@@ -6,7 +6,7 @@
  ____) | |_| | |__| |____  ____) | |_| |_| | (_| | | (_) |
 |_____/|____/|_____\_____||_____/ \__|\__,_|\__,_|_|\___/
 
-         From PRD to Production-Ready Tests
+      From PRD to Quality, Fully Tested Code
 ```
 
 A Claude Code skill for managing the full software development lifecycle.
