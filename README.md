@@ -1,4 +1,4 @@
-```
+```text
   _____ ____  _     _____   _____ _             _ _
  / ____|  _ \| |   / ____| / ____| |           | (_)
 | (___ | | | | |  | |     | (___ | |_ _   _  __| |_  ___
@@ -90,7 +90,7 @@ cp -r sdlc-studio/.claude/skills/sdlc-studio ~/.claude/skills/
 
 ### Greenfield Project
 
-```
+```bash
 /sdlc-studio init              # Bootstrap pipeline
 /sdlc-studio prd create        # Interactive PRD creation
 /sdlc-studio trd create        # Define technical requirements
@@ -104,7 +104,7 @@ cp -r sdlc-studio/.claude/skills/sdlc-studio ~/.claude/skills/
 
 ### Brownfield Project
 
-```
+```bash
 /sdlc-studio init              # Bootstrap pipeline (auto-detect)
 /sdlc-studio migrate           # Migrate old test-plan/suite/case format
 /sdlc-studio prd generate      # Reverse-engineer PRD from code
@@ -119,7 +119,7 @@ cp -r sdlc-studio/.claude/skills/sdlc-studio ~/.claude/skills/
 
 ### Development Cycle
 
-```
+```bash
 /sdlc-studio code plan         # Plan implementation for story
 /sdlc-studio code implement    # Execute the plan
 /sdlc-studio code review       # Review implementation
@@ -130,7 +130,7 @@ cp -r sdlc-studio/.claude/skills/sdlc-studio ~/.claude/skills/
 
 All artifacts are created in the `sdlc-studio/` directory:
 
-```
+```text
 sdlc-studio/
   prd.md                      # Product Requirements Document
   trd.md                      # Technical Requirements Document

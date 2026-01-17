@@ -1,0 +1,18 @@
+{
+  "name": "sdlc-studio",
+  "version": "1.0.0",
+  "description": "Claude Code skill for managing the full software development lifecycle",
+  "private": true,
+  "scripts": {
+    "lint": "markdownlint '**/*.md' --ignore node_modules",
+    "lint:fix": "markdownlint '**/*.md' --ignore node_modules --fix"
+  },
+  "devDependencies": {
+    "markdownlint-cli": "^0.43.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DarrenBenson/sdlc-studio.git"
+  },
+  "license": "MIT"
+}
