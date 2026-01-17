@@ -5,20 +5,11 @@
  \___ \| | | | |  | |      \___ \| __| | | |/ _` | |/ _ \
  ____) | |_| | |__| |____  ____) | |_| |_| | (_| | | (_) |
 |_____/|____/|_____\_____||_____/ \__|\__,_|\__,_|_|\___/
+
+         From PRD to Production-Ready Tests
 ```
 
-<div align="center">
-
-**From PRD to Production-Ready Tests**
-
-*A Claude Code skill for managing the full software development lifecycle*
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Claude Code](https://img.shields.io/badge/Claude-Code-orange.svg)](https://claude.ai/code)
-
-</div>
-
----
+A Claude Code skill for managing the full software development lifecycle.
 
 ## Features
 
