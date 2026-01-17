@@ -1,0 +1,88 @@
+"""
+Tests for {{epic_title}}
+Generated from {{spec_id}}: {{spec_title}}
+
+Traceability:
+- Epic: {{epic_id}}
+- Stories: {{story_refs}}
+
+GENERATION NOTES:
+Before generating tests, the following should be discovered from implementation:
+1. Enum values - grep "class.*Enum" in service files for exact values
+2. Dataclass structures - grep "@dataclass" for attribute definitions
+3. Required mock attributes - check what attributes are accessed in code
+"""
+import pytest
+{{#if has_async}}
+import pytest_asyncio
+from unittest.mock import AsyncMock, MagicMock, patch
+{{else}}
+from unittest.mock import MagicMock, patch
+{{/if}}
+
+{{#if mock_helpers}}
+# =============================================================================
+# Mock Helpers - Generated from discovered dataclasses
+# =============================================================================
+
+{{#each mock_helpers}}
+def make_{{name}}({{params}}):
+    """Create a MagicMock that behaves like {{class_name}}."""
+    mock = MagicMock()
+    {{#each attributes}}
+    mock.{{name}} = {{default}}
+    {{/each}}
+    return mock
+
+{{/each}}
+{{/if}}
+
+# =============================================================================
+# Fixtures
+# =============================================================================
+
+{{#each fixtures}}
+@pytest.fixture
+def {{name}}():
+    """{{description}}"""
+    return {{value}}
+
+{{/each}}
+
+# =============================================================================
+# Tests
+# =============================================================================
+
+class Test{{class_name}}:
+    """
+    {{spec_title}}
+
+    Stories covered:
+    {{#each stories}}
+    - {{id}}: {{title}}
+    {{/each}}
+    """
+
+{{#each test_cases}}
+    {{#if is_async}}
+    @pytest.mark.asyncio
+    async def test_{{snake_name}}(self{{#each fixtures}}, {{name}}{{/each}}):
+    {{else}}
+    def test_{{snake_name}}(self{{#each fixtures}}, {{name}}{{/each}}):
+    {{/if}}
+        """
+        {{id}}: {{title}}
+
+        Story: {{story_ref}}
+        Priority: {{priority}}
+        """
+        # Given: {{given}}
+        {{given_code}}
+
+        # When: {{when}}
+        {{when_code}}
+
+        # Then: {{then}}
+        {{then_code}}
+
+{{/each}}

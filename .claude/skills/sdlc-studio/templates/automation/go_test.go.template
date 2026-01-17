@@ -1,0 +1,53 @@
+// Tests for {{epic_title}}
+// Generated from {{spec_id}}: {{spec_title}}
+//
+// Traceability:
+// - Epic: {{epic_id}}
+// - Stories: {{story_refs}}
+
+package {{package_name}}
+
+import (
+	"testing"
+{{#each imports}}
+	"{{this}}"
+{{/each}}
+)
+
+{{#each fixtures}}
+func {{name}}(t *testing.T) {{type}} {
+	t.Helper()
+	return {{value}}
+}
+
+{{/each}}
+
+// Test{{class_name}} tests {{spec_title}}
+//
+// Stories covered:
+{{#each stories}}
+// - {{id}}: {{title}}
+{{/each}}
+func Test{{class_name}}(t *testing.T) {
+{{#each test_cases}}
+	t.Run("{{title}}", func(t *testing.T) {
+		// {{id}}: {{title}}
+		// Story: {{story_ref}}
+		// Priority: {{priority}}
+
+		// Given: {{given}}
+		{{given_code}}
+
+		// When: {{when}}
+		{{when_code}}
+
+		// Then: {{then}}
+		{{#each assertions}}
+		if {{condition}} {
+			t.Errorf("{{error_message}}")
+		}
+		{{/each}}
+	})
+
+{{/each}}
+}

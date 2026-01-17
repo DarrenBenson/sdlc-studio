@@ -1,0 +1,158 @@
+"""
+E2E Tests for {{epic_title}}
+Generated from {{spec_id}}: {{spec_title}}
+
+Traceability:
+- Epic: {{epic_id}}
+- Stories: {{story_refs}}
+
+IMPORTANT: This template includes patterns for proper E2E test mocking.
+Before using, verify:
+1. Enum values match implementation (grep "class.*Enum" in service files)
+2. Dataclass structures match (grep "@dataclass" in service files)
+3. Singleton patterns are correctly identified (look for global variables)
+4. API request schemas include all required fields
+"""
+import uuid
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+from fastapi import status
+from httpx import ASGITransport, AsyncClient
+
+{{#if app_import}}
+from {{app_module}} import {{app_name}}
+{{/if}}
+
+
+# =============================================================================
+# Mock Helpers - Generate these from discovered dataclasses
+# =============================================================================
+
+{{#each mock_helpers}}
+def make_{{name}}({{params}}):
+    """Create a MagicMock that behaves like {{class_name}}.
+
+    IMPORTANT: Attributes are set explicitly to avoid MagicMock comparison issues.
+    e.g., mock.confidence > 0.4 would fail if confidence is a MagicMock.
+    """
+    mock = MagicMock()
+    {{#each attributes}}
+    mock.{{name}} = {{default}}
+    {{/each}}
+    return mock
+
+{{/each}}
+
+# =============================================================================
+# Fixtures
+# =============================================================================
+
+@pytest.fixture
+async def async_client():
+    """Create async test client for the API."""
+    {{#if app_import}}
+    async with AsyncClient(transport=ASGITransport(app={{app_name}}), base_url="http://test") as client:
+        yield client
+    {{else}}
+    async with AsyncClient(base_url="{{base_url}}") as client:
+        yield client
+    {{/if}}
+
+
+@pytest.fixture
+def session_id():
+    """Generate unique session ID for tests."""
+    return str(uuid.uuid4())
+
+
+@pytest.fixture
+def {{service_fixture_name}}():
+    """Mock the {{service_name}} for testing.
+
+    IMPORTANT: Patch the global singleton directly, not the getter function.
+    This bypasses any caching that may have already occurred.
+    """
+    import {{service_module}} as module
+
+    mock_service = MagicMock()
+
+    # Configure default responses
+    {{#each default_responses}}
+    {{this}}
+    {{/each}}
+
+    # Patch the global singleton directly
+    original = module.{{global_var_name}}
+    module.{{global_var_name}} = mock_service
+
+    yield mock_service
+
+    # Restore original (or None to allow re-initialization)
+    module.{{global_var_name}} = original
+
+
+{{#each fixtures}}
+@pytest.fixture
+def {{name}}():
+    """{{description}}"""
+    return {{value}}
+
+{{/each}}
+
+# =============================================================================
+# Test Classes
+# =============================================================================
+
+class Test{{class_name}}:
+    """
+    E2E tests for {{spec_title}}
+
+    Stories covered:
+    {{#each stories}}
+    - {{id}}: {{title}}
+    {{/each}}
+
+    IMPORTANT REMINDERS:
+    - Use exact enum values from implementation, not spec descriptions
+    - Mock objects must have all accessed attributes set explicitly
+    - Include all required fields in request payloads
+    """
+
+{{#each test_cases}}
+    @pytest.mark.asyncio
+    async def test_{{snake_name}}(
+        self, async_client, session_id, {{service_fixture_name}}{{#each fixtures}}, {{name}}{{/each}}
+    ):
+        """
+        {{id}}: {{title}}
+
+        Story: {{story_ref}}
+        Priority: {{priority}}
+        Type: E2E
+        """
+        # Configure mock for this test
+        {{#if mock_setup}}
+        {{mock_setup}}
+        {{/if}}
+
+        # Given: {{given}}
+        {{given_code}}
+
+        # When: {{when}}
+        response = await async_client.{{method_lower}}(
+            "{{endpoint}}",
+            json={
+                {{#each request_fields}}
+                "{{name}}": {{value}},
+                {{/each}}
+            }
+        )
+
+        # Then: {{then}}
+        assert response.status_code == {{expected_status}}
+        {{#each assertions}}
+        {{this}}
+        {{/each}}
+
+{{/each}}

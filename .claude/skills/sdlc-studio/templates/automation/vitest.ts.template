@@ -1,0 +1,66 @@
+/**
+ * Tests for {{epic_title}}
+ * Generated from {{spec_id}}: {{spec_title}}
+ *
+ * Traceability:
+ * - Epic: {{epic_id}}
+ * - Stories: {{story_refs}}
+ */
+
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+{{#each imports}}
+import { {{items}} } from '{{module}}';
+{{/each}}
+
+{{#each fixtures}}
+const {{name}} = (): {{type}} => {{value}};
+{{/each}}
+
+describe('{{class_name}}', () => {
+  /**
+   * {{spec_title}}
+   *
+   * Stories covered:
+   {{#each stories}}
+   * - {{id}}: {{title}}
+   {{/each}}
+   */
+
+  {{#if has_before_each}}
+  beforeEach(() => {
+    {{before_each_code}}
+  });
+  {{/if}}
+
+  {{#if has_after_each}}
+  afterEach(() => {
+    {{after_each_code}}
+  });
+  {{/if}}
+
+{{#each test_cases}}
+  {{#if is_async}}
+  it('{{title}}', async () => {
+  {{else}}
+  it('{{title}}', () => {
+  {{/if}}
+    /**
+     * {{id}}: {{title}}
+     * Story: {{story_ref}}
+     * Priority: {{priority}}
+     */
+
+    // Given: {{given}}
+    {{given_code}}
+
+    // When: {{when}}
+    {{when_code}}
+
+    // Then: {{then}}
+    {{#each assertions}}
+    expect({{actual}}).{{matcher}}({{expected}});
+    {{/each}}
+  });
+
+{{/each}}
+});
