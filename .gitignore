@@ -42,3 +42,26 @@ yarn-error.log*
 # Logs
 *.log
 logs/
+
+# macOS
+._*
+.AppleDouble
+__MACOSX/
+
+# Linux
+.directory
+.fuse_hidden*
+.Trash-*
+.nfs*
+
+# Windows
+ehthumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# General
+*.bak
+*.tmp
+*.temp
+.cache/
+*.orig
