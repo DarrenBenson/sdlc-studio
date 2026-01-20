@@ -33,6 +33,20 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+
+# Coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# TypeScript
+*.tsbuildinfo
+
+# Cache
+.eslintcache
+.stylelintcache
+.npm/
 
 # Environment
 .env

@@ -1,40 +1,110 @@
-# Global Best Practices
+# Best Practices
 
-Quality checklists for AI assistants creating artifacts in any project.
+Quality standards and code patterns for SDLC Studio.
 
-## When to Check
+---
 
-| Creating... | Check |
-|-------------|-------|
-| Python script | `python.md` then `script.md` |
-| Bash script | `script.md` |
-| README file | `readme.md` |
-| Documentation | `documentation.md` |
-| Claude skill | `skill.md` |
-| Claude command | `command.md` |
+## Language Guides
+
+Each language has two files:
+- `{language}-rules.md` - Concise checklist of standards (load first)
+- `{language}-examples.md` - Code patterns and snippets (load when writing code)
+
+| Language | Rules | Examples |
+|----------|-------|----------|
+| Python | `python-rules.md` | `python-examples.md` |
+| TypeScript | `typescript-rules.md` | `typescript-examples.md` |
+| JavaScript | `javascript-rules.md` | `javascript-examples.md` |
+| Go | `go-rules.md` | `go-examples.md` |
+| Rust | `rust-rules.md` | `rust-examples.md` |
+| C# | `csharp-rules.md` | `csharp-examples.md` |
+| PHP | `php-rules.md` | `php-examples.md` |
+
+---
 
 ## How to Use
 
-1. **Before creating**: Read the relevant guide
-2. **During creation**: Follow the structure
-3. **Before completing**: Run through the checklist
-4. **If updating**: Check anti-patterns haven't crept in
+### During Code Planning
+
+1. Load `{language}-rules.md` for the project's language
+2. Use the checklist to validate your plan
+
+### During Implementation
+
+1. Load `{language}-rules.md` for standards
+2. Load `{language}-examples.md` when writing code
+3. Reference patterns for common tasks
+4. Check anti-patterns before completing
+
+### During Code Review
+
+1. Verify checklist items in `{language}-rules.md`
+2. Check for anti-patterns listed in each guide
+
+---
+
+## Technology Guides
+
+| Guide | Purpose |
+|-------|---------|
+| `architecture.md` | SDLC-specific architecture patterns |
+| `docker.md` | Container best practices |
+| `openapi.md` | API design standards |
+| `script.md` | Script structure (Bash/Python) |
+
+---
 
 ## Universal Standards
 
+Applied across all languages:
+
 - British English (analyse, colour, behaviour)
-- No em dashes (use en dash with spaces or restructure)
-- No corporate jargon (synergy, leverage, robust, journey)
+- No em dashes - use en dash with spaces or restructure
+- No corporate jargon (synergy, leverage, robust)
 - Dense, economical writing
-- Markdown formatting with consistent header hierarchy
+- Consistent Markdown formatting
 
-## Files
+---
 
-| File | Purpose |
-|------|---------|
-| `python.md` | Python libraries, error handling, security |
-| `script.md` | Script structure (Python and Bash) |
-| `documentation.md` | Technical documentation standards |
-| `readme.md` | README file standards |
-| `skill.md` | Claude Code skill standards |
-| `command.md` | Claude Code command standards |
+## Quick Reference
+
+### Security Essentials
+
+| Risk | Mitigation |
+|------|------------|
+| SQL Injection | Parameterised queries |
+| XSS | Output escaping |
+| Code Injection | No `eval()` with user input |
+| Credential Exposure | Environment variables |
+| YAML Attacks | Safe loading only |
+
+### Error Handling
+
+| Language | Pattern |
+|----------|---------|
+| Python | Specific exceptions, logging |
+| TypeScript | Custom errors, typed catch |
+| JavaScript | try/catch, custom Error classes |
+| Go | Wrap errors, `errors.Is/As` |
+| Rust | `Result<T, E>`, `?` operator |
+| C# | Specific exceptions, custom types |
+| PHP | Typed exceptions, no `@` suppression |
+
+### Testing
+
+| Language | Framework | Key Pattern |
+|----------|-----------|-------------|
+| Python | pytest | Fixtures, parametrise |
+| TypeScript | Vitest/Jest | Typed mocks |
+| JavaScript | Vitest/Jest | Mocking, coverage |
+| Go | testing | Table-driven tests |
+| Rust | built-in | `#[test]`, proptest |
+| C# | xUnit | Theory, Moq |
+| PHP | PHPUnit | Data providers |
+
+---
+
+## See Also
+
+- `../reference-code.md` - Code workflow reference
+- `../reference-testing.md` - Test workflow reference

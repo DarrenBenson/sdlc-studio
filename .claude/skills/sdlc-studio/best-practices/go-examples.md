@@ -1,12 +1,10 @@
-# Go Best Practices
+# Go Examples
 
-Standards and patterns for Go code.
+Code patterns and snippets for Go.
 
 ---
 
 ## Table-Driven Tests
-
-The idiomatic way to write tests in Go:
 
 ```go
 func TestAdd(t *testing.T) {
@@ -32,27 +30,25 @@ func TestAdd(t *testing.T) {
 }
 ```
 
-**Why:** Easy to add cases, clear failure messages, subtests run in parallel.
-
 ---
 
 ## Error Handling
 
-### Wrap errors with context
+### Wrap Errors with Context
 
 ```go
-// Bad - loses context
-if err != nil {
-    return err
-}
-
-// Good - adds context for debugging
+// GOOD - adds context for debugging
 if err != nil {
     return fmt.Errorf("failed to process item %s: %w", item.ID, err)
 }
+
+// BAD - loses context
+if err != nil {
+    return err
+}
 ```
 
-### Check specific errors
+### Check Specific Errors
 
 ```go
 if errors.Is(err, ErrNotFound) {
@@ -65,7 +61,7 @@ if errors.As(err, &pathErr) {
 }
 ```
 
-### Sentinel errors
+### Sentinel Errors
 
 ```go
 var (
@@ -79,10 +75,10 @@ var (
 
 ## Interface Design
 
-### Define interfaces at point of use
+### Define at Point of Use
 
 ```go
-// Bad - interface in implementation package
+// BAD - interface in implementation package
 package storage
 
 type UserStore interface {
@@ -90,7 +86,7 @@ type UserStore interface {
     Save(user *User) error
 }
 
-// Good - interface where it's needed
+// GOOD - interface where it's needed
 package handler
 
 // UserGetter is what this handler needs
@@ -103,10 +99,10 @@ func NewHandler(users UserGetter) *Handler {
 }
 ```
 
-### Keep interfaces small
+### Keep Interfaces Small
 
 ```go
-// Bad - too many methods
+// BAD - too many methods
 type Repository interface {
     Get(id string) (*Entity, error)
     GetAll() ([]*Entity, error)
@@ -117,7 +113,7 @@ type Repository interface {
     Count() (int, error)
 }
 
-// Good - single responsibility
+// GOOD - single responsibility
 type Getter interface {
     Get(id string) (*Entity, error)
 }
@@ -131,7 +127,7 @@ type Saver interface {
 
 ## Context Usage
 
-### Pass context as first parameter
+### Pass as First Parameter
 
 ```go
 func ProcessOrder(ctx context.Context, orderID string) error {
@@ -139,7 +135,7 @@ func ProcessOrder(ctx context.Context, orderID string) error {
 }
 ```
 
-### Respect cancellation
+### Respect Cancellation
 
 ```go
 func LongRunningTask(ctx context.Context) error {
@@ -157,7 +153,7 @@ func LongRunningTask(ctx context.Context) error {
 }
 ```
 
-### Set timeouts
+### Set Timeouts
 
 ```go
 ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -170,10 +166,9 @@ result, err := slowOperation(ctx)
 
 ## Concurrency
 
-### Use channels for communication
+### Worker Pool
 
 ```go
-// Worker pool pattern
 func ProcessItems(items []Item, workers int) []Result {
     jobs := make(chan Item, len(items))
     results := make(chan Result, len(items))
@@ -202,7 +197,7 @@ func ProcessItems(items []Item, workers int) []Result {
 }
 ```
 
-### Use sync.WaitGroup for goroutine coordination
+### WaitGroup
 
 ```go
 var wg sync.WaitGroup
@@ -216,7 +211,7 @@ for _, url := range urls {
 wg.Wait()
 ```
 
-### Protect shared state with mutex
+### Mutex for Shared State
 
 ```go
 type SafeCounter struct {
@@ -235,7 +230,7 @@ func (c *SafeCounter) Inc() {
 
 ## Struct Design
 
-### Use constructor functions
+### Constructor with Functional Options
 
 ```go
 func NewServer(addr string, opts ...Option) *Server {
@@ -249,7 +244,6 @@ func NewServer(addr string, opts ...Option) *Server {
     return s
 }
 
-// Functional options
 type Option func(*Server)
 
 func WithTimeout(d time.Duration) Option {
@@ -257,9 +251,12 @@ func WithTimeout(d time.Duration) Option {
         s.timeout = d
     }
 }
+
+// Usage
+server := NewServer(":8080", WithTimeout(10*time.Second))
 ```
 
-### Embed for composition
+### Embedding for Composition
 
 ```go
 type Logger struct {
@@ -278,13 +275,10 @@ type Service struct {
 
 ---
 
-## Testing Patterns
-
-### Test helpers
+## Test Helpers
 
 ```go
 func TestHandler(t *testing.T) {
-    // Helper marks function as test helper (better stack traces)
     client := newTestClient(t)
 
     resp := client.Get("/users/1")
@@ -305,7 +299,9 @@ func assertStatus(t *testing.T, resp *http.Response, want int) {
 }
 ```
 
-### Time mocking with clockwork
+---
+
+## Time Mocking
 
 ```go
 import "github.com/jonboulle/clockwork"
@@ -318,7 +314,7 @@ func (s *Service) IsExpired(createdAt time.Time) bool {
     return s.clock.Now().Sub(createdAt) > 24*time.Hour
 }
 
-// In tests:
+// In tests
 func TestIsExpired(t *testing.T) {
     fakeClock := clockwork.NewFakeClock()
     svc := &Service{clock: fakeClock}
@@ -329,6 +325,66 @@ func TestIsExpired(t *testing.T) {
     if !svc.IsExpired(createdAt) {
         t.Error("expected expired")
     }
+}
+```
+
+---
+
+## Common Mistakes
+
+### Nil Slice vs Empty Slice
+
+```go
+// Nil slice - JSON marshals to null
+var s []string
+json.Marshal(s) // "null"
+
+// Empty slice - JSON marshals to []
+s := []string{}
+json.Marshal(s) // "[]"
+
+// Or use make
+s := make([]string, 0)
+```
+
+### Loop Variable in Goroutine
+
+```go
+// BAD - all goroutines share same i
+for i := range items {
+    go func() {
+        process(items[i]) // Bug: i changes
+    }()
+}
+
+// GOOD - capture value
+for i := range items {
+    go func(i int) {
+        process(items[i])
+    }(i)
+}
+
+// Go 1.22+ - loop variables are per-iteration (safe)
+for i := range items {
+    go func() {
+        process(items[i]) // Safe in Go 1.22+
+    }()
+}
+```
+
+### Deferred Function Arguments
+
+```go
+// BAD - argument evaluated immediately
+for _, f := range files {
+    defer f.Close() // Bug: all close same file
+}
+
+// GOOD - use closure
+for _, f := range files {
+    defer func(file *os.File) {
+        file.Close()
+    }(f)
 }
 ```
 
@@ -357,60 +413,6 @@ project/
 
 ---
 
-## Common Mistakes
+## See Also
 
-### Nil slice vs empty slice
-
-```go
-// Nil slice - JSON marshals to null
-var s []string
-json.Marshal(s) // "null"
-
-// Empty slice - JSON marshals to []
-s := []string{}
-json.Marshal(s) // "[]"
-
-// Or use make
-s := make([]string, 0)
-```
-
-### Closing over loop variable
-
-```go
-// Bad - all goroutines share same i
-for i := range items {
-    go func() {
-        process(items[i]) // Bug: i changes
-    }()
-}
-
-// Good - capture value
-for i := range items {
-    go func(i int) {
-        process(items[i])
-    }(i)
-}
-
-// Go 1.22+ - loop variables are per-iteration
-for i := range items {
-    go func() {
-        process(items[i]) // Safe in Go 1.22+
-    }()
-}
-```
-
-### Deferred function arguments
-
-```go
-// Argument evaluated immediately
-for _, f := range files {
-    defer f.Close() // Bug: all close same file
-}
-
-// Fix: use closure
-for _, f := range files {
-    defer func(file *os.File) {
-        file.Close()
-    }(f)
-}
-```
+- `go-rules.md` - Standards checklist

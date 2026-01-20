@@ -13,122 +13,194 @@
 
 A Claude Code skill for managing the full software development lifecycle.
 
-## Features
+## What is This?
 
-- **PRD Management** - Create, generate from codebase, or update Product Requirements Documents
-- **TRD Management** - Create, generate from codebase, or update Technical Requirements Documents
-- **Epic Generation** - Group features into manageable Epics with acceptance criteria
-- **Story Breakdown** - Generate User Stories with Given/When/Then acceptance criteria
-- **Persona Creation** - Define or infer user personas from codebase patterns
-- **Bug Tracking** - Report, list, fix, verify, and close bugs with traceability
-- **Code Workflows** - Plan, implement, review, and check code against requirements
-- **Test Strategy Document (TSD)** - Document project-level testing approach
-- **Test Specifications** - Consolidated test specs with embedded fixtures
-- **Test Automation** - Generate executable tests for pytest, Jest, Vitest, Go, and more
-- **Test Execution** - Run tests with traceability to stories and epics
-- **Workflow Automation** - Execute stories through 7 phases or epics in dependency order
-- **Status & Hints** - Check pipeline state and get single actionable next steps
+SDLC Studio is a **skill** (plugin) for [Claude Code](https://docs.anthropic.com/en/docs/claude-code), Anthropic's official CLI tool for working with Claude. It adds commands that help you manage the entire software development process:
+
+- Write Product Requirements Documents (PRDs)
+- Break work into Epics and User Stories
+- Plan and implement code changes
+- Generate and run tests
+- Track bugs
+
+**New to Claude Code?** You'll need to [install Claude Code](https://docs.anthropic.com/en/docs/claude-code/getting-started) first before installing this skill.
+
+## Prerequisites
+
+Before installing SDLC Studio, ensure you have:
+
+| Requirement | How to check | Install guide |
+|-------------|--------------|---------------|
+| Claude Code | Run `claude --version` | [Getting Started](https://docs.anthropic.com/en/docs/claude-code/getting-started) |
+| curl or wget | Run `curl --version` | Usually pre-installed on macOS/Linux |
 
 ## Installation
 
-Copy the skill to your Claude Code skills directory:
+### Option 1: One-line installer (recommended)
+
+Open your terminal and run:
 
 ```bash
-# Project-level installation (recommended)
-mkdir -p .claude/skills
-cp -r sdlc-studio/.claude/skills/sdlc-studio .claude/skills/
-
-# Or global installation
-cp -r sdlc-studio/.claude/skills/sdlc-studio ~/.claude/skills/
+curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash
 ```
+
+This installs SDLC Studio globally, making it available in all your projects.
+
+**What this does:**
+1. Downloads the latest version from GitHub
+2. Creates `~/.claude/skills/` if it doesn't exist
+3. Installs the skill files
+
+### Option 2: Install for a single project only
+
+If you only want the skill available in one project:
+
+```bash
+cd /path/to/your/project
+curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash -s -- --local
+```
+
+This creates `.claude/skills/sdlc-studio/` in your current directory.
+
+### Option 3: Install a specific version
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash -s -- --version v1.1.0
+```
+
+### Option 4: Manual installation
+
+If you prefer not to use the installer script:
+
+```bash
+# Clone the repository
+git clone https://github.com/DarrenBenson/sdlc-studio.git
+cd sdlc-studio
+
+# Copy to your Claude Code skills directory
+mkdir -p ~/.claude/skills
+cp -r .claude/skills/sdlc-studio ~/.claude/skills/
+```
+
+## Verify Installation
+
+After installing, verify it works:
+
+1. **Start Claude Code** in any project directory:
+   ```bash
+   cd /path/to/any/project
+   claude
+   ```
+
+2. **Run the help command** inside Claude Code:
+   ```
+   /sdlc-studio help
+   ```
+
+   You should see a list of available commands.
+
+3. **Check the status**:
+   ```
+   /sdlc-studio status
+   ```
+
+   This shows the current state of your SDLC pipeline (empty for a new project).
 
 ## Quick Start
 
-```bash
-# Check pipeline status
+Once installed, here's how to get started inside Claude Code:
+
+### First time? Check the status
+
+```
 /sdlc-studio status
+```
 
-# Generate PRD from existing codebase
-/sdlc-studio prd generate
+This shows what artifacts exist and suggests next steps.
 
-# Generate TRD from codebase
-/sdlc-studio trd generate
+### Don't know what to do next?
 
-# Create Epics from PRD
-/sdlc-studio epic
-
-# Generate User Stories
-/sdlc-studio story
-
-# Report a bug
-/sdlc-studio bug
-
-# Plan implementation for a story
-/sdlc-studio code plan
-
-# Execute implementation plan
-/sdlc-studio code implement
-
-# Execute full story workflow (7 phases)
-/sdlc-studio story implement --story US0001
-
-# Create test specifications
-/sdlc-studio test-spec
-
-# Generate executable tests
-/sdlc-studio test-automation
-
-# Run tests for an epic
-/sdlc-studio code test --epic EP0001
-
-# Get single actionable next step
+```
 /sdlc-studio hint
 ```
 
+This gives you a single, actionable next step based on your project's current state.
+
+### Starting a new project?
+
+```
+/sdlc-studio prd create
+```
+
+Claude will ask you questions about your project and create a Product Requirements Document.
+
+### Have existing code?
+
+```
+/sdlc-studio prd generate
+```
+
+Claude analyses your codebase and creates a PRD based on what it finds.
+
+## Common Commands
+
+| Command | What it does |
+|---------|--------------|
+| `/sdlc-studio help` | Show all available commands |
+| `/sdlc-studio status` | Show pipeline state and progress |
+| `/sdlc-studio hint` | Get a single suggested next action |
+| `/sdlc-studio prd create` | Create a new PRD interactively |
+| `/sdlc-studio prd generate` | Generate PRD from existing code |
+| `/sdlc-studio epic` | Generate Epics from your PRD |
+| `/sdlc-studio story` | Generate User Stories from Epics |
+| `/sdlc-studio code plan` | Plan implementation for a story |
+| `/sdlc-studio code implement` | Execute your implementation plan |
+| `/sdlc-studio bug` | Report a new bug |
+
 ## Workflows
 
-### Greenfield Project
+### New Project (Greenfield)
 
-```bash
-/sdlc-studio prd create        # Interactive PRD creation
-/sdlc-studio trd create        # Define technical requirements
-/sdlc-studio persona           # Define user personas
-/sdlc-studio epic              # Generate Epics
-/sdlc-studio story             # Generate Stories
-/sdlc-studio tsd               # Define test strategy
-/sdlc-studio test-spec         # Generate test specs
-/sdlc-studio test-automation   # Generate executable tests
-# Or use workflow automation
-/sdlc-studio story implement --story US0001  # Single story, all phases
+Follow this sequence to build from scratch:
+
+```
+/sdlc-studio prd create        # 1. Define what you're building
+/sdlc-studio trd create        # 2. Define technical approach
+/sdlc-studio persona           # 3. Define who will use it
+/sdlc-studio epic              # 4. Break into Epics
+/sdlc-studio story             # 5. Break into Stories
+/sdlc-studio tsd               # 6. Define test strategy
+/sdlc-studio test-spec         # 7. Create test specifications
+/sdlc-studio code plan         # 8. Plan first story
+/sdlc-studio code implement    # 9. Build it
 ```
 
-### Brownfield Project
+### Existing Project (Brownfield)
 
-```bash
-/sdlc-studio prd generate      # Reverse-engineer PRD from code
-/sdlc-studio trd generate      # Generate TRD from codebase
-/sdlc-studio persona generate  # Infer personas from codebase
-/sdlc-studio epic              # Generate Epics
-/sdlc-studio story             # Generate Stories
-/sdlc-studio tsd generate      # Infer test strategy from existing tests
-/sdlc-studio test-spec generate      # Reverse-engineer from tests
-/sdlc-studio test-automation   # Fill test gaps
+Use `generate` to reverse-engineer documentation from code:
+
+```
+/sdlc-studio prd generate      # Analyse code, create PRD
+/sdlc-studio trd generate      # Document technical decisions
+/sdlc-studio persona generate  # Infer users from code
+/sdlc-studio epic              # Create Epics for future work
+/sdlc-studio story             # Break into Stories
 ```
 
-### Development Cycle
+### Daily Development
 
-```bash
-/sdlc-studio code plan         # Plan implementation for story
-/sdlc-studio code implement    # Execute the plan
-/sdlc-studio code review       # Review implementation
-/sdlc-studio code test         # Run tests with traceability
+```
+/sdlc-studio code plan         # Plan your changes
+/sdlc-studio code implement    # Make the changes
+/sdlc-studio code review       # Review what you built
+/sdlc-studio code test         # Run tests
 ```
 
 ## Output Structure
 
-All artifacts are created in the `sdlc-studio/` directory:
+SDLC Studio creates a `sdlc-studio/` directory in your project:
 
-```text
+```
 sdlc-studio/
   prd.md                      # Product Requirements Document
   trd.md                      # Technical Requirements Document
@@ -136,62 +208,112 @@ sdlc-studio/
   personas.md                 # User Personas
   epics/
     _index.md                 # Epic registry
-    EP0001-*.md               # Epic files
+    EP0001-*.md               # Individual Epic files
   stories/
     _index.md                 # Story registry
-    US0001-*.md               # Story files
+    US0001-*.md               # Individual Story files
   bugs/
     _index.md                 # Bug registry
-    BG0001-*.md               # Bug files
+    BG0001-*.md               # Individual Bug files
   plans/
     _index.md                 # Plan registry
     PL0001-*.md               # Implementation plans
   test-specs/
     _index.md                 # Spec registry
     TSP0001-*.md              # Test Specifications
-  workflows/
-    _index.md                 # Workflow registry
-    WF0001-*.md               # Workflow tracking files
 
-tests/                        # Generated test code
+tests/                        # Generated test code (in project root)
   unit/
   integration/
   api/
   e2e/
 ```
 
+## Troubleshooting
+
+### "Command not found" when running /sdlc-studio
+
+The skill isn't installed correctly. Check:
+
+1. **Is the skill in the right place?**
+   ```bash
+   ls ~/.claude/skills/sdlc-studio/SKILL.md
+   ```
+   If this file doesn't exist, reinstall.
+
+2. **For project-level installs**, check:
+   ```bash
+   ls .claude/skills/sdlc-studio/SKILL.md
+   ```
+
+3. **Try reinstalling**:
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash
+   ```
+
+### Installer fails to download
+
+Check your internet connection and that you can access GitHub:
+```bash
+curl -I https://github.com/DarrenBenson/sdlc-studio
+```
+
+If you're behind a corporate proxy, you may need to configure proxy settings.
+
+### Commands run but nothing happens
+
+Make sure you're running commands **inside Claude Code**, not in your regular terminal. Start Claude Code first:
+```bash
+claude
+```
+Then type the `/sdlc-studio` commands at the Claude Code prompt.
+
+## Updating
+
+To update to the latest version, simply run the installer again:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash
+```
+
+The installer removes the old version before installing the new one.
+
+## Uninstalling
+
+### Global installation
+
+```bash
+rm -rf ~/.claude/skills/sdlc-studio
+```
+
+### Project-level installation
+
+```bash
+rm -rf .claude/skills/sdlc-studio
+```
+
+## Getting Help
+
+Inside Claude Code:
+
+```
+/sdlc-studio help              # Show all commands
+/sdlc-studio prd help          # Help for PRD commands
+/sdlc-studio epic help         # Help for Epic commands
+/sdlc-studio test-spec help    # Help for test specification
+```
+
 ## Documentation
 
 - [SKILL.md](.claude/skills/sdlc-studio/SKILL.md) - Full command reference
 - [reference-philosophy.md](.claude/skills/sdlc-studio/reference-philosophy.md) - Create vs Generate modes (read first)
-- [reference-*.md](.claude/skills/sdlc-studio/) - Domain-specific workflows (13 files)
+- [reference-*.md](.claude/skills/sdlc-studio/) - Domain-specific workflows
 - [best-practices/](.claude/skills/sdlc-studio/best-practices/) - Quality guidelines
-
-## Best Practices
-
-The skill includes best practice guides for creating quality artifacts:
-
-| Creating... | Check |
-|-------------|-------|
-| Python script | `best-practices/python.md` then `best-practices/script.md` |
-| Bash script | `best-practices/script.md` |
-| README file | `best-practices/readme.md` |
-| Documentation | `best-practices/documentation.md` |
-| Claude skill | `best-practices/skill.md` |
-| Claude command | `best-practices/command.md` |
-
-## Getting Help
-
-```bash
-/sdlc-studio help              # Show command reference
-/sdlc-studio prd help          # PRD-specific help
-/sdlc-studio test-spec help    # Test specification help
-```
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on contributing to this project.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Licence
 
-This project is licensed under the MIT Licence - see the [LICENSE](LICENSE) file for details.
+MIT Licence - see [LICENSE](LICENSE) for details.

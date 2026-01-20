@@ -32,12 +32,12 @@ Detailed workflows for code planning, review, and quality checks.
    > **Detection table:** `reference-testing.md` → Detect Language
 
 4. **Load Best Practices**
-   Read relevant best practices from `~/.claude/best-practices/`:
-   - `python.md` for Python
-   - `typescript.md` for TypeScript
-   - `go.md` for Go
-   - `rust.md` for Rust
-   - Language-specific patterns and anti-patterns
+   Read relevant best practices from `best-practices/`:
+   - `{language}-rules.md` for standards checklist
+   - `{language}-examples.md` when writing code (loaded on demand)
+
+   Supported languages:
+   - Python, TypeScript, JavaScript, Go, Rust, C#, PHP
 
 5. **Explore Codebase**
    Use Task tool with Explore agent to understand:
@@ -84,6 +84,53 @@ Detailed workflows for code planning, review, and quality checks.
    | 1 | Empty input            | Return 400 with validation error | Phase 1 |
    | 2 | Network timeout        | Retry 3x with exponential backoff | Phase 2 |
    ```
+
+6c. **Enforce Scope Completeness (MANDATORY)**
+
+   **A plan MUST deliver ALL story requirements.** Never defer in-scope work to "future stories".
+
+   a) Extract ALL items from Story's "In Scope" section
+   b) Extract ALL acceptance criteria (full requirement, not partial)
+   c) Check for UI/UX Requirements section - if present, UI work is required
+   d) For each in-scope item and AC, identify the implementation phase that addresses it:
+
+      ```markdown
+      ## Scope Coverage
+
+      | Requirement | Source | Implementation Phase | Status |
+      |-------------|--------|---------------------|--------|
+      | Settings API endpoint | In Scope | Phase 1 | Planned |
+      | Settings UI panel | In Scope | Phase 2 | Planned |
+      | View current rate | AC1 | Phase 1 + Phase 2 | Planned |
+      | Update rate via settings page | AC2 | Phase 1 + Phase 2 | Planned |
+      ```
+
+   e) Validate completeness:
+      ```
+      In-scope items: N
+      Acceptance criteria: M
+      Total requirements: N + M
+      Planned: N + M (must equal total)
+      Deferred: 0 (must be zero)
+      ```
+
+   f) **Blocking conditions** - the plan CANNOT be written if:
+      - Any in-scope item lacks an implementation phase
+      - Any AC is only partially addressed (e.g., backend-only when UI is in scope)
+      - UI mockups exist but no frontend phase is planned
+      - Plan contains phrases like "future story", "handled separately", "out of scope for this plan"
+
+   g) If a Story's scope is too large for one plan, the Story should be split - not the plan.
+
+   **Anti-patterns to reject:**
+   - "This is backend-only - frontend will be handled separately" ❌
+   - "Dashboard integration will be done in a future story" ❌
+   - "UI work is out of scope for this plan" ❌
+
+   **Correct approach:**
+   - If Story has UI in scope → Plan includes frontend phase
+   - If Story has API in scope → Plan includes backend phase
+   - If Story has both → Plan includes both phases
 
 7. **Write Plan File**
    - Use template from `templates/plan-template.md`
@@ -158,10 +205,9 @@ If you encounter uncertainty during implementation:
 
    **This step is mandatory before writing any code.**
 
-   a) Read the relevant best practice guide:
-      - Python: `~/.claude/best-practices/python.md`
-      - TypeScript: `~/.claude/best-practices/typescript.md`
-      - Go: `~/.claude/best-practices/go.md`
+   a) Read the relevant best practice guides from `best-practices/`:
+      - `{language}-rules.md` for standards checklist
+      - `{language}-examples.md` for code patterns
 
    b) Query Context7 for each external library in the plan's "Library Documentation" section:
       ```
@@ -606,35 +652,33 @@ Draft/Ready  ──[code plan]──▶  Planned
 
 # Best Practices Integration
 
-## Python Projects
+Load from `best-practices/` directory within the skill.
 
-Load from `~/.claude/best-practices/python.md`:
-- Type hints required
-- Docstrings for public functions
-- Ruff formatting
-- pytest conventions
+## Loading Pattern
 
-## TypeScript Projects
+1. **During Planning:** Load `{language}-rules.md` for standards checklist
+2. **During Implementation:** Load `{language}-examples.md` for code patterns
+3. **During Review:** Verify against anti-patterns in rules file
 
-Load from `~/.claude/best-practices/typescript.md`:
-- Strict mode enabled
-- ESLint + Prettier
-- Jest/Vitest patterns
-- Error handling
+## Supported Languages
 
-## Go Projects
+| Language | Rules File | Examples File |
+|----------|------------|---------------|
+| Python | `python-rules.md` | `python-examples.md` |
+| TypeScript | `typescript-rules.md` | `typescript-examples.md` |
+| JavaScript | `javascript-rules.md` | `javascript-examples.md` |
+| Go | `go-rules.md` | `go-examples.md` |
+| Rust | `rust-rules.md` | `rust-examples.md` |
+| C# | `csharp-rules.md` | `csharp-examples.md` |
+| PHP | `php-rules.md` | `php-examples.md` |
 
-Load from `~/.claude/best-practices/go.md`:
-- Error wrapping
-- Table-driven tests
-- go fmt compliance
+## Technology Guides
 
-## Rust Projects
-
-Load from `~/.claude/best-practices/rust.md`:
-- Clippy compliance
-- Error handling with Result
-- Documentation comments
+For non-language-specific guidance:
+- `architecture.md` - SDLC architecture patterns
+- `docker.md` - Container best practices
+- `openapi.md` - API design standards
+- `script.md` - Script structure (Bash/Python)
 
 ---
 
@@ -649,6 +693,11 @@ Load from `~/.claude/best-practices/rust.md`:
 | Story not found (--story) | Report error, list available stories |
 | Epic not found (--epic) | Report error, list available epics |
 | Unknown language | Ask user to specify framework |
+| In-scope item not planned | BLOCKING: List unplanned items, cannot write plan |
+| AC partially addressed | BLOCKING: List ACs missing coverage, cannot write plan |
+| UI mockups exist but no frontend phase | BLOCKING: Add frontend phase or split story |
+| Plan defers work to "future story" | BLOCKING: Rewrite plan to cover all requirements |
+| Story too large for one plan | Recommend splitting story, do not create partial plan |
 
 ## Code Implement Errors
 
