@@ -27,15 +27,9 @@ Detailed workflows for code planning, review, and quality checks.
    - Edge cases
 
 3. **Detect Language**
-   Check for project files in order:
-   | File | Language | Framework |
-   |------|----------|-----------|
-   | `pyproject.toml` | Python | pytest |
-   | `requirements.txt` | Python | pytest |
-   | `package.json` + vitest | TypeScript | Vitest |
-   | `package.json` | TypeScript | Jest |
-   | `go.mod` | Go | testing |
-   | `Cargo.toml` | Rust | cargo test |
+   Check for project files to detect language and framework.
+
+   > **Detection table:** `reference-testing.md` → Detect Language
 
 4. **Load Best Practices**
    Read relevant best practices from `~/.claude/best-practices/`:
@@ -59,9 +53,36 @@ Detailed workflows for code planning, review, and quality checks.
    1. Analyse each acceptance criterion
    2. Identify implementation phases
    3. Break into concrete steps with file changes
-   4. Consider edge cases and error handling
+   4. Map edge cases to handling strategies (see step 6b)
    5. Plan test coverage
    6. Identify risks and dependencies
+   7. Determine TDD vs Test-After recommendation
+   ```
+
+6b. **Enforce Edge Case Coverage (MANDATORY)**
+
+   Every edge case from the Story MUST have a handling strategy:
+
+   a) Extract all edge cases from Story's "Edge Cases & Error Handling" section
+   b) For each edge case, document:
+      - Handling Strategy (how it will be addressed)
+      - Implementation Phase (when it will be implemented)
+   c) Validate coverage:
+      ```
+      Story edge cases: N
+      Handled in plan: N (must equal story count)
+      Unhandled: 0 (must be zero to proceed)
+      ```
+   d) If any edge cases are unhandled, the plan CANNOT be written
+
+   **Plan template section to populate:**
+   ```markdown
+   ## Edge Case Handling Plan
+
+   | # | Edge Case (from Story) | Handling Strategy | Phase |
+   |---|------------------------|-------------------|-------|
+   | 1 | Empty input            | Return 400 with validation error | Phase 1 |
+   | 2 | Network timeout        | Retry 3x with exponential backoff | Phase 2 |
    ```
 
 7. **Write Plan File**
@@ -95,6 +116,16 @@ Detailed workflows for code planning, review, and quality checks.
 
 ## /sdlc-studio code implement - Step by Step
 
+**CRITICAL REQUIREMENT: Complete ALL plan phases.**
+
+Do NOT pause mid-implementation to ask questions like "Would you like me to continue with the frontend?" or "Should I implement this now?". Execute EVERY phase from the plan (backend, frontend, integration, database, etc.) in sequence before marking the implementation complete.
+
+If you encounter uncertainty during implementation:
+- Make a reasonable choice based on existing patterns
+- Document the decision in code comments if non-obvious
+- Continue to the next phase
+- Only stop if there's a blocking error (tests fail, code won't compile)
+
 1. **Select Plan**
    - If `--plan PL0001` specified: use that plan
    - If `--story US0001` specified: find plan linked to that story
@@ -123,17 +154,59 @@ Detailed workflows for code planning, review, and quality checks.
    Please update the plan file and check off resolved questions.
    ```
 
-3. **Determine Approach**
+3. **Check Best Practices and Library Documentation**
+
+   **This step is mandatory before writing any code.**
+
+   a) Read the relevant best practice guide:
+      - Python: `~/.claude/best-practices/python.md`
+      - TypeScript: `~/.claude/best-practices/typescript.md`
+      - Go: `~/.claude/best-practices/go.md`
+
+   b) Query Context7 for each external library in the plan's "Library Documentation" section:
+      ```
+      mcp__context7__resolve-library-id({ libraryName: "fastapi", query: "feature needed" })
+      mcp__context7__query-docs({ libraryId: "/tiangolo/fastapi", query: "specific pattern" })
+      ```
+
+   c) Update plan with key patterns discovered (if significant):
+      - Add to "Key Patterns" column in Library Documentation table
+      - Note any API changes from expected patterns
+
+4. **Verify API Contracts (if applicable)**
+
+   **This step is mandatory when writing code that consumes an API.**
+
+   If the implementation involves calling backend APIs, database queries, or external services:
+
+   a) Find and read the actual schema/contract:
+      - Backend API: Check schema files (e.g., `src/**/schemas/*.py`, `src/**/types/*.ts`)
+      - Database: Check migration files or ORM models
+      - External API: Check OpenAPI spec or official documentation
+
+   b) Verify against the running system:
+      ```bash
+      # For REST APIs - actually call the endpoint
+      curl -s http://localhost:PORT/api/endpoint | jq '.'
+      ```
+
+   c) Update TypeScript/frontend types to match EXACTLY what the API returns
+      - Do not invent fields that don't exist in the response
+      - Do not assume field names - verify them
+
+   **Why this matters:** Unit tests only verify code matches expectations. If expectations are wrong (invented API fields), tests pass but the code fails against the real system.
+
+5. **Determine Approach**
    Check plan's "Recommended Approach" section, then apply overrides:
    - `--tdd` flag → Force TDD mode
    - `--no-tdd` flag → Force Test-After mode
    - Neither → Use plan's recommendation
 
-4. **Update Status**
+6. **Update Status**
    - Plan: `Draft` → `In Progress`
    - Story: `Planned` → `In Progress`
 
-5. **Execute Implementation**
+7. **Execute Implementation**
    Depending on approach:
 
    **TDD Mode:**
@@ -146,12 +219,14 @@ Detailed workflows for code planning, review, and quality checks.
    6. Proceed to next AC
 
    **Test-After Mode:**
-   1. Execute plan phases sequentially
-   2. Follow implementation steps
-   3. After all phases complete, write tests
+   1. Execute ALL plan phases sequentially (do NOT skip any phase)
+   2. Follow implementation steps for each phase (backend, frontend, etc.)
+   3. After ALL phases are complete, write tests
    4. Verify all tests pass
 
-6. **Documentation Updates (if --docs)**
+   **Completion check:** Before proceeding to step 3, verify every phase in the plan's "Implementation Phases" section has been executed. If a phase is incomplete, go back and complete it.
+
+8. **Documentation Updates (if --docs)**
    If `--docs` enabled (default: true):
    - Check plan's "Documentation Updates Required" section
    - Update each identified document
@@ -159,14 +234,38 @@ Detailed workflows for code planning, review, and quality checks.
 
    If `--no-docs` specified, skip this step.
 
-7. **Final Checks**
+9. **Final Checks**
    Run quality checks:
    ```
    /sdlc-studio code check
-   /sdlc-studio test --story {story_id}
+   /sdlc-studio code test --story {story_id}
    ```
 
-8. **Complete Implementation**
+   **Warning Policy (mandatory):**
+   - Tests MUST pass with warnings treated as errors
+   - For pytest: `pytest -W error`
+   - DO NOT dismiss warnings - investigate and fix root cause
+
+   > **Full guidance:** `reference-test-best-practices.md` → Warning Policy
+
+   **Manual Verification (mandatory):**
+   - If changes involve UI: open the application in a browser and test the feature
+   - If changes involve API: curl the endpoint and verify the response
+   - If changes involve CLI: run the command and verify output
+   - Rebuild containers if using Docker: `docker compose build && docker compose up -d`
+
+   **Unit tests passing is not sufficient.** Tests verify code matches expectations, but expectations can be wrong. Manual verification against the running system is the only way to confirm the implementation actually works.
+
+10. **Validate All Phases Complete**
+   Before marking complete, verify:
+   - [ ] Every phase from "Implementation Phases" has been executed
+   - [ ] All acceptance criteria have implementing code
+   - [ ] Backend, frontend, and integration work (if in plan) are done
+   - [ ] No phases marked as "pending" or "TODO"
+
+   If any phase is incomplete, go back and complete it before proceeding.
+
+11. **Complete Implementation**
    - Plan: `In Progress` → `Complete`
    - Display summary:
      ```
@@ -186,12 +285,12 @@ Detailed workflows for code planning, review, and quality checks.
      | AC3 | Implemented |
 
      ### Next Steps
-     Run `/sdlc-studio code review --story US0001` to verify implementation
+     Run `/sdlc-studio code verify --story US0001` to verify implementation
      ```
 
 ---
 
-## /sdlc-studio code review - Step by Step
+## /sdlc-studio code verify - Step by Step
 
 1. **Select Story**
    - If `--story US0001` specified: use that story
@@ -239,7 +338,7 @@ Detailed workflows for code planning, review, and quality checks.
 7. **Generate Report**
    Output console report:
    ```
-   ## Code Review: US0001 - {title}
+   ## Code Verification: US0001 - {title}
 
    ### Acceptance Criteria
 
@@ -340,7 +439,7 @@ Detailed workflows for code planning, review, and quality checks.
 
 ---
 
-## /sdlc-studio test - Step by Step
+## /sdlc-studio code test - Step by Step
 
 1. **Parse Arguments**
    | Argument | Effect |
@@ -348,7 +447,7 @@ Detailed workflows for code planning, review, and quality checks.
    | (none) | Run all tests |
    | `--epic EP0001` | Filter by epic traceability |
    | `--story US0001` | Filter by story traceability |
-   | `--spec TSP0001` | Filter by test spec |
+   | `--spec TS0001` | Filter by test spec |
    | `--type unit` | Filter by test type |
    | `--verbose` | Show detailed output |
 
@@ -357,7 +456,7 @@ Detailed workflows for code planning, review, and quality checks.
 
 3. **Build Traceability Map (if filtered)**
    If filtering by epic/story/spec:
-   - Read test spec files in `sdlc-studio/testing/specs/`
+   - Read test spec files in `sdlc-studio/test-specs/`
    - Extract test case IDs linked to stories
    - Map test cases to test file paths
    - Build list of tests to run
@@ -366,11 +465,17 @@ Detailed workflows for code planning, review, and quality checks.
    Execute tests with appropriate framework:
    | Framework | Command |
    |-----------|---------|
-   | pytest | `pytest {test_paths} -v` |
+   | pytest | `pytest {test_paths} -v -W error` |
    | Vitest | `npx vitest run {test_paths}` |
    | Jest | `npx jest {test_paths}` |
    | Go | `go test {packages} -v` |
    | Rust | `cargo test {tests}` |
+
+   **Warning Policy:**
+   - All frameworks: Warnings MUST be treated as errors
+   - pytest: Use `-W error` to fail on any warning
+   - If warnings occur, fix the root cause before proceeding
+   - Never dismiss warnings as acceptable - they indicate quality issues
 
 5. **Parse Results**
    Extract from test output:
@@ -423,6 +528,48 @@ Detailed workflows for code planning, review, and quality checks.
    > **Status:** Review  →  > **Status:** Done
    ```
 
+9. **Propagate Results (Backward Traceability)**
+
+   Test results MUST update related artifacts for traceability:
+
+   a) **Update Test-Spec automation status:**
+      - For each test case executed, update Automation Status table
+      - Mark as "Pass", "Fail", or "Skip" with timestamp
+
+   b) **Update Story AC status based on test results:**
+      - Map test failures to specific ACs using TC→AC mapping
+      - If all tests for an AC pass → AC remains verified
+      - If any test for an AC fails → AC marked as Regression
+
+   c) **Story status changes:**
+      | Test Result | Story in Done | Story in Review |
+      |-------------|---------------|-----------------|
+      | All pass | Remains Done | → Done |
+      | Any fail | → **Regression** | Remains Review |
+
+   d) **Auto-create Bug on failure (optional, with --create-bugs):**
+      ```markdown
+      ## Auto-generated Bug
+
+      **Title:** Test failure: {test_name}
+      **Affected Story:** US{NNNN}
+      **Affected AC:** AC{N}
+      **Test Case:** TC{NNNN}
+      **Error:** {assertion_error}
+      ```
+
+   e) **Update _index files:**
+      - Stories _index: Update status counts
+      - Test-specs _index: Update pass/fail counts
+
+---
+
+# TDD vs Test-After
+
+> **Source of truth:** `reference-decisions.md` → TDD vs Test-After Decision Tree
+
+For the complete decision tree, conditions for TDD vs Test-After, and override flags, see `reference-decisions.md`.
+
 ---
 
 # Status Update Flow
@@ -435,7 +582,7 @@ Draft/Ready  ──[code plan]──▶  Planned
                                   ▼
                             In Progress
                                   │
-                          [code review]
+                          [code verify]
                                   │
                           (all AC met?)
                                   │
@@ -514,6 +661,9 @@ Load from `~/.claude/best-practices/rust.md`:
 | Unresolved open questions | List questions, pause for resolution |
 | Tests fail during TDD | Report failure, prompt to fix |
 | Documentation update fails | Report which doc failed, continue |
+| API contract not verified | Read backend schema before writing frontend code |
+| Manual verification fails | Fix code, do not mark implementation complete |
+| Invented API fields | Check actual API response, update types to match reality |
 
 ## Code Review Errors
 
@@ -538,3 +688,25 @@ Load from `~/.claude/best-practices/rust.md`:
 | Test framework not found | Report error, suggest install |
 | No tests match filter | Report no matching tests |
 | Tests fail | Report failures, do not update status |
+
+---
+
+# Workflow Orchestration
+
+> **Source of truth:** `reference-story.md` and `reference-epic.md`
+
+For automated story and epic workflows:
+- Story workflows: `reference-story.md` → Workflow Commands
+- Epic workflows: `reference-epic.md` → Workflow Commands
+
+---
+
+# See Also
+
+- `reference-decisions.md` - Decision impact matrix, TDD decision tree, Ready criteria
+- `reference-prd.md, reference-trd.md, reference-persona.md` - PRD, TRD, Persona workflows
+- `reference-epic.md, reference-story.md, reference-bug.md` - Epic, Story, Bug workflows
+- `reference-testing.md` - Test Strategy, Spec, Automation workflows
+- `reference-philosophy.md` - Create vs Generate philosophy
+- `reference-test-best-practices.md` - Test generation pitfalls and validation
+- `reference-test-e2e-guidelines.md` - E2E and mocking patterns

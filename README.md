@@ -22,12 +22,11 @@ A Claude Code skill for managing the full software development lifecycle.
 - **Persona Creation** - Define or infer user personas from codebase patterns
 - **Bug Tracking** - Report, list, fix, verify, and close bugs with traceability
 - **Code Workflows** - Plan, implement, review, and check code against requirements
-- **Test Strategy** - Document project-level testing approach
+- **Test Strategy Document (TSD)** - Document project-level testing approach
 - **Test Specifications** - Consolidated test specs with embedded fixtures
 - **Test Automation** - Generate executable tests for pytest, Jest, Vitest, Go, and more
 - **Test Execution** - Run tests with traceability to stories and epics
-- **Pipeline Bootstrap** - Auto-detect brownfield/greenfield and initialise pipeline
-- **Migration** - Migrate from old test-plan/suite/case format
+- **Workflow Automation** - Execute stories through 7 phases or epics in dependency order
 - **Status & Hints** - Check pipeline state and get single actionable next steps
 
 ## Installation
@@ -46,9 +45,6 @@ cp -r sdlc-studio/.claude/skills/sdlc-studio ~/.claude/skills/
 ## Quick Start
 
 ```bash
-# Bootstrap pipeline (auto-detect greenfield/brownfield)
-/sdlc-studio init
-
 # Check pipeline status
 /sdlc-studio status
 
@@ -73,6 +69,9 @@ cp -r sdlc-studio/.claude/skills/sdlc-studio ~/.claude/skills/
 # Execute implementation plan
 /sdlc-studio code implement
 
+# Execute full story workflow (7 phases)
+/sdlc-studio story implement --story US0001
+
 # Create test specifications
 /sdlc-studio test-spec
 
@@ -80,7 +79,7 @@ cp -r sdlc-studio/.claude/skills/sdlc-studio ~/.claude/skills/
 /sdlc-studio test-automation
 
 # Run tests for an epic
-/sdlc-studio test --epic EP0001
+/sdlc-studio code test --epic EP0001
 
 # Get single actionable next step
 /sdlc-studio hint
@@ -91,28 +90,27 @@ cp -r sdlc-studio/.claude/skills/sdlc-studio ~/.claude/skills/
 ### Greenfield Project
 
 ```bash
-/sdlc-studio init              # Bootstrap pipeline
 /sdlc-studio prd create        # Interactive PRD creation
 /sdlc-studio trd create        # Define technical requirements
 /sdlc-studio persona           # Define user personas
 /sdlc-studio epic              # Generate Epics
 /sdlc-studio story             # Generate Stories
-/sdlc-studio test-strategy     # Define test approach
+/sdlc-studio tsd               # Define test strategy
 /sdlc-studio test-spec         # Generate test specs
 /sdlc-studio test-automation   # Generate executable tests
+# Or use workflow automation
+/sdlc-studio story implement --story US0001  # Single story, all phases
 ```
 
 ### Brownfield Project
 
 ```bash
-/sdlc-studio init              # Bootstrap pipeline (auto-detect)
-/sdlc-studio migrate           # Migrate old test-plan/suite/case format
 /sdlc-studio prd generate      # Reverse-engineer PRD from code
 /sdlc-studio trd generate      # Generate TRD from codebase
 /sdlc-studio persona generate  # Infer personas from codebase
 /sdlc-studio epic              # Generate Epics
 /sdlc-studio story             # Generate Stories
-/sdlc-studio test-strategy generate  # Infer from existing tests
+/sdlc-studio tsd generate      # Infer test strategy from existing tests
 /sdlc-studio test-spec generate      # Reverse-engineer from tests
 /sdlc-studio test-automation   # Fill test gaps
 ```
@@ -123,7 +121,7 @@ cp -r sdlc-studio/.claude/skills/sdlc-studio ~/.claude/skills/
 /sdlc-studio code plan         # Plan implementation for story
 /sdlc-studio code implement    # Execute the plan
 /sdlc-studio code review       # Review implementation
-/sdlc-studio test              # Run tests with traceability
+/sdlc-studio code test         # Run tests with traceability
 ```
 
 ## Output Structure
@@ -134,8 +132,8 @@ All artifacts are created in the `sdlc-studio/` directory:
 sdlc-studio/
   prd.md                      # Product Requirements Document
   trd.md                      # Technical Requirements Document
+  tsd.md                      # Test Strategy Document
   personas.md                 # User Personas
-  definition-of-done.md       # Definition of Done
   epics/
     _index.md                 # Epic registry
     EP0001-*.md               # Epic files
@@ -148,11 +146,12 @@ sdlc-studio/
   plans/
     _index.md                 # Plan registry
     PL0001-*.md               # Implementation plans
-  testing/
-    strategy.md               # Test Strategy
-    specs/
-      _index.md               # Spec registry
-      TSP0001-*.md            # Test Specifications
+  test-specs/
+    _index.md                 # Spec registry
+    TSP0001-*.md              # Test Specifications
+  workflows/
+    _index.md                 # Workflow registry
+    WF0001-*.md               # Workflow tracking files
 
 tests/                        # Generated test code
   unit/
@@ -164,9 +163,8 @@ tests/                        # Generated test code
 ## Documentation
 
 - [SKILL.md](.claude/skills/sdlc-studio/SKILL.md) - Full command reference
-- [reference.md](.claude/skills/sdlc-studio/reference.md) - PRD, TRD, Epic, Story, Persona workflows
-- [reference-code.md](.claude/skills/sdlc-studio/reference-code.md) - Code plan, implement, review workflows
-- [reference-testing.md](.claude/skills/sdlc-studio/reference-testing.md) - Testing workflows
+- [reference-philosophy.md](.claude/skills/sdlc-studio/reference-philosophy.md) - Create vs Generate modes (read first)
+- [reference-*.md](.claude/skills/sdlc-studio/) - Domain-specific workflows (13 files)
 - [best-practices/](.claude/skills/sdlc-studio/best-practices/) - Quality guidelines
 
 ## Best Practices

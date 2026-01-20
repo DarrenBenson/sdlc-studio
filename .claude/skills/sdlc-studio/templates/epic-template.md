@@ -9,6 +9,29 @@
 
 {{summary}}
 
+## Inherited Constraints
+
+Constraints that flow from PRD and TRD to this Epic.
+
+### From PRD
+
+| Type | Constraint | Impact on Epic |
+|------|------------|----------------|
+| Performance | {{prd_performance_requirements}} | {{performance_impact}} |
+| Security | {{prd_security_requirements}} | {{security_impact}} |
+| Scalability | {{prd_scalability_requirements}} | {{scalability_impact}} |
+| Constraint | {{prd_constraint}} | {{constraint_impact}} |
+
+### From TRD
+
+| Type | Constraint | Impact on Epic |
+|------|------------|----------------|
+| Architecture | {{trd_architecture_pattern}} | {{architecture_impact_detail}} |
+| Tech Stack | {{trd_language}}/{{trd_framework}} | {{tech_stack_impact}} |
+| Data Model | {{trd_data_constraints}} | {{data_impact}} |
+
+> **Note:** Inherited constraints MUST propagate to child Stories. Check Story templates include these constraints.
+
 ## Business Context
 
 ### Problem Statement

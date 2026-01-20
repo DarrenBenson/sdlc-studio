@@ -13,7 +13,7 @@ This index catalogues all test specifications for the project. Each spec consoli
 | Spec | Epic | Cases | Automated | Status |
 |------|------|-------|-----------|--------|
 {{#each specs}}
-| [TSP{{id}}](TSP{{id}}-{{slug}}.md) | [EP{{epic_id}}](../../epics/EP{{epic_id}}-{{epic_slug}}.md) | {{case_count}} | {{automated_count}} ({{automated_pct}}%) | {{status}} |
+| [TS{{id}}](TS{{id}}-{{slug}}.md) | [EP{{epic_id}}](../../epics/EP{{epic_id}}-{{epic_slug}}.md) | {{case_count}} | {{automated_count}} ({{automated_pct}}%) | {{status}} |
 {{/each}}
 
 ## Coverage Summary
@@ -48,7 +48,7 @@ This index catalogues all test specifications for the project. Each spec consoli
 ## Specifications
 
 {{#each specs}}
-### TSP{{id}}: {{title}}
+### TS{{id}}: {{title}}
 
 **Epic:** [EP{{epic_id}}: {{epic_title}}](../../epics/EP{{epic_id}}-{{epic_slug}}.md)
 **Status:** {{status}}
@@ -87,7 +87,7 @@ This index catalogues all test specifications for the project. Each spec consoli
 {{#if pending_automation}}
 **Specs with pending automation:**
 {{#each pending_automation}}
-- [ ] TSP{{id}}: {{pending_count}} cases - Run `/spec test-automation --spec TSP{{id}}`
+- [ ] TS{{id}}: {{pending_count}} cases - Run `/spec test-automation --spec TS{{id}}`
 {{/each}}
 {{/if}}
 

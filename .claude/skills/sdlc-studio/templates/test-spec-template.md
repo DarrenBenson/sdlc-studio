@@ -1,4 +1,4 @@
-# TSP{{spec_id}}: {{spec_title}}
+# TS{{spec_id}}: {{spec_title}}
 
 > **Status:** Draft
 > **Epic:** [EP{{epic_id}}: {{epic_title}}](../../epics/EP{{epic_id}}-{{epic_slug}}.md)
@@ -18,6 +18,30 @@
 {{#each stories}}
 | [US{{id}}](../../stories/US{{id}}-{{slug}}.md) | {{title}} | {{priority}} |
 {{/each}}
+
+### AC Coverage Matrix
+
+Maps each Story AC to test cases ensuring complete coverage.
+
+| Story | AC | Description | Test Cases | Status |
+|-------|-----|-------------|------------|--------|
+{{#each ac_coverage}}
+| {{story}} | {{ac}} | {{description}} | {{test_cases}} | {{status}} |
+{{/each}}
+
+**Coverage Summary:**
+- Total ACs: {{total_ac_count}}
+- Covered: {{covered_ac_count}}
+- Uncovered: {{uncovered_ac_count}}
+
+{{#if uncovered_acs}}
+**UNCOVERED ACs (blocking):**
+{{#each uncovered_acs}}
+- {{story}}/{{ac}}: {{description}}
+{{/each}}
+
+> **Warning:** Test spec cannot be marked Ready until all ACs have at least one test case.
+{{/if}}
 
 ### Test Types Required
 
@@ -96,7 +120,17 @@ expected:
 |----------|-----------|
 | PRD | [sdlc-studio/prd.md](../../prd.md) |
 | Epic | [EP{{epic_id}}](../../epics/EP{{epic_id}}-{{epic_slug}}.md) |
-| Strategy | [sdlc-studio/testing/strategy.md](../strategy.md) |
+| TSD | [sdlc-studio/tsd.md](../tsd.md) |
+
+## Lessons Learned
+
+<!-- Optional section. Document issues discovered during testing that should inform future test design. -->
+<!-- Example:
+### E2E Mocking Blindspot
+**Issue:** E2E tests with mocked data passed but production showed "--" for a field.
+**Root Cause:** Backend schema omitted the field even though DB stored it.
+**Prevention:** Add API contract tests that verify backend returns all frontend-expected fields.
+-->
 
 ## Revision History
 

@@ -2,6 +2,17 @@
 
 Detailed workflows for test artifact generation and automation.
 
+<!-- Load when: generating test strategy, test specs, or test automation -->
+
+## Related References
+
+| Document | Content |
+|----------|---------|
+| `reference-prd.md, reference-trd.md, reference-persona.md` | PRD, TRD, Persona workflows |
+| `reference-epic.md, reference-story.md, reference-bug.md` | Epic, Story, Bug workflows |
+| `reference-test-best-practices.md` | Pre-generation checklist, validation steps, test writing guidelines |
+| `reference-test-e2e-guidelines.md` | E2E mocking patterns, singleton/factory mocking, API contract tests |
+
 ---
 
 # Status Workflow
@@ -15,8 +26,8 @@ Detailed workflows for test artifact generation and automation.
    - Glob `sdlc-studio/stories/US*.md` and count, parse status
 
 2. **Check Testing Pipeline**
-   - Check if `sdlc-studio/testing/strategy.md` exists
-   - Glob `sdlc-studio/testing/specs/TSP*.md` and count
+   - Check if `sdlc-studio/tsd.md` exists
+   - Glob `sdlc-studio/test-specs/TS*.md` and count
    - For each spec, count test cases and automation status
    - Scan `tests/` directory for actual test files
 
@@ -43,24 +54,24 @@ Detailed workflows for test artifact generation and automation.
      Stories     12 stories (8 Done, 4 pending)
 
    Testing: 60%
-     Strategy    sdlc-studio/testing/strategy.md
+     Strategy    sdlc-studio/tsd.md
      Specs       2/3 epics covered
      Automation  22/135 cases (16%)
 
    Next steps:
      /sdlc-studio test-spec --epic EP0003
-     /sdlc-studio test-automation --spec TSP0001
+     /sdlc-studio test-automation --spec TS0001
    ```
 
 ---
 
-# Test Strategy Workflows
+# TSD Workflows
 
-## /sdlc-studio test-strategy - Step by Step
+## /sdlc-studio tsd - Step by Step
 
 1. **Check Prerequisites**
    - Verify PRD exists at sdlc-studio/prd.md
-   - Create sdlc-studio/testing/ directory if needed
+   - Create sdlc-studio/ directory if needed
 
 2. **Gather Context**
    Use AskUserQuestion to collect:
@@ -75,13 +86,13 @@ Detailed workflows for test artifact generation and automation.
    - Note integration points requiring testing
 
 4. **Generate Strategy**
-   - Use `templates/test-strategy-template.md`
+   - Use `templates/tsd-template.md`
    - Fill test levels based on architecture
    - Define automation candidates
    - Set quality gates
 
 5. **Write File**
-   - Write to `sdlc-studio/testing/strategy.md`
+   - Write to `sdlc-studio/tsd.md`
 
 6. **Report**
    - Test levels defined
@@ -90,7 +101,7 @@ Detailed workflows for test artifact generation and automation.
 
 ---
 
-## /sdlc-studio test-strategy generate - Step by Step
+## /sdlc-studio tsd generate - Step by Step
 
 1. **Analyse Codebase**
    Use Task tool with Explore agent:
@@ -122,7 +133,7 @@ Detailed workflows for test artifact generation and automation.
 1. **Check Prerequisites**
    - Verify Test Strategy exists
    - Verify Epics exist in sdlc-studio/epics/
-   - Create sdlc-studio/testing/specs/ if needed
+   - Create sdlc-studio/test-specs/ if needed
    - Scan for existing specs to determine next ID
 
 2. **Parse Epics**
@@ -138,20 +149,46 @@ Detailed workflows for test artifact generation and automation.
 
 4. **Generate Test Spec**
    For each Epic:
-   - Assign ID: TSP{NNNN}
+   - Assign ID: TS{NNNN}
    - Create slug from Epic title
    - Use `templates/test-spec-template.md`
    - Link to parent Epic
 
    Include:
    - **Scope:** Stories covered, test types needed
+   - **AC Coverage Matrix:** Map every Story AC to test cases (see step 4b)
    - **Test Cases:** One per AC minimum, with Given/When/Then steps
    - **Fixtures:** Embedded YAML test data
    - **Automation Status:** Initially all "Pending"
 
+4b. **Build AC Coverage Matrix (MANDATORY)**
+
+   Every Acceptance Criterion from covered Stories MUST have at least one test case:
+
+   a) Extract all ACs from each Story in scope
+   b) Create mapping table:
+      ```markdown
+      ### AC Coverage Matrix
+
+      | Story | AC | Description | Test Cases | Status |
+      |-------|-----|-------------|------------|--------|
+      | US0001 | AC1 | Valid login | TC001, TC003 | Covered |
+      | US0001 | AC2 | Invalid password | TC002 | Covered |
+      | US0001 | AC3 | Rate limiting | - | **UNCOVERED** |
+      ```
+
+   c) Validate coverage:
+      - Total ACs: N
+      - Covered: M (ACs with at least one test case)
+      - Uncovered: N-M (must be zero to mark Ready)
+
+   d) **Blocking condition:** If any AC is uncovered, test-spec cannot be marked Ready
+      - Flag uncovered ACs prominently
+      - Generate test case stubs for uncovered ACs
+
 5. **Write Files**
-   - Write `sdlc-studio/testing/specs/TSP{NNNN}-{slug}.md`
-   - Create/update `sdlc-studio/testing/specs/_index.md`
+   - Write `sdlc-studio/test-specs/TS{NNNN}-{slug}.md`
+   - Create/update `sdlc-studio/test-specs/_index.md`
 
 6. **Report**
    - Number of specs created
@@ -194,7 +231,7 @@ Detailed workflows for test artifact generation and automation.
    - Create logical groupings
 
 4. **Generate Test Specs**
-   - Create TSP files with discovered tests
+   - Create TS files with discovered tests
    - Mark all as "Automated: Yes"
    - Link to actual test file paths
    - Note coverage gaps if epics exist
@@ -205,7 +242,7 @@ Detailed workflows for test artifact generation and automation.
    - Flag untraced tests for review
 
 6. **Write Files**
-   - Write `sdlc-studio/testing/specs/TSP{NNNN}-{slug}.md`
+   - Write `sdlc-studio/test-specs/TS{NNNN}-{slug}.md`
    - Update `_index.md`
 
 7. **Report**
@@ -215,10 +252,10 @@ Detailed workflows for test artifact generation and automation.
 
 ---
 
-## /sdlc-studio test-spec update - Step by Step
+## /sdlc-studio test-spec review - Step by Step
 
 1. **Load Test Specs**
-   - Read all from sdlc-studio/testing/specs/
+   - Read all from sdlc-studio/test-specs/
 
 2. **Check Automation Status**
    For each Test Spec:
@@ -239,7 +276,7 @@ Detailed workflows for test artifact generation and automation.
 ## /sdlc-studio test-automation - Step by Step
 
 1. **Check Prerequisites**
-   - Verify test specs exist in sdlc-studio/testing/specs/
+   - Verify test specs exist in sdlc-studio/test-specs/
    - If none, prompt: "Run `/sdlc-studio test-spec` first"
 
 2. **Implementation Discovery (CRITICAL)**
@@ -261,12 +298,13 @@ Detailed workflows for test artifact generation and automation.
       - Look for global variables (e.g., `_discovery_engine = None`)
       - Identify `@lru_cache` decorators and lazy initialization
       - Mocking strategy: patch the global variable directly
+      - See: `reference-test-e2e-guidelines.md` → Mocking Singletons
 
    d. **Factory Function Patterns (Dependency Injection)**
       - Look for `def get_*():` factory functions in route files
       - Identify `Depends(get_something)` patterns in route handlers
       - Mocking strategy: patch the factory function, not the class
-      - Example: `patch('api.routes.jobs.get_job_service')` not `JobService`
+      - See: `reference-test-e2e-guidelines.md` → Mocking Factory Functions
 
    e. **API Response Status Codes**
       - Read route handlers to find actual status codes returned
@@ -296,29 +334,44 @@ Detailed workflows for test artifact generation and automation.
       ```
 
 3. **Detect Language**
-   Check in order:
+
+   | Detection File | Language | Framework | Support Level |
+   |----------------|----------|-----------|---------------|
+   | `pyproject.toml`, `setup.py` | Python | pytest | Full - templates and examples |
+   | `package.json` + vitest | TypeScript | Vitest | Full - templates and examples |
+   | `package.json` | TypeScript | Jest | Full - templates and examples |
+   | `go.mod` | Go | testing | Basic - templates only |
+   | `Cargo.toml` | Rust | cargo test | Detection only - no template |
+   | `pom.xml` | Java | JUnit | Detection only - no template |
+   | `build.gradle` | Java/Kotlin | JUnit | Detection only - no template |
+   | `*.csproj` | C# | xUnit/NUnit | Detection only - no template |
+
+   **Support levels:**
+   - **Full:** Templates, examples, automatic generation
+   - **Basic:** Templates exist but fewer examples
+   - **Detection only:** Language detected but manual test guidance provided
+
+   If Rust, Java, or C# detected, prompt user:
    ```
-   pyproject.toml OR setup.py → Python
-   package.json + "vitest" in devDeps → TypeScript (Vitest)
-   package.json → TypeScript (Jest)
-   go.mod → Go
-   Cargo.toml → Rust
+   Detected {language} project. Test automation templates not yet available.
+   Would you like guidance for writing {framework} tests manually?
    ```
+
    If none found, use AskUserQuestion to ask user.
 
-3. **Detect Framework**
+4. **Detect Framework**
    - Python: Check for pytest in dependencies (default: pytest)
    - TypeScript: Check for vitest vs jest in package.json
    - Go: Standard testing package
    - Rust: Standard cargo test
 
-4. **Parse Test Specs**
-   - Read TSP file(s) to process
+5. **Parse Test Specs**
+   - Read TS file(s) to process
    - Extract test cases not yet automated
    - Extract fixtures/test data
    - Group by test type (unit, integration, api, e2e)
 
-5. **Select Template**
+6. **Select Template**
    Based on language + test type:
    - `templates/automation/pytest.py.template`
    - `templates/automation/pytest-api.py.template`
@@ -326,14 +379,15 @@ Detailed workflows for test artifact generation and automation.
    - `templates/automation/vitest.ts.template`
    - `templates/automation/go_test.go.template`
 
-6. **Generate Test Code**
+7. **Generate Test Code**
    For each test case:
    - Convert Given/When/Then to code structure
    - Generate fixture functions from spec data
    - Add docstring with TC ID and story reference
    - Include proper assertions
+   - Apply best practices from `reference-test-best-practices.md`
 
-7. **Determine Output Location**
+8. **Determine Output Location**
    | Framework | Unit | Integration | API | E2E |
    |-----------|------|-------------|-----|-----|
    | pytest | tests/unit/ | tests/integration/ | tests/api/ | tests/e2e/ |
@@ -341,26 +395,29 @@ Detailed workflows for test artifact generation and automation.
    | vitest | src/__tests__/ | src/__tests__/ | src/__tests__/ | tests/e2e/ |
    | go | same package | same package | same package | same package |
 
-8. **Write Test Files**
+9. **Write Test Files**
    - Write test files to appropriate directories
    - Create directories if needed
-   - Group tests by spec (one file per TSP typically)
+   - Group tests by spec (one file per TS typically)
 
-9. **Update Specs**
-   - Mark test cases as "Automated: Yes"
-   - Add file path to Automation Status table
-   - Update _index.md coverage stats
+10. **Update Specs**
+    - Mark test cases as "Automated: Yes"
+    - Add file path to Automation Status table
+    - Update _index.md coverage stats
 
-10. **Run Generated Tests**
-    - Execute the generated tests immediately
-    - Fix any failures before proceeding
-    - Common issues to fix:
-      - Mock patch paths (factory functions vs classes)
-      - API status codes (verify against actual handlers)
-      - Schema mismatches (check current schema version)
-    - Only proceed to report when tests pass
+11. **Run Generated Tests**
+    - Execute the generated tests immediately with warnings as errors:
+      ```bash
+      pytest tests/path/to/new_tests.py -v -W error
+      ```
+    - Fix any failures AND warnings before proceeding
+    - Common issues: mock paths, API status codes, schema mismatches
 
-11. **Report**
+    > **Warning Policy:** `reference-test-best-practices.md` → Warning Policy
+
+    - Only proceed to report when tests pass with ZERO warnings
+
+12. **Report**
     - Tests generated
     - Files created
     - Test execution status (PASS/FAIL count)
@@ -368,326 +425,11 @@ Detailed workflows for test artifact generation and automation.
 
 ---
 
-## Test Generation Best Practices
-
-These guidelines address common pitfalls discovered during test automation runs.
-
-### Pre-Generation Analysis Checklist
-
-Before writing any test code, complete this checklist:
-
-- [ ] **Verify import paths**: Grep for actual class/model names in implementation
-  ```bash
-  grep -r "class.*Model\|@dataclass" api/models.py api/services/
-  ```
-
-- [ ] **Check required fields**: Read model definitions for required vs optional fields
-  ```bash
-  grep -A 20 "class Job\|class StageResult" api/models.py
-  ```
-
-- [ ] **Verify field types**: Check if status fields are strings or enums
-  ```python
-  # Is it an enum?
-  class StageStatus(str, Enum):
-      COMPLETE = "complete"
-
-  # Or just a string?
-  status: str  # "pending", "running", "complete", "failed"
-  ```
-
-- [ ] **Read output templates**: Get exact section/header names from templates
-  ```bash
-  grep "^##\|^###" prompts/user-manual-template.md
-  ```
-
-- [ ] **Create verified import block FIRST**: Write and test imports before test code
-  ```python
-  # Test this imports correctly before proceeding
-  from api.models import Job, StageResult, HeadshotStatus
-  from api.services.headshot import HeadshotService, HeadshotResult
-  ```
-
-### Validation Steps
-
-After generating each test file, validate before running the full suite:
-
-1. **Syntax check** (catches encoding issues, unclosed strings):
-   ```bash
-   python -m py_compile tests/unit/test_new_feature.py
-   ```
-
-2. **Import check** (catches wrong class names, missing modules):
-   ```bash
-   python -c "from tests.unit.test_new_feature import *"
-   ```
-
-3. **Run single file** (faster feedback than full suite):
-   ```bash
-   pytest tests/unit/test_new_feature.py -v --tb=short
-   ```
-
-4. **Only then** run related tests together.
-
-### Test Writing Guidelines
-
-#### Unicode and Encoding
-
-When testing unicode handling functions:
-
-```python
-# BAD: Literal unicode can break Python parsing
-text = "It's a "test" string"  # Smart quotes break the file!
-
-# GOOD: Use escape sequences
-text = "It\u2019s a \u201ctest\u201d string"
-```
-
-#### Assertion Patterns
-
-Prefer structural assertions over content matching:
-
-```python
-# BAD: Assumes exact section name
-assert "Psychological Profile" in manual  # May be "Profile Foundation"
-
-# GOOD: Check for structural elements that won't change
-assert "## " in manual  # Has markdown headers
-assert len(manual) > 100  # Has substantial content
-assert name in manual  # Subject name appears
-```
-
-For behavioural tests, use broad phrase lists:
-
-```python
-# BAD: Too specific
-assert "I maintain my boundaries" in response
-
-# GOOD: Accept multiple valid phrasings
-boundary_phrases = [
-    "maintain", "boundaries", "privacy", "personal",
-    "prefer not to", "cannot share"
-]
-assert any(phrase in response.lower() for phrase in boundary_phrases)
-```
-
-#### Model Instantiation
-
-Always verify required fields before creating test objects:
-
-```python
-# BAD: Missing required 'name' field
-job = Job(id="test-1", slug="test")  # ValidationError!
-
-# GOOD: Include all required fields
-job = Job(
-    id="test-1",
-    name="Test Job",  # Required!
-    slug="test",
-    stages=[],
-)
-```
-
-#### Enum vs String
-
-Check implementation before using status values:
-
-```python
-# If StageResult.status is a string (not enum):
-stage = StageResult(stage=0, name="Stage 0", status="complete")
-
-# If using an actual enum:
-from api.models import StageStatus
-stage = StageResult(stage=0, name="Stage 0", status=StageStatus.COMPLETE)
-```
-
-### Coverage Verification
-
-After generating tests, verify coverage:
-
-1. **Count tests vs spec TCs**:
-   ```bash
-   # Count test functions
-   grep -c "def test_\|async def test_" tests/unit/test_feature.py
-
-   # Count TCs in spec (can be fewer - multiple tests per TC is fine)
-   grep -c "^### TC" sdlc-studio/testing/specs/TSP0004*.md
-   ```
-
-2. **Verify TC IDs in docstrings**:
-   ```bash
-   # Each test should reference its TC
-   grep "TC0" tests/unit/test_feature.py
-   ```
-
-3. **Update automation summary**:
-   - Edit `sdlc-studio/testing/specs/_index.md`
-   - Update Automated count and Coverage percentage
-   - Change Status from "Draft" to "Complete"
-
----
-
-## E2E Test Generation Guidelines
-
-E2E tests have unique requirements that differ from unit/integration tests:
-
-### Mocking Singletons (Global Variables)
-
-When services use singleton patterns with global caching:
-
-```python
-# BAD: Patching the getter doesn't work if global is already set
-with patch('api.routes.intents.get_discovery_engine') as mock:
-    # Global _discovery_engine may already be cached!
-    ...
-
-# GOOD: Patch the global directly
-import api.routes.intents as intents_module
-original = intents_module._discovery_engine
-intents_module._discovery_engine = mock_engine
-yield mock_engine
-intents_module._discovery_engine = original  # Restore
-```
-
-### Mocking Factory Functions (Dependency Injection)
-
-When routes use factory functions for dependency injection (common in FastAPI):
-
-```python
-# Implementation pattern - routes use a factory function:
-# api/routes/jobs.py:
-#   def get_job_service() -> JobService:
-#       return JobService(...)
-#
-#   @router.get("/{job_id}")
-#   async def get_job(job_id: str, service: JobService = Depends(get_job_service)):
-#       return await service.get_job(job_id)
-
-# BAD: Patching the class doesn't work - route calls the factory
-with patch('api.routes.jobs.JobService') as MockService:
-    # This creates a mock class, but the route calls get_job_service()!
-    ...
-
-# GOOD: Patch the factory function to return your mock
-with patch('api.routes.jobs.get_job_service') as mock_get_service:
-    mock_service = MagicMock()
-    mock_service.get_job = AsyncMock(return_value=mock_job)
-    mock_get_service.return_value = mock_service
-
-    # Now when route calls get_job_service(), it gets mock_service
-    response = await client.get(f"/api/v1/jobs/{job_id}")
-```
-
-**How to identify** - Check the route file for:
-- `Depends(get_something)` patterns
-- `def get_*():` factory functions
-- Absence of direct class instantiation in route handlers
-
-### API Response Status Codes
-
-Never assume REST conventions. Always verify by reading the route handler:
-
-```python
-# BAD: Assumed 201 for POST (REST convention)
-assert response.status_code == 201
-
-# GOOD: Check the actual route handler first
-# api/routes/jobs.py:
-#   @router.post("/")
-#   async def create_job(...):
-#       ...
-#       return job  # Returns 200 by default in FastAPI!
-
-assert response.status_code == 200  # Match actual implementation
-```
-
-### Schema Version Verification
-
-For validation tests, always check the current schema version:
-
-```python
-# BAD: Used outdated schema fields from old specs
-valid_engram = {
-    "name": "Test",           # Old V1 field
-    "core_identity": {...},   # Old V1 field
-}
-
-# GOOD: Check api/services/validation.py for REQUIRED_TOP_LEVEL
-# Then use current schema structure
-valid_engram = {
-    "schema_version": "2.3.0",
-    "id": "test-001",
-    "slug": "test",
-    "identity_and_background": {...},  # V2.3.0 structure
-    ...
-}
-```
-
-### Mock Objects with Attributes
-
-When code accesses attributes on objects (e.g., `field.confidence > 0.4`):
-
-```python
-# BAD: Plain dict doesn't have .confidence
-state.intent_fields = {"name": {"value": "Ada", "confidence": 0.9}}
-
-# BAD: Basic MagicMock has MagicMock as attributes, not floats
-state.intent_fields = {"name": MagicMock(value="Ada")}
-# fv.confidence > 0.4 fails: MagicMock > float is TypeError
-
-# GOOD: Explicitly set attributes with correct types
-def make_field_value(value, confidence=0.8):
-    mock = MagicMock()
-    mock.value = value
-    mock.confidence = confidence  # Float, not MagicMock
-    return mock
-
-state.intent_fields = {"name": make_field_value("Ada", 0.9)}
-```
-
-### Enum Values
-
-Always extract enum values from implementation, never assume:
-
-```python
-# BAD: Guessed from spec description
-state.phase = "greeting"  # Doesn't exist!
-
-# GOOD: Use actual enum values from implementation
-from api.services.discovery_engine import ConversationPhase
-state.phase = ConversationPhase.IDENTIFICATION
-# Or as string for JSON payloads:
-{"phase": "identification"}  # Exact enum value
-```
-
-### Request Payload Completeness
-
-Check route handler for required fields:
-
-```python
-# Check the from_dict() or Pydantic model to find required fields
-# api/services/discovery_engine.py:
-#   state.character_type = CharacterType(data.get("character_type", "UNKNOWN"))
-
-# GOOD: Include all fields that from_dict() expects
-response = await client.post("/api/v1/intents/conversation", json={
-    "messages": [...],
-    "conversation_state": {
-        "session_id": session_id,
-        "character_type": "UNKNOWN",  # Required by CharacterType enum
-        "phase": "identification",     # Valid ConversationPhase value
-    },
-    "session_id": session_id,
-})
-```
-
----
-
 ## Test Generation Examples
 
 ### Python/pytest Example
 
-Input (from TSP):
+Input (from TS):
 ```markdown
 ### TC001: Valid login succeeds
 **Type:** api
@@ -705,7 +447,7 @@ Input (from TSP):
 Output:
 ```python
 class TestAuthentication:
-    """TSP0001: Authentication Tests"""
+    """TS0001: Authentication Tests"""
 
     @pytest.mark.asyncio
     async def test_valid_login_succeeds(self, client, valid_user):
@@ -735,7 +477,7 @@ Output:
 ```typescript
 describe('Authentication', () => {
   /**
-   * TSP0001: Authentication Tests
+   * TS0001: Authentication Tests
    */
 
   it('should succeed with valid credentials', async () => {
@@ -762,85 +504,6 @@ describe('Authentication', () => {
 
 ---
 
-# Migration Workflow
-
-## /sdlc-studio migrate - Step by Step
-
-1. **Scan Existing Artifacts**
-   - Glob `sdlc-studio/testing/plans/TP*.md`
-   - Glob `sdlc-studio/testing/suites/TS*.md`
-   - Glob `sdlc-studio/testing/cases/TC*.md`
-   - Glob `sdlc-studio/testing/features/*.feature`
-   - Check `sdlc-studio/testing/data/fixtures.yaml`
-
-2. **Build Mapping**
-   - Group test cases by parent suite
-   - Group suites by parent plan
-   - Link plans to epics
-
-3. **Preview (Default Action)**
-   ```
-   /sdlc-studio migrate
-
-   Scanning existing test artifacts...
-
-   Found:
-   - 4 test plans (TP0001-TP0004)
-   - 27 test suites (TS0001-TS0027)
-   - 135 test cases (TC0001-TC0344)
-   - 2 feature files
-   - 1 fixtures file
-
-   Migration plan:
-   - Create 4 test-spec files (one per plan/epic)
-   - Consolidate 135 test cases into specs
-   - Archive old files to sdlc-studio/testing/.archive/
-
-   Run `/sdlc-studio migrate --execute` to proceed.
-   ```
-
-4. **Execute Migration (--execute flag)**
-
-   a. Create archive directory:
-   ```
-   sdlc-studio/testing/.archive/
-     plans/
-     suites/
-     cases/
-     features/
-     data/
-   ```
-
-   b. For each Test Plan:
-   - Create TSP file with same ID number
-   - Include all child suites as sections
-   - Include all test cases inline
-   - Embed fixtures from fixtures.yaml
-
-   c. Move old files to archive:
-   ```
-   mv sdlc-studio/testing/plans/* sdlc-studio/testing/.archive/plans/
-   mv sdlc-studio/testing/suites/* sdlc-studio/testing/.archive/suites/
-   mv sdlc-studio/testing/cases/* sdlc-studio/testing/.archive/cases/
-   mv sdlc-studio/testing/features/* sdlc-studio/testing/.archive/features/
-   mv sdlc-studio/testing/data/* sdlc-studio/testing/.archive/data/
-   ```
-
-   d. Create new index:
-   - Write `sdlc-studio/testing/specs/_index.md`
-
-5. **Backup Option (--backup flag)**
-   - Create timestamped backup before migration
-   - `sdlc-studio/testing/.backup-{timestamp}/`
-
-6. **Report**
-   - Files migrated
-   - New spec files created
-   - Archive location
-   - Next step: `/sdlc-studio test-automation`
-
----
-
 # Traceability Rules
 
 ## ID Naming Conventions
@@ -849,7 +512,7 @@ describe('Authentication', () => {
 |----------|--------|---------|
 | Epic | EP{NNNN} | EP0001 |
 | Story | US{NNNN} | US0001 |
-| Test Spec | TSP{NNNN} | TSP0001 |
+| Test Spec | TS{NNNN} | TS0001 |
 | Test Case | TC{NNNN} | TC0001 |
 
 ## Link Formats
@@ -858,8 +521,8 @@ From test artifacts, use relative paths:
 - To PRD: `../../prd.md`
 - To Epic: `../../epics/EP{NNNN}-{slug}.md`
 - To Story: `../../stories/US{NNNN}-{slug}.md`
-- To Strategy: `../strategy.md`
-- To Spec: `TSP{NNNN}-{slug}.md`
+- To TSD: `../tsd.md`
+- To Spec: `TS{NNNN}-{slug}.md`
 
 ## Coverage Matrix
 
@@ -872,9 +535,20 @@ Test Cases should cover all Acceptance Criteria:
 
 # Error Handling
 
-- No Test Strategy exists → prompt to run `/sdlc-studio test-strategy` first
+- No Test Strategy exists → prompt to run `/sdlc-studio tsd` first
 - No Epics exist → prompt to run `/sdlc-studio epic` first
 - No Test Specs exist → prompt to run `/sdlc-studio test-spec` first
 - Unknown language → ask user to specify framework
 - `--spec` flag with invalid ID → report error, list valid IDs
 - No old artifacts for migration → report nothing to migrate
+
+---
+
+# See Also
+
+- `reference-prd.md, reference-trd.md, reference-persona.md` - PRD, TRD, Persona workflows
+- `reference-epic.md, reference-story.md, reference-bug.md` - Epic, Story, Bug workflows
+- `reference-code.md` - Code plan, implement, review workflows
+- `reference-philosophy.md` - Create vs Generate philosophy
+- `reference-test-best-practices.md` - Test generation pitfalls and validation
+- `reference-test-e2e-guidelines.md` - E2E and mocking patterns

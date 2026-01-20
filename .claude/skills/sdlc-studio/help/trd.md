@@ -1,3 +1,9 @@
+<!--
+Load: On /sdlc-studio trd or /sdlc-studio trd help
+Dependencies: SKILL.md (always loaded first)
+Related: reference-trd.md (deep workflow), reference-architecture.md, templates/trd-template.md
+-->
+
 # /sdlc-studio trd - Technical Requirements Document
 
 Create and maintain Technical Requirements Documents that bridge product requirements and implementation.
@@ -5,21 +11,23 @@ Create and maintain Technical Requirements Documents that bridge product require
 ## Usage
 
 ```
-/sdlc-studio trd                     # Ask which mode (create/generate/update)
+/sdlc-studio trd                     # Ask which mode (create/generate/review)
 /sdlc-studio trd create              # Interactive TRD creation
 /sdlc-studio trd generate            # Reverse-engineer TRD from codebase
-/sdlc-studio trd update              # Update TRD with implementation changes
+/sdlc-studio trd review              # Review TRD against implementation
 ```
 
 ## Purpose
 
 A TRD bridges the gap between **what** (PRD) and **how** (code). It captures:
+- **Project type classification** and architecture implications
 - Architecture decisions with rationale
-- Technology stack with justifications
+- Technology stack with strong justifications
 - API contracts and data schemas
 - Integration patterns
 - Infrastructure approach
 - Security considerations
+- **Architecture assessment** (brownfield projects)
 
 ## Pipeline Position
 
@@ -38,12 +46,19 @@ Interactive conversation to build a TRD from scratch.
 **Prerequisites:** PRD must exist at `sdlc-studio/prd.md`
 
 **Process:**
-1. Architecture pattern discussion
-2. Technology stack decisions
-3. API design choices
-4. Data architecture planning
-5. Infrastructure approach
-6. Security considerations
+1. **Project type classification** (Web App, API Backend, Mobile Backend, etc.)
+2. **Architecture recommendations** based on project type
+3. Architecture pattern discussion (accept defaults or customise)
+4. Technology stack decisions with strong justifications
+5. API design choices
+6. Data architecture planning
+7. Infrastructure approach
+8. Security considerations
+
+**Architecture Guidance:**
+- Presents recommended stack based on project type
+- Requires strong rationale for technology choices (not just "familiarity")
+- Captures deviations from defaults as ADRs
 
 **Best for:** Greenfield projects or major re-architecture
 
@@ -54,18 +69,30 @@ Reverse-engineer a TRD from an existing codebase.
 **Prerequisites:** PRD should exist for context
 
 **Process:**
-1. Explore codebase structure and patterns
-2. Extract technology stack from configs
-3. Map API contracts from routes
-4. Document data models from schemas
-5. Analyse infrastructure from deployment configs
-6. Assess security implementation
+1. **Detect project type** from codebase patterns
+2. **Detect architecture pattern** (monolith, microservices, etc.)
+3. Explore codebase structure and patterns
+4. Extract technology stack from configs
+5. Map API contracts from routes
+6. Document data models from schemas
+7. Analyse infrastructure from deployment configs
+8. Assess security implementation
+9. **Architecture assessment** against best practices
 
-**Best for:** Brownfield projects needing documentation
+**Architecture Assessment:**
+Evaluates existing architecture for:
+- Pattern alignment with project type
+- Architecture smells (Big Ball of Mud, Distributed Monolith, etc.)
+- Technology selection appropriateness
+- Standards compliance (API, error handling)
 
-### update
+Produces recommendations with severity markers: [CRITICAL], [REVIEW], [INFO]
 
-Sync TRD with implementation changes.
+**Best for:** Brownfield projects needing documentation and assessment
+
+### review
+
+Review TRD against implementation and sync changes.
 
 **Prerequisites:** TRD must exist at `sdlc-studio/trd.md`
 
@@ -89,6 +116,7 @@ Sync TRD with implementation changes.
 | Section | Content |
 |---------|---------|
 | Executive Summary | Purpose, scope, key decisions |
+| **Project Classification** | Project type, default pattern, deviation rationale |
 | Architecture Overview | Pattern, components, diagram |
 | Technology Stack | Languages, frameworks, tools with rationale |
 | API Contracts | Endpoints, schemas, authentication |
@@ -97,8 +125,25 @@ Sync TRD with implementation changes.
 | Infrastructure | Deployment, environments, scaling |
 | Security | Threats, controls, data classification |
 | Performance | Targets and capacity |
+| **Architecture Checklist** | Pattern, technology, standards, infrastructure |
 | ADRs | Architecture Decision Records |
 | Open Questions | Unresolved technical items |
+| **Architecture Assessment** | (generate only) Best practice alignment, smells, recommendations |
+
+## Project Types
+
+Classification determines architecture recommendations:
+
+| Type | Description | Default Pattern |
+|------|-------------|-----------------|
+| Web Application | Frontend + backend | Monolith |
+| API Backend | REST/GraphQL API, no UI | Modular Monolith |
+| Mobile Backend | APIs for iOS/Android | Monolith with API layer |
+| Desktop Application | Local app, CLI tool | Layered |
+| SDK/Library | Reusable code | Modular |
+| Monorepo | Multiple services | Depends on count |
+
+See `reference-architecture.md` for full guidance and decision trees.
 
 ## Architecture Decision Records (ADRs)
 
@@ -134,8 +179,8 @@ The TRD includes ADRs for significant decisions:
 # Generate from existing codebase
 /sdlc-studio trd generate
 
-# Update after adding new service
-/sdlc-studio trd update
+# Review after adding new service
+/sdlc-studio trd review
 
 # Generate using specific PRD
 /sdlc-studio trd generate --prd docs/requirements.md
@@ -164,3 +209,5 @@ After TRD:
 - `/sdlc-studio prd help` - Product requirements (prerequisite)
 - `/sdlc-studio epic help` - Feature groupings (next step)
 - `/sdlc-studio status` - Check pipeline state
+- `reference-architecture.md` - Full architecture guidance
+- `best-practices/architecture.md` - Quick reference patterns

@@ -1,16 +1,32 @@
+<!--
+Load: On /sdlc-studio persona or /sdlc-studio persona help
+Dependencies: SKILL.md (always loaded first)
+Related: reference-persona.md (deep workflow), templates/personas-template.md
+-->
+
 # /sdlc-studio persona - User Personas
 
 ## Quick Reference
 
 ```
-/sdlc-studio persona                # Interactive creation
+/sdlc-studio persona                # Ask which mode (create/generate/review)
+/sdlc-studio persona create         # Interactive creation
 /sdlc-studio persona generate       # Infer from codebase
-/sdlc-studio persona update         # Refine existing
+/sdlc-studio persona review         # Review and refine existing
 ```
 
 ## Actions
 
-### create (default)
+### (default)
+Ask which mode to use.
+
+**What happens:**
+1. Prompts for mode selection:
+   - **Create** - Start from scratch with guided questions
+   - **Generate** - Infer personas from codebase patterns
+   - **Review** - Review and update existing personas
+
+### create
 Interactive conversation to define user personas.
 
 **What happens:**
@@ -43,8 +59,8 @@ Analyse codebase to infer user types.
 
 **Best for:** Existing projects with role-based access
 
-### update
-Refine existing personas with new information.
+### review
+Review and refine existing personas with new information.
 
 **What happens:**
 1. Loads existing `sdlc-studio/personas.md`
@@ -92,8 +108,8 @@ Refine existing personas with new information.
 # Infer from codebase
 /sdlc-studio persona generate
 
-# Update existing personas
-/sdlc-studio persona update
+# Review and refine existing personas
+/sdlc-studio persona review
 ```
 
 ## Best Practices

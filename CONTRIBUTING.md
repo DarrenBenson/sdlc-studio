@@ -42,7 +42,7 @@ This project follows specific writing and code conventions:
 When modifying the skill:
 
 - Keep SKILL.md under 500 lines
-- Use progressive disclosure (reference.md for detailed docs)
+- Use progressive disclosure (reference-*.md files for detailed docs)
 - Maintain the `{{placeholder}}` syntax in templates
 - Update help files when changing commands
 

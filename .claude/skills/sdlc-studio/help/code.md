@@ -1,3 +1,9 @@
+<!--
+Load: On /sdlc-studio code or /sdlc-studio code help
+Dependencies: SKILL.md (always loaded first)
+Related: reference-code.md (deep workflow), reference-test-best-practices.md (TDD mode)
+-->
+
 # /sdlc-studio code - Implementation & Quality
 
 ## Quick Reference
@@ -11,8 +17,11 @@
 /sdlc-studio code implement --story US0001 # Implement by story
 /sdlc-studio code implement --tdd       # Force TDD mode
 /sdlc-studio code implement --no-docs   # Skip doc updates
-/sdlc-studio code review                # Review next In Progress story
-/sdlc-studio code review --story US0001 # Review specific story
+/sdlc-studio code test                  # Run all tests
+/sdlc-studio code test --story US0001   # Run tests for story
+/sdlc-studio code test --type unit      # Run only unit tests
+/sdlc-studio code verify                # Verify next In Progress story
+/sdlc-studio code verify --story US0001 # Verify specific story
 /sdlc-studio code check                 # Run linters with auto-fix
 /sdlc-studio code check --no-fix        # Check only, no changes
 ```
@@ -21,7 +30,7 @@
 
 - For `plan`: Stories must exist in `sdlc-studio/stories/`
 - For `implement`: Plan must exist with Planned story
-- For `review`: Story must be In Progress status
+- For `verify`: Story must be In Progress status
 - Run `/sdlc-studio story` first if no stories exist
 
 ## Actions
@@ -49,16 +58,25 @@ Create detailed implementation plan for a User Story.
 
 Execute implementation plan with TDD support and documentation updates.
 
+**CRITICAL: Complete ALL plan phases.** Do NOT pause mid-implementation to ask questions. Execute every phase from the plan (backend, frontend, integration, etc.) before marking complete. If unsure about a detail, make a reasonable choice and continue.
+
 **What happens:**
 1. Selects plan (by ID, story, or next available)
 2. Validates plan and story status
-3. Checks for unresolved open questions
+3. Checks for unresolved open questions (blocks if critical)
 4. Determines approach (TDD/Test-After from plan or flags)
 5. Updates status: Plan → In Progress, Story → In Progress
-6. Executes implementation steps
+6. Executes ALL implementation phases from plan sequentially
 7. Updates documentation (if --docs, default: true)
 8. Runs final checks (code check, tests)
-9. Completes plan: Plan → Complete
+9. Validates ALL plan phases are complete
+10. Completes plan: Plan → Complete
+
+**Completion criteria:**
+- Every implementation phase in the plan is executed
+- All acceptance criteria have implementing code
+- Tests pass (or are created for Test-After)
+- Quality checks pass
 
 **Selection logic:**
 - `--plan PL0001`: Use specified plan
@@ -81,9 +99,9 @@ For each acceptance criterion:
 | `--docs` | Update documentation (default) |
 | `--no-docs` | Skip documentation updates |
 
-### review
+### verify
 
-Review implementation against acceptance criteria.
+Verify implementation against acceptance criteria.
 
 **What happens:**
 1. Selects next In Progress story (or specified story)
@@ -97,7 +115,7 @@ Review implementation against acceptance criteria.
 
 **Output format:**
 ```
-## Code Review: US0001 - {title}
+## Code Verification: US0001 - {title}
 
 ### Acceptance Criteria
 | AC | Status | Evidence |
@@ -142,6 +160,53 @@ Run linters and best practice checks.
 1. src/api.ts:45 - Unused variable
 ```
 
+### test
+
+Run tests with optional filtering and story traceability.
+
+**What happens:**
+1. Detects test framework
+2. If filtered, builds traceability map from test specs
+3. Runs matching tests
+4. Parses results and maps to stories
+5. Reports coverage by story
+6. Updates story status (Review → Done) if tests pass
+
+**Options:**
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--epic EP0001` | Filter by epic | all |
+| `--story US0001` | Filter by story | all |
+| `--spec TS0001` | Filter by test spec | all |
+| `--type unit` | Filter by test type (unit, integration, api, e2e) | all |
+| `--verbose` | Show detailed test output | false |
+
+**Framework detection:**
+| File | Framework | Command |
+|------|-----------|---------|
+| `pyproject.toml` | pytest | `pytest -v` |
+| `package.json` + vitest | Vitest | `npx vitest run` |
+| `package.json` | Jest | `npx jest` |
+| `go.mod` | Go testing | `go test -v` |
+
+**Output format:**
+```
+## Test Results
+
+### Summary
+| Metric | Value |
+|--------|-------|
+| Total | 45 |
+| Passed | 42 |
+| Failed | 2 |
+
+### By Story
+| Story | Tests | Passed | Failed |
+|-------|-------|--------|--------|
+| US0001 | 12 | 12 | 0 |
+| US0002 | 8 | 6 | 2 |
+```
+
 ## Output
 
 ### code plan
@@ -180,7 +245,7 @@ Run linters and best practice checks.
 
 **Status update:** Plan → "Complete", Story → "In Progress"
 
-### code review
+### code verify
 
 **Output:** Console report only (no files created)
 
@@ -219,11 +284,11 @@ Run linters and best practice checks.
 # Implement without documentation updates
 /sdlc-studio code implement --no-docs
 
-# Review implementation
-/sdlc-studio code review
+# Verify implementation
+/sdlc-studio code verify
 
-# Review specific story
-/sdlc-studio code review --story US0001
+# Verify specific story
+/sdlc-studio code verify --story US0001
 
 # Run linters with auto-fix
 /sdlc-studio code check
@@ -232,13 +297,26 @@ Run linters and best practice checks.
 /sdlc-studio code check --no-fix
 ```
 
+## TDD vs Test-After: Per-Story Choice
+
+Choose **per story** whether to use TDD (test-first) or Test-After (code-first).
+
+> **Decision tree:** `reference-decisions.md` → TDD vs Test-After Decision Tree
+
+**Quick guide:**
+- **Prefer TDD**: API stories, >5 edge cases, clear AC, complex business rules
+- **Prefer Test-After**: Exploratory, UI-heavy, prototype, evolving AC
+
+Both paths produce the same artifacts, just in different order.
+
 ## Status Flow
 
 ```
 Draft/Ready  ──[code plan]──▶  Planned
 Planned      ──[code implement]──▶  In Progress
-In Progress  ──[code review]──▶  Review (if AC met)
-Review       ──[test passes]──▶  Done
+In Progress  ──[test passes]──▶  In Progress
+In Progress  ──[code verify]──▶  Review (if AC met)
+Review       ──[code check]──▶  Done
 ```
 
 ## Next Steps
@@ -250,21 +328,29 @@ After plan created:
 
 After implement completes:
 ```
-/sdlc-studio code review           # Verify AC met
-```
-
-After code review passes:
-```
-/sdlc-studio test --story US0001   # Run tests for story
+/sdlc-studio code test --story US0001   # Run tests for story
 ```
 
 After tests pass:
 ```
-Story status automatically updated: Review → Done
+/sdlc-studio code verify           # Verify AC met
+```
+
+After code verify passes:
+```
+/sdlc-studio code check            # Run quality checks
+```
+
+After all checks pass:
+```
+Story status updated: Review → Done
 ```
 
 ## See Also
 
 - `/sdlc-studio story help` - Generate stories (prerequisite)
-- `/sdlc-studio test help` - Run tests with traceability
+- `/sdlc-studio test-spec help` - Generate test specifications
+- `/sdlc-studio test-automation help` - Generate test code
 - `reference-code.md` - Detailed workflows
+- `reference-testing.md` - Test workflows
+- `reference-decisions.md` - TDD decision tree, Ready criteria, edge case enforcement

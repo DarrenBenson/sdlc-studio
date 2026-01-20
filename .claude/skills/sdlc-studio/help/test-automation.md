@@ -1,3 +1,9 @@
+<!--
+Load: On /sdlc-studio test-automation or /sdlc-studio test-automation help
+Dependencies: SKILL.md (always loaded first)
+Related: reference-testing.md (deep workflow), reference-test-best-practices.md, reference-test-e2e-guidelines.md
+-->
+
 # /sdlc-studio test-automation
 
 Generates executable test code from test specifications. Supports multiple languages and frameworks with automatic detection.
@@ -9,7 +15,7 @@ Generates executable test code from test specifications. Supports multiple langu
 /sdlc-studio test-automation
 
 # Generate for specific spec
-/sdlc-studio test-automation --spec TSP0001
+/sdlc-studio test-automation --spec TS0001
 
 # Filter by test type
 /sdlc-studio test-automation --type unit
@@ -62,7 +68,7 @@ tests/
 
 ## Generation Process
 
-1. Parse TSP file and extract test cases
+1. Parse TS file and extract test cases
 2. Detect language and framework
 3. **Implementation Discovery (CRITICAL for E2E/Integration)**
    - Examine services being tested for enum definitions
@@ -76,7 +82,7 @@ tests/
    - Extract fixtures from spec
    - Generate test functions with correct enum values
    - Write to correct location
-6. Update TSP file with "Automated: Yes" and file paths
+6. Update TS file with "Automated: Yes" and file paths
 
 ## Pre-Generation Checklist
 
@@ -94,66 +100,14 @@ Before generating E2E or integration tests, verify:
 
 ## Common Pitfalls
 
-### 1. Wrong Enum Values
-```python
-# WRONG: Assumed from spec description
-{"phase": "greeting"}
+Brief summary - see `reference-test-best-practices.md` and `reference-test-e2e-guidelines.md` for detailed patterns and examples.
 
-# RIGHT: Actual enum value from implementation
-{"phase": "identification"}
-```
-
-### 2. MagicMock Attribute Access
-```python
-# WRONG: Causes TypeError when comparing
-state.field = MagicMock(value="x")  # field.confidence is MagicMock
-
-# RIGHT: Set attributes explicitly
-mock = MagicMock()
-mock.value = "x"
-mock.confidence = 0.8  # Actual float
-```
-
-### 3. Singleton Mocking (Globals)
-```python
-# WRONG: Doesn't work if global already cached
-with patch('module.get_engine'):
-    ...
-
-# RIGHT: Patch the global directly
-module._engine = mock_engine
-```
-
-### 4. Factory Function Mocking (Dependency Injection)
-```python
-# WRONG: Patching the class when route uses factory
-with patch('api.routes.jobs.JobService') as Mock:
-    ...  # Route calls get_job_service(), not JobService()!
-
-# RIGHT: Patch the factory function
-with patch('api.routes.jobs.get_job_service') as mock_get:
-    mock_service = MagicMock()
-    mock_service.get_job = AsyncMock(return_value=job)
-    mock_get.return_value = mock_service
-```
-
-### 5. API Status Code Assumptions
-```python
-# WRONG: Assumed REST conventions
-assert response.status_code == 201  # POST should return 201?
-
-# RIGHT: Check actual route handler - FastAPI defaults to 200
-assert response.status_code == 200
-```
-
-### 6. Outdated Schema Fields
-```python
-# WRONG: Used old V1 schema fields
-{"name": "Test", "core_identity": {...}}
-
-# RIGHT: Check current REQUIRED_TOP_LEVEL in validation.py
-{"schema_version": "2.3.0", "identity_and_background": {...}}
-```
+- **Wrong enum values** - Extract from implementation, don't assume from spec
+- **MagicMock attribute access** - Set attributes explicitly (`.confidence = 0.8`), not as MagicMock
+- **Singleton mocking** - Patch the global directly, not the getter function
+- **Factory function mocking** - Patch `get_*()` factory, not the class being returned
+- **API status codes** - FastAPI defaults to 200, check actual route handler
+- **Outdated schema fields** - Verify current schema version before writing validation tests
 
 ## Generated Test Structure
 
@@ -168,7 +122,7 @@ Each generated test includes:
 
 ```python
 class TestAuthentication:
-    """TSP0001: Authentication Tests"""
+    """TS0001: Authentication Tests"""
 
     def test_valid_login_succeeds(self, client, valid_user):
         """TC001: Valid login succeeds
@@ -189,20 +143,19 @@ class TestAuthentication:
 
 ## Prerequisites
 
-- Test specs must exist in `sdlc-studio/testing/specs/`
+- Test specs must exist in `sdlc-studio/test-specs/`
 - Run `/sdlc-studio test-spec` first if specs don't exist
 
 ## Options
 
 | Option | Description |
 |--------|-------------|
-| `--spec TSP0001` | Generate for specific spec only |
+| `--spec TS0001` | Generate for specific spec only |
 | `--type unit` | Only generate unit tests |
 | `--type integration` | Only generate integration tests |
 | `--type api` | Only generate API tests |
 | `--type e2e` | Only generate E2E tests |
 | `--framework pytest` | Override framework detection |
-| `--dry-run` | Show what would be generated |
 
 ## Post-Generation (REQUIRED)
 
@@ -214,7 +167,7 @@ After generating tests:
    - API status codes (verify against actual handlers)
    - Schema field mismatches
 3. Add any complex setup not captured in specs
-4. Only update specs after tests pass: `/sdlc-studio test-spec update`
+4. Only update specs after tests pass: `/sdlc-studio test-spec review`
 
 **Tests must pass before automation is considered complete.**
 
@@ -222,4 +175,5 @@ After generating tests:
 
 - `/sdlc-studio test-spec` - Generate test specifications first
 - `/sdlc-studio status` - Check automation coverage
-- `/sdlc-studio migrate` - Migrate from old format
+- `reference-test-best-practices.md` - Test writing guidelines, validation steps
+- `reference-test-e2e-guidelines.md` - E2E mocking patterns, API contract tests

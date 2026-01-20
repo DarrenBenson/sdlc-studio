@@ -61,4 +61,3 @@ This document provides an overview of all User Stories in the project.
 
 - Stories are numbered globally (US0001, US0002, etc.) to allow movement between Epics
 - Story points should be assigned during team refinement, not by AI generation
-- For Definition of Done, see [Definition of Done](../definition-of-done.md)

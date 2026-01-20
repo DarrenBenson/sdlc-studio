@@ -1,9 +1,14 @@
+<!--
+Load: On /sdlc-studio help
+Dependencies: SKILL.md (always loaded first)
+Related: All help/*.md files for type-specific help
+-->
+
 # /sdlc-studio help - Command Reference
 
 ## Quick Start
 
 ```
-/sdlc-studio init                    # Bootstrap entire pipeline (auto-detect)
 /sdlc-studio hint                    # Get single next step suggestion
 /sdlc-studio status                  # Check pipeline state
 /sdlc-studio prd generate            # Create PRD from codebase
@@ -12,10 +17,10 @@
 /sdlc-studio story                   # Generate Stories from Epics
 /sdlc-studio code plan               # Plan implementation for story
 /sdlc-studio code implement          # Execute implementation plan
-/sdlc-studio code review             # Review code against AC
+/sdlc-studio code test               # Run tests with traceability
+/sdlc-studio code verify             # Verify code against AC
 /sdlc-studio code check              # Run linters and checks
-/sdlc-studio test                    # Run tests with traceability
-/sdlc-studio test-strategy           # Create test strategy
+/sdlc-studio tsd                     # Create test strategy document
 /sdlc-studio test-spec               # Generate test specifications
 /sdlc-studio test-automation         # Generate executable tests
 ```
@@ -23,20 +28,18 @@
 ## Get Help for Specific Types
 
 ```
-/sdlc-studio init help               # Project initialisation help
-/sdlc-studio hint help               # Next step suggestion help
 /sdlc-studio prd help                # PRD commands and options
 /sdlc-studio trd help                # TRD commands and options
+/sdlc-studio tsd help                # Test strategy document help
+/sdlc-studio persona help            # Persona management help
 /sdlc-studio epic help               # Epic generation help
 /sdlc-studio story help              # Story generation help
-/sdlc-studio persona help            # Persona management help
-/sdlc-studio code help               # Code plan/review/check help
-/sdlc-studio test help               # Test runner help
-/sdlc-studio test-strategy help      # Test strategy help
+/sdlc-studio code help               # Code plan/test/verify/check help
 /sdlc-studio test-spec help          # Test specification help
 /sdlc-studio test-automation help    # Test automation help
+/sdlc-studio bug help                # Bug tracking help
 /sdlc-studio status help             # Pipeline status help
-/sdlc-studio migrate help            # Migration help
+/sdlc-studio hint help               # Next step suggestion help
 ```
 
 ## All Commands
@@ -49,35 +52,25 @@
 | `/sdlc-studio status --testing` | Testing pipeline only |
 | `/sdlc-studio status --brief` | One-line summary |
 
-### Project Setup
-
-| Command | Description |
-|---------|-------------|
-| `/sdlc-studio init` | Auto-detect and bootstrap pipeline |
-| `/sdlc-studio init --brownfield` | Force existing project mode |
-| `/sdlc-studio init --greenfield` | Force new project mode |
-| `/sdlc-studio init --skip-tests` | Skip test artifact generation |
-| `/sdlc-studio init --dry-run` | Show plan without executing |
-| `/sdlc-studio hint` | Get single actionable next step |
-
 ### Requirements Pipeline
 
 | Command | Description |
 |---------|-------------|
+| `/sdlc-studio hint` | Get single actionable next step |
 | `/sdlc-studio prd create` | Interactive PRD creation |
 | `/sdlc-studio prd generate` | Reverse-engineer PRD from codebase |
-| `/sdlc-studio prd update` | Update feature implementation status |
+| `/sdlc-studio prd review` | Review PRD against codebase |
 | `/sdlc-studio trd create` | Interactive TRD creation |
 | `/sdlc-studio trd generate` | Reverse-engineer TRD from codebase |
-| `/sdlc-studio trd update` | Update TRD with implementation changes |
+| `/sdlc-studio trd review` | Review TRD against implementation |
 | `/sdlc-studio epic` | Generate Epics from PRD |
-| `/sdlc-studio epic update` | Update Epic status |
+| `/sdlc-studio epic review` | Review Epic status |
 | `/sdlc-studio story` | Generate Stories from Epics |
 | `/sdlc-studio story --epic EP0001` | Generate for specific Epic |
-| `/sdlc-studio story update` | Update Story status |
+| `/sdlc-studio story review` | Review Story status |
 | `/sdlc-studio persona` | Interactive persona creation |
 | `/sdlc-studio persona generate` | Infer personas from codebase |
-| `/sdlc-studio persona update` | Refine existing personas |
+| `/sdlc-studio persona review` | Review and refine existing personas |
 
 ### Development Pipeline
 
@@ -89,30 +82,28 @@
 | `/sdlc-studio code implement --plan PL0001` | Implement specific plan |
 | `/sdlc-studio code implement --tdd` | Implement with TDD mode |
 | `/sdlc-studio code implement --no-docs` | Implement without doc updates |
-| `/sdlc-studio code review` | Review next In Progress story |
-| `/sdlc-studio code review --story US0001` | Review specific story |
+| `/sdlc-studio code verify` | Verify next In Progress story |
+| `/sdlc-studio code verify --story US0001` | Verify specific story |
+| `/sdlc-studio code test` | Run all tests |
+| `/sdlc-studio code test --story US0001` | Run tests for specific story |
+| `/sdlc-studio code test --epic EP0001` | Run tests for specific epic |
+| `/sdlc-studio code test --type unit` | Run only unit tests |
 | `/sdlc-studio code check` | Run linters with auto-fix |
 | `/sdlc-studio code check --no-fix` | Check only, no changes |
-| `/sdlc-studio test` | Run all tests |
-| `/sdlc-studio test --story US0001` | Run tests for specific story |
-| `/sdlc-studio test --epic EP0001` | Run tests for specific epic |
-| `/sdlc-studio test --type unit` | Run only unit tests |
 
 ### Testing Pipeline
 
 | Command | Description |
 |---------|-------------|
-| `/sdlc-studio test-strategy` | Create project test strategy |
-| `/sdlc-studio test-strategy generate` | Infer from codebase |
+| `/sdlc-studio tsd` | Create test strategy document |
+| `/sdlc-studio tsd generate` | Infer strategy from codebase |
 | `/sdlc-studio test-spec` | Generate test specs from epics |
 | `/sdlc-studio test-spec --epic EP0001` | Generate for specific Epic |
 | `/sdlc-studio test-spec generate` | Reverse-engineer from existing tests |
-| `/sdlc-studio test-spec update` | Sync automation status |
+| `/sdlc-studio test-spec review` | Review and sync status |
 | `/sdlc-studio test-automation` | Generate executable tests |
-| `/sdlc-studio test-automation --spec TSP0001` | Generate for specific spec |
+| `/sdlc-studio test-automation --spec TS0001` | Generate for specific spec |
 | `/sdlc-studio test-automation --type unit` | Generate only unit tests |
-| `/sdlc-studio migrate` | Preview migration from old format |
-| `/sdlc-studio migrate --execute` | Execute migration |
 
 ## Output Locations
 
@@ -122,8 +113,8 @@ All artifacts are under the `sdlc-studio/` directory:
 sdlc-studio/
   prd.md                      # Product Requirements
   trd.md                      # Technical Requirements
+  tsd.md                      # Test Strategy Document
   personas.md                 # User Personas
-  definition-of-done.md       # Definition of Done
   epics/
     _index.md                 # Epic registry
     EP0001-*.md               # Epic files
@@ -133,11 +124,14 @@ sdlc-studio/
   plans/
     _index.md                 # Plan registry
     PL0001-*.md               # Implementation plans
-  testing/
-    strategy.md               # Test Strategy
-    specs/
-      _index.md               # Spec registry
-      TSP0001-*.md            # Test Specifications
+  bugs/
+    _index.md                 # Bug registry
+    BG0001-*.md               # Bug reports
+  test-specs/
+    _index.md                 # Spec registry
+    TS0001-*.md               # Test Specifications
+  workflows/
+    WF0001-*.md               # Workflow tracking
 
 tests/                        # Generated test code
   unit/
@@ -148,10 +142,10 @@ tests/                        # Generated test code
 
 ## Typical Workflows
 
-### Quick Start (Recommended)
+### Quick Start
 ```
-/sdlc-studio init                # Auto-detect and bootstrap everything
 /sdlc-studio hint                # Get suggested next step
+/sdlc-studio status              # See full pipeline state
 ```
 
 ### Greenfield Project (Manual)
@@ -161,7 +155,7 @@ tests/                        # Generated test code
 /sdlc-studio persona
 /sdlc-studio epic
 /sdlc-studio story
-/sdlc-studio test-strategy
+/sdlc-studio tsd
 /sdlc-studio test-spec
 /sdlc-studio test-automation
 ```
@@ -173,7 +167,7 @@ tests/                        # Generated test code
 /sdlc-studio persona generate
 /sdlc-studio epic
 /sdlc-studio story
-/sdlc-studio test-strategy generate
+/sdlc-studio tsd generate
 /sdlc-studio test-spec generate
 /sdlc-studio test-automation
 ```
@@ -182,9 +176,9 @@ tests/                        # Generated test code
 ```
 /sdlc-studio code plan           # Plan story (status → Planned)
 /sdlc-studio code implement      # Execute plan (status → In Progress)
-/sdlc-studio code check          # Run linters, fix issues
-/sdlc-studio code review         # Verify AC (status → Review)
-/sdlc-studio test                # Run tests (status → Done)
+/sdlc-studio code test           # Run tests
+/sdlc-studio code verify         # Verify AC (status → Review)
+/sdlc-studio code check          # Run linters (status → Done)
 ```
 
 ### Daily Usage
@@ -201,7 +195,7 @@ tests/                        # Generated test code
 | `--force` | Overwrite existing files |
 | `--epic EP0001` | Target specific Epic |
 | `--story US0001` | Target specific Story |
-| `--spec TSP0001` | Target specific Test Spec |
+| `--spec TS0001` | Target specific Test Spec |
 | `--type unit` | Filter by test type |
 | `--framework pytest` | Override framework detection |
 | `--no-fix` | Check without auto-fixing (code check) |
@@ -210,6 +204,7 @@ tests/                        # Generated test code
 ## See Also
 
 - `SKILL.md` - Full skill documentation
-- `reference.md` - Detailed workflows (PRD, Epic, Story, Persona)
-- `reference-code.md` - Detailed workflows (Code, Test)
-- `reference-testing.md` - Testing workflows (Test artifacts)
+- `reference-philosophy.md` - Create vs Generate modes (read first)
+- `reference-*.md` - Domain-specific workflows (13 files)
+- `reference-code.md` - Code plan, implement, review workflows
+- `reference-testing.md` - Testing workflows

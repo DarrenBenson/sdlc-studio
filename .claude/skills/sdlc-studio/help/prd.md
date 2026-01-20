@@ -1,3 +1,9 @@
+<!--
+Load: On /sdlc-studio prd or /sdlc-studio prd help
+Dependencies: SKILL.md (always loaded first)
+Related: reference-prd.md (deep workflow), templates/prd-template.md
+-->
+
 # /sdlc-studio prd - Product Requirements Document
 
 ## Quick Reference
@@ -6,7 +12,7 @@
 /sdlc-studio prd                    # Ask which mode
 /sdlc-studio prd create             # Interactive creation
 /sdlc-studio prd generate           # Reverse-engineer from codebase
-/sdlc-studio prd update             # Update implementation status
+/sdlc-studio prd review             # Review PRD against codebase
 ```
 
 ## Actions
@@ -33,8 +39,8 @@ Analyse existing codebase and reverse-engineer requirements.
 
 **Best for:** Existing projects needing documentation
 
-### update
-Compare PRD against current codebase, update feature status.
+### review
+Review PRD against current codebase, update feature status.
 
 **What happens:**
 1. Reads existing PRD from `sdlc-studio/prd.md`
@@ -73,8 +79,8 @@ Compare PRD against current codebase, update feature status.
 # Document existing codebase
 /sdlc-studio prd generate
 
-# Update status after sprint
-/sdlc-studio prd update
+# Review status after sprint
+/sdlc-studio prd review
 
 # Overwrite existing PRD
 /sdlc-studio prd generate --force

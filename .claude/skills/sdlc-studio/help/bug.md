@@ -1,10 +1,15 @@
+<!--
+Load: On /sdlc-studio bug or /sdlc-studio bug help
+Dependencies: SKILL.md (always loaded first)
+Related: reference-bug.md (deep workflow), templates/bug-template.md
+-->
+
 # /sdlc-studio bug - Bug Tracking
 
 ## Quick Reference
 
 ```
 /sdlc-studio bug                        # Create new bug (interactive)
-/sdlc-studio bug create                 # Create bug report
 /sdlc-studio bug list                   # List all bugs
 /sdlc-studio bug list --status open     # List open bugs
 /sdlc-studio bug list --severity critical  # List critical bugs
@@ -18,11 +23,11 @@
 ## Prerequisites
 
 - For linking: Stories should exist in `sdlc-studio/stories/`
-- For test integration: Test specs should exist in `sdlc-studio/testing/specs/`
+- For test integration: Test specs should exist in `sdlc-studio/test-specs/`
 
 ## Actions
 
-### create (default)
+### (default)
 
 Create a new bug report with full traceability.
 
@@ -105,14 +110,15 @@ Updates:
 
 ### verify
 
-Verify a bug fix.
+Verify and close a bug fix (quick happy path).
 
 **What happens:**
 1. Reads bug and fix details
 2. Runs associated tests
 3. Checks fix addresses root cause
-4. Updates status: Fixed → Verified
+4. Updates status: Fixed → Closed (verified)
 5. Updates verification section
+6. Removes from "Open Bugs" in story (if linked)
 
 **Requirements:**
 - Bug must be in "Fixed" status
@@ -120,13 +126,18 @@ Verify a bug fix.
 
 ### close
 
-Close a verified or won't-fix bug.
+Close a bug with reason selection.
 
 **What happens:**
-1. Validates bug is Verified or marked Won't Fix
+1. Prompts for close reason:
+   - **Verified** - Fix confirmed working
+   - **Rejected/Won't Fix** - Not a bug or won't address
 2. Updates status → Closed
-3. Updates metrics in index
-4. Removes from "Open Bugs" in story (if linked)
+3. Records close reason
+4. Updates metrics in index
+5. Removes from "Open Bugs" in story (if linked)
+
+**Note:** Use `bug verify` for the common case of closing a verified fix.
 
 ### reopen
 
@@ -199,7 +210,7 @@ When fixing a bug:
 - Prompt to add regression test
 - Test case added to relevant test spec
 - Test ID recorded in bug report
-- `/sdlc-studio test --bug BG0001` runs regression tests
+- `/sdlc-studio code test --bug BG0001` runs regression tests
 
 ### Status Integration
 
@@ -224,9 +235,6 @@ When fixing a bug:
 ```
 # Create a bug interactively
 /sdlc-studio bug
-
-# Create bug with details
-/sdlc-studio bug create
 
 # List all open bugs
 /sdlc-studio bug list --status open
@@ -264,18 +272,17 @@ When fixing a bug:
          │                                   [verify]
          │                                        │
          │                                        ▼
-         │                                    Verified
-         │                                        │
-         │                                   [close]
-         │                                        │
-         ├──[won't fix]──▶ Won't Fix ──[close]──▶ Closed
+         ├──[close: won't fix]────────────────▶ Closed
          │                                        │
          └────────────────[reopen]────────────────┘
 ```
 
+**Quick paths:**
+- `bug verify` = verify fix + close (most common)
+- `bug close` = prompt for reason (verified/rejected/won't fix)
+
 ## See Also
 
 - `/sdlc-studio story help` - Stories affected by bugs
-- `/sdlc-studio test help` - Running regression tests
-- `/sdlc-studio code help` - Implementation workflow
-- `reference.md` - Detailed bug workflow
+- `/sdlc-studio code help` - Implementation workflow (includes test command)
+- `reference-bug.md` - Detailed bug workflow

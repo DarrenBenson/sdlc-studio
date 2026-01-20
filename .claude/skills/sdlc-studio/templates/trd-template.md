@@ -23,6 +23,21 @@
 
 ---
 
+## 1.5 Project Classification
+
+**Project Type:** {{web_application | api_backend | mobile_backend | desktop_application | sdk_library | monorepo}}
+
+**Classification Rationale:**
+{{Why this type was chosen - e.g., "Serves web frontend with React SPA"}}
+
+**Architecture Implications:**
+Based on this project type:
+- **Default Pattern:** {{recommended pattern from reference-architecture.md}}
+- **Pattern Used:** {{actual choice}}
+- **Deviation Rationale:** {{if different from default, explain why - document as ADR}}
+
+---
+
 ## 2. Architecture Overview
 
 ### System Context
@@ -230,6 +245,32 @@
 
 ### Capacity Planning
 {{expected load, growth projections}}
+
+---
+
+## 9.5 Architecture Checklist
+
+### Pattern Selection
+- [ ] Project type identified and documented
+- [ ] Default pattern evaluated against project needs
+- [ ] Deviation from default documented as ADR (if applicable)
+
+### Technology Decisions
+- [ ] Language selection justified (not just "familiarity")
+- [ ] Framework selection justified
+- [ ] Database selection justified
+- [ ] API style selection justified
+
+### Standards Compliance
+- [ ] OpenAPI documented (if REST)
+- [ ] Error responses standardised
+- [ ] Authentication approach documented
+- [ ] Pagination approach documented (if applicable)
+
+### Infrastructure
+- [ ] Deployment target identified
+- [ ] Scaling strategy documented
+- [ ] Disaster recovery documented
 
 ---
 

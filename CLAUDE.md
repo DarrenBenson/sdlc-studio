@@ -12,10 +12,13 @@ SDLC Studio is a Claude Code skill for managing the full software development li
 
 | Path | Purpose |
 |------|---------|
-| `.claude/skills/sdlc-studio/SKILL.md` | Main entry point (307 lines) |
-| `.claude/skills/sdlc-studio/reference.md` | PRD, TRD, Epic, Story, Persona workflows |
+| `.claude/skills/sdlc-studio/SKILL.md` | Main entry point (326 lines) |
+| `.claude/skills/sdlc-studio/reference-philosophy.md` | Create vs Generate modes - read first |
+| `.claude/skills/sdlc-studio/reference-*.md` | Domain-specific workflows (13 files) |
 | `.claude/skills/sdlc-studio/reference-code.md` | Code plan, implement, review workflows |
 | `.claude/skills/sdlc-studio/reference-testing.md` | Test Strategy, Spec, Automation workflows |
+| `.claude/skills/sdlc-studio/reference-test-best-practices.md` | Test generation pitfalls and validation |
+| `.claude/skills/sdlc-studio/reference-test-e2e-guidelines.md` | E2E and mocking patterns |
 | `.claude/skills/sdlc-studio/help/` | Type-specific help (16 files) |
 | `.claude/skills/sdlc-studio/templates/` | Document and code templates (22 files) |
 | `.claude/skills/sdlc-studio/best-practices/` | Quality guidelines (11 files) |
@@ -32,7 +35,7 @@ No automated tests. To verify manually:
 
 When modifying the skill:
 
-- **SKILL.md:** Keep under 500 lines (currently 307)
+- **SKILL.md:** Keep under 500 lines (currently 326)
 - **New commands:** Add help file to `help/`, update SKILL.md tables
 - **New templates:** Add to `templates/`, update See Also section
 - **Workflows:** Update relevant `reference*.md` file

@@ -1,4 +1,4 @@
-# Test Strategy
+# Test Strategy Document
 
 > **Project:** {{project_name}}
 > **Version:** {{version}}
@@ -196,7 +196,6 @@
 
 - [Product Requirements Document](../prd.md)
 - [User Personas](../personas.md)
-- [Definition of Done](../definition-of-done.md)
 
 ## Revision History
 

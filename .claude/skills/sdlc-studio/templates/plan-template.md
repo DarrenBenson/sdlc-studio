@@ -30,6 +30,15 @@
 
 {{best_practices_summary}}
 
+### Library Documentation (Context7)
+
+Query Context7 for each library before implementation:
+
+| Library | Context7 ID | Query | Key Patterns |
+|---------|-------------|-------|--------------|
+| {{library_1}} | {{context7_id_1}} | {{query_1}} | {{patterns_1}} |
+| {{library_2}} | {{context7_id_2}} | {{query_2}} | {{patterns_2}} |
+
 ### Existing Patterns
 
 {{existing_patterns}}
@@ -106,11 +115,36 @@
 | AC2 | {{ac2_verification}} | Pending |
 | AC3 | {{ac3_verification}} | Pending |
 
-## Edge Cases
+## Edge Case Handling Plan
 
-| Scenario | Handling Approach |
-|----------|-------------------|
-| {{edge_case}} | {{edge_case_approach}} |
+Every edge case from the Story MUST appear here with an explicit handling strategy.
+
+### Edge Case Coverage
+
+| # | Edge Case (from Story) | Handling Strategy | Implementation Phase | Validated |
+|---|------------------------|-------------------|---------------------|-----------|
+{{#each edge_cases}}
+| {{index}} | {{scenario}} | {{strategy}} | Phase {{phase}} | [ ] |
+{{/each}}
+
+### Coverage Summary
+
+- Story edge cases: {{story_edge_case_count}}
+- Handled in plan: {{planned_edge_case_count}}
+- Unhandled: {{unhandled_edge_case_count}}
+
+{{#if unhandled_edge_cases}}
+**UNHANDLED EDGE CASES (blocking):**
+{{#each unhandled_edge_cases}}
+- {{scenario}}
+{{/each}}
+
+> **Error:** Plan cannot proceed until all story edge cases have handling strategies.
+{{/if}}
+
+### Edge Case Implementation Notes
+
+{{edge_case_notes}}
 
 ## Risks & Mitigations
 

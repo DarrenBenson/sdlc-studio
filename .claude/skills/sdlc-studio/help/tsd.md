@@ -1,14 +1,20 @@
-# /sdlc-studio test-strategy - Test Strategy
+<!--
+Load: On /sdlc-studio tsd or /sdlc-studio tsd help
+Dependencies: SKILL.md (always loaded first)
+Related: reference-testing.md (deep workflow), templates/tsd-template.md
+-->
+
+# /sdlc-studio tsd - Test Strategy Document
 
 ## Quick Reference
 
 ```
-/sdlc-studio test-strategy          # Interactive creation
-/sdlc-studio test-strategy generate # Infer from codebase
-/sdlc-studio test-strategy update   # Update strategy
+/sdlc-studio tsd                     # Interactive creation
+/sdlc-studio tsd generate            # Infer from codebase
+/sdlc-studio tsd review              # Review and update strategy
 ```
 
-## What is a Test Strategy?
+## What is a Test Strategy Document?
 
 A project-level document defining:
 - **What** to test (scope, levels, types)
@@ -16,7 +22,7 @@ A project-level document defining:
 - **When** to test (CI/CD integration, quality gates)
 - **Who** tests (roles and responsibilities)
 
-One test strategy per project. Test Plans then apply it to specific Epics.
+One test strategy per project. Test Specs then apply it to specific Stories.
 
 ## Prerequisites
 
@@ -33,7 +39,7 @@ Guided conversation to define test strategy.
 3. Asks about framework preferences
 4. Documents automation approach
 5. Defines quality gates for CI/CD
-6. Writes to `sdlc-studio/testing/strategy.md`
+6. Writes to `sdlc-studio/tsd.md`
 
 ### generate
 Analyse codebase testing patterns and infer strategy.
@@ -45,8 +51,8 @@ Analyse codebase testing patterns and infer strategy.
 4. Documents current coverage and gaps
 5. Writes strategy with [INFERRED] markers
 
-### update
-Update strategy based on changes.
+### review
+Review strategy against codebase and update.
 
 **What happens:**
 1. Loads existing strategy
@@ -56,7 +62,7 @@ Update strategy based on changes.
 
 ## Output
 
-**File:** `sdlc-studio/testing/strategy.md`
+**File:** `sdlc-studio/tsd.md`
 
 **Key sections:**
 - Overview & Objectives
@@ -74,20 +80,20 @@ Update strategy based on changes.
 
 ```
 # Interactive strategy creation
-/sdlc-studio test-strategy
+/sdlc-studio tsd
 
 # Infer from existing test setup
-/sdlc-studio test-strategy generate
+/sdlc-studio tsd generate
 
-# Update after framework change
-/sdlc-studio test-strategy update
+# Review after framework change
+/sdlc-studio tsd review
 ```
 
 ## Quality Gates Example
 
 | Gate | Criteria | Blocking |
 |------|----------|----------|
-| Unit coverage | ≥80% | Yes |
+| Unit coverage | >=80% | Yes |
 | Integration tests | 100% pass | Yes |
 | E2E critical path | 100% pass | Yes |
 | Performance | p95 < 500ms | Yes |
@@ -96,10 +102,11 @@ Update strategy based on changes.
 
 After creating Test Strategy:
 ```
-/sdlc-studio test-plan            # Generate Test Plans for Epics
+/sdlc-studio test-spec            # Generate Test Specs from Stories
 ```
 
 ## See Also
 
-- `/sdlc-studio test-plan help` - Test Plans apply strategy to Epics
+- `/sdlc-studio test-spec help` - Test Specs apply strategy to Stories
 - `/sdlc-studio prd help` - PRD provides context for strategy
+- `reference-testing.md` - Detailed test strategy workflows
