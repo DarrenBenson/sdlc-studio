@@ -1,3 +1,9 @@
+<!--
+Template: Epic Index
+File: sdlc-studio/epics/_index.md
+Status values: See reference-outputs.md
+Related: help/epic.md, reference-epic.md
+-->
 # Epic Registry
 
 This document provides an overview of all Epics in the project.

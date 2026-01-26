@@ -37,6 +37,8 @@ Analyse existing codebase and reverse-engineer requirements.
 3. Documents technical architecture found
 4. PRD is written with confidence markers ([HIGH], [MEDIUM], [LOW])
 
+> **New to generate mode?** Read `reference-philosophy.md#generate-mode` first - it explains why generated specs must be validated by tests.
+
 **Best for:** Existing projects needing documentation
 
 ### review
@@ -96,5 +98,13 @@ After creating PRD:
 
 ## See Also
 
-- `/sdlc-studio epic help` - Generate Epics from PRD
-- `/sdlc-studio persona help` - Define user personas
+**REQUIRED for this workflow:**
+- `reference-philosophy.md#generate-mode` - Understand specification extraction (generate mode only)
+- `reference-prd.md` - PRD workflow details
+
+**Recommended:**
+- `/sdlc-studio epic help` - Generate Epics from PRD (downstream)
+- `/sdlc-studio trd help` - Technical requirements (parallel)
+
+**Optional (deep dives):**
+- `reference-outputs.md` - Output formats reference

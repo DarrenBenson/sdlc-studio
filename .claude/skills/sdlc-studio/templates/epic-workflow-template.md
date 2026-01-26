@@ -1,3 +1,9 @@
+<!--
+Template: Epic Workflow
+File: sdlc-studio/workflows/WF{NNNN}-epic-{slug}.md
+Status values: See reference-outputs.md
+Related: help/epic.md, reference-epic.md
+-->
 # WF{{workflow_id}}: {{epic_title}} - Epic Workflow
 
 > **Status:** {{status}}
@@ -30,7 +36,7 @@ Stories are processed in dependency order.
 | Order | Story | Title | Dependencies | Approach | Status | Phases |
 |-------|-------|-------|--------------|----------|--------|--------|
 {{#each stories}}
-| {{order}} | US{{story_id}} | {{title}} | {{dependencies}} | {{approach}} | {{status}} | {{phases_complete}}/7 |
+| {{order}} | US{{story_id}} | {{title}} | {{dependencies}} | {{approach}} | {{status}} | {{phases_complete}}/8 |
 {{/each}}
 
 ## Story Progress
@@ -59,7 +65,7 @@ No stories completed yet.
 
 - **Workflow:** [WF{{current_workflow_id}}](WF{{current_workflow_id}}-{{current_slug}}.md)
 - **Status:** {{current_story_status}}
-- **Phase:** {{current_phase}}/7 - {{current_phase_name}}
+- **Phase:** {{current_phase}}/8 - {{current_phase_name}}
 - **Started:** {{current_started}}
 
 **Progress:**
@@ -73,6 +79,7 @@ No stories completed yet.
 | 5. Test | {{current_phase5}} |
 | 6. Verify | {{current_phase6}} |
 | 7. Check | {{current_phase7}} |
+| 8. Review | {{current_phase8}} |
 {{else}}
 No story currently in progress.
 {{/if}}
@@ -137,7 +144,7 @@ No errors encountered.
 
 {{#if status_paused}}
 **Paused at:** Story US{{paused_story_id}} - {{paused_story_title}}
-**Phase:** {{paused_phase}}/7 - {{paused_phase_name}}
+**Phase:** {{paused_phase}}/8 - {{paused_phase_name}}
 **Reason:** {{pause_reason}}
 
 **To resume:**

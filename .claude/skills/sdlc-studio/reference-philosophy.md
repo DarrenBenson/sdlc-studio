@@ -1,12 +1,12 @@
 # SDLC Studio Philosophy
 
-## Create vs Generate: Two Fundamentally Different Modes
+## Create vs Generate: Two Fundamentally Different Modes {#modes-overview}
 
 SDLC Studio operates in two distinct modes. Understanding the difference is critical.
 
 ---
 
-## Create Mode (Greenfield)
+## Create Mode (Greenfield) {#create-mode}
 
 **Purpose:** Plan something new that doesn't exist yet.
 
@@ -23,7 +23,7 @@ User requirements → PRD → Epics → Stories → Implementation → Tests
 
 ---
 
-## Generate Mode (Specification Extraction)
+## Generate Mode (Specification Extraction) {#generate-mode}
 
 **Purpose:** Extract a complete, testable specification from existing code.
 
@@ -34,7 +34,7 @@ Existing code → PRD → Epics → Stories → Test Specs → Tests → VALIDAT
 
 **This is NOT documentation. This is a migration blueprint.**
 
-### Why This Matters
+### Why This Matters {#why-this-matters}
 
 A properly extracted specification enables:
 
@@ -46,7 +46,7 @@ A properly extracted specification enables:
 
 4. **Vendor Independence** - Your specification, not your code, becomes the source of truth. Swap implementations without losing functionality.
 
-### The Validation Requirement
+### The Validation Requirement {#validation-requirement}
 
 **A generated specification is worthless until validated.**
 
@@ -63,9 +63,9 @@ Only when tests pass against the existing implementation do you have a valid spe
 
 ---
 
-## Generate Mode Requirements
+## Generate Mode Requirements {#generate-requirements}
 
-### Acceptance Criteria Must Be Implementation-Ready
+### Acceptance Criteria Must Be Implementation-Ready {#ac-implementation-ready}
 
 **Bad (documentation-style):**
 ```
@@ -88,7 +88,7 @@ Only when tests pass against the existing implementation do you have a valid spe
 
 The second version can be implemented by someone who has never seen the original code.
 
-### Edge Cases Must Be Exhaustive
+### Edge Cases Must Be Exhaustive {#edge-cases-exhaustive}
 
 Don't just note "handles errors". Document every edge case:
 
@@ -100,7 +100,7 @@ Don't just note "handles errors". Document every edge case:
 | Case insensitive | `q=ALICE` | 200, matches alice |
 | Limit exceeded | `limit=500` | Capped at 100 |
 
-### API Contracts Must Be Precise
+### API Contracts Must Be Precise {#api-contracts-precise}
 
 Not "returns engram data" but:
 
@@ -127,7 +127,7 @@ Response 404:
 }
 ```
 
-### Tests Must Validate Reality
+### Tests Must Validate Reality {#tests-validate-reality}
 
 Generated test specs aren't complete until:
 
@@ -137,15 +137,15 @@ Generated test specs aren't complete until:
 
 ---
 
-## Story Generate vs Story (from Epics)
+## Story Generate vs Story (from Epics) {#story-generate-vs-story}
 
-### `/sdlc-studio story` (Default)
+### `/sdlc-studio story` (Default) {#story-default}
 
 Generates stories from Epic acceptance criteria.
 - Input: Epics (which came from PRD)
 - Best for: Forward-looking planning
 
-### `/sdlc-studio story generate` (Extraction)
+### `/sdlc-studio story generate` (Extraction) {#story-generate}
 
 Reverse-engineers stories from actual code behaviour.
 - Input: The codebase itself
@@ -165,7 +165,7 @@ Reverse-engineers stories from actual code behaviour.
 
 ---
 
-## The Complete Extraction Pipeline
+## The Complete Extraction Pipeline {#extraction-pipeline}
 
 For a brownfield project, the full pipeline is:
 
@@ -184,7 +184,7 @@ For a brownfield project, the full pipeline is:
 
 ---
 
-## Status: Ready vs Done
+## Status: Ready vs Done {#ready-vs-done}
 
 For extracted specifications:
 
@@ -195,7 +195,7 @@ Never mark as "Done" until tests confirm the spec matches reality.
 
 ---
 
-## Quality Checklist for Generated Specs
+## Quality Checklist for Generated Specs {#quality-checklist}
 
 Before considering a story "Ready":
 

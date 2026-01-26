@@ -8,20 +8,24 @@ allowed-tools: Read, Glob, Grep, Write, Edit, Task, AskUserQuestion
 
 Manage project specifications and test artifacts. Supports the full pipeline from PRD creation through Epic decomposition, User Story generation, and streamlined test automation.
 
-## Create vs Generate: Know the Difference
+## Critical Philosophy (Read This First)
 
-| Mode | Purpose | Use When |
-|------|---------|----------|
-| **create** | Plan something new | Greenfield, new features |
-| **generate** | Extract testable specification from existing code | Brownfield, migration, refactoring |
+**Two modes for every artifact type:**
+
+| Mode | Purpose | When to Use |
+|------|---------|-------------|
+| **create** | Author new specifications from user input | Greenfield projects, new features |
+| **generate** | Extract specifications from existing code | Brownfield projects, documentation gaps |
+
+> **New to Create vs Generate?** Read `reference-philosophy.md` - it explains why these modes exist and how they differ fundamentally.
+>
+> **Using generate mode?** You MUST read `reference-philosophy.md#generate-mode` first - generated specs must be validated by tests.
 
 **Generate mode is NOT documentation.** It produces a **migration blueprint** - a specification detailed enough that another team could rebuild the system in a different technology stack. Generated specs MUST be validated by running tests against the existing implementation.
 
-> **New to Create vs Generate?** Read `reference-philosophy.md` first - it explains why these modes exist and how they differ fundamentally.
-
 ## Quick Start
 
-```
+```bash
 /sdlc-studio help                    # Show command reference
 /sdlc-studio status                  # Check pipeline state and next steps
 /sdlc-studio prd generate            # Create PRD from codebase
@@ -45,12 +49,13 @@ Manage project specifications and test artifacts. Supports the full pipeline fro
 
 ## Get Help for Any Type
 
-```
+```bash
 /sdlc-studio {type} help             # Show help for specific type
 ```
 
 Examples:
-```
+
+```bash
 /sdlc-studio prd help                # PRD commands and options
 /sdlc-studio epic help               # Epic generation help
 /sdlc-studio bug help                # Bug tracking help
@@ -60,6 +65,7 @@ Examples:
 ```
 
 Each help page shows:
+
 - Available actions and what they do
 - Prerequisites
 - Output format and location
@@ -97,49 +103,55 @@ Each help page shows:
 - `/sdlc-studio story plan`, `/sdlc-studio story implement`, `/sdlc-studio epic plan`, `/sdlc-studio epic implement`
 - `/sdlc-studio status`
 
-## File Loading Guide
+## Instructions
 
-Claude loads files progressively - only what's needed for the current task.
+When invoked with `/sdlc-studio [type] [action]`:
 
-**Loading hierarchy:**
-```
-Level 1: SKILL.md (Always loaded - "what can I do?")
-    ↓
-Level 2: help/{type}.md (On command - "how do I do X?")
-    ↓
-Level 3: reference-*.md (Deep workflow - "step-by-step for X")
-    ↓
-Level 4: templates/*.md (Creating artifacts - "what goes in the file?")
-```
+1. **Parse Command:** Extract type and action from arguments
+2. **Load Help File:** Read `help/{type}.md` for command-specific guidance
+3. **Check Philosophy:** If generate mode, load `reference-philosophy.md#generate-mode` FIRST
+4. **Follow Progressive Loading:**
+   - Load reference files only for multi-step workflows
+   - Load templates only when creating artifacts
+   - Load decision files when choosing approaches (TDD, Ready status)
+5. **Execute Workflow:** Follow step-by-step procedure in reference file
+6. **Update Status:** Modify artifact status markers per `reference-outputs.md`
+7. **Validate:** Check Ready criteria in `reference-decisions.md` before proceeding
 
-**Pattern-based loading:**
+See "Progressive Loading Guide" below for detailed file loading patterns.
 
-| When | Load |
-|------|------|
-| Any `/sdlc-studio {type}` command | help/{type}.md first |
-| Executing multi-step workflow | Relevant reference-*.md |
-| Creating/updating artifacts | Relevant template from templates/ |
-| Validating Ready status | reference-decisions.md |
-| Choosing TDD vs Test-After | reference-decisions.md |
-| Enforcing edge case/AC coverage | reference-decisions.md |
+## Progressive Loading Guide
+
+Claude loads files progressively based on task needs:
+
+| Task Type | Primary Load | Secondary Load | Decision Load |
+|-----------|--------------|----------------|---------------|
+| Understanding command | help/{type}.md | - | - |
+| Create mode workflow | help/{type}.md | reference-{domain}.md | reference-philosophy.md#create-mode |
+| Generate mode workflow | reference-philosophy.md#generate-mode | help/{type}.md | reference-{domain}.md |
+| Creating artifacts | templates/{type}-template.md | reference-outputs.md | - |
+| Planning code | reference-code.md#code-plan-workflow | reference-decisions.md#story-ready | best-practices/{language}.md |
+| Choosing TDD/Test-After | reference-decisions.md#tdd-decision-tree | reference-test-best-practices.md | - |
+| Validating Ready status | reference-decisions.md#{type}-ready | reference-outputs.md | - |
 
 **Reference file mapping:**
 
 | Domain | Reference File |
 |--------|----------------|
-| PRD workflows | reference-prd.md |
-| TRD workflows | reference-trd.md |
-| Persona workflows | reference-persona.md |
-| Epic workflows | reference-epic.md |
-| Story workflows | reference-story.md |
-| Bug workflows | reference-bug.md |
-| Code plan/implement/verify/test/check | reference-code.md |
+| PRD workflows | reference-prd.md#prd-create-workflow, reference-prd.md#prd-generate-workflow |
+| TRD workflows | reference-trd.md#trd-create-workflow, reference-trd.md#trd-generate-workflow |
+| Persona workflows | reference-persona.md#persona-create-workflow, reference-persona.md#persona-generate-workflow |
+| Epic workflows | reference-epic.md#epic-workflow |
+| Story workflows | reference-story.md#story-workflow, reference-story.md#story-generate-workflow |
+| Bug workflows | reference-bug.md#bug-workflow |
+| Code plan/implement/verify/test/check | reference-code.md#code-plan-workflow, reference-code.md#code-implementation-workflow |
 | TSD/test-spec/test-automation | reference-testing.md |
 | Architecture decisions | reference-architecture.md |
-| Cross-stage decisions, Ready criteria | reference-decisions.md |
-| Create vs Generate philosophy | reference-philosophy.md |
+| Cross-stage decisions, Ready criteria | reference-decisions.md#tdd-decision-tree, reference-decisions.md#story-ready |
+| Create vs Generate philosophy | reference-philosophy.md#create-mode, reference-philosophy.md#generate-mode |
 | Test writing guidelines | reference-test-best-practices.md |
 | E2E and mocking patterns | reference-test-e2e-guidelines.md |
+| Output formats and status values | reference-outputs.md#output-formats, reference-outputs.md#status-transitions |
 
 ## Arguments
 
@@ -182,7 +194,7 @@ Level 4: templates/*.md (Creating artifacts - "what goes in the file?")
 | `test-spec` | Consolidated test specification (plan + cases + fixtures) |
 | `test-automation` | Generate executable test code |
 | `bug` | Bug tracking and traceability |
-| `status` | Show pipeline state and next steps |
+| `status` | Visual dashboard: Requirements, Code, Tests health |
 | `hint` | Single actionable next step |
 | `help` | Show command reference and examples |
 
@@ -192,9 +204,16 @@ Level 4: templates/*.md (Creating artifacts - "what goes in the file?")
 
 | Command | Description |
 |---------|-------------|
-| `/sdlc-studio status` | Show full pipeline state |
-| `/sdlc-studio status --testing` | Show testing pipeline only |
+| `/sdlc-studio status` | Visual dashboard with three pillars |
+| `/sdlc-studio status --testing` | Tests pillar only |
+| `/sdlc-studio status --workflows` | Workflow state only |
 | `/sdlc-studio status --brief` | One-line summary |
+
+**Three Pillars:**
+
+- 📋 **Requirements** (PRD Status) - PRD, Personas, Epics, Stories
+- 💻 **Code** (TRD Status) - TRD, Lint, TODOs
+- 🧪 **Tests** (TSD Status) - Coverage, E2E features
 
 ### Requirements Pipeline
 
@@ -291,34 +310,62 @@ Level 4: templates/*.md (Creating artifacts - "what goes in the file?")
 ## Workflows
 
 For detailed step-by-step workflows, see reference files:
-- `reference-requirements.md` - PRD, TRD, Persona workflows
-- `reference-specifications.md` - Epic, Story, Bug workflows
+
+- `reference-prd.md`, `reference-trd.md`, `reference-persona.md` - PRD, TRD, Persona workflows
+- `reference-epic.md`, `reference-story.md`, `reference-bug.md` - Epic, Story, Bug workflows
 - `reference-code.md` - Code plan, implement, review, check, test workflows
 - `reference-testing.md` - TSD, Test Spec, Test Automation workflows
 
 ---
 
-## Output Formats
+## Navigation Map
 
-| Type | Location | Status Values |
-|------|----------|---------------|
-| PRD | `sdlc-studio/prd.md` | Feature status markers |
-| TRD | `sdlc-studio/trd.md` | Draft/Approved |
-| Epic | `sdlc-studio/epics/EP{NNNN}-*.md` | Draft/Ready/Approved/In Progress/Done |
-| Story | `sdlc-studio/stories/US{NNNN}-*.md` | Draft/Ready/Planned/In Progress/Review/Done |
-| Plan | `sdlc-studio/plans/PL{NNNN}-*.md` | Draft/In Progress/Complete |
-| Bug | `sdlc-studio/bugs/BG{NNNN}-*.md` | Open/In Progress/Fixed/Verified/Closed/Won't Fix |
-| Persona | `sdlc-studio/personas.md` | - |
-| TSD | `sdlc-studio/tsd.md` | - |
-| Test Spec | `sdlc-studio/test-specs/TS{NNNN}-*.md` | Draft/Ready/In Progress/Complete |
-| Test Code | `tests/` | - |
-| Workflow | `sdlc-studio/workflows/WF{NNNN}-*.md` | Created/Planning/Testing/Implementing/Verifying/Reviewing/Checking/Done/Paused |
+### By Domain
 
-Each type with `{NNNN}` also has an `_index.md` registry.
+**Requirements:**
+
+- `reference-prd.md` - Product Requirements workflows
+- `reference-trd.md` - Technical Requirements workflows
+- `reference-persona.md` - User Persona workflows
+
+**Specifications:**
+
+- `reference-epic.md` - Epic generation and management
+- `reference-story.md#story-generation-workflow` - User Story workflows
+- `reference-bug.md` - Bug tracking workflows
+
+**Development:**
+
+- `reference-code.md#code-plan-workflow` - Code planning
+- `reference-code.md#code-implementation-workflow` - Implementation
+
+**Testing:**
+
+- `reference-testing.md` - Test Strategy, Spec, Automation
+- `reference-test-best-practices.md` - Testing guidelines
+- `reference-test-e2e-guidelines.md` - E2E patterns
+
+**Cross-Cutting:**
+
+- `reference-decisions.md` - Ready criteria, TDD decisions, enforcement
+- `reference-philosophy.md` - Create vs Generate modes
+- `reference-outputs.md` - Output formats and status values (single source of truth)
+- `reference-architecture.md` - Architectural decisions
+
+### By Workflow Stage
+
+1. **Requirements** → reference-prd.md, reference-trd.md
+2. **Decomposition** → reference-epic.md, reference-story.md
+3. **Planning** → reference-code.md#code-plan-workflow
+4. **Implementation** → reference-code.md#code-implementation-workflow
+5. **Testing** → reference-testing.md, reference-test-best-practices.md
+6. **Validation** → reference-decisions.md#{type}-ready
+
+> **For output formats, status values, and file locations:** See `reference-outputs.md`
 
 ## Examples
 
-```
+```bash
 # Requirements
 /sdlc-studio prd generate             /sdlc-studio prd create
 /sdlc-studio epic                     /sdlc-studio story --epic EP0001
@@ -348,12 +395,14 @@ See `help/{type}.md` for full examples per type.
 
 ## Error Handling
 
-**Missing prerequisites:** Prompts to run earlier pipeline step (e.g., no PRD → `prd`, no epics → `epic`, no stories → `story`, no plans → `code plan`). **Existing files:** Warns and asks to continue unless `--force`. **No type:** Asks user which type. **ID collision:** Auto-increments. **Open questions:** Reports and pauses. **Unknown language:** Asks user to specify framework. **Incomplete scope:** Plans MUST cover all in-scope items and ACs; blocks if items deferred to "future stories".
+**Missing prerequisites:** Prompts to run earlier pipeline step (e.g., no PRD → `prd`, no epics → `epic`, no stories → `story`, no plans → `code plan`). **Existing files:** Warns and asks to continue unless `--force`. **No type:** Asks user which type. **ID collision:** Auto-increments. **Open questions:** Reports and pauses. **Unknown language:** Asks user to specify framework.
 
 ## Typical Workflow
 
 ### Greenfield (Create Mode)
-```
+
+```text
+
 PRD → TRD → Personas → Epics → Stories
                                   │
                     ┌─────────────┴─────────────┐
@@ -380,7 +429,8 @@ PRD → TRD → Personas → Epics → Stories
 
 For streamlined development, use workflow automation:
 
-```
+```text
+
 PRD → TRD → Personas → Epics → Stories
                                   │
                           story plan --story US0001
@@ -392,7 +442,8 @@ PRD → TRD → Personas → Epics → Stories
 
 Or at the epic level:
 
-```
+```text
+
 PRD → TRD → Personas → Epics → Stories
                                   │
                           epic plan --epic EP0001
@@ -403,6 +454,7 @@ PRD → TRD → Personas → Epics → Stories
 ```
 
 **Workflow phases per story:**
+
 1. Plan (code plan)
 2. Test Spec (test-spec)
 3. Tests (test-automation)
@@ -410,22 +462,33 @@ PRD → TRD → Personas → Epics → Stories
 5. Test (code test)
 6. Verify (code verify)
 7. Check (code check)
+8. Review (status review)
 
 ### Brownfield (Specification Extraction)
-```
+
+```bash
+
 prd generate → trd generate → persona generate → epic → story generate → test-spec → test-automation → code test (VALIDATE)
 ```
+
 **Critical:** The `code test` step validates specs against reality. Not optional.
 
 ### Development Cycle
-```
+
+```text
+
 code plan → code implement → code test → code verify → code check
 ```
+
 Status: `Draft/Ready → Planned → In Progress → Review → Done`
 
 ### Daily Usage
-```
-/sdlc-studio status          # What needs attention?
+
+```bash
+
+/sdlc-studio status          # Visual dashboard - what needs attention?
+/sdlc-studio status --brief  # Quick: Requirements 85% | Code 90% | Tests 94%
+/sdlc-studio hint            # Single next step
 /sdlc-studio code plan       # Plan next story
 /sdlc-studio code implement  # Execute plan
 ```

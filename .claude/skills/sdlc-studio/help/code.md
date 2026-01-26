@@ -56,9 +56,9 @@ Create detailed implementation plan for a User Story.
 
 ### implement
 
-Execute implementation plan with TDD support and documentation updates.
-
 **CRITICAL: Complete ALL plan phases.** Do NOT pause mid-implementation to ask questions. Execute every phase from the plan (backend, frontend, integration, etc.) before marking complete. If unsure about a detail, make a reasonable choice and continue.
+
+Execute implementation plan with TDD support and documentation updates.
 
 **What happens:**
 1. Selects plan (by ID, story, or next available)
@@ -348,9 +348,14 @@ Story status updated: Review → Done
 
 ## See Also
 
-- `/sdlc-studio story help` - Generate stories (prerequisite)
-- `/sdlc-studio test-spec help` - Generate test specifications
-- `/sdlc-studio test-automation help` - Generate test code
-- `reference-code.md` - Detailed workflows
-- `reference-testing.md` - Test workflows
-- `reference-decisions.md` - TDD decision tree, Ready criteria, edge case enforcement
+**REQUIRED for this workflow:**
+- `reference-code.md` - Code workflow details
+- `reference-decisions.md#story-ready` - Ready status criteria
+
+**Recommended:**
+- `/sdlc-studio story help` - User Stories (upstream)
+- `/sdlc-studio test-spec help` - Test specifications (parallel)
+
+**Optional (deep dives):**
+- `reference-test-best-practices.md` - Testing guidelines
+- `reference-outputs.md` - Output formats reference

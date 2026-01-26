@@ -135,5 +135,13 @@ After creating Personas:
 
 ## See Also
 
-- `/sdlc-studio story help` - Generate Stories (requires personas)
-- `/sdlc-studio prd help` - PRD often informs persona creation
+**REQUIRED for this workflow:**
+- `reference-philosophy.md#generate-mode` - Understand specification extraction (generate mode only)
+- `reference-persona.md` - Persona workflow details
+
+**Recommended:**
+- `/sdlc-studio prd help` - Product requirements (upstream)
+- `/sdlc-studio story help` - User Stories (downstream)
+
+**Optional (deep dives):**
+- `reference-outputs.md` - Output formats reference

@@ -1,6 +1,6 @@
 # Best Practices: Scripts
 
-> **See also:** [python-rules.md](python-rules.md) and [python-examples.md](python-examples.md) for Python-specific library guidance (YAML, requests, Pillow).
+> **See also:** [python.md](python.md) for Python-specific library guidance (YAML, requests, Pillow).
 
 ## Checklist
 

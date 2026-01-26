@@ -1,3 +1,9 @@
+<!--
+Template: Implementation Plan
+File: sdlc-studio/plans/PL{NNNN}-{slug}.md
+Status values: See reference-outputs.md
+Related: help/code.md, reference-code.md
+-->
 # PL{{plan_id}}: {{story_title}} - Implementation Plan
 
 > **Status:** {{status}}
@@ -17,47 +23,6 @@
 | AC1 | {{ac1_name}} | {{ac1_summary}} |
 | AC2 | {{ac2_name}} | {{ac2_summary}} |
 | AC3 | {{ac3_name}} | {{ac3_summary}} |
-
-## Scope Coverage
-
-**All Story requirements MUST be planned. No deferral to "future stories".**
-
-### In-Scope Items
-
-| Requirement | Source | Implementation Phase |
-|-------------|--------|---------------------|
-{{#each in_scope_items}}
-| {{item}} | In Scope | Phase {{phase}} |
-{{/each}}
-{{#if has_ui}}
-| {{ui_requirement}} | UI/UX Requirements | Phase {{ui_phase}} |
-{{/if}}
-
-### Acceptance Criteria Coverage
-
-| AC | Full Requirement | Phases Addressing |
-|----|------------------|-------------------|
-{{#each acceptance_criteria}}
-| {{ac_id}} | {{full_requirement}} | {{phases}} |
-{{/each}}
-
-### Completeness Validation
-
-```
-In-scope items: {{in_scope_count}}
-Acceptance criteria: {{ac_count}}
-UI requirements: {{ui_count}}
-Total requirements: {{total_requirements}}
-Planned: {{planned_count}}
-Deferred: {{deferred_count}}
-```
-
-{{#if deferred_count}}
-> **BLOCKING ERROR:** {{deferred_count}} requirements deferred. Plan cannot proceed.
-> Deferred items: {{deferred_items}}
-{{else}}
-✓ All requirements covered by implementation phases
-{{/if}}
 
 ## Technical Context
 
@@ -205,9 +170,7 @@ Every edge case from the Story MUST appear here with an explicit handling strate
 
 ## Definition of Done Checklist
 
-- [ ] All in-scope items implemented (no deferral)
-- [ ] All acceptance criteria implemented (backend AND frontend if in scope)
-- [ ] UI requirements implemented (if UI mockups exist in story)
+- [ ] All acceptance criteria implemented
 - [ ] Unit tests written and passing
 - [ ] Edge cases handled
 - [ ] Code follows best practices

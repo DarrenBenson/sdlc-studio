@@ -8,7 +8,7 @@ Related: reference-test-best-practices.md (validation steps)
 
 E2E tests have unique requirements that differ from unit/integration tests. This guide covers patterns applicable across languages, then provides language-specific guidance.
 
-## Related References
+## Related References {#e2e-related-references}
 
 | Document | Content |
 |----------|---------|
@@ -17,11 +17,45 @@ E2E tests have unique requirements that differ from unit/integration tests. This
 
 ---
 
+# E2E Feature Coverage Requirements
+
+**Target: 100% feature coverage** - Every user-visible feature area must have at least one E2E spec file.
+
+## Feature Coverage Matrix {#feature-coverage-matrix}
+
+Track E2E coverage by feature area:
+
+| Feature Area | Spec File | Test Count | Status |
+|--------------|-----------|------------|--------|
+| Dashboard | `dashboard.spec.ts` | - | - |
+| Authentication | `auth.spec.ts` | - | - |
+| Settings | `settings.spec.ts` | - | - |
+
+**Naming convention:** `[feature].spec.ts` (or language-appropriate extension)
+
+## Minimum Scenarios Per Feature {#minimum-scenarios-per-feature}
+
+Each feature spec should cover:
+
+1. **Happy path** - Primary user flow works correctly
+2. **Error states** - Graceful handling of failures
+3. **Edge cases** - Empty states, boundary conditions
+4. **Auth checks** - Protected features require authentication (if applicable)
+
+## When to Create New Spec Files {#when-to-create-new-spec-files}
+
+Create a new spec file when:
+- Adding a new user-facing page/feature
+- Existing spec exceeds ~50 tests (split by sub-feature)
+- Feature has distinct user journey from existing specs
+
+---
+
 # Language-Agnostic Patterns
 
 These patterns apply regardless of your technology stack.
 
-## Critical: E2E Mocking Blindspot
+## Critical: E2E Mocking Blindspot {#e2e-mocking-blindspot}
 
 **E2E tests with mocked API data verify the frontend works correctly but do NOT catch backend bugs.**
 
@@ -33,7 +67,7 @@ When E2E tests mock API responses (Playwright route interception, MSW, etc.), th
 
 ---
 
-## The API Contract Test Pattern
+## The API Contract Test Pattern {#api-contract-test-pattern}
 
 For every field the frontend consumes, write a backend contract test that:
 
@@ -45,9 +79,9 @@ This catches schema mismatches between frontend expectations and backend respons
 
 ---
 
-## Mock Boundary Principles
+## Mock Boundary Principles {#mock-boundary-principles}
 
-### Mock at System Boundaries, Not Internal Libraries
+### Mock at System Boundaries, Not Internal Libraries {#mock-at-system-boundaries}
 
 **Boundaries to mock:**
 - Network (HTTP requests, WebSocket connections)
@@ -62,7 +96,7 @@ This catches schema mismatches between frontend expectations and backend respons
 
 ---
 
-## Status Code Verification
+## Status Code Verification {#status-code-verification-python}
 
 **Never assume REST conventions.** Always verify by reading the route handler:
 
@@ -76,7 +110,7 @@ Read the actual handler implementation to confirm expected status codes.
 
 # Python/FastAPI Patterns
 
-## Contract Test Example
+## Contract Test Example {#contract-test-example-python}
 
 ```python
 # tests/test_api_response_schema.py
@@ -100,7 +134,7 @@ class TestLatestMetricsResponseSchema:
         assert metrics["uptime_seconds"] == 86400
 ```
 
-## Mocking Singletons (Global Variables)
+## Mocking Singletons (Global Variables) {#mocking-singletons}
 
 When services use singleton patterns with global caching:
 
@@ -118,7 +152,7 @@ yield mock_engine
 intents_module._discovery_engine = original  # Restore
 ```
 
-## Mocking Factory Functions (Dependency Injection)
+## Mocking Factory Functions (Dependency Injection) {#mocking-factory-functions}
 
 When routes use FastAPI's `Depends()` with factory functions:
 
@@ -146,7 +180,7 @@ with patch('api.routes.jobs.get_job_service') as mock_get_service:
 
 **Detection:** Look for `Depends(get_something)` in route handlers.
 
-## Mock Objects with Attributes
+## Mock Objects with Attributes {#mock-objects-with-attributes}
 
 When code accesses attributes on objects (e.g., `field.confidence > 0.4`):
 
@@ -168,7 +202,7 @@ def make_field_value(value, confidence=0.8):
 state.intent_fields = {"name": make_field_value("Ada", 0.9)}
 ```
 
-## Schema Version Verification
+## Schema Version Verification {#schema-version-verification}
 
 For validation tests, check current schema version:
 
@@ -192,7 +226,7 @@ valid_engram = {
 
 # TypeScript/Node.js Patterns
 
-## Contract Test Example
+## Contract Test Example {#contract-test-example-python}
 
 ```typescript
 // tests/api/contracts/server.contract.test.ts
@@ -212,7 +246,7 @@ describe('Server API Contract', () => {
 });
 ```
 
-## E2E with Playwright and MSW
+## E2E with Playwright and MSW {#e2e-playwright-msw}
 
 ```typescript
 // tests/e2e/dashboard.spec.ts
@@ -240,7 +274,7 @@ test.describe('Dashboard', () => {
 // PAIR WITH: Backend contract test for uptime_seconds field
 ```
 
-## Mocking with Jest/Vitest
+## Mocking with Jest/Vitest {#mocking-jest-vitest}
 
 ```typescript
 // GOOD: Mock at module boundary
@@ -254,7 +288,7 @@ vi.mock('../utils/calculateUptime', () => ({
 }));
 ```
 
-## Status Code Verification
+## Status Code Verification {#status-code-verification-python}
 
 ```typescript
 // Check actual Express/Fastify route handler:
@@ -274,7 +308,7 @@ expect(response.status).toBe(201);  // May not be true!
 
 # Go Patterns
 
-## Contract Test Example
+## Contract Test Example {#contract-test-example-python}
 
 ```go
 func TestServerResponseIncludesUptimeSeconds(t *testing.T) {
@@ -302,7 +336,7 @@ func TestServerResponseIncludesUptimeSeconds(t *testing.T) {
 }
 ```
 
-## Mocking External Services
+## Mocking External Services {#mocking-external-services}
 
 ```go
 // Use interfaces for dependency injection
@@ -330,7 +364,7 @@ func TestHandler(t *testing.T) {
 }
 ```
 
-## Time Mocking with Clockwork
+## Time Mocking with Clockwork {#time-mocking-clockwork}
 
 ```go
 import "github.com/jonboulle/clockwork"
@@ -359,6 +393,78 @@ func TestIsExpired(t *testing.T) {
 
 ---
 
+# Test Organisation Patterns
+
+## Frontend Test Structure {#frontend-test-structure}
+
+```
+frontend/
+├── src/
+│   ├── components/
+│   │   ├── Button.tsx
+│   │   └── Button.test.tsx      # Co-located unit test
+│   ├── pages/
+│   │   ├── Dashboard.tsx
+│   │   └── Dashboard.test.tsx   # Co-located unit test
+│   └── __tests__/
+│       └── integration/         # Integration tests (optional)
+├── e2e/
+│   ├── dashboard.spec.ts        # E2E tests by feature
+│   ├── settings.spec.ts
+│   └── auth.spec.ts
+└── vitest.config.ts / jest.config.js
+```
+
+**Principles:**
+- Unit tests co-located with components (`*.test.tsx`)
+- E2E tests in separate `/e2e/` directory
+- One spec file per user-visible feature area
+
+## Backend Test Structure {#backend-test-structure}
+
+```
+backend/
+├── src/
+│   └── app/
+└── tests/
+    ├── conftest.py              # Shared fixtures
+    ├── test_auth.py             # Feature-based naming
+    ├── test_api_users.py
+    ├── test_api_servers.py
+    ├── test_contracts.py        # Contract tests
+    └── integration/             # Integration tests (optional)
+        └── test_db_operations.py
+```
+
+**Principles:**
+- Flat `/tests/` directory with clear naming
+- Group by feature not by test type
+- Contract tests in dedicated file(s)
+
+## Go Test Structure {#go-test-structure}
+
+```
+project/
+├── internal/
+│   ├── auth/
+│   │   ├── auth.go
+│   │   └── auth_test.go         # Co-located tests
+│   └── api/
+│       ├── handlers.go
+│       └── handlers_test.go
+├── integration/
+│   └── api_test.go              # Integration tests
+└── e2e/
+    └── e2e_test.go              # E2E tests
+```
+
+**Principles:**
+- Unit tests co-located with source (`*_test.go`)
+- Integration/E2E in separate directories
+- Use build tags to separate test suites
+
+---
+
 # Summary: Full-Stack Test Strategy
 
 For comprehensive coverage, use this three-layer approach:
@@ -370,3 +476,13 @@ For comprehensive coverage, use this three-layer approach:
 | E2E tests | UI renders correctly | Mock network/API responses |
 
 **Contract tests bridge the gap** between E2E tests (which mock APIs) and backend reality. Without them, schema changes in the backend won't be caught until production.
+
+## Coverage Targets {#e2e-coverage-targets}
+
+| Level | Target | Rationale |
+|-------|--------|-----------|
+| Unit | 90% | Core business logic |
+| Integration | 85% | API and database interactions |
+| E2E | 100% feature coverage | Every user-visible feature has spec file |
+
+**Why 90%?** AI-assisted development requires higher quality gates. This target has been proven achievable with AI assistance.

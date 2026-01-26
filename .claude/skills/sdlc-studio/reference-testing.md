@@ -4,7 +4,56 @@ Detailed workflows for test artifact generation and automation.
 
 <!-- Load when: generating test strategy, test specs, or test automation -->
 
-## Related References
+---
+
+# Coverage Targets and Rationale
+
+## Default Targets {#default-targets}
+
+| Level | Target | Rationale |
+|-------|--------|-----------|
+| Unit | 90% | Core business logic must be thoroughly tested |
+| Integration | 85% | API and database interactions |
+| E2E | 100% feature coverage | Every user-visible feature has at least one spec file |
+
+## Why 90%? {#why-ninety-percent}
+
+AI-assisted development changes the economics of testing:
+
+1. **AI produces code faster** - More code requires more quality gates
+2. **AI can hallucinate** - Higher coverage catches incorrect implementations
+3. **AI assists with test writing** - Makes high coverage achievable with reasonable effort
+4. **Proven achievable** - Projects using AI assistance have demonstrated 90%+ coverage
+
+This target has been proven achievable across multiple projects with AI assistance (e.g., 1,027+ tests achieving 90% backend coverage, 90%+ frontend coverage).
+
+## Language-Agnostic Principles {#language-agnostic-principles}
+
+These principles apply regardless of technology stack:
+
+| Principle | Description |
+|-----------|-------------|
+| Test at boundaries | Unit tests for logic, integration tests for APIs, E2E for user flows |
+| Mock at system edges | Network, filesystem, time - not internal libraries |
+| Contract tests bridge gaps | Pair mocked E2E tests with backend contract tests |
+| Feature-based organisation | Group tests by feature, not by test type |
+| Coverage by layer | Different targets for different test levels |
+
+## Test Runner Recommendations (Not Mandates) {#test-runner-recommendations}
+
+| Language | Unit/Integration | E2E | Coverage |
+|----------|------------------|-----|----------|
+| Python | pytest | pytest / Playwright | pytest-cov |
+| TypeScript | vitest / jest | Playwright / Cypress | v8 / istanbul |
+| Go | testing | testing | go test -cover |
+| Rust | cargo test | - | cargo-llvm-cov |
+| Java | JUnit | Selenium | JaCoCo |
+
+**Note:** These are recommendations based on ecosystem norms. Use whatever tools work best for your project.
+
+---
+
+## Related References {#related-references}
 
 | Document | Content |
 |----------|---------|
@@ -13,61 +62,208 @@ Detailed workflows for test artifact generation and automation.
 | `reference-test-best-practices.md` | Pre-generation checklist, validation steps, test writing guidelines |
 | `reference-test-e2e-guidelines.md` | E2E mocking patterns, singleton/factory mocking, API contract tests |
 
+## Test Organisation (Language-Agnostic) {#test-organisation}
+
+All tests reside in a unified `tests/` directory at the project root:
+
+```
+tests/
+  unit/
+    backend/          # Python unit tests
+    frontend/         # TypeScript unit tests
+  integration/        # Cross-component tests
+  api/               # API endpoint tests
+  e2e/               # End-to-end browser tests
+  contracts/         # API contract tests (bridge E2E mocks to backend)
+  fixtures/          # Shared test data (JSON, YAML)
+```
+
+**Naming conventions within unified structure:**
+
+| Language | Pattern | Example |
+|----------|---------|---------|
+| Python | `test_*.py` | `tests/unit/backend/test_auth.py` |
+| TypeScript | `*.test.ts` | `tests/unit/frontend/auth.test.ts` |
+| E2E (any) | `*.spec.ts` | `tests/e2e/dashboard.spec.ts` |
+| Go | `*_test.go` | `tests/unit/backend/auth_test.go` |
+
+**Key principles:**
+- **Single root:** All tests in `tests/` at project root, not scattered across `backend/tests/`, `frontend/__tests__/`
+- **By type first:** Subdirectories by test type (`unit/`, `integration/`, `api/`, `e2e/`, `contracts/`)
+- **Then by component:** Language/component subdirectories within type (`unit/backend/`, `unit/frontend/`)
+- **Shared fixtures:** Common test data in `tests/fixtures/`
+
 ---
 
 # Status Workflow
 
-## /sdlc-studio status - Step by Step
+## /sdlc-studio status - Visual Dashboard {#status-dashboard}
 
-1. **Check Requirements Pipeline**
-   - Check if `sdlc-studio/prd.md` exists
-   - Check if `sdlc-studio/personas.md` exists
-   - Glob `sdlc-studio/epics/EP*.md` and count, parse status
-   - Glob `sdlc-studio/stories/US*.md` and count, parse status
+The status command produces a visual dashboard across three pillars:
 
-2. **Check Testing Pipeline**
-   - Check if `sdlc-studio/tsd.md` exists
-   - Glob `sdlc-studio/test-specs/TS*.md` and count
-   - For each spec, count test cases and automation status
-   - Scan `tests/` directory for actual test files
+```
+══════════════════════════════════════════════════════════
+                      SDLC STATUS
+══════════════════════════════════════════════════════════
 
-3. **Calculate Coverage**
-   - Count total test cases across all specs
-   - Count cases marked "Automated: Yes"
-   - Calculate percentage
+📋 REQUIREMENTS (PRD Status)        ▓▓▓▓▓▓▓▓░░ 85%
+   ✅ PRD: 14 features defined
+   ✅ Personas: 4 documented
+   ⚠️ Epics: 2/3 Ready (1 Draft)
+   ✅ Stories: 12/12 Done
 
-4. **Identify Gaps**
-   - Epics without test specs
-   - Test specs with pending automation
-   - Stories without test coverage
+💻 CODE (TRD Status)                ▓▓▓▓▓▓▓▓▓░ 90%
+   ✅ TRD: Architecture documented
+   ✅ Lint: Passing
+   ⚠️ TODOs: 5 remaining
 
-5. **Generate Next Steps**
-   - Prioritise by impact
-   - Suggest specific commands with arguments
+🧪 TESTS (TSD Status)               ▓▓▓▓▓▓▓▓▓░ 94%
+   ✅ Backend (1,027 tests):        ▓▓▓▓▓▓▓▓▓░ 90%
+   ✅ Frontend:                     ▓▓▓▓▓▓▓▓▓░ 90%
+   ✅ E2E (7/7 features):           ▓▓▓▓▓▓▓▓▓▓ 100%
 
-6. **Output**
-   ```
-   Requirements: 80%
-     PRD         sdlc-studio/prd.md (14 features)
-     Personas    sdlc-studio/personas.md (4 personas)
-     Epics       3 epics (2 Done, 1 Draft)
-     Stories     12 stories (8 Done, 4 pending)
+──────────────────────────────────────────────────────────
+📌 NEXT STEPS
+   1. ⚠️ Complete Epic EP0003 → unblocks 4 stories
+   2. ⚠️ Clear 5 TODOs in backend/
+   3. ❌ Add CI/CD pipeline (gap identified in TSD)
+══════════════════════════════════════════════════════════
+```
 
-   Testing: 60%
-     Strategy    sdlc-studio/tsd.md
-     Specs       2/3 epics covered
-     Automation  22/135 cases (16%)
+## Step-by-Step Implementation {#status-implementation}
 
-   Next steps:
-     /sdlc-studio test-spec --epic EP0003
-     /sdlc-studio test-automation --spec TS0001
-   ```
+### 1. Gather Requirements Pillar Data {#gather-requirements-pillar}
+
+```
+a) Check PRD:
+   - Glob for `sdlc-studio/prd.md`
+   - Parse feature count (count ## headings or feature markers)
+
+b) Check Personas:
+   - Glob for `sdlc-studio/personas.md`
+   - Count persona sections
+
+c) Check Epics:
+   - Glob `sdlc-studio/epics/EP*.md`
+   - Parse status from frontmatter (Draft/Ready/Done)
+   - Calculate: Ready+Done / Total
+
+d) Check Stories:
+   - Glob `sdlc-studio/stories/US*.md`
+   - Parse status from frontmatter
+   - Calculate: Done / Total
+```
+
+### 2. Gather Code Pillar Data {#gather-code-pillar}
+
+```
+a) Check TRD:
+   - Glob for `sdlc-studio/trd.md`
+
+b) Check Lint Status:
+   - Detect language (pyproject.toml → Python, package.json → JS/TS)
+   - Run: `ruff check --quiet` or `npm run lint --silent`
+   - Capture exit code (0 = pass)
+
+c) Count TODOs:
+   - Grep source directories for TODO/FIXME
+   - Exclude: node_modules, .venv, __pycache__, dist
+   - Count occurrences
+
+d) Check Type Status (optional):
+   - If mypy configured: `mypy --quiet`
+   - If tsconfig: `tsc --noEmit --quiet`
+```
+
+### 3. Gather Tests Pillar Data {#gather-tests-pillar}
+
+```
+a) Check TSD:
+   - Glob for `sdlc-studio/tsd.md`
+
+b) Get Backend Coverage:
+   - Primary: Parse `.coverage` SQLite or `coverage.xml`
+   - Fallback: Parse coverage % from TSD "Current Coverage" line
+   - Check file age vs source files for staleness
+
+c) Get Frontend Coverage:
+   - Primary: Parse `coverage/lcov.info` or `coverage/coverage-summary.json`
+   - Fallback: Parse from TSD
+
+d) Get E2E Feature Coverage:
+   - Glob `e2e/*.spec.ts` or `frontend/e2e/*.spec.ts`
+   - Count spec files
+   - Compare to expected features (from PRD or TSD)
+```
+
+### 4. Calculate Health Scores {#calculate-health-scores}
+
+```python
+# Requirements health (PRD Status)
+req_health = (
+    (20 if prd_exists else 0) +
+    (10 if personas_count > 0 else 0) +
+    (30 * epics_ready_pct / 100) +
+    (40 * stories_done_pct / 100)
+)
+
+# Code health (TRD Status)
+code_health = (
+    (30 if trd_exists else 0) +
+    (35 if lint_passes else 0) +
+    (35 if todo_count < 10 else 35 * max(0, (20 - todo_count)) / 20)
+)
+
+# Tests health (TSD Status)
+tests_health = (
+    (10 if tsd_exists else 0) +
+    (30 * min(backend_coverage, 90) / 90) +
+    (30 * min(frontend_coverage, 90) / 90) +
+    (30 * e2e_feature_pct / 100)
+)
+```
+
+### 5. Generate Progress Bars {#generate-progress-bars}
+
+```python
+def progress_bar(percent, width=10):
+    filled = round(percent / 100 * width)
+    return "▓" * filled + "░" * (width - filled)
+
+# Example: 85% → ▓▓▓▓▓▓▓▓░░
+```
+
+### 6. Determine Status Indicators {#determine-status-indicators}
+
+```
+✅ = Complete/Passing/On target (>=90% or exists when required)
+⚠️ = Partial/Warning (50-89% or minor issues)
+❌ = Missing/Failing/Critical (<50% or required item missing)
+```
+
+### 7. Prioritise Next Steps {#prioritise-next-steps}
+
+Priority order:
+1. **Missing foundations** (PRD, TRD, TSD not created)
+2. **Blocking items** (Epics in Draft blocking stories)
+3. **Below-target coverage** (Backend/Frontend < 90%)
+4. **Quality issues** (Lint failures, > 10 TODOs)
+5. **Automation gaps** (E2E features missing specs)
+
+### 8. Output Dashboard {#output-dashboard}
+
+Use the visual format shown above. Key formatting:
+- Unicode box drawing for borders
+- Progress bars using ▓░ characters
+- Emoji indicators for quick scanning
+- Right-aligned percentage in brackets
+- Indented details under each pillar
 
 ---
 
 # TSD Workflows
 
-## /sdlc-studio tsd - Step by Step
+## /sdlc-studio tsd - Step by Step {#tsd-workflow}
 
 1. **Check Prerequisites**
    - Verify PRD exists at sdlc-studio/prd.md
@@ -101,7 +297,7 @@ Detailed workflows for test artifact generation and automation.
 
 ---
 
-## /sdlc-studio tsd generate - Step by Step
+## /sdlc-studio tsd generate - Step by Step {#tsd-generate-workflow}
 
 1. **Analyse Codebase**
    Use Task tool with Explore agent:
@@ -128,7 +324,7 @@ Detailed workflows for test artifact generation and automation.
 
 # Test Spec Workflows
 
-## /sdlc-studio test-spec - Step by Step (Greenfield)
+## /sdlc-studio test-spec - Step by Step (Greenfield) {#test-spec-workflow}
 
 1. **Check Prerequisites**
    - Verify Test Strategy exists
@@ -197,7 +393,7 @@ Detailed workflows for test artifact generation and automation.
 
 ---
 
-## /sdlc-studio test-spec generate - Step by Step (Brownfield)
+## /sdlc-studio test-spec generate - Step by Step (Brownfield) {#test-spec-generate-workflow}
 
 1. **Scan Test Directory**
    - Glob `tests/**/*.py` for pytest
@@ -252,7 +448,7 @@ Detailed workflows for test artifact generation and automation.
 
 ---
 
-## /sdlc-studio test-spec review - Step by Step
+## /sdlc-studio test-spec review - Step by Step {#test-spec-review-workflow}
 
 1. **Load Test Specs**
    - Read all from sdlc-studio/test-specs/
@@ -273,7 +469,7 @@ Detailed workflows for test artifact generation and automation.
 
 # Test Automation Workflows
 
-## /sdlc-studio test-automation - Step by Step
+## /sdlc-studio test-automation - Step by Step {#test-automation-workflow}
 
 1. **Check Prerequisites**
    - Verify test specs exist in sdlc-studio/test-specs/
@@ -388,12 +584,18 @@ Detailed workflows for test artifact generation and automation.
    - Apply best practices from `reference-test-best-practices.md`
 
 8. **Determine Output Location**
-   | Framework | Unit | Integration | API | E2E |
-   |-----------|------|-------------|-----|-----|
-   | pytest | tests/unit/ | tests/integration/ | tests/api/ | tests/e2e/ |
-   | jest | __tests__/unit/ | __tests__/integration/ | __tests__/api/ | __tests__/e2e/ |
-   | vitest | src/__tests__/ | src/__tests__/ | src/__tests__/ | tests/e2e/ |
-   | go | same package | same package | same package | same package |
+
+   All frameworks use the unified `tests/` structure at project root:
+
+   | Test Type | Path | Subdirectory |
+   |-----------|------|--------------|
+   | Unit (backend) | `tests/unit/backend/` | `test_*.py`, `*_test.go` |
+   | Unit (frontend) | `tests/unit/frontend/` | `*.test.ts` |
+   | Integration | `tests/integration/` | Cross-component tests |
+   | API | `tests/api/` | Endpoint tests |
+   | E2E | `tests/e2e/` | `*.spec.ts` browser tests |
+   | Contracts | `tests/contracts/` | API contract tests |
+   | Fixtures | `tests/fixtures/` | Shared test data (JSON, YAML)
 
 9. **Write Test Files**
    - Write test files to appropriate directories
@@ -425,9 +627,9 @@ Detailed workflows for test artifact generation and automation.
 
 ---
 
-## Test Generation Examples
+## Test Generation Examples {#test-generation-examples}
 
-### Python/pytest Example
+### Python/pytest Example {#python-pytest-example}
 
 Input (from TS):
 ```markdown
@@ -471,7 +673,7 @@ class TestAuthentication:
         assert "token" in data
 ```
 
-### TypeScript/Jest Example
+### TypeScript/Jest Example {#typescript-jest-example}
 
 Output:
 ```typescript
@@ -506,7 +708,7 @@ describe('Authentication', () => {
 
 # Traceability Rules
 
-## ID Naming Conventions
+## ID Naming Conventions {#id-naming-conventions}
 
 | Artefact | Format | Example |
 |----------|--------|---------|
@@ -515,7 +717,7 @@ describe('Authentication', () => {
 | Test Spec | TS{NNNN} | TS0001 |
 | Test Case | TC{NNNN} | TC0001 |
 
-## Link Formats
+## Link Formats {#link-formats}
 
 From test artifacts, use relative paths:
 - To PRD: `../../prd.md`
@@ -524,7 +726,7 @@ From test artifacts, use relative paths:
 - To TSD: `../tsd.md`
 - To Spec: `TS{NNNN}-{slug}.md`
 
-## Coverage Matrix
+## Coverage Matrix {#coverage-matrix}
 
 Test Cases should cover all Acceptance Criteria:
 - Each AC should have at least one TC
@@ -552,3 +754,23 @@ Test Cases should cover all Acceptance Criteria:
 - `reference-philosophy.md` - Create vs Generate philosophy
 - `reference-test-best-practices.md` - Test generation pitfalls and validation
 - `reference-test-e2e-guidelines.md` - E2E and mocking patterns
+
+---
+
+## Navigation {#navigation}
+
+**Prerequisites (load these first):**
+- `reference-story.md` - User Stories (test specs derive from story acceptance criteria)
+
+**Related workflows:**
+- `reference-code.md` - Code implementation (parallel - tests accompany code)
+- `reference-test-best-practices.md` - Test quality guidelines (critical before test generation)
+- `reference-test-e2e-guidelines.md` - E2E patterns (for end-to-end test automation)
+
+**Cross-cutting concerns:**
+- `reference-decisions.md` - Decision guidance and Ready criteria
+- `reference-outputs.md#output-formats` - File formats and status values
+
+**Deep dives (optional):**
+- `reference-prd.md` - Product requirements (context for test strategy)
+- `reference-philosophy.md` - Create vs Generate philosophy

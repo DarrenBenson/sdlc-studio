@@ -15,7 +15,7 @@ Cross-stage decision guidance, impact analysis, and validation checkpoints.
 
 ---
 
-# Decision Timeline
+# Decision Timeline {#decision-timeline}
 
 Decisions flow downstream through the pipeline. Early decisions constrain later choices.
 
@@ -34,11 +34,11 @@ PRD                 TRD                 Epic                Story               
 
 ---
 
-# Decision Impact Matrix
+# Decision Impact Matrix {#decision-impact-matrix}
 
 How decisions at each stage constrain downstream choices.
 
-## PRD Decisions
+## PRD Decisions {#prd-decisions}
 
 | Decision | Impacts | Guidance |
 |----------|---------|----------|
@@ -50,7 +50,7 @@ How decisions at each stage constrain downstream choices.
 | Constraint: Memory limit | Story AC, test assertions | "Agent memory <50MB" must appear in relevant stories |
 | Constraint: Browser support | Story AC, test matrix | IE11 support = polyfill AC, cross-browser tests |
 
-## TRD Decisions
+## TRD Decisions {#trd-decisions}
 
 | Decision | Impacts | Guidance |
 |----------|---------|----------|
@@ -61,7 +61,7 @@ How decisions at each stage constrain downstream choices.
 | Auth mechanism | Story auth AC, test fixtures | JWT = token validation tests; OAuth = flow tests |
 | Caching strategy | Story cache AC, test invalidation | Redis = cache invalidation tests needed |
 
-## Epic Decisions
+## Epic Decisions {#epic-decisions}
 
 | Decision | Impacts | Guidance |
 |----------|---------|----------|
@@ -70,7 +70,7 @@ How decisions at each stage constrain downstream choices.
 | Risk identification | Story dependencies, plan mitigations | Risks MUST propagate to affected stories |
 | Success metrics | Story AC, test assertions | Metrics define what tests validate |
 
-## Story Decisions
+## Story Decisions {#story-decisions}
 
 | Decision | Impacts | Guidance |
 |----------|---------|----------|
@@ -79,7 +79,7 @@ How decisions at each stage constrain downstream choices.
 | Persona binding | AC perspective, test scenarios | Wrong persona = wrong validation focus |
 | Dependency identification | Plan ordering, implementation sequence | Missing deps = blocked implementation |
 
-## Plan Decisions
+## Plan Decisions {#plan-decisions}
 
 | Decision | Impacts | Guidance |
 |----------|---------|----------|
@@ -89,7 +89,7 @@ How decisions at each stage constrain downstream choices.
 
 ---
 
-# TDD vs Test-After Decision Tree
+# TDD vs Test-After Decision Tree {#tdd-decision-tree}
 
 **Default:** Plan recommends based on story characteristics. User can override.
 
@@ -116,7 +116,7 @@ How decisions at each stage constrain downstream choices.
                      Test-After         Test-After
 ```
 
-## Prefer TDD When
+## Prefer TDD When {#prefer-tdd}
 
 | Condition | Rationale |
 |-----------|-----------|
@@ -127,7 +127,7 @@ How decisions at each stage constrain downstream choices.
 | Critical path functionality | Tests provide safety net |
 | Story AC is clear and stable | Tests won't need constant rewriting |
 
-## Prefer Test-After When
+## Prefer Test-After When {#prefer-test-after}
 
 | Condition | Rationale |
 |-----------|-----------|
@@ -138,7 +138,7 @@ How decisions at each stage constrain downstream choices.
 | AC may evolve during implementation | Avoid rewriting tests |
 | Prototyping new features | Tests constrain exploration |
 
-## Override Flags
+## Override Flags {#override-flags}
 
 | Flag | Effect |
 |------|--------|
@@ -149,7 +149,7 @@ How decisions at each stage constrain downstream choices.
 
 ---
 
-# Status Transition Rules
+# Status Transition Rules {#status-transition-rules}
 
 **"Done" is always a user decision, never auto-assigned.**
 
@@ -163,11 +163,11 @@ This applies to all artifact types:
 
 ---
 
-# Ready Status Criteria
+# Ready Status Criteria {#ready-status-criteria}
 
 Explicit checklists for when each artifact type is ready for the next stage.
 
-## PRD Ready
+## PRD Ready {#prd-ready}
 
 PRD can proceed to Epic generation when:
 
@@ -183,7 +183,7 @@ PRD can proceed to Epic generation when:
 - NFR without measurable target
 - Referenced persona doesn't exist
 
-## TRD Ready
+## TRD Ready {#trd-ready}
 
 TRD can proceed to Epic generation when:
 
@@ -200,7 +200,7 @@ TRD can proceed to Epic generation when:
 - PRD NFR not addressed
 - Critical technical question unresolved
 
-## Epic Ready
+## Epic Ready {#epic-ready}
 
 Epic can proceed to Story generation when:
 
@@ -216,7 +216,7 @@ Epic can proceed to Story generation when:
 - Dependency marked Blocked with no resolution plan
 - Risk without mitigation strategy
 
-## Story Ready
+## Story Ready {#story-ready}
 
 Story can proceed to Planning/Implementation when:
 
@@ -234,7 +234,7 @@ Story can proceed to Planning/Implementation when:
 - Ambiguous language in AC (see Ambiguous Language Detection)
 - Critical Open Question unresolved
 
-## Plan Ready
+## Plan Ready {#plan-ready}
 
 Plan can proceed to Implementation when:
 
@@ -251,7 +251,7 @@ Plan can proceed to Implementation when:
 - Open question unchecked
 - API-consuming code without verified contract
 
-## Test-Spec Ready
+## Test-Spec Ready {#test-spec-ready}
 
 Test-Spec can proceed to Automation when:
 
@@ -268,7 +268,7 @@ Test-Spec can proceed to Automation when:
 
 ---
 
-# Ambiguous Language Detection
+# Ambiguous Language Detection {#ambiguous-language}
 
 These phrases indicate specification gaps. Replace before marking Ready.
 
@@ -289,11 +289,11 @@ These phrases indicate specification gaps. Replace before marking Ready.
 
 ---
 
-# Validation Checkpoints
+# Validation Checkpoints {#validation-checkpoints}
 
 When to validate decisions and what to check.
 
-## PRD → Epic Validation
+## PRD → Epic Validation {#prd-epic-validation}
 
 **Check:** Do epics capture all PRD features?
 
@@ -306,7 +306,7 @@ When to validate decisions and what to check.
 
 **Tool support:** `/sdlc-studio status` shows PRD-to-Epic coverage.
 
-## Epic → Story Validation
+## Epic → Story Validation {#epic-story-validation}
 
 **Check:** Do stories cover all Epic AC?
 
@@ -319,7 +319,7 @@ When to validate decisions and what to check.
 
 **Tool support:** `/sdlc-studio story review` checks AC coverage.
 
-## Story → Plan Validation
+## Story → Plan Validation {#story-plan-validation}
 
 **Check:** Does plan address all story requirements?
 
@@ -332,7 +332,7 @@ When to validate decisions and what to check.
 
 **Tool support:** `/sdlc-studio code plan` validates AC coverage.
 
-## Story → Test-Spec Validation
+## Story → Test-Spec Validation {#story-test-spec-validation}
 
 **Check:** Do tests cover all story AC?
 
@@ -344,7 +344,7 @@ When to validate decisions and what to check.
 
 **Tool support:** `/sdlc-studio test-spec` generates AC Coverage Matrix.
 
-## Test → Story Validation (Backward Traceability)
+## Test → Story Validation (Backward Traceability) {#test-story-validation}
 
 **Check:** Do test results reflect in story status?
 
@@ -358,11 +358,11 @@ When to validate decisions and what to check.
 
 ---
 
-# Cross-Story Dependency Detection
+# Cross-Story Dependency Detection {#cross-story-dependencies}
 
 Identifying dependencies between stories based on code patterns.
 
-## Detection Patterns
+## Detection Patterns {#detection-patterns}
 
 | Pattern | Indicates | Dependency Type |
 |---------|-----------|-----------------|
@@ -371,7 +371,7 @@ Identifying dependencies between stories based on code patterns.
 | Data model in Story A, referenced by Story B | B depends on A | Data Model |
 | Service in Story A, injected in Story B | B depends on A | Service |
 
-## Workflow Change
+## Workflow Change {#workflow-change}
 
 Story generation (`/sdlc-studio story`) must:
 
@@ -402,11 +402,11 @@ Example output in story template:
 
 ---
 
-# Inherited Constraints
+# Inherited Constraints {#inherited-constraints}
 
 How constraints flow through the pipeline.
 
-## From PRD to Epic
+## From PRD to Epic {#prd-to-epic}
 
 | PRD Section | Epic Section | What Inherits |
 |-------------|--------------|---------------|
@@ -416,7 +416,7 @@ How constraints flow through the pipeline.
 | Constraints | Scope - Out of Scope | Hard limits |
 | Success Metrics | Success Metrics | Measurement targets |
 
-## From TRD to Epic
+## From TRD to Epic {#trd-to-epic}
 
 | TRD Section | Epic Section | What Inherits |
 |-------------|--------------|---------------|
@@ -424,7 +424,7 @@ How constraints flow through the pipeline.
 | Technology Stack | Technical Considerations | Framework constraints |
 | Data Model | Technical Considerations | Schema constraints |
 
-## From Epic to Story
+## From Epic to Story {#epic-to-story}
 
 | Epic Section | Story Section | What Inherits |
 |--------------|---------------|---------------|
@@ -433,7 +433,7 @@ How constraints flow through the pipeline.
 | Success Metrics | Test Scenarios | Validation targets |
 | Acceptance Criteria | Scope context | Boundary awareness |
 
-## From Story to Plan
+## From Story to Plan {#story-to-plan}
 
 | Story Section | Plan Section | What Inherits |
 |---------------|--------------|---------------|
@@ -442,7 +442,7 @@ How constraints flow through the pipeline.
 | Dependencies | Dependencies | Ordering constraints |
 | AC | Implementation Steps | Must all be covered |
 
-## From Story to Test-Spec
+## From Story to Test-Spec {#story-to-test-spec}
 
 | Story Section | Test-Spec Section | What Inherits |
 |---------------|-------------------|---------------|
@@ -453,15 +453,15 @@ How constraints flow through the pipeline.
 
 ---
 
-# Workflow Checkpoints
+# Workflow Checkpoints {#workflow-checkpoints}
 
 Validation gates for automated workflow execution.
 
-## Story Workflow Checkpoints
+## Story Workflow Checkpoints {#story-workflow-checkpoints}
 
 Each phase in `story implement` validates before proceeding:
 
-### Phase 1: Plan
+### Phase 1: Plan {#phase-1-plan}
 
 | Checkpoint | Validation |
 |------------|------------|
@@ -471,7 +471,7 @@ Each phase in `story implement` validates before proceeding:
 
 **Failure:** Workflow pauses, reports missing criteria.
 
-### Phase 2: Test Spec
+### Phase 2: Test Spec {#phase-2-test-spec}
 
 | Checkpoint | Validation |
 |------------|------------|
@@ -481,7 +481,7 @@ Each phase in `story implement` validates before proceeding:
 
 **Failure:** Workflow pauses, reports coverage gaps.
 
-### Phase 3: Tests
+### Phase 3: Tests {#phase-3-tests}
 
 | Checkpoint | Validation |
 |------------|------------|
@@ -491,7 +491,7 @@ Each phase in `story implement` validates before proceeding:
 
 **Failure:** Workflow pauses, reports generation errors.
 
-### Phase 4: Implement
+### Phase 4: Implement {#phase-4-implement}
 
 | Checkpoint | Validation |
 |------------|------------|
@@ -501,7 +501,7 @@ Each phase in `story implement` validates before proceeding:
 
 **Failure:** Workflow pauses, reports missing context.
 
-### Phase 5: Verify
+### Phase 5: Verify {#phase-5-verify}
 
 | Checkpoint | Validation |
 |------------|------------|
@@ -511,7 +511,7 @@ Each phase in `story implement` validates before proceeding:
 
 **Failure:** Workflow pauses, reports test failures.
 
-### Phase 6: Review
+### Phase 6: Review {#phase-6-review}
 
 | Checkpoint | Validation |
 |------------|------------|
@@ -521,7 +521,7 @@ Each phase in `story implement` validates before proceeding:
 
 **Failure:** Workflow pauses, reports review issues.
 
-### Phase 7: Check
+### Phase 7: Check {#phase-7-check}
 
 | Checkpoint | Validation |
 |------------|------------|
@@ -533,9 +533,9 @@ Each phase in `story implement` validates before proceeding:
 
 ---
 
-## Epic Workflow Checkpoints
+## Epic Workflow Checkpoints {#epic-workflow-checkpoints}
 
-### Pre-execution
+### Pre-execution {#epic-pre-execution}
 
 | Checkpoint | Validation |
 |------------|------------|
@@ -543,7 +543,7 @@ Each phase in `story implement` validates before proceeding:
 | No cycles | Dependency graph is acyclic |
 | Dependencies resolvable | No external blockers |
 
-### Per-story
+### Per-story {#epic-per-story}
 
 | Checkpoint | Validation |
 |------------|------------|
@@ -551,7 +551,7 @@ Each phase in `story implement` validates before proceeding:
 | Story Ready | Individual story meets Ready criteria |
 | Story workflow | 7 phases complete successfully |
 
-### Post-execution
+### Post-execution {#epic-post-execution}
 
 | Checkpoint | Validation |
 |------------|------------|
@@ -561,7 +561,7 @@ Each phase in `story implement` validates before proceeding:
 
 ---
 
-## Checkpoint Recovery
+## Checkpoint Recovery {#checkpoint-recovery}
 
 When a checkpoint fails, workflow provides:
 

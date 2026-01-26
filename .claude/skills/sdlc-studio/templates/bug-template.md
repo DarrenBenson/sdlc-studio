@@ -1,3 +1,9 @@
+<!--
+Template: Bug Report
+File: sdlc-studio/bugs/BG{NNNN}-{slug}.md
+Status values: See reference-outputs.md
+Related: help/bug.md, reference-bug.md
+-->
 # BG{{bug_id}}: {{title}}
 
 > **Status:** {{status}}

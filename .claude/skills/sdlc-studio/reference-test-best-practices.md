@@ -2,16 +2,84 @@
 
 Guidelines addressing common pitfalls discovered during test automation runs.
 
-## Related References
+## Related References {#test-bp-related-references}
 
 | Document | Content |
 |----------|---------|
 | `reference-testing.md` | Main test workflows (tsd, test-spec, test-automation) |
+| `reference-test-validation.md` | Validation workflows, contract testing, advanced practices |
 | `reference-test-e2e-guidelines.md` | E2E mocking patterns, singleton/factory mocking, API contract tests |
 
 ---
 
-## Pre-Generation Analysis Checklist
+# AI-Assisted Development and Testing
+
+## Why Higher Coverage Matters for AI Code {#why-higher-coverage-for-ai}
+
+AI-assisted development changes the testing equation:
+
+| Factor | Impact | Mitigation |
+|--------|--------|------------|
+| AI produces code faster | More code = more potential bugs | Higher coverage catches more issues |
+| AI can hallucinate | Incorrect implementations look plausible | Tests verify actual behaviour |
+| AI may miss edge cases | Focus on happy path | Explicit edge case testing |
+| AI code may drift from spec | Implementation doesn't match requirements | Tests enforce spec compliance |
+
+**Target: 90% coverage** - Proven achievable with AI assistance across multiple projects.
+
+## Common AI Testing Mistakes {#common-ai-testing-mistakes}
+
+### 1. Trusting AI-Generated Mocks {#trusting-ai-mocks}
+
+AI may generate mocks that return exactly what the code expects, creating tests that always pass:
+
+```python
+# BAD: AI generates mock that mirrors implementation
+mock_service.calculate_total.return_value = 100
+result = get_order_total(items)
+assert result == 100  # Always passes - mock dictates answer!
+```
+
+**Fix:** Verify mocks simulate realistic external behaviour, not expected outcomes.
+
+### 2. Over-Mocking in E2E Tests {#over-mocking-e2e}
+
+AI tends to mock everything to avoid setup complexity:
+
+```typescript
+// BAD: Everything mocked - only tests React rendering
+vi.mock('../api/client');
+vi.mock('../services/auth');
+vi.mock('../utils/validation');
+```
+
+**Fix:** E2E tests should exercise real code paths. Mock only at system boundaries.
+
+### 3. Missing Contract Tests {#missing-contract-tests}
+
+AI writes E2E tests with mocked APIs but forgets backend contract tests:
+
+```typescript
+// E2E test mocks server response - passes even if backend broken
+await page.route('/api/servers/*', route =>
+  route.fulfill({ json: { uptime_seconds: 86400 } })
+);
+```
+
+**Fix:** For every mocked field, write a backend contract test asserting the field exists.
+
+## Review Patterns for AI Tests {#review-patterns-for-ai-tests}
+
+When reviewing AI-generated tests:
+
+1. **Check mock realism** - Would this mock catch a real bug?
+2. **Verify edge cases** - Are boundary conditions tested?
+3. **Confirm contract coverage** - Is every mocked field contract-tested?
+4. **Test the test** - Temporarily break the code and ensure test fails
+
+---
+
+## Pre-Generation Analysis Checklist {#pre-generation-checklist}
 
 Before writing any test code, complete this checklist:
 
@@ -49,46 +117,18 @@ Before writing any test code, complete this checklist:
 
 ---
 
-## Validation Steps
-
-After generating each test file, validate before running the full suite:
-
-1. **Syntax check** (catches encoding issues, unclosed strings):
-   ```bash
-   python -m py_compile tests/unit/test_new_feature.py
-   ```
-
-2. **Import check** (catches wrong class names, missing modules):
-   ```bash
-   python -c "from tests.unit.test_new_feature import *"
-   ```
-
-3. **Run single file with warnings as errors** (faster feedback than full suite):
-   ```bash
-   pytest tests/unit/test_new_feature.py -v -W error --tb=short
-   ```
-
-4. **Run full suite with warnings as errors**:
-   ```bash
-   pytest -W error
-   ```
-
-5. **Only proceed** when ALL tests pass with ZERO warnings.
-
----
-
-## Warning Policy
+## Warning Policy {#warning-policy}
 
 **Warnings are errors.** Do not dismiss them as "benign" - they indicate real quality issues.
 
-### Why Warnings Matter
+### Why Warnings Matter {#why-warnings-matter}
 
 - **Resource leaks**: Unclosed connections, file handles, async tasks
 - **Deprecated APIs**: Code that will break in future library versions
 - **Async lifecycle issues**: Event loops closing before cleanup, thread communication failures
 - **Flaky tests**: Race conditions that occasionally fail in CI
 
-### Common Warning Types and Fixes
+### Common Warning Types and Fixes {#common-warning-types}
 
 | Warning | Root Cause | Fix |
 |---------|------------|-----|
@@ -98,7 +138,7 @@ After generating each test file, validate before running the full suite:
 | `ResourceWarning: unclosed file` | File not closed | Use context manager (`with open(...)`) |
 | `Event loop is closed` (aiosqlite) | DB connections outlive event loop | Dispose engine before event loop closes |
 
-### Async/Database Test Fixture Pattern
+### Async/Database Test Fixture Pattern {#async-database-fixture-pattern}
 
 When testing async code with databases, use test-specific app configuration:
 
@@ -123,7 +163,7 @@ def client() -> Generator[TestClient, None, None]:
 
 **Key insight**: Background schedulers (APScheduler, Celery beat, etc.) create async tasks that may outlive the test. Create test-specific app configurations that skip background task initialisation.
 
-### Running Tests
+### Running Tests {#running-tests}
 
 Always use warning flags:
 
@@ -140,9 +180,9 @@ pytest -W error --tb=short -q
 
 ---
 
-## Test Writing Guidelines
+## Test Writing Guidelines {#test-writing-guidelines}
 
-### Unicode and Encoding
+### Unicode and Encoding {#unicode-and-encoding}
 
 When testing unicode handling functions:
 
@@ -154,7 +194,7 @@ text = "It's a "test" string"  # Smart quotes break the file!
 text = "It\u2019s a \u201ctest\u201d string"
 ```
 
-### Assertion Patterns
+### Assertion Patterns {#assertion-patterns}
 
 Prefer structural assertions over content matching:
 
@@ -182,7 +222,7 @@ boundary_phrases = [
 assert any(phrase in response.lower() for phrase in boundary_phrases)
 ```
 
-### Model Instantiation
+### Model Instantiation {#model-instantiation}
 
 Always verify required fields before creating test objects:
 
@@ -199,7 +239,7 @@ job = Job(
 )
 ```
 
-### Enum vs String
+### Enum vs String {#enum-vs-string}
 
 Check implementation before using status values:
 
@@ -214,7 +254,7 @@ stage = StageResult(stage=0, name="Stage 0", status=StageStatus.COMPLETE)
 
 ---
 
-## Coverage Verification
+## Coverage Verification {#coverage-verification}
 
 After generating tests, verify coverage:
 
@@ -240,11 +280,11 @@ After generating tests, verify coverage:
 
 ---
 
-## Test Anti-Patterns to Avoid
+## Test Anti-Patterns to Avoid {#test-anti-patterns}
 
 Common mistakes that cause test failures, false positives, or maintenance burden.
 
-### 1. Over-Mocking (Mocking at Wrong Boundary)
+### 1. Over-Mocking (Mocking at Wrong Boundary) {#anti-pattern-over-mocking}
 
 **Bad:**
 ```python
@@ -266,7 +306,7 @@ def test_webhook_sends_correctly():
 
 **Rule:** Mock at system boundaries (network, filesystem, time), not internal libraries.
 
-### 2. Framework Testing
+### 2. Framework Testing {#anti-pattern-framework-testing}
 
 **Bad:**
 ```python
@@ -279,7 +319,7 @@ def test_cors_headers_present():
 - One smoke test to verify CORS is configured correctly
 - Focus tests on your business logic, not framework behaviour
 
-### 3. Time-Dependent Tests Without Mocking
+### 3. Time-Dependent Tests Without Mocking {#anti-pattern-time-dependent}
 
 **Bad:**
 ```python
@@ -304,7 +344,7 @@ def test_server_offline_after_180_seconds():
 - TypeScript: Sinon.useFakeTimers(), jest.useFakeTimers()
 - Go: clockwork
 
-### 4. Tests That Always Pass
+### 4. Tests That Always Pass {#anti-pattern-always-pass}
 
 **Symptom:** Test mocks return exactly what the code expects.
 
@@ -322,56 +362,49 @@ def test_calculate_total():
 
 **Rule:** Mocks should simulate external behaviour, not dictate internal expectations.
 
----
+### 5. Mocking Everything in E2E Tests {#anti-pattern-mock-everything}
 
-## E2E Tests and the API Mock Gap
-
-### The Problem
-
-E2E tests with mocked API data verify frontend rendering but do NOT catch backend bugs.
-
-**Example scenario:**
-- Frontend expects `latest_metrics.uptime_seconds`
-- E2E test mocks API with `{ uptime_seconds: 86400 }` - test passes
-- Backend Pydantic schema doesn't include `uptime_seconds` - BUG not caught
-- Production frontend shows "--" because field is missing
-
-### The Solution: API Contract Tests
-
-For every field the frontend consumes, write a contract test that:
-
-1. Creates real data via the API
-2. Retrieves it via the endpoint being tested (no mocking)
-3. Asserts the expected field exists with correct type/value
-
-**Python example:**
-```python
-async def test_server_response_includes_uptime_seconds():
-    """Contract test: Frontend expects uptime_seconds field."""
-    # Create real server with heartbeat data
-    await create_test_server_with_metrics()
-
-    # Call actual API (no mocking!)
-    response = await client.get("/api/v1/servers/test-server")
-
-    # Assert contract field exists
-    assert "uptime_seconds" in response.json()["latest_metrics"]
-```
-
-**TypeScript example:**
+**Bad:**
 ```typescript
-it('should include uptime_seconds in server response', async () => {
-  // Create real data
-  await createTestServerWithMetrics();
-
-  // Call actual API
-  const response = await request(app).get('/api/v1/servers/test-server');
-
-  // Assert contract
-  expect(response.body.latest_metrics).toHaveProperty('uptime_seconds');
+// Every API call mocked - doesn't test real backend at all
+beforeEach(() => {
+  cy.intercept('GET', '/api/*', { fixture: 'response.json' });
+  cy.intercept('POST', '/api/*', { statusCode: 200 });
 });
 ```
 
-### Recommendation
+**Good:**
+- Mock network for UI rendering tests
+- Run separate contract tests against real backend
+- Use real backend for integration E2E tests
 
-Pair E2E tests (UI works with mocked data) with contract tests (backend returns expected fields). Neither alone is sufficient for full-stack coverage.
+**Rule:** E2E tests with mocked APIs must be paired with contract tests.
+
+### 6. Skipping Contract Tests Between Layers {#anti-pattern-skip-contract-tests}
+
+**Problem:** Frontend mocks API, backend never tested for those fields.
+
+**Example scenario:**
+1. Frontend expects `response.metrics.uptime_seconds`
+2. E2E test mocks `{ metrics: { uptime_seconds: 86400 } }` - passes
+3. Backend schema doesn't include `uptime_seconds` - no test fails
+4. Production shows "--" because field is missing
+
+**Rule:** For every field mocked in E2E tests, write a contract test:
+```python
+def test_server_response_includes_uptime_seconds(client):
+    """Contract: Frontend expects uptime_seconds field."""
+    response = client.get('/api/servers/test')
+    assert 'uptime_seconds' in response.json()['metrics']
+```
+
+---
+
+## See Also {#see-also}
+
+| Document | Purpose |
+|----------|---------|
+| `reference-testing.md` | Main test workflows (tsd, test-spec, test-automation) |
+| `reference-test-validation.md` | Validation workflows and advanced testing patterns |
+| `reference-test-e2e-guidelines.md` | E2E mocking patterns and strategies |
+| `reference-test-pitfalls.md` | Common testing mistakes to avoid |

@@ -206,8 +206,14 @@ After TRD:
 
 ## See Also
 
-- `/sdlc-studio prd help` - Product requirements (prerequisite)
-- `/sdlc-studio epic help` - Feature groupings (next step)
-- `/sdlc-studio status` - Check pipeline state
+**REQUIRED for this workflow:**
+- `reference-philosophy.md#generate-mode` - Understand specification extraction (generate mode only)
+- `reference-trd.md` - TRD workflow details
+
+**Recommended:**
+- `/sdlc-studio prd help` - Product requirements (context)
+- `/sdlc-studio code help` - Implementation workflow (downstream)
+
+**Optional (deep dives):**
 - `reference-architecture.md` - Full architecture guidance
-- `best-practices/architecture.md` - Quick reference patterns
+- `reference-outputs.md` - Output formats reference

@@ -1,3 +1,9 @@
+<!--
+Template: Test Spec Index
+File: sdlc-studio/test-specs/_index.md
+Status values: See reference-outputs.md
+Related: help/test-spec.md, reference-testing.md
+-->
 # Test Specification Index
 
 > **Generated:** {{generated_date}}

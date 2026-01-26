@@ -8,7 +8,7 @@ Detailed workflows for Product Requirements Document creation and management.
 
 # PRD Workflows
 
-## /sdlc-studio prd create - Step by Step
+## /sdlc-studio prd create - Step by Step {#prd-create-workflow}
 
 1. **Gather Project Context**
    Use AskUserQuestion to collect:
@@ -55,7 +55,7 @@ Detailed workflows for Product Requirements Document creation and management.
 
 ---
 
-## /sdlc-studio prd generate - Step by Step
+## /sdlc-studio prd generate - Step by Step {#prd-generate-workflow}
 
 1. **Launch Exploration**
    Use Task tool with Explore agent:
@@ -98,7 +98,7 @@ Detailed workflows for Product Requirements Document creation and management.
 
 ---
 
-## /sdlc-studio prd review - Step by Step
+## /sdlc-studio prd review - Step by Step {#prd-review-workflow}
 
 1. **Read Existing PRD**
    - Load from sdlc-studio/prd.md
@@ -142,7 +142,7 @@ Detailed guidance for completing each section of the PRD template.
 
 ---
 
-## 1. Project Overview
+## 1. Project Overview {#project-overview}
 
 ### CREATE Mode - Questions to Ask
 - What is the project called?
@@ -163,7 +163,7 @@ Detailed guidance for completing each section of the PRD template.
 
 ---
 
-## 2. Problem Statement
+## 2. Problem Statement {#problem-statement}
 
 ### CREATE Mode - Questions to Ask
 - What problem does this solve?
@@ -183,7 +183,7 @@ Detailed guidance for completing each section of the PRD template.
 
 ---
 
-## 3. Feature Inventory
+## 3. Feature Inventory {#feature-inventory}
 
 ### CREATE Mode - Questions to Ask
 For each feature:
@@ -209,7 +209,7 @@ For each feature:
 
 ---
 
-## 4. Functional Requirements
+## 4. Functional Requirements {#functional-requirements}
 
 ### CREATE Mode - Questions to Ask
 - What inputs does the system accept?
@@ -230,7 +230,7 @@ For each feature:
 
 ---
 
-## 5. Non-Functional Requirements
+## 5. Non-Functional Requirements {#non-functional-requirements}
 
 ### CREATE Mode - Questions to Ask
 - **Performance:** What response times are acceptable? Expected load?
@@ -253,7 +253,7 @@ For each feature:
 
 ---
 
-## 6. AI/ML Specifications
+## 6. AI/ML Specifications {#ai-ml-specifications}
 
 ### CREATE Mode - Questions to Ask
 - Will this use AI/ML? Which models or APIs?
@@ -276,7 +276,7 @@ For each feature:
 
 ---
 
-## 7. Data Architecture
+## 7. Data Architecture {#data-architecture}
 
 ### CREATE Mode - Questions to Ask
 - What data will be stored?
@@ -298,7 +298,7 @@ For each feature:
 
 ---
 
-## 8. Integration Map
+## 8. Integration Map {#integration-map}
 
 ### CREATE Mode - Questions to Ask
 - What external services will you integrate with?
@@ -320,7 +320,7 @@ For each feature:
 
 ---
 
-## 9. Configuration Reference
+## 9. Configuration Reference {#configuration-reference}
 
 ### CREATE Mode - Questions to Ask
 - What environment variables are needed?
@@ -342,7 +342,7 @@ For each feature:
 
 ---
 
-## 10. Test Coverage Analysis
+## 10. Test Coverage Analysis {#test-coverage-analysis}
 
 ### CREATE Mode - Questions to Ask
 - What testing approach will you use?
@@ -363,7 +363,7 @@ For each feature:
 
 ---
 
-## 11. Technical Debt Register
+## 11. Technical Debt Register {#technical-debt-register}
 
 ### CREATE Mode - Questions to Ask
 - Are there known shortcuts being taken?
@@ -385,7 +385,7 @@ For each feature:
 
 ---
 
-## 12. Documentation Gaps
+## 12. Documentation Gaps {#documentation-gaps}
 
 ### CREATE Mode - Questions to Ask
 - What documentation exists?
@@ -406,7 +406,7 @@ For each feature:
 
 ---
 
-## 13. Recommendations
+## 13. Recommendations {#recommendations}
 
 ### CREATE Mode - Questions to Ask
 - What's the MVP vs ideal state?
@@ -427,7 +427,7 @@ For each feature:
 
 ---
 
-## 14. Open Questions
+## 14. Open Questions {#open-questions}
 
 ### All Modes
 Document anything that:
@@ -445,7 +445,7 @@ Format:
 
 ---
 
-## Appendix Guidelines
+## Appendix Guidelines {#appendix-guidelines}
 
 ### File Tree
 - Use `tree` command output or manual listing
@@ -475,3 +475,21 @@ Format:
 - `reference-architecture.md` - Architecture guidance for TRD
 - `reference-epic.md` - Epic generation (next step after PRD)
 - `reference-decisions.md` - Ready criteria, decision guidance
+
+---
+
+## Navigation {#navigation}
+
+**Prerequisites (load these first):**
+- `reference-philosophy.md#create-mode` OR `reference-philosophy.md#generate-mode` - Understanding modes
+
+**Related workflows:**
+- `reference-epic.md` - Epic generation (downstream consumer - what uses PRD output)
+- `reference-trd.md` - Technical Requirements (parallel artifact)
+
+**Cross-cutting concerns:**
+- `reference-decisions.md` - Decision guidance and Ready criteria
+- `reference-outputs.md#output-formats` - File formats and status values
+
+**Deep dives (optional):**
+- `reference-architecture.md` - Architecture patterns for TRD context

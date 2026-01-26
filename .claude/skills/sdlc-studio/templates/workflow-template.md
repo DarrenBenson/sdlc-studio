@@ -1,3 +1,9 @@
+<!--
+Template: Story Workflow
+File: sdlc-studio/workflows/WF{NNNN}-story-{slug}.md
+Status values: See reference-outputs.md
+Related: help/story.md, reference-story.md
+-->
 # WF{{workflow_id}}: {{story_title}} - Story Workflow
 
 > **Status:** {{status}}
@@ -54,6 +60,7 @@
 | 5 | Test | {{phase5_status}} | {{phase5_artifact}} | {{phase5_started}} | {{phase5_completed}} | {{phase5_notes}} |
 | 6 | Verify | {{phase6_status}} | {{phase6_artifact}} | {{phase6_started}} | {{phase6_completed}} | {{phase6_notes}} |
 | 7 | Check | {{phase7_status}} | {{phase7_artifact}} | {{phase7_started}} | {{phase7_completed}} | {{phase7_notes}} |
+| 8 | Review | {{phase8_status}} | {{phase8_artifact}} | {{phase8_started}} | {{phase8_completed}} | {{phase8_notes}} |
 
 ### Phase Status Values
 
@@ -157,6 +164,19 @@
 - Lint errors: {{lint_errors}}
 - Auto-fixed: {{lint_fixed}}
 - Remaining: {{lint_remaining}}
+{{/if}}
+
+### Phase 8: Review
+
+**Command:** `status`
+**Expected Output:** Final status review before marking complete
+
+{{#if phase8_status_done}}
+**Result:**
+- Requirements: {{review_requirements_pct}}%
+- Code: {{review_code_pct}}%
+- Tests: {{review_tests_pct}}%
+- Issues: {{review_issues}}
 {{/if}}
 
 ## Error Log

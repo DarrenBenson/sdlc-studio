@@ -8,7 +8,7 @@ Detailed workflows for Technical Requirements Document creation and management.
 
 # TRD Workflows
 
-## /sdlc-studio trd create - Step by Step
+## /sdlc-studio trd create - Step by Step {#trd-create-workflow}
 
 1. **Check Prerequisites**
    - Verify PRD exists at sdlc-studio/prd.md
@@ -97,7 +97,7 @@ Detailed workflows for Technical Requirements Document creation and management.
 
 ---
 
-## /sdlc-studio trd generate - Step by Step
+## /sdlc-studio trd generate - Step by Step {#trd-generate-workflow}
 
 1. **Load Architecture Guidance**
    - Load `reference-architecture.md` for assessment criteria
@@ -234,7 +234,7 @@ Detailed workflows for Technical Requirements Document creation and management.
 
 ---
 
-## /sdlc-studio trd review - Step by Step
+## /sdlc-studio trd review - Step by Step {#trd-review-workflow}
 
 1. **Read Existing TRD**
    - Load from sdlc-studio/trd.md
@@ -287,3 +287,22 @@ Detailed workflows for Technical Requirements Document creation and management.
 - `reference-architecture.md` - Architecture patterns and guidance
 - `reference-epic.md` - Epic generation (next step after TRD)
 - `reference-decisions.md` - Decision impact matrix, TRD decisions
+
+---
+
+## Navigation {#navigation}
+
+**Prerequisites (load these first):**
+- `reference-philosophy.md#create-mode` OR `reference-philosophy.md#generate-mode` - Understanding modes
+- `reference-prd.md` - Product Requirements (context for technical decisions)
+
+**Related workflows:**
+- `reference-architecture.md` - Architecture patterns and guidance (deep dive for TRD creation)
+- `reference-code.md` - Code implementation (downstream consumer)
+
+**Cross-cutting concerns:**
+- `reference-decisions.md` - Decision guidance and Ready criteria
+- `reference-outputs.md#output-formats` - File formats and status values
+
+**Deep dives (optional):**
+- `reference-epic.md` - Epic generation (next step after TRD)

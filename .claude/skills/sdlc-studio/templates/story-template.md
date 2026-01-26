@@ -1,3 +1,9 @@
+<!--
+Template: User Story
+File: sdlc-studio/stories/US{NNNN}-{slug}.md
+Status values: See reference-outputs.md
+Related: help/story.md, reference-story.md
+-->
 # US{{story_id}}: {{story_title}}
 
 > **Status:** {{status}}

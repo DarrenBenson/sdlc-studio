@@ -30,6 +30,16 @@ Generates executable test code from test specifications. Supports multiple langu
 /sdlc-studio test-automation --framework go
 ```
 
+## Coverage Targets
+
+| Level | Target |
+|-------|--------|
+| Unit | 90% line coverage |
+| Integration | 85% line coverage |
+| E2E | 100% feature coverage |
+
+**Why 90%?** AI-assisted development requires higher quality gates. This target has been proven achievable.
+
 ## Language Detection
 
 The skill automatically detects the project language:
@@ -44,26 +54,40 @@ The skill automatically detects the project language:
 
 ## Framework Conventions
 
-| Framework | Test Location | Naming Pattern |
-|-----------|---------------|----------------|
-| pytest | `tests/` | `test_*.py` |
-| Jest | `__tests__/` | `*.test.ts` |
-| Vitest | `src/__tests__/` | `*.test.ts` |
-| Go | same package | `*_test.go` |
+All frameworks use a unified `tests/` directory at project root with consistent naming:
+
+| Language | Pattern | Example Path |
+|----------|---------|--------------|
+| Python | `test_*.py` | `tests/unit/backend/test_auth.py` |
+| TypeScript | `*.test.ts` | `tests/unit/frontend/auth.test.ts` |
+| E2E (any) | `*.spec.ts` | `tests/e2e/dashboard.spec.ts` |
+| Go | `*_test.go` | `tests/unit/backend/auth_test.go` |
 
 ## Output Structure
 
-Tests are organised by type:
+Tests are organised in a unified `tests/` directory at project root:
 
 ```
 tests/
   unit/
-    test_authentication.py
-    test_validation.py
+    backend/
+      test_authentication.py
+      test_validation.py
+    frontend/
+      auth.test.ts
+      validation.test.ts
   integration/
-    test_api_auth.py
+    test_api_database.py
+  api/
+    test_endpoints.py
   e2e/
-    test_login_flow.py
+    dashboard.spec.ts
+    login.spec.ts
+  contracts/
+    test_frontend_expects.py
+  fixtures/
+    users.json
+    servers.json
 ```
 
 ## Generation Process
@@ -171,9 +195,62 @@ After generating tests:
 
 **Tests must pass before automation is considered complete.**
 
+## Contract Test Pattern
+
+**Critical:** E2E tests with mocked APIs don't catch backend bugs. Pair them with contract tests.
+
+For every field the frontend consumes, write a backend test:
+
+```python
+# Python
+def test_response_includes_uptime(client):
+    response = client.get('/api/servers/test')
+    assert 'uptime_seconds' in response.json()['metrics']
+```
+
+```typescript
+// TypeScript
+it('includes uptime_seconds', async () => {
+  const response = await request(app).get('/api/servers/test');
+  expect(response.body.metrics).toHaveProperty('uptime_seconds');
+});
+```
+
+```go
+// Go
+func TestResponseIncludesUptime(t *testing.T) {
+    resp := httptest.NewRecorder()
+    router.ServeHTTP(resp, httptest.NewRequest("GET", "/api/servers/test", nil))
+    var result ServerResponse
+    json.Unmarshal(resp.Body.Bytes(), &result)
+    if result.Metrics.UptimeSeconds == 0 {
+        t.Error("uptime_seconds missing")
+    }
+}
+```
+
+## Language-Agnostic Runner Commands
+
+| Language | Run Tests | With Coverage |
+|----------|-----------|---------------|
+| Python (pytest-cov) | `pytest` | `pytest --cov --cov-report=term-missing` |
+| Python (coverage.py) | `pytest` | `coverage run -m pytest && coverage report` |
+| TypeScript (vitest) | `npm test` | `npm run test:coverage` |
+| TypeScript (jest) | `npm test` | `npm test -- --coverage` |
+| Go | `go test ./...` | `go test -cover ./...` |
+
+**Note:** Check project's `pyproject.toml` for which coverage tool is configured. If `[tool.coverage.run]` exists, use coverage.py directly.
+
 ## See Also
 
-- `/sdlc-studio test-spec` - Generate test specifications first
-- `/sdlc-studio status` - Check automation coverage
-- `reference-test-best-practices.md` - Test writing guidelines, validation steps
-- `reference-test-e2e-guidelines.md` - E2E mocking patterns, API contract tests
+**REQUIRED for this workflow:**
+- `reference-testing.md` - Test automation workflow details
+- `reference-test-best-practices.md` - Test writing guidelines and pitfalls
+- `reference-test-validation.md` - Validation steps and post-generation checklist
+
+**Recommended:**
+- `/sdlc-studio test-spec help` - Test specifications (upstream)
+
+**Optional (deep dives):**
+- `reference-test-e2e-guidelines.md` - E2E patterns and guidelines
+- `reference-outputs.md` - Output formats reference

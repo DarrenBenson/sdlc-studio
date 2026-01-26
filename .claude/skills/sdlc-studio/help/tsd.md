@@ -98,6 +98,67 @@ Review strategy against codebase and update.
 | E2E critical path | 100% pass | Yes |
 | Performance | p95 < 500ms | Yes |
 
+## Coverage Troubleshooting
+
+### Async Code Shows 0% Coverage
+
+**Symptom:** Tests pass but async route handlers show 0% or very low coverage.
+
+**Cause:** Coverage.py doesn't track code in greenlets by default. FastAPI/Starlette TestClient uses anyio which executes requests in greenlets.
+
+**Fix:** Add concurrency configuration:
+
+```toml
+# pyproject.toml
+[tool.coverage.run]
+concurrency = ["greenlet", "thread"]
+```
+
+**Verification:**
+```bash
+# Before fix - low coverage
+pytest --cov --cov-report=term | grep "routes/agents"
+# agents.py    127    81    28%
+
+# After fix - accurate coverage
+pytest --cov --cov-report=term | grep "routes/agents"
+# agents.py    127     6    93%
+```
+
+### Tests Pass But Coverage Still Low
+
+**Symptom:** All tests pass but coverage for a module remains low despite having tests for it.
+
+**Common causes:**
+
+1. **Conditional assertions hiding failures**
+   ```python
+   # BAD - silently passes if no alerts created
+   if service_alerts:
+       assert service_alerts[0]["status"] == "success"
+
+   # GOOD - fails explicitly
+   assert len(service_alerts) > 0, "Service alerts should exist"
+   assert service_alerts[0]["status"] == "success"
+   ```
+
+2. **Test helpers missing required data**
+   - Helper creates partial data that doesn't trigger the code path
+   - Example: Service alerts only evaluated when `metrics` present in heartbeat
+   - Fix: Trace the full code path and include all required fields
+
+3. **Feature dependencies not satisfied**
+   - Feature A only runs when Feature B provides certain data
+   - Fix: Read the source to understand triggering conditions
+
+**Debugging steps:**
+1. Add `print()` statements in the code being tested
+2. Run test with `-s` flag to see output: `pytest -s test_file.py`
+3. If no output appears, the code path isn't being reached
+4. Trace backwards to find what condition isn't being met
+
+**See also:** Test Anti-Patterns section in TSD template
+
 ## Next Steps
 
 After creating Test Strategy:
@@ -107,6 +168,14 @@ After creating Test Strategy:
 
 ## See Also
 
-- `/sdlc-studio test-spec help` - Test Specs apply strategy to Stories
-- `/sdlc-studio prd help` - PRD provides context for strategy
-- `reference-testing.md` - Detailed test strategy workflows
+**REQUIRED for this workflow:**
+- `reference-testing.md` - Test strategy workflow details
+
+**Recommended:**
+- `/sdlc-studio prd help` - Product requirements (context)
+- `/sdlc-studio trd help` - Technical requirements (context)
+- `/sdlc-studio test-spec help` - Test specifications (downstream)
+
+**Optional (deep dives):**
+- `reference-test-best-practices.md` - Testing guidelines
+- `reference-outputs.md` - Output formats reference

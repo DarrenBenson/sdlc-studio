@@ -1,3 +1,9 @@
+<!--
+Template: Product Requirements Document
+File: sdlc-studio/prd.md
+Status values: See reference-outputs.md
+Related: help/prd.md, reference-prd.md
+-->
 # Product Requirements Document
 
 **Project:** {{project_name}}
