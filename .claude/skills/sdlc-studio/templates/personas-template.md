@@ -1,3 +1,9 @@
+<!--
+Template: User Personas
+File: sdlc-studio/personas.md
+Status values: See reference-outputs.md
+Related: help/persona.md, reference-persona.md
+-->
 # User Personas
 
 This document defines the user personas for the project. These personas are used when generating user stories to ensure features are designed with specific users in mind.

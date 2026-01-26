@@ -47,6 +47,7 @@ curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/insta
 This installs SDLC Studio globally, making it available in all your projects.
 
 **What this does:**
+
 1. Downloads the latest version from GitHub
 2. Creates `~/.claude/skills/` if it doesn't exist
 3. Installs the skill files
@@ -65,7 +66,7 @@ This creates `.claude/skills/sdlc-studio/` in your current directory.
 ### Option 3: Install a specific version
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash -s -- --version v1.1.0
+curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash -s -- --version v1.2.0
 ```
 
 ### Option 4: Manual installation
@@ -87,12 +88,14 @@ cp -r .claude/skills/sdlc-studio ~/.claude/skills/
 After installing, verify it works:
 
 1. **Start Claude Code** in any project directory:
+
    ```bash
    cd /path/to/any/project
    claude
    ```
 
 2. **Run the help command** inside Claude Code:
+
    ```
    /sdlc-studio help
    ```
@@ -100,6 +103,7 @@ After installing, verify it works:
    You should see a list of available commands.
 
 3. **Check the status**:
+
    ```
    /sdlc-studio status
    ```
@@ -236,17 +240,21 @@ tests/                        # Generated test code (in project root)
 The skill isn't installed correctly. Check:
 
 1. **Is the skill in the right place?**
+
    ```bash
    ls ~/.claude/skills/sdlc-studio/SKILL.md
    ```
+
    If this file doesn't exist, reinstall.
 
 2. **For project-level installs**, check:
+
    ```bash
    ls .claude/skills/sdlc-studio/SKILL.md
    ```
 
 3. **Try reinstalling**:
+
    ```bash
    curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash
    ```
@@ -254,6 +262,7 @@ The skill isn't installed correctly. Check:
 ### Installer fails to download
 
 Check your internet connection and that you can access GitHub:
+
 ```bash
 curl -I https://github.com/DarrenBenson/sdlc-studio
 ```
@@ -263,9 +272,11 @@ If you're behind a corporate proxy, you may need to configure proxy settings.
 ### Commands run but nothing happens
 
 Make sure you're running commands **inside Claude Code**, not in your regular terminal. Start Claude Code first:
+
 ```bash
 claude
 ```
+
 Then type the `/sdlc-studio` commands at the Claude Code prompt.
 
 ## Updating

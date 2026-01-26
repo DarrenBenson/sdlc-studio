@@ -1,3 +1,9 @@
+<!--
+Template: Technical Requirements Document
+File: sdlc-studio/trd.md
+Status values: See reference-outputs.md
+Related: help/trd.md, reference-trd.md
+-->
 # Technical Requirements Document
 
 **Project:** {{project_name}}

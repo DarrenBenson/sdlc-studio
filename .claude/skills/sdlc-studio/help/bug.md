@@ -283,6 +283,12 @@ When fixing a bug:
 
 ## See Also
 
-- `/sdlc-studio story help` - Stories affected by bugs
-- `/sdlc-studio code help` - Implementation workflow (includes test command)
-- `reference-bug.md` - Detailed bug workflow
+**REQUIRED for this workflow:**
+- `reference-bug.md` - Bug workflow details
+
+**Recommended:**
+- `/sdlc-studio story help` - User Stories (context)
+- `/sdlc-studio code fix help` - Code fix workflow (related)
+
+**Optional (deep dives):**
+- `reference-outputs.md` - Output formats reference

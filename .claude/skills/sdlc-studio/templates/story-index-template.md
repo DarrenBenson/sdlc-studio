@@ -1,3 +1,9 @@
+<!--
+Template: Story Index
+File: sdlc-studio/stories/_index.md
+Status values: See reference-outputs.md
+Related: help/story.md, reference-story.md
+-->
 # Story Registry
 
 This document provides an overview of all User Stories in the project.

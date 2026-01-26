@@ -1,3 +1,9 @@
+<!--
+Template: Bug Index
+File: sdlc-studio/bugs/_index.md
+Status values: See reference-outputs.md
+Related: help/bug.md, reference-bug.md
+-->
 # Bug Registry
 
 This document tracks all bugs in the project.

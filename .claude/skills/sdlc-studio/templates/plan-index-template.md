@@ -1,3 +1,9 @@
+<!--
+Template: Plan Index
+File: sdlc-studio/plans/_index.md
+Status values: See reference-outputs.md
+Related: help/code.md, reference-code.md
+-->
 # Implementation Plans Registry
 
 This document provides an overview of all implementation plans in the project.

@@ -1,3 +1,9 @@
+<!--
+Template: Epic
+File: sdlc-studio/epics/EP{NNNN}-{slug}.md
+Status values: See reference-outputs.md
+Related: help/epic.md, reference-epic.md
+-->
 # EP{{epic_id}}: {{epic_title}}
 
 > **Status:** {{status}}

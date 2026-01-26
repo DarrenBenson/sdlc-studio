@@ -204,7 +204,6 @@ tests/                        # Generated test code
 ## See Also
 
 - `SKILL.md` - Full skill documentation
-- `reference-philosophy.md` - Create vs Generate modes (read first)
-- `reference-*.md` - Domain-specific workflows (13 files)
-- `reference-code.md` - Code plan, implement, review workflows
-- `reference-testing.md` - Testing workflows
+- `reference.md` - Detailed workflows (PRD, Epic, Story, Persona)
+- `reference-code.md` - Detailed workflows (Code, Test)
+- `reference-testing.md` - Testing workflows (Test artifacts)

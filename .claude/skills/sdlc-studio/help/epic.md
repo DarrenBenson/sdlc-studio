@@ -138,7 +138,7 @@ Preview the implementation workflow for all stories in an epic.
 - **Stories to implement:** 5
 - **TDD stories:** 4
 - **Test-After stories:** 1
-- **Estimated phases:** 35 (7 per story)
+- **Estimated phases:** 40 (8 per story)
 
 ### Dependency Graph
 US0023 --+-- US0024 --+-- US0026 -- US0027
@@ -191,8 +191,13 @@ For each story in dependency order:
 
 ## See Also
 
-- `/sdlc-studio prd help` - Create PRD (prerequisite)
-- `/sdlc-studio story help` - Generate Stories from Epics
-- `/sdlc-studio story plan` - Plan workflow for single story
-- `/sdlc-studio test-plan help` - Generate Test Plans for Epics
-- `reference-epic.md` - Detailed epic workflows including workflow orchestration
+**REQUIRED for this workflow:**
+- `reference-epic.md` - Epic workflow details including workflow orchestration
+
+**Recommended:**
+- `/sdlc-studio prd help` - Product requirements (upstream)
+- `/sdlc-studio story help` - User Stories (downstream)
+
+**Optional (deep dives):**
+- `reference-outputs.md` - Output formats reference
+- `/sdlc-studio story plan help` - Plan workflow for single story

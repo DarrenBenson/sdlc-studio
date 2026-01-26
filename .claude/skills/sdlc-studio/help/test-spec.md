@@ -30,6 +30,16 @@ Generates consolidated test specifications that combine test plans, suites, case
 /sdlc-studio test-spec review             # Review and sync status
 ```
 
+## Coverage Targets
+
+| Level | Target |
+|-------|--------|
+| Unit | 90% line coverage |
+| Integration | 85% line coverage |
+| E2E | 100% feature coverage (one spec file per feature) |
+
+**Why 90%?** AI-assisted development requires higher quality gates. This target has been proven achievable.
+
 ## Output
 
 ```
@@ -53,13 +63,19 @@ Each TS file contains:
 
 When running `/sdlc-studio test-spec generate`, the skill:
 
-1. Scans `tests/` directory for test files
+1. Scans unified `tests/` directory for test files:
+   - `tests/unit/backend/` - Python/Go unit tests
+   - `tests/unit/frontend/` - TypeScript unit tests
+   - `tests/integration/` - Cross-component tests
+   - `tests/api/` - API endpoint tests
+   - `tests/e2e/` - End-to-end browser tests
+   - `tests/contracts/` - API contract tests
 2. Parses test structure based on language:
    - Python: `class TestX`, `def test_*`, `@pytest.mark.*`
    - JavaScript/TypeScript: `describe()`, `it()`, `test()`
    - Go: `func Test*(t *testing.T)`
 3. Extracts metadata from docstrings and comments
-4. Groups tests by feature/file
+4. Groups tests by feature/component
 5. Creates TS files with cases marked as "Automated: Yes"
 6. Cross-references with epics/stories if they exist
 
@@ -129,11 +145,51 @@ A test-spec can be marked **Ready** when:
 | No placeholders | No "verify result", "check response" assertions |
 | Test types | Appropriate for story (unit for logic, API for endpoints) |
 
+## E2E Feature Coverage
+
+**Target:** One spec file per user-visible feature area.
+
+| Feature Area | Spec File | Minimum Tests |
+|--------------|-----------|---------------|
+| Dashboard | `dashboard.spec.ts` | Happy path, error states, auth |
+| Authentication | `auth.spec.ts` | Login, logout, session expiry |
+| Settings | `settings.spec.ts` | View, edit, validation |
+
+**Naming convention:** `[feature].spec.ts` (or language equivalent)
+
+## Multi-Language Spec Examples
+
+Test specs are language-agnostic. Here's how they map to different frameworks:
+
+**Python (pytest):**
+```markdown
+### TC001: Valid login succeeds
+```
+→ `def test_valid_login_succeeds(self, client):`
+
+**TypeScript (vitest/jest):**
+```markdown
+### TC001: Valid login succeeds
+```
+→ `it('TC001: valid login succeeds', async () => { ... });`
+
+**Go:**
+```markdown
+### TC001: Valid login succeeds
+```
+→ `func TestValidLoginSucceeds(t *testing.T) { ... }`
+
 ## See Also
 
-- `/sdlc-studio tsd` - Define testing approach first
-- `/sdlc-studio test-automation` - Generate executable tests from specs
-- `/sdlc-studio status` - Check overall pipeline progress
-- `reference-testing.md` - Detailed test spec workflows
-- `reference-decisions.md` - Ready criteria, validation checkpoints
-- `reference-test-best-practices.md` - Test writing guidelines
+**REQUIRED for this workflow:**
+- `reference-testing.md` - Test specification workflow details
+
+**Recommended:**
+- `/sdlc-studio story help` - User Stories (upstream)
+- `/sdlc-studio test-automation help` - Test automation (downstream)
+
+**Optional (deep dives):**
+- `reference-test-best-practices.md` - Testing guidelines
+- `reference-test-e2e-guidelines.md` - E2E patterns and guidelines
+- `reference-decisions.md#test-spec-ready` - Ready status criteria
+- `reference-outputs.md` - Output formats reference

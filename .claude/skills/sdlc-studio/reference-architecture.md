@@ -10,7 +10,7 @@ Architecture decision guidance for TRD creation and review.
 
 Before choosing architecture patterns, identify what you're building.
 
-## Decision Tree
+## Decision Tree {#decision-tree}
 
 ```
 Q1: Does this serve a web frontend (browser UI)?
@@ -30,7 +30,7 @@ Q4: Multiple independently deployable services?
     Yes -> Add "Monorepo" modifier
 ```
 
-## Project Types
+## Project Types {#project-types}
 
 | Type | Description | Examples |
 |------|-------------|----------|
@@ -45,7 +45,7 @@ Q4: Multiple independently deployable services?
 
 # Architecture Pattern Guidance
 
-## Pattern-to-Project-Type Matrix
+## Pattern-to-Project-Type Matrix {#pattern-to-project-type-matrix}
 
 | Project Type | Default Pattern | When to Deviate |
 |--------------|-----------------|-----------------|
@@ -56,7 +56,7 @@ Q4: Multiple independently deployable services?
 | SDK/Library | Modular with clear API | (rarely deviate) |
 | Monorepo | Depends on service count | <3 services -> Modular Monolith |
 
-## Start Simple Rule
+## Start Simple Rule {#start-simple-rule}
 
 > **Default to monolith unless you have specific reasons not to.**
 >
@@ -67,7 +67,7 @@ Q4: Multiple independently deployable services?
 
 # Pattern Explanations
 
-## Monolith
+## Monolith {#monolith}
 
 **What it is:** Single deployable unit containing all application code.
 
@@ -94,7 +94,7 @@ Q4: Multiple independently deployable services?
 - ADR: Internal module boundaries
 - ADR: Database schema approach
 
-## Modular Monolith
+## Modular Monolith {#modular-monolith}
 
 **What it is:** Monolith with enforced module boundaries that could be split later.
 
@@ -119,7 +119,7 @@ Q4: Multiple independently deployable services?
 - ADR: Inter-module communication patterns
 - ADR: Data ownership per module
 
-## Microservices
+## Microservices {#microservices}
 
 **What it is:** Multiple independently deployable services communicating over network.
 
@@ -149,7 +149,7 @@ Q4: Multiple independently deployable services?
 - ADR: Service discovery approach
 - ADR: API gateway selection
 
-## Serverless
+## Serverless {#serverless}
 
 **What it is:** Functions as units of deployment, managed infrastructure.
 
@@ -183,7 +183,7 @@ Q4: Multiple independently deployable services?
 
 # Technology Selection
 
-## Language Selection Matrix
+## Language Selection Matrix {#language-selection-matrix}
 
 | Factor | Python | TypeScript | Go | Rust |
 |--------|--------|------------|-----|------|
@@ -195,7 +195,7 @@ Q4: Multiple independently deployable services?
 | CLI/DevOps | 2/3 | 1/3 | 3/3 | 2/3 |
 | Learning curve | Low | Low-Medium | Medium | High |
 
-### Recommendation by Project Type
+### Recommendation by Project Type {#language-recommendation}
 
 | Project Type | Primary Recommendation | Alternative |
 |--------------|----------------------|-------------|
@@ -206,14 +206,14 @@ Q4: Multiple independently deployable services?
 | High-performance | Go or Rust | - |
 | Data/ML | Python | - |
 
-### Weak Justifications to Avoid
+### Weak Justifications to Avoid {#weak-justifications}
 
 These are NOT sufficient rationale for technology choice:
 - "Team familiarity" (only valid if learning time is critical constraint)
 - "It's popular" (popularity doesn't mean fit)
 - "We've always used it" (evaluate fit for this project)
 
-### Strong Justifications
+### Strong Justifications {#strong-justifications}
 
 - "Existing codebase uses X, consistency reduces cognitive load"
 - "Ecosystem has required libraries (specific names)"
@@ -221,7 +221,7 @@ These are NOT sufficient rationale for technology choice:
 - "Type safety critical for domain complexity"
 - "Team has 3+ years production experience, timeline is aggressive"
 
-## Database Selection
+## Database Selection {#database-selection}
 
 | Question | Yes -> Consider | No -> Consider |
 |----------|-----------------|----------------|
@@ -232,7 +232,7 @@ These are NOT sufficient rationale for technology choice:
 | Complex queries/joins? | PostgreSQL | MongoDB |
 | Embedded/local-first? | SQLite, DuckDB | PostgreSQL |
 
-### Default Recommendation
+### Default Recommendation {#database-default}
 
 **PostgreSQL** for most production systems - it covers 90% of use cases with:
 - ACID compliance
@@ -247,7 +247,7 @@ These are NOT sufficient rationale for technology choice:
 - Development/testing
 - Embedded applications
 
-## API Style Selection
+## API Style Selection {#api-style-selection}
 
 | Style | Best For | Avoid When |
 |-------|----------|------------|
@@ -256,7 +256,7 @@ These are NOT sufficient rationale for technology choice:
 | gRPC | Service-to-service, high performance | Browser clients, public APIs |
 | WebSocket | Real-time bidirectional | Request-response patterns |
 
-### Default Recommendation
+### Default Recommendation {#database-default}
 
 **REST with OpenAPI 3.1** - it covers 90% of use cases with:
 - Excellent tooling (code generation, documentation)
@@ -270,7 +270,7 @@ These are NOT sufficient rationale for technology choice:
 
 For `trd generate`, assess existing architecture against best practices.
 
-## Pattern Detection
+## Pattern Detection {#pattern-detection}
 
 | Files Present | Indicates |
 |---------------|-----------|
@@ -283,7 +283,7 @@ For `trd generate`, assess existing architecture against best practices.
 | /cmd/ (Go) | CLI or multi-binary |
 | /internal/ (Go) | Private packages (good structure) |
 
-## Architecture Smell Detection
+## Architecture Smell Detection {#architecture-smell-detection}
 
 | Smell | Detection | Severity |
 |-------|-----------|----------|
@@ -298,17 +298,17 @@ For `trd generate`, assess existing architecture against best practices.
 | God Object | Single class/module with >1000 lines | Medium |
 | Missing Dependency Injection | Hard-coded dependencies throughout | Medium |
 
-## Assessment Output Format
+## Assessment Output Format {#assessment-output-format}
 
 When generating a TRD for brownfield projects, include:
 
 ```markdown
-## Architecture Assessment
+## Architecture Assessment {#architecture-assessment-section}
 
 **Detected Pattern:** {{pattern}}
 **Detected Project Type:** {{type}}
 
-### Alignment with Best Practices
+### Alignment with Best Practices {#alignment-best-practices}
 
 | Aspect | Finding | Status |
 |--------|---------|--------|
@@ -317,13 +317,13 @@ When generating a TRD for brownfield projects, include:
 | API standards | {{analysis}} | Good/Warning/Issue |
 | Database choice | {{analysis}} | Good/Warning/Issue |
 
-### Architecture Smells
+### Architecture Smells {#architecture-smells-table}
 
 | Smell | Found | Notes |
 |-------|-------|-------|
 | {{smell}} | Yes/No | {{notes}} |
 
-### Recommendations
+### Recommendations {#architecture-recommendations}
 
 1. [CRITICAL/REVIEW/INFO] {{recommendation}}
 ```
@@ -334,7 +334,7 @@ When generating a TRD for brownfield projects, include:
 
 For `trd create`, guide users to good defaults.
 
-## Recommendation Workflow
+## Recommendation Workflow {#recommendation-workflow}
 
 After project type classification, present recommended stack:
 
@@ -354,32 +354,32 @@ Would you like to:
 3. Learn more about alternatives
 ```
 
-## Key ADRs by Project Type
+## Key ADRs by Project Type {#key-adrs-by-project-type}
 
 Prompt users to document these decisions:
 
-### Web Application
+### Web Application {#adrs-web-application}
 - ADR: Frontend framework choice (React/Vue/Svelte)
 - ADR: Backend framework choice
 - ADR: Database selection
 - ADR: Authentication approach
 - ADR: State management (if complex)
 
-### API Backend
+### API Backend {#adrs-api-backend}
 - ADR: API versioning strategy
 - ADR: Authentication mechanism
 - ADR: Rate limiting approach
 - ADR: Database selection
 - ADR: Error response format
 
-### Mobile Backend
+### Mobile Backend {#adrs-mobile-backend}
 - ADR: API versioning for backwards compatibility
 - ADR: Push notification strategy
 - ADR: Offline sync strategy (if needed)
 - ADR: Authentication (consider refresh tokens)
 - ADR: API pagination strategy
 
-### SDK/Library
+### SDK/Library {#adrs-sdk-library}
 - ADR: Public API design principles
 - ADR: Versioning strategy (semver)
 - ADR: Dependency policy (minimal deps)
@@ -391,7 +391,7 @@ Prompt users to document these decisions:
 
 Link OpenAPI best practices into TRD workflow.
 
-## REST API Checklist
+## REST API Checklist {#rest-api-checklist}
 
 When using REST, verify:
 
@@ -405,7 +405,7 @@ When using REST, verify:
 - [ ] Rate limiting documented
 - [ ] CORS configuration documented
 
-## Error Response Standard
+## Error Response Standard {#error-response-standard}
 
 Recommend consistent error format:
 

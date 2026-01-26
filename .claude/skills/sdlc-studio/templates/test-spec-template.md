@@ -1,3 +1,9 @@
+<!--
+Template: Test Specification
+File: sdlc-studio/test-specs/TS{NNNN}-{slug}.md
+Status values: See reference-outputs.md
+Related: help/test-spec.md, reference-testing.md
+-->
 # TS{{spec_id}}: {{spec_title}}
 
 > **Status:** Draft

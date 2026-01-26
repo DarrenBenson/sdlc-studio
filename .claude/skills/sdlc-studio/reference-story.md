@@ -8,7 +8,7 @@ Detailed workflows for User Story generation, quality enforcement, and managemen
 
 # Story Workflows
 
-## /sdlc-studio story - Step by Step
+## /sdlc-studio story - Step by Step {#story-workflow}
 
 1. **Check Prerequisites**
    - Check sdlc-studio/personas.md exists
@@ -107,7 +107,7 @@ Detailed workflows for User Story generation, quality enforcement, and managemen
 
 ---
 
-## /sdlc-studio story review - Step by Step
+## /sdlc-studio story review - Step by Step {#story-review-workflow}
 
 1. **Load Stories**
    - Read all from sdlc-studio/stories/
@@ -146,7 +146,7 @@ Detailed workflows for User Story generation, quality enforcement, and managemen
 
 ---
 
-## /sdlc-studio story generate - Step by Step (Specification Extraction)
+## /sdlc-studio story generate - Step by Step (Specification Extraction) {#story-generate-workflow}
 
 **Purpose:** Extract detailed, testable specifications from existing code. The output must be detailed enough that another team could rebuild the system without seeing the original code.
 
@@ -252,9 +252,9 @@ Before marking a story as Ready, verify it meets minimum standards.
 
 > **Ready criteria:** `reference-decisions.md` → Story Ready
 
-## Quality Checklist
+## Quality Checklist {#quality-checklist}
 
-### API Stories
+### API Stories {#api-stories}
 
 | Requirement | Minimum | Check |
 |-------------|---------|-------|
@@ -264,7 +264,7 @@ Before marking a story as Ready, verify it meets minimum standards.
 | Error codes | All codes with messages | Edge case table complete |
 | Validation rules | Extracted from code | Not assumed or guessed |
 
-### All Stories
+### All Stories {#all-stories}
 
 - [ ] No ambiguous language ("handles errors", "returns data", "works correctly")
 - [ ] All Open Questions have target resolution dates
@@ -272,7 +272,7 @@ Before marking a story as Ready, verify it meets minimum standards.
 - [ ] Given/When/Then uses concrete values, not placeholders
 - [ ] Persona referenced with specific context (not just name)
 
-## Blocking Conditions
+## Blocking Conditions {#blocking-conditions}
 
 **Do NOT mark Ready if:**
 
@@ -284,13 +284,13 @@ Before marking a story as Ready, verify it meets minimum standards.
 | "TBD" still in acceptance criteria | Story is not actually ready |
 | No error scenarios documented | Happy-path-only specification |
 
-## Ambiguous Language Detection
+## Ambiguous Language Detection {#ambiguous-language-detection}
 
 > **Source of truth:** `reference-decisions.md` → Ambiguous Language Detection
 
 These phrases indicate specification gaps. Replace before marking Ready.
 
-## Quality Metrics
+## Quality Metrics {#quality-metrics}
 
 Track story quality across the project:
 
@@ -315,52 +315,52 @@ Detailed guidance for completing each section of the User Story template.
 
 ---
 
-## User Story Statement
+## User Story Statement {#user-story-statement}
 
-### Format
+### Format {#story-format}
 **As a** {persona name from personas.md}
 **I want** {specific capability or action}
 **So that** {concrete benefit or outcome}
 
-### Good Examples
+### Good Examples {#story-good-examples}
 - As a **new user**, I want **to reset my password via email** so that **I can regain access without contacting support**.
 - As a **team lead**, I want **to see my team's activity summary** so that **I can identify blockers in our standup**.
 
-### Bad Examples
+### Bad Examples {#story-bad-examples}
 - As a user, I want a button... (which user? button for what?)
 - As a developer, I want clean code... (not user-facing value)
 - As a user, I want the system to be fast... (not specific action)
 
 ---
 
-## Context
+## Context {#context}
 
-### Persona Reference
+### Persona Reference {#persona-reference}
 - Link to full persona in personas.md
 - Include relevant summary (goals, pain points)
 - Helps developers understand who they're building for
 
-### Background
+### Background {#story-background}
 - Why does this story exist?
 - What led to this need?
 - Business context not obvious from Epic
 
 ---
 
-## Acceptance Criteria
+## Acceptance Criteria {#acceptance-criteria-guide}
 
-### Given/When/Then Format
+### Given/When/Then Format {#given-when-then-format}
 - **Given**: precondition or context
 - **When**: action taken
 - **Then**: observable outcome
 
-### Guidelines
+### Guidelines {#ac-guidelines}
 - 3-5 criteria per story
 - Each criterion independently testable
 - Cover happy path AND key edge cases
 - Avoid implementation details
 
-### Good Example
+### Good Example {#ac-good-example}
 ```
 ### AC1: Successful password reset
 - **Given** user has a registered email address
@@ -368,7 +368,7 @@ Detailed guidance for completing each section of the User Story template.
 - **Then** they receive a reset link within 5 minutes
 ```
 
-### Bad Example
+### Bad Example {#ac-bad-example}
 ```
 ### AC1: Works correctly
 - **Given** user is logged in
@@ -378,28 +378,28 @@ Detailed guidance for completing each section of the User Story template.
 
 ---
 
-## Scope
+## Scope {#story-scope}
 
-### In Scope
+### In Scope {#story-in-scope}
 - What this specific story delivers
 - Boundaries prevent scope creep
 - Be precise (e.g., "Email reset only, not SMS")
 
-### Out of Scope
+### Out of Scope {#story-out-of-scope}
 - Related functionality NOT in this story
 - Explicitly state to prevent misunderstandings
 - Reference other stories if covered elsewhere
 
 ---
 
-## UI/UX Requirements
+## UI/UX Requirements {#ui-ux-requirements}
 
-### When to Include
+### When to Include {#when-to-include}
 - User-facing functionality
 - Visual or interaction requirements
 - Accessibility considerations
 
-### What to Include
+### What to Include {#what-to-include}
 - Wireframe or design references
 - Design system components to use
 - Behavioural specifications (animations, transitions)
@@ -407,33 +407,33 @@ Detailed guidance for completing each section of the User Story template.
 
 ---
 
-## Technical Notes
+## Technical Notes {#technical-notes}
 
-### Purpose
+### Purpose {#purpose}
 - Guide developers without prescribing solution
 - Share relevant context
 - Prevent known pitfalls
 
-### API Contracts
+### API Contracts {#api-contracts}
 - Expected request/response shapes
 - Error codes and messages
 - Authentication requirements
 
-### Data Requirements
+### Data Requirements {#data-requirements}
 - Schema changes needed
 - Data sources
 - Validation rules
 
 ---
 
-## Edge Cases & Error Handling
+## Edge Cases & Error Handling {#edge-cases-and-error-handling}
 
-### What to Include
+### What to Include {#what-to-include}
 - Unusual but valid scenarios
 - Error conditions
 - Recovery behaviours
 
-### Format
+### Format {#story-format}
 | Scenario | Expected Behaviour |
 |----------|-------------------|
 | User submits expired reset link | Show "Link expired" with option to request new |
@@ -441,27 +441,27 @@ Detailed guidance for completing each section of the User Story template.
 
 ---
 
-## Test Scenarios
+## Test Scenarios {#test-scenarios}
 
-### Purpose
+### Purpose {#purpose}
 - Key scenarios for QA
 - NOT exhaustive test cases
 - Helps estimate test effort
 
-### Guidelines
+### Guidelines {#ac-guidelines}
 - Focus on user journeys
 - Include happy path and key edge cases
 - Checkbox format for tracking
 
 ---
 
-## Definition of Done
+## Definition of Done {#definition-of-done}
 
-### Standard Reference
+### Standard Reference {#standard-reference}
 - Link to project-level DoD
 - Don't repeat standard items
 
-### Story-Specific Additions
+### Story-Specific Additions {#story-specific-additions}
 - Additional criteria for THIS story
 - Security review needed?
 - Performance benchmark required?
@@ -469,14 +469,14 @@ Detailed guidance for completing each section of the User Story template.
 
 ---
 
-## Estimation
+## Estimation {#estimation}
 
-### Story Points
+### Story Points {#story-points-guide}
 - Filled in during team refinement
 - Initially `{{TBD}}` from generation
 - Fibonacci sequence (1, 2, 3, 5, 8, 13)
 
-### Complexity
+### Complexity {#complexity}
 - Low: familiar patterns, no unknowns
 - Medium: some new elements, manageable risk
 - High: significant unknowns, new technology
@@ -488,7 +488,7 @@ Detailed guidance for completing each section of the User Story template.
 
 Automated workflows for complete story implementation.
 
-## /sdlc-studio story plan - Step by Step
+## /sdlc-studio story plan - Step by Step {#story-plan-workflow}
 
 1. **Validate Story Ready**
    - Load story file from sdlc-studio/stories/
@@ -556,13 +556,14 @@ Automated workflows for complete story implementation.
    | 5. Test | code test | Run tests |
    | 6. Verify | code verify | Verify against AC |
    | 7. Check | code check | Quality gates |
+   | 8. Review | status | Final status review |
 
    Ready to execute? Run: /sdlc-studio story implement --story US0024
    ```
 
 ---
 
-## /sdlc-studio story implement - Step by Step
+## /sdlc-studio story implement - Step by Step {#story-implement-workflow}
 
 1. **Load or Create Workflow State**
    - Check for existing workflow file in sdlc-studio/workflows/
@@ -581,7 +582,7 @@ Automated workflows for complete story implementation.
    - Otherwise: use approach from story plan
 
 4. **Execute Phases**
-   For each phase (1-7):
+   For each phase (1-8):
 
    a. **Update workflow state**: Phase → In Progress
 
@@ -640,9 +641,10 @@ Automated workflows for complete story implementation.
      | 2. Test Spec | Done | 7m |
      | 3. Tests | Done | 12m |
      | 4. Implement | Done | 15m |
-     | 5. Verify | Done | 2m |
-     | 6. Review | Done | 3m |
+     | 5. Test | Done | 2m |
+     | 6. Verify | Done | 2m |
      | 7. Check | Done | 1m |
+     | 8. Review | Done | 1m |
 
      ### Artifacts Created
      - sdlc-studio/plans/PL0024-action-queue-api.md
@@ -653,9 +655,9 @@ Automated workflows for complete story implementation.
 
 ---
 
-## Workflow Error Handling
+## Workflow Error Handling {#workflow-error-handling}
 
-### Phase-Specific Errors
+### Phase-Specific Errors {#phase-specific-errors}
 
 | Phase | Error | Cause | Resolution |
 |-------|-------|-------|------------|
@@ -664,11 +666,12 @@ Automated workflows for complete story implementation.
 | 2. Test Spec | AC coverage gap | AC not testable | Clarify AC in story |
 | 3. Tests | Generation fails | Test framework issue | Check framework config |
 | 4. Implement | Syntax error | Code bug | Fix code |
-| 5. Verify | Tests fail | Implementation bug | Fix implementation |
-| 6. Review | Issues found | AC not met | Address review issues |
+| 5. Test | Tests fail | Implementation bug | Fix implementation |
+| 6. Verify | AC not met | Missing functionality | Address verification issues |
 | 7. Check | Lint errors | Style violations | Run auto-fix or manual fix |
+| 8. Review | Status issues | Gaps in coverage/quality | Address before marking done |
 
-### Recovery Strategies
+### Recovery Strategies {#story-recovery-strategies}
 
 **Option 1: Fix and Resume**
 ```bash
@@ -701,4 +704,24 @@ rm sdlc-studio/workflows/WF0024-action-queue-api.md
 - `reference-decisions.md` - Ready criteria, dependency detection, decision guidance
 - `reference-code.md` - Code plan, implement, review workflows (includes workflow orchestration)
 - `reference-testing.md` - Test Strategy, Spec, Automation workflows
+- `reference-philosophy.md` - Create vs Generate philosophy
+
+---
+
+## Navigation {#navigation}
+
+**Prerequisites (load these first):**
+- `reference-epic.md` - Epic workflows (epics must exist before generating stories)
+
+**Related workflows:**
+- `reference-code.md` - Code planning (downstream - stories feed into code plans)
+- `reference-persona.md` - Personas (referenced in every story)
+
+**Cross-cutting concerns:**
+- `reference-decisions.md` - Decision guidance and Ready criteria
+- `reference-outputs.md#output-formats` - File formats and status values
+
+**Deep dives (optional):**
+- `reference-testing.md` - Test workflows (stories link to test specs)
+- `reference-bug.md` - Bug tracking (bugs link to stories)
 - `reference-philosophy.md` - Create vs Generate philosophy

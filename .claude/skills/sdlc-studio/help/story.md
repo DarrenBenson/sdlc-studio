@@ -305,6 +305,7 @@ Reason: API story with >5 edge cases, clear AC
 | 5. Test | code test | Run tests |
 | 6. Verify | code verify | Verify against AC |
 | 7. Check | code check | Quality gates |
+| 8. Review | status | Final status review |
 
 Ready to execute? Run: /sdlc-studio story implement --story US0024
 ```
@@ -324,7 +325,7 @@ Execute the full implementation workflow for a story.
 | Flag | Description |
 |------|-------------|
 | `--story US000X` | Target story (required) |
-| `--from-phase N` | Resume from specific phase (1-7) |
+| `--from-phase N` | Resume from specific phase (1-8) |
 | `--tdd` | Force TDD mode |
 | `--no-tdd` | Force Test-After mode |
 
@@ -359,10 +360,15 @@ Creates `sdlc-studio/workflows/WF{NNNN}-{story-slug}.md` to track progress.
 
 ## See Also
 
-- `reference-philosophy.md` - **Read first.** Create vs Generate philosophy
-- `reference-decisions.md` - Ready criteria, dependency detection, decision guidance
-- `reference-story.md` - Detailed story workflows including workflow orchestration
-- `/sdlc-studio epic help` - Generate Epics (prerequisite)
-- `/sdlc-studio epic plan` - Plan workflow for entire epic
-- `/sdlc-studio persona help` - Define Personas (prerequisite)
-- `/sdlc-studio test-spec help` - Generate Test Specs from Stories
+**REQUIRED for this workflow:**
+- `reference-story.md` - Story workflow details including workflow orchestration
+- `reference-decisions.md#story-ready` - Ready status criteria
+
+**Recommended:**
+- `/sdlc-studio epic help` - Generate Epics (upstream)
+- `/sdlc-studio code plan help` - Implementation planning (downstream)
+
+**Optional (deep dives):**
+- `reference-philosophy.md` - Create vs Generate philosophy
+- `reference-outputs.md` - Output formats reference
+- `/sdlc-studio epic plan help` - Plan workflow for entire epic

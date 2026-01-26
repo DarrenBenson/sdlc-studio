@@ -8,7 +8,7 @@ Detailed workflows for User Persona creation and management.
 
 # Persona Workflows
 
-## /sdlc-studio persona - Step by Step
+## /sdlc-studio persona - Step by Step {#persona-workflow}
 
 1. **Check Existing**
    - Check if sdlc-studio/personas.md exists
@@ -40,7 +40,7 @@ Detailed workflows for User Persona creation and management.
 
 ---
 
-## /sdlc-studio persona generate - Step by Step
+## /sdlc-studio persona generate - Step by Step {#persona-generate-workflow}
 
 1. **Analyse Codebase**
    Use Task tool with Explore agent:
@@ -73,7 +73,7 @@ Detailed workflows for User Persona creation and management.
 
 ---
 
-## /sdlc-studio persona review - Step by Step
+## /sdlc-studio persona review - Step by Step {#persona-review-workflow}
 
 1. **Read Existing**
    - Load sdlc-studio/personas.md
@@ -103,54 +103,54 @@ Guidance for creating effective user personas.
 
 ---
 
-## Persona Structure
+## Persona Structure {#persona-structure}
 
-### Required Fields
+### Required Fields {#required-fields}
 - **Name**: Memorable, humanising (e.g., "Power User Pat")
 - **Role**: Job title or function
 - **Technical Proficiency**: Novice / Intermediate / Advanced / Expert
 - **Primary Goal**: One sentence, what they want to achieve
 
-### Background
+### Background {#background}
 - 2-3 sentences about who this person is
 - Context that affects how they use the product
 - NOT a biography
 
-### Needs & Motivations
+### Needs & Motivations {#needs-and-motivations}
 - What drives their behaviour?
 - What are they trying to accomplish?
 - Link to product features
 
-### Pain Points
+### Pain Points {#pain-points}
 - Current frustrations
 - Problems with existing solutions
 - Opportunities for your product
 
-### Typical Tasks
+### Typical Tasks {#typical-tasks}
 - What do they actually DO?
 - Helps generate realistic user stories
 - Prioritise common over rare tasks
 
-### Quote
+### Quote {#quote}
 - Representative mindset
 - Captures their perspective
 - Humanises the persona
 
 ---
 
-## Best Practices
+## Best Practices {#best-practices}
 
-### Number of Personas
+### Number of Personas {#number-of-personas}
 - 3-5 is usually sufficient
 - Too few: missing perspectives
 - Too many: dilutes focus
 
-### Validation
+### Validation {#validation}
 - Based on research, not assumptions
 - Interview actual users if possible
 - Update as you learn more
 
-### Usage
+### Usage {#usage}
 - Reference in every user story
 - Guides feature prioritisation
 - Helps resolve design debates
@@ -164,3 +164,21 @@ Guidance for creating effective user personas.
 - `reference-trd.md` - TRD workflows
 - `reference-story.md` - Story workflows (personas used here)
 - `reference-decisions.md` - Ready criteria
+
+---
+
+## Navigation {#navigation}
+
+**Prerequisites (load these first):**
+- `reference-philosophy.md#create-mode` OR `reference-philosophy.md#generate-mode` - Understanding modes
+
+**Related workflows:**
+- `reference-prd.md` - Product Requirements (upstream - provides context for personas)
+- `reference-story.md` - User Stories (downstream - personas referenced in every story)
+
+**Cross-cutting concerns:**
+- `reference-decisions.md` - Decision guidance and Ready criteria
+- `reference-outputs.md#output-formats` - File formats and status values
+
+**Deep dives (optional):**
+- `reference-epic.md` - Epic workflows (personas used for scoping)

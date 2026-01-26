@@ -4,9 +4,9 @@ Detailed workflows for code planning, review, and quality checks.
 
 ---
 
-# Detailed Workflows
+# Detailed Workflows {#detailed-workflows}
 
-## /sdlc-studio code plan - Step by Step
+## /sdlc-studio code plan - Step by Step {#code-plan-workflow}
 
 1. **Check Prerequisites**
    Verify stories exist:
@@ -32,34 +32,14 @@ Detailed workflows for code planning, review, and quality checks.
    > **Detection table:** `reference-testing.md` → Detect Language
 
 4. **Load Best Practices**
-   Read relevant best practices from `best-practices/`:
-   - `{language}-rules.md` for standards checklist
-   - `{language}-examples.md` when writing code (loaded on demand)
+   Read relevant best practices from `~/.claude/best-practices/`:
+   - `python.md` for Python
+   - `typescript.md` for TypeScript
+   - `go.md` for Go
+   - `rust.md` for Rust
+   - Language-specific patterns and anti-patterns
 
-   Supported languages:
-   - Python, TypeScript, JavaScript, Go, Rust, C#, PHP
-
-5. **Explore Codebase**
-   Use Task tool with Explore agent to understand:
-   - Existing architecture patterns
-   - Similar implementations to reference
-   - Files likely to be modified
-   - Testing conventions
-
-6. **Generate Implementation Plan**
-   Use sequential thinking to plan implementation:
-   ```
-   Use mcp__sequential-thinking__sequentialthinking to:
-   1. Analyse each acceptance criterion
-   2. Identify implementation phases
-   3. Break into concrete steps with file changes
-   4. Map edge cases to handling strategies (see step 6b)
-   5. Plan test coverage
-   6. Identify risks and dependencies
-   7. Determine TDD vs Test-After recommendation
-   ```
-
-6b. **Enforce Edge Case Coverage (MANDATORY)**
+5. **Enforce Edge Case Coverage (MANDATORY)** {#edge-case-coverage}
 
    Every edge case from the Story MUST have a handling strategy:
 
@@ -85,73 +65,46 @@ Detailed workflows for code planning, review, and quality checks.
    | 2 | Network timeout        | Retry 3x with exponential backoff | Phase 2 |
    ```
 
-6c. **Enforce Scope Completeness (MANDATORY)**
+6. **Explore Codebase**
+   Use Task tool with Explore agent to understand:
+   - Existing architecture patterns
+   - Similar implementations to reference
+   - Files likely to be modified
+   - Testing conventions
 
-   **A plan MUST deliver ALL story requirements.** Never defer in-scope work to "future stories".
+7. **Generate Implementation Plan**
+   Use sequential thinking to plan implementation:
+   ```
+   Use mcp__sequential-thinking__sequentialthinking to:
+   1. Analyse each acceptance criterion
+   2. Identify implementation phases
+   3. Break into concrete steps with file changes
+   4. Map edge cases to handling strategies (validated in step 5)
+   5. Plan test coverage
+   6. Identify risks and dependencies
+   7. Determine TDD vs Test-After recommendation
+   ```
 
-   a) Extract ALL items from Story's "In Scope" section
-   b) Extract ALL acceptance criteria (full requirement, not partial)
-   c) Check for UI/UX Requirements section - if present, UI work is required
-   d) For each in-scope item and AC, identify the implementation phase that addresses it:
-
-      ```markdown
-      ## Scope Coverage
-
-      | Requirement | Source | Implementation Phase | Status |
-      |-------------|--------|---------------------|--------|
-      | Settings API endpoint | In Scope | Phase 1 | Planned |
-      | Settings UI panel | In Scope | Phase 2 | Planned |
-      | View current rate | AC1 | Phase 1 + Phase 2 | Planned |
-      | Update rate via settings page | AC2 | Phase 1 + Phase 2 | Planned |
-      ```
-
-   e) Validate completeness:
-      ```
-      In-scope items: N
-      Acceptance criteria: M
-      Total requirements: N + M
-      Planned: N + M (must equal total)
-      Deferred: 0 (must be zero)
-      ```
-
-   f) **Blocking conditions** - the plan CANNOT be written if:
-      - Any in-scope item lacks an implementation phase
-      - Any AC is only partially addressed (e.g., backend-only when UI is in scope)
-      - UI mockups exist but no frontend phase is planned
-      - Plan contains phrases like "future story", "handled separately", "out of scope for this plan"
-
-   g) If a Story's scope is too large for one plan, the Story should be split - not the plan.
-
-   **Anti-patterns to reject:**
-   - "This is backend-only - frontend will be handled separately" ❌
-   - "Dashboard integration will be done in a future story" ❌
-   - "UI work is out of scope for this plan" ❌
-
-   **Correct approach:**
-   - If Story has UI in scope → Plan includes frontend phase
-   - If Story has API in scope → Plan includes backend phase
-   - If Story has both → Plan includes both phases
-
-7. **Write Plan File**
+8. **Write Plan File**
    - Use template from `templates/plan-template.md`
    - Output to `sdlc-studio/plans/PL{NNNN}-{slug}.md`
    - Assign next available plan ID
 
-8. **Update Plan Index**
+9. **Update Plan Index**
    - Create or update `sdlc-studio/plans/_index.md`
    - Use template from `templates/plan-index-template.md`
 
-9. **Update Story Status**
-   Edit story file to change status:
-   ```
-   > **Status:** Draft  →  > **Status:** Planned
-   ```
-   or
-   ```
-   > **Status:** Ready  →  > **Status:** Planned
-   ```
+10. **Update Story Status**
+    Edit story file to change status:
+    ```
+    > **Status:** Draft  →  > **Status:** Planned
+    ```
+    or
+    ```
+    > **Status:** Ready  →  > **Status:** Planned
+    ```
 
-10. **Display Summary**
+11. **Display Summary**
     Output to console:
     - Plan ID and file path
     - Story being planned
@@ -161,7 +114,7 @@ Detailed workflows for code planning, review, and quality checks.
 
 ---
 
-## /sdlc-studio code implement - Step by Step
+## /sdlc-studio code implement - Step by Step {#code-implementation-workflow}
 
 **CRITICAL REQUIREMENT: Complete ALL plan phases.**
 
@@ -205,9 +158,10 @@ If you encounter uncertainty during implementation:
 
    **This step is mandatory before writing any code.**
 
-   a) Read the relevant best practice guides from `best-practices/`:
-      - `{language}-rules.md` for standards checklist
-      - `{language}-examples.md` for code patterns
+   a) Read the relevant best practice guide:
+      - Python: `~/.claude/best-practices/python.md`
+      - TypeScript: `~/.claude/best-practices/typescript.md`
+      - Go: `~/.claude/best-practices/go.md`
 
    b) Query Context7 for each external library in the plan's "Library Documentation" section:
       ```
@@ -336,7 +290,7 @@ If you encounter uncertainty during implementation:
 
 ---
 
-## /sdlc-studio code verify - Step by Step
+## /sdlc-studio code verify - Step by Step {#code-verify-workflow}
 
 1. **Select Story**
    - If `--story US0001` specified: use that story
@@ -420,7 +374,7 @@ If you encounter uncertainty during implementation:
 
 ---
 
-## /sdlc-studio code check - Step by Step
+## /sdlc-studio code check - Step by Step {#code-check-workflow}
 
 1. **Detect Language**
    Same detection as code plan (see step 3 above).
@@ -485,7 +439,7 @@ If you encounter uncertainty during implementation:
 
 ---
 
-## /sdlc-studio code test - Step by Step
+## /sdlc-studio code test - Step by Step {#code-test-workflow}
 
 1. **Parse Arguments**
    | Argument | Effect |
@@ -610,7 +564,7 @@ If you encounter uncertainty during implementation:
 
 ---
 
-# TDD vs Test-After
+# TDD vs Test-After {#tdd-vs-test-after}
 
 > **Source of truth:** `reference-decisions.md` → TDD vs Test-After Decision Tree
 
@@ -618,7 +572,7 @@ For the complete decision tree, conditions for TDD vs Test-After, and override f
 
 ---
 
-# Status Update Flow
+# Status Update Flow {#status-update-flow}
 
 ```
 Draft/Ready  ──[code plan]──▶  Planned
@@ -650,41 +604,43 @@ Draft/Ready  ──[code plan]──▶  Planned
 
 ---
 
-# Best Practices Integration
+# Best Practices Integration {#best-practices-integration}
 
-Load from `best-practices/` directory within the skill.
+## Python Projects {#python-projects}
 
-## Loading Pattern
+Load from `~/.claude/best-practices/python.md`:
+- Type hints required
+- Docstrings for public functions
+- Ruff formatting
+- pytest conventions
 
-1. **During Planning:** Load `{language}-rules.md` for standards checklist
-2. **During Implementation:** Load `{language}-examples.md` for code patterns
-3. **During Review:** Verify against anti-patterns in rules file
+## TypeScript Projects {#typescript-projects}
 
-## Supported Languages
+Load from `~/.claude/best-practices/typescript.md`:
+- Strict mode enabled
+- ESLint + Prettier
+- Jest/Vitest patterns
+- Error handling
 
-| Language | Rules File | Examples File |
-|----------|------------|---------------|
-| Python | `python-rules.md` | `python-examples.md` |
-| TypeScript | `typescript-rules.md` | `typescript-examples.md` |
-| JavaScript | `javascript-rules.md` | `javascript-examples.md` |
-| Go | `go-rules.md` | `go-examples.md` |
-| Rust | `rust-rules.md` | `rust-examples.md` |
-| C# | `csharp-rules.md` | `csharp-examples.md` |
-| PHP | `php-rules.md` | `php-examples.md` |
+## Go Projects {#go-projects}
 
-## Technology Guides
+Load from `~/.claude/best-practices/go.md`:
+- Error wrapping
+- Table-driven tests
+- go fmt compliance
 
-For non-language-specific guidance:
-- `architecture.md` - SDLC architecture patterns
-- `docker.md` - Container best practices
-- `openapi.md` - API design standards
-- `script.md` - Script structure (Bash/Python)
+## Rust Projects {#rust-projects}
+
+Load from `~/.claude/best-practices/rust.md`:
+- Clippy compliance
+- Error handling with Result
+- Documentation comments
 
 ---
 
-# Error Handling
+# Error Handling {#error-handling}
 
-## Code Plan Errors
+## Code Plan Errors {#code-plan-errors}
 
 | Condition | Action |
 |-----------|--------|
@@ -693,13 +649,8 @@ For non-language-specific guidance:
 | Story not found (--story) | Report error, list available stories |
 | Epic not found (--epic) | Report error, list available epics |
 | Unknown language | Ask user to specify framework |
-| In-scope item not planned | BLOCKING: List unplanned items, cannot write plan |
-| AC partially addressed | BLOCKING: List ACs missing coverage, cannot write plan |
-| UI mockups exist but no frontend phase | BLOCKING: Add frontend phase or split story |
-| Plan defers work to "future story" | BLOCKING: Rewrite plan to cover all requirements |
-| Story too large for one plan | Recommend splitting story, do not create partial plan |
 
-## Code Implement Errors
+## Code Implement Errors {#code-implement-errors}
 
 | Condition | Action |
 |-----------|--------|
@@ -714,7 +665,7 @@ For non-language-specific guidance:
 | Manual verification fails | Fix code, do not mark implementation complete |
 | Invented API fields | Check actual API response, update types to match reality |
 
-## Code Review Errors
+## Code Review Errors {#code-review-errors}
 
 | Condition | Action |
 |-----------|--------|
@@ -722,7 +673,7 @@ For non-language-specific guidance:
 | Story not found | Report error, list available stories |
 | No implementation found | Report AC as FAILED with "Not found" |
 
-## Code Check Errors
+## Code Check Errors {#code-check-errors}
 
 | Condition | Action |
 |-----------|--------|
@@ -730,7 +681,7 @@ For non-language-specific guidance:
 | No config found | Use default config |
 | Linter fails | Report errors to user |
 
-## Test Errors
+## Test Errors {#test-errors}
 
 | Condition | Action |
 |-----------|--------|
@@ -740,7 +691,7 @@ For non-language-specific guidance:
 
 ---
 
-# Workflow Orchestration
+# Workflow Orchestration {#workflow-orchestration}
 
 > **Source of truth:** `reference-story.md` and `reference-epic.md`
 
@@ -759,3 +710,24 @@ For automated story and epic workflows:
 - `reference-philosophy.md` - Create vs Generate philosophy
 - `reference-test-best-practices.md` - Test generation pitfalls and validation
 - `reference-test-e2e-guidelines.md` - E2E and mocking patterns
+
+---
+
+## Navigation {#navigation}
+
+**Prerequisites (load these first):**
+- `reference-story.md` - User Stories (must exist and be Ready before code planning)
+- `reference-decisions.md#story-ready` - Ready criteria for stories
+
+**Related workflows:**
+- `reference-testing.md` - Test workflows (parallel - tests accompany code)
+- `reference-test-best-practices.md` - Test quality guidelines
+- `reference-test-e2e-guidelines.md` - E2E testing patterns
+
+**Cross-cutting concerns:**
+- `reference-decisions.md` - Decision guidance and Ready criteria
+- `reference-outputs.md#output-formats` - File formats and status values
+
+**Deep dives (optional):**
+- `reference-trd.md` - Technical architecture context
+- `reference-philosophy.md` - Create vs Generate philosophy

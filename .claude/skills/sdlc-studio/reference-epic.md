@@ -8,7 +8,7 @@ Detailed workflows for Epic generation and management.
 
 # Epic Workflows
 
-## /sdlc-studio epic - Step by Step
+## /sdlc-studio epic - Step by Step {#epic-workflow}
 
 1. **Check Prerequisites**
    - Verify PRD exists at sdlc-studio/prd.md
@@ -51,7 +51,7 @@ Detailed workflows for Epic generation and management.
 
 ---
 
-## /sdlc-studio epic review - Step by Step
+## /sdlc-studio epic review - Step by Step {#epic-review-workflow}
 
 1. **Load Epics**
    - Read all from sdlc-studio/epics/
@@ -98,33 +98,33 @@ Detailed guidance for completing each section of the Epic template.
 
 ---
 
-## Summary
+## Summary {#summary}
 
-### What to Include
+### What to Include {#summary-what-to-include}
 - 2-3 sentences describing what this Epic delivers
 - Written for someone unfamiliar with the project
 - Focus on user value, not technical implementation
 
-### What to Avoid
+### What to Avoid {#summary-what-to-avoid}
 - Technical jargon without explanation
 - Implementation details (save for stories)
 - Vague statements like "improve the system"
 
 ---
 
-## Business Context
+## Business Context {#business-context}
 
-### Problem Statement
+### Problem Statement {#problem-statement}
 - Extract from PRD's Problem Statement
 - Focus on the specific aspect this Epic addresses
 - Reference PRD section for traceability
 
-### Value Proposition
+### Value Proposition {#value-proposition}
 - What happens if we DO this?
 - What happens if we DON'T?
 - Quantify where possible
 
-### Success Metrics
+### Success Metrics {#success-metrics}
 - Must be measurable
 - Include baseline (current state) even if "N/A"
 - Specify how measurement will occur
@@ -132,67 +132,67 @@ Detailed guidance for completing each section of the Epic template.
 
 ---
 
-## Scope
+## Scope {#scope}
 
-### In Scope
+### In Scope {#in-scope}
 - Be specific about what's included
 - List features, not implementation details
 - Helps prevent scope creep
 
-### Out of Scope
+### Out of Scope {#out-of-scope}
 - Explicitly state exclusions
 - Include brief rationale (helps prevent arguments later)
 - Can reference "future Epic" if planned
 
-### Affected Personas
+### Affected Personas {#affected-personas}
 - Link to personas.md
 - Describe HOW this Epic affects each persona
 - Helps prioritise and validate stories
 
 ---
 
-## Acceptance Criteria (Epic Level)
+## Acceptance Criteria (Epic Level) {#acceptance-criteria}
 
-### Format
+### Format {#ac-format}
 - High-level, observable outcomes
 - Use checkboxes for tracking
 - NOT detailed Given/When/Then (save for stories)
 
-### Good Examples
+### Good Examples {#ac-good-examples}
 - [ ] Users can complete registration without assistance
 - [ ] Dashboard loads within 2 seconds
 - [ ] All data is encrypted at rest
 
-### Bad Examples
+### Bad Examples {#ac-bad-examples}
 - [ ] Code is written (too vague)
 - [ ] Tests pass (that's DoD, not AC)
 - [ ] Given user clicks button, When... (too detailed for Epic)
 
 ---
 
-## Dependencies
+## Dependencies {#dependencies}
 
-### Blocked By
+### Blocked By {#blocked-by}
 - Other Epics that must complete first
 - External systems or APIs
 - Data migrations or infrastructure
 - Include impact notes (what happens if delayed)
 
-### Blocking
+### Blocking {#blocking}
 - What's waiting on this Epic
 - Helps prioritise and communicate urgency
 - Include consequence of delay
 
 ---
 
-## Risks & Assumptions
+## Risks & Assumptions {#risks-and-assumptions}
 
-### Assumptions
+### Assumptions {#assumptions}
 - What are we taking for granted?
 - Each should be validateable
 - If assumption proves wrong, impact should be assessed
 
-### Risks
+### Risks {#risks}
 - Technical risks (new technology, integration)
 - Business risks (user adoption, market timing)
 - Resource risks (availability, skills)
@@ -201,52 +201,52 @@ Detailed guidance for completing each section of the Epic template.
 
 ---
 
-## Technical Considerations
+## Technical Considerations {#technical-considerations}
 
-### Architecture Impact
+### Architecture Impact {#architecture-impact}
 - Does this require new services?
 - Significant refactoring needed?
 - Infrastructure changes?
 - Keep high-level (details in stories)
 
-### Integration Points
+### Integration Points {#integration-points}
 - External APIs and services
 - Internal system boundaries
 - Authentication/authorisation touchpoints
 
-### Data Considerations
+### Data Considerations {#data-considerations}
 - New data models
 - Migrations required
 - Data dependencies from other systems
 
 ---
 
-## Sizing & Effort
+## Sizing & Effort {#sizing-and-effort}
 
-### Story Points
+### Story Points {#story-points}
 - Relative sizing (1, 2, 3, 5, 8, 13, 21)
 - Based on complexity, not time
 - Compare to reference Epics
 
-### Story Count
+### Story Count {#story-count}
 - Estimate range (e.g., "8-12 stories")
 - Helps sprint planning
 - Refine after story generation
 
-### Complexity Factors
+### Complexity Factors {#complexity-factors}
 - What makes this harder than it looks?
 - New technology, integrations, unknowns
 - Helps justify sizing
 
 ---
 
-## Story Breakdown
+## Story Breakdown {#story-breakdown}
 
-### Before Story Generation
+### Before Story Generation {#before-story-generation}
 - Provisional titles only
 - Use `- [ ] US{{TBD}}: {Title}`
 
-### After Story Generation
+### After Story Generation {#after-story-generation}
 - Updated automatically by `/sdlc-studio story`
 - Links to actual story files
 - Status tracked via story files
@@ -258,7 +258,7 @@ Detailed guidance for completing each section of the Epic template.
 
 Automated workflows for implementing all stories in an epic.
 
-## /sdlc-studio epic plan - Step by Step
+## /sdlc-studio epic plan - Step by Step {#epic-plan-workflow}
 
 1. **Load Epic**
    - Read epic file from sdlc-studio/epics/
@@ -317,7 +317,7 @@ Automated workflows for implementing all stories in an epic.
    - **Stories to implement:** 5
    - **TDD stories:** 4
    - **Test-After stories:** 1
-   - **Estimated phases:** 35 (7 per story)
+   - **Estimated phases:** 40 (8 per story)
 
    ### Dependency Graph
    US0023 --+-- US0024 --+-- US0026 -- US0027
@@ -328,7 +328,7 @@ Automated workflows for implementing all stories in an epic.
 
 ---
 
-## /sdlc-studio epic implement - Step by Step
+## /sdlc-studio epic implement - Step by Step {#epic-implement-workflow}
 
 1. **Load or Create Epic Workflow State**
    - Check for existing workflow in sdlc-studio/workflows/
@@ -414,16 +414,16 @@ Automated workflows for implementing all stories in an epic.
 
 ---
 
-## Workflow Flags
+## Workflow Flags {#workflow-flags}
 
-### --story US000X
+### --story US000X {#flag-story}
 
 Start from specific story (useful for resume):
 ```bash
 /sdlc-studio epic implement --epic EP0004 --story US0024
 ```
 
-### --skip US000X
+### --skip US000X {#flag-skip}
 
 Skip a problematic story and continue:
 ```bash
@@ -432,9 +432,9 @@ Skip a problematic story and continue:
 
 ---
 
-## Epic Workflow Error Handling
+## Epic Workflow Error Handling {#epic-workflow-error-handling}
 
-### Error Types
+### Error Types {#error-types}
 
 | Error | Action |
 |-------|--------|
@@ -443,7 +443,7 @@ Skip a problematic story and continue:
 | All remaining stories blocked | Pause with blocker info |
 | Story not in Ready status | Skip with warning |
 
-### Recovery Strategies
+### Recovery Strategies {#recovery-strategies}
 
 **Option 1: Fix and Resume**
 ```bash
@@ -475,4 +475,23 @@ Skip a problematic story and continue:
 - `reference-decisions.md` - Ready criteria, decision guidance
 - `reference-code.md` - Code plan, implement, review workflows (includes workflow orchestration)
 - `reference-testing.md` - Test Strategy, Spec, Automation workflows
+- `reference-philosophy.md` - Create vs Generate philosophy
+
+---
+
+## Navigation {#navigation}
+
+**Prerequisites (load these first):**
+- `reference-prd.md` - Product Requirements (must exist before generating epics)
+
+**Related workflows:**
+- `reference-story.md` - User Stories (downstream - epics decompose into stories)
+- `reference-persona.md` - Personas (referenced when scoping epics)
+
+**Cross-cutting concerns:**
+- `reference-decisions.md` - Decision guidance and Ready criteria
+- `reference-outputs.md#output-formats` - File formats and status values
+
+**Deep dives (optional):**
+- `reference-code.md` - Code workflows (epic workflow orchestration)
 - `reference-philosophy.md` - Create vs Generate philosophy

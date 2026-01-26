@@ -1,142 +1,168 @@
 <!--
 Load: On /sdlc-studio status or /sdlc-studio status help
 Dependencies: SKILL.md (always loaded first)
-Related: None (standalone utility command)
+Related: reference-testing.md (status workflow details)
 -->
 
 # /sdlc-studio status
 
-Shows the current state of the specification pipeline and recommends next steps.
+Shows a visual dashboard of project health across three pillars: Requirements, Code, and Tests.
 
 ## Usage
 
 ```bash
-/sdlc-studio status              # Full status report
-/sdlc-studio status --testing    # Testing pipeline only
+/sdlc-studio status              # Full visual dashboard
+/sdlc-studio status --testing    # Testing pillar only
 /sdlc-studio status --workflows  # Workflow state only
 /sdlc-studio status --brief      # One-line summary
 ```
 
-## Output
+## Visual Dashboard
 
-The status command displays:
-
-1. **Requirements Pipeline Progress**
-   - PRD existence and feature count
-   - Personas defined
-   - Epics generated and their status
-   - Stories generated and their status
-
-2. **Testing Pipeline Progress**
-   - Test strategy defined
-   - Test specs generated per epic
-   - Automation coverage percentage
-
-3. **Workflow Progress**
-   - Active story workflows (in progress or paused)
-   - Active epic workflows (in progress or paused)
-   - Completed workflows (history)
-
-4. **Next Steps**
-   - Recommended commands to run
-   - Gaps that need attention
-   - Resume commands for paused workflows
-
-## Example Output
+The status command displays an at-a-glance dashboard:
 
 ```
-/sdlc-studio status
+══════════════════════════════════════════════════════════
+                      SDLC STATUS
+══════════════════════════════════════════════════════════
 
-Requirements: 80%
-  PRD         sdlc-studio/prd.md (14 features)
-  Personas    sdlc-studio/personas.md (4 personas)
-  Epics       3 epics (2 Done, 1 Draft)
-  Stories     12 stories (8 Done, 4 pending)
+📋 REQUIREMENTS (PRD Status)        ▓▓▓▓▓▓▓▓░░ 85%
+   ✅ PRD: 14 features defined
+   ✅ Personas: 4 documented
+   ⚠️ Epics: 2/3 Ready (1 Draft)
+   ✅ Stories: 12/12 Done
 
-Testing: 60%
-  Strategy    sdlc-studio/tsd.md
-  Specs       2/3 epics covered
-  Automation  22/135 cases (16%)
+💻 CODE (TRD Status)                ▓▓▓▓▓▓▓▓▓░ 90%
+   ✅ TRD: Architecture documented
+   ✅ Lint: Passing
+   ⚠️ TODOs: 5 remaining
 
+🧪 TESTS (TSD Status)               ▓▓▓▓▓▓▓▓▓░ 94%
+   ✅ Backend (1,027 tests):        ▓▓▓▓▓▓▓▓▓░ 90%
+   ✅ Frontend:                     ▓▓▓▓▓▓▓▓▓░ 90%
+   ✅ E2E (7/7 features):           ▓▓▓▓▓▓▓▓▓▓ 100%
+
+──────────────────────────────────────────────────────────
+📌 NEXT STEPS
+   1. ⚠️ Complete Epic EP0003 → unblocks 4 stories
+   2. ⚠️ Clear 5 TODOs in backend/
+   3. ❌ Add CI/CD pipeline (gap identified in TSD)
+══════════════════════════════════════════════════════════
+```
+
+## Three Pillars
+
+### 📋 Requirements (PRD Status)
+
+Tracks specification completeness:
+
+| Metric | Source | Calculation |
+|--------|--------|-------------|
+| PRD | `sdlc-studio/prd.md` | Exists + feature count |
+| Personas | `sdlc-studio/personas.md` | Count defined |
+| Epics | `sdlc-studio/epics/EP*.md` | % in Ready/Done status |
+| Stories | `sdlc-studio/stories/US*.md` | % in Done status |
+
+**Health score:** Weighted average (PRD 20%, Personas 10%, Epics 30%, Stories 40%)
+
+### 💻 Code (TRD Status)
+
+Tracks implementation quality:
+
+| Metric | Source | Calculation |
+|--------|--------|-------------|
+| TRD | `sdlc-studio/trd.md` | Exists |
+| Lint | `ruff check` / `npm run lint` | Pass/Fail |
+| TODOs | Grep source directories | Count of TODO/FIXME |
+| Type check | `mypy` / `tsc --noEmit` | Pass/Fail (if configured) |
+
+**Health score:** TRD exists 30%, Lint pass 35%, No critical TODOs 35%
+
+### 🧪 Tests (TSD Status)
+
+Tracks test coverage and quality:
+
+| Metric | Source | Calculation |
+|--------|--------|-------------|
+| TSD | `sdlc-studio/tsd.md` | Exists |
+| Backend coverage | `.coverage` or TSD | Actual % vs 90% target |
+| Frontend coverage | `coverage/lcov.info` or TSD | Actual % vs 90% target |
+| E2E features | `e2e/*.spec.ts` | Spec files vs features |
+
+**Health score:** TSD 10%, Backend coverage 30%, Frontend coverage 30%, E2E coverage 30%
+
+## Status Indicators
+
+| Indicator | Meaning |
+|-----------|---------|
+| ✅ | Complete / Passing / On target |
+| ⚠️ | Partial / Warning / Below target |
+| ❌ | Missing / Failing / Critical gap |
+
+## Progress Bars
+
+Progress bars use 10 characters, right-aligned with percentage:
+
+```
+▓▓▓▓▓▓▓▓▓▓ 100%
+▓▓▓▓▓▓▓▓▓░ 90%
+▓▓▓▓▓▓▓▓░░ 80%
+▓▓▓▓▓░░░░░ 50%
+░░░░░░░░░░ 0%
+```
+
+## Next Steps Prioritisation
+
+Next steps are prioritised by impact:
+
+1. **Missing foundations** - PRD, TRD, TSD not created
+2. **Blocking items** - Epics blocking stories, failing tests
+3. **Below-target coverage** - Coverage under 90%
+4. **Quality issues** - Lint failures, TODOs
+5. **Automation gaps** - Test specs without automation
+
+## Workflow Status
+
+With `--workflows` flag, shows active and paused workflows:
+
+```
 Workflows:
-  Active      1 story workflow (US0024 - phase 5/7)
+  Active      1 story workflow (US0024 - phase 5/8)
   Paused      0
   Completed   7 story workflows, 1 epic workflow
 
-Next steps:
-  /sdlc-studio story implement --story US0024   Full workflow (recommended)
-  /sdlc-studio code plan --story US0024         Step-by-step (manual control)
-
-Other actions:
-  /sdlc-studio test-spec --epic EP0003          Create test spec
-  /sdlc-studio test-automation                   Generate 113 pending tests
+Resume:
+  /sdlc-studio story implement --story US0024 --from-phase 5
 ```
 
-### With Paused Workflow
+## Brief Mode
+
+With `--brief` flag, shows single-line summary:
 
 ```
-/sdlc-studio status
-
-Requirements: 80%
-  ...
-
-Workflows:
-  Active      0
-  Paused      1 story workflow (US0024 - phase 5, tests failed)
-  Completed   6 story workflows
-
-Next steps:
-  /sdlc-studio story implement --story US0024 --from-phase 5   Resume paused workflow
+SDLC: 📋 85% | 💻 90% | 🧪 94% | Next: Complete EP0003
 ```
 
-### Workflows Only
+## Data Sources
 
-```
-/sdlc-studio status --workflows
+| Data | Primary Source | Fallback |
+|------|----------------|----------|
+| Coverage % | `.coverage`, `coverage/lcov.info` | Parse from TSD |
+| Lint status | Run lint command | Skip if no config |
+| TODO count | Grep source dirs | Show "unknown" |
+| Feature count | Parse PRD headings | Count "##" sections |
 
-Workflows:
-
-Story Workflows:
-  | Story | Status | Phase | Started | Notes |
-  |-------|--------|-------|---------|-------|
-  | US0024 | Paused | 5/7 | 10:30 | Tests failed |
-  | US0023 | Done | 7/7 | 09:15 | Completed 09:52 |
-  | US0022 | Done | 7/7 | Yesterday | Completed |
-
-Epic Workflows:
-  | Epic | Status | Stories | Started | Notes |
-  |------|--------|---------|---------|-------|
-  | EP0004 | In Progress | 2/5 | 09:15 | At US0024 |
-```
-
-## Detection Logic
-
-The status command checks:
-
-1. `sdlc-studio/prd.md` - PRD exists
-2. `sdlc-studio/personas.md` - Personas defined
-3. `sdlc-studio/epics/EP*.md` - Epic files and status
-4. `sdlc-studio/stories/US*.md` - Story files and status
-5. `sdlc-studio/tsd.md` - Test strategy exists
-6. `sdlc-studio/test-specs/TS*.md` - Test specs and case counts
-7. `tests/` directory - Actual test file count
-8. `sdlc-studio/workflows/WF*.md` - Workflow files and status
+**Note:** Coverage data may be stale if tests haven't run recently. The dashboard will indicate when coverage data is older than source file changes.
 
 ## When to Use
 
-- Start of a session to see what needs work
-- After generating new artifacts to verify progress
-- Before starting test automation to check coverage
-- When onboarding to understand project state
+- **Session start** - See what needs attention
+- **After changes** - Verify progress
+- **Before commit** - Check all pillars healthy
+- **Onboarding** - Understand project state
 
 ## See Also
 
-- `/sdlc-studio help` - Full command reference
 - `/sdlc-studio hint` - Single actionable next step
-- `/sdlc-studio story plan` - Preview story workflow
-- `/sdlc-studio story implement` - Full workflow (recommended)
-- `/sdlc-studio code plan` - Step-by-step (manual control)
-- `/sdlc-studio epic plan` - Preview epic workflow
-- `/sdlc-studio epic implement` - Execute epic workflow
-- `/sdlc-studio test-spec` - Generate test specifications
-- `/sdlc-studio test-automation` - Generate executable tests
+- `/sdlc-studio help` - Full command reference
+- `reference-testing.md` - Detailed status workflow
