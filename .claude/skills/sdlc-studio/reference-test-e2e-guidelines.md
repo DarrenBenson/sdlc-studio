@@ -2,7 +2,7 @@
 
 <!--
 Load: On test-automation, test-spec, or when generating integration/E2E tests
-Dependencies: reference-testing.md (main workflow)
+Dependencies: reference-test-automation.md (main workflow)
 Related: reference-test-best-practices.md (validation steps)
 -->
 
@@ -12,7 +12,7 @@ E2E tests have unique requirements that differ from unit/integration tests. This
 
 | Document | Content |
 |----------|---------|
-| `reference-testing.md` | Main test workflows (tsd, test-spec, test-automation) |
+| `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` | Test workflows |
 | `reference-test-best-practices.md` | Pre-generation checklist, validation steps, test writing guidelines |
 
 ---

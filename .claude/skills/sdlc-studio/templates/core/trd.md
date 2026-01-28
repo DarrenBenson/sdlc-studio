@@ -1,7 +1,8 @@
 <!--
-Template: Technical Requirements Document
+Template: Technical Requirements Document (Streamlined)
 File: sdlc-studio/trd.md
 Status values: See reference-outputs.md
+Modules: trd/c4-diagrams.md, trd/container-design.md, trd/adr.md
 Related: help/trd.md, reference-trd.md
 -->
 # Technical Requirements Document
@@ -29,22 +30,20 @@ Related: help/trd.md, reference-trd.md
 
 ---
 
-## 1.5 Project Classification
+## 2. Project Classification
 
 **Project Type:** {{web_application | api_backend | mobile_backend | desktop_application | sdk_library | monorepo}}
 
-**Classification Rationale:**
-{{Why this type was chosen - e.g., "Serves web frontend with React SPA"}}
+**Classification Rationale:** {{why this type was chosen}}
 
 **Architecture Implications:**
-Based on this project type:
 - **Default Pattern:** {{recommended pattern from reference-architecture.md}}
 - **Pattern Used:** {{actual choice}}
-- **Deviation Rationale:** {{if different from default, explain why - document as ADR}}
+- **Deviation Rationale:** {{if different, explain why}}
 
 ---
 
-## 2. Architecture Overview
+## 3. Architecture Overview
 
 ### System Context
 {{high-level description of how the system fits into its environment}}
@@ -60,14 +59,11 @@ Based on this project type:
 |-----------|---------------|------------|
 | {{component}} | {{what it does}} | {{stack}} |
 
-### Component Diagram
-```
-{{ASCII or mermaid diagram showing component relationships}}
-```
+> **C4 Diagrams:** Use `trd create --with-diagrams` or see `modules/trd/c4-diagrams.md`
 
 ---
 
-## 3. Technology Stack
+## 4. Technology Stack
 
 ### Core Technologies
 
@@ -91,7 +87,7 @@ Based on this project type:
 
 ---
 
-## 4. API Contracts
+## 5. API Contracts
 
 ### API Style
 {{REST | GraphQL | gRPC | WebSocket}}
@@ -99,34 +95,11 @@ Based on this project type:
 ### Authentication
 {{JWT | OAuth2 | API Key | Session}}
 
-**Flow:**
-```
-{{authentication flow diagram or description}}
-```
-
 ### Endpoints Overview
 
 | Method | Path | Description | Auth |
 |--------|------|-------------|------|
 | {{method}} | {{path}} | {{description}} | {{required?}} |
-
-### Request/Response Schemas
-
-#### {{Endpoint Name}}
-
-**Request:**
-```json
-{
-  "field": "type - description"
-}
-```
-
-**Response:**
-```json
-{
-  "field": "type - description"
-}
-```
 
 ### Error Response Format
 ```json
@@ -141,7 +114,7 @@ Based on this project type:
 
 ---
 
-## 5. Data Architecture
+## 6. Data Architecture
 
 ### Data Models
 
@@ -150,11 +123,6 @@ Based on this project type:
 | Field | Type | Constraints | Description |
 |-------|------|-------------|-------------|
 | {{field}} | {{type}} | {{constraints}} | {{description}} |
-
-### Relationships
-```
-{{ERD or relationship description}}
-```
 
 ### Storage Strategy
 
@@ -167,7 +135,7 @@ Based on this project type:
 
 ---
 
-## 6. Integration Patterns
+## 7. Integration Patterns
 
 ### External Services
 
@@ -178,19 +146,12 @@ Based on this project type:
 ### Event Architecture
 {{if applicable - event-driven patterns, message queues}}
 
-### Auth/Authz Model
-{{how authentication and authorisation work across components}}
-
 ---
 
-## 7. Infrastructure Approach
+## 8. Infrastructure
 
 ### Deployment Topology
 {{description of how the system is deployed}}
-
-```
-{{deployment diagram}}
-```
 
 ### Environment Strategy
 
@@ -201,14 +162,13 @@ Based on this project type:
 | Production | Live system | {{characteristics}} |
 
 ### Scaling Strategy
-{{horizontal/vertical scaling approach, auto-scaling rules}}
+{{horizontal/vertical scaling approach}}
 
-### Disaster Recovery
-{{backup strategy, RTO, RPO}}
+> **Container Design:** Use `trd create --with-containers` or see `modules/trd/container-design.md`
 
 ---
 
-## 8. Security Considerations
+## 9. Security Considerations
 
 ### Threat Model
 
@@ -224,21 +184,10 @@ Based on this project type:
 | Authorisation | {{approach}} |
 | Encryption at rest | {{approach}} |
 | Encryption in transit | {{approach}} |
-| Input validation | {{approach}} |
-| Logging & monitoring | {{approach}} |
-
-### Data Classification
-
-| Category | Examples | Handling |
-|----------|----------|----------|
-| Public | {{examples}} | {{handling}} |
-| Internal | {{examples}} | {{handling}} |
-| Confidential | {{examples}} | {{handling}} |
-| Restricted (PII) | {{examples}} | {{handling}} |
 
 ---
 
-## 9. Performance Requirements
+## 10. Performance Requirements
 
 ### Targets
 
@@ -249,68 +198,36 @@ Based on this project type:
 | Throughput | {{target}} | {{how measured}} |
 | Availability | {{target}} | {{how measured}} |
 
-### Capacity Planning
-{{expected load, growth projections}}
-
 ---
 
-## 9.5 Architecture Checklist
+## 11. Architecture Decision Records
 
-### Pattern Selection
-- [ ] Project type identified and documented
-- [ ] Default pattern evaluated against project needs
-- [ ] Deviation from default documented as ADR (if applicable)
-
-### Technology Decisions
-- [ ] Language selection justified (not just "familiarity")
-- [ ] Framework selection justified
-- [ ] Database selection justified
-- [ ] API style selection justified
-
-### Standards Compliance
-- [ ] OpenAPI documented (if REST)
-- [ ] Error responses standardised
-- [ ] Authentication approach documented
-- [ ] Pagination approach documented (if applicable)
-
-### Infrastructure
-- [ ] Deployment target identified
-- [ ] Scaling strategy documented
-- [ ] Disaster recovery documented
-
----
-
-## 10. Architecture Decision Records
+> See `modules/trd/adr.md` for ADR template
 
 ### ADR-001: {{Decision Title}}
 
 **Status:** Proposed | Accepted | Deprecated | Superseded
 
-**Context:** {{what is the issue we're seeing that motivates this decision}}
+**Context:** {{what is the issue we're seeing}}
 
 **Decision:** {{what is the change we're proposing}}
 
 **Consequences:**
 - Positive: {{benefits}}
 - Negative: {{drawbacks}}
-- Neutral: {{other effects}}
 
 ---
 
-## 11. Open Technical Questions
+## 12. Open Technical Questions
 
 - [ ] **Q:** {{question}}
   **Context:** {{why this matters}}
-  **Options:** {{if applicable}}
 
 ---
 
-## 12. Implementation Constraints
+## 13. Implementation Constraints
 
 ### Must Have
-- {{constraint}}
-
-### Should Have
 - {{constraint}}
 
 ### Won't Have (This Version)

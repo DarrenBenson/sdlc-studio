@@ -1,7 +1,7 @@
 <!--
 Load: On /sdlc-studio persona or /sdlc-studio persona help
 Dependencies: SKILL.md (always loaded first)
-Related: reference-persona.md (deep workflow), templates/personas-template.md
+Related: reference-persona.md (deep workflow), templates/core/personas.md
 -->
 
 # /sdlc-studio persona - User Personas
@@ -48,6 +48,8 @@ Interactive conversation to define user personas.
 
 ### generate
 Analyse codebase to infer user types.
+
+> **Source of truth:** `reference-philosophy.md#generate-mode` - explains the specification extraction philosophy.
 
 **What happens:**
 1. Searches for role/permission definitions

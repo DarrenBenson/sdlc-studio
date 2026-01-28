@@ -6,7 +6,7 @@ Guidelines addressing common pitfalls discovered during test automation runs.
 
 | Document | Content |
 |----------|---------|
-| `reference-testing.md` | Main test workflows (tsd, test-spec, test-automation) |
+| `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` | Test workflows |
 | `reference-test-validation.md` | Validation workflows, contract testing, advanced practices |
 | `reference-test-e2e-guidelines.md` | E2E mocking patterns, singleton/factory mocking, API contract tests |
 
@@ -404,7 +404,7 @@ def test_server_response_includes_uptime_seconds(client):
 
 | Document | Purpose |
 |----------|---------|
-| `reference-testing.md` | Main test workflows (tsd, test-spec, test-automation) |
+| `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` | Test workflows |
 | `reference-test-validation.md` | Validation workflows and advanced testing patterns |
 | `reference-test-e2e-guidelines.md` | E2E mocking patterns and strategies |
 | `reference-test-pitfalls.md` | Common testing mistakes to avoid |

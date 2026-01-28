@@ -1,7 +1,7 @@
 <!--
 Load: On /sdlc-studio test-spec or /sdlc-studio test-spec help
 Dependencies: SKILL.md (always loaded first)
-Related: reference-testing.md (deep workflow), reference-test-best-practices.md, templates/test-spec-template.md
+Related: reference-test-spec.md (deep workflow), reference-test-best-practices.md, templates/core/test-spec.md
 -->
 
 # /sdlc-studio test-spec
@@ -182,7 +182,7 @@ Test specs are language-agnostic. Here's how they map to different frameworks:
 ## See Also
 
 **REQUIRED for this workflow:**
-- `reference-testing.md` - Test specification workflow details
+- `reference-test-spec.md` - Test specification workflow details
 
 **Recommended:**
 - `/sdlc-studio story help` - User Stories (upstream)

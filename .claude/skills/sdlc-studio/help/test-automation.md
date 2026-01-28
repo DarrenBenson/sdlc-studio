@@ -1,7 +1,7 @@
 <!--
 Load: On /sdlc-studio test-automation or /sdlc-studio test-automation help
 Dependencies: SKILL.md (always loaded first)
-Related: reference-testing.md (deep workflow), reference-test-best-practices.md, reference-test-e2e-guidelines.md
+Related: reference-test-automation.md (deep workflow), reference-test-best-practices.md, reference-test-e2e-guidelines.md
 -->
 
 # /sdlc-studio test-automation
@@ -109,6 +109,8 @@ tests/
 6. Update TS file with "Automated: Yes" and file paths
 
 ## Pre-Generation Checklist
+
+> **Source of truth:** `reference-test-best-practices.md` - detailed patterns for edge case coverage and common pitfalls.
 
 Before generating E2E or integration tests, verify:
 
@@ -244,7 +246,7 @@ func TestResponseIncludesUptime(t *testing.T) {
 ## See Also
 
 **REQUIRED for this workflow:**
-- `reference-testing.md` - Test automation workflow details
+- `reference-test-automation.md` - Test automation workflow details
 - `reference-test-best-practices.md` - Test writing guidelines and pitfalls
 - `reference-test-validation.md` - Validation steps and post-generation checklist
 

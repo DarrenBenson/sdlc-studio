@@ -5,6 +5,67 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-01-28
+
+Major restructuring with modular template architecture, expanded command coverage, and British English standardisation.
+
+### Added
+
+- **Modular Template Architecture**: Reorganised templates into logical structure
+  - `templates/core/*.md` - Streamlined core templates (prd, trd, tsd, epic, story, plan, test-spec, bug, personas)
+  - `templates/indexes/*.md` - Index file templates
+  - `templates/modules/trd/*.md` - Optional TRD modules (c4-diagrams, container-design, adr)
+  - `templates/modules/tsd/*.md` - Optional TSD modules (contract-tests, performance-tests, security-tests)
+  - `templates/modules/epic/*.md` - Epic perspective modules (engineering-view, product-view, test-view)
+  - `templates/automation/*.template` - Test automation templates (pytest, jest, vitest, go, xunit, junit)
+  - `templates/workflows/*.md` - Workflow state templates
+  - `templates/reviews/*.md` - Review output templates
+- **New Reference Files**: Expanded documentation coverage
+  - `reference-config.md` - Project configuration options
+  - `reference-refactor.md` - Code refactoring workflows
+  - `reference-review.md` - Unified document review workflow
+  - `reference-upgrade.md` - Schema migration guidance
+  - `reference-test-spec.md` - Test specification workflows
+  - `reference-test-automation.md` - Test automation and environment workflows
+  - `reference-tsd.md` - Test Strategy Document workflows
+  - `reference-epic-sections.md` - Epic section deep dives
+  - `reference-story-sections.md` - Story section deep dives
+  - `reference-test-pitfalls.md` - Test generation anti-patterns
+- **New Help Files**: Command-specific guidance
+  - `help/init.md` - Project initialisation
+  - `help/refactor.md` - Refactoring commands
+  - `help/review.md` - Review commands
+  - `help/test-env.md` - Test environment setup
+  - `help/upgrade.md` - Schema upgrade guidance
+- **New Best Practice Guides**:
+  - `best-practices/postgresql.md` - PostgreSQL-specific patterns
+  - `best-practices/sql.md` - General SQL best practices
+- **Configuration System**: New project configuration
+  - `templates/config.yaml` - Project configuration template
+  - `templates/config-defaults.yaml` - Skill default settings
+  - `templates/version.yaml` - Version tracking template
+
+### Changed
+
+- **British English Standardisation**: Consistent spelling throughout
+  - `visualize` → `visualise` (command name)
+  - `License` → `Licence` (section headers)
+- **SKILL.md Streamlined**: Improved command reference and progressive loading guide
+- **Reference Files Updated**: Enhanced navigation sections and cross-references
+- **Help Files Consolidated**: Reduced duplication, improved See Also sections
+
+### Removed
+
+- **Legacy Templates**: Replaced with modular structure
+  - `templates/bug-template.md`, `templates/bug-index-template.md`
+  - `templates/epic-template.md`, `templates/epic-index-template.md`, `templates/epic-workflow-template.md`
+  - `templates/story-template.md`, `templates/story-index-template.md`
+  - `templates/plan-template.md`, `templates/plan-index-template.md`
+  - `templates/prd-template.md`, `templates/trd-template.md`, `templates/tsd-template.md`
+  - `templates/test-spec-template.md`, `templates/test-spec-index-template.md`
+  - `templates/personas-template.md`, `templates/workflow-template.md`
+- **Obsolete Reference File**: `reference-testing.md` (split into test-spec, test-automation, tsd)
+
 ## [1.2.0] - 2026-01-26
 
 Major documentation overhaul with comprehensive refactoring for improved navigation, progressive disclosure, and best practices compliance. Consolidated best practices structure and enhanced AI-assisted testing guidance.
@@ -174,6 +235,7 @@ Based on production testing and user feedback to improve workflow and output qua
 - **Templates**: 22 templates for all artifact types
 - **Best Practices**: 11 guides for quality artifacts
 
+[1.3.0]: https://github.com/DarrenBenson/sdlc-studio/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/DarrenBenson/sdlc-studio/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/DarrenBenson/sdlc-studio/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/DarrenBenson/sdlc-studio/releases/tag/v1.0.0

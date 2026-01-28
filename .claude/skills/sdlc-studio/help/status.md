@@ -1,7 +1,7 @@
 <!--
 Load: On /sdlc-studio status or /sdlc-studio status help
 Dependencies: SKILL.md (always loaded first)
-Related: reference-testing.md (status workflow details)
+Related: reference-tsd.md (status workflow details)
 -->
 
 # /sdlc-studio status
@@ -11,15 +11,41 @@ Shows a visual dashboard of project health across three pillars: Requirements, C
 ## Usage
 
 ```bash
-/sdlc-studio status              # Full visual dashboard
+/sdlc-studio status              # Quick status (uses cache if available)
+/sdlc-studio status --full       # Full refresh, updates cache
 /sdlc-studio status --testing    # Testing pillar only
 /sdlc-studio status --workflows  # Workflow state only
 /sdlc-studio status --brief      # One-line summary
 ```
 
+## Pre-flight: Version Check
+
+**First tool call:** `Glob: sdlc-studio/.version`
+
+| Result | Action |
+|--------|--------|
+| No sdlc-studio/ directory | Proceed (new project) |
+| .version exists, schema_version: 2 | Proceed |
+| .version missing or schema_version < 2 | Check `sdlc-studio/.local/upgrade-dismissed.json` |
+| └─ dismissed: true | Proceed |
+| └─ not dismissed | Prompt user (see below) |
+
+**Prompt if needed:**
+
+```
+question: "Project uses v1 format. Upgrade to v2?"
+header: "Upgrade"
+options:
+  - "Preview" → run upgrade --dry-run, then continue
+  - "Not now" → continue
+  - "Don't ask again" → write dismissal file, continue
+```
+
+**Output prefix:** Start response with `**Version:** v2 ✓` or `**Version:** v1 (reason)`
+
 ## Visual Dashboard
 
-The status command displays an at-a-glance dashboard:
+The status command displays an at-a-glance dashboard with four pillars:
 
 ```
 ══════════════════════════════════════════════════════════
@@ -42,15 +68,25 @@ The status command displays an at-a-glance dashboard:
    ✅ Frontend:                     ▓▓▓▓▓▓▓▓▓░ 90%
    ✅ E2E (7/7 features):           ▓▓▓▓▓▓▓▓▓▓ 100%
 
+🔍 REVIEWS                          ▓▓▓▓▓▓▓▓░░ 80%
+   ✅ PRD: Reviewed (2026-01-15)
+   ✅ TRD: Reviewed (2026-01-18)
+   ⚠️ EP0001: 3 stories changed since review
+   ⚠️ EP0002: 1 critical finding unaddressed
+   ✅ EP0003: Reviewed (2026-01-26)
+
 ──────────────────────────────────────────────────────────
 📌 NEXT STEPS
    1. ⚠️ Complete Epic EP0003 → unblocks 4 stories
    2. ⚠️ Clear 5 TODOs in backend/
-   3. ❌ Add CI/CD pipeline (gap identified in TSD)
+   3. ⚠️ Review EP0001 (stories changed)
+   4. ❌ Add CI/CD pipeline (gap identified in TSD)
+
+▶️ SUGGESTED: /sdlc-studio epic review --epic EP0001
 ══════════════════════════════════════════════════════════
 ```
 
-## Three Pillars
+## Four Pillars
 
 ### 📋 Requirements (PRD Status)
 
@@ -91,6 +127,47 @@ Tracks test coverage and quality:
 
 **Health score:** TSD 10%, Backend coverage 30%, Frontend coverage 30%, E2E coverage 30%
 
+### 🔍 Reviews
+
+Tracks review currency and findings:
+
+| Metric | Source | Calculation |
+|--------|--------|-------------|
+| PRD reviewed | `.local/review-state.json` | Has review, not modified since |
+| TRD reviewed | `.local/review-state.json` | Has review, not modified since |
+| TSD reviewed | `.local/review-state.json` | Has review, not modified since |
+| Epics current | `.local/review-state.json` | % of epics reviewed after last modification |
+| Stories current | `.local/review-state.json` | % of stories reviewed after last modification |
+| Open findings | `sdlc-studio/reviews/` | Unaddressed critical/important issues |
+
+**Health score calculation:**
+
+```text
+Review Health % =
+  PRD reviewed (10%)
+  + TRD reviewed (10%)
+  + TSD reviewed (10%)
+  + Epics with current reviews (40%)
+  + Stories with current reviews (30%)
+  × Stale penalty (0.9 if anything needs re-review)
+```
+
+**Stale detection:**
+
+An artifact needs re-review when:
+- Artifact file modified since last review
+- Code files modified since last review (stories)
+- No review exists
+
+**Findings indicators:**
+
+| Indicator | Meaning |
+|-----------|---------|
+| ✅ Reviewed (date) | Reviewed and current |
+| ⚠️ N stories changed | Stories modified since epic review |
+| ⚠️ N critical findings | Unaddressed critical issues |
+| ❌ Never reviewed | No review record exists |
+
 ## Status Indicators
 
 | Indicator | Meaning |
@@ -121,6 +198,23 @@ Next steps are prioritised by impact:
 4. **Quality issues** - Lint failures, TODOs
 5. **Automation gaps** - Test specs without automation
 
+## Suggested Command
+
+The dashboard includes a suggested `/sdlc-studio` command based on the highest-priority next step:
+
+| Next Step Type | Suggested Command |
+|----------------|-------------------|
+| Missing PRD | `/sdlc-studio prd create` or `prd generate` |
+| Missing TRD | `/sdlc-studio trd create` or `trd generate` |
+| Missing TSD | `/sdlc-studio tsd create` |
+| Epic incomplete | `/sdlc-studio epic review --epic {id}` |
+| Stories ready | `/sdlc-studio story implement --story {id}` |
+| Lint failures | `/sdlc-studio code review` |
+| Test failures | `/sdlc-studio test-spec review` |
+| Coverage gaps | `/sdlc-studio test-automation generate` |
+
+The command maps directly to the first item in NEXT STEPS. For detailed guidance, use `/sdlc-studio hint`.
+
 ## Workflow Status
 
 With `--workflows` flag, shows active and paused workflows:
@@ -140,7 +234,7 @@ Resume:
 With `--brief` flag, shows single-line summary:
 
 ```
-SDLC: 📋 85% | 💻 90% | 🧪 94% | Next: Complete EP0003
+SDLC: 📋 85% | 💻 90% | 🧪 94% | 🔍 80% | ▶️ /sdlc-studio epic review --epic EP0001
 ```
 
 ## Data Sources
@@ -161,8 +255,34 @@ SDLC: 📋 85% | 💻 90% | 🧪 94% | Next: Complete EP0003
 - **Before commit** - Check all pillars healthy
 - **Onboarding** - Understand project state
 
+## Caching
+
+For large projects, status uses cached results by default:
+
+| Mode | Behaviour |
+|------|-----------|
+| Default (quick) | Uses cached results if available, shows timestamp |
+| `--full` | Runs fresh analysis, updates cache |
+
+Cache location: `sdlc-studio/.local/status-cache.json`
+
+**When to use `--full`:**
+- After running tests or lint
+- After significant code changes
+- When cache is stale (more than a few hours old)
+
+**Quick mode still updates:**
+- PRD/TRD/TSD existence checks (fast)
+- Epic/Story status markers (fast file reads)
+
+**Quick mode caches:**
+- Lint results (slow command execution)
+- TODO counts (slow grep across codebase)
+- Coverage percentages (slow parsing)
+- Test counts (slow parsing)
+
 ## See Also
 
 - `/sdlc-studio hint` - Single actionable next step
 - `/sdlc-studio help` - Full command reference
-- `reference-testing.md` - Detailed status workflow
+- `reference-tsd.md` - Detailed status workflow

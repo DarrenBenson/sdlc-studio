@@ -441,4 +441,4 @@ Or RFC 7807 Problem Details:
 - `reference-prd.md, reference-trd.md, reference-persona.md` - TRD create/generate/update workflows
 - `best-practices/architecture.md` - Quick-reference patterns
 - `best-practices/openapi.md` - OpenAPI best practices
-- `templates/trd-template.md` - TRD template with architecture sections
+- `templates/core/trd.md` - TRD template with architecture sections

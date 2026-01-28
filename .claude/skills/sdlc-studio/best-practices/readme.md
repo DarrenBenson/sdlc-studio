@@ -65,9 +65,9 @@ Common commands or examples.
 
 How to contribute.
 
-## License
+## Licence
 
-License type.
+Licence type.
 ```
 
 ## Structure: Folder README

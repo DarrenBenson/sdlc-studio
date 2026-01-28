@@ -1,5 +1,5 @@
 <!--
-Template: Product Requirements Document
+Template: Product Requirements Document (Streamlined)
 File: sdlc-studio/prd.md
 Status values: See reference-outputs.md
 Related: help/prd.md, reference-prd.md
@@ -26,9 +26,6 @@ Related: help/prd.md, reference-prd.md
 
 ### Architecture Pattern
 {{architecture_pattern}}
-
-### Maturity Assessment
-{{maturity_level}}
 
 ---
 
@@ -63,9 +60,7 @@ Related: help/prd.md, reference-prd.md
 - [ ] {{criterion_3}}
 
 **Dependencies:** {{dependencies}}
-
 **Status:** {{feature_status}}
-
 **Confidence:** {{confidence_marker}}
 
 ---
@@ -97,14 +92,11 @@ Related: help/prd.md, reference-prd.md
 ### Availability
 {{availability_requirements}}
 
-### Error Handling
-{{error_handling_approach}}
-
 ---
 
 ## 6. AI/ML Specifications
 
-> Skip this section if not applicable.
+> Skip if not applicable.
 
 ### Models and Providers
 {{models_used}}
@@ -114,12 +106,6 @@ Related: help/prd.md, reference-prd.md
 
 ### Context Management
 {{context_management}}
-
-### Parameters and Settings
-{{model_parameters}}
-
-### Retry and Fallback Logic
-{{fallback_logic}}
 
 ---
 
@@ -134,9 +120,6 @@ Related: help/prd.md, reference-prd.md
 ### Storage Mechanisms
 {{storage_mechanisms}}
 
-### Data Flow
-{{data_flow_description}}
-
 ---
 
 ## 8. Integration Map
@@ -146,9 +129,6 @@ Related: help/prd.md, reference-prd.md
 
 ### Authentication Methods
 {{auth_methods}}
-
-### Webhooks and Events
-{{webhook_patterns}}
 
 ### Third-Party Dependencies
 {{third_party_deps}}
@@ -166,12 +146,9 @@ Related: help/prd.md, reference-prd.md
 ### Feature Flags
 {{feature_flags}}
 
-### Deployment Requirements
-{{deployment_requirements}}
-
 ---
 
-## 10. Test Coverage Analysis
+## 10. Quality Assessment
 
 ### Tested Functionality
 {{tested_features}}
@@ -179,82 +156,18 @@ Related: help/prd.md, reference-prd.md
 ### Untested Areas
 {{untested_areas}}
 
-### Test Patterns Used
-{{test_patterns}}
-
-### Quality Assessment
-{{quality_assessment}}
-
----
-
-## 11. Technical Debt Register
-
-### TODO/FIXME Items Found
+### Technical Debt
 {{todo_items}}
 
-### Inconsistent Patterns
-{{inconsistent_patterns}}
-
-### Deprecated Dependencies
-{{deprecated_deps}}
-
-### Security Concerns
-{{security_concerns}}
-
 ---
 
-## 12. Documentation Gaps
-
-### Undocumented Features
-{{undocumented_features}}
-
-### Missing Inline Comments
-{{missing_comments}}
-
-### Unclear Code Sections
-{{unclear_sections}}
-
----
-
-## 13. Recommendations
-
-### Critical Gaps
-{{critical_gaps}}
-
-### Suggested Improvements
-{{improvements}}
-
-### Security Hardening
-{{security_hardening}}
-
----
-
-## 14. Open Questions
+## 11. Open Questions
 
 {{open_questions}}
 
 ---
 
-## Appendix
-
-### A. File Tree Summary
-```
-{{file_tree}}
-```
-
-### B. Dependency List
-{{dependency_list}}
-
-### C. Environment Variable Reference
-{{env_reference}}
-
-### D. API Endpoint Catalogue
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| {{method}} | {{endpoint}} | {{description}} |
-
-### E. Changelog
+## Changelog
 
 | Date | Version | Changes |
 |------|---------|---------|
@@ -262,17 +175,6 @@ Related: help/prd.md, reference-prd.md
 
 ---
 
-## Confidence Markers Legend
-
-- **[HIGH]** - Clear from code, tests, or documentation
-- **[MEDIUM]** - Reasonable inference from patterns
-- **[LOW]** - Speculative, needs verification
-- **[UNKNOWN]** - Cannot determine
-
-## Status Legend
-
-- **Complete** - Fully implemented and tested
-- **Partial** - Partially implemented, some functionality missing
-- **Stubbed** - Interface exists but implementation incomplete
-- **Broken** - Was working, now failing
-- **Not Started** - Planned but not yet implemented
+> **Confidence Markers:** [HIGH] clear from code | [MEDIUM] inferred from patterns | [LOW] speculative
+>
+> **Status Values:** Complete | Partial | Stubbed | Broken | Not Started

@@ -18,6 +18,31 @@ Get a single actionable next step based on current pipeline state.
 
 Checks pipeline state in priority order and returns the first applicable action. Also detects blockers that may prevent progress.
 
+## Pre-flight: Version Check
+
+**First tool call:** `Glob: sdlc-studio/.version`
+
+| Result | Action |
+|--------|--------|
+| No sdlc-studio/ directory | Proceed (new project) |
+| .version exists, schema_version: 2 | Proceed |
+| .version missing or schema_version < 2 | Check `sdlc-studio/.local/upgrade-dismissed.json` |
+| └─ dismissed: true | Proceed |
+| └─ not dismissed | Prompt user (see below) |
+
+**Prompt if needed:**
+
+```
+question: "Project uses v1 format. Upgrade to v2?"
+header: "Upgrade"
+options:
+  - "Preview" → run upgrade --dry-run, then continue
+  - "Not now" → continue
+  - "Don't ask again" → write dismissal file, continue
+```
+
+**Output prefix:** Start response with `**Version:** v2 ✓` or `**Version:** v1 (reason)`
+
 ## Priority Logic
 
 | # | Condition | Suggested Action | Command |
@@ -88,10 +113,13 @@ When an issue prevents smooth progress:
 ```
 ## Pipeline Complete
 
-All stories are done. Consider:
-- `/sdlc-studio prd review` to check for new features
+All stories are done.
+**Run:** `/sdlc-studio prd review`
+**Why:** Check for new features or scope changes
+
+Also consider:
 - `/sdlc-studio test-spec review` to sync test coverage
-- Start a new epic or feature
+- `/sdlc-studio epic create` to start a new epic
 ```
 
 ## Blocker Detection
@@ -214,8 +242,11 @@ $ /sdlc-studio hint
 | Aspect | `hint` | `status` |
 |--------|--------|----------|
 | Output | Single next action | Full pipeline overview |
+| Suggested command | Yes, with explanation | Yes, based on top priority |
 | Detail | Minimal, actionable | Comprehensive |
 | Use case | "What do I do next?" | "What's the big picture?" |
+
+Both commands include a suggested `/sdlc-studio` command. The status command shows it at the end of the dashboard; hint provides more context about why that command is recommended.
 
 ## See Also
 

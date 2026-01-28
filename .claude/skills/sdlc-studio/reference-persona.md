@@ -31,7 +31,7 @@ Detailed workflows for User Persona creation and management.
    Recommend 3-5 personas.
 
 4. **Write Personas File**
-   - Use `templates/personas-template.md`
+   - Use `templates/core/personas.md`
    - Write to sdlc-studio/personas.md
 
 5. **Report**

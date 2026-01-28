@@ -7,7 +7,7 @@ Detailed validation workflows, contract testing, and advanced testing patterns.
 | Document | Content |
 |----------|---------|
 | `reference-test-best-practices.md` | Core practices, checklists, warnings, coverage targets |
-| `reference-testing.md` | Main test workflows (tsd, test-spec, test-automation) |
+| `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` | Test workflows |
 | `reference-test-e2e-guidelines.md` | E2E mocking patterns, singleton/factory mocking, API contract tests |
 
 ---
@@ -489,6 +489,6 @@ expect({
 | Document | Purpose |
 |----------|---------|
 | `reference-test-best-practices.md` | Core testing practices and checklist |
-| `reference-testing.md` | Main test workflows |
+| `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` | Test workflows |
 | `reference-test-e2e-guidelines.md` | E2E patterns and mocking strategies |
 | `reference-test-pitfalls.md` | Common testing mistakes to avoid |

@@ -96,7 +96,7 @@ After installing, verify it works:
 
 2. **Run the help command** inside Claude Code:
 
-   ```
+   ```text
    /sdlc-studio help
    ```
 
@@ -104,7 +104,7 @@ After installing, verify it works:
 
 3. **Check the status**:
 
-   ```
+   ```text
    /sdlc-studio status
    ```
 
@@ -116,7 +116,7 @@ Once installed, here's how to get started inside Claude Code:
 
 ### First time? Check the status
 
-```
+```text
 /sdlc-studio status
 ```
 
@@ -124,7 +124,7 @@ This shows what artifacts exist and suggests next steps.
 
 ### Don't know what to do next?
 
-```
+```text
 /sdlc-studio hint
 ```
 
@@ -132,7 +132,7 @@ This gives you a single, actionable next step based on your project's current st
 
 ### Starting a new project?
 
-```
+```text
 /sdlc-studio prd create
 ```
 
@@ -140,7 +140,7 @@ Claude will ask you questions about your project and create a Product Requiremen
 
 ### Have existing code?
 
-```
+```text
 /sdlc-studio prd generate
 ```
 
@@ -167,7 +167,7 @@ Claude analyses your codebase and creates a PRD based on what it finds.
 
 Follow this sequence to build from scratch:
 
-```
+```text
 /sdlc-studio prd create        # 1. Define what you're building
 /sdlc-studio trd create        # 2. Define technical approach
 /sdlc-studio persona           # 3. Define who will use it
@@ -183,7 +183,7 @@ Follow this sequence to build from scratch:
 
 Use `generate` to reverse-engineer documentation from code:
 
-```
+```text
 /sdlc-studio prd generate      # Analyse code, create PRD
 /sdlc-studio trd generate      # Document technical decisions
 /sdlc-studio persona generate  # Infer users from code
@@ -193,7 +193,7 @@ Use `generate` to reverse-engineer documentation from code:
 
 ### Daily Development
 
-```
+```text
 /sdlc-studio code plan         # Plan your changes
 /sdlc-studio code implement    # Make the changes
 /sdlc-studio code review       # Review what you built
@@ -204,7 +204,7 @@ Use `generate` to reverse-engineer documentation from code:
 
 SDLC Studio creates a `sdlc-studio/` directory in your project:
 
-```
+```text
 sdlc-studio/
   prd.md                      # Product Requirements Document
   trd.md                      # Technical Requirements Document
@@ -307,7 +307,7 @@ rm -rf .claude/skills/sdlc-studio
 
 Inside Claude Code:
 
-```
+```text
 /sdlc-studio help              # Show all commands
 /sdlc-studio prd help          # Help for PRD commands
 /sdlc-studio epic help         # Help for Epic commands

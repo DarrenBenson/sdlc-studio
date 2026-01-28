@@ -1,0 +1,49 @@
+# SDLC Studio Default Configuration
+# These are the skill defaults. Projects can override in sdlc-studio/.config.yaml
+# See reference-config.md for documentation
+
+# Schema version for upgrade compatibility
+schema_version: 2
+
+# Coverage targets for test strategy
+coverage:
+  unit: 90          # Target unit test coverage %
+  integration: 85   # Target integration coverage %
+  e2e: 100          # Target feature coverage % (100 = all features)
+
+# Story quality gates
+story_quality:
+  edge_cases:
+    api: 8          # Minimum edge cases for API stories
+    other: 5        # Minimum edge cases for non-API stories
+  test_scenarios:
+    api: 10         # Minimum test scenarios for API stories
+    ui: 8           # Minimum test scenarios for UI stories
+  sizing:
+    max_ac: 10      # Flag story if AC count exceeds this
+    max_points: 13  # Flag story if points exceed this
+    recommended_ac:
+      min: 3        # Recommended minimum AC per story
+      max: 5        # Recommended maximum AC per story
+
+# TDD trigger thresholds
+tdd:
+  edge_case_threshold: 5  # Use TDD if edge cases > this
+
+# E2E test limits
+e2e:
+  max_tests_per_spec: 50  # Split spec if tests exceed this
+
+# Epic configuration
+epic:
+  perspectives:
+    - engineering   # TRD-aligned
+    - product       # PRD-aligned
+    - test          # TSD-aligned
+
+# Review configuration
+review:
+  severity_levels:
+    - critical      # Must address before merge
+    - important     # Should address
+    - suggestion    # Consider addressing

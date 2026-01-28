@@ -1,7 +1,7 @@
 <!--
 Load: On /sdlc-studio bug or /sdlc-studio bug help
 Dependencies: SKILL.md (always loaded first)
-Related: reference-bug.md (deep workflow), templates/bug-template.md
+Related: reference-bug.md (deep workflow), templates/core/bug.md
 -->
 
 # /sdlc-studio bug - Bug Tracking
@@ -35,7 +35,7 @@ Create a new bug report with full traceability.
 1. Prompts for bug details (title, description, steps)
 2. Determines severity and priority
 3. Auto-detects affected stories/epics from description
-4. Creates bug file using `templates/bug-template.md`
+4. Creates bug file using `templates/core/bug.md`
 5. Updates `sdlc-studio/bugs/_index.md`
 6. Optionally adds "Known Issue" note to affected story
 

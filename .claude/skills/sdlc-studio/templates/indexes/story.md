@@ -1,12 +1,10 @@
 <!--
-Template: Story Index
+Template: Story Index (Streamlined)
 File: sdlc-studio/stories/_index.md
 Status values: See reference-outputs.md
 Related: help/story.md, reference-story.md
 -->
 # Story Registry
-
-This document provides an overview of all User Stories in the project.
 
 **Last Updated:** {{last_updated}}
 **Personas Reference:** [User Personas](../personas.md)
@@ -17,6 +15,7 @@ This document provides an overview of all User Stories in the project.
 |--------|-------|
 | Draft | {{draft_count}} |
 | Ready | {{ready_count}} |
+| Planned | {{planned_count}} |
 | In Progress | {{in_progress_count}} |
 | Review | {{review_count}} |
 | Done | {{done_count}} |
@@ -36,34 +35,7 @@ This document provides an overview of all User Stories in the project.
 |----|-------|------|--------|--------|---------|
 | [US{{story_id}}](US{{story_id}}-{{story_slug}}.md) | {{story_title}} | [EP{{epic_id}}](../epics/EP{{epic_id}}-{{epic_slug}}.md) | {{status}} | {{points}} | {{persona}} |
 
-## By Status
-
-### In Progress
-
-{{in_progress_stories}}
-
-### Ready
-
-{{ready_stories}}
-
-### Draft
-
-{{draft_stories}}
-
-### Done
-
-{{done_stories}}
-
-## Estimation Summary
-
-| Metric | Value |
-|--------|-------|
-| Total Story Points | {{total_points}} |
-| Estimated Stories | {{estimated_count}} |
-| Unestimated Stories | {{unestimated_count}} |
-| Average Points/Story | {{avg_points}} |
-
 ## Notes
 
-- Stories are numbered globally (US0001, US0002, etc.) to allow movement between Epics
-- Story points should be assigned during team refinement, not by AI generation
+- Stories are numbered globally (US0001, US0002, etc.)
+- Story points should be assigned during team refinement

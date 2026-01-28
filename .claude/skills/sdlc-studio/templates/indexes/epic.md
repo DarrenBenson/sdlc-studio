@@ -1,12 +1,10 @@
 <!--
-Template: Epic Index
+Template: Epic Index (Streamlined)
 File: sdlc-studio/epics/_index.md
 Status values: See reference-outputs.md
 Related: help/epic.md, reference-epic.md
 -->
 # Epic Registry
-
-This document provides an overview of all Epics in the project.
 
 **Last Updated:** {{last_updated}}
 **PRD Reference:** [Product Requirements Document](../prd.md)
@@ -16,7 +14,7 @@ This document provides an overview of all Epics in the project.
 | Status | Count |
 |--------|-------|
 | Draft | {{draft_count}} |
-| Ready for Review | {{review_count}} |
+| Ready | {{ready_count}} |
 | Approved | {{approved_count}} |
 | In Progress | {{in_progress_count}} |
 | Done | {{done_count}} |
@@ -28,32 +26,7 @@ This document provides an overview of all Epics in the project.
 |----|-------|--------|-------|---------|--------|
 | [EP{{epic_id}}](EP{{epic_id}}-{{epic_slug}}.md) | {{epic_title}} | {{status}} | {{owner}} | {{story_count}} | {{target}} |
 
-## By Status
-
-### In Progress
-
-{{in_progress_epics}}
-
-### Ready for Review
-
-{{review_epics}}
-
-### Draft
-
-{{draft_epics}}
-
-### Done
-
-{{done_epics}}
-
-## Dependency Graph
-
-```
-{{dependency_graph}}
-```
-
 ## Notes
 
 - Epics are numbered globally (EP0001, EP0002, etc.)
-- Stories are tracked separately in [Story Registry](../stories/_index.md)
-- For PRD traceability, see the PRD Reference link in each Epic
+- Stories are tracked in [Story Registry](../stories/_index.md)

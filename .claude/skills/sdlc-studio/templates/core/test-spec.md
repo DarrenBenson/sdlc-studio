@@ -1,8 +1,8 @@
 <!--
-Template: Test Specification
+Template: Test Specification (Streamlined)
 File: sdlc-studio/test-specs/TS{NNNN}-{slug}.md
 Status values: See reference-outputs.md
-Related: help/test-spec.md, reference-testing.md
+Related: help/test-spec.md, reference-test-spec.md
 -->
 # TS{{spec_id}}: {{spec_title}}
 
@@ -27,27 +27,13 @@ Related: help/test-spec.md, reference-testing.md
 
 ### AC Coverage Matrix
 
-Maps each Story AC to test cases ensuring complete coverage.
-
 | Story | AC | Description | Test Cases | Status |
 |-------|-----|-------------|------------|--------|
 {{#each ac_coverage}}
 | {{story}} | {{ac}} | {{description}} | {{test_cases}} | {{status}} |
 {{/each}}
 
-**Coverage Summary:**
-- Total ACs: {{total_ac_count}}
-- Covered: {{covered_ac_count}}
-- Uncovered: {{uncovered_ac_count}}
-
-{{#if uncovered_acs}}
-**UNCOVERED ACs (blocking):**
-{{#each uncovered_acs}}
-- {{story}}/{{ac}}: {{description}}
-{{/each}}
-
-> **Warning:** Test spec cannot be marked Ready until all ACs have at least one test case.
-{{/if}}
+**Coverage:** {{covered_count}}/{{total_count}} ACs covered
 
 ### Test Types Required
 
@@ -55,8 +41,9 @@ Maps each Story AC to test cases ensuring complete coverage.
 |------|----------|-----------|
 | Unit | {{unit_required}} | {{unit_rationale}} |
 | Integration | {{integration_required}} | {{integration_rationale}} |
-| API | {{api_required}} | {{api_rationale}} |
 | E2E | {{e2e_required}} | {{e2e_rationale}} |
+
+---
 
 ## Environment
 
@@ -73,44 +60,29 @@ Maps each Story AC to test cases ensuring complete coverage.
 {{#each test_cases}}
 ### TC{{id}}: {{title}}
 
-**Type:** {{type}}
-**Priority:** {{priority}}
-**Story:** {{story_ref}}
-**Automated:** No
-
-#### Scenario
+**Type:** {{type}} | **Priority:** {{priority}} | **Story:** {{story_ref}}
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Given {{given}} | {{given_result}} |
-| 2 | When {{when}} | {{when_result}} |
-| 3 | Then {{then}} | {{then_result}} |
+| Given | {{given}} | {{given_result}} |
+| When | {{when}} | {{when_result}} |
+| Then | {{then}} | {{then_result}} |
 
-#### Test Data
-
-```yaml
-input:
-  {{input_data}}
-expected:
-  {{expected_data}}
-```
-
-#### Assertions
-
+**Assertions:**
 {{#each assertions}}
 - [ ] {{this}}
 {{/each}}
 
 ---
-
 {{/each}}
 
 ## Fixtures
 
 ```yaml
-# Shared test data for this spec
 {{fixtures_yaml}}
 ```
+
+---
 
 ## Automation Status
 
@@ -120,6 +92,8 @@ expected:
 | TC{{id}} | {{title}} | Pending | - |
 {{/each}}
 
+---
+
 ## Traceability
 
 | Artefact | Reference |
@@ -128,18 +102,10 @@ expected:
 | Epic | [EP{{epic_id}}](../../epics/EP{{epic_id}}-{{epic_slug}}.md) |
 | TSD | [sdlc-studio/tsd.md](../tsd.md) |
 
-## Lessons Learned
-
-<!-- Optional section. Document issues discovered during testing that should inform future test design. -->
-<!-- Example:
-### E2E Mocking Blindspot
-**Issue:** E2E tests with mocked data passed but production showed "--" for a field.
-**Root Cause:** Backend schema omitted the field even though DB stored it.
-**Prevention:** Add API contract tests that verify backend returns all frontend-expected fields.
--->
+---
 
 ## Revision History
 
 | Date | Author | Change |
 |------|--------|--------|
-| {{created_date}} | {{author}} | Initial spec generation |
+| {{created_date}} | {{author}} | Initial spec |

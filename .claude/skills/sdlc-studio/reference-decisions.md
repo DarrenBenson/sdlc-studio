@@ -11,7 +11,7 @@ Cross-stage decision guidance, impact analysis, and validation checkpoints.
 | `reference-prd.md, reference-trd.md, reference-persona.md` | PRD, TRD, Persona workflows |
 | `reference-epic.md, reference-story.md, reference-bug.md` | Epic, Story, Bug workflows |
 | `reference-code.md` | Code plan, implement, review workflows |
-| `reference-testing.md` | Test Strategy, Spec, Automation workflows |
+| `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` | Test workflows |
 
 ---
 
@@ -599,5 +599,5 @@ Example:
 - `reference-prd.md, reference-trd.md, reference-persona.md` - PRD, TRD, Persona workflows
 - `reference-epic.md, reference-story.md, reference-bug.md` - Epic, Story, Bug workflows
 - `reference-code.md` - Code plan, implement, review workflows (includes workflow orchestration)
-- `reference-testing.md` - Test Strategy, Spec, Automation workflows
+- `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` - Test workflows
 - `reference-philosophy.md` - Create vs Generate philosophy

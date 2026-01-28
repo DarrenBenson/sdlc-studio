@@ -1,7 +1,7 @@
 <!--
 Load: On /sdlc-studio story or /sdlc-studio story help
 Dependencies: SKILL.md (always loaded first)
-Related: reference-story.md (deep workflow), reference-philosophy.md (create vs generate), templates/story-template.md
+Related: reference-story.md (deep workflow), reference-philosophy.md (create vs generate), templates/core/story.md
 -->
 
 # /sdlc-studio story - User Stories
@@ -113,6 +113,16 @@ Review Story status based on codebase implementation.
 - Never auto-assign Done for brownfield
 - User confirms Done only after test validation
 
+### Story Cohesion Review (Automatic)
+
+After story generation, a cohesion review validates coverage of epic requirements.
+
+**What it checks:** AC coverage, edge case distribution, dependency cycles, story sizing, overlaps.
+
+**Auto-fixes:** Adds missing edge cases, flags sizing issues, reports gaps as open questions.
+
+> **Full details:** See `reference-story.md#story-cohesion-review` for checks, output format, and auto-fix behaviour.
+
 **Story sections:**
 - User Story (As a... I want... So that...)
 - Context (persona reference, background)
@@ -143,37 +153,9 @@ Review Story status based on codebase implementation.
 
 ## Acceptance Criteria Quality
 
-### Bad (documentation-style)
-```
-### AC1: Search works
-- Given a user searches
-- When they enter a query
-- Then results are returned
-```
+> **Source of truth:** See `reference-philosophy.md#ac-implementation-ready` for bad vs good AC patterns with detailed examples.
 
-### Good (specification-style)
-```
-### AC1: Search returns ranked results by relevance
-- Given the index contains engrams with slugs "alice-smith", "bob-jones", "alice-wong"
-- When I GET /search?q=alice
-- Then I receive results with alice-smith and alice-wong
-- And alice-smith has match_score >= 0.9 (exact slug match)
-- And results are sorted by match_score descending
-- And each result includes slug, name, role, category, match_score, matched_field
-```
-
-The good version can be implemented by someone who has never seen the original code.
-
-## Edge Case Documentation
-
-For generate mode, edge cases must be exhaustive:
-
-| Scenario | Input | Expected Output |
-|----------|-------|-----------------|
-| Query too short | `q=a` | 422, `{"detail": "ensure this value has at least 2 characters"}` |
-| No matches | `q=zzzznotfound` | 200, `[]` |
-| Special characters | `q=o'brien` | 200, matches o'brien |
-| Limit exceeded | `limit=500` | Silently capped at 100 |
+**Key principle:** Good AC can be implemented by someone who has never seen the original code. Avoid documentation-style ("search works") in favour of specification-style (exact inputs, outputs, values).
 
 ## Test-Spec Timing: TDD vs Test-After
 
@@ -193,22 +175,11 @@ story generate → test-spec → test-automation → test (MUST PASS)
 
 Only mark stories as Done when tests pass against the existing implementation.
 
-## Story Format
+## Formats
 
-```markdown
-**As a** {persona name}
-**I want** {capability}
-**So that** {benefit}
-```
+**Story:** `As a {persona} I want {capability} So that {benefit}`
 
-## Acceptance Criteria Format
-
-```markdown
-### AC1: {name}
-- **Given** {precondition}
-- **When** {action}
-- **Then** {expected outcome}
-```
+**AC:** `Given {precondition} When {action} Then {outcome}`
 
 ## Next Steps
 
@@ -249,19 +220,9 @@ A story can be marked **Ready** when:
 
 ## Cross-Story Dependency Detection
 
-Story generation automatically detects dependencies:
+Story generation automatically detects schema, API, and service dependencies between stories. Warnings are shown if dependent stories are not Done.
 
-| Detection | Source |
-|-----------|--------|
-| Schema dependencies | Config schemas, data models defined in other stories |
-| API dependencies | Endpoints consumed that are defined in other stories |
-| Service dependencies | Functions/services defined in other stories |
-
-**Warning system:** If a dependent story is not Done, the story template shows a warning:
-```
-> **Warning:** This story depends on stories that are not Done:
-> - US0013: Slack Notifications (In Progress)
-```
+> **Details:** See `reference-story.md#story-workflow` step 3b for detection logic and warning format.
 
 ## Workflow Commands
 
@@ -276,39 +237,13 @@ Preview the full implementation workflow for a story.
 ```
 
 **What happens:**
-1. Validates story is Ready (all AC in Given/When/Then, no TBD, edge cases complete)
-2. Checks story dependencies (warns if blocking stories not Done)
-3. Determines TDD vs Test-After approach (using decision tree from reference-decisions.md)
-4. Creates implementation plan (code plan)
-5. Creates test specification (test-spec)
-6. Shows execution preview with phases
+1. Validates story Ready criteria
+2. Checks dependencies (warns if not Done)
+3. Determines TDD vs Test-After approach
+4. Creates plan and test spec
+5. Shows 8-phase execution preview
 
-**Output:**
-```
-## Story Workflow Plan: US0024
-
-**Story:** Action Queue API Endpoint
-**Status:** Ready
-**Dependencies:** US0023 (Done)
-
-### Approach: TDD
-Reason: API story with >5 edge cases, clear AC
-
-### Execution Phases
-
-| Phase | Command | Artifacts |
-|-------|---------|-----------|
-| 1. Plan | code plan | PL0024-action-queue-api.md |
-| 2. Test Spec | test-spec | TS0024-action-queue-api.md |
-| 3. Tests | test-automation | tests/test_action_queue_api.py |
-| 4. Implement | code implement | src/api/action_queue.py |
-| 5. Test | code test | Run tests |
-| 6. Verify | code verify | Verify against AC |
-| 7. Check | code check | Quality gates |
-| 8. Review | status | Final status review |
-
-Ready to execute? Run: /sdlc-studio story implement --story US0024
-```
+> **Full workflow details:** See `reference-story.md#story-plan-workflow`
 
 ### implement
 
@@ -316,47 +251,20 @@ Execute the full implementation workflow for a story.
 
 ```
 /sdlc-studio story implement --story US0024
-/sdlc-studio story implement --story US0024 --tdd
 /sdlc-studio story implement --story US0024 --from-phase 3
 ```
-
-**Flags:**
 
 | Flag | Description |
 |------|-------------|
 | `--story US000X` | Target story (required) |
 | `--from-phase N` | Resume from specific phase (1-8) |
-| `--tdd` | Force TDD mode |
-| `--no-tdd` | Force Test-After mode |
+| `--tdd` / `--no-tdd` | Force TDD or Test-After mode |
 
-**What happens:**
-1. Loads or creates workflow plan
-2. Executes each phase sequentially
-3. Tracks progress in workflow state file
-4. Pauses on errors with resume capability
-5. Updates story status on completion
+**8 phases:** Plan → Test Spec → Tests → Implement → Test → Verify → Check → Review
 
-**State tracking:**
-Creates `sdlc-studio/workflows/WF{NNNN}-{story-slug}.md` to track progress.
+**CRITICAL:** `code implement` (Phase 4) must complete ALL plan phases before continuing.
 
-**Phase execution:**
-
-| Phase | Command Run | On Success | On Failure |
-|-------|-------------|------------|------------|
-| 1 | `code plan` | Continue | Pause |
-| 2 | `test-spec` | Continue | Pause |
-| 3 | `test-automation` | Continue | Pause |
-| 4 | `code implement` | Continue | Pause |
-| 5 | `test` | Continue | Pause |
-| 6 | `code verify` | Continue | Pause |
-| 7 | `code check` | Complete | Pause |
-
-**CRITICAL for Phase 4:** `code implement` must complete ALL implementation phases from the plan (backend, frontend, integration, etc.) before moving to Phase 5. Do NOT pause to ask questions mid-implementation.
-
-**Resume after pause:**
-```
-/sdlc-studio story implement --story US0024 --from-phase 5
-```
+> **Full workflow details:** See `reference-story.md#story-implement-workflow`
 
 ## See Also
 

@@ -1,0 +1,18 @@
+# SDLC Studio Project Configuration
+# Place this file at: sdlc-studio/.config.yaml
+# Only specify values that differ from defaults (see reference-config.md)
+
+# Example overrides - uncomment and modify as needed:
+
+# coverage:
+#   unit: 80          # Lower target for legacy code
+#   integration: 75
+
+# story_quality:
+#   edge_cases:
+#     api: 6          # Fewer edge cases for simple APIs
+#   sizing:
+#     max_points: 8   # Smaller stories preferred
+
+# tdd:
+#   edge_case_threshold: 3  # TDD for more stories

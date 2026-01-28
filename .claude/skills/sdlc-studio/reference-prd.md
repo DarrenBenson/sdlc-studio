@@ -49,7 +49,7 @@ Detailed workflows for Product Requirements Document creation and management.
 
 6. **Write PRD**
    - Create sdlc-studio/ directory if needed
-   - Use template from `templates/prd-template.md`
+   - Use template from `templates/core/prd.md`
    - Use confidence markers: [HIGH], [MEDIUM], [LOW]
    - Include Open Questions for unresolved items
 

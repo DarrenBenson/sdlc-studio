@@ -285,4 +285,4 @@ Public API?
 
 - `reference-architecture.md` - Full architecture guidance
 - `openapi.md` - API documentation standards
-- `templates/trd-template.md` - TRD template
+- `templates/core/trd.md` - TRD template

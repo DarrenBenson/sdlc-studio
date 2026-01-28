@@ -206,4 +206,4 @@ tests/                        # Generated test code
 - `SKILL.md` - Full skill documentation
 - `reference.md` - Detailed workflows (PRD, Epic, Story, Persona)
 - `reference-code.md` - Detailed workflows (Code, Test)
-- `reference-testing.md` - Testing workflows (Test artifacts)
+- `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` - Testing workflows

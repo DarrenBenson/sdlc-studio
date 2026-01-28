@@ -1,7 +1,7 @@
 <!--
 Load: On /sdlc-studio epic or /sdlc-studio epic help
 Dependencies: SKILL.md (always loaded first)
-Related: reference-epic.md (deep workflow), templates/epic-template.md
+Related: reference-epic.md (deep workflow), templates/core/epic.md
 -->
 
 # /sdlc-studio epic - Epics
@@ -11,6 +11,9 @@ Related: reference-epic.md (deep workflow), templates/epic-template.md
 ```
 /sdlc-studio epic                   # Generate Epics from PRD
 /sdlc-studio epic review            # Review Epic status
+/sdlc-studio epic --perspective engineering  # TRD-aligned technical focus
+/sdlc-studio epic --perspective product      # PRD-aligned product focus
+/sdlc-studio epic --perspective test         # TSD-aligned testing focus
 /sdlc-studio epic plan --epic EP0004      # Preview workflow for all stories
 /sdlc-studio epic implement --epic EP0004 # Execute workflow for all stories
 ```
@@ -36,14 +39,47 @@ Parse PRD and group features into Epics.
 - Features with shared dependencies → same Epic
 - Features forming complete user journey → same Epic
 
-### review
-Review Epic status based on Stories and codebase.
+**Perspective option:**
 
-**What happens:**
+Use `--perspective` to generate epics with specific focus aligned to document types:
+
+| Perspective | Aligns With | Focus Areas |
+|-------------|-------------|-------------|
+| `engineering` | TRD | Components, APIs, data models, tech dependencies |
+| `product` | PRD | User value, success metrics, priority rationale |
+| `test` | TSD | Test types, coverage targets, risk-based priorities |
+
+### review
+Review Epic status based on Stories and codebase. **Cascades by default** - reviews epic and all changed stories/code.
+
+```bash
+/sdlc-studio epic review                  # Cascade review (default)
+/sdlc-studio epic review --quick          # Epic only, skip stories
+/sdlc-studio epic review --resume         # Resume from pause point
+/sdlc-studio epic review --epic EP0001    # Target specific epic
+```
+
+**Flags:**
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--quick` | Skip cascade, review only the epic | false |
+| `--resume` | Resume from where review paused | false |
+| `--epic` | Target specific epic | all epics |
+
+**What happens (cascade mode):**
+1. Builds review queue - stories/code changed since last review
+2. Reviews changed story specs against implementation
+3. Reviews changed code for quality issues
+4. Reviews epic-level acceptance criteria
+5. Stores findings in `sdlc-studio/reviews/RV{NNNN}-*.md`
+6. Updates `.local/review-state.json` with review timestamps
+
+**What happens (quick mode):**
 1. Reads all Epics and their linked Stories
 2. Calculates completion from Story status
-3. Verifies against codebase implementation
-4. Updates status and acceptance criteria checkboxes
+3. Updates status and acceptance criteria checkboxes
+4. No deep story/code review
 
 ## Output
 
@@ -82,6 +118,15 @@ Review Epic status based on Stories and codebase.
 
 # Use custom PRD location
 /sdlc-studio epic --prd ./docs/requirements.md
+
+# Generate with engineering perspective (TRD-aligned)
+/sdlc-studio epic --perspective engineering
+
+# Generate with product perspective (PRD-aligned)
+/sdlc-studio epic --perspective product
+
+# Generate with test perspective (TSD-aligned)
+/sdlc-studio epic --perspective test
 ```
 
 ## Next Steps

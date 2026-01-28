@@ -28,6 +28,8 @@ Manage project specifications and test artifacts. Supports the full pipeline fro
 ```bash
 /sdlc-studio help                    # Show command reference
 /sdlc-studio status                  # Check pipeline state and next steps
+/sdlc-studio review                  # Unified PRD/TRD/TSD review
+/sdlc-studio upgrade --dry-run       # Preview schema upgrade
 /sdlc-studio prd generate            # Create PRD from codebase
 /sdlc-studio trd generate            # Create TRD from codebase
 /sdlc-studio epic                    # Generate Epics from PRD
@@ -74,34 +76,7 @@ Each help page shows:
 
 ## When to Use
 
-- "Create a PRD for this project"
-- "Generate requirements from this codebase"
-- "Create a TRD for this project"
-- "Generate technical requirements from this codebase"
-- "Generate epics from the PRD"
-- "Create user stories from the epics"
-- "Create personas for this project"
-- "Report a bug I found"
-- "List all open bugs"
-- "Fix this bug"
-- "Plan the implementation for this story"
-- "Implement the plan for this story"
-- "Implement this story with TDD"
-- "Check my code quality"
-- "Verify my code against acceptance criteria"
-- "Run the tests for this epic" → `/sdlc-studio code test --epic EP0001`
-- "Generate test specifications"
-- "Create automated tests from specs"
-- "What's the current status of my specs?"
-- "Run the full workflow for this story"
-- "Implement all stories in this epic"
-- "Show me the workflow plan for US0024"
-- `/sdlc-studio prd`, `/sdlc-studio trd`, `/sdlc-studio epic`, `/sdlc-studio story`, `/sdlc-studio persona`
-- `/sdlc-studio bug`, `/sdlc-studio bug list`, `/sdlc-studio bug fix`, `/sdlc-studio bug verify`, `/sdlc-studio bug close`
-- `/sdlc-studio code plan`, `/sdlc-studio code implement`, `/sdlc-studio code test`, `/sdlc-studio code verify`, `/sdlc-studio code check`
-- `/sdlc-studio tsd`, `/sdlc-studio test-spec`, `/sdlc-studio test-automation`
-- `/sdlc-studio story plan`, `/sdlc-studio story implement`, `/sdlc-studio epic plan`, `/sdlc-studio epic implement`
-- `/sdlc-studio status`
+Use when asked about: PRD, TRD, epics, stories, personas, bugs, code planning, implementation, testing, test specs, test automation, project status, or any `/sdlc-studio` command.
 
 ## Instructions
 
@@ -118,6 +93,8 @@ When invoked with `/sdlc-studio [type] [action]`:
 6. **Update Status:** Modify artifact status markers per `reference-outputs.md`
 7. **Validate:** Check Ready criteria in `reference-decisions.md` before proceeding
 
+**Note:** Version checks run on `hint` and `status` commands only (see those help files).
+
 See "Progressive Loading Guide" below for detailed file loading patterns.
 
 ## Progressive Loading Guide
@@ -129,10 +106,35 @@ Claude loads files progressively based on task needs:
 | Understanding command | help/{type}.md | - | - |
 | Create mode workflow | help/{type}.md | reference-{domain}.md | reference-philosophy.md#create-mode |
 | Generate mode workflow | reference-philosophy.md#generate-mode | help/{type}.md | reference-{domain}.md |
-| Creating artifacts | templates/{type}-template.md | reference-outputs.md | - |
+| Creating artifacts | templates/core/{type}.md | reference-outputs.md | - |
+| Loading modules | templates/modules/{domain}/*.md | - | - |
 | Planning code | reference-code.md#code-plan-workflow | reference-decisions.md#story-ready | best-practices/{language}.md |
 | Choosing TDD/Test-After | reference-decisions.md#tdd-decision-tree | reference-test-best-practices.md | - |
 | Validating Ready status | reference-decisions.md#{type}-ready | reference-outputs.md | - |
+| Document review | reference-review.md | reference-{doc}.md | - |
+| Schema upgrade | reference-upgrade.md | reference-config.md | - |
+
+**Template structure:**
+
+| Path | Purpose |
+|------|---------|
+| `templates/core/*.md` | Streamlined core templates (v2) |
+| `templates/indexes/*.md` | Index file templates |
+| `templates/modules/trd/*.md` | Optional TRD modules (diagrams, containers, ADR) |
+| `templates/modules/tsd/*.md` | Optional TSD modules (contract, perf, security) |
+| `templates/modules/epic/*.md` | Optional Epic perspective modules |
+| `templates/config-defaults.yaml` | Skill default configuration |
+
+**Module loading flags:**
+
+| Flag | Modules Loaded |
+|------|---------------|
+| `trd create --with-diagrams` | modules/trd/c4-diagrams.md |
+| `trd create --with-containers` | modules/trd/container-design.md |
+| `trd create --full` | All TRD modules |
+| `epic --perspective engineering` | modules/epic/engineering-view.md |
+| `epic --perspective product` | modules/epic/product-view.md |
+| `epic --perspective test` | modules/epic/test-view.md |
 
 **Reference file mapping:**
 
@@ -140,17 +142,23 @@ Claude loads files progressively based on task needs:
 |--------|----------------|
 | PRD workflows | reference-prd.md#prd-create-workflow, reference-prd.md#prd-generate-workflow |
 | TRD workflows | reference-trd.md#trd-create-workflow, reference-trd.md#trd-generate-workflow |
-| Persona workflows | reference-persona.md#persona-create-workflow, reference-persona.md#persona-generate-workflow |
+| Persona workflows | reference-persona.md#persona-workflow, reference-persona.md#persona-generate-workflow |
 | Epic workflows | reference-epic.md#epic-workflow |
 | Story workflows | reference-story.md#story-workflow, reference-story.md#story-generate-workflow |
-| Bug workflows | reference-bug.md#bug-workflow |
+| Bug workflows | reference-bug.md#bug-create-workflow, reference-bug.md#bug-fix-workflow |
 | Code plan/implement/verify/test/check | reference-code.md#code-plan-workflow, reference-code.md#code-implementation-workflow |
-| TSD/test-spec/test-automation | reference-testing.md |
+| Code refactor/review | reference-refactor.md |
+| TSD, status dashboard, TSD review | reference-tsd.md, reference-tsd.md#tsd-review-workflow |
+| Unified document review | reference-review.md |
+| Test specifications | reference-test-spec.md |
+| Test automation, test-env | reference-test-automation.md |
 | Architecture decisions | reference-architecture.md |
 | Cross-stage decisions, Ready criteria | reference-decisions.md#tdd-decision-tree, reference-decisions.md#story-ready |
 | Create vs Generate philosophy | reference-philosophy.md#create-mode, reference-philosophy.md#generate-mode |
 | Test writing guidelines | reference-test-best-practices.md |
 | E2E and mocking patterns | reference-test-e2e-guidelines.md |
+| Configuration options | reference-config.md |
+| Schema upgrade | reference-upgrade.md |
 | Output formats and status values | reference-outputs.md#output-formats, reference-outputs.md#status-transitions |
 
 ## Arguments
@@ -162,6 +170,7 @@ Claude loads files progressively based on task needs:
 | `--output` | Output path (file or directory) | varies by type |
 | `--prd` | PRD file path (for epic) | sdlc-studio/prd.md |
 | `--epic` | Specific epic ID | all epics |
+| `--perspective` | Epic breakdown focus (engineering, product, test) | balanced |
 | `--story` | Specific story ID | auto-select |
 | `--bug` | Specific bug ID | auto-select |
 | `--severity` | Bug severity filter (critical, high, medium, low) | all |
@@ -172,6 +181,7 @@ Claude loads files progressively based on task needs:
 | `--force` | Overwrite existing files | false |
 | `--no-fix` | Report without auto-fixing (code check) | false |
 | `--verbose` | Detailed test output | false |
+| `--env` | Test environment (local, docker) | local |
 | `--plan` | Specific plan ID (for implement) | auto-select |
 | `--tdd` | Force TDD mode (for implement) | plan recommendation |
 | `--no-tdd` | Force Test-After mode (for implement) | plan recommendation |
@@ -179,6 +189,12 @@ Claude loads files progressively based on task needs:
 | `--no-docs` | Skip documentation updates (for implement) | false |
 | `--from-phase` | Resume workflow from phase N (for story implement) | 1 |
 | `--skip` | Skip specific story (for epic implement) | none |
+| `--dry-run` | Preview changes without applying (for refactor) | false |
+| `--focus` | Review focus area (patterns, security, performance, testing, all) | all |
+| `--severity` | Minimum severity to report (for review) | all |
+| `--quick` | Use cached status results (for status), skip cascade (for epic review) | varies |
+| `--full` | Run fresh status analysis | false |
+| `--resume` | Resume cascading review from pause point | false |
 
 ## Type Reference
 
@@ -193,6 +209,7 @@ Claude loads files progressively based on task needs:
 | `code` | Implementation planning, testing, and quality |
 | `test-spec` | Consolidated test specification (plan + cases + fixtures) |
 | `test-automation` | Generate executable test code |
+| `test-env` | Containerised test environment setup |
 | `bug` | Bug tracking and traceability |
 | `status` | Visual dashboard: Requirements, Code, Tests health |
 | `hint` | Single actionable next step |
@@ -204,21 +221,29 @@ Claude loads files progressively based on task needs:
 
 | Command | Description |
 |---------|-------------|
-| `/sdlc-studio status` | Visual dashboard with three pillars |
+| `/sdlc-studio status` | Visual dashboard (quick mode, uses cache) |
+| `/sdlc-studio status --full` | Full refresh, updates cache |
 | `/sdlc-studio status --testing` | Tests pillar only |
 | `/sdlc-studio status --workflows` | Workflow state only |
 | `/sdlc-studio status --brief` | One-line summary |
 
-**Three Pillars:**
+**Four Pillars:**
 
 - 📋 **Requirements** (PRD Status) - PRD, Personas, Epics, Stories
 - 💻 **Code** (TRD Status) - TRD, Lint, TODOs
 - 🧪 **Tests** (TSD Status) - Coverage, E2E features
+- 🔍 **Reviews** - Review currency, findings status
 
 ### Requirements Pipeline
 
 | Command | Description |
 |---------|-------------|
+| `/sdlc-studio init` | Initialise project context and config |
+| `/sdlc-studio upgrade` | Upgrade project to latest schema version |
+| `/sdlc-studio upgrade --dry-run` | Preview upgrade changes without applying |
+| `/sdlc-studio review` | Unified PRD, TRD, TSD review |
+| `/sdlc-studio review --quick` | Fast review using cached data |
+| `/sdlc-studio review --focus {doc}` | Review specific document (prd, trd, tsd) |
 | `/sdlc-studio hint` | Get single actionable next step |
 | `/sdlc-studio help` | Show command reference and examples |
 | `/sdlc-studio prd` | Ask which mode (create/generate/review) |
@@ -226,7 +251,9 @@ Claude loads files progressively based on task needs:
 | `/sdlc-studio prd generate` | **Extract PRD from codebase** (brownfield) |
 | `/sdlc-studio prd review` | Review PRD against codebase, update status |
 | `/sdlc-studio epic` | Generate Epics from PRD |
-| `/sdlc-studio epic review` | Review Epic status from codebase |
+| `/sdlc-studio epic review` | Cascading review of epic + changed stories (default) |
+| `/sdlc-studio epic review --quick` | Quick review - epic only, skip cascade |
+| `/sdlc-studio epic review --resume` | Resume from pause point |
 | `/sdlc-studio story` | Generate User Stories from Epics |
 | `/sdlc-studio story generate` | **Extract detailed specs from CODE** (brownfield) |
 | `/sdlc-studio story review` | Review Story status from codebase |
@@ -243,6 +270,8 @@ Claude loads files progressively based on task needs:
 | `/sdlc-studio trd create` | Interactive TRD creation |
 | `/sdlc-studio trd generate` | **Extract TRD from architecture** (brownfield) |
 | `/sdlc-studio trd review` | Review TRD against implementation |
+| `/sdlc-studio trd visualise` | Regenerate C4 architecture diagrams |
+| `/sdlc-studio trd containerize` | Add container design decisions to TRD |
 
 ### Bug Tracking
 
@@ -270,6 +299,10 @@ Claude loads files progressively based on task needs:
 | `/sdlc-studio code implement --story US0001` | Implement by story |
 | `/sdlc-studio code implement --tdd` | Force TDD mode |
 | `/sdlc-studio code implement --no-docs` | Skip doc updates |
+| `/sdlc-studio code refactor` | Guided refactoring workflow |
+| `/sdlc-studio code refactor --type extract-method` | Apply specific refactoring |
+| `/sdlc-studio code review` | Design pattern and quality review |
+| `/sdlc-studio code review --story US0001` | Review specific story implementation |
 | `/sdlc-studio code verify` | Verify next In Progress story |
 | `/sdlc-studio code verify --story US0001` | Verify specific story |
 | `/sdlc-studio code test` | Run all tests |
@@ -293,6 +326,10 @@ Claude loads files progressively based on task needs:
 | `/sdlc-studio test-automation` | Generate executable tests |
 | `/sdlc-studio test-automation --spec TS0001` | Generate for specific spec |
 | `/sdlc-studio test-automation --type unit` | Generate only unit tests |
+| `/sdlc-studio test-env setup` | Generate docker-compose.test.yml |
+| `/sdlc-studio test-env up` | Start test environment |
+| `/sdlc-studio test-env down` | Stop test environment |
+| `/sdlc-studio test-env status` | Check environment health |
 
 ### Workflow Automation
 
@@ -313,85 +350,13 @@ For detailed step-by-step workflows, see reference files:
 
 - `reference-prd.md`, `reference-trd.md`, `reference-persona.md` - PRD, TRD, Persona workflows
 - `reference-epic.md`, `reference-story.md`, `reference-bug.md` - Epic, Story, Bug workflows
-- `reference-code.md` - Code plan, implement, review, check, test workflows
-- `reference-testing.md` - TSD, Test Spec, Test Automation workflows
+- `reference-code.md` - Code plan, implement, verify, check, test workflows
+- `reference-refactor.md` - Code refactor, review workflows
+- `reference-tsd.md` - TSD, status dashboard workflows
+- `reference-test-spec.md` - Test specification workflows
+- `reference-test-automation.md` - Test automation, test environment workflows
 
 ---
-
-## Navigation Map
-
-### By Domain
-
-**Requirements:**
-
-- `reference-prd.md` - Product Requirements workflows
-- `reference-trd.md` - Technical Requirements workflows
-- `reference-persona.md` - User Persona workflows
-
-**Specifications:**
-
-- `reference-epic.md` - Epic generation and management
-- `reference-story.md#story-generation-workflow` - User Story workflows
-- `reference-bug.md` - Bug tracking workflows
-
-**Development:**
-
-- `reference-code.md#code-plan-workflow` - Code planning
-- `reference-code.md#code-implementation-workflow` - Implementation
-
-**Testing:**
-
-- `reference-testing.md` - Test Strategy, Spec, Automation
-- `reference-test-best-practices.md` - Testing guidelines
-- `reference-test-e2e-guidelines.md` - E2E patterns
-
-**Cross-Cutting:**
-
-- `reference-decisions.md` - Ready criteria, TDD decisions, enforcement
-- `reference-philosophy.md` - Create vs Generate modes
-- `reference-outputs.md` - Output formats and status values (single source of truth)
-- `reference-architecture.md` - Architectural decisions
-
-### By Workflow Stage
-
-1. **Requirements** → reference-prd.md, reference-trd.md
-2. **Decomposition** → reference-epic.md, reference-story.md
-3. **Planning** → reference-code.md#code-plan-workflow
-4. **Implementation** → reference-code.md#code-implementation-workflow
-5. **Testing** → reference-testing.md, reference-test-best-practices.md
-6. **Validation** → reference-decisions.md#{type}-ready
-
-> **For output formats, status values, and file locations:** See `reference-outputs.md`
-
-## Examples
-
-```bash
-# Requirements
-/sdlc-studio prd generate             /sdlc-studio prd create
-/sdlc-studio epic                     /sdlc-studio story --epic EP0001
-
-# Bugs
-/sdlc-studio bug                      /sdlc-studio bug list --status open
-/sdlc-studio bug fix --bug BG0001     /sdlc-studio bug verify --bug BG0001
-
-# Development (manual)
-/sdlc-studio code plan --story US0001 /sdlc-studio code implement
-/sdlc-studio code implement --tdd     /sdlc-studio code implement --no-docs
-/sdlc-studio code test --story US0001 /sdlc-studio code verify
-/sdlc-studio code check
-
-# Workflow automation (recommended)
-/sdlc-studio story plan --story US0001    /sdlc-studio story implement --story US0001
-/sdlc-studio epic plan --epic EP0001      /sdlc-studio epic implement --epic EP0001
-/sdlc-studio story implement --from-phase 3  # Resume from phase
-/sdlc-studio epic implement --story US0002   # Resume from story
-
-# Testing
-/sdlc-studio test-spec --epic EP0001  /sdlc-studio test-automation
-/sdlc-studio status
-```
-
-See `help/{type}.md` for full examples per type.
 
 ## Error Handling
 
@@ -499,8 +464,15 @@ Status: `Draft/Ready → Planned → In Progress → Review → Done`
 
 **Decisions:** `reference-decisions.md` - Decision impact matrix, TDD decision tree, Ready status criteria, cross-stage validation checkpoints.
 
-**Help:** `help/help.md` (main), `help/{type}.md` (type-specific)
+**Configuration:** `reference-config.md` - Project configuration options for coverage targets, story quality gates, and thresholds.
 
-**References:** `reference-prd.md`, `reference-trd.md`, `reference-persona.md` (Requirements), `reference-epic.md`, `reference-story.md`, `reference-bug.md` (Specifications), `reference-architecture.md` (Architecture), `reference-code.md` (Code, Test), `reference-testing.md` (Test artifacts), `reference-test-best-practices.md` (Test pitfalls), `reference-test-e2e-guidelines.md` (E2E patterns)
+**Help:** `help/help.md` (main), `help/{type}.md` (type-specific), `help/upgrade.md` (schema upgrade)
 
-**Templates:** `templates/prd-template.md`, `trd-template.md`, `epic-template.md`, `story-template.md`, `personas-template.md`, `plan-template.md`, `plan-index-template.md`, `bug-template.md`, `bug-index-template.md`, `tsd-template.md`, `test-spec-template.md`, `automation/*.template`
+**References:** `reference-prd.md`, `reference-trd.md`, `reference-persona.md` (Requirements), `reference-epic.md`, `reference-story.md`, `reference-bug.md` (Specifications), `reference-architecture.md` (Architecture), `reference-code.md` (Code, Test), `reference-refactor.md` (Refactoring, Review), `reference-review.md` (Unified document review), `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` (Test artifacts), `reference-test-best-practices.md` (Test pitfalls), `reference-test-e2e-guidelines.md` (E2E patterns), `reference-upgrade.md` (Schema migration)
+
+**Templates (v2 modular structure):**
+- Core: `templates/core/*.md` (prd, trd, tsd, epic, story, plan, test-spec, bug, personas)
+- Indexes: `templates/indexes/*.md` (epic, story, plan, bug, test-spec, review)
+- Modules: `templates/modules/trd/*.md` (c4-diagrams, container-design, adr), `templates/modules/tsd/*.md` (contract-tests, performance-tests, security-tests), `templates/modules/epic/*.md` (engineering-view, product-view, test-view)
+- Config: `templates/config-defaults.yaml`, `templates/config.yaml`, `templates/version.yaml`
+- Automation: `templates/automation/*.template` (pytest, jest, vitest, go, xunit, junit)

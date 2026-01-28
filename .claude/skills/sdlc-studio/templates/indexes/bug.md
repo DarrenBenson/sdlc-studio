@@ -1,12 +1,10 @@
 <!--
-Template: Bug Index
+Template: Bug Index (Streamlined)
 File: sdlc-studio/bugs/_index.md
 Status values: See reference-outputs.md
 Related: help/bug.md, reference-bug.md
 -->
 # Bug Registry
-
-This document tracks all bugs in the project.
 
 **Last Updated:** {{last_updated}}
 
@@ -22,7 +20,7 @@ This document tracks all bugs in the project.
 | Won't Fix | {{wont_fix_count}} |
 | **Total** | **{{total_count}}** |
 
-### By Severity
+## By Severity
 
 | Severity | Open | In Progress | Fixed | Closed |
 |----------|------|-------------|-------|--------|
@@ -37,48 +35,8 @@ This document tracks all bugs in the project.
 |----|-------|----------|----------|--------|------|-------|---------|
 | [BG{{bug_id}}](BG{{bug_id}}-{{bug_slug}}.md) | {{title}} | {{severity}} | {{priority}} | {{status}} | EP{{epic_id}} | US{{story_id}} | {{created_date}} |
 
-## Open Bugs
-
-### Critical
-
-{{critical_bugs}}
-
-### High
-
-{{high_bugs}}
-
-### Medium
-
-{{medium_bugs}}
-
-### Low
-
-{{low_bugs}}
-
-## Recently Fixed
-
-| ID | Title | Fixed Date | Verified |
-|----|-------|------------|----------|
-| [BG{{bug_id}}](BG{{bug_id}}-{{bug_slug}}.md) | {{title}} | {{fixed_date}} | {{verified}} |
-
-## By Epic
-
-### EP{{epic_id}}: {{epic_title}}
-
-| ID | Title | Severity | Status |
-|----|-------|----------|--------|
-| [BG{{bug_id}}](BG{{bug_id}}-{{bug_slug}}.md) | {{title}} | {{severity}} | {{status}} |
-
-## Metrics
-
-- **Mean Time to Fix (Critical):** {{mttr_critical}}
-- **Mean Time to Fix (All):** {{mttr_all}}
-- **Bug Escape Rate:** {{escape_rate}}
-- **Regression Rate:** {{regression_rate}}
-
 ## Notes
 
 - Bugs are numbered globally (BG0001, BG0002, etc.)
 - Severity: Critical > High > Medium > Low
-- Priority: P1 > P2 > P3 > P4
 - Critical bugs should be fixed within 24 hours

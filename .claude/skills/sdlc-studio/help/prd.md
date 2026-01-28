@@ -1,7 +1,7 @@
 <!--
 Load: On /sdlc-studio prd or /sdlc-studio prd help
 Dependencies: SKILL.md (always loaded first)
-Related: reference-prd.md (deep workflow), templates/prd-template.md
+Related: reference-prd.md (deep workflow), templates/core/prd.md
 -->
 
 # /sdlc-studio prd - Product Requirements Document
@@ -37,7 +37,7 @@ Analyse existing codebase and reverse-engineer requirements.
 3. Documents technical architecture found
 4. PRD is written with confidence markers ([HIGH], [MEDIUM], [LOW])
 
-> **New to generate mode?** Read `reference-philosophy.md#generate-mode` first - it explains why generated specs must be validated by tests.
+> **Source of truth:** `reference-philosophy.md#generate-mode` - explains why generated specs must be validated by tests.
 
 **Best for:** Existing projects needing documentation
 

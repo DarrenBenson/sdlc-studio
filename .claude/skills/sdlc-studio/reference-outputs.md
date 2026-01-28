@@ -257,8 +257,260 @@ TRD
 - **Plan:** Referenced in Workflow
 - **Test Spec:** Referenced in Workflow
 
+## Review State Files {#review-state}
+
+Review tracking uses JSON files for state management. These are runtime files, not templates.
+
+### review-state.json {#review-state-json}
+
+**Location:** `sdlc-studio/.local/review-state.json`
+
+Tracks when each artifact was last reviewed and modified.
+
+```json
+{
+  "version": 1,
+  "artifacts": {
+    "EP0001": {
+      "type": "epic",
+      "path": "sdlc-studio/epics/EP0001-user-auth.md",
+      "last_reviewed": "2026-01-20T10:30:00Z",
+      "last_modified": "2026-01-22T14:00:00Z",
+      "review_findings_ref": "RV0001"
+    },
+    "US0001": {
+      "type": "story",
+      "path": "sdlc-studio/stories/US0001-login-form.md",
+      "last_reviewed": "2026-01-21T09:00:00Z",
+      "last_modified": "2026-01-21T09:00:00Z",
+      "code_files": ["src/auth/login.ts"],
+      "code_last_modified": "2026-01-23T16:00:00Z"
+    }
+  },
+  "reviews": {
+    "RV0001": {
+      "artifact": "EP0001",
+      "timestamp": "2026-01-20T10:30:00Z",
+      "findings_file": "sdlc-studio/reviews/RV0001-EP0001-review.md",
+      "summary": { "critical": 0, "important": 2, "suggestions": 5 }
+    }
+  }
+}
+```
+
+**Field descriptions:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `version` | number | Schema version (currently 1) |
+| `artifacts.{id}.type` | string | Artifact type (epic, story) |
+| `artifacts.{id}.path` | string | Path to artifact file |
+| `artifacts.{id}.last_reviewed` | ISO date | When last reviewed |
+| `artifacts.{id}.last_modified` | ISO date | When artifact last modified |
+| `artifacts.{id}.review_findings_ref` | string | Reference to RV file |
+| `artifacts.{id}.code_files` | array | Code files implementing this artifact (stories only) |
+| `artifacts.{id}.code_last_modified` | ISO date | Most recent code file modification |
+| `reviews.{id}.artifact` | string | Artifact this review covers |
+| `reviews.{id}.timestamp` | ISO date | When review was conducted |
+| `reviews.{id}.findings_file` | string | Path to findings document |
+| `reviews.{id}.summary` | object | Issue counts by severity |
+
+### review-queue.json {#review-queue-json}
+
+**Location:** `sdlc-studio/.local/review-queue.json`
+
+Enables pause/resume for cascading reviews.
+
+```json
+{
+  "id": "RQ0001",
+  "epic": "EP0001",
+  "created": "2026-01-27T10:00:00Z",
+  "status": "in_progress",
+  "queue": [
+    { "type": "story_spec", "id": "US0001", "status": "done" },
+    { "type": "story_code", "id": "US0001", "status": "in_progress" },
+    { "type": "story_spec", "id": "US0002", "status": "pending" }
+  ],
+  "current_index": 1
+}
+```
+
+**Field descriptions:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Queue identifier (RQ{NNNN}) |
+| `epic` | string | Epic being reviewed |
+| `created` | ISO date | When queue was created |
+| `status` | string | pending, in_progress, done, paused |
+| `queue[].type` | string | story_spec, story_code, epic |
+| `queue[].id` | string | Artifact ID |
+| `queue[].status` | string | pending, in_progress, done, skipped |
+| `current_index` | number | Current position in queue |
+
+### Modified-Since Detection {#modified-since-detection}
+
+The review system detects when artifacts need re-review:
+
+```text
+needs_re_review(artifact):
+  1. Load entry from review-state.json
+  2. If no entry OR no last_reviewed: return TRUE
+  3. Get last_modified via git log or file mtime
+  4. If last_modified > last_reviewed: return TRUE
+  5. return FALSE
+
+code_changed_since_review(story):
+  1. Get code_files list from story entry
+  2. For each file: check git log timestamp
+  3. If any file_modified > story.last_reviewed: return TRUE
+  4. return FALSE
+```
+
+### Backward Compatibility {#review-backward-compatibility}
+
+- Projects without `review-state.json`: all items marked "needs review"
+- Review system is advisory only - never blocks any workflow
+- Existing artifacts work without review history
+
+## Local State Files {#local-state}
+
+The `.local/` directory contains user-specific runtime state that should NOT be committed:
+
+| File | Purpose | Why User-Local |
+|------|---------|----------------|
+| `review-state.json` | Review timestamps | Each developer's review history differs |
+| `review-queue.json` | Pause/resume state | One user's paused review shouldn't affect others |
+| `status-cache.json` | Cached lint/coverage | Machine-specific results |
+| `upgrade-dismissed.json` | Upgrade prompt preference | User's choice to suppress upgrade prompts |
+
+**Gitignore:** Add to your project's `.gitignore`:
+```gitignore
+# SDLC Studio user-local state
+sdlc-studio/.local/
+```
+
+### upgrade-dismissed.json {#upgrade-dismissed-json}
+
+**Location:** `sdlc-studio/.local/upgrade-dismissed.json`
+
+Records user's preference to not be prompted about schema upgrades.
+
+```json
+{
+  "dismissed_at": "2026-01-27T10:30:00Z",
+  "schema_version_at_dismissal": 1,
+  "reason": "user_choice"
+}
+```
+
+**Field descriptions:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `dismissed_at` | ISO date | When user chose "don't ask again" |
+| `schema_version_at_dismissal` | number | Schema version when dismissed (1 = legacy) |
+| `reason` | string | Why dismissed: `user_choice` |
+
+**Behaviour:**
+
+- Created when user selects "No, don't ask again" on upgrade prompt
+- If file exists, `/sdlc-studio status` and `/sdlc-studio hint` skip upgrade prompt
+- Deleting this file re-enables upgrade prompts
+- File is user-local (not committed to repo)
+
+## Review Findings {#review-findings}
+
+| Type | Location | Naming | Status Values |
+|------|----------|--------|---------------|
+| Review | `sdlc-studio/reviews/RV{NNNN}-*.md` | RV0001, RV0002... | N/A (immutable) |
+
+Review findings are immutable records - once created, they are not modified. New reviews create new RV files.
+
+---
+
+## Validation Checklists {#validation-checklists}
+
+Validation criteria extracted from templates for reference. Templates link here rather than embedding checklists.
+
+### Story Ready Checklist {#story-ready-checklist}
+
+A story can be marked **Ready** when:
+- [ ] All critical Open Questions resolved
+- [ ] Minimum edge case count met (API: {{config.story_quality.edge_cases.api}}, other: {{config.story_quality.edge_cases.other}})
+- [ ] No "TBD" placeholders in acceptance criteria
+- [ ] Error scenarios documented (not just happy path)
+- [ ] Inherited constraints addressed in AC, Edge Cases, or Technical Notes
+
+### Story Quality Checklist {#story-quality-checklist}
+
+**API Stories (minimum requirements):**
+- [ ] Edge cases: {{config.story_quality.edge_cases.api}} minimum documented
+- [ ] Test scenarios: {{config.story_quality.test_scenarios.api}} minimum listed
+- [ ] API contracts: Exact request/response JSON shapes documented
+- [ ] Error codes: All error codes with exact messages specified
+
+**All Stories:**
+- [ ] No ambiguous language (avoid: "handles errors", "returns data", "works correctly")
+- [ ] Given/When/Then uses concrete values, not placeholders
+- [ ] Persona referenced with specific context
+
+### Architecture Checklist {#architecture-checklist}
+
+**Pattern Selection:**
+- [ ] Project type identified and documented
+- [ ] Default pattern evaluated against project needs
+- [ ] Deviation from default documented as ADR (if applicable)
+
+**Technology Decisions:**
+- [ ] Language selection justified (not just "familiarity")
+- [ ] Framework selection justified
+- [ ] Database selection justified
+- [ ] API style selection justified
+
+**Standards Compliance:**
+- [ ] OpenAPI documented (if REST)
+- [ ] Error responses standardised
+- [ ] Authentication approach documented
+- [ ] Pagination approach documented (if applicable)
+
+**Infrastructure:**
+- [ ] Deployment target identified
+- [ ] Scaling strategy documented
+- [ ] Disaster recovery documented
+
+---
+
+## Version Schema {#version-schema}
+
+The `.version` file tracks project schema version for upgrade compatibility.
+
+```yaml
+# sdlc-studio/.version
+schema_version: 2          # Current template schema version
+upgraded_from: 1           # Previous version (null for new projects)
+upgraded_at: 2026-01-27T10:30:00Z  # When upgrade was performed
+skill_version: "1.3.0"     # SDLC Studio version
+created_at: 2026-01-15T09:00:00Z   # When project was initialised
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `schema_version` | number | 1=legacy, 2=modular |
+| `upgraded_from` | number/null | Previous version (null if new) |
+| `upgraded_at` | ISO date | Upgrade timestamp |
+| `skill_version` | string | SDLC Studio version |
+| `created_at` | ISO date | Project creation timestamp |
+
+---
+
 ## See Also
 
 - `SKILL.md` - Main skill entry point
 - `help/*.md` - Type-specific command help
-- `templates/*.md` - Output templates for each artifact type
+- `templates/core/*.md` - Core templates
+- `templates/indexes/*.md` - Index templates
+- `templates/modules/` - Optional modules
+- `reference-config.md` - Configuration options
+- `reference-upgrade.md` - Schema migration

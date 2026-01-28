@@ -1,7 +1,7 @@
 <!--
 Load: On /sdlc-studio tsd or /sdlc-studio tsd help
 Dependencies: SKILL.md (always loaded first)
-Related: reference-testing.md (deep workflow), templates/tsd-template.md
+Related: reference-tsd.md (deep workflow), templates/core/tsd.md
 -->
 
 # /sdlc-studio tsd - Test Strategy Document
@@ -169,7 +169,7 @@ After creating Test Strategy:
 ## See Also
 
 **REQUIRED for this workflow:**
-- `reference-testing.md` - Test strategy workflow details
+- `reference-tsd.md` - Test strategy workflow details
 
 **Recommended:**
 - `/sdlc-studio prd help` - Product requirements (context)

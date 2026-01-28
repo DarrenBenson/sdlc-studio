@@ -29,7 +29,7 @@ Detailed workflows for code planning, review, and quality checks.
 3. **Detect Language**
    Check for project files to detect language and framework.
 
-   > **Detection table:** `reference-testing.md` → Detect Language
+   > **Detection table:** `reference-test-automation.md` → Detect Language
 
 4. **Load Best Practices**
    Read relevant best practices from `~/.claude/best-practices/`:
@@ -86,13 +86,13 @@ Detailed workflows for code planning, review, and quality checks.
    ```
 
 8. **Write Plan File**
-   - Use template from `templates/plan-template.md`
+   - Use template from `templates/core/plan.md`
    - Output to `sdlc-studio/plans/PL{NNNN}-{slug}.md`
    - Assign next available plan ID
 
 9. **Update Plan Index**
    - Create or update `sdlc-studio/plans/_index.md`
-   - Use template from `templates/plan-index-template.md`
+   - Use template from `templates/indexes/plan.md`
 
 10. **Update Story Status**
     Edit story file to change status:
@@ -110,7 +110,7 @@ Detailed workflows for code planning, review, and quality checks.
     - Story being planned
     - Number of implementation phases
     - Key files to modify
-    - Next steps (run `/sdlc-studio code implement`)
+    - Next steps: `▶️ Run /sdlc-studio code implement --story US{NNNN}` (use the story ID, not plan ID)
 
 ---
 
@@ -706,7 +706,7 @@ For automated story and epic workflows:
 - `reference-decisions.md` - Decision impact matrix, TDD decision tree, Ready criteria
 - `reference-prd.md, reference-trd.md, reference-persona.md` - PRD, TRD, Persona workflows
 - `reference-epic.md, reference-story.md, reference-bug.md` - Epic, Story, Bug workflows
-- `reference-testing.md` - Test Strategy, Spec, Automation workflows
+- `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` - Test workflows
 - `reference-philosophy.md` - Create vs Generate philosophy
 - `reference-test-best-practices.md` - Test generation pitfalls and validation
 - `reference-test-e2e-guidelines.md` - E2E and mocking patterns
@@ -720,7 +720,7 @@ For automated story and epic workflows:
 - `reference-decisions.md#story-ready` - Ready criteria for stories
 
 **Related workflows:**
-- `reference-testing.md` - Test workflows (parallel - tests accompany code)
+- `reference-test-automation.md` - Test workflows (parallel - tests accompany code)
 - `reference-test-best-practices.md` - Test quality guidelines
 - `reference-test-e2e-guidelines.md` - E2E testing patterns
 

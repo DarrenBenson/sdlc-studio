@@ -4,6 +4,16 @@ Detailed workflows for Epic generation and management.
 
 <!-- Load when: generating or managing Epics -->
 
+## Reading Guide
+
+| Section | When to Read |
+|---------|--------------|
+| Epic Workflows | When generating epics from PRD |
+| Perspective-Based Generation | When using `--perspective` flag |
+| Epic Review Workflow | When reviewing epic status (cascade or quick) |
+| Workflow Commands | When using `epic plan` or `epic implement` |
+| Section Reference | See `reference-epic-sections.md` for template guidance |
+
 ---
 
 # Epic Workflows
@@ -31,7 +41,7 @@ Detailed workflows for Epic generation and management.
    For each Epic:
    - Assign ID: EP{NNNN}
    - Create slug (kebab-case, max 50 chars)
-   - Use `templates/epic-template.md`
+   - Use `templates/core/epic.md`
    - Fill all sections from PRD data
    - Estimate story points
    - **Status Rules:**
@@ -51,14 +61,220 @@ Detailed workflows for Epic generation and management.
 
 ---
 
+## Perspective-Based Generation {#perspective-based-generation}
+
+Use `--perspective` to generate epics with specific focus areas aligned to document types. This creates a consistent mental model:
+- **Product perspective** → PRD-style breakdown (features, user value)
+- **Engineering perspective** → TRD-style breakdown (technical architecture)
+- **Test perspective** → TSD-style breakdown (quality strategy)
+
+### Engineering Perspective (--perspective engineering) {#perspective-engineering}
+
+Aligns with TRD - generates epics emphasising technical structure.
+
+**Additional sections per epic:**
+
+| Section | Content |
+|---------|---------|
+| Components | Component boundaries and ownership |
+| API Contracts | Endpoints, methods, schemas |
+| Data Models | New/modified entities and relationships |
+| Infrastructure | Infrastructure requirements |
+| Tech Dependencies | Libraries, services, versions |
+| Performance | Performance considerations and targets |
+| Security | Security implications and mitigations |
+
+**Story emphasis:** Technical implementation details, API specifications, data schemas.
+
+**Example output:**
+```markdown
+### Engineering View (TRD-aligned)
+
+**Components:**
+- UserAuthService: Handles authentication flows (Owner: Backend Team)
+- SessionManager: Manages session lifecycle (Owner: Backend Team)
+- AuthMiddleware: Request authentication (Owner: Platform Team)
+
+**API Contracts:**
+- `POST /api/v1/auth/login`: Authenticate user credentials
+- `POST /api/v1/auth/refresh`: Refresh access token
+- `DELETE /api/v1/auth/logout`: Invalidate session
+
+**Data Models:**
+- User: id, email, password_hash, created_at, last_login
+- Session: id, user_id, token_hash, expires_at, ip_address
+
+**Technical Dependencies:**
+- bcrypt (14.0): Password hashing
+- jsonwebtoken (9.0): JWT creation/verification
+- redis (4.6): Session storage
+```
+
+### Product Perspective (--perspective product) {#perspective-product}
+
+Aligns with PRD - generates epics emphasising business value.
+
+**Additional sections per epic:**
+
+| Section | Content |
+|---------|---------|
+| User Value | Clear statement of user benefit |
+| Success Metrics | Measurable outcomes with baselines and targets |
+| Priority Rationale | Why this order? Business justification |
+| Stakeholder Impact | Who is affected and how |
+| Release Considerations | Timing, dependencies, rollout strategy |
+| Business Risk | Risk if delayed or not delivered |
+
+**Story emphasis:** User benefits, acceptance criteria from user perspective.
+
+**Example output:**
+```markdown
+### Product View (PRD-aligned)
+
+**User Value:** Users can securely access their accounts with minimal friction, reducing support tickets by 40%.
+
+**Success Metrics:**
+| Metric | Baseline | Target |
+|--------|----------|--------|
+| Login success rate | 87% | 95% |
+| Password reset requests | 50/day | 20/day |
+| Support tickets (auth) | 25/week | 10/week |
+
+**Priority Rationale:** Authentication is foundational - blocks user profile, settings, and personalisation features. Delivery in Q1 unblocks Q2 roadmap.
+
+**Stakeholder Impact:**
+| Stakeholder | Impact | Mitigation |
+|-------------|--------|------------|
+| End Users | New login flow | Gradual rollout, clear guidance |
+| Support | Training needed | Documentation, FAQs |
+| Marketing | Can promote security | Press release coordination |
+```
+
+### Test Perspective (--perspective test) {#perspective-test}
+
+Aligns with TSD - generates epics emphasising quality assurance.
+
+**Additional sections per epic:**
+
+| Section | Content |
+|---------|---------|
+| Test Types Required | Unit, integration, E2E with coverage targets |
+| Risk-Based Priorities | What to test first based on risk |
+| Test Data Requirements | What data needed for testing |
+| Automation Candidates | What can/should be automated |
+| Manual Testing Needs | What requires human verification |
+| Performance Scenarios | Load, stress, endurance tests |
+
+**Story emphasis:** Test scenarios, edge cases, failure modes.
+
+**Example output:**
+```markdown
+### Test View (TSD-aligned)
+
+**Test Types Required:**
+| Type | Coverage Target | Automation |
+|------|-----------------|------------|
+| Unit | 90% | Fully automated |
+| Integration | 80% | Fully automated |
+| E2E | Critical paths | Automated |
+| Security | OWASP Top 10 | Automated scans + manual |
+
+**Risk-Based Priorities:**
+1. Session hijacking prevention - High risk - Security scan + penetration test
+2. Password brute force - High risk - Rate limiting tests
+3. Token expiration - Medium risk - Automated timing tests
+4. Concurrent logins - Medium risk - Load testing
+
+**Test Data Requirements:**
+- users_valid: 100 valid user accounts with various states
+- users_locked: 20 accounts in locked state
+- tokens_expired: Pre-generated expired tokens for testing
+
+**Automation Candidates:**
+- Login flow happy path (E2E)
+- Token refresh cycle (Integration)
+- Password validation rules (Unit)
+- Rate limiting behaviour (Integration)
+```
+
+---
+
 ## /sdlc-studio epic review - Step by Step {#epic-review-workflow}
 
-1. **Load Epics**
-   - Read all from sdlc-studio/epics/
-   - Parse acceptance criteria and story links
+Epic review now **cascades by default** - it reviews the epic and all changed stories/code. Use `--quick` for epic-only review.
 
-2. **Check Story Status**
-   For each Epic:
+### Command Syntax
+
+```bash
+/sdlc-studio epic review              # Cascade review (default) - epic + changed stories
+/sdlc-studio epic review --quick      # Quick review - epic only, skip stories
+/sdlc-studio epic review --resume     # Resume from last pause point
+/sdlc-studio epic review --epic EP0001  # Target specific epic
+```
+
+| Flag | Description |
+|------|-------------|
+| `--quick` | Skip cascade, review only the epic |
+| `--resume` | Resume from where review paused |
+| `--epic EP0001` | Target specific epic |
+
+### Cascade Workflow (Default) {#cascade-workflow}
+
+```text
+1. Build Review Queue
+   - Load target epic
+   - For each linked story:
+     - Check: story spec changed since review?
+     - Check: story code changed since review?
+   - Add changed items to queue
+   - Prioritise: failing tests > spec changes > code changes
+
+2. Execute Reviews
+   For each queue item:
+   - Story spec: Check AC against implementation
+   - Story code: Run code review patterns
+   - Store findings in RV{NNNN} file
+   - Update .local/review-state.json timestamps
+
+3. Aggregate Epic Review
+   - Compile story findings
+   - Check epic-level AC
+   - Generate summary
+
+4. Report
+   - Display findings by severity
+   - List actionable items
+   - Show what was reviewed vs skipped
+```
+
+### Step-by-Step (Cascade Mode)
+
+1. **Load Epic and Build Queue**
+   - Read target epic from sdlc-studio/epics/
+   - Parse acceptance criteria and story links
+   - Load `.local/review-state.json` for modification tracking
+   - Build review queue:
+     ```text
+     For each linked story:
+       if needs_re_review(story_spec): add story_spec to queue
+       if code_changed_since_review(story): add story_code to queue
+     ```
+   - Save queue to `.local/review-queue.json` for resume capability
+
+2. **Execute Story Reviews**
+   For each item in queue:
+   - **Story spec review:**
+     - Check AC against implementation
+     - Verify edge cases handled
+     - Check for regressions
+   - **Story code review:**
+     - Run code quality checks
+     - Check for pattern violations
+     - Verify test coverage
+   - Store findings in `sdlc-studio/reviews/RV{NNNN}-{story-id}-review.md`
+   - Update `.local/review-state.json` with review timestamp
+
+3. **Check Epic-Level Status**
    - Read linked stories
    - Calculate completion percentage
    - If any In Progress → Epic In Progress
@@ -69,7 +285,7 @@ Detailed workflows for Epic generation and management.
 
      > **Principle:** `reference-decisions.md` → Status Transition Rules
 
-3. **Analyse Implementation**
+4. **Analyse Implementation**
    Use Task tool with Explore agent:
    ```
    For epic [Title], check implementation:
@@ -79,180 +295,134 @@ Detailed workflows for Epic generation and management.
    Assess: What percentage complete?
    ```
 
-4. **Update Files**
-   - Update Status field
+5. **Update Files**
+   - Update epic Status field
    - Update acceptance criteria checkboxes
    - Add revision history entry
    - Update _index.md
+   - Store epic findings in `sdlc-studio/reviews/RV{NNNN}-{epic-id}-review.md`
 
-5. **Report**
-   - Epics completed
-   - Epics in progress
-   - Epics blocked or regressed
+6. **Report**
+   ```text
+   ## Epic Review: EP0001 - User Authentication
+
+   ### Cascade Summary
+   | Type | Reviewed | Skipped | Findings |
+   |------|----------|---------|----------|
+   | Story specs | 3 | 2 (unchanged) | 5 |
+   | Story code | 2 | 3 (unchanged) | 3 |
+   | Epic | 1 | 0 | 2 |
+
+   ### Findings by Severity
+   | Severity | Count |
+   |----------|-------|
+   | Critical | 0 |
+   | Important | 4 |
+   | Suggestions | 6 |
+
+   ### Stories Reviewed
+   - US0001: 2 important issues
+   - US0003: 1 important issue, 2 suggestions
+   - US0005: 1 suggestion
+
+   ### Stories Skipped (unchanged since last review)
+   - US0002: Reviewed 2026-01-25
+   - US0004: Reviewed 2026-01-26
+
+   ### Next Steps
+   - [ ] Address important issues in US0001
+   - [ ] Consider suggestions for US0003
+   ```
+
+### Quick Mode (--quick) {#quick-mode}
+
+Skips story cascade, reviews only epic-level concerns:
+
+1. **Load Epic**
+   - Read from sdlc-studio/epics/
+   - Parse acceptance criteria
+
+2. **Check Story Status**
+   - Read linked stories
+   - Calculate completion only (no deep review)
+
+3. **Update Epic**
+   - Update Status field
+   - Update _index.md
+
+4. **Report**
+   - Epic status
+   - Story completion summary
+   - No detailed findings
+
+### Resume Mode (--resume) {#resume-mode}
+
+Continues from last pause point using `.local/review-queue.json`:
+
+1. **Load Queue State**
+   - Read `.local/review-queue.json`
+   - Find `current_index`
+   - Verify queue is still valid (no new changes)
+
+2. **Continue Execution**
+   - Resume from paused item
+   - Complete remaining queue items
+
+3. **Cleanup**
+   - Remove `.local/review-queue.json` on completion
+   - Update `.local/review-state.json`
+
+### Review Queue Persistence {#review-queue}
+
+**File:** `sdlc-studio/.local/review-queue.json`
+
+Enables pause/resume if review is interrupted:
+
+```json
+{
+  "id": "RQ0001",
+  "epic": "EP0001",
+  "created": "2026-01-27T10:00:00Z",
+  "status": "in_progress",
+  "queue": [
+    { "type": "story_spec", "id": "US0001", "status": "done" },
+    { "type": "story_code", "id": "US0001", "status": "in_progress" },
+    { "type": "story_spec", "id": "US0002", "status": "pending" }
+  ],
+  "current_index": 1
+}
+```
+
+### Review State Tracking {#review-state-tracking}
+
+**File:** `sdlc-studio/.local/review-state.json`
+
+Tracks when each artifact was last reviewed. See `reference-outputs.md#review-state` for schema details.
+
+**Modified-since detection:**
+
+```text
+needs_re_review(artifact):
+  1. Load entry from review-state.json
+  2. If no entry OR no last_reviewed: return TRUE
+  3. Get last_modified via git log or file mtime
+  4. If last_modified > last_reviewed: return TRUE
+  5. return FALSE
+
+code_changed_since_review(story):
+  1. Get code_files list from story entry
+  2. For each file: check git log timestamp
+  3. If any file_modified > story.last_reviewed: return TRUE
+  4. return FALSE
+```
 
 ---
 
 # Epic Section Reference
 
-Detailed guidance for completing each section of the Epic template.
+> **Section-by-section guidance:** See `reference-epic-sections.md` for detailed guidance on completing each section of the epic template (Summary, Business Context, Scope, AC, Dependencies, Risks, Technical Considerations, Sizing, Story Breakdown).
 
 ---
-
-## Summary {#summary}
-
-### What to Include {#summary-what-to-include}
-- 2-3 sentences describing what this Epic delivers
-- Written for someone unfamiliar with the project
-- Focus on user value, not technical implementation
-
-### What to Avoid {#summary-what-to-avoid}
-- Technical jargon without explanation
-- Implementation details (save for stories)
-- Vague statements like "improve the system"
-
----
-
-## Business Context {#business-context}
-
-### Problem Statement {#problem-statement}
-- Extract from PRD's Problem Statement
-- Focus on the specific aspect this Epic addresses
-- Reference PRD section for traceability
-
-### Value Proposition {#value-proposition}
-- What happens if we DO this?
-- What happens if we DON'T?
-- Quantify where possible
-
-### Success Metrics {#success-metrics}
-- Must be measurable
-- Include baseline (current state) even if "N/A"
-- Specify how measurement will occur
-- Examples: completion rate, time reduction, error rate
-
----
-
-## Scope {#scope}
-
-### In Scope {#in-scope}
-- Be specific about what's included
-- List features, not implementation details
-- Helps prevent scope creep
-
-### Out of Scope {#out-of-scope}
-- Explicitly state exclusions
-- Include brief rationale (helps prevent arguments later)
-- Can reference "future Epic" if planned
-
-### Affected Personas {#affected-personas}
-- Link to personas.md
-- Describe HOW this Epic affects each persona
-- Helps prioritise and validate stories
-
----
-
-## Acceptance Criteria (Epic Level) {#acceptance-criteria}
-
-### Format {#ac-format}
-- High-level, observable outcomes
-- Use checkboxes for tracking
-- NOT detailed Given/When/Then (save for stories)
-
-### Good Examples {#ac-good-examples}
-- [ ] Users can complete registration without assistance
-- [ ] Dashboard loads within 2 seconds
-- [ ] All data is encrypted at rest
-
-### Bad Examples {#ac-bad-examples}
-- [ ] Code is written (too vague)
-- [ ] Tests pass (that's DoD, not AC)
-- [ ] Given user clicks button, When... (too detailed for Epic)
-
----
-
-## Dependencies {#dependencies}
-
-### Blocked By {#blocked-by}
-- Other Epics that must complete first
-- External systems or APIs
-- Data migrations or infrastructure
-- Include impact notes (what happens if delayed)
-
-### Blocking {#blocking}
-- What's waiting on this Epic
-- Helps prioritise and communicate urgency
-- Include consequence of delay
-
----
-
-## Risks & Assumptions {#risks-and-assumptions}
-
-### Assumptions {#assumptions}
-- What are we taking for granted?
-- Each should be validateable
-- If assumption proves wrong, impact should be assessed
-
-### Risks {#risks}
-- Technical risks (new technology, integration)
-- Business risks (user adoption, market timing)
-- Resource risks (availability, skills)
-- Include likelihood/impact for prioritisation
-- Must have mitigation strategy
-
----
-
-## Technical Considerations {#technical-considerations}
-
-### Architecture Impact {#architecture-impact}
-- Does this require new services?
-- Significant refactoring needed?
-- Infrastructure changes?
-- Keep high-level (details in stories)
-
-### Integration Points {#integration-points}
-- External APIs and services
-- Internal system boundaries
-- Authentication/authorisation touchpoints
-
-### Data Considerations {#data-considerations}
-- New data models
-- Migrations required
-- Data dependencies from other systems
-
----
-
-## Sizing & Effort {#sizing-and-effort}
-
-### Story Points {#story-points}
-- Relative sizing (1, 2, 3, 5, 8, 13, 21)
-- Based on complexity, not time
-- Compare to reference Epics
-
-### Story Count {#story-count}
-- Estimate range (e.g., "8-12 stories")
-- Helps sprint planning
-- Refine after story generation
-
-### Complexity Factors {#complexity-factors}
-- What makes this harder than it looks?
-- New technology, integrations, unknowns
-- Helps justify sizing
-
----
-
-## Story Breakdown {#story-breakdown}
-
-### Before Story Generation {#before-story-generation}
-- Provisional titles only
-- Use `- [ ] US{{TBD}}: {Title}`
-
-### After Story Generation {#after-story-generation}
-- Updated automatically by `/sdlc-studio story`
-- Links to actual story files
-- Status tracked via story files
-
----
-
 
 # Workflow Commands
 
@@ -474,7 +644,7 @@ Skip a problematic story and continue:
 - `reference-bug.md` - Bug tracking workflows
 - `reference-decisions.md` - Ready criteria, decision guidance
 - `reference-code.md` - Code plan, implement, review workflows (includes workflow orchestration)
-- `reference-testing.md` - Test Strategy, Spec, Automation workflows
+- `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` - Test workflows
 - `reference-philosophy.md` - Create vs Generate philosophy
 
 ---

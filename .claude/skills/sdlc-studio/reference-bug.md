@@ -36,7 +36,7 @@ Detailed workflows for Bug tracking and management.
    - Any other relevant environment details
 
 6. **Write Bug Report**
-   - Use `templates/bug-template.md`
+   - Use `templates/core/bug.md`
    - Assign ID: BG{NNNN}
    - Create slug (kebab-case, max 50 chars)
    - Write to `sdlc-studio/bugs/BG{NNNN}-{slug}.md`
@@ -439,7 +439,7 @@ Detailed guidance for completing each section of the Bug template.
 - `reference-decisions.md` - Ready criteria, decision guidance
 - `reference-prd.md`, `reference-trd.md`, `reference-persona.md` - PRD, TRD, Persona workflows
 - `reference-code.md` - Code plan, implement, review workflows
-- `reference-testing.md` - Test Strategy, Spec, Automation workflows
+- `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` - Test workflows
 
 ---
 
@@ -450,7 +450,7 @@ Detailed guidance for completing each section of the Bug template.
 
 **Related workflows:**
 - `reference-code.md` - Code implementation (downstream - bug fixes become code tasks)
-- `reference-testing.md` - Testing workflows (bugs often require regression tests)
+- `reference-test-spec.md` - Testing workflows (bugs often require regression tests)
 
 **Cross-cutting concerns:**
 - `reference-decisions.md` - Decision guidance and Ready criteria

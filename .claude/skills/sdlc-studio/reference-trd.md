@@ -88,7 +88,7 @@ Detailed workflows for Technical Requirements Document creation and management.
    - Security controls planned
 
 10. **Write TRD**
-    - Use template from `templates/trd-template.md`
+    - Use template from `templates/core/trd.md`
     - Include Project Classification section
     - Include Architecture Checklist section
     - Reference PRD sections where appropriate
@@ -223,7 +223,7 @@ Detailed workflows for Technical Requirements Document creation and management.
     ```
 
 12. **Write TRD**
-    - Use template from `templates/trd-template.md`
+    - Use template from `templates/core/trd.md`
     - Include Project Classification section
     - Include Architecture Checklist section
     - Include Architecture Assessment section (from step 11)
@@ -279,6 +279,117 @@ Detailed workflows for Technical Requirements Document creation and management.
 
 ---
 
+## /sdlc-studio trd visualise - Step by Step {#trd-visualise-workflow}
+
+1. **Read Existing TRD**
+   - Load from sdlc-studio/trd.md
+   - Verify TRD exists with required sections
+   - Parse Technology Stack, Architecture Overview, Integrations
+
+2. **Extract Diagram Data**
+
+   **System Context (L1):**
+   | Source | Extract |
+   |--------|---------|
+   | TRD header | System name |
+   | Personas document | Users and roles |
+   | Integration Patterns section | External systems |
+   | API Contracts section | External APIs |
+
+   **Container Diagram (L2):**
+   | Source | Extract |
+   |--------|---------|
+   | Technology Stack - Framework | Frontend container |
+   | Technology Stack - Language | Backend container |
+   | Technology Stack - Database | Data stores |
+   | API Contracts - Style | Communication protocols |
+   | Integration Patterns | External service connections |
+
+   **Component Diagram (L3):**
+   | Source | Extract |
+   |--------|---------|
+   | Architecture Overview - Components | Internal components |
+   | Component relationships | Dependencies |
+   | API Contracts | API layers |
+
+3. **Generate Mermaid Diagrams**
+
+   Apply diagram guidelines:
+   - Max 7±2 elements per diagram (cognitive limit)
+   - Use consistent naming matching TRD terminology
+   - Show key flows, not every connection
+   - Label protocols (HTTP, gRPC, WebSocket, etc.)
+   - Use standard shapes:
+     - Rectangle `[]` for applications/services
+     - Cylinder `[()]` for databases/storage
+     - Rounded `(())` for users/actors
+
+4. **Update TRD**
+   - Replace Architecture Diagrams section (2.5)
+   - Preserve all other sections
+   - Update last-modified date
+
+5. **Report**
+   - Diagrams generated
+   - Elements per diagram
+   - Any missing data warnings
+
+---
+
+## Diagram Guidelines {#diagram-guidelines}
+
+### Element Limits
+
+Keep diagrams focused with 7±2 elements per view:
+- If more elements needed, split into multiple diagrams
+- Group related components into subgraphs
+- Use abstraction (e.g., "External Services" instead of listing all)
+
+### Naming Conventions
+
+Match TRD terminology exactly:
+- Component names from Architecture Overview
+- Technology names from Technology Stack
+- Protocol names from API Contracts
+
+### Visual Hierarchy
+
+| Shape | Use For |
+|-------|---------|
+| `[Service Name]` | Applications, services |
+| `[(Database)]` | Data stores |
+| `((User))` | Human actors |
+| `[External System]` | Third-party systems |
+| `{Decision}` | Decision points |
+
+### Connection Labels
+
+Always label connections with:
+- Protocol (REST, GraphQL, gRPC, WebSocket)
+- Port if non-standard
+- Direction if not obvious
+
+### Subgraphs
+
+Use subgraphs for:
+- System boundaries
+- Trust boundaries
+- Deployment zones
+- Component groups
+
+```mermaid
+graph TB
+    subgraph internal [Internal Network]
+        API[API Gateway]
+        SVC[Service]
+    end
+    subgraph external [External]
+        CDN[CDN]
+    end
+    CDN --> API
+```
+
+---
 
 # See Also
 

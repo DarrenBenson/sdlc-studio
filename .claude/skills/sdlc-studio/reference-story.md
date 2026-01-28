@@ -4,6 +4,16 @@ Detailed workflows for User Story generation, quality enforcement, and managemen
 
 <!-- Load when: generating or managing Stories -->
 
+## Reading Guide
+
+| Section | When to Read |
+|---------|--------------|
+| Story Workflows | When generating stories from epics |
+| Story Generate Workflow | When extracting specs from existing code |
+| Story Quality Enforcement | When validating story readiness |
+| Workflow Commands | When using `story plan` or `story implement` |
+| Section Reference | See `reference-story-sections.md` for template guidance |
+
 ---
 
 # Story Workflows
@@ -88,7 +98,7 @@ Detailed workflows for User Story generation, quality enforcement, and managemen
 4. **Generate Story Files**
    - Assign ID: US{NNNN} (global)
    - Create slug (kebab-case)
-   - Use `templates/story-template.md`
+   - Use `templates/core/story.md`
    - Link to parent Epic
 
 5. **Update Epic Files**
@@ -104,6 +114,122 @@ Detailed workflows for User Story generation, quality enforcement, and managemen
    - Stories created per Epic
    - Full story list
    - Criteria that couldn't be converted
+
+8. **Run Cohesion Review (Automatic)**
+   - See [Story Cohesion Review](#story-cohesion-review) below
+   - Validates generated stories collectively cover the epic
+   - Reports gaps, sizing issues, overlaps
+   - Auto-fixes where possible
+
+---
+
+## Story Cohesion Review (Post-Generation) {#story-cohesion-review}
+
+Automatic review that runs as the final step of story generation. Ensures stories collectively cover the epic requirements.
+
+### Trigger
+
+Runs automatically after `story generate --epic EP0001`. No separate command needed.
+
+### Cohesion Checks
+
+| Check | Description | Severity |
+|-------|-------------|----------|
+| **AC Coverage** | Every epic AC maps to at least one story AC | Critical |
+| **Edge Cases** | All epic edge cases distributed across stories | Important |
+| **Dependencies** | Story dependencies form valid DAG (no cycles) | Critical |
+| **Sizing** | No story too large (> 13 points or > 10 AC) | Important |
+| **Overlaps** | No duplicate AC across multiple stories | Suggestion |
+| **Gaps** | No epic requirements left unaddressed | Critical |
+
+### Cohesion Review Workflow {#cohesion-workflow}
+
+```text
+1. Gather Generated Stories
+   - Load all stories just created for epic
+   - Build story-to-AC mapping
+
+2. Check AC Coverage
+   - Parse epic AC list
+   - For each epic AC: find matching story AC
+   - Flag any epic AC with no story coverage
+
+3. Check Edge Cases
+   - Parse epic edge cases
+   - For each: find story that handles it
+   - Flag unhandled edge cases
+
+4. Check Dependencies
+   - Build dependency graph from story deps
+   - Detect cycles (error if found)
+   - Check schema/API deps have source stories
+
+5. Check Sizing
+   - Flag stories with > 13 points
+   - Flag stories with > 10 AC
+   - Suggest splitting if found
+
+6. Check Overlaps
+   - Compare AC text across stories
+   - Flag similar AC in different stories
+   - Suggest consolidation if overlap > 70%
+
+7. Report & Auto-Fix
+   - Display cohesion summary
+   - If issues found:
+     - Critical: Missing AC coverage, cycles
+     - Important: Sizing issues, edge case gaps
+     - Suggestion: Overlaps, dependency optimisations
+   - Apply auto-fixes where safe
+   - Update epic with discovered gaps
+```
+
+### Cohesion Report Output {#cohesion-output}
+
+Displayed after story generation completes:
+
+```text
+## Story Cohesion Review: EP0001
+
+Generated 6 stories for "User Authentication"
+
+### AC Coverage                    ✅ 100%
+All 12 epic AC mapped to story AC
+
+### Edge Cases                     ⚠️ 1 gap
+- "Rate limiting bypass" not covered → Added to US0006
+
+### Dependencies                   ✅ Valid
+No cycles, all deps have sources
+
+### Sizing                         ⚠️ 1 flag
+- US0003 has 14 AC → Consider splitting
+
+### Overlaps                       ✅ None
+No duplicate AC detected
+
+### Actions Taken
+- Added edge case to US0006
+- Updated EP0001 open questions with sizing concern
+```
+
+### Auto-Fix Behaviour {#cohesion-auto-fix}
+
+| Issue | Auto-Fix | Manual Action |
+|-------|----------|---------------|
+| Missing edge case | Add to most relevant story | None needed |
+| Missing AC coverage | Add as open question on epic | User must assign to story |
+| Cycle detected | Report error, no auto-fix | User must resolve |
+| Oversized story | Add splitting suggestion to story | User decides whether to split |
+| Overlapping AC | Report only, no auto-fix | User consolidates if needed |
+
+### Cohesion Findings Storage {#cohesion-storage}
+
+Cohesion review results are stored as part of the review findings system:
+
+- **Location:** `sdlc-studio/reviews/RV{NNNN}-{epic-id}-cohesion.md`
+- **Template:** `templates/review-findings-template.md` (cohesion section)
+- **State tracking:** Updated in `sdlc-studio/.local/review-state.json`
 
 ---
 
@@ -222,7 +348,7 @@ Detailed workflows for User Story generation, quality enforcement, and managemen
    - Done only after tests pass against implementation
 
 6. **Write Story Files**
-   - Use `templates/story-template.md`
+   - Use `templates/core/story.md`
    - Include exhaustive edge case tables
    - Include precise API contracts
    - Link to parent Epic
@@ -252,17 +378,100 @@ Before marking a story as Ready, verify it meets minimum standards.
 
 > **Ready criteria:** `reference-decisions.md` → Story Ready
 
-## Quality Checklist {#quality-checklist}
+## Story Ready Validation (Enforced) {#ready-validation}
+
+Stories CANNOT be marked Ready unless they meet these enforced minimums:
 
 ### API Stories {#api-stories}
 
-| Requirement | Minimum | Check |
-|-------------|---------|-------|
-| Edge cases | 8+ with specific inputs/outputs | `grep -c "\| Scenario" story.md` |
-| Test scenarios | 10+ | `grep -c "- \[ \]" story.md` |
-| Request/response shapes | Exact JSON documented | AC includes full schema |
-| Error codes | All codes with messages | Edge case table complete |
-| Validation rules | Extracted from code | Not assumed or guessed |
+| Requirement | Minimum | Enforcement |
+|-------------|---------|-------------|
+| Edge cases documented | 8 | Count `\| Scenario` rows in edge case table |
+| Test scenarios listed | 10 | Count `- [ ]` items in Test Scenarios section |
+| Given/When/Then concrete | All AC | No placeholders or TBD |
+| Error codes specified | All errors | Each error has code and message |
+| Open questions resolved | All critical | No unresolved critical questions |
+
+### UI Stories {#ui-stories}
+
+| Requirement | Minimum | Enforcement |
+|-------------|---------|-------------|
+| Edge cases documented | 5 | Count `\| Scenario` rows |
+| Test scenarios listed | 8 | Count `- [ ]` items |
+| UI states documented | All | Loading, error, empty, success |
+| Accessibility noted | Required | Screen reader, keyboard nav |
+| Open questions resolved | All critical | No unresolved critical |
+
+### Validation Algorithm {#validation-algorithm}
+
+```python
+def validate_story_ready(story):
+    errors = []
+
+    # Count edge cases
+    edge_cases = count_table_rows(story, "Edge Cases")
+    min_edge_cases = 8 if story.is_api else 5
+    if edge_cases < min_edge_cases:
+        errors.append(f"Edge cases: {edge_cases}/{min_edge_cases} (need {min_edge_cases - edge_cases} more)")
+
+    # Count test scenarios
+    test_scenarios = count_checkboxes(story, "Test Scenarios")
+    min_scenarios = 10 if story.is_api else 8
+    if test_scenarios < min_scenarios:
+        errors.append(f"Test scenarios: {test_scenarios}/{min_scenarios}")
+
+    # Check for placeholders
+    if contains_placeholder(story.acceptance_criteria):
+        errors.append("AC contains TBD or placeholder text")
+
+    # Check critical open questions
+    critical_questions = get_unresolved_critical(story.open_questions)
+    if critical_questions:
+        errors.append(f"Unresolved critical questions: {len(critical_questions)}")
+
+    # Check ambiguous language
+    ambiguous = detect_ambiguous_language(story)
+    if ambiguous:
+        errors.append(f"Ambiguous language found: {', '.join(ambiguous)}")
+
+    return errors
+```
+
+### Validation Output {#validation-output}
+
+When attempting to mark a story Ready:
+
+```markdown
+## Story Ready Validation: US0024
+
+### Status: BLOCKED
+
+Cannot mark Ready - the following requirements are not met:
+
+| Requirement | Current | Required | Gap |
+|-------------|---------|----------|-----|
+| Edge cases | 5 | 8 | Need 3 more |
+| Test scenarios | 7 | 10 | Need 3 more |
+| Critical questions | 2 unresolved | 0 | Resolve or downgrade |
+
+### Ambiguous Language Detected
+
+The following phrases should be made specific:
+
+| Location | Phrase | Suggestion |
+|----------|--------|------------|
+| AC2 | "handles errors" | Specify which errors and how |
+| Edge Case 3 | "returns appropriate response" | Specify exact response |
+
+### Actions Required
+
+1. Add 3 more edge cases to Edge Cases table
+2. Add 3 more test scenarios to Test Scenarios section
+3. Resolve or downgrade critical open questions
+4. Replace ambiguous language with specific behaviour
+```
+
+## Quality Checklist {#quality-checklist}
 
 ### All Stories {#all-stories}
 
@@ -311,178 +520,9 @@ Story Quality:
 
 # User Story Section Reference
 
-Detailed guidance for completing each section of the User Story template.
+> **Section-by-section guidance:** See `reference-story-sections.md` for detailed guidance on completing each section of the story template (User Story statement, Context, AC, Scope, UI/UX, Technical Notes, Edge Cases, Test Scenarios, DoD, Estimation).
 
 ---
-
-## User Story Statement {#user-story-statement}
-
-### Format {#story-format}
-**As a** {persona name from personas.md}
-**I want** {specific capability or action}
-**So that** {concrete benefit or outcome}
-
-### Good Examples {#story-good-examples}
-- As a **new user**, I want **to reset my password via email** so that **I can regain access without contacting support**.
-- As a **team lead**, I want **to see my team's activity summary** so that **I can identify blockers in our standup**.
-
-### Bad Examples {#story-bad-examples}
-- As a user, I want a button... (which user? button for what?)
-- As a developer, I want clean code... (not user-facing value)
-- As a user, I want the system to be fast... (not specific action)
-
----
-
-## Context {#context}
-
-### Persona Reference {#persona-reference}
-- Link to full persona in personas.md
-- Include relevant summary (goals, pain points)
-- Helps developers understand who they're building for
-
-### Background {#story-background}
-- Why does this story exist?
-- What led to this need?
-- Business context not obvious from Epic
-
----
-
-## Acceptance Criteria {#acceptance-criteria-guide}
-
-### Given/When/Then Format {#given-when-then-format}
-- **Given**: precondition or context
-- **When**: action taken
-- **Then**: observable outcome
-
-### Guidelines {#ac-guidelines}
-- 3-5 criteria per story
-- Each criterion independently testable
-- Cover happy path AND key edge cases
-- Avoid implementation details
-
-### Good Example {#ac-good-example}
-```
-### AC1: Successful password reset
-- **Given** user has a registered email address
-- **When** they submit the password reset form
-- **Then** they receive a reset link within 5 minutes
-```
-
-### Bad Example {#ac-bad-example}
-```
-### AC1: Works correctly
-- **Given** user is logged in
-- **When** they use the feature
-- **Then** it works
-```
-
----
-
-## Scope {#story-scope}
-
-### In Scope {#story-in-scope}
-- What this specific story delivers
-- Boundaries prevent scope creep
-- Be precise (e.g., "Email reset only, not SMS")
-
-### Out of Scope {#story-out-of-scope}
-- Related functionality NOT in this story
-- Explicitly state to prevent misunderstandings
-- Reference other stories if covered elsewhere
-
----
-
-## UI/UX Requirements {#ui-ux-requirements}
-
-### When to Include {#when-to-include}
-- User-facing functionality
-- Visual or interaction requirements
-- Accessibility considerations
-
-### What to Include {#what-to-include}
-- Wireframe or design references
-- Design system components to use
-- Behavioural specifications (animations, transitions)
-- Responsive requirements
-
----
-
-## Technical Notes {#technical-notes}
-
-### Purpose {#purpose}
-- Guide developers without prescribing solution
-- Share relevant context
-- Prevent known pitfalls
-
-### API Contracts {#api-contracts}
-- Expected request/response shapes
-- Error codes and messages
-- Authentication requirements
-
-### Data Requirements {#data-requirements}
-- Schema changes needed
-- Data sources
-- Validation rules
-
----
-
-## Edge Cases & Error Handling {#edge-cases-and-error-handling}
-
-### What to Include {#what-to-include}
-- Unusual but valid scenarios
-- Error conditions
-- Recovery behaviours
-
-### Format {#story-format}
-| Scenario | Expected Behaviour |
-|----------|-------------------|
-| User submits expired reset link | Show "Link expired" with option to request new |
-| Network timeout during submit | Show retry option, preserve form data |
-
----
-
-## Test Scenarios {#test-scenarios}
-
-### Purpose {#purpose}
-- Key scenarios for QA
-- NOT exhaustive test cases
-- Helps estimate test effort
-
-### Guidelines {#ac-guidelines}
-- Focus on user journeys
-- Include happy path and key edge cases
-- Checkbox format for tracking
-
----
-
-## Definition of Done {#definition-of-done}
-
-### Standard Reference {#standard-reference}
-- Link to project-level DoD
-- Don't repeat standard items
-
-### Story-Specific Additions {#story-specific-additions}
-- Additional criteria for THIS story
-- Security review needed?
-- Performance benchmark required?
-- Specific documentation?
-
----
-
-## Estimation {#estimation}
-
-### Story Points {#story-points-guide}
-- Filled in during team refinement
-- Initially `{{TBD}}` from generation
-- Fibonacci sequence (1, 2, 3, 5, 8, 13)
-
-### Complexity {#complexity}
-- Low: familiar patterns, no unknowns
-- Medium: some new elements, manageable risk
-- High: significant unknowns, new technology
-
----
-
 
 # Workflow Commands
 
@@ -703,7 +743,7 @@ rm sdlc-studio/workflows/WF0024-action-queue-api.md
 - `reference-bug.md` - Bug tracking workflows
 - `reference-decisions.md` - Ready criteria, dependency detection, decision guidance
 - `reference-code.md` - Code plan, implement, review workflows (includes workflow orchestration)
-- `reference-testing.md` - Test Strategy, Spec, Automation workflows
+- `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` - Test workflows
 - `reference-philosophy.md` - Create vs Generate philosophy
 
 ---
@@ -722,6 +762,6 @@ rm sdlc-studio/workflows/WF0024-action-queue-api.md
 - `reference-outputs.md#output-formats` - File formats and status values
 
 **Deep dives (optional):**
-- `reference-testing.md` - Test workflows (stories link to test specs)
+- `reference-test-spec.md` - Test workflows (stories link to test specs)
 - `reference-bug.md` - Bug tracking (bugs link to stories)
 - `reference-philosophy.md` - Create vs Generate philosophy

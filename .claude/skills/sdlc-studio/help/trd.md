@@ -1,7 +1,7 @@
 <!--
 Load: On /sdlc-studio trd or /sdlc-studio trd help
 Dependencies: SKILL.md (always loaded first)
-Related: reference-trd.md (deep workflow), reference-architecture.md, templates/trd-template.md
+Related: reference-trd.md (deep workflow), reference-architecture.md, templates/core/trd.md
 -->
 
 # /sdlc-studio trd - Technical Requirements Document
@@ -15,6 +15,7 @@ Create and maintain Technical Requirements Documents that bridge product require
 /sdlc-studio trd create              # Interactive TRD creation
 /sdlc-studio trd generate            # Reverse-engineer TRD from codebase
 /sdlc-studio trd review              # Review TRD against implementation
+/sdlc-studio trd visualise           # Regenerate architecture diagrams
 ```
 
 ## Purpose
@@ -68,6 +69,8 @@ Reverse-engineer a TRD from an existing codebase.
 
 **Prerequisites:** PRD should exist for context
 
+> **Source of truth:** `reference-philosophy.md#generate-mode` - explains the specification extraction philosophy.
+
 **Process:**
 1. **Detect project type** from codebase patterns
 2. **Detect architecture pattern** (monolith, microservices, etc.)
@@ -104,6 +107,61 @@ Review TRD against implementation and sync changes.
 5. Resolve answered questions
 
 **Best for:** Keeping documentation current after changes
+
+### visualise
+
+Regenerate architecture diagrams from TRD content.
+
+**Prerequisites:** TRD must exist with Technology Stack and Architecture sections
+
+**Process:**
+1. Parses TRD sections (Technology Stack, Architecture Decisions, Integrations)
+2. Extracts system boundaries, containers, components
+3. Generates C4 model diagrams as Mermaid code blocks
+4. Updates TRD Architecture Diagrams section
+
+**Diagram types:**
+
+| Diagram | C4 Level | Shows |
+|---------|----------|-------|
+| System Context | L1 | System + external actors + systems |
+| Container | L2 | Applications + data stores + communication |
+| Component | L3 | Internal structure of a container |
+
+**Diagram rendering:**
+- GitHub/GitLab: Renders automatically in markdown preview
+- VS Code: Install Mermaid extension
+- Documentation systems: Most modern systems support Mermaid
+
+**Best for:** Keeping diagrams in sync after architecture changes
+
+### containerize
+
+Add container design decisions to TRD.
+
+**Prerequisites:** TRD must exist with Technology Stack section
+
+**Process:**
+1. Parses TRD Technology Stack section
+2. Asks about containerisation requirements
+3. Generates Container Design section with:
+   - Base image selection and rationale
+   - Build stages for multi-stage builds
+   - Environment variables documentation
+   - Test environment container definitions
+4. Updates TRD with Container Design section
+
+**Container decisions captured:**
+
+| Decision | What it documents |
+|----------|-------------------|
+| Base image | Alpine, slim, distroless, etc. |
+| Build stages | Multi-stage build strategy |
+| Exposed ports | Application ports and usage |
+| Environment variables | Config with defaults and requirements |
+| Test services | Database, cache, queue for testing |
+
+**Best for:** Documenting container strategy before generating docker-compose files
 
 ## Output
 

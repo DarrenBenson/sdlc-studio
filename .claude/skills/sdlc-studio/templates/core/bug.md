@@ -1,5 +1,5 @@
 <!--
-Template: Bug Report
+Template: Bug Report (Streamlined)
 File: sdlc-studio/bugs/BG{NNNN}-{slug}.md
 Status values: See reference-outputs.md
 Related: help/bug.md, reference-bug.md
@@ -12,7 +12,6 @@ Related: help/bug.md, reference-bug.md
 > **Reporter:** {{reporter}}
 > **Assignee:** {{assignee}}
 > **Created:** {{created_date}}
-> **Updated:** {{updated_date}}
 
 ## Summary
 
@@ -28,7 +27,8 @@ Related: help/bug.md, reference-bug.md
 
 - **Version:** {{version}}
 - **Platform:** {{platform}}
-- **Browser:** {{browser}}
+
+---
 
 ## Reproduction Steps
 
@@ -44,9 +44,7 @@ Related: help/bug.md, reference-bug.md
 
 {{actual_behaviour}}
 
-## Screenshots/Evidence
-
-{{screenshots}}
+---
 
 ## Root Cause Analysis
 
@@ -68,33 +66,22 @@ Related: help/bug.md, reference-bug.md
 
 ### Tests Added
 
-| Test ID | Description | File |
-|---------|-------------|------|
+| Test | Description | File |
+|------|-------------|------|
 | TC{{test_id}} | {{test_description}} | {{test_file}} |
 
-## Verification
+---
 
-> *Filled when verifying*
+## Verification
 
 - [ ] Fix verified in development
 - [ ] Regression tests pass
 - [ ] No side effects observed
-- [ ] Documentation updated (if applicable)
 
 **Verified by:** {{verifier}}
 **Verification date:** {{verification_date}}
 
-## Related Items
-
-| Type | ID | Description |
-|------|-----|-------------|
-| Story | US{{related_story}} | {{related_story_title}} |
-| Bug | BG{{related_bug}} | {{related_bug_title}} |
-| Test | TC{{related_test}} | {{related_test_title}} |
-
-## Notes
-
-{{notes}}
+---
 
 ## Revision History
 
