@@ -356,6 +356,20 @@ When to validate decisions and what to check.
 
 **Tool support:** `/sdlc-studio code test` propagates results to story status.
 
+## Story Terminal Status Validation {#story-terminal-validation}
+
+**Check:** When a story reaches any terminal status (Done, Won't Implement, Deferred, Superseded), verify that the [Story Completion Cascade](reference-outputs.md#story-completion-cascade) was executed correctly.
+
+| Validation | Method | Pass Condition |
+|------------|--------|----------------|
+| Plan cascade | Check plan's `> **Status:**` header | Matches target from cascade table |
+| Test spec cascade | Check spec's `> **Status:**` header | Matches target from cascade table |
+| Workflow cascade | Check workflow's `> **Status:**` header | Matches target from cascade table |
+| Index counts current | Compare `_index.md` counts with file statuses | Counts match reality |
+| Reason documented | Check story file for reason (non-Done terminals only) | Reason present for Won't Implement/Deferred/Superseded |
+
+**Tool support:** `/sdlc-studio status --full` detects stale statuses where a story is terminal but linked artifacts are not. See `help/status.md` → Index Reconciliation.
+
 ---
 
 # Cross-Story Dependency Detection {#cross-story-dependencies}
@@ -542,6 +556,7 @@ Each phase in `story implement` validates before proceeding:
 | Stories exist | At least one Ready story |
 | No cycles | Dependency graph is acyclic |
 | Dependencies resolvable | No external blockers |
+| Agentic wave analysis | If `--agentic`: `epic plan --agentic` must have run first |
 
 ### Per-story {#epic-per-story}
 
@@ -550,6 +565,13 @@ Each phase in `story implement` validates before proceeding:
 | Dependencies Done | All story dependencies complete |
 | Story Ready | Individual story meets Ready criteria |
 | Story workflow | 7 phases complete successfully |
+
+### Per-wave (agentic mode only) {#epic-per-wave}
+
+| Checkpoint | Validation |
+|------------|------------|
+| No hub file conflicts | Stories in wave share no hub files |
+| Wave tests pass | Full test suite after each wave completes |
 
 ### Post-execution {#epic-post-execution}
 

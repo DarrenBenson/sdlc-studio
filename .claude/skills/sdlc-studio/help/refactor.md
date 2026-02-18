@@ -6,6 +6,8 @@ Related: reference-refactor.md (deep workflow), reference-code.md (implementatio
 
 # /sdlc-studio code refactor - Guided Refactoring
 
+> **Source of truth:** `reference-refactor.md` - Detailed workflow steps
+
 ## Quick Reference
 
 ```bash

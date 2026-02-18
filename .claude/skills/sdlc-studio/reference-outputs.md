@@ -11,11 +11,11 @@ Single source of truth for all output formats, file locations, status values, an
 | Persona | `sdlc-studio/personas.md` | Fixed | - |
 | TSD | `sdlc-studio/tsd.md` | Fixed | - |
 | Epic | `sdlc-studio/epics/EP{NNNN}-*.md` | EP0001, EP0002, EP0003... | Draft/Ready/Approved/In Progress/Done |
-| Story | `sdlc-studio/stories/US{NNNN}-*.md` | US0001, US0002, US0003... | Draft/Ready/Planned/In Progress/Review/Done |
-| Plan | `sdlc-studio/plans/PL{NNNN}-*.md` | PL0001, PL0002, PL0003... | Draft/In Progress/Complete |
+| Story | `sdlc-studio/stories/US{NNNN}-*.md` | US0001, US0002, US0003... | Draft/Ready/Planned/In Progress/Review/Done/Won't Implement/Deferred/Superseded |
+| Plan | `sdlc-studio/plans/PL{NNNN}-*.md` | PL0001, PL0002, PL0003... | Draft/In Progress/Complete/Superseded |
 | Bug | `sdlc-studio/bugs/BG{NNNN}-*.md` | BG0001, BG0002, BG0003... | Open/In Progress/Fixed/Verified/Closed/Won't Fix |
-| Test Spec | `sdlc-studio/test-specs/TS{NNNN}-*.md` | TS0001, TS0002, TS0003... | Draft/Ready/In Progress/Complete |
-| Workflow | `sdlc-studio/workflows/WF{NNNN}-*.md` | WF0001, WF0002, WF0003... | Created/Planning/Testing/Implementing/Verifying/Reviewing/Checking/Done/Paused |
+| Test Spec | `sdlc-studio/test-specs/TS{NNNN}-*.md` | TS0001, TS0002, TS0003... | Draft/Ready/In Progress/Complete/Superseded |
+| Workflow | `sdlc-studio/workflows/WF{NNNN}-*.md` | WF0001, WF0002, WF0003... | Created/Planning/Testing/Implementing/Verifying/Reviewing/Checking/Done/Paused/Superseded |
 | Test Code | `tests/` | Framework-dependent | - |
 
 ## Status Transitions {#status-transitions}
@@ -54,6 +54,12 @@ Draft → Ready → Planned → In Progress → Review → Done
 - **In Progress → Review:** Code complete, tests passing
 - **Review → Done:** Code verified against acceptance criteria, quality checks passed
 - **Any → Draft:** Requirements change (revision)
+
+**Terminal status transitions (non-Done):**
+
+- **Any → Won't Implement:** Decision not to build this story. Document reason in story file. Execute [Story Completion Cascade](#story-completion-cascade) with target status "Superseded" for linked artifacts.
+- **Any → Deferred:** Story postponed to a future release. Document reason and expected timeline. Execute [Story Completion Cascade](#story-completion-cascade) with target status "Superseded" for linked artifacts.
+- **Any → Superseded:** Story replaced by a different story or combined approach (e.g. two stories merged into one). Document replacement in story file, cross-reference the superseding story. Execute [Story Completion Cascade](#story-completion-cascade) with target status "Superseded" for linked artifacts.
 
 ### Plan Status Flow {#plan-status-flow}
 
@@ -116,6 +122,51 @@ Created → Planning → Testing → Implementing → Verifying → Reviewing �
 - **Reviewing → Checking:** Code check phase started
 - **Checking → Done:** All phases complete
 - **Any → Paused:** Workflow suspended (user request or blocker)
+
+> **Agentic execution:** When `epic implement --agentic` runs, each story still produces a standard workflow file with these status transitions. Wave-level orchestration (pre-flight checks, post-wave test runs) is tracked in the epic file, not in individual workflow files. See `reference-epic.md#flag-agentic`.
+
+## Status Vocabulary Enforcement {#status-vocabulary}
+
+Each artifact type has a **canonical set of status values**. Do not use ad-hoc statuses (e.g., "Active", "Review", "Planned" for plans). Non-standard values cause dashboard misreporting.
+
+| Type | Allowed Statuses | Terminal |
+|------|-----------------|----------|
+| Epic | Draft, Ready, Approved, In Progress, Done | Done |
+| Story | Draft, Ready, Planned, In Progress, Review, Done, Won't Implement, Deferred, Superseded | Done, Won't Implement, Deferred, Superseded |
+| Plan | Draft, In Progress, Complete, Superseded | Complete, Superseded |
+| Test Spec | Draft, Ready, In Progress, Complete, Superseded | Complete, Superseded |
+| Bug | Open, In Progress, Fixed, Verified, Closed, Won't Fix | Closed, Won't Fix |
+| Workflow | Created, Planning, Testing, Implementing, Verifying, Reviewing, Checking, Done, Paused, Complete, Superseded | Done, Complete, Superseded |
+
+**Validation rule:** When writing or updating a `> **Status:**` header, verify the value is in the allowed set for that artifact type. If a non-standard value is found during `status --full`, flag it in the INTEGRITY section.
+
+### Project-Level Document Exemptions {#project-level-exemptions}
+
+The following project-level documents do **not** follow the standard Draft-to-Done lifecycle. They are exempt from lifecycle status checks in `status --full` and health-check rules.
+
+| Document | Location | Reason for Exemption |
+|----------|----------|---------------------|
+| PRD | `sdlc-studio/prd.md` | Living document. Uses feature status markers, not lifecycle status. |
+| TRD | `sdlc-studio/trd.md` | Uses Draft/Approved only. No terminal "Done" state - evolves with architecture. |
+| TSD | `sdlc-studio/tsd.md` | Strategy document. Updated as test approach evolves, not per-story lifecycle. |
+| Personas | `sdlc-studio/personas.md` | Reference document. No status field - always current or updated in place. |
+| Brand Guide | `sdlc-studio/brand-guide.md` | Reference document. No lifecycle status - defines project visual identity. |
+
+**Rule:** When `status --full` or health-check scans for stale/missing statuses, skip files matching these locations. Do not flag them as missing a status field or having a non-standard status.
+
+## ID Collision Prevention {#id-collision-prevention}
+
+Before assigning any artifact ID, **always check for existing files with the same ID prefix:**
+
+```
+Glob: sdlc-studio/{type}/{PREFIX}{NNNN}*.md
+```
+
+If one or more files already exist with that ID:
+1. Increment to the next available ID
+2. Log a warning: `ID collision avoided: {ID} already used by {existing_file}`
+
+**Known historical collisions** (for reference): TS0012, TS0180, TS0190, TS0201, PL0180, PL0184, PL0190, PL0201. These exist from before collision prevention was added.
 
 ## File Naming Conventions {#file-naming}
 
@@ -479,6 +530,38 @@ A story can be marked **Ready** when:
 - [ ] Deployment target identified
 - [ ] Scaling strategy documented
 - [ ] Disaster recovery documented
+
+### Story Completion Cascade Checklist {#story-completion-cascade}
+
+When a story reaches any **terminal status** (Done, Won't Implement, Deferred, Superseded), all linked artifacts MUST be updated immediately. This is the single canonical cascade procedure - all code paths reference this checklist rather than maintaining inline copies.
+
+**Target status mapping:**
+
+| Story Terminal Status | Plan Target | Test Spec Target | Workflow Target |
+|----------------------|-------------|------------------|-----------------|
+| Done | Complete | Complete | Complete/Done |
+| Won't Implement | Superseded | Superseded | Superseded |
+| Deferred | Superseded | Superseded | Superseded |
+| Superseded | Superseded | Superseded | Superseded |
+
+**Mandatory cascade steps:**
+
+1. **Find and update plan:** Search `sdlc-studio/plans/` for the plan linked to this story. Update `> **Status:**` to the target status from the table above. Update `plans/_index.md` entry.
+2. **Find and update test spec:** Search `sdlc-studio/test-specs/` for the spec linked to this story. Update `> **Status:**` to the target status. Update `test-specs/_index.md` entry. For epic-scoped specs, see [Epic-Scoped Coverage](#epic-scoped-coverage) in `reference-test-spec.md` - only cascade when ALL covered stories are terminal.
+3. **Find and update workflow:** Search `sdlc-studio/workflows/WF*` for the workflow linked to this story. Update `> **Status:**` to the target status. Update any non-terminal phase statuses.
+4. **Recalculate index counts:** Update summary counts in `plans/_index.md`, `test-specs/_index.md`, and `workflows/_index.md` if they contain summary sections.
+5. **Check epic status:** If all stories in the parent epic are now terminal, suggest marking the epic as Done (user confirms - never auto-assign).
+6. **Document reason:** For non-Done terminal statuses, ensure the story file contains a reason (e.g. "Superseded by US0026 which combines US0025 and US0027").
+
+**Code paths that trigger this cascade:**
+
+- `reference-code.md` → code verify step 9 (story marked Done after verification)
+- `reference-code.md` → code test step 8 (story moved to Done after tests pass)
+- `reference-story.md` → story review step 3 (user confirms Done)
+- `reference-story.md` → story implement step 6a (workflow completion cascade)
+- Manual status change (any workflow that sets a story to a terminal status)
+
+> **Why this matters:** Without cascading, artifact files accumulate stale statuses (Draft/Ready/In Progress) even though the linked story is terminal. This creates misleading dashboard output, false health-check findings, and requires periodic manual cleanup.
 
 ---
 

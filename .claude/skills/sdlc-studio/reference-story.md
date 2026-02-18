@@ -121,6 +121,19 @@ Detailed workflows for User Story generation, quality enforcement, and managemen
    - Reports gaps, sizing issues, overlaps
    - Auto-fixes where possible
 
+9. **Persona Validation (Optional)**
+   Unless `--skip-personas` flag used:
+   - For each story, identify the primary persona (from "As a...")
+   - Offer: "Would you like persona validation of acceptance criteria?"
+   - If yes, for each story:
+     - Consult the story's persona about AC completeness
+     - Run: `/sdlc-studio consult [persona] [story-file] --quick`
+   - Report persona feedback:
+     - AC that personas approved
+     - AC that personas questioned
+     - Missing scenarios personas identified
+   - Optionally update stories with persona-suggested improvements
+
 ---
 
 ## Story Cohesion Review (Post-Generation) {#story-cohesion-review}
@@ -259,6 +272,8 @@ Cohesion review results are stored as part of the review findings system:
      - If all AC and DoD items met → suggest "Done" (user confirms)
      - "Done" is always a user decision, never auto-assigned
      - Prompt user: "All criteria complete. Mark story as Done? [y/N]"
+     - **If user confirms Done:** Execute the **Story Completion Cascade** immediately.
+       > **Canonical checklist:** `reference-outputs.md` → [Story Completion Cascade](#story-completion-cascade)
 
 4. **Update Related Files**
    - Update _index.md with status counts
@@ -528,6 +543,8 @@ Story Quality:
 
 Automated workflows for complete story implementation.
 
+These commands operate on a single story. For autonomous epic-level execution with concurrent waves, see `reference-epic.md#flag-agentic`.
+
 ## /sdlc-studio story plan - Step by Step {#story-plan-workflow}
 
 1. **Validate Story Ready**
@@ -563,24 +580,33 @@ Automated workflows for complete story implementation.
 
    Document rationale for approach selection.
 
-4. **Create Implementation Plan**
+4. **Create Implementation Plan (MANDATORY)**
    - Run `code plan --story US000X` internally
-   - Verify plan creates successfully
+   - Write plan file to `sdlc-studio/plans/PL{NNNN}-{slug}.md`
+   - **STOP if file creation fails** - do not proceed without written plan
    - Store plan ID for workflow tracking
 
-5. **Create Test Specification**
+5. **Create Test Specification (MANDATORY)**
    - Run `test-spec --story US000X` internally
-   - Verify spec creates successfully
+   - Write spec file to `sdlc-studio/test-specs/TS{NNNN}-{slug}.md`
+   - **STOP if file creation fails** - do not proceed without written spec
    - Store spec ID for workflow tracking
 
-6. **Generate Preview**
-   Output workflow plan to console:
+6. **Review Created Artifacts with User**
+   Present the created artifacts for user review:
    ```
    ## Story Workflow Plan: US0024
 
    **Story:** Action Queue API Endpoint
-   **Status:** Ready
+   **Status:** Ready → Planned
    **Dependencies:** US0023 (Done)
+
+   ### Artifacts Created
+
+   | Artifact | Path | Status |
+   |----------|------|--------|
+   | Implementation Plan | sdlc-studio/plans/PL0024-action-queue-api.md | ✅ Created |
+   | Test Specification | sdlc-studio/test-specs/TS0024-action-queue-api.md | ✅ Created |
 
    ### Approach: TDD
    Reason: API story with 8 edge cases, clear Given/When/Then AC
@@ -589,8 +615,8 @@ Automated workflows for complete story implementation.
 
    | Phase | Command | Artifacts |
    |-------|---------|-----------|
-   | 1. Plan | code plan | PL0024-action-queue-api.md |
-   | 2. Test Spec | test-spec | TS0024-action-queue-api.md |
+   | 1. Plan | ✅ Complete | PL0024-action-queue-api.md |
+   | 2. Test Spec | ✅ Complete | TS0024-action-queue-api.md |
    | 3. Tests | test-automation | tests/test_action_queue_api.py |
    | 4. Implement | code implement | src/api/action_queue.py |
    | 5. Test | code test | Run tests |
@@ -598,100 +624,228 @@ Automated workflows for complete story implementation.
    | 7. Check | code check | Quality gates |
    | 8. Review | status | Final status review |
 
-   Ready to execute? Run: /sdlc-studio story implement --story US0024
+   Review the plan and test-spec files. Ready to continue?
+   Run: /sdlc-studio story implement --story US0024
    ```
+
+   **CRITICAL:** Steps 4 and 5 MUST complete with files written to disk before showing this review. If no files exist, the workflow has failed.
 
 ---
 
 ## /sdlc-studio story implement - Step by Step {#story-implement-workflow}
 
-1. **Load or Create Workflow State**
-   - Check for existing workflow file in sdlc-studio/workflows/
-   - If exists, load state and determine resume point
-   - If not exists, create from `templates/workflow-template.md`
-   - Assign next workflow ID: WF{NNNN}
+1. **Check for Existing Workflow State (MANDATORY RESUME CHECK)**
 
-2. **Validate Prerequisites**
-   - Story exists and is Ready status
-   - Dependencies met (or `--from-phase` used to skip validation)
-   - No blocking errors in previous phases (if resuming)
+   **CRITICAL:** Before starting any work, check if this story has an existing workflow:
+
+   a. Search for workflow file: `sdlc-studio/workflows/WF*-{story-slug}.md`
+
+   b. **If workflow exists:**
+      - Read the workflow state file
+      - Check "Current Phase" and "Phase Progress" table
+      - Identify last completed phase and any errors
+      - Report resume status to user:
+        ```
+        ## Resuming Workflow: WF0024
+
+        **Story:** US0024 - Action Queue API
+        **Last Session:** 2026-01-27
+        **Completed Phases:** 1-3 (Plan, Test Spec, Implement)
+        **Resume From:** Phase 4 (Tests)
+
+        Continuing from where we left off...
+        ```
+      - Skip to the first incomplete phase
+
+   c. **If no workflow exists:**
+      - Create new workflow file from `templates/core/workflow.md`
+      - Write to `sdlc-studio/workflows/WF{NNNN}-{story-slug}.md`
+      - Assign next available workflow ID
+      - **STOP if file creation fails** - do not proceed without workflow state
+
+   d. **If `--from-phase N` specified:**
+      - Override resume point to phase N
+      - Update workflow state to reflect manual override
+
+2. **Validate Prerequisites (STOP if any fail)**
+
+   a. **Check story exists and has correct status:**
+      - Story file must exist in `sdlc-studio/stories/`
+      - Status must be Planned or In Progress
+      - If status is Ready/Draft: **STOP** - plan not created yet
+
+   b. **Check plan file exists (MANDATORY):**
+      - Search for `sdlc-studio/plans/PL*-{story-slug}.md`
+      - **If plan does NOT exist, STOP immediately:**
+        ```
+        ## Cannot Proceed - No Plan Found
+
+        **Story:** US0024 - Action Queue API
+        **Status:** Ready
+
+        A plan must be created before implementation can begin.
+        The plan defines implementation tasks, approach, and provides
+        an audit trail for the work.
+
+        ### To Create a Plan
+        Run: /sdlc-studio story plan --story US0024
+
+        This will:
+        1. Create the implementation plan (PL0024)
+        2. Create the test specification (TS0024)
+        3. Update story status to Planned
+        4. Present artifacts for review
+
+        Then run: /sdlc-studio story implement --story US0024
+        ```
+
+   c. **Check test spec file exists:**
+      - Search for `sdlc-studio/test-specs/TS*-{story-slug}.md`
+      - If missing but plan exists: warn but allow to continue
+        (test spec can be created during workflow)
+
+   d. **Check dependencies:**
+      - Dependencies met (or acknowledged if resuming)
+      - No unresolved blocking errors in workflow state
 
 3. **Apply Approach Override**
    - If `--tdd` flag: use TDD phase order
    - If `--no-tdd` flag: use Test-After phase order
-   - Otherwise: use approach from story plan
+   - Otherwise: use approach from plan's "Recommended Approach" section
 
-4. **Execute Phases**
-   For each phase (1-8):
+4. **Execute Phases (with Progress Tracking)**
 
-   a. **Update workflow state**: Phase → In Progress
+   For each phase (starting from resume point):
 
-   b. **Execute phase command**:
-      | Phase | Command |
-      |-------|---------|
-      | 1 | `code plan --story US000X` |
-      | 2 | `test-spec --story US000X` |
-      | 3 | `test-automation --spec TS000X` |
-      | 4 | `code implement --plan PL000X` |
-      | 5 | `code test --story US000X` |
-      | 6 | `code verify --story US000X` |
-      | 7 | `code check` |
+   a. **Update workflow state BEFORE starting phase:**
+      - Set phase status to "In Progress"
+      - Record start timestamp
+      - Write workflow file to disk
 
-   c. **Check result**:
-      - On success: Update phase → Done, continue
-      - On failure: Update phase → Paused, record error, stop
+   b. **Execute phase command:**
+      | Phase | Command | Artifacts |
+      |-------|---------|-----------|
+      | 1 | `code plan --story US000X` | Plan file |
+      | 2 | `test-spec --story US000X` | Test spec file |
+      | 3 | `code implement --plan PL000X` | Source files |
+      | 4 | `test-automation --spec TS000X` | Test files |
+      | 5 | `code test --story US000X` | Test results |
+      | 6 | `code verify --story US000X` | AC verification |
+      | 7 | `code check` | Lint results |
+      | 8 | Review | Final status |
 
-5. **Handle Phase Errors**
+   c. **Update plan checkboxes (MANDATORY for Phase 3):**
+      During implementation (Phase 3), as each task completes:
+      - Read the plan file
+      - Find the task in "Implementation Tasks" table
+      - Change `[ ]` to `[x]`
+      - Write the plan file
+      - Update workflow state with task completion
+
+      Example plan update:
+      ```markdown
+      | 1 | Add isPaused prop to StatusLED | `StatusLED.tsx` | - | [x] |
+      | 2 | Add paused state styling | `StatusLED.tsx` | 1 | [x] |
+      | 3 | Import Wrench icon | `ServerCard.tsx` | - | [ ] |  ← next task
+      ```
+
+   d. **Update workflow state AFTER phase completes:**
+      - Set phase status to "Done" (success) or "Paused" (failure)
+      - Record completion timestamp
+      - Record any notes or errors
+      - Update "Current Phase" pointer
+      - Add session log entry
+      - Write workflow file to disk
+
+5. **Handle Phase Errors (with State Preservation)**
+
    When a phase fails:
-   - Record error in workflow file
-   - Update workflow status to Paused
-   - Report error and resume instructions:
-     ```
-     ## Workflow Paused
 
-     **Story:** US0024 - Action Queue API
-     **Phase:** 5. Verify
-     **Error:** 2 tests failed
+   a. **Update workflow state immediately:**
+      - Set phase status to "Paused"
+      - Record error message in "Errors & Pauses" section
+      - Set workflow status to "Paused"
+      - Write workflow file to disk
 
-     ### Failed Tests
-     - test_action_queue_empty: Expected 200, got 500
-     - test_action_invalid_id: AssertionError
+   b. **Report error with resume path:**
+      ```
+      ## Workflow Paused
 
-     ### To Resume
-     1. Fix the failing tests or implementation
-     2. Run: /sdlc-studio story implement --story US0024 --from-phase 5
-     ```
+      **Story:** US0024 - Action Queue API
+      **Phase:** 5. Test
+      **Error:** 2 tests failed
 
-6. **Complete Workflow**
+      ### Failed Tests
+      - test_action_queue_empty: Expected 200, got 500
+      - test_action_invalid_id: AssertionError
+
+      ### State Saved
+      Workflow state saved to: sdlc-studio/workflows/WF0024-action-queue-api.md
+      Plan progress saved: 6/8 tasks complete
+
+      ### To Resume
+      1. Fix the failing tests or implementation
+      2. Run: /sdlc-studio story implement --story US0024
+         (Will automatically resume from Phase 5)
+
+      Or to skip to next phase:
+         /sdlc-studio story implement --story US0024 --from-phase 6
+      ```
+
+6. **Complete Workflow (with Full State Update)**
+
    When all phases pass:
-   - Update workflow status to Done
-   - Update story status to Done (or Review if `code verify` had issues)
-   - Report completion:
-     ```
-     ## Workflow Complete
 
-     **Story:** US0024 - Action Queue API
-     **Duration:** 45 minutes
-     **Approach:** TDD
+   a. **Update all artifact statuses (Status Cascade):**
+      This is the most critical step. Execute the **Story Completion Cascade** for the story being completed.
 
-     ### Summary
-     | Phase | Status | Duration |
-     |-------|--------|----------|
-     | 1. Plan | Done | 5m |
-     | 2. Test Spec | Done | 7m |
-     | 3. Tests | Done | 12m |
-     | 4. Implement | Done | 15m |
-     | 5. Test | Done | 2m |
-     | 6. Verify | Done | 2m |
-     | 7. Check | Done | 1m |
-     | 8. Review | Done | 1m |
+      > **Canonical checklist:** `reference-outputs.md` → [Story Completion Cascade](#story-completion-cascade)
 
-     ### Artifacts Created
-     - sdlc-studio/plans/PL0024-action-queue-api.md
-     - sdlc-studio/test-specs/TS0024-action-queue-api.md
-     - tests/test_action_queue_api.py
-     - src/api/action_queue.py
-     ```
+      Follow all six steps: update plan, update test spec, update workflow, recalculate index counts, check epic status, and document reason (for non-Done terminals). The story itself should be updated to Done (or the appropriate terminal status if the workflow was terminated early).
+
+      > **Why this is critical:** Without this cascade, plan and test spec files accumulate stale statuses (Draft/Ready/In Progress) while the story shows Done. This creates misleading dashboard output. Every story terminal status MUST cascade to all linked artifacts.
+
+   b. **Verify plan task completion:**
+      - Read plan file
+      - Check all tasks have `[x]`
+      - If any unchecked, report warning
+
+   c. **Update workflow completion section:**
+      - Record completion date
+      - Calculate total duration
+      - List all artifacts created
+
+   d. **Report completion with audit trail:**
+      ```
+      ## Workflow Complete
+
+      **Story:** US0024 - Action Queue API
+      **Workflow:** WF0024
+      **Duration:** 45 minutes (across 2 sessions)
+      **Approach:** TDD
+
+      ### Phase Summary
+      | Phase | Status | Completed |
+      |-------|--------|-----------|
+      | 1. Plan | Done | 2026-01-27 10:15 |
+      | 2. Test Spec | Done | 2026-01-27 10:22 |
+      | 3. Implement | Done | 2026-01-27 10:37 |
+      | 4. Tests | Done | 2026-01-27 10:45 |
+      | 5. Test | Done | 2026-01-28 09:12 |
+      | 6. Verify | Done | 2026-01-28 09:14 |
+      | 7. Check | Done | 2026-01-28 09:15 |
+      | 8. Review | Done | 2026-01-28 09:16 |
+
+      ### Plan Tasks: 8/8 Complete
+      All implementation tasks checked off in plan file.
+
+      ### Artifacts
+      - Workflow: sdlc-studio/workflows/WF0024-action-queue-api.md
+      - Plan: sdlc-studio/plans/PL0024-action-queue-api.md
+      - Test Spec: sdlc-studio/test-specs/TS0024-action-queue-api.md
+      - Tests: tests/test_action_queue_api.py
+      - Source: src/api/action_queue.py
+      ```
 
 ---
 
@@ -740,6 +894,9 @@ rm sdlc-studio/workflows/WF0024-action-queue-api.md
 # See Also
 
 - `reference-epic.md` - Epic workflows
+- `reference-epic.md#flag-agentic` - `--agentic` flag for concurrent story execution
+- `reference-persona.md` - Persona workflows
+- `reference-consult.md` - Persona consultation for story validation
 - `reference-bug.md` - Bug tracking workflows
 - `reference-decisions.md` - Ready criteria, dependency detection, decision guidance
 - `reference-code.md` - Code plan, implement, review workflows (includes workflow orchestration)

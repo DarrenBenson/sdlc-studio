@@ -254,6 +254,114 @@ stage = StageResult(stage=0, name="Stage 0", status=StageStatus.COMPLETE)
 
 ---
 
+## Frontend Testing Patterns (Vitest + React) {#frontend-testing-patterns}
+
+Patterns for testing React components with Vitest and jsdom.
+
+### Shared API Client Mock {#shared-api-mock}
+
+Most frontend tests need the same API client mock. Create a complete mock to avoid partial-mock errors:
+
+```typescript
+vi.mock("../../src/api/client.ts", () => ({
+  fetchProjects: vi.fn(),
+  fetchProject: vi.fn(),
+  createProject: vi.fn(),
+  updateProject: vi.fn(),
+  deleteProject: vi.fn(),
+  triggerSync: vi.fn(),
+  fetchDocuments: vi.fn(),
+  fetchDocument: vi.fn(),
+  fetchProjectStats: vi.fn(),
+  fetchAggregateStats: vi.fn(),
+}));
+
+// Then import and type the specific function:
+const { fetchProjectStats } = await import("../../src/api/client.ts");
+const mockFetch = vi.mocked(fetchProjectStats);
+```
+
+**Key:** The `vi.mock()` call must list ALL exports from the module, not just the ones your test uses. Missing exports cause runtime errors in the component under test.
+
+### Libraries That Need jsdom Mocking {#jsdom-mocking}
+
+These libraries use Canvas, SVG rendering, or browser APIs that jsdom doesn't support:
+
+| Library | Issue | Mock Pattern |
+|---------|-------|-------------|
+| Recharts | Relies on SVG measurement APIs | Mock all chart components as div stubs |
+| D3 | Canvas/SVG rendering | Mock at module level |
+| MapboxGL | WebGL context | Mock entire module |
+
+**Recharts mock pattern:**
+
+```typescript
+vi.mock("recharts", () => ({
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="responsive-container">{children}</div>
+  ),
+  BarChart: ({ children, data }: { children: React.ReactNode; data: unknown[] }) => (
+    <div data-testid="bar-chart" data-count={data.length}>{children}</div>
+  ),
+  Bar: ({ dataKey }: { dataKey: string }) => <div data-testid={`bar-${dataKey}`} />,
+  XAxis: () => <div data-testid="x-axis" />,
+  YAxis: () => <div data-testid="y-axis" />,
+  CartesianGrid: () => <div data-testid="cartesian-grid" />,
+  Tooltip: () => <div data-testid="tooltip" />,
+  Cell: () => <div data-testid="cell" />,
+}));
+```
+
+Then assert chart presence via `data-testid` attributes rather than visual output.
+
+### React Router Testing {#react-router-testing}
+
+Use `MemoryRouter` with `initialEntries` for route-dependent components:
+
+```typescript
+import { MemoryRouter, Route, Routes } from "react-router";
+
+function renderWithRoute(slug = "my-project") {
+  const { MyPage } = await import("../../src/pages/MyPage.tsx");
+  return render(
+    <MemoryRouter initialEntries={[`/projects/${slug}`]}>
+      <Routes>
+        <Route path="projects/:slug" element={<MyPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+```
+
+### Dynamic Import Pattern for Mocked Modules {#dynamic-import-pattern}
+
+When using `vi.mock()`, import the component under test dynamically to ensure mocks are applied:
+
+```typescript
+vi.mock("../../src/api/client.ts", () => ({ /* ... */ }));
+
+// Dynamic import AFTER mock setup:
+async function renderMyComponent() {
+  const { MyComponent } = await import("../../src/pages/MyComponent.tsx");
+  return render(<MyComponent />);
+}
+```
+
+### Batch TDD for Frontend Components {#batch-tdd-frontend}
+
+For frontend components, the practical TDD cycle is **batch tests** rather than AC-by-AC:
+
+1. **RED:** Write ALL test cases in one file (all fail because component doesn't exist)
+2. **GREEN:** Implement the full component (all tests pass)
+3. **REFACTOR:** Clean up if needed
+
+This is more efficient than AC-by-AC because:
+- Frontend components are tightly coupled (header + cards + charts in one component)
+- Creating a partial component just to pass one AC adds unnecessary intermediate states
+- The failing test file as a whole defines the component's contract
+
+---
+
 ## Coverage Verification {#coverage-verification}
 
 After generating tests, verify coverage:

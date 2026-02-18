@@ -14,7 +14,7 @@ Related: reference-story.md (deep workflow), reference-philosophy.md (create vs 
 /sdlc-studio story generate         # Extract detailed specs from CODE
 /sdlc-studio story generate --epic EP0002  # Extract for specific Epic
 /sdlc-studio story review           # Review Story status
-/sdlc-studio story plan --story US0024     # Preview workflow for story
+/sdlc-studio story plan --story US0024     # Create plan + test-spec, then review
 /sdlc-studio story implement --story US0024  # Execute full workflow
 ```
 
@@ -230,7 +230,7 @@ Automate the full implementation workflow for a single story.
 
 ### plan
 
-Preview the full implementation workflow for a story.
+Create implementation plan and test spec, then review with user.
 
 ```
 /sdlc-studio story plan --story US0024
@@ -240,14 +240,17 @@ Preview the full implementation workflow for a story.
 1. Validates story Ready criteria
 2. Checks dependencies (warns if not Done)
 3. Determines TDD vs Test-After approach
-4. Creates plan and test spec
-5. Shows 8-phase execution preview
+4. **Creates plan file** (MANDATORY - must write to disk)
+5. **Creates test-spec file** (MANDATORY - must write to disk)
+6. Presents created artifacts for user review
+
+**CRITICAL:** Files MUST be written before presenting review. No preview-only mode.
 
 > **Full workflow details:** See `reference-story.md#story-plan-workflow`
 
 ### implement
 
-Execute the full implementation workflow for a story.
+Execute the full implementation workflow for a story with state tracking.
 
 ```
 /sdlc-studio story implement --story US0024
@@ -260,11 +263,28 @@ Execute the full implementation workflow for a story.
 | `--from-phase N` | Resume from specific phase (1-8) |
 | `--tdd` / `--no-tdd` | Force TDD or Test-After mode |
 
-**8 phases:** Plan → Test Spec → Tests → Implement → Test → Verify → Check → Review
+**What happens:**
+1. **Checks for existing workflow state** (auto-resume if found)
+2. **Creates workflow file** if new (`sdlc-studio/workflows/WF{NNNN}-{slug}.md`)
+3. Executes 8 phases: Plan → Test Spec → Implement → Tests → Test → Verify → Check → Review
+4. **Updates plan checkboxes** as tasks complete (during Phase 3)
+5. **Saves state after each phase** for resumability across sessions
 
-**CRITICAL:** `code implement` (Phase 4) must complete ALL plan phases before continuing.
+**Prerequisites (will STOP if missing):**
+- Plan file must exist (`story plan` creates this)
+- Story status must be Planned or In Progress
+- If no plan exists, you'll be prompted to run `story plan` first
+
+**State tracking (MANDATORY):**
+- Workflow state file tracks progress across sessions
+- Plan task checkboxes updated as implementation proceeds
+- Automatic resume from last completed phase if session interrupted
+
+**CRITICAL:** Run `story plan` before `story implement`. Implementation cannot proceed without a plan.
 
 > **Full workflow details:** See `reference-story.md#story-implement-workflow`
+
+> **Epic-level automation:** `epic implement --agentic` calls this command for each story in concurrent waves. See `/sdlc-studio epic help`.
 
 ## See Also
 
@@ -274,9 +294,11 @@ Execute the full implementation workflow for a story.
 
 **Recommended:**
 - `/sdlc-studio epic help` - Generate Epics (upstream)
+- `/sdlc-studio epic implement --agentic` - Autonomous concurrent execution across an epic
 - `/sdlc-studio code plan help` - Implementation planning (downstream)
 
 **Optional (deep dives):**
 - `reference-philosophy.md` - Create vs Generate philosophy
 - `reference-outputs.md` - Output formats reference
+- `reference-outputs.md#story-completion-cascade` - Terminal status cascade rules
 - `/sdlc-studio epic plan help` - Plan workflow for entire epic

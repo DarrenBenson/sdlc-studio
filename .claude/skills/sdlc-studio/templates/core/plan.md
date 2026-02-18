@@ -71,7 +71,7 @@ Related: help/code.md, reference-code.md
 
 | Group | Tasks | Prerequisite |
 |-------|-------|--------------|
-{{#each parallel_groups}}
+{{#each agentic_groups}}
 | {{group}} | {{tasks}} | {{prerequisite}} |
 {{/each}}
 

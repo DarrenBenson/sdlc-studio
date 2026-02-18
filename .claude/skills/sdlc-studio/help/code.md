@@ -6,6 +6,8 @@ Related: reference-code.md (deep workflow), reference-test-best-practices.md (TD
 
 # /sdlc-studio code - Implementation & Quality
 
+> **Source of truth:** `reference-code.md` - Detailed workflow steps
+
 ## Quick Reference
 
 ```

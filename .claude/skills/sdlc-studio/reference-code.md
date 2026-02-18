@@ -88,11 +88,15 @@ Detailed workflows for code planning, review, and quality checks.
 8. **Write Plan File**
    - Use template from `templates/core/plan.md`
    - Output to `sdlc-studio/plans/PL{NNNN}-{slug}.md`
-   - Assign next available plan ID
+   - Assign next available plan ID using **ID Collision Check**:
+     1. Glob for `sdlc-studio/plans/PL{NNNN}*.md` with the proposed ID
+     2. If file(s) exist with that ID prefix, increment to next available
+     3. Log a warning if a collision was avoided
 
 9. **Update Plan Index**
    - Create or update `sdlc-studio/plans/_index.md`
    - Use template from `templates/indexes/plan.md`
+   - **CRITICAL:** Always add the new entry to the index in the same step as creating the file. Do not defer index updates.
 
 10. **Update Story Status**
     Edit story file to change status:
@@ -217,6 +221,8 @@ If you encounter uncertainty during implementation:
    4. Run tests to verify they pass
    5. Refactor if needed
    6. Proceed to next AC
+
+   **Note:** For frontend components, batch TDD is more practical - write all tests first (all fail because the component doesn't exist), then implement the full component. See `reference-test-best-practices.md` → "Batch TDD for Frontend Components".
 
    **Test-After Mode:**
    1. Execute ALL plan phases sequentially (do NOT skip any phase)
@@ -371,6 +377,15 @@ If you encounter uncertainty during implementation:
    ```
    > **Status:** In Progress  →  > **Status:** Review
    ```
+
+9. **Status Cascade (when story reaches a terminal status)**
+   When a story is marked Done (or any terminal status: Won't Implement, Deferred, Superseded), execute the **Story Completion Cascade** immediately.
+
+   > **Canonical checklist:** `reference-outputs.md` → [Story Completion Cascade](#story-completion-cascade)
+
+   Follow all six steps in the checklist: update plan, update test spec, update workflow, recalculate index counts, check epic status, and document reason (for non-Done terminals).
+
+   > **Why this matters:** Without cascading, artifact files accumulate stale statuses (Draft/Ready/In Progress) even though the linked story is terminal. This creates misleading dashboard output and requires periodic manual cleanup.
 
 ---
 
@@ -527,6 +542,10 @@ If you encounter uncertainty during implementation:
    ```
    > **Status:** Review  →  > **Status:** Done
    ```
+
+   **Cascade trigger:** If story moved to Done, execute the **Story Completion Cascade** immediately.
+
+   > **Canonical checklist:** `reference-outputs.md` → [Story Completion Cascade](#story-completion-cascade)
 
 9. **Propagate Results (Backward Traceability)**
 
@@ -698,6 +717,7 @@ Load from `~/.claude/best-practices/rust.md`:
 For automated story and epic workflows:
 - Story workflows: `reference-story.md` → Workflow Commands
 - Epic workflows: `reference-epic.md` → Workflow Commands
+- Agentic execution: `reference-epic.md#flag-agentic` - Concurrent wave execution with hub file safety
 
 ---
 
@@ -723,6 +743,7 @@ For automated story and epic workflows:
 - `reference-test-automation.md` - Test workflows (parallel - tests accompany code)
 - `reference-test-best-practices.md` - Test quality guidelines
 - `reference-test-e2e-guidelines.md` - E2E testing patterns
+- `reference-epic.md#flag-agentic` - `--agentic` for concurrent story execution
 
 **Cross-cutting concerns:**
 - `reference-decisions.md` - Decision guidance and Ready criteria

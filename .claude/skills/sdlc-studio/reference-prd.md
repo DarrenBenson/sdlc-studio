@@ -53,6 +53,14 @@ Detailed workflows for Product Requirements Document creation and management.
    - Use confidence markers: [HIGH], [MEDIUM], [LOW]
    - Include Open Questions for unresolved items
 
+7. **Persona Consultation (Optional)**
+   Unless `--skip-personas` flag used:
+   - Check if personas exist in `sdlc-studio/personas/`
+   - If yes, ask: "Would you like Three Amigos review of this PRD?"
+   - If user agrees, run: `/sdlc-studio consult team sdlc-studio/prd.md`
+   - Append consultation summary to PRD or report separately
+   - If personas don't exist, suggest: "Run `/sdlc-studio persona create` for stakeholder feedback"
+
 ---
 
 ## /sdlc-studio prd generate - Step by Step {#prd-generate-workflow}
@@ -96,6 +104,13 @@ Detailed workflows for Product Requirements Document creation and management.
    - Include Technical Debt Register (TODOs, FIXMEs)
    - Include Open Questions for ambiguities
 
+6. **Persona Consultation (Recommended)**
+   For generated PRDs, persona review is especially valuable:
+   - If personas exist, automatically suggest Three Amigos review
+   - Generated PRDs may have inferred requirements that need validation
+   - Run: `/sdlc-studio consult team sdlc-studio/prd.md --thorough`
+   - Flag any requirements that personas question for manual review
+
 ---
 
 ## /sdlc-studio prd review - Step by Step {#prd-review-workflow}
@@ -133,6 +148,16 @@ Detailed workflows for Product Requirements Document creation and management.
    - Features still in progress
    - New features discovered
    - Any regressions
+
+6. **Persona Re-consultation (If Significant Changes)**
+   If review found significant changes:
+   - New features discovered
+   - Features marked as broken
+   - Scope changes identified
+
+   Offer: "Significant changes found. Would you like persona feedback on updates?"
+   - Quick mode for minor changes: `/sdlc-studio consult team prd.md --quick`
+   - Thorough mode for major changes: `/sdlc-studio consult team prd.md --thorough`
 
 ---
 
@@ -472,6 +497,7 @@ Format:
 
 - `reference-trd.md` - TRD workflows
 - `reference-persona.md` - Persona workflows
+- `reference-consult.md` - Persona consultation workflows
 - `reference-architecture.md` - Architecture guidance for TRD
 - `reference-epic.md` - Epic generation (next step after PRD)
 - `reference-decisions.md` - Ready criteria, decision guidance

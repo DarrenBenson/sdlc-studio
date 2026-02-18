@@ -6,6 +6,8 @@ Related: reference-bug.md (deep workflow), templates/core/bug.md
 
 # /sdlc-studio bug - Bug Tracking
 
+> **Source of truth:** `reference-bug.md` - Detailed workflow steps
+
 ## Quick Reference
 
 ```

@@ -43,7 +43,7 @@ Manage project specifications and test artifacts. Supports the full pipeline fro
 /sdlc-studio tsd                      # Create test strategy document
 /sdlc-studio test-spec               # Generate test specifications
 /sdlc-studio test-automation         # Generate executable tests
-/sdlc-studio story plan              # Preview story workflow
+/sdlc-studio story plan              # Create plan + test-spec, then review
 /sdlc-studio story implement         # Execute story workflow (all phases)
 /sdlc-studio epic plan               # Preview epic workflow (all stories)
 /sdlc-studio epic implement          # Execute epic workflow (all stories)
@@ -138,28 +138,11 @@ Claude loads files progressively based on task needs:
 
 **Reference file mapping:**
 
-| Domain | Reference File |
-|--------|----------------|
-| PRD workflows | reference-prd.md#prd-create-workflow, reference-prd.md#prd-generate-workflow |
-| TRD workflows | reference-trd.md#trd-create-workflow, reference-trd.md#trd-generate-workflow |
-| Persona workflows | reference-persona.md#persona-workflow, reference-persona.md#persona-generate-workflow |
-| Epic workflows | reference-epic.md#epic-workflow |
-| Story workflows | reference-story.md#story-workflow, reference-story.md#story-generate-workflow |
-| Bug workflows | reference-bug.md#bug-create-workflow, reference-bug.md#bug-fix-workflow |
-| Code plan/implement/verify/test/check | reference-code.md#code-plan-workflow, reference-code.md#code-implementation-workflow |
-| Code refactor/review | reference-refactor.md |
-| TSD, status dashboard, TSD review | reference-tsd.md, reference-tsd.md#tsd-review-workflow |
-| Unified document review | reference-review.md |
-| Test specifications | reference-test-spec.md |
-| Test automation, test-env | reference-test-automation.md |
-| Architecture decisions | reference-architecture.md |
-| Cross-stage decisions, Ready criteria | reference-decisions.md#tdd-decision-tree, reference-decisions.md#story-ready |
-| Create vs Generate philosophy | reference-philosophy.md#create-mode, reference-philosophy.md#generate-mode |
-| Test writing guidelines | reference-test-best-practices.md |
-| E2E and mocking patterns | reference-test-e2e-guidelines.md |
-| Configuration options | reference-config.md |
-| Schema upgrade | reference-upgrade.md |
-| Output formats and status values | reference-outputs.md#output-formats, reference-outputs.md#status-transitions |
+Reference files follow the pattern `reference-{domain}.md`. When executing
+a workflow, load the reference file matching the artifact type being created
+or modified. Cross-domain files (`reference-decisions.md`, `reference-outputs.md`,
+`reference-philosophy.md`) load as needed for validation, status updates, and
+approach decisions.
 
 ## Arguments
 
@@ -177,7 +160,14 @@ Claude loads files progressively based on task needs:
 | `--spec` | Specific test spec ID (for test-automation) | all specs |
 | `--type` | Test type filter (unit, integration, api, e2e) | all types |
 | `--framework` | Override framework detection | auto-detect |
-| `--personas` | Personas file path | sdlc-studio/personas.md |
+| `--personas` | Personas directory path | sdlc-studio/personas/ |
+| `--from-prd` | Generate personas from PRD (persona generate) | - |
+| `--from-code` | Generate personas from codebase (persona generate) | - |
+| `--with-personas` | Force persona consultation in workflows | false |
+| `--skip-personas` | Skip persona consultation in workflows | false |
+| `--workshop` | Multi-persona discussion (chat) | - |
+| `--amigos` | Three Amigos participants (chat/consult) | false |
+| `--context` | Load artefact for context (chat) | - |
 | `--force` | Overwrite existing files | false |
 | `--no-fix` | Report without auto-fixing (code check) | false |
 | `--verbose` | Detailed test output | false |
@@ -189,6 +179,7 @@ Claude loads files progressively based on task needs:
 | `--no-docs` | Skip documentation updates (for implement) | false |
 | `--from-phase` | Resume workflow from phase N (for story implement) | 1 |
 | `--skip` | Skip specific story (for epic implement) | none |
+| `--agentic` | Autonomous epic execution with concurrent story waves (for epic plan/implement) | false |
 | `--dry-run` | Preview changes without applying (for refactor) | false |
 | `--focus` | Review focus area (patterns, security, performance, testing, all) | all |
 | `--severity` | Minimum severity to report (for review) | all |
@@ -204,6 +195,8 @@ Claude loads files progressively based on task needs:
 | `trd` | Technical Requirements Document |
 | `tsd` | Test Strategy Document (project-level) |
 | `persona` | User Personas |
+| `consult` | Persona consultation on artefacts |
+| `chat` | Interactive persona sessions |
 | `epic` | Feature groupings (Epics) |
 | `story` | User Stories with acceptance criteria |
 | `code` | Implementation planning, testing, and quality |
@@ -251,16 +244,26 @@ Claude loads files progressively based on task needs:
 | `/sdlc-studio prd generate` | **Extract PRD from codebase** (brownfield) |
 | `/sdlc-studio prd review` | Review PRD against codebase, update status |
 | `/sdlc-studio epic` | Generate Epics from PRD |
-| `/sdlc-studio epic review` | Cascading review of epic + changed stories (default) |
-| `/sdlc-studio epic review --quick` | Quick review - epic only, skip cascade |
-| `/sdlc-studio epic review --resume` | Resume from pause point |
+| `/sdlc-studio epic review` | Cascading review (use `--quick` or `--resume`) |
 | `/sdlc-studio story` | Generate User Stories from Epics |
 | `/sdlc-studio story generate` | **Extract detailed specs from CODE** (brownfield) |
 | `/sdlc-studio story review` | Review Story status from codebase |
 | `/sdlc-studio persona` | Ask which mode (create/generate/review) |
-| `/sdlc-studio persona create` | Interactive persona creation |
-| `/sdlc-studio persona generate` | **Infer personas from codebase** (brownfield) |
+| `/sdlc-studio persona create` | Interactive persona creation (Team or Stakeholder) |
+| `/sdlc-studio persona generate` | Reverse engineer from `--from-prd`, `--from-code`, `--from-docs` |
+| `/sdlc-studio persona list` | Show all project personas by category |
+| `/sdlc-studio persona import/export` | Import or export persona markdown files |
 | `/sdlc-studio persona review` | Review and refine existing personas |
+
+### Persona Consultation & Chat
+
+| Command | Description |
+|---------|-------------|
+| `/sdlc-studio consult [persona] [artefact]` | Get structured feedback from persona |
+| `/sdlc-studio consult team [artefact]` | Three Amigos review |
+| `/sdlc-studio consult stakeholders [artefact]` | All stakeholder personas |
+| `/sdlc-studio chat [persona]` | Interactive chat session |
+| `/sdlc-studio chat --workshop [topic]` | Multi-persona discussion (see `help/chat.md`) |
 
 ### Technical Requirements
 
@@ -335,14 +338,18 @@ Claude loads files progressively based on task needs:
 
 | Command | Description |
 |---------|-------------|
-| `/sdlc-studio story plan --story US0001` | Preview story workflow |
-| `/sdlc-studio story implement --story US0001` | Execute story workflow |
+| `/sdlc-studio story plan --story US0001` | Create plan + test-spec, then review |
+| `/sdlc-studio story implement --story US0001` | Execute story workflow (with state tracking) |
 | `/sdlc-studio story implement --tdd` | Execute with TDD approach |
 | `/sdlc-studio story implement --from-phase 3` | Resume from phase |
 | `/sdlc-studio epic plan --epic EP0001` | Preview epic workflow |
+| `/sdlc-studio epic plan --epic EP0001 --agentic` | Preview with agentic wave analysis |
 | `/sdlc-studio epic implement --epic EP0001` | Execute epic workflow |
+| `/sdlc-studio epic implement --epic EP0001 --agentic` | Execute with agentic waves |
 | `/sdlc-studio epic implement --story US0001` | Resume from story |
 | `/sdlc-studio epic implement --skip US0001` | Skip specific story |
+
+**State tracking:** `story implement` creates `sdlc-studio/workflows/WF{NNNN}.md` to track progress across sessions. Auto-resumes from last phase if interrupted.
 
 ## Workflows
 
@@ -418,6 +425,25 @@ PRD → TRD → Personas → Epics → Stories
                           (all stories processed in dependency order)
 ```
 
+Or with autonomous execution for maximum throughput:
+
+```text
+
+PRD → TRD → Personas → Epics → Stories
+                                  │
+                       epic plan --epic EP0001 --agentic
+                                  │
+                    (analyses dependencies → assigns concurrent waves)
+                                  │
+                       epic implement --epic EP0001 --agentic
+                                  │
+                    Wave 1: [US0001, US0003] concurrent
+                    Wave 2: [US0002, US0004] concurrent
+                    Wave 3: [US0005] sequential (hub file conflict)
+```
+
+`--agentic` analyses the dependency graph and hub file overlap to identify stories that can safely execute concurrently. Falls back to sequential for any stories with shared file conflicts.
+
 **Workflow phases per story:**
 
 1. Plan (code plan)
@@ -468,10 +494,11 @@ Status: `Draft/Ready → Planned → In Progress → Review → Done`
 
 **Help:** `help/help.md` (main), `help/{type}.md` (type-specific), `help/upgrade.md` (schema upgrade)
 
-**References:** `reference-prd.md`, `reference-trd.md`, `reference-persona.md` (Requirements), `reference-epic.md`, `reference-story.md`, `reference-bug.md` (Specifications), `reference-architecture.md` (Architecture), `reference-code.md` (Code, Test), `reference-refactor.md` (Refactoring, Review), `reference-review.md` (Unified document review), `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` (Test artifacts), `reference-test-best-practices.md` (Test pitfalls), `reference-test-e2e-guidelines.md` (E2E patterns), `reference-upgrade.md` (Schema migration)
+**References:** `reference-prd.md`, `reference-trd.md`, `reference-persona.md`, `reference-persona-generate.md`, `reference-consult.md`, `reference-chat.md`, `reference-workflow-personas.md` (Requirements), `reference-epic.md`, `reference-story.md`, `reference-bug.md` (Specifications), `reference-architecture.md` (Architecture), `reference-code.md` (Code, Test), `reference-refactor.md` (Refactoring, Review), `reference-review.md` (Unified document review), `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` (Test artifacts), `reference-test-best-practices.md` (Test pitfalls), `reference-test-e2e-guidelines.md` (E2E patterns), `reference-upgrade.md` (Schema migration)
 
 **Templates (v2 modular structure):**
-- Core: `templates/core/*.md` (prd, trd, tsd, epic, story, plan, test-spec, bug, personas)
+- Core: `templates/core/*.md` (prd, trd, tsd, epic, story, plan, test-spec, bug)
+- Personas: `templates/personas/` (persona-template, archetypes by category)
 - Indexes: `templates/indexes/*.md` (epic, story, plan, bug, test-spec, review)
 - Modules: `templates/modules/trd/*.md` (c4-diagrams, container-design, adr), `templates/modules/tsd/*.md` (contract-tests, performance-tests, security-tests), `templates/modules/epic/*.md` (engineering-view, product-view, test-view)
 - Config: `templates/config-defaults.yaml`, `templates/config.yaml`, `templates/version.yaml`

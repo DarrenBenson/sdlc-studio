@@ -59,6 +59,21 @@ Detailed workflows for Epic generation and management.
    - List with IDs and titles
    - Orphan features (if any)
 
+7. **Affected Personas Assessment (Optional)**
+   Unless `--skip-personas` flag used:
+   - For each Epic, identify affected personas from:
+     - Personas mentioned in PRD features
+     - Personas whose pain points are addressed
+     - Personas whose workflows are impacted
+   - Populate "Affected Personas" section in each Epic
+   - Offer: "Would you like persona feedback on epic scope?"
+   - If yes, consult affected personas:
+     - Run: `/sdlc-studio consult [affected-personas] [epic-file]`
+   - Report persona impact assessment:
+     - Primary beneficiaries
+     - Potentially affected stakeholders
+     - Concerns raised by personas
+
 ---
 
 ## Perspective-Based Generation {#perspective-based-generation}
@@ -458,6 +473,61 @@ Automated workflows for implementing all stories in an epic.
    4. Repeat until all stories processed
    ```
 
+4b. **Analyse Agentic Groups (if `--agentic`)**
+
+   Identify stories that can safely run concurrently by checking for shared file modifications.
+
+   **Step 1: Classify each story's layer**
+
+   | Layer | Indicators |
+   |-------|-----------|
+   | Backend | API endpoints, services, models, migrations |
+   | Frontend-component | Reusable components, utilities, theme constants |
+   | Frontend-page | Page components that add routes |
+   | Infra | Docker, CI/CD, config files |
+
+   **Step 2: Identify hub files each story will modify**
+
+   Hub files are shared files that multiple stories commonly modify:
+
+   | Hub File | Layer | Typically Modified By |
+   |----------|-------|-----------------------|
+   | `App.tsx` (or router config) | Frontend | Every page story |
+   | `types/index.ts` (or shared types) | Frontend | Every API-consuming story |
+   | `api/client.ts` (or API layer) | Frontend | Every story calling new endpoints |
+   | `main.py` (or app entry) | Backend | Every story adding a new router |
+   | Primary router file (e.g., `routes/projects.py`) | Backend | Stories adding endpoints to same resource |
+   | Index files (`_index.md`) | Docs | Every story at completion |
+
+   For each story, list which hub files it will modify (based on story scope and technical notes).
+
+   **Step 3: Assign parallel waves**
+
+   Two stories may share a wave ONLY if they modify **zero hub files in common**. Apply these rules:
+
+   | Rule | Safe? | Reason |
+   |------|-------|--------|
+   | Backend + Frontend-component (no shared deps) | Yes | Different directories, no shared files |
+   | Backend + Frontend-page | Caution | Page may need types/client from this backend story |
+   | Two Frontend-pages | No | Both modify App.tsx, types, client |
+   | Two Backend endpoints on same router | No | Both modify router file and main.py |
+   | Two Backend endpoints on different routers | Caution | Both modify main.py |
+   | Frontend-component + Frontend-page | Caution | Page may import from the component |
+
+   **Step 4: Emit warnings**
+
+   If `--agentic` is used but all stories are in the same layer, warn:
+   ```
+   ⚠ Agentic mode: All stories are frontend-page - no safe concurrent groups found.
+     Falling back to sequential execution.
+   ```
+
+   If a wave contains stories with possible (but unconfirmed) conflicts, warn:
+   ```
+   ⚠ Wave 1: US0017 ‖ US0020 - cross-layer, likely safe.
+     Verify neither story imports from the other before proceeding.
+   ```
+
 5. **Determine Approach Per Story**
    For each story, apply TDD decision tree:
    - API story with >5 edge cases → TDD
@@ -496,6 +566,24 @@ Automated workflows for implementing all stories in an epic.
    Ready to execute? Run: /sdlc-studio epic implement --epic EP0004
    ```
 
+   **With `--agentic` flag**, also include the agentic wave analysis:
+   ```
+   ### Agentic Waves
+
+   | Wave | Stories | Layer(s) | Shared Hub Files | Safe? |
+   |------|---------|----------|------------------|-------|
+   | 1 | US0017 ‖ US0020 | Backend ‖ Frontend-component | None | ✅ Yes |
+   | 2 | US0018 | Frontend-page | App.tsx, types, client | - |
+   | 3 | US0019 | Frontend-page | App.tsx | - |
+
+   **Sequential waves:** 3 (vs 4 sequential)
+   **Parallel stories:** Wave 1 (2 stories concurrently)
+
+   ⚠ US0018 and US0019 cannot be parallelised: both modify App.tsx
+
+   Ready to execute? Run: /sdlc-studio epic implement --epic EP0004 --agentic
+   ```
+
 ---
 
 ## /sdlc-studio epic implement - Step by Step {#epic-implement-workflow}
@@ -511,12 +599,16 @@ Automated workflows for implementing all stories in an epic.
    - Has stories in Ready status
    - No circular dependencies
    - If `--story` flag, validate that story is in epic
+   - If `--agentic` flag, validate agentic wave analysis was done (run `epic plan --agentic` first if not)
 
 3. **Determine Starting Point**
    - If `--story US000X`: start from that story
-   - Otherwise: start from first story in execution order
+   - Otherwise: start from first story (or first wave) in execution order
 
 4. **Process Stories**
+
+   **Sequential mode (default):**
+
    For each story in execution order:
 
    a. **Check Dependencies**
@@ -531,6 +623,41 @@ Automated workflows for implementing all stories in an epic.
    c. **Handle Result**
       - On success: Update story → Done, continue to next
       - On failure: Pause epic workflow, report error
+
+   **Agentic mode (`--agentic`):**
+
+   For each wave in the agentic plan:
+
+   a. **Check Wave Prerequisites**
+      - All prior waves must be complete
+      - All dependency stories for this wave must be Done
+
+   b. **Pre-flight Shared File Check**
+      Before launching parallel stories, verify no hub file conflicts:
+      - List files each story will modify (from plan analysis)
+      - If any file appears in more than one story in this wave: **ABORT wave, fall back to sequential**
+      - Report the conflict and which stories caused it
+
+   c. **Execute Stories in Parallel**
+      Launch concurrent story workflows using Task tool agents:
+      ```
+      # Parallel execution of Wave 1
+      Task: story implement --story US0017  (agent 1)
+      Task: story implement --story US0020  (agent 2)
+      ```
+
+   d. **Wait for All Stories in Wave**
+      - Both must complete before advancing to next wave
+      - If either fails: pause epic at that wave, report which story failed
+
+   e. **Post-Wave Verification**
+      After a parallel wave completes:
+      - Run full test suite (backend + frontend) to catch integration issues
+      - Verify no file was silently overwritten (check git diff for unexpected removals)
+
+   f. **Advance to Next Wave**
+      - Continue to next wave only when all stories in current wave are Done
+      - Repeat until all waves complete
 
 5. **Handle Story Errors**
    When a story workflow fails:
@@ -562,6 +689,7 @@ Automated workflows for implementing all stories in an epic.
    When all stories complete:
    - Update epic workflow status to Done
    - Update epic status to Done (user confirms)
+   - **Run post-epic index updates** (see checklist below)
    - Report completion:
      ```
      ## Epic Workflow Complete
@@ -582,6 +710,25 @@ Automated workflows for implementing all stories in an epic.
      Run `/sdlc-studio epic review` to update epic status.
      ```
 
+### Post-Epic Completion Checklist {#post-epic-checklist}
+
+After all stories in an epic are Done, update these indexes:
+
+| File | Updates Required |
+|------|-----------------|
+| `epics/EP{NNNN}-*.md` | Status → Done, story breakdown statuses → Done |
+| `stories/_index.md` | Summary counts (Draft↓, Done↑), per-epic table statuses, all-stories table statuses |
+| `plans/_index.md` | Summary count (Complete↑, Total↑), add new PL rows |
+| `test-specs/_index.md` | Summary count (Complete↑, Total↑), add new TS rows |
+
+**Steps:**
+1. Update epic file: `> **Status:** Done` and story breakdown table
+2. Update `stories/_index.md`: recalculate Done/Draft counts, set all epic stories to Done in both tables (by-epic and all-stories)
+3. Update `plans/_index.md`: add PL rows for each story, increment Complete and Total counts
+4. Update `test-specs/_index.md`: add TS rows for each story, increment Complete and Total counts
+
+**Note:** During `epic implement`, story statuses are auto-set to Done as each story completes. This is acceptable because the user approved the batch workflow at the epic level.
+
 ---
 
 ## Workflow Flags {#workflow-flags}
@@ -600,6 +747,31 @@ Skip a problematic story and continue:
 /sdlc-studio epic implement --epic EP0004 --skip US0025
 ```
 
+### --agentic {#flag-agentic}
+
+Enable autonomous concurrent execution for stories that share no hub files.
+
+```bash
+# Plan with agentic wave analysis
+/sdlc-studio epic plan --epic EP0004 --agentic
+
+# Execute with agentic waves
+/sdlc-studio epic implement --epic EP0004 --agentic
+```
+
+**When to use:** Epics with a clear backend/frontend split where independent stories exist.
+
+**When NOT to use:**
+- All stories are in the same layer (all frontend pages, all backend endpoints)
+- Stories have tight data dependencies (one creates types the other consumes)
+- Epic has fewer than 4 stories (overhead exceeds benefit)
+
+**Safety guarantees:**
+- Stories in the same wave must modify zero files in common
+- Full test suite runs after each wave completes
+- Falls back to sequential if hub file conflict detected at runtime
+- `--agentic` on `epic plan` shows the analysis; `--agentic` on `epic implement` executes it
+
 ---
 
 ## Epic Workflow Error Handling {#epic-workflow-error-handling}
@@ -612,6 +784,8 @@ Skip a problematic story and continue:
 | Circular dependency detected | Abort with dependency graph |
 | All remaining stories blocked | Pause with blocker info |
 | Story not in Ready status | Skip with warning |
+| Hub file conflict in agentic wave | Abort wave, fall back to sequential for conflicting stories |
+| Agentic story overwrites shared file | Detected in post-wave verification; re-run affected story sequentially |
 
 ### Recovery Strategies {#recovery-strategies}
 
@@ -641,6 +815,8 @@ Skip a problematic story and continue:
 # See Also
 
 - `reference-story.md` - Story workflows
+- `reference-persona.md` - Persona workflows
+- `reference-consult.md` - Persona consultation for epic scoping
 - `reference-bug.md` - Bug tracking workflows
 - `reference-decisions.md` - Ready criteria, decision guidance
 - `reference-code.md` - Code plan, implement, review workflows (includes workflow orchestration)

@@ -5,6 +5,52 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-02-18
+
+Persona consultation system, interactive chat sessions, agentic epic execution, and workflow state management.
+
+### Added
+
+- **Persona Consultation System**: `/sdlc-studio consult` command for structured persona feedback on artefacts
+  - Single persona, Three Amigos (`consult team`), and stakeholder group (`consult stakeholders`) modes
+  - Verdicts: Approve, Concerns, Reject with actionable recommendations
+  - New files: `help/consult.md`, `reference-consult.md`, 3 consultation templates
+- **Interactive Persona Chat**: `/sdlc-studio chat` command for conversational persona sessions
+  - Workshop mode (`--workshop`) for multi-persona discussions
+  - Context loading (`--context`), transcript saving (`--save`)
+  - New files: `help/chat.md`, `reference-chat.md`
+- **Persona Generation**: `/sdlc-studio persona generate` with three source modes
+  - `--from-prd`, `--from-code`, `--from-docs` extraction
+  - Import/export and list commands
+  - New file: `reference-persona-generate.md`
+- **Archetype Personas**: 15 pre-built persona templates across Team and Stakeholder categories
+  - Team: Product (2), Engineering (4), QA (2)
+  - Stakeholders: Users (3), Business (2), Technical (2)
+  - New directory: `templates/personas/` with per-category subdirectories
+- **Workflow Persona Integration**: `--with-personas` and `--skip-personas` flags across all workflows
+  - New file: `reference-workflow-personas.md`
+- **Agentic Epic Execution**: `--agentic` flag for autonomous concurrent story execution
+  - Dependency graph analysis and hub file overlap detection
+  - Concurrent wave assignment with automatic sequential fallback
+  - Post-wave test suite verification
+- **Story Completion Cascade**: Automatic status propagation to linked plans, test specs, and workflows when a story reaches any terminal status
+- **Terminal Status Support**: Won't Implement, Deferred, Superseded statuses for stories, plans, test specs, and workflows
+- **Workflow State Templates**: `templates/core/workflow.md` and `templates/indexes/workflow.md` for implementation tracking
+- **Index Reconciliation**: `status --full` detects missing entries, status mismatches, stale statuses, and ID collisions
+- **Frontend Testing Patterns**: Vitest + React patterns, shared API client mocking, jsdom mocking for Recharts/D3/MapboxGL
+- **Test Case Numbering**: Global TC numbering across specs and epic-scoped coverage rules
+
+### Changed
+
+- **`--parallel` renamed to `--agentic`**: Better branding for autonomous execution capability (all files updated, `#flag-agentic` anchor)
+- **Persona workflows expanded**: `help/persona.md` (+305 lines) and `reference-persona.md` (+423 lines) with category framework, create/generate workflows, enrichment questions
+- **Story workflows enhanced**: `reference-story.md` (+321 lines) with mandatory plan prerequisites, resume-from-phase, persona validation, completion cascade
+- **Epic workflows enhanced**: `reference-epic.md` (+178 lines) with persona assessment, agentic execution, post-epic checklist
+- **Output formats expanded**: `reference-outputs.md` (+91 lines) with terminal statuses, cascade checklist, status vocabulary enforcement, ID collision prevention
+- **SKILL.md updated**: New persona/consult/chat commands, `--agentic` flag, agentic workflow diagram (+93 lines, now 505 lines)
+- **README.md updated**: Agentic epic execution in Common Commands table and Workflows section
+- **Help files**: Source of truth pointers added to bug, code, refactor, test-automation, test-spec help files
+
 ## [1.3.0] - 2026-01-28
 
 Major restructuring with modular template architecture, expanded command coverage, and British English standardisation.
@@ -235,6 +281,7 @@ Based on production testing and user feedback to improve workflow and output qua
 - **Templates**: 22 templates for all artifact types
 - **Best Practices**: 11 guides for quality artifacts
 
+[1.4.0]: https://github.com/DarrenBenson/sdlc-studio/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/DarrenBenson/sdlc-studio/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/DarrenBenson/sdlc-studio/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/DarrenBenson/sdlc-studio/compare/v1.0.0...v1.1.0

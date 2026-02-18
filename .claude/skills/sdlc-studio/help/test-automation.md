@@ -6,6 +6,8 @@ Related: reference-test-automation.md (deep workflow), reference-test-best-pract
 
 # /sdlc-studio test-automation
 
+> **Source of truth:** `reference-test-automation.md` - Detailed workflow steps
+
 Generates executable test code from test specifications. Supports multiple languages and frameworks with automatic detection.
 
 ## Usage

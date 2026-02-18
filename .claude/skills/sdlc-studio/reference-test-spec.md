@@ -13,6 +13,7 @@ Detailed workflows for test specification creation and management.
    - Verify Epics exist in sdlc-studio/epics/
    - Create sdlc-studio/test-specs/ if needed
    - Scan for existing specs to determine next ID
+   - **ID Collision Check:** Glob for `sdlc-studio/test-specs/TS{NNNN}*.md` with the proposed ID. If file(s) already exist with that prefix, increment to the next available ID. Log a warning if a collision was avoided.
 
 2. **Parse Epics**
    - Read all Epic files (or specific Epic if --epic flag)
@@ -154,6 +155,34 @@ Detailed workflows for test specification creation and management.
 
 ---
 
+## TC Numbering {#tc-numbering}
+
+Test Case IDs are **globally sequential** across all test specs. They do NOT reset per spec.
+
+### Finding the Next TC Number
+
+Before creating a new test spec, find the last assigned TC number:
+
+```bash
+# Search all test specs for highest TC number
+grep -h "^### TC" sdlc-studio/test-specs/TS*.md | sort -t'C' -k2 -n | tail -1
+```
+
+Or check the most recently created test spec file and find its last TC.
+
+### Assigning TC Ranges
+
+When planning multiple test specs (e.g., for an epic), assign contiguous ranges:
+
+| Test Spec | Story | Test Cases | TC Range |
+|-----------|-------|------------|----------|
+| TS0017 | US0017 | 13 | TC0187-TC0199 |
+| TS0018 | US0018 | 8 | TC0200-TC0207 |
+
+This prevents ID collisions when specs are created in parallel.
+
+---
+
 ## Traceability Rules
 
 ### ID Naming Conventions
@@ -163,7 +192,7 @@ Detailed workflows for test specification creation and management.
 | Epic | EP{NNNN} | EP0001 |
 | Story | US{NNNN} | US0001 |
 | Test Spec | TS{NNNN} | TS0001 |
-| Test Case | TC{NNNN} | TC0001 |
+| Test Case | TC{NNNN} | TC0001 (globally sequential) |
 
 ### Link Formats
 
@@ -182,6 +211,38 @@ Test Cases should cover all Acceptance Criteria:
 - Each AC should have at least one TC
 - Map TC to Story AC in test case metadata
 - Track coverage in Spec files
+
+## Epic-Scoped Test Spec Coverage {#epic-scoped-coverage}
+
+Some test specs cover an entire epic rather than a single story. These require special handling for coverage checks and cascade behaviour.
+
+### Scope Identification
+
+| Scope | Frontmatter | Example |
+|-------|-------------|---------|
+| Story-level | `story: US0024` | TS0024 covers US0024 only |
+| Epic-level | `epic: EP0006` (no `story:` field, or `story:` lists multiple) | TS0253 covers all stories in EP0006 |
+
+**Detection rule:** A test spec is epic-scoped when it references an epic but either omits the `story:` field or lists multiple stories in its scope section.
+
+### Coverage Resolution
+
+When checking whether a story has test coverage:
+
+1. Check for a **direct story-level spec** (`story: US0024`)
+2. If none found, check for an **epic-scoped spec** that covers the story's parent epic
+3. A story is "covered" if either check succeeds
+
+This prevents false "missing test spec" findings for stories covered by an epic-wide spec.
+
+### Cascade Implications
+
+Epic-scoped test specs follow different cascade rules:
+
+- **Story-level specs:** Cascade immediately when their single linked story reaches terminal status.
+- **Epic-scoped specs:** Only cascade when **ALL** stories covered by the spec are terminal. If some stories are still active, the spec remains in its current status.
+
+**Example:** TS0253 covers EP0006 (stories US0024-US0027). If US0025 is marked Superseded but US0024, US0026, US0027 are still In Progress, TS0253 remains active. Only when all four stories reach terminal status does TS0253 cascade.
 
 ---
 

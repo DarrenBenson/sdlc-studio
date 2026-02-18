@@ -101,6 +101,8 @@ Tracks specification completeness:
 
 **Health score:** Weighted average (PRD 20%, Personas 10%, Epics 30%, Stories 40%)
 
+**Exemptions:** Project-level documents (PRD, TRD, TSD, Personas, Brand Guide) are exempt from lifecycle status checks. See `reference-outputs.md` → [Project-Level Document Exemptions](#project-level-exemptions).
+
 ### 💻 Code (TRD Status)
 
 Tracks implementation quality:
@@ -281,8 +283,38 @@ Cache location: `sdlc-studio/.local/status-cache.json`
 - Coverage percentages (slow parsing)
 - Test counts (slow parsing)
 
+## Index Reconciliation
+
+The `--full` status check includes index reconciliation to detect drift between files and indexes:
+
+### What it checks
+
+1. **Missing index entries:** Glob `sdlc-studio/plans/PL*.md` and `sdlc-studio/test-specs/TS*.md`, compare with entries in `_index.md`. Report files that exist but have no index entry.
+
+2. **Status mismatches:** For each indexed artifact, compare the status in the index table with the `> **Status:**` header in the actual file. Flag any discrepancies.
+
+3. **Stale statuses:** Cross-reference story status with linked plan/test-spec/workflow status. If a story is in any terminal status (Done, Won't Implement, Deferred, Superseded) but its plan, test spec, or workflow is still in a non-terminal status (Draft/In Progress/Ready/Created), flag it as stale. See `reference-outputs.md` → [Story Completion Cascade](#story-completion-cascade) for the expected target statuses.
+
+4. **ID collisions:** Detect multiple files sharing the same ID prefix (e.g., `PL0184-*.md` matching two files). Report these for resolution.
+
+### Output format
+
+If issues are found, add an INTEGRITY section to the dashboard:
+
+```
+🔗 INTEGRITY                        ⚠️ Issues found
+   ⚠️ 3 plans missing from index
+   ⚠️ 2 test specs with stale status (story Done, spec Draft)
+   ⚠️ 1 ID collision (PL0184)
+```
+
+### Why this matters
+
+Without reconciliation, indexes drift over time as artifacts are created during workflows but index updates are skipped or fail. This produces misleading dashboard counts and phantom entries in status reports.
+
 ## See Also
 
 - `/sdlc-studio hint` - Single actionable next step
 - `/sdlc-studio help` - Full command reference
 - `reference-tsd.md` - Detailed status workflow
+- `reference-outputs.md#status-vocabulary` - Valid status values and transitions

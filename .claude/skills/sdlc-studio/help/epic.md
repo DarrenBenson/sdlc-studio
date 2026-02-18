@@ -153,6 +153,7 @@ Preview the implementation workflow for all stories in an epic.
 
 ```
 /sdlc-studio epic plan --epic EP0004
+/sdlc-studio epic plan --epic EP0004 --agentic   # Include agentic wave analysis
 ```
 
 **What happens:**
@@ -160,7 +161,8 @@ Preview the implementation workflow for all stories in an epic.
 2. Filters to stories that need implementation (Ready, not Done)
 3. Analyses cross-story dependencies
 4. Determines execution order (topological sort)
-5. Shows aggregate work preview
+5. If `--agentic`: analyses hub file overlap and assigns concurrent waves
+6. Shows aggregate work preview
 
 **Output:**
 ```
@@ -198,6 +200,7 @@ Execute the full implementation workflow for all stories in an epic.
 
 ```
 /sdlc-studio epic implement --epic EP0004
+/sdlc-studio epic implement --epic EP0004 --agentic   # Run safe waves concurrently
 /sdlc-studio epic implement --epic EP0004 --story US0024
 /sdlc-studio epic implement --epic EP0004 --skip US0025
 ```
@@ -209,14 +212,16 @@ Execute the full implementation workflow for all stories in an epic.
 | `--epic EP000X` | Target epic (required) |
 | `--story US000X` | Start from specific story |
 | `--skip US000X` | Skip specific story |
+| `--agentic` | Autonomous concurrent execution with wave analysis (cross-layer only) |
 
 **What happens:**
 1. Loads or creates epic workflow plan
-2. Processes stories in dependency order
-3. Runs `story implement` for each story
+2. Processes stories in dependency order (or concurrent waves with `--agentic`)
+3. Runs `story implement` for each story (concurrent within a wave if `--agentic`)
 4. Tracks overall progress
 5. Pauses on story failure with resume capability
-6. Updates epic status on completion
+6. Runs full test suite after each wave completes (if `--agentic`)
+7. Updates epic status on completion
 
 **State tracking:**
 Creates `sdlc-studio/workflows/WF{NNNN}-{epic-slug}.md` to track progress.

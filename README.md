@@ -159,6 +159,7 @@ Claude analyses your codebase and creates a PRD based on what it finds.
 | `/sdlc-studio story` | Generate User Stories from Epics |
 | `/sdlc-studio code plan` | Plan implementation for a story |
 | `/sdlc-studio code implement` | Execute your implementation plan |
+| `/sdlc-studio epic implement --agentic` | Autonomous concurrent epic execution |
 | `/sdlc-studio bug` | Report a new bug |
 
 ## Workflows
@@ -190,6 +191,17 @@ Use `generate` to reverse-engineer documentation from code:
 /sdlc-studio epic              # Create Epics for future work
 /sdlc-studio story             # Break into Stories
 ```
+
+### Agentic Epic Execution
+
+Use `--agentic` to run an entire epic autonomously. Stories are analysed for dependencies and hub file overlap, then executed in concurrent waves where safe:
+
+```text
+/sdlc-studio epic plan --epic EP0001 --agentic       # Analyse and preview waves
+/sdlc-studio epic implement --epic EP0001 --agentic   # Execute concurrently
+```
+
+Falls back to sequential for any stories with shared file conflicts. See `/sdlc-studio epic help` for details.
 
 ### Daily Development
 

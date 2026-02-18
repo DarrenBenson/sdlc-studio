@@ -5,5 +5,5 @@
 schema_version: 2
 upgraded_from: null       # Previous version (null for new projects)
 upgraded_at: null         # ISO timestamp of upgrade
-skill_version: "1.3.0"    # SDLC Studio version that created/upgraded
+skill_version: "1.4.0"    # SDLC Studio version that created/upgraded
 created_at: "{{created_at}}"

@@ -6,6 +6,8 @@ Related: reference-test-spec.md (deep workflow), reference-test-best-practices.m
 
 # /sdlc-studio test-spec
 
+> **Source of truth:** `reference-test-spec.md` - Detailed workflow steps
+
 Generates consolidated test specifications that combine test plans, suites, cases, and fixtures into a single document per Epic.
 
 ## Actions
@@ -191,5 +193,6 @@ Test specs are language-agnostic. Here's how they map to different frameworks:
 **Optional (deep dives):**
 - `reference-test-best-practices.md` - Testing guidelines
 - `reference-test-e2e-guidelines.md` - E2E patterns and guidelines
+- `reference-test-spec.md#tc-numbering` - Test case numbering conventions
 - `reference-decisions.md#test-spec-ready` - Ready status criteria
 - `reference-outputs.md` - Output formats reference
