@@ -21,7 +21,7 @@ Before creating an issue:
 ## Response Times
 
 | Channel | Expected Response |
-|---------|-------------------|
+| --- | --- |
 | Issues | Best effort (maintained in spare time) |
 
 ## Frequently Asked Questions

@@ -30,7 +30,7 @@ SDLC Studio is a **skill** (plugin) for [Claude Code](https://docs.anthropic.com
 Before installing SDLC Studio, ensure you have:
 
 | Requirement | How to check | Install guide |
-|-------------|--------------|---------------|
+| --- | --- | --- |
 | Claude Code | Run `claude --version` | [Getting Started](https://docs.anthropic.com/en/docs/claude-code/getting-started) |
 | curl or wget | Run `curl --version` | Usually pre-installed on macOS/Linux |
 
@@ -149,7 +149,7 @@ Claude analyses your codebase and creates a PRD based on what it finds.
 ## Common Commands
 
 | Command | What it does |
-|---------|--------------|
+| --------- | -------------- |
 | `/sdlc-studio help` | Show all available commands |
 | `/sdlc-studio status` | Show pipeline state and progress |
 | `/sdlc-studio hint` | Get a single suggested next action |

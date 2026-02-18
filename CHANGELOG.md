@@ -252,7 +252,7 @@ Based on production testing and user feedback to improve workflow and output qua
 ### Migration
 
 | Old | New |
-|-----|-----|
+| ----- | ----- |
 | `/sdlc-studio init` | `/sdlc-studio status` (start with prd create/generate) |
 | `/sdlc-studio migrate` | No longer needed |
 | `/sdlc-studio test-strategy` | `/sdlc-studio tsd` |

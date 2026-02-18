@@ -11,7 +11,7 @@ SDLC Studio is a Claude Code skill for managing the full software development li
 ## Skill Structure
 
 | Path | Purpose |
-|------|---------|
+| ------ | --------- |
 | `.claude/skills/sdlc-studio/SKILL.md` | Main entry point (326 lines) |
 | `.claude/skills/sdlc-studio/reference-philosophy.md` | Create vs Generate modes - read first |
 | `.claude/skills/sdlc-studio/reference-*.md` | Domain-specific workflows (13 files) |
@@ -53,7 +53,7 @@ When modifying the skill:
 Check the relevant guide before creating artifacts:
 
 | Creating... | Check |
-|-------------|-------|
+| ------------- | ------- |
 | Python script | `best-practices/python.md` then `script.md` |
 | Bash script | `best-practices/script.md` |
 | Documentation | `best-practices/documentation.md` |

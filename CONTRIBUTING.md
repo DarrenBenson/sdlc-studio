@@ -51,7 +51,7 @@ When modifying the skill:
 Before submitting changes, review the relevant best practice guide:
 
 | Changing... | Check |
-|-------------|-------|
+| ------------- | ------- |
 | Main skill file | `best-practices/skill.md` |
 | Documentation | `best-practices/documentation.md` |
 | README | `best-practices/readme.md` |
