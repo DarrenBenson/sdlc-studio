@@ -57,7 +57,7 @@ Check the relevant guide before creating artifacts:
 | Python script | `best-practices/python.md` then `script.md` |
 | Bash script | `best-practices/script.md` |
 | Documentation | `best-practices/documentation.md` |
-| Claude skill | `best-practices/skill.md` |
+| Claude skill | `best-practices/claude-skill.md` |
 
 ## Related
 

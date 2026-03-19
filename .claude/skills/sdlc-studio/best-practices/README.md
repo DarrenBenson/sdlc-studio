@@ -10,7 +10,7 @@ Quality checklists for AI assistants creating artifacts in any project.
 | Bash script | `script.md` |
 | README file | `readme.md` |
 | Documentation | `documentation.md` |
-| Claude skill | `skill.md` |
+| Claude skill | `claude-skill.md` |
 | Claude command | `command.md` |
 
 ## How to Use
@@ -36,5 +36,5 @@ Quality checklists for AI assistants creating artifacts in any project.
 | `script.md` | Script structure (Python and Bash) |
 | `documentation.md` | Technical documentation standards |
 | `readme.md` | README file standards |
-| `skill.md` | Claude Code skill standards |
+| `claude-skill.md` | Claude Code skill standards |
 | `command.md` | Claude Code command standards |

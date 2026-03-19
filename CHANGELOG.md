@@ -139,7 +139,7 @@ Major documentation overhaul with comprehensive refactoring for improved navigat
 - **Best Practice Guides for Skill Development**: New guides for maintaining quality standards
   - `best-practices/command.md` (168 lines) - Claude Code command patterns
   - `best-practices/documentation.md` (165 lines) - Documentation standards
-  - `best-practices/skill.md` (268 lines) - Skill development guide
+  - `best-practices/claude-skill.md` (268 lines) - Skill development guide
   - `best-practices/settings.md` - Configuration best practices
 - **Enhanced AI-Assisted Testing Guidance**:
   - `reference-test-pitfalls.md` (144 lines) - Test generation anti-patterns catalogue

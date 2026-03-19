@@ -19,6 +19,7 @@ Before considering a skill complete:
 - [ ] `SKILL.md` exists with frontmatter (`name`, `description`)
 - [ ] `name` is lowercase with hyphens, max 64 chars, matches folder name
 - [ ] `description` explains what it does and includes trigger keywords (max 1024 chars)
+- [ ] `description` is double-quoted if it contains `: `, `[]`, `{}`, or `#`
 - [ ] Clear "When to Use" section with trigger phrases
 - [ ] Step-by-step instructions the AI can follow
 - [ ] Examples with expected inputs/outputs
@@ -40,8 +41,32 @@ Before considering a skill complete:
 
 | Field | Description | Example |
 |-------|-------------|---------|
-| `allowed-tools` | Restrict available tools | `allowed-tools: Read, Grep, Glob` |
-| `model` | Specify Claude model | `model: claude-sonnet-4-20250514` |
+| `allowed-tools` | Restrict available tools | `Read, Grep, Glob` |
+| `model` | Specify Claude model | `sonnet`, `opus`, `haiku`, or full model ID |
+| `argument-hint` | Hint text for arguments | `[issue-number]`, `[filename] [format]` |
+| `user-invocable` | Whether users can invoke directly | `true` or `false` |
+| `disable-model-invocation` | Prevent AI auto-triggering | `true` or `false` |
+| `context` | Execution context | `fork` (run in subagent) |
+| `agent` | Subagent type | `Explore`, `Plan`, `general-purpose` |
+
+### YAML Quoting Rules
+
+Values containing special YAML characters must be quoted. Unquoted values with colons cause `malformed YAML frontmatter` errors on claude.ai.
+
+| Character | Example problem | Fix |
+|-----------|----------------|-----|
+| `: ` (colon-space) | `SDLC pipeline: requirements` | Wrap value in double quotes |
+| `#` | `Run # of tests` | Wrap value in double quotes |
+| `[` or `]` | `[type] [action]` | Wrap value in double quotes |
+| `{` or `}` | `{name}` | Wrap value in double quotes |
+
+```yaml
+# Bad - colons and brackets cause YAML parse errors
+description: /skill [type] - Pipeline: requirements, specs, code.
+
+# Good - double quotes protect special characters
+description: "/skill [type] - Pipeline: requirements, specs, code."
+```
 
 ## Structure
 
@@ -156,7 +181,7 @@ A good description answers:
 ### Standard Pattern
 
 ```yaml
-description: Extract text and tables from PDF files, fill forms, merge documents. Use when working with PDF files or when the user mentions PDFs, forms, or document extraction.
+description: "Extract text and tables from PDF files, fill forms, merge documents. Use when working with PDF files or when the user mentions PDFs, forms, or document extraction."
 ```
 
 ### Command-Wrapper Pattern
@@ -164,7 +189,7 @@ description: Extract text and tables from PDF files, fill forms, merge documents
 When a skill is invoked via a command wrapper (`.claude/commands/*.md`), you can prefix the description with the command syntax for documentation clarity:
 
 ```yaml
-description: /search [query] - Search engrams by name, slug, nationality, MBTI, or role. Use when looking up or finding engrams.
+description: "/search [query] - Search engrams by name, slug, nationality, MBTI, or role. Use when looking up or finding engrams."
 ```
 
 This pattern:
@@ -184,7 +209,7 @@ Follow the skill instructions in `.claude/skills/library-search/SKILL.md`.
 ```yaml
 ---
 name: library-search
-description: /search [query] - Search engrams by name, slug, nationality, MBTI, or role. Use when looking up or finding engrams.
+description: "/search [query] - Search engrams by name, slug, nationality, MBTI, or role. Use when looking up or finding engrams."
 ---
 ```
 
@@ -265,3 +290,5 @@ If the skill includes scripts:
 - Scripts need execute permissions: `chmod +x scripts/*.py`
 - YAML frontmatter must start on line 1 (no blank lines before `---`)
 - Use spaces for indentation in YAML (not tabs)
+- Quote `description` values containing `: `, `[]`, `{}`, or `#` to avoid YAML parse errors
+- The claude.ai web uploader has stricter YAML parsing than the CLI; always quote descriptions with special characters

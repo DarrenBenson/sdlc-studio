@@ -52,10 +52,10 @@ Before submitting changes, review the relevant best practice guide:
 
 | Changing... | Check |
 | ------------- | ------- |
-| Main skill file | `best-practices/skill.md` |
+| Main skill file | `best-practices/claude-skill.md` |
 | Documentation | `best-practices/documentation.md` |
 | README | `best-practices/readme.md` |
-| Templates | Template conventions in skill.md |
+| Templates | Template conventions in claude-skill.md |
 
 ### Testing Changes
 
