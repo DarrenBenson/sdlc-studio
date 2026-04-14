@@ -4,15 +4,17 @@ Detailed workflows for code planning, review, and quality checks.
 
 ---
 
-# Detailed Workflows {#detailed-workflows}
+## Detailed Workflows {#detailed-workflows}
 
 ## /sdlc-studio code plan - Step by Step {#code-plan-workflow}
 
 1. **Check Prerequisites**
    Verify stories exist:
-   ```
+
+   ```text
    Glob: sdlc-studio/stories/US*.md
    ```
+
    If no stories found, prompt user to run `/sdlc-studio story` first.
 
 2. **Select Story**
@@ -48,14 +50,17 @@ Detailed workflows for code planning, review, and quality checks.
       - Handling Strategy (how it will be addressed)
       - Implementation Phase (when it will be implemented)
    c) Validate coverage:
-      ```
+
+      ```text
       Story edge cases: N
       Handled in plan: N (must equal story count)
       Unhandled: 0 (must be zero to proceed)
       ```
+
    d) If any edge cases are unhandled, the plan CANNOT be written
 
    **Plan template section to populate:**
+
    ```markdown
    ## Edge Case Handling Plan
 
@@ -74,7 +79,8 @@ Detailed workflows for code planning, review, and quality checks.
 
 7. **Generate Implementation Plan**
    Use sequential thinking to plan implementation:
-   ```
+
+   ```text
    Use mcp__sequential-thinking__sequentialthinking to:
    1. Analyse each acceptance criterion
    2. Identify implementation phases
@@ -98,17 +104,33 @@ Detailed workflows for code planning, review, and quality checks.
    - Use template from `templates/indexes/plan.md`
    - **CRITICAL:** Always add the new entry to the index in the same step as creating the file. Do not defer index updates.
 
-10. **Update Story Status**
+9b. **Three Amigos Plan Review (Default)**
+   Unless `--skip-personas` flag used, run Three Amigos review of the plan:
+
+- **Sarah Chen (PM):** Validates scope alignment - does the plan address all ACs without scope creep? Are any user-facing requirements missing from the implementation phases?
+- **Marcus Johnson (Eng):** Reviews implementation approach for architecture alignment, edge case handling plan completeness, and feasibility of the phased approach
+- **Priya Sharma (QA):** Validates the test strategy recommendation (TDD vs Test-After), confirms test coverage plan addresses the story's risk profile, checks regression impact
+
+   **Apply findings:**
+
+- Update plan with persona feedback where actionable
+- Flag items needing user decision
+- Record consultation in plan revision history
+
+1. **Update Story Status**
     Edit story file to change status:
-    ```
+
+    ```text
     > **Status:** Draft  →  > **Status:** Planned
     ```
+
     or
-    ```
+
+    ```text
     > **Status:** Ready  →  > **Status:** Planned
     ```
 
-11. **Display Summary**
+2. **Display Summary**
     Output to console:
     - Plan ID and file path
     - Story being planned
@@ -125,6 +147,7 @@ Detailed workflows for code planning, review, and quality checks.
 Do NOT pause mid-implementation to ask questions like "Would you like me to continue with the frontend?" or "Should I implement this now?". Execute EVERY phase from the plan (backend, frontend, integration, database, etc.) in sequence before marking the implementation complete.
 
 If you encounter uncertainty during implementation:
+
 - Make a reasonable choice based on existing patterns
 - Document the decision in code comments if non-obvious
 - Continue to the next phase
@@ -148,7 +171,8 @@ If you encounter uncertainty during implementation:
    - No unresolved open questions (all checkboxes checked)
 
    If open questions remain unchecked:
-   ```
+
+   ```text
    ## Cannot Proceed - Open Questions
 
    The following questions must be resolved before implementation:
@@ -168,7 +192,8 @@ If you encounter uncertainty during implementation:
       - Go: `~/.claude/best-practices/go.md`
 
    b) Query Context7 for each external library in the plan's "Library Documentation" section:
-      ```
+
+      ```text
       mcp__context7__resolve-library-id({ libraryName: "fastapi", query: "feature needed" })
       mcp__context7__query-docs({ libraryId: "/tiangolo/fastapi", query: "specific pattern" })
       ```
@@ -189,6 +214,7 @@ If you encounter uncertainty during implementation:
       - External API: Check OpenAPI spec or official documentation
 
    b) Verify against the running system:
+
       ```bash
       # For REST APIs - actually call the endpoint
       curl -s http://localhost:PORT/api/endpoint | jq '.'
@@ -242,7 +268,8 @@ If you encounter uncertainty during implementation:
 
 9. **Final Checks**
    Run quality checks:
-   ```
+
+   ```text
    /sdlc-studio code check
    /sdlc-studio code test --story {story_id}
    ```
@@ -264,17 +291,20 @@ If you encounter uncertainty during implementation:
 
 10. **Validate All Phases Complete**
    Before marking complete, verify:
-   - [ ] Every phase from "Implementation Phases" has been executed
-   - [ ] All acceptance criteria have implementing code
-   - [ ] Backend, frontend, and integration work (if in plan) are done
-   - [ ] No phases marked as "pending" or "TODO"
+
+- [ ] Every phase from "Implementation Phases" has been executed
+- [ ] All acceptance criteria have implementing code
+- [ ] Backend, frontend, and integration work (if in plan) are done
+- [ ] No phases marked as "pending" or "TODO"
 
    If any phase is incomplete, go back and complete it before proceeding.
 
-11. **Complete Implementation**
-   - Plan: `In Progress` → `Complete`
-   - Display summary:
-     ```
+1. **Complete Implementation**
+
+- Plan: `In Progress` → `Complete`
+- Display summary:
+
+     ```text
      ## Implementation Complete: US0001 - {title}
 
      ### Summary
@@ -313,7 +343,8 @@ If you encounter uncertainty during implementation:
 
 3. **Explore Implementation**
    Use Task tool with Explore agent:
-   ```
+
+   ```text
    Find implementation evidence for each acceptance criterion:
    - AC1: {ac1_description}
    - AC2: {ac2_description}
@@ -343,7 +374,8 @@ If you encounter uncertainty during implementation:
 
 7. **Generate Report**
    Output console report:
-   ```
+
+   ```text
    ## Code Verification: US0001 - {title}
 
    ### Acceptance Criteria
@@ -374,16 +406,17 @@ If you encounter uncertainty during implementation:
 
 8. **Update Story Status (if all passed)**
    If all acceptance criteria met:
-   ```
+
+   ```text
    > **Status:** In Progress  →  > **Status:** Review
    ```
 
 9. **Status Cascade (when story reaches a terminal status)**
    When a story is marked Done (or any terminal status: Won't Implement, Deferred, Superseded), execute the **Story Completion Cascade** immediately.
 
-   > **Canonical checklist:** `reference-outputs.md` → [Story Completion Cascade](#story-completion-cascade)
+   > **Canonical checklist:** `reference-outputs.md` → [Story Completion Cascade](reference-outputs.md#story-completion-cascade)
 
-   Follow all six steps in the checklist: update plan, update test spec, update workflow, recalculate index counts, check epic status, and document reason (for non-Done terminals).
+   Follow all steps in the checklist: update plan, update test spec, update workflow, recalculate index counts, check epic status, document reason (for non-Done terminals), update story index entries, update epic story breakdown, update downstream dependency tables, tick test scenario checkboxes, and cascade epic completion if applicable.
 
    > **Why this matters:** Without cascading, artifact files accumulate stale statuses (Draft/Ready/In Progress) even though the linked story is terminal. This creates misleading dashboard output and requires periodic manual cleanup.
 
@@ -395,26 +428,26 @@ If you encounter uncertainty during implementation:
    Same detection as code plan (see step 3 above).
 
 2. **Select Linter Configuration**
-   | Language | Linter | Config |
-   |----------|--------|--------|
-   | Python | ruff | pyproject.toml or ruff.toml |
-   | TypeScript | eslint | eslint.config.js or .eslintrc |
-   | Go | go fmt + go vet | - |
-   | Rust | cargo clippy | - |
+| | Language | Linter | Config |
+| --- | --- | --- | --- |
+| | Python | ruff | pyproject.toml or ruff.toml |
+| | TypeScript | eslint | eslint.config.js or .eslintrc |
+| | Go | go fmt + go vet | - |
+| | Rust | cargo clippy | - |
 
 3. **Run Linters**
    Execute appropriate linter:
    - If `--no-fix`: run in check-only mode
    - Otherwise: run with auto-fix enabled
 
-   | Language | Check Command | Fix Command |
-   |----------|--------------|-------------|
-   | Python | `ruff check .` | `ruff check --fix .` |
-   | TypeScript | `npx eslint .` | `npx eslint --fix .` |
-   | Go | `go fmt -n ./...` | `go fmt ./...` |
-   | Rust | `cargo clippy` | `cargo clippy --fix` |
+| | Language | Check Command | Fix Command |
+| --- | --- | --- | --- |
+| | Python | `ruff check .` | `ruff check --fix .` |
+| | TypeScript | `npx eslint .` | `npx eslint --fix .` |
+| | Go | `go fmt -n ./...` | `go fmt ./...` |
+| | Rust | `cargo clippy` | `cargo clippy --fix` |
 
-4. **Check Best Practices Anti-patterns**
+1. **Check Best Practices Anti-patterns**
    Load anti-patterns from best practices and search codebase:
    - TODO/FIXME comments
    - Hardcoded secrets
@@ -422,9 +455,10 @@ If you encounter uncertainty during implementation:
    - Large functions (>50 lines)
    - Deep nesting (>4 levels)
 
-5. **Generate Report**
+2. **Generate Report**
    Output console report:
-   ```
+
+   ```text
    ## Code Quality Check
 
    ### Linter Results
@@ -457,14 +491,14 @@ If you encounter uncertainty during implementation:
 ## /sdlc-studio code test - Step by Step {#code-test-workflow}
 
 1. **Parse Arguments**
-   | Argument | Effect |
-   |----------|--------|
-   | (none) | Run all tests |
-   | `--epic EP0001` | Filter by epic traceability |
-   | `--story US0001` | Filter by story traceability |
-   | `--spec TS0001` | Filter by test spec |
-   | `--type unit` | Filter by test type |
-   | `--verbose` | Show detailed output |
+| | Argument | Effect |
+| --- | --- | --- |
+| | (none) | Run all tests |
+| | `--epic EP0001` | Filter by epic traceability |
+| | `--story US0001` | Filter by story traceability |
+| | `--spec TS0001` | Filter by test spec |
+| | `--type unit` | Filter by test type |
+| | `--verbose` | Show detailed output |
 
 2. **Detect Test Framework**
    Same detection as code plan (see step 3 above).
@@ -478,13 +512,13 @@ If you encounter uncertainty during implementation:
 
 4. **Run Tests**
    Execute tests with appropriate framework:
-   | Framework | Command |
-   |-----------|---------|
-   | pytest | `pytest {test_paths} -v -W error` |
-   | Vitest | `npx vitest run {test_paths}` |
-   | Jest | `npx jest {test_paths}` |
-   | Go | `go test {packages} -v` |
-   | Rust | `cargo test {tests}` |
+| | Framework | Command |
+| --- | --- | --- |
+| | pytest | `pytest {test_paths} -v -W error` |
+| | Vitest | `npx vitest run {test_paths}` |
+| | Jest | `npx jest {test_paths}` |
+| | Go | `go test {packages} -v` |
+| | Rust | `cargo test {tests}` |
 
    **Warning Policy:**
    - All frameworks: Warnings MUST be treated as errors
@@ -508,7 +542,8 @@ If you encounter uncertainty during implementation:
 
 7. **Generate Report**
    Output console report:
-   ```
+
+   ```text
    ## Test Results
 
    ### Summary
@@ -539,13 +574,14 @@ If you encounter uncertainty during implementation:
 
 8. **Update Story Status (if applicable)**
    For stories in Review status with all tests passing:
-   ```
+
+   ```text
    > **Status:** Review  →  > **Status:** Done
    ```
 
    **Cascade trigger:** If story moved to Done, execute the **Story Completion Cascade** immediately.
 
-   > **Canonical checklist:** `reference-outputs.md` → [Story Completion Cascade](#story-completion-cascade)
+   > **Canonical checklist:** `reference-outputs.md` → [Story Completion Cascade](reference-outputs.md#story-completion-cascade)
 
 9. **Propagate Results (Backward Traceability)**
 
@@ -561,12 +597,13 @@ If you encounter uncertainty during implementation:
       - If any test for an AC fails → AC marked as Regression
 
    c) **Story status changes:**
-      | Test Result | Story in Done | Story in Review |
-      |-------------|---------------|-----------------|
-      | All pass | Remains Done | → Done |
-      | Any fail | → **Regression** | Remains Review |
+| | Test Result | Story in Done | Story in Review |
+| --- | --- | --- | --- |
+| | All pass | Remains Done | → Done |
+| | Any fail | → **Regression** | Remains Review |
 
    d) **Auto-create Bug on failure (optional, with --create-bugs):**
+
       ```markdown
       ## Auto-generated Bug
 
@@ -583,17 +620,17 @@ If you encounter uncertainty during implementation:
 
 ---
 
-# TDD vs Test-After {#tdd-vs-test-after}
-
+## TDD vs Test-After {#tdd-vs-test-after}
+>
 > **Source of truth:** `reference-decisions.md` → TDD vs Test-After Decision Tree
 
 For the complete decision tree, conditions for TDD vs Test-After, and override flags, see `reference-decisions.md`.
 
 ---
 
-# Status Update Flow {#status-update-flow}
+## Status Update Flow {#status-update-flow}
 
-```
+```text
 Draft/Ready  ──[code plan]──▶  Planned
                                   │
                          [code implement]
@@ -623,11 +660,12 @@ Draft/Ready  ──[code plan]──▶  Planned
 
 ---
 
-# Best Practices Integration {#best-practices-integration}
+## Best Practices Integration {#best-practices-integration}
 
 ## Python Projects {#python-projects}
 
 Load from `~/.claude/best-practices/python.md`:
+
 - Type hints required
 - Docstrings for public functions
 - Ruff formatting
@@ -636,6 +674,7 @@ Load from `~/.claude/best-practices/python.md`:
 ## TypeScript Projects {#typescript-projects}
 
 Load from `~/.claude/best-practices/typescript.md`:
+
 - Strict mode enabled
 - ESLint + Prettier
 - Jest/Vitest patterns
@@ -644,6 +683,7 @@ Load from `~/.claude/best-practices/typescript.md`:
 ## Go Projects {#go-projects}
 
 Load from `~/.claude/best-practices/go.md`:
+
 - Error wrapping
 - Table-driven tests
 - go fmt compliance
@@ -651,18 +691,19 @@ Load from `~/.claude/best-practices/go.md`:
 ## Rust Projects {#rust-projects}
 
 Load from `~/.claude/best-practices/rust.md`:
+
 - Clippy compliance
 - Error handling with Result
 - Documentation comments
 
 ---
 
-# Error Handling {#error-handling}
+## Error Handling {#error-handling}
 
 ## Code Plan Errors {#code-plan-errors}
 
 | Condition | Action |
-|-----------|--------|
+| --- | --- |
 | No stories exist | Prompt to run `/sdlc-studio story` |
 | No incomplete stories | Report all stories complete |
 | Story not found (--story) | Report error, list available stories |
@@ -672,7 +713,7 @@ Load from `~/.claude/best-practices/rust.md`:
 ## Code Implement Errors {#code-implement-errors}
 
 | Condition | Action |
-|-----------|--------|
+| --- | --- |
 | No plans exist | Prompt to run `/sdlc-studio code plan` |
 | No Planned stories | Report no stories ready for implementation |
 | Plan not found (--plan) | Report error, list available plans |
@@ -687,7 +728,7 @@ Load from `~/.claude/best-practices/rust.md`:
 ## Code Review Errors {#code-review-errors}
 
 | Condition | Action |
-|-----------|--------|
+| --- | --- |
 | No In Progress stories | Report no stories ready for review |
 | Story not found | Report error, list available stories |
 | No implementation found | Report AC as FAILED with "Not found" |
@@ -695,7 +736,7 @@ Load from `~/.claude/best-practices/rust.md`:
 ## Code Check Errors {#code-check-errors}
 
 | Condition | Action |
-|-----------|--------|
+| --- | --- |
 | Linter not installed | Report error, suggest install command |
 | No config found | Use default config |
 | Linter fails | Report errors to user |
@@ -703,25 +744,26 @@ Load from `~/.claude/best-practices/rust.md`:
 ## Test Errors {#test-errors}
 
 | Condition | Action |
-|-----------|--------|
+| --- | --- |
 | Test framework not found | Report error, suggest install |
 | No tests match filter | Report no matching tests |
 | Tests fail | Report failures, do not update status |
 
 ---
 
-# Workflow Orchestration {#workflow-orchestration}
-
+## Workflow Orchestration {#workflow-orchestration}
+>
 > **Source of truth:** `reference-story.md` and `reference-epic.md`
 
 For automated story and epic workflows:
+
 - Story workflows: `reference-story.md` → Workflow Commands
 - Epic workflows: `reference-epic.md` → Workflow Commands
 - Agentic execution: `reference-epic.md#flag-agentic` - Concurrent wave execution with hub file safety
 
 ---
 
-# See Also
+## See Also
 
 - `reference-decisions.md` - Decision impact matrix, TDD decision tree, Ready criteria
 - `reference-prd.md, reference-trd.md, reference-persona.md` - PRD, TRD, Persona workflows
@@ -736,19 +778,23 @@ For automated story and epic workflows:
 ## Navigation {#navigation}
 
 **Prerequisites (load these first):**
+
 - `reference-story.md` - User Stories (must exist and be Ready before code planning)
 - `reference-decisions.md#story-ready` - Ready criteria for stories
 
 **Related workflows:**
+
 - `reference-test-automation.md` - Test workflows (parallel - tests accompany code)
 - `reference-test-best-practices.md` - Test quality guidelines
 - `reference-test-e2e-guidelines.md` - E2E testing patterns
 - `reference-epic.md#flag-agentic` - `--agentic` for concurrent story execution
 
 **Cross-cutting concerns:**
+
 - `reference-decisions.md` - Decision guidance and Ready criteria
 - `reference-outputs.md#output-formats` - File formats and status values
 
 **Deep dives (optional):**
+
 - `reference-trd.md` - Technical architecture context
 - `reference-philosophy.md` - Create vs Generate philosophy

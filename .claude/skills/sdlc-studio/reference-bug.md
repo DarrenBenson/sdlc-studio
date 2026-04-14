@@ -6,7 +6,7 @@ Detailed workflows for Bug tracking and management.
 
 ---
 
-# Bug Tracking Workflows
+## Bug Tracking Workflows
 
 ## /sdlc-studio bug create - Step by Step {#bug-create-workflow}
 
@@ -80,7 +80,8 @@ Detailed workflows for Bug tracking and management.
    - Then by age (oldest first)
 
 5. **Display Output**
-   ```
+
+   ```text
    ## Open Bugs (12)
 
    | ID | Title | Severity | Priority | Age |
@@ -104,7 +105,8 @@ Detailed workflows for Bug tracking and management.
 
 3. **Analyse Root Cause**
    Use Task tool with Explore agent:
-   ```
+
+   ```text
    For bug [BG{NNNN}]: [Title]
    Reproduction: [steps]
    Affected: [component/story]
@@ -121,11 +123,24 @@ Detailed workflows for Bug tracking and management.
    - Suggested approach
    - Tests to add
 
-5. **Prompt for Regression Test**
+4b. **Three Amigos Consultation (Default)**
+   Unless `--skip-personas` flag used, run Three Amigos review of the fix plan:
+
+- **Sarah Chen (PM):** Assesses user impact of the bug, validates fix priority against roadmap, confirms scope of fix is appropriate (not over/under-scoped)
+- **Marcus Johnson (Eng):** Reviews root cause analysis for accuracy, validates fix approach for architectural soundness, checks for potential side effects or regression risks
+- **Priya Sharma (QA):** Plans regression test coverage, identifies related test scenarios that need updating, assesses risk of fix introducing new issues, validates that reproduction steps are captured
+
+   **Apply findings:**
+
+- Update fix plan with persona feedback
+- Add regression test suggestions from QA to the plan
+- Flag any architectural concerns from Eng for resolution before coding
+
+1. **Prompt for Regression Test**
    - Suggest test case based on reproduction steps
    - Link to relevant test spec
 
-6. **Mark Fix Complete (--complete)**
+2. **Mark Fix Complete (--complete)**
    When user runs with `--complete`:
    - Update status: In Progress → Fixed
    - Fill in "Root Cause Analysis" section
@@ -255,7 +270,7 @@ Close a bug with reason selection.
 
 ---
 
-# Bug Section Reference
+## Bug Section Reference
 
 Detailed guidance for completing each section of the Bug template.
 
@@ -264,22 +279,25 @@ Detailed guidance for completing each section of the Bug template.
 ## Summary and Metadata {#summary-and-metadata}
 
 ### Status Values {#status-values}
+
 - **Open**: Bug reported, awaiting fix
 - **In Progress**: Fix being developed
 - **Fixed**: Fix complete, awaiting verification
 - **Closed**: Bug resolved (includes close reason: Verified, Rejected, Won't Fix)
 
 ### Severity Guide {#severity-guide}
+
 | Severity | Description | Response Time |
-|----------|-------------|---------------|
+| --- | --- | --- |
 | Critical | System unusable, data loss, security issue | < 24 hours |
 | High | Major feature broken, no workaround | < 3 days |
 | Medium | Feature impaired, workaround exists | < 1 week |
 | Low | Minor issue, cosmetic, edge case | Next release |
 
 ### Priority Guide {#priority-guide}
+
 | Priority | Description |
-|----------|-------------|
+| --- | --- |
 | P1 | Fix immediately, blocks release |
 | P2 | Fix this sprint |
 | P3 | Fix this release |
@@ -290,11 +308,13 @@ Detailed guidance for completing each section of the Bug template.
 ## Affected Area {#affected-area}
 
 ### Epic/Story Links {#epic-story-links}
+
 - Link to the affected Epic and Story
 - Use relative paths: `../epics/EP0001-*.md`
 - Multiple bugs can affect same story
 
 ### Component {#component}
+
 - Module, service, or subsystem affected
 - Helps with assignment and analysis
 
@@ -303,13 +323,15 @@ Detailed guidance for completing each section of the Bug template.
 ## Reproduction Steps {#reproduction-steps}
 
 ### Good Steps {#good-steps}
+
 - Numbered, precise actions
 - Include specific data values
 - State starting conditions
 - One action per step
 
 ### Example {#example}
-```
+
+```text
 1. Navigate to /login
 2. Enter email: test@example.com
 3. Enter password: wrong-password
@@ -322,11 +344,13 @@ Detailed guidance for completing each section of the Bug template.
 ## Expected vs Actual {#expected-vs-actual}
 
 ### Expected Behaviour {#expected-behaviour}
+
 - What SHOULD happen
 - Reference acceptance criteria if applicable
 - Be specific about the outcome
 
 ### Actual Behaviour {#actual-behaviour}
+
 - What DOES happen
 - Include error messages verbatim
 - Screenshot references if visual
@@ -336,10 +360,12 @@ Detailed guidance for completing each section of the Bug template.
 ## Root Cause Analysis {#root-cause-analysis}
 
 ### When to Fill {#when-to-fill}
+
 - During `bug fix` investigation
 - Before implementing fix
 
 ### What to Include {#root-cause-what-to-include}
+
 - Code location(s) causing the issue
 - Why the bug exists (not just what's wrong)
 - Reference specific files and lines
@@ -349,14 +375,16 @@ Detailed guidance for completing each section of the Bug template.
 ## Fix Description {#fix-description}
 
 ### What to Include {#root-cause-what-to-include}
+
 - Approach taken to fix
 - Files modified (with change descriptions)
 - Any architectural considerations
 - Trade-offs made
 
 ### Files Modified Table {#files-modified-table}
+
 | File | Change |
-|------|--------|
+| --- | --- |
 | src/services/auth.ts:45 | Added null check for user session |
 
 ---
@@ -364,12 +392,14 @@ Detailed guidance for completing each section of the Bug template.
 ## Tests Added {#tests-added}
 
 ### Purpose {#tests-purpose}
+
 - Prevent regression
 - Document expected behaviour
 
 ### Table Format {#table-format}
+
 | Test ID | Description | File |
-|---------|-------------|------|
+| --- | --- | --- |
 | TC0042 | Verify login fails gracefully with wrong password | tests/auth.test.ts |
 
 ---
@@ -377,12 +407,14 @@ Detailed guidance for completing each section of the Bug template.
 ## Verification {#verification}
 
 ### Checklist {#checklist}
+
 - [ ] Fix verified in development
 - [ ] Regression tests pass
 - [ ] No side effects observed
 - [ ] Documentation updated (if applicable)
 
 ### Who Verifies {#who-verifies}
+
 - Preferably not the person who fixed it
 - QA or another developer
 - Record verifier and date
@@ -392,11 +424,13 @@ Detailed guidance for completing each section of the Bug template.
 ## Related Items {#related-items}
 
 ### What to Link {#what-to-link}
+
 - Affected Story: The story this bug affects
 - Related Bug: Duplicate or dependent bugs
 - Related Test: Test that caught or should catch this
 
 ### Duplicate Handling {#duplicate-handling}
+
 - If duplicate found, close as "Won't Fix"
 - Link to original bug in notes
 - Keep original open
@@ -406,6 +440,7 @@ Detailed guidance for completing each section of the Bug template.
 ## Notes {#notes}
 
 ### What to Include {#root-cause-what-to-include}
+
 - Investigation findings
 - Workarounds discovered
 - Communication with stakeholders
@@ -416,6 +451,7 @@ Detailed guidance for completing each section of the Bug template.
 ## Revision History {#revision-history}
 
 ### Required Entries {#required-entries}
+
 - Bug reported (initial creation)
 - Status changes
 - Fix complete
@@ -423,16 +459,16 @@ Detailed guidance for completing each section of the Bug template.
 - Closed/Reopened
 
 ### Format {#revision-format}
+
 | Date | Author | Change |
-|------|--------|--------|
+| --- | --- | --- |
 | 2026-01-17 | Reporter | Bug reported |
 | 2026-01-18 | Developer | Status → In Progress |
 | 2026-01-19 | Developer | Status → Fixed, added regression test |
 
 ---
 
-
-# See Also
+## See Also
 
 - `reference-epic.md` - Epic workflows
 - `reference-story.md` - Story workflows
@@ -446,16 +482,20 @@ Detailed guidance for completing each section of the Bug template.
 ## Navigation {#navigation}
 
 **Prerequisites (load these first):**
+
 - `reference-story.md` - User Stories (provides context for bugs)
 
 **Related workflows:**
+
 - `reference-code.md` - Code implementation (downstream - bug fixes become code tasks)
 - `reference-test-spec.md` - Testing workflows (bugs often require regression tests)
 
 **Cross-cutting concerns:**
+
 - `reference-decisions.md` - Decision guidance and Ready criteria
 - `reference-outputs.md#output-formats` - File formats and status values
 
 **Deep dives (optional):**
+
 - `reference-epic.md` - Epic workflows (bugs may affect epics)
 - `reference-philosophy.md` - Create vs Generate philosophy

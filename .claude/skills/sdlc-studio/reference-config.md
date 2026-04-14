@@ -5,7 +5,7 @@ Project-level configuration for customising SDLC Studio behaviour.
 ## Configuration Files
 
 | File | Location | Purpose |
-|------|----------|---------|
+| --- | --- | --- |
 | `config-defaults.yaml` | `templates/` (skill) | Default values (do not modify) |
 | `.config.yaml` | `sdlc-studio/` (project) | Project-specific overrides |
 | `.version` | `sdlc-studio/` (project) | Version tracking for upgrades |
@@ -35,7 +35,7 @@ coverage:
 ```
 
 | Setting | Default | Used In | Notes |
-|---------|---------|---------|-------|
+| --- | --- | --- | --- |
 | `unit` | 90 | TSD, status, test-spec | Core business logic coverage |
 | `integration` | 85 | TSD | API and database interaction coverage |
 | `e2e` | 100 | TSD, e2e-guidelines | Feature file coverage target |
@@ -71,11 +71,12 @@ story_quality:
 ### Edge Cases
 
 | Setting | Default | Used In |
-|---------|---------|---------|
+| --- | --- | --- |
 | `edge_cases.api` | 8 | story template, reference-story |
 | `edge_cases.other` | 5 | reference-story, reference-decisions |
 
 **API stories require more edge cases** because they handle:
+
 - Input validation
 - Authentication/authorisation
 - Rate limiting
@@ -85,14 +86,14 @@ story_quality:
 ### Test Scenarios
 
 | Setting | Default | Used In |
-|---------|---------|---------|
+| --- | --- | --- |
 | `test_scenarios.api` | 10 | story template |
 | `test_scenarios.ui` | 8 | reference-story |
 
 ### Story Sizing
 
 | Setting | Default | Meaning |
-|---------|---------|---------|
+| --- | --- | --- |
 | `max_ac` | 10 | Story too large if > 10 AC |
 | `max_points` | 13 | Story too large if > 13 points |
 | `recommended_ac.min` | 3 | Suggest more AC if < 3 |
@@ -110,10 +111,11 @@ tdd:
 ```
 
 | Setting | Default | Used In |
-|---------|---------|---------|
+| --- | --- | --- |
 | `edge_case_threshold` | 5 | reference-decisions, help/code |
 
 **Rationale**: Stories with many edge cases benefit from TDD because:
+
 - Tests clarify expected behaviour before implementation
 - Edge cases are harder to retrofit
 - TDD prevents "happy path only" implementations
@@ -130,10 +132,11 @@ e2e:
 ```
 
 | Setting | Default | Used In |
-|---------|---------|---------|
+| --- | --- | --- |
 | `max_tests_per_spec` | 50 | reference-test-e2e-guidelines |
 
 **Why 50?** Larger spec files:
+
 - Take longer to run
 - Are harder to parallelise
 - Make failures harder to isolate
@@ -219,7 +222,7 @@ created_at: 2026-01-15T09:00:00Z
 ```
 
 | Field | Purpose |
-|-------|---------|
+| --- | --- |
 | `schema_version` | Current template schema (1=legacy, 2=modular) |
 | `upgraded_from` | Previous version (for migration tracking) |
 | `upgraded_at` | When upgrade was performed |
@@ -228,8 +231,30 @@ created_at: 2026-01-15T09:00:00Z
 
 ---
 
+## Project Implementation
+
+Control behaviour of `/sdlc-studio project implement`.
+
+```yaml
+project:
+  commit_strategy: per-epic   # per-wave | per-epic | per-project
+  review_interval: 3          # Epics between quick reviews
+  auto_reconcile: true        # Auto-reconcile after each epic
+  auto_commit: true           # Auto-commit at boundaries
+```
+
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `commit_strategy` | enum | `per-epic` | When to auto-commit: after each wave, each epic, or at project end |
+| `review_interval` | int | `3` | Run `review --quick` after this many epics |
+| `auto_reconcile` | bool | `true` | Automatically reconcile after each epic completes |
+| `auto_commit` | bool | `true` | Automatically commit at strategy boundaries |
+
+---
+
 ## See Also
 
 - `templates/config-defaults.yaml` - Default values
 - `help/init.md` - Project initialisation
 - `reference-upgrade.md` - Upgrading between versions
+- `reference-project.md` - Project-level orchestration

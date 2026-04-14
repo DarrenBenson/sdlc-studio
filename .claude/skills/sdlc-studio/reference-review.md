@@ -13,7 +13,7 @@ The unified review command runs document reviews across all three specification 
 ### 1. Parse Arguments
 
 | Flag | Effect | Default |
-|------|--------|---------|
+| --- | --- | --- |
 | (none) | Run all document reviews | - |
 | `--quick` | Use cached data, skip codebase analysis | false |
 | `--focus prd` | Run only PRD review | all |
@@ -25,6 +25,7 @@ The unified review command runs document reviews across all three specification 
 Execute reviews in sequence, collecting findings:
 
 #### PRD Review
+
 ```text
 1. Load sdlc-studio/prd.md
 2. Scan codebase for feature implementation
@@ -36,6 +37,7 @@ Execute reviews in sequence, collecting findings:
 See `reference-prd.md#prd-review-workflow` for details.
 
 #### TRD Review
+
 ```text
 1. Load sdlc-studio/trd.md
 2. Analyse architecture against implementation
@@ -47,6 +49,7 @@ See `reference-prd.md#prd-review-workflow` for details.
 See `reference-trd.md#trd-review-workflow` for details.
 
 #### TSD Review
+
 ```text
 1. Load sdlc-studio/tsd.md
 2. Parse coverage data (.coverage, lcov.info)
@@ -87,7 +90,86 @@ For each PRD non-functional requirement:
     - PRD "99.9% uptime" → TSD availability gate
 ```
 
-### 4. Generate Consolidated Report
+#### CR Staleness Check
+
+```text
+If sdlc-studio/change-requests/ exists:
+
+For each CR with status "Proposed":
+  - Check created date against today
+  - If older than 14 days: flag as stale
+  - Suggest: approve, reject, or defer
+
+For each CR with status "In Progress":
+  - Check linked epic statuses from "Linked Epics" section
+  - If ALL linked epics Done: suggest marking CR Complete
+  - If SOME Done: report progress (e.g. "2/3 linked epics Done")
+```
+
+### 3a. Persona Consultation (default when personas exist)
+
+If `sdlc-studio/personas/` contains persona files and `--skip-personas` was NOT passed:
+
+1. Load persona index (`sdlc-studio/personas/index.md`)
+2. For each reviewed document, identify relevant personas from the consultation guide:
+   - **PRD:** Darren (scope, priorities), Cora (API shape, errors), Webapp Dev (API docs, schema), HA (health, sensors)
+   - **TRD:** Claude Code (patterns, testability), Marcus Johnson (architecture), Cora (error contracts)
+   - **TSD:** Priya Sharma (coverage, risk), Claude Code (test structure, runnable locally)
+3. Consult each relevant persona on the review findings from their perspective:
+   - Does the implementation meet their stated needs?
+   - Are their frustrations addressed?
+   - Are their "push back" triggers present in the findings?
+4. Append persona verdicts to the consolidated report under a "Persona Consultation" section
+5. Flag persona concerns as priority actions
+
+**Default behaviour:** When `sdlc-studio/personas/` exists and contains persona files, persona consultation runs automatically. Use `--skip-personas` to opt out. Use `--with-personas` to force consultation even when no persona files exist (uses archetype defaults).
+
+### 3b. Auto-Apply Mechanical Fixes
+
+After detecting findings, automatically apply fixes that are purely mechanical (not judgment calls):
+
+**Auto-applied (no confirmation needed):**
+
+- PRD feature status updates matching verified epic completion
+- PRD AC checkboxes matching verified implementation
+- Dependency table status corrections (fact, not judgment)
+- Index summary count recalculations
+- Story/epic index status entries matching file statuses
+- Epic AC checkboxes for criteria verified against the codebase
+- Epic story breakdown checkboxes matching story statuses
+
+**Reported only (requires user judgment):**
+
+- Spec-to-code naming drift (e.g. interface names in TRD vs code)
+- TSD test tree vs actual test file structure
+- Content accuracy issues (stale descriptions, outdated architecture claims)
+- Status transitions to Done (always a user decision)
+
+To skip auto-fix: `--no-fix` flag.
+
+### 4. Update Review State and Metadata
+
+**CRITICAL:** After generating findings, update `sdlc-studio/.local/review-state.json` to track the review. This ensures the status dashboard recognises reviews have been conducted.
+
+```text
+1. Create sdlc-studio/.local/ directory if it doesn't exist
+2. Load existing review-state.json (or create empty structure)
+3. For each reviewed document (prd, trd, tsd):
+   a) Set artifacts.{doc}.last_reviewed = current ISO timestamp
+   b) Set artifacts.{doc}.last_modified = file's git log timestamp
+   c) Set artifacts.{doc}.review_findings_ref = RV{NNNN} ID
+4. Add review entry to reviews.{RV_ID} with timestamp and findings summary
+5. Write updated review-state.json
+6. For each reviewed document that was modified (status updates, AC checkboxes, auto-fixes):
+   a) Update `**Last Updated:**` date in the document header to today's date
+   b) Add a changelog/revision history entry summarising the review changes
+   c) Format: `| {date} | Claude | {type} review: {summary of changes} |`
+5. Write updated review-state.json
+```
+
+**review-state.json schema:** See `reference-outputs.md#review-state-json`.
+
+### 5. Generate Consolidated Report
 
 ```text
 ══════════════════════════════════════════════════════════
@@ -107,6 +189,12 @@ For each PRD non-functional requirement:
 🧪 TSD REVIEW                          ▓▓▓▓▓▓▓░░░ 78%
    Coverage Target: 90% (Actual: 78%)
    ⚠️ 3 gaps identified
+
+──────────────────────────────────────────────────────────
+📝 CHANGE REQUESTS
+   Proposed: 2 (1 stale > 14 days)
+   In Progress: 1 (all epics Done -- suggest close)
+   Complete: 7
 
 ──────────────────────────────────────────────────────────
 🔗 CROSS-DOCUMENT CONSISTENCY
@@ -140,6 +228,7 @@ When `--quick` is specified:
 ```
 
 Quick mode is useful for:
+
 - Fast status checks during development
 - CI/CD quick gates
 - When codebase hasn't changed
@@ -157,11 +246,13 @@ When `--focus {document}` is specified:
 ```
 
 Example:
+
 ```bash
 /sdlc-studio review --focus tsd
 ```
 
 Output:
+
 ```text
 ══════════════════════════════════════════════════════════
                       TSD REVIEW
@@ -230,12 +321,27 @@ c) CI/CD quality gates:
 ### 3. Identify Gaps
 
 | Gap Type | Detection | Severity |
-|----------|-----------|----------|
+| --- | --- | --- |
 | Coverage below target | Actual < target | ❌ if >5% gap, ⚠️ otherwise |
 | Missing test type | No tests for documented type | ⚠️ |
 | Outdated framework | Current > documented | ⚠️ |
 | Missing quality gate | PRD NFR without gate | ❌ |
 | Stale TSD content | Document older than tests | ⚠️ |
+| Test tree drift | Files in codebase not in TSD tree (or vice versa) | ⚠️ |
+
+### 3a. Validate Test Organisation Tree
+
+If the TSD contains a "Test Organisation" section with a file tree:
+
+1. Glob `src/__tests__/**/*.test.ts` (or project-appropriate test pattern)
+2. Compare actual test file tree against the TSD's documented tree
+3. Report discrepancies:
+   - Files in codebase but not in TSD tree → "undocumented test"
+   - Files in TSD tree but not in codebase → "planned test" or "stale entry"
+4. If `--no-fix` not set and significant drift found, offer to regenerate the test tree section:
+   - Current files annotated with descriptions
+   - Missing planned files annotated with `(EP00XX)` epic reference
+   - Split into "Current Test Files" and "Planned Test Files" sections
 
 ### 4. Update TSD
 
@@ -265,6 +371,7 @@ TSD Currency:
 ### PRD → TRD Mapping
 
 Each PRD feature should have:
+
 - At least one TRD component addressing it
 - Clear API contracts (if feature involves API)
 - Data model documentation (if feature involves data)
@@ -272,6 +379,7 @@ Each PRD feature should have:
 ### TRD → TSD Mapping
 
 Each TRD component should have:
+
 - Test strategy defined (unit/integration/E2E)
 - Coverage targets appropriate to risk
 - Automation approach documented
@@ -279,7 +387,7 @@ Each TRD component should have:
 ### PRD NFR → TSD Gate Mapping
 
 | PRD NFR Type | Required TSD Gate |
-|--------------|-------------------|
+| --- | --- |
 | Response time | Performance threshold |
 | Availability | Uptime monitoring |
 | Security | Security scan stage |

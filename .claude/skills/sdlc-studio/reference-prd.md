@@ -6,7 +6,7 @@ Detailed workflows for Product Requirements Document creation and management.
 
 ---
 
-# PRD Workflows
+## PRD Workflows
 
 ## /sdlc-studio prd create - Step by Step {#prd-create-workflow}
 
@@ -53,11 +53,12 @@ Detailed workflows for Product Requirements Document creation and management.
    - Use confidence markers: [HIGH], [MEDIUM], [LOW]
    - Include Open Questions for unresolved items
 
-7. **Persona Consultation (Optional)**
-   Unless `--skip-personas` flag used:
-   - Check if personas exist in `sdlc-studio/personas/`
-   - If yes, ask: "Would you like Three Amigos review of this PRD?"
-   - If user agrees, run: `/sdlc-studio consult team sdlc-studio/prd.md`
+7. **Persona Consultation** (default when personas exist)
+
+   **Default behaviour:** When `sdlc-studio/personas/` exists and contains persona files, persona consultation runs automatically. Use `--skip-personas` to opt out.
+
+   - Load persona index and identify relevant personas for PRD review
+   - Run consultation: `/sdlc-studio consult team sdlc-studio/prd.md`
    - Append consultation summary to PRD or report separately
    - If personas don't exist, suggest: "Run `/sdlc-studio persona create` for stakeholder feedback"
 
@@ -67,7 +68,8 @@ Detailed workflows for Product Requirements Document creation and management.
 
 1. **Launch Exploration**
    Use Task tool with Explore agent:
-   ```
+
+   ```text
    Explore this codebase comprehensively:
    1. Directory structure and architecture patterns
    2. README and documentation files
@@ -122,7 +124,8 @@ Detailed workflows for Product Requirements Document creation and management.
 
 2. **Analyse Implementation**
    For each feature, use Task tool with Explore agent:
-   ```
+
+   ```text
    Search for implementation of: [feature name]
    Look for:
    1. Relevant code files and functions
@@ -149,19 +152,18 @@ Detailed workflows for Product Requirements Document creation and management.
    - New features discovered
    - Any regressions
 
-6. **Persona Re-consultation (If Significant Changes)**
-   If review found significant changes:
-   - New features discovered
-   - Features marked as broken
-   - Scope changes identified
+6. **Persona Consultation** (default when personas exist)
 
-   Offer: "Significant changes found. Would you like persona feedback on updates?"
+   **Default behaviour:** When `sdlc-studio/personas/` exists, persona consultation runs automatically during PRD review. Use `--skip-personas` to opt out.
+
+   - Load persona index and consult relevant personas on review findings
    - Quick mode for minor changes: `/sdlc-studio consult team prd.md --quick`
    - Thorough mode for major changes: `/sdlc-studio consult team prd.md --thorough`
+   - Include persona verdicts in the review report
 
 ---
 
-# PRD Section Reference
+## PRD Section Reference
 
 Detailed guidance for completing each section of the PRD template.
 
@@ -170,18 +172,21 @@ Detailed guidance for completing each section of the PRD template.
 ## 1. Project Overview {#project-overview}
 
 ### CREATE Mode - Questions to Ask
+
 - What is the project called?
 - What does it do in one sentence?
 - What technologies are you using or planning to use?
 - Is this a new project, MVP, or mature product?
 
 ### GENERATE Mode - What to Look For
+
 - README.md title and description
 - package.json name/description fields
 - Docker/compose files for architecture clues
 - Directory structure patterns (monorepo, microservices, etc.)
 
 ### REVIEW Mode - How to Assess
+
 - Check if tech stack has changed
 - Verify architecture description matches current state
 - Update maturity assessment if significant progress made
@@ -191,18 +196,21 @@ Detailed guidance for completing each section of the PRD template.
 ## 2. Problem Statement {#problem-statement}
 
 ### CREATE Mode - Questions to Ask
+
 - What problem does this solve?
 - Who experiences this problem?
 - What happens if the problem isn't solved?
 - What existing solutions are there and why aren't they sufficient?
 
 ### GENERATE Mode - What to Look For
+
 - README "About" or "Why" sections
 - Code comments explaining purpose
 - Marketing copy in docs
 - Issue tracker for pain points addressed
 
 ### REVIEW Mode - How to Assess
+
 - Rarely changes; verify still accurate
 - Update if pivot or scope change occurred
 
@@ -211,7 +219,9 @@ Detailed guidance for completing each section of the PRD template.
 ## 3. Feature Inventory {#feature-inventory}
 
 ### CREATE Mode - Questions to Ask
+
 For each feature:
+
 - What is the feature name?
 - What does it do?
 - Who uses it?
@@ -219,6 +229,7 @@ For each feature:
 - What priority is it? (Must-have, should-have, nice-to-have)
 
 ### GENERATE Mode - What to Look For
+
 - Route handlers and API endpoints
 - UI components and pages
 - Service classes and modules
@@ -226,7 +237,9 @@ For each feature:
 - Menu items and navigation
 
 ### REVIEW Mode - How to Assess
+
 For each feature:
+
 - Search codebase for implementation
 - Check test files for coverage
 - Verify functionality manually if possible
@@ -237,12 +250,14 @@ For each feature:
 ## 4. Functional Requirements {#functional-requirements}
 
 ### CREATE Mode - Questions to Ask
+
 - What inputs does the system accept?
 - What outputs does it produce?
 - What transformations happen in between?
 - What business rules apply?
 
 ### GENERATE Mode - What to Look For
+
 - Validation logic
 - Data transformations
 - Business rule implementations
@@ -250,6 +265,7 @@ For each feature:
 - API request/response types
 
 ### REVIEW Mode - How to Assess
+
 - Verify documented behaviours match implementation
 - Add any undocumented functional requirements found
 
@@ -258,12 +274,14 @@ For each feature:
 ## 5. Non-Functional Requirements {#non-functional-requirements}
 
 ### CREATE Mode - Questions to Ask
+
 - **Performance:** What response times are acceptable? Expected load?
 - **Security:** What data needs protection? Authentication requirements?
 - **Scalability:** How many users/requests expected? Growth projections?
 - **Availability:** What uptime is required? Recovery time objectives?
 
 ### GENERATE Mode - What to Look For
+
 - Caching implementations
 - Rate limiting
 - Authentication middleware
@@ -273,6 +291,7 @@ For each feature:
 - Load balancer configs
 
 ### REVIEW Mode - How to Assess
+
 - Check if implemented NFRs meet stated requirements
 - Note any performance issues or security gaps found
 
@@ -281,12 +300,14 @@ For each feature:
 ## 6. AI/ML Specifications {#ai-ml-specifications}
 
 ### CREATE Mode - Questions to Ask
+
 - Will this use AI/ML? Which models or APIs?
 - What prompts or instructions will be used?
 - How will context be managed?
 - What happens when AI fails?
 
 ### GENERATE Mode - What to Look For
+
 - API calls to OpenAI, Anthropic, etc.
 - Prompt templates and system instructions
 - Context window management (chunking, summarisation)
@@ -295,6 +316,7 @@ For each feature:
 - Cost tracking
 
 ### REVIEW Mode - How to Assess
+
 - Verify models and versions match documentation
 - Check if prompts have been modified
 - Update any changed parameters
@@ -304,12 +326,14 @@ For each feature:
 ## 7. Data Architecture {#data-architecture}
 
 ### CREATE Mode - Questions to Ask
+
 - What data will be stored?
 - What are the relationships between data types?
 - How will data be persisted? (SQL, NoSQL, files)
 - What's the data lifecycle?
 
 ### GENERATE Mode - What to Look For
+
 - Database migrations
 - ORM models (SQLAlchemy, Prisma, etc.)
 - Schema definitions
@@ -317,6 +341,7 @@ For each feature:
 - Data validation schemas (Pydantic, Zod)
 
 ### REVIEW Mode - How to Assess
+
 - Compare documented models to actual schemas
 - Note any new tables or fields
 - Update relationship diagrams
@@ -326,12 +351,14 @@ For each feature:
 ## 8. Integration Map {#integration-map}
 
 ### CREATE Mode - Questions to Ask
+
 - What external services will you integrate with?
 - What APIs will you consume?
 - Will you expose APIs for others?
 - What authentication is needed for integrations?
 
 ### GENERATE Mode - What to Look For
+
 - HTTP client calls
 - SDK imports (stripe, twilio, etc.)
 - Webhook handlers
@@ -339,6 +366,7 @@ For each feature:
 - API key environment variables
 
 ### REVIEW Mode - How to Assess
+
 - Verify all integrations are documented
 - Check for new external service calls
 - Update auth methods if changed
@@ -348,12 +376,14 @@ For each feature:
 ## 9. Configuration Reference {#configuration-reference}
 
 ### CREATE Mode - Questions to Ask
+
 - What environment variables are needed?
 - What can be configured without code changes?
 - Are there feature flags?
 - What's needed for deployment?
 
 ### GENERATE Mode - What to Look For
+
 - .env.example files
 - Config loading code
 - Environment variable usage
@@ -361,6 +391,7 @@ For each feature:
 - Docker/K8s configurations
 
 ### REVIEW Mode - How to Assess
+
 - Scan for new environment variables
 - Check for removed/deprecated config
 - Update defaults if changed
@@ -370,11 +401,13 @@ For each feature:
 ## 10. Test Coverage Analysis {#test-coverage-analysis}
 
 ### CREATE Mode - Questions to Ask
+
 - What testing approach will you use?
 - What must be tested?
 - What's acceptable coverage?
 
 ### GENERATE Mode - What to Look For
+
 - Test files and their coverage
 - Test patterns (unit, integration, e2e)
 - Mocking strategies
@@ -382,6 +415,7 @@ For each feature:
 - Coverage reports
 
 ### REVIEW Mode - How to Assess
+
 - Run coverage analysis if possible
 - Note newly tested areas
 - Flag reduced coverage
@@ -391,11 +425,13 @@ For each feature:
 ## 11. Technical Debt Register {#technical-debt-register}
 
 ### CREATE Mode - Questions to Ask
+
 - Are there known shortcuts being taken?
 - What will need revisiting?
 - Any deprecated dependencies planned?
 
 ### GENERATE Mode - What to Look For
+
 - TODO comments
 - FIXME comments
 - HACK comments
@@ -404,6 +440,7 @@ For each feature:
 - Inconsistent patterns
 
 ### REVIEW Mode - How to Assess
+
 - Re-scan for new TODOs
 - Check if previous debt items resolved
 - Update priority based on impact
@@ -413,11 +450,13 @@ For each feature:
 ## 12. Documentation Gaps {#documentation-gaps}
 
 ### CREATE Mode - Questions to Ask
+
 - What documentation exists?
 - What's the documentation standard?
 - Who is the documentation audience?
 
 ### GENERATE Mode - What to Look For
+
 - Functions without docstrings
 - Complex logic without comments
 - Missing README sections
@@ -425,6 +464,7 @@ For each feature:
 - No inline type hints
 
 ### REVIEW Mode - How to Assess
+
 - Note new undocumented features
 - Check if gaps have been filled
 - Update list of missing docs
@@ -434,11 +474,13 @@ For each feature:
 ## 13. Recommendations {#recommendations}
 
 ### CREATE Mode - Questions to Ask
+
 - What's the MVP vs ideal state?
 - What risks should be mitigated?
 - What would make this more maintainable?
 
 ### GENERATE Mode - What to Look For
+
 - Security vulnerabilities
 - Performance bottlenecks
 - Maintainability issues
@@ -446,6 +488,7 @@ For each feature:
 - Scalability concerns
 
 ### REVIEW Mode - How to Assess
+
 - Check if previous recommendations addressed
 - Add new recommendations based on current state
 - Prioritise by impact and effort
@@ -455,14 +498,17 @@ For each feature:
 ## 14. Open Questions {#open-questions}
 
 ### All Modes
+
 Document anything that:
+
 - Cannot be determined from available information
 - Requires stakeholder decision
 - Has multiple valid interpretations
 - Needs clarification before implementation
 
 Format:
-```
+
+```text
 - **Q:** [Question]
   **Context:** [Why this matters]
   **Options:** [If applicable]
@@ -473,27 +519,30 @@ Format:
 ## Appendix Guidelines {#appendix-guidelines}
 
 ### File Tree
+
 - Use `tree` command output or manual listing
 - Limit depth to 3-4 levels
-- Exclude node_modules, __pycache__, etc.
+- Exclude node_modules, **pycache**, etc.
 
 ### Dependencies
+
 - List from package.json, requirements.txt, etc.
 - Group by purpose (runtime, dev, optional)
 
 ### API Catalogue
+
 - List all exposed endpoints
 - Include method, path, brief description
 - Note authentication requirements
 
 ### Changelog
+
 - Track PRD updates, not code changes
 - Include date, version, summary of changes
 
 ---
 
-
-# See Also
+## See Also
 
 - `reference-trd.md` - TRD workflows
 - `reference-persona.md` - Persona workflows
@@ -507,15 +556,19 @@ Format:
 ## Navigation {#navigation}
 
 **Prerequisites (load these first):**
+
 - `reference-philosophy.md#create-mode` OR `reference-philosophy.md#generate-mode` - Understanding modes
 
 **Related workflows:**
+
 - `reference-epic.md` - Epic generation (downstream consumer - what uses PRD output)
 - `reference-trd.md` - Technical Requirements (parallel artifact)
 
 **Cross-cutting concerns:**
+
 - `reference-decisions.md` - Decision guidance and Ready criteria
 - `reference-outputs.md#output-formats` - File formats and status values
 
 **Deep dives (optional):**
+
 - `reference-architecture.md` - Architecture patterns for TRD context

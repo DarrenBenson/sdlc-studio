@@ -7,7 +7,7 @@ Detailed workflows for User Story generation, quality enforcement, and managemen
 ## Reading Guide
 
 | Section | When to Read |
-|---------|--------------|
+| --- | --- |
 | Story Workflows | When generating stories from epics |
 | Story Generate Workflow | When extracting specs from existing code |
 | Story Quality Enforcement | When validating story readiness |
@@ -16,7 +16,7 @@ Detailed workflows for User Story generation, quality enforcement, and managemen
 
 ---
 
-# Story Workflows
+## Story Workflows
 
 ## /sdlc-studio story - Step by Step {#story-workflow}
 
@@ -72,6 +72,8 @@ Detailed workflows for User Story generation, quality enforcement, and managemen
       - If found, add to Story Dependencies table
 
    d) **Populate story template sections:**
+
+      <!-- markdownlint-disable MD046 -->
       ```markdown
       ### Story Dependencies
       | Story | Dependency Type | What's Needed | Status |
@@ -88,51 +90,75 @@ Detailed workflows for User Story generation, quality enforcement, and managemen
       |----------|--------------|----------|
       | GET /api/settings | US0023 | Fetch user preferences |
       ```
+      <!-- markdownlint-enable MD046 -->
 
    e) **Warn if dependent story not Done:**
-      ```
+      ```text
       > **Warning:** This story depends on stories that are not Done:
       > - US0013: Slack Notifications (In Progress)
       ```
 
-4. **Generate Story Files**
+1. **Generate Story Files**
    - Assign ID: US{NNNN} (global)
    - Create slug (kebab-case)
    - Use `templates/core/story.md`
    - Link to parent Epic
 
-5. **Update Epic Files**
+2. **Update Epic Files**
    - Add story links to Story Breakdown section
    - Update Estimated Story Count
 
-6. **Write Files**
+3. **Write Files**
    - Write `sdlc-studio/stories/US{NNNN}-{slug}.md`
    - Create/update `sdlc-studio/stories/_index.md`
    - Update modified Epic files
 
-7. **Report**
+4. **Report**
    - Stories created per Epic
    - Full story list
    - Criteria that couldn't be converted
 
-8. **Run Cohesion Review (Automatic)**
+5. **Run Cohesion Review (Automatic)**
    - See [Story Cohesion Review](#story-cohesion-review) below
    - Validates generated stories collectively cover the epic
    - Reports gaps, sizing issues, overlaps
    - Auto-fixes where possible
 
-9. **Persona Validation (Optional)**
-   Unless `--skip-personas` flag used:
-   - For each story, identify the primary persona (from "As a...")
-   - Offer: "Would you like persona validation of acceptance criteria?"
-   - If yes, for each story:
-     - Consult the story's persona about AC completeness
-     - Run: `/sdlc-studio consult [persona] [story-file] --quick`
-   - Report persona feedback:
-     - AC that personas approved
-     - AC that personas questioned
-     - Missing scenarios personas identified
-   - Optionally update stories with persona-suggested improvements
+6. **Three Amigos Consultation (Default)**
+   Unless `--skip-personas` flag used, run Three Amigos review on all generated stories:
+
+   **Per-epic batch:** For each epic's stories, consult all three amigos:
+
+   a. **Sarah Chen (PM) reviews each story for:**
+      - User value clarity in "As a... I want... So that..."
+      - AC completeness against epic requirements
+      - Success metrics alignment
+      - Scope boundaries (nothing missing, nothing extra)
+
+   b. **Marcus Johnson (Eng) reviews each story for:**
+      - TRD alignment (API contracts, data models, architecture patterns)
+      - Technical notes accuracy and feasibility
+      - Dependency correctness (cross-story and cross-epic)
+      - Implementation guidance clarity
+
+   c. **Priya Sharma (QA) reviews each story for:**
+      - AC testability (Given/When/Then precision)
+      - Edge case completeness against TSD risk profile
+      - Test scenario coverage adequacy
+      - Multi-tenancy isolation considerations
+
+   **Process:**
+   - Run consultations in parallel (one agent per epic)
+   - Each agent reviews all stories in its epic from all three perspectives
+   - Apply improvements directly to story files where feedback is actionable
+   - Add persona attribution to revision history for changes made
+   - Report summary of findings, changes applied, and items needing user decision
+
+   **Output:** Append to each story's revision history:
+
+   ```text
+   | {date} | Three Amigos | Persona consultation: {summary of changes} |
+   ```
 
 ---
 
@@ -147,7 +173,7 @@ Runs automatically after `story generate --epic EP0001`. No separate command nee
 ### Cohesion Checks
 
 | Check | Description | Severity |
-|-------|-------------|----------|
+| --- | --- | --- |
 | **AC Coverage** | Every epic AC maps to at least one story AC | Critical |
 | **Edge Cases** | All epic edge cases distributed across stories | Important |
 | **Dependencies** | Story dependencies form valid DAG (no cycles) | Critical |
@@ -229,7 +255,7 @@ No duplicate AC detected
 ### Auto-Fix Behaviour {#cohesion-auto-fix}
 
 | Issue | Auto-Fix | Manual Action |
-|-------|----------|---------------|
+| --- | --- | --- |
 | Missing edge case | Add to most relevant story | None needed |
 | Missing AC coverage | Add as open question on epic | User must assign to story |
 | Cycle detected | Report error, no auto-fix | User must resolve |
@@ -254,7 +280,8 @@ Cohesion review results are stored as part of the review findings system:
 
 2. **Analyse Implementation**
    For each story, use Task tool with Explore agent:
-   ```
+
+   ```text
    For story [Title], check implementation:
    1. Code matching acceptance criteria
    2. Relevant test files
@@ -273,7 +300,7 @@ Cohesion review results are stored as part of the review findings system:
      - "Done" is always a user decision, never auto-assigned
      - Prompt user: "All criteria complete. Mark story as Done? [y/N]"
      - **If user confirms Done:** Execute the **Story Completion Cascade** immediately.
-       > **Canonical checklist:** `reference-outputs.md` → [Story Completion Cascade](#story-completion-cascade)
+       > **Canonical checklist:** `reference-outputs.md` → [Story Completion Cascade](reference-outputs.md#story-completion-cascade)
 
 4. **Update Related Files**
    - Update _index.md with status counts
@@ -305,7 +332,8 @@ Cohesion review results are stored as part of the review findings system:
 
 3. **Deep Code Exploration**
    Use Task tool with Explore agent:
-   ```
+
+   ```text
    For Epic [Title], extract implementation specifications:
 
    1. Find all implementing code (routes, services, models)
@@ -323,7 +351,8 @@ Cohesion review results are stored as part of the review findings system:
    For each feature identified:
 
    a. **Write precise AC** - not "returns data" but exact shapes:
-      ```
+
+      ```text
       - Given an engram exists with slug "test-person"
       - When I GET /engrams/test-person
       - Then I receive 200 with JSON containing:
@@ -339,7 +368,8 @@ Cohesion review results are stored as part of the review findings system:
       ```
 
    b. **Document all edge cases** with specific inputs and outputs:
-      ```
+
+      ```text
       | Scenario | Input | Expected |
       |----------|-------|----------|
       | Not found | GET /engrams/nonexistent | 404, {"detail": "Engram not found: nonexistent"} |
@@ -378,6 +408,7 @@ Cohesion review results are stored as part of the review findings system:
    - Suggest: `/sdlc-studio test-spec --epic EP00XX` next
 
 **Quality Checklist for Generated Stories:**
+
 - [ ] AC detailed enough to implement without seeing original code
 - [ ] All edge cases documented with specific inputs/outputs
 - [ ] API contracts include exact request/response shapes
@@ -387,7 +418,7 @@ Cohesion review results are stored as part of the review findings system:
 
 ---
 
-# Story Quality Enforcement
+## Story Quality Enforcement
 
 Before marking a story as Ready, verify it meets minimum standards.
 
@@ -400,7 +431,7 @@ Stories CANNOT be marked Ready unless they meet these enforced minimums:
 ### API Stories {#api-stories}
 
 | Requirement | Minimum | Enforcement |
-|-------------|---------|-------------|
+| --- | --- | --- |
 | Edge cases documented | 8 | Count `\| Scenario` rows in edge case table |
 | Test scenarios listed | 10 | Count `- [ ]` items in Test Scenarios section |
 | Given/When/Then concrete | All AC | No placeholders or TBD |
@@ -410,7 +441,7 @@ Stories CANNOT be marked Ready unless they meet these enforced minimums:
 ### UI Stories {#ui-stories}
 
 | Requirement | Minimum | Enforcement |
-|-------------|---------|-------------|
+| --- | --- | --- |
 | Edge cases documented | 5 | Count `\| Scenario` rows |
 | Test scenarios listed | 8 | Count `- [ ]` items |
 | UI states documented | All | Loading, error, empty, success |
@@ -501,7 +532,7 @@ The following phrases should be made specific:
 **Do NOT mark Ready if:**
 
 | Condition | Why It Blocks |
-|-----------|---------------|
+| --- | --- |
 | Critical Open Question unresolved | Specification incomplete |
 | Edge case count below 8 (API stories) | Test coverage will have gaps |
 | API contracts use vague language | Implementer will make assumptions |
@@ -518,7 +549,7 @@ These phrases indicate specification gaps. Replace before marking Ready.
 
 Track story quality across the project:
 
-```
+```text
 /sdlc-studio status --quality
 
 Story Quality:
@@ -533,13 +564,13 @@ Story Quality:
 
 ---
 
-# User Story Section Reference
-
+## User Story Section Reference
+>
 > **Section-by-section guidance:** See `reference-story-sections.md` for detailed guidance on completing each section of the story template (User Story statement, Context, AC, Scope, UI/UX, Technical Notes, Edge Cases, Test Scenarios, DoD, Estimation).
 
 ---
 
-# Workflow Commands
+## Workflow Commands
 
 Automated workflows for complete story implementation.
 
@@ -561,7 +592,8 @@ These commands operate on a single story. For autonomous epic-level execution wi
    - Parse story Dependencies section
    - For each dependent story, verify status is Done
    - If any dependency not Done, report warning:
-     ```
+
+     ```text
      > **Warning:** This story depends on stories that are not Done:
      > - US0013: Slack Notifications (In Progress)
      ```
@@ -569,32 +601,33 @@ These commands operate on a single story. For autonomous epic-level execution wi
 3. **Determine Approach**
    Apply TDD decision tree from reference-decisions.md:
 
-   | Factor | TDD | Test-After |
-   |--------|-----|------------|
-   | Edge cases >5 | Yes | |
-   | Clear AC | Yes | |
-   | API story | Yes | |
-   | UI-heavy | | Yes |
-   | Exploratory | | Yes |
-   | Complex business rules | Yes | |
+| | Factor | TDD | Test-After |
+| --- | --- | --- | --- |
+| | Edge cases >5 | Yes | |
+| | Clear AC | Yes | |
+| | API story | Yes | |
+| | UI-heavy | | Yes |
+| | Exploratory | | Yes |
+| | Complex business rules | Yes | |
 
    Document rationale for approach selection.
 
-4. **Create Implementation Plan (MANDATORY)**
+1. **Create Implementation Plan (MANDATORY)**
    - Run `code plan --story US000X` internally
    - Write plan file to `sdlc-studio/plans/PL{NNNN}-{slug}.md`
    - **STOP if file creation fails** - do not proceed without written plan
    - Store plan ID for workflow tracking
 
-5. **Create Test Specification (MANDATORY)**
+2. **Create Test Specification (MANDATORY)**
    - Run `test-spec --story US000X` internally
    - Write spec file to `sdlc-studio/test-specs/TS{NNNN}-{slug}.md`
    - **STOP if file creation fails** - do not proceed without written spec
    - Store spec ID for workflow tracking
 
-6. **Review Created Artifacts with User**
+3. **Review Created Artifacts with User**
    Present the created artifacts for user review:
-   ```
+
+   ```text
    ## Story Workflow Plan: US0024
 
    **Story:** Action Queue API Endpoint
@@ -634,6 +667,37 @@ These commands operate on a single story. For autonomous epic-level execution wi
 
 ## /sdlc-studio story implement - Step by Step {#story-implement-workflow}
 
+### Agentic Mode Behaviour {#agentic-override}
+
+When called from `epic implement --agentic` or `project implement --agentic`, the workflow adapts based on whether `--no-artifacts` is active:
+
+**Default agentic (without `--no-artifacts`):**
+
+- All 8 phases run, but agents execute phases 1-4 in a single prompt (plan + test-spec + tests + implement together)
+- **Plan file (PL) IS created** - lightweight, written before agent launches
+- **Test spec file (TS) IS created** - alongside plan
+- **Workflow file (WF) IS created** - tracks phase progress for resumability
+- Status transitions: Ready -> Planned -> In Progress -> Done (full flow)
+- **Reconcile runs after each wave** to prevent drift
+
+**With `--no-artifacts`:**
+
+- **Skip phases 1-2:** Plan and test-spec files are not created. The agent prompt contains all plan/test-spec content inline (story AC, TRD context, codebase patterns, file scope).
+- **Skip phase 8:** Formal review phase is not run. Quality is enforced at wave boundaries instead.
+- **Workflow file not created.** Epic-level or project-level state tracking suffices.
+- **Status transitions compressed:** Story goes Ready -> Done directly.
+- **Reconcile still runs after each wave** to keep indexes and dependency tables in sync.
+
+**In both modes, quality gates are enforced at wave boundaries:**
+
+- Typecheck must pass
+- Full test suite must pass
+- Reconcile runs (scoped to wave's stories)
+
+The full 8-phase sequential workflow below applies when NOT in agentic mode (i.e. `story implement` called directly).
+
+---
+
 1. **Check for Existing Workflow State (MANDATORY RESUME CHECK)**
 
    **CRITICAL:** Before starting any work, check if this story has an existing workflow:
@@ -645,7 +709,8 @@ These commands operate on a single story. For autonomous epic-level execution wi
       - Check "Current Phase" and "Phase Progress" table
       - Identify last completed phase and any errors
       - Report resume status to user:
-        ```
+
+        ```text
         ## Resuming Workflow: WF0024
 
         **Story:** US0024 - Action Queue API
@@ -655,6 +720,7 @@ These commands operate on a single story. For autonomous epic-level execution wi
 
         Continuing from where we left off...
         ```
+
       - Skip to the first incomplete phase
 
    c. **If no workflow exists:**
@@ -677,7 +743,8 @@ These commands operate on a single story. For autonomous epic-level execution wi
    b. **Check plan file exists (MANDATORY):**
       - Search for `sdlc-studio/plans/PL*-{story-slug}.md`
       - **If plan does NOT exist, STOP immediately:**
-        ```
+
+        ```text
         ## Cannot Proceed - No Plan Found
 
         **Story:** US0024 - Action Queue API
@@ -723,16 +790,16 @@ These commands operate on a single story. For autonomous epic-level execution wi
       - Write workflow file to disk
 
    b. **Execute phase command:**
-      | Phase | Command | Artifacts |
-      |-------|---------|-----------|
-      | 1 | `code plan --story US000X` | Plan file |
-      | 2 | `test-spec --story US000X` | Test spec file |
-      | 3 | `code implement --plan PL000X` | Source files |
-      | 4 | `test-automation --spec TS000X` | Test files |
-      | 5 | `code test --story US000X` | Test results |
-      | 6 | `code verify --story US000X` | AC verification |
-      | 7 | `code check` | Lint results |
-      | 8 | Review | Final status |
+| | Phase | Command | Artifacts |
+| --- | --- | --- | --- |
+| | 1 | `code plan --story US000X` | Plan file |
+| | 2 | `test-spec --story US000X` | Test spec file |
+| | 3 | `code implement --plan PL000X` | Source files |
+| | 4 | `test-automation --spec TS000X` | Test files |
+| | 5 | `code test --story US000X` | Test results |
+| | 6 | `code verify --story US000X` | AC verification |
+| | 7 | `code check` | Lint results |
+| | 8 | Review | Final status |
 
    c. **Update plan checkboxes (MANDATORY for Phase 3):**
       During implementation (Phase 3), as each task completes:
@@ -743,6 +810,7 @@ These commands operate on a single story. For autonomous epic-level execution wi
       - Update workflow state with task completion
 
       Example plan update:
+
       ```markdown
       | 1 | Add isPaused prop to StatusLED | `StatusLED.tsx` | - | [x] |
       | 2 | Add paused state styling | `StatusLED.tsx` | 1 | [x] |
@@ -768,7 +836,8 @@ These commands operate on a single story. For autonomous epic-level execution wi
       - Write workflow file to disk
 
    b. **Report error with resume path:**
-      ```
+
+      ```text
       ## Workflow Paused
 
       **Story:** US0024 - Action Queue API
@@ -799,9 +868,9 @@ These commands operate on a single story. For autonomous epic-level execution wi
    a. **Update all artifact statuses (Status Cascade):**
       This is the most critical step. Execute the **Story Completion Cascade** for the story being completed.
 
-      > **Canonical checklist:** `reference-outputs.md` → [Story Completion Cascade](#story-completion-cascade)
+      > **Canonical checklist:** `reference-outputs.md` → [Story Completion Cascade](reference-outputs.md#story-completion-cascade)
 
-      Follow all six steps: update plan, update test spec, update workflow, recalculate index counts, check epic status, and document reason (for non-Done terminals). The story itself should be updated to Done (or the appropriate terminal status if the workflow was terminated early).
+      Follow all steps: update plan, update test spec, update workflow, recalculate index counts, check epic status, document reason (for non-Done terminals), update story index entries, update epic story breakdown, update downstream dependency tables, tick test scenario checkboxes, and cascade epic completion if applicable. The story itself should be updated to Done (or the appropriate terminal status if the workflow was terminated early).
 
       > **Why this is critical:** Without this cascade, plan and test spec files accumulate stale statuses (Draft/Ready/In Progress) while the story shows Done. This creates misleading dashboard output. Every story terminal status MUST cascade to all linked artifacts.
 
@@ -816,7 +885,8 @@ These commands operate on a single story. For autonomous epic-level execution wi
       - List all artifacts created
 
    d. **Report completion with audit trail:**
-      ```
+
+      ```text
       ## Workflow Complete
 
       **Story:** US0024 - Action Queue API
@@ -854,7 +924,7 @@ These commands operate on a single story. For autonomous epic-level execution wi
 ### Phase-Specific Errors {#phase-specific-errors}
 
 | Phase | Error | Cause | Resolution |
-|-------|-------|-------|------------|
+| --- | --- | --- | --- |
 | 1. Plan | Story not Ready | Missing Ready criteria | Complete story preparation |
 | 1. Plan | Dependency not Done | Blocking story incomplete | Complete dependency first |
 | 2. Test Spec | AC coverage gap | AC not testable | Clarify AC in story |
@@ -868,6 +938,7 @@ These commands operate on a single story. For autonomous epic-level execution wi
 ### Recovery Strategies {#story-recovery-strategies}
 
 **Option 1: Fix and Resume**
+
 ```bash
 # Fix the issue manually
 # Then resume from failed phase
@@ -875,6 +946,7 @@ These commands operate on a single story. For autonomous epic-level execution wi
 ```
 
 **Option 2: Skip Phase**
+
 ```bash
 # Manual phase execution
 /sdlc-studio code test --story US0024
@@ -883,6 +955,7 @@ These commands operate on a single story. For autonomous epic-level execution wi
 ```
 
 **Option 3: Restart Workflow**
+
 ```bash
 # Delete workflow file and start fresh
 rm sdlc-studio/workflows/WF0024-action-queue-api.md
@@ -891,7 +964,7 @@ rm sdlc-studio/workflows/WF0024-action-queue-api.md
 
 ---
 
-# See Also
+## See Also
 
 - `reference-epic.md` - Epic workflows
 - `reference-epic.md#flag-agentic` - `--agentic` flag for concurrent story execution
@@ -908,17 +981,21 @@ rm sdlc-studio/workflows/WF0024-action-queue-api.md
 ## Navigation {#navigation}
 
 **Prerequisites (load these first):**
+
 - `reference-epic.md` - Epic workflows (epics must exist before generating stories)
 
 **Related workflows:**
+
 - `reference-code.md` - Code planning (downstream - stories feed into code plans)
 - `reference-persona.md` - Personas (referenced in every story)
 
 **Cross-cutting concerns:**
+
 - `reference-decisions.md` - Decision guidance and Ready criteria
 - `reference-outputs.md#output-formats` - File formats and status values
 
 **Deep dives (optional):**
+
 - `reference-test-spec.md` - Test workflows (stories link to test specs)
 - `reference-bug.md` - Bug tracking (bugs link to stories)
 - `reference-philosophy.md` - Create vs Generate philosophy

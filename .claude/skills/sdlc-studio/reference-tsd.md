@@ -11,7 +11,7 @@ Detailed workflows for test strategy creation and the status dashboard.
 ### Default Targets
 
 | Level | Target | Rationale |
-|-------|--------|-----------|
+| --- | --- | --- |
 | Unit | 90% | Core business logic must be thoroughly tested |
 | Integration | 85% | API and database interactions |
 | E2E | 100% feature coverage | Every user-visible feature has at least one spec file |
@@ -32,7 +32,7 @@ This target has been proven achievable across multiple projects with AI assistan
 These principles apply regardless of technology stack:
 
 | Principle | Description |
-|-----------|-------------|
+| --- | --- |
 | Test at boundaries | Unit tests for logic, integration tests for APIs, E2E for user flows |
 | Mock at system edges | Network, filesystem, time - not internal libraries |
 | Contract tests bridge gaps | Pair mocked E2E tests with backend contract tests |
@@ -42,14 +42,14 @@ These principles apply regardless of technology stack:
 ### Test Runner Recommendations (Not Mandates)
 
 | Language | Unit/Integration | E2E | Coverage |
-|----------|------------------|-----|----------|
+| --- | --- | --- | --- |
 | Python | pytest | pytest / Playwright | pytest-cov |
 | TypeScript | vitest / jest | Playwright / Cypress | v8 / istanbul |
 | Go | testing | testing | go test -cover |
 | Rust | cargo test | - | cargo-llvm-cov |
 | Java | JUnit | Selenium | JaCoCo |
 
-**Note:** These are recommendations based on ecosystem norms. Use whatever tools work best for your project.
+**Note:** These are recommendations based on community conventions. Use whatever tools work best for your project.
 
 ---
 
@@ -72,7 +72,7 @@ tests/
 **Naming conventions within unified structure:**
 
 | Language | Pattern | Example |
-|----------|---------|---------|
+| --- | --- | --- |
 | Python | `test_*.py` | `tests/unit/backend/test_auth.py` |
 | TypeScript | `*.test.ts` | `tests/unit/frontend/auth.test.ts` |
 | E2E (any) | `*.spec.ts` | `tests/e2e/dashboard.spec.ts` |
@@ -199,6 +199,36 @@ e) Detect Flaky/Failing Tests:
    - Note specific test names if found
 ```
 
+#### 3b. Gather Reviews Pillar Data
+
+```text
+a) Check review-state.json (primary):
+   - Read sdlc-studio/.local/review-state.json
+   - If exists: use artifact timestamps for staleness detection
+
+b) Fallback: Scan review files directly (CRITICAL - do NOT skip):
+   - If review-state.json is MISSING, glob sdlc-studio/reviews/RV*.md
+   - Parse each file for:
+     - > **Date:** header → review timestamp
+     - > **Status:** header → review completeness
+     - Filename pattern (ep{NNNN}, unified, prd, trd, tsd)
+   - Match reviews to artifacts by filename/content
+   - Compare review dates against artifact git log timestamps
+
+c) Calculate review currency:
+   - For each artifact (prd, trd, tsd, each epic):
+     - Has review? (from state file or RV file scan)
+     - Review date > artifact modification date? → current
+     - Otherwise → stale (needs re-review)
+
+d) Count findings:
+   - Parse review files for severity counts
+   - Track unaddressed critical/important issues
+```
+
+**IMPORTANT:** Never report 0% reviews when `sdlc-studio/reviews/RV*.md` files exist.
+The review-state.json is a cache for efficiency - the actual reviews are the RV files.
+
 #### 4. Calculate Health Scores
 
 ```python
@@ -224,6 +254,18 @@ tests_health = (
     (30 * min(frontend_coverage, 90) / 90) +
     (30 * e2e_feature_pct / 100)
 )
+
+# Reviews health (NEW - was previously missing from calculation)
+# See help/status.md for full formula
+review_health = (
+    (10 if prd_reviewed_and_current else 0) +
+    (10 if trd_reviewed_and_current else 0) +
+    (10 if tsd_reviewed_and_current else 0) +
+    (40 * epics_with_current_reviews_pct / 100) +
+    (30 * stories_with_current_reviews_pct / 100)
+)
+if any_needs_re_review:
+    review_health *= 0.9
 ```
 
 #### 5. Generate Progress Bars
@@ -259,7 +301,7 @@ Priority order:
 Map the highest-priority next step to an sdlc-studio command:
 
 | Next Step Type | Suggested Command |
-|----------------|-------------------|
+| --- | --- |
 | Missing PRD | `/sdlc-studio prd create` or `prd generate` |
 | Missing TRD | `/sdlc-studio trd create` or `trd generate` |
 | Missing TSD | `/sdlc-studio tsd create` |
@@ -360,6 +402,7 @@ The status dashboard MUST match this exact structure:
 7. **No extras:** No Summary tables, no narrative text
 
 **MUST surface these warnings (use ⚠️ indicator):**
+
 - Lint failures or issues (show count and location)
 - Flaky tests (show test name)
 - Failing tests (show count)
@@ -368,7 +411,7 @@ The status dashboard MUST match this exact structure:
 
 **Output with cache (quick mode):**
 
-```
+```text
 ══════════════════════════════════════════════════════════
                       SDLC STATUS
                  (cached: 26 Jan 2026, 10:30)
@@ -377,6 +420,7 @@ The status dashboard MUST match this exact structure:
 ```
 
 **FORBIDDEN - Do NOT use:**
+
 - Markdown tables (use ASCII art only)
 - Summary sections at the end
 - Narrative paragraphs ("Project State:", "Summary:")
@@ -470,19 +514,19 @@ The status dashboard MUST match this exact structure:
 
 3. **Identify Gaps**
 
-   | Gap Type | Detection | Severity |
-   |----------|-----------|----------|
-   | Coverage below target | Actual < target | ❌ if >5% gap |
-   | Missing test type | No tests for type | ⚠️ |
-   | Outdated framework | Package newer than TSD | ⚠️ |
-   | Missing quality gate | PRD NFR without gate | ❌ |
+| | Gap Type | Detection | Severity |
+| --- | --- | --- | --- |
+| | Coverage below target | Actual < target | ❌ if >5% gap |
+| | Missing test type | No tests for type | ⚠️ |
+| | Outdated framework | Package newer than TSD | ⚠️ |
+| | Missing quality gate | PRD NFR without gate | ❌ |
 
-4. **Update TSD with Findings**
+1. **Update TSD with Findings**
    - Update coverage percentages with actual values
    - Update framework versions
    - Add [GAP] markers for missing items
 
-5. **Report Strategy Currency**
+2. **Report Strategy Currency**
 
    ```text
    TSD Currency:
