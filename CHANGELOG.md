@@ -5,6 +5,101 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-04-14
+
+Production-run upgrades to the SDLC pipeline. Four new commands, a
+formal Three Amigos review model, project-wide orchestration, and
+mechanical drift reconciliation. All additions are backwards
+compatible with v1.4.0 artefacts.
+
+### Added
+
+- **Change Requests**: `/sdlc-studio cr` lifecycle for post-PRD changes
+  - `cr create`, `cr list` (filter by status, priority, type, affects),
+    `cr action` (bridges a CR into epics and stories and updates the
+    PRD feature inventory), `cr review` (staleness and cascade
+    checks), `cr close` (Complete, Rejected, Deferred)
+  - New files: `reference-cr.md`, `help/cr.md`, `templates/core/cr.md`,
+    `templates/indexes/cr.md`
+  - Stored at `sdlc-studio/change-requests/CR{NNNN}-{slug}.md`
+- **Project-Level Orchestration**: `/sdlc-studio project plan` and
+  `/sdlc-studio project implement`
+  - Dependency-graph execution across all epics with topological sort
+    and cycle detection
+  - Flags: `--agentic`, `--from epics|stories`,
+    `--commit-strategy per-wave|per-epic|per-project`, `--resume
+    EP000X`, `--skip EP000X`, `--no-artifacts`, `--dry-run`
+  - Persistent state at `sdlc-studio/.local/project-state.json` with
+    epic-by-epic checkpoints
+  - Quality gates at wave, epic, and project boundaries
+  - New files: `reference-project.md`, `help/project.md`
+- **Reconciliation**: `/sdlc-studio reconcile [--dry-run] [--scope
+  stories|epics|prd|crs|indexes]`
+  - Mechanical drift detection and repair across stories, epics, PRD
+    feature statuses, CRs, indexes, dependency tables, and checkbox
+    state
+  - Idempotent; runs automatically at epic and wave boundaries during
+    agentic execution
+  - New files: `reference-reconcile.md`, `help/reconcile.md`
+- **Agentic Lessons**: `reference-agentic-lessons.md` captures
+  production-tested patterns for wave execution, exploration cadence,
+  hub-file sidecar pattern, per-wave reconcile, commit pacing, and a
+  failure-mode table. Loaded before any `--agentic` wave execution.
+- **Three Amigos Consultation**: formal PM/Eng/QA review model now the
+  default for epic create, story create, story plan, and bug fix.
+  Personas named (Sarah Chen, Marcus Johnson, Priya Sharma) with
+  distinct review remits.
+
+### Changed
+
+- **`reference-outputs.md`**: canonical 11-step Story Completion
+  Cascade (previously 6) and 9-step Epic Completion Cascade. All other
+  reference files now delegate to this file rather than maintaining
+  local copies. Adds compressed status flow (Ready -> Done) for
+  agentic batch mode and documents the `project-state.json` artefact
+  and the `Owner` field on stories.
+- **`reference-epic.md`** (+50%): Three Amigos mandatory review,
+  8-step Post-Wave Merge Protocol with troubleshooting table, full
+  Agent Prompt Template (READ FIRST, DO NOT, AC-to-files mapping, code
+  snippets for shapes not logic), wave-boundary quality gates,
+  `--no-artifacts` agentic mode.
+- **`reference-review.md`** (+50%): automatic Phase 3a persona
+  consultation, Phase 3b auto-apply mechanical fixes (with `--no-fix`),
+  Phase 4 review-state.json update, test-tree validation against TSD,
+  CR staleness checks.
+- **`reference-workflow-personas.md`**: defaults flipped from Optional
+  to Always for most artefacts; new sections for story-plan and
+  bug-fix consultation.
+- **`reference-story.md`**: Three Amigos default review, new Agentic
+  Mode Behaviour section covering `--no-artifacts`.
+- **`reference-code.md`**: Three Amigos plan review; completion
+  checklist expanded from 6 to 12 steps.
+- **`reference-bug.md`**: Three Amigos for bug fixes (impact, root
+  cause, regression).
+- **`reference-prd.md`**: automatic persona consultation when
+  `sdlc-studio/personas/` exists.
+- **`reference-tsd.md`**: review-state.json fallback to `RV*.md` scan
+  with explicit reviews-health formula.
+- **`reference-config.md`**: project implement configuration block
+  (`commit_strategy`, `review_interval`, `auto_reconcile`,
+  `auto_commit`).
+- **`reference-consult.md`**: automation table with Three Amigos as
+  the explicit default across most artefacts.
+- **`SKILL.md`**: registers new commands and flags, adds
+  Reconciliation, Change Management, and Project Implementation
+  sections.
+- **`help/help.md`**: Change Management, Project Implementation, Epic
+  Implementation, Story Implementation, and manual Development Cycle
+  sections.
+- **`help/status.md`**: dual-source metrics with `RV*.md` fallback
+  when `.local/review-state.json` is absent.
+
+### Config
+
+- `.markdownlint.json`: set `MD046` to fenced style and disable
+  `MD036` (the skill deliberately uses bold labels as sub-step markers
+  within numbered lists).
+
 ## [1.4.0] - 2026-02-18
 
 Persona consultation system, interactive chat sessions, agentic epic execution, and workflow state management.

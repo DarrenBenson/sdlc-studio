@@ -12,15 +12,17 @@ SDLC Studio is a Claude Code skill for managing the full software development li
 
 | Path | Purpose |
 | ------ | --------- |
-| `.claude/skills/sdlc-studio/SKILL.md` | Main entry point (326 lines) |
+| `.claude/skills/sdlc-studio/SKILL.md` | Main entry point (584 lines) |
 | `.claude/skills/sdlc-studio/reference-philosophy.md` | Create vs Generate modes - read first |
-| `.claude/skills/sdlc-studio/reference-*.md` | Domain-specific workflows (13 files) |
-| `.claude/skills/sdlc-studio/reference-code.md` | Code plan, implement, review workflows |
-| `.claude/skills/sdlc-studio/reference-testing.md` | Test Strategy, Spec, Automation workflows |
-| `.claude/skills/sdlc-studio/reference-test-best-practices.md` | Test generation pitfalls and validation |
-| `.claude/skills/sdlc-studio/reference-test-e2e-guidelines.md` | E2E and mocking patterns |
-| `.claude/skills/sdlc-studio/help/` | Type-specific help (16 files) |
-| `.claude/skills/sdlc-studio/templates/` | Document and code templates (22 files) |
+| `.claude/skills/sdlc-studio/reference-outputs.md` | Canonical story and epic completion cascades |
+| `.claude/skills/sdlc-studio/reference-project.md` | Full-PRD orchestration (`project plan` and `project implement`) |
+| `.claude/skills/sdlc-studio/reference-cr.md` | Change request lifecycle |
+| `.claude/skills/sdlc-studio/reference-reconcile.md` | Mechanical drift detection and repair |
+| `.claude/skills/sdlc-studio/reference-agentic-lessons.md` | Production patterns for `--agentic` execution |
+| `.claude/skills/sdlc-studio/reference-workflow-personas.md` | Three Amigos consultation model |
+| `.claude/skills/sdlc-studio/reference-*.md` | Domain-specific workflows (32 files total) |
+| `.claude/skills/sdlc-studio/help/` | Type-specific help (23 files) |
+| `.claude/skills/sdlc-studio/templates/` | Document and code templates (66 files) |
 | `.claude/skills/sdlc-studio/best-practices/` | Quality guidelines (11 files) |
 
 ## Testing the Skill
@@ -35,7 +37,7 @@ No automated tests. To verify manually:
 
 When modifying the skill:
 
-- **SKILL.md:** Keep under 500 lines (currently 326)
+- **SKILL.md:** Main entry point (currently 584 lines). Delegate workflow detail to `reference-*.md` rather than inline it.
 - **New commands:** Add help file to `help/`, update SKILL.md tables
 - **New templates:** Add to `templates/`, update See Also section
 - **Workflows:** Update relevant `reference*.md` file

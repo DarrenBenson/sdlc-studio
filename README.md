@@ -160,6 +160,11 @@ Claude analyses your codebase and creates a PRD based on what it finds.
 | `/sdlc-studio code plan` | Plan implementation for a story |
 | `/sdlc-studio code implement` | Execute your implementation plan |
 | `/sdlc-studio epic implement --agentic` | Autonomous concurrent epic execution |
+| `/sdlc-studio project plan` | Preview full-PRD execution order |
+| `/sdlc-studio project implement --agentic` | Execute every epic in dependency order |
+| `/sdlc-studio cr create` | Open a change request for post-PRD scope changes |
+| `/sdlc-studio cr action --cr CR-NNNN` | Turn a CR into epics and stories |
+| `/sdlc-studio reconcile --dry-run` | Detect index, dependency, and checkbox drift |
 | `/sdlc-studio bug` | Report a new bug |
 
 ## Workflows
@@ -202,6 +207,43 @@ Use `--agentic` to run an entire epic autonomously. Stories are analysed for dep
 ```
 
 Falls back to sequential for any stories with shared file conflicts. See `/sdlc-studio epic help` for details.
+
+### Full-Project Execution
+
+Run the entire PRD in one pass. The project command builds a dependency graph across all epics, sorts them topologically, then executes each one, checkpoint-committing and reconciling between epics.
+
+```text
+/sdlc-studio project plan                               # Preview execution order and waves
+/sdlc-studio project implement --agentic                 # Execute every epic
+/sdlc-studio project implement --agentic --from stories  # Generate missing stories first
+/sdlc-studio project implement --resume EP0003           # Resume after a failure
+```
+
+State is persisted at `sdlc-studio/.local/project-state.json` so runs are resumable.
+
+### Change Requests
+
+Post-PRD changes flow through the CR lifecycle rather than editing the PRD directly:
+
+```text
+/sdlc-studio cr create              # Capture a new change request
+/sdlc-studio cr list --status proposed
+/sdlc-studio cr action --cr CR-0001 # Turn it into epics and stories
+/sdlc-studio cr review              # Staleness and completion checks
+/sdlc-studio cr close --cr CR-0001  # Mark Complete, Rejected, or Deferred
+```
+
+### Reconcile Drift
+
+Mechanical drift detection and repair across stories, epics, PRD, change requests, and index files:
+
+```text
+/sdlc-studio reconcile --dry-run              # Preview changes
+/sdlc-studio reconcile                        # Apply fixes
+/sdlc-studio reconcile --scope stories        # Limit to a single artefact type
+```
+
+Reconcile is idempotent and runs automatically at epic and wave boundaries during agentic execution.
 
 ### Daily Development
 
@@ -330,6 +372,12 @@ Inside Claude Code:
 
 - [SKILL.md](.claude/skills/sdlc-studio/SKILL.md) - Full command reference
 - [reference-philosophy.md](.claude/skills/sdlc-studio/reference-philosophy.md) - Create vs Generate modes (read first)
+- [reference-project.md](.claude/skills/sdlc-studio/reference-project.md) - Full-PRD orchestration
+- [reference-cr.md](.claude/skills/sdlc-studio/reference-cr.md) - Change request lifecycle
+- [reference-reconcile.md](.claude/skills/sdlc-studio/reference-reconcile.md) - Drift detection and repair
+- [reference-agentic-lessons.md](.claude/skills/sdlc-studio/reference-agentic-lessons.md) - Production patterns for agentic execution
+- [reference-outputs.md](.claude/skills/sdlc-studio/reference-outputs.md) - Canonical completion cascades
+- [reference-workflow-personas.md](.claude/skills/sdlc-studio/reference-workflow-personas.md) - Three Amigos consultation model
 - [reference-*.md](.claude/skills/sdlc-studio/) - Domain-specific workflows
 - [best-practices/](.claude/skills/sdlc-studio/best-practices/) - Quality guidelines
 
