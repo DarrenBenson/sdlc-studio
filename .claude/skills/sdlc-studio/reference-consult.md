@@ -6,7 +6,7 @@ Detailed workflows for persona consultation on SDLC artefacts.
 
 ---
 
-# Overview
+## Overview
 
 The consult command gets structured feedback from personas on SDLC artefacts. Unlike `/sdlc-studio chat` (interactive), consult is automated and returns structured output.
 
@@ -14,7 +14,7 @@ The consult command gets structured feedback from personas on SDLC artefacts. Un
 
 ---
 
-# Consultation Modes
+## Consultation Modes
 
 ## Single Persona {#single-persona}
 
@@ -25,6 +25,7 @@ The consult command gets structured feedback from personas on SDLC artefacts. Un
 Get feedback from one specific persona.
 
 **Example:**
+
 ```bash
 /sdlc-studio consult sarah-chen sdlc-studio/prd.md
 /sdlc-studio consult marcus-johnson sdlc-studio/stories/US0001.md
@@ -41,7 +42,8 @@ Get feedback from one specific persona.
    - Identify artefact type (PRD, Epic, Story, Spec, etc.)
 
 3. **Generate Review Prompt**
-   ```
+
+   ```text
    You are {{persona_name}}, a {{role}}.
 
    Your perspective:
@@ -81,7 +83,7 @@ Get feedback from one representative of each amigo.
 ### Default Team Selection
 
 | Amigo | Default Persona | Rationale |
-|-------|-----------------|-----------|
+| --- | --- | --- |
 | Product | First Product persona (or Sarah Chen) | Requirements perspective |
 | Engineering | First Senior-level Engineering persona (or Marcus Johnson) | Technical perspective |
 | QA | First QA persona (or Priya Sharma) | Quality perspective |
@@ -259,12 +261,12 @@ Get feedback from both Team and Stakeholder personas.
 
 ---
 
-# Options
+## Options
 
 ## Depth Control
 
 | Flag | Effect |
-|------|--------|
+| --- | --- |
 | `--quick` | Brief feedback (1-2 sentences, 1-2 questions) |
 | `--thorough` | Detailed analysis (full persona voice, comprehensive questions) |
 | (default) | Standard depth (2-4 sentences, 2-4 questions) |
@@ -272,7 +274,7 @@ Get feedback from both Team and Stakeholder personas.
 ## Filtering
 
 | Flag | Effect |
-|------|--------|
+| --- | --- |
 | `--relevant` | Only consult personas relevant to artefact type |
 | `--persona [name]` | Consult specific persona only |
 | `--exclude [name]` | Exclude specific persona |
@@ -280,7 +282,7 @@ Get feedback from both Team and Stakeholder personas.
 ## Team Override
 
 | Flag | Effect |
-|------|--------|
+| --- | --- |
 | `--product [name]` | Use specific Product amigo representative |
 | `--engineering [name]` | Use specific Engineering amigo representative |
 | `--qa [name]` | Use specific QA amigo representative |
@@ -288,19 +290,19 @@ Get feedback from both Team and Stakeholder personas.
 ## Output
 
 | Flag | Effect |
-|------|--------|
+| --- | --- |
 | `--output [file]` | Write to file instead of stdout |
 | `--format [md\|json]` | Output format (default: md) |
 | `--append` | Append to artefact as review section |
 
 ---
 
-# Relevance Scoring {#relevance}
+## Relevance Scoring {#relevance}
 
 When using `--relevant`, personas are scored:
 
 | Factor | Weight | Example |
-|--------|--------|---------|
+| --- | --- | --- |
 | Role match | 40% | PM reviewing PRD = high |
 | Expertise overlap | 30% | Security lead reviewing auth feature = high |
 | Artefact mentions persona | 20% | PRD mentions "power users" = Emma relevant |
@@ -310,17 +312,19 @@ Threshold: Personas scoring < 30% are skipped.
 
 ---
 
-# Artefact-Specific Guidance {#artefact-guidance}
+## Artefact-Specific Guidance {#artefact-guidance}
 
 ## PRD Review
 
 **High-value personas:**
+
 - Product (all) - Requirements completeness
 - End Users - Does this solve their problem?
 - Business - ROI and strategic alignment
 - Security - Data handling concerns
 
 **Focus areas:**
+
 - Problem statement clarity
 - Success metrics defined
 - Scope boundaries
@@ -329,12 +333,14 @@ Threshold: Personas scoring < 30% are skipped.
 ## Epic Review
 
 **High-value personas:**
+
 - Product - Scope and prioritisation
 - Engineering - Technical feasibility
 - QA - Testability
 - Affected user types
 
 **Focus areas:**
+
 - Size and complexity
 - Dependencies
 - Acceptance criteria quality
@@ -342,11 +348,13 @@ Threshold: Personas scoring < 30% are skipped.
 ## Story Review
 
 **High-value personas:**
+
 - The specific persona in "As a..."
 - QA Lead - Testable acceptance criteria
 - Engineering - Implementation clarity
 
 **Focus areas:**
+
 - Acceptance criteria completeness
 - Edge cases identified
 - Persona needs addressed
@@ -354,28 +362,33 @@ Threshold: Personas scoring < 30% are skipped.
 ## Technical Spec Review
 
 **High-value personas:**
+
 - Engineering (all) - Architecture quality
 - Security - Vulnerabilities
 - DevOps - Operational concerns
 
 **Focus areas:**
+
 - Technical approach
 - Error handling
 - Performance considerations
 
 ---
 
-# Integration Points {#integration}
+## Integration Points {#integration}
 
 ## Automatic Consultation (Workflow Integration)
 
-Consult can be triggered automatically in workflows:
+Consult is triggered automatically in workflows (Three Amigos is the default for most artefacts):
 
 | Workflow | Trigger | Default Personas |
-|----------|---------|------------------|
-| PRD create | After draft complete | Product + relevant stakeholders |
-| Story create | After AC defined | Story persona + QA |
-| Epic scope | After sizing | Three Amigos |
+| --- | --- | --- |
+| PRD create | After draft complete | Three Amigos + relevant stakeholders |
+| Epic create | After generation | Three Amigos + affected stakeholders |
+| Story create | After cohesion review | Three Amigos (PM: completeness, Eng: TRD, QA: testability) |
+| Story plan | After plan creation | Three Amigos (PM: scope, Eng: approach, QA: test strategy) |
+| Bug fix | After root cause analysis | Three Amigos (PM: impact, Eng: root cause, QA: regression) |
+| Bug verify | After fix complete | QA Lead |
 | Spec review | Before implementation | Engineering team |
 
 Disable with `--skip-personas` on parent command.
@@ -395,9 +408,9 @@ Add consultation to any workflow:
 
 ---
 
-# Consultation Prompt Template {#prompt-template}
+## Consultation Prompt Template {#prompt-template}
 
-```
+```text
 You are {{persona_name}}, a {{role}} with {{experience}} years of experience.
 
 ## Your Profile
@@ -442,7 +455,7 @@ Provide:
 
 ---
 
-# See Also
+## See Also
 
 - `reference-persona.md` - Persona management
 - `reference-chat.md` - Interactive persona sessions (Phase 5)
@@ -454,14 +467,17 @@ Provide:
 ## Navigation {#navigation}
 
 **Prerequisites:**
+
 - Personas must exist in `sdlc-studio/personas/`
 
 **Related workflows:**
+
 - `reference-prd.md` - PRD creation (consult after)
 - `reference-story.md` - Story creation (consult persona)
 - `reference-review.md` - Document review workflows
 
 **Templates:**
+
 - `templates/reviews/consultation-single.md`
 - `templates/reviews/consultation-team.md`
 - `templates/reviews/consultation-stakeholders.md`
