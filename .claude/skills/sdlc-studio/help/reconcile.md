@@ -57,6 +57,7 @@ Three-phase workflow: **collect ground truth** from artifact files, **detect dri
 | `--scope epics` | Only reconcile epic-related artifacts | all |
 | `--scope stories` | Only reconcile story-related artifacts | all |
 | `--scope prd` | Only reconcile PRD feature statuses | all |
+| `--scope crs` | Only reconcile change request index drift (report-only for completion cascade) | all |
 | `--scope indexes` | Only reconcile index files and counts | all |
 
 ## Output
