@@ -23,7 +23,7 @@ Shows a visual dashboard of project health across three pillars: Requirements, C
 **First tool call:** `Glob: sdlc-studio/.version`
 
 | Result | Action |
-|--------|--------|
+| --- | --- |
 | No sdlc-studio/ directory | Proceed (new project) |
 | .version exists, schema_version: 2 | Proceed |
 | .version missing or schema_version < 2 | Check `sdlc-studio/.local/upgrade-dismissed.json` |
@@ -32,7 +32,7 @@ Shows a visual dashboard of project health across three pillars: Requirements, C
 
 **Prompt if needed:**
 
-```
+```text
 question: "Project uses v1 format. Upgrade to v2?"
 header: "Upgrade"
 options:
@@ -47,7 +47,7 @@ options:
 
 The status command displays an at-a-glance dashboard with four pillars:
 
-```
+```text
 ══════════════════════════════════════════════════════════
                       SDLC STATUS
 ══════════════════════════════════════════════════════════
@@ -93,7 +93,7 @@ The status command displays an at-a-glance dashboard with four pillars:
 Tracks specification completeness:
 
 | Metric | Source | Calculation |
-|--------|--------|-------------|
+| --- | --- | --- |
 | PRD | `sdlc-studio/prd.md` | Exists + feature count |
 | Personas | `sdlc-studio/personas.md` | Count defined |
 | Epics | `sdlc-studio/epics/EP*.md` | % in Ready/Done status |
@@ -101,14 +101,14 @@ Tracks specification completeness:
 
 **Health score:** Weighted average (PRD 20%, Personas 10%, Epics 30%, Stories 40%)
 
-**Exemptions:** Project-level documents (PRD, TRD, TSD, Personas, Brand Guide) are exempt from lifecycle status checks. See `reference-outputs.md` → [Project-Level Document Exemptions](#project-level-exemptions).
+**Exemptions:** Project-level documents (PRD, TRD, TSD, Personas, Brand Guide) are exempt from lifecycle status checks. See `reference-outputs.md` → [Project-Level Document Exemptions](../reference-outputs.md#project-level-exemptions).
 
 ### 💻 Code (TRD Status)
 
 Tracks implementation quality:
 
 | Metric | Source | Calculation |
-|--------|--------|-------------|
+| --- | --- | --- |
 | TRD | `sdlc-studio/trd.md` | Exists |
 | Lint | `ruff check` / `npm run lint` | Pass/Fail |
 | TODOs | Grep source directories | Count of TODO/FIXME |
@@ -121,7 +121,7 @@ Tracks implementation quality:
 Tracks test coverage and quality:
 
 | Metric | Source | Calculation |
-|--------|--------|-------------|
+| --- | --- | --- |
 | TSD | `sdlc-studio/tsd.md` | Exists |
 | Backend coverage | `.coverage` or TSD | Actual % vs 90% target |
 | Frontend coverage | `coverage/lcov.info` or TSD | Actual % vs 90% target |
@@ -133,14 +133,27 @@ Tracks test coverage and quality:
 
 Tracks review currency and findings:
 
-| Metric | Source | Calculation |
-|--------|--------|-------------|
-| PRD reviewed | `.local/review-state.json` | Has review, not modified since |
-| TRD reviewed | `.local/review-state.json` | Has review, not modified since |
-| TSD reviewed | `.local/review-state.json` | Has review, not modified since |
-| Epics current | `.local/review-state.json` | % of epics reviewed after last modification |
-| Stories current | `.local/review-state.json` | % of stories reviewed after last modification |
-| Open findings | `sdlc-studio/reviews/` | Unaddressed critical/important issues |
+| Metric | Primary Source | Fallback Source |
+| --- | --- | --- |
+| PRD reviewed | `.local/review-state.json` | Scan `sdlc-studio/reviews/RV*.md` for PRD/unified reviews |
+| TRD reviewed | `.local/review-state.json` | Scan `sdlc-studio/reviews/RV*.md` for TRD/unified reviews |
+| TSD reviewed | `.local/review-state.json` | Scan `sdlc-studio/reviews/RV*.md` for TSD/unified reviews |
+| Epics current | `.local/review-state.json` | Scan `sdlc-studio/reviews/RV*-ep*.md` for cascade reviews |
+| Stories current | `.local/review-state.json` | Epic cascade reviews cover stories |
+| Open findings | `sdlc-studio/reviews/` | Parse `> **Status:**` in review files |
+
+**IMPORTANT - Fallback when review-state.json is missing:**
+
+If `.local/review-state.json` does not exist, the status dashboard MUST NOT report 0% reviews. Instead:
+
+1. Glob `sdlc-studio/reviews/RV*.md` to discover existing review files
+2. Parse each file's `> **Date:**` header for the review timestamp
+3. Match reviews to artifacts:
+   - Files containing "unified" or "prd" or "trd" or "tsd" in title → document reviews
+   - Files containing `ep{NNNN}` in filename → epic cascade reviews
+4. Compare review dates against artifact modification dates (via git log)
+5. Report findings based on discovered reviews
+6. **Recommend creating review-state.json** by running `/sdlc-studio review` to establish proper tracking
 
 **Health score calculation:**
 
@@ -157,6 +170,7 @@ Review Health % =
 **Stale detection:**
 
 An artifact needs re-review when:
+
 - Artifact file modified since last review
 - Code files modified since last review (stories)
 - No review exists
@@ -164,7 +178,7 @@ An artifact needs re-review when:
 **Findings indicators:**
 
 | Indicator | Meaning |
-|-----------|---------|
+| --- | --- |
 | ✅ Reviewed (date) | Reviewed and current |
 | ⚠️ N stories changed | Stories modified since epic review |
 | ⚠️ N critical findings | Unaddressed critical issues |
@@ -173,7 +187,7 @@ An artifact needs re-review when:
 ## Status Indicators
 
 | Indicator | Meaning |
-|-----------|---------|
+| --- | --- |
 | ✅ | Complete / Passing / On target |
 | ⚠️ | Partial / Warning / Below target |
 | ❌ | Missing / Failing / Critical gap |
@@ -182,7 +196,7 @@ An artifact needs re-review when:
 
 Progress bars use 10 characters, right-aligned with percentage:
 
-```
+```text
 ▓▓▓▓▓▓▓▓▓▓ 100%
 ▓▓▓▓▓▓▓▓▓░ 90%
 ▓▓▓▓▓▓▓▓░░ 80%
@@ -205,7 +219,7 @@ Next steps are prioritised by impact:
 The dashboard includes a suggested `/sdlc-studio` command based on the highest-priority next step:
 
 | Next Step Type | Suggested Command |
-|----------------|-------------------|
+| --- | --- |
 | Missing PRD | `/sdlc-studio prd create` or `prd generate` |
 | Missing TRD | `/sdlc-studio trd create` or `trd generate` |
 | Missing TSD | `/sdlc-studio tsd create` |
@@ -221,7 +235,7 @@ The command maps directly to the first item in NEXT STEPS. For detailed guidance
 
 With `--workflows` flag, shows active and paused workflows:
 
-```
+```text
 Workflows:
   Active      1 story workflow (US0024 - phase 5/8)
   Paused      0
@@ -235,14 +249,14 @@ Resume:
 
 With `--brief` flag, shows single-line summary:
 
-```
+```text
 SDLC: 📋 85% | 💻 90% | 🧪 94% | 🔍 80% | ▶️ /sdlc-studio epic review --epic EP0001
 ```
 
 ## Data Sources
 
 | Data | Primary Source | Fallback |
-|------|----------------|----------|
+| --- | --- | --- |
 | Coverage % | `.coverage`, `coverage/lcov.info` | Parse from TSD |
 | Lint status | Run lint command | Skip if no config |
 | TODO count | Grep source dirs | Show "unknown" |
@@ -262,22 +276,25 @@ SDLC: 📋 85% | 💻 90% | 🧪 94% | 🔍 80% | ▶️ /sdlc-studio epic revie
 For large projects, status uses cached results by default:
 
 | Mode | Behaviour |
-|------|-----------|
+| --- | --- |
 | Default (quick) | Uses cached results if available, shows timestamp |
 | `--full` | Runs fresh analysis, updates cache |
 
 Cache location: `sdlc-studio/.local/status-cache.json`
 
 **When to use `--full`:**
+
 - After running tests or lint
 - After significant code changes
 - When cache is stale (more than a few hours old)
 
 **Quick mode still updates:**
+
 - PRD/TRD/TSD existence checks (fast)
 - Epic/Story status markers (fast file reads)
 
 **Quick mode caches:**
+
 - Lint results (slow command execution)
 - TODO counts (slow grep across codebase)
 - Coverage percentages (slow parsing)
@@ -293,7 +310,7 @@ The `--full` status check includes index reconciliation to detect drift between 
 
 2. **Status mismatches:** For each indexed artifact, compare the status in the index table with the `> **Status:**` header in the actual file. Flag any discrepancies.
 
-3. **Stale statuses:** Cross-reference story status with linked plan/test-spec/workflow status. If a story is in any terminal status (Done, Won't Implement, Deferred, Superseded) but its plan, test spec, or workflow is still in a non-terminal status (Draft/In Progress/Ready/Created), flag it as stale. See `reference-outputs.md` → [Story Completion Cascade](#story-completion-cascade) for the expected target statuses.
+3. **Stale statuses:** Cross-reference story status with linked plan/test-spec/workflow status. If a story is in any terminal status (Done, Won't Implement, Deferred, Superseded) but its plan, test spec, or workflow is still in a non-terminal status (Draft/In Progress/Ready/Created), flag it as stale. See `reference-outputs.md` → [Story Completion Cascade](../reference-outputs.md#story-completion-cascade) for the expected target statuses.
 
 4. **ID collisions:** Detect multiple files sharing the same ID prefix (e.g., `PL0184-*.md` matching two files). Report these for resolution.
 
@@ -301,7 +318,7 @@ The `--full` status check includes index reconciliation to detect drift between 
 
 If issues are found, add an INTEGRITY section to the dashboard:
 
-```
+```text
 🔗 INTEGRITY                        ⚠️ Issues found
    ⚠️ 3 plans missing from index
    ⚠️ 2 test specs with stale status (story Done, spec Draft)

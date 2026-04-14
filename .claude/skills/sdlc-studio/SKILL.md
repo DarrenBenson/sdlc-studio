@@ -13,7 +13,7 @@ Manage project specifications and test artifacts. Supports the full pipeline fro
 **Two modes for every artifact type:**
 
 | Mode | Purpose | When to Use |
-|------|---------|-------------|
+| --- | --- | --- |
 | **create** | Author new specifications from user input | Greenfield projects, new features |
 | **generate** | Extract specifications from existing code | Brownfield projects, documentation gaps |
 
@@ -29,12 +29,14 @@ Manage project specifications and test artifacts. Supports the full pipeline fro
 /sdlc-studio help                    # Show command reference
 /sdlc-studio status                  # Check pipeline state and next steps
 /sdlc-studio review                  # Unified PRD/TRD/TSD review
+/sdlc-studio reconcile               # Fix all status drift in one pass
 /sdlc-studio upgrade --dry-run       # Preview schema upgrade
 /sdlc-studio prd generate            # Create PRD from codebase
 /sdlc-studio trd generate            # Create TRD from codebase
 /sdlc-studio epic                    # Generate Epics from PRD
 /sdlc-studio story                   # Generate Stories from Epics
 /sdlc-studio bug                     # Create or list bugs
+/sdlc-studio cr                      # Manage change requests
 /sdlc-studio code plan               # Plan implementation for story
 /sdlc-studio code implement          # Execute implementation plan
 /sdlc-studio code test               # Run tests with traceability
@@ -47,6 +49,8 @@ Manage project specifications and test artifacts. Supports the full pipeline fro
 /sdlc-studio story implement         # Execute story workflow (all phases)
 /sdlc-studio epic plan               # Preview epic workflow (all stories)
 /sdlc-studio epic implement          # Execute epic workflow (all stories)
+/sdlc-studio project plan            # Preview project execution plan
+/sdlc-studio project implement       # Execute all epics in dependency order
 ```
 
 ## Get Help for Any Type
@@ -102,7 +106,7 @@ See "Progressive Loading Guide" below for detailed file loading patterns.
 Claude loads files progressively based on task needs:
 
 | Task Type | Primary Load | Secondary Load | Decision Load |
-|-----------|--------------|----------------|---------------|
+| --- | --- | --- | --- |
 | Understanding command | help/{type}.md | - | - |
 | Create mode workflow | help/{type}.md | reference-{domain}.md | reference-philosophy.md#create-mode |
 | Generate mode workflow | reference-philosophy.md#generate-mode | help/{type}.md | reference-{domain}.md |
@@ -113,11 +117,14 @@ Claude loads files progressively based on task needs:
 | Validating Ready status | reference-decisions.md#{type}-ready | reference-outputs.md | - |
 | Document review | reference-review.md | reference-{doc}.md | - |
 | Schema upgrade | reference-upgrade.md | reference-config.md | - |
+| Project orchestration | reference-project.md | reference-epic.md | reference-config.md |
+| Agentic execution | reference-agentic-lessons.md | reference-epic.md | - |
+| Change request workflow | help/cr.md | reference-cr.md | reference-outputs.md |
 
 **Template structure:**
 
 | Path | Purpose |
-|------|---------|
+| --- | --- |
 | `templates/core/*.md` | Streamlined core templates (v2) |
 | `templates/indexes/*.md` | Index file templates |
 | `templates/modules/trd/*.md` | Optional TRD modules (diagrams, containers, ADR) |
@@ -128,7 +135,7 @@ Claude loads files progressively based on task needs:
 **Module loading flags:**
 
 | Flag | Modules Loaded |
-|------|---------------|
+| --- | --- |
 | `trd create --with-diagrams` | modules/trd/c4-diagrams.md |
 | `trd create --with-containers` | modules/trd/container-design.md |
 | `trd create --full` | All TRD modules |
@@ -147,7 +154,7 @@ approach decisions.
 ## Arguments
 
 | Argument | Description | Default |
-|----------|-------------|---------|
+| --- | --- | --- |
 | `type` | See Type Reference below | Required |
 | `action` | create, generate, review, plan, verify, check, list, fix, close, **help** | varies |
 | `--output` | Output path (file or directory) | varies by type |
@@ -156,6 +163,7 @@ approach decisions.
 | `--perspective` | Epic breakdown focus (engineering, product, test) | balanced |
 | `--story` | Specific story ID | auto-select |
 | `--bug` | Specific bug ID | auto-select |
+| `--cr` | Specific change request ID | auto-select |
 | `--severity` | Bug severity filter (critical, high, medium, low) | all |
 | `--spec` | Specific test spec ID (for test-automation) | all specs |
 | `--type` | Test type filter (unit, integration, api, e2e) | all types |
@@ -169,7 +177,8 @@ approach decisions.
 | `--amigos` | Three Amigos participants (chat/consult) | false |
 | `--context` | Load artefact for context (chat) | - |
 | `--force` | Overwrite existing files | false |
-| `--no-fix` | Report without auto-fixing (code check) | false |
+| `--no-fix` | Report without auto-fixing (code check, review) | false |
+| `--scope` | Reconcile scope: epics, stories, prd, indexes (reconcile) | all |
 | `--verbose` | Detailed test output | false |
 | `--env` | Test environment (local, docker) | local |
 | `--plan` | Specific plan ID (for implement) | auto-select |
@@ -179,7 +188,11 @@ approach decisions.
 | `--no-docs` | Skip documentation updates (for implement) | false |
 | `--from-phase` | Resume workflow from phase N (for story implement) | 1 |
 | `--skip` | Skip specific story (for epic implement) | none |
-| `--agentic` | Autonomous epic execution with concurrent story waves (for epic plan/implement) | false |
+| `--agentic` | Autonomous epic/project execution with concurrent story waves | false |
+| `--no-artifacts` | Suppress plan/test-spec/workflow file creation (agentic mode only) | false |
+| `--commit-strategy` | Commit granularity: `per-wave`, `per-epic` (default), `per-project` | per-epic |
+| `--from` | Generation starting point for project implement: `stories`, `epics` | none |
+| `--yes` | Auto-approve generated artifacts (skip pause after `--from`) | false |
 | `--dry-run` | Preview changes without applying (for refactor) | false |
 | `--focus` | Review focus area (patterns, security, performance, testing, all) | all |
 | `--severity` | Minimum severity to report (for review) | all |
@@ -190,7 +203,7 @@ approach decisions.
 ## Type Reference
 
 | Type | Description |
-|------|-------------|
+| --- | --- |
 | `prd` | Product Requirements Document |
 | `trd` | Technical Requirements Document |
 | `tsd` | Test Strategy Document (project-level) |
@@ -204,6 +217,9 @@ approach decisions.
 | `test-automation` | Generate executable test code |
 | `test-env` | Containerised test environment setup |
 | `bug` | Bug tracking and traceability |
+| `cr` | Change requests (post-PRD change proposals) |
+| `project` | Project-level orchestration across all epics |
+| `reconcile` | Detect and fix status drift across all artifacts |
 | `status` | Visual dashboard: Requirements, Code, Tests health |
 | `hint` | Single actionable next step |
 | `help` | Show command reference and examples |
@@ -213,7 +229,7 @@ approach decisions.
 ### Pipeline Status
 
 | Command | Description |
-|---------|-------------|
+| --- | --- |
 | `/sdlc-studio status` | Visual dashboard (quick mode, uses cache) |
 | `/sdlc-studio status --full` | Full refresh, updates cache |
 | `/sdlc-studio status --testing` | Tests pillar only |
@@ -227,10 +243,20 @@ approach decisions.
 - 🧪 **Tests** (TSD Status) - Coverage, E2E features
 - 🔍 **Reviews** - Review currency, findings status
 
+### Reconciliation
+
+| Command | Description |
+| --- | --- |
+| `/sdlc-studio reconcile` | Detect and fix all status drift |
+| `/sdlc-studio reconcile --dry-run` | Preview fixes without applying |
+| `/sdlc-studio reconcile --scope epics` | Reconcile epics only |
+| `/sdlc-studio reconcile --scope stories` | Reconcile stories only |
+| `/sdlc-studio reconcile --scope prd` | Reconcile PRD only |
+
 ### Requirements Pipeline
 
 | Command | Description |
-|---------|-------------|
+| --- | --- |
 | `/sdlc-studio init` | Initialise project context and config |
 | `/sdlc-studio upgrade` | Upgrade project to latest schema version |
 | `/sdlc-studio upgrade --dry-run` | Preview upgrade changes without applying |
@@ -258,7 +284,7 @@ approach decisions.
 ### Persona Consultation & Chat
 
 | Command | Description |
-|---------|-------------|
+| --- | --- |
 | `/sdlc-studio consult [persona] [artefact]` | Get structured feedback from persona |
 | `/sdlc-studio consult team [artefact]` | Three Amigos review |
 | `/sdlc-studio consult stakeholders [artefact]` | All stakeholder personas |
@@ -268,7 +294,7 @@ approach decisions.
 ### Technical Requirements
 
 | Command | Description |
-|---------|-------------|
+| --- | --- |
 | `/sdlc-studio trd` | Ask which mode (create/generate/review) |
 | `/sdlc-studio trd create` | Interactive TRD creation |
 | `/sdlc-studio trd generate` | **Extract TRD from architecture** (brownfield) |
@@ -279,7 +305,7 @@ approach decisions.
 ### Bug Tracking
 
 | Command | Description |
-|---------|-------------|
+| --- | --- |
 | `/sdlc-studio bug` | Create new bug (interactive) |
 | `/sdlc-studio bug list` | List all bugs |
 | `/sdlc-studio bug list --status open` | List open bugs |
@@ -290,10 +316,23 @@ approach decisions.
 | `/sdlc-studio bug close --bug BG0001` | Close a bug |
 | `/sdlc-studio bug reopen --bug BG0001` | Reopen a closed bug |
 
+### Change Management
+
+| Command | Description |
+| --- | --- |
+| `/sdlc-studio cr` | Ask what to do (create, list, action, review, close) |
+| `/sdlc-studio cr create` | Interactive CR creation |
+| `/sdlc-studio cr list` | List all change requests |
+| `/sdlc-studio cr list --status proposed` | List proposed CRs |
+| `/sdlc-studio cr list --priority P1` | List P1 change requests |
+| `/sdlc-studio cr action --cr CR-0001` | Turn CR into epics and stories |
+| `/sdlc-studio cr review` | Review CR statuses against implementation |
+| `/sdlc-studio cr close --cr CR-0001` | Mark CR complete/rejected/deferred |
+
 ### Development Pipeline
 
 | Command | Description |
-|---------|-------------|
+| --- | --- |
 | `/sdlc-studio code plan` | Plan next incomplete story |
 | `/sdlc-studio code plan --story US0001` | Plan specific story |
 | `/sdlc-studio code plan --epic EP0001` | Plan next story in epic |
@@ -318,7 +357,7 @@ approach decisions.
 ### Testing Pipeline
 
 | Command | Description |
-|---------|-------------|
+| --- | --- |
 | `/sdlc-studio tsd` | Create test strategy document |
 | `/sdlc-studio tsd generate` | Infer strategy from codebase |
 | `/sdlc-studio tsd review` | Review and update strategy |
@@ -337,7 +376,7 @@ approach decisions.
 ### Workflow Automation
 
 | Command | Description |
-|---------|-------------|
+| --- | --- |
 | `/sdlc-studio story plan --story US0001` | Create plan + test-spec, then review |
 | `/sdlc-studio story implement --story US0001` | Execute story workflow (with state tracking) |
 | `/sdlc-studio story implement --tdd` | Execute with TDD approach |
@@ -348,8 +387,15 @@ approach decisions.
 | `/sdlc-studio epic implement --epic EP0001 --agentic` | Execute with agentic waves |
 | `/sdlc-studio epic implement --story US0001` | Resume from story |
 | `/sdlc-studio epic implement --skip US0001` | Skip specific story |
+| `/sdlc-studio project plan` | Preview project execution plan (all epics) |
+| `/sdlc-studio project plan --agentic` | Preview with agentic wave estimates |
+| `/sdlc-studio project implement` | Execute all epics in dependency order |
+| `/sdlc-studio project implement --agentic` | Agentic waves within each epic |
+| `/sdlc-studio project implement --agentic --no-artifacts` | Fast mode: no PL/TS/WF files |
+| `/sdlc-studio project implement --from stories` | Generate stories first, then implement |
+| `/sdlc-studio project implement --resume EP0003` | Resume from specific epic |
 
-**State tracking:** `story implement` creates `sdlc-studio/workflows/WF{NNNN}.md` to track progress across sessions. Auto-resumes from last phase if interrupted.
+**State tracking:** `story implement` creates `sdlc-studio/workflows/WF{NNNN}.md` to track progress across sessions. `project implement` creates `sdlc-studio/.local/project-state.json` for cross-epic progress.
 
 ## Workflows
 
@@ -357,6 +403,7 @@ For detailed step-by-step workflows, see reference files:
 
 - `reference-prd.md`, `reference-trd.md`, `reference-persona.md` - PRD, TRD, Persona workflows
 - `reference-epic.md`, `reference-story.md`, `reference-bug.md` - Epic, Story, Bug workflows
+- `reference-project.md` - Project-level orchestration across all epics
 - `reference-code.md` - Code plan, implement, verify, check, test workflows
 - `reference-refactor.md` - Code refactor, review workflows
 - `reference-tsd.md` - TSD, status dashboard workflows
@@ -455,6 +502,37 @@ PRD → TRD → Personas → Epics → Stories
 7. Check (code check)
 8. Review (status review)
 
+### Project Implementation (Full PRD in One Pass)
+
+For implementing an entire PRD across all epics with maximum throughput:
+
+```text
+
+PRD → TRD → Personas → Epics → Stories
+                                  │
+                    project plan --agentic
+                                  │
+                    project implement --agentic --no-artifacts
+                                  │
+                    EP0001: epic implement --agentic
+                        → commit → reconcile
+                    EP0002: epic implement --agentic
+                        → commit → reconcile
+                    EP0003: epic implement --agentic
+                        → commit → reconcile → review (every 3 epics)
+                    ...
+                    Final: review → reconcile → report
+```
+
+**Quality gates enforced at every boundary:**
+
+- Wave: typecheck + test suite
+- Epic: reconcile + status cascade + commit
+- Every 3 epics: quick review
+- Project: full review + reconcile + code check
+
+See `reference-project.md` for the full workflow.
+
 ### Brownfield (Specification Extraction)
 
 ```bash
@@ -492,12 +570,13 @@ Status: `Draft/Ready → Planned → In Progress → Review → Done`
 
 **Configuration:** `reference-config.md` - Project configuration options for coverage targets, story quality gates, and thresholds.
 
-**Help:** `help/help.md` (main), `help/{type}.md` (type-specific), `help/upgrade.md` (schema upgrade)
+**Help:** `help/help.md` (main), `help/{type}.md` (type-specific), `help/upgrade.md` (schema upgrade), `help/reconcile.md` (status reconciliation)
 
-**References:** `reference-prd.md`, `reference-trd.md`, `reference-persona.md`, `reference-persona-generate.md`, `reference-consult.md`, `reference-chat.md`, `reference-workflow-personas.md` (Requirements), `reference-epic.md`, `reference-story.md`, `reference-bug.md` (Specifications), `reference-architecture.md` (Architecture), `reference-code.md` (Code, Test), `reference-refactor.md` (Refactoring, Review), `reference-review.md` (Unified document review), `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` (Test artifacts), `reference-test-best-practices.md` (Test pitfalls), `reference-test-e2e-guidelines.md` (E2E patterns), `reference-upgrade.md` (Schema migration)
+**References:** `reference-prd.md`, `reference-trd.md`, `reference-persona.md`, `reference-persona-generate.md`, `reference-consult.md`, `reference-chat.md`, `reference-workflow-personas.md` (Requirements), `reference-epic.md`, `reference-story.md`, `reference-bug.md`, `reference-cr.md` (Specifications), `reference-architecture.md` (Architecture), `reference-code.md` (Code, Test), `reference-refactor.md` (Refactoring, Review), `reference-review.md` (Unified document review), `reference-project.md` (Project orchestration), `reference-agentic-lessons.md` (Production lessons for agentic execution), `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` (Test artifacts), `reference-test-best-practices.md` (Test pitfalls), `reference-test-e2e-guidelines.md` (E2E patterns), `reference-upgrade.md` (Schema migration), `reference-reconcile.md` (Status reconciliation)
 
 **Templates (v2 modular structure):**
-- Core: `templates/core/*.md` (prd, trd, tsd, epic, story, plan, test-spec, bug)
+
+- Core: `templates/core/*.md` (prd, trd, tsd, epic, story, plan, test-spec, bug, cr)
 - Personas: `templates/personas/` (persona-template, archetypes by category)
 - Indexes: `templates/indexes/*.md` (epic, story, plan, bug, test-spec, review)
 - Modules: `templates/modules/trd/*.md` (c4-diagrams, container-design, adr), `templates/modules/tsd/*.md` (contract-tests, performance-tests, security-tests), `templates/modules/epic/*.md` (engineering-view, product-view, test-view)

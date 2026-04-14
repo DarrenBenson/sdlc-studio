@@ -8,7 +8,7 @@ Related: All help/*.md files for type-specific help
 
 ## Quick Start
 
-```
+```text
 /sdlc-studio hint                    # Get single next step suggestion
 /sdlc-studio status                  # Check pipeline state
 /sdlc-studio prd generate            # Create PRD from codebase
@@ -20,6 +20,7 @@ Related: All help/*.md files for type-specific help
 /sdlc-studio code test               # Run tests with traceability
 /sdlc-studio code verify             # Verify code against AC
 /sdlc-studio code check              # Run linters and checks
+/sdlc-studio cr                      # Manage change requests
 /sdlc-studio tsd                     # Create test strategy document
 /sdlc-studio test-spec               # Generate test specifications
 /sdlc-studio test-automation         # Generate executable tests
@@ -27,7 +28,7 @@ Related: All help/*.md files for type-specific help
 
 ## Get Help for Specific Types
 
-```
+```text
 /sdlc-studio prd help                # PRD commands and options
 /sdlc-studio trd help                # TRD commands and options
 /sdlc-studio tsd help                # Test strategy document help
@@ -38,6 +39,7 @@ Related: All help/*.md files for type-specific help
 /sdlc-studio test-spec help          # Test specification help
 /sdlc-studio test-automation help    # Test automation help
 /sdlc-studio bug help                # Bug tracking help
+/sdlc-studio cr help                 # Change request help
 /sdlc-studio status help             # Pipeline status help
 /sdlc-studio hint help               # Next step suggestion help
 ```
@@ -47,7 +49,7 @@ Related: All help/*.md files for type-specific help
 ### Pipeline Status
 
 | Command | Description |
-|---------|-------------|
+| --- | --- |
 | `/sdlc-studio status` | Show full pipeline state |
 | `/sdlc-studio status --testing` | Testing pipeline only |
 | `/sdlc-studio status --brief` | One-line summary |
@@ -55,7 +57,7 @@ Related: All help/*.md files for type-specific help
 ### Requirements Pipeline
 
 | Command | Description |
-|---------|-------------|
+| --- | --- |
 | `/sdlc-studio hint` | Get single actionable next step |
 | `/sdlc-studio prd create` | Interactive PRD creation |
 | `/sdlc-studio prd generate` | Reverse-engineer PRD from codebase |
@@ -72,10 +74,21 @@ Related: All help/*.md files for type-specific help
 | `/sdlc-studio persona generate` | Infer personas from codebase |
 | `/sdlc-studio persona review` | Review and refine existing personas |
 
+### Change Management
+
+| Command | Description |
+| --- | --- |
+| `/sdlc-studio cr` | Ask what to do (create, list, action, review, close) |
+| `/sdlc-studio cr create` | Interactive CR creation |
+| `/sdlc-studio cr list` | List change requests (--status, --priority) |
+| `/sdlc-studio cr action --cr CR-0001` | Turn CR into epics and stories |
+| `/sdlc-studio cr review` | Review CR statuses against implementation |
+| `/sdlc-studio cr close --cr CR-0001` | Complete, reject, or defer a CR |
+
 ### Development Pipeline
 
 | Command | Description |
-|---------|-------------|
+| --- | --- |
 | `/sdlc-studio code plan` | Plan next incomplete story |
 | `/sdlc-studio code plan --story US0001` | Plan specific story |
 | `/sdlc-studio code implement` | Implement next planned story |
@@ -94,7 +107,7 @@ Related: All help/*.md files for type-specific help
 ### Testing Pipeline
 
 | Command | Description |
-|---------|-------------|
+| --- | --- |
 | `/sdlc-studio tsd` | Create test strategy document |
 | `/sdlc-studio tsd generate` | Infer strategy from codebase |
 | `/sdlc-studio test-spec` | Generate test specs from epics |
@@ -109,7 +122,7 @@ Related: All help/*.md files for type-specific help
 
 All artifacts are under the `sdlc-studio/` directory:
 
-```
+```text
 sdlc-studio/
   prd.md                      # Product Requirements
   trd.md                      # Technical Requirements
@@ -127,6 +140,9 @@ sdlc-studio/
   bugs/
     _index.md                 # Bug registry
     BG0001-*.md               # Bug reports
+  change-requests/
+    _index.md                 # CR registry
+    CR0001-*.md               # Change requests
   test-specs/
     _index.md                 # Spec registry
     TS0001-*.md               # Test Specifications
@@ -143,13 +159,15 @@ tests/                        # Generated test code
 ## Typical Workflows
 
 ### Quick Start
-```
+
+```text
 /sdlc-studio hint                # Get suggested next step
 /sdlc-studio status              # See full pipeline state
 ```
 
 ### Greenfield Project (Manual)
-```
+
+```text
 /sdlc-studio prd create
 /sdlc-studio trd create
 /sdlc-studio persona
@@ -161,7 +179,8 @@ tests/                        # Generated test code
 ```
 
 ### Brownfield Project (Manual)
-```
+
+```text
 /sdlc-studio prd generate
 /sdlc-studio trd generate
 /sdlc-studio persona generate
@@ -172,17 +191,40 @@ tests/                        # Generated test code
 /sdlc-studio test-automation
 ```
 
-### Development Cycle
+### Project Implementation (Full PRD)
+
+```text
+/sdlc-studio project plan --agentic              # Preview execution order
+/sdlc-studio project implement --agentic --no-artifacts  # Implement all epics
 ```
-/sdlc-studio code plan           # Plan story (status → Planned)
-/sdlc-studio code implement      # Execute plan (status → In Progress)
+
+### Epic Implementation
+
+```text
+/sdlc-studio epic plan --epic EP0002 --agentic   # Preview wave analysis
+/sdlc-studio epic implement --epic EP0002 --agentic  # Implement one epic
+```
+
+### Story Implementation
+
+```text
+/sdlc-studio story plan --story US0001           # Create plan + test-spec
+/sdlc-studio story implement --story US0001      # Execute 8-phase workflow
+```
+
+### Development Cycle (Manual)
+
+```text
+/sdlc-studio code plan           # Plan story (status -> Planned)
+/sdlc-studio code implement      # Execute plan (status -> In Progress)
 /sdlc-studio code test           # Run tests
-/sdlc-studio code verify         # Verify AC (status → Review)
-/sdlc-studio code check          # Run linters (status → Done)
+/sdlc-studio code verify         # Verify AC (status -> Review)
+/sdlc-studio code check          # Run linters (status -> Done)
 ```
 
 ### Daily Usage
-```
+
+```text
 /sdlc-studio hint                # What should I do next?
 /sdlc-studio status              # Full pipeline overview
 /sdlc-studio code plan           # Plan next story
@@ -191,7 +233,7 @@ tests/                        # Generated test code
 ## Common Options
 
 | Option | Description |
-|--------|-------------|
+| --- | --- |
 | `--force` | Overwrite existing files |
 | `--epic EP0001` | Target specific Epic |
 | `--story US0001` | Target specific Story |
