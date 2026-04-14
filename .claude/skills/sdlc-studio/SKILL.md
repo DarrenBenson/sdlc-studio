@@ -120,6 +120,7 @@ Claude loads files progressively based on task needs:
 | Project orchestration | reference-project.md | reference-epic.md | reference-config.md |
 | Agentic execution | reference-agentic-lessons.md | reference-epic.md | - |
 | Change request workflow | help/cr.md | reference-cr.md | reference-outputs.md |
+| Invoking skill internals | reference-scripts.md | scripts/README.md | - |
 
 **Template structure:**
 
@@ -396,6 +397,10 @@ approach decisions.
 | `/sdlc-studio project implement --resume EP0003` | Resume from specific epic |
 
 **State tracking:** `story implement` creates `sdlc-studio/workflows/WF{NNNN}.md` to track progress across sessions. `project implement` creates `sdlc-studio/.local/project-state.json` for cross-epic progress.
+
+### Utilities
+
+Skill-internal helpers live at `.claude/skills/sdlc-studio/scripts/`. Claude invokes these on behalf of workflows; users do not call them directly. See `reference-scripts.md` for the full catalogue.
 
 ## Workflows
 
