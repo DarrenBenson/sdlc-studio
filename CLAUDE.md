@@ -12,26 +12,52 @@ SDLC Studio is a Claude Code skill for managing the full software development li
 
 | Path | Purpose |
 | ------ | --------- |
-| `.claude/skills/sdlc-studio/SKILL.md` | Main entry point (584 lines) |
+| `.claude/skills/sdlc-studio/SKILL.md` | Main entry point (624 lines) |
 | `.claude/skills/sdlc-studio/reference-philosophy.md` | Create vs Generate modes - read first |
 | `.claude/skills/sdlc-studio/reference-outputs.md` | Canonical story and epic completion cascades |
 | `.claude/skills/sdlc-studio/reference-project.md` | Full-PRD orchestration (`project plan` and `project implement`) |
-| `.claude/skills/sdlc-studio/reference-cr.md` | Change request lifecycle |
-| `.claude/skills/sdlc-studio/reference-reconcile.md` | Mechanical drift detection and repair |
-| `.claude/skills/sdlc-studio/reference-agentic-lessons.md` | Production patterns for `--agentic` execution |
+| `.claude/skills/sdlc-studio/reference-cr.md` | Change request lifecycle (plus `cr sync` for GitHub) |
+| `.claude/skills/sdlc-studio/reference-reconcile.md` | Mechanical drift detection, `--verify` delegates to verify_ac.py |
+| `.claude/skills/sdlc-studio/reference-agentic-lessons.md` | Production patterns plus per-project lessons accumulation |
 | `.claude/skills/sdlc-studio/reference-workflow-personas.md` | Three Amigos consultation model |
-| `.claude/skills/sdlc-studio/reference-*.md` | Domain-specific workflows (32 files total) |
-| `.claude/skills/sdlc-studio/help/` | Type-specific help (23 files) |
+| `.claude/skills/sdlc-studio/reference-repo-map.md` | AST repo indexer design (v1.6.0) |
+| `.claude/skills/sdlc-studio/reference-verify.md` | Executable AC verifier DSL (v1.6.0) |
+| `.claude/skills/sdlc-studio/reference-github-sync.md` | GitHub Issues two-way sync (v1.6.0) |
+| `.claude/skills/sdlc-studio/reference-scripts.md` | Scripts directory convention (v1.6.0) |
+| `.claude/skills/sdlc-studio/reference-*.md` | Domain-specific workflows (36 files total) |
+| `.claude/skills/sdlc-studio/help/` | Type-specific help (27 files) |
 | `.claude/skills/sdlc-studio/templates/` | Document and code templates (66 files) |
+| `.claude/skills/sdlc-studio/scripts/` | Skill-internal Python helpers (v1.6.0 - repo_map, verify_ac, github_sync) |
 | `.claude/skills/sdlc-studio/best-practices/` | Quality guidelines (11 files) |
+
+## Soft Dependencies (runtime)
+
+Some v1.6.0 features need external tools on PATH:
+
+| Feature | Requires | Notes |
+| --- | --- | --- |
+| `cr sync`, `story sync`, `project sync` | `gh` CLI authenticated | No PyGitHub dependency; all calls routed through gh |
+| `reconcile --verify` | `pytest`, `jest`, `vitest`, `go`, `curl`, `jq`, `rg` (whichever your AC verifiers reference) | Only the tools your Verify lines invoke need to be installed |
+| `repo map build` | Python 3.10+ | Pure stdlib; no ctags or tree-sitter needed |
 
 ## Testing the Skill
 
-No automated tests. To verify manually:
+Markdown: `npm run lint` runs markdownlint across all markdown in
+the repo.
+
+Scripts: `python3 -m unittest discover -s
+.claude/skills/sdlc-studio/scripts/tests` runs the unit tests for
+`repo_map.py`, `verify_ac.py`, and `github_sync.py`. All tests must
+pass before a release is tagged.
+
+Manual verification:
 
 1. Install: `cp -r .claude/skills/sdlc-studio ~/.claude/skills/`
 2. Run `/sdlc-studio help` - displays command reference
 3. Run `/sdlc-studio status` - shows pipeline state
+4. Run `/sdlc-studio repo map build` - produces .local/repo-map.json
+5. Run `/sdlc-studio reconcile --verify --dry-run` against a fixture
+   story with Verify lines
 
 ## Development Guidelines
 

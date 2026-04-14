@@ -165,6 +165,11 @@ Claude analyses your codebase and creates a PRD based on what it finds.
 | `/sdlc-studio cr create` | Open a change request for post-PRD scope changes |
 | `/sdlc-studio cr action --cr CR-NNNN` | Turn a CR into epics and stories |
 | `/sdlc-studio reconcile --dry-run` | Detect index, dependency, and checkbox drift |
+| `/sdlc-studio reconcile --verify` | Run executable AC verifiers and update Verified state |
+| `/sdlc-studio repo map build` | Index the repo for Agent Prompt Templates |
+| `/sdlc-studio repo map query --story US0001` | Rank files by relevance to a story |
+| `/sdlc-studio cr sync` | Two-way sync CRs with GitHub Issues |
+| `/sdlc-studio lessons list` | Print accumulated per-project lessons |
 | `/sdlc-studio bug` | Report a new bug |
 
 ## Workflows
@@ -241,9 +246,57 @@ Mechanical drift detection and repair across stories, epics, PRD, change request
 /sdlc-studio reconcile --dry-run              # Preview changes
 /sdlc-studio reconcile                        # Apply fixes
 /sdlc-studio reconcile --scope stories        # Limit to a single artefact type
+/sdlc-studio reconcile --verify               # Run executable AC verifiers
 ```
 
 Reconcile is idempotent and runs automatically at epic and wave boundaries during agentic execution.
+
+### Executable Acceptance Criteria (v1.6.0)
+
+Acceptance criteria can declare a verifier expression that reconcile runs against the live codebase. Status stops lying because the Verified state is derived, not asserted:
+
+```markdown
+### AC1: Happy path email login
+- **Given** a registered account
+- **When** the user submits valid credentials
+- **Then** they are redirected to /dashboard
+- **Verify:** pytest tests/unit/auth/test_login.py::test_email_happy
+- **Verified:** yes (2026-04-15)
+```
+
+Supported verifier prefixes: `pytest`, `jest`, `vitest`, `go`, `file`, `grep`, `http ... -- <jq>`, `shell`. Optional strict gate (`require_ac_verification: true` in config) refuses to mark a story Done until every AC passes.
+
+### Repo Map for Agent Prompts (v1.6.0)
+
+The Agent Prompt Template's `READ THESE FILES FIRST` list is derived automatically from a pure-Python repo indexer so agents stop hallucinating APIs on large codebases:
+
+```text
+/sdlc-studio repo map build
+/sdlc-studio repo map query --story US0001 --top 10
+```
+
+Supports Python (stdlib ast), TypeScript, JavaScript, Go, Rust, Java, Kotlin, C#, Ruby, PHP, Swift. No ctags dependency.
+
+### GitHub Issues Sync (v1.6.0)
+
+Two-way sync between local CR / Story / Epic files and GitHub Issues via the `gh` CLI. A CR and its linked Issue are two representations of the same record:
+
+```text
+/sdlc-studio cr sync                      # Push + pull CRs
+/sdlc-studio project sync                 # All three types
+/sdlc-studio project sync cascade         # Merged-PR cascade candidates
+```
+
+Labels use the `sdlc:` prefix (`sdlc:cr`, `sdlc:story`, `sdlc:status:*`, `sdlc:priority:P1..P4`). Requires `gh` CLI authenticated. See `reference-github-sync.md` for setup.
+
+### Per-Project Lessons (v1.6.0)
+
+`sdlc-studio/.local/lessons.md` accumulates failure patterns specific to the current project. Loaded at every agentic wave start and injected into Agent Prompt Templates as a `Known Pitfalls on This Project` section:
+
+```text
+/sdlc-studio lessons list                 # Print accumulated lessons
+/sdlc-studio lessons add                  # Interactive add
+```
 
 ### Daily Development
 
@@ -378,6 +431,10 @@ Inside Claude Code:
 - [reference-agentic-lessons.md](.claude/skills/sdlc-studio/reference-agentic-lessons.md) - Production patterns for agentic execution
 - [reference-outputs.md](.claude/skills/sdlc-studio/reference-outputs.md) - Canonical completion cascades
 - [reference-workflow-personas.md](.claude/skills/sdlc-studio/reference-workflow-personas.md) - Three Amigos consultation model
+- [reference-repo-map.md](.claude/skills/sdlc-studio/reference-repo-map.md) - AST repo indexer design (v1.6.0)
+- [reference-verify.md](.claude/skills/sdlc-studio/reference-verify.md) - Executable AC verifier DSL (v1.6.0)
+- [reference-github-sync.md](.claude/skills/sdlc-studio/reference-github-sync.md) - GitHub Issues two-way sync (v1.6.0)
+- [reference-scripts.md](.claude/skills/sdlc-studio/reference-scripts.md) - Skill-internal scripts convention (v1.6.0)
 - [reference-*.md](.claude/skills/sdlc-studio/) - Domain-specific workflows
 - [best-practices/](.claude/skills/sdlc-studio/best-practices/) - Quality guidelines
 

@@ -5,6 +5,103 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - v1.6.0-dev
+
+Structural upgrades from competitive research against BMAD-METHOD,
+GitHub Spec Kit, Kiro, and Aider. Four new capabilities target the
+real pain points: agent prompts that hallucinate files, acceptance
+criteria that drift from reality, the skill as a parallel universe
+to GitHub Issues, and projects that start dumb every time.
+
+### Added
+
+- **Scripts directory convention**: `.claude/skills/sdlc-studio/scripts/`
+  now holds skill-internal Python helpers invoked by workflows.
+  Documented in `reference-scripts.md`. Ships with three scripts,
+  all pure-Python stdlib except where noted, all with unit tests
+  runnable via `python3 -m unittest discover -s scripts/tests`.
+- **AST Repo Map** (`scripts/repo_map.py`): indexes source files
+  by symbols and imports, ranks files by relevance to a story
+  description. Supports Python (via stdlib ast), TypeScript,
+  JavaScript, Go, Rust, Java, Kotlin, C#, Ruby, PHP, Swift via
+  regex extractors. Subcommands: `build`, `query`, `stats`. Output
+  at `sdlc-studio/.local/repo-map.json`. The Agent Prompt Template
+  now derives its `READ THESE FILES FIRST` list from repo_map
+  query output instead of hand-authoring from memory.
+- **Executable Acceptance Criteria** (`scripts/verify_ac.py`): AC
+  blocks in story files gain optional `Verify:` and `Verified:`
+  bullets. `/sdlc-studio reconcile --verify` runs each verifier
+  and updates state in place. DSL supports `pytest`, `jest`,
+  `vitest`, `go`, `file`, `grep`, `http ... -- <jq>`, and `shell`
+  as fallback. Report written to
+  `sdlc-studio/.local/verify-report.json`. Story Completion Cascade
+  gains an optional gate (`require_ac_verification: true` in
+  config) that blocks Done unless every AC reports `Verified: yes`.
+- **GitHub Issues Sync** (`scripts/github_sync.py`): two-way sync
+  between local CR / Story / Epic files and GitHub Issues via the
+  `gh` CLI. Unified model: a CR and its linked Issue are two
+  representations of the same record. Subcommands: `push`, `pull`,
+  `cascade`, `state`. Label convention uses `sdlc:` prefix. Every
+  record template gains a `> **GitHub Issue:**` metadata line.
+  reference-cr.md gains a full `/sdlc-studio cr sync` workflow.
+  Story Completion Cascade gains step 12 to update linked issues
+  on status transitions.
+- **Per-Project Lessons**: `sdlc-studio/.local/lessons.md`
+  accumulates project-specific failure patterns across agentic
+  runs. Loaded at every wave start and injected into Agent Prompt
+  Templates as a `Known Pitfalls on This Project` section.
+  reference-agentic-lessons.md gains a "Lessons Accumulation"
+  section with the file format, four hook points (wave failure,
+  post-wave merge failure, epic retrospective, manual add), and
+  consumption pattern. `/sdlc-studio lessons list|add|prune`
+  commands.
+
+### Changed
+
+- **Verifier DSL** (`reference-verify.md`): new document defining
+  the executable-AC DSL, writing guidance, troubleshooting, and
+  integration with reconcile.
+- **`reference-reconcile.md`**: Phase 2 gains check h) AC
+  verification drift. Scope table gains `verify` row that
+  delegates to `scripts/verify_ac.py`.
+- **`reference-outputs.md`**: Story Completion Cascade gains step
+  0 (AC verification gate, conditional on config flag) and step 12
+  (external sync push for records with a `GitHub Issue:` field).
+- **`reference-cr.md`**: new `/sdlc-studio cr sync - Step by Step`
+  workflow inserted between `cr review` and `cr close`.
+- **`reference-epic.md`**: Agent Prompt Template instructs authors
+  to derive `READ THESE FILES FIRST` from repo_map query output.
+  Wave prep loads `.local/lessons.md`. Handle Story Errors appends
+  a lesson on failure.
+- **`reference-code.md`**: code plan step 6 explicitly runs
+  repo_map build + query before the Explore agent.
+- **`reference-agentic-lessons.md`**: READ THESE FILES FIRST
+  guidance references repo_map. New "Load project lessons before
+  exploration" subsection. New "Lessons Accumulation" section at
+  end of file.
+- **`reference-story.md`**: story-create step 3g emits best-effort
+  Verify lines matching AC type.
+- **`templates/core/story.md`**: AC blocks gain Verify and
+  Verified bullets. Metadata gains `GitHub Issue:` field.
+- **`templates/core/cr.md`**, **`templates/core/epic.md`**: both
+  gain a `GitHub Issue:` metadata field.
+- **`templates/config-defaults.yaml`**: new
+  `require_ac_verification: false` gate.
+- **`SKILL.md`**: new "Utilities" and "External Integrations"
+  command sections. Progressive Loading Guide rows for
+  repo-map, verify, github-sync, scripts, and lessons.
+- **`help/*.md`**: new help files for repo-map, verify,
+  github-sync, lessons. Existing `help/reconcile.md` documents
+  `--verify`, `--story`, and `--scope verify` arguments.
+- **Templates**: pre-existing markdownlint drift in
+  `templates/core/story.md` cleaned up while adding Verify fields.
+
+### Config
+
+- `templates/config-defaults.yaml` adds `require_ac_verification`
+  (default `false`). Flip to `true` once reconcile reports zero
+  manual ACs to enable the Story Completion Cascade gate.
+
 ## [1.5.0] - 2026-04-14
 
 Production-run upgrades to the SDLC pipeline. Four new commands, a
