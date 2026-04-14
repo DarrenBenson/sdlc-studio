@@ -781,6 +781,11 @@ Automated workflows for implementing all stories in an epic.
    When a story workflow fails:
    - Update epic workflow status to Paused
    - Record which story and phase failed
+   - **Append a lesson to `.local/lessons.md`** capturing the epic,
+     wave, symptom, root cause (once diagnosed), and fix (once
+     applied). Use the format in
+     `reference-agentic-lessons.md#lessons-accumulation`. The
+     next wave will load this lesson at wave start.
    - Report error and resume instructions:
 
      ```text
@@ -1096,6 +1101,8 @@ Before writing the prompt, the orchestrator MUST:
    - Which files should NOT be touched (other agents' scope)
 
 This exploration typically happens ONCE per epic (before wave 1) and the findings are reused across all waves in that epic. The key files, patterns, and conventions don't change within an epic.
+
+**Also load `.local/lessons.md` at wave start** (cheap, file-only). If the file exists, inject a condensed `## Known Pitfalls on This Project` section into every Agent Prompt Template. Each lesson records a past failure from this specific project and the fix that worked. Skipping this step means the wave starts as dumb as the first one. See `reference-agentic-lessons.md#lessons-accumulation` for the format and four hook points.
 
 ### Inter-Epic Context
 

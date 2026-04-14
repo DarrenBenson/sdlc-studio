@@ -10,6 +10,16 @@ These are not procedures - they are patterns observed across real project implem
 
 ## Exploration
 
+### Load project lessons before exploration
+
+At the start of every wave, load `sdlc-studio/.local/lessons.md` if
+it exists. This file accumulates failure patterns specific to the
+current project (not generic advice). Inject the entries into the
+Agent Prompt Template as a `## Known Pitfalls on This Project`
+section so agents avoid repeating them. Greenfield projects without
+the file skip this step entirely. See the "Lessons Accumulation"
+section below for the format and hook points.
+
 ### Explore once per epic, not per wave
 
 Before launching Wave 1 of an epic, run a single thorough codebase exploration covering:
@@ -191,3 +201,80 @@ Don't generate stories and implement them in the same wave of thinking. Generate
 | Tests pass in worktree, fail after merge | Agents imported conflicting versions of a type | Run typecheck + tests on merged code, not worktree |
 | Massive reconcile at the end | No per-wave reconcile | Add `reconcile --scope stories` after every wave |
 | Agent implements too much | No scope exclusions | Always include "DO NOT" and "Out of Scope" sections |
+
+---
+
+## Lessons Accumulation {#lessons-accumulation}
+
+This document is generic: battle-tested patterns that apply to any
+project. It does not know your specific codebase's quirks. The
+per-project lessons file closes that gap.
+
+### Where lessons are stored
+
+`sdlc-studio/.local/lessons.md`. The file is never committed
+(`.local/` is already gitignored) and is created lazily on first
+append.
+
+### When lessons are recorded
+
+Four hook points:
+
+1. **Wave failure** - When an agentic wave fails (typecheck red,
+   tests red, or the Post-Wave Merge Protocol fails), append a
+   lesson naming the root cause and the fix that made the next
+   attempt work.
+2. **Post-wave merge failure** - When the merge step produces
+   conflicts or broken imports, append a lesson describing which
+   hub file was involved and how the sidecar pattern could have
+   avoided it.
+3. **Epic completion retrospective** - After each epic, optionally
+   add a lesson capturing any non-obvious pattern that emerged
+   (naming conventions, testing gotchas, schema surprises).
+4. **Manual entry via `/sdlc-studio lessons add`** - Any time a
+   developer notices a recurring friction and wants to record it.
+
+Commands:
+
+```text
+/sdlc-studio lessons list               # Show accumulated lessons
+/sdlc-studio lessons add                # Interactive add (prompts for fields)
+/sdlc-studio lessons prune --older EP0003  # Drop lessons tied to old epics
+```
+
+### File format
+
+```markdown
+# Project Lessons
+
+**Last Updated:** 2026-04-15
+
+<!-- Append new entries at the top. Keep each entry under 10 lines. -->
+
+## L-0003: Zod schema mismatch in wave 2
+
+- **Epic:** EP0004
+- **Wave:** 2
+- **Symptom:** Agent added `created_at` to the Bridge schema as
+  camelCase but existing tests expected snake_case
+- **Root cause:** `READ THESE FILES FIRST` omitted `src/db/schema.ts`
+  so the agent guessed the naming convention
+- **Fix:** Added `src/db/schema.ts` to the repo_map hub-files list
+  and to every prompt that touches schemas
+- **Applies to:** Any story modifying the schema or adding fields
+
+## L-0002: ...
+```
+
+Each entry has a monotonic L-NNNN ID, an epic/wave context, a
+symptom, root cause, fix, and an "applies to" clause that helps
+agents decide whether the lesson is relevant to the current story.
+
+### How lessons are consumed
+
+At wave start, the workflow described in
+`reference-epic.md#agentic-execution` reads `.local/lessons.md` and
+injects a condensed `## Known Pitfalls on This Project` section into
+every Agent Prompt Template. Agents read this alongside
+`reference-agentic-lessons.md` and the story-specific prompt. The
+goal is for each wave to start smarter than the last.

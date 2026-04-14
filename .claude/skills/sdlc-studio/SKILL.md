@@ -124,6 +124,7 @@ Claude loads files progressively based on task needs:
 | Ranking files for a story | reference-repo-map.md | help/repo-map.md | reference-epic.md#agent-prompt-template |
 | Verifying ACs against codebase | reference-verify.md | help/verify.md | reference-reconcile.md#verify-scope |
 | Syncing CR/Story/Epic with GitHub | reference-github-sync.md | help/github-sync.md | reference-cr.md#cr-sync-workflow |
+| Recording and loading project lessons | reference-agentic-lessons.md#lessons-accumulation | help/lessons.md | reference-epic.md#agentic-execution |
 
 **Template structure:**
 
@@ -417,6 +418,9 @@ Skill-internal helpers live at `.claude/skills/sdlc-studio/scripts/`. Claude inv
 | `/sdlc-studio repo map query --story US0001` | Rank files by relevance to a story |
 | `/sdlc-studio repo map query --story "auth flow"` | Rank files by a free-text query |
 | `/sdlc-studio repo map stats` | Index size and top-10 hub files |
+| `/sdlc-studio lessons list` | Print accumulated project lessons |
+| `/sdlc-studio lessons add` | Append a new lesson to .local/lessons.md |
+| `/sdlc-studio lessons prune --older EP0003` | Drop entries for old epics |
 
 ### External Integrations
 
