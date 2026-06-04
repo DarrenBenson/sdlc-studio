@@ -23,6 +23,25 @@ SDLC Studio is a **skill** (plugin) for [Claude Code](https://docs.anthropic.com
 - Generate and run tests
 - Track bugs
 
+### The idea (for beginners)
+
+Most AI coding jumps straight from a vague prompt to code, then drifts as the project grows. SDLC Studio adds the steps a real team uses, so Claude always has the context it needs to stay on track:
+
+> **Requirements → Epics → User Stories → Plan → Code → Tests**
+
+Each step writes a plain markdown file under `sdlc-studio/` in your project. You stay in control: review each artefact, then run the next command. Start a brand-new project with `prd create`, or point it at existing code with `prd generate`. If you ever lose your place, `/sdlc-studio status` shows where you are and `/sdlc-studio hint` tells you the single next thing to do.
+
+### New in v1.6.0
+
+Four capabilities that keep status honest and keep agents grounded on large codebases:
+
+- **[Executable acceptance criteria](#executable-acceptance-criteria-v160)** – acceptance criteria run real tests, so a story's Verified state is derived from the code, not just claimed.
+- **[Repo map](#repo-map-for-agent-prompts-v160)** – a pure-Python indexer feeds agents the right files to read first, so they stop hallucinating APIs.
+- **[GitHub Issues sync](#github-issues-sync-v160)** – two-way sync of Change Requests, Stories, and Epics with GitHub Issues via the `gh` CLI.
+- **[Per-project lessons](#per-project-lessons-v160)** – failures from past runs are remembered and injected into future agent prompts.
+
+Full details are under [Workflows](#workflows) below.
+
 **New to Claude Code?** You'll need to [install Claude Code](https://docs.anthropic.com/en/docs/claude-code/getting-started) first before installing this skill.
 
 ## Prerequisites
