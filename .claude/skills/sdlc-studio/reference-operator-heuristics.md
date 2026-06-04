@@ -43,7 +43,7 @@ The same anti-pattern shows up under many guises. *"It's probably a race conditi
 - When a memory note names a config key or path, include a `grep` or inspection line so the next reader can verify the named thing still exists.
 - When the note describes a regime (e.g. "pre-migration" vs "post-migration"), spell out BOTH regimes once either has been in play. Don't delete the historical one – it may still be load-bearing for someone reading an older branch or investigating an older incident.
 - Before answering "should I do X?" from memory alone, re-read the code the note references. If the current code contradicts the note, trust the code and **update the note before continuing**.
-- At release-gate time, re-read any memory note that references flags, topology, or behaviour the release changes. Stale memory is one of the highest-leverage incident vectors; don't ship a release whose first consequence is invalidating your own operator notes.
+- At release-gate time, re-read any memory note that references flags, topology, or behaviour the release changes. Stale memory is one of the highest-impact incident vectors; don't ship a release whose first consequence is invalidating your own operator notes.
 
 **Anti-pattern:** A memory note that just says "do X" or "don't do Y" with no named regime. It will outlive the regime it was written for, and you won't notice until an incident. If you catch one of these, rewrite it to name the regime even if you have to reverse-engineer the context.
 

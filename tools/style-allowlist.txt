@@ -1,0 +1,10 @@
+# Style allowlist for tools/lint-style.sh
+#
+# Each non-comment, non-blank line is a case-insensitive fixed substring.
+# A markdown line flagged for corporate jargon is permitted when it contains
+# one of these substrings. Keep the list small and justify each entry.
+#
+# Lines documenting the no-jargon rule must name the banned words.
+corporate jargon
+# "user journey" is established UX / persona / test terminology, not fluff.
+user journey

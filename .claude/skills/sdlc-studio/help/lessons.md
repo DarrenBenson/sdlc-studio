@@ -120,7 +120,7 @@ The skill's `lessons/` folder is a curated, durable knowledge base – see
 
 ### recall
 Read `lessons/_index.md`, surface the lessons whose tags/titles match the
-decision at hand (optionally `--tags`), and apply them. Cheap, high-leverage:
+decision at hand (optionally `--tags`), and apply them. Cheap, high-impact:
 do this before any non-trivial design or process decision. The Operating
 Doctrine (`reference-doctrine.md`) instructs this as a standing habit.
 

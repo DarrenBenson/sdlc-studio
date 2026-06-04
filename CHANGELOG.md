@@ -5,6 +5,23 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.2] - 2026-06-05
+
+Extends the style guard to corporate jargon. No behaviour changes.
+
+### Added
+
+- `tools/lint-style.sh` now also fails on the four banned corporate-jargon
+  words, filtered through `tools/style-allowlist.txt`. The allowlist
+  permits lines documenting the rule itself, plus the established term
+  "user journey". The em-dash check now lives in the same script, which
+  `npm run lint:style` calls.
+
+### Changed
+
+- Reworded two metaphorical jargon uses (operator-heuristics, lessons
+  help) to plainer wording; these were not allowlist candidates.
+
 ## [1.7.1] - 2026-06-05
 
 Style and tooling housekeeping. No content or behaviour changes.
