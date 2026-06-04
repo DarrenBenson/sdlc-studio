@@ -64,9 +64,9 @@ STATE_PATH = "sdlc-studio/.local/github-sync-state.json"
 
 
 def gh(*args: str, capture: bool = True) -> subprocess.CompletedProcess:
+    """Run a `gh` subcommand, raising RuntimeError if the CLI is absent."""
     if shutil.which("gh") is None:
-        print("error: gh CLI not on PATH. Install https://cli.github.com/", file=sys.stderr)
-        sys.exit(127)
+        raise RuntimeError("gh CLI not on PATH. Install https://cli.github.com/")
     return subprocess.run(
         ["gh", *args],
         capture_output=capture,
@@ -75,7 +75,16 @@ def gh(*args: str, capture: bool = True) -> subprocess.CompletedProcess:
     )
 
 
+def _loads(text: str, default):
+    """Parse JSON, returning `default` (not raising) on malformed input."""
+    try:
+        return json.loads(text or "null") if text and text.strip() else default
+    except json.JSONDecodeError:
+        return default
+
+
 def gh_issue_list(label: str) -> list[dict]:
+    """Return all issues carrying `label` (open and closed), or [] on error."""
     result = gh(
         "issue", "list",
         "--label", label,
@@ -86,10 +95,11 @@ def gh_issue_list(label: str) -> list[dict]:
     if result.returncode != 0:
         print(f"gh issue list failed: {result.stderr}", file=sys.stderr)
         return []
-    return json.loads(result.stdout or "[]")
+    return _loads(result.stdout, [])
 
 
 def gh_issue_create(title: str, body: str, labels: list[str]) -> int | None:
+    """Create an issue, returning its number, or None on failure."""
     args = ["issue", "create", "--title", title, "--body", body]
     for lbl in labels:
         args.extend(["--label", lbl])
@@ -103,6 +113,7 @@ def gh_issue_create(title: str, body: str, labels: list[str]) -> int | None:
 
 
 def gh_issue_edit(number: int, labels_add: list[str], labels_remove: list[str]) -> bool:
+    """Add and remove labels on an issue. Returns True on success."""
     if not labels_add and not labels_remove:
         return True
     args = ["issue", "edit", str(number)]
@@ -118,6 +129,7 @@ def gh_issue_edit(number: int, labels_add: list[str], labels_remove: list[str]) 
 
 
 def gh_pr_list_merged(since_ref: str | None) -> list[dict]:
+    """Return merged PRs, optionally only those merged after `since_ref`."""
     # Use --search to filter by merge date if given; otherwise list the last 100 merged
     args = [
         "pr", "list",
@@ -129,7 +141,7 @@ def gh_pr_list_merged(since_ref: str | None) -> list[dict]:
     if result.returncode != 0:
         print(f"gh pr list failed: {result.stderr}", file=sys.stderr)
         return []
-    prs = json.loads(result.stdout or "[]")
+    prs = _loads(result.stdout, [])
     if since_ref:
         since = since_ref
         prs = [p for p in prs if (p.get("mergedAt") or "") > since]
@@ -155,6 +167,7 @@ class LocalRecord:
     content_hash: str
 
     def labels(self) -> list[str]:
+        """Build the full sdlc label set for this record."""
         labels = [TYPE_LABELS[self.type]]
         if self.status:
             labels.append(f"{LABEL_PREFIX}:status:{_slug(self.status)}")
@@ -166,21 +179,24 @@ class LocalRecord:
 
 
 def _slug(value: str) -> str:
+    """Lowercase, hyphenate, and trim a label component."""
     return re.sub(r"[^a-z0-9]+", "-", value.strip().lower()).strip("-")
 
 
 def _hash_body(body: str) -> str:
+    """Return a short content hash used to detect local edits since last push."""
     return "sha256:" + hashlib.sha256(body.encode("utf-8")).hexdigest()[:16]
 
 
 def _extract_field(text: str, name: str) -> str | None:
-    # Match `> **Name:** value`
+    """Pull the value of a `> **Name:** value` metadata line, if present."""
     pattern = rf"^>\s*\*\*{re.escape(name)}:\*\*\s*(.+?)\s*$"
     m = re.search(pattern, text, re.M)
     return m.group(1) if m else None
 
 
 def _extract_github_issue(text: str) -> int | None:
+    """Return the linked GitHub issue number from the metadata, if any."""
     value = _extract_field(text, "GitHub Issue")
     if not value:
         return None
@@ -189,7 +205,8 @@ def _extract_github_issue(text: str) -> int | None:
 
 
 def parse_local_file(path: Path, type_: str) -> LocalRecord | None:
-    text = path.read_text()
+    """Parse one CR/Story/Epic markdown file into a LocalRecord."""
+    text = path.read_text(encoding="utf-8")
     # Title: first `# ` heading
     title_match = re.search(r"^#\s+(.+)$", text, re.M)
     title = title_match.group(1).strip() if title_match else path.stem
@@ -217,6 +234,7 @@ def parse_local_file(path: Path, type_: str) -> LocalRecord | None:
 
 
 def walk_local(type_: str) -> Iterable[LocalRecord]:
+    """Yield parsed records for every CR/Story/Epic file of `type_`."""
     if type_ not in TYPE_DIRS:
         return []
     dir_path, prefix = TYPE_DIRS[type_]
@@ -238,24 +256,40 @@ def walk_local(type_: str) -> Iterable[LocalRecord]:
 # -----------------------------------------------------------------------------
 
 
+def _empty_state() -> dict:
+    """Return a fresh, empty sync-state structure."""
+    return {
+        "version": 1,
+        "last_pull": None,
+        "last_push": None,
+        "last_cascade_ref": None,
+        "mappings": {},
+    }
+
+
 def load_state(path: Path = Path(STATE_PATH)) -> dict:
+    """Load the sync state, falling back to an empty state if missing or corrupt."""
     if not path.exists():
-        return {
-            "version": 1,
-            "last_pull": None,
-            "last_push": None,
-            "last_cascade_ref": None,
-            "mappings": {},
-        }
-    return json.loads(path.read_text())
+        return _empty_state()
+    text = path.read_text(encoding="utf-8")
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        print(
+            f"warning: {path} is not valid JSON; starting from empty state",
+            file=sys.stderr,
+        )
+        return _empty_state()
 
 
 def save_state(state: dict, path: Path = Path(STATE_PATH)) -> None:
+    """Write the sync state to disk, creating parent dirs as needed."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(state, indent=2))
+    path.write_text(json.dumps(state, indent=2), encoding="utf-8")
 
 
 def now_iso() -> str:
+    """Return the current UTC time as an ISO-8601 string."""
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
@@ -265,7 +299,8 @@ def now_iso() -> str:
 
 
 def set_github_issue_field(path: Path, number: int) -> None:
-    text = path.read_text()
+    """Write the `> **GitHub Issue:** #N` metadata line into a local file."""
+    text = path.read_text(encoding="utf-8")
     if _extract_github_issue(text) == number:
         return
     if _extract_field(text, "GitHub Issue") is not None:
@@ -290,7 +325,7 @@ def set_github_issue_field(path: Path, number: int) -> None:
             )
         else:
             new_text = text.rstrip() + "\n\n" + insert_line + "\n"
-    path.write_text(new_text)
+    path.write_text(new_text, encoding="utf-8")
 
 
 # -----------------------------------------------------------------------------
@@ -299,6 +334,7 @@ def set_github_issue_field(path: Path, number: int) -> None:
 
 
 def cmd_push(args: argparse.Namespace) -> int:
+    """Create or update GitHub issues from local CR/Story/Epic files."""
     types = _resolve_types(args.type)
     state = load_state()
     mappings = state.get("mappings", {})
@@ -382,6 +418,7 @@ def cmd_push(args: argparse.Namespace) -> int:
 
 
 def cmd_pull(args: argparse.Namespace) -> int:
+    """List labelled issues that have no local file and need ingesting."""
     types = _resolve_types(args.type)
     state = load_state()
     mappings = state.get("mappings", {})
@@ -434,6 +471,7 @@ _CR_REF_RE = re.compile(r"sdlc:cr\s+(CR-\d{4})", re.I)
 
 
 def cmd_cascade(args: argparse.Namespace) -> int:
+    """Find merged PRs whose bodies reference stories/CRs to cascade."""
     state = load_state()
     since = args.since or state.get("last_cascade_ref")
     prs = gh_pr_list_merged(since)
@@ -497,12 +535,14 @@ def cmd_cascade(args: argparse.Namespace) -> int:
 
 
 def cmd_state(args: argparse.Namespace) -> int:
+    """Print the current sync-state file as JSON."""
     state = load_state()
     print(json.dumps(state, indent=2))
     return 0
 
 
 def _resolve_types(type_arg: str) -> list[str]:
+    """Expand a --type argument (including `all`) into a list of types."""
     if type_arg == "all":
         return ["cr", "story", "epic"]
     if type_arg in TYPE_LABELS:
@@ -511,6 +551,7 @@ def _resolve_types(type_arg: str) -> list[str]:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Construct the argparse parser for all subcommands."""
     p = argparse.ArgumentParser(
         prog="github_sync.py",
         description="Two-way sync between local sdlc-studio records and GitHub Issues.",
@@ -539,9 +580,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Parse arguments and dispatch to the chosen subcommand."""
     parser = build_parser()
     args = parser.parse_args(argv)
-    return args.func(args)
+    try:
+        return args.func(args)
+    except RuntimeError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 127
 
 
 if __name__ == "__main__":

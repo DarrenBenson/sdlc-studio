@@ -72,6 +72,7 @@ def parse_story(text: str) -> list[ACBlock]:
     current: ACBlock | None = None
 
     def flush() -> None:
+        """Append the in-progress AC block, if any, to the result list."""
         if current is not None:
             blocks.append(current)
 
@@ -208,7 +209,9 @@ def _build_command(expr: str) -> tuple[str, list[str] | str]:
     if head == "shell" and tail:
         return "shell", tail  # shell=True
 
-    # Fallback: treat the whole expression as a shell command
+    # Fallback: treat the whole expression as a shell command. AC Verify lines
+    # are authored by the team alongside the story, so this runs trusted input,
+    # not untrusted external content.
     return "shell", expr
 
 
@@ -243,7 +246,10 @@ def update_verified(lines: list[str], block: ACBlock, new_state: str) -> list[st
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     new_line = None
 
-    if block.verified_line is not None:
+    if not lines:
+        return lines
+
+    if block.verified_line is not None and block.verified_line < len(lines):
         orig = lines[block.verified_line]
         indent_match = re.match(r"^(\s*)", orig)
         indent = indent_match.group(1) if indent_match else ""
@@ -252,8 +258,10 @@ def update_verified(lines: list[str], block: ACBlock, new_state: str) -> list[st
         lines[block.verified_line] = new_line
         return lines
 
-    # Insert after the Verify line or last bullet
+    # Insert after the Verify line or last bullet. Clamp to the file bounds so
+    # malformed markdown (a stale line index past EOF) can never IndexError.
     insert_at = block.insert_after if block.insert_after is not None else block.heading_line
+    insert_at = max(0, min(insert_at, len(lines) - 1))
     # Inherit indent from the line we're inserting after
     base = lines[insert_at]
     indent_match = re.match(r"^(\s*)", base)
@@ -287,7 +295,8 @@ def verify_story(
     timeout: int,
     repo_root: Path,
 ) -> StoryReport:
-    text = story_path.read_text()
+    """Run every AC verifier in one story and update its Verified state."""
+    text = story_path.read_text(encoding="utf-8")
     lines = text.splitlines()
     blocks = parse_story(text)
     report = StoryReport(path=str(story_path), ac_count=len(blocks))
@@ -329,18 +338,20 @@ def verify_story(
         new_text = "\n".join(lines)
         if text.endswith("\n"):
             new_text += "\n"
-        story_path.write_text(new_text)
+        story_path.write_text(new_text, encoding="utf-8")
 
     return report
 
 
 def walk_stories(stories_dir: Path) -> Iterable[Path]:
+    """Yield every US*.md story file in a directory, sorted."""
     if not stories_dir.exists():
         return []
     return sorted(p for p in stories_dir.glob("US*.md") if p.is_file())
 
 
 def write_report(path: Path, stories: list[StoryReport]) -> None:
+    """Write the per-story verification summary to JSON."""
     data = {
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "stories": {
@@ -357,7 +368,7 @@ def write_report(path: Path, stories: list[StoryReport]) -> None:
         },
     }
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2))
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
 # -----------------------------------------------------------------------------
@@ -366,6 +377,7 @@ def write_report(path: Path, stories: list[StoryReport]) -> None:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
+    """Run verifiers across stories, update files, and write the report."""
     repo_root = Path(args.repo_root).resolve()
 
     if args.story:
@@ -410,11 +422,12 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 
 def cmd_report(args: argparse.Namespace) -> int:
+    """Print the latest verification report in text or JSON form."""
     report_path = Path(args.report)
     if not report_path.exists():
         print(f"error: no report at {report_path}. Run `verify_ac.py run` first.", file=sys.stderr)
         return 2
-    data = json.loads(report_path.read_text())
+    data = json.loads(report_path.read_text(encoding="utf-8"))
     if args.format == "json":
         print(json.dumps(data, indent=2))
         return 0
@@ -442,6 +455,7 @@ def cmd_report(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Construct the argparse parser for the run and report subcommands."""
     p = argparse.ArgumentParser(
         prog="verify_ac.py",
         description="Execute acceptance-criterion verifiers and update Verified state.",
@@ -478,6 +492,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Parse arguments and dispatch to the chosen subcommand."""
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)

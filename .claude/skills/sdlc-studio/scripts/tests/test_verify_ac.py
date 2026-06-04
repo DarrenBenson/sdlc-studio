@@ -225,5 +225,56 @@ class UpdateTests(unittest.TestCase):
         self.assertIn("**Verified:** yes", joined)
 
 
+class HardeningTests(unittest.TestCase):
+    def test_update_verified_clamps_out_of_bounds_insert(self) -> None:
+        lines = ["### AC1: x", "- **Verify:** file README.md"]
+        block = verify_ac.ACBlock(
+            heading_line=0,
+            ac_id="AC1",
+            title="x",
+            verifier="file README.md",
+            insert_after=99,  # past EOF
+        )
+        updated = verify_ac.update_verified(lines, block, "yes")
+        self.assertIn("**Verified:** yes", "\n".join(updated))
+
+    def test_update_verified_handles_empty_lines(self) -> None:
+        block = verify_ac.ACBlock(
+            heading_line=0, ac_id="AC1", title="x", insert_after=5
+        )
+        self.assertEqual(verify_ac.update_verified([], block, "yes"), [])
+
+    def test_run_verifier_shell_pass_and_fail(self) -> None:
+        ok = verify_ac.run_verifier("shell echo ok", timeout=10, cwd=Path("."))
+        self.assertTrue(ok.ok)
+        self.assertEqual(ok.kind, "shell")
+        bad = verify_ac.run_verifier("shell false", timeout=10, cwd=Path("."))
+        self.assertFalse(bad.ok)
+
+    def test_verify_story_preserves_non_ascii(self) -> None:
+        tmp = Path(tempfile.mkdtemp(prefix="verify_ac_unicode_"))
+        try:
+            (tmp / "scripts").mkdir()
+            (tmp / "scripts" / "repo_map.py").write_text("# marker\n", encoding="utf-8")
+            story = tmp / "story.md"
+            story.write_text(
+                "# US0009: Café checkout – naïve flow\n\n"
+                "## Acceptance Criteria\n\n"
+                "### AC1: Existing file\n"
+                "- **Verify:** file scripts/repo_map.py\n",
+                encoding="utf-8",
+            )
+            report = verify_ac.verify_story(
+                story, dry_run=False, timeout=10, repo_root=tmp
+            )
+            self.assertEqual(report.verified, 1)
+            text = story.read_text(encoding="utf-8")
+            self.assertIn("Café checkout", text)
+            self.assertIn("naïve", text)
+            self.assertIn("**Verified:** yes", text)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1077,7 +1077,7 @@ Use in-memory SQLite for DB tests.
 | Tests | "Write tests" | "8 tests covering: success, failure, edge case X, edge case Y" |
 | Context | None | "READ THESE FILES FIRST: 1. client.ts for Zod pattern..." |
 
-### Building the Prompt
+### Building the Prompt {#agentic-execution}
 
 Before writing the prompt, the orchestrator MUST:
 

@@ -151,6 +151,7 @@ class FileEntry:
     in_degree: int = 0
 
     def to_dict(self) -> dict:
+        """Serialise this entry to a plain dict for JSON output."""
         return {
             "language": self.language,
             "symbols": self.symbols,
@@ -203,6 +204,7 @@ def _parse_python_regex(text: str) -> tuple[list[dict], list[str]]:
 def parse_with_regex(
     text: str, symbol_re: re.Pattern, import_re: re.Pattern
 ) -> tuple[list[dict], list[str]]:
+    """Extract symbols and imports for non-Python languages via regex."""
     symbols: list[dict] = []
     for m in symbol_re.finditer(text):
         groups = m.groupdict()
@@ -236,13 +238,21 @@ LANGUAGE_PARSERS = {
 
 
 def walk_source_files(root: Path, ignores: set[str]) -> Iterable[Path]:
-    """Yield source files under root, skipping ignored dirs."""
+    """Yield source files under root, skipping ignored dirs.
+
+    Hidden directories are pruned everywhere except at the repo root, so
+    top-level dotdirs such as .claude/ are indexed while nested caches like
+    src/.cache are not.
+    """
+    root_str = str(root)
     for dirpath, dirnames, filenames in os.walk(root):
-        # Prune ignored dirs in-place so os.walk doesn't descend
-        dirnames[:] = [d for d in dirnames if d not in ignores and not d.startswith(".")]
-        # Keep the root even if it starts with . (e.g., .claude/)
-        if dirpath == str(root):
-            dirnames[:] = [d for d in os.listdir(dirpath) if d not in ignores and os.path.isdir(os.path.join(dirpath, d))]
+        at_root = dirpath == root_str
+        # Prune in-place so os.walk doesn't descend into ignored or (below the
+        # root) hidden directories.
+        dirnames[:] = [
+            d for d in dirnames
+            if d not in ignores and (at_root or not d.startswith("."))
+        ]
         for name in filenames:
             ext = os.path.splitext(name)[1].lower()
             if ext in SUPPORTED_EXTENSIONS:
@@ -308,6 +318,7 @@ def compute_in_degree(entries: dict[str, FileEntry]) -> None:
 
 
 def write_index(entries: dict[str, FileEntry], out_path: Path, root: Path) -> None:
+    """Serialise the index to JSON at out_path."""
     data = {
         "version": 1,
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -315,7 +326,7 @@ def write_index(entries: dict[str, FileEntry], out_path: Path, root: Path) -> No
         "files": {path: entry.to_dict() for path, entry in entries.items()},
     }
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(data, indent=2))
+    out_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
 # -----------------------------------------------------------------------------
@@ -383,7 +394,8 @@ def score_file(path: str, entry: FileEntry, tokens: set[str]) -> tuple[float, li
 
 
 def query_index(map_path: Path, story_text: str, top_n: int) -> list[dict]:
-    data = json.loads(map_path.read_text())
+    """Rank indexed files by relevance to story_text, top_n results."""
+    data = json.loads(map_path.read_text(encoding="utf-8"))
     entries = data.get("files", {})
     tokens = tokenise(story_text)
     if not tokens:
@@ -420,6 +432,7 @@ def query_index(map_path: Path, story_text: str, top_n: int) -> list[dict]:
 
 
 def cmd_build(args: argparse.Namespace) -> int:
+    """Walk the repo, build the index, and write it to disk."""
     root = Path(args.root).resolve()
     if not root.exists():
         print(f"error: root does not exist: {root}", file=sys.stderr)
@@ -440,6 +453,7 @@ def cmd_build(args: argparse.Namespace) -> int:
 
 
 def cmd_query(args: argparse.Namespace) -> int:
+    """Rank files against a story file or free-text query and print them."""
     map_path = Path(args.map)
     if not map_path.exists():
         print(
@@ -477,11 +491,12 @@ def cmd_query(args: argparse.Namespace) -> int:
 
 
 def cmd_stats(args: argparse.Namespace) -> int:
+    """Print index size, language breakdown, and top hub files."""
     map_path = Path(args.map)
     if not map_path.exists():
         print(f"error: repo map not found at {map_path}", file=sys.stderr)
         return 2
-    data = json.loads(map_path.read_text())
+    data = json.loads(map_path.read_text(encoding="utf-8"))
     entries = data.get("files", {})
     if not entries:
         print("empty index")
@@ -514,6 +529,7 @@ def cmd_stats(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Construct the argparse parser for build, query, and stats."""
     p = argparse.ArgumentParser(
         prog="repo_map.py",
         description="Pure-Python repo indexer and relevance ranker.",
@@ -557,6 +573,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Parse arguments and dispatch to the chosen subcommand."""
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)

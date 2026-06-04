@@ -5,7 +5,7 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - v1.6.0-dev
+## [1.6.0] - 2026-06-04
 
 Structural upgrades from competitive research against BMAD-METHOD,
 GitHub Spec Kit, Kiro, and Aider. Four new capabilities target the
@@ -55,6 +55,10 @@ to GitHub Issues, and projects that start dumb every time.
   post-wave merge failure, epic retrospective, manual add), and
   consumption pattern. `/sdlc-studio lessons list|add|prune`
   commands.
+- **Windows PowerShell installer** (`install.ps1`): one-line install
+  via `irm ... | iex`, mirroring `install.sh`. Supports `-Local`,
+  `-Global`, `-DryRun`, `-Version <tag>`, and `-Help`. README gains
+  Windows instructions throughout.
 
 ### Changed
 
@@ -95,6 +99,12 @@ to GitHub Issues, and projects that start dumb every time.
   `--verify`, `--story`, and `--scope verify` arguments.
 - **Templates**: pre-existing markdownlint drift in
   `templates/core/story.md` cleaned up while adding Verify fields.
+- **Script hardening**: the three scripts gain release-grade
+  robustness: malformed `gh` output and corrupt sync state no longer
+  crash `github_sync.py` (graceful fallback), `verify_ac.py` clamps
+  out-of-bounds insertion points, all file I/O is explicit UTF-8, and
+  every public function is documented. Test suite grows to 46 cases
+  covering the new edge paths.
 
 ### Config
 

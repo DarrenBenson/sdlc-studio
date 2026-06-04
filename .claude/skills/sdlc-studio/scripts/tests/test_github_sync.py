@@ -206,6 +206,43 @@ class CascadeTests(unittest.TestCase):
         self.assertEqual(crs, ["CR-0007"])
 
 
+class HardeningTests(unittest.TestCase):
+    def test_loads_returns_default_on_malformed(self) -> None:
+        self.assertEqual(github_sync._loads("not json", []), [])
+        self.assertEqual(github_sync._loads("", []), [])
+        self.assertEqual(github_sync._loads("   ", []), [])
+        self.assertEqual(github_sync._loads('[{"number": 1}]', []), [{"number": 1}])
+
+    def test_load_state_recovers_from_corrupt_file(self) -> None:
+        tmp = Path(tempfile.mkdtemp())
+        try:
+            path = tmp / "state.json"
+            path.write_text("{ not valid json", encoding="utf-8")
+            state = github_sync.load_state(path)
+            self.assertEqual(state["version"], 1)
+            self.assertEqual(state["mappings"], {})
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_gh_raises_runtimeerror_when_cli_missing(self) -> None:
+        with mock.patch.object(github_sync.shutil, "which", return_value=None):
+            with self.assertRaises(RuntimeError):
+                github_sync.gh("issue", "list")
+
+    def test_main_returns_127_when_gh_missing(self) -> None:
+        fixture = FixtureRepo()
+        import os
+        cwd = Path.cwd()
+        os.chdir(fixture.tmp)
+        try:
+            with mock.patch.object(github_sync.shutil, "which", return_value=None):
+                rc = github_sync.main(["push", "--type", "cr"])
+            self.assertEqual(rc, 127)
+        finally:
+            os.chdir(cwd)
+            fixture.cleanup()
+
+
 def subprocess_result(returncode: int, stdout: str, stderr: str):
     import subprocess
     return subprocess.CompletedProcess(

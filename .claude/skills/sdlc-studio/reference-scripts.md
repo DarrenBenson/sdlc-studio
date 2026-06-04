@@ -22,12 +22,12 @@ markdown instruction that Claude executed using built-in tools (Read,
 Grep, Bash, Edit). v1.6.0 introduces three capabilities that need
 deterministic computation:
 
-1. **AST repository indexing** (`repo_map.py`) — reinventing a ranked
+1. **AST repository indexing** (`repo_map.py`) – reinventing a ranked
    file index every session wastes tokens and drifts.
-2. **AC verifier execution** (`verify_ac.py`) — running pytest, curl,
+2. **AC verifier execution** (`verify_ac.py`) – running pytest, curl,
    or shell assertions at scale needs a single entry point that
    parses results and updates story files atomically.
-3. **GitHub issue sync** (`github_sync.py`) — diffing local CR/Story
+3. **GitHub issue sync** (`github_sync.py`) – diffing local CR/Story
    files against GitHub Issues and writing back needs idempotent
    logic that a script can unit-test.
 

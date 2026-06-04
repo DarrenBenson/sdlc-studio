@@ -185,7 +185,7 @@ After applying:
    ══════════════════════════════════════════════════════════
 ```
 
-### 5. Scope Filtering
+### 5. Scope Filtering {#verify-scope}
 
 When `--scope` is specified, only run the relevant subset of Phase 2 and Phase 3:
 

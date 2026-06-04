@@ -49,7 +49,7 @@ Build the index:
 - **When stale:** If `.local/repo-map.json` is older than an hour during
   active coding, or older than a day otherwise
 
-The build is fast — a 50,000-line repo indexes in 5-15 seconds on
+The build is fast – a 50,000-line repo indexes in 5-15 seconds on
 stock hardware. There is no significant cost to rebuilding more often
 than strictly needed.
 
@@ -119,7 +119,7 @@ boundaries, minimum 3 characters, with a short stopword list that
 strips `test`, `class`, `function`, `api`, `ui`, `the`, `and`, etc.
 
 Files with zero matched tokens score 0 regardless of in-degree. This
-prevents hub files from polluting every query result — a file has to
+prevents hub files from polluting every query result – a file has to
 be content-relevant before the hub bonus kicks in.
 
 ## Limits and Falsehoods {#repo-map-limits}
