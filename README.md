@@ -32,16 +32,23 @@ Before installing SDLC Studio, ensure you have:
 | Requirement | How to check | Install guide |
 | --- | --- | --- |
 | Claude Code | Run `claude --version` | [Getting Started](https://docs.anthropic.com/en/docs/claude-code/getting-started) |
-| curl or wget | Run `curl --version` | Usually pre-installed on macOS/Linux |
+| curl or wget (macOS/Linux) | Run `curl --version` | Usually pre-installed on macOS/Linux |
+| PowerShell (Windows) | Run `$PSVersionTable.PSVersion` | Pre-installed on Windows |
 
 ## Installation
 
 ### Option 1: One-line installer (recommended)
 
-Open your terminal and run:
+**macOS/Linux** - open your terminal and run:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash
+```
+
+**Windows** - open PowerShell and run:
+
+```powershell
+irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 | iex
 ```
 
 This installs SDLC Studio globally, making it available in all your projects.
@@ -56,22 +63,42 @@ This installs SDLC Studio globally, making it available in all your projects.
 
 If you only want the skill available in one project:
 
+**macOS/Linux:**
+
 ```bash
 cd /path/to/your/project
 curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash -s -- --local
+```
+
+**Windows** - download the installer first, then run with options:
+
+```powershell
+cd C:\path\to\your\project
+irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 -OutFile install.ps1
+.\install.ps1 -Local
 ```
 
 This creates `.claude/skills/sdlc-studio/` in your current directory.
 
 ### Option 3: Install a specific version
 
+**macOS/Linux:**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash -s -- --version v1.2.0
+```
+
+**Windows:**
+
+```powershell
+.\install.ps1 -Version v1.2.0
 ```
 
 ### Option 4: Manual installation
 
 If you prefer not to use the installer script:
+
+**macOS/Linux:**
 
 ```bash
 # Clone the repository
@@ -81,6 +108,18 @@ cd sdlc-studio
 # Copy to your Claude Code skills directory
 mkdir -p ~/.claude/skills
 cp -r .claude/skills/sdlc-studio ~/.claude/skills/
+```
+
+**Windows:**
+
+```powershell
+# Clone the repository
+git clone https://github.com/DarrenBenson/sdlc-studio.git
+cd sdlc-studio
+
+# Copy to your Claude Code skills directory
+New-Item -ItemType Directory -Force "$HOME\.claude\skills" | Out-Null
+Copy-Item -Recurse .claude\skills\sdlc-studio "$HOME\.claude\skills\"
 ```
 
 ## Verify Installation
@@ -337,8 +376,16 @@ Then type the `/sdlc-studio` commands at the Claude Code prompt.
 
 To update to the latest version, simply run the installer again:
 
+**macOS/Linux:**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash
+```
+
+**Windows:**
+
+```powershell
+irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 | iex
 ```
 
 The installer removes the old version before installing the new one.
@@ -347,14 +394,30 @@ The installer removes the old version before installing the new one.
 
 ### Global installation
 
+**macOS/Linux:**
+
 ```bash
 rm -rf ~/.claude/skills/sdlc-studio
 ```
 
+**Windows:**
+
+```powershell
+Remove-Item -Recurse -Force "$HOME\.claude\skills\sdlc-studio"
+```
+
 ### Project-level installation
+
+**macOS/Linux:**
 
 ```bash
 rm -rf .claude/skills/sdlc-studio
+```
+
+**Windows:**
+
+```powershell
+Remove-Item -Recurse -Force .claude\skills\sdlc-studio
 ```
 
 ## Getting Help
