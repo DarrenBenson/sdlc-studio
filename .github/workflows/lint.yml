@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  markdownlint:
+  ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
