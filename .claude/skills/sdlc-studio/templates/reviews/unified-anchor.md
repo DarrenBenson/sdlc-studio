@@ -13,7 +13,7 @@ Rule: rewritten on every `/sdlc-studio review` run that is not `--focus {single-
 Do not edit by hand; edit the latest dated `RV{NNNN}-unified-*.md` instead.
 -->
 
-# {{review_id}} — Unified Review — {{project_version}} + {{anchor_event}}
+# {{review_id}} – Unified Review – {{project_version}} + {{anchor_event}}
 
 > **Review type:** Unified PRD/TRD/TSD/Persona consolidation
 > **Reviewer:** {{reviewer}}
@@ -120,7 +120,7 @@ If empty, replace with: *No priority actions blocking the next session.*
 
 ## Production State Snapshot
 
-For projects with a deployed runtime — capture the state at review time so a fresh-session reader can orient without polling. Skip this section for non-deployed projects (libraries, tools, work-in-progress greenfield).
+For projects with a deployed runtime – capture the state at review time so a fresh-session reader can orient without polling. Skip this section for non-deployed projects (libraries, tools, work-in-progress greenfield).
 
 | Aspect | State |
 | --- | --- |
@@ -141,10 +141,10 @@ If empty, replace with: *No artefact files were modified by this review run.*
 
 ## See Also
 
-- `templates/reviews/findings.md` — per-artefact RV{NNNN} findings template (the inputs to this anchor)
-- `reference-review.md#review-workflow` — full unified review workflow
-- `help/review.md` — command quick reference
-- {{predecessor_review_path}} — the previous unified anchor for delta comparison
+- `templates/reviews/findings.md` – per-artefact RV{NNNN} findings template (the inputs to this anchor)
+- `reference-review.md#review-workflow` – full unified review workflow
+- `help/review.md` – command quick reference
+- {{predecessor_review_path}} – the previous unified anchor for delta comparison
 
 ---
 

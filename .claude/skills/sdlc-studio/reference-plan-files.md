@@ -43,10 +43,10 @@ When the operator re-enters plan mode and an existing plan file is present, the 
 1. **Read the existing file.** Understand what it covered.
 2. **Compare against the user's current request.** Topic match? Same task continuing? Or a fresh task?
 3. **Choose a path:**
-   - **Same task continuing** — modify the existing plan, removing outdated sections.
-   - **Different task** — overwrite the existing plan with a fresh one (the previous plan should already have been archived; if not, this plan-file's purpose was satisfied and overwriting is correct).
+   - **Same task continuing** – modify the existing plan, removing outdated sections.
+   - **Different task** – overwrite the existing plan with a fresh one (the previous plan should already have been archived; if not, this plan-file's purpose was satisfied and overwriting is correct).
 
-The skill does not silently merge plans. If the existing file has substance worth preserving and the new task is unrelated, the operator should archive the existing file first — `/sdlc-studio plan archive <slug>` — before re-entering plan mode.
+The skill does not silently merge plans. If the existing file has substance worth preserving and the new task is unrelated, the operator should archive the existing file first – `/sdlc-studio plan archive <slug>` – before re-entering plan mode.
 
 ---
 
@@ -64,7 +64,7 @@ Output (`/sdlc-studio plan list`):
 ACTIVE PLANS
 ─────────────────────────────────────────────────────────────────────
   add-user-authentication    (2026-04-30, today)
-    Plan — implement OAuth login across the API and web client
+    Plan – implement OAuth login across the API and web client
 ─────────────────────────────────────────────────────────────────────
 1 active plan
 ```
@@ -102,9 +102,9 @@ Surfaces candidates for archival:
 STALE PLANS (mtime > 30 days, slug does not match active branch / CR / story)
 ─────────────────────────────────────────────────────────────────────
   some-old-task-slug                           (2026-03-12, 49d ago)
-    Plan — that thing we never finished
+    Plan – that thing we never finished
   another-old-slug                             (2026-02-08, 82d ago)
-    Plan — abandoned migration approach
+    Plan – abandoned migration approach
 ─────────────────────────────────────────────────────────────────────
 2 stale plans
 
@@ -131,7 +131,7 @@ The plan-mode prompt's "different task" → overwrite path is correct **when the
 
 ## Anti-patterns
 
-- **Editing the active plan file with content for an unrelated task.** Plans are atomic — one file, one task. Mixing erodes both.
+- **Editing the active plan file with content for an unrelated task.** Plans are atomic – one file, one task. Mixing erodes both.
 - **Letting old plans accumulate as "active".** A plans directory full of dead plans is a search problem on every plan-mode entry. Archive on ship.
 - **Overwriting without checking.** The plan-mode prompt asks Claude to read the existing file first for a reason; skipping the check loses information. If the existing plan is genuinely stale, archive it explicitly rather than overwrite it.
 - **Treating the slug as semantic.** Slugs are auto-generated and can drift from the actual topic over edits. Read the first heading, not the slug, to identify the plan.
@@ -140,6 +140,6 @@ The plan-mode prompt's "different task" → overwrite path is correct **when the
 
 ## See Also
 
-- `reference-decisions.md#execution-contract` — what happens once a plan is approved (no mid-flight check-ins; gates are SDLC-internal)
-- `help/plan.md` — `/sdlc-studio plan list` / `archive` quick reference (if present)
+- `reference-decisions.md#execution-contract` – what happens once a plan is approved (no mid-flight check-ins; gates are SDLC-internal)
+- `help/plan.md` – `/sdlc-studio plan list` / `archive` quick reference (if present)
 - The plan-mode system prompt itself documents the in-prompt overwrite-vs-continue choice; this file documents the *between-sessions* lifecycle

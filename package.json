@@ -1,10 +1,12 @@
 {
   "name": "sdlc-studio",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Claude Code skill for managing the full software development lifecycle",
   "private": true,
   "scripts": {
-    "lint": "markdownlint '**/*.md' --ignore node_modules",
+    "lint": "npm run lint:md && npm run lint:style",
+    "lint:md": "markdownlint '**/*.md' --ignore node_modules",
+    "lint:style": "! grep -rnP '\\x{2014}' --include='*.md' --exclude-dir=node_modules . || { echo '^ em-dash(es) found above; use an en-dash with spaces instead (CLAUDE.md house style).'; false; }",
     "lint:fix": "markdownlint '**/*.md' --ignore node_modules --fix"
   },
   "devDependencies": {

@@ -5,6 +5,25 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.1] - 2026-06-05
+
+Style and tooling housekeeping. No content or behaviour changes.
+
+### Fixed
+
+- Replaced 201 em-dashes across the skill docs, templates, lessons,
+  README, CHANGELOG, and CLAUDE.md with spaced en-dashes, per the
+  house style rule in CLAUDE.md. The v1.7.0 content reintroduced them
+  because no automated check existed.
+- Corrected a stale line-count note in CLAUDE.md (SKILL.md is 651
+  lines, not 584).
+
+### Changed
+
+- `npm run lint` now also runs a style guard (`lint:style`) that fails
+  on any em-dash in markdown, so the regression cannot recur. CI picks
+  this up automatically via the existing `npm run lint` step.
+
 ## [1.7.0] - 2026-06-05
 
 Field-tested patterns from real-world use, generalised and folded back

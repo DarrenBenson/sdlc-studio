@@ -4,13 +4,13 @@ Workflows for the unified document review command that analyses PRD, TRD, TSD, a
 
 ## Overview
 
-The unified review command runs document reviews across all four specification layers (Product, Technical, Test, Persona) and checks cross-document consistency. Persona is reviewed for **drift** (have personas gone stale, do PRD references still resolve, are personas still consulted) — distinct from "Persona Consultation" (using personas to assess the other documents), which is documented at step 3a.
+The unified review command runs document reviews across all four specification layers (Product, Technical, Test, Persona) and checks cross-document consistency. Persona is reviewed for **drift** (have personas gone stale, do PRD references still resolve, are personas still consulted) – distinct from "Persona Consultation" (using personas to assess the other documents), which is documented at step 3a.
 
 ---
 
 ## When to Run a Unified Review
 
-Run `/sdlc-studio review` on a deliberate cadence — it is the periodic synthesis point that keeps PRD/TRD/TSD honest. CLAUDE.md and commit messages are audit trails, not indexes; the review is what answers "is this project healthy?"
+Run `/sdlc-studio review` on a deliberate cadence – it is the periodic synthesis point that keeps PRD/TRD/TSD honest. CLAUDE.md and commit messages are audit trails, not indexes; the review is what answers "is this project healthy?"
 
 **Cadence (any of, whichever comes first):**
 
@@ -21,11 +21,11 @@ Run `/sdlc-studio review` on a deliberate cadence — it is the periodic synthes
 
 **Symptom triggers (any of these mean a review is overdue):**
 
-- CLAUDE.md or PRD §3 detail blocks have started accumulating per-ship narrative — the changelog is leaking into the index because no review has synthesised it.
+- CLAUDE.md or PRD §3 detail blocks have started accumulating per-ship narrative – the changelog is leaking into the index because no review has synthesised it.
 - A canvas / persona consultation surfaced multiple cross-cutting concerns that no document has digested.
 - The number of versions since the most recent `RV{NNNN}-unified-review-*.md` exceeds the cadence above.
 
-The most recent unified review is always written to `sdlc-studio/reviews/LATEST.md` (see step 4 below) so it is one read away — use it as the orientation entry-point for fresh conversations rather than re-deriving project state from `git log`.
+The most recent unified review is always written to `sdlc-studio/reviews/LATEST.md` (see step 4 below) so it is one read away – use it as the orientation entry-point for fresh conversations rather than re-deriving project state from `git log`.
 
 ---
 
@@ -43,9 +43,9 @@ The most recent unified review is always written to `sdlc-studio/reviews/LATEST.
 | `--focus persona` | Run only Persona review | all |
 | `--skip-personas` | Drop Persona Review from the default chain (PRD+TRD+TSD only) | false |
 
-If `sdlc-studio/personas/` does not exist or contains no persona files, Persona Review is skipped automatically — no flag required. The four-doc default applies whenever personas exist.
+If `sdlc-studio/personas/` does not exist or contains no persona files, Persona Review is skipped automatically – no flag required. The four-doc default applies whenever personas exist.
 
-**RFC review (if `sdlc-studio/rfcs/` exists).** As part of the unified pass, scan the RFCs: flag any **Draft / In Review** RFC stalled > ~14 days with no Revision-History movement; flag **Open Decisions** unresolved > 7 days (name the owner); and for **Accepted** RFCs verify each workstream has a spawned CR that exists and links back. This catches design exploration that has gone quiet before it silently blocks the dependent CRs. Report-only — RFC acceptance is always a judgement call.
+**RFC review (if `sdlc-studio/rfcs/` exists).** As part of the unified pass, scan the RFCs: flag any **Draft / In Review** RFC stalled > ~14 days with no Revision-History movement; flag **Open Decisions** unresolved > 7 days (name the owner); and for **Accepted** RFCs verify each workstream has a spawned CR that exists and links back. This catches design exploration that has gone quiet before it silently blocks the dependent CRs. Report-only – RFC acceptance is always a judgement call.
 
 ### 2. Run Document Reviews
 
@@ -102,7 +102,7 @@ See `reference-tsd.md#tsd-review-workflow` for details.
    - Personas with no CR/Story references at all → "unused" (suggest archive or first-consult)
 ```
 
-If `sdlc-studio/personas/` does not exist or contains no persona files, Persona Review is skipped (no warning — the project has no persona artefacts to review). The other three reviews run as normal. See `reference-persona.md#persona-review-workflow` for details (when personas exist).
+If `sdlc-studio/personas/` does not exist or contains no persona files, Persona Review is skipped (no warning – the project has no persona artefacts to review). The other three reviews run as normal. See `reference-persona.md#persona-review-workflow` for details (when personas exist).
 
 ### 3. Cross-Document Consistency Check
 
@@ -491,9 +491,9 @@ A "broken reference" (PRD names a persona that no longer exists) is **critical**
 
 For each active persona:
 
-- Recent consult (`/sdlc-studio consult`) — counts as a touch
-- Reference in a CR's "Stakeholders" or "Personas Consulted" section — counts as a touch
-- Reference in a Story's `As a {persona}` line or persona-reference section — counts as a touch
+- Recent consult (`/sdlc-studio consult`) – counts as a touch
+- Reference in a CR's "Stakeholders" or "Personas Consulted" section – counts as a touch
+- Reference in a Story's `As a {persona}` line or persona-reference section – counts as a touch
 
 Personas with zero touches across all artefacts within the staleness window are flagged as **unused** and should be archived or first-consulted.
 

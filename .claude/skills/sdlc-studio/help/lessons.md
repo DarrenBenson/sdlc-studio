@@ -11,7 +11,7 @@ wave start and inject the entries into every Agent Prompt Template
 as a `## Known Pitfalls on This Project` section.
 
 The file is never committed (`.local/` is gitignored). That is the
-**per-project tier** — transient failure memory for agentic waves.
+**per-project tier** – transient failure memory for agentic waves.
 
 There is also a **cross-project tier**: the skill's own `lessons/` folder
 (`~/.claude/skills/sdlc-studio/lessons/`), carrying *generalisable*
@@ -19,7 +19,7 @@ engineering/process lessons that improve decisions on ANY project (it ships
 with the skill). **Recall** relevant ones before substantive decisions;
 **promote** a project lesson there only once it clearly generalises. A
 project-specific *fact* (a config path, an incident, a box name) is **memory**,
-not a lesson — keep those in the project's memory store.
+not a lesson – keep those in the project's memory store.
 
 ## Quick Reference
 
@@ -115,7 +115,7 @@ Four hook points, detailed in
 
 ## Cross-project lessons (`recall` / `add --global`)
 
-The skill's `lessons/` folder is a curated, durable knowledge base — see
+The skill's `lessons/` folder is a curated, durable knowledge base – see
 `lessons/_index.md` and `lessons/_template.md`.
 
 ### recall

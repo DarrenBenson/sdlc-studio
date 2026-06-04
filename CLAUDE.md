@@ -69,7 +69,7 @@ Manual verification:
 
 When modifying the skill:
 
-- **SKILL.md:** Main entry point (currently 584 lines). Delegate workflow detail to `reference-*.md` rather than inline it.
+- **SKILL.md:** Main entry point (currently 651 lines). Delegate workflow detail to `reference-*.md` rather than inline it.
 - **New commands:** Add help file to `help/`, update SKILL.md tables
 - **New templates:** Add to `templates/`, update See Also section
 - **Workflows:** Update relevant `reference*.md` file

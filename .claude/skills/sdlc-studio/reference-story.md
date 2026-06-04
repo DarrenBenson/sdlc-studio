@@ -607,10 +607,10 @@ A story whose `affects_production_runtime` field is `true` must declare a **roll
 
 - **Reversal must be concrete.** "Roll back the change" is not a reversal; "`docker compose -f ... up -d --image=ghcr.io/...:<prior-version>`" is.
 - **Reversal must be tested or trivially obviously-correct.** A reversal that has never been exercised is a hope, not a plan. For migrations, the reversal must include the down-migration and a sample of test data validating it.
-- **Expected time must include verification.** Not just "1 min to flip the flag" — "1 min to flip + 2 min to confirm the dependent service recovered = 3 min".
+- **Expected time must include verification.** Not just "1 min to flip the flag" – "1 min to flip + 2 min to confirm the dependent service recovered = 3 min".
 - **One row per affected component.** If the story affects three components, three rows.
 
-If `affects_production_runtime: false`, the story may either omit the section or include a one-liner: *"Not applicable — story does not change runtime behaviour."* The Ready validation accepts either.
+If `affects_production_runtime: false`, the story may either omit the section or include a one-liner: *"Not applicable – story does not change runtime behaviour."* The Ready validation accepts either.
 
 See `reference-deploy-readiness.md#auto-rollback-on-smoke-fail` for the script-level rollback contract; the story-level rollback envelope describes the *manual* reversal for changes that survive smoke and only manifest later.
 
@@ -629,7 +629,7 @@ Each AC carries a `Verification target:` field declaring the lowest tier of evid
 
 Notes:
 
-- An AC with target `functional` must NOT be marked verified by smoke alone — the tier vocabulary is for graded **fix-claims**, not deploy-handshake claims.
+- An AC with target `functional` must NOT be marked verified by smoke alone – the tier vocabulary is for graded **fix-claims**, not deploy-handshake claims.
 - An AC's target may be **escalated** during implementation if implementation reveals a hidden state-management or load-time concern. Escalating is fine; quietly downgrading the target to fit the test you happened to write is not.
 - `/sdlc-studio code verify` reads the `Verification target:` and reports the highest tier it has evidence for. If the achieved tier is below the target, the story stays In Progress until the gap is closed.
 

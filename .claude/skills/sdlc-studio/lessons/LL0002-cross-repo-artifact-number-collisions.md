@@ -6,7 +6,7 @@ added: 2026-06-03
 origin: two repos sharing a single CR/RFC numbering namespace
 ---
 
-**Lesson.** When two repos share an artifact namespace (e.g. both file bridge CRs), two agents grab the same number concurrently. Before assigning a number, `git fetch` and check the highest on **`origin/main`** — not just the local tree, which may be days stale. On collision, renumber the **unshipped / lower-priority** side, and compare the *contracts* (field names, endpoints), not just the numbers — a same-numbered consumer artifact can diverge from what the producer ships.
+**Lesson.** When two repos share an artifact namespace (e.g. both file bridge CRs), two agents grab the same number concurrently. Before assigning a number, `git fetch` and check the highest on **`origin/main`** – not just the local tree, which may be days stale. On collision, renumber the **unshipped / lower-priority** side, and compare the *contracts* (field names, endpoints), not just the numbers – a same-numbered consumer artifact can diverge from what the producer ships.
 
 **Why / what it cost.** A blind local count produced colliding CR numbers across repos; the deeper risk was a consumer CR's shape silently diverging from the shipped producer API.
 

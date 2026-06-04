@@ -2,23 +2,23 @@
 
 <!-- Load when: writing or reviewing a deploy script, debugging a deploy that fails post-rollout, planning a release-gate checklist that includes a smoke pass, or designing a healthcheck contract for a new service -->
 
-Patterns for making post-deploy verification reliable. Every pattern below is generic — it applies regardless of language, platform, or whether the project uses Docker, systemd, Kubernetes, or bare process management. The only assumption is that the project has *something* the deploy script calls "smoke" — a post-rollout functional verification.
+Patterns for making post-deploy verification reliable. Every pattern below is generic – it applies regardless of language, platform, or whether the project uses Docker, systemd, Kubernetes, or bare process management. The only assumption is that the project has *something* the deploy script calls "smoke" – a post-rollout functional verification.
 
 The patterns are written down because they are the failures that occur **silently** if you don't think about them in advance. By the time the operator notices, the deploy has half-rolled-out, smoke is timing out, and the rollback path is being exercised under pressure rather than in calm.
 
 Companion files:
 
-- `reference-test-best-practices.md#verification-depth-tiers` — the depth vocabulary the smoke pass produces evidence at
-- `templates/workflows/release-gate.md` — the checklist that operationalises this file
-- `reference-operator-heuristics.md` — incident-response patterns for when smoke fails post-deploy
+- `reference-test-best-practices.md#verification-depth-tiers` – the depth vocabulary the smoke pass produces evidence at
+- `templates/workflows/release-gate.md` – the checklist that operationalises this file
+- `reference-operator-heuristics.md` – incident-response patterns for when smoke fails post-deploy
 
 ---
 
 ## Cold-Spawn Pre-Warm {#cold-spawn-pre-warm}
 
-**Pattern:** When the slowest path's cold-start time approaches the smoke budget, the smoke pass becomes a lottery. The fix is to **pre-warm** the cold path before triggering smoke — either via the deploy script or as an explicit pre-deploy step.
+**Pattern:** When the slowest path's cold-start time approaches the smoke budget, the smoke pass becomes a lottery. The fix is to **pre-warm** the cold path before triggering smoke – either via the deploy script or as an explicit pre-deploy step.
 
-**Class of incident:** A multi-service deploy contains a heterogeneous mix of workloads. Most services warm in 1–5 seconds. One service (a CLI-spawning agent, a JIT-compiled language runtime, a model-loading inference path) takes 60–90 seconds cold. The smoke budget is set to 90 seconds because that's "enough for normal traffic". Every deploy then gets unlucky — the cold path lands within milliseconds of the timeout. Smoke fails, auto-rollback fires, the deploy reverts. The next deploy attempt fares the same way. The operator concludes "the deploy is broken" when the actual problem is a smoke budget that doesn't account for cold-spawn variance.
+**Class of incident:** A multi-service deploy contains a heterogeneous mix of workloads. Most services warm in 1–5 seconds. One service (a CLI-spawning agent, a JIT-compiled language runtime, a model-loading inference path) takes 60–90 seconds cold. The smoke budget is set to 90 seconds because that's "enough for normal traffic". Every deploy then gets unlucky – the cold path lands within milliseconds of the timeout. Smoke fails, auto-rollback fires, the deploy reverts. The next deploy attempt fares the same way. The operator concludes "the deploy is broken" when the actual problem is a smoke budget that doesn't account for cold-spawn variance.
 
 **Detection rubric:**
 
@@ -32,7 +32,7 @@ The threshold is 60% because variance compounds: a target that runs at 60% of bu
 **How to apply:**
 
 1. Identify cold-spawn-sensitive targets via the rubric above. Maintain the list in deploy-script config or in `sdlc-studio/.local/deploy-targets.json`.
-2. **Pre-warm before deploy.** Before pulling the new image / rolling the systemd unit / restarting the process, send the cold-spawn-sensitive target a benign request that exercises its slow path. The next request — the smoke ping post-deploy — hits a warm runtime.
+2. **Pre-warm before deploy.** Before pulling the new image / rolling the systemd unit / restarting the process, send the cold-spawn-sensitive target a benign request that exercises its slow path. The next request – the smoke ping post-deploy – hits a warm runtime.
 3. **Or auto-pre-warm in the deploy script.** Detect the target on the rolling-timing list and emit a pre-warm request as the first step of the rollout, *not* the smoke pass.
 4. **Or extend the smoke budget for that one target.** Per-target budgets beat single-budget-for-all. This is the simplest mitigation when pre-warm isn't feasible (e.g. the cold-spawn IS the path being smoke-tested).
 
@@ -50,7 +50,7 @@ The threshold is 60% because variance compounds: a target that runs at 60% of bu
 
 1. **Per-target budgets, not single shared budget.** Each smoke target has its own deadline based on its own observed worst-case. Sum them for the total budget; don't compute the total first.
 2. **Multiplier of 1.5 above worst-case.** The 0.5× headroom is for the variance that happens between the last measurement and the next deploy. If you observe 60s worst-case, set the budget at 90s. If you observe 4s worst-case, set it at 6s.
-3. **Refresh worst-case after every deploy.** A target whose worst-case grew last deploy needs its budget grown next deploy. Treat "smoke budget never changes" as drift — refresh the rolling-worst-case on every successful deploy.
+3. **Refresh worst-case after every deploy.** A target whose worst-case grew last deploy needs its budget grown next deploy. Treat "smoke budget never changes" as drift – refresh the rolling-worst-case on every successful deploy.
 
 **Anti-pattern:** Sizing the budget to the *current target* of latency rather than *observed* latency. "It should be 5s, so let's give it 7." If it's actually 12s today, the deploy fails and the ambition was wrong. Size to reality, then improve reality separately.
 
@@ -73,7 +73,7 @@ The deploy script must:
 
 The deploy script's contract: when control returns to the operator, the system is either (a) running the new version with smoke green, or (b) running the previous version with smoke green. There is no third state where the system is running the new version with smoke red.
 
-**Override:** `--skip-smoke` (or equivalent) for emergency-fix scenarios where the operator accepts the risk explicitly. The flag must be loud — log a warning, print a banner, write to incident log.
+**Override:** `--skip-smoke` (or equivalent) for emergency-fix scenarios where the operator accepts the risk explicitly. The flag must be loud – log a warning, print a banner, write to incident log.
 
 **Anti-pattern:** "We'll roll back manually if smoke fails." Manual rollback under incident pressure is slower, more error-prone, and may forget the pre-deploy state. Automate it.
 
@@ -88,9 +88,9 @@ The deploy script's contract: when control returns to the operator, the system i
 **How to apply:**
 
 1. **Health endpoint contract.** The deployed component must expose a `/health` (or equivalent) endpoint that reports at least:
-   - `version` — the version actually running, not the version intended.
-   - `state` — one of `starting | ready | degraded | failed`.
-   - `dependencies` — one row per upstream the component needs (DB, cache, downstream service), with state per row.
+   - `version` – the version actually running, not the version intended.
+   - `state` – one of `starting | ready | degraded | failed`.
+   - `dependencies` – one row per upstream the component needs (DB, cache, downstream service), with state per row.
 2. **Readiness wait protocol.** After rollout, poll the health endpoint at 1–2 second intervals. Wait until: (a) version equals the deployed version, AND (b) state is `ready`. If either is wrong after `readiness_timeout` (default 60s), abort and roll back.
 3. **Only after readiness is confirmed**, fire smoke. The smoke budget starts now.
 
@@ -100,7 +100,7 @@ The deploy script's contract: when control returns to the operator, the system i
 
 ## Smoke Targets and Coverage {#smoke-coverage}
 
-**Pattern:** Smoke must exercise every functional path the deploy could affect — per-agent, per-channel, per-adapter. Not just liveness.
+**Pattern:** Smoke must exercise every functional path the deploy could affect – per-agent, per-channel, per-adapter. Not just liveness.
 
 A health-endpoint 200 says only "the process started." It says nothing about whether traffic actually flows through any specific path. If the deploy broke the path that calls `/v1/foo` for agent X, but you only smoke `/health`, the deploy proceeds and the breakage hits real users.
 
@@ -147,8 +147,8 @@ This pairs with the verification-depth `soak` tier and the `staged-rollout` rele
 
 ## See Also
 
-- `reference-test-best-practices.md#verification-depth-tiers` — the tier vocabulary; smoke is functional-tier evidence
-- `reference-test-best-practices.md#test-timeout-tuning` — tuning timeouts for smoke targets uses the same measure-CI-variance discipline
-- `reference-decisions.md#release-strategy-decision` — when to choose `staged-rollout` (which makes the soak window mandatory)
-- `reference-operator-heuristics.md#silent-cli-localisation` — when smoke catches a path-level failure, this is the localisation pattern
-- `templates/workflows/release-gate.md` — the release-gate checklist that aggregates these patterns
+- `reference-test-best-practices.md#verification-depth-tiers` – the tier vocabulary; smoke is functional-tier evidence
+- `reference-test-best-practices.md#test-timeout-tuning` – tuning timeouts for smoke targets uses the same measure-CI-variance discipline
+- `reference-decisions.md#release-strategy-decision` – when to choose `staged-rollout` (which makes the soak window mandatory)
+- `reference-operator-heuristics.md#silent-cli-localisation` – when smoke catches a path-level failure, this is the localisation pattern
+- `templates/workflows/release-gate.md` – the release-gate checklist that aggregates these patterns

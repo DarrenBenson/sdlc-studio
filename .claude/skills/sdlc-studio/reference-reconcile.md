@@ -54,12 +54,12 @@ e) RFCs (if sdlc-studio/rfcs/ exists):
 
 Compare ground truth against indexes and cross-references. Collect all discrepancies into a change list.
 
-> **Census, not just compare (see [[LL0001]] — applies to EVERY indexed type: stories, epics, plans, test-specs, bugs, CRs, RFCs).** Rebuild each index from the on-disk file census and detect **three** drift classes, not just status mismatches:
-> 1. **Status mismatch** — file `> **Status:**` ≠ the index-table row.
-> 2. **Missing row** — a file exists on disk with **no** index-table row (a silent under-count; e.g. CR/bug files numbered past the last table row). Add the row.
-> 3. **Orphan row** — an index row with no backing file on disk. Flag (and remove if confirmed).
+> **Census, not just compare (see [[LL0001]] – applies to EVERY indexed type: stories, epics, plans, test-specs, bugs, CRs, RFCs).** Rebuild each index from the on-disk file census and detect **three** drift classes, not just status mismatches:
+> 1. **Status mismatch** – file `> **Status:**` ≠ the index-table row.
+> 2. **Missing row** – a file exists on disk with **no** index-table row (a silent under-count; e.g. CR/bug files numbered past the last table row). Add the row.
+> 3. **Orphan row** – an index row with no backing file on disk. Flag (and remove if confirmed).
 >
-> Recompute every Summary count **from the file census**, never by incrementing the existing (possibly-drifted) totals. A "count looks right" check is insufficient — enumerate the files.
+> Recompute every Summary count **from the file census**, never by incrementing the existing (possibly-drifted) totals. A "count looks right" check is insufficient – enumerate the files.
 
 ```text
 a) Story index drift:
@@ -134,7 +134,7 @@ h) Numeric-claim drift in prose docs {#numeric-claim-drift}:
      - Default behaviour: REPORT ONLY. Auto-fix requires explicit
        --fix-counts because a numeric claim in prose may be
        intentionally historical (e.g. "was 1732 at launch").
-     - Prose drift (wording, not numbers) is NEVER auto-fixed — it
+     - Prose drift (wording, not numbers) is NEVER auto-fixed – it
        requires human judgment.
 
    Scope keeper: only NUMERIC claims adjacent to the listed keywords
@@ -253,16 +253,16 @@ When `--scope` is specified, only run the relevant subset of Phase 2 and Phase 3
 
 ## Cadence Triggers {#cadence-triggers}
 
-Drift is silent — by the time it shows up in a status dashboard or a review, it has usually accumulated through several un-reconciled events. These events are the **natural cadence triggers** that should prompt a reconcile pass:
+Drift is silent – by the time it shows up in a status dashboard or a review, it has usually accumulated through several un-reconciled events. These events are the **natural cadence triggers** that should prompt a reconcile pass:
 
 | Trigger | Why |
 | --- | --- |
 | **Epic close** (`Status → Done`) | The epic-close moment is when story / dependency / index drift accumulates fastest. Always reconcile after closing an epic. |
-| **Ship event** (tagged release / merge to main / deploy) | A ship is the highest-stakes drift moment — code on disk has just diverged from spec on disk. Reconcile after every ship. |
+| **Ship event** (tagged release / merge to main / deploy) | A ship is the highest-stakes drift moment – code on disk has just diverged from spec on disk. Reconcile after every ship. |
 | **CR `action`** (CR → Epic+Stories generation) | CR action creates new epics and stories; the index update on the CR side and the epic / story side can fall out of sync. Reconcile after CR action. |
 | **More than 7 days since last reconcile** | If no other trigger fired but the calendar has rolled forward, drift has compounded silently. Recommend reconcile. |
 
-`/sdlc-studio status` reads `.local/reconcile-state.json` to detect when one of these triggers fired and emits a **"Reconcile recommended because…"** line. The line is advisory; the operator decides when to act. Reconcile itself is cheap — running it more often than needed is harmless. The cost of skipping a recommended reconcile is silent drift that surfaces later as a review finding or, worse, an inconsistent ship.
+`/sdlc-studio status` reads `.local/reconcile-state.json` to detect when one of these triggers fired and emits a **"Reconcile recommended because…"** line. The line is advisory; the operator decides when to act. Reconcile itself is cheap – running it more often than needed is harmless. The cost of skipping a recommended reconcile is silent drift that surfaces later as a review finding or, worse, an inconsistent ship.
 
 `reconcile-state.json` schema:
 

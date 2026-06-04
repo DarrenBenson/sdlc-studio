@@ -10,11 +10,11 @@ Superseded / Withdrawn` (see `reference-outputs.md`).
 
 ## When to use an RFC vs a CR vs an ADR
 
-- **RFC** — the design is unsettled: ≥2 viable options, ≥1 open decision, or
+- **RFC** – the design is unsettled: ≥2 viable options, ≥1 open decision, or
   cross-cutting/cross-repo impact that must be agreed before committing. The RFC
   is the place options are weighed and decisions are recorded.
-- **CR** — the change is already clear; propose it and action it into epics.
-- **ADR** (in the TRD) — a decision already made; records context + consequences.
+- **CR** – the change is already clear; propose it and action it into epics.
+- **ADR** (in the TRD) – a decision already made; records context + consequences.
   When an RFC is accepted, record the resulting decision as an ADR in the TRD.
 
 If you find yourself writing "Option A vs Option B" or "open question / TBD" in a
@@ -54,7 +54,7 @@ Use when the Open Decisions are resolved.
 1. Validate status is Draft or In Review and **no Open Decision row is still Open**
    (resolve or explicitly defer-with-reason first).
 2. Fill the **Decision** section: chosen option(s) + rationale.
-3. **Spawn the workstream CRs** — for each WS row, create a CR (`reference-cr.md`)
+3. **Spawn the workstream CRs** – for each WS row, create a CR (`reference-cr.md`)
    that references this RFC in its header (`> **RFC:** RFC-{{id}}`) and carries the
    workstream's scope. Cross-repo RFCs spawn CRs in each affected repo; confirm next
    free numbers on `origin/main` per repo.
@@ -67,9 +67,9 @@ Use when the Open Decisions are resolved.
 > reference. Don't delete or archive it.
 
 ## close
-- **Superseded** — a later RFC replaces it. Set status, point to the replacement in
+- **Superseded** – a later RFC replaces it. Set status, point to the replacement in
   "Supersedes / Superseded by", note in Revision History.
-- **Withdrawn** — not pursued. Set status, record why in the Decision section.
+- **Withdrawn** – not pursued. Set status, record why in the Decision section.
 Update the index either way.
 
 ## Reconcile

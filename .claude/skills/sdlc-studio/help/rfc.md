@@ -4,16 +4,16 @@ Dependencies: SKILL.md (always loaded first)
 Related: reference-rfc.md (deep workflow), templates/core/rfc.md
 -->
 
-# /sdlc-studio rfc — Design Exploration (Request For Comments)
+# /sdlc-studio rfc – Design Exploration (Request For Comments)
 
-> **Source of truth:** `reference-rfc.md` — detailed workflow steps.
+> **Source of truth:** `reference-rfc.md` – detailed workflow steps.
 
-An **RFC** captures an *unsettled* design space — multiple viable options and open
-decisions — and drives it to a decision. It sits **before** a CR:
+An **RFC** captures an *unsettled* design space – multiple viable options and open
+decisions – and drives it to a decision. It sits **before** a CR:
 
 | Artifact | When | Shape |
 | --- | --- | --- |
-| **RFC** | Design is unsettled — options + open decisions, often cross-repo | Explore → decide |
+| **RFC** | Design is unsettled – options + open decisions, often cross-repo | Explore → decide |
 | **CR** | The change is already clear | Propose → action into epics |
 | **ADR** (TRD §) | A decision already made | Record context + consequences |
 
@@ -43,7 +43,7 @@ List RFCs; filter `--status {draft|in-review|accepted|superseded|withdrawn}`, `-
 Flag RFCs needing attention: Draft/In Review older than ~14 days with no movement; Open Decisions unresolved > 7 days; Accepted RFCs whose spawned CRs don't exist / aren't linked back.
 
 ### accept
-Promote an RFC whose Open Decisions are resolved: fill the **Decision** section (chosen option + rationale), set status **Accepted**, and **spawn the workstream CRs** (one per WS row) cross-linked back to the RFC. Cross-repo RFCs spawn CRs in each repo — confirm next free numbers against `origin/main` first (see `reference-cr.md`).
+Promote an RFC whose Open Decisions are resolved: fill the **Decision** section (chosen option + rationale), set status **Accepted**, and **spawn the workstream CRs** (one per WS row) cross-linked back to the RFC. Cross-repo RFCs spawn CRs in each repo – confirm next free numbers against `origin/main` first (see `reference-cr.md`).
 
 ### close
 Set **Superseded** (point to the replacing RFC) or **Withdrawn** (record why). Update the index.
@@ -64,7 +64,7 @@ Draft → In Review → Accepted ──(spawns)──▶ CRs → Epics → Stori
 
 ## See Also
 
-- `reference-rfc.md` — workflow detail (REQUIRED for this workflow)
-- `/sdlc-studio cr help` — the promotion target
-- `/sdlc-studio trd help` — architecture context; record the final decision as an ADR in the TRD
-- `/sdlc-studio consult team` — Three Amigos (+ live-fleet) review of design options before `accept`
+- `reference-rfc.md` – workflow detail (REQUIRED for this workflow)
+- `/sdlc-studio cr help` – the promotion target
+- `/sdlc-studio trd help` – architecture context; record the final decision as an ADR in the TRD
+- `/sdlc-studio consult team` – Three Amigos (+ live-fleet) review of design options before `accept`

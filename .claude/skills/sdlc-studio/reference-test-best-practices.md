@@ -63,7 +63,7 @@ When a test fails on a timeout, the temptation is to bump the timeout. Doing so 
    it('audit log is bounded to 1000 events on disk', { timeout: 30_000 }, async () => {
    ```
 
-The comment is non-negotiable. Without it, the next person to see the timeout will either re-bump it (compounding the workaround) or rip it out as "magic number" — and neither has any evidence to argue with.
+The comment is non-negotiable. Without it, the next person to see the timeout will either re-bump it (compounding the workaround) or rip it out as "magic number" – and neither has any evidence to argue with.
 
 ## Anti-patterns {#timeout-anti-patterns}
 
@@ -74,9 +74,9 @@ The comment is non-negotiable. Without it, the next person to see the timeout wi
 
 ## When the bump is legitimate {#timeout-bump-legitimate}
 
-Bumping a timeout is the right call when measurement shows the test does real, expected work that takes that long under realistic conditions — for example, sequential disk writes whose count is intentionally large, network round-trips whose latency is bounded by an external service, or warm-up flows that exercise the cold-start path on purpose. In these cases the timeout is part of the test's specification of expected runtime and the comment should explain why the lower bound exists.
+Bumping a timeout is the right call when measurement shows the test does real, expected work that takes that long under realistic conditions – for example, sequential disk writes whose count is intentionally large, network round-trips whose latency is bounded by an external service, or warm-up flows that exercise the cold-start path on purpose. In these cases the timeout is part of the test's specification of expected runtime and the comment should explain why the lower bound exists.
 
-If measurement shows the test is taking longer than it *should* be — that is a regression, not a flake. File a bug or an investigation note rather than masking it with a timeout bump.
+If measurement shows the test is taking longer than it *should* be – that is a regression, not a flake. File a bug or an investigation note rather than masking it with a timeout bump.
 
 ---
 

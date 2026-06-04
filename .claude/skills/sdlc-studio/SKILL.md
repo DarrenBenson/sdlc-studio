@@ -23,7 +23,7 @@ Manage project specifications and test artifacts. Supports the full pipeline fro
 
 **Generate mode is NOT documentation.** It produces a **migration blueprint** - a specification detailed enough that another team could rebuild the system in a different technology stack. Generated specs MUST be validated by running tests against the existing implementation.
 
-> **Operating Doctrine — onboarding to a project? Read `reference-doctrine.md` first.** It is the project-*agnostic* working discipline (the skill is the operating system; RFC/CR/ADR choice; files-are-truth + reconcile-from-census; reconcile/verify/review cadence; ship-paperwork-in-the-same-commit; consult gates; TDD; cross-repo numbering; **recall cross-project `lessons/` before substantive decisions**). A project's own `CLAUDE.md` = this doctrine + that project's specifics. The cross-project lessons-learned folder is `lessons/` (see `help/lessons.md`).
+> **Operating Doctrine – onboarding to a project? Read `reference-doctrine.md` first.** It is the project-*agnostic* working discipline (the skill is the operating system; RFC/CR/ADR choice; files-are-truth + reconcile-from-census; reconcile/verify/review cadence; ship-paperwork-in-the-same-commit; consult gates; TDD; cross-repo numbering; **recall cross-project `lessons/` before substantive decisions**). A project's own `CLAUDE.md` = this doctrine + that project's specifics. The cross-project lessons-learned folder is `lessons/` (see `help/lessons.md`).
 
 ## Quick Start
 
@@ -238,7 +238,7 @@ approach decisions.
 | `test-env` | Containerised test environment setup |
 | `bug` | Bug tracking and traceability |
 | `cr` | Change requests (post-PRD change proposals) |
-| `rfc` | Request For Comments — design exploration of an unsettled space, pre-CR |
+| `rfc` | Request For Comments – design exploration of an unsettled space, pre-CR |
 | `project` | Project-level orchestration across all epics |
 | `reconcile` | Detect and fix status drift across all artifacts |
 | `status` | Visual dashboard: Requirements, Code, Tests health |
@@ -360,7 +360,7 @@ approach decisions.
 | Command | Description |
 | --- | --- |
 | `/sdlc-studio rfc` | Ask what to do (create, list, review, accept, close) |
-| `/sdlc-studio rfc create` | Draft a new RFC (unsettled design — options + open decisions) |
+| `/sdlc-studio rfc create` | Draft a new RFC (unsettled design – options + open decisions) |
 | `/sdlc-studio rfc list` | List RFCs (filter `--status`, `--priority`, `--author`) |
 | `/sdlc-studio rfc review` | Flag stalled RFCs + unresolved open decisions |
 | `/sdlc-studio rfc accept --rfc RFC-0001` | Record the decision + spawn/link the workstream CRs |

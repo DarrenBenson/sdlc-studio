@@ -4,7 +4,7 @@ File: sdlc-studio/rfcs/_index.md
 Status values: See reference-outputs.md
 Related: help/rfc.md, reference-rfc.md
 -->
-# RFC Registry — Design Exploration
+# RFC Registry – Design Exploration
 
 **Last Updated:** {{last_updated}}
 **TRD Reference:** [Technical Requirements Document](../trd.md)
@@ -30,6 +30,6 @@ Related: help/rfc.md, reference-rfc.md
 
 - An RFC explores an **unsettled** design space (multiple options, open decisions) BEFORE a CR commits a change. Use a CR directly when the change is already clear.
 - Lifecycle: **Draft → In Review → Accepted** (then spawns CRs). Terminal: **Superseded / Withdrawn**.
-- An **Accepted** RFC is not "done" — it stays the living design home its CRs reference.
+- An **Accepted** RFC is not "done" – it stays the living design home its CRs reference.
 - RFCs are numbered globally (RFC-0001, RFC-0002, …). Cross-repo: confirm the next free number against `origin/main` before filing.
 - Promote with `/sdlc-studio rfc accept --rfc RFC-NNNN` (records the decision + spawns/links the workstream CRs).

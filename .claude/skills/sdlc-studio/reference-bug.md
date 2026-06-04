@@ -176,7 +176,7 @@ Quick happy path: verify fix and close in one step.
    - [ ] Regression tests pass
    - [ ] No side effects observed
    - [ ] Documentation updated (if applicable)
-   - [ ] Verification depth recorded (`smoke` / `functional` / `conversational` / `soak` / `live`) — see `reference-test-best-practices.md#verification-depth-tiers`
+   - [ ] Verification depth recorded (`smoke` / `functional` / `conversational` / `soak` / `live`) – see `reference-test-best-practices.md#verification-depth-tiers`
 
 5. **Update Bug Report**
    - Check off verification items

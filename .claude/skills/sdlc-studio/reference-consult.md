@@ -263,7 +263,7 @@ Get feedback from both Team and Stakeholder personas.
 
 ## Multi-Persona Pressure-Test Canvas {#pressure-test-canvas}
 
-When the design space is unsettled and the operator has multiple plausible options, a single-persona consult is the wrong tool — the persona will pick *one* of the options and argue for it, but the operator already has multiple voices in their head and needs to know which one converges. Use a **pressure-test canvas** instead.
+When the design space is unsettled and the operator has multiple plausible options, a single-persona consult is the wrong tool – the persona will pick *one* of the options and argue for it, but the operator already has multiple voices in their head and needs to know which one converges. Use a **pressure-test canvas** instead.
 
 ### When to trigger
 
@@ -279,7 +279,7 @@ When the design space is unsettled and the operator has multiple plausible optio
 1. **Identify the canvas members.** Pick personas that bring **different perspectives** (engineering, product, ops, security, customer-experience). Three personas is the minimum that gives convergent signal; five is the comfort point; more than seven adds noise without adding signal.
 2. **Frame the proposal as a *single, complete* artefact** before sending to anyone. Half-formed proposals get half-formed feedback. State assumptions, options considered, and the proposed choice.
 3. **Send to each canvas member in parallel** (in practice: sequential consults issued in one batch, results collected before synthesis).
-4. **Each persona answers in their own voice.** Don't pre-bias by asking "do you agree?" — ask "what would you do, and why?"
+4. **Each persona answers in their own voice.** Don't pre-bias by asking "do you agree?" – ask "what would you do, and why?"
 5. **Synthesise.** Read the *Synthesis discipline* below.
 
 ### Synthesis discipline
@@ -294,7 +294,7 @@ The point of the canvas is **convergence**, not vote-counting. A 3-of-5 majority
 | Personas split on the proposal but agree on *constraints the proposal violates* | The constraints, not the proposal, are the decision | Articulate the constraints; rewrite the proposal to satisfy them; canvas the rewrite |
 | Some personas ratify, some reject without an alternative | Inconclusive; the rejecting personas have not engaged | Re-prompt the rejectors with the specific objection |
 
-**Counter-offers more often than ratifications.** A canvas where 5/5 personas ratify the original proposal is suspicious — either the proposal is genuinely settled (in which case the canvas was unnecessary), or the personas weren't pressure-testing. If you keep getting unanimous ratifications, your canvas is rubber-stamping; widen the persona set.
+**Counter-offers more often than ratifications.** A canvas where 5/5 personas ratify the original proposal is suspicious – either the proposal is genuinely settled (in which case the canvas was unnecessary), or the personas weren't pressure-testing. If you keep getting unanimous ratifications, your canvas is rubber-stamping; widen the persona set.
 
 ### Canvas size
 
@@ -302,7 +302,7 @@ The point of the canvas is **convergence**, not vote-counting. A 3-of-5 majority
 | --- | --- |
 | Solo-dev with persona files | 3 stakeholder personas |
 | Team project | Three Amigos + 1–2 stakeholder personas (5 total) |
-| Project with live agents | 3+ stakeholder personas plus available live agents (live agents amplify the canvas — different stack, different prior, more divergent feedback) |
+| Project with live agents | 3+ stakeholder personas plus available live agents (live agents amplify the canvas – different stack, different prior, more divergent feedback) |
 | Greenfield with no personas yet | Skip the canvas; this is the wrong tool. Run a Three Amigos consult instead and create stakeholder personas as the design firms up |
 
 **Live-agent amplification:** Projects whose deployed runtime *is* a multi-agent system can canvas the running agents directly via their existing chat / API surface. The agents bring divergent priors (different model families, different memory state, different prompts) which makes them a high-quality pressure test. This is an *enhancement* available to such projects; the canvas pattern itself works without it.

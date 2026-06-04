@@ -73,7 +73,7 @@ Related: help/story.md, reference-story.md
 - **Verification target:** {{ac3_verification_target}}
 - **Verified:** no
 
-> **Verification target tiers:** `functional` (single round-trip — default) | `conversational` (multi-turn / multi-step session continuity) | `soak` (live traffic over a window) | `live` (operator-confirmed in production). End-to-end ACs default to `conversational`; production-affecting ACs default to `soak`; ACs shipping behind a flag awaiting promotion default to `live`. See `reference-test-best-practices.md#verification-depth-tiers`.
+> **Verification target tiers:** `functional` (single round-trip – default) | `conversational` (multi-turn / multi-step session continuity) | `soak` (live traffic over a window) | `live` (operator-confirmed in production). End-to-end ACs default to `conversational`; production-affecting ACs default to `soak`; ACs shipping behind a flag awaiting promotion default to `live`. See `reference-test-best-practices.md#verification-depth-tiers`.
 
 ---
 
@@ -154,7 +154,7 @@ Related: help/story.md, reference-story.md
 | --- | --- | --- |
 | {{component}} | {{reversal_command_or_steps}} | {{reversal_eta}} |
 
-If `affects_production_runtime: false`, replace with: *Not applicable — story does not change runtime behaviour.*
+If `affects_production_runtime: false`, replace with: *Not applicable – story does not change runtime behaviour.*
 
 ---
 

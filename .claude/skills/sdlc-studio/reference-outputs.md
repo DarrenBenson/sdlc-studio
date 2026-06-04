@@ -150,7 +150,7 @@ Draft → In Review → Accepted ──(spawns CRs)──▶ …
 - **Any → Superseded:** replaced by a later RFC (point to it).
 - **Any → Withdrawn:** not pursued (record why).
 
-**Note:** Accepted is **not terminal** — the RFC stays the living design home its spawned CRs reference. Acceptance is a judgement call (consult-gated); the reconciler suggests but never auto-transitions.
+**Note:** Accepted is **not terminal** – the RFC stays the living design home its spawned CRs reference. Acceptance is a judgement call (consult-gated); the reconciler suggests but never auto-transitions.
 
 ### Test Spec Status Flow {#test-spec-status-flow}
 

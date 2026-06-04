@@ -57,11 +57,11 @@ If `sdlc-studio/personas/` does not exist or contains no persona files, step 4 i
 | PRD → TSD | Every NFR has a quality gate |
 | PRD → Persona | Every primary user persona referenced in PRD §1/§2 exists in `personas/` |
 | Persona → CRs / Stories | Every persona has been consulted on ≥1 CR or story within the staleness window (default 90 days; configurable via `personas.staleness_days`) |
-| Persona → Persona | No duplicate personas (same role + name) — catches stale entries left behind after rename |
+| Persona → Persona | No duplicate personas (same role + name) – catches stale entries left behind after rename |
 
 ## Output: LATEST.md
 
-Every full run writes `sdlc-studio/reviews/LATEST.md` (overwrites any prior copy) using the unified-anchor template. LATEST.md is intended as the **first read in a fresh conversation** — it carries: the headline, the four-doc status table, CR rollup, persona delta, cross-doc consistency, priority actions, production state, and links to the dated `RV{NNNN}-unified-*.md` history. Do not delete LATEST.md by hand; it is rewritten on the next review.
+Every full run writes `sdlc-studio/reviews/LATEST.md` (overwrites any prior copy) using the unified-anchor template. LATEST.md is intended as the **first read in a fresh conversation** – it carries: the headline, the four-doc status table, CR rollup, persona delta, cross-doc consistency, priority actions, production state, and links to the dated `RV{NNNN}-unified-*.md` history. Do not delete LATEST.md by hand; it is rewritten on the next review.
 
 ## Example Output
 

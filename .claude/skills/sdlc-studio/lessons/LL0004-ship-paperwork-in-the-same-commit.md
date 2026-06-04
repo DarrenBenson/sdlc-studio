@@ -6,7 +6,7 @@ added: 2026-06-03
 origin: per-ship discipline
 ---
 
-**Lesson.** When a feature ships, update its structured contract (spec feature-inventory row + detail, interface/schema tables, capability list with a `since:` version) **in the same commit as the code** — not as a follow-up. The structured tables ARE the contract; the changelog is the audit trail. Never grow `CLAUDE.md` / the project doctrine file with per-ship narrative.
+**Lesson.** When a feature ships, update its structured contract (spec feature-inventory row + detail, interface/schema tables, capability list with a `since:` version) **in the same commit as the code** – not as a follow-up. The structured tables ARE the contract; the changelog is the audit trail. Never grow `CLAUDE.md` / the project doctrine file with per-ship narrative.
 
 **Why / what it cost.** Deferred "paperwork later" is the single biggest source of index/spec drift; the narrative leaks into files meant to be stable indexes, and the spec stops describing reality.
 

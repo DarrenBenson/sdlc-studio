@@ -3,7 +3,7 @@ Template: Request For Comments (design exploration)
 File: sdlc-studio/rfcs/RFC{NNNN}-{slug}.md
 Status values: See reference-outputs.md (Draft / In Review / Accepted / Superseded / Withdrawn)
 Related: help/rfc.md, reference-rfc.md
-Use an RFC (not a CR) when the design space is UNSETTLED — multiple viable options,
+Use an RFC (not a CR) when the design space is UNSETTLED – multiple viable options,
 open decisions, or cross-cutting/cross-repo impact that must be agreed before any
 change is committed. An accepted RFC SPAWNS CRs (its workstreams); it does not
 itself get actioned into epics.
@@ -38,7 +38,7 @@ itself get actioned into epics.
 
 ## Design Options
 
-### Option A — {{option_a_title}}
+### Option A – {{option_a_title}}
 **Approach:** {{description}}
 **Pros:** {{pros}}
 **Cons:** {{cons}}
@@ -50,11 +50,11 @@ itself get actioned into epics.
 
 ## Recommendation
 
-{{leaning_with_rationale_or_"TBD — pending the Open Decisions below"}}
+{{leaning_with_rationale_or_"TBD – pending the Open Decisions below"}}
 
 ## Open Decisions
 
-> The unsettled cores — the reason this is an RFC. Each must resolve before the
+> The unsettled cores – the reason this is an RFC. Each must resolve before the
 > dependent workstream can be built. List owner + how it gets resolved (consult,
 > spike, operator call, threat model).
 
@@ -85,7 +85,7 @@ itself get actioned into epics.
 
 | WS | Workstream | Repo | Becomes | Depends on |
 | --- | --- | --- | --- | --- |
-| WS1 | {{workstream}} | {{repo}} | CR (TBD) | — |
+| WS1 | {{workstream}} | {{repo}} | CR (TBD) | – |
 
 ---
 
@@ -106,7 +106,7 @@ itself get actioned into epics.
 | RFC/CR/EP | {{id}} | {{title}} | {{status}} | parent / sibling / workstream / supersedes |
 
 > **Cross-repo note:** if this RFC spans repos (e.g. backend-api + web-client),
-> the spawned CRs are filed in BOTH and cross-referenced. Numbers are per-repo —
+> the spawned CRs are filed in BOTH and cross-referenced. Numbers are per-repo –
 > confirm the next free number against `origin/main` before filing (see
 > reference-cr.md cross-repo guard).
 

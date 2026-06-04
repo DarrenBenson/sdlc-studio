@@ -6,7 +6,7 @@ added: 2026-06-03
 origin: recurring index drift in a multi-artifact project
 ---
 
-**Lesson.** When reconciling an index against files, rebuild it from a full on-disk **census** and detect three drift classes — status mismatch, **missing row** (a file with no index row), and orphan row (a row with no file) — and recompute every Summary count from the census. Never adjust the existing (possibly-drifted) total.
+**Lesson.** When reconciling an index against files, rebuild it from a full on-disk **census** and detect three drift classes – status mismatch, **missing row** (a file with no index row), and orphan row (a row with no file) – and recompute every Summary count from the census. Never adjust the existing (possibly-drifted) total.
 
 **Why / what it cost.** Indexes repeatedly under-counted because new files were added past the last table row; "the count looks about right" hid files that had no row at all. The banner said one total, the Summary another, the disk a third.
 

@@ -8,7 +8,7 @@ Related: reference-tsd.md (status workflow details)
 
 Shows a visual dashboard of project health across three pillars: Requirements, Code, and Tests.
 
-> If `sdlc-studio/rfcs/` exists, optionally surface a one-line **Design Exploration** count under Requirements (e.g. `🧭 RFCs: 1 Draft, 0 In Review` — open design questions awaiting a decision). RFCs are pre-CR exploration and do not gate pipeline health; the line is informational only.
+> If `sdlc-studio/rfcs/` exists, optionally surface a one-line **Design Exploration** count under Requirements (e.g. `🧭 RFCs: 1 Draft, 0 In Review` – open design questions awaiting a decision). RFCs are pre-CR exploration and do not gate pipeline health; the line is informational only.
 
 ## Usage
 
@@ -347,7 +347,7 @@ When any trigger is open, status appends:
    Run: /sdlc-studio reconcile
 ```
 
-The recommendation is advisory — it doesn't block any other workflow. Reconcile is cheap and idempotent; running it more often than strictly necessary is harmless. The cost of skipping a recommended reconcile is silent drift that surfaces later as a review finding or, worse, an inconsistent ship.
+The recommendation is advisory – it doesn't block any other workflow. Reconcile is cheap and idempotent; running it more often than strictly necessary is harmless. The cost of skipping a recommended reconcile is silent drift that surfaces later as a review finding or, worse, an inconsistent ship.
 
 If `reconcile-state.json` does not exist (project hasn't yet adopted the cadence triggers), the recommendation line is suppressed and no error is emitted.
 
