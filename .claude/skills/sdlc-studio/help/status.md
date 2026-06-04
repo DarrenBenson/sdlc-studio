@@ -8,6 +8,8 @@ Related: reference-tsd.md (status workflow details)
 
 Shows a visual dashboard of project health across three pillars: Requirements, Code, and Tests.
 
+> If `sdlc-studio/rfcs/` exists, optionally surface a one-line **Design Exploration** count under Requirements (e.g. `🧭 RFCs: 1 Draft, 0 In Review` — open design questions awaiting a decision). RFCs are pre-CR exploration and do not gate pipeline health; the line is informational only.
+
 ## Usage
 
 ```bash
@@ -328,6 +330,26 @@ If issues are found, add an INTEGRITY section to the dashboard:
 ### Why this matters
 
 Without reconciliation, indexes drift over time as artifacts are created during workflows but index updates are skipped or fail. This produces misleading dashboard counts and phantom entries in status reports.
+
+## Reconcile Recommendation Line {#reconcile-recommendation}
+
+`/sdlc-studio status` reads `sdlc-studio/.local/reconcile-state.json` and emits a one-line recommendation when one or more reconcile-cadence triggers fired since the last reconcile. Triggers are defined in `reference-reconcile.md#cadence-triggers`:
+
+- Epic close (`Status → Done`)
+- Ship event (tagged release / merge to main)
+- CR `action` (CR → Epic+Stories generation)
+- More than 7 days since last reconcile
+
+When any trigger is open, status appends:
+
+```text
+ℹ️  Reconcile recommended because: epic EP0042 closed, v3.55.3 shipped (2 triggers since last reconcile)
+   Run: /sdlc-studio reconcile
+```
+
+The recommendation is advisory — it doesn't block any other workflow. Reconcile is cheap and idempotent; running it more often than strictly necessary is harmless. The cost of skipping a recommended reconcile is silent drift that surfaces later as a review finding or, worse, an inconsistent ship.
+
+If `reconcile-state.json` does not exist (project hasn't yet adopted the cadence triggers), the recommendation line is suppressed and no error is emitted.
 
 ## See Also
 

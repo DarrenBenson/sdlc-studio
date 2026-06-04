@@ -578,6 +578,61 @@ Story Quality:
 >
 > **Section-by-section guidance:** See `reference-story-sections.md` for detailed guidance on completing each section of the story template (User Story statement, Context, AC, Scope, UI/UX, Technical Notes, Edge Cases, Test Scenarios, DoD, Estimation).
 
+### Rollback envelope {#rollback-envelope}
+
+A story whose `affects_production_runtime` field is `true` must declare a **rollback envelope** before it can be marked Ready. This is the per-component reversal recipe the operator follows if the story's deploy goes wrong post-ship.
+
+**Required for** stories that ship any of:
+
+- Schema migrations (database, file format, message format)
+- Configuration changes affecting live agents / services
+- Infrastructure changes (deployment topology, dependencies, ports, network rules)
+- Feature flags whose default state is `on`
+- Public API changes
+
+**Optional for** stories that only touch:
+
+- Tests (no runtime change)
+- Documentation
+- Internal refactors with no observable behaviour change
+- Tooling / dev-only scripts
+
+**Format:**
+
+| Component | Reversal | Expected time |
+| --- | --- | --- |
+| (the affected runtime component) | (the literal command or steps to reverse) | (realistic time including verification) |
+
+**Quality criteria:**
+
+- **Reversal must be concrete.** "Roll back the change" is not a reversal; "`docker compose -f ... up -d --image=ghcr.io/...:<prior-version>`" is.
+- **Reversal must be tested or trivially obviously-correct.** A reversal that has never been exercised is a hope, not a plan. For migrations, the reversal must include the down-migration and a sample of test data validating it.
+- **Expected time must include verification.** Not just "1 min to flip the flag" — "1 min to flip + 2 min to confirm the dependent service recovered = 3 min".
+- **One row per affected component.** If the story affects three components, three rows.
+
+If `affects_production_runtime: false`, the story may either omit the section or include a one-liner: *"Not applicable — story does not change runtime behaviour."* The Ready validation accepts either.
+
+See `reference-deploy-readiness.md#auto-rollback-on-smoke-fail` for the script-level rollback contract; the story-level rollback envelope describes the *manual* reversal for changes that survive smoke and only manifest later.
+
+---
+
+### Verification target per AC {#ac-verification-target}
+
+Each AC carries a `Verification target:` field declaring the lowest tier of evidence sufficient to mark the AC verified. Tiers are defined in `reference-test-best-practices.md#verification-depth-tiers`.
+
+| Tier | Default for | Why |
+|---|---|---|
+| `functional` | Most AC | Single round-trip is enough for behaviour the AC isolates |
+| `conversational` | End-to-end / multi-step AC | "AC retains state across N interactions" cannot be proved in one call |
+| `soak` | Production-affecting AC | "AC behaves under load over time" needs a window, not a sample |
+| `live` | AC shipping behind a flag awaiting promotion | AC isn't actually verified until the flag is fully on |
+
+Notes:
+
+- An AC with target `functional` must NOT be marked verified by smoke alone — the tier vocabulary is for graded **fix-claims**, not deploy-handshake claims.
+- An AC's target may be **escalated** during implementation if implementation reveals a hidden state-management or load-time concern. Escalating is fine; quietly downgrading the target to fit the test you happened to write is not.
+- `/sdlc-studio code verify` reads the `Verification target:` and reports the highest tier it has evidence for. If the achieved tier is below the target, the story stays In Progress until the gap is closed.
+
 ---
 
 ## Workflow Commands

@@ -40,6 +40,8 @@ Related: All help/*.md files for type-specific help
 /sdlc-studio test-automation help    # Test automation help
 /sdlc-studio bug help                # Bug tracking help
 /sdlc-studio cr help                 # Change request help
+/sdlc-studio rfc help                # RFC / design exploration help
+/sdlc-studio lessons help            # Cross-project lessons-learned help
 /sdlc-studio status help             # Pipeline status help
 /sdlc-studio hint help               # Next step suggestion help
 ```
@@ -84,6 +86,24 @@ Related: All help/*.md files for type-specific help
 | `/sdlc-studio cr action --cr CR-0001` | Turn CR into epics and stories |
 | `/sdlc-studio cr review` | Review CR statuses against implementation |
 | `/sdlc-studio cr close --cr CR-0001` | Complete, reject, or defer a CR |
+
+### Design Exploration (RFC)
+
+| Command | Description |
+| --- | --- |
+| `/sdlc-studio rfc` | Ask what to do (create, list, review, accept, close) |
+| `/sdlc-studio rfc create` | Draft an RFC for an unsettled design (options + open decisions) |
+| `/sdlc-studio rfc list` | List RFCs (--status, --priority, --author) |
+| `/sdlc-studio rfc accept --rfc RFC-0001` | Record the decision + spawn/link the workstream CRs |
+| `/sdlc-studio rfc close --rfc RFC-0001` | Supersede or withdraw an RFC |
+
+### Lessons (cross-project)
+
+| Command | Description |
+| --- | --- |
+| `/sdlc-studio lessons recall` | Surface relevant cross-project lessons before a decision |
+| `/sdlc-studio lessons add --global` | Promote a generalisable lesson to the skill's `lessons/` |
+| `/sdlc-studio lessons list` | Per-project agentic-wave lessons (`.local/lessons.md`) |
 
 ### Development Pipeline
 
@@ -143,6 +163,9 @@ sdlc-studio/
   change-requests/
     _index.md                 # CR registry
     CR0001-*.md               # Change requests
+  rfcs/
+    _index.md                 # RFC registry
+    RFC0001-*.md              # Design-exploration RFCs (pre-CR)
   test-specs/
     _index.md                 # Spec registry
     TS0001-*.md               # Test Specifications

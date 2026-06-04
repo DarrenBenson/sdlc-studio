@@ -5,6 +5,69 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-06-05
+
+Field-tested patterns from real-world use, generalised and folded back
+into the skill. This release adds a design-exploration artifact type,
+an operating doctrine for onboarding, a cross-project lessons registry,
+and hardening of the reconcile, review, and release workflows. The
+v1.6.0 Python helper scripts are unchanged.
+
+### Added
+
+- **RFC artifact type** (`/sdlc-studio rfc`): a first-class artifact for
+  exploring an unsettled design space *before* committing to a CR.
+  Lifecycle: create, list, review, accept (spawns CRs), close
+  (supersede/withdraw). Ships with `reference-rfc.md`, `help/rfc.md`, and
+  `templates/core/rfc.md` + `templates/indexes/rfc.md`. RFCs share the
+  cross-repo numbering guard with CRs.
+- **Operating doctrine** (`reference-doctrine.md`): a project-agnostic
+  manual for onboarding a Claude to any sdlc-studio project - the skill as
+  an OS, the RFC/CR/ADR decision matrix, files-as-truth and reconcile
+  discipline, review cadence, consult gates, TDD default, paperwork in the
+  same commit, lessons recall, and cross-repo numbering. Surfaced from
+  `/sdlc-studio init`.
+- **Cross-project lessons registry** (`lessons/`): a release-curated set of
+  generalisable engineering/process lessons (seeded with six) that any
+  project can recall before substantive decisions, distinct from a
+  project's own transient `.local/lessons.md`. Recall and promote hooks
+  documented in `help/lessons.md` and `reference-agentic-lessons.md`.
+- **Operator heuristics** (`reference-operator-heuristics.md`): cross-cutting
+  patterns for running a live service alongside development - hypothesis
+  discipline, memory-entry drift, silent-CLI/proxy failure localisation,
+  bug-title framing, external-layer-first diagnosis, post-release briefing,
+  and adversarial review as a release gate.
+- **Deploy readiness patterns** (`reference-deploy-readiness.md`): platform-
+  agnostic post-deploy verification - cold-spawn pre-warm, smoke budget
+  sizing, auto-rollback on smoke fail, readiness-wait protocol, and soak
+  windows.
+- **Plan-file lifecycle** (`reference-plan-files.md`): conventions for
+  Claude Code plan files (`~/.claude/plans/`) - active vs archived layout,
+  listing, archiving, and anti-patterns.
+- **Persona review**: `/sdlc-studio review` now reviews personas (staleness
+  map, PRD/CR cross-checks, self-consistency), scans `sdlc-studio/rfcs/`,
+  supports `--skip-personas`, and writes a unified `reviews/LATEST.md`
+  first-read anchor (`templates/reviews/unified-anchor.md`).
+- **Reconcile census + cadence**: reconcile now rebuilds each index from an
+  on-disk file census (detecting status mismatch, missing rows, and orphan
+  rows), adds RFC scope, detects numeric-claim drift in prose docs
+  (report-only, or auto-fix with `--fix-counts`), and emits advisory
+  cadence triggers (epic close, ship, CR action, 7-day window) tracked in
+  `reconcile-state.json`.
+- **Release strategy**: `release_strategy` config (`solo-dev | pr-required |
+  staged-rollout`) plus a decision tree (`reference-decisions.md`) that
+  branches ship guidance accordingly.
+- **Execution contract**: `reference-decisions.md` defines stop conditions
+  and anti-patterns for agentic execution after plan approval.
+- **Multi-persona pressure-test canvas** (`reference-consult.md`): a
+  structured pattern for consulting multiple personas in parallel on
+  high-blast-radius design decisions.
+- **Verification depth tiers** and **test-timeout tuning** discipline
+  (`reference-test-best-practices.md`), recorded per AC and at bug close;
+  rollback envelope and per-AC verification target in `reference-story.md`.
+- **Release-gate checklist** template (`templates/workflows/release-gate.md`)
+  and new config knobs: `personas.staleness_days`, `contract_tables`.
+
 ## [1.6.0] - 2026-06-04
 
 Structural upgrades from competitive research against BMAD-METHOD,

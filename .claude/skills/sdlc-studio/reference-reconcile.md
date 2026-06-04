@@ -13,7 +13,8 @@ Detailed workflow for the reconcile command that detects and fixes status drift 
 | Flag | Effect | Default |
 | --- | --- | --- |
 | `--dry-run` | Preview changes, don't apply | false |
-| `--scope` | Limit to: `epics`, `stories`, `prd`, `indexes` | all |
+| `--scope` | Limit to: `epics`, `stories`, `prd`, `indexes`, `crs`, `rfcs`, `verify`, `docs` | all |
+| `--fix-counts` | When `--scope docs` (or no scope) finds drifted numeric claims, auto-fix them. Off by default because a prose numeric claim may be intentionally historical. | false |
 
 ### 2. Phase 1: Collect Ground Truth
 
@@ -42,11 +43,23 @@ c) PRD:
 d) Plans and Test Specs:
    - Glob sdlc-studio/plans/PL*.md, extract statuses
    - Glob sdlc-studio/test-specs/TS*.md, extract statuses
+
+e) RFCs (if sdlc-studio/rfcs/ exists):
+   - Glob sdlc-studio/rfcs/RFC*.md
+   - For each: extract > **Status:** value + the "Spawned CRs" links (for Accepted RFCs)
+   - Build map: { RFC0001: { status: "Accepted", spawnedCRs: [...] }, ... }
 ```
 
 ### 3. Phase 2: Detect Drift
 
 Compare ground truth against indexes and cross-references. Collect all discrepancies into a change list.
+
+> **Census, not just compare (see [[LL0001]] — applies to EVERY indexed type: stories, epics, plans, test-specs, bugs, CRs, RFCs).** Rebuild each index from the on-disk file census and detect **three** drift classes, not just status mismatches:
+> 1. **Status mismatch** — file `> **Status:**` ≠ the index-table row.
+> 2. **Missing row** — a file exists on disk with **no** index-table row (a silent under-count; e.g. CR/bug files numbered past the last table row). Add the row.
+> 3. **Orphan row** — an index row with no backing file on disk. Flag (and remove if confirmed).
+>
+> Recompute every Summary count **from the file census**, never by incrementing the existing (possibly-drifted) totals. A "count looks right" check is insufficient — enumerate the files.
 
 ```text
 a) Story index drift:
@@ -100,7 +113,34 @@ g) Story dependency table drift:
      - For each row: look up the referenced story's actual status from truth map
      - If dependency table shows different status: add to change list
 
-h) CR status drift (if sdlc-studio/change-requests/ exists):
+h) Numeric-claim drift in prose docs {#numeric-claim-drift}:
+   Project-level markdown docs (e.g. CLAUDE.md, README.md, docs/**)
+   often embed numeric claims that drift silently across releases:
+     - "vitest (N tests, M files)" / "N test cases" / "N lines of code"
+     - "Version: X.Y.Z" footer strings
+     - "N epics / M stories complete" status banners
+
+   For each such claim, resolve it against a runnable source of truth:
+     - Test counts: re-run the project's test command in count-only
+       mode (vitest `--reporter=dot`, jest `--listTests | wc -l`,
+       pytest `--collect-only -q | tail -1`) and compare.
+     - Version strings: compare against package.json / pyproject.toml
+       / Cargo.toml / etc.
+     - Artifact counts ("N epics"): reuse the counts this phase
+       already computed from the index files.
+
+   If drifted:
+     - Under --scope docs (or --scope all): add to change list.
+     - Default behaviour: REPORT ONLY. Auto-fix requires explicit
+       --fix-counts because a numeric claim in prose may be
+       intentionally historical (e.g. "was 1732 at launch").
+     - Prose drift (wording, not numbers) is NEVER auto-fixed — it
+       requires human judgment.
+
+   Scope keeper: only NUMERIC claims adjacent to the listed keywords
+   are flagged. English prose drift stays out of this check.
+
+i) CR status drift (if sdlc-studio/change-requests/ exists):
    For each CR file:
      - Compare file status vs index entry status → mismatch?
    For each CR with status "In Progress":
@@ -111,7 +151,7 @@ h) CR status drift (if sdlc-studio/change-requests/ exists):
    Recalculate CR index summary counts from truth map:
      - Compare against _index.md Summary table → drift?
 
-i) AC verification drift (when --verify or --scope verify):
+j) AC verification drift (when --verify or --scope verify):
    Delegate to scripts/verify_ac.py run for each story file in scope.
    The runner:
      - Parses - **Verify:** bullets under each AC
@@ -196,6 +236,7 @@ When `--scope` is specified, only run the relevant subset of Phase 2 and Phase 3
 | `prd` | PRD feature status + AC drift | prd.md |
 | `crs` | CR index drift + CR status cascade (report-only for completion) | change-requests/_index.md |
 | `verify` | Run AC verifiers via scripts/verify_ac.py | story Verified: lines + verify-report.json |
+| `docs` | Numeric-claim drift in prose docs (CLAUDE.md / README.md / docs/**) | REPORT ONLY unless `--fix-counts` |
 | `indexes` | All index drift (no file-level fixes) | All _index.md files |
 | (none) | All checks | All fixes |
 
@@ -207,6 +248,34 @@ When `--scope` is specified, only run the relevant subset of Phase 2 and Phase 3
 2. **Done is never auto-assigned.** Reconcile propagates existing Done statuses to indexes, dependency tables, and PRD. It never changes a story or epic status TO Done.
 3. **Mechanical only.** Reconcile fixes bookkeeping (counts, checkboxes, cross-references). It does not evaluate content accuracy, test coverage, or architecture alignment.
 4. **Idempotent.** Running reconcile twice produces the same result. Zero drift after first run means zero changes on second run.
+
+---
+
+## Cadence Triggers {#cadence-triggers}
+
+Drift is silent — by the time it shows up in a status dashboard or a review, it has usually accumulated through several un-reconciled events. These events are the **natural cadence triggers** that should prompt a reconcile pass:
+
+| Trigger | Why |
+| --- | --- |
+| **Epic close** (`Status → Done`) | The epic-close moment is when story / dependency / index drift accumulates fastest. Always reconcile after closing an epic. |
+| **Ship event** (tagged release / merge to main / deploy) | A ship is the highest-stakes drift moment — code on disk has just diverged from spec on disk. Reconcile after every ship. |
+| **CR `action`** (CR → Epic+Stories generation) | CR action creates new epics and stories; the index update on the CR side and the epic / story side can fall out of sync. Reconcile after CR action. |
+| **More than 7 days since last reconcile** | If no other trigger fired but the calendar has rolled forward, drift has compounded silently. Recommend reconcile. |
+
+`/sdlc-studio status` reads `.local/reconcile-state.json` to detect when one of these triggers fired and emits a **"Reconcile recommended because…"** line. The line is advisory; the operator decides when to act. Reconcile itself is cheap — running it more often than needed is harmless. The cost of skipping a recommended reconcile is silent drift that surfaces later as a review finding or, worse, an inconsistent ship.
+
+`reconcile-state.json` schema:
+
+```json
+{
+  "last_reconcile": "2026-04-30T14:32:11Z",
+  "last_epic_close": { "epic": "EP0042", "at": "2026-04-30T11:18:00Z" },
+  "last_ship": { "tag": "v3.55.3", "at": "2026-04-30T16:05:41Z" },
+  "last_cr_action": { "cr": "CR-0130", "at": "2026-04-30T08:14:00Z" }
+}
+```
+
+After every reconcile, `last_reconcile` is updated. Triggers older than `last_reconcile` are cleared from the recommendation. Triggers newer than `last_reconcile` accumulate; the recommendation lists all of them.
 
 ---
 

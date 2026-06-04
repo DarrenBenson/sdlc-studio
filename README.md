@@ -31,6 +31,16 @@ Most AI coding jumps straight from a vague prompt to code, then drifts as the pr
 
 Each step writes a plain markdown file under `sdlc-studio/` in your project. You stay in control: review each artefact, then run the next command. Start a brand-new project with `prd create`, or point it at existing code with `prd generate`. If you ever lose your place, `/sdlc-studio status` shows where you are and `/sdlc-studio hint` tells you the single next thing to do.
 
+### New in v1.7.0
+
+Field-tested workflow patterns generalised from real-world use:
+
+- **RFC artifact type** – `/sdlc-studio rfc` explores an unsettled design space before committing to a Change Request; accepting an RFC spawns the CRs.
+- **Operating doctrine** – `reference-doctrine.md` onboards a Claude to any project in one read: the RFC/CR/ADR decision matrix, files-as-truth, reconcile cadence, and lessons recall.
+- **Cross-project lessons registry** – a release-curated set of generalisable engineering lessons (`lessons/`) any project can recall before substantive decisions.
+
+Full details are in the [CHANGELOG](CHANGELOG.md).
+
 ### New in v1.6.0
 
 Four capabilities that keep status honest and keep agents grounded on large codebases:
@@ -507,6 +517,12 @@ Inside Claude Code:
 
 - [SKILL.md](.claude/skills/sdlc-studio/SKILL.md) - Full command reference
 - [reference-philosophy.md](.claude/skills/sdlc-studio/reference-philosophy.md) - Create vs Generate modes (read first)
+- [reference-doctrine.md](.claude/skills/sdlc-studio/reference-doctrine.md) - Operating doctrine for onboarding (v1.7.0)
+- [reference-rfc.md](.claude/skills/sdlc-studio/reference-rfc.md) - RFC design-exploration lifecycle (v1.7.0)
+- [reference-operator-heuristics.md](.claude/skills/sdlc-studio/reference-operator-heuristics.md) - Operator patterns for live services (v1.7.0)
+- [reference-deploy-readiness.md](.claude/skills/sdlc-studio/reference-deploy-readiness.md) - Post-deploy verification patterns (v1.7.0)
+- [reference-plan-files.md](.claude/skills/sdlc-studio/reference-plan-files.md) - Plan-file lifecycle (v1.7.0)
+- [lessons/](.claude/skills/sdlc-studio/lessons/) - Cross-project lessons registry (v1.7.0)
 - [reference-project.md](.claude/skills/sdlc-studio/reference-project.md) - Full-PRD orchestration
 - [reference-cr.md](.claude/skills/sdlc-studio/reference-cr.md) - Change request lifecycle
 - [reference-reconcile.md](.claude/skills/sdlc-studio/reference-reconcile.md) - Drift detection and repair

@@ -15,16 +15,18 @@ SDLC Studio supports three types of reviews:
 
 # /sdlc-studio review - Document Review
 
-Review all specification documents together and check cross-document consistency.
+Review all specification documents together and check cross-document consistency. The default chain is **PRD + TRD + TSD + Persona**, written into a single unified anchor at `sdlc-studio/reviews/LATEST.md` for fresh-conversation orientation.
 
 ## Quick Reference
 
 ```bash
-/sdlc-studio review                    # Run all document reviews
+/sdlc-studio review                    # Run all document reviews (PRD + TRD + TSD + Persona)
 /sdlc-studio review --quick            # Fast check using cached data
 /sdlc-studio review --focus prd        # Run only PRD review
 /sdlc-studio review --focus trd        # Run only TRD review
 /sdlc-studio review --focus tsd        # Run only TSD review
+/sdlc-studio review --focus persona    # Run only Persona review
+/sdlc-studio review --skip-personas    # Run PRD+TRD+TSD only (skip Persona pass)
 ```
 
 ## Flags
@@ -32,14 +34,19 @@ Review all specification documents together and check cross-document consistency
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--quick` | Use cached data, skip codebase analysis | false |
-| `--focus` | Review specific document only | all |
+| `--focus` | Review specific document only (`prd`, `trd`, `tsd`, `persona`) | all |
+| `--skip-personas` | Drop Persona Review from the default chain | false |
 
 ## What Happens
 
 1. **PRD Review** - Compare features against implementation
 2. **TRD Review** - Check architecture matches reality
 3. **TSD Review** - Verify coverage and quality gates
-4. **Cross-Document Check** - Validate consistency between documents
+4. **Persona Review** - Verify personas are still load-bearing (not stale, still consulted, still referenced)
+5. **Cross-Document Check** - Validate consistency between documents
+6. **Write LATEST.md** - Overwrite `sdlc-studio/reviews/LATEST.md` with the unified anchor (template: `templates/reviews/unified-anchor.md`)
+
+If `sdlc-studio/personas/` does not exist or contains no persona files, step 4 is skipped automatically and the chain falls back to the legacy 3-doc behaviour. No flag needed.
 
 ## Cross-Document Checks
 
@@ -48,6 +55,13 @@ Review all specification documents together and check cross-document consistency
 | PRD → TRD | Every feature has architecture documentation |
 | TRD → TSD | Every component has test strategy |
 | PRD → TSD | Every NFR has a quality gate |
+| PRD → Persona | Every primary user persona referenced in PRD §1/§2 exists in `personas/` |
+| Persona → CRs / Stories | Every persona has been consulted on ≥1 CR or story within the staleness window (default 90 days; configurable via `personas.staleness_days`) |
+| Persona → Persona | No duplicate personas (same role + name) — catches stale entries left behind after rename |
+
+## Output: LATEST.md
+
+Every full run writes `sdlc-studio/reviews/LATEST.md` (overwrites any prior copy) using the unified-anchor template. LATEST.md is intended as the **first read in a fresh conversation** — it carries: the headline, the four-doc status table, CR rollup, persona delta, cross-doc consistency, priority actions, production state, and links to the dated `RV{NNNN}-unified-*.md` history. Do not delete LATEST.md by hand; it is rewritten on the next review.
 
 ## Example Output
 

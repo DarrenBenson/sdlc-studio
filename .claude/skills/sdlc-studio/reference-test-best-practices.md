@@ -12,6 +12,74 @@ Guidelines addressing common pitfalls discovered during test automation runs.
 
 ---
 
+# Verification Depth Tiers {#verification-depth-tiers}
+
+Pick the lowest tier sufficient for the claim. Inflating the tier wastes time; deflating it ships claims you can't back up.
+
+| Tier | Means | Time to acquire | When sufficient |
+|---|---|---|---|
+| **smoke** | Compiles + handshake (one-shot ping) | seconds | "Service starts and the endpoint exists." Never sufficient for a fix-claim. |
+| **functional** | Single round-trip exercises the feature path | tens of seconds | "Happy-path API behaviour works once." Sufficient for unit/integration claims and most non-runtime story AC. |
+| **conversational** | Multi-turn / multi-step session continuity validated | minutes | "The feature retains state across interactions." Required for any claim involving sessions, transactions, or multi-step flows. |
+| **soak** | Behaves under live traffic over a defined window (default 7 days) | days | "It still works after sustained real use." Required to close any production-affecting bug fix. |
+| **live** | Operator-confirmed in production for the soak window with no rollback | days, then sealed | "It is in production and stable." Required to mark a feature Done in a deployed system. |
+
+## Anti-pattern: smoke → "fixed" {#smoke-fix-anti-pattern}
+
+The most common verification mistake is closing a bug after a smoke ping passes. Smoke proves the service starts and the endpoint exists. It does not prove the bug is fixed. A bug fix-claim **always** requires at least functional verification, and most production-affecting bugs require conversational + soak.
+
+Symptoms of this anti-pattern in commit messages and bug records:
+
+- "Fixed in v3.X.Y; smoke green on both boxes."
+- "Health check passes after rollout."
+- "All endpoints respond with 200."
+
+None of these are evidence of a fix. They are evidence the deploy didn't break the handshake. Re-grade the verification by running the multi-turn / multi-step path the bug originally exercised.
+
+## How to use the tiers in artefacts {#using-tiers}
+
+| Artefact | Field | Default | Required to escalate |
+|---|---|---|---|
+| Bug | `Verification depth:` | `smoke` (initial) | Must be `functional` or higher to mark Fixed; `soak` or higher to Close |
+| Story AC | `Verification target:` per AC | `functional` | `conversational` for end-to-end AC; `soak` for production-affecting AC; `live` for AC that ship behind a feature flag awaiting promotion |
+| CR / Epic | Inherited from highest-tier child story AC | n/a | n/a |
+| `/sdlc-studio code verify` | Reports current verified-depth per AC | based on test types run | n/a |
+
+Cross-reference: `templates/core/bug.md`, `templates/core/story.md`, `reference-bug.md`, `reference-story.md`.
+
+---
+
+# Test-Timeout Tuning Discipline {#test-timeout-tuning}
+
+When a test fails on a timeout, the temptation is to bump the timeout. Doing so without measurement is superstition, not engineering. The right rubric:
+
+1. **Measure local timing** 3 times. Take the worst. (Local hardware is the cheapest signal you have.)
+2. **Measure CI timing variance** via the last 10 runs of the same test (e.g. `gh run list --workflow=test --json conclusion,databaseId | head -10`, then drill into the test's runtime). Take the worst.
+3. **Set the timeout** to 2× the larger of (local-worst, CI-worst).
+4. **Leave a comment** at the test definition with the measurements and the date. Example:
+   ```ts
+   // 30s timeout: local-worst 2.7s × 2 + headroom; CI-worst 13.5s × 2 ≈ 27s.
+   // Measured 2026-04-30. Test runs 1010 sequential atomic writes; cost is real.
+   it('audit log is bounded to 1000 events on disk', { timeout: 30_000 }, async () => {
+   ```
+
+The comment is non-negotiable. Without it, the next person to see the timeout will either re-bump it (compounding the workaround) or rip it out as "magic number" — and neither has any evidence to argue with.
+
+## Anti-patterns {#timeout-anti-patterns}
+
+- **Bump-without-measure.** "It failed at 10s, let's try 30s." This is a workaround dressed as a fix. The timeout might be hiding an unbounded loop, a deadlock, or a real performance regression. Always measure before bumping.
+- **Bump-and-forget.** Increasing the timeout but leaving no comment. The next reader has zero context.
+- **Disable the test.** "It's flaky, let's `.skip` it for now." If you do this, the bug is now invisible. Re-arm it within 7 days or delete it; do not let `.skip` become permanent.
+- **Increase the global default.** Bumping the framework's default timeout to fix one slow test punishes every other test. Use a per-test override.
+
+## When the bump is legitimate {#timeout-bump-legitimate}
+
+Bumping a timeout is the right call when measurement shows the test does real, expected work that takes that long under realistic conditions — for example, sequential disk writes whose count is intentionally large, network round-trips whose latency is bounded by an external service, or warm-up flows that exercise the cold-start path on purpose. In these cases the timeout is part of the test's specification of expected runtime and the comment should explain why the lower bound exists.
+
+If measurement shows the test is taking longer than it *should* be — that is a regression, not a flake. File a bug or an investigation note rather than masking it with a timeout bump.
+
+---
+
 # AI-Assisted Development and Testing
 
 ## Why Higher Coverage Matters for AI Code {#why-higher-coverage-for-ai}

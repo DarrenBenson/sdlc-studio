@@ -176,10 +176,12 @@ Quick happy path: verify fix and close in one step.
    - [ ] Regression tests pass
    - [ ] No side effects observed
    - [ ] Documentation updated (if applicable)
+   - [ ] Verification depth recorded (`smoke` / `functional` / `conversational` / `soak` / `live`) — see `reference-test-best-practices.md#verification-depth-tiers`
 
 5. **Update Bug Report**
    - Check off verification items
    - Fill in verifier and verification date
+   - **Set `Verification depth:`** to the highest tier the fix has actually achieved. Smoke alone is never sufficient to mark Fixed; functional is the minimum to escalate. A production-affecting bug must reach `soak` before Closed.
    - Update status: Fixed → Closed (verified)
    - Record close reason as "Verified"
    - Add revision history entry
@@ -206,6 +208,7 @@ Close a bug with reason selection.
 1. **Check Prerequisites**
    - Verify bug status is "Fixed" or "Open"
    - If already closed, report error
+   - **Check verification depth.** A production-affecting bug cannot be Closed until its `Verification depth:` field reaches `soak` (default 7-day window). A non-production bug must be at least `functional`. Smoke-only verification is never sufficient to close. See `reference-test-best-practices.md#verification-depth-tiers` and the *Hypothesis discipline* gate in `reference-operator-heuristics.md#hypothesis-discipline`.
 
 2. **Prompt for Close Reason**
    Use AskUserQuestion:

@@ -1,10 +1,31 @@
 # SDLC Studio Unified Review Reference
 
-Workflows for the unified document review command that analyses PRD, TRD, and TSD together.
+Workflows for the unified document review command that analyses PRD, TRD, TSD, and Persona together.
 
 ## Overview
 
-The unified review command runs document reviews across all three specification layers and checks cross-document consistency.
+The unified review command runs document reviews across all four specification layers (Product, Technical, Test, Persona) and checks cross-document consistency. Persona is reviewed for **drift** (have personas gone stale, do PRD references still resolve, are personas still consulted) — distinct from "Persona Consultation" (using personas to assess the other documents), which is documented at step 3a.
+
+---
+
+## When to Run a Unified Review
+
+Run `/sdlc-studio review` on a deliberate cadence — it is the periodic synthesis point that keeps PRD/TRD/TSD honest. CLAUDE.md and commit messages are audit trails, not indexes; the review is what answers "is this project healthy?"
+
+**Cadence (any of, whichever comes first):**
+
+- Every 5 minor releases.
+- Per-epic completion (after the closing reconcile, before the next epic starts).
+- More than 4 weeks since the last unified review.
+- About to tag a release (also see `templates/workflows/release-gate.md`).
+
+**Symptom triggers (any of these mean a review is overdue):**
+
+- CLAUDE.md or PRD §3 detail blocks have started accumulating per-ship narrative — the changelog is leaking into the index because no review has synthesised it.
+- A canvas / persona consultation surfaced multiple cross-cutting concerns that no document has digested.
+- The number of versions since the most recent `RV{NNNN}-unified-review-*.md` exceeds the cadence above.
+
+The most recent unified review is always written to `sdlc-studio/reviews/LATEST.md` (see step 4 below) so it is one read away — use it as the orientation entry-point for fresh conversations rather than re-deriving project state from `git log`.
 
 ---
 
@@ -14,11 +35,17 @@ The unified review command runs document reviews across all three specification 
 
 | Flag | Effect | Default |
 | --- | --- | --- |
-| (none) | Run all document reviews | - |
+| (none) | Run all document reviews (PRD + TRD + TSD + Persona) | - |
 | `--quick` | Use cached data, skip codebase analysis | false |
 | `--focus prd` | Run only PRD review | all |
 | `--focus trd` | Run only TRD review | all |
 | `--focus tsd` | Run only TSD review | all |
+| `--focus persona` | Run only Persona review | all |
+| `--skip-personas` | Drop Persona Review from the default chain (PRD+TRD+TSD only) | false |
+
+If `sdlc-studio/personas/` does not exist or contains no persona files, Persona Review is skipped automatically — no flag required. The four-doc default applies whenever personas exist.
+
+**RFC review (if `sdlc-studio/rfcs/` exists).** As part of the unified pass, scan the RFCs: flag any **Draft / In Review** RFC stalled > ~14 days with no Revision-History movement; flag **Open Decisions** unresolved > 7 days (name the owner); and for **Accepted** RFCs verify each workstream has a spawned CR that exists and links back. This catches design exploration that has gone quiet before it silently blocks the dependent CRs. Report-only — RFC acceptance is always a judgement call.
 
 ### 2. Run Document Reviews
 
@@ -60,6 +87,23 @@ See `reference-trd.md#trd-review-workflow` for details.
 
 See `reference-tsd.md#tsd-review-workflow` for details.
 
+#### Persona Review
+
+```text
+1. Load sdlc-studio/personas/index.md (and per-persona files)
+2. Build the staleness map: for each persona, last consult date + last referenced-in-CR/Story date
+3. Cross-check: every persona referenced in PRD §1/§2 still exists in personas/
+4. Cross-check: every persona consulted on a CR/Story in the last `personas.staleness_days`
+                (default 90 days) is still present (catches stale references after rename)
+5. Identify drift:
+   - Personas not consulted within the staleness window → "stale" (suggest refresh / archive / consult)
+   - Personas referenced in PRD but missing from personas/ → "broken reference"
+   - Duplicate personas (same role + name) → "duplicate"
+   - Personas with no CR/Story references at all → "unused" (suggest archive or first-consult)
+```
+
+If `sdlc-studio/personas/` does not exist or contains no persona files, Persona Review is skipped (no warning — the project has no persona artefacts to review). The other three reviews run as normal. See `reference-persona.md#persona-review-workflow` for details (when personas exist).
+
 ### 3. Cross-Document Consistency Check
 
 Only in full mode (not `--quick`):
@@ -88,6 +132,35 @@ For each PRD non-functional requirement:
   - Examples:
     - PRD "p95 < 200ms" → TSD performance gate
     - PRD "99.9% uptime" → TSD availability gate
+```
+
+#### PRD → Persona Reference Resolution
+
+```text
+For each persona referenced in PRD §1 (Personas) or §2 (Goals/Users):
+  - Check persona file exists in sdlc-studio/personas/
+  - Flag broken references as critical (PRD names a persona that no longer exists)
+  - Flag PRD references to archived personas as important
+```
+
+#### Persona → CR / Story Activity
+
+```text
+For each persona in sdlc-studio/personas/:
+  - Find most recent consult or reference in CRs and Stories
+  - If older than `personas.staleness_days` (default 90 days):
+    - Active personas: flag as stale, suggest refresh
+    - Archived personas: no flag (expected)
+  - If never referenced: flag as unused, suggest archive or first-consult
+```
+
+#### Persona Self-Consistency
+
+```text
+Within sdlc-studio/personas/:
+  - Detect duplicate personas (same role + name)
+  - Detect personas with broken cross-references (consultation guide names that no longer exist)
+  - Detect personas missing from personas/index.md
 ```
 
 #### CR Staleness Check
@@ -154,9 +227,10 @@ To skip auto-fix: `--no-fix` flag.
 ```text
 1. Create sdlc-studio/.local/ directory if it doesn't exist
 2. Load existing review-state.json (or create empty structure)
-3. For each reviewed document (prd, trd, tsd):
+3. For each reviewed document (prd, trd, tsd, persona):
    a) Set artifacts.{doc}.last_reviewed = current ISO timestamp
    b) Set artifacts.{doc}.last_modified = file's git log timestamp
+      (for persona, take max(mtime) across personas/ directory)
    c) Set artifacts.{doc}.review_findings_ref = RV{NNNN} ID
 4. Add review entry to reviews.{RV_ID} with timestamp and findings summary
 5. Write updated review-state.json
@@ -164,7 +238,8 @@ To skip auto-fix: `--no-fix` flag.
    a) Update `**Last Updated:**` date in the document header to today's date
    b) Add a changelog/revision history entry summarising the review changes
    c) Format: `| {date} | Claude | {type} review: {summary of changes} |`
-5. Write updated review-state.json
+7. Write updated review-state.json
+8. Write `sdlc-studio/reviews/LATEST.md` -- the unified anchor for the review just generated. Render via `templates/reviews/unified-anchor.md`. Overwrites any previous LATEST.md. This is the canonical "most recent review" pointer; CLAUDE.md and fresh-conversation orientation should read this rather than searching the directory. The dated `RV{NNNN}-unified-review-*.md` file remains the historical record; LATEST.md is purely a stable filename pointing at the most recent unified anchor.
 ```
 
 **review-state.json schema:** See `reference-outputs.md#review-state-json`.
@@ -190,6 +265,12 @@ To skip auto-fix: `--no-fix` flag.
    Coverage Target: 90% (Actual: 78%)
    ⚠️ 3 gaps identified
 
+👥 PERSONA REVIEW                      ▓▓▓▓▓▓▓▓▓░ 95%
+   Personas: 7 active | 0 archived
+   Stale: 1 (>90d since last consult)
+   Broken refs: 0
+   ✅ Persona alignment current
+
 ──────────────────────────────────────────────────────────
 📝 CHANGE REQUESTS
    Proposed: 2 (1 stale > 14 days)
@@ -202,6 +283,9 @@ To skip auto-fix: `--no-fix` flag.
    PRD → TRD: ✅ 14/14 features have architecture
    TRD → TSD: ⚠️ API tests but no contract tests
    PRD → TSD: ⚠️ NFR "p95 < 200ms" not in quality gates
+   PRD → Persona: ✅ 4/4 PRD persona refs resolve
+   Persona → CRs: ⚠️ 1 persona stale (no consult in 92 days)
+   Persona → Persona: ✅ no duplicates / broken cross-refs
 
 ──────────────────────────────────────────────────────────
 📌 PRIORITY ACTIONS
@@ -393,6 +477,26 @@ Each TRD component should have:
 | Security | Security scan stage |
 | Scalability | Load test stage |
 
+### PRD → Persona Mapping
+
+Each persona named in PRD §1 (Personas) or §2 (Goals/Users) should:
+
+- Have a corresponding file in `sdlc-studio/personas/`
+- Be present in `sdlc-studio/personas/index.md`
+- Have at least one consult / story / CR reference within `personas.staleness_days` (default 90)
+
+A "broken reference" (PRD names a persona that no longer exists) is **critical**. A "stale persona" (no consult in 90+ days) is **important** unless the persona has been explicitly archived.
+
+### Persona → Artefact Activity Mapping
+
+For each active persona:
+
+- Recent consult (`/sdlc-studio consult`) — counts as a touch
+- Reference in a CR's "Stakeholders" or "Personas Consulted" section — counts as a touch
+- Reference in a Story's `As a {persona}` line or persona-reference section — counts as a touch
+
+Personas with zero touches across all artefacts within the staleness window are flagged as **unused** and should be archived or first-consulted.
+
 ---
 
 ## Review Output Formats
@@ -414,12 +518,16 @@ ASCII art dashboard as shown above.
   "documents": {
     "prd": { "health": 85, "findings": 2 },
     "trd": { "health": 92, "findings": 1 },
-    "tsd": { "health": 78, "findings": 3 }
+    "tsd": { "health": 78, "findings": 3 },
+    "persona": { "health": 95, "findings": 1, "personas_total": 7, "stale": 1, "broken_refs": 0 }
   },
   "cross_document": {
     "prd_trd": { "covered": 14, "total": 14 },
     "trd_tsd": { "issues": ["API tests but no contract tests"] },
-    "prd_tsd": { "issues": ["NFR 'p95 < 200ms' not in quality gates"] }
+    "prd_tsd": { "issues": ["NFR 'p95 < 200ms' not in quality gates"] },
+    "prd_persona": { "resolved": 4, "total": 4, "broken": [] },
+    "persona_artefacts": { "stale": ["Webapp Dev"], "unused": [] },
+    "persona_consistency": { "duplicates": [], "broken_xrefs": [] }
   },
   "priority_actions": [
     { "severity": "critical", "action": "Increase test coverage to 90% target" },
@@ -436,3 +544,5 @@ ASCII art dashboard as shown above.
 - `reference-prd.md#prd-review-workflow` - PRD review details
 - `reference-trd.md#trd-review-workflow` - TRD review details
 - `reference-tsd.md#tsd-review-workflow` - TSD review details
+- `reference-persona.md#persona-review-workflow` - Persona review details (the 4th review in the chain)
+- `templates/reviews/unified-anchor.md` - The LATEST.md template written on every full review

@@ -173,6 +173,53 @@ review:
 
 ---
 
+## Persona Staleness {#personas-staleness-days}
+
+The Persona Review pass of `/sdlc-studio review` uses this window to decide whether a persona is "stale" (no consult / story / CR reference within the window). Default 90 days.
+
+```yaml
+personas:
+  staleness_days: 90  # Days without a touch before a persona is flagged stale
+```
+
+A project where personas are consulted rarely by design (e.g. stable archetypes) can extend this; a project where personas are expected to be high-touch can shorten it. See `reference-review.md` for the cross-doc check that reads this value.
+
+---
+
+## Contract Tables {#contract-tables}
+
+The structured tables in PRD and TRD that **are** the feature contract. The default anchors (`§3 Feature Inventory`, `§6 Data Models`) match the v2 PRD/TRD templates.
+
+```yaml
+contract_tables:
+  prd: "§3 Feature Inventory"
+  trd: "§6 Data Models"
+```
+
+Override per-project if the project's PRD/TRD use different section anchors. Strings are matched literally against the document's section headings. Setting either to `null` disables the cross-check for that document.
+
+The `code implement` workflow uses these anchors for the **ship-time contract sync** check: when a commit touches files that imply a feature surface change (anything matching `contract_table_paths`, derived per language) but does not touch the named anchors, the workflow warns. See `reference-code.md#ship-time-contract-sync`.
+
+---
+
+## Release Strategy {#release-strategy}
+
+Determines which ship-time guidance the workflow emits.
+
+```yaml
+release_strategy: pr-required    # solo-dev | pr-required | staged-rollout
+```
+
+| Value | Ship guidance | When appropriate |
+| --- | --- | --- |
+| `solo-dev` | Direct commit to `main`, or branch + `git merge --ff-only main` + `git push`. **No PR.** | Single-developer projects (operator + AI assistant). The PR ceremony is friction; reviews happen via Three Amigos consult + verify + check. |
+| `pr-required` | `gh pr create` + review + merge. **Default.** | Team projects where PR review is the change gate. |
+| `staged-rollout` | Tag + deploy + soak window + promote. The "live" verification depth requires a stable soak before a feature can be marked Done. | Production systems with multi-environment deploys. |
+
+`/sdlc-studio code implement` and `/sdlc-studio epic implement` branch their final-step ship guidance on this value. See `reference-code.md#release-strategy-branch` and `reference-decisions.md#release-strategy-decision`.
+
+---
+
 ## Using Config in Templates
 
 Templates can reference config values using `{{config.path.to.value}}` syntax:

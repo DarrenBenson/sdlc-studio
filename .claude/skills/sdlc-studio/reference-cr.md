@@ -43,6 +43,7 @@ What would you like to do?
      - Glob `sdlc-studio/change-requests/CR*.md`
      - Parse highest number, increment by 1
      - Apply ID collision prevention per `reference-outputs.md#id-collision-prevention`
+     - **Cross-repo guard (when the CR namespace is shared across two or more repos).** Two repos' agents grab the same CR number concurrently. Before assigning a number: `git fetch` and check the highest CR on **`origin/main`** (`git ls-tree -r origin/main -- sdlc-studio/change-requests/`), not just the local working tree (which may be stale). On a collision after filing, **renumber the unshipped / lower-priority side**, and compare the *contracts* (field names, endpoints), not just the numbers — a same-numbered consumer CR may diverge from what the producer ships. Same guard applies to RFCs.
 
 2. **Gather CR Details**
    Prompt the user for:
@@ -381,7 +382,7 @@ See `reference-github-sync.md#gh-conflict`.
 
 4. **Update CR File**
    - Set status to chosen terminal status
-   - For Complete: format as `Complete -- EP{NNNN} (Done)` (matching agent-bridge pattern)
+   - For Complete: format as `Complete -- EP{NNNN} (Done)`
    - Tick all AC checkboxes (for Complete)
    - Fill "Close Reason" section with outcome and rationale
    - Update revision history

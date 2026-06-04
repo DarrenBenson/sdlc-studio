@@ -10,9 +10,16 @@ in `sdlc-studio/.local/lessons.md`; agentic waves load this file at
 wave start and inject the entries into every Agent Prompt Template
 as a `## Known Pitfalls on This Project` section.
 
-The file is never committed (`.local/` is gitignored). Lessons are
-project-specific, generic patterns belong in
-`reference-agentic-lessons.md`.
+The file is never committed (`.local/` is gitignored). That is the
+**per-project tier** — transient failure memory for agentic waves.
+
+There is also a **cross-project tier**: the skill's own `lessons/` folder
+(`~/.claude/skills/sdlc-studio/lessons/`), carrying *generalisable*
+engineering/process lessons that improve decisions on ANY project (it ships
+with the skill). **Recall** relevant ones before substantive decisions;
+**promote** a project lesson there only once it clearly generalises. A
+project-specific *fact* (a config path, an incident, a box name) is **memory**,
+not a lesson — keep those in the project's memory store.
 
 ## Quick Reference
 
@@ -21,6 +28,11 @@ project-specific, generic patterns belong in
 /sdlc-studio lessons add                       # Interactive add
 /sdlc-studio lessons add --epic EP0004 --wave 2  # Add with explicit context
 /sdlc-studio lessons prune --older EP0003      # Drop entries tied to old epics
+
+# Cross-project tier (skill lessons/ folder)
+/sdlc-studio lessons recall                    # Surface relevant cross-project lessons before a decision
+/sdlc-studio lessons recall --tags reconcile   # Filter by tag
+/sdlc-studio lessons add --global              # Promote a generalisable lesson into the skill's lessons/
 ```
 
 ## Actions
@@ -100,6 +112,23 @@ Four hook points, detailed in
 3. **Epic retrospective** - After an epic ships, record any
    non-obvious pattern that surfaced during the run.
 4. **Manual** - Any developer friction worth not repeating.
+
+## Cross-project lessons (`recall` / `add --global`)
+
+The skill's `lessons/` folder is a curated, durable knowledge base — see
+`lessons/_index.md` and `lessons/_template.md`.
+
+### recall
+Read `lessons/_index.md`, surface the lessons whose tags/titles match the
+decision at hand (optionally `--tags`), and apply them. Cheap, high-leverage:
+do this before any non-trivial design or process decision. The Operating
+Doctrine (`reference-doctrine.md`) instructs this as a standing habit.
+
+### add --global
+Promote a generalisable lesson: next free `LL{NNNN}`, copy `lessons/_template.md`
+(Lesson / Why-it-cost / How-to-apply / Generalises-to), add the index row.
+Gate: it must apply *beyond* this project. Project facts go to memory instead.
+Additions accumulate locally and are blessed into the next skill release.
 
 ## File Format
 

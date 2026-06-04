@@ -6,6 +6,8 @@ Hard-won lessons from production runs of `epic implement --agentic` and `project
 
 These are not procedures - they are patterns observed across real project implementations that consistently affect quality and speed. Treat them as constraints on your approach.
 
+> **Scope note.** This file is narrowly about agentic wave execution. For cross-cutting operator patterns (memory-entry drift, silent-CLI-failure localisation, post-release briefing, adversarial-review-as-gate) see **`reference-operator-heuristics.md`**. For project-specific pitfalls see `sdlc-studio/.local/lessons.md` (see `help/lessons.md`).
+
 ---
 
 ## Exploration

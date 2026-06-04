@@ -12,23 +12,29 @@ SDLC Studio is a Claude Code skill for managing the full software development li
 
 | Path | Purpose |
 | ------ | --------- |
-| `.claude/skills/sdlc-studio/SKILL.md` | Main entry point (624 lines) |
+| `.claude/skills/sdlc-studio/SKILL.md` | Main entry point (651 lines) |
 | `.claude/skills/sdlc-studio/reference-philosophy.md` | Create vs Generate modes - read first |
+| `.claude/skills/sdlc-studio/reference-doctrine.md` | Operating doctrine - onboard a Claude to any project (v1.7.0) |
 | `.claude/skills/sdlc-studio/reference-outputs.md` | Canonical story and epic completion cascades |
 | `.claude/skills/sdlc-studio/reference-project.md` | Full-PRD orchestration (`project plan` and `project implement`) |
 | `.claude/skills/sdlc-studio/reference-cr.md` | Change request lifecycle (plus `cr sync` for GitHub) |
-| `.claude/skills/sdlc-studio/reference-reconcile.md` | Mechanical drift detection, `--verify` delegates to verify_ac.py |
+| `.claude/skills/sdlc-studio/reference-rfc.md` | RFC design-exploration lifecycle (v1.7.0) |
+| `.claude/skills/sdlc-studio/reference-reconcile.md` | Census-based drift detection, `--verify` delegates to verify_ac.py |
 | `.claude/skills/sdlc-studio/reference-agentic-lessons.md` | Production patterns plus per-project lessons accumulation |
+| `.claude/skills/sdlc-studio/reference-operator-heuristics.md` | Cross-cutting operator patterns for live services (v1.7.0) |
+| `.claude/skills/sdlc-studio/reference-deploy-readiness.md` | Post-deploy verification patterns (v1.7.0) |
+| `.claude/skills/sdlc-studio/reference-plan-files.md` | Claude Code plan-file lifecycle (v1.7.0) |
 | `.claude/skills/sdlc-studio/reference-workflow-personas.md` | Three Amigos consultation model |
 | `.claude/skills/sdlc-studio/reference-repo-map.md` | AST repo indexer design (v1.6.0) |
 | `.claude/skills/sdlc-studio/reference-verify.md` | Executable AC verifier DSL (v1.6.0) |
 | `.claude/skills/sdlc-studio/reference-github-sync.md` | GitHub Issues two-way sync (v1.6.0) |
 | `.claude/skills/sdlc-studio/reference-scripts.md` | Scripts directory convention (v1.6.0) |
-| `.claude/skills/sdlc-studio/reference-*.md` | Domain-specific workflows (36 files total) |
-| `.claude/skills/sdlc-studio/help/` | Type-specific help (27 files) |
-| `.claude/skills/sdlc-studio/templates/` | Document and code templates (66 files) |
+| `.claude/skills/sdlc-studio/reference-*.md` | Domain-specific workflows (41 files total) |
+| `.claude/skills/sdlc-studio/help/` | Type-specific help (28 files) |
+| `.claude/skills/sdlc-studio/lessons/` | Cross-project lessons registry (v1.7.0) |
+| `.claude/skills/sdlc-studio/templates/` | Document and code templates (70 files) |
 | `.claude/skills/sdlc-studio/scripts/` | Skill-internal Python helpers (v1.6.0 - repo_map, verify_ac, github_sync) |
-| `.claude/skills/sdlc-studio/best-practices/` | Quality guidelines (11 files) |
+| `.claude/skills/sdlc-studio/best-practices/` | Quality guidelines (15 files) |
 
 ## Soft Dependencies (runtime)
 

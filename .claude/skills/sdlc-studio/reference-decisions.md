@@ -89,6 +89,84 @@ How decisions at each stage constrain downstream choices.
 
 ---
 
+## Execution Contract After Plan Approval {#execution-contract}
+
+Once a plan is approved (via `ExitPlanMode` or operator confirmation), the operator-review gate is **already satisfied** by the SDLC's own mechanisms. The implementing agent does **not** stop mid-execution to re-confirm.
+
+**Approved plan = green light through every wave**, until one of these stop conditions fires:
+
+| Stop condition | What it means | What to do |
+| --- | --- | --- |
+| **(a) Genuine technical blocker** | A failure the SDLC's own consult / verify / check / reconcile cannot resolve (missing credentials, an external system down, an inconsistent state that needs operator judgement) | Pause and ask. State the specific blocker, what you tried, what the SDLC can't decide. |
+| **(b) Explicit operator pause** | The operator typed something like "stop", "pause", "wait" — *not* a benign question or a clarification | Acknowledge and pause. Resume only when the operator says so. |
+| **(c) Destructive / hard-to-reverse action** | Force-push, delete branches, drop tables, send external messages, publish public artefacts | Confirm before acting per the system-prompt safety guidance. Authorisation for one such action does not generalise to the next. |
+
+**Gates that DO NOT count as stop conditions** (the plan-time approval already covers them):
+
+- Three Amigos consult (`/sdlc-studio consult team <artefact>`)
+- `/sdlc-studio code verify` / `code check` / `reconcile`
+- Test-suite green
+- Story-level "operator review" AC — these are **satisfied by the consult + verify + check + reconcile chain**, not by a mid-flight check-in
+
+**Anti-patterns to avoid:**
+
+- "Should I continue?" / "Want me to proceed?" / "Pausing for review?" check-ins after each wave when no stop condition has fired.
+- Inserting unprompted `AskUserQuestion` calls between waves.
+- Inferring "I should pause" from the plan's wave structure — wave boundaries are *checkpoints*, not *gates*.
+- Treating a clarifying question from the operator as a stop signal.
+
+**Why this contract exists:** mid-flight check-ins fragment execution into many short turns, lose context, and force the operator to repeatedly re-validate decisions they already approved. The plan-mode approval is the single decision the operator wanted to make.
+
+---
+
+## Release Strategy Decision {#release-strategy-decision}
+
+The `release_strategy` config knob (see `reference-config.md#release-strategy`) determines which ship-time guidance the workflow emits. Choose by team shape and deployment target:
+
+```
+                Single developer (operator + AI)?
+                          │
+                ┌─────────yes──────────┐
+                │                      │
+          solo-dev                 (continue below)
+   (commit to main, ff-only        Multiple developers?
+    merge from short branches)              │
+                                ┌──────────yes──────────┐
+                                │                       │
+                          pr-required              (continue below)
+                          (gh pr create,           Production with
+                           team review,            multi-environment
+                           merge)                  staged rollout?
+                                                          │
+                                                  ┌──────yes──────┐
+                                                  │               │
+                                          staged-rollout      pr-required
+                                          (tag + deploy +     (default — review
+                                           soak gate +        before merge,
+                                           live promote)      simple deploy)
+```
+
+**Choosing solo-dev:**
+
+- Single developer plus AI assistant (or solo human).
+- Reviews happen via Three Amigos consult, `code verify`, `code check`, `reconcile` — not via PR ceremony.
+- The PR overhead is friction: it creates a fictional reviewer and a fictional approval flow that the same person performs on themselves.
+- Ship discipline still applies: tests must pass, contract tables must sync, rollback envelope must exist for production-affecting stories.
+
+**Choosing pr-required:**
+
+- Two or more developers committing.
+- A non-author reviewer must approve before merge.
+- The workflow's ship guidance emits `gh pr create` with the appropriate template; merging is the operator's call.
+
+**Choosing staged-rollout:**
+
+- Production system with multi-environment deploys (e.g. AB01 primary + AB02 standby + a soak window before promotion).
+- "Live" verification depth (`reference-test-best-practices.md#verification-depth-tiers`) requires a stable soak before a feature can be Done.
+- Combine with `pr-required` if a team is committing — they are orthogonal concerns; staged-rollout is about *deploy* discipline, pr-required is about *commit* discipline. The skill currently surfaces them as a single field; if both apply, set `staged-rollout` and document the PR requirement at project-level.
+
+---
+
 # TDD vs Test-After Decision Tree {#tdd-decision-tree}
 
 **Default:** Plan recommends based on story characteristics. User can override.

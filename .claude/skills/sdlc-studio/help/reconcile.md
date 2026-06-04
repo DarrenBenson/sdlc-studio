@@ -14,6 +14,7 @@ Related: reference-reconcile.md (deep workflow), reference-outputs.md (cascade c
 /sdlc-studio reconcile --scope epics     # Reconcile epics only
 /sdlc-studio reconcile --scope stories   # Reconcile stories only
 /sdlc-studio reconcile --scope prd       # Reconcile PRD only
+/sdlc-studio reconcile --scope rfcs      # Reconcile RFC index + Accepted→CR linkage
 ```
 
 ## Prerequisites
@@ -38,6 +39,8 @@ Three-phase workflow: **collect ground truth** from artifact files, **detect dri
 | PRD feature AC checkboxes | Ticked for criteria matching verified implementation |
 | `plans/_index.md` | Status entries matching plan file statuses, summary counts |
 | `test-specs/_index.md` | Status entries matching test-spec file statuses, summary counts |
+| `change-requests/_index.md`, `rfcs/_index.md` | Status entries + **missing rows** (files on disk with no index row) + summary counts, recomputed from a file census |
+| Prose-doc numeric claims | Test counts, version strings, artifact totals in CLAUDE.md / README.md / docs/** — REPORTED by default; auto-fixed only with `--fix-counts` |
 | Metadata dates | `**Last Updated:**` on modified files set to today |
 | Changelogs | Revision history entry added to modified files |
 
@@ -58,10 +61,13 @@ Three-phase workflow: **collect ground truth** from artifact files, **detect dri
 | `--scope stories` | Only reconcile story-related artifacts | all |
 | `--scope prd` | Only reconcile PRD feature statuses | all |
 | `--scope crs` | Only reconcile change request index drift (report-only for completion cascade) | all |
+| `--scope rfcs` | Only reconcile RFC index drift + Accepted-RFC→spawned-CR linkage | all |
 | `--scope verify` | Only run AC verifiers via scripts/verify_ac.py | all |
+| `--scope docs` | Only detect numeric-claim drift in prose docs (report-only unless `--fix-counts`) | all |
 | `--verify` | Shortcut for `--scope verify`; may be combined with `--story` | off |
 | `--story <path>` | Limit `--verify` to a single story file | none |
 | `--scope indexes` | Only reconcile index files and counts | all |
+| `--fix-counts` | With `--scope docs` (or no scope), auto-fix drifted numeric claims. Off by default because a prose number may be intentionally historical. | off |
 
 ## Output
 
@@ -87,7 +93,7 @@ Three-phase workflow: **collect ground truth** from artifact files, **detect dri
 
   prd.md
   ├─ Config File Loader: Not Started → Complete
-  └─ [x] Config loads from ~/.agent-bridge/config.json
+  └─ [x] Config loads from ~/.myapp/config.json
 
   ▶️ Run without --dry-run to apply all 12 fixes.
 ══════════════════════════════════════════════════════════

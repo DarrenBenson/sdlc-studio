@@ -646,6 +646,73 @@ For the complete decision tree, conditions for TDD vs Test-After, and override f
 
 ---
 
+## Ship-Time Contract Sync {#ship-time-contract-sync}
+
+When `code implement` produces a commit that touches files implying a feature surface change (new public API, schema change, new CLI flag, new config key, new agent / adapter / provider, etc.), the workflow checks that the same commit also touches the **contract-table anchors** named in `config.contract_tables` (default: PRD §3 Feature Inventory + TRD §6 Data Models). If not, it emits a warning.
+
+**Why:** the structured tables ARE the contract. The changelog is the audit trail. If a feature surface change ships without a contract-table update, the spec immediately falls behind the code and the only place the change is described becomes the commit message — which is the wrong artefact for documentation lookups.
+
+**The check:**
+
+1. After test green and before commit suggestion:
+2. Compute the file diff against the merge base.
+3. For each language-specific `contract_table_paths` rule (e.g. `src/api/**`, `src/types/**`, `src/config/**` for TypeScript), test whether any matched file changed.
+4. If any matched, also check whether the same diff touches `sdlc-studio/prd.md` (in the section matching `config.contract_tables.prd`) and `sdlc-studio/trd.md` (in the section matching `config.contract_tables.trd`).
+5. If a matched code-side file changed but no anchor change, **warn** (not block — the operator may be in the middle of a multi-commit feature). The warning includes a rendered diff hint pointing at the lines that look feature-surfaced and the anchors that look untouched.
+6. If `config.contract_tables.prd` or `.trd` is `null`, skip the corresponding side of the check.
+
+**To suppress** for a commit that intentionally precedes the spec update (rare and discouraged): include `[contract-pending]` in the commit message body. The workflow will still log the deferral so reconcile can flag it later.
+
+**See also:** `reference-config.md#contract-tables`, `templates/config-defaults.yaml`.
+
+---
+
+## Release-Strategy Branch {#release-strategy-branch}
+
+`code implement` and `epic implement` emit different ship-time guidance based on `config.release_strategy` (`reference-config.md#release-strategy`):
+
+### `solo-dev`
+
+```bash
+# Working on a branch (recommended for risky / multi-commit work):
+git checkout main
+git merge --ff-only <branch>
+git push
+
+# Or working directly on main (small, low-risk changes):
+git push
+```
+
+Does not emit `gh pr create`. The Three Amigos consult + verify + check + reconcile chain replaces the PR review gate. If the change is risky and isolation is wanted, branch first; otherwise commit straight to main.
+
+### `pr-required`
+
+```bash
+gh pr create --title "..." --body "..."
+# Reviewer approves
+# Squash-merge or merge per project policy
+```
+
+Default. Includes the standard PR template body (Summary + Test plan + linked stories / CRs).
+
+### `staged-rollout`
+
+```bash
+# Tag and deploy
+git tag v<version>
+git push --tags
+# Deploy to canary / staging
+# Soak window per config.soak_days (default 7)
+# Monitor metrics — see reference-deploy-readiness.md
+# Promote to live
+```
+
+Cannot promote a story to Done until the soak window completes and the AC's `Verification target: live` condition is satisfied. Combine with `pr-required` if a team is committing — set `staged-rollout` and document the PR requirement at project level.
+
+**See also:** `reference-decisions.md#release-strategy-decision`, `reference-deploy-readiness.md` (deploy / readiness / smoke patterns).
+
+---
+
 ## Status Update Flow {#status-update-flow}
 
 ```text

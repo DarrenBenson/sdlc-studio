@@ -15,6 +15,7 @@ Single source of truth for all output formats, file locations, status values, an
 | Plan | `sdlc-studio/plans/PL{NNNN}-*.md` | PL0001, PL0002, PL0003... | Draft/In Progress/Complete/Superseded |
 | Bug | `sdlc-studio/bugs/BG{NNNN}-*.md` | BG0001, BG0002, BG0003... | Open/In Progress/Fixed/Verified/Closed/Won't Fix |
 | CR | `sdlc-studio/change-requests/CR{NNNN}-*.md` | CR0001, CR0002, CR0003... | Proposed/Approved/In Progress/Complete/Rejected/Deferred |
+| RFC | `sdlc-studio/rfcs/RFC{NNNN}-*.md` | RFC0001, RFC0002, RFC0003... | Draft/In Review/Accepted/Superseded/Withdrawn |
 | Test Spec | `sdlc-studio/test-specs/TS{NNNN}-*.md` | TS0001, TS0002, TS0003... | Draft/Ready/In Progress/Complete/Superseded |
 | Workflow | `sdlc-studio/workflows/WF{NNNN}-*.md` | WF0001, WF0002, WF0003... | Created/Planning/Testing/Implementing/Verifying/Reviewing/Checking/Done/Paused/Superseded |
 | Test Code | `tests/` | Framework-dependent | - |
@@ -133,6 +134,24 @@ Proposed → Approved → In Progress → Complete
 
 **Note:** Complete is never auto-assigned. Completing a CR is a judgment call -- the reconciler suggests but does not auto-transition.
 
+### RFC Status Flow {#rfc-status-flow}
+
+```text
+
+Draft → In Review → Accepted ──(spawns CRs)──▶ …
+                       ↘ Superseded
+                       ↘ Withdrawn
+```
+
+**Transition criteria:**
+
+- **Draft → In Review:** options + open decisions documented; feedback / consult solicited (Three Amigos + live-fleet where the design touches the agents).
+- **In Review → Accepted:** all Open Decisions resolved; the **Decision** section records the chosen option + rationale; the workstream CRs are spawned + cross-linked, and the decision is recorded as an ADR in the TRD.
+- **Any → Superseded:** replaced by a later RFC (point to it).
+- **Any → Withdrawn:** not pursued (record why).
+
+**Note:** Accepted is **not terminal** — the RFC stays the living design home its spawned CRs reference. Acceptance is a judgement call (consult-gated); the reconciler suggests but never auto-transitions.
+
 ### Test Spec Status Flow {#test-spec-status-flow}
 
 ```text
@@ -180,6 +199,7 @@ Each artifact type has a **canonical set of status values**. Do not use ad-hoc s
 | Test Spec | Draft, Ready, In Progress, Complete, Superseded | Complete, Superseded |
 | Bug | Open, In Progress, Fixed, Verified, Closed, Won't Fix | Closed, Won't Fix |
 | CR | Proposed, Approved, In Progress, Complete, Rejected, Deferred | Complete, Rejected, Deferred |
+| RFC | Draft, In Review, Accepted, Superseded, Withdrawn | Superseded, Withdrawn (Accepted = decision reached, stays live) |
 | Workflow | Created, Planning, Testing, Implementing, Verifying, Reviewing, Checking, Done, Paused, Complete, Superseded | Done, Complete, Superseded |
 
 **Validation rule:** When writing or updating a `> **Status:**` header, verify the value is in the allowed set for that artifact type. If a non-standard value is found during `status --full`, flag it in the INTEGRITY section.
@@ -226,6 +246,7 @@ Each numbered artifact type uses a 4-digit zero-padded ID:
 | Plan | `PL{NNNN}` | PL0001, PL0015, PL0200 |
 | Bug | `BG{NNNN}` | BG0001, BG0007, BG0050 |
 | CR | `CR{NNNN}` | CR0001, CR0008, CR0050 |
+| RFC | `RFC{NNNN}` | RFC0001, RFC0008, RFC0050 |
 | Test Spec | `TS{NNNN}` | TS0001, TS0018, TS0300 |
 | Workflow | `WF{NNNN}` | WF0001, WF0009, WF0150 |
 
@@ -269,6 +290,7 @@ Each numbered type maintains an `_index.md` registry file in its directory.
 | Plan | `sdlc-studio/plans/_index.md` |
 | Bug | `sdlc-studio/bugs/_index.md` |
 | CR | `sdlc-studio/change-requests/_index.md` |
+| RFC | `sdlc-studio/rfcs/_index.md` |
 | Test Spec | `sdlc-studio/test-specs/_index.md` |
 | Workflow | `sdlc-studio/workflows/_index.md` |
 

@@ -12,6 +12,7 @@ Related: help/bug.md, reference-bug.md
 > **Reporter:** {{reporter}}
 > **Assignee:** {{assignee}}
 > **Created:** {{created_date}}
+> **Verification depth:** {{verification_depth}}
 
 ## Summary
 
@@ -80,6 +81,9 @@ Related: help/bug.md, reference-bug.md
 
 **Verified by:** {{verifier}}
 **Verification date:** {{verification_date}}
+**Verification depth:** {{verification_depth}}
+
+> Verification depth tiers: `smoke` (one-shot ping) | `functional` (single round-trip) | `conversational` (multi-turn / multi-step) | `soak` (live traffic over a window) | `live` (operator-confirmed in production with no rollback). See `reference-test-best-practices.md#verification-depth-tiers`. A bug cannot be marked **Fixed** until depth is at least `functional`. A production-affecting bug cannot be **Closed** until depth is at least `soak` (default 7 days).
 
 ---
 

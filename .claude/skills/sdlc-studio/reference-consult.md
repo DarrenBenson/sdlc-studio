@@ -261,6 +261,61 @@ Get feedback from both Team and Stakeholder personas.
 
 ---
 
+## Multi-Persona Pressure-Test Canvas {#pressure-test-canvas}
+
+When the design space is unsettled and the operator has multiple plausible options, a single-persona consult is the wrong tool — the persona will pick *one* of the options and argue for it, but the operator already has multiple voices in their head and needs to know which one converges. Use a **pressure-test canvas** instead.
+
+### When to trigger
+
+| Signal | Why |
+| --- | --- |
+| The operator says "I'm not sure if A or B is right" or "what's the cleanest way to..." | Genuine design uncertainty |
+| The artefact has more than one option section / open-question section | Author already flagged the unsettledness |
+| The first persona consulted offers a counter-offer instead of a ratification | The proposal is shaped wrong, not just imperfect |
+| The decision has high blast-radius (architecture, migration, public API, schema change) | Cost of getting it wrong is high enough to warrant the parallel consult |
+
+### How to conduct
+
+1. **Identify the canvas members.** Pick personas that bring **different perspectives** (engineering, product, ops, security, customer-experience). Three personas is the minimum that gives convergent signal; five is the comfort point; more than seven adds noise without adding signal.
+2. **Frame the proposal as a *single, complete* artefact** before sending to anyone. Half-formed proposals get half-formed feedback. State assumptions, options considered, and the proposed choice.
+3. **Send to each canvas member in parallel** (in practice: sequential consults issued in one batch, results collected before synthesis).
+4. **Each persona answers in their own voice.** Don't pre-bias by asking "do you agree?" — ask "what would you do, and why?"
+5. **Synthesise.** Read the *Synthesis discipline* below.
+
+### Synthesis discipline
+
+The point of the canvas is **convergence**, not vote-counting. A 3-of-5 majority for A is not a decision; it is a sign that A might be defensible. A counter-offer that *all five* personas converge on, even if not literally articulated by any of them in those words, is a decision.
+
+| Synthesis pattern | Meaning | Action |
+| --- | --- | --- |
+| All personas ratify the proposal | Proposal is correct | Ship it |
+| All personas reject with **the same alternative** | Proposal is wrong; the alternative is right | Ship the alternative |
+| All personas reject with **different alternatives** | Design space is more unsettled than thought | Reframe the proposal; canvas again |
+| Personas split on the proposal but agree on *constraints the proposal violates* | The constraints, not the proposal, are the decision | Articulate the constraints; rewrite the proposal to satisfy them; canvas the rewrite |
+| Some personas ratify, some reject without an alternative | Inconclusive; the rejecting personas have not engaged | Re-prompt the rejectors with the specific objection |
+
+**Counter-offers more often than ratifications.** A canvas where 5/5 personas ratify the original proposal is suspicious — either the proposal is genuinely settled (in which case the canvas was unnecessary), or the personas weren't pressure-testing. If you keep getting unanimous ratifications, your canvas is rubber-stamping; widen the persona set.
+
+### Canvas size
+
+| Project type | Canvas |
+| --- | --- |
+| Solo-dev with persona files | 3 stakeholder personas |
+| Team project | Three Amigos + 1–2 stakeholder personas (5 total) |
+| Project with live agents | 3+ stakeholder personas plus available live agents (live agents amplify the canvas — different stack, different prior, more divergent feedback) |
+| Greenfield with no personas yet | Skip the canvas; this is the wrong tool. Run a Three Amigos consult instead and create stakeholder personas as the design firms up |
+
+**Live-agent amplification:** Projects whose deployed runtime *is* a multi-agent system can canvas the running agents directly via their existing chat / API surface. The agents bring divergent priors (different model families, different memory state, different prompts) which makes them a high-quality pressure test. This is an *enhancement* available to such projects; the canvas pattern itself works without it.
+
+### Anti-patterns
+
+- **Consulting personas one at a time and stopping at the first ratification.** That's confirmation bias dressed as consensus. Run the canvas in parallel.
+- **Counting votes.** Convergence is not voting. A 4-of-5 vote for the wrong answer is still wrong.
+- **Discarding personas whose feedback you don't like.** If a persona keeps offering objections you reject, re-prompt to understand the objection, don't filter.
+- **Letting the canvas run forever.** A canvas where consensus does not form within 2 rounds means the proposal needs rewriting, not more rounds. Reframe and re-canvas.
+
+---
+
 ## Options
 
 ## Depth Control

@@ -23,12 +23,14 @@ Manage project specifications and test artifacts. Supports the full pipeline fro
 
 **Generate mode is NOT documentation.** It produces a **migration blueprint** - a specification detailed enough that another team could rebuild the system in a different technology stack. Generated specs MUST be validated by running tests against the existing implementation.
 
+> **Operating Doctrine — onboarding to a project? Read `reference-doctrine.md` first.** It is the project-*agnostic* working discipline (the skill is the operating system; RFC/CR/ADR choice; files-are-truth + reconcile-from-census; reconcile/verify/review cadence; ship-paperwork-in-the-same-commit; consult gates; TDD; cross-repo numbering; **recall cross-project `lessons/` before substantive decisions**). A project's own `CLAUDE.md` = this doctrine + that project's specifics. The cross-project lessons-learned folder is `lessons/` (see `help/lessons.md`).
+
 ## Quick Start
 
 ```bash
 /sdlc-studio help                    # Show command reference
 /sdlc-studio status                  # Check pipeline state and next steps
-/sdlc-studio review                  # Unified PRD/TRD/TSD review
+/sdlc-studio review                  # Unified PRD/TRD/TSD/Persona review
 /sdlc-studio reconcile               # Fix all status drift in one pass
 /sdlc-studio upgrade --dry-run       # Preview schema upgrade
 /sdlc-studio prd generate            # Create PRD from codebase
@@ -37,6 +39,7 @@ Manage project specifications and test artifacts. Supports the full pipeline fro
 /sdlc-studio story                   # Generate Stories from Epics
 /sdlc-studio bug                     # Create or list bugs
 /sdlc-studio cr                      # Manage change requests
+/sdlc-studio rfc                     # Explore an unsettled design (pre-CR)
 /sdlc-studio code plan               # Plan implementation for story
 /sdlc-studio code implement          # Execute implementation plan
 /sdlc-studio code test               # Run tests with traceability
@@ -120,11 +123,23 @@ Claude loads files progressively based on task needs:
 | Project orchestration | reference-project.md | reference-epic.md | reference-config.md |
 | Agentic execution | reference-agentic-lessons.md | reference-epic.md | - |
 | Change request workflow | help/cr.md | reference-cr.md | reference-outputs.md |
+| RFC / design exploration | help/rfc.md | reference-rfc.md | reference-outputs.md |
 | Invoking skill internals | reference-scripts.md | scripts/README.md | - |
 | Ranking files for a story | reference-repo-map.md | help/repo-map.md | reference-epic.md#agent-prompt-template |
 | Verifying ACs against codebase | reference-verify.md | help/verify.md | reference-reconcile.md#verify-scope |
 | Syncing CR/Story/Epic with GitHub | reference-github-sync.md | help/github-sync.md | reference-cr.md#cr-sync-workflow |
+| Onboarding to a project / operating doctrine | reference-doctrine.md | help/init.md | lessons/_index.md |
 | Recording and loading project lessons | reference-agentic-lessons.md#lessons-accumulation | help/lessons.md | reference-epic.md#agentic-execution |
+| Recalling cross-project lessons (before a decision) | lessons/_index.md | help/lessons.md | reference-doctrine.md |
+| Operator patterns (memory drift, incident localisation, release-gate) | reference-operator-heuristics.md | templates/workflows/release-gate.md | reference-reconcile.md#numeric-claim-drift |
+| Hypothesis discipline (don't guess root cause) | reference-operator-heuristics.md#hypothesis-discipline | reference-bug.md#bug-close-workflow | reference-test-best-practices.md#verification-depth-tiers |
+| Preparing to tag a release | templates/workflows/release-gate.md | reference-operator-heuristics.md | reference-reconcile.md |
+| Deploy readiness (cold-spawn, smoke budget, rollback, soak) | reference-deploy-readiness.md | reference-test-best-practices.md#verification-depth-tiers | reference-decisions.md#release-strategy-decision |
+| Verification depth tiers (smoke / functional / conversational / soak / live) | reference-test-best-practices.md#verification-depth-tiers | templates/core/bug.md | templates/core/story.md |
+| Test-timeout tuning (measure local + CI variance) | reference-test-best-practices.md#test-timeout-tuning | - | - |
+| Multi-persona pressure-test canvas (unsettled design) | reference-consult.md#pressure-test-canvas | reference-decisions.md | - |
+| Plan-file lifecycle (active / archive / list) | reference-plan-files.md | - | - |
+| Reconcile cadence triggers | reference-reconcile.md#cadence-triggers | help/status.md#reconcile-recommendation | - |
 
 **Template structure:**
 
@@ -161,7 +176,7 @@ approach decisions.
 | Argument | Description | Default |
 | --- | --- | --- |
 | `type` | See Type Reference below | Required |
-| `action` | create, generate, review, plan, verify, check, list, fix, close, **help** | varies |
+| `action` | create, generate, review, plan, verify, check, list, fix, close, accept, propose, **help** | varies |
 | `--output` | Output path (file or directory) | varies by type |
 | `--prd` | PRD file path (for epic) | sdlc-studio/prd.md |
 | `--epic` | Specific epic ID | all epics |
@@ -223,6 +238,7 @@ approach decisions.
 | `test-env` | Containerised test environment setup |
 | `bug` | Bug tracking and traceability |
 | `cr` | Change requests (post-PRD change proposals) |
+| `rfc` | Request For Comments — design exploration of an unsettled space, pre-CR |
 | `project` | Project-level orchestration across all epics |
 | `reconcile` | Detect and fix status drift across all artifacts |
 | `status` | Visual dashboard: Requirements, Code, Tests health |
@@ -338,6 +354,17 @@ approach decisions.
 | `/sdlc-studio cr sync` | Two-way sync CRs with GitHub Issues |
 | `/sdlc-studio cr sync --dry-run` | Preview sync without writes |
 | `/sdlc-studio cr close --cr CR-0001` | Mark CR complete/rejected/deferred |
+
+### Design Exploration (RFC)
+
+| Command | Description |
+| --- | --- |
+| `/sdlc-studio rfc` | Ask what to do (create, list, review, accept, close) |
+| `/sdlc-studio rfc create` | Draft a new RFC (unsettled design — options + open decisions) |
+| `/sdlc-studio rfc list` | List RFCs (filter `--status`, `--priority`, `--author`) |
+| `/sdlc-studio rfc review` | Flag stalled RFCs + unresolved open decisions |
+| `/sdlc-studio rfc accept --rfc RFC-0001` | Record the decision + spawn/link the workstream CRs |
+| `/sdlc-studio rfc close --rfc RFC-0001` | Supersede or withdraw an RFC |
 
 ### Development Pipeline
 
@@ -612,7 +639,7 @@ Status: `Draft/Ready → Planned → In Progress → Review → Done`
 
 **Help:** `help/help.md` (main), `help/{type}.md` (type-specific), `help/upgrade.md` (schema upgrade), `help/reconcile.md` (status reconciliation)
 
-**References:** `reference-prd.md`, `reference-trd.md`, `reference-persona.md`, `reference-persona-generate.md`, `reference-consult.md`, `reference-chat.md`, `reference-workflow-personas.md` (Requirements), `reference-epic.md`, `reference-story.md`, `reference-bug.md`, `reference-cr.md` (Specifications), `reference-architecture.md` (Architecture), `reference-code.md` (Code, Test), `reference-refactor.md` (Refactoring, Review), `reference-review.md` (Unified document review), `reference-project.md` (Project orchestration), `reference-agentic-lessons.md` (Production lessons for agentic execution), `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` (Test artifacts), `reference-test-best-practices.md` (Test pitfalls), `reference-test-e2e-guidelines.md` (E2E patterns), `reference-upgrade.md` (Schema migration), `reference-reconcile.md` (Status reconciliation), `reference-repo-map.md` (AST repo indexer), `reference-verify.md` (Executable AC verifier DSL), `reference-github-sync.md` (GitHub Issues two-way sync), `reference-scripts.md` (Skill-internal scripts convention)
+**References:** `reference-prd.md`, `reference-trd.md`, `reference-persona.md`, `reference-persona-generate.md`, `reference-consult.md`, `reference-chat.md`, `reference-workflow-personas.md` (Requirements), `reference-epic.md`, `reference-story.md`, `reference-bug.md`, `reference-cr.md` (Specifications), `reference-architecture.md` (Architecture), `reference-code.md` (Code, Test), `reference-refactor.md` (Refactoring, Review), `reference-review.md` (Unified document review), `reference-project.md` (Project orchestration), `reference-agentic-lessons.md` (Production lessons for agentic execution), `reference-operator-heuristics.md` (Cross-cutting operator patterns: memory-drift, incident localisation, release-gate), `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` (Test artifacts), `reference-test-best-practices.md` (Test pitfalls), `reference-test-e2e-guidelines.md` (E2E patterns), `reference-upgrade.md` (Schema migration), `reference-reconcile.md` (Status reconciliation), `reference-repo-map.md` (AST repo indexer), `reference-verify.md` (Executable AC verifier DSL), `reference-github-sync.md` (GitHub Issues two-way sync), `reference-scripts.md` (Skill-internal scripts convention), `reference-doctrine.md` (Operating doctrine), `reference-deploy-readiness.md` (Deploy readiness patterns), `reference-rfc.md` (RFC design exploration), `reference-plan-files.md` (Plan-file lifecycle)
 
 **Templates (v2 modular structure):**
 

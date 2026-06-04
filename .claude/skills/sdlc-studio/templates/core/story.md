@@ -52,6 +52,7 @@ Related: help/story.md, reference-story.md
 - **When** {{ac1_when}}
 - **Then** {{ac1_then}}
 - **Verify:** {{ac1_verify}}
+- **Verification target:** {{ac1_verification_target}}
 - **Verified:** no
 
 ### AC2: {{ac2_name}}
@@ -60,6 +61,7 @@ Related: help/story.md, reference-story.md
 - **When** {{ac2_when}}
 - **Then** {{ac2_then}}
 - **Verify:** {{ac2_verify}}
+- **Verification target:** {{ac2_verification_target}}
 - **Verified:** no
 
 ### AC3: {{ac3_name}}
@@ -68,7 +70,10 @@ Related: help/story.md, reference-story.md
 - **When** {{ac3_when}}
 - **Then** {{ac3_then}}
 - **Verify:** {{ac3_verify}}
+- **Verification target:** {{ac3_verification_target}}
 - **Verified:** no
+
+> **Verification target tiers:** `functional` (single round-trip — default) | `conversational` (multi-turn / multi-step session continuity) | `soak` (live traffic over a window) | `live` (operator-confirmed in production). End-to-end ACs default to `conversational`; production-affecting ACs default to `soak`; ACs shipping behind a flag awaiting promotion default to `live`. See `reference-test-best-practices.md#verification-depth-tiers`.
 
 ---
 
@@ -136,6 +141,20 @@ Related: help/story.md, reference-story.md
 
 **Story Points:** {{story_points}}
 **Complexity:** {{complexity}}
+
+---
+
+## Rollback Envelope
+
+> Required when `affects_production_runtime: true`; optional otherwise. See `reference-story.md#rollback-envelope`.
+
+**Affects production runtime:** {{affects_production_runtime}}
+
+| Component | Reversal | Expected time |
+| --- | --- | --- |
+| {{component}} | {{reversal_command_or_steps}} | {{reversal_eta}} |
+
+If `affects_production_runtime: false`, replace with: *Not applicable — story does not change runtime behaviour.*
 
 ---
 

@@ -54,3 +54,31 @@ review:
 # off while seeding Verify: lines, then enable once reconcile reports
 # manual: 0 for the whole repository. See reference-verify.md.
 require_ac_verification: false
+
+# Persona staleness window (in days). A persona without a consult / story / CR
+# reference older than this is flagged in the Persona Review pass of
+# `/sdlc-studio review`. See reference-review.md.
+personas:
+  staleness_days: 90
+
+# Contract-table anchors. The structured tables in PRD and TRD that
+# constitute the feature contract — they ARE the contract, the changelog
+# is the audit trail. When a `code implement` ship-impacting commit
+# touches files that imply a feature surface change but does NOT touch
+# these anchors, the workflow warns. Project-overridable.
+# See reference-config.md and reference-code.md.
+contract_tables:
+  prd: "§3 Feature Inventory"
+  trd: "§6 Data Models"
+
+# Release strategy. Determines which ship-time guidance the workflow
+# emits for `code implement` and `epic implement`. See reference-config.md
+# and reference-decisions.md.
+#
+#   solo-dev       — direct commits to main; branches for isolation only.
+#                    Ship via `git merge --ff-only` + `git push`. No PR.
+#   pr-required    — every change goes through a PR. Ship via `gh pr create`
+#                    + review + merge. (default)
+#   staged-rollout — tagged-deploy + soak gate. Ship via tag + deploy +
+#                    soak window before promoting to "live".
+release_strategy: pr-required
