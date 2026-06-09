@@ -16,6 +16,8 @@ Thumbs.db
 
 # Local Claude settings
 .claude/settings.local.json
+.claude/memory.jsonl
+.claude/memory/
 
 # Python
 __pycache__/

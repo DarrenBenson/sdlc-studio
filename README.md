@@ -10,8 +10,11 @@
 ```
 
 [![MIT Licence](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/DarrenBenson/sdlc-studio?style=social)](https://github.com/DarrenBenson/sdlc-studio/stargazers)
 
 A Claude Code skill for managing the full software development lifecycle.
+
+> If SDLC Studio saves you time, please give it a ⭐ on GitHub. Stars help other developers find it.
 
 ## What is This?
 
@@ -30,6 +33,17 @@ Most AI coding jumps straight from a vague prompt to code, then drifts as the pr
 > **Requirements → Epics → User Stories → Plan → Code → Tests**
 
 Each step writes a plain markdown file under `sdlc-studio/` in your project. You stay in control: review each artefact, then run the next command. Start a brand-new project with `prd create`, or point it at existing code with `prd generate`. If you ever lose your place, `/sdlc-studio status` shows where you are and `/sdlc-studio hint` tells you the single next thing to do.
+
+### New in v1.8.0
+
+Cross-tool portability and a determinism-first script layer:
+
+- **Portable agent instructions** – a `templates/agent-instructions.md` starter (canonical `AGENTS.md`, with a one-line `CLAUDE.md` that imports it via `@AGENTS.md`) works across Claude Code, Codex, and Copilot. The skill no longer hard-codes `CLAUDE.md`.
+- **Deterministic helpers** – `reconcile`, `status`/`hint`, artifact validation, ID allocation, and review-prep now run as tested Python scripts that emit JSON, so the model spends tokens on judgement, not census. The principle: determinism in scripts, judgement in Claude. The five-leg review verdict stays Claude's.
+- **Link-check CI** – `npm run lint` now verifies every intra-skill anchor reference resolves, and CI runs the script unit tests.
+- **Cross-harness installer** – `install.sh` / `install.ps1` gain `--target claude|codex|gemini|opencode|copilot|all|auto`, installing the standard skill into each tool's skills directory. See [docs/INSTALL.md](docs/INSTALL.md).
+
+Full details are in the [CHANGELOG](CHANGELOG.md).
 
 ### New in v1.7.0
 
@@ -52,7 +66,7 @@ Four capabilities that keep status honest and keep agents grounded on large code
 
 Full details are under [Workflows](#workflows) below.
 
-**New to Claude Code?** You'll need to [install Claude Code](https://docs.anthropic.com/en/docs/claude-code/getting-started) first before installing this skill.
+**New to Claude Code?** You'll need to [install Claude Code](https://docs.anthropic.com/en/docs/claude-code/getting-started) (or another Agent-Skills tool) first before installing this skill.
 
 ## Prerequisites
 
@@ -60,96 +74,44 @@ Before installing SDLC Studio, ensure you have:
 
 | Requirement | How to check | Install guide |
 | --- | --- | --- |
-| Claude Code | Run `claude --version` | [Getting Started](https://docs.anthropic.com/en/docs/claude-code/getting-started) |
+| A supported agent (Claude Code, Codex, Gemini CLI, opencode, or Copilot) | e.g. `claude --version` | [Getting Started](https://docs.anthropic.com/en/docs/claude-code/getting-started) |
 | curl or wget (macOS/Linux) | Run `curl --version` | Usually pre-installed on macOS/Linux |
 | PowerShell (Windows) | Run `$PSVersionTable.PSVersion` | Pre-installed on Windows |
 
 ## Installation
 
-### Option 1: One-line installer (recommended)
+SDLC Studio is a standard Agent Skill, so it installs into any compatible tool -
+Claude Code, Codex, Gemini CLI, opencode, and GitHub Copilot. The one-liner below
+installs the **Claude Code** skill globally; for other tools append `--target`.
 
-**macOS/Linux** - open your terminal and run:
+**macOS/Linux:**
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash
 ```
 
-**Windows** - open PowerShell and run:
+**Windows (PowerShell):**
 
 ```powershell
 irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 | iex
 ```
 
-This installs SDLC Studio globally, making it available in all your projects.
+To target other agents, append a flag to the one-liner (PowerShell: `-Target`):
 
-**What this does:**
+| Target | Flag |
+| --- | --- |
+| Codex | `--target codex` |
+| Gemini CLI | `--target gemini` |
+| opencode | `--target opencode` |
+| Copilot | `--target copilot --local` |
+| Several at once | `--target gemini,codex` |
+| Every tool you have | `--target auto` |
 
-1. Downloads the latest version from GitHub
-2. Creates `~/.claude/skills/` if it doesn't exist
-3. Installs the skill files
+For example, `curl -fsSL .../install.sh | bash -s -- --target auto`.
 
-### Option 2: Install for a single project only
-
-If you only want the skill available in one project:
-
-**macOS/Linux:**
-
-```bash
-cd /path/to/your/project
-curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash -s -- --local
-```
-
-**Windows** - download the installer first, then run with options:
-
-```powershell
-cd C:\path\to\your\project
-irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 -OutFile install.ps1
-.\install.ps1 -Local
-```
-
-This creates `.claude/skills/sdlc-studio/` in your current directory.
-
-### Option 3: Install a specific version
-
-**macOS/Linux:**
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash -s -- --version v1.2.0
-```
-
-**Windows:**
-
-```powershell
-.\install.ps1 -Version v1.2.0
-```
-
-### Option 4: Manual installation
-
-If you prefer not to use the installer script:
-
-**macOS/Linux:**
-
-```bash
-# Clone the repository
-git clone https://github.com/DarrenBenson/sdlc-studio.git
-cd sdlc-studio
-
-# Copy to your Claude Code skills directory
-mkdir -p ~/.claude/skills
-cp -r .claude/skills/sdlc-studio ~/.claude/skills/
-```
-
-**Windows:**
-
-```powershell
-# Clone the repository
-git clone https://github.com/DarrenBenson/sdlc-studio.git
-cd sdlc-studio
-
-# Copy to your Claude Code skills directory
-New-Item -ItemType Directory -Force "$HOME\.claude\skills" | Out-Null
-Copy-Item -Recurse .claude\skills\sdlc-studio "$HOME\.claude\skills\"
-```
+**Full install guide:** [docs/INSTALL.md](docs/INSTALL.md) covers project-local
+installs, specific versions, native installers (`gh` / `gemini skills install`),
+uninstalling, the per-tool directory map, and Windows specifics.
 
 ## Verify Installation
 

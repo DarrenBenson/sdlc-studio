@@ -4,8 +4,9 @@ File: sdlc-studio/reviews/LATEST.md (overwritten on every full /sdlc-studio revi
 Status values: N/A (immutable record; the dated RV{NNNN}-unified-*.md is the historical copy)
 Related: help/review.md, reference-review.md, templates/reviews/findings.md
 
-Purpose: First-read orientation for fresh conversations. CLAUDE.md should point at this
-file as the entry-point so a new session can absorb current project state in one read.
+Purpose: First-read orientation for fresh conversations. The project's agent-instructions
+file (`AGENTS.md` / `CLAUDE.md`) should point at this file as the entry-point so a new
+session can absorb current project state in one read.
 The dated RV{NNNN}-unified-review-*.md remains the audit trail; LATEST.md is the
 stable filename pointing at the most recent unified anchor.
 
@@ -148,4 +149,4 @@ If empty, replace with: *No artefact files were modified by this review run.*
 
 ---
 
-> **First-read in fresh conversations:** point CLAUDE.md (or the project's equivalent orientation file) at this file as the canonical entry point. The unified anchor survives compaction better than narrative docs because it is a *snapshot*, not a *stream*.
+> **First-read in fresh conversations:** point the project's agent-instructions file (`AGENTS.md` / `CLAUDE.md`) at this file as the canonical entry point. The unified anchor survives compaction better than narrative docs because it is a *snapshot*, not a *stream*.

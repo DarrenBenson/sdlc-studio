@@ -8,6 +8,10 @@ Related: None (standalone utility command)
 
 Get a single actionable next step based on current pipeline state.
 
+> **Deterministic helper.** `python3 .claude/skills/sdlc-studio/scripts/status.py hint --format json`
+> returns `{next_command, reason}` from the mechanical ladder. Apply judgement only for the
+> blocker and implement-vs-plan branches it flags.
+
 ## Usage
 
 ```

@@ -22,9 +22,11 @@ import re
 import sys
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib import sdlc_md  # noqa: E402
 
 # Languages are identified by extension. Each language provides a symbol
 # extractor and an import extractor. Python uses the stdlib ast module;
@@ -305,8 +307,10 @@ def compute_in_degree(entries: dict[str, FileEntry]) -> None:
 
     for importer, entry in entries.items():
         for imp in entry.imports:
-            # Strip quotes, leading './', and file extensions
-            imp_clean = imp.strip("\"'").rstrip(".").lstrip("./")
+            # Strip quotes, a single leading './', and trailing dots
+            imp_clean = imp.strip("\"'").rstrip(".")
+            if imp_clean.startswith("./"):
+                imp_clean = imp_clean[2:]
             tail = os.path.basename(imp_clean)
             tail_stem = os.path.splitext(tail)[0]
             candidates = basenames.get(tail_stem) or basenames.get(tail)
@@ -321,7 +325,7 @@ def write_index(entries: dict[str, FileEntry], out_path: Path, root: Path) -> No
     """Serialise the index to JSON at out_path."""
     data = {
         "version": 1,
-        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "generated_at": sdlc_md.now_iso8601(),
         "root": str(root.resolve()),
         "files": {path: entry.to_dict() for path, entry in entries.items()},
     }
@@ -395,7 +399,9 @@ def score_file(path: str, entry: FileEntry, tokens: set[str]) -> tuple[float, li
 
 def query_index(map_path: Path, story_text: str, top_n: int) -> list[dict]:
     """Rank indexed files by relevance to story_text, top_n results."""
-    data = json.loads(map_path.read_text(encoding="utf-8"))
+    data = sdlc_md.read_json(map_path, None)
+    if data is None:
+        raise ValueError(f"{map_path} is not valid JSON")
     entries = data.get("files", {})
     tokens = tokenise(story_text)
     if not tokens:
@@ -474,7 +480,11 @@ def cmd_query(args: argparse.Namespace) -> int:
     else:
         story_text = story_arg
 
-    results = query_index(map_path, story_text, args.top)
+    try:
+        results = query_index(map_path, story_text, args.top)
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
     if args.format == "json":
         print(json.dumps(results, indent=2))
     else:
@@ -496,7 +506,10 @@ def cmd_stats(args: argparse.Namespace) -> int:
     if not map_path.exists():
         print(f"error: repo map not found at {map_path}", file=sys.stderr)
         return 2
-    data = json.loads(map_path.read_text(encoding="utf-8"))
+    data = sdlc_md.read_json(map_path, None)
+    if data is None:
+        print(f"error: {map_path} is not valid JSON", file=sys.stderr)
+        return 2
     entries = data.get("files", {})
     if not entries:
         print("empty index")
@@ -580,4 +593,10 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        sys.exit(130)
+    except Exception as exc:  # noqa: BLE001 - top-level guard
+        print(f"error: {exc}", file=sys.stderr)
+        sys.exit(1)

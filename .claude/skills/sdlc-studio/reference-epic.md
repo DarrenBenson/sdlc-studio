@@ -706,7 +706,7 @@ Automated workflows for implementing all stories in an epic.
       - Both must complete before advancing to next wave
       - If either fails: pause epic at that wave, report which story failed
 
-   e. **Post-Wave Merge Protocol**
+   e. **Post-Wave Merge Protocol** {#post-wave-merge-protocol}
       After all agents in a wave complete, merge their work into the main working directory. Follow this checklist in order:
 
       **Step 1: Inventory changes per worktree**

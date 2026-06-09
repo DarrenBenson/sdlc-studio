@@ -196,7 +196,7 @@ tests/
   fixtures/
 ```
 
-> See `reference-tsd.md#test-organisation` for naming conventions.
+> See `reference-tsd.md#test-organisation-language-agnostic` for naming conventions.
 
 ---
 

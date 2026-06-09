@@ -8,6 +8,11 @@ Related: reference-tsd.md (status workflow details)
 
 Shows a visual dashboard of project health across three pillars: Requirements, Code, and Tests.
 
+> **Deterministic helper.** Compute the census with the script rather than reading every artifact:
+> `python3 .claude/skills/sdlc-studio/scripts/status.py pillars --format json`.
+> Render the dashboard from that JSON. Run live lint / type-check / coverage yourself - the
+> script reports artifact-derived state only.
+
 > If `sdlc-studio/rfcs/` exists, optionally surface a one-line **Design Exploration** count under Requirements (e.g. `🧭 RFCs: 1 Draft, 0 In Review` – open design questions awaiting a decision). RFCs are pre-CR exploration and do not gate pipeline health; the line is informational only.
 
 ## Usage

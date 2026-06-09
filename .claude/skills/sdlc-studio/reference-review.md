@@ -6,11 +6,13 @@ Workflows for the unified document review command that analyses PRD, TRD, TSD, a
 
 The unified review command runs document reviews across all four specification layers (Product, Technical, Test, Persona) and checks cross-document consistency. Persona is reviewed for **drift** (have personas gone stale, do PRD references still resolve, are personas still consulted) – distinct from "Persona Consultation" (using personas to assess the other documents), which is documented at step 3a.
 
+> **Deterministic helper (run first).** `python3 .claude/skills/sdlc-studio/scripts/review_prep.py prep --format json` gathers the mechanical inputs each leg needs: artifact staleness (changed since last review), persona definition-vs-PRD usage, and the count / AC-verification inputs. Start each leg from that JSON. The review verdict - and the CODE leg in particular - stays your judgement; it is never scripted.
+
 ---
 
 ## When to Run a Unified Review
 
-Run `/sdlc-studio review` on a deliberate cadence – it is the periodic synthesis point that keeps PRD/TRD/TSD honest. CLAUDE.md and commit messages are audit trails, not indexes; the review is what answers "is this project healthy?"
+Run `/sdlc-studio review` on a deliberate cadence – it is the periodic synthesis point that keeps PRD/TRD/TSD honest. The agent-instructions file (`AGENTS.md` / `CLAUDE.md`) and commit messages are audit trails, not indexes; the review is what answers "is this project healthy?"
 
 **Cadence (any of, whichever comes first):**
 
@@ -21,7 +23,7 @@ Run `/sdlc-studio review` on a deliberate cadence – it is the periodic synthes
 
 **Symptom triggers (any of these mean a review is overdue):**
 
-- CLAUDE.md or PRD §3 detail blocks have started accumulating per-ship narrative – the changelog is leaking into the index because no review has synthesised it.
+- The agent-instructions file or PRD §3 detail blocks have started accumulating per-ship narrative – the changelog is leaking into the index because no review has synthesised it.
 - A canvas / persona consultation surfaced multiple cross-cutting concerns that no document has digested.
 - The number of versions since the most recent `RV{NNNN}-unified-review-*.md` exceeds the cadence above.
 
@@ -239,7 +241,7 @@ To skip auto-fix: `--no-fix` flag.
    b) Add a changelog/revision history entry summarising the review changes
    c) Format: `| {date} | Claude | {type} review: {summary of changes} |`
 7. Write updated review-state.json
-8. Write `sdlc-studio/reviews/LATEST.md` -- the unified anchor for the review just generated. Render via `templates/reviews/unified-anchor.md`. Overwrites any previous LATEST.md. This is the canonical "most recent review" pointer; CLAUDE.md and fresh-conversation orientation should read this rather than searching the directory. The dated `RV{NNNN}-unified-review-*.md` file remains the historical record; LATEST.md is purely a stable filename pointing at the most recent unified anchor.
+8. Write `sdlc-studio/reviews/LATEST.md` -- the unified anchor for the review just generated. Render via `templates/reviews/unified-anchor.md`. Overwrites any previous LATEST.md. This is the canonical "most recent review" pointer; the agent-instructions file and fresh-conversation orientation should read this rather than searching the directory. The dated `RV{NNNN}-unified-review-*.md` file remains the historical record; LATEST.md is purely a stable filename pointing at the most recent unified anchor.
 ```
 
 **review-state.json schema:** See `reference-outputs.md#review-state-json`.

@@ -32,10 +32,12 @@ import re
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib import sdlc_md  # noqa: E402
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -75,12 +77,8 @@ def gh(*args: str, capture: bool = True) -> subprocess.CompletedProcess:
     )
 
 
-def _loads(text: str, default):
-    """Parse JSON, returning `default` (not raising) on malformed input."""
-    try:
-        return json.loads(text or "null") if text and text.strip() else default
-    except json.JSONDecodeError:
-        return default
+# Shared JSON-with-default loader (kept under this name for callers/tests).
+_loads = sdlc_md.loads
 
 
 def gh_issue_list(label: str) -> list[dict]:
@@ -178,9 +176,7 @@ class LocalRecord:
         return labels
 
 
-def _slug(value: str) -> str:
-    """Lowercase, hyphenate, and trim a label component."""
-    return re.sub(r"[^a-z0-9]+", "-", value.strip().lower()).strip("-")
+_slug = sdlc_md.slug
 
 
 def _hash_body(body: str) -> str:
@@ -188,11 +184,7 @@ def _hash_body(body: str) -> str:
     return "sha256:" + hashlib.sha256(body.encode("utf-8")).hexdigest()[:16]
 
 
-def _extract_field(text: str, name: str) -> str | None:
-    """Pull the value of a `> **Name:** value` metadata line, if present."""
-    pattern = rf"^>\s*\*\*{re.escape(name)}:\*\*\s*(.+?)\s*$"
-    m = re.search(pattern, text, re.M)
-    return m.group(1) if m else None
+_extract_field = sdlc_md.extract_field
 
 
 def _extract_github_issue(text: str) -> int | None:
@@ -207,18 +199,13 @@ def _extract_github_issue(text: str) -> int | None:
 def parse_local_file(path: Path, type_: str) -> LocalRecord | None:
     """Parse one CR/Story/Epic markdown file into a LocalRecord."""
     text = path.read_text(encoding="utf-8")
-    # Title: first `# ` heading
-    title_match = re.search(r"^#\s+(.+)$", text, re.M)
-    title = title_match.group(1).strip() if title_match else path.stem
-    # Extract metadata fields
+    title = sdlc_md.extract_h1_title(text) or path.stem
     status = _extract_field(text, "Status") or ""
     priority = _extract_field(text, "Priority")
     rec_type = _extract_field(text, "Type")
     github_issue = _extract_github_issue(text)
-    # rec_id is the file's ID prefix. CR files use CR-NNNN-slug, US/EP
-    # files use US0001-slug / EP0001-slug with no dash inside the ID.
-    id_match = re.match(r"^(CR-\d{4}|US\d{4}|EP\d{4})", path.stem)
-    rec_id = id_match.group(1) if id_match else path.stem
+    # rec_id is the file's ID prefix (CR-NNNN with a dash; US/EP NNNN without).
+    rec_id = sdlc_md.extract_record_id(path.stem) or path.stem
     return LocalRecord(
         type=type_,
         rec_id=rec_id,
@@ -238,11 +225,8 @@ def walk_local(type_: str) -> Iterable[LocalRecord]:
     if type_ not in TYPE_DIRS:
         return []
     dir_path, prefix = TYPE_DIRS[type_]
-    base = Path(dir_path)
-    if not base.exists():
-        return []
     result: list[LocalRecord] = []
-    for p in sorted(base.glob(f"{prefix}*.md")):
+    for p in sdlc_md.walk_glob(Path(dir_path), f"{prefix}*.md"):
         if p.name == "_index.md":
             continue
         rec = parse_local_file(p, type_)
@@ -288,9 +272,7 @@ def save_state(state: dict, path: Path = Path(STATE_PATH)) -> None:
     path.write_text(json.dumps(state, indent=2), encoding="utf-8")
 
 
-def now_iso() -> str:
-    """Return the current UTC time as an ISO-8601 string."""
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+now_iso = sdlc_md.now_iso8601
 
 
 # -----------------------------------------------------------------------------
@@ -342,6 +324,9 @@ def cmd_push(args: argparse.Namespace) -> int:
     updated = 0
 
     for type_ in types:
+        # Fetch the type's issues at most once per type (lazily, only if a
+        # record needs a label sync) rather than once per record.
+        issues_by_number: dict[int, dict] | None = None
         for rec in walk_local(type_):
             if rec.github_issue is None:
                 title = f"[{rec.rec_id}] {rec.title}"
@@ -378,8 +363,11 @@ def cmd_push(args: argparse.Namespace) -> int:
                         f"for {rec.rec_id}"
                     )
                     continue
-                issues = gh_issue_list(TYPE_LABELS[type_])
-                issue = next((i for i in issues if i.get("number") == rec.github_issue), None)
+                if issues_by_number is None:
+                    issues_by_number = {
+                        i.get("number"): i for i in gh_issue_list(TYPE_LABELS[type_])
+                    }
+                issue = issues_by_number.get(rec.github_issue)
                 if issue is None:
                     print(
                         f"issue #{rec.github_issue} not found via gh for "
@@ -591,4 +579,10 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        sys.exit(130)
+    except Exception as exc:  # noqa: BLE001 - top-level guard
+        print(f"error: {exc}", file=sys.stderr)
+        sys.exit(1)

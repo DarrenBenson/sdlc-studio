@@ -6,6 +6,15 @@ Detailed workflow for the reconcile command that detects and fixes status drift 
 
 ---
 
+> **Deterministic helper - do the census with the script, not by hand.**
+> `python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect [--scope <scope>] --format json`
+> builds the file census and returns the drift list (`status-mismatch`,
+> `missing-row`, `orphan-row`, `count-mismatch`, `missing-index`). Consume that
+> JSON, then apply the fixes and the judgement calls the script does not make
+> (checkbox / dependency / PRD-feature drift, CR completion cascades, the
+> changelog). AC verification still runs via `verify_ac.py` (`--scope verify`).
+> The manual walk below is the fallback when the script is unavailable.
+
 ## /sdlc-studio reconcile - Step by Step {#reconcile-workflow}
 
 ### 1. Parse Arguments
@@ -114,7 +123,7 @@ g) Story dependency table drift:
      - If dependency table shows different status: add to change list
 
 h) Numeric-claim drift in prose docs {#numeric-claim-drift}:
-   Project-level markdown docs (e.g. CLAUDE.md, README.md, docs/**)
+   Project-level markdown docs (e.g. AGENTS.md, CLAUDE.md, README.md, docs/**)
    often embed numeric claims that drift silently across releases:
      - "vitest (N tests, M files)" / "N test cases" / "N lines of code"
      - "Version: X.Y.Z" footer strings
@@ -236,7 +245,7 @@ When `--scope` is specified, only run the relevant subset of Phase 2 and Phase 3
 | `prd` | PRD feature status + AC drift | prd.md |
 | `crs` | CR index drift + CR status cascade (report-only for completion) | change-requests/_index.md |
 | `verify` | Run AC verifiers via scripts/verify_ac.py | story Verified: lines + verify-report.json |
-| `docs` | Numeric-claim drift in prose docs (CLAUDE.md / README.md / docs/**) | REPORT ONLY unless `--fix-counts` |
+| `docs` | Numeric-claim drift in prose docs (AGENTS.md / CLAUDE.md / README.md / docs/**) | REPORT ONLY unless `--fix-counts` |
 | `indexes` | All index drift (no file-level fixes) | All _index.md files |
 | (none) | All checks | All fixes |
 

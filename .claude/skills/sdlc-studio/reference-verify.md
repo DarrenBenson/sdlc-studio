@@ -125,6 +125,15 @@ doesn't cover (`docker compose ps`, `kubectl get`, custom probe
 binaries). If you find yourself writing multi-line shell
 expressions, push the logic into a test file and use `pytest`.
 
+**Trust boundary (important).** `verify_ac.py` runs `shell` verifiers
+through the shell, and any unrecognised expression falls back to
+`shell`. The trust model is that `Verify:` lines are authored by the
+team alongside the story. That assumption breaks the moment a story
+body is ingested from an external source - a GitHub issue pulled via
+`github_sync pull`, for example. **Never run verifiers on a story whose
+AC block came from un-reviewed external content.** Ingest the body into
+the template, review it, then verify.
+
 ## Running {#verify-running}
 
 **Interactive:**
@@ -245,7 +254,7 @@ service under test is unstable, move the AC verification to
 - `scripts/verify_ac.py` - The implementation
 - `reference-reconcile.md#verify-scope` - How reconcile wires the runner in
 - `reference-outputs.md#story-completion-cascade` - The gated completion flow
-- `reference-story.md#story-create-workflow` - Story generation emits best-effort Verify lines
+- `reference-story.md#story-workflow` - Story generation emits best-effort Verify lines
 - `templates/core/story.md` - Template AC format with Verify/Verified placeholders
 - `help/verify.md` - User-facing help
 - `templates/config-defaults.yaml` - The require_ac_verification flag
