@@ -26,3 +26,27 @@ jobs:
 
       - name: Run script unit tests
         run: npm test
+
+  windows-smoke:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: install.ps1 - list targets and dry run (offline)
+        shell: pwsh
+        run: |
+          & ./install.ps1 -ListTargets
+          & ./install.ps1 -Target all -DryRun
+
+      - name: install.ps1 - real local install
+        shell: pwsh
+        run: |
+          $proj = Join-Path $env:RUNNER_TEMP 'sdlc-smoke'
+          New-Item -ItemType Directory -Force $proj | Out-Null
+          Push-Location $proj
+          & "$env:GITHUB_WORKSPACE/install.ps1" -Target claude -Local
+          if (-not (Test-Path '.claude/skills/sdlc-studio/SKILL.md')) {
+            throw 'install.ps1 did not place SKILL.md'
+          }
+          Write-Host 'Windows install smoke OK'
+          Pop-Location
