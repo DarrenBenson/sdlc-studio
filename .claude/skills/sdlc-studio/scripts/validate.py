@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -128,8 +129,91 @@ def cmd_check(args: argparse.Namespace) -> int:
     return 1 if errors else 0
 
 
+def check_instructions(root: Path) -> list[dict]:
+    """Hygiene-check a project's agent-instructions files (AGENTS.md / CLAUDE.md).
+
+    AGENTS.md is the canonical instructions file; CLAUDE.md should be a thin
+    `@AGENTS.md` pointer. Warns when the exemplar elements are missing or when the
+    file looks bloated with per-ship narrative (which belongs in LATEST.md).
+    """
+    out: list[dict] = []
+
+    def add(severity: str, rule: str, message: str) -> None:
+        out.append({"severity": severity, "rule": rule, "message": message})
+
+    agents = root / "AGENTS.md"
+    claude = root / "CLAUDE.md"
+
+    if not agents.exists():
+        add("error", "no-agents",
+            "no AGENTS.md (the canonical instructions file); seed it from "
+            "templates/agent-instructions.md")
+
+    if claude.exists():
+        ctext = claude.read_text(encoding="utf-8")
+        if "@AGENTS.md" not in ctext:
+            add("warning", "claude-not-pointer",
+                "CLAUDE.md exists but does not import `@AGENTS.md`; it should be a thin "
+                "pointer so the canonical instructions live in AGENTS.md")
+
+    if not agents.exists():
+        return out
+
+    text = agents.read_text(encoding="utf-8")
+    lower = text.lower()
+    for rule, present, message in [
+        ("no-doctrine-pointer",
+         "reference-doctrine" in text or "operating doctrine" in lower,
+         "no operating-doctrine pointer (reference `reference-doctrine.md`, do not restate it)"),
+        ("no-latest-pointer",
+         "latest.md" in lower,
+         "no pointer to `sdlc-studio/reviews/LATEST.md` (the current-state anchor)"),
+        ("no-release-gate",
+         "reconcile --verify" in text or "pre-release" in lower or "release gate" in lower,
+         "no pre-release gate (`reconcile --verify` + the review legs)"),
+        ("no-compaction-rule",
+         "compact" in lower or "compaction" in lower,
+         "no context-compaction re-read rule (re-read LATEST.md + run status after a reset)"),
+    ]:
+        if not present:
+            add("warning", rule, message)
+
+    n_lines = text.count("\n") + 1
+    if n_lines > 300:
+        add("warning", "bloat-length",
+            f"AGENTS.md is {n_lines} lines; instructions should stay lean - move "
+            "current-state/history into sdlc-studio/reviews/LATEST.md")
+    n_versions = len(re.findall(r"\bv?\d+\.\d+\.\d+\b", text))
+    if n_versions >= 12:
+        add("warning", "bloat-narrative",
+            f"{n_versions} version strings in AGENTS.md - looks like per-ship narrative; "
+            "move it to LATEST.md")
+
+    return out
+
+
+def cmd_instructions(args: argparse.Namespace) -> int:
+    """Validate the project's agent-instructions files and report."""
+    violations = check_instructions(Path(args.root).resolve())
+    errors = sum(1 for v in violations if v["severity"] == "error")
+    warnings = sum(1 for v in violations if v["severity"] == "warning")
+    if args.format == "json":
+        print(json.dumps({
+            "generated_at": sdlc_md.now_iso8601(),
+            "violations": violations,
+            "summary": {"errors": errors, "warnings": warnings},
+        }, indent=2))
+    else:
+        for v in violations:
+            print(f"{v['severity'].upper():7} [{v['rule']}] {v['message']}")
+        if not violations:
+            print("agent-instructions files look good.")
+        print(f"errors={errors} warnings={warnings}")
+    return 1 if errors else 0
+
+
 def build_parser() -> argparse.ArgumentParser:
-    """Construct the argparse parser for the check subcommand."""
+    """Construct the argparse parser for the check and instructions subcommands."""
     p = argparse.ArgumentParser(
         prog="validate.py",
         description="Validate sdlc-studio artifact structure.",
@@ -142,6 +226,12 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--root", default=".", help="Repo root (default: .)")
     c.add_argument("--format", choices=("text", "json"), default="text")
     c.set_defaults(func=cmd_check)
+
+    i = sub.add_parser("instructions",
+                       help="Validate the project's agent-instructions files (AGENTS.md / CLAUDE.md).")
+    i.add_argument("--root", default=".", help="Repo root (default: .)")
+    i.add_argument("--format", choices=("text", "json"), default="text")
+    i.set_defaults(func=cmd_instructions)
     return p
 
 

@@ -7,6 +7,8 @@ Workflows for the unified document review command that analyses PRD, TRD, TSD, a
 The unified review command runs document reviews across all four specification layers (Product, Technical, Test, Persona) and checks cross-document consistency. Persona is reviewed for **drift** (have personas gone stale, do PRD references still resolve, are personas still consulted) – distinct from "Persona Consultation" (using personas to assess the other documents), which is documented at step 3a.
 
 > **Deterministic helper (run first).** `python3 .claude/skills/sdlc-studio/scripts/review_prep.py prep --format json` gathers the mechanical inputs each leg needs: artifact staleness (changed since last review), persona definition-vs-PRD usage, and the count / AC-verification inputs. Start each leg from that JSON. The review verdict - and the CODE leg in particular - stays your judgement; it is never scripted.
+>
+> **Agent-instructions hygiene check.** Also run `python3 .claude/skills/sdlc-studio/scripts/validate.py instructions` - it verifies the project's `AGENTS.md` / `CLAUDE.md` are well-formed (AGENTS.md canonical, CLAUDE.md a `@AGENTS.md` pointer, the operating-doctrine + `LATEST.md` pointers present, the pre-release gate and the compaction re-read rule present, and no per-ship-narrative bloat). Fold any findings into the review (or fix them in the same pass) - a stale or bloated instructions file is drift like any other.
 
 ---
 
