@@ -84,5 +84,54 @@ class CheckCmdTests(unittest.TestCase):
             self.assertEqual(rc, 0)
 
 
+GOOD_AGENTS = (
+    "# Proj\n\n"
+    "Read `reference-doctrine.md`. Read `sdlc-studio/reviews/LATEST.md` first.\n"
+    "IMPORTANT pre-release gate: `/sdlc-studio reconcile --verify` + the review legs.\n"
+    "After `/compact` or a reset, re-read LATEST.md and run status.\n"
+)
+
+
+class InstructionsTests(unittest.TestCase):
+    def test_missing_agents_is_error(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            v = validate.check_instructions(Path(d))
+            self.assertIn("no-agents", {x["rule"] for x in v})
+            self.assertTrue(any(x["severity"] == "error" for x in v))
+
+    def test_good_agents_clean(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "AGENTS.md").write_text(GOOD_AGENTS, encoding="utf-8")
+            (root / "CLAUDE.md").write_text("@AGENTS.md\n", encoding="utf-8")
+            self.assertEqual(validate.check_instructions(root), [])
+
+    def test_claude_not_pointer_warns(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "AGENTS.md").write_text(GOOD_AGENTS, encoding="utf-8")
+            (root / "CLAUDE.md").write_text("# full instructions inline\n", encoding="utf-8")
+            self.assertIn("claude-not-pointer", {x["rule"] for x in validate.check_instructions(root)})
+
+    def test_missing_elements_warn(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "AGENTS.md").write_text("# Proj\n\nNothing useful here.\n", encoding="utf-8")
+            rules = {x["rule"] for x in validate.check_instructions(root)}
+            self.assertIn("no-doctrine-pointer", rules)
+            self.assertIn("no-latest-pointer", rules)
+            self.assertIn("no-release-gate", rules)
+            self.assertIn("no-compaction-rule", rules)
+
+    def test_cmd_exit_nonzero_when_no_agents(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(validate.main(["instructions", "--root", d]), 1)
+
+    def test_cmd_exit_zero_when_clean(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "AGENTS.md").write_text(GOOD_AGENTS, encoding="utf-8")
+            self.assertEqual(validate.main(["instructions", "--root", d]), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

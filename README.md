@@ -34,6 +34,13 @@ Most AI coding jumps straight from a vague prompt to code, then drifts as the pr
 
 Each step writes a plain markdown file under `sdlc-studio/` in your project. You stay in control: review each artefact, then run the next command. Start a brand-new project with `prd create`, or point it at existing code with `prd generate`. If you ever lose your place, `/sdlc-studio status` shows where you are and `/sdlc-studio hint` tells you the single next thing to do.
 
+### New in v1.9.0
+
+- **`init` seeds the agent-instructions file** – a new project gets `AGENTS.md` (plus a one-line `CLAUDE.md` pointer) from the templates automatically; an existing one gets a hygiene check with suggestions.
+- **Instruction-file hygiene check** – `validate.py instructions` (also run by `/sdlc-studio review`) flags a missing `AGENTS.md`, a `CLAUDE.md` that isn't a pointer, missing doctrine / gate / compaction elements, or per-ship-narrative bloat.
+
+Full details are in the [CHANGELOG](CHANGELOG.md).
+
 ### New in v1.8.0
 
 Cross-tool portability and a determinism-first script layer:

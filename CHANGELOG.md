@@ -5,6 +5,37 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-06-09
+
+`init` now seeds (or checks) the project's agent-instructions file, and a new
+deterministic hygiene check keeps `AGENTS.md` / `CLAUDE.md` honest - wired into
+`/sdlc-studio review`.
+
+### Added
+
+- **`validate.py instructions`** - a deterministic hygiene check for a project's
+  agent-instructions files: `AGENTS.md` exists (canonical), `CLAUDE.md` is a
+  `@AGENTS.md` pointer, the operating-doctrine and `LATEST.md` pointers are present, the
+  pre-release gate and the context-compaction re-read rule are present, and the file is
+  not bloated with per-ship narrative or stale version strings. Emits JSON; exits
+  non-zero on a missing `AGENTS.md`.
+- **`/sdlc-studio review` runs the instruction-file hygiene check** (via
+  `validate.py instructions`, alongside `review_prep`), so a stale or bloated
+  instructions file is caught as drift.
+
+### Changed
+
+- **`/sdlc-studio init` seeds or checks the agent-instructions file.** When `AGENTS.md`
+  is absent, init creates it from `templates/agent-instructions.md` plus a one-line
+  `CLAUDE.md` pointer (`@AGENTS.md`); when present, it runs `validate.py instructions`
+  and suggests improvements rather than overwriting hand-written specifics. Current-state
+  stays in `sdlc-studio/reviews/LATEST.md` (progressive disclosure), not in the
+  instructions file.
+
+### Tests
+
+- Script test count 95 → 101 (the instruction-file check).
+
 ## [1.8.0] - 2026-06-09
 
 Cross-tool portability and a determinism-first script layer. The skill stops

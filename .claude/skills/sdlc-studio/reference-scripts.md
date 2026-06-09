@@ -151,6 +151,10 @@ Live metrics (lint, type-check, coverage) are left to Claude to run. Help:
 ### `validate.py` (read-only)
 
 - `check`: lint artifact structure (ID, Status vocabulary, title, AC presence)
+- `instructions`: hygiene-check the project's `AGENTS.md` / `CLAUDE.md` (AGENTS.md
+  canonical, CLAUDE.md a `@AGENTS.md` pointer, operating-doctrine + `LATEST.md`
+  pointers present, pre-release gate + compaction rule present, no per-ship-narrative
+  bloat). Used by `/sdlc-studio init` (seed-or-check) and `/sdlc-studio review`.
 
 Exits non-zero when any error-severity violation is found. Used by Ready-status
 checks (`reference-decisions.md`) and as a reconcile pre-step.

@@ -14,7 +14,7 @@ them on behalf of the reference-file workflows.
 | `github_sync.py` | Two-way sync between local CRs, Stories, Epics and GitHub Issues via the `gh` CLI. Handles pull, push, PR-merge cascade, and conflict reporting. | `reference-github-sync.md` |
 | `reconcile.py` | Read-only drift detection: builds the artifact-file census and reports where `_index.md` tables have drifted (status mismatch, missing/orphan rows, count drift). Emits JSON; Claude applies fixes and the judgement. | `reference-reconcile.md` |
 | `status.py` | Four-pillar census (Requirements/Code/Tests/Reviews) plus the next-step hint, as JSON. Drives `/sdlc-studio status` and `hint`. | `help/status.md` |
-| `validate.py` | Artifact-structure linter: ID format, Status drawn from the type vocabulary, title/metadata block, AC presence. | `reference-decisions.md` |
+| `validate.py` | `check`: artifact-structure linter (ID format, Status vocabulary, title/metadata, AC presence). `instructions`: agent-instructions hygiene (`AGENTS.md` canonical, `CLAUDE.md` pointer, doctrine/LATEST pointers, pre-release gate, compaction rule, no narrative bloat). | `reference-decisions.md`, `reference-review.md` |
 | `next_id.py` | Allocate the next free artifact ID for a type (local plus, with `--remote`, `origin/main`). | `reference-outputs.md` |
 | `review_prep.py` | Deterministic inputs for the five-leg unified review: artifact staleness, persona usage, count/AC inputs. | `reference-review.md` |
 
