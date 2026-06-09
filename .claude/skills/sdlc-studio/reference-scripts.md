@@ -31,10 +31,31 @@ deterministic computation:
    files against GitHub Issues and writing back needs idempotent
    logic that a script can unit-test.
 
+A later wave extends the same principle - **determinism in scripts,
+judgement in Claude** - to the highest-frequency mechanical workflows,
+which had been running inside Claude's context:
+
+4. **Drift detection** (`reconcile.py`) – the file census and index-drift
+   comparison doctrine rule 3 prescribes is a deterministic algorithm.
+5. **Pipeline status** (`status.py`) – the four-pillar census and hint ladder.
+6. **Artifact validation** (`validate.py`) – ID/Status/structure linting.
+7. **ID allocation** (`next_id.py`) – cross-repo-safe numbering (rule 13).
+8. **Review inputs** (`review_prep.py`) – the mechanical inputs the five-leg
+   review consumes (staleness, persona usage, counts).
+
+These five are **read-only**: each emits JSON (or writes only to
+`.local/`), and Claude consumes it and does the judgement - adjudicating
+ambiguous drift, applying body-level edits, and rendering the dashboard or
+the review verdict. The census and computation move to the script; the
+decision stays with Claude. The five-leg review verdict and the CODE leg in
+particular are never scripted - they are irreducibly judgement.
+
 For everything else (reading files, walking directories, simple
 transforms) Claude's built-in tools are still the right answer. The
 scripts directory is for computation that benefits from being written
-once and tested.
+once and tested. All scripts share `lib/sdlc_md.py`, the single source of
+truth for the markdown conventions (metadata fields, artifact IDs, AC
+blocks, the artifact-type and status-vocabulary tables).
 
 ## Invocation {#scripts-invocation}
 
@@ -107,6 +128,48 @@ the `gh` CLI.
 
 Full workflow: `reference-github-sync.md`. User-facing help:
 `help/github-sync.md`.
+
+### `reconcile.py` (read-only)
+
+Builds the artifact-file census and reports `_index.md` drift as JSON.
+
+- `detect`: census + drift report (`--scope`, `--write-report`)
+
+Drift kinds: `status-mismatch`, `missing-row`, `orphan-row`, `count-mismatch`,
+`missing-index`. Claude consumes the report, applies the edits, and handles the
+checkbox/dependency/PRD-feature and CR-cascade drift that needs judgement.
+Full workflow: `reference-reconcile.md`.
+
+### `status.py` (read-only)
+
+- `pillars`: four-pillar census (Requirements/Code/Tests/Reviews) as JSON
+- `hint`: the next mechanical action
+
+Live metrics (lint, type-check, coverage) are left to Claude to run. Help:
+`help/status.md`, `help/hint.md`.
+
+### `validate.py` (read-only)
+
+- `check`: lint artifact structure (ID, Status vocabulary, title, AC presence)
+
+Exits non-zero when any error-severity violation is found. Used by Ready-status
+checks (`reference-decisions.md`) and as a reconcile pre-step.
+
+### `next_id.py` (read-only)
+
+- `allocate`: next free ID for a type (`--remote` also scans `origin/main`)
+- `scan`: list IDs in use
+
+Read-only; runs `git ls-tree` (no fetch - the caller fetches first per the
+contract). Backs ID assignment in `reference-cr.md` and doctrine rule 13.
+
+### `review_prep.py` (read-only)
+
+- `prep`: deterministic inputs for the five-leg review (artifact staleness,
+  persona definition-vs-PRD usage, count and AC-verification inputs)
+
+Gathers inputs only; the review verdict stays with Claude. Full workflow:
+`reference-review.md`.
 
 ## See Also
 

@@ -164,4 +164,4 @@ After creating a command:
 
 1. Test it works: `/command-name --help` or similar
 2. Add to `.claude/commands/engram-help.md`
-3. Update `CLAUDE.md` commands table if significant
+3. Update the project's agent-instructions file (`AGENTS.md` / `CLAUDE.md`) commands table if significant

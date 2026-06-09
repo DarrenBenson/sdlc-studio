@@ -28,7 +28,7 @@ argument reference, workflow diagrams, and reference index are loaded on demand 
 
 **Generate mode is NOT documentation.** It produces a **migration blueprint** - a specification detailed enough that another team could rebuild the system in a different technology stack. Generated specs MUST be validated by running tests against the existing implementation.
 
-> **Operating Doctrine – onboarding to a project? Read `reference-doctrine.md` first.** It is the project-*agnostic* working discipline (the skill is the operating system; RFC/CR/ADR choice; files-are-truth + reconcile-from-census; reconcile/verify/review cadence; ship-paperwork-in-the-same-commit; consult gates; TDD; cross-repo numbering; **recall cross-project `lessons/` before substantive decisions**). A project's own `CLAUDE.md` = this doctrine + that project's specifics. The cross-project lessons-learned folder is `lessons/` (see `help/lessons.md`).
+> **Operating Doctrine – onboarding to a project? Read `reference-doctrine.md` first.** It is the project-*agnostic* working discipline (the skill is the operating system; RFC/CR/ADR choice; files-are-truth + reconcile-from-census; reconcile/verify/review cadence; ship-paperwork-in-the-same-commit; consult gates; TDD; cross-repo numbering; **recall cross-project `lessons/` before substantive decisions**). A project's own agent-instructions file (`AGENTS.md`; Claude Code's `CLAUDE.md` can import it with `@AGENTS.md`) = this doctrine + that project's specifics; start from `templates/agent-instructions.md`. The cross-project lessons-learned folder is `lessons/` (see `help/lessons.md`).
 
 ## Quick Start
 

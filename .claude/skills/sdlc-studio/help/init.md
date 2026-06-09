@@ -164,12 +164,12 @@ After init:
 /sdlc-studio prd      # Start with Product Requirements
 ```
 
-## Onboarding a Claude to this project
+## Onboarding an agent to this project
 
-`init` configures the project; **onboarding** gives a Claude the working discipline:
+`init` configures the project; **onboarding** gives the agent the working discipline:
 
 1. **Read `reference-doctrine.md`** – the project-*agnostic* operating rules (the skill is the OS; RFC/CR/ADR choice; reconcile cadence + file-census; review cadence incl. a CODE leg; ship-paperwork-in-the-same-commit; consult gates; TDD; cross-repo numbering; recall `lessons/`).
-2. **Author/extend the project `CLAUDE.md` as doctrine + project specifics.** A good `CLAUDE.md` *references* the doctrine rather than restating it, then adds only what is unique to this project (architecture, config/secret handling, deploy/CI, code-style rules, the agents/services, house language).
+2. **Author/extend the project agent-instructions file as doctrine + project specifics.** The cross-tool standard is `AGENTS.md` (read by Codex, Copilot, Cursor and others); Claude Code reads `CLAUDE.md`, which can import it with `@AGENTS.md`. Start from `templates/agent-instructions.md` (with `agent-instructions.CLAUDE.md` and `agent-instructions.README.md`). A good file *references* the doctrine rather than restating it, then adds only what is unique to this project (architecture, config/secret handling, deploy/CI, code-style rules, the agents/services, house language).
 3. **`/sdlc-studio lessons recall`** – load the cross-project lessons-learned before design/process decisions.
 4. If `sdlc-studio/reviews/LATEST.md` exists, read it for current orientation.
 

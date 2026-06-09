@@ -5,6 +5,73 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-06-09
+
+Cross-tool portability and a determinism-first script layer. The skill stops
+hard-coding `CLAUDE.md` so it runs from Codex and Copilot too, ships a starter
+agent-instructions file, and moves its most mechanical workflows (census,
+status, validation, ID allocation, review inputs) into tested read-only Python
+helpers that emit JSON. The principle: determinism in scripts, judgement in
+Claude. The five-leg review verdict and its CODE leg are never scripted.
+
+### Added
+
+- **Agent-instructions template** (`templates/agent-instructions.md`, plus
+  `agent-instructions.CLAUDE.md` and `agent-instructions.README.md`): a
+  tool-neutral starter for a consuming project. `AGENTS.md` is the canonical
+  cross-tool file (read by Codex, Copilot, Cursor and others); Claude Code's
+  `CLAUDE.md` imports it with `@AGENTS.md`. It carries the production-release
+  gate (reconcile --verify plus the five-leg review) and the
+  autonomous-execution-with-persona-consultation goal inline, and points at the
+  doctrine rather than restating it.
+- **Five read-only deterministic helpers** under `scripts/`, each emitting JSON
+  the workflows consume: `reconcile.py detect` (file-census index drift),
+  `status.py` (four-pillar census plus hint), `validate.py` (artifact-structure
+  linter), `next_id.py` (cross-repo-safe ID allocation), and `review_prep.py`
+  (the mechanical inputs the five-leg review consumes). Shared parsing lives in
+  `scripts/lib/sdlc_md.py`, the single source of truth for the markdown
+  conventions and the artifact-type and status-vocabulary tables.
+- **Link-check CI** (`tools/check_links.py`, `npm run lint:links`): verifies
+  every intra-skill `path.md#anchor` reference resolves. `npm test` and the
+  script unit tests now also run in CI.
+- **Cross-harness installer.** `install.sh` and `install.ps1` gain
+  `--target claude|codex|gemini|opencode|copilot|all|auto` (plus `--uninstall`
+  and `--list-targets`), installing the standard `SKILL.md` skill into each
+  tool's skills directory. SDLC Studio is a standard Agent Skill, so it now runs
+  from Codex, Gemini CLI, opencode and Copilot as well as Claude Code; native
+  installers (`gh skills install`, `gemini skills install`) work too. New
+  `docs/INSTALL.md` is the full install guide; the README install section is
+  trimmed to a multi-harness summary that links to it.
+
+### Changed
+
+- **The skill no longer hard-codes `CLAUDE.md`.** Seventeen references across
+  nine files now read "the project's agent-instructions file (`AGENTS.md`)", so
+  the skill is portable to Copilot and Codex. `help/init.md` and
+  `reference-doctrine.md` point at the new template.
+- `reconcile`, `status`/`hint`, ID allocation, story Ready checks, and the
+  unified review now invoke their helper script first and consume the JSON,
+  keeping the manual walk as a fallback. The five-leg review verdict stays
+  Claude's; the CODE leg is never scripted.
+- The agent-instructions template instructs re-reading `reviews/LATEST.md` and
+  running `status` after any context compaction or reset - portable across
+  Claude Code, Codex, Copilot, and opencode.
+
+### Fixed
+
+- Hardened the three existing scripts: a corrupt `.local/*.json` now exits 2
+  instead of raising a traceback; every `main()` wraps `KeyboardInterrupt`
+  (exit 130) and unexpected errors (exit 1) per the script template; fixed a
+  `repo_map` import-prefix bug; `github_sync push` no longer re-fetches the
+  issue list once per record; removed a dead acceptance-criterion boundary
+  block in `verify_ac`.
+- Renamed `best-practices/readme.md` to `readme-guide.md` to remove a
+  case-collision with `README.md` on case-insensitive filesystems.
+- Fixed three pre-existing broken cross-reference anchors
+  (`reference-epic.md#post-wave-merge-protocol`, and mis-named anchors in
+  `reference-verify.md` and `templates/core/tsd.md`).
+- Script test count rose from 46 to 95.
+
 ## [1.7.2] - 2026-06-05
 
 Extends the style guard to corporate jargon, and restructures SKILL.md for

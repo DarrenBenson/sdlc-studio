@@ -31,20 +31,19 @@ import subprocess
 import sys
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib import sdlc_md  # noqa: E402
+
 # -----------------------------------------------------------------------------
-# AC parsing
+# AC parsing (regexes live in the shared lib; aliased here for local use)
 # -----------------------------------------------------------------------------
 
-AC_HEADING_RE = re.compile(r"^###\s+(AC\d+)(?::\s*(.*))?$")
-VERIFY_RE = re.compile(r"^(\s*)-\s*\*\*Verify:\*\*\s*(.+?)\s*$")
-VERIFIED_RE = re.compile(
-    r"^(\s*)-\s*\*\*Verified:\*\*\s*(yes|no|stale|manual)\s*(?:\(([^)]*)\))?\s*$",
-    re.IGNORECASE,
-)
+AC_HEADING_RE = sdlc_md.AC_HEADING_RE
+VERIFY_RE = sdlc_md.VERIFY_RE
+VERIFIED_RE = sdlc_md.VERIFIED_RE
 
 
 @dataclass
@@ -89,11 +88,6 @@ def parse_story(text: str) -> list[ACBlock]:
 
         if current is None:
             continue
-
-        # Stop the current AC at the next non-indented heading or the next top-level heading
-        if line.startswith("## ") or line.startswith("### AC"):
-            # Heading guard already handled, but blank below also ends
-            pass
 
         vm = VERIFY_RE.match(line)
         if vm and current.verify_line is None:
@@ -243,7 +237,7 @@ def update_verified(lines: list[str], block: ACBlock, new_state: str) -> list[st
     Adds a new Verified line if one does not exist. Preserves original
     indentation.
     """
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today = sdlc_md.now_date()
     new_line = None
 
     if not lines:
@@ -353,7 +347,7 @@ def walk_stories(stories_dir: Path) -> Iterable[Path]:
 def write_report(path: Path, stories: list[StoryReport]) -> None:
     """Write the per-story verification summary to JSON."""
     data = {
-        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "generated_at": sdlc_md.now_iso8601(),
         "stories": {
             os.path.basename(s.path).replace(".md", ""): {
                 "ac_count": s.ac_count,
@@ -427,7 +421,10 @@ def cmd_report(args: argparse.Namespace) -> int:
     if not report_path.exists():
         print(f"error: no report at {report_path}. Run `verify_ac.py run` first.", file=sys.stderr)
         return 2
-    data = json.loads(report_path.read_text(encoding="utf-8"))
+    data = sdlc_md.read_json(report_path, None)
+    if data is None:
+        print(f"error: {report_path} is not valid JSON", file=sys.stderr)
+        return 2
     if args.format == "json":
         print(json.dumps(data, indent=2))
         return 0
@@ -499,4 +496,10 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        sys.exit(130)
+    except Exception as exc:  # noqa: BLE001 - top-level guard
+        print(f"error: {exc}", file=sys.stderr)
+        sys.exit(1)

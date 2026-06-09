@@ -54,7 +54,7 @@ Before submitting changes, review the relevant best practice guide:
 | ------------- | ------- |
 | Main skill file | `best-practices/claude-skill.md` |
 | Documentation | `best-practices/documentation.md` |
-| README | `best-practices/readme.md` |
+| README | `best-practices/readme-guide.md` |
 | Templates | Template conventions in claude-skill.md |
 
 ### Testing Changes

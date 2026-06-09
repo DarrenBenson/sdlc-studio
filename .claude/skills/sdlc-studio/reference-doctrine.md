@@ -3,11 +3,17 @@
 **Read this to onboard to ANY sdlc-studio project.** These are the project-*agnostic*
 working rules – the discipline that makes a Claude effective in an sdlc-studio repo.
 Project-*specific* facts (architecture, config paths, deploy recipes, code-style
-rules, the agents/services) live in that project's `CLAUDE.md` + TRD, not here.
+rules, the agents/services) live in that project's agent-instructions file
+(`AGENTS.md`, which `CLAUDE.md` / `.github/copilot-instructions.md` may point to)
++ TRD, not here.
 
-> A project's `CLAUDE.md` should be **doctrine (this file) + project specifics**.
+> A project's agent-instructions file should be **doctrine (this file) + project
+> specifics**. The cross-tool standard is `AGENTS.md`; Claude Code reads `CLAUDE.md`
+> (point it at `AGENTS.md` with `@AGENTS.md`). Start from
+> `templates/agent-instructions.md`.
 > When onboarding to a new project: (1) read this doctrine, (2) read the project
-> `CLAUDE.md`, (3) read `sdlc-studio/reviews/LATEST.md` for current orientation,
+> agent-instructions file, (3) read `sdlc-studio/reviews/LATEST.md` for current
+> orientation,
 > (4) run `/sdlc-studio status` then `/sdlc-studio hint`, (5) **recall relevant
 > cross-project lessons** (`lessons/`, see `help/lessons.md`).
 
@@ -59,7 +65,8 @@ rules, the agents/services) live in that project's `CLAUDE.md` + TRD, not here.
 
 9. **Ship paperwork in the same commit as the code.** The structured tables (PRD
    feature inventory, TRD rows, capability lists) ARE the contract; the changelog is
-   the audit trail. Never grow `CLAUDE.md` with per-ship narrative – that's what
+   the audit trail. Never grow the agent-instructions file (`AGENTS.md` /
+   `CLAUDE.md`) with per-ship narrative – that's what
    `git log` + spec detail blocks + `LATEST.md` are for.
 
 10. **Query current API docs before using any library.** Training data is stale;
@@ -91,5 +98,6 @@ rules, the agents/services) live in that project's `CLAUDE.md` + TRD, not here.
 Architecture and design principles · config/secret handling specifics · deploy &
 CI recipes · language/code-style rules (e.g. "no `any`", error shapes) · the
 agents/services/topology · house language (British/American). Capture those in the
-project `CLAUDE.md` + TRD. This doctrine + those specifics together = a fully
+project agent-instructions file (`AGENTS.md`) + TRD. This doctrine + those specifics
+together = a fully
 onboarded Claude.
