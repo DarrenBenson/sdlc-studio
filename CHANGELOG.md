@@ -5,6 +5,49 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.1] - 2026-06-10
+
+Back-port of production fixes to the read-only helper scripts: `reconcile`,
+`status`, and `validate` now tolerate real-world artefact conventions instead of
+emitting false-positive drift. Folded in from live use on a project whose
+artefacts use mixed id casing, decorated status lines, and plain-bullet
+acceptance criteria.
+
+### Fixed
+
+- **`reconcile` no longer false-positives on six artefact conventions.** Case- and
+  punctuation-insensitive id matching (a file `cr0001.md` matches an index row
+  `CR-0001` instead of double-counting as missing-row + orphan-row); decorated
+  statuses (`Done (v2.83.0) · **CR:** CR-0088`) canonicalise to their vocabulary
+  token before comparison; status-less files (legacy docs, most CRs) assert
+  nothing and are not status-mismatched; summary counts for such types reconcile
+  against the index rows, not the file census; `*-consultations.md` notes are
+  excluded from the census so they no longer clobber the real artefact; and
+  reserved/retired index rows (`Proposed`/`Draft`/custom non-vocabulary states)
+  with no file are treated as intentional reservations, not orphans. See
+  `reference-reconcile.md#matching-tolerances`.
+- **`status` tallies decorated statuses under their canonical token,** so
+  `Done (v2.66.0)` counts as `Done` and done-percentages stay correct.
+- **`validate` accepts more valid forms.** Acceptance criteria may be `### ACn`
+  headings, compact `- **ACn:**` bullets, or a populated `## Acceptance Criteria`
+  section; metadata fields parse with or without the leading `>` blockquote;
+  decorated statuses pass the vocabulary check.
+
+### Changed
+
+- **Status vocabulary additions:** story gains `Proposed` (optional pre-Draft
+  intake state); bug and CR gain `Superseded`. Docs in `reference-outputs.md`
+  and `help/story.md` updated to match.
+- **`lib/sdlc_md.py`** gains shared `norm_id()` and `canonical_status()` helpers
+  and excludes `*-consultations.md` from `artifact_files()`; id regexes are now
+  case-insensitive.
+
+### Tests
+
+- Script test count 101 → 123 (id-normalisation, canonical-status, decorated and
+  plain-bullet AC, consultations exclusion, reserved-row, and count-authority
+  regressions).
+
 ## [1.9.0] - 2026-06-09
 
 `init` now seeds (or checks) the project's agent-instructions file, and a new

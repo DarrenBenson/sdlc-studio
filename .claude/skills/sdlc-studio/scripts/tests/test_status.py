@@ -36,6 +36,17 @@ class CensusTests(unittest.TestCase):
             self.assertEqual(census["total"], 3)
             self.assertEqual(census["by_status"]["Done"], 2)
 
+    def test_decorated_status_collapses_to_canonical(self) -> None:
+        # `Done (v2.66.0) · **CR:** CR-0088` must tally under `Done`, not as a
+        # distinct bucket, so done-percentages stay correct.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, "Done (v2.66.0) · **CR:** CR-0088")
+            _story(root, 2, "Done")
+            census = status.count_by_status("story", root)
+            self.assertEqual(census["total"], 2)
+            self.assertEqual(census["by_status"], {"Done": 2})
+
     def test_pct_done(self) -> None:
         census = {"total": 4, "by_status": {"Done": 1, "Draft": 3}}
         self.assertEqual(status._pct_done(census, ("Done",)), 25)

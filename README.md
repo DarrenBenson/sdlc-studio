@@ -34,6 +34,13 @@ Most AI coding jumps straight from a vague prompt to code, then drifts as the pr
 
 Each step writes a plain markdown file under `sdlc-studio/` in your project. You stay in control: review each artefact, then run the next command. Start a brand-new project with `prd create`, or point it at existing code with `prd generate`. If you ever lose your place, `/sdlc-studio status` shows where you are and `/sdlc-studio hint` tells you the single next thing to do.
 
+### New in v1.9.1
+
+- **Fewer false-positive drift reports** – `reconcile`, `status`, and `validate` now tolerate real-world artefact conventions: mixed id casing (`cr0001.md` ↔ `CR-0001`), decorated status lines (`Done (v2.83.0) · …`), status-less legacy files, `*-consultations.md` notes, reserved/retired index rows, and plain-bullet acceptance criteria. See `reference-reconcile.md#matching-tolerances`.
+- **Status vocabulary additions** – story gains `Proposed`; bug and CR gain `Superseded`.
+
+Full details are in the [CHANGELOG](CHANGELOG.md).
+
 ### New in v1.9.0
 
 - **`init` seeds the agent-instructions file** – a new project gets `AGENTS.md` (plus a one-line `CLAUDE.md` pointer) from the templates automatically; an existing one gets a hygiene check with suggestions.

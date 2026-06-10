@@ -41,7 +41,10 @@ class CensusTests(unittest.TestCase):
             root = Path(d)
             _fixture(root)
             census = reconcile.file_census("story", root)
-            self.assertEqual(census, {"US0001": "Done", "US0002": "In Progress"})
+            self.assertEqual(
+                census,
+                {"US0001": ("US0001", "Done"), "US0002": ("US0002", "In Progress")},
+            )
 
 
 class IndexParseTests(unittest.TestCase):
@@ -51,7 +54,10 @@ class IndexParseTests(unittest.TestCase):
             _fixture(root)
             idx = reconcile.parse_index("story", root)
             self.assertTrue(idx["exists"])
-            self.assertEqual(idx["rows"], {"US0001": "Draft", "US0099": "Done"})
+            self.assertEqual(
+                idx["rows"],
+                {"US0001": ("US0001", "Draft"), "US0099": ("US0099", "Done")},
+            )
             self.assertEqual(idx["summary"], {"Done": 1, "In Progress": 0})
 
     def test_table_cells_skips_separator(self) -> None:
@@ -93,6 +99,107 @@ class DriftTests(unittest.TestCase):
             (sd / "US0001-x.md").write_text("# X\n\n> **Status:** Done\n", encoding="utf-8")
             kinds = {x["kind"] for x in reconcile.detect_type("story", root)["drift"]}
             self.assertIn("missing-index", kinds)
+
+
+class NormalisationTests(unittest.TestCase):
+    """Regression cover for the four false-positive classes fixed 2026-06-10."""
+
+    def test_id_format_hyphen_insensitive(self) -> None:
+        # File `CR0001` (no hyphen) vs index row `CR-0001` (hyphen) must MATCH,
+        # not double-count as missing-row + orphan-row.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cd = root / "sdlc-studio" / "change-requests"
+            cd.mkdir(parents=True)
+            (cd / "CR0001-x.md").write_text("# X\n\n> **Status:** Complete\n", encoding="utf-8")
+            (cd / "_index.md").write_text(
+                "| Status | Count |\n|---|---|\n| Complete | 1 |\n\n"
+                "| ID | Status |\n|---|---|\n| [CR-0001](CR0001-x.md) | Complete |\n",
+                encoding="utf-8",
+            )
+            kinds = {x["kind"] for x in reconcile.detect_type("cr", root)["drift"]}
+            self.assertNotIn("missing-row", kinds)
+            self.assertNotIn("orphan-row", kinds)
+
+    def test_decorated_status_canonicalised(self) -> None:
+        # File `Done (v2.83.0) · **CR:** CR-0088` vs index `Done` is NOT drift.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "US0001-x.md").write_text(
+                "# X\n\n> **Status:** Done (v2.83.0) · **CR:** CR-0088 · **Points:** 8\n",
+                encoding="utf-8",
+            )
+            (sd / "_index.md").write_text(
+                "| Status | Count |\n|---|---|\n| Done | 1 |\n\n"
+                "| ID | Status |\n|---|---|\n| [US0001](US0001-x.md) | Done |\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(reconcile.detect_type("story", root)["drift"], [])
+
+    def test_status_less_namesake_does_not_clobber(self) -> None:
+        # `EP0001-consultations.md` (no status) must not overwrite EP0001's Done.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            ed = root / "sdlc-studio" / "epics"
+            ed.mkdir(parents=True)
+            (ed / "EP0001-real.md").write_text("# Real\n\n> **Status:** Done\n", encoding="utf-8")
+            (ed / "EP0001-consultations.md").write_text("# Consults\n\nno status here\n", encoding="utf-8")
+            census = reconcile.file_census("epic", root)
+            self.assertEqual(census["EP0001"][1], "Done")
+
+    def test_file_without_status_field_not_flagged(self) -> None:
+        # A legacy file with no `> **Status:**` line asserts nothing to compare,
+        # so it must not status-mismatch against the index every run.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cd = root / "sdlc-studio" / "change-requests"
+            cd.mkdir(parents=True)
+            (cd / "CR0001-x.md").write_text("# CR-0001\n\n**Requester:** Op\n\nbody only\n", encoding="utf-8")
+            (cd / "_index.md").write_text(
+                "| Status | Count |\n|---|---|\n| Complete | 1 |\n\n"
+                "| ID | Status |\n|---|---|\n| [CR-0001](CR0001-x.md) | Complete |\n",
+                encoding="utf-8",
+            )
+            kinds = {x["kind"] for x in reconcile.detect_type("cr", root)["drift"]}
+            self.assertNotIn("status-mismatch", kinds)
+
+    def test_reserved_row_is_not_an_orphan(self) -> None:
+        # A `Proposed` (or custom `Retired`) index row with no file is an
+        # intentional reservation, not an orphan; an active `Done` row with no
+        # file IS an orphan.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            ed = root / "sdlc-studio" / "epics"
+            ed.mkdir(parents=True)
+            (ed / "_index.md").write_text(
+                "| ID | Status |\n|---|---|\n"
+                "| EP0050 | Proposed |\n"      # reserved future epic, no file
+                "| EP0051 | Retired |\n"        # documented retirement, no file
+                "| EP0052 | Done |\n",          # shipped but file vanished -> orphan
+                encoding="utf-8",
+            )
+            orphans = {x["id"] for x in reconcile.detect_type("epic", root)["drift"]
+                       if x["kind"] == "orphan-row"}
+            self.assertEqual(orphans, {"EP0052"})
+
+    def test_count_checked_against_index_rows_not_file_census(self) -> None:
+        # CR files carry no status; the summary must reconcile against the index
+        # ROW tally, so a correct summary is clean even though the file census
+        # is all-Unknown.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cd = root / "sdlc-studio" / "change-requests"
+            cd.mkdir(parents=True)
+            (cd / "CR0001-x.md").write_text("# CR-0001\n\nno status line\n", encoding="utf-8")
+            (cd / "_index.md").write_text(
+                "| Status | Count |\n|---|---|\n| Complete | 1 |\n\n"
+                "| ID | Status |\n|---|---|\n| [CR-0001](CR0001-x.md) | Complete |\n",
+                encoding="utf-8",
+            )
+            kinds = {x["kind"] for x in reconcile.detect_type("cr", root)["drift"]}
+            self.assertNotIn("count-mismatch", kinds)
 
 
 if __name__ == "__main__":

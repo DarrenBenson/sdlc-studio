@@ -23,6 +23,26 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 
+_AC_SECTION_RE = re.compile(r"^#{2,}\s+.*acceptance criteria", re.I | re.M)
+
+
+def _has_ac_section(text: str) -> bool:
+    """True if an 'Acceptance Criteria' heading is followed by at least one line
+    of content (bullet, numbered item, or prose) before the next heading.
+
+    Accepts the common plain-bullet-list AC style, not only labelled `ACn` ids.
+    """
+    m = _AC_SECTION_RE.search(text)
+    if not m:
+        return False
+    for line in text[m.end():].splitlines():
+        s = line.strip()
+        if s.startswith("#"):
+            break  # next heading — section ended with no content
+        if s and not s.startswith(">"):
+            return True
+    return False
+
 # Directory basename -> artifact type, for inferring a file's type from path.
 _DIR_TO_TYPE = {
     Path(rel).name: type_ for type_, (rel, _prefix) in sdlc_md.ARTIFACT_TYPES.items()
@@ -71,7 +91,9 @@ def validate_file(path: Path, type_: str) -> list[dict]:
     status = sdlc_md.extract_field(text, "Status")
     if status is None:
         add("error", "no-status", "no `> **Status:**` metadata line found")
-    elif status not in sdlc_md.STATUS_VOCAB[type_]:
+    elif sdlc_md.canonical_status(status, sdlc_md.STATUS_VOCAB[type_]) is None:
+        # Decorated statuses ('Done (v2.66.0)') are valid — only a status whose
+        # leading token is not in the vocabulary at all is flagged.
         allowed = ", ".join(sdlc_md.STATUS_VOCAB[type_])
         add("error", "status-vocab",
             f"status '{status}' is not one of the allowed {type_} statuses ({allowed})")
@@ -82,8 +104,10 @@ def validate_file(path: Path, type_: str) -> list[dict]:
             for line in text.splitlines()
             if sdlc_md.extract_ac_id(line)
         ]
-        if not ac_ids:
-            add("error", "no-ac", "story has no `### ACn` acceptance criteria")
+        if not ac_ids and not _has_ac_section(text):
+            add("error", "no-ac",
+                "story has no acceptance criteria (`### ACn`, `- **ACn:**`, or a "
+                "populated `## Acceptance Criteria` section)")
 
     return out
 
