@@ -34,16 +34,39 @@ SCOPE_TYPES = {
 }
 _DEFAULT_TYPES = ["story", "epic", "cr", "rfc", "plan", "test-spec"]
 
+# Statuses that do NOT imply a backing file yet. An index row in one of these
+# states (or a non-vocabulary state such as a custom "Retired"/"Reserved") with
+# no file on disk is an intentional reservation or a documented retirement —
+# not an orphan to remove. Only an active/terminal status (Done, In Progress,
+# Complete, …) with no file is a real orphan.
+_NO_FILE_EXPECTED = {
+    "Proposed", "Draft", "Deferred", "Superseded", "Withdrawn", "Rejected",
+    "Won't Implement", "Won't Fix",
+}
 
-def file_census(type_: str, repo_root: Path) -> dict[str, str]:
-    """Map artifact ID -> Status from the files on disk (the source of truth)."""
-    census: dict[str, str] = {}
+
+# Shared, project-agnostic helpers (id normalisation + status canonicalisation)
+# live in sdlc_md so every script handles the same conventions identically.
+_norm_id = sdlc_md.norm_id
+_canonical_status = sdlc_md.canonical_status
+
+
+def file_census(type_: str, repo_root: Path) -> dict[str, tuple[str, str]]:
+    """Map normalised artifact ID -> (display id, raw Status) from disk (truth)."""
+    vocab = sdlc_md.STATUS_VOCAB.get(type_, [])
+    census: dict[str, tuple[str, str]] = {}
     for path in sdlc_md.artifact_files(type_, repo_root):
         rec = sdlc_md.extract_record_id(path.stem)
         if not rec:
             continue
         status = sdlc_md.extract_field(path.read_text(encoding="utf-8"), "Status") or "Unknown"
-        census[rec] = status
+        key = _norm_id(rec)
+        prev = census.get(key)
+        # A file with a recognised status wins over a status-less namesake
+        # sharing the ID (e.g. `EP0025-consultations.md` must not clobber the
+        # real `EP0025` epic's status).
+        if _canonical_status(status, vocab) is not None or prev is None:
+            census[key] = (rec, status)
     return census
 
 
@@ -70,18 +93,18 @@ def parse_index(type_: str, repo_root: Path) -> dict:
     result = {"exists": index_path.exists(), "rows": {}, "summary": {}}
     if not index_path.exists():
         return result
-    vocab = set(sdlc_md.STATUS_VOCAB[type_])
+    vocab = list(sdlc_md.STATUS_VOCAB[type_])
     for line in index_path.read_text(encoding="utf-8").splitlines():
         cells = _table_cells(line)
         if not cells:
             continue
         # Summary row: `| <Status> | <int> |`
         if len(cells) == 2 and cells[1].replace(",", "").isdigit():
-            label = cells[0].strip("*").strip()
-            if label in vocab:
+            label = _canonical_status(cells[0], vocab)
+            if label:
                 result["summary"][label] = int(cells[1].replace(",", ""))
             continue
-        # Data row: find an ID cell and a status cell.
+        # Data row: find an ID cell and a status cell (status may be decorated).
         row_id = None
         row_status = None
         for c in cells:
@@ -89,10 +112,17 @@ def parse_index(type_: str, repo_root: Path) -> dict:
                 m = sdlc_md.ID_SEARCH_RE.search(c)
                 if m:
                     row_id = m.group(0)
-            if row_status is None and c.strip("*").strip() in vocab:
-                row_status = c.strip("*").strip()
+            if row_status is None:
+                cs = _canonical_status(c, vocab)
+                if cs:
+                    row_status = cs
         if row_id:
-            result["rows"][row_id] = row_status or "Unknown"
+            key = _norm_id(row_id)
+            prev = result["rows"].get(key)
+            # A real status never gets clobbered by a later status-less row
+            # mentioning the same ID (e.g. a dependency or breakdown table).
+            if row_status is not None or prev is None:
+                result["rows"][key] = (row_id, row_status or "Unknown")
     return result
 
 
@@ -101,6 +131,7 @@ def detect_type(type_: str, repo_root: Path) -> dict:
     census = file_census(type_, repo_root)
     index = parse_index(type_, repo_root)
     drift: list[dict] = []
+    vocab = sdlc_md.STATUS_VOCAB.get(type_, [])
 
     if census and not index["exists"]:
         drift.append({
@@ -110,37 +141,64 @@ def detect_type(type_: str, repo_root: Path) -> dict:
         })
 
     rows = index["rows"]
-    for rec, fstatus in sorted(census.items()):
-        if rec not in rows:
-            drift.append({"type": type_, "id": rec, "kind": "missing-row",
+    for norm, (disp, fstatus) in sorted(census.items()):
+        if norm not in rows:
+            drift.append({"type": type_, "id": disp, "kind": "missing-row",
                           "file_status": fstatus, "index_status": None,
-                          "fix": f"add {rec} ({fstatus}) to the index"})
-        elif rows[rec] != fstatus:
-            drift.append({"type": type_, "id": rec, "kind": "status-mismatch",
-                          "file_status": fstatus, "index_status": rows[rec],
-                          "fix": f"set index status of {rec} to {fstatus}"})
-    for rec in sorted(rows):
-        if rec not in census:
-            drift.append({"type": type_, "id": rec, "kind": "orphan-row",
-                          "file_status": None, "index_status": rows[rec],
-                          "fix": f"remove orphan index row {rec} (no backing file)"})
+                          "fix": f"add {disp} ({fstatus}) to the index"})
+        else:
+            istatus = rows[norm][1]
+            fcanon = _canonical_status(fstatus, vocab)
+            icanon = _canonical_status(istatus, vocab)
+            # Only a file that DECLARES a recognised status can drift from its
+            # index row. A file with no status field (legacy docs) or a
+            # non-vocabulary status asserts nothing to compare — skip it rather
+            # than emit noise every run.
+            target = icanon if icanon is not None else istatus
+            if fcanon is not None and fcanon != target:
+                drift.append({"type": type_, "id": disp, "kind": "status-mismatch",
+                              "file_status": fstatus, "index_status": istatus,
+                              "fix": f"set index status of {disp} to {fstatus}"})
+    for norm, (disp, istatus) in sorted(rows.items()):
+        if norm not in census:
+            icanon = _canonical_status(istatus, vocab)
+            # A row whose status doesn't imply a file yet (Proposed/Draft/…) or
+            # is a custom retirement (non-vocabulary) is an intentional
+            # reservation, not an orphan — don't flag it.
+            if icanon is None or icanon in _NO_FILE_EXPECTED:
+                continue
+            drift.append({"type": type_, "id": disp, "kind": "orphan-row",
+                          "file_status": None, "index_status": istatus,
+                          "fix": f"remove orphan index row {disp} (no backing file)"})
 
-    # Count drift: census tally vs summary table.
-    census_counts: dict[str, int] = {}
-    for st in census.values():
-        census_counts[st] = census_counts.get(st, 0) + 1
+    # Count drift: the summary table summarises the INDEX ROWS, so check it
+    # against the row tally (canonical), not the file census. This is the right
+    # authority for types whose files routinely carry no status field (e.g. CRs)
+    # — per-row file-vs-index drift is already caught by status-mismatch above.
+    row_counts: dict[str, int] = {}
+    for _disp, istatus in rows.values():
+        rc = _canonical_status(istatus, vocab)
+        if rc is not None:
+            row_counts[rc] = row_counts.get(rc, 0) + 1
     count_mismatch = bool(index["summary"]) and any(
-        index["summary"].get(st, 0) != census_counts.get(st, 0)
-        for st in set(index["summary"]) | set(census_counts)
+        index["summary"].get(st, 0) != row_counts.get(st, 0)
+        for st in set(index["summary"]) | set(row_counts)
     )
     if count_mismatch:
         drift.append({"type": type_, "id": None, "kind": "count-mismatch",
                       "file_status": None, "index_status": None,
-                      "fix": "recompute the summary counts from the file census"})
+                      "fix": "recompute the summary counts from the index rows"})
+
+    # File-census tally kept for information (status distribution on disk).
+    census_counts: dict[str, int] = {}
+    for _disp, fstatus in census.values():
+        key = _canonical_status(fstatus, vocab) or "Unknown"
+        census_counts[key] = census_counts.get(key, 0) + 1
 
     return {
         "census_total": len(census),
         "census_counts": census_counts,
+        "row_counts": row_counts,
         "index_exists": index["exists"],
         "index_summary": index["summary"],
         "drift": drift,

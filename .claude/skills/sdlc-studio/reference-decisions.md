@@ -301,6 +301,11 @@ Epic can proceed to Story generation when:
 > (ID format, Status vocabulary, title/metadata, AC presence). It exits non-zero on
 > structural errors; the judgement criteria below (concrete values, no ambiguous
 > language, resolved questions) remain yours.
+>
+> AC presence is satisfied by any of: `### ACn` headings, compact `- **ACn:**`
+> bullets, or a populated `## Acceptance Criteria` section (plain bullets, no
+> `ACn` id). Decorated statuses (`Done (v2.66.0)`) pass the vocabulary check -
+> only an unrecognised leading token is flagged.
 
 Story can proceed to Planning/Implementation when:
 

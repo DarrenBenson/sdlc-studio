@@ -126,5 +126,64 @@ class JsonGuardRegressionTests(unittest.TestCase):
             self.assertEqual(rc, 2)
 
 
+class ExtractFieldFlexTests(unittest.TestCase):
+    def test_blockquote_and_plain_both_extract(self) -> None:
+        self.assertEqual(sdlc_md.extract_field("> **Status:** Done\n", "Status"), "Done")
+        self.assertEqual(sdlc_md.extract_field("**Status:** Complete\n", "Status"), "Complete")
+
+
+class ExtractAcTests(unittest.TestCase):
+    def test_heading_form(self) -> None:
+        self.assertEqual(sdlc_md.extract_ac_id("### AC1: Login works"), ("AC1", "Login works"))
+
+    def test_bold_bullet_form(self) -> None:
+        self.assertEqual(sdlc_md.extract_ac_id("- **AC2:** additive migration")[0], "AC2")
+        self.assertEqual(sdlc_md.extract_ac_id("* **AC3** something")[0], "AC3")
+
+    def test_non_ac_returns_none(self) -> None:
+        self.assertIsNone(sdlc_md.extract_ac_id("- just a bullet"))
+
+
+class NormIdTests(unittest.TestCase):
+    def test_hyphen_and_case_insensitive(self) -> None:
+        self.assertEqual(sdlc_md.norm_id("CR-0001"), "CR0001")
+        self.assertEqual(sdlc_md.norm_id("cr0001"), "CR0001")
+        self.assertEqual(sdlc_md.norm_id("CR0001"), sdlc_md.norm_id("CR-0001"))
+
+
+class CanonicalStatusTests(unittest.TestCase):
+    VOCAB = ["Proposed", "In Progress", "Done", "Won't Implement"]
+
+    def test_strips_decoration(self) -> None:
+        self.assertEqual(sdlc_md.canonical_status("Done (v2.83.0) · **CR:** CR-0088", self.VOCAB), "Done")
+
+    def test_multiword_wins_over_prefix(self) -> None:
+        self.assertEqual(sdlc_md.canonical_status("In Progress — crew-half", self.VOCAB), "In Progress")
+
+    def test_exact_and_bold(self) -> None:
+        self.assertEqual(sdlc_md.canonical_status("**Done**", self.VOCAB), "Done")
+
+    def test_unrecognised_returns_none(self) -> None:
+        self.assertIsNone(sdlc_md.canonical_status("Retired", self.VOCAB))
+        self.assertIsNone(sdlc_md.canonical_status(None, self.VOCAB))
+
+    def test_no_partial_word_match(self) -> None:
+        # 'Doneish' must not canonicalise to 'Done'.
+        self.assertIsNone(sdlc_md.canonical_status("Doneish", self.VOCAB))
+
+
+class ArtifactFilesTests(unittest.TestCase):
+    def test_excludes_index_and_consultations(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            ed = root / "sdlc-studio" / "epics"
+            ed.mkdir(parents=True)
+            (ed / "EP0001-real.md").write_text("# x\n", encoding="utf-8")
+            (ed / "EP0001-consultations.md").write_text("# x\n", encoding="utf-8")
+            (ed / "_index.md").write_text("# x\n", encoding="utf-8")
+            names = {p.name for p in sdlc_md.artifact_files("epic", root)}
+            self.assertEqual(names, {"EP0001-real.md"})
+
+
 if __name__ == "__main__":
     unittest.main()

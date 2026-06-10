@@ -23,12 +23,19 @@ from lib import sdlc_md  # noqa: E402
 
 
 def count_by_status(type_: str, repo_root: Path) -> dict:
-    """Tally a type's files by Status value, plus a total."""
+    """Tally a type's files by canonical Status, plus a total.
+
+    Decorated statuses (`Done (v2.66.0)`) collapse to their vocabulary token
+    (`Done`) so the tally and done-percentages are correct; consultations files
+    are excluded by `artifact_files`.
+    """
+    vocab = sdlc_md.STATUS_VOCAB.get(type_, [])
     counts: dict[str, int] = {}
     total = 0
     for path in sdlc_md.artifact_files(type_, repo_root):
         total += 1
-        status = sdlc_md.extract_field(path.read_text(encoding="utf-8"), "Status") or "Unknown"
+        raw = sdlc_md.extract_field(path.read_text(encoding="utf-8"), "Status") or "Unknown"
+        status = sdlc_md.canonical_status(raw, vocab) or "Unknown"
         counts[status] = counts.get(status, 0) + 1
     return {"total": total, "by_status": counts}
 

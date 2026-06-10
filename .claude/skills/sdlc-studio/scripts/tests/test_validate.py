@@ -61,6 +61,39 @@ class ValidateFileTests(unittest.TestCase):
             rules = {v["rule"] for v in validate.validate_file(p, "story")}
             self.assertIn("id-format", rules)
 
+    def test_decorated_status_accepted(self) -> None:
+        # `Done (v2.66.0)` canonicalises to `Done` — not a status-vocab error.
+        with tempfile.TemporaryDirectory() as d:
+            p = _write(Path(d), "sdlc-studio/stories/US0005-x.md",
+                       "# X\n\n> **Status:** Done (v2.66.0)\n\n### AC1: y\n- **Verify:** file b\n")
+            rules = {v["rule"] for v in validate.validate_file(p, "story")}
+            self.assertNotIn("status-vocab", rules)
+
+    def test_bold_bullet_ac_accepted(self) -> None:
+        # `- **AC1:**` compact bullet style satisfies the AC requirement.
+        with tempfile.TemporaryDirectory() as d:
+            p = _write(Path(d), "sdlc-studio/stories/US0006-x.md",
+                       "# X\n\n> **Status:** Draft\n\n- **AC1:** login works\n")
+            rules = {v["rule"] for v in validate.validate_file(p, "story")}
+            self.assertNotIn("no-ac", rules)
+
+    def test_plain_ac_section_accepted(self) -> None:
+        # A populated `## Acceptance Criteria` section (plain bullets, no ACn
+        # ids) satisfies the AC requirement.
+        with tempfile.TemporaryDirectory() as d:
+            p = _write(Path(d), "sdlc-studio/stories/US0007-x.md",
+                       "# X\n\n> **Status:** Draft\n\n## Acceptance Criteria\n\n- user can log in\n")
+            rules = {v["rule"] for v in validate.validate_file(p, "story")}
+            self.assertNotIn("no-ac", rules)
+
+    def test_empty_ac_section_still_flagged(self) -> None:
+        # An AC heading with no content before the next heading is still no-ac.
+        with tempfile.TemporaryDirectory() as d:
+            p = _write(Path(d), "sdlc-studio/stories/US0008-x.md",
+                       "# X\n\n> **Status:** Draft\n\n## Acceptance Criteria\n\n## Notes\n- something\n")
+            rules = {v["rule"] for v in validate.validate_file(p, "story")}
+            self.assertIn("no-ac", rules)
+
 
 class InferTypeTests(unittest.TestCase):
     def test_infer_from_dir(self) -> None:

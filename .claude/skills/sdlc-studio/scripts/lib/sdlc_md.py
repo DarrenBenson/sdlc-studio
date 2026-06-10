@@ -26,12 +26,17 @@ METADATA_FIELD_RE = re.compile(r"^>\s*\*\*([^*]+):\*\*\s*(.+?)\s*$", re.M)
 H1_RE = re.compile(r"^#\s+(.+)$", re.M)
 # Artifact ID prefix at the start of a filename stem. CR/RFC display with a
 # dash (CR-0001); the others do not (US0001). The optional dash matches both.
-ID_RE = re.compile(r"^((?:EP|US|PL|BG|TS|WF|RFC|CR)-?\d{4})")
+# Case-insensitive: some repos name files lowercase (`cr0001.md`) while indexes
+# use uppercase (`CR-0001`) — both must parse to the same ID.
+ID_RE = re.compile(r"^((?:EP|US|PL|BG|TS|WF|RFC|CR)-?\d{4})", re.IGNORECASE)
 # Same, unanchored - finds an ID anywhere (e.g. inside an index table cell
 # `[US0001](US0001-login.md)`). RFC before CR so `RFC-0001` is not read as `CR`.
-ID_SEARCH_RE = re.compile(r"(?<![A-Za-z])(?:EP|US|PL|BG|TS|WF|RFC|CR)-?\d{4}")
+ID_SEARCH_RE = re.compile(r"(?<![A-Za-z])(?:EP|US|PL|BG|TS|WF|RFC|CR)-?\d{4}", re.IGNORECASE)
 # Acceptance-criterion heading: `### AC1: Title`.
 AC_HEADING_RE = re.compile(r"^###\s+(AC\d+)(?::\s*(.*))?$")
+# Acceptance-criterion bold bullet: `- **AC1:** text` / `* **AC1** text` — the
+# compact inline style many stories use instead of a heading per criterion.
+AC_BULLET_RE = re.compile(r"^\s*[-*]\s+\*\*(AC\d+)[^*]*\*\*[:\s]*(.*)$")
 # AC verifier bullets.
 VERIFY_RE = re.compile(r"^(\s*)-\s*\*\*Verify:\*\*\s*(.+?)\s*$")
 VERIFIED_RE = re.compile(
@@ -87,8 +92,12 @@ def read_json(path: Path, default: T) -> T:
 
 
 def extract_field(text: str, name: str) -> str | None:
-    """Value of a `> **Name:** value` metadata line, or None if absent."""
-    m = re.search(rf"^>\s*\*\*{re.escape(name)}:\*\*\s*(.+?)\s*$", text, re.M)
+    """Value of a `> **Name:** value` metadata line, or None if absent.
+
+    The leading blockquote `>` is optional — older artefacts use a plain
+    `**Name:** value` metadata block, which is just as valid.
+    """
+    m = re.search(rf"^>?\s*\*\*{re.escape(name)}:\*\*\s*(.+?)\s*$", text, re.M)
     return m.group(1) if m else None
 
 
@@ -109,11 +118,14 @@ def extract_record_id(stem: str) -> str | None:
 
 
 def extract_ac_id(line: str) -> tuple[str, str] | None:
-    """(ac_id, title) from an `### AC1: Title` heading line, or None."""
+    """(ac_id, title) from an `### AC1: Title` heading or a `- **AC1:**` bullet."""
     m = AC_HEADING_RE.match(line)
-    if not m:
-        return None
-    return m.group(1), (m.group(2) or "").strip()
+    if m:
+        return m.group(1), (m.group(2) or "").strip()
+    m = AC_BULLET_RE.match(line)
+    if m:
+        return m.group(1), (m.group(2) or "").strip()
+    return None
 
 
 def slug(value: str) -> str:
@@ -156,12 +168,12 @@ ARTIFACT_TYPES: dict[str, tuple[str, str]] = {
 STATUS_VOCAB: dict[str, list[str]] = {
     "epic": ["Draft", "Ready", "Approved", "In Progress", "Done"],
     "story": [
-        "Draft", "Ready", "Planned", "In Progress", "Review", "Done",
+        "Proposed", "Draft", "Ready", "Planned", "In Progress", "Review", "Done",
         "Won't Implement", "Deferred", "Superseded",
     ],
     "plan": ["Draft", "In Progress", "Complete", "Superseded"],
-    "bug": ["Open", "In Progress", "Fixed", "Verified", "Closed", "Won't Fix"],
-    "cr": ["Proposed", "Approved", "In Progress", "Complete", "Rejected", "Deferred"],
+    "bug": ["Open", "In Progress", "Fixed", "Verified", "Closed", "Won't Fix", "Superseded"],
+    "cr": ["Proposed", "Approved", "In Progress", "Complete", "Rejected", "Deferred", "Superseded"],
     "rfc": ["Draft", "In Review", "Accepted", "Superseded", "Withdrawn"],
     "test-spec": ["Draft", "Ready", "In Progress", "Complete", "Superseded"],
     "workflow": [
@@ -171,15 +183,59 @@ STATUS_VOCAB: dict[str, list[str]] = {
 }
 
 
+def norm_id(rec: str) -> str:
+    """Case- and punctuation-insensitive comparison key for an artifact ID.
+
+    Files often use one id format and an index another (e.g. `CR0001` on disk
+    vs `CR-0001` in a table). Both normalise to `CR0001` so they match instead
+    of being treated as two different records.
+    """
+    return re.sub(r"[^A-Za-z0-9]", "", rec).upper()
+
+
+def canonical_status(raw: str | None, vocab: list[str]) -> str | None:
+    """Reduce a decorated status line to its canonical vocabulary token.
+
+    Projects often append release context, e.g.
+    `Done (v2.83.0) · **CR:** CR-0088 · **Points:** 8`. The canonical status is
+    the vocabulary term that prefixes the (bold-stripped) text. Returns None if
+    no vocab term prefixes it (a genuinely unrecognised status still surfaces).
+    """
+    if not raw:
+        return None
+    s = raw.replace("*", "").strip()
+    low = s.lower()
+    # Longest term first so multi-word terms ('In Progress') win over a prefix.
+    for term in sorted(vocab, key=len, reverse=True):
+        t = term.lower()
+        if low == t or (low.startswith(t) and not low[len(t):len(t) + 1].isalnum()):
+            return term
+    return None
+
+
 def artifact_files(type_: str, repo_root: Path) -> list[Path]:
-    """All artifact files of `type_` under repo_root (excludes `_index.md`)."""
+    """All artifact files of `type_` under repo_root.
+
+    Excludes `_index.md` and `*-consultations.md` — the latter are supplementary
+    notes filed under an artifact's ID (e.g. `EP0025-consultations.md`), not
+    artifacts of that type, so counting them double-counts the ID and pollutes
+    status tallies with a status-less namesake.
+    """
     if type_ not in ARTIFACT_TYPES:
         return []
     rel, prefix = ARTIFACT_TYPES[type_]
-    return [
-        p for p in walk_glob(repo_root / rel, f"{prefix}*.md")
-        if p.name != "_index.md"
-    ]
+    want = prefix.upper()
+    # Glob all markdown and filter by the (case-insensitive) record ID rather
+    # than a `{prefix}*.md` glob: `Path.glob` is case-sensitive on Linux, so a
+    # `CR*.md` pattern silently misses repos that name files `cr0001.md`.
+    out: list[Path] = []
+    for p in walk_glob(repo_root / rel, "*.md"):
+        if p.name == "_index.md" or p.stem.endswith("-consultations"):
+            continue
+        rec = extract_record_id(p.stem)
+        if rec and norm_id(rec).startswith(want):
+            out.append(p)
+    return out
 
 
 def id_number(record_id: str) -> int | None:

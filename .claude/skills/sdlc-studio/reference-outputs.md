@@ -11,10 +11,10 @@ Single source of truth for all output formats, file locations, status values, an
 | Persona | `sdlc-studio/personas.md` | Fixed | - |
 | TSD | `sdlc-studio/tsd.md` | Fixed | - |
 | Epic | `sdlc-studio/epics/EP{NNNN}-*.md` | EP0001, EP0002, EP0003... | Draft/Ready/Approved/In Progress/Done |
-| Story | `sdlc-studio/stories/US{NNNN}-*.md` | US0001, US0002, US0003... | Draft/Ready/Planned/In Progress/Review/Done/Won't Implement/Deferred/Superseded |
+| Story | `sdlc-studio/stories/US{NNNN}-*.md` | US0001, US0002, US0003... | Proposed/Draft/Ready/Planned/In Progress/Review/Done/Won't Implement/Deferred/Superseded |
 | Plan | `sdlc-studio/plans/PL{NNNN}-*.md` | PL0001, PL0002, PL0003... | Draft/In Progress/Complete/Superseded |
-| Bug | `sdlc-studio/bugs/BG{NNNN}-*.md` | BG0001, BG0002, BG0003... | Open/In Progress/Fixed/Verified/Closed/Won't Fix |
-| CR | `sdlc-studio/change-requests/CR{NNNN}-*.md` | CR0001, CR0002, CR0003... | Proposed/Approved/In Progress/Complete/Rejected/Deferred |
+| Bug | `sdlc-studio/bugs/BG{NNNN}-*.md` | BG0001, BG0002, BG0003... | Open/In Progress/Fixed/Verified/Closed/Won't Fix/Superseded |
+| CR | `sdlc-studio/change-requests/CR{NNNN}-*.md` | CR0001, CR0002, CR0003... | Proposed/Approved/In Progress/Complete/Rejected/Deferred/Superseded |
 | RFC | `sdlc-studio/rfcs/RFC{NNNN}-*.md` | RFC0001, RFC0002, RFC0003... | Draft/In Review/Accepted/Superseded/Withdrawn |
 | Test Spec | `sdlc-studio/test-specs/TS{NNNN}-*.md` | TS0001, TS0002, TS0003... | Draft/Ready/In Progress/Complete/Superseded |
 | Workflow | `sdlc-studio/workflows/WF{NNNN}-*.md` | WF0001, WF0002, WF0003... | Created/Planning/Testing/Implementing/Verifying/Reviewing/Checking/Done/Paused/Superseded |
@@ -114,6 +114,7 @@ Open → In Progress → Fixed → Verified → Closed
 - **Fixed → Verified:** Tests confirm bug resolved
 - **Verified → Closed:** Verification accepted
 - **Open → Won't Fix:** Decision not to fix (document reason)
+- **Any → Superseded:** Subsumed by another bug or CR (point to it)
 
 ### Change Request Status Flow {#cr-status-flow}
 
@@ -131,6 +132,7 @@ Proposed → Approved → In Progress → Complete
 - **Proposed → Deferred:** Postponed to future release (document timeline)
 - **Approved → In Progress:** CR actioned -- epics and stories created via `/sdlc-studio cr action`
 - **In Progress → Complete:** All linked epics Done, all AC met (user confirmation required)
+- **Any → Superseded:** Replaced by a later CR or RFC (point to it)
 
 **Note:** Complete is never auto-assigned. Completing a CR is a judgment call -- the reconciler suggests but does not auto-transition.
 
@@ -194,11 +196,11 @@ Each artifact type has a **canonical set of status values**. Do not use ad-hoc s
 | Type | Allowed Statuses | Terminal |
 | --- | --- | --- |
 | Epic | Draft, Ready, Approved, In Progress, Done | Done |
-| Story | Draft, Ready, Planned, In Progress, Review, Done, Won't Implement, Deferred, Superseded | Done, Won't Implement, Deferred, Superseded |
+| Story | Proposed, Draft, Ready, Planned, In Progress, Review, Done, Won't Implement, Deferred, Superseded | Done, Won't Implement, Deferred, Superseded |
 | Plan | Draft, In Progress, Complete, Superseded | Complete, Superseded |
 | Test Spec | Draft, Ready, In Progress, Complete, Superseded | Complete, Superseded |
-| Bug | Open, In Progress, Fixed, Verified, Closed, Won't Fix | Closed, Won't Fix |
-| CR | Proposed, Approved, In Progress, Complete, Rejected, Deferred | Complete, Rejected, Deferred |
+| Bug | Open, In Progress, Fixed, Verified, Closed, Won't Fix, Superseded | Closed, Won't Fix, Superseded |
+| CR | Proposed, Approved, In Progress, Complete, Rejected, Deferred, Superseded | Complete, Rejected, Deferred, Superseded |
 | RFC | Draft, In Review, Accepted, Superseded, Withdrawn | Superseded, Withdrawn (Accepted = decision reached, stays live) |
 | Workflow | Created, Planning, Testing, Implementing, Verifying, Reviewing, Checking, Done, Paused, Complete, Superseded | Done, Complete, Superseded |
 

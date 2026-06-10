@@ -105,7 +105,9 @@ Review Story status based on codebase implementation.
 - `sdlc-studio/stories/_index.md` registry
 - `sdlc-studio/personas.md` (created if missing)
 
-**Status values:** Draft | Ready | Planned | In Progress | Review | Done
+**Status values:** Proposed | Draft | Ready | Planned | In Progress | Review | Done | Won't Implement | Deferred | Superseded
+
+`Proposed` is an optional pre-Draft intake state for a story that has been raised but not yet written up. See `reference-outputs.md#status-vocabulary` for the full vocabulary and terminal states.
 
 **Status rules for generate mode:**
 - Generated stories start as **Ready** (not Done)
