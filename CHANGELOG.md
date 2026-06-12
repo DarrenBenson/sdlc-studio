@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **SKILL.md frontmatter conforms to the Agent Skills open standard**
+  (agentskills.io): adds `license`, `compatibility` (Python 3.10+, gh CLI;
+  agentic waves Claude-Code-only), `metadata.version`, and `argument-hint`;
+  the description now leads with capability and an explicit "Use when..."
+  trigger sentence while keeping every existing trigger term.
+- **Script examples use `$CLAUDE_SKILL_DIR`** instead of the project-local
+  `.claude/skills/sdlc-studio/` path, so they work at personal, project, and
+  plugin install levels; one canonical fallback rule for other tools lives at
+  `reference-scripts.md#skill-dir`.
+
 ### Fixed
 
 - **`verify_ac.py` counts stale downgrades.** A `yes` Verified state
@@ -34,6 +46,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`tools/validate_skill.py`** - stdlib-only CI validator for SKILL.md
+  frontmatter against the agentskills.io spec subset (name pattern and
+  directory match, description length, known-field allowlist, semver
+  `metadata.version`); wired into `npm run lint` as `lint:skill`.
 - **`plan` command surface:** `help/plan.md` plus SKILL.md and `help/help.md`
   entries for `/sdlc-studio plan list` / `plan archive`
   (`reference-plan-files.md` existed since v1.7.0 without them).

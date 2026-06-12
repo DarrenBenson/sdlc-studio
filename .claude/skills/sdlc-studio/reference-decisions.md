@@ -297,7 +297,7 @@ Epic can proceed to Story generation when:
 ## Story Ready {#story-ready}
 
 > **Deterministic helper.** Run the structural checks with the linter first:
-> `python3 .claude/skills/sdlc-studio/scripts/validate.py check --file <story> --format json`
+> `python3 "$CLAUDE_SKILL_DIR/scripts/validate.py" check --file <story> --format json`
 > (ID format, Status vocabulary, title/metadata, AC presence). It exits non-zero on
 > structural errors; the judgement criteria below (concrete values, no ambiguous
 > language, resolved questions) remain yours.

@@ -1,6 +1,6 @@
 # SDLC Studio Reference - Skill Internal Scripts
 
-Runtime helpers that live at `.claude/skills/sdlc-studio/scripts/` and
+Runtime helpers that live in the skill's `scripts/` directory and
 are invoked by workflow reference files. Claude calls these; users do
 not.
 
@@ -10,10 +10,23 @@ not.
 
 | Section | When to Read |
 | --- | --- |
+| Locating the skill directory | When running any script example |
 | Rationale | When deciding whether a new helper belongs in scripts/ |
 | Invocation | When a reference file needs to call a script |
 | Contract | When writing or modifying a script |
 | Catalogue | When finding an existing helper before writing a new one |
+
+## Locating the Skill Directory {#skill-dir}
+
+Script examples throughout the skill use the form
+`python3 "$CLAUDE_SKILL_DIR/scripts/<name>.py"`. Claude Code sets
+`$CLAUDE_SKILL_DIR` to this skill's directory at every install level
+(personal, project, or plugin). If the variable is not set (another
+agent tool, or a shell outside skill execution), substitute the
+directory containing this skill's `SKILL.md` - for example
+`~/.claude/skills/sdlc-studio`, `~/.agents/skills/sdlc-studio`, or
+`.github/skills/sdlc-studio`. The quoted variable fails loudly when
+unset; never guess between multiple installed copies.
 
 ## Rationale {#scripts-rationale}
 
@@ -62,7 +75,7 @@ blocks, the artifact-type and status-vocabulary tables).
 Reference files call scripts via Bash:
 
 ```bash
-python3 .claude/skills/sdlc-studio/scripts/repo_map.py query \
+python3 "$CLAUDE_SKILL_DIR/scripts/repo_map.py" query \
   --story sdlc-studio/stories/US0001-user-login.md --top 10
 ```
 

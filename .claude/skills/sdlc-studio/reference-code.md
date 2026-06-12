@@ -80,8 +80,8 @@ Detailed workflows for code planning, review, and quality checks.
    than an hour):
 
    ```bash
-   python3 .claude/skills/sdlc-studio/scripts/repo_map.py build
-   python3 .claude/skills/sdlc-studio/scripts/repo_map.py query \
+   python3 "$CLAUDE_SKILL_DIR/scripts/repo_map.py" build
+   python3 "$CLAUDE_SKILL_DIR/scripts/repo_map.py" query \
      --story sdlc-studio/stories/US{NNNN}-*.md --top 15
    ```
 

@@ -223,7 +223,7 @@ The following project-level documents do **not** follow the standard Draft-to-Do
 ## ID Collision Prevention {#id-collision-prevention}
 
 > **Deterministic helper.** Allocate IDs with the script:
-> `python3 .claude/skills/sdlc-studio/scripts/next_id.py allocate --type <type> [--remote]`.
+> `python3 "$CLAUDE_SKILL_DIR/scripts/next_id.py" allocate --type <type> [--remote]`.
 > It returns the next free, zero-padded ID (and with `--remote` checks `origin/main`
 > for cross-repo namespaces - doctrine rule 13; `git fetch` first). The manual glob
 > below is the fallback.

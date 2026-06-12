@@ -241,7 +241,7 @@ reference-file and template catalogue see `help/references.md`.
 
 ### Utilities
 
-Skill-internal helpers live at `.claude/skills/sdlc-studio/scripts/`. Claude invokes these on behalf of workflows; users do not call them directly. See `reference-scripts.md` for the full catalogue.
+Skill-internal helpers live in the skill's `scripts/` directory (`$CLAUDE_SKILL_DIR/scripts/`, see `reference-scripts.md#skill-dir`). Claude invokes these on behalf of workflows; users do not call them directly. See `reference-scripts.md` for the full catalogue.
 
 | Command | Description |
 | --- | --- |

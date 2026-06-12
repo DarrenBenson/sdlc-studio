@@ -21,8 +21,9 @@ during `code plan`.
 /sdlc-studio repo map stats                          # Index size and top hubs
 ```
 
-Each slash command maps to a `python3 scripts/repo_map.py <subcommand>`
-invocation. Claude runs the script; users see the output.
+Each slash command maps to a `python3 "$CLAUDE_SKILL_DIR/scripts/repo_map.py" <subcommand>`
+invocation (see `reference-scripts.md#skill-dir`). Claude runs the
+script; users see the output.
 
 ## Prerequisites
 

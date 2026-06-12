@@ -9,7 +9,7 @@ Related: reference-tsd.md (status workflow details)
 Shows a visual dashboard of project health across three pillars: Requirements, Code, and Tests.
 
 > **Deterministic helper.** Compute the census with the script rather than reading every artifact:
-> `python3 .claude/skills/sdlc-studio/scripts/status.py pillars --format json`.
+> `python3 "$CLAUDE_SKILL_DIR/scripts/status.py" pillars --format json`.
 > Render the dashboard from that JSON. Run live lint / type-check / coverage yourself - the
 > script reports artifact-derived state only.
 

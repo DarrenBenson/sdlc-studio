@@ -1,6 +1,11 @@
 ---
 name: sdlc-studio
-description: "/sdlc-studio [type] [action] - SDLC pipeline: requirements, specifications, code, testing. Run /sdlc-studio help for commands and /sdlc-studio status for next steps."
+description: "Full software development lifecycle pipeline: create or reverse-engineer PRDs, TRDs, personas, epics, and user stories with acceptance criteria, then plan, implement, test, and verify code against them - with status dashboards, reconciliation, change requests, RFCs, test specs, test automation, and bug tracking. Use when asked about PRDs, requirements documents, epics, user stories, personas, implementation planning, test specs, test automation, project status, bugs, change requests, or any /sdlc-studio [type] [action] command. Run /sdlc-studio help for the catalogue and /sdlc-studio status for next steps."
+argument-hint: "[type] [action] [--flags]"
+license: MIT
+compatibility: "Requires Python 3.10+ for bundled scripts; gh CLI (authenticated) for GitHub sync commands. Agentic wave execution (--agentic) is Claude-Code-only."
+metadata:
+  version: "1.9.1"
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash, Agent
 ---
 
