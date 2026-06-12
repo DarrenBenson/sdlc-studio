@@ -65,6 +65,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`evals/` behavioural regression scenarios** - four manually-run
+  two-Claude scenarios (worker session + grader session) covering trigger
+  routing, the greenfield create path, the generate-mode philosophy gate,
+  and reconcile dry-run safety; wired into the release gate. The
+  counterpart to `scripts/tests/` for the skill's *instructions*.
 - **Blind review gate** (adopted from AWS AI-DLC): before implementation,
   `story plan` re-reads the story's AC and judges the plan's task list from
   the task descriptions alone - no code - asking whether every AC would be

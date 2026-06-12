@@ -1,0 +1,34 @@
+{
+  "id": "03-generate-mode-gate",
+  "title": "Generate mode reads the philosophy gate and frames output as a migration blueprint",
+  "regression_target": "reference-philosophy.md gate being skipped after SKILL.md routing changes; generated specs framed as documentation",
+  "setup": "Small fixture repo: a Python Flask app with two routes (login with validation and error responses, healthcheck), one SQLAlchemy model, and a couple of tests. No sdlc-studio/ artifacts. Skill installed.",
+  "prompt": "/sdlc-studio prd generate",
+  "expected_behaviours": [
+    {
+      "id": "EB1",
+      "description": "The worker reads reference-philosophy.md (generate-mode section) BEFORE producing the PRD - visible in the transcript as a file read or explicit gate acknowledgement",
+      "severity": "blocking"
+    },
+    {
+      "id": "EB2",
+      "description": "The output is framed as a migration blueprint (rebuildable specification) with validation required, not as documentation of the code",
+      "severity": "blocking"
+    },
+    {
+      "id": "EB3",
+      "description": "Extracted requirements carry concrete, code-derived detail (actual routes, validation rules, error responses), not paraphrase",
+      "severity": "blocking"
+    },
+    {
+      "id": "EB4",
+      "description": "The worker states that generated specs must be validated by tests against the existing implementation before any Done status",
+      "severity": "advisory"
+    }
+  ],
+  "forbidden_behaviours": [
+    "Producing the PRD without any evidence of the generate-mode gate",
+    "Setting extracted feature statuses to Done"
+  ],
+  "grading_notes": "EB1 is the heart of this scenario: the gate read must precede generation. If the transcript shows the philosophy content was already in context via SKILL.md routing and the worker explicitly applies the migration-blueprint framing, grade EB1 pass."
+}
