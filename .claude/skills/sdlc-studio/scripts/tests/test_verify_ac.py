@@ -94,6 +94,31 @@ class ParseTests(unittest.TestCase):
         blocks = verify_ac.parse_story(PASSING_STORY)
         self.assertIsNone(blocks[2].verifier)
 
+    def test_insert_after_prefers_verify_line_over_later_bullets(self) -> None:
+        story = (
+            "### AC1: x\n"
+            "- **Given** x\n"
+            "- **Verify:** file README.md\n"
+            "- **Note:** extra context\n"
+        )
+        blocks = verify_ac.parse_story(story)
+        self.assertEqual(blocks[0].insert_after, 2)
+        updated = verify_ac.update_verified(story.splitlines(), blocks[0], "yes")
+        # Canonical order is Given / When / Then / Verify / Verified, so the
+        # new line goes directly after Verify, not after trailing bullets
+        self.assertIn("**Verified:** yes", updated[3])
+        self.assertIn("**Note:**", updated[4])
+
+    def test_insert_after_tracks_last_bullet_without_verify_line(self) -> None:
+        story = (
+            "### AC1: x\n"
+            "- **Given** x\n"
+            "- **When** y\n"
+            "- **Then** z\n"
+        )
+        blocks = verify_ac.parse_story(story)
+        self.assertEqual(blocks[0].insert_after, 3)
+
 
 class DSLTests(unittest.TestCase):
     def test_build_command_pytest(self) -> None:
@@ -204,6 +229,38 @@ class RunTests(unittest.TestCase):
         # AC1 was Verified: yes in fixture, verifier fails, should become no
         self.assertIn("**Verified:** no", updated)
         self.assertNotIn("yes (2026-01-01)", updated)
+        # The downgrade must be counted as stale in the report
+        report = json.loads(
+            (self.fixture.tmp / ".local/verify-report.json").read_text()
+        )
+        self.assertEqual(report["stories"]["US0002-broken"]["stale"], 1)
+
+    def test_passing_story_reports_zero_stale(self) -> None:
+        rc = verify_ac.main(
+            [
+                "run",
+                "--story",
+                str(self.fixture.tmp / "sdlc-studio/stories/US0001-login.md"),
+                "--repo-root",
+                str(self.fixture.tmp),
+                "--report",
+                str(self.fixture.tmp / ".local/verify-report.json"),
+            ]
+        )
+        self.assertEqual(rc, 0)
+        report = json.loads(
+            (self.fixture.tmp / ".local/verify-report.json").read_text()
+        )
+        self.assertEqual(report["stories"]["US0001-login"]["stale"], 0)
+
+    def test_dry_run_counts_stale_downgrade_without_writing(self) -> None:
+        story = self.fixture.tmp / "sdlc-studio/stories/US0002-broken.md"
+        before = story.read_text()
+        report = verify_ac.verify_story(
+            story, dry_run=True, timeout=10, repo_root=self.fixture.tmp
+        )
+        self.assertEqual(report.stale, 1)
+        self.assertEqual(story.read_text(), before)
 
 
 class UpdateTests(unittest.TestCase):

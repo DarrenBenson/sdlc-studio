@@ -104,8 +104,11 @@ def parse_story(text: str) -> list[ACBlock]:
             continue
 
         # Track the last bullet line inside the AC so we know where to
-        # insert a new Verified line if we need to create one later.
-        if line.strip().startswith("-") and current.insert_after is None:
+        # insert a new Verified line if we need to create one later. A
+        # Verify line, once seen, is the preferred anchor (canonical order
+        # is Given / When / Then / Verify / Verified) and must not be
+        # displaced by later bullets.
+        if line.strip().startswith("-") and current.verify_line is None:
             current.insert_after = i
 
     flush()
@@ -322,10 +325,10 @@ def verify_story(
                     "duration_ms": result.duration_ms,
                 }
             )
-            if block.verified_state == "yes" and not dry_run:
-                lines = update_verified(lines, block, "no")
-                report.changed += 1
-            elif block.verified_state == "yes":
+            if block.verified_state == "yes":
+                report.stale += 1
+                if not dry_run:
+                    lines = update_verified(lines, block, "no")
                 report.changed += 1
 
     if report.changed and not dry_run:
