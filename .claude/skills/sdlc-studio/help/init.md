@@ -174,7 +174,7 @@ After init:
 1. **Read `reference-doctrine.md`** – the project-*agnostic* operating rules (the skill is the OS; RFC/CR/ADR choice; reconcile cadence + file-census; review cadence incl. a CODE leg; ship-paperwork-in-the-same-commit; consult gates; TDD; cross-repo numbering; recall `lessons/`).
 2. **Seed or check the project agent-instructions file.**
    - **If absent:** create `AGENTS.md` from `templates/agent-instructions.md` and a one-line `CLAUDE.md` from `templates/agent-instructions.CLAUDE.md` (`@AGENTS.md`), then fill the `{{placeholders}}` with this project's specifics. `AGENTS.md` is the cross-tool standard (Codex, Copilot, Cursor, opencode); Claude Code reads `CLAUDE.md`, which imports it.
-   - **If present:** run `python3 .claude/skills/sdlc-studio/scripts/validate.py instructions` and apply the suggested improvements - do not overwrite the hand-written specifics.
+   - **If present:** run `python3 "$CLAUDE_SKILL_DIR/scripts/validate.py" instructions` and apply the suggested improvements - do not overwrite the hand-written specifics.
    A good file *references* the doctrine rather than restating it, then adds only what is unique to this project (architecture, config/secret handling, deploy/CI, code-style rules, the agents/services, house language). Keep current-state out of it: that belongs in `sdlc-studio/reviews/LATEST.md` (progressive disclosure).
 3. **`/sdlc-studio lessons recall`** – load the cross-project lessons-learned before design/process decisions.
 4. If `sdlc-studio/reviews/LATEST.md` exists, read it for current orientation.

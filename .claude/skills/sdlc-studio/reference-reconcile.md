@@ -7,7 +7,7 @@ Detailed workflow for the reconcile command that detects and fixes status drift 
 ---
 
 > **Deterministic helper - do the census with the script, not by hand.**
-> `python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect [--scope <scope>] --format json`
+> `python3 "$CLAUDE_SKILL_DIR/scripts/reconcile.py" detect [--scope <scope>] --format json`
 > builds the file census and returns the drift list (`status-mismatch`,
 > `missing-row`, `orphan-row`, `count-mismatch`, `missing-index`). Consume that
 > JSON, then apply the fixes and the judgement calls the script does not make

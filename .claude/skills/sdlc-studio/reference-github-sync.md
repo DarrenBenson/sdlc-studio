@@ -102,7 +102,7 @@ Syncs local files to GitHub. For each CR / Story / Epic file:
    deferred to v1.7 (push mirrors metadata only for now).
 
 ```bash
-python3 .claude/skills/sdlc-studio/scripts/github_sync.py push \
+python3 "$CLAUDE_SKILL_DIR/scripts/github_sync.py" push \
   --type cr \
   [--dry-run]
 ```
@@ -120,7 +120,7 @@ cannot be inferred reliably from a free-form issue body, so the
 workflow reference files drive the create step with human review.
 
 ```bash
-python3 .claude/skills/sdlc-studio/scripts/github_sync.py pull \
+python3 "$CLAUDE_SKILL_DIR/scripts/github_sync.py" pull \
   --type cr \
   [--dry-run]
 ```
@@ -151,7 +151,7 @@ Supported references in PR bodies:
 - `sdlc:cr CR-NNNN` for direct CR IDs
 
 ```bash
-python3 .claude/skills/sdlc-studio/scripts/github_sync.py cascade \
+python3 "$CLAUDE_SKILL_DIR/scripts/github_sync.py" cascade \
   [--since 2026-04-14T00:00:00Z] \
   [--dry-run]
 ```
@@ -198,7 +198,7 @@ since the last run, avoiding redundant `gh` calls on large projects.
 Print state:
 
 ```bash
-python3 .claude/skills/sdlc-studio/scripts/github_sync.py state
+python3 "$CLAUDE_SKILL_DIR/scripts/github_sync.py" state
 ```
 
 ## Conflict Policy {#gh-conflict}

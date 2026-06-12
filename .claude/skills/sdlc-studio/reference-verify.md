@@ -147,7 +147,7 @@ the template, review it, then verify.
 Under the hood, Claude invokes:
 
 ```bash
-python3 .claude/skills/sdlc-studio/scripts/verify_ac.py run \
+python3 "$CLAUDE_SKILL_DIR/scripts/verify_ac.py" run \
   [--dir sdlc-studio/stories] \
   [--story <path>] \
   [--dry-run] \

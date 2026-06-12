@@ -56,7 +56,7 @@ than strictly needed.
 ## Building {#repo-map-build}
 
 ```bash
-python3 .claude/skills/sdlc-studio/scripts/repo_map.py build \
+python3 "$CLAUDE_SKILL_DIR/scripts/repo_map.py" build \
   --root . \
   --out sdlc-studio/.local/repo-map.json
 ```
@@ -77,7 +77,7 @@ in-degree score. Index structure is documented in
 ## Querying {#repo-map-query}
 
 ```bash
-python3 .claude/skills/sdlc-studio/scripts/repo_map.py query \
+python3 "$CLAUDE_SKILL_DIR/scripts/repo_map.py" query \
   --story sdlc-studio/stories/US0001-user-login.md \
   --top 10
 ```
