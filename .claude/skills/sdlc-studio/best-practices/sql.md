@@ -141,6 +141,7 @@ Most databases optimise join order, but hints can help:
 ```sql
 -- Put smaller tables first in FROM clause (some DBs)
 -- Use EXPLAIN to verify actual execution
+-- /*+ LEADING */ is Oracle/MySQL syntax; PostgreSQL ignores inline hints
 SELECT /*+ LEADING(small_table) */ *
 FROM small_table s
 INNER JOIN large_table l ON l.small_id = s.id;

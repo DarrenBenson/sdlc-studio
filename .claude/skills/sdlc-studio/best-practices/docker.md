@@ -33,9 +33,9 @@ git push → CI builds image → Push to registry → Server pulls → docker co
 
 | Image | Size | Use When |
 |-------|------|----------|
-| `python:3.11-slim` | ~130MB | Default choice |
-| `python:3.11-alpine` | ~52MB | Size critical, no C extensions |
-| `python:3.11` | ~1GB | Need build tools at runtime |
+| `python:3.13-slim` | ~130MB | Default choice |
+| `python:3.13-alpine` | ~52MB | Size critical, no C extensions |
+| `python:3.13` | ~1GB | Need build tools at runtime |
 
 **Prefer `-slim` over Alpine** - Alpine requires extra work for C extensions and can increase build times.
 
@@ -45,13 +45,13 @@ Separate build dependencies from runtime:
 
 ```dockerfile
 # Stage 1: Build
-FROM python:3.11-slim AS builder
+FROM python:3.13-slim AS builder
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir --user -r requirements.txt
 
 # Stage 2: Runtime
-FROM python:3.11-slim
+FROM python:3.13-slim
 WORKDIR /app
 COPY --from=builder /root/.local /root/.local
 COPY . .

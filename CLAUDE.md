@@ -30,11 +30,11 @@ SDLC Studio is a Claude Code skill for managing the full software development li
 | `.claude/skills/sdlc-studio/reference-github-sync.md` | GitHub Issues two-way sync (v1.6.0) |
 | `.claude/skills/sdlc-studio/reference-scripts.md` | Scripts directory convention (v1.6.0) |
 | `.claude/skills/sdlc-studio/reference-*.md` | Domain-specific workflows (41 files total) |
-| `.claude/skills/sdlc-studio/help/` | Type-specific help (30 files) |
+| `.claude/skills/sdlc-studio/help/` | Type-specific help (31 files) |
 | `.claude/skills/sdlc-studio/lessons/` | Cross-project lessons registry (v1.7.0) |
-| `.claude/skills/sdlc-studio/templates/` | Document and code templates (73 files), incl. `agent-instructions.md` (tool-neutral `AGENTS.md`/`CLAUDE.md` starter for consuming projects) |
+| `.claude/skills/sdlc-studio/templates/` | Document and code templates (72 files), incl. `agent-instructions.md` (tool-neutral `AGENTS.md`/`CLAUDE.md` starter for consuming projects) |
 | `.claude/skills/sdlc-studio/scripts/` | Skill-internal Python helpers: `repo_map`, `verify_ac`, `github_sync`, plus read-only JSON helpers `reconcile`, `status`, `validate`, `next_id`, `review_prep`, sharing `lib/sdlc_md.py` |
-| `.claude/skills/sdlc-studio/best-practices/` | Quality guidelines (15 files) |
+| `.claude/skills/sdlc-studio/best-practices/` | Quality guidelines (19 files) |
 
 ## Soft Dependencies (runtime)
 

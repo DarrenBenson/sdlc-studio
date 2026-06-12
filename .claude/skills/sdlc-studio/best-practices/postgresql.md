@@ -49,7 +49,7 @@ SELECT data->'metadata' FROM items;
 -- Containment query (uses GIN index)
 SELECT * FROM items WHERE data @> '{"type": "active"}';
 
--- Path query (PostgreSQL 12+)
+-- Path query
 SELECT jsonb_path_query(data, '$.items[*].name') FROM orders;
 ```
 

@@ -8,7 +8,7 @@ Use **OpenAPI 3.1.1** (current stable). FastAPI supports this via:
 
 ```python
 from fastapi import FastAPI
-app = FastAPI(openapi_version="3.1.0")
+app = FastAPI(openapi_version="3.1.1")
 ```
 
 ## Required Root Fields
