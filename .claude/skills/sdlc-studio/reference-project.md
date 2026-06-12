@@ -373,7 +373,7 @@ Is this a single story fix or feature?
 
 - `help/project.md` - Command quick reference
 - `reference-epic.md` - Epic-level orchestration (called by project implement)
-- `reference-epic.md#agent-prompt-template` - **Critical:** How to write effective agent prompts
+- `reference-agent-prompt-template.md#agent-prompt-template` - **Critical:** How to write effective agent prompts
 - `reference-epic.md#post-wave-merge-protocol` - Step-by-step merge checklist
 - `reference-story.md` - Story-level workflow (8-phase detail)
 - `reference-outputs.md` - Status flows and completion cascades

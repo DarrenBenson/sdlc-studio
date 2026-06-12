@@ -124,11 +124,9 @@ Detailed workflows for code planning, review, and quality checks.
    - **CRITICAL:** Always add the new entry to the index in the same step as creating the file. Do not defer index updates.
 
 9b. **Three Amigos Plan Review (Default)**
-   Unless `--skip-personas` flag used, run Three Amigos review of the plan:
-
-- **Sarah Chen (PM):** Validates scope alignment - does the plan address all ACs without scope creep? Are any user-facing requirements missing from the implementation phases?
-- **Marcus Johnson (Eng):** Reviews implementation approach for architecture alignment, edge case handling plan completeness, and feasibility of the phased approach
-- **Priya Sharma (QA):** Validates the test strategy recommendation (TDD vs Test-After), confirms test coverage plan addresses the story's risk profile, checks regression impact
+   Unless `--skip-personas` flag used, run Three Amigos review of the plan.
+   Per-persona focus list: `reference-workflow-personas.md#story-integration`
+   (Story Plan subsection) - do not restate it here.
 
    **Apply findings:**
 
@@ -435,11 +433,7 @@ If you encounter uncertainty during implementation:
 9. **Status Cascade (when story reaches a terminal status)**
    When a story is marked Done (or any terminal status: Won't Implement, Deferred, Superseded), execute the **Story Completion Cascade** immediately.
 
-   > **Canonical checklist:** `reference-outputs.md` → [Story Completion Cascade](reference-outputs.md#story-completion-cascade)
-
-   Follow all steps in the checklist: update plan, update test spec, update workflow, recalculate index counts, check epic status, document reason (for non-Done terminals), update story index entries, update epic story breakdown, update downstream dependency tables, tick test scenario checkboxes, and cascade epic completion if applicable.
-
-   > **Why this matters:** Without cascading, artifact files accumulate stale statuses (Draft/Ready/In Progress) even though the linked story is terminal. This creates misleading dashboard output and requires periodic manual cleanup.
+   > **Canonical checklist:** [Story Completion Cascade](reference-outputs.md#story-completion-cascade) - run every step; do not restate or improvise the list here. Without the cascade, linked artifacts accumulate stale statuses while the story shows terminal, and the dashboard misleads.
 
 ---
 

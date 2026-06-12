@@ -275,7 +275,7 @@ agents decide whether the lesson is relevant to the current story.
 ### How lessons are consumed
 
 At wave start, the workflow described in
-`reference-epic.md#agentic-execution` reads `.local/lessons.md` and
+`reference-agent-prompt-template.md#agentic-execution` reads `.local/lessons.md` and
 injects a condensed `## Known Pitfalls on This Project` section into
 every Agent Prompt Template. Agents read this alongside
 `reference-agentic-lessons.md` and the story-specific prompt. The

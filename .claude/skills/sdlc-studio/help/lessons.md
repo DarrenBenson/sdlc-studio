@@ -160,4 +160,4 @@ a lesson wasted.
 ## See Also
 
 - `reference-agentic-lessons.md#lessons-accumulation` - Full rationale and format
-- `reference-epic.md#agentic-execution` - Wave-start hook that reads the file
+- `reference-agent-prompt-template.md#agentic-execution` - Wave-start hook that reads the file
