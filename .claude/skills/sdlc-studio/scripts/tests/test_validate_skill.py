@@ -86,6 +86,15 @@ class ValidateTests(unittest.TestCase):
             errors = validate_skill.validate(root)
             self.assertTrue(any("exceeds 1024" in e for e in errors))
 
+    def test_claude_extension_field_fails_strict_spec(self) -> None:
+        # skills-ref rejects any field outside the spec's closed set; tool
+        # extensions like argument-hint belong under metadata:.
+        bad = VALID.replace("license: MIT", 'license: MIT\nargument-hint: "[x]"')
+        with tempfile.TemporaryDirectory() as d:
+            root = _skill_dir(Path(d), "my-skill", bad)
+            errors = validate_skill.validate(root)
+            self.assertTrue(any("argument-hint" in e for e in errors))
+
     def test_unknown_field_fails(self) -> None:
         bad = VALID.replace("license: MIT", "license: MIT\nbanana: yes")
         with tempfile.TemporaryDirectory() as d:

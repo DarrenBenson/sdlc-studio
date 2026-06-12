@@ -9,7 +9,7 @@ set -e
 REPO="DarrenBenson/sdlc-studio"
 BRANCH="main"
 SKILL_NAME="sdlc-studio"
-ALL_TARGETS="claude codex gemini opencode copilot"
+ALL_TARGETS="claude codex gemini opencode copilot agents"
 
 # Colours (disabled if not a terminal)
 if [[ -t 1 ]]; then
@@ -62,6 +62,12 @@ Targets (global / local skills directory):
     gemini     ~/.gemini/skills            .gemini/skills
     opencode   ~/.config/opencode/skills   .opencode/skills
     copilot    (repo-scoped)               .github/skills
+    agents     ~/.agents/skills            .agents/skills
+
+The generic .agents/skills directory is read by Codex, Gemini CLI,
+Copilot, and Cursor - one "agents" install serves all four. Claude Code
+does not read it; keep the claude target for Claude Code. (codex and
+agents resolve to the same directory.)
 
 Examples:
     # Claude Code, globally (the classic one-liner)
@@ -126,6 +132,8 @@ target_dir() {
         opencode:local)  echo ".opencode/skills" ;;
         copilot:global)  echo "" ;;   # repo-scoped only
         copilot:local)   echo ".github/skills" ;;
+        agents:global)   echo "$HOME/.agents/skills" ;;
+        agents:local)    echo ".agents/skills" ;;
         *) echo "" ;;
     esac
 }
@@ -138,6 +146,7 @@ is_detected() {
         gemini)   command -v gemini >/dev/null 2>&1 || [[ -d "$HOME/.gemini" ]] ;;
         opencode) command -v opencode >/dev/null 2>&1 || [[ -d "$HOME/.config/opencode" ]] ;;
         copilot)  command -v gh >/dev/null 2>&1 || [[ -d ".github" ]] ;;
+        agents)   [[ -d "$HOME/.agents" ]] || command -v codex >/dev/null 2>&1 || command -v cursor >/dev/null 2>&1 ;;
         *) return 1 ;;
     esac
 }
@@ -150,6 +159,7 @@ invoke_note() {
         gemini)   echo "Gemini CLI: run /skills to confirm it is discovered; then it is used automatically." ;;
         opencode) echo "opencode: discovered automatically via the skill tool." ;;
         copilot)  echo "Copilot: reads .github/skills in the repo; invoke from chat or via a slash command." ;;
+        agents)   echo "Generic .agents/skills: read by Codex, Gemini CLI, Copilot, and Cursor (one copy serves all four; Claude Code does NOT read it)." ;;
     esac
 }
 
@@ -173,7 +183,7 @@ resolve_targets() {
             auto)
                 local d
                 for d in $ALL_TARGETS; do is_detected "$d" && expanded="$expanded $d"; done ;;
-            claude|codex|gemini|opencode|copilot) expanded="$expanded $t" ;;
+            claude|codex|gemini|opencode|copilot|agents) expanded="$expanded $t" ;;
             *) error "Unknown target: $t (valid: $ALL_TARGETS all auto)"; exit 2 ;;
         esac
     done
@@ -322,6 +332,7 @@ main() {
             parent=$(target_dir copilot local)
         fi
         [[ -z "$parent" ]] && { warn "no $scope dir for $t; skipping"; continue; }
+        case " $resolved " in *":$parent "*) continue ;; esac   # codex/agents share a dir
         resolved="$resolved $t:$parent"
     done
     [[ -z "$resolved" ]] && { error "No installable targets resolved."; exit 1; }

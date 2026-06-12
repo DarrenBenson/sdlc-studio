@@ -51,9 +51,13 @@ irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 
 | Gemini CLI | `~/.gemini/skills` | `.gemini/skills` | auto via description; `/skills` to confirm |
 | opencode | `~/.config/opencode/skills` | `.opencode/skills` | auto via skill tool |
 | Copilot | (repo-scoped) | `.github/skills` | from chat |
+| `agents` (generic) | `~/.agents/skills` | `.agents/skills` | read by Codex, Gemini, Copilot, Cursor |
 
 `--target claude,codex` picks tools; `--local` installs into the current
-project; `--list-targets` shows the map and what is detected. Native
+project; `--list-targets` shows the map and what is detected. The generic
+`.agents/skills` directory is read by four tools, so `--target agents`
+covers Codex, Gemini, Copilot, and Cursor in one copy (Claude Code does
+not read it). Native
 alternatives also work: `gh skills install DarrenBenson/sdlc-studio
 sdlc-studio` (Copilot) or `gemini skills install
 https://github.com/DarrenBenson/sdlc-studio`.
