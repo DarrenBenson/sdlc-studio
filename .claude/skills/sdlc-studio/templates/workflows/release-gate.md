@@ -21,6 +21,14 @@ Related: reference-reconcile.md (drift check), reference-verify.md (AC verificat
 
 - [ ] Typecheck (e.g. `npx tsc --noEmit`, `mypy`, `go vet`, etc.) – **zero** errors
 - [ ] Full test suite – **all** pass; record the count: `_____ tests, _____ files`
+- [ ] Skill checks (skill repo only): `validate_skill.py` (frontmatter spec),
+      `check_versions.py --strict` (all version homes + CHANGELOG topmost
+      release match), `check_budgets.py` (line budgets), `check_links.py`
+      (anchors) – all green. `npm run lint` covers the first three without
+      `--strict`; run the strict version check explicitly pre-tag.
+- [ ] Eval scenarios (skill repo only): run the `evals/` scenarios per
+      `evals/README.md`; record results in the release notes. Any failed
+      expected behaviour blocks the tag.
 - [ ] Integration / E2E suite green on at least one host – record which: `_____________`
 - [ ] `/sdlc-studio reconcile --dry-run` – zero drift remaining
 - [ ] **Grep tests for pinned version literals** before tagging. A test that asserts `body.version === 'X.Y.Z'` (or equivalent hard-coded string) is a release-bump landmine: the test passes locally against the old version, CI breaks on the release-prep commit, and you spend a CI roundtrip chasing it. Fix: assert the *shape* (semver regex, or type-of-string) rather than the literal – or read the expected value from `package.json` / equivalent manifest. Grep pattern to run pre-tag: the current version string across the test tree. Any hit that isn't a deliberate historical fixture should be migrated to a shape assertion.

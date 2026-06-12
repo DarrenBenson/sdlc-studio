@@ -93,6 +93,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   frontmatter against the agentskills.io spec subset (name pattern and
   directory match, description length, known-field allowlist, semver
   `metadata.version`); wired into `npm run lint` as `lint:skill`.
+- **`tools/check_versions.py` and `tools/check_budgets.py`** - CI guards
+  wired into `npm run lint`: the version checker asserts the four
+  authoritative version homes agree by structured extraction (never
+  repo-wide grep; `--strict` adds the CHANGELOG topmost release for the
+  release gate), and the budget guard holds SKILL.md under 500 lines and
+  un-allowlisted reference files under 600 (allowlisted files carry a
+  recorded ceiling +5% tolerance, so they cannot silently regrow).
+  `templates/workflows/release-gate.md` gains both checks plus the eval run.
 - **Installer stale-copy sweep:** after installing to the chosen targets,
   `install.sh` and `install.ps1` refresh every other sdlc-studio copy found in
   the known tool locations (identity-checked: only directories whose SKILL.md
