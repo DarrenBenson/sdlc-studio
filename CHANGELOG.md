@@ -5,6 +5,25 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Strict Agent Skills spec conformance:** the Claude-Code-only
+  `argument-hint` frontmatter field is dropped (its content is already in the
+  description verbatim) and `tools/validate_skill.py` now enforces the spec's
+  closed six-field set - exactly what the official `skills-ref` validator
+  rejects ("Unexpected fields in frontmatter"). The skill now passes strict
+  reference validation.
+
+### Added
+
+- **Generic `agents` installer target:** `--target agents` installs to
+  `.agents/skills`, the neutral directory read by Codex, Gemini CLI, Copilot,
+  and Cursor - one copy serves all four. `codex` and `agents` resolve to the
+  same directory and the installers dedup; docs note Claude Code does not
+  read it.
+
 ## [2.0.0] - 2026-06-12
 
 The open-format release. SDLC Studio is now formally a standard

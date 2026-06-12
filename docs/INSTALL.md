@@ -50,8 +50,14 @@ append it to the one-liner, e.g.
 | opencode | `opencode` |
 | Copilot | `copilot` (with `--local`) |
 | Several at once | `gemini,codex` |
+| Codex + Gemini + Copilot + Cursor in one copy | `agents` (the generic `.agents/skills` dir) |
 | Every tool you have | `auto` |
 | Every supported tool | `all` |
+
+The generic `.agents/skills` directory is read by Codex, Gemini CLI, Copilot,
+and Cursor, so one `agents` install serves all four (`codex` and `agents`
+resolve to the same directory; the installer dedups). Claude Code does not
+read it - keep the `claude` target for Claude Code.
 
 `auto` detects a tool when its CLI is on `PATH` or its config directory exists.
 `--list-targets` (`-ListTargets`) prints the full map and what was detected

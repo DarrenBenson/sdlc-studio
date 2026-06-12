@@ -29,12 +29,11 @@ from pathlib import Path
 
 DEFAULT_ROOT = ".claude/skills/sdlc-studio"
 
-SPEC_FIELDS = {"name", "description", "license", "compatibility", "metadata",
-               "allowed-tools"}
-CLAUDE_ADDITIVE_FIELDS = {"argument-hint", "when_to_use", "disable-model-invocation",
-                          "user-invocable", "model", "effort", "context", "agent",
-                          "hooks", "paths", "shell", "arguments"}
-KNOWN_FIELDS = SPEC_FIELDS | CLAUDE_ADDITIVE_FIELDS
+# The spec's closed field set - the skills-ref reference validator rejects
+# anything else ("Unexpected fields in frontmatter"), so we enforce exactly
+# that. Tool-specific extras belong under metadata:.
+KNOWN_FIELDS = {"name", "description", "license", "compatibility", "metadata",
+                "allowed-tools"}
 
 NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")

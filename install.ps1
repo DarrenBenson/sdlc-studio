@@ -29,7 +29,7 @@ function Invoke-Install {
     $ErrorActionPreference = 'Stop'
     $Repo = 'DarrenBenson/sdlc-studio'
     $SkillName = 'sdlc-studio'
-    $AllTargets = @('claude', 'codex', 'gemini', 'opencode', 'copilot')
+    $AllTargets = @('claude', 'codex', 'gemini', 'opencode', 'copilot', 'agents')
 
     # Per-tool skills directory map (global / local). opencode's Windows global
     # path follows its cross-platform ~/.config/opencode convention; adjust if a
@@ -40,6 +40,7 @@ function Invoke-Install {
         gemini   = @{ global = (Join-Path $HOME '.gemini\skills');          local = '.gemini\skills' }
         opencode = @{ global = (Join-Path $HOME '.config\opencode\skills'); local = '.opencode\skills' }
         copilot  = @{ global = '';                                          local = '.github\skills' }
+        agents   = @{ global = (Join-Path $HOME '.agents\skills');          local = '.agents\skills' }
     }
 
     if ($Help) {
@@ -54,8 +55,9 @@ Usage:
     .\install.ps1 [options]
 
 Options:
-    -Target LIST    Comma-separated tools: claude,codex,gemini,opencode,copilot
-                    or "all" or "auto". Default: claude
+    -Target LIST    Comma-separated tools: claude,codex,gemini,opencode,
+                    copilot,agents (generic .agents/skills - read by Codex,
+                    Gemini, Copilot, Cursor) or "all" or "auto". Default: claude
     -Global         Per-user skills dir (default)
     -Local          Current project's skills dir
     -Uninstall      Remove SDLC Studio from the resolved target dirs
@@ -87,6 +89,7 @@ Native alternatives (sdlc-studio is a standard skill):
             'gemini'   { [bool](Get-Command gemini   -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $HOME '.gemini')) }
             'opencode' { [bool](Get-Command opencode -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $HOME '.config\opencode')) }
             'copilot'  { [bool](Get-Command gh       -ErrorAction SilentlyContinue) -or (Test-Path '.github') }
+            'agents'   { (Test-Path (Join-Path $HOME '.agents')) -or [bool](Get-Command codex -ErrorAction SilentlyContinue) -or [bool](Get-Command cursor -ErrorAction SilentlyContinue) }
             default    { $false }
         }
     }
@@ -132,6 +135,7 @@ Native alternatives (sdlc-studio is a standard skill):
             'gemini'   { 'Gemini CLI: run /skills to confirm discovery; then it is used automatically.' }
             'opencode' { 'opencode: discovered automatically via the skill tool.' }
             'copilot'  { 'Copilot: reads .github/skills in the repo; invoke from chat.' }
+            'agents'   { 'Generic .agents/skills: read by Codex, Gemini CLI, Copilot, and Cursor (Claude Code does NOT read it).' }
         }
     }
 
@@ -164,6 +168,7 @@ Native alternatives (sdlc-studio is a standard skill):
             $dir = $Map['copilot'].local
         }
         if (-not $dir) { Write-Warn2 "no $Scope dir for $t; skipping"; continue }
+        if ($resolved.Values -contains $dir) { continue }   # codex/agents share a dir
         $resolved[$t] = $dir
     }
     if ($resolved.Count -eq 0) { throw 'No installable targets resolved.' }
