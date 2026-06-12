@@ -52,66 +52,62 @@ The skill does not silently merge plans. If the existing file has substance wort
 
 ## /sdlc-studio plan list
 
-```bash
-/sdlc-studio plan list                # Show active plans only
-/sdlc-studio plan list --all          # Include archive
-/sdlc-studio plan list --stale        # Show only plans untouched > 30 days
-```
+Backed by `scripts/plan.py`. Claude runs
+`python3 "$CLAUDE_SKILL_DIR/scripts/plan.py" list` (`--all` includes the
+archive, `--format json` for machine-readable output):
 
-Output (`/sdlc-studio plan list`):
+```bash
+python3 "$CLAUDE_SKILL_DIR/scripts/plan.py" list
+```
 
 ```text
-ACTIVE PLANS
-─────────────────────────────────────────────────────────────────────
-  add-user-authentication    (2026-04-30, today)
-    Plan – implement OAuth login across the API and web client
-─────────────────────────────────────────────────────────────────────
-1 active plan
+PLANS
+  add-user-authentication  (2026-04-30, 0d)
+                           Plan - implement OAuth login across the API and web client
+1 active plan(s)
 ```
-
-Each row:
-
-| Field | Source |
-| --- | --- |
-| Slug | filename (sans `.md`) |
-| mtime | git log if the plans dir is git-tracked, else `stat -c %y` |
-| First heading | line 1 of the file (after the YAML/HTML comment header if present) |
-
-Stale detection: a plan with mtime older than 30 days **and** whose slug does not match the current branch / current task / current open CR is flagged for archival.
 
 ---
 
 ## /sdlc-studio plan archive {slug}
 
-Move an active plan into the archive subfolder by year-month:
+Backed by `scripts/plan.py`. Claude runs
+`python3 "$CLAUDE_SKILL_DIR/scripts/plan.py" archive <slug>`, which moves the
+plan into the archive subfolder by current year-month. The script errors
+(non-zero exit) if the slug does not exist, is already archived, or would
+overwrite an existing archive file:
 
 ```bash
-/sdlc-studio plan archive add-user-authentication
-# → ~/.claude/plans/archive/2026-04/add-user-authentication.md
+python3 "$CLAUDE_SKILL_DIR/scripts/plan.py" archive add-user-authentication
 ```
 
-If the slug doesn't exist or is already archived, exit with a clear error rather than silently creating empty entries.
+```text
+Archived add-user-authentication -> ~/.claude/plans/archive/2026-04/add-user-authentication.md
+```
 
 ---
 
 ## /sdlc-studio plan list --stale
 
-Surfaces candidates for archival:
+Backed by `scripts/plan.py`. Claude runs
+`python3 "$CLAUDE_SKILL_DIR/scripts/plan.py" list --stale` (threshold
+`--days N`, default 30) to surface candidates for archival:
 
-```text
-STALE PLANS (mtime > 30 days, slug does not match active branch / CR / story)
-─────────────────────────────────────────────────────────────────────
-  some-old-task-slug                           (2026-03-12, 49d ago)
-    Plan – that thing we never finished
-  another-old-slug                             (2026-02-08, 82d ago)
-    Plan – abandoned migration approach
-─────────────────────────────────────────────────────────────────────
-2 stale plans
-
-To archive: /sdlc-studio plan archive <slug>
+```bash
+python3 "$CLAUDE_SKILL_DIR/scripts/plan.py" list --stale
 ```
 
-The skill does not auto-archive; the suggestion is advisory. A plan whose work was deferred but is genuinely still valid stays active until the operator says otherwise.
+```text
+STALE PLANS
+  some-old-task-slug  (2026-03-12, 49d)
+                      Plan - that thing we never finished
+1 active plan(s)
+```
+
+The script flags by age only; whether a stale slug still matches the current
+branch, task, or open CR is Claude's judgement. The skill does not
+auto-archive; the suggestion is advisory. A plan whose work was deferred but
+is genuinely still valid stays active until the operator says otherwise.
 
 ---
 

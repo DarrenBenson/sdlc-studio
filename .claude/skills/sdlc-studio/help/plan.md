@@ -10,6 +10,9 @@ kebab-case slug. Active plans live at the top level; retired plans move to
 `archive/{yyyy-mm}/`. The skill suggests archival but never moves files
 unprompted.
 
+Both commands are backed by `python3 "$CLAUDE_SKILL_DIR/scripts/plan.py"`
+(`list` / `archive`).
+
 ## Quick Reference
 
 ```bash

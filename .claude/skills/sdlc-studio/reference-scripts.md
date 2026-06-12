@@ -92,7 +92,11 @@ Every script in `scripts/`:
 3. Supports `--help` on every subcommand
 4. Exits non-zero on any failure that should halt the workflow
 5. Never mutates files outside `sdlc-studio/.local/` or the files
-   passed on the command line
+   passed on the command line. One flagged exception: `plan.py archive`
+   moves files under `~/.claude/plans/`, an operator-owned directory
+   outside any project - it is the only script that writes outside
+   `.local/`, only on that explicit subcommand, and it never deletes
+   or overwrites
 6. Never fetches network resources except the explicit GitHub CLI
    wrapper, and even then only via the `gh` tool (no token handling)
 7. Prints plain text to stdout by default, with `--format json` where
@@ -187,6 +191,38 @@ contract). Backs ID assignment in `reference-cr.md` and doctrine rule 13.
 
 Gathers inputs only; the review verdict stays with Claude. Full workflow:
 `reference-review.md`.
+
+### `plan.py`
+
+Claude Code plan-file manager for `~/.claude/plans/`.
+
+- `list`: table of active plans (slug, modified date, age, first heading);
+  `--all` includes the archive, `--stale` filters by `--days` (default 30)
+- `archive`: move `<slug>.md` to `archive/<yyyy-mm>/`; errors on a missing
+  slug, an already-archived plan, or an existing archive target
+
+Contract note: this is the one script that writes outside `.local/` - the
+`archive` subcommand moves files under `~/.claude/plans/`, an operator-owned
+directory. It never deletes and never overwrites; `list` is read-only.
+Full workflow: `reference-plan-files.md`. User-facing help: `help/plan.md`.
+
+### `lessons.py`
+
+Lessons manager for both tiers: the project's `sdlc-studio/.local/lessons.md`
+and the skill's own cross-project `lessons/` registry.
+
+- `list`: project-tier entries newest first (`--global` for the skill tier)
+- `add`: append a project-tier entry (L-NNNN allocation, top insertion,
+  header upkeep); `--global` creates the next `LL{NNNN}-{slug}.md` from
+  `lessons/_template.md` and appends the `_index.md` row
+- `prune`: drop project-tier entries with Epic `<=` `--older` or `==` `--epic`
+- `recall`: skill-tier lessons matching `--tags`/`--query` (case-insensitive
+  substring); `--all` searches both tiers
+
+`add --global` writes within the skill's own `lessons/` folder (the registry
+ships with the skill); project-tier writes stay in `.local/`. Full workflow:
+`reference-agentic-lessons.md#lessons-accumulation`. User-facing help:
+`help/lessons.md`.
 
 ## See Also
 
