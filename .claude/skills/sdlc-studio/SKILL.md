@@ -119,7 +119,7 @@ Claude loads files progressively based on task needs:
 | Verification depth tiers (smoke / functional / conversational / soak / live) | reference-test-best-practices.md#verification-depth-tiers | templates/core/bug.md | templates/core/story.md |
 | Test-timeout tuning (measure local + CI variance) | reference-test-best-practices.md#test-timeout-tuning | - | - |
 | Multi-persona pressure-test canvas (unsettled design) | reference-consult.md#pressure-test-canvas | reference-decisions.md | - |
-| Plan-file lifecycle (active / archive / list) | reference-plan-files.md | - | - |
+| Plan-file lifecycle (active / archive / list) | reference-plan-files.md | help/plan.md | - |
 | Reconcile cadence triggers | reference-reconcile.md#cadence-triggers | help/status.md#reconcile-recommendation | - |
 
 **Template structure:**
@@ -172,6 +172,7 @@ approach decisions. The full index is in `help/references.md`.
 | `cr` | Change requests (post-PRD change proposals) |
 | `rfc` | Request For Comments – design exploration of an unsettled space, pre-CR |
 | `project` | Project-level orchestration across all epics |
+| `plan` | Claude Code plan-file lifecycle (list, archive) |
 | `reconcile` | Detect and fix status drift across all artifacts |
 | `status` | Visual dashboard: Requirements, Code, Tests health |
 | `hint` | Single actionable next step |

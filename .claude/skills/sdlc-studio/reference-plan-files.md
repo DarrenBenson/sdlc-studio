@@ -141,5 +141,5 @@ The plan-mode prompt's "different task" → overwrite path is correct **when the
 ## See Also
 
 - `reference-decisions.md#execution-contract` – what happens once a plan is approved (no mid-flight check-ins; gates are SDLC-internal)
-- `help/plan.md` – `/sdlc-studio plan list` / `archive` quick reference (if present)
+- `help/plan.md` – `/sdlc-studio plan list` / `archive` quick reference
 - The plan-mode system prompt itself documents the in-prompt overwrite-vs-continue choice; this file documents the *between-sessions* lifecycle

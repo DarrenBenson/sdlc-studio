@@ -636,7 +636,9 @@ Automated workflows for implementing all stories in an epic.
 1. **Load or Create Epic Workflow State**
    - Check for existing workflow in sdlc-studio/workflows/
    - If exists, load state and determine resume point
-   - If not exists, create from `templates/epic-workflow-template.md`
+   - If not exists, create from `templates/core/workflow.md`, replacing the
+     Phase Progress table with the epic plan's story execution table
+     (order, story, dependencies, approach, status)
    - Assign next workflow ID: WF{NNNN}
 
 2. **Validate Prerequisites**

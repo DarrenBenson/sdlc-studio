@@ -261,6 +261,13 @@ Skill-internal helpers live at `.claude/skills/sdlc-studio/scripts/`. Claude inv
 | `/sdlc-studio lessons add` | Append a new lesson to `.local/lessons.md` |
 | `/sdlc-studio lessons prune --older EP0003` | Drop entries for old epics |
 
+### Plan Files
+
+| Command | Description |
+| --- | --- |
+| `/sdlc-studio plan list` | Show active Claude Code plan files (`--all`, `--stale`) |
+| `/sdlc-studio plan archive {slug}` | Move a plan to `archive/{yyyy-mm}/` |
+
 ### External Integrations
 
 Two-way sync between local records and external trackers. v1.6.0 ships GitHub Issues; Linear, Jira, and GitHub Projects board integration are deferred. Requires `gh` CLI installed and authenticated. See `reference-github-sync.md`.

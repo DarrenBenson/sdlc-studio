@@ -138,6 +138,6 @@ pytest tests/test_file.py --cov=module --cov-report=term-missing
 
 ## Related
 
-- TSD template: `templates/tsd-template.md` (Test Anti-Patterns section)
+- TSD template: `templates/core/tsd.md`
 - TSD help: `help/tsd.md` (Coverage Troubleshooting section)
 - Test best practices: `reference-test-best-practices.md`

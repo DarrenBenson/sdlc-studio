@@ -277,7 +277,7 @@ No duplicate AC detected
 Cohesion review results are stored as part of the review findings system:
 
 - **Location:** `sdlc-studio/reviews/RV{NNNN}-{epic-id}-cohesion.md`
-- **Template:** `templates/review-findings-template.md` (cohesion section)
+- **Template:** `templates/reviews/findings.md` (Cohesion Analysis section)
 - **State tracking:** Updated in `sdlc-studio/.local/review-state.json`
 
 ---

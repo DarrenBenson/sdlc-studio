@@ -34,12 +34,13 @@ Detailed workflows for code planning, review, and quality checks.
    > **Detection table:** `reference-test-automation.md` → Detect Language
 
 4. **Load Best Practices**
-   Read relevant best practices from `~/.claude/best-practices/`:
+   Read the relevant guide from the skill's `best-practices/` directory:
    - `python.md` for Python
-   - `typescript.md` for TypeScript
-   - `go.md` for Go
-   - `rust.md` for Rust
+   - `typescript.md` for TypeScript, `javascript.md` for JavaScript
+   - `go.md` for Go, `rust.md` for Rust
    - Language-specific patterns and anti-patterns
+   - No bundled guide for the language? Use the inline conventions in
+     [Best Practices Integration](#best-practices-integration)
 
 5. **Enforce Edge Case Coverage (MANDATORY)** {#edge-case-coverage}
 
@@ -204,10 +205,12 @@ If you encounter uncertainty during implementation:
 
    **This step is mandatory before writing any code.**
 
-   a) Read the relevant best practice guide:
-      - Python: `~/.claude/best-practices/python.md`
-      - TypeScript: `~/.claude/best-practices/typescript.md`
-      - Go: `~/.claude/best-practices/go.md`
+   a) Read the relevant best practice guide from the skill's `best-practices/` directory:
+      - Python: `best-practices/python.md`
+      - TypeScript: `best-practices/typescript.md`
+      - Go: `best-practices/go.md`
+      - Other languages: matching guide if present, else the inline
+        conventions in [Best Practices Integration](#best-practices-integration)
 
    b) Query Context7 for each external library in the plan's "Library Documentation" section:
 
@@ -749,7 +752,7 @@ Draft/Ready  ──[code plan]──▶  Planned
 
 ## Python Projects {#python-projects}
 
-Load from `~/.claude/best-practices/python.md`:
+Load from `best-practices/python.md`:
 
 - Type hints required
 - Docstrings for public functions
@@ -758,7 +761,7 @@ Load from `~/.claude/best-practices/python.md`:
 
 ## TypeScript Projects {#typescript-projects}
 
-Load from `~/.claude/best-practices/typescript.md`:
+Load from `best-practices/typescript.md`:
 
 - Strict mode enabled
 - ESLint + Prettier
@@ -767,7 +770,7 @@ Load from `~/.claude/best-practices/typescript.md`:
 
 ## Go Projects {#go-projects}
 
-Load from `~/.claude/best-practices/go.md`:
+Load from `best-practices/go.md`:
 
 - Error wrapping
 - Table-driven tests
@@ -775,7 +778,7 @@ Load from `~/.claude/best-practices/go.md`:
 
 ## Rust Projects {#rust-projects}
 
-Load from `~/.claude/best-practices/rust.md`:
+Load from `best-practices/rust.md`:
 
 - Clippy compliance
 - Error handling with Result
