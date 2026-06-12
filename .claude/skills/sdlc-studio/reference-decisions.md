@@ -97,7 +97,7 @@ Once a plan is approved (via `ExitPlanMode` or operator confirmation), the opera
 
 | Stop condition | What it means | What to do |
 | --- | --- | --- |
-| **(a) Genuine technical blocker** | A failure the SDLC's own consult / verify / check / reconcile cannot resolve (missing credentials, an external system down, an inconsistent state that needs operator judgement) | Pause and ask. State the specific blocker, what you tried, what the SDLC can't decide. |
+| **(a) Genuine technical blocker** | A failure the SDLC's own consult / verify / check / reconcile cannot resolve (missing credentials, an external system down, an inconsistent state that needs operator judgement) | Pause and ask **as a structured question with suggested answers** (2-4 options plus the evidence-favoured pick - see `reference-agent-prompt-template.md#structured-clarifications`). State the specific blocker, what you tried, what the SDLC can't decide. |
 | **(b) Explicit operator pause** | The operator typed something like "stop", "pause", "wait" – *not* a benign question or a clarification | Acknowledge and pause. Resume only when the operator says so. |
 | **(c) Destructive / hard-to-reverse action** | Force-push, delete branches, drop tables, send external messages, publish public artefacts | Confirm before acting per the system-prompt safety guidance. Authorisation for one such action does not generalise to the next. |
 
@@ -581,6 +581,7 @@ Each phase in `story implement` validates before proceeding:
 | Plan exists | Phase 1 completed successfully |
 | AC coverage | All AC mappable to test cases |
 | Fixtures defined | Test data requirements clear |
+| Blind review | Plan tasks, read as written and without looking at any code, logically satisfy every AC - no gaps, no scope excess (see `reference-story.md#blind-review`) |
 
 **Failure:** Workflow pauses, reports coverage gaps.
 

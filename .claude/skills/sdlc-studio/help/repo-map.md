@@ -191,6 +191,6 @@ top hubs (by in_degree):
 ## See Also
 
 - `reference-repo-map.md` - Full design, scoring, and limits
-- `reference-epic.md#agent-prompt-template` - Primary consumer
+- `reference-agent-prompt-template.md#agent-prompt-template` - Primary consumer
 - `reference-code.md#code-plan-workflow` - Secondary consumer
 - `scripts/repo_map.py` - The implementation

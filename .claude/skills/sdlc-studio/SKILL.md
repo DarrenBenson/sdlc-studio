@@ -108,14 +108,15 @@ Claude loads files progressively based on task needs:
 | Schema upgrade | reference-upgrade.md | reference-config.md | - |
 | Project orchestration | reference-project.md | reference-epic.md | reference-config.md |
 | Agentic execution | reference-agentic-lessons.md | reference-epic.md | - |
+| Building agentic wave prompts | reference-agent-prompt-template.md | reference-repo-map.md | reference-agentic-lessons.md#lessons-accumulation |
 | Change request workflow | help/cr.md | reference-cr.md | reference-outputs.md |
 | RFC / design exploration | help/rfc.md | reference-rfc.md | reference-outputs.md |
 | Invoking skill internals | reference-scripts.md | scripts/README.md | - |
-| Ranking files for a story | reference-repo-map.md | help/repo-map.md | reference-epic.md#agent-prompt-template |
+| Ranking files for a story | reference-repo-map.md | help/repo-map.md | reference-agent-prompt-template.md#agent-prompt-template |
 | Verifying ACs against codebase | reference-verify.md | help/verify.md | reference-reconcile.md#verify-scope |
 | Syncing CR/Story/Epic with GitHub | reference-github-sync.md | help/github-sync.md | reference-cr.md#cr-sync-workflow |
 | Onboarding to a project / operating doctrine | reference-doctrine.md | help/init.md | lessons/_index.md |
-| Recording and loading project lessons | reference-agentic-lessons.md#lessons-accumulation | help/lessons.md | reference-epic.md#agentic-execution |
+| Recording and loading project lessons | reference-agentic-lessons.md#lessons-accumulation | help/lessons.md | reference-agent-prompt-template.md#agentic-execution |
 | Recalling cross-project lessons (before a decision) | lessons/_index.md | help/lessons.md | reference-doctrine.md |
 | Operator patterns (memory drift, incident localisation, release-gate) | reference-operator-heuristics.md | templates/workflows/release-gate.md | reference-reconcile.md#numeric-claim-drift |
 | Hypothesis discipline (don't guess root cause) | reference-operator-heuristics.md#hypothesis-discipline | reference-bug.md#bug-close-workflow | reference-test-best-practices.md#verification-depth-tiers |

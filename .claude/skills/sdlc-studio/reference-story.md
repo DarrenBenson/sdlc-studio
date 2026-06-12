@@ -137,25 +137,9 @@ Detailed workflows for User Story generation, quality enforcement, and managemen
 6. **Three Amigos Consultation (Default)**
    Unless `--skip-personas` flag used, run Three Amigos review on all generated stories:
 
-   **Per-epic batch:** For each epic's stories, consult all three amigos:
-
-   a. **Sarah Chen (PM) reviews each story for:**
-      - User value clarity in "As a... I want... So that..."
-      - AC completeness against epic requirements
-      - Success metrics alignment
-      - Scope boundaries (nothing missing, nothing extra)
-
-   b. **Marcus Johnson (Eng) reviews each story for:**
-      - TRD alignment (API contracts, data models, architecture patterns)
-      - Technical notes accuracy and feasibility
-      - Dependency correctness (cross-story and cross-epic)
-      - Implementation guidance clarity
-
-   c. **Priya Sharma (QA) reviews each story for:**
-      - AC testability (Given/When/Then precision)
-      - Edge case completeness against TSD risk profile
-      - Test scenario coverage adequacy
-      - Multi-tenancy isolation considerations
+   **Per-epic batch:** For each epic's stories, consult all three amigos.
+   Per-persona focus list: `reference-workflow-personas.md#story-integration`
+   - do not restate it here.
 
    **Process:**
    - Run consultations in parallel (one agent per epic)
@@ -689,7 +673,20 @@ These commands operate on a single story. For autonomous epic-level execution wi
    - **STOP if file creation fails** - do not proceed without written spec
    - Store spec ID for workflow tracking
 
-3. **Review Created Artifacts with User**
+3. **Blind Review of the Plan (MANDATORY)** {#blind-review}
+   Before presenting artifacts, re-read the story's AC and edge cases,
+   then judge the plan's task list **from the task descriptions alone**
+   - no code, no implementation detail: *if every task were completed
+   exactly as written, would every acceptance criterion be satisfied?*
+   - For each AC, record which task(s) satisfy it, or **GAP**
+   - Flag scope excess: any task no AC or edge case requires
+   - On any GAP or excess, fix the plan before presenting it
+
+   This catches semantic drift (task says "add email validation"; the AC
+   says "send a confirmation email") that test execution cannot - tests
+   verify what was built, not whether the plan builds the right thing.
+
+4. **Review Created Artifacts with User**
    Present the created artifacts for user review:
 
    ```text
@@ -933,11 +930,7 @@ The full 8-phase sequential workflow below applies when NOT in agentic mode (i.e
    a. **Update all artifact statuses (Status Cascade):**
       This is the most critical step. Execute the **Story Completion Cascade** for the story being completed.
 
-      > **Canonical checklist:** `reference-outputs.md` → [Story Completion Cascade](reference-outputs.md#story-completion-cascade)
-
-      Follow all steps: update plan, update test spec, update workflow, recalculate index counts, check epic status, document reason (for non-Done terminals), update story index entries, update epic story breakdown, update downstream dependency tables, tick test scenario checkboxes, and cascade epic completion if applicable. The story itself should be updated to Done (or the appropriate terminal status if the workflow was terminated early).
-
-      > **Why this is critical:** Without this cascade, plan and test spec files accumulate stale statuses (Draft/Ready/In Progress) while the story shows Done. This creates misleading dashboard output. Every story terminal status MUST cascade to all linked artifacts.
+      > **Canonical checklist:** [Story Completion Cascade](reference-outputs.md#story-completion-cascade) - run every step; do not restate or improvise the list here. Set the story itself to Done (or the appropriate terminal status if the workflow ended early). Every story terminal status MUST cascade to all linked artifacts, or plans and test specs accumulate stale statuses while the story shows Done.
 
    b. **Verify plan task completion:**
       - Read plan file

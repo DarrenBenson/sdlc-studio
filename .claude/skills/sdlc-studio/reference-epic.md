@@ -62,10 +62,8 @@ Detailed workflows for Epic generation and management.
 7. **Three Amigos + Stakeholder Assessment (Default)**
    Unless `--skip-personas` flag used, run Three Amigos review plus affected stakeholder consultation:
 
-   a. **Three Amigos review each epic for:**
-      - **Sarah Chen (PM):** Scope boundaries, success metrics, user value, feature completeness
-      - **Marcus Johnson (Eng):** Technical feasibility, TRD alignment, architecture impact, dependency accuracy
-      - **Priya Sharma (QA):** Testability, risk assessment, TSD alignment, quality gate applicability
+   a. **Three Amigos review each epic.** Per-persona focus list:
+      `reference-workflow-personas.md#epic-integration` - do not restate it here.
 
    b. **Affected Stakeholder review:**
       - For each Epic, identify affected personas from:
@@ -696,7 +694,7 @@ Automated workflows for implementing all stories in an epic.
 
       **Critical:** If a story modifies a hub file (e.g. `src/api/app.ts`), do NOT include that hub file in the agent's file scope. Instead, instruct the agent to create a sidecar file (e.g. `src/api/routes/new-route.ts`) and integrate the hub file manually during post-wave merge.
 
-      See [Agent Prompt Template](#agent-prompt-template) below for the full prompt structure.
+      See `reference-agent-prompt-template.md#agent-prompt-template` for the full prompt structure.
 
       ```text
       # Example: launch two agents in parallel (single message, two Agent tool calls)
@@ -960,159 +958,22 @@ See `reference-project.md#mode-guide` for the full decision tree.
 
 ### Quality Gates at Wave Boundaries {#wave-quality-gates}
 
-After each wave completes (all parallel agents return), these gates are **enforced** (blocking):
-
-1. **Typecheck** - detect: `tsconfig.json` -> `npx tsc --noEmit`; `go.mod` -> `go vet ./...`
-2. **Test suite** - detect: `package.json` -> `pnpm test` or `npm test`; `pyproject.toml` -> `pytest`
-3. **Reconcile** - `reconcile --scope stories` to fix drift from the wave's story completions
-4. All three must pass. On failure: pause execution, report failures, print resume instructions.
-
-These gates are mandatory and cannot be skipped. They replace the per-story verify/check/review phases with wave-boundary enforcement and prevent drift from accumulating across waves.
+After each wave completes (all parallel agents return), the **Wave** row of
+the canonical gate table applies - typecheck + test suite + scoped
+reconcile, all blocking. Canon (boundary table, per-language command
+detection, rationale): `reference-project.md#quality-gates` - do not
+restate it here. The gates replace the per-story verify/check/review
+phases with wave-boundary enforcement; on failure, pause execution,
+report, and print resume instructions.
 
 ---
 
 ## Agent Prompt Template {#agent-prompt-template}
 
-The quality of agentic implementation depends almost entirely on the prompt each worktree agent receives. A well-structured prompt replaces the plan file, test spec, and scope boundaries. A vague prompt produces inconsistent, low-quality code.
-
-### Prompt Structure
-
-Every agentic implementation prompt MUST contain these sections in this order:
-
-```markdown
-## Task: Implement US{NNNN} - {Story Title}
-
-{Framework} project. {One sentence of context about what this story does.}
-
-### What to Build
-{2-3 sentences describing the deliverable. Not the full AC - a human summary.}
-
-### READ THESE FILES FIRST
-{Numbered list of existing files the agent must read before writing anything.
-Include what to look for in each file. This is the most important section -
-it establishes the patterns the agent must follow.
-**Populate this list from the repo map, not from memory.** Run
-`scripts/repo_map.py query --story <story-path> --top 10` first and
-use the output as the starting file set. Prune obvious false positives
-and add any files the indexer missed (hub files, shared types, schema
-definitions). If the repo map is absent or older than an hour, rebuild
-first with `repo_map.py build`. See `reference-repo-map.md` for details.}
-
-1. `src/lib/bridge/client.ts` - BridgeClient class, Zod schema pattern, error handling
-2. `src/db/bridges.ts` - CRUD helper pattern (insertBridge, getBridge, etc.)
-3. `src/app/bridges/page.tsx` - Server Component page pattern
-4. `src/components/ui/badge.tsx` - shadcn Badge component
-5. `vitest.config.ts` - Test configuration
-
-### Acceptance Criteria
-{Verbatim Given/When/Then from story file. Do not paraphrase.}
-
-### Files to Create
-{Explicit paths for new files this agent should create.}
-- `src/lib/backup/engine.ts`
-- `src/lib/backup/engine.test.ts`
-
-### Files to Modify
-{Explicit paths for existing files this agent should change.}
-- `src/lib/bridge/client.ts` - Add getMetrics() method
-- `src/db/schema.ts` - Add snapshots table
-
-### DO NOT Modify
-{Hub files or files being modified by other agents in this wave.}
-- `src/app/page.tsx` (being modified by another agent)
-- `src/app/layout.tsx` (hub file - integrate manually after)
-
-### Codebase Patterns to Follow
-{Key conventions extracted from READ THESE FILES FIRST.
-Be specific - naming, imports, error handling, styling.}
-
-- Server Components: `export const dynamic = 'force-dynamic'`, data via direct DB call
-- Client Components: `'use client'`, useState for state, useRouter().refresh() after mutations
-- Styling: Tailwind with `cn()` utility, `bg-card rounded-lg border border-border p-6`
-- Errors: Custom error classes with `code` property, never throw raw strings
-- IDs: `crypto.randomUUID()`, timestamps as ISO 8601 strings
-- Imports: `@/` alias for `src/`
-
-### Implementation Steps
-{Ordered steps. Include code snippets for Zod schemas, interfaces, or
-complex logic where the shape matters. Skip snippets for straightforward
-CRUD or UI rendering.}
-
-1. Add Zod schema to client.ts: `export const SnapshotSchema = z.object({ ... })`
-2. Create engine.ts with backup flow: quiesce -> tar -> store -> resume
-3. Write tests covering: success, storage failure, agent resume on failure
-
-### Testing
-
-{What to test. Minimum counts. Framework specifics.}
-
-Write tests in `src/lib/backup/engine.test.ts`:
-
-- Successful backup creates snapshot and stores archive
-- Failed storage marks snapshot as failed
-- Agent always resumed even on failure
-- Audit entry logged
-
-Use `vi.stubGlobal('fetch', fetchMock)` for HTTP mocks.
-Use in-memory SQLite for DB tests.
-
-### Quality Gates
-
-{Non-negotiable requirements.}
-
-1. `pnpm typecheck` - zero errors
-2. `pnpm test` - all tests pass (existing + new)
-3. No `any` types - use `unknown` with type guards
-4. British English in comments and user-facing strings
-
-```text
-
-### What Makes a Good Prompt
-
-| Aspect | Bad | Good |
-| --- | --- | --- |
-| Scope | "Implement the backup feature" | "Create `src/lib/backup/engine.ts` with quiesce/tar/store/resume flow" |
-| Patterns | "Follow existing patterns" | "Use `cn()` from `src/lib/utils.ts`, `bg-card` class for cards" |
-| Files | "Create necessary files" | Explicit list of files to create AND modify |
-| AC | Paraphrased | Verbatim Given/When/Then from story |
-| Exclusions | None | "DO NOT modify src/app/page.tsx" |
-| Tests | "Write tests" | "8 tests covering: success, failure, edge case X, edge case Y" |
-| Context | None | "READ THESE FILES FIRST: 1. client.ts for Zod pattern..." |
-
-### Building the Prompt {#agentic-execution}
-
-Before writing the prompt, the orchestrator MUST:
-
-1. **Explore the codebase** (or use an Explore agent) to understand:
-   - File structure and naming conventions
-   - Existing patterns for the type of code being written
-   - Canonical type locations (where shared interfaces live)
-   - Test patterns (mocking approach, assertion style)
-   - Hub files that multiple stories touch
-
-2. **Read key files** to extract concrete patterns (not guesses):
-   - The main layout/entry point
-   - An existing page similar to what the story creates
-   - An existing test file for the testing pattern
-   - The database schema
-   - The relevant client/service module
-
-3. **Map story AC to file changes** to determine:
-   - Which files need creating (agent's exclusive scope)
-   - Which files need modifying (check for hub file conflicts)
-   - Which files should NOT be touched (other agents' scope)
-
-This exploration typically happens ONCE per epic (before wave 1) and the findings are reused across all waves in that epic. The key files, patterns, and conventions don't change within an epic.
-
-**Also load `.local/lessons.md` at wave start** (cheap, file-only). If the file exists, inject a condensed `## Known Pitfalls on This Project` section into every Agent Prompt Template. Each lesson records a past failure from this specific project and the fix that worked. Skipping this step means the wave starts as dumb as the first one. See `reference-agentic-lessons.md#lessons-accumulation` for the format and four hook points.
-
-### Inter-Epic Context
-
-When implementing later epics that depend on earlier ones (e.g. EP0004 depends on EP0001):
-- Earlier epic code is already committed to git HEAD
-- Agent prompts should reference files from earlier epics in "READ THESE FILES FIRST"
-- Example: EP0004 agents should read `src/lib/bridge/client.ts` (from EP0001) to understand BridgeClient patterns
-- The commit strategy (per-epic) ensures earlier code is available to later agents
+Canonical template: `reference-agent-prompt-template.md` - prompt
+structure, good-vs-bad examples, orchestrator pre-work, structured
+clarifications, and inter-epic context. Do not restate it here; load
+that file when building wave prompts.
 
 ---
 

@@ -158,7 +158,7 @@ is correct most of the time, fast always, and cheap to rebuild.
 
 ## Integration {#repo-map-integration}
 
-**Agent Prompt Template (`reference-epic.md#agent-prompt-template`):**
+**Agent Prompt Template (`reference-agent-prompt-template.md#agent-prompt-template`):**
 Run `repo_map.py query` against the story file before populating
 `READ THESE FILES FIRST`. Use the top 5-10 results as the starting
 file set; prune obvious false positives; add files the indexer
@@ -205,7 +205,7 @@ existing artefacts where a file list is already committed.
 
 - `scripts/repo_map.py` - The implementation
 - `scripts/README.md` - Scripts directory conventions
-- `reference-epic.md#agent-prompt-template` - Primary consumer
+- `reference-agent-prompt-template.md#agent-prompt-template` - Primary consumer
 - `reference-code.md#code-plan-workflow` - Secondary consumer
 - `help/repo-map.md` - User-facing help
 - `reference-agentic-lessons.md` - Lessons that motivated this feature

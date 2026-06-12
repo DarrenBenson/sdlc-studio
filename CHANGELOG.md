@@ -22,6 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   itself recommends:** substantive guidance moved to a new `AGENTS.md`
   (read directly by Codex, Copilot, Cursor, Gemini); `CLAUDE.md` is now an
   `@AGENTS.md` import plus Claude-Code-only notes.
+- **Duplicated instruction blocks consolidated to canonical homes** with
+  do-not-restate pointers: story completion cascade
+  (`reference-outputs.md#story-completion-cascade`), Three Amigos per-persona
+  focus lists (`reference-workflow-personas.md`), wave quality gates
+  (`reference-project.md#quality-gates`), and the agent prompt template (new
+  file). `reference-epic.md` shrinks 1191 -> ~1050 lines.
 
 ### Fixed
 
@@ -53,6 +59,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Blind review gate** (adopted from AWS AI-DLC): before implementation,
+  `story plan` re-reads the story's AC and judges the plan's task list from
+  the task descriptions alone - no code - asking whether every AC would be
+  satisfied as written (`reference-story.md#blind-review`, checkpoint row in
+  `reference-decisions.md`). Catches semantic drift that test execution
+  cannot.
+- **Structured clarification convention** (adopted from AWS AI-DLC): pauses
+  pose 2-4 concrete options with an evidence-favoured suggestion instead of
+  open prose questions
+  (`reference-agent-prompt-template.md#structured-clarifications`, wired into
+  the execution contract's blocker row).
+- **`reference-agent-prompt-template.md`** - the agentic wave prompt template
+  extracted from `reference-epic.md` into its own canonical file (its three
+  consumers - epic waves, project orchestration, lessons injection - now load
+  it without the rest of the epic reference).
 - **`tools/validate_skill.py`** - stdlib-only CI validator for SKILL.md
   frontmatter against the agentskills.io spec subset (name pattern and
   directory match, description length, known-field allowlist, semver
