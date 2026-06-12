@@ -4,11 +4,13 @@
   "description": "Claude Code skill for managing the full software development lifecycle",
   "private": true,
   "scripts": {
-    "lint": "npm run lint:md && npm run lint:style && npm run lint:links && npm run lint:skill",
+    "lint": "npm run lint:md && npm run lint:style && npm run lint:links && npm run lint:skill && npm run lint:versions && npm run lint:budgets",
     "lint:md": "markdownlint '**/*.md' --ignore node_modules",
     "lint:style": "bash tools/lint-style.sh",
     "lint:links": "python3 tools/check_links.py",
     "lint:skill": "python3 tools/validate_skill.py",
+    "lint:versions": "python3 tools/check_versions.py",
+    "lint:budgets": "python3 tools/check_budgets.py",
     "lint:fix": "markdownlint '**/*.md' --ignore node_modules --fix",
     "test": "python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests"
   },
