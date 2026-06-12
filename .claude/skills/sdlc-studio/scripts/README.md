@@ -17,6 +17,8 @@ them on behalf of the reference-file workflows.
 | `validate.py` | `check`: artifact-structure linter (ID format, Status vocabulary, title/metadata, AC presence). `instructions`: agent-instructions hygiene (`AGENTS.md` canonical, `CLAUDE.md` pointer, doctrine/LATEST pointers, pre-release gate, compaction rule, no narrative bloat). | `reference-decisions.md`, `reference-review.md` |
 | `next_id.py` | Allocate the next free artifact ID for a type (local plus, with `--remote`, `origin/main`). | `reference-outputs.md` |
 | `review_prep.py` | Deterministic inputs for the five-leg unified review: artifact staleness, persona usage, count/AC inputs. | `reference-review.md` |
+| `plan.py` | Claude Code plan-file manager: list active/stale plans, archive by year-month. The one script that writes outside `.local/` - the explicit `archive` subcommand moves files under `~/.claude/plans/`, an operator-owned directory. Never deletes or overwrites. | `reference-plan-files.md` |
+| `lessons.py` | Lessons manager for both tiers: project `.local/lessons.md` (list/add/prune, L-NNNN allocation, newest-first insertion) and the skill's cross-project `lessons/` registry (recall by tags/query, `add --global` with LL-ID allocation and `_index.md` row upkeep). | `reference-agentic-lessons.md`, `help/lessons.md` |
 
 ## Conventions
 

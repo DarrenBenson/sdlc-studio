@@ -236,13 +236,24 @@ Four hook points:
 4. **Manual entry via `/sdlc-studio lessons add`** - Any time a
    developer notices a recurring friction and wants to record it.
 
-Commands:
+The mechanical work - ID allocation, top-of-file insertion, header
+upkeep, pruning - is scripted. Claude gathers the lesson content
+(the judgement), then runs `scripts/lessons.py`:
 
-```text
-/sdlc-studio lessons list               # Show accumulated lessons
-/sdlc-studio lessons add                # Interactive add (prompts for fields)
-/sdlc-studio lessons prune --older EP0003  # Drop lessons tied to old epics
+```bash
+python3 "$CLAUDE_SKILL_DIR/scripts/lessons.py" list
+python3 "$CLAUDE_SKILL_DIR/scripts/lessons.py" add \
+  --title "Zod schema mismatch in wave 2" \
+  --body "..." --epic EP0004 --wave 2
+python3 "$CLAUDE_SKILL_DIR/scripts/lessons.py" prune --older EP0003
 ```
+
+The script creates the file (with header) on first append, assigns
+the next L-NNNN, inserts the entry at the top, and refreshes
+`**Last Updated:**`. Promotion to the cross-project tier is
+`add --global` (next LL id from `lessons/_template.md`, index row
+appended); whether a lesson *generalises* enough to promote stays a
+judgement call - see `help/lessons.md`.
 
 ### File format
 

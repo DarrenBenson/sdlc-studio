@@ -80,6 +80,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   extracted from `reference-epic.md` into its own canonical file (its three
   consumers - epic waves, project orchestration, lessons injection - now load
   it without the rest of the epic reference).
+- **`scripts/plan.py` and `scripts/lessons.py`** - stdlib-only helpers that
+  replace procedural prose with deterministic, tested code: `plan.py
+  list|archive` manages Claude Code plan-mode files under `~/.claude/plans/`
+  (active/stale tables, archive by year-month; the one script that writes
+  outside `.local/`, to that operator-owned directory, never deleting or
+  overwriting), and `lessons.py list|add|prune|recall` manages both lesson
+  tiers (project `.local/lessons.md` with L-NNNN allocation and newest-first
+  insertion; the skill's cross-project `lessons/` registry with LL-ID
+  allocation, `_template.md` instantiation, and `_index.md` row upkeep).
 - **`tools/validate_skill.py`** - stdlib-only CI validator for SKILL.md
   frontmatter against the agentskills.io spec subset (name pattern and
   directory match, description length, known-field allowlist, semver

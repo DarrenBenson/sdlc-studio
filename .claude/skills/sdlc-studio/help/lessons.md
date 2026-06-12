@@ -21,6 +21,9 @@ with the skill). **Recall** relevant ones before substantive decisions;
 project-specific *fact* (a config path, an incident, a box name) is **memory**,
 not a lesson – keep those in the project's memory store.
 
+All actions are backed by `python3 "$CLAUDE_SKILL_DIR/scripts/lessons.py"`
+(`list` / `add` / `prune` / `recall`).
+
 ## Quick Reference
 
 ```bash
