@@ -5,6 +5,50 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **`verify_ac.py` counts stale downgrades.** A `yes` Verified state
+  downgraded to `no` now increments the report's `stale` counter (apply and
+  dry-run modes); previously it was always 0, hiding regressions from
+  `verify-report.json`.
+- **`verify_ac.py` inserts new Verified lines at the right anchor.** The
+  fallback tracked the first bullet of an AC block instead of the last; the
+  Verify line, once seen, now holds the insertion anchor so the canonical
+  bullet order (Given / When / Then / Verify / Verified) is preserved.
+- **Story workflow phase order reconciled to the 8-phase canon** (Plan, Test
+  Spec, Tests, Implement, Test, Verify, Check, Review) across
+  `reference-story.md`, `reference-decisions.md` (checkpoint relabel plus a
+  missing Phase 8 entry), `help/story.md`, and `templates/core/workflow.md`;
+  `--from-phase N` is no longer ambiguous between Tests and Implement.
+- **Broken file references repaired:** `reference-epic.md` (epic workflow
+  template), `reference-story.md` (cohesion findings template),
+  `reference-test-pitfalls.md` (pre-v2 TSD template name), and
+  `reference-code.md` (best-practices paths now skill-relative instead of
+  `~/.claude/best-practices/`).
+- **Best-practices corrections:** `docker.md` Python base images bumped to
+  3.13, `openapi.md` example matches the recommended 3.1.1, `postgresql.md`
+  drops an EOL version qualifier, `sql.md` notes `/*+ LEADING */` is
+  Oracle/MySQL-only syntax.
+
+### Added
+
+- **`plan` command surface:** `help/plan.md` plus SKILL.md and `help/help.md`
+  entries for `/sdlc-studio plan list` / `plan archive`
+  (`reference-plan-files.md` existed since v1.7.0 without them).
+- **Four best-practices guides:** `typescript.md`, `rust.md` (referenced by
+  `reference-code.md` but missing), `java.md`, `csharp.md` (test-automation
+  ships JUnit/xUnit templates with no matching guide); best-practices README
+  index now lists every guide.
+- **Regression tests** for both `verify_ac.py` fixes (stale counting in apply
+  and dry-run modes, insertion-anchor parsing).
+
+### Removed
+
+- **`templates/workflows/workflow.md`** - an unreferenced duplicate of
+  `templates/core/workflow.md` with divergent phase order and a 7-phase claim.
+
 ## [1.9.1] - 2026-06-10
 
 Back-port of production fixes to the read-only helper scripts: `reconcile`,
