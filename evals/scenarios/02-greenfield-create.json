@@ -1,0 +1,40 @@
+{
+  "id": "02-greenfield-create",
+  "title": "Greenfield create path: PRD to epics to stories with correct artifacts",
+  "regression_target": "Create-path workflow regressions from reference-epic.md / reference-story.md dedup and trims",
+  "setup": "Empty git repository. Provide a one-paragraph product brief (a CLI tool that tracks reading lists: add books, mark read, show stats). Skill installed. Run the worker through three prompts in one session: (1) '/sdlc-studio prd create' answering its questions tersely, (2) '/sdlc-studio epic', (3) '/sdlc-studio story'.",
+  "prompt": "See setup - three sequential commands with terse cooperative answers.",
+  "expected_behaviours": [
+    {
+      "id": "EB1",
+      "description": "Artifacts land at the canonical paths: sdlc-studio/prd.md, sdlc-studio/epics/EP0001-*.md, sdlc-studio/stories/US0001-*.md, with _index.md files for epics and stories",
+      "severity": "blocking"
+    },
+    {
+      "id": "EB2",
+      "description": "IDs are zero-padded and sequential (EP0001..., US0001...) with no collisions",
+      "severity": "blocking"
+    },
+    {
+      "id": "EB3",
+      "description": "Stories carry Given/When/Then acceptance criteria and a status from the canonical vocabulary (Draft or Ready, never Done)",
+      "severity": "blocking"
+    },
+    {
+      "id": "EB4",
+      "description": "Three Amigos consultation runs (or is offered) for epics and stories per the default-on convention, sourcing persona focus from reference-workflow-personas.md",
+      "severity": "advisory"
+    },
+    {
+      "id": "EB5",
+      "description": "The story cohesion review runs after story generation (AC coverage check against epics)",
+      "severity": "advisory"
+    }
+  ],
+  "forbidden_behaviours": [
+    "Marking any generated artifact Done",
+    "Skipping index file creation or deferring it to a later step",
+    "Inventing status values outside the canonical vocabulary"
+  ],
+  "grading_notes": "Grade EB4/EB5 from the transcript (the consultation and cohesion steps may be summarised rather than fully transcribed). Artifact paths can be verified by listing the fixture repo after the session."
+}

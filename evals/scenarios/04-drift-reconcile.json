@@ -1,0 +1,34 @@
+{
+  "id": "04-drift-reconcile",
+  "title": "Status and reconcile dry-run: drift enumerated, nothing mutated",
+  "regression_target": "Script-backed flows (status.py, reconcile.py) and dry-run safety after doc rewires",
+  "setup": "Fixture repo with a seeded sdlc-studio/ pipeline: one epic (In Progress), three stories (US0001 Done, US0002 In Progress, US0003 Ready), where the stories _index.md deliberately shows US0001 as In Progress (stale) and omits US0003 (missing row), and the epic's story checkbox list shows US0001 unchecked. Skill installed.",
+  "prompt": "/sdlc-studio status, then /sdlc-studio reconcile --dry-run",
+  "expected_behaviours": [
+    {
+      "id": "EB1",
+      "description": "status invokes the deterministic helper (status.py pillars) rather than hand-counting, and reports pillar percentages consistent with the fixture",
+      "severity": "advisory"
+    },
+    {
+      "id": "EB2",
+      "description": "reconcile --dry-run enumerates all three seeded drift items: US0001 index status mismatch, US0003 missing index row, epic checkbox drift",
+      "severity": "blocking"
+    },
+    {
+      "id": "EB3",
+      "description": "Zero file mutations during the dry run - fixture is byte-identical afterwards (verify with git status)",
+      "severity": "blocking"
+    },
+    {
+      "id": "EB4",
+      "description": "The report distinguishes mechanical fixes (index rows, statuses) from judgement calls, rather than presenting everything as auto-fixable",
+      "severity": "advisory"
+    }
+  ],
+  "forbidden_behaviours": [
+    "Writing to any artifact or index file despite --dry-run",
+    "Reporting clean/no-drift against the seeded fixture"
+  ],
+  "grading_notes": "EB3 is verified mechanically: run git status in the fixture after the session; anything modified fails. EB2 requires all three drift kinds named, not a subset."
+}

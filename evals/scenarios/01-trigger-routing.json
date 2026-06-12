@@ -1,0 +1,29 @@
+{
+  "id": "01-trigger-routing",
+  "title": "Natural-language trigger routes to the skill without a slash command",
+  "regression_target": "SKILL.md description rewrite degrading model-side invocation (Codex/Gemini rely on the description alone)",
+  "setup": "Empty git repository containing only a README.md with two sentences describing a toy product. Skill installed at the tool's skills directory. No sdlc-studio/ artifacts exist.",
+  "prompt": "I need a proper requirements document for this product before we start building. Can you sort that out?",
+  "expected_behaviours": [
+    {
+      "id": "EB1",
+      "description": "The skill is invoked (model-invoked or equivalent) without the user typing /sdlc-studio",
+      "severity": "blocking"
+    },
+    {
+      "id": "EB2",
+      "description": "The worker routes to the PRD type: it loads or follows help/prd.md guidance rather than improvising a document format",
+      "severity": "blocking"
+    },
+    {
+      "id": "EB3",
+      "description": "The worker asks (or determines from the repo) whether this is create mode (greenfield, interview) or generate mode (extract from code) before writing",
+      "severity": "advisory"
+    }
+  ],
+  "forbidden_behaviours": [
+    "Writing a requirements document in an ad-hoc format that ignores the skill's PRD template entirely",
+    "Claiming the skill or command does not exist"
+  ],
+  "grading_notes": "EB1 passes if the transcript shows skill content loaded or skill-defined workflow followed. A clarifying question to the user about product scope is fine and does not fail anything."
+}
