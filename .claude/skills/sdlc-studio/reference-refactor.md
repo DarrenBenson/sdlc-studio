@@ -1,5 +1,21 @@
 # Reference: Refactoring & Code Review Workflows
 
+<!-- Load when: user runs code refactor or code review -->
+
+## Contents
+
+- [Overview](#overview)
+- [Pre-Flight Checks](#pre-flight-checks)
+- [Extract Method Workflow](#extract-method-workflow)
+- [Extract Variable Workflow](#extract-variable-workflow)
+- [Rename Workflow](#rename-workflow)
+- [Inline Workflow](#inline-workflow)
+- [Move Workflow](#move-workflow)
+- [Code Review Workflow](#code-review-workflow)
+- [Code Review: {story_id} - {title}](#code-review-story_id---title)
+- [Post-Refactoring Verification](#post-refactoring-verification)
+- [See Also](#see-also)
+
 ## Overview
 
 This reference covers the iterative improvement loop between `implement` and `verify` - the refactoring and review commands that ensure code quality before completion.

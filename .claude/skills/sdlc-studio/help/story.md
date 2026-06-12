@@ -1,5 +1,5 @@
 <!--
-Load: On /sdlc-studio story or /sdlc-studio story help
+Load when: /sdlc-studio story or /sdlc-studio story help
 Dependencies: SKILL.md (always loaded first)
 Related: reference-story.md (deep workflow), reference-philosophy.md (create vs generate), templates/core/story.md
 -->

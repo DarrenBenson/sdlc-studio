@@ -1,5 +1,25 @@
 # Test Generation Best Practices
 
+<!-- Load when: writing or reviewing tests, choosing verification depth, tuning timeouts -->
+
+## Contents
+
+- [Related References](#test-bp-related-references)
+- [Anti-pattern: smoke → "fixed"](#smoke-fix-anti-pattern)
+- [How to use the tiers in artefacts](#using-tiers)
+- [Anti-patterns](#timeout-anti-patterns)
+- [When the bump is legitimate](#timeout-bump-legitimate)
+- [Why Higher Coverage Matters for AI Code](#why-higher-coverage-for-ai)
+- [Common AI Testing Mistakes](#common-ai-testing-mistakes)
+- [Review Patterns for AI Tests](#review-patterns-for-ai-tests)
+- [Pre-Generation Analysis Checklist](#pre-generation-checklist)
+- [Warning Policy](#warning-policy)
+- [Test Writing Guidelines](#test-writing-guidelines)
+- [Frontend Testing Patterns (Vitest + React)](#frontend-testing-patterns)
+- [Coverage Verification](#coverage-verification)
+- [Test Anti-Patterns to Avoid](#test-anti-patterns)
+- [See Also](#see-also)
+
 Guidelines addressing common pitfalls discovered during test automation runs.
 
 ## Related References {#test-bp-related-references}

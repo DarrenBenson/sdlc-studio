@@ -1,5 +1,7 @@
 # Test Pitfalls and Anti-Patterns Reference
 
+<!-- Load when: tests pass but the feature is broken, or auditing test quality -->
+
 Reusable guidance for avoiding common test failures that cause tests to pass while actual coverage remains low.
 
 ## Anti-Pattern: Conditional Assertions

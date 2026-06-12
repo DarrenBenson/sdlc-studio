@@ -1,5 +1,7 @@
 # SDLC Studio Philosophy
 
+<!-- Load when: starting any create or generate workflow - the create-vs-generate distinction -->
+
 ## Create vs Generate: Two Fundamentally Different Modes {#modes-overview}
 
 SDLC Studio operates in two distinct modes. Understanding the difference is critical.

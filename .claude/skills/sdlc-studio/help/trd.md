@@ -1,5 +1,5 @@
 <!--
-Load: On /sdlc-studio trd or /sdlc-studio trd help
+Load when: /sdlc-studio trd or /sdlc-studio trd help
 Dependencies: SKILL.md (always loaded first)
 Related: reference-trd.md (deep workflow), reference-architecture.md, templates/core/trd.md
 -->

@@ -1,5 +1,5 @@
 <!--
-Load: On /sdlc-studio review or /sdlc-studio code review or /sdlc-studio epic review or review help
+Load when: /sdlc-studio review or /sdlc-studio code review or /sdlc-studio epic review or review help
 Dependencies: SKILL.md (always loaded first)
 Related: reference-review.md (document review), reference-refactor.md (code review), reference-epic.md (epic review cascade)
 -->

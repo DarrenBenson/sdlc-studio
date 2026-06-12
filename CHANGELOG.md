@@ -28,6 +28,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   focus lists (`reference-workflow-personas.md`), wave quality gates
   (`reference-project.md#quality-gates`), and the agent prompt template (new
   file). `reference-epic.md` shrinks 1191 -> ~1050 lines.
+- **Every reference and help file over 100 lines now opens with a
+  `Load when:` hint** (one convention; the older multi-line `Load:` blocks
+  renamed), and large reference files gain a Contents list so partial reads
+  reveal scope. The story Ready validation pseudocode is replaced by a
+  pointer to `validate.py check` (determinism in scripts, judgement in
+  Claude).
 
 ### Fixed
 

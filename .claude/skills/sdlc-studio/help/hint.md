@@ -1,5 +1,5 @@
 <!--
-Load: On /sdlc-studio hint or /sdlc-studio hint help
+Load when: /sdlc-studio hint or /sdlc-studio hint help
 Dependencies: SKILL.md (always loaded first)
 Related: None (standalone utility command)
 -->

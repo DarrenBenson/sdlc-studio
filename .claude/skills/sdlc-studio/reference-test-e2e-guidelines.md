@@ -1,10 +1,38 @@
 # E2E Test Generation Guidelines
 
 <!--
-Load: On test-automation, test-spec, or when generating integration/E2E tests
+Load when: test-automation, test-spec, or when generating integration/E2E tests
 Dependencies: reference-test-automation.md (main workflow)
 Related: reference-test-best-practices.md (validation steps)
 -->
+
+## Contents
+
+- [Related References](#e2e-related-references)
+- [Feature Coverage Matrix](#feature-coverage-matrix)
+- [Minimum Scenarios Per Feature](#minimum-scenarios-per-feature)
+- [When to Create New Spec Files](#when-to-create-new-spec-files)
+- [Critical: E2E Mocking Blindspot](#e2e-mocking-blindspot)
+- [The API Contract Test Pattern](#api-contract-test-pattern)
+- [Mock Boundary Principles](#mock-boundary-principles)
+- [Status Code Verification](#status-code-verification-python)
+- [Contract Test Example](#contract-test-example-python)
+- [Mocking Singletons (Global Variables)](#mocking-singletons)
+- [Mocking Factory Functions (Dependency Injection)](#mocking-factory-functions)
+- [Mock Objects with Attributes](#mock-objects-with-attributes)
+- [Schema Version Verification](#schema-version-verification)
+- [Contract Test Example](#contract-test-example-python)
+- [E2E with Playwright and MSW](#e2e-playwright-msw)
+- [Mocking with Jest/Vitest](#mocking-jest-vitest)
+- [Status Code Verification](#status-code-verification-python)
+- [Contract Test Example](#contract-test-example-python)
+- [Mocking External Services](#mocking-external-services)
+- [Time Mocking with Clockwork](#time-mocking-clockwork)
+- [Frontend Test Structure](#frontend-test-structure)
+- [Backend Test Structure](#backend-test-structure)
+- [Go Test Structure](#go-test-structure)
+- [Coverage Targets](#e2e-coverage-targets)
+
 
 E2E tests have unique requirements that differ from unit/integration tests. This guide covers patterns applicable across languages, then provides language-specific guidance.
 

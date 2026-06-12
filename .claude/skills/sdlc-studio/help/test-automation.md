@@ -1,5 +1,5 @@
 <!--
-Load: On /sdlc-studio test-automation or /sdlc-studio test-automation help
+Load when: /sdlc-studio test-automation or /sdlc-studio test-automation help
 Dependencies: SKILL.md (always loaded first)
 Related: reference-test-automation.md (deep workflow), reference-test-best-practices.md, reference-test-e2e-guidelines.md
 -->

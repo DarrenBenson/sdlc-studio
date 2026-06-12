@@ -1,5 +1,5 @@
 <!--
-Load: On /sdlc-studio upgrade or upgrade help
+Load when: /sdlc-studio upgrade or upgrade help
 Dependencies: SKILL.md (always loaded first)
 Related: reference-upgrade.md
 -->

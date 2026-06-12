@@ -1,5 +1,24 @@
 # SDLC Studio Output Reference
 
+<!-- Load when: creating or updating artifacts - file formats, status flows, completion cascades, index files -->
+
+## Contents
+
+- [Output Formats](#output-formats)
+- [Status Transitions](#status-transitions)
+- [Status Vocabulary Enforcement](#status-vocabulary)
+- [ID Collision Prevention](#id-collision-prevention)
+- [File Naming Conventions](#file-naming)
+- [Index Files](#index-files)
+- [Frontmatter Standards](#frontmatter)
+- [Traceability](#traceability)
+- [Review State Files](#review-state)
+- [Local State Files](#local-state)
+- [Review Findings](#review-findings)
+- [Validation Checklists](#validation-checklists)
+- [Version Schema](#version-schema)
+- [See Also](#see-also)
+
 Single source of truth for all output formats, file locations, status values, and transitions.
 
 ## Output Formats {#output-formats}

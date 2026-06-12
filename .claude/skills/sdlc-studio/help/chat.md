@@ -1,5 +1,5 @@
 <!--
-Load: On /sdlc-studio chat or /sdlc-studio chat help
+Load when: /sdlc-studio chat or /sdlc-studio chat help
 Dependencies: SKILL.md (always loaded first)
 Related: reference-chat.md, reference-persona.md, reference-consult.md
 -->

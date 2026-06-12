@@ -1,5 +1,5 @@
 <!--
-Load: On /sdlc-studio status or /sdlc-studio status help
+Load when: /sdlc-studio status or /sdlc-studio status help
 Dependencies: SKILL.md (always loaded first)
 Related: reference-tsd.md (status workflow details)
 -->

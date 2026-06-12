@@ -1,5 +1,5 @@
 <!--
-Load: On /sdlc-studio prd or /sdlc-studio prd help
+Load when: /sdlc-studio prd or /sdlc-studio prd help
 Dependencies: SKILL.md (always loaded first)
 Related: reference-prd.md (deep workflow), templates/core/prd.md
 -->

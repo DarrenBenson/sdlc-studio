@@ -1,5 +1,5 @@
 <!--
-Load: On /sdlc-studio reconcile or /sdlc-studio reconcile help
+Load when: /sdlc-studio reconcile or /sdlc-studio reconcile help
 Dependencies: SKILL.md (always loaded first)
 Related: reference-reconcile.md (deep workflow), reference-outputs.md (cascade checklists)
 -->

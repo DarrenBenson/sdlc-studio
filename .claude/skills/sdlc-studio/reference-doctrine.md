@@ -1,5 +1,7 @@
 # SDLC Studio Operating Doctrine
 
+<!-- Load when: onboarding to a project or applying the operating doctrine -->
+
 **Read this to onboard to ANY sdlc-studio project.** These are the project-*agnostic*
 working rules – the discipline that makes a Claude effective in an sdlc-studio repo.
 Project-*specific* facts (architecture, config paths, deploy recipes, code-style
