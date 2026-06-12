@@ -5,7 +5,16 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0] - 2026-06-12
+
+The open-format release. SDLC Studio is now formally a standard
+[Agent Skill](https://agentskills.io) - one folder that works in Claude
+Code, Codex, Gemini CLI, opencode, and Copilot - with an installer that
+keeps every copy fresh, consolidated and budgeted documentation, two new
+deterministic helpers, CI guards for spec conformance and version
+consistency, behavioural eval scenarios, and two workflow gates adopted
+from AWS AI-DLC. No consuming-project migration: the artifact schema is
+unchanged.
 
 ### Changed
 

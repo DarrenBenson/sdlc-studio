@@ -5,7 +5,7 @@ argument-hint: "[type] [action] [--flags]"
 license: MIT
 compatibility: "Requires Python 3.10+ for bundled scripts; gh CLI (authenticated) for GitHub sync commands. Agentic wave execution (--agentic) is Claude-Code-only."
 metadata:
-  version: "1.9.1"
+  version: "2.0.0"
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash, Agent
 ---
 

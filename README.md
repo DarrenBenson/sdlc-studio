@@ -1,6 +1,6 @@
 # SDLC Studio
 
-**Version 1.9.1** | MIT Licence
+**Version 2.0.0** | MIT Licence
 
 A full software-development-lifecycle skill for AI coding agents - one
 folder of instructions, templates, and tested scripts that takes a
