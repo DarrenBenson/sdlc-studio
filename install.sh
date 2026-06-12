@@ -50,6 +50,9 @@ Options:
     --uninstall     Remove SDLC Studio from the resolved target dirs
     --list-targets  Print the target/directory map and what is detected
     --dry-run       Show what would be done without making changes
+    --no-sweep      Skip refreshing sdlc-studio copies found in other
+                    tool locations (default: refresh them all so no
+                    stale version lingers)
     --version VER   Install a specific version/tag (default: main)
     --help, -h      Show this help
 
@@ -82,6 +85,7 @@ INSTALL_MODE="global"
 DRY_RUN=false
 UNINSTALL=false
 LIST_TARGETS=false
+SWEEP=true
 VERSION="$BRANCH"
 TARGETS_RAW=""
 
@@ -90,6 +94,7 @@ while [[ $# -gt 0 ]]; do
         --global) INSTALL_MODE="global"; shift ;;
         --local) INSTALL_MODE="local"; shift ;;
         --dry-run) DRY_RUN=true; shift ;;
+        --no-sweep) SWEEP=false; shift ;;
         --uninstall) UNINSTALL=true; shift ;;
         --list-targets) LIST_TARGETS=true; shift ;;
         --target)
@@ -188,7 +193,9 @@ check_deps() {
 # Temp dir for the download, cleaned up when the script exits.
 TMP_DIR=""
 SRC=""
-cleanup() { [[ -n "$TMP_DIR" ]] && rm -rf "$TMP_DIR"; }
+# The || true matters: under set -e, a false test in the EXIT trap would
+# overwrite the script's real exit status with 1.
+cleanup() { { [[ -n "$TMP_DIR" ]] && rm -rf "$TMP_DIR"; } || true; }
 trap cleanup EXIT
 
 # Download + extract once; set SRC to the extracted skill directory.
@@ -226,6 +233,56 @@ uninstall_from() {
     if [[ ! -d "$dest" ]]; then info "not present: $dest"; return; fi
     if [[ "$DRY_RUN" == true ]]; then info "[dry run] would remove: $dest"; return; fi
     rm -rf "$dest"; success "removed: $dest"
+}
+
+# Canonical physical path of an existing directory (portable: no readlink -f).
+canon() { (cd "$1" 2>/dev/null && pwd -P) || echo "$1"; }
+
+# Version recorded inside an installed copy (templates/version.yaml).
+installed_version() {
+    local v
+    v=$(grep -m1 '^skill_version:' "$1/templates/version.yaml" 2>/dev/null \
+        | sed 's/^skill_version:[[:space:]]*"\{0,1\}\([^"#]*\)"\{0,1\}.*/\1/' \
+        | tr -d ' ')
+    echo "${v:-unknown}"
+}
+
+# Identity guard: only ever touch a directory that is genuinely this skill.
+is_skill_copy() {
+    [[ -f "$1/SKILL.md" ]] && grep -q '^name: sdlc-studio[[:space:]]*$' "$1/SKILL.md"
+}
+
+# Refresh every sdlc-studio copy found in any known location that was not
+# already written this run, so no stale version lingers anywhere.
+sweep_stale() {
+    local src="$1" done_list="$2"
+    local t scope parent dest old new_ver found=false
+    if [[ "$DRY_RUN" == true ]]; then new_ver="$VERSION"; else new_ver=$(installed_version "$src"); fi
+    for t in $ALL_TARGETS; do
+        for scope in global local; do
+            parent=$(target_dir "$t" "$scope")
+            [[ -z "$parent" || ! -d "$parent" ]] && continue
+            parent=$(canon "$parent")
+            dest="$parent/$SKILL_NAME"
+            case " $done_list " in *" $dest "*) continue ;; esac
+            [[ -d "$dest" ]] || continue
+            done_list="$done_list $dest"
+            if ! is_skill_copy "$dest"; then
+                warn "sweep: skipping $dest (no sdlc-studio SKILL.md - not touching it)"
+                continue
+            fi
+            old=$(installed_version "$dest")
+            found=true
+            if [[ "$DRY_RUN" == true ]]; then
+                info "[dry run] would refresh: $dest ($old -> $new_ver)"
+            else
+                rm -rf "$dest"
+                cp -r "$src" "$parent/"
+                success "refreshed: $dest ($old -> $new_ver)"
+            fi
+        done
+    done
+    [[ "$found" == false ]] && info "sweep: no other sdlc-studio copies found"
 }
 
 print_list() {
@@ -281,7 +338,18 @@ main() {
     fi
 
     echo ""
-    for item in $resolved; do install_to "${item#*:}" "$SRC"; done
+    local installed_dests="" dest_parent
+    for item in $resolved; do
+        install_to "${item#*:}" "$SRC"
+        dest_parent=$(canon "${item#*:}")
+        installed_dests="$installed_dests $dest_parent/$SKILL_NAME"
+    done
+
+    if [[ "$SWEEP" == true ]]; then
+        echo ""
+        info "Sweep: checking other tool locations for stale copies..."
+        sweep_stale "$SRC" "$installed_dests"
+    fi
 
     echo ""
     if [[ "$DRY_RUN" == true ]]; then

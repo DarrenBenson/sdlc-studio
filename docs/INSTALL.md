@@ -122,10 +122,16 @@ build or dependency install is needed.
 ## Updating and uninstalling
 
 - **Update**: re-run the installer; it replaces the existing copy in place.
+- **Stale-copy sweep**: after installing, the installer also refreshes every
+  other sdlc-studio copy it finds in the known tool locations (it never touches
+  a directory without an sdlc-studio `SKILL.md`), reporting each refresh as
+  `old -> new`. Skip this with `--no-sweep` (bash) or `-NoSweep` (PowerShell);
+  preview it with `--dry-run`.
 - **Specific version**: `--version v1.8.0` (bash) or `-Version v1.8.0`
   (PowerShell).
 - **Uninstall**: `--uninstall` (bash) or `-Uninstall` (PowerShell), with the same
-  `--target` / scope you installed with. Preview first with `--dry-run`.
+  `--target` / scope you installed with. Preview first with `--dry-run`. The
+  uninstall does not sweep other locations.
 
 ## Verifying
 

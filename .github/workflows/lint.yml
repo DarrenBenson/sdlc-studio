@@ -38,9 +38,15 @@ jobs:
           & ./install.ps1 -ListTargets
           & ./install.ps1 -Target all -DryRun
 
-      - name: install.ps1 - real local install
+      - name: install.ps1 - real local install with stale-copy sweep
         shell: pwsh
         run: |
+          # Pre-place a stale sdlc-studio copy where the sweep should find it.
+          $stale = Join-Path $HOME '.gemini/skills/sdlc-studio'
+          New-Item -ItemType Directory -Force (Join-Path $stale 'templates') | Out-Null
+          Set-Content -Path (Join-Path $stale 'SKILL.md') -Value "---`nname: sdlc-studio`n---`n"
+          Set-Content -Path (Join-Path $stale 'templates/version.yaml') -Value 'skill_version: "0.0.1"'
+
           $proj = Join-Path $env:RUNNER_TEMP 'sdlc-smoke'
           New-Item -ItemType Directory -Force $proj | Out-Null
           Push-Location $proj
@@ -48,5 +54,29 @@ jobs:
           if (-not (Test-Path '.claude/skills/sdlc-studio/SKILL.md')) {
             throw 'install.ps1 did not place SKILL.md'
           }
-          Write-Host 'Windows install smoke OK'
+          # The sweep must have refreshed the stale gemini copy.
+          $swept = Get-Content (Join-Path $stale 'templates/version.yaml') -Raw
+          if ($swept -match '0\.0\.1') {
+            throw 'sweep did not refresh the stale gemini copy'
+          }
+          Write-Host 'Windows install + sweep refresh OK'
+          Pop-Location
+
+      - name: install.ps1 - NoSweep leaves other copies alone
+        shell: pwsh
+        run: |
+          # Reset the gemini copy to a stale version, install with -NoSweep,
+          # and assert it was left untouched.
+          $stale = Join-Path $HOME '.gemini/skills/sdlc-studio'
+          Set-Content -Path (Join-Path $stale 'templates/version.yaml') -Value 'skill_version: "0.0.1"'
+
+          $proj = Join-Path $env:RUNNER_TEMP 'sdlc-smoke-nosweep'
+          New-Item -ItemType Directory -Force $proj | Out-Null
+          Push-Location $proj
+          & "$env:GITHUB_WORKSPACE/install.ps1" -Target claude -Local -NoSweep
+          $kept = Get-Content (Join-Path $stale 'templates/version.yaml') -Raw
+          if ($kept -notmatch '0\.0\.1') {
+            throw 'NoSweep still modified the gemini copy'
+          }
+          Write-Host 'NoSweep opt-out OK'
           Pop-Location
