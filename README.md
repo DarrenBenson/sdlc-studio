@@ -1,521 +1,190 @@
-```text
-  _____ ____  _     _____   _____ _             _ _
- / ____|  _ \| |   / ____| / ____| |           | (_)
-| (___ | | | | |  | |     | (___ | |_ _   _  __| |_  ___
- \___ \| | | | |  | |      \___ \| __| | | |/ _` | |/ _ \
- ____) | |_| | |__| |____  ____) | |_| |_| | (_| | | (_) |
-|_____/|____/|_____\_____||_____/ \__|\__,_|\__,_|_|\___/
+# SDLC Studio
 
-      From PRD to Quality, Fully Tested Code
-```
+**Version 1.9.1** | MIT Licence
 
-[![MIT Licence](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/DarrenBenson/sdlc-studio?style=social)](https://github.com/DarrenBenson/sdlc-studio/stargazers)
+A full software-development-lifecycle skill for AI coding agents - one
+folder of instructions, templates, and tested scripts that takes a
+project from requirements to verified code:
 
-A Claude Code skill for managing the full software development lifecycle.
+> **PRD → TRD → Personas → Epics → User Stories → Plan → Code → Tests → Verify**
 
-> If SDLC Studio saves you time, please give it a ⭐ on GitHub. Stars help other developers find it.
+SDLC Studio is a standard [Agent Skill](https://agentskills.io)
+(`SKILL.md` format), so the same install works in **Claude Code, OpenAI
+Codex, Gemini CLI, opencode, and GitHub Copilot**.
 
-## What is This?
+## The idea (for beginners)
 
-SDLC Studio is a **skill** (plugin) for [Claude Code](https://docs.anthropic.com/en/docs/claude-code), Anthropic's official CLI tool for working with Claude. It adds commands that help you manage the entire software development process:
+Most AI coding jumps straight from a vague prompt to code, then drifts
+as the project grows. SDLC Studio adds the steps a real team uses, so
+the agent always has the context it needs to stay on track. Each step
+writes a plain markdown file under `sdlc-studio/` in your project. You
+stay in control: review each artefact, then run the next command.
 
-- Write Product Requirements Documents (PRDs)
-- Break work into Epics and User Stories
-- Plan and implement code changes
-- Generate and run tests
-- Track bugs
+Start a brand-new project with `prd create`, or point it at existing
+code with `prd generate`. If you ever lose your place,
+`/sdlc-studio status` shows where you are and `/sdlc-studio hint` tells
+you the single next thing to do.
 
-### The idea (for beginners)
+## Install
 
-Most AI coding jumps straight from a vague prompt to code, then drifts as the project grows. SDLC Studio adds the steps a real team uses, so Claude always has the context it needs to stay on track:
-
-> **Requirements → Epics → User Stories → Plan → Code → Tests**
-
-Each step writes a plain markdown file under `sdlc-studio/` in your project. You stay in control: review each artefact, then run the next command. Start a brand-new project with `prd create`, or point it at existing code with `prd generate`. If you ever lose your place, `/sdlc-studio status` shows where you are and `/sdlc-studio hint` tells you the single next thing to do.
-
-### New in v1.9.1
-
-- **Fewer false-positive drift reports** – `reconcile`, `status`, and `validate` now tolerate real-world artefact conventions: mixed id casing (`cr0001.md` ↔ `CR-0001`), decorated status lines (`Done (v2.83.0) · …`), status-less legacy files, `*-consultations.md` notes, reserved/retired index rows, and plain-bullet acceptance criteria. See `reference-reconcile.md#matching-tolerances`.
-- **Status vocabulary additions** – story gains `Proposed`; bug and CR gain `Superseded`.
-
-Full details are in the [CHANGELOG](CHANGELOG.md).
-
-### New in v1.9.0
-
-- **`init` seeds the agent-instructions file** – a new project gets `AGENTS.md` (plus a one-line `CLAUDE.md` pointer) from the templates automatically; an existing one gets a hygiene check with suggestions.
-- **Instruction-file hygiene check** – `validate.py instructions` (also run by `/sdlc-studio review`) flags a missing `AGENTS.md`, a `CLAUDE.md` that isn't a pointer, missing doctrine / gate / compaction elements, or per-ship-narrative bloat.
-
-Full details are in the [CHANGELOG](CHANGELOG.md).
-
-### New in v1.8.0
-
-Cross-tool portability and a determinism-first script layer:
-
-- **Portable agent instructions** – a `templates/agent-instructions.md` starter (canonical `AGENTS.md`, with a one-line `CLAUDE.md` that imports it via `@AGENTS.md`) works across Claude Code, Codex, and Copilot. The skill no longer hard-codes `CLAUDE.md`.
-- **Deterministic helpers** – `reconcile`, `status`/`hint`, artifact validation, ID allocation, and review-prep now run as tested Python scripts that emit JSON, so the model spends tokens on judgement, not census. The principle: determinism in scripts, judgement in Claude. The five-leg review verdict stays Claude's.
-- **Link-check CI** – `npm run lint` now verifies every intra-skill anchor reference resolves, and CI runs the script unit tests.
-- **Cross-harness installer** – `install.sh` / `install.ps1` gain `--target claude|codex|gemini|opencode|copilot|all|auto`, installing the standard skill into each tool's skills directory. See [docs/INSTALL.md](docs/INSTALL.md).
-
-Full details are in the [CHANGELOG](CHANGELOG.md).
-
-### New in v1.7.0
-
-Field-tested workflow patterns generalised from real-world use:
-
-- **RFC artifact type** – `/sdlc-studio rfc` explores an unsettled design space before committing to a Change Request; accepting an RFC spawns the CRs.
-- **Operating doctrine** – `reference-doctrine.md` onboards a Claude to any project in one read: the RFC/CR/ADR decision matrix, files-as-truth, reconcile cadence, and lessons recall.
-- **Cross-project lessons registry** – a release-curated set of generalisable engineering lessons (`lessons/`) any project can recall before substantive decisions.
-
-Full details are in the [CHANGELOG](CHANGELOG.md).
-
-### New in v1.6.0
-
-Four capabilities that keep status honest and keep agents grounded on large codebases:
-
-- **[Executable acceptance criteria](#executable-acceptance-criteria-v160)** – acceptance criteria run real tests, so a story's Verified state is derived from the code, not just claimed.
-- **[Repo map](#repo-map-for-agent-prompts-v160)** – a pure-Python indexer feeds agents the right files to read first, so they stop hallucinating APIs.
-- **[GitHub Issues sync](#github-issues-sync-v160)** – two-way sync of Change Requests, Stories, and Epics with GitHub Issues via the `gh` CLI.
-- **[Per-project lessons](#per-project-lessons-v160)** – failures from past runs are remembered and injected into future agent prompts.
-
-Full details are under [Workflows](#workflows) below.
-
-**New to Claude Code?** You'll need to [install Claude Code](https://docs.anthropic.com/en/docs/claude-code/getting-started) (or another Agent-Skills tool) first before installing this skill.
-
-## Prerequisites
-
-Before installing SDLC Studio, ensure you have:
-
-| Requirement | How to check | Install guide |
-| --- | --- | --- |
-| A supported agent (Claude Code, Codex, Gemini CLI, opencode, or Copilot) | e.g. `claude --version` | [Getting Started](https://docs.anthropic.com/en/docs/claude-code/getting-started) |
-| curl or wget (macOS/Linux) | Run `curl --version` | Usually pre-installed on macOS/Linux |
-| PowerShell (Windows) | Run `$PSVersionTable.PSVersion` | Pre-installed on Windows |
-
-## Installation
-
-SDLC Studio is a standard Agent Skill, so it installs into any compatible tool -
-Claude Code, Codex, Gemini CLI, opencode, and GitHub Copilot. The one-liner below
-installs the **Claude Code** skill globally; for other tools append `--target`.
-
-**macOS/Linux:**
+One line, any platform:
 
 ```bash
+# macOS / Linux - Claude Code, globally (the classic)
 curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash
+
+# Every tool you have installed
+curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash -s -- --target auto
 ```
 
-**Windows (PowerShell):**
-
 ```powershell
+# Windows
 irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 | iex
 ```
 
-To target other agents, append a flag to the one-liner (PowerShell: `-Target`):
+### Where it installs
 
-| Target | Flag |
-| --- | --- |
-| Codex | `--target codex` |
-| Gemini CLI | `--target gemini` |
-| opencode | `--target opencode` |
-| Copilot | `--target copilot --local` |
-| Several at once | `--target gemini,codex` |
-| Every tool you have | `--target auto` |
+| Tool | Global | Project-local | Invoke as |
+| --- | --- | --- | --- |
+| Claude Code | `~/.claude/skills` | `.claude/skills` | `/sdlc-studio` (or model-invoked) |
+| Codex | `~/.agents/skills` | `.agents/skills` | `$sdlc-studio`, `/skills` |
+| Gemini CLI | `~/.gemini/skills` | `.gemini/skills` | auto via description; `/skills` to confirm |
+| opencode | `~/.config/opencode/skills` | `.opencode/skills` | auto via skill tool |
+| Copilot | (repo-scoped) | `.github/skills` | from chat |
 
-For example, `curl -fsSL .../install.sh | bash -s -- --target auto`.
+`--target claude,codex` picks tools; `--local` installs into the current
+project; `--list-targets` shows the map and what is detected. Native
+alternatives also work: `gh skills install DarrenBenson/sdlc-studio
+sdlc-studio` (Copilot) or `gemini skills install
+https://github.com/DarrenBenson/sdlc-studio`.
 
-**Full install guide:** [docs/INSTALL.md](docs/INSTALL.md) covers project-local
-installs, specific versions, native installers (`gh` / `gemini skills install`),
-uninstalling, the per-tool directory map, and Windows specifics.
+**Stale-copy sweep:** after installing, the installer refreshes every
+other sdlc-studio copy it finds in the known locations (reported as
+`old -> new`; it never touches a directory that is not this skill), so
+no stale version lingers when you use several tools. Opt out with
+`--no-sweep` / `-NoSweep`. Full detail: [docs/INSTALL.md](docs/INSTALL.md).
 
-## Verify Installation
+### Verify
 
-After installing, verify it works:
+Start your tool in any project and run `/sdlc-studio status` (Claude
+Code) or confirm the skill is listed (`/skills` in Codex/Gemini). You
+should see the pipeline dashboard.
 
-1. **Start Claude Code** in any project directory:
-
-   ```bash
-   cd /path/to/any/project
-   claude
-   ```
-
-2. **Run the help command** inside Claude Code:
-
-   ```text
-   /sdlc-studio help
-   ```
-
-   You should see a list of available commands.
-
-3. **Check the status**:
-
-   ```text
-   /sdlc-studio status
-   ```
-
-   This shows the current state of your SDLC pipeline (empty for a new project).
-
-## Quick Start
-
-Once installed, here's how to get started inside Claude Code:
-
-### First time? Check the status
+## Quick start
 
 ```text
-/sdlc-studio status
+/sdlc-studio status            # Where am I? (four-pillar dashboard)
+/sdlc-studio hint              # The single next thing to do
+/sdlc-studio prd create        # New project: interview -> PRD
+/sdlc-studio prd generate      # Existing code: extract the PRD from it
+/sdlc-studio epic              # Break the PRD into Epics
+/sdlc-studio story             # Break Epics into User Stories with AC
+/sdlc-studio code plan         # Plan the next story
+/sdlc-studio code implement    # Build it
+/sdlc-studio code verify       # Verify against acceptance criteria
 ```
 
-This shows what artifacts exist and suggests next steps.
+Run `/sdlc-studio help` for the full catalogue (bugs, change requests,
+RFCs, personas, test specs, test automation, GitHub sync, and every
+flag).
 
-### Don't know what to do next?
+## What you get
 
-```text
-/sdlc-studio hint
-```
+**Two modes for every document.** `create` interviews you (greenfield);
+`generate` reverse-engineers a *migration blueprint* from existing code
+(brownfield) - detailed enough to rebuild the system, validated by
+running tests against the real implementation.
 
-This gives you a single, actionable next step based on your project's current state.
+**Status that polices itself.** Artifacts carry canonical statuses;
+`reconcile` detects and fixes drift from a file census; acceptance
+criteria can carry executable `Verify:` lines that `reconcile --verify`
+actually runs. A blind-review gate checks that a plan's tasks logically
+satisfy every AC *before* implementation.
 
-### Starting a new project?
+**Determinism in scripts, judgement in the model.** Eight stdlib-only
+Python helpers (census, status, validation, ID allocation, repo
+indexing, AC verification, GitHub sync, plan/lessons management) with
+180 unit tests do the mechanical work; the model does the thinking.
 
-```text
-/sdlc-studio prd create
-```
+**Agentic execution.** `epic implement --agentic` analyses the story
+dependency graph and hub-file overlap, then runs safe waves of parallel
+implementation agents (Claude Code only), with quality gates at every
+wave boundary and a lessons file that makes each wave smarter than the
+last.
 
-Claude will ask you questions about your project and create a Product Requirements Document.
+**Cross-project memory.** A lessons registry ships with the skill
+(`lessons recall` before big decisions; `lessons add --global` to
+promote what you learn), and each project accumulates its own pitfall
+file that agentic waves inject into every prompt.
 
-### Have existing code?
+**Two-way GitHub sync.** CRs, stories, and epics sync with GitHub
+Issues through the `gh` CLI; merged PRs trigger completion cascades.
 
-```text
-/sdlc-studio prd generate
-```
-
-Claude analyses your codebase and creates a PRD based on what it finds.
-
-## Common Commands
-
-| Command | What it does |
-| --------- | -------------- |
-| `/sdlc-studio help` | Show all available commands |
-| `/sdlc-studio status` | Show pipeline state and progress |
-| `/sdlc-studio hint` | Get a single suggested next action |
-| `/sdlc-studio prd create` | Create a new PRD interactively |
-| `/sdlc-studio prd generate` | Generate PRD from existing code |
-| `/sdlc-studio epic` | Generate Epics from your PRD |
-| `/sdlc-studio story` | Generate User Stories from Epics |
-| `/sdlc-studio code plan` | Plan implementation for a story |
-| `/sdlc-studio code implement` | Execute your implementation plan |
-| `/sdlc-studio epic implement --agentic` | Autonomous concurrent epic execution |
-| `/sdlc-studio project plan` | Preview full-PRD execution order |
-| `/sdlc-studio project implement --agentic` | Execute every epic in dependency order |
-| `/sdlc-studio cr create` | Open a change request for post-PRD scope changes |
-| `/sdlc-studio cr action --cr CR-NNNN` | Turn a CR into epics and stories |
-| `/sdlc-studio reconcile --dry-run` | Detect index, dependency, and checkbox drift |
-| `/sdlc-studio reconcile --verify` | Run executable AC verifiers and update Verified state |
-| `/sdlc-studio repo map build` | Index the repo for Agent Prompt Templates |
-| `/sdlc-studio repo map query --story US0001` | Rank files by relevance to a story |
-| `/sdlc-studio cr sync` | Two-way sync CRs with GitHub Issues |
-| `/sdlc-studio lessons list` | Print accumulated per-project lessons |
-| `/sdlc-studio bug` | Report a new bug |
-
-## Workflows
-
-### New Project (Greenfield)
-
-Follow this sequence to build from scratch:
-
-```text
-/sdlc-studio prd create        # 1. Define what you're building
-/sdlc-studio trd create        # 2. Define technical approach
-/sdlc-studio persona           # 3. Define who will use it
-/sdlc-studio epic              # 4. Break into Epics
-/sdlc-studio story             # 5. Break into Stories
-/sdlc-studio tsd               # 6. Define test strategy
-/sdlc-studio test-spec         # 7. Create test specifications
-/sdlc-studio code plan         # 8. Plan first story
-/sdlc-studio code implement    # 9. Build it
-```
-
-### Existing Project (Brownfield)
-
-Use `generate` to reverse-engineer documentation from code:
-
-```text
-/sdlc-studio prd generate      # Analyse code, create PRD
-/sdlc-studio trd generate      # Document technical decisions
-/sdlc-studio persona generate  # Infer users from code
-/sdlc-studio epic              # Create Epics for future work
-/sdlc-studio story             # Break into Stories
-```
-
-### Agentic Epic Execution
-
-Use `--agentic` to run an entire epic autonomously. Stories are analysed for dependencies and hub file overlap, then executed in concurrent waves where safe:
-
-```text
-/sdlc-studio epic plan --epic EP0001 --agentic       # Analyse and preview waves
-/sdlc-studio epic implement --epic EP0001 --agentic   # Execute concurrently
-```
-
-Falls back to sequential for any stories with shared file conflicts. See `/sdlc-studio epic help` for details.
-
-### Full-Project Execution
-
-Run the entire PRD in one pass. The project command builds a dependency graph across all epics, sorts them topologically, then executes each one, checkpoint-committing and reconciling between epics.
-
-```text
-/sdlc-studio project plan                               # Preview execution order and waves
-/sdlc-studio project implement --agentic                 # Execute every epic
-/sdlc-studio project implement --agentic --from stories  # Generate missing stories first
-/sdlc-studio project implement --resume EP0003           # Resume after a failure
-```
-
-State is persisted at `sdlc-studio/.local/project-state.json` so runs are resumable.
-
-### Change Requests
-
-Post-PRD changes flow through the CR lifecycle rather than editing the PRD directly:
-
-```text
-/sdlc-studio cr create              # Capture a new change request
-/sdlc-studio cr list --status proposed
-/sdlc-studio cr action --cr CR-0001 # Turn it into epics and stories
-/sdlc-studio cr review              # Staleness and completion checks
-/sdlc-studio cr close --cr CR-0001  # Mark Complete, Rejected, or Deferred
-```
-
-### Reconcile Drift
-
-Mechanical drift detection and repair across stories, epics, PRD, change requests, and index files:
-
-```text
-/sdlc-studio reconcile --dry-run              # Preview changes
-/sdlc-studio reconcile                        # Apply fixes
-/sdlc-studio reconcile --scope stories        # Limit to a single artefact type
-/sdlc-studio reconcile --verify               # Run executable AC verifiers
-```
-
-Reconcile is idempotent and runs automatically at epic and wave boundaries during agentic execution.
-
-### Executable Acceptance Criteria (v1.6.0)
-
-Acceptance criteria can declare a verifier expression that reconcile runs against the live codebase. Status stops lying because the Verified state is derived, not asserted:
-
-```markdown
-### AC1: Happy path email login
-- **Given** a registered account
-- **When** the user submits valid credentials
-- **Then** they are redirected to /dashboard
-- **Verify:** pytest tests/unit/auth/test_login.py::test_email_happy
-- **Verified:** yes (2026-04-15)
-```
-
-Supported verifier prefixes: `pytest`, `jest`, `vitest`, `go`, `file`, `grep`, `http ... -- <jq>`, `shell`. Optional strict gate (`require_ac_verification: true` in config) refuses to mark a story Done until every AC passes.
-
-### Repo Map for Agent Prompts (v1.6.0)
-
-The Agent Prompt Template's `READ THESE FILES FIRST` list is derived automatically from a pure-Python repo indexer so agents stop hallucinating APIs on large codebases:
-
-```text
-/sdlc-studio repo map build
-/sdlc-studio repo map query --story US0001 --top 10
-```
-
-Supports Python (stdlib ast), TypeScript, JavaScript, Go, Rust, Java, Kotlin, C#, Ruby, PHP, Swift. No ctags dependency.
-
-### GitHub Issues Sync (v1.6.0)
-
-Two-way sync between local CR / Story / Epic files and GitHub Issues via the `gh` CLI. A CR and its linked Issue are two representations of the same record:
-
-```text
-/sdlc-studio cr sync                      # Push + pull CRs
-/sdlc-studio project sync                 # All three types
-/sdlc-studio project sync cascade         # Merged-PR cascade candidates
-```
-
-Labels use the `sdlc:` prefix (`sdlc:cr`, `sdlc:story`, `sdlc:status:*`, `sdlc:priority:P1..P4`). Requires `gh` CLI authenticated. See `reference-github-sync.md` for setup.
-
-### Per-Project Lessons (v1.6.0)
-
-`sdlc-studio/.local/lessons.md` accumulates failure patterns specific to the current project. Loaded at every agentic wave start and injected into Agent Prompt Templates as a `Known Pitfalls on This Project` section:
-
-```text
-/sdlc-studio lessons list                 # Print accumulated lessons
-/sdlc-studio lessons add                  # Interactive add
-```
-
-### Daily Development
-
-```text
-/sdlc-studio code plan         # Plan your changes
-/sdlc-studio code implement    # Make the changes
-/sdlc-studio code review       # Review what you built
-/sdlc-studio code test         # Run tests
-```
-
-## Output Structure
-
-SDLC Studio creates a `sdlc-studio/` directory in your project:
+## Output structure
 
 ```text
 sdlc-studio/
-  prd.md                      # Product Requirements Document
-  trd.md                      # Technical Requirements Document
-  tsd.md                      # Test Strategy Document
-  personas.md                 # User Personas
-  epics/
-    _index.md                 # Epic registry
-    EP0001-*.md               # Individual Epic files
-  stories/
-    _index.md                 # Story registry
-    US0001-*.md               # Individual Story files
-  bugs/
-    _index.md                 # Bug registry
-    BG0001-*.md               # Individual Bug files
-  plans/
-    _index.md                 # Plan registry
-    PL0001-*.md               # Implementation plans
-  test-specs/
-    _index.md                 # Spec registry
-    TSP0001-*.md              # Test Specifications
-
-tests/                        # Generated test code (in project root)
-  unit/
-  integration/
-  api/
-  e2e/
+  prd.md  trd.md  tsd.md  personas.md
+  epics/      EP0001-*.md  + _index.md
+  stories/    US0001-*.md  + _index.md
+  plans/      PL0001-*.md  + _index.md
+  bugs/       BG0001-*.md  + _index.md
+  test-specs/ TS0001-*.md  + _index.md
+  crs/  rfcs/  reviews/  workflows/
+  .local/                  # gitignored: caches, reports, lessons
+tests/                     # generated test code (project root)
 ```
+
+## Requirements
+
+- Python 3.10+ for the bundled scripts (pure stdlib, no pip installs)
+- `gh` CLI (authenticated) only for the GitHub sync commands
+- Whatever test runners your AC verifiers invoke (pytest, vitest, go...)
+
+## Upgrading from v1.x
+
+Re-run the installer - it replaces the skill in place and sweeps other
+locations up to the same version. **No project migration is needed:**
+the artifact schema is unchanged (`schema_version: 2`), so existing
+`sdlc-studio/` directories keep working. What changed in v2 is the
+skill itself: open Agent Skills frontmatter, `$CLAUDE_SKILL_DIR` script
+paths, consolidated reference docs, new helpers and CI guards - see
+[CHANGELOG.md](CHANGELOG.md).
+
+## Roadmap
+
+Candidates for v2.1 (recorded from the AI-DLC review; not committed):
+task-level dependency DAGs for finer-grained parallel waves, review
+iteration history as first-class artifact fields, and a lightweight
+artifact-relationship graph for impact analysis.
 
 ## Troubleshooting
 
-### "Command not found" when running /sdlc-studio
+- **`/sdlc-studio` not found** - confirm the skill directory exists for
+  your tool (`install.sh --list-targets`), then restart the session;
+  Claude Code also live-reloads project-level skills.
+- **Installer download fails** - check network/proxy; you can install
+  manually: `git clone` this repo and copy
+  `.claude/skills/sdlc-studio/` into your tool's skills directory.
+- **Commands run but nothing happens** - run `/sdlc-studio status`; if
+  the pipeline is empty the next step is `prd create` or `prd generate`.
+- **Uninstall** - `./install.sh --uninstall` (same `--target`/scope you
+  installed with); preview with `--dry-run`.
 
-The skill isn't installed correctly. Check:
+## Contributing and development
 
-1. **Is the skill in the right place?**
-
-   ```bash
-   ls ~/.claude/skills/sdlc-studio/SKILL.md
-   ```
-
-   If this file doesn't exist, reinstall.
-
-2. **For project-level installs**, check:
-
-   ```bash
-   ls .claude/skills/sdlc-studio/SKILL.md
-   ```
-
-3. **Try reinstalling**:
-
-   ```bash
-   curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash
-   ```
-
-### Installer fails to download
-
-Check your internet connection and that you can access GitHub:
-
-```bash
-curl -I https://github.com/DarrenBenson/sdlc-studio
-```
-
-If you're behind a corporate proxy, you may need to configure proxy settings.
-
-### Commands run but nothing happens
-
-Make sure you're running commands **inside Claude Code**, not in your regular terminal. Start Claude Code first:
-
-```bash
-claude
-```
-
-Then type the `/sdlc-studio` commands at the Claude Code prompt.
-
-## Updating
-
-To update to the latest version, simply run the installer again:
-
-**macOS/Linux:**
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash
-```
-
-**Windows:**
-
-```powershell
-irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 | iex
-```
-
-The installer removes the old version before installing the new one.
-
-## Uninstalling
-
-### Global installation
-
-**macOS/Linux:**
-
-```bash
-rm -rf ~/.claude/skills/sdlc-studio
-```
-
-**Windows:**
-
-```powershell
-Remove-Item -Recurse -Force "$HOME\.claude\skills\sdlc-studio"
-```
-
-### Project-level installation
-
-**macOS/Linux:**
-
-```bash
-rm -rf .claude/skills/sdlc-studio
-```
-
-**Windows:**
-
-```powershell
-Remove-Item -Recurse -Force .claude\skills\sdlc-studio
-```
-
-## Getting Help
-
-Inside Claude Code:
-
-```text
-/sdlc-studio help              # Show all commands
-/sdlc-studio prd help          # Help for PRD commands
-/sdlc-studio epic help         # Help for Epic commands
-/sdlc-studio test-spec help    # Help for test specification
-```
+Dev instructions live in [AGENTS.md](AGENTS.md) (read natively by
+Codex, Copilot, Cursor, Gemini; Claude Code imports it via CLAUDE.md).
+Lint with `npm run lint` (markdown, style, links, frontmatter spec,
+version consistency, line budgets); test with `npm test`. Behavioural
+eval scenarios live in [evals/](evals/README.md). See
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Documentation
 
-- [SKILL.md](.claude/skills/sdlc-studio/SKILL.md) - Full command reference
-- [reference-philosophy.md](.claude/skills/sdlc-studio/reference-philosophy.md) - Create vs Generate modes (read first)
-- [reference-doctrine.md](.claude/skills/sdlc-studio/reference-doctrine.md) - Operating doctrine for onboarding (v1.7.0)
-- [reference-rfc.md](.claude/skills/sdlc-studio/reference-rfc.md) - RFC design-exploration lifecycle (v1.7.0)
-- [reference-operator-heuristics.md](.claude/skills/sdlc-studio/reference-operator-heuristics.md) - Operator patterns for live services (v1.7.0)
-- [reference-deploy-readiness.md](.claude/skills/sdlc-studio/reference-deploy-readiness.md) - Post-deploy verification patterns (v1.7.0)
-- [reference-plan-files.md](.claude/skills/sdlc-studio/reference-plan-files.md) - Plan-file lifecycle (v1.7.0)
-- [lessons/](.claude/skills/sdlc-studio/lessons/) - Cross-project lessons registry (v1.7.0)
-- [reference-project.md](.claude/skills/sdlc-studio/reference-project.md) - Full-PRD orchestration
-- [reference-cr.md](.claude/skills/sdlc-studio/reference-cr.md) - Change request lifecycle
-- [reference-reconcile.md](.claude/skills/sdlc-studio/reference-reconcile.md) - Drift detection and repair
-- [reference-agentic-lessons.md](.claude/skills/sdlc-studio/reference-agentic-lessons.md) - Production patterns for agentic execution
-- [reference-outputs.md](.claude/skills/sdlc-studio/reference-outputs.md) - Canonical completion cascades
-- [reference-workflow-personas.md](.claude/skills/sdlc-studio/reference-workflow-personas.md) - Three Amigos consultation model
-- [reference-repo-map.md](.claude/skills/sdlc-studio/reference-repo-map.md) - AST repo indexer design (v1.6.0)
-- [reference-verify.md](.claude/skills/sdlc-studio/reference-verify.md) - Executable AC verifier DSL (v1.6.0)
-- [reference-github-sync.md](.claude/skills/sdlc-studio/reference-github-sync.md) - GitHub Issues two-way sync (v1.6.0)
-- [reference-scripts.md](.claude/skills/sdlc-studio/reference-scripts.md) - Skill-internal scripts convention (v1.6.0)
-- [reference-*.md](.claude/skills/sdlc-studio/) - Domain-specific workflows
-- [best-practices/](.claude/skills/sdlc-studio/best-practices/) - Quality guidelines
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-## Licence
-
-MIT Licence - see [LICENSE](LICENSE) for details.
+- [docs/INSTALL.md](docs/INSTALL.md) - full installer reference
+- `/sdlc-studio help` - command catalogue (also
+  `.claude/skills/sdlc-studio/help/help.md`)
+- `.claude/skills/sdlc-studio/reference-doctrine.md` - the operating
+  doctrine for running any project with this skill
+- [CHANGELOG.md](CHANGELOG.md) | [SECURITY.md](SECURITY.md) | [SUPPORT.md](SUPPORT.md)

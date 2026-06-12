@@ -34,6 +34,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   reveal scope. The story Ready validation pseudocode is replaced by a
   pointer to `validate.py check` (determinism in scripts, judgement in
   Claude).
+- **README rewritten for v2** (521 -> ~200 lines): open Agent Skills
+  positioning, the five-tool install matrix with per-tool invocation, the
+  stale-copy sweep, feature tour, v1.x upgrade notes (no project migration),
+  and a v2.1 roadmap (task DAGs, review iteration history, artifact graph -
+  recorded from the AI-DLC review).
 
 ### Fixed
 
