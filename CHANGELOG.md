@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `.claude/skills/sdlc-studio/` path, so they work at personal, project, and
   plugin install levels; one canonical fallback rule for other tools lives at
   `reference-scripts.md#skill-dir`.
+- **Repo-root agent instructions follow the cross-tool convention the skill
+  itself recommends:** substantive guidance moved to a new `AGENTS.md`
+  (read directly by Codex, Copilot, Cursor, Gemini); `CLAUDE.md` is now an
+  `@AGENTS.md` import plus Claude-Code-only notes.
 
 ### Fixed
 
