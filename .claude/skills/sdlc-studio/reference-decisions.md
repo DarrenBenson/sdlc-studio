@@ -604,7 +604,7 @@ Each phase in `story implement` validates before proceeding:
 
 **Failure:** Workflow pauses, reports missing context.
 
-### Phase 5: Verify {#phase-5-verify}
+### Phase 5: Test {#phase-5-test}
 
 | Checkpoint | Validation |
 |------------|------------|
@@ -614,7 +614,7 @@ Each phase in `story implement` validates before proceeding:
 
 **Failure:** Workflow pauses, reports test failures.
 
-### Phase 6: Review {#phase-6-review}
+### Phase 6: Verify {#phase-6-verify}
 
 | Checkpoint | Validation |
 |------------|------------|
@@ -622,7 +622,7 @@ Each phase in `story implement` validates before proceeding:
 | Edge cases | All edge cases handled |
 | Best practices | No violations detected |
 
-**Failure:** Workflow pauses, reports review issues.
+**Failure:** Workflow pauses, reports verification issues.
 
 ### Phase 7: Check {#phase-7-check}
 
@@ -633,6 +633,15 @@ Each phase in `story implement` validates before proceeding:
 | Manual verification | User confirms (if UI/API changes) |
 
 **Failure:** Workflow pauses, reports quality issues.
+
+### Phase 8: Review {#phase-8-review}
+
+| Checkpoint | Validation |
+|------------|------------|
+| Status current | Story and workflow status reflect completed work |
+| Pillars healthy | Requirements, Code, Tests pillars show no regressions |
+
+**Failure:** Workflow pauses, reports status drift.
 
 ---
 

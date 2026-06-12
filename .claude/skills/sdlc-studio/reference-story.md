@@ -780,8 +780,8 @@ The full 8-phase sequential workflow below applies when NOT in agentic mode (i.e
 
         **Story:** US0024 - Action Queue API
         **Last Session:** 2026-01-27
-        **Completed Phases:** 1-3 (Plan, Test Spec, Implement)
-        **Resume From:** Phase 4 (Tests)
+        **Completed Phases:** 1-3 (Plan, Test Spec, Tests)
+        **Resume From:** Phase 4 (Implement)
 
         Continuing from where we left off...
         ```
@@ -859,15 +859,15 @@ The full 8-phase sequential workflow below applies when NOT in agentic mode (i.e
 | --- | --- | --- | --- |
 | | 1 | `code plan --story US000X` | Plan file |
 | | 2 | `test-spec --story US000X` | Test spec file |
-| | 3 | `code implement --plan PL000X` | Source files |
-| | 4 | `test-automation --spec TS000X` | Test files |
+| | 3 | `test-automation --spec TS000X` | Test files |
+| | 4 | `code implement --plan PL000X` | Source files |
 | | 5 | `code test --story US000X` | Test results |
 | | 6 | `code verify --story US000X` | AC verification |
 | | 7 | `code check` | Lint results |
 | | 8 | Review | Final status |
 
-   c. **Update plan checkboxes (MANDATORY for Phase 3):**
-      During implementation (Phase 3), as each task completes:
+   c. **Update plan checkboxes (MANDATORY for Phase 4):**
+      During implementation (Phase 4), as each task completes:
       - Read the plan file
       - Find the task in "Implementation Tasks" table
       - Change `[ ]` to `[x]`

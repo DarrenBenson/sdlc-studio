@@ -18,7 +18,7 @@ Related: help/story.md, reference-story.md
 |-----------|-------|
 | Story | US{{story_id}} |
 | Approach | {{approach}} |
-| Phases | 7 |
+| Phases | 8 |
 | Current Phase | {{current_phase}} |
 
 ## Approach Decision

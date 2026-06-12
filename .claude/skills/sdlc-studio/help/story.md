@@ -268,8 +268,8 @@ Execute the full implementation workflow for a story with state tracking.
 **What happens:**
 1. **Checks for existing workflow state** (auto-resume if found)
 2. **Creates workflow file** if new (`sdlc-studio/workflows/WF{NNNN}-{slug}.md`)
-3. Executes 8 phases: Plan → Test Spec → Implement → Tests → Test → Verify → Check → Review
-4. **Updates plan checkboxes** as tasks complete (during Phase 3)
+3. Executes 8 phases: Plan → Test Spec → Tests → Implement → Test → Verify → Check → Review
+4. **Updates plan checkboxes** as tasks complete (during Phase 4)
 5. **Saves state after each phase** for resumability across sessions
 
 **Prerequisites (will STOP if missing):**

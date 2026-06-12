@@ -20,8 +20,8 @@ Related: reference-story.md#story-implement-workflow
 |---|-------|--------|---------|-----------|-------|
 | 1 | Plan | {{phase1_status}} | {{phase1_started}} | {{phase1_completed}} | {{phase1_notes}} |
 | 2 | Test Spec | {{phase2_status}} | {{phase2_started}} | {{phase2_completed}} | {{phase2_notes}} |
-| 3 | Implement | {{phase3_status}} | {{phase3_started}} | {{phase3_completed}} | {{phase3_notes}} |
-| 4 | Tests | {{phase4_status}} | {{phase4_started}} | {{phase4_completed}} | {{phase4_notes}} |
+| 3 | Tests | {{phase3_status}} | {{phase3_started}} | {{phase3_completed}} | {{phase3_notes}} |
+| 4 | Implement | {{phase4_status}} | {{phase4_started}} | {{phase4_completed}} | {{phase4_notes}} |
 | 5 | Test | {{phase5_status}} | {{phase5_started}} | {{phase5_completed}} | {{phase5_notes}} |
 | 6 | Verify | {{phase6_status}} | {{phase6_started}} | {{phase6_completed}} | {{phase6_notes}} |
 | 7 | Check | {{phase7_status}} | {{phase7_started}} | {{phase7_completed}} | {{phase7_notes}} |
