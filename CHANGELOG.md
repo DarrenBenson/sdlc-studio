@@ -43,6 +43,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `reference-test-pitfalls.md` (pre-v2 TSD template name), and
   `reference-code.md` (best-practices paths now skill-relative instead of
   `~/.claude/best-practices/`).
+- **`install.sh` exit status no longer clobbered by the cleanup trap.** With an
+  empty `TMP_DIR` (e.g. `--list-targets`, `--dry-run`), the EXIT trap's failed
+  test made the script exit 1 under `set -e` even after success.
 - **Best-practices corrections:** `docker.md` Python base images bumped to
   3.13, `openapi.md` example matches the recommended 3.1.1, `postgresql.md`
   drops an EOL version qualifier, `sql.md` notes `/*+ LEADING */` is
@@ -54,6 +57,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   frontmatter against the agentskills.io spec subset (name pattern and
   directory match, description length, known-field allowlist, semver
   `metadata.version`); wired into `npm run lint` as `lint:skill`.
+- **Installer stale-copy sweep:** after installing to the chosen targets,
+  `install.sh` and `install.ps1` refresh every other sdlc-studio copy found in
+  the known tool locations (identity-checked: only directories whose SKILL.md
+  declares `name: sdlc-studio` are touched), reporting each as `old -> new`.
+  Opt out with `--no-sweep` / `-NoSweep`; `--dry-run` previews the sweep; the
+  Windows CI smoke test asserts both behaviours.
 - **`plan` command surface:** `help/plan.md` plus SKILL.md and `help/help.md`
   entries for `/sdlc-studio plan list` / `plan archive`
   (`reference-plan-files.md` existed since v1.7.0 without them).

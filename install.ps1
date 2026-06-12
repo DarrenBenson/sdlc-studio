@@ -11,6 +11,7 @@ param(
     [switch]$Uninstall,
     [switch]$ListTargets,
     [switch]$DryRun,
+    [switch]$NoSweep,
     [string]$Version = 'main',
     [switch]$Help
 )
@@ -21,7 +22,8 @@ function Invoke-Install {
     [CmdletBinding()]
     param(
         [string]$Target, [switch]$Global, [switch]$Local, [switch]$Uninstall,
-        [switch]$ListTargets, [switch]$DryRun, [string]$Version, [switch]$Help
+        [switch]$ListTargets, [switch]$DryRun, [switch]$NoSweep, [string]$Version,
+        [switch]$Help
     )
 
     $ErrorActionPreference = 'Stop'
@@ -59,6 +61,8 @@ Options:
     -Uninstall      Remove SDLC Studio from the resolved target dirs
     -ListTargets    Print the target/directory map and what is detected
     -DryRun         Show what would be done without making changes
+    -NoSweep        Skip refreshing sdlc-studio copies found in other tool
+                    locations (default: refresh them all)
     -Version VER    Install a specific version/tag (default: main)
     -Help           Show this help
 
@@ -100,6 +104,25 @@ Native alternatives (sdlc-studio is a standard skill):
             }
         }
         $expanded | Select-Object -Unique
+    }
+
+    # Version recorded inside an installed copy (templates/version.yaml).
+    function Get-InstalledVersion($dir) {
+        $vy = Join-Path $dir 'templates\version.yaml'
+        if (Test-Path $vy) {
+            $line = Select-String -Path $vy -Pattern '^skill_version:' | Select-Object -First 1
+            if ($line) {
+                $v = ($line.Line -replace '^skill_version:\s*"?([^"#\s]*)"?.*$', '$1')
+                if ($v) { return $v }
+            }
+        }
+        return 'unknown'
+    }
+
+    # Identity guard: only ever touch a directory that is genuinely this skill.
+    function Test-SkillCopy($dir) {
+        $sm = Join-Path $dir 'SKILL.md'
+        (Test-Path $sm) -and [bool](Select-String -Path $sm -Pattern '^name: sdlc-studio\s*$' -Quiet)
     }
 
     function Invoke-Note($t) {
@@ -180,14 +203,51 @@ Native alternatives (sdlc-studio is a standard skill):
         }
 
         Write-Host ''
+        $installedDests = @()
         foreach ($t in $resolved.Keys) {
             $parent = $resolved[$t]
             $dest = Join-Path $parent $SkillName
-            if ($DryRun) { Write-Info "[dry run] would install to: $dest"; continue }
-            New-Item -ItemType Directory -Path $parent -Force | Out-Null
-            if (Test-Path $dest) { Write-Warn2 "Removing existing installation at $dest"; Remove-Item -Path $dest -Recurse -Force }
-            Copy-Item -Path $SourceDir -Destination $dest -Recurse
-            Write-Ok "installed: $dest"
+            if ($DryRun) { Write-Info "[dry run] would install to: $dest" }
+            else {
+                New-Item -ItemType Directory -Path $parent -Force | Out-Null
+                if (Test-Path $dest) { Write-Warn2 "Removing existing installation at $dest"; Remove-Item -Path $dest -Recurse -Force }
+                Copy-Item -Path $SourceDir -Destination $dest -Recurse
+                Write-Ok "installed: $dest"
+            }
+            if (Test-Path $parent) { $installedDests += (Join-Path (Resolve-Path $parent).Path $SkillName) }
+        }
+
+        # Refresh every sdlc-studio copy found in any known location that was
+        # not written this run, so no stale version lingers anywhere.
+        if (-not $NoSweep) {
+            Write-Host ''
+            Write-Info 'Sweep: checking other tool locations for stale copies...'
+            $newVer = if ($DryRun) { $Version } else { Get-InstalledVersion $SourceDir }
+            $found = $false
+            foreach ($t in $AllTargets) {
+                foreach ($sweepScope in @('global', 'local')) {
+                    $parent = $Map[$t].$sweepScope
+                    if (-not $parent -or -not (Test-Path $parent)) { continue }
+                    $parent = (Resolve-Path $parent).Path
+                    $dest = Join-Path $parent $SkillName
+                    if ($installedDests -contains $dest) { continue }
+                    if (-not (Test-Path $dest)) { continue }
+                    $installedDests += $dest
+                    if (-not (Test-SkillCopy $dest)) {
+                        Write-Warn2 "sweep: skipping $dest (no sdlc-studio SKILL.md - not touching it)"
+                        continue
+                    }
+                    $old = Get-InstalledVersion $dest
+                    $found = $true
+                    if ($DryRun) { Write-Info "[dry run] would refresh: $dest ($old -> $newVer)" }
+                    else {
+                        Remove-Item -Path $dest -Recurse -Force
+                        Copy-Item -Path $SourceDir -Destination $dest -Recurse
+                        Write-Ok "refreshed: $dest ($old -> $newVer)"
+                    }
+                }
+            }
+            if (-not $found) { Write-Info 'sweep: no other sdlc-studio copies found' }
         }
 
         Write-Host ''
@@ -207,4 +267,4 @@ Native alternatives (sdlc-studio is a standard skill):
 }
 
 Invoke-Install -Target $Target -Global:$Global -Local:$Local -Uninstall:$Uninstall `
-    -ListTargets:$ListTargets -DryRun:$DryRun -Version $Version -Help:$Help
+    -ListTargets:$ListTargets -DryRun:$DryRun -NoSweep:$NoSweep -Version $Version -Help:$Help
