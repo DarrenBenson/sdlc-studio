@@ -1,5 +1,20 @@
 # Test Validation and Advanced Practices
 
+<!-- Load when: validating generated specs/tests against the real codebase (brownfield) -->
+
+## Contents
+
+- [Related References](#test-validation-related-references)
+- [Validation Steps](#validation-steps)
+- [E2E Tests and the API Mock Gap](#e2e-api-mock-gap)
+- [Parameterised Testing](#parameterised-testing)
+- [Test Data Management](#test-data-management)
+- [Flakiness Prevention](#flakiness-prevention)
+- [Test Performance](#test-performance)
+- [Property-Based Testing](#property-based-testing)
+- [Snapshot Testing](#snapshot-testing)
+- [Navigation](#navigation)
+
 Detailed validation workflows, contract testing, and advanced testing patterns.
 
 ## Related References {#test-validation-related-references}

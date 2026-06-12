@@ -1,5 +1,5 @@
 <!--
-Load: On /sdlc-studio code or /sdlc-studio code help
+Load when: /sdlc-studio code or /sdlc-studio code help
 Dependencies: SKILL.md (always loaded first)
 Related: reference-code.md (deep workflow), reference-test-best-practices.md (TDD mode)
 -->

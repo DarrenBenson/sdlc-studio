@@ -1,5 +1,19 @@
 # SDLC Studio Unified Review Reference
 
+<!-- Load when: running /sdlc-studio review or assessing document currency -->
+
+## Contents
+
+- [Overview](#overview)
+- [When to Run a Unified Review](#when-to-run-a-unified-review)
+- [/sdlc-studio review - Step by Step](#review-workflow)
+- [Quick Mode](#quick-mode)
+- [Focus Mode](#focus-mode)
+- [TSD Review Workflow (Detailed)](#tsd-review-workflow)
+- [Cross-Document Rules](#cross-document-rules)
+- [Review Output Formats](#review-output-formats)
+- [See Also](#see-also)
+
 Workflows for the unified document review command that analyses PRD, TRD, TSD, and Persona together.
 
 ## Overview

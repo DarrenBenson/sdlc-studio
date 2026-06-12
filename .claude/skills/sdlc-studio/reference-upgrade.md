@@ -1,5 +1,19 @@
 # SDLC Studio Upgrade Reference
 
+<!-- Load when: upgrading a project's schema version (/sdlc-studio upgrade) -->
+
+## Contents
+
+- [Schema Versions](#schema-versions)
+- [Version Check (hint and status only)](#version-check-hint-and-status-only)
+- [Version Detection](#version-detection)
+- [/sdlc-studio upgrade - Step by Step](#upgrade-workflow)
+- [Dry Run Output](#dry-run-output)
+- [Backward Compatibility](#backward-compatibility)
+- [Configuration Upgrade](#configuration-upgrade)
+- [Rollback](#rollback)
+- [See Also](#see-also)
+
 Workflows for upgrading projects between schema versions and detecting version mismatches.
 
 ## Schema Versions

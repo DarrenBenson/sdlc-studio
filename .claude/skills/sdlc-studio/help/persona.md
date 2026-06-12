@@ -1,5 +1,5 @@
 <!--
-Load: On /sdlc-studio persona or /sdlc-studio persona help
+Load when: /sdlc-studio persona or /sdlc-studio persona help
 Dependencies: SKILL.md (always loaded first)
 Related: reference-persona.md, reference-persona-generate.md
 -->

@@ -1,5 +1,5 @@
 <!--
-Load: On /sdlc-studio bug or /sdlc-studio bug help
+Load when: /sdlc-studio bug or /sdlc-studio bug help
 Dependencies: SKILL.md (always loaded first)
 Related: reference-bug.md (deep workflow), templates/core/bug.md
 -->

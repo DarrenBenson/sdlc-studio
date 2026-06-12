@@ -1,8 +1,8 @@
 # SDLC Studio Reference - Persona Generate
 
-Detailed workflows for reverse engineering personas from existing artefacts.
+<!-- Load when: user runs /sdlc-studio persona generate (from PRD, code, or docs) -->
 
-<!-- Load when: /sdlc-studio persona generate is invoked -->
+Detailed workflows for reverse engineering personas from existing artefacts.
 
 ---
 

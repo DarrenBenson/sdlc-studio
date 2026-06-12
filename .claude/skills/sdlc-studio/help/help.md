@@ -1,5 +1,5 @@
 <!--
-Load: On /sdlc-studio help
+Load when: /sdlc-studio help
 Dependencies: SKILL.md (always loaded first)
 Related: help/arguments.md (full flags), help/references.md (reference catalogue), all help/*.md
 -->

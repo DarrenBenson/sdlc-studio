@@ -444,38 +444,16 @@ Stories CANNOT be marked Ready unless they meet these enforced minimums:
 
 ### Validation Algorithm {#validation-algorithm}
 
-```python
-def validate_story_ready(story):
-    errors = []
+Structural checks (edge-case and scenario counts, placeholders,
+unresolved critical questions, ambiguous-language patterns) are
+deterministic - run the linter rather than re-deriving them:
 
-    # Count edge cases
-    edge_cases = count_table_rows(story, "Edge Cases")
-    min_edge_cases = 8 if story.is_api else 5
-    if edge_cases < min_edge_cases:
-        errors.append(f"Edge cases: {edge_cases}/{min_edge_cases} (need {min_edge_cases - edge_cases} more)")
-
-    # Count test scenarios
-    test_scenarios = count_checkboxes(story, "Test Scenarios")
-    min_scenarios = 10 if story.is_api else 8
-    if test_scenarios < min_scenarios:
-        errors.append(f"Test scenarios: {test_scenarios}/{min_scenarios}")
-
-    # Check for placeholders
-    if contains_placeholder(story.acceptance_criteria):
-        errors.append("AC contains TBD or placeholder text")
-
-    # Check critical open questions
-    critical_questions = get_unresolved_critical(story.open_questions)
-    if critical_questions:
-        errors.append(f"Unresolved critical questions: {len(critical_questions)}")
-
-    # Check ambiguous language
-    ambiguous = detect_ambiguous_language(story)
-    if ambiguous:
-        errors.append(f"Ambiguous language found: {', '.join(ambiguous)}")
-
-    return errors
+```bash
+python3 "$CLAUDE_SKILL_DIR/scripts/validate.py" check --file <story> --format json
 ```
+
+Judgement checks (whether AC are genuinely implementation-ready,
+whether edge cases cover the risk profile) stay with Claude.
 
 ### Validation Output {#validation-output}
 
@@ -957,8 +935,8 @@ The full 8-phase sequential workflow below applies when NOT in agentic mode (i.e
       |-------|--------|-----------|
       | 1. Plan | Done | 2026-01-27 10:15 |
       | 2. Test Spec | Done | 2026-01-27 10:22 |
-      | 3. Implement | Done | 2026-01-27 10:37 |
-      | 4. Tests | Done | 2026-01-27 10:45 |
+      | 3. Tests | Done | 2026-01-27 10:37 |
+      | 4. Implement | Done | 2026-01-27 10:45 |
       | 5. Test | Done | 2026-01-28 09:12 |
       | 6. Verify | Done | 2026-01-28 09:14 |
       | 7. Check | Done | 2026-01-28 09:15 |

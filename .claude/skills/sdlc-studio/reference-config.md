@@ -1,5 +1,26 @@
 # SDLC Studio Configuration Reference
 
+<!-- Load when: reading or changing project configuration, thresholds, or quality-gate knobs -->
+
+## Contents
+
+- [Configuration Files](#configuration-files)
+- [Configuration Loading](#configuration-loading)
+- [Coverage Targets](#coverage-targets)
+- [Story Quality Gates](#story-quality-gates)
+- [TDD Trigger](#tdd-trigger)
+- [E2E Limits](#e2e-limits)
+- [Epic Perspectives](#epic-perspectives)
+- [Review Configuration](#review-configuration)
+- [Persona Staleness](#personas-staleness-days)
+- [Contract Tables](#contract-tables)
+- [Release Strategy](#release-strategy)
+- [Using Config in Templates](#using-config-in-templates)
+- [Example Project Config](#example-project-config)
+- [Version File](#version-file)
+- [Project Implementation](#project-implementation)
+- [See Also](#see-also)
+
 Project-level configuration for customising SDLC Studio behaviour.
 
 ## Configuration Files

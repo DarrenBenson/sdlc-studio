@@ -1,5 +1,5 @@
 <!--
-Load: On /sdlc-studio test-env or /sdlc-studio test-env help
+Load when: /sdlc-studio test-env or /sdlc-studio test-env help
 Dependencies: SKILL.md (always loaded first)
 Related: reference-test-automation.md (test workflows), templates/docker-compose.test.template
 -->

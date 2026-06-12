@@ -1,5 +1,5 @@
 <!--
-Load: On /sdlc-studio epic or /sdlc-studio epic help
+Load when: /sdlc-studio epic or /sdlc-studio epic help
 Dependencies: SKILL.md (always loaded first)
 Related: reference-epic.md (deep workflow), templates/core/epic.md
 -->

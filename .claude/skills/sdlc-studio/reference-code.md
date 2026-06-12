@@ -1,5 +1,34 @@
 # SDLC Studio Code Reference
 
+<!-- Load when: planning, implementing, verifying, or checking code (code plan/implement/verify/check/test) -->
+
+## Contents
+
+- [Detailed Workflows](#detailed-workflows)
+- [/sdlc-studio code plan - Step by Step](#code-plan-workflow)
+- [/sdlc-studio code implement - Step by Step](#code-implementation-workflow)
+- [/sdlc-studio code verify - Step by Step](#code-verify-workflow)
+- [/sdlc-studio code check - Step by Step](#code-check-workflow)
+- [/sdlc-studio code test - Step by Step](#code-test-workflow)
+- [TDD vs Test-After](#tdd-vs-test-after)
+- [Ship-Time Contract Sync](#ship-time-contract-sync)
+- [Release-Strategy Branch](#release-strategy-branch)
+- [Status Update Flow](#status-update-flow)
+- [Best Practices Integration](#best-practices-integration)
+- [Python Projects](#python-projects)
+- [TypeScript Projects](#typescript-projects)
+- [Go Projects](#go-projects)
+- [Rust Projects](#rust-projects)
+- [Error Handling](#error-handling)
+- [Code Plan Errors](#code-plan-errors)
+- [Code Implement Errors](#code-implement-errors)
+- [Code Review Errors](#code-review-errors)
+- [Code Check Errors](#code-check-errors)
+- [Test Errors](#test-errors)
+- [Workflow Orchestration](#workflow-orchestration)
+- [See Also](#see-also)
+- [Navigation](#navigation)
+
 Detailed workflows for code planning, review, and quality checks.
 
 ---

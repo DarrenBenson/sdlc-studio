@@ -1,5 +1,5 @@
 <!--
-Load: On /sdlc-studio init or /sdlc-studio init help
+Load when: /sdlc-studio init or /sdlc-studio init help
 Dependencies: SKILL.md (always loaded first)
 Related: reference-outputs.md, templates/
 -->

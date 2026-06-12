@@ -1,5 +1,5 @@
 <!--
-Load: On /sdlc-studio code refactor or /sdlc-studio code refactor help
+Load when: /sdlc-studio code refactor or /sdlc-studio code refactor help
 Dependencies: SKILL.md (always loaded first)
 Related: reference-refactor.md (deep workflow), reference-code.md (implementation)
 -->

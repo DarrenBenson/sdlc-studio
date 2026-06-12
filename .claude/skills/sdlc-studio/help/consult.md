@@ -1,5 +1,5 @@
 <!--
-Load: On /sdlc-studio consult or /sdlc-studio consult help
+Load when: /sdlc-studio consult or /sdlc-studio consult help
 Dependencies: SKILL.md (always loaded first)
 Related: reference-consult.md, reference-persona.md
 -->

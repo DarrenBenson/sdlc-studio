@@ -1,5 +1,5 @@
 <!--
-Load: On /sdlc-studio test-spec or /sdlc-studio test-spec help
+Load when: /sdlc-studio test-spec or /sdlc-studio test-spec help
 Dependencies: SKILL.md (always loaded first)
 Related: reference-test-spec.md (deep workflow), reference-test-best-practices.md, templates/core/test-spec.md
 -->
