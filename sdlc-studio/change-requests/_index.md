@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 15 |
+| Proposed | 14 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 4 |
 | Rejected | 0 |
 | Deferred | 0 |
-| Superseded | 0 |
+| Superseded | 1 |
 | Blocked | 0 |
 | **Total** | **19** |
 
@@ -38,4 +38,4 @@
 | [CR-0016](CR0016-all-eight-audit-filed-crs-carry-an-identical-place.md) | All eight audit-filed CRs carry an identical placeholder AC that asserts nothing about the change | Proposed | Medium | Improvement | 2026-06-20 | -- |
 | [CR-0017](CR0017-cr0005-evidence-is-partly-false-it-claims-verify-a.md) | CR0005 evidence is partly false: it claims verify_ac writes the report 'with no timestamp', but write_report emits generated_at | Proposed | Low | Improvement | 2026-06-20 | -- |
 | [CR-0018](CR0018-sprint-retro-lessons-folder.md) | Sprint retro and committed lessons-learned folder | Proposed | Medium | Improvement | 2026-06-20 | -- |
-| [CR-0019](CR0019-progressive-disclosure-archived-indexes.md) | Progressive-disclosure indexes with release archival | Proposed | High | Improvement | 2026-06-20 | -- |
+| [CR-0019](CR0019-progressive-disclosure-archived-indexes.md) | Progressive-disclosure indexes with release archival | Superseded | High | Improvement | 2026-06-20 | -- |

@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 10 |
+| Draft | 11 |
 | In Review | 0 |
 | Accepted | 1 |
 | Superseded | 0 |
 | Withdrawn | 0 |
-| **Total** | **11** |
+| **Total** | **12** |
 
 ## All RFCs
 
@@ -28,3 +28,4 @@
 | [RFC-0009](RFC0009-code-complexity-signals.md) | Code-complexity signals for estimation, token budgeting, refactor-first and test risk | High | Draft | -- | 2026-06-20 | -- |
 | [RFC-0010](RFC0010-audit-filed-rfcs-0003-0008-have-boilerplate-act-vs.md) | Audit-filed RFCs (0003-0008) have boilerplate 'act vs status quo' options that never weigh the real design choices | Medium | Draft | -- | 2026-06-20 | -- |
 | [RFC-0011](RFC0011-rfc0006-reopens-the-default-autonomy-decision-rfc0.md) | RFC0006 reopens the default-autonomy decision RFC0001 declares settled, with no cross-reference | Medium | Draft | -- | 2026-06-20 | -- |
+| [RFC-0012](RFC0012-progressive-disclosure-indexes.md) | Progressive-disclosure indexes with release archival | High | Draft | -- | 2026-06-20 | -- |

@@ -1,6 +1,6 @@
 # CR-0019: Progressive-disclosure indexes with release archival
 
-> **Status:** Proposed
+> **Status:** Superseded
 > **Priority:** High
 > **Type:** Improvement
 > **Requester:** Darren Benson
@@ -8,6 +8,7 @@
 > **Affects:** reference-outputs.md (index conventions), scripts/reconcile.py, scripts/status.py, templates/indexes/*, a new archive helper
 > **Depends on:** --
 > **GitHub Issue:** --
+> **Superseded by:** [RFC-0012](../rfcs/RFC0012-progressive-disclosure-indexes.md)
 
 ## Summary
 
@@ -108,3 +109,4 @@ None for small projects (no archive until a threshold/release). Backward compati
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Darren Benson | Raised - flat indexes do not scale (agent-bridge 376 KB CR index); progressive disclosure + release archival |
+| 2026-06-20 | Darren Benson | Superseded - promoted to RFC0012 to weigh the design options |
