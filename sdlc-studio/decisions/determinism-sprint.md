@@ -12,3 +12,4 @@
 | 2026-06-20T13:49:17Z | status.py reads config via config.py (lazy/graceful) | critic REJECT: AC1 needed a real consumer, not just a loader; staleness_days moved to a guarded table row |
 | 2026-06-20T13:54:53Z | resume skips ALL terminal statuses, matches primary Epic id (CR0007) | critic REJECT: Superseded/Won't-Implement/Deferred must not be resume points; multi-id Epic field must not over-match |
 | 2026-06-20T14:05:44Z | Retro filed CR0022 (deps-order), CR0023 (conformance completion), widened BG0018, LL0007/LL0008 | run learnings: conformance is a partial oracle; critic unenforced; ordering ignores deps; status-parse fragility is a class |
+| 2026-06-20T14:09:52Z | Moved LL0007/LL0008 OUT of the shared skill lessons/ registry into sdlc-studio/.local/lessons.md (project tier) | operator: this repo's own dev lessons must not pollute every consuming project's cross-project recall; committed copy lives in RETRO0002 |

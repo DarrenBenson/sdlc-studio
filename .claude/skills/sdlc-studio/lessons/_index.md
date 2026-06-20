@@ -19,8 +19,6 @@ and from per-project memory (project-specific facts).
 | [LL0004](LL0004-ship-paperwork-in-the-same-commit.md) | Ship the paperwork in the same commit as the code | process, docs, release |
 | [LL0005](LL0005-full-review-set-includes-a-code-leg.md) | The between-releases review set must include a CODE leg | review, release, quality |
 | [LL0006](LL0006-deploy-meta-files-gap-class.md) | Deploy meta-files gap – new boot-read file → every deploy path | deploy, packaging, gap-class |
-| [LL0007](LL0007-amend-the-ac-when-you-deviate.md) | Amend the AC in the same unit when the implementation deviates | process, acceptance-criteria, critic, honesty |
-| [LL0008](LL0008-forward-port-via-install-script.md) | Forward-port a skill via its install script, not per-file copy | process, skill-dev, sync, dogfood |
 
 ## Notes
 
