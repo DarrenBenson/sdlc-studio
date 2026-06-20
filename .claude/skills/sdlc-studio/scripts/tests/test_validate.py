@@ -55,6 +55,51 @@ class ValidateFileTests(unittest.TestCase):
             rules = {v["rule"] for v in validate.validate_file(p, "story")}
             self.assertIn("no-ac", rules)
 
+    def test_no_ac_grandfathered_below_adopt_after(self) -> None:
+        # A pre-cutoff story is exempt from no-ac; a story at/after the cutoff is not.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "sdlc-studio/.config.yaml",
+                   "conformance:\n  adopt_after: US0682\n")
+            old = _write(root, "sdlc-studio/stories/US0100-x.md",
+                         "# X\n\n> **Status:** Draft\n")
+            new = _write(root, "sdlc-studio/stories/US0700-y.md",
+                         "# Y\n\n> **Status:** Draft\n")
+            old_rules = {v["rule"] for v in validate.validate_file(old, "story", root)}
+            new_rules = {v["rule"] for v in validate.validate_file(new, "story", root)}
+            self.assertNotIn("no-ac", old_rules)  # grandfathered
+            self.assertIn("no-ac", new_rules)      # judged
+
+    def test_no_ac_still_flagged_without_cutoff(self) -> None:
+        # No .config.yaml cutoff -> the discipline applies to every story.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = _write(root, "sdlc-studio/stories/US0100-x.md",
+                       "# X\n\n> **Status:** Draft\n")
+            rules = {v["rule"] for v in validate.validate_file(p, "story", root)}
+            self.assertIn("no-ac", rules)
+
+    def test_no_ac_still_flagged_with_malformed_config(self) -> None:
+        # Fail-safe: a broken .config.yaml must NOT silently exempt - no-ac fires.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "sdlc-studio/.config.yaml", ": : not yaml :")
+            p = _write(root, "sdlc-studio/stories/US0001-x.md",
+                       "# X\n\n> **Status:** Draft\n")
+            rules = {v["rule"] for v in validate.validate_file(p, "story", root)}
+            self.assertIn("no-ac", rules)
+
+    def test_no_ac_at_cutoff_still_flagged(self) -> None:
+        # The cutoff is exclusive: the cutoff story itself is still judged.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "sdlc-studio/.config.yaml",
+                   "conformance:\n  adopt_after: US0100\n")
+            p = _write(root, "sdlc-studio/stories/US0100-x.md",
+                       "# X\n\n> **Status:** Draft\n")
+            rules = {v["rule"] for v in validate.validate_file(p, "story", root)}
+            self.assertIn("no-ac", rules)
+
     def test_bad_id_format(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             p = _write(Path(d), "sdlc-studio/stories/login.md", GOOD_STORY)

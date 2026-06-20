@@ -9,12 +9,12 @@
 | Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 29 |
+| Complete | 30 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **30** |
+| **Total** | **31** |
 
 ## All Changes
 
@@ -50,3 +50,4 @@
 | [CR-0028](CR0028-complexity-computation.md) | complexity computation (RFC0009 WS1) | Complete | High | Feature | 2026-06-20 | EP0008 |
 | [CR-0029](CR0029-code-plan-complexity-estimation.md) | code plan complexity estimation + refactor-first (RFC0009 WS2) | Complete | High | Feature | 2026-06-20 | EP0008 |
 | [CR-0030](CR0030-decompose-apply-type.md) | decompose apply_type (refactor-first on RFC0009's own signal) | Complete | Medium | Improvement | 2026-06-20 | EP0005 |
+| [CR-0031](CR0031-validate-no-ac-adoption-cutoff.md) | validate no-ac honours the conformance adoption cutoff | Complete | Medium | Improvement | 2026-06-20 | EP0005 |

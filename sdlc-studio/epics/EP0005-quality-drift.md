@@ -70,6 +70,7 @@ mode in this backlog.
 - [x] [US0023: reconcile apply - mechanical index fixes](../stories/US0023-reconcile-apply.md) (CR0026, RFC0003)
 - [x] [US0025: conformance adoption cutoff](../stories/US0025-conformance-adoption-cutoff.md) (CR0027, agent-crew)
 - [x] [US0028: decompose apply_type (refactor-first)](../stories/US0028-decompose-apply-type.md) (CR0030, RFC0009 signal)
+- [x] [US0029: validate no-ac honours the adoption cutoff](../stories/US0029-validate-no-ac-adoption-cutoff.md) (CR0031, agent-crew)
 
 > Deterministic next-ID allocation (US0005) is owned by EP0008 (Tooling &
 > Scripts), not this epic.

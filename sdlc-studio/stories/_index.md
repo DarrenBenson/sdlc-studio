@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 23 |
+| Done | 24 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
-| **Total** | **28** |
+| **Total** | **29** |
 
 ## All Stories
 
@@ -50,3 +50,4 @@
 | [US0026](US0026-complexity-computation.md) | complexity computation (cognitive + cyclomatic) | Done | EP0008 | 2026-06-20 | 2026-06-20 |
 | [US0027](US0027-code-plan-complexity-estimation.md) | code plan complexity estimation + refactor-first | Done | EP0008 | 2026-06-20 | 2026-06-20 |
 | [US0028](US0028-decompose-apply-type.md) | decompose apply_type | Done | EP0005 | 2026-06-20 | 2026-06-20 |
+| [US0029](US0029-validate-no-ac-adoption-cutoff.md) | validate no-ac honours the adoption cutoff | Done | EP0005 | 2026-06-20 | 2026-06-20 |

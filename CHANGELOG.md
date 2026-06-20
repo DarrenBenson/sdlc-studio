@@ -43,9 +43,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and reconcile/validate/conformance recognise them instead of parsing the row as
   `Unknown`; extensions add to the shared base, never replace it. `Blocked` is now a
   base story status. Reads via a new fully-degrading `sdlc_md.project_override`.
-- **Conformance adoption cutoff (CR0027):** `conformance.adopt_after: USnnnn` exempts
-  pre-adoption stories (reported, never counted non-conformant), so a project that
-  turns the gate on partway is not buried in permanent legacy findings.
+- **Conformance adoption cutoff (CR0027, extended CR0031):** `conformance.adopt_after:
+  USnnnn` exempts pre-adoption stories - both from the conformance gate (reported,
+  never counted non-conformant) and from `validate`'s `no-ac` error - so a project that
+  turns the AC discipline on partway is not buried in permanent legacy findings. Fails
+  safe: any uncertainty (no config / no PyYAML / malformed / unparseable id) judges the
+  story as before.
 - **`reconcile apply` (RFC0003 / CR0026):** the mechanical index fixes are now a
   deterministic, idempotent script step - `reconcile apply [--scope] [--dry-run]`
   rewrites each drifted index row's Status cell (positionally, by header) to the
