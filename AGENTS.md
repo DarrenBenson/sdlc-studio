@@ -14,6 +14,17 @@ implementation planning, and test automation.
 **The skill source lives at `.claude/skills/sdlc-studio/`** and installs
 to each tool's skill directory (see `install.sh --list-targets`).
 
+## Orientation & Current State
+
+This repo dogfoods the skill against its own source. Durable guidance lives in
+this file; volatile project state - what exists, what is in flight, known
+divergences, next steps - lives in `sdlc-studio/reviews/LATEST.md`, so the two do
+not drift (progressive disclosure).
+
+- **At session start, and after any context reset or compaction:** re-read
+  `sdlc-studio/reviews/LATEST.md` and run `/sdlc-studio status` before acting, to
+  re-anchor on where the pipeline is.
+
 ## Skill Structure
 
 | Path | Purpose |

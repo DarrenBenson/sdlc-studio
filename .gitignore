@@ -9,10 +9,11 @@
 .DS_Store
 Thumbs.db
 
-# Generated SDLC artifacts (project-specific, not part of skill)
-# Use leading slash to only match at root level
-/sdlc-studio/
+# Generated test code for the demo workspace (project-specific, not skill source)
 /tests/
+
+# Note: the sdlc-studio/ workspace IS committed - the skill dogfoods itself.
+# Only its user-local runtime state is ignored (see sdlc-studio/.local/ below).
 
 # Local Claude settings
 .claude/settings.local.json
@@ -81,3 +82,6 @@ $RECYCLE.BIN/
 *.temp
 .cache/
 *.orig
+
+# SDLC Studio user-local runtime state
+sdlc-studio/.local/

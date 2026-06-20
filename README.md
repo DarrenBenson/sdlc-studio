@@ -12,6 +12,31 @@ SDLC Studio is a standard [Agent Skill](https://agentskills.io)
 (`SKILL.md` format), so the same install works in **Claude Code, OpenAI
 Codex, Gemini CLI, opencode, and GitHub Copilot**.
 
+## Mission
+
+SDLC Studio takes a deliberate position against the prevailing direction of AI
+coding tools. A wave of frameworks is inventing new, AI-native ways to deliver
+software: fresh artifact formats, fresh ceremonies, fresh vocabularies for the
+model to follow. We did the opposite. Software engineering already worked out how
+to ship software that survives contact with reality - clear requirements,
+acceptance criteria, traceability from intent to code, change control, and a
+definition of done that means done. Those practices are not dated; they are the
+part of two decades of agile and DevOps practice that earned its place. Teams
+quietly dropped them not because they were wrong, but because maintaining them by
+hand was expensive, so specifications went stale and the discipline lapsed. That
+economics has changed. An agent can now author the requirements, keep them
+current, and prove the code against them, with acceptance criteria as a
+machine-checkable oracle and continuous reconciliation keeping every artifact
+true to what was built. The agent carries the cost of the ceremony, and the
+discipline stays.
+
+It is also why the lifecycle is, in current terms, a loop-engineering problem
+already solved. An agent runs in a loop that cannot judge its own exit condition;
+the lifecycle has always been that loop - specify, build, validate against the
+specification, reconcile, repeat - with acceptance criteria as the test that
+closes it. The spec-driven and eval-driven tools arriving now are rediscovering a
+cycle the SDLC described in full long ago.
+
 ## The idea (for beginners)
 
 Most AI coding jumps straight from a vague prompt to code, then drifts
