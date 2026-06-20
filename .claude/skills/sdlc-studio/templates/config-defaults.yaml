@@ -55,6 +55,13 @@ review:
 # manual: 0 for the whole repository. See reference-verify.md.
 require_ac_verification: false
 
+# Project constitution (RFC0005). When `sdlc-studio/constitution.md` exists, its
+# machine-checkable principles are asserted by `constitution check`. Advisory by
+# default - set enforce: true to make a violation fail the check (exit non-zero), the
+# same incremental-adoption pattern as require_ac_verification. See reference-doctrine.md.
+constitution:
+  enforce: false
+
 # Per-project status vocabulary extensions. The skill ships a base vocabulary per
 # artifact type (see sdlc_md.STATUS_VOCAB). A project that uses extra statuses can
 # declare them here so reconcile/validate/conformance recognise them instead of

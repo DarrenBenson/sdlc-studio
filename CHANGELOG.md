@@ -51,6 +51,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Project constitution gate (RFC0005 / CR0040):** an optional
+  `sdlc-studio/constitution.md` lets a project declare inviolable principles;
+  `scripts/constitution.py check` asserts the machine-checkable ones across the artifact
+  graph. Each checkable principle carries a `` `rule:` `` from a fixed vocabulary
+  (story-requires-epic, story-has-ac, ac-requires-verify, links-resolve, status-in-vocab,
+  no-index-drift) that maps onto the existing integrity/conformance/validate/reconcile
+  checks; free-text principles are advisory. Advisory by default; `constitution.enforce:
+  true` makes a violation fail the check. Proven against agent-crew + agent-bridge.
 - **autosprint `--order wsjf` (RFC0009 WS3 / CR0038):** the WSJF stub is now real -
   priority stays dominant and the cognitive complexity of a unit's `Affects` files
   (scored by complexity.py) breaks ties within a priority, so the smaller blast-radius

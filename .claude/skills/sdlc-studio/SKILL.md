@@ -117,6 +117,7 @@ Claude loads files progressively based on task needs:
 | Verifying ACs against codebase | reference-verify.md | help/verify.md | reference-reconcile.md#verify-scope |
 | Syncing CR/Story/Epic with GitHub | reference-github-sync.md | help/github-sync.md | reference-cr.md#cr-sync-workflow |
 | Onboarding to a project / operating doctrine | reference-doctrine.md | help/init.md | lessons/_index.md |
+| Project constitution / machine-checkable principle gate | templates/constitution.md | scripts/constitution.py | reference-doctrine.md#constitution |
 | Recording and loading project lessons | reference-agentic-lessons.md#lessons-accumulation | help/lessons.md | reference-agent-prompt-template.md#agentic-execution |
 | Recalling cross-project lessons (before a decision) | lessons/_index.md | help/lessons.md | reference-doctrine.md |
 | Operator patterns (memory drift, incident localisation, release-gate) | reference-operator-heuristics.md | templates/workflows/release-gate.md | reference-reconcile.md#numeric-claim-drift |

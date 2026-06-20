@@ -132,6 +132,17 @@ emits the same per-function scores into the map.
 - `scan`: list functions over the cognitive threshold (`complexity.cognitive_high`, default 15)
 - `assess --files ...`: a change's blast-radius difficulty band + refactor-first hotspots (used by `code plan`)
 
+### `constitution.py`
+
+Project-constitution principle gate (RFC0005). Asserts the machine-checkable
+principles declared in `sdlc-studio/constitution.md` - each `rule:` maps onto an
+existing detector (integrity/conformance/validate/reconcile). Advisory by default;
+`constitution.enforce: true` makes a violation exit non-zero.
+
+- `check`: report (and, when enforced, fail on) principle violations
+
+Full methodology: `reference-doctrine.md#constitution`.
+
 ### `file_finding.py`
 
 Deterministic Bug/CR/RFC filer for audit findings (RFC0002). Allocates a

@@ -95,11 +95,25 @@ rules, the agents/services) live in that project's agent-instructions file
     project}-state.json` track resumable state – don't delete them; reconcile updates
     them.
 
+## Project constitution {#constitution}
+
+A project may declare its inviolable principles in an optional
+`sdlc-studio/constitution.md` (seed from `templates/constitution.md`). It is loaded as a
+generation constraint, and `constitution check` (`scripts/constitution.py`, RFC0005)
+asserts the **machine-checkable** principles across the artifact graph - a principle
+carries a `` `rule:` `` from a fixed vocabulary (e.g. `story-requires-epic`,
+`ac-requires-verify`, `status-in-vocab`, `no-index-drift`) that maps onto the existing
+integrity / conformance / validate / reconcile checks; principles with no rule are
+advisory (loaded, listed, not gated). Enforcement is advisory by default; set
+`constitution.enforce: true` in `.config.yaml` to make a violation fail the check. Keep
+the set small - the handful of rules that must never be violated, not a style guide.
+
 ## What is NOT in this doctrine (stays project-specific)
 
 Architecture and design principles · config/secret handling specifics · deploy &
 CI recipes · language/code-style rules (e.g. "no `any`", error shapes) · the
 agents/services/topology · house language (British/American). Capture those in the
-project agent-instructions file (`AGENTS.md`) + TRD. This doctrine + those specifics
+project agent-instructions file (`AGENTS.md`) + TRD, and the inviolable, checkable ones
+in the [project constitution](#constitution). This doctrine + those specifics
 together = a fully
 onboarded Claude.

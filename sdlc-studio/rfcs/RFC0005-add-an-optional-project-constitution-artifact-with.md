@@ -1,6 +1,6 @@
 # RFC-0005: Add an optional project-constitution artifact with a machine-checkable principle gate
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Priority:** Medium
 > **Author:** Adversarial Audit
 > **Date:** 2026-06-20
@@ -28,13 +28,13 @@ Keep the current behaviour and accept the trade-off described above.
 
 ## Recommendation
 
-TBD - pending the Open Decision below.
+**Option A (scoped).** Ship an optional constitution + a gate whose rules MAP onto the existing deterministic checks; advisory by default with opt-in enforcement; free-text principles advisory. Lean (no new engine), reversible.
 
 ## Open Decisions
 
 | # | Decision | Options | Owner | How it resolves | Status |
 | --- | --- | --- | --- | --- | --- |
-| D1 | Act on this finding or keep status quo | Option A / Option B | Operator | spike or operator call | Open |
+| D1 | Act on this finding or keep status quo | Option A / Option B | Operator | spike or operator call | Resolved |
 
 ## Evidence
 
@@ -46,12 +46,16 @@ Project-specific rules (security requirements, mandated patterns) are not enforc
 
 ## Decision
 
-**Outcome:** TBD
-**Rationale:** TBD
+**Outcome:** Accepted (Option A, scoped)
+
+**Rationale:** A consuming project needs a machine-checkable principle gate (deferral lifted). Scoped to structurally-checkable principles that reuse the existing integrity/conformance/validate/reconcile detectors; advisory default + `constitution.enforce` opt-in; free-text principles advisory. Proven read-only against agent-crew (8 findings) and agent-bridge (139).
+
+**Spawned CRs:** CR0040 (constitution.py gate + template + dogfood), **delivered**.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (rfc0005) | Accepted + delivered as CR0040 (operator: a consuming project needs it; deferral lifted); proven vs agent-crew + agent-bridge |
 | 2026-06-20 | Autosprint (rfc-decide session) | Decision session 2026-06-20: deferred - revisit when a consuming project needs a machine-checkable principle gate; scope then to structurally-checkable principles only. |
 | 2026-06-20 | Adversarial Audit | Filed from the 2026-06-20 audit (lens: external-benchmark) |

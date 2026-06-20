@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 2 |
+| Draft | 1 |
 | In Review | 0 |
-| Accepted | 7 |
+| Accepted | 8 |
 | Superseded | 0 |
 | Withdrawn | 3 |
 | **Total** | **12** |
@@ -21,7 +21,7 @@
 | [RFC-0002](RFC0002-adversarial-audit.md) | Adversarial Audit (`/sdlc-studio audit`) as a first-class capability | High | Accepted | -- | 2026-06-20 | -- |
 | [RFC-0003](RFC0003-promote-reconcile-s-mechanical-apply-into-the-scri.md) | Promote reconcile's mechanical apply into the script; current Phase-3 apply is prose and the documented idempotency guarantee is false | High | Accepted | -- | 2026-06-20 | -- |
 | [RFC-0004](RFC0004-repo-map-ranks-by-import-in-degree-plus-token-over.md) | repo_map ranks by import in-degree plus token overlap only; decide between an Aider-style PageRank symbol graph or explicitly scoping it down | Medium | Accepted | -- | 2026-06-20 | -- |
-| [RFC-0005](RFC0005-add-an-optional-project-constitution-artifact-with.md) | Add an optional project-constitution artifact with a machine-checkable principle gate | Medium | Draft | -- | 2026-06-20 | -- |
+| [RFC-0005](RFC0005-add-an-optional-project-constitution-artifact-with.md) | Add an optional project-constitution artifact with a machine-checkable principle gate | Medium | Accepted | -- | 2026-06-20 | -- |
 | [RFC-0006](RFC0006-reconsider-the-default-autonomous-execution-model.md) | Reconsider the default autonomous execution model: phase-gating and per-story fresh-context isolation for sequential epic implement | Medium | Withdrawn | -- | 2026-06-20 | -- |
 | [RFC-0007](RFC0007-replace-13-baked-in-fictional-character-personas-1.md) | Replace 13 baked-in fictional-character personas (~1680 lines) with template plus generate-on-demand | Medium | Accepted | -- | 2026-06-20 | -- |
 | [RFC-0008](RFC0008-consolidate-the-5-file-test-reference-clique-2030.md) | Consolidate the 5-file test reference clique (~2030 lines, triplicated anti-patterns, two files unreachable from the router) | Medium | Accepted | -- | 2026-06-20 | -- |
