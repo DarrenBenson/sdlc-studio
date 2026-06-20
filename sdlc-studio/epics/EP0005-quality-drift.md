@@ -63,6 +63,7 @@ mode in this backlog.
 - [ ] [US0003: Unified review with modified-since detection and cadence](../stories/US0003-review-cadence.md)
 - [ ] [US0004: Status dashboard and single-step hint](../stories/US0004-status-hint.md)
 - [x] [US0012: Referential-integrity check](../stories/US0012-referential-integrity-check.md) (CR0003, determinism sprint)
+- [x] [US0014: review_prep staleness determinism](../stories/US0014-review-prep-determinism.md) (CR0004, determinism sprint)
 
 > Deterministic next-ID allocation (US0005) is owned by EP0008 (Tooling &
 > Scripts), not this epic.

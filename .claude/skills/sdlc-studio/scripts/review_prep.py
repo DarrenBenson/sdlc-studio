@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -26,17 +27,54 @@ from lib import sdlc_md  # noqa: E402
 PROJECT_DOCS = ["prd", "trd", "tsd", "personas"]
 
 
-def _mtime_iso(path: Path) -> str:
-    """File modification time as an ISO-8601 Z string."""
+def _git_iso(path: Path, repo_root: Path) -> str | None:
+    """Last commit time for `path` as ISO-8601, or None if untracked/unavailable."""
+    try:
+        r = subprocess.run(
+            ["git", "-C", str(repo_root), "log", "-1", "--format=%cI", "--", str(path)],
+            capture_output=True, text=True, timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if r.returncode != 0:
+        return None
+    return r.stdout.strip() or None
+
+
+def _modified_iso(path: Path, repo_root: Path) -> tuple[str, str]:
+    """(timestamp, method): git commit time when tracked, else file mtime.
+
+    The git commit time is reproducible across clones, pulls and checkouts;
+    `st_mtime` is reset by every one of those, so it is only the fallback for an
+    untracked file or when git is unavailable. Note the git time is the last
+    *commit*, so a tracked file with uncommitted working-tree edits reads as
+    unmodified - reviewing committed state is the normal case.
+    """
+    git = _git_iso(path, repo_root)
+    if git:
+        return git, "git"
     ts = path.stat().st_mtime
-    return datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.fromtimestamp(ts, timezone.utc).isoformat(), "mtime"
+
+
+def _parse_dt(value: str | None) -> datetime | None:
+    """Parse an ISO-8601 timestamp to an aware datetime (UTC if naive); None if bad."""
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return None
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 
 def staleness(repo_root: Path) -> dict:
     """For each artifact and project doc, whether it changed since last review.
 
-    Uses file mtime as the deterministic 'last modified' signal and the
-    review-state.json `last_reviewed` timestamp. No entry -> needs review.
+    'Last modified' is the git commit time (reproducible) with an st_mtime
+    fallback; it is compared to review-state.json `last_reviewed` as parsed
+    datetimes, not raw strings. No entry, or an unparseable `last_reviewed`,
+    means needs review (the latter also surfaces a warning).
     """
     base = repo_root / "sdlc-studio"
     state = sdlc_md.read_json(base / ".local" / "review-state.json", {})
@@ -46,16 +84,26 @@ def staleness(repo_root: Path) -> dict:
     def consider(key: str, path: Path) -> None:
         if not path.exists():
             return
-        modified = _mtime_iso(path)
+        modified, method = _modified_iso(path, repo_root)
         entry = reviewed.get(key, {})
         last_reviewed = entry.get("last_reviewed")
-        needs = (last_reviewed is None) or (modified > last_reviewed)
-        out[key] = {
+        rec = {
             "path": str(path.relative_to(repo_root)),
             "last_modified": modified,
+            "modified_method": method,
             "last_reviewed": last_reviewed,
-            "needs_review": needs,
         }
+        if last_reviewed is None:
+            rec["needs_review"] = True
+        else:
+            r_dt = _parse_dt(last_reviewed)
+            if r_dt is None:
+                rec["needs_review"] = True
+                rec["warning"] = f"unparseable last_reviewed {last_reviewed!r}; treated as needs_review"
+            else:
+                m_dt = _parse_dt(modified)
+                rec["needs_review"] = (m_dt is None) or (m_dt > r_dt)
+        out[key] = rec
 
     for doc in PROJECT_DOCS:
         consider(doc, base / f"{doc}.md")
@@ -138,6 +186,7 @@ def cmd_prep(args: argparse.Namespace) -> int:
         "generated_at": sdlc_md.now_iso8601(),
         "staleness": stale,
         "needs_review": sorted(k for k, v in stale.items() if v["needs_review"]),
+        "warnings": sorted(f"{k}: {v['warning']}" for k, v in stale.items() if "warning" in v),
         "persona_usage": persona_usage(repo_root),
         "inputs": inputs(repo_root),
     }
@@ -147,6 +196,8 @@ def cmd_prep(args: argparse.Namespace) -> int:
         nr = data["needs_review"]
         pu = data["persona_usage"]
         print(f"needs_review ({len(nr)}): {', '.join(nr) if nr else 'none'}")
+        for w in data["warnings"]:
+            print(f"warning: {w}")
         print(f"personas defined={len(pu['defined'])} unused={len(pu['unused'])}"
               + (f" ({', '.join(pu['unused'])})" if pu["unused"] else ""))
         print(f"counts: {data['inputs']['counts']}")

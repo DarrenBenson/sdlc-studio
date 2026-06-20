@@ -1,6 +1,6 @@
 # CR-0004: review_prep staleness uses filesystem mtime and raw-string timestamp comparison, breaking determinism across clones and timestamp formats
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** High
 > **Type:** Improvement
 > **Requester:** Adversarial Audit
@@ -33,9 +33,9 @@ On any fresh clone, pull, or worktree the staleness leg reports every artifact a
 
 ## Acceptance Criteria
 
-- [ ] `last_modified` derives from `git log -1 --format=%cI -- <path>`, falling back to `st_mtime` only when untracked or git is unavailable, with the method labelled in the JSON.
-- [ ] Both timestamps are parsed with `datetime.fromisoformat` (trailing `Z` normalised, naive treated as UTC) and compared as datetimes, not raw strings.
-- [ ] A malformed `last_reviewed` yields `needs_review` plus a warning, surfaced not silently mis-compared. Unit-tested.
+- [x] `last_modified` derives from `git log -1 --format=%cI -- <path>`, falling back to `st_mtime` only when untracked or git is unavailable, with the method labelled in the JSON.
+- [x] Both timestamps are parsed with `datetime.fromisoformat` (trailing `Z` normalised, naive treated as UTC) and compared as datetimes, not raw strings.
+- [x] A malformed `last_reviewed` yields `needs_review` plus a warning, surfaced not silently mis-compared. Unit-tested.
 
 ## Out of Scope
 
@@ -45,4 +45,5 @@ On any fresh clone, pull, or worktree the staleness leg reports every artifact a
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (determinism-sprint) | Complete - delivered as US0014 (git-time + datetime compare + warning); critic-approved |
 | 2026-06-20 | Adversarial Audit | Filed from the 2026-06-20 audit (lens: determinism; evidence: .claude/skills/sdlc-studio/scripts/review_prep.py:49-52 (modified = `_mtime_iso(path)`; needs = ... modified > last_reviewed) vs reference-review.md:250-251 (mandates git log timestamp)) |
