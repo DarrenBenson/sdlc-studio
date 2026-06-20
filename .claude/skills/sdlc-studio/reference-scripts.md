@@ -132,6 +132,15 @@ emits the same per-function scores into the map.
 - `scan`: list functions over the cognitive threshold (`complexity.cognitive_high`, default 15)
 - `assess --files ...`: a change's blast-radius difficulty band + refactor-first hotspots (used by `code plan`)
 
+### `transition.py`
+
+Deterministic status transition + cascade (CR0042). `set --id <ID> --status <new>`
+sets the artifact's `Status`, syncs its index row + summary counts (reusing
+`reconcile.apply_type`), and ticks/unticks a story's checkbox in the parent epic's Story
+Breakdown. `index_synced` is the true post-state (warns if a row is archived or the new
+status has no summary row). Replaces the hand-edited "mark it Done + update the index"
+cascade.
+
 ### `archive.py`
 
 Index archival for large boards (RFC0012). `archive --type <t> --release <r>` moves a

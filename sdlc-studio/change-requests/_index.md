@@ -9,12 +9,12 @@
 | Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 40 |
+| Complete | 41 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **41** |
+| **Total** | **42** |
 
 ## All Changes
 
@@ -61,3 +61,4 @@
 | [CR-0039](CR0039-audit-skill-profile-pack.md) | package the skill-profile lens pack (RFC0002 WS5) | Complete | Low | Feature | 2026-06-20 | -- |
 | [CR-0040](CR0040-project-constitution-gate.md) | optional project constitution + machine-checkable principle gate (RFC0005) | Complete | Medium | Feature | 2026-06-20 | -- |
 | [CR-0041](CR0041-progressive-disclosure-indexes.md) | progressive-disclosure indexes with release archival (RFC0012) | Complete | High | Feature | 2026-06-20 | -- |
+| [CR-0042](CR0042-transition-helper.md) | deterministic status-transition helper | Complete | Medium | Feature | 2026-06-21 | -- |

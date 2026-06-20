@@ -131,6 +131,7 @@ Claude loads files progressively based on task needs:
 | Multi-persona pressure-test canvas (unsettled design) | reference-consult.md#pressure-test-canvas | reference-decisions.md | - |
 | Plan-file lifecycle (active / archive / list) | reference-plan-files.md | help/plan.md | - |
 | Reconcile cadence triggers | reference-reconcile.md#cadence-triggers | help/status.md#reconcile-recommendation | - |
+| Transition an artifact's status (+ index/epic cascade) | scripts/transition.py | reference-outputs.md#status-transitions | reference-reconcile.md |
 | Bounding large indexes (archival + slice-read) | reference-outputs.md#index-archival | scripts/archive.py | reference-reconcile.md |
 
 **Template structure:**

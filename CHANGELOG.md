@@ -51,6 +51,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Deterministic status-transition helper (CR0042):** `scripts/transition.py set --id
+  <ID> --status <new>` performs the last hand-driven write cascade - set the artifact's
+  `Status`, sync its index row + summary counts (reusing `reconcile.apply_type`), and
+  tick/untick a story's checkbox in the parent epic's Story Breakdown. `index_synced`
+  reflects the true post-state (warns on an archived row or a status with no summary
+  row). Retires the manual "mark it Done + update the index" edit.
 - **Progressive-disclosure indexes (RFC0012 / CR0041):** `scripts/archive.py archive
   --type <t> --release <r>` bounds a large `_index.md` by moving the master table's
   terminal rows into `<type>/archive/{release}/{type}.md` (rows move, files stay),
