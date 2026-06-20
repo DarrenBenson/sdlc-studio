@@ -277,6 +277,105 @@ def _canonical_counts(rows: dict[str, tuple[str, str]], vocab: list[str]) -> dic
     return counts
 
 
+def _plan_status_fixes(rows: dict, census: dict, vocab: list) -> tuple[dict, list]:
+    """Status fixes to apply (norm id -> new canonical status) and their change
+    records, decided against the file census (mirrors detect_type)."""
+    fixes: dict[str, str] = {}
+    changes: list[dict] = []
+    for norm, (disp, istatus) in rows.items():
+        if norm not in census:
+            continue
+        fcanon = _canonical_status(census[norm][1], vocab)
+        icanon = _canonical_status(istatus, vocab)
+        target = icanon if icanon is not None else istatus
+        if fcanon is not None and fcanon != target:
+            fixes[norm] = fcanon
+            changes.append({"id": disp, "from": istatus, "to": fcanon})
+    return fixes, changes
+
+
+def _row_id(cells: list, status_col: int, id_col: int | None) -> str | None:
+    """The artifact id in a data row - by the ID column, else the first id-bearing cell."""
+    if id_col is not None and id_col < len(cells):
+        m = sdlc_md.ID_SEARCH_RE.search(cells[id_col])
+        return m.group(0) if m else None
+    return next((sdlc_md.ID_SEARCH_RE.search(c).group(0)
+                 for c in cells if sdlc_md.ID_SEARCH_RE.search(c)), None)
+
+
+def _summary_cell_rewrite(cells: list, counts: dict, vocab: list) -> str | None:
+    """The rewritten line for a 2-col summary count row when its count changed, else
+    None (also None for a non-count row such as the `| Status | Count |` header)."""
+    raw_label, raw_count = cells
+    if not raw_count.replace("*", "").replace(",", "").strip().isdigit():
+        return None
+    label = raw_label.replace("*", "").strip()
+    if label.lower() == "total":
+        new = sum(counts.values())
+    else:
+        canon = _canonical_status(label, vocab)
+        if canon is None:
+            return None
+        new = counts.get(canon, 0)
+    bold = "**" if "*" in raw_count else ""
+    newcell = f"{bold}{new}{bold}"
+    return _join_row([raw_label, newcell]) if newcell != raw_count else None
+
+
+def _header_kind(cells: list, lowered: list) -> tuple[str | None, int | None, int | None]:
+    """Classify a table header row: ('summary'|'data'|None, status_col, id_col)."""
+    if "status" not in lowered:
+        return None, None, None
+    if lowered == ["status", "count"]:
+        return "summary", None, None
+    if len(cells) >= 2:
+        return "data", lowered.index("status"), (lowered.index("id") if "id" in lowered else None)
+    return None, None, None
+
+
+def _data_row_rewrite(cells: list, status_col: int | None, id_col: int | None,
+                      fixes: dict) -> str | None:
+    """The rewritten line for a data row whose Status drifts (per `fixes`), else None."""
+    if status_col is None or status_col >= len(cells):
+        return None
+    rid = _row_id(cells, status_col, id_col)
+    if rid and _norm_id(rid) in fixes:
+        cells[status_col] = fixes[_norm_id(rid)]
+        return _join_row(cells)
+    return None
+
+
+def _rewrite_index_lines(lines: list, fixes: dict, counts: dict, vocab: list) -> bool:
+    """Rewrite drifted data-row Status cells (per `fixes`) and summary counts in
+    `lines`, in place. Returns whether any summary count changed."""
+    counts_updated = False
+    status_col = id_col = None
+    in_summary = False
+    for i, line in enumerate(lines):
+        cells = _table_cells(line)
+        if not cells:
+            if not line.strip().startswith("|"):
+                in_summary = False  # a blank/non-table line ends a block (a `---` separator does not)
+            continue
+        kind, sc, ic = _header_kind(cells, [c.lower() for c in cells])
+        if kind == "summary":
+            in_summary, status_col, id_col = True, None, None
+            continue
+        if kind == "data":
+            in_summary, status_col, id_col = False, sc, ic
+            continue
+        if in_summary and len(cells) == 2:        # summary count row
+            new_line = _summary_cell_rewrite(cells, counts, vocab)
+            if new_line is not None:
+                lines[i] = new_line
+                counts_updated = True
+            continue
+        new_line = _data_row_rewrite(cells, status_col, id_col, fixes)
+        if new_line is not None:
+            lines[i] = new_line
+    return counts_updated
+
+
 def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
     """Apply the two mechanical index fixes for one type: rewrite each drifted data
     row's Status cell to the file's canonical status, then recompute the summary
@@ -290,75 +389,17 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
     result: dict = {"changes": [], "counts_updated": False}
     if not index_path.exists():
         return result
-    census = file_census(type_, root)
     rows = parse_index(type_, root)["rows"]
-
-    # Decide the status fixes against the file census (mirrors detect_type), and
-    # model the corrected rows so the count recompute matches detect's authority.
-    fixes: dict[str, str] = {}      # norm id -> new canonical status
+    fixes, result["changes"] = _plan_status_fixes(rows, file_census(type_, root), vocab)
+    # Model the corrected rows so the count recompute matches detect's authority.
     corrected = dict(rows)
-    for norm, (disp, istatus) in rows.items():
-        if norm not in census:
-            continue
-        fcanon = _canonical_status(census[norm][1], vocab)
-        icanon = _canonical_status(istatus, vocab)
-        target = icanon if icanon is not None else istatus
-        if fcanon is not None and fcanon != target:
-            fixes[norm] = fcanon
-            corrected[norm] = (disp, fcanon)
-            result["changes"].append({"id": disp, "from": istatus, "to": fcanon})
+    for norm, new in fixes.items():
+        corrected[norm] = (rows[norm][0], new)
     counts = _canonical_counts(corrected, vocab)
 
     original = index_path.read_text(encoding="utf-8")
     lines = original.splitlines()
-    status_col = id_col = None
-    in_summary = False
-    for i, line in enumerate(lines):
-        cells = _table_cells(line)
-        if not cells:
-            if not line.strip().startswith("|"):
-                in_summary = False  # a blank/non-table line ends a table block (a `---` separator does not)
-            continue
-        lowered = [c.lower() for c in cells]
-        if "status" in lowered:
-            if lowered == ["status", "count"]:  # the summary table header
-                in_summary, status_col, id_col = True, None, None
-                continue
-            if len(cells) >= 2:                  # a data-table header (any layout)
-                status_col = lowered.index("status")
-                id_col = lowered.index("id") if "id" in lowered else None
-                in_summary = False
-                continue
-        if in_summary and len(cells) == 2:        # summary count row
-            raw_label, raw_count = cells
-            if not raw_count.replace("*", "").replace(",", "").strip().isdigit():
-                continue
-            label = raw_label.replace("*", "").strip()
-            if label.lower() == "total":
-                new = sum(counts.values())
-            else:
-                canon = _canonical_status(label, vocab)
-                if canon is None:
-                    continue
-                new = counts.get(canon, 0)
-            bold = "**" if "*" in raw_count else ""
-            newcell = f"{bold}{new}{bold}"
-            if newcell != raw_count:
-                lines[i] = _join_row([raw_label, newcell])
-                result["counts_updated"] = True
-            continue
-        if status_col is None or status_col >= len(cells):
-            continue
-        if id_col is not None and id_col < len(cells):
-            m = sdlc_md.ID_SEARCH_RE.search(cells[id_col])
-            rid = m.group(0) if m else None
-        else:
-            rid = next((sdlc_md.ID_SEARCH_RE.search(c).group(0)
-                        for c in cells if sdlc_md.ID_SEARCH_RE.search(c)), None)
-        if rid and _norm_id(rid) in fixes:
-            cells[status_col] = fixes[_norm_id(rid)]
-            lines[i] = _join_row(cells)
-
+    result["counts_updated"] = _rewrite_index_lines(lines, fixes, counts, vocab)
     if (result["changes"] or result["counts_updated"]) and not dry_run:
         text = "\n".join(lines) + ("\n" if original.endswith("\n") else "")
         index_path.write_text(text, encoding="utf-8")

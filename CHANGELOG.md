@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`reconcile.apply_type` decomposed (CR0030):** acting on RFC0009's own
+  refactor-first signal (the complexity tool flagged it as the top hotspot at
+  cognitive 56), `apply_type` is split into single-purpose helpers and reduced to 7,
+  with behaviour held identical by the CR0026 corruption-guard suite and a regression
+  guard against regrowth. No behaviour change.
 - **Strict Agent Skills spec conformance:** the Claude-Code-only
   `argument-hint` frontmatter field is dropped (its content is already in the
   description verbatim) and `tools/validate_skill.py` now enforces the spec's

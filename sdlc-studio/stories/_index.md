@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 22 |
+| Done | 23 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
-| **Total** | **27** |
+| **Total** | **28** |
 
 ## All Stories
 
@@ -49,3 +49,4 @@
 | [US0025](US0025-conformance-adoption-cutoff.md) | conformance adoption cutoff | Done | EP0005 | 2026-06-20 | 2026-06-20 |
 | [US0026](US0026-complexity-computation.md) | complexity computation (cognitive + cyclomatic) | Done | EP0008 | 2026-06-20 | 2026-06-20 |
 | [US0027](US0027-code-plan-complexity-estimation.md) | code plan complexity estimation + refactor-first | Done | EP0008 | 2026-06-20 | 2026-06-20 |
+| [US0028](US0028-decompose-apply-type.md) | decompose apply_type | Done | EP0005 | 2026-06-20 | 2026-06-20 |

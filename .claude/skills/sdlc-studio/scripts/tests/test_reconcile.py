@@ -180,6 +180,21 @@ class GuidanceTests(unittest.TestCase):
             self.assertIn("status-mismatch ->", out)
 
 
+class RefactorGuardTests(unittest.TestCase):
+    """apply_type was decomposed from cognitive 56 (CR0030, acting on RFC0009's own
+    refactor-first signal); guard it from silently regrowing."""
+
+    def test_apply_type_stays_decomposed(self) -> None:
+        import ast
+        import inspect
+        cx_spec = importlib.util.spec_from_file_location(
+            "complexity", SCRIPT_PATH.parent / "complexity.py")
+        cx = importlib.util.module_from_spec(cx_spec)
+        cx_spec.loader.exec_module(cx)
+        fn = ast.parse(inspect.getsource(reconcile.apply_type)).body[0]
+        self.assertLess(cx.cognitive_complexity(fn), 15)
+
+
 class ApplyTests(unittest.TestCase):
     def test_apply_fixes_status_and_counts_idempotent(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -248,6 +263,22 @@ class ApplyTests(unittest.TestCase):
                 "## Points by status\n\n| Done | 5 |\n", encoding="utf-8")
             reconcile.apply_type("story", root)
             self.assertIn("| Done | 5 |", (sd / "_index.md").read_text(encoding="utf-8"))
+
+    def test_apply_ignores_row_shorter_than_status_col(self) -> None:
+        # A ragged data row with fewer cells than the Status column is a no-op,
+        # not a crash (the status_col >= len(cells) guard).
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "US0001-x.md").write_text("# US0001: a\n\n> **Status:** Done\n", encoding="utf-8")
+            (sd / "_index.md").write_text(
+                "# Stories\n\n| Status | Count |\n| --- | --- |\n| Done | 1 |\n\n"
+                "| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| US0001 | a | Done |\n| US0002 |\n", encoding="utf-8")  # ragged last row
+            res = reconcile.apply_type("story", root)  # must not raise
+            self.assertIn("| US0002 |", (sd / "_index.md").read_text(encoding="utf-8"))
+            self.assertEqual(res["changes"], [])
 
     def test_apply_leaves_structural_classes(self) -> None:
         with tempfile.TemporaryDirectory() as d:

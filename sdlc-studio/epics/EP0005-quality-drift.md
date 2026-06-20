@@ -69,6 +69,7 @@ mode in this backlog.
 - [x] [US0022: checks emit remediation guidance](../stories/US0022-checks-remediation-guidance.md) (CR0025, remediation)
 - [x] [US0023: reconcile apply - mechanical index fixes](../stories/US0023-reconcile-apply.md) (CR0026, RFC0003)
 - [x] [US0025: conformance adoption cutoff](../stories/US0025-conformance-adoption-cutoff.md) (CR0027, agent-crew)
+- [x] [US0028: decompose apply_type (refactor-first)](../stories/US0028-decompose-apply-type.md) (CR0030, RFC0009 signal)
 
 > Deterministic next-ID allocation (US0005) is owned by EP0008 (Tooling &
 > Scripts), not this epic.

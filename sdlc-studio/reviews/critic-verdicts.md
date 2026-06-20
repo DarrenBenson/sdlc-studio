@@ -27,3 +27,4 @@
 | US0025 | APPROVE | independent-critic | 2026-06-20 | CR0027 reviewed: degradation contract holds all inputs; 13 sites correct; cutoff exclusive-boundary correct. LOW followups applied (id_number reuse + type-confusion/all-exempt tests) |
 | US0026 | APPROVE | independent-critic | 2026-06-20 | RFC0009 complexity reviewed: REJECT->fixed 4 cognitive spec deviations (comprehension filter, else-vs-elif via col_offset, nested-ternary nesting, match guard); cyclomatic/lizard/assess correct; +5 spec-edge tests |
 | US0027 | APPROVE | independent-critic | 2026-06-20 | RFC0009 complexity reviewed: REJECT->fixed 4 cognitive spec deviations (comprehension filter, else-vs-elif via col_offset, nested-ternary nesting, match guard); cyclomatic/lizard/assess correct; +5 spec-edge tests |
+| US0028 | APPROVE | independent-critic | 2026-06-20 | apply_type refactor 56->7: behaviourally identical (14-case differential probe, 0 divergence); +ragged-row regression test |
