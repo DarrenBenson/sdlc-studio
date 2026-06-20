@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 2 |
+| Done | 3 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
-| **Total** | **7** |
+| **Total** | **8** |
 
 ## All Stories
 
@@ -29,3 +29,4 @@
 | [US0005](US0005-next-id-allocation.md) | Deterministic next-ID allocation | Ready | EP0008 | 2026-06-20 | 2026-06-20 |
 | [US0006](US0006-duplicate-id-detector.md) | Deterministic duplicate-ID detector | Done | EP0008 | 2026-06-20 | 2026-06-20 |
 | [US0007](US0007-lifecycle-conformance-check.md) | Lifecycle-conformance check | Done | EP0007 | 2026-06-20 | 2026-06-20 |
+| [US0008](US0008-autosprint-batch-selector.md) | Autosprint batch selector and ordering | Done | EP0007 | 2026-06-20 | 2026-06-20 |
