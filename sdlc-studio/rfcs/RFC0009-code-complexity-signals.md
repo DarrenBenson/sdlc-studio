@@ -59,6 +59,35 @@ already owns every hook.
 
 ---
 
+## Tooling (how cognitive complexity is computed, and what exists)
+
+Cognitive complexity (SonarSource, Campbell 2018) scores understandability by three
+rules: no increment for readable shorthand (a `switch` is +1, not +1 per case); +1 for
+each break in linear flow (`if`/`else`, ternary, loops, `catch`, a sequence of `&&`/`||`,
+label jumps); and an extra **+1 per nesting level** for flow-breakers nested inside
+others - the part cyclomatic complexity ignores. SonarSource flags a function above
+**15** as high. It predicts agent difficulty better than raw cyclomatic, which is why
+this RFC leans on it.
+
+Open-source landscape (verified 2026-06-20):
+
+| Tool | Metric | Languages | Deps | Licence |
+| --- | --- | --- | --- | --- |
+| complexipy | cognitive | Python | pip (Rust wheel) | MIT |
+| cognitive_complexity | cognitive | Python | pip, pure-Python AST | MIT |
+| lizard | cyclomatic | 15+ (C/C++, Java, JS, Py) | pip, pure-Python | MIT |
+| radon | cyclomatic, Halstead, MI | Python | pip, pure-Python | MIT |
+| SonarQube | cognitive | ~30 | server, heavyweight | LGPL/commercial |
+
+**Key finding:** there is no clean, embeddable, multi-language cognitive-complexity
+library - SonarSource is the only broad implementation and it is a server, not a lib.
+The cognitive algorithm is small and fully specified, so the pragmatic split is: write
+our own Python cognitive scorer (~120-150 lines of stdlib `ast`, zero deps) for the
+language we most need, and soft-depend on `lizard` for multi-language cyclomatic
+breadth. That is Option A + B below.
+
+---
+
 ## Design Options
 
 ### Option A - Complexity in `repo_map.py` (stdlib-first)
@@ -73,9 +102,10 @@ marked unscored. `code plan` reads the JSON.
 
 ### Option B - A complexity helper with a soft dependency
 
-**Approach:** a `scripts/complexity.py` that uses stdlib AST for Python and shells out
-to `lizard` (pure-Python, multi-language, MIT) or `radon` when present, degrading to the
-stdlib path otherwise - the same soft-dep pattern as `gh` and the test runners.
+**Approach:** a `scripts/complexity.py` that uses our own stdlib AST scorer for Python
+and shells out to `lizard` (pure-Python, multi-language cyclomatic, MIT) or
+`radon`/`complexipy` when present, degrading to the stdlib path otherwise - the same
+soft-dep pattern as `gh` and the test runners.
 **Pros:** real multi-language coverage; battle-tested metric implementations.
 **Cons:** an optional dependency to document and detect.
 **Effort / risk:** Medium / low.
@@ -104,8 +134,8 @@ output advisory.
 
 | # | Decision | Options | Owner | How it resolves | Status |
 | --- | --- | --- | --- | --- | --- |
-| D1 | Which metric(s) | cyclomatic only / + cognitive **[leaning]** / + Halstead / track LM-CC | Design | start cognitive + cyclomatic; revisit with data | Open |
-| D2 | Core dependency | stdlib-only **[leaning]** / soft-dep lizard or radon for multi-language / required dep | Operator | stdlib-first + soft dep | Open |
+| D1 | Which metric(s) | cyclomatic only / + cognitive **[leaning]** (own stdlib scorer or complexipy) / + Halstead / track LM-CC | Design | start cognitive + cyclomatic; revisit with data | Open |
+| D2 | Core dependency | own stdlib cognitive scorer **[leaning]** / soft-dep lizard for multi-language / required dep | Operator | stdlib-first + lizard soft dep; no embeddable multi-language cognitive lib exists | Open |
 | D3 | Refactor-first behaviour | recommend **[leaning]** / block above threshold / silent score only | Operator | recommend, configurable threshold | Open |
 | D4 | Unit of measure | function / file / change blast-radius (function + repo_map neighbourhood) **[leaning]** | Design | blast-radius best predicts agent cost | Open |
 | D5 | What consumes it | estimation / token budget (RFC0001) / wave sizing / test risk - which first | Operator | phase: estimation + refactor reco first | Open |
@@ -173,3 +203,4 @@ output advisory.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Darren Benson | RFC drafted - complexity signals for estimation, token budget, refactor-first, test risk |
+| 2026-06-20 | Darren Benson | Folded in the cognitive-complexity algorithm + open-source tooling landscape (complexipy/lizard/radon); sharpened D1/D2 to "own stdlib Python scorer + lizard soft dep" |
