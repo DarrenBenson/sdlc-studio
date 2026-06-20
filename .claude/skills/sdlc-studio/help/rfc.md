@@ -27,6 +27,7 @@ decisions – and drives it to a decision. It sits **before** a CR:
 /sdlc-studio rfc list                   # List RFCs
 /sdlc-studio rfc list --status draft    # Filter by status
 /sdlc-studio rfc review                 # Review RFC ages + open decisions
+/sdlc-studio rfc decide                 # Decision session: triage the Draft backlog -> accept/defer/withdraw
 /sdlc-studio rfc accept --rfc RFC-0001  # Record the decision + spawn/link CRs
 /sdlc-studio rfc close  --rfc RFC-0001  # Supersede or withdraw
 ```
@@ -41,6 +42,9 @@ List RFCs; filter `--status {draft|in-review|accepted|superseded|withdrawn}`, `-
 
 ### review
 Flag RFCs needing attention: Draft/In Review older than ~14 days with no movement; Open Decisions unresolved > 7 days; Accepted RFCs whose spawned CRs don't exist / aren't linked back.
+
+### decide
+The multi-RFC **decision session**: `scripts/rfc.py decide` digests each Draft/In-Review RFC (open-decision count, workstreams, has-recommendation, `ready_for_decision`); you then brief each (core decision, options + leaning, what acceptance spawns, recommendation) and choose per RFC: **accept** (optionally scoped), **defer** (record the trigger), or **withdraw**. Accept routes to `accept` below. See `reference-rfc.md#decide`.
 
 ### accept
 Promote an RFC whose Open Decisions are resolved: fill the **Decision** section (chosen option + rationale), set status **Accepted**, and **spawn the workstream CRs** (one per WS row) cross-linked back to the RFC. Cross-repo RFCs spawn CRs in each repo – confirm next free numbers against `origin/main` first (see `reference-cr.md`).

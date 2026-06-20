@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 15 |
+| Done | 16 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
-| **Total** | **20** |
+| **Total** | **21** |
 
 ## All Stories
 
@@ -42,3 +42,4 @@
 | [US0018](US0018-deps-first-ordering.md) | Dependency-first batch ordering | Done | EP0007 | 2026-06-20 | 2026-06-20 |
 | [US0019](US0019-verify-ac-report-history.md) | verify_ac report history and dry-run record | Done | EP0005 | 2026-06-20 | 2026-06-20 |
 | [US0020](US0020-verify-ac-graded-verifier.md) | verify_ac graded (eval) verifier verb | Done | EP0005 | 2026-06-20 | 2026-06-20 |
+| [US0021](US0021-rfc-decide-session.md) | rfc decide - multi-RFC decision session | Done | EP0006 | 2026-06-20 | 2026-06-20 |

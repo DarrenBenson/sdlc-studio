@@ -49,6 +49,29 @@ For each RFC:
 - **Accepted** → verify each Workstream row has a spawned CR that exists and links
   back; flag any missing/unlinked.
 
+## decide
+The **multi-RFC decision session** - groom the whole Draft backlog to dispositions
+in one pass (the front-of-pipe analogue of the autosprint tranche-audit). Use when
+several RFCs have accumulated and need triaging together.
+
+1. **Digest** - `scripts/rfc.py decide` reports, per Draft / In Review RFC, the
+   open-decision count (total + still-Open), workstream count, has-recommendation,
+   and a `ready_for_decision` flag. This is the mechanical input; it makes no call.
+2. **Brief** - for each RFC, from its own Design Options / Open Decisions /
+   Recommendation, state: the core decision, the options + the RFC's leaning, what
+   acceptance spawns (workstreams → CRs), effort/value, and a recommended
+   disposition. The "is the problem still real / option still sound" judgement is
+   model-instructed (delegates to the RFC0002 audit when built).
+3. **Decide (operator)** - present the briefs together; per RFC choose **accept**
+   (optionally scoped to a subset of workstreams), **defer** (stays Draft; record
+   the trigger that would revisit it), or **withdraw/supersede**.
+4. **Route** - accept → run `accept` below (resolving/deferring each Open Decision
+   as part of it; a scoped accept spawns only the chosen workstreams' CRs); defer →
+   leave Draft, note the trigger in the Revision History; withdraw → `close`.
+
+Accepting grows the CR backlog (the workstreams), so a decision session is the
+moment to choose how much delivery to take on - not a rubber stamp.
+
 ## accept
 Use when the Open Decisions are resolved.
 1. Validate status is Draft or In Review and **no Open Decision row is still Open**

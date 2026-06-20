@@ -9,12 +9,12 @@
 | Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 22 |
+| Complete | 23 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **23** |
+| **Total** | **24** |
 
 ## All Changes
 
@@ -43,3 +43,4 @@
 | [CR-0021](CR0021-autosprint-tranche-audit-step.md) | Autosprint tranche-audit step (pre-flight grooming) | Complete | High | Feature | 2026-06-20 | EP0007 |
 | [CR-0022](CR0022-autosprint-deps-first-ordering.md) | Dependency-first ordering in autosprint plan | Complete | High | Feature | 2026-06-20 | -- |
 | [CR-0023](CR0023-complete-conformance-gate.md) | Complete the conformance gate - reconciled, reviewed, and a recorded critic verdict | Complete | High | Feature | 2026-06-20 | -- |
+| [CR-0024](CR0024-rfc-decide-decision-session.md) | `rfc decide` - the multi-RFC decision session | Complete | High | Feature | 2026-06-20 | EP0006 |

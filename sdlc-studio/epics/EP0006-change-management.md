@@ -56,6 +56,7 @@ lives here).
 - [ ] US: CR lifecycle + cr action
 - [ ] US: RFC lifecycle + spawn CRs
 - [ ] US: Bug tracking + hypothesis discipline
+- [x] [US0021: rfc decide - multi-RFC decision session](../stories/US0021-rfc-decide-session.md) (CR0024)
 
 > GitHub Issue sync for CR/story/epic is owned by EP0008 (Tooling & Scripts);
 > this epic consumes it as a cross-epic dependency.

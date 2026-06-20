@@ -20,3 +20,4 @@
 | US0018 | APPROVE | independent-critic | 2026-06-20 | approved after fixing prose-id phantom edges |
 | US0019 | APPROVE | independent-critic | 2026-06-20 | - |
 | US0020 | APPROVE | independent-critic | 2026-06-20 | approved after guarding non-numeric threshold + boundary test |
+| US0021 | APPROVE | independent-critic | 2026-06-20 | approved; verified against real RFCs; added first-table-only + exact-Open guard tests |
