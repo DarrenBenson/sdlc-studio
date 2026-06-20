@@ -74,6 +74,11 @@ Detailed workflows for project-level orchestration across all epics.
 
 ## /sdlc-studio project implement - Step by Step {#project-implement-workflow}
 
+> **Outer loop:** `project implement` is the wave engine. To drive a whole batch
+> of work (CRs, bugs, an epic) to a goal **autonomously** - with the triage STOP,
+> the decisions ledger, and the deterministic cap/repetition/completion guardrails -
+> use `autosprint --autonomous`, which wraps this engine. See `reference-autosprint.md`.
+
 ## 1. Parse Arguments
 
 | Flag | Effect | Default |

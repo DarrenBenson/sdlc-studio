@@ -1,6 +1,6 @@
 # US0011: Autonomous mode wiring
 
-> **Status:** Ready
+> **Status:** Done
 > **Epic:** [EP0007: Agentic Orchestration](../epics/EP0007-orchestration.md)
 > **Owner:** Autosprint (CR0020, by hand)
 > **Reviewer:** --
@@ -31,7 +31,7 @@ by content checks (`rg`), the skill's supported doc-verifier style.
 - **When** searched for the autonomous-mode policy
 - **Then** it describes `--autonomous`, the ledger, the cap/repetition/completion guardrails, quarantine-and-continue, and the closing reconcile + review
 - **Verify:** rg -q "autonomous" .claude/skills/sdlc-studio/reference-autosprint.md
-- **Verified:** pending
+- **Verified:** yes (2026-06-20)
 
 ### AC2: Independent critic recorded as a loop step
 
@@ -39,7 +39,7 @@ by content checks (`rg`), the skill's supported doc-verifier style.
 - **When** searched for the critic step
 - **Then** the non-author critic (D3/WS4) is present in the per-unit loop
 - **Verify:** rg -q "critic" .claude/skills/sdlc-studio/reference-autosprint.md
-- **Verified:** pending
+- **Verified:** yes (2026-06-20)
 
 ### AC3: project implement notes the autonomous mode
 
@@ -47,7 +47,7 @@ by content checks (`rg`), the skill's supported doc-verifier style.
 - **When** searched
 - **Then** it cross-references `--autonomous` / autosprint as the outer loop over the wave engine
 - **Verify:** rg -q "autonomous" .claude/skills/sdlc-studio/reference-project.md
-- **Verified:** pending
+- **Verified:** yes (2026-06-20)
 
 ### AC4: help documents the flag
 
@@ -55,7 +55,7 @@ by content checks (`rg`), the skill's supported doc-verifier style.
 - **When** searched
 - **Then** the `--autonomous` flag is documented
 - **Verify:** rg -q "autonomous" .claude/skills/sdlc-studio/help/autosprint.md
-- **Verified:** pending
+- **Verified:** yes (2026-06-20)
 
 ## Implementation
 

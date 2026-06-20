@@ -67,10 +67,33 @@ Natural language resolves to the same: "do an autosprint to deliver all open bug
 ## Guardrails (settled in RFC0001)
 
 - **Deterministic** (the model cannot skip them): the iteration cap, the
-  repetition-breaker, the completion oracle, and the **conformance check**.
+  repetition-breaker, the completion oracle (`scripts/loop_guard.py`), and the
+  **conformance check** (`scripts/conformance.py`).
 - **Model-instructed:** the autonomy ceiling and escalation policy.
-- **Decisions ledger (D4):** a committed, append-only per-tranche log; survives
-  context compaction.
+- **Decisions ledger (D4):** a committed, append-only per-tranche log
+  (`scripts/ledger.py` -> `sdlc-studio/decisions/<tranche>.md`); survives context
+  compaction.
+
+## Autonomous mode (`--autonomous`)
+
+The default loop runs autonomously after the triage STOP but leaves the
+cap/repetition/completion judgements to the model. `--autonomous` hands those three
+to the deterministic scripts so an unattended overnight run cannot thrash, silently
+drop a unit, or declare itself done early:
+
+- **Per failed attempt:** `loop_guard.py record --unit <id> --signature <test::name>`
+  persists the attempt to `sdlc-studio/.local/loop-state.json` and exits non-zero
+  (3) when the unit must quarantine - at the cap (3 attempts) or on a repeated
+  failure signature. The loop marks that unit **Blocked** and continues (D2).
+- **Every ruling** (a scope call, an interface decision, a quarantine) is appended
+  to the `ledger` so a context reset resumes from disk, not a lost transcript.
+- **Done means done:** the completion oracle (`is_complete`) passes only when every
+  batch unit is terminal (Done or Blocked), never while one is still In Progress.
+- **The closing gate is unconditional:** `reconcile` + `review` + retro run at the
+  end regardless of `--goal`, producing the conformance `reviewed` signal.
+
+Without `--autonomous` the same guardrails apply as model-instructed policy - the
+portable Phase-1 path for tools without the scripts.
 
 ## Scripts
 
@@ -78,6 +101,8 @@ Natural language resolves to the same: "do an autosprint to deliver all open bug
 | --- | --- |
 | `scripts/autosprint.py plan` | select + order the batch (the triage plan) |
 | `scripts/conformance.py check` | the lifecycle-conformance gate (hard-fail) |
+| `scripts/loop_guard.py` | iteration cap, repetition-breaker, completion oracle |
+| `scripts/ledger.py` | append-only per-tranche decisions ledger (survives compaction) |
 | `reconcile` / `review` / `verify_ac` | the closing gate + per-unit oracle (reused) |
 
 ## See Also
