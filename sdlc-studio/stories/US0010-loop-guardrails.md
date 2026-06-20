@@ -1,6 +1,6 @@
 # US0010: Deterministic loop guardrails
 
-> **Status:** Ready
+> **Status:** Done
 > **Epic:** [EP0007: Agentic Orchestration](../epics/EP0007-orchestration.md)
 > **Owner:** Autosprint (CR0020, by hand)
 > **Reviewer:** --
@@ -30,7 +30,7 @@ Quarantine = mark the unit Blocked and continue (D2), never thrash, never drop.
 - **When** a 3rd failed attempt is recorded
 - **Then** `verdict` reports `quarantine=True` with reason `cap`
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_loop_guard.py::CapTests::test_cap_quarantines
-- **Verified:** pending
+- **Verified:** yes (2026-06-20)
 
 ### AC2: Repetition-breaker quarantines early
 
@@ -38,7 +38,7 @@ Quarantine = mark the unit Blocked and continue (D2), never thrash, never drop.
 - **When** `verdict` runs
 - **Then** it reports `quarantine=True` with reason `repeat`
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_loop_guard.py::RepeatTests::test_repeat_quarantines
-- **Verified:** pending
+- **Verified:** yes (2026-06-20)
 
 ### AC3: Completion oracle
 
@@ -46,7 +46,7 @@ Quarantine = mark the unit Blocked and continue (D2), never thrash, never drop.
 - **When** `is_complete` runs
 - **Then** it returns True (all terminal); `["Done", "In Progress"]` returns False
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_loop_guard.py::CompleteTests::test_all_terminal
-- **Verified:** pending
+- **Verified:** yes (2026-06-20)
 
 ### AC4: CLI record persists and signals quarantine
 
@@ -54,7 +54,7 @@ Quarantine = mark the unit Blocked and continue (D2), never thrash, never drop.
 - **When** `loop_guard.py record --unit US --signature s --cap 1 --state <path>` runs
 - **Then** it exits 3 (quarantine signal) and the state file records the attempt
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_loop_guard.py::CliTests::test_record_quarantine_exit
-- **Verified:** pending
+- **Verified:** yes (2026-06-20)
 
 ## Implementation
 
