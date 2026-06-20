@@ -26,6 +26,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Per-project status vocabulary (CR0027):** a project can declare extra statuses
+  in `sdlc-studio/.config.yaml` under `status_vocab.<type>` (e.g. `story: [Gated]`)
+  and reconcile/validate/conformance recognise them instead of parsing the row as
+  `Unknown`; extensions add to the shared base, never replace it. `Blocked` is now a
+  base story status. Reads via a new fully-degrading `sdlc_md.project_override`.
+- **Conformance adoption cutoff (CR0027):** `conformance.adopt_after: USnnnn` exempts
+  pre-adoption stories (reported, never counted non-conformant), so a project that
+  turns the gate on partway is not buried in permanent legacy findings.
 - **`reconcile apply` (RFC0003 / CR0026):** the mechanical index fixes are now a
   deterministic, idempotent script step - `reconcile apply [--scope] [--dry-run]`
   rewrites each drifted index row's Status cell (positionally, by header) to the

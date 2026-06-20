@@ -54,7 +54,7 @@ def _table_data_rows(lines: list[str]) -> list[list[str]]:
 def digest(repo_root: Path | str, decidable_only: bool = True) -> dict:
     """Per-RFC decision-readiness over the workspace."""
     root = Path(repo_root)
-    vocab = sdlc_md.STATUS_VOCAB.get("rfc", [])
+    vocab = sdlc_md.status_vocab("rfc", root)
     rfcs: list[dict] = []
     for path in sdlc_md.artifact_files("rfc", root):
         text = path.read_text(encoding="utf-8")

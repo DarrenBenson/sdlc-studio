@@ -80,7 +80,7 @@ def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "pr
     `manual` preserves discovery order.
     """
     root = Path(repo_root)
-    vocab = sdlc_md.STATUS_VOCAB.get(kind, [])
+    vocab = sdlc_md.status_vocab(kind, root)
     out: list[dict] = []
     deps: dict[str, set] = {}
     for path in sdlc_md.artifact_files(kind, root):

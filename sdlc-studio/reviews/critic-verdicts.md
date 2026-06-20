@@ -23,3 +23,5 @@
 | US0021 | APPROVE | independent-critic | 2026-06-20 | approved; verified against real RFCs; added first-table-only + exact-Open guard tests |
 | US0022 | APPROVE | independent-critic | 2026-06-20 | approved; added registry-completeness contract test + bulk-note floor per critic |
 | US0023 | APPROVE | independent-critic | 2026-06-20 | REJECT->fixed: escaped-pipe re-escape on write, counts from parse_index authority, summary anchoring; +4 corruption-guard tests |
+| US0024 | APPROVE | independent-critic | 2026-06-20 | CR0027 reviewed: degradation contract holds all inputs; 13 sites correct; cutoff exclusive-boundary correct. LOW followups applied (id_number reuse + type-confusion/all-exempt tests) |
+| US0025 | APPROVE | independent-critic | 2026-06-20 | CR0027 reviewed: degradation contract holds all inputs; 13 sites correct; cutoff exclusive-boundary correct. LOW followups applied (id_number reuse + type-confusion/all-exempt tests) |

@@ -45,7 +45,7 @@ def count_by_status(type_: str, repo_root: Path) -> dict:
     (`Done`) so the tally and done-percentages are correct; consultations files
     are excluded by `artifact_files`.
     """
-    vocab = sdlc_md.STATUS_VOCAB.get(type_, [])
+    vocab = sdlc_md.status_vocab(type_, repo_root)
     counts: dict[str, int] = {}
     total = 0
     for path in sdlc_md.artifact_files(type_, repo_root):

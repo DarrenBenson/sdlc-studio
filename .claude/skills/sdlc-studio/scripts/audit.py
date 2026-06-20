@@ -88,7 +88,7 @@ def _unmet_deps(root: Path, text: str) -> list[str]:
         path, type_ = found
         st = sdlc_md.canonical_status(
             sdlc_md.extract_field(path.read_text(encoding="utf-8"), "Status"),
-            sdlc_md.STATUS_VOCAB.get(type_, []),
+            sdlc_md.status_vocab(type_, root),
         ) or "Unknown"
         if st in DEAD:
             unmet.append(f"{ref}:{st}(dead)")
@@ -107,7 +107,7 @@ def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None 
     text = path.read_text(encoding="utf-8")
     rid = sdlc_md.extract_record_id(path.stem) or path.stem
     status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"),
-                                      sdlc_md.STATUS_VOCAB.get(type_, [])) or "Unknown"
+                                      sdlc_md.status_vocab(type_, root)) or "Unknown"
     issues: list[str] = []
     if type_ == "bug":
         if _bug_underspecified(text):

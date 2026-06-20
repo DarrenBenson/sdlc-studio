@@ -31,7 +31,7 @@ def epic_stories(repo_root: Path | str, epic_id: str) -> list[dict]:
     """
     root = Path(repo_root)
     target = sdlc_md.norm_id(epic_id)
-    vocab = sdlc_md.STATUS_VOCAB.get("story", [])
+    vocab = sdlc_md.status_vocab("story", root)
     out: list[dict] = []
     for path in sdlc_md.artifact_files("story", root):
         text = path.read_text(encoding="utf-8")

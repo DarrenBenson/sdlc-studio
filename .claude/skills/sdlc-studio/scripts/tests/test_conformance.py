@@ -183,7 +183,55 @@ class CliTests(unittest.TestCase):
             self.assertEqual(rc, 1)  # US0002 is non-conformant
             data = mod.detect_conformance(root)
             self.assertIn("units", data)
-            self.assertEqual(set(data["summary"]), {"total", "conformant", "nonconformant"})
+            self.assertEqual(set(data["summary"]), {"total", "conformant", "nonconformant", "exempt"})
+
+
+try:
+    import yaml as _yaml  # noqa: F401
+    HAS_YAML = True
+except ImportError:
+    HAS_YAML = False
+
+
+@unittest.skipUnless(HAS_YAML, "adopt_after reads .config.yaml (needs PyYAML)")
+class AdoptCutoffTests(unittest.TestCase):
+    """conformance.adopt_after exempts pre-adoption stories (CR0027)."""
+
+    def _config(self, root: Path, body: str) -> None:
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(body, encoding="utf-8")
+
+    def test_pre_cutoff_story_is_exempt(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, epic=False, ac=False)   # would be non-conformant
+            _story(root, 10, epic=False, ac=False)  # non-conformant, judged
+            self._config(root, "conformance:\n  adopt_after: US0005\n")
+            units = _units(root)
+            self.assertTrue(units["US0001"]["exempt"])
+            self.assertTrue(units["US0001"]["conformant"])   # exempt -> not failing
+            self.assertEqual(units["US0001"]["missing"], [])
+            self.assertFalse(units["US0010"]["exempt"])
+            self.assertFalse(units["US0010"]["conformant"])  # still judged + failing
+            summ = _load().detect_conformance(root)["summary"]
+            self.assertEqual(summ["exempt"], 1)
+            self.assertEqual(summ["nonconformant"], 1)
+
+    def test_no_cutoff_judges_all(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, epic=False, ac=False)
+            self.assertFalse(_units(root)["US0001"]["exempt"])
+            self.assertFalse(_units(root)["US0001"]["conformant"])
+
+    def test_cmd_check_exits_zero_when_all_nonconformant_are_exempt(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, epic=False, ac=False)   # would fail, but exempt
+            self._config(root, "conformance:\n  adopt_after: US0005\n")
+            mod = _load()
+            args = mod.build_parser().parse_args(["check", "--root", str(root)])
+            self.assertEqual(args.func(args), 0)  # nothing judged-and-failing
 
 
 if __name__ == "__main__":

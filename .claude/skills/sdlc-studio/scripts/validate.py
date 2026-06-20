@@ -63,8 +63,9 @@ def infer_type(path: Path) -> str | None:
     return None
 
 
-def validate_file(path: Path, type_: str) -> list[dict]:
-    """Return a list of violation dicts for one artifact file."""
+def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list[dict]:
+    """Return a list of violation dicts for one artifact file. Pass repo_root so a
+    project's `.config.yaml` status_vocab extensions count as valid."""
     out: list[dict] = []
 
     def add(severity: str, rule: str, message: str) -> None:
@@ -91,10 +92,10 @@ def validate_file(path: Path, type_: str) -> list[dict]:
     status = sdlc_md.extract_field(text, "Status")
     if status is None:
         add("error", "no-status", "no `> **Status:**` metadata line found")
-    elif sdlc_md.canonical_status(status, sdlc_md.STATUS_VOCAB[type_]) is None:
+    elif sdlc_md.canonical_status(status, sdlc_md.status_vocab(type_, repo_root)) is None:
         # Decorated statuses ('Done (v2.66.0)') are valid — only a status whose
         # leading token is not in the vocabulary at all is flagged.
-        allowed = ", ".join(sdlc_md.STATUS_VOCAB[type_])
+        allowed = ", ".join(sdlc_md.status_vocab(type_, repo_root))
         add("error", "status-vocab",
             f"status '{status}' is not one of the allowed {type_} statuses ({allowed})")
 
@@ -132,9 +133,10 @@ def collect_targets(args: argparse.Namespace) -> list[tuple[Path, str]]:
 def cmd_check(args: argparse.Namespace) -> int:
     """Validate the selected artifacts and report violations."""
     targets = collect_targets(args)
+    repo_root = Path(args.root).resolve()
     violations: list[dict] = []
     for path, type_ in targets:
-        violations.extend(validate_file(path, type_))
+        violations.extend(validate_file(path, type_, repo_root))
 
     errors = sum(1 for v in violations if v["severity"] == "error")
     warnings = sum(1 for v in violations if v["severity"] == "warning")

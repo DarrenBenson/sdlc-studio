@@ -25,6 +25,12 @@ def _load(name: str, rel: str):
 
 
 sdlc_md = _load("sdlc_md", "lib/sdlc_md.py")
+
+try:
+    import yaml as _yaml  # noqa: F401
+    _HAS_YAML = True
+except ImportError:
+    _HAS_YAML = False
 repo_map = _load("repo_map", "repo_map.py")
 verify_ac = _load("verify_ac", "verify_ac.py")
 
@@ -260,6 +266,50 @@ class TableCellsTests(unittest.TestCase):
     def test_separator_and_non_table_are_none(self) -> None:
         self.assertIsNone(sdlc_md.table_cells("| --- | :--: |"))
         self.assertIsNone(sdlc_md.table_cells("not a table row"))
+
+
+class StatusVocabTests(unittest.TestCase):
+    """Base vocab + per-project config extension (CR0027)."""
+
+    def test_blocked_in_base_story_vocab(self) -> None:
+        self.assertIn("Blocked", sdlc_md.status_vocab("story"))
+
+    def test_no_root_or_no_config_returns_base(self) -> None:
+        base = sdlc_md.status_vocab("story")
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(sdlc_md.status_vocab("story", Path(d)), base)
+
+    @unittest.skipUnless(_HAS_YAML, "config extension needs PyYAML")
+    def test_project_extension_adds_without_replacing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "status_vocab:\n  story:\n    - Gated\n", encoding="utf-8")
+            v = sdlc_md.status_vocab("story", root)
+            self.assertIn("Gated", v)
+            self.assertIn("Done", v)  # base preserved
+
+    def test_malformed_config_degrades_to_base(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            (root / "sdlc-studio" / ".config.yaml").write_text(": : not yaml :", encoding="utf-8")
+            self.assertEqual(sdlc_md.status_vocab("story", root), sdlc_md.status_vocab("story"))
+
+    @unittest.skipUnless(_HAS_YAML, "config read needs PyYAML")
+    def test_type_confused_override_degrades_to_base(self) -> None:
+        base = sdlc_md.status_vocab("story")
+        for body in (
+            "status_vocab:\n  story: Gated\n",   # value a string, not a list
+            "- a\n- b\n",                          # whole config a list, not a dict
+            "status_vocab: []\n",                  # status_vocab a list, not a dict
+        ):
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                (root / "sdlc-studio").mkdir()
+                (root / "sdlc-studio" / ".config.yaml").write_text(body, encoding="utf-8")
+                self.assertEqual(sdlc_md.status_vocab("story", root), base, body)
 
 
 if __name__ == "__main__":

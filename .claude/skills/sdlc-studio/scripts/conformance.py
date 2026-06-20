@@ -30,7 +30,12 @@ def detect_conformance(repo_root: Path | str) -> dict:
     every required stage for its status is present.
     """
     root = Path(repo_root)
-    vocab = sdlc_md.STATUS_VOCAB.get("story", [])
+    vocab = sdlc_md.status_vocab("story", root)
+    # Adoption cutoff: a project that turns the gate on partway can set
+    # `conformance.adopt_after: US0360` in .config.yaml so units before that id are
+    # exempt (reported, not judged) - the discipline applies forward, not retroactively.
+    cutoff = sdlc_md.project_override(root, "conformance.adopt_after")
+    cutoff_num = sdlc_md.id_number(str(cutoff)) if cutoff is not None else None
     # A story is "reconciled" only if its index row matches and exists: a drifted
     # status (status-mismatch) or a story absent from the index (missing-row) both
     # fail it, and a missing index file fails every story.
@@ -80,23 +85,29 @@ def detect_conformance(repo_root: Path | str) -> dict:
         required = ["decomposed", "specified", "verifiable"]
         if status == "Done":
             required += ["verified", "reconciled", "critiqued"]
-        missing = [s for s in required if not stages[s]]
+        rid_num = sdlc_md.id_number(rid)
+        exempt = cutoff_num is not None and rid_num is not None and rid_num < cutoff_num
+        missing = [] if exempt else [s for s in required if not stages[s]]
         conformant = not missing
-        ok += int(conformant)
+        ok += int(conformant and not exempt)
         units.append({
             "id": rid,
             "type": "story",
             "status": status,
             "stages": stages,
+            "exempt": exempt,
             "conformant": conformant,
             "missing": missing,
         })
     units.sort(key=lambda u: u["id"])
     total = len(units)
+    exempt_n = sum(1 for u in units if u["exempt"])
+    nonconformant = sum(1 for u in units if not u["conformant"])
     return {
         "generated_at": sdlc_md.now_iso8601(),
         "units": units,
-        "summary": {"total": total, "conformant": ok, "nonconformant": total - ok},
+        "summary": {"total": total, "conformant": ok,
+                    "nonconformant": nonconformant, "exempt": exempt_n},
     }
 
 
@@ -107,7 +118,8 @@ def cmd_check(args: argparse.Namespace) -> int:
         print(json.dumps(result, indent=2))
     else:
         s = result["summary"]
-        print(f"conformance: {s['conformant']}/{s['total']} conformant, {s['nonconformant']} not")
+        extra = f", {s['exempt']} exempt (pre-adoption)" if s.get("exempt") else ""
+        print(f"conformance: {s['conformant']}/{s['total']} conformant, {s['nonconformant']} not{extra}")
         tally: dict[str, int] = {}
         for u in result["units"]:
             if not u["conformant"]:
@@ -119,7 +131,8 @@ def cmd_check(args: argparse.Namespace) -> int:
             print("Guidance:")
             for h in hints:
                 print(f"  - {h}")
-            bulk = sorted(k for k, c in tally.items() if s["total"] >= 3 and c >= 0.8 * s["total"])
+            judged = s["total"] - s.get("exempt", 0)
+            bulk = sorted(k for k, c in tally.items() if judged >= 3 and c >= 0.8 * judged)
             if bulk:
                 print(f"  note: most units miss {', '.join(bulk)} - likely an unadopted "
                       "discipline or template shape, not per-unit drift; adopt it or scope conformance.")

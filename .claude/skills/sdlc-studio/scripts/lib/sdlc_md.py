@@ -192,8 +192,8 @@ ARTIFACT_TYPES: dict[str, tuple[str, str]] = {
 STATUS_VOCAB: dict[str, list[str]] = {
     "epic": ["Draft", "Ready", "Approved", "In Progress", "Done"],
     "story": [
-        "Proposed", "Draft", "Ready", "Planned", "In Progress", "Review", "Done",
-        "Won't Implement", "Deferred", "Superseded",
+        "Proposed", "Draft", "Ready", "Planned", "In Progress", "Review", "Blocked",
+        "Done", "Won't Implement", "Deferred", "Superseded",
     ],
     "plan": ["Draft", "In Progress", "Complete", "Superseded"],
     "bug": ["Open", "In Progress", "Fixed", "Verified", "Closed", "Won't Fix", "Superseded"],
@@ -205,6 +205,43 @@ STATUS_VOCAB: dict[str, list[str]] = {
         "Reviewing", "Checking", "Done", "Paused", "Superseded",
     ],
 }
+
+
+def project_override(repo_root, dotted: str, default=None):
+    """Read a dotted key from the project's `sdlc-studio/.config.yaml` (the override
+    file only, no defaults merge). Self-contained and fully degrading: a missing
+    file, no PyYAML, or malformed YAML all return `default`. This is the reader for
+    parser-critical paths that must never hard-depend on PyYAML; the richer merged
+    config (defaults + override) lives in config.py."""
+    cfg_path = Path(repo_root) / "sdlc-studio" / ".config.yaml"
+    if not cfg_path.exists():
+        return default
+    try:
+        import yaml  # soft dependency, mirrors config.py
+    except ImportError:
+        return default
+    try:
+        cur = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
+    except Exception:  # noqa: BLE001 - a broken override must never break parsing
+        return default
+    for part in dotted.split("."):
+        if not isinstance(cur, dict) or part not in cur:
+            return default
+        cur = cur[part]
+    return cur
+
+
+def status_vocab(type_: str, repo_root=None) -> list[str]:
+    """The status vocabulary for a type: the shared base, plus any project-declared
+    extensions (`.config.yaml` `status_vocab.<type>`) when a repo_root is given.
+    Pass the repo root so a consuming project's custom statuses (e.g. `Gated`) are
+    recognised by reconcile/validate/conformance instead of parsing as Unknown."""
+    base = list(STATUS_VOCAB.get(type_, []))
+    if repo_root is None:
+        return base
+    extra = project_override(repo_root, f"status_vocab.{type_}", [])
+    extra = [str(s) for s in extra] if isinstance(extra, list) else []
+    return base + [s for s in extra if s not in base]
 
 
 # Remediation hints: per check, a one-line "how to fix" for each finding-kind, so a

@@ -68,7 +68,7 @@ def detect_integrity(repo_root: Path | str) -> dict:
     census = _census(root)
     findings: list[dict] = []
     for type_, required in REQUIRED_LINKS.items():
-        vocab = sdlc_md.STATUS_VOCAB.get(type_, [])
+        vocab = sdlc_md.status_vocab(type_, root)
         for path in sdlc_md.artifact_files(type_, root):
             text = path.read_text(encoding="utf-8")
             rid = sdlc_md.extract_record_id(path.stem) or path.stem

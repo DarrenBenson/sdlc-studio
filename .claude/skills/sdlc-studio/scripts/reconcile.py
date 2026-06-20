@@ -55,7 +55,7 @@ _canonical_status = sdlc_md.canonical_status
 
 def file_census(type_: str, repo_root: Path) -> dict[str, tuple[str, str]]:
     """Map normalised artifact ID -> (display id, raw Status) from disk (truth)."""
-    vocab = sdlc_md.STATUS_VOCAB.get(type_, [])
+    vocab = sdlc_md.status_vocab(type_, repo_root)
     census: dict[str, tuple[str, str]] = {}
     for path in sdlc_md.artifact_files(type_, repo_root):
         rec = sdlc_md.extract_record_id(path.stem)
@@ -92,7 +92,7 @@ def parse_index(type_: str, repo_root: Path) -> dict:
     result = {"exists": index_path.exists(), "rows": {}, "summary": {}}
     if not index_path.exists():
         return result
-    vocab = list(sdlc_md.STATUS_VOCAB[type_])
+    vocab = sdlc_md.status_vocab(type_, repo_root)
     status_col = id_col = None  # resolved from the data table's header row
     for line in index_path.read_text(encoding="utf-8").splitlines():
         cells = _table_cells(line)
@@ -141,7 +141,7 @@ def detect_type(type_: str, repo_root: Path) -> dict:
     census = file_census(type_, repo_root)
     index = parse_index(type_, repo_root)
     drift: list[dict] = []
-    vocab = sdlc_md.STATUS_VOCAB.get(type_, [])
+    vocab = sdlc_md.status_vocab(type_, repo_root)
 
     if census and not index["exists"]:
         drift.append({
@@ -285,7 +285,7 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
     missing-index) are left report-only. Returns {changes: [{id, from, to}], counts_updated}.
     """
     root = Path(repo_root)
-    vocab = sdlc_md.STATUS_VOCAB.get(type_, [])
+    vocab = sdlc_md.status_vocab(type_, repo_root)
     index_path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / "_index.md"
     result: dict = {"changes": [], "counts_updated": False}
     if not index_path.exists():

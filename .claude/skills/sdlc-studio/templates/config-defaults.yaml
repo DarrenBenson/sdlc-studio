@@ -55,6 +55,24 @@ review:
 # manual: 0 for the whole repository. See reference-verify.md.
 require_ac_verification: false
 
+# Per-project status vocabulary extensions. The skill ships a base vocabulary per
+# artifact type (see sdlc_md.STATUS_VOCAB). A project that uses extra statuses can
+# declare them here so reconcile/validate/conformance recognise them instead of
+# parsing the row as "Unknown". Extensions add to the base; they never replace it.
+# Example (in your project's sdlc-studio/.config.yaml):
+# status_vocab:
+#   story:
+#     - Gated
+status_vocab: {}
+
+# Lifecycle-conformance adoption cutoff. A project that turns the conformance gate
+# on partway through its life can set this to the first story id that must pass the
+# full gate; earlier stories are reported as "exempt (pre-adoption)" and never
+# counted as non-conformant. Unset (default) judges every story.
+# Example: conformance: { adopt_after: US0360 }
+conformance:
+  adopt_after: null
+
 # Persona staleness window (in days). A persona without a consult / story / CR
 # reference older than this is flagged in the Persona Review pass of
 # `/sdlc-studio review`. See reference-review.md.

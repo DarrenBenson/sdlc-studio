@@ -63,6 +63,7 @@ stdlib, read-only over the workspace, unit-tested.
 - [ ] US: Skill + instructions validation
 - [ ] US: Schema upgrade between versions
 - [x] [US0015: Config single source](../stories/US0015-config-single-source.md) (CR0008, determinism sprint)
+- [x] [US0024: config-extensible status vocabulary](../stories/US0024-config-extensible-status-vocab.md) (CR0027, agent-crew)
 
 ## Revision History
 

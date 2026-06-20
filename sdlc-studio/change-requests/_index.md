@@ -9,12 +9,12 @@
 | Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 25 |
+| Complete | 26 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **26** |
+| **Total** | **27** |
 
 ## All Changes
 
@@ -46,3 +46,4 @@
 | [CR-0024](CR0024-rfc-decide-decision-session.md) | `rfc decide` - the multi-RFC decision session | Complete | High | Feature | 2026-06-20 | EP0006 |
 | [CR-0025](CR0025-checks-emit-remediation-guidance.md) | deterministic checks emit remediation guidance, not just findings | Complete | High | Feature | 2026-06-20 | EP0005 |
 | [CR-0026](CR0026-reconcile-apply-subcommand.md) | reconcile `apply` - mechanical index fixes behind --dry-run | Complete | High | Feature | 2026-06-20 | EP0005 |
+| [CR-0027](CR0027-per-project-status-vocab-and-conformance-cutoff.md) | per-project status vocab + conformance adoption cutoff | Complete | High | Feature | 2026-06-20 | EP0005/EP0008 |
