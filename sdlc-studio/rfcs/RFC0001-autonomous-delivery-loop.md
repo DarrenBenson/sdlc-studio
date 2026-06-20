@@ -1,6 +1,6 @@
 # RFC-0001: Autonomous Delivery Loop for SDLC Studio
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Priority:** High
 > **Author:** Darren Benson
 > **Date:** 2026-06-20
@@ -57,6 +57,14 @@ material issue.** This RFC captures that as the default and fills the gaps.
 - Persist the decisions ledger to disk so it survives compaction and resume.
 - Add an independent verification step that resists spec gaming.
 - Keep the operator's chosen autonomy ceiling as the default; make it tunable.
+- **Use the SDLC Studio commands end to end** - the loop drives `cr action`
+  (decompose every CR into stories under an existing or new epic), then per story
+  `code plan` / `code implement` under TDD, `verify`, `reconcile`, `review`. It
+  does not bypass the pipeline with bespoke edits.
+- TDD and agentic execution are the defaults.
+- A **deterministic lifecycle-conformance check** confirms each unit went through
+  the required stages (decomposed, AC present, tested under TDD, verified,
+  reconciled, reviewed), so "everything was used" is enforced, not assumed.
 
 **Non-Goals**
 
@@ -124,6 +132,8 @@ this RFC through the very loop it describes.
 ## Open Decisions
 
 > The unsettled cores. Each must resolve before its dependent workstream is built.
+>
+> **Resolved on acceptance (2026-06-20) - see the Decision section.**
 
 | # | Decision | Options | Owner | How it resolves | Status |
 | --- | --- | --- | --- | --- | --- |
@@ -133,6 +143,7 @@ this RFC through the very loop it describes.
 | D4 | Decisions ledger form | (a) new artifact type under `sdlc-studio/` (e.g. `decisions/DLNNNN`) · (b) extend `project-state.json` · (c) plain append-only `sdlc-studio/.local/decisions.log` | Design | Pick by need for traceability vs. simplicity; reconcile impact | Open |
 | D5 | Where guardrails live | model-instructed (Option A) vs. deterministic script/Stop-Hook (Option C) per guardrail | Design | Decide per guardrail; cap + completion-gate lean deterministic | Open |
 | D6 | Commit strategy coupling | autonomous mode assumes trunk-based green-gate vs. honours existing `--commit-strategy` (per-wave/epic/project) | Operator | Operator call; keep trunk-based as one mode, not the only one | Open |
+| D7 | Are implementation-plan (PL) files required per story? | (a) required / (b) optional in agentic/compressed mode - the agent prompt is the plan **[leaning]** / (c) required only for single-story or audit-sensitive work | Operator | `reference-project.md` already makes PL optional at project scale | Open |
 
 ---
 
@@ -213,7 +224,8 @@ are recorded as the leaning options in D1-D5.
 | WS3 | Stall-cap + quarantine semantics (deterministic ledger) | sdlc-studio | CR (TBD) | D2, D5 |
 | WS4 | Independent (non-author) critic pass wired into verify/reconcile | sdlc-studio | CR (TBD) | D3 |
 | WS5 | Persisted decisions ledger (artifact + schema + reconcile awareness) | sdlc-studio | CR (TBD) | D4 |
-| WS6 | `project implement --autonomous` mode wiring the above | sdlc-studio | CR (TBD) | WS1–WS5 |
+| WS6 | `project implement --autonomous` mode wiring the above | sdlc-studio | CR (TBD) | WS1-WS5 |
+| WS7 | Lifecycle-conformance check (deterministic): per CR/tranche, assert it was decomposed into stories with AC, implemented under TDD (test precedes/accompanies impl), verified (`verify_ac`), reconciled clean, and reviewed; flag any skipped stage | sdlc-studio | CR (TBD) | D7 |
 
 ---
 
@@ -221,9 +233,44 @@ are recorded as the leaning options in D1-D5.
 
 > *Filled on acceptance.* Chosen option + rationale + the CRs spawned.
 
-**Outcome:** TBD
-**Rationale:** TBD
-**Spawned CRs:** TBD
+**Outcome:** Accepted (2026-06-20).
+
+**Resolved decisions:**
+
+- **D1 Autonomy ceiling:** stop once after triage for approval, then run
+  autonomously, re-pausing only on a material issue (scope change, broken
+  contract, no safe reversible default). Matches the proven `coding-prompts-2.txt`.
+- **D2 Stall handling:** quarantine-and-continue. After 3 failed green attempts a
+  unit is marked **Blocked**, logged, and skipped; the run continues and the
+  blocked unit surfaces in `status`.
+- **D3 Verify strength:** an independent non-author critic judges each unit's diff
+  against AC intent, plus adversarial/mutation checks (does the test fail if the
+  behaviour breaks).
+- **D4 Decisions ledger:** a committed, append-only per-tranche ledger - traceable
+  and survives context compaction.
+- **D5 Guardrails:** the iteration cap, repetition-breaker and completion-gate are
+  deterministic scripts the model cannot skip; the autonomy ceiling and escalation
+  policy stay model-instructed.
+- **D6 Commit strategy:** trunk-based green-gate by default (the operator's
+  workflow); honours `--commit-strategy` for others.
+
+**Rationale:** keep the proven manual loop's ergonomics, but move the three
+judgements the model cannot own - am-I-done, am-I-stuck, is-this-gamed - onto
+deterministic scripts and an independent critic. Phased delivery: Option A (policy
+doc + prompt template) ships first for tool-neutrality, then the deterministic
+guardrails (D5) and the critic (D3).
+
+**Spawned CRs:** the six workstreams (WS1-WS6 in the Phased Plan) remain tracked
+in this RFC and are spawned/actioned as each phase begins (WS1+WS2 first). The RFC
+stays the living design home they reference.
+
+**Process conformance (added 2026-06-20):** the loop must use the skill's own
+commands throughout - a CR is always decomposed via `cr action` into stories under
+an epic, TDD and agentic execution are the defaults, and a new deterministic
+**lifecycle-conformance check** (WS7) gates each unit so no stage is silently
+skipped. It joins the cap / repetition-breaker / completion-oracle as the fourth
+deterministic guardrail. Whether PL plan files stay required is tracked as D7
+(leaning: optional in agentic mode, since the agent prompt serves as the plan).
 
 ---
 

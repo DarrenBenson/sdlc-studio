@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 11 |
+| Draft | 10 |
 | In Review | 0 |
-| Accepted | 0 |
+| Accepted | 1 |
 | Superseded | 0 |
 | Withdrawn | 0 |
 | **Total** | **11** |
@@ -17,7 +17,7 @@
 
 | ID | Title | Priority | Status | Author | Date | Spawned CRs |
 | --- | --- | --- | --- | --- | --- | --- |
-| [RFC-0001](RFC0001-autonomous-delivery-loop.md) | Autonomous Delivery Loop for SDLC Studio | High | Draft | -- | 2026-06-20 | -- |
+| [RFC-0001](RFC0001-autonomous-delivery-loop.md) | Autonomous Delivery Loop for SDLC Studio | High | Accepted | -- | 2026-06-20 | -- |
 | [RFC-0002](RFC0002-adversarial-audit.md) | Adversarial Audit (`/sdlc-studio audit`) as a first-class capability | High | Draft | -- | 2026-06-20 | -- |
 | [RFC-0003](RFC0003-promote-reconcile-s-mechanical-apply-into-the-scri.md) | Promote reconcile's mechanical apply into the script; current Phase-3 apply is prose and the documented idempotency guarantee is false | High | Draft | -- | 2026-06-20 | -- |
 | [RFC-0004](RFC0004-repo-map-ranks-by-import-in-degree-plus-token-over.md) | repo_map ranks by import in-degree plus token overlap only; decide between an Aider-style PageRank symbol graph or explicitly scoping it down | Medium | Draft | -- | 2026-06-20 | -- |
