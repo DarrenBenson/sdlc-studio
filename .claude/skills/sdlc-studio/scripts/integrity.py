@@ -38,6 +38,10 @@ TERMINAL = {
     "Deferred", "Rejected", "Withdrawn", "Closed", "Fixed", "Verified",
 }
 
+# Types whose links are recommended, not required: a bug is often filed pre-triage
+# with no epic/story, so a missing link is advisory at any status, never an error.
+LINK_OPTIONAL = {"bug"}
+
 # A field carrying one of these placeholders declares "no link" - treated as absent,
 # so `Epic: --` on an active story is caught, not waved through.
 _BLANK = {"", "--", "—", "-", "tbd", "n/a", "na", "none"}
@@ -77,7 +81,7 @@ def detect_integrity(repo_root: Path | str) -> dict:
                     findings.append({
                         "id": rid, "type": type_, "status": status,
                         "kind": "missing-required", "field": field,
-                        "severity": "advisory" if terminal else "error",
+                        "severity": "advisory" if (terminal or type_ in LINK_OPTIONAL) else "error",
                     })
                     continue
                 for ref in refs:

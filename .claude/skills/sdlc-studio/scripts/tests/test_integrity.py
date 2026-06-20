@@ -109,6 +109,37 @@ class DanglingTests(unittest.TestCase):
             self.assertEqual(mod.main(["check", "--root", str(root)]), 0)  # no errors
 
 
+class BugLinkTests(unittest.TestCase):
+    def test_open_bug_missing_link_is_advisory(self) -> None:
+        # A bug's Epic/Story link is recommended, not required: missing -> advisory
+        # at any status (bugs are often filed pre-triage), never an error.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1, status="Open")   # active bug, no Epic/Story
+            mod = _load()
+            res = mod.detect_integrity(root)
+            self.assertEqual(res["summary"]["errors"], 0)
+            bug_findings = [f for f in res["findings"] if f["id"] == "BG0001"]
+            self.assertTrue(bug_findings)
+            self.assertTrue(all(f["severity"] == "advisory" for f in bug_findings))
+            self.assertEqual(mod.main(["check", "--root", str(root)]), 0)
+
+    def test_bug_dangling_reference_still_reported(self) -> None:
+        # Optional links must not suppress a bug's DANGLING reference (guards a
+        # future early-return-for-LINK_OPTIONAL mutant).
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            dd = root / "sdlc-studio" / "bugs"
+            dd.mkdir(parents=True, exist_ok=True)
+            (dd / "BG0002-x.md").write_text(
+                "# BG0002: b\n\n> **Status:** Open\n> **Epic:** EP9099\n", encoding="utf-8")
+            res = _load().detect_integrity(root)
+            dang = [f for f in res["findings"] if f["id"] == "BG0002" and f["kind"] == "dangling"]
+            self.assertTrue(dang)
+            self.assertTrue(all(f["severity"] == "advisory" for f in dang))
+            self.assertEqual(res["summary"]["errors"], 0)
+
+
 class TerminalTests(unittest.TestCase):
     def test_terminal_missing_is_advisory(self) -> None:
         with tempfile.TemporaryDirectory() as d:

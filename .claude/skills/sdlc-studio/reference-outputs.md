@@ -407,8 +407,8 @@ TRD
 
 **Link fields in frontmatter:**
 
-- **Epic:** Required in Story, Plan, Bug, Test Spec, Workflow
-- **Story:** Required in Plan, Bug, Test Spec, Workflow
+- **Epic:** Required in Story, Plan, Test Spec, Workflow; **recommended** (not required) in Bug - bugs are often filed pre-triage with no epic, so `integrity` treats a missing bug link as advisory, never an error (BG0019)
+- **Story:** Required in Plan, Test Spec, Workflow; **recommended** in Bug
 - **Plan:** Referenced in Workflow
 - **Test Spec:** Referenced in Workflow
 

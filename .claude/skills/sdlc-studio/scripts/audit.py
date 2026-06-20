@@ -64,6 +64,16 @@ def _weak_ac(text: str) -> bool:
     return any(TAUTOLOGY in i.lower() for i in items)
 
 
+def _bug_underspecified(text: str) -> bool:
+    """A bug is ready when it documents how to reproduce AND a proposed fix.
+
+    Bugs have no Acceptance Criteria section - judging them by `_weak_ac` would
+    always flag them. Readiness for a bug is repro + fix presence instead.
+    """
+    low = text.lower()
+    return not ("## steps to reproduce" in low and "## proposed fix" in low)
+
+
 def _unmet_deps(root: Path, text: str) -> list[str]:
     """Referents of `Depends on` that are not yet delivered."""
     val = sdlc_md.extract_field(text, "Depends on") or sdlc_md.extract_field(text, "Depends On")
@@ -99,7 +109,10 @@ def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None 
     status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"),
                                       sdlc_md.STATUS_VOCAB.get(type_, [])) or "Unknown"
     issues: list[str] = []
-    if _weak_ac(text):
+    if type_ == "bug":
+        if _bug_underspecified(text):
+            issues.append("underspecified")
+    elif _weak_ac(text):
         issues.append("weak-AC")
     unmet = _unmet_deps(root, text)
     if unmet:

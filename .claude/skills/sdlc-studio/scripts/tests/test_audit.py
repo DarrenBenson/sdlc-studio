@@ -34,6 +34,17 @@ def _cr(root, num, status="Proposed", ac="- [ ] integrity.py exits 1 when an act
 TAUTOLOGY = "- [ ] Change implemented and verified; lint and tests green."
 
 
+def _bug(root, num, status="Open", repro=True, fix=True):
+    d = root / "sdlc-studio" / "bugs"
+    d.mkdir(parents=True, exist_ok=True)
+    body = f"# BG{num:04d}: b\n\n> **Status:** {status}\n> **Severity:** Medium\n\n## Summary\n\nx\n"
+    if repro:
+        body += "\n## Steps to Reproduce\n\n1. do it\n"
+    if fix:
+        body += "\n## Proposed Fix\n\ndo this\n"
+    (d / f"BG{num:04d}-x.md").write_text(body, encoding="utf-8")
+
+
 class WeakAcTests(unittest.TestCase):
     def test_tautology_is_weak(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -130,6 +141,37 @@ class LinkIntegrityTests(unittest.TestCase):
                 "## Acceptance Criteria\n\n### AC1: real thing\n", encoding="utf-8")
             res = _load().audit_batch(root, ["US0001"])
             self.assertIn("link-integrity", res["units"][0]["issues"])
+
+
+class BugReadinessTests(unittest.TestCase):
+    def test_well_formed_bug_is_ready_not_weak_ac(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1, repro=True, fix=True)   # has Steps + Proposed Fix
+            u = _load().audit_unit(root, "BG0001")
+            self.assertTrue(u["ready"], u["issues"])
+            self.assertNotIn("weak-AC", u["issues"])
+
+    def test_underspecified_bug_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 2, repro=False, fix=False)
+            u = _load().audit_unit(root, "BG0002")
+            self.assertFalse(u["ready"])
+            self.assertIn("underspecified", u["issues"])
+            self.assertNotIn("weak-AC", u["issues"])
+
+    def test_bug_with_suffixed_headings_ready(self) -> None:
+        # Heading match is substring-tolerant: "## Steps to Reproduce the crash" counts.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            dd = root / "sdlc-studio" / "bugs"
+            dd.mkdir(parents=True, exist_ok=True)
+            (dd / "BG0003-x.md").write_text(
+                "# BG0003: b\n\n> **Status:** Open\n\n## Steps to Reproduce the crash\n\n"
+                "1. x\n\n## Proposed Fix and rationale\n\ny\n", encoding="utf-8")
+            u = _load().audit_unit(root, "BG0003")
+            self.assertTrue(u["ready"], u["issues"])
 
 
 class CliTests(unittest.TestCase):
