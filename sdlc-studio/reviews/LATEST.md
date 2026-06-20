@@ -41,8 +41,9 @@ Gates green: reconcile drift=0, lint exit 0, 181 script tests pass.
 ──────────────────────────────────────────────────────────
 📝 CHANGE REQUESTS
 
-   Proposed: 0   In Progress: 0   Complete: 1 (CR0001)
-   RFC open: RFC0001 (Draft)
+   CRs: 8 Proposed + 1 Complete (CR0001; CR0002-0009 from the audit)
+   RFCs: 8 Draft (RFC0001 loop, RFC0002 audit feature, RFC0003-0008 from audit)
+   Bugs: 4 Open (BG0001-0004 from audit; note BG0002 - status omits bugs)
 
 ──────────────────────────────────────────────────────────
 🔗 CROSS-DOCUMENT CONSISTENCY
@@ -57,10 +58,12 @@ Gates green: reconcile drift=0, lint exit 0, 181 script tests pass.
 ──────────────────────────────────────────────────────────
 📌 PRIORITY ACTIONS (remaining)
 
-   1. Resolve RFC0001 open decisions D1-D6 (consultation gives leanings)
-   2. Forward-port the T1 edit to the installed copy (CR0001 follow-up)
-   3. Deferred: remaining epics' stories; generate-mode test validation
-      (move artifacts Ready → Done); first TSD review
+   1. Triage the 18 audit findings (RV0002): BG0003 critical (verify_ac AC
+      parsing) first, then BG0001/BG0002 (vocab + census), then the
+      determinism cluster (CR0002/CR0003/RFC0003)
+   2. Resolve RFC0001 and RFC0002 open decisions
+   3. Forward-port the T1 edit to the installed copy (CR0001 follow-up)
+   4. Deferred: remaining epics' stories; generate-mode test validation
 
 ──────────────────────────────────────────────────────────
 🚀 PRODUCTION STATE
@@ -81,4 +84,5 @@ Gates green: reconcile drift=0, lint exit 0, 181 script tests pass.
 
 ## History
 
-- [RV0001-unified-review-2026-06-20.md](RV0001-unified-review-2026-06-20.md) - full as-found findings (immutable).
+- [RV0001-unified-review-2026-06-20.md](RV0001-unified-review-2026-06-20.md) - first unified review (immutable).
+- [RV0002-adversarial-audit-2026-06-20.md](RV0002-adversarial-audit-2026-06-20.md) - adversarial audit: 69 candidates, 28 survived, 18 filed (4 Bug, 8 CR, 6 RFC); proves RFC0002.
