@@ -28,6 +28,19 @@ Gates green: reconcile drift=0, lint exit 0, 181 script tests pass.
 - **Outstanding follow-up:** forward-port the T1 edit to the installed copy at
   `~/.claude/skills/sdlc-studio/reference-outputs.md` (CR0001 follow-up).
 
+## Update 2026-06-20 - Autosprint fully delivered (RFC0001 Phase 1 + 2)
+
+The autonomous delivery loop is **complete**. Phase 1 shipped the usable cut
+(batch selector, conformance gate, policy doc, command wiring). **Phase 2 (CR0020)
+now ships the hard guardrails, driven by autosprint over itself** (the loop
+self-hosting): `ledger.py` (committed append-only decisions ledger, D4),
+`loop_guard.py` (deterministic cap / repetition-breaker / completion oracle, D5/D2),
+and the documented `--autonomous` mode (WS6) plus the independent critic (D3). All
+via EP0007 stories US0009/US0010/US0011, each TDD'd and critic-approved; the
+conformance check gated its own delivery (11/11). Closing gate run: reconcile drift
+0, 210 script tests green, RETRO0001 written. **Next:** the 14 Proposed CRs are now
+a candidate first real `autosprint --crs proposed` tranche (the loop on the backlog).
+
 ```text
 ══════════════════════════════════════════════════════════
                    DOCUMENT REVIEW SUMMARY

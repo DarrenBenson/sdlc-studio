@@ -10,4 +10,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 
 | ID | Sprint | Date | Delivered | Blocked |
 | --- | --- | --- | --- | --- |
-| (none yet) | | | | |
+| [RETRO-0001](RETRO0001-autosprint-phase2.md) | Autosprint Phase 2 (CR0020) | 2026-06-20 | 3 / 3 | 0 |

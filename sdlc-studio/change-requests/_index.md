@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 14 |
 | Approved | 0 |
-| In Progress | 1 |
-| Complete | 4 |
+| In Progress | 0 |
+| Complete | 5 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -39,4 +39,4 @@
 | [CR-0017](CR0017-cr0005-evidence-is-partly-false-it-claims-verify-a.md) | CR0005 evidence is partly false: it claims verify_ac writes the report 'with no timestamp', but write_report emits generated_at | Proposed | Low | Improvement | 2026-06-20 | -- |
 | [CR-0018](CR0018-sprint-retro-lessons-folder.md) | Sprint retro and committed lessons-learned folder | Proposed | Medium | Improvement | 2026-06-20 | -- |
 | [CR-0019](CR0019-progressive-disclosure-archived-indexes.md) | Progressive-disclosure indexes with release archival | Superseded | High | Improvement | 2026-06-20 | -- |
-| [CR-0020](CR0020-autosprint-phase2-guardrails-ledger.md) | Autosprint Phase 2 - deterministic guardrails, decisions ledger, autonomous wiring | In Progress | High | Feature | 2026-06-20 | EP0007 |
+| [CR-0020](CR0020-autosprint-phase2-guardrails-ledger.md) | Autosprint Phase 2 - deterministic guardrails, decisions ledger, autonomous wiring | Complete | High | Feature | 2026-06-20 | EP0007 |

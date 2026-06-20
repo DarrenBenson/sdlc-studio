@@ -304,8 +304,16 @@ dogfooded: `conformance.py` (WS7 hard-fail gate), `autosprint.py plan` (WS2
 batch/order), `reference-autosprint.md` + `help/autosprint.md` + the prompt
 template + SKILL routing, and the sprint-retro closing gate (CR0018). A measured
 run delivered CR0002 end to end (decompose -> TDD -> verify -> critic) for ~164K
-tokens, critic-approved - evidence the design works. Phase 2 (deterministic
-cap/ledger + unattended `--autonomous` wiring) remains.
+tokens, critic-approved - evidence the design works.
+
+**Phase 2 delivered (2026-06-20, CR0020).** The remaining deterministic guardrails
+and the persisted ledger now ship, each TDD'd and critic-approved, driven by
+autosprint over itself: `ledger.py` (D4/WS5 - committed append-only per-tranche
+decisions ledger), `loop_guard.py` (D5/D2/WS3 - iteration cap, repetition-breaker,
+completion oracle; quarantine = Blocked-and-continue, exit 3), and the documented
+`--autonomous` mode (WS6) tying them plus the independent critic (D3/WS4) and the
+unconditional closing reconcile + review. The conformance check gated the delivery
+(11/11 conformant) - the loop self-hosting. WS1/WS2 ship as `reference-autosprint.md`.
 
 ---
 
@@ -325,3 +333,4 @@ cap/ledger + unattended `--autonomous` wiring) remains.
 | --- | --- | --- |
 | 2026-06-20 | Darren Benson | RFC drafted |
 | 2026-06-20 | Darren Benson | Persona consultation added (RV0001 action U1) |
+| 2026-06-20 | Autosprint (CR0020) | Phase 2 delivered: ledger, loop guardrails, --autonomous wiring |

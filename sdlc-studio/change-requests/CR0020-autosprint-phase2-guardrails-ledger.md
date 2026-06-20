@@ -1,6 +1,6 @@
 # CR-0020: Autosprint Phase 2 - deterministic guardrails, decisions ledger, autonomous wiring
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Priority:** High
 > **Type:** Feature
 > **Requester:** Darren Benson
@@ -83,14 +83,15 @@ None. New scripts and documented mode; Phase-1 behaviour unchanged.
 
 ## Acceptance Criteria
 
-- [ ] `ledger.py` appends rulings to a committed per-tranche file and reads them back; append-only.
-- [ ] `loop_guard.py` quarantines a unit at the cap or on a repeated signature, and the completion oracle reports all-terminal.
-- [ ] Both scripts are unit-tested; `npm test` green.
-- [ ] `--autonomous` mode is documented end to end, tying ledger + guardrails + critic + closing gate.
-- [ ] The conformance check passes on the new EP0007 stories (the loop gating its own delivery).
+- [x] `ledger.py` appends rulings to a committed per-tranche file and reads them back; append-only. (US0009)
+- [x] `loop_guard.py` quarantines a unit at the cap or on a repeated signature, and the completion oracle reports all-terminal. (US0010)
+- [x] Both scripts are unit-tested; `npm test` green. (210 tests)
+- [x] `--autonomous` mode is documented end to end, tying ledger + guardrails + critic + closing gate. (US0011)
+- [x] The conformance check passes on the new EP0007 stories (the loop gating its own delivery). (11/11 conformant)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Darren Benson | Raised - RFC0001 Phase 2 (guardrails, ledger, autonomous wiring); actioned via autosprint |
+| 2026-06-20 | Autosprint (CR0020) | Complete - US0009/US0010/US0011 delivered green, TDD'd, critic-approved, conformant |
