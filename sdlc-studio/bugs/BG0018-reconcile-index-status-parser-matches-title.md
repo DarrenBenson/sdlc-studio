@@ -46,8 +46,19 @@ Status field, instead of scanning all cells for the first canonical-status match
 Add a regression test: a story titled "Review the login flow" with Status Done is
 read as Done, not Review.
 
+**Scope (systemic).** The root cause is `sdlc_md.canonical_status` prefix-matching
+(a vocab term followed by a non-alphanumeric boundary), which is correct for a
+real status field (`Done (v2.83.0)`) but wrong when handed a title/slug
+(`review_prep...` -> `Review`). Audit **every** `canonical_status` caller for the
+same trap - it must only ever receive a value extracted from the Status field/
+column, never a title, slug, or free-prose cell. Candidates to check: reconcile
+(index rows), status, review_prep, audit, integrity, resume. Consider tightening
+the boundary rule or adding a guarded `status_from_row(row, col)` helper so the
+column is positional, not inferred.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Autosprint (determinism-sprint) | Filed - surfaced by US0014's title during the sprint closing reconcile |
+| 2026-06-20 | Autosprint (determinism-sprint retro) | Recurred live on CR0023's title ("Complete the conformance gate" -> status Complete) - confirms the class; raises severity for a positional-read fix |
