@@ -295,6 +295,20 @@ nothing is lost; the conformance check enforces it at the story level.
 
 ---
 
+## Delivery status
+
+**Phase 1 delivered (2026-06-20).** The command is `autosprint <batch> --goal
+triage|design|done [--order priority|wsjf|manual]`, implementing **Goal-Driven
+Development** (TDD -> BDD -> Eval-Driven -> Goal-Driven). Shipped, each TDD'd and
+dogfooded: `conformance.py` (WS7 hard-fail gate), `autosprint.py plan` (WS2
+batch/order), `reference-autosprint.md` + `help/autosprint.md` + the prompt
+template + SKILL routing, and the sprint-retro closing gate (CR0018). A measured
+run delivered CR0002 end to end (decompose -> TDD -> verify -> critic) for ~164K
+tokens, critic-approved - evidence the design works. Phase 2 (deterministic
+cap/ledger + unattended `--autonomous` wiring) remains.
+
+---
+
 ## Related Artifacts
 
 | Kind | ID | Title | Status | Relationship |

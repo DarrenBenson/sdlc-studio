@@ -57,6 +57,10 @@ autonomous loop wraps.
 
 ## Story Breakdown
 
+Autosprint (RFC0001) is this epic's centrepiece; Phase 1 delivered:
+
+- [x] [US0007: Lifecycle-conformance check](../stories/US0007-lifecycle-conformance-check.md)
+- [x] [US0008: Autosprint batch selector and ordering](../stories/US0008-autosprint-batch-selector.md)
 - [ ] US: Project plan (dependency graph + wave estimate)
 - [ ] US: Project implement (resume, commit/reconcile/review checkpoints)
 - [ ] US: Epic agentic wave execution
