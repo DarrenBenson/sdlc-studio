@@ -12,3 +12,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | --- | --- | --- | --- | --- |
 | [RETRO-0001](RETRO0001-autosprint-phase2.md) | Autosprint Phase 2 (CR0020) | 2026-06-20 | 3 / 3 | 0 |
 | [RETRO-0002](RETRO0002-determinism-sprint.md) | Determinism-hardening sprint | 2026-06-20 | 7 / 7 | 0 |
+| [RETRO-0003](RETRO0003-tooling-honesty-sprint.md) | Tooling-honesty + loop-integrity sprint | 2026-06-20 | 8 / 8 | 0 |

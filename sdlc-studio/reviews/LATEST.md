@@ -109,6 +109,29 @@ title that starts with a status word - surfaced by the closing reconcile).
 audited **ready**; 1 Open bug (BG0018); 12 Draft RFCs (design track). Decisions
 ledger: `decisions/determinism-sprint.md`.
 
+## Update 2026-06-20 - Tooling-honesty + loop-integrity sprint COMPLETE (8/8)
+
+Second autosprint tranche (bugs + high-value + quick wins), delivered end to end
+(RETRO0003), each TDD'd + critic-reviewed, trunk-based green:
+
+- **BG0019** - integrity + audit handle the `bug` class (links advisory; readiness by
+  repro+fix) - cleared the RED integrity check the triage surfaced.
+- **BG0018** - reconcile reads index status by table-header column, not a cell scan
+  (a status-word title no longer misreads); systemic caller audit.
+- **CR0023 / US0017** - conformance gate completed: Done now requires reconciled +
+  critiqued (a committed independent-critic APPROVE via new `critic.py`). The gate
+  blocked its own delivery until US0017's verdict was recorded.
+- **CR0022 / US0018** - `autosprint plan` orders deps-first (topological, priority
+  tiebreak; cycle aborts).
+- **CR0012/13/14/17** - TRD/TSD doc-truth fixes.
+
+Critic REJECT-then-fix twice (CR0023 reconciled scope, CR0022 prose-id edges). Gates:
+reconcile drift 0, conformance 18/18, integrity clean, no collisions, 270 tests,
+installed in sync.
+
+**Backlog now:** 4 Proposed CRs (CR0005/0006/0009/0015), 0 Open bugs, 12 Draft RFCs
+(design track; RFC0009 unlocks `--order wsjf`). Ledger: `decisions/tooling-honesty-sprint.md`.
+
 ## Known divergences
 
 1. ~~Docs say "YAML frontmatter" vs the parser's `> **Field:**` headers~~ -
