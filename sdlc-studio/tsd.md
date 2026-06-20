@@ -116,7 +116,7 @@ written. This document records that state rather than overstating coverage.
 | --- | --- | --- |
 | Unit (scripts) | ~90% statement coverage | Core deterministic logic; the part that can and must be tested as code. [MEDIUM] |
 | Static / lint (markdown) | 100% of `*.md` pass all checkers | House style and structural invariants are binary - any violation fails the gate. [HIGH] |
-| Integration (scripts vs fixtures) | Every script with side effects has at least one fixture-workspace test | Confirms read-only confinement and end-to-end script behaviour against real files. [HIGH] |
+| Integration (scripts vs fixtures) | Every script with side effects has at least one fixture-workspace test; write-confinement asserted by `test_confinement.py` (snapshot before/after) | Confirms read-only confinement and that side-effecting scripts touch only `.local/` or their named target. [HIGH] |
 | End-to-end | Not applicable | No running application or service to drive. [HIGH] |
 
 > The ~90% unit target is a goal, not a presently measured figure. Coverage is not

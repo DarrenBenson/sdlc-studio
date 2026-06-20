@@ -2,6 +2,14 @@
 
 Guidelines for JavaScript code based on modern standards and common pitfalls.
 
+
+## Quick conventions {#quick-conventions}
+
+- Declare with `const`/`let`, never `var`; prefer `async`/`await` over raw promise chains.
+- Guard DOM lookups; batch reads then writes to avoid layout thrash.
+- Handle errors explicitly - no empty `catch`; fail loud.
+- Use array methods (`map`/`filter`/`reduce`) over manual index loops.
+
 ## DOM Manipulation
 
 ### Use Modern Selectors

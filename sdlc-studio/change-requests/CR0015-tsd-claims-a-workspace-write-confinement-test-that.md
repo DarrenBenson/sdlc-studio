@@ -1,6 +1,6 @@
 # CR-0015: TSD claims a workspace write-confinement test that does not exist
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Requester:** Project Audit
@@ -33,7 +33,7 @@ Contract rule 5 is the central safety property of the read-only helpers and the 
 
 ## Acceptance Criteria
 
-- [ ] Add a fixture test per side-effecting script that snapshots the workspace tree (paths + hashes), runs the script, and asserts only .local/ a
+- [x] Add a fixture test per side-effecting script that snapshots the workspace tree (paths + hashes), runs the script, and asserts only .local/ a
 
 ## Out of Scope
 
@@ -43,4 +43,5 @@ Contract rule 5 is the central safety property of the read-only helpers and the 
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (backlog-closeout) | Complete - test_confinement.py snapshots a fixture workspace and asserts read-only scripts mutate nothing + ledger touches only its named target; TSD claim now backed |
 | 2026-06-20 | Project Audit | Filed from the 2026-06-20 project-profile audit (lens: tsd) |

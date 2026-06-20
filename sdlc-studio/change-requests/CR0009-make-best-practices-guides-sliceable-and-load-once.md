@@ -1,6 +1,6 @@
 # CR-0009: Make best-practices guides sliceable and load-once; a TypeScript code plan misses the DOM guidance it delegates to javascript.md
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Requester:** Adversarial Audit
@@ -33,9 +33,9 @@ Each code plan/implement of a Go or JS story pays a 370-420 line whole-file load
 
 ## Acceptance Criteria
 
-- [ ] The best-practices guides carry section anchors (e.g. `{#testing}`, `{#conventions}`) so the code workflow can pull a slice rather than the whole file.
-- [ ] When the story language resolves to TypeScript, the loader pulls both `javascript.md` and `typescript.md`, so the delegated DOM guidance is present.
-- [ ] (The file-merge into `web.md` is RFC-shaped and deferred; anchors + dual-load are the bounded core here.)
+- [x] The best-practices guides carry section anchors (e.g. `{#testing}`, `{#conventions}`) so the code workflow can pull a slice rather than the whole file.
+- [x] When the story language resolves to TypeScript, the loader pulls both `javascript.md` and `typescript.md`, so the delegated DOM guidance is present.
+- [x] (The file-merge into `web.md` is RFC-shaped and deferred; anchors + dual-load are the bounded core here.)
 
 ## Out of Scope
 
@@ -45,4 +45,5 @@ Each code plan/implement of a Go or JS story pays a 370-420 line whole-file load
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (backlog-closeout) | Complete (bounded core) - TS/PostgreSQL dual-load in reference-code.md + {#quick-conventions} anchors in the 4 pair guides; file-merge deferred (RFC-shaped) |
 | 2026-06-20 | Adversarial Audit | Filed from the 2026-06-20 audit (lens: token-economy / over-engineering; evidence: reference-code.md:65-66 and :235-238 (plan and implement both 'Read best-practices/{lang}.md'); grep -c '{#' = 0 for best-practices/go.md, python.md, javascript.md; typescript.md header delegates DOM patterns to javascript.md while PLG line 103 loads exactly one language file) |

@@ -65,9 +65,13 @@ Detailed workflows for code planning, review, and quality checks.
 4. **Load Best Practices**
    Read the relevant guide from the skill's `best-practices/` directory:
    - `python.md` for Python
-   - `typescript.md` for TypeScript, `javascript.md` for JavaScript
-   - `go.md` for Go, `rust.md` for Rust
-   - Language-specific patterns and anti-patterns
+   - **TypeScript: load both `javascript.md` and `typescript.md`** - typescript.md
+     delegates the shared JS/DOM conventions to javascript.md, so loading only
+     typescript.md misses them. Likewise **PostgreSQL: load both `sql.md` and
+     `postgresql.md`**.
+   - `javascript.md` for plain JavaScript; `go.md` for Go, `rust.md` for Rust
+   - Pull a slice when the story is narrow: each guide has a
+     `{#quick-conventions}` anchor for a ~30-line summary instead of the full file.
    - No bundled guide for the language? Use the inline conventions in
      [Best Practices Integration](#best-practices-integration)
 
@@ -234,7 +238,8 @@ If you encounter uncertainty during implementation:
 
    a) Read the relevant best practice guide from the skill's `best-practices/` directory:
       - Python: `best-practices/python.md`
-      - TypeScript: `best-practices/typescript.md`
+      - TypeScript: **both** `best-practices/javascript.md` and `best-practices/typescript.md`
+      - PostgreSQL: **both** `best-practices/sql.md` and `best-practices/postgresql.md`
       - Go: `best-practices/go.md`
       - Other languages: matching guide if present, else the inline
         conventions in [Best Practices Integration](#best-practices-integration)

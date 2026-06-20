@@ -2,6 +2,14 @@
 
 Guidelines for PostgreSQL implementation in SDLC Studio projects.
 
+
+## Quick conventions {#quick-conventions}
+
+- Pool connections; keep transactions short to limit lock contention.
+- `EXPLAIN ANALYZE` before optimising; index for the actual query shape.
+- `COPY`/bulk inserts over per-row round-trips for large loads.
+- Loaded alongside `sql.md` for the shared SQL conventions.
+
 ## Query Optimisation
 
 ### Use EXPLAIN ANALYSE

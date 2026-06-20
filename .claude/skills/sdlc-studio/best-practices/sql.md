@@ -2,6 +2,14 @@
 
 General SQL patterns applicable across database systems.
 
+
+## Quick conventions {#quick-conventions}
+
+- Explicit column lists, never `SELECT *`; alias tables consistently.
+- Keyset (seek) pagination over `OFFSET` for large result sets.
+- Mind three-valued NULL logic; use `IS [NOT] NULL`, not `= NULL`.
+- Batch writes; avoid N+1 query patterns.
+
 ## Query Structure
 
 ### Readability

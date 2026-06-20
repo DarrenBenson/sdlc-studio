@@ -5,6 +5,15 @@ with plain JavaScript, see `javascript.md`.
 
 ---
 
+
+## Quick conventions {#quick-conventions}
+
+- Strict mode on; never `any` - use `unknown` and narrow.
+- Validate external data at boundaries (e.g. zod) before trusting types.
+- Discriminated unions over optional-field soup; `const` objects over enums.
+- Let inference work; `import type` for type-only imports.
+- Loaded alongside `javascript.md` for the shared JS/DOM conventions.
+
 ## Strict Mode
 
 Always enable strict mode in `tsconfig.json`:

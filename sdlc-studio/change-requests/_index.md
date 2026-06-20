@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 2 |
+| Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 20 |
+| Complete | 22 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -28,13 +28,13 @@
 | [CR-0006](CR0006-add-a-graded-llm-judge-verifier-verb-to-verify-ac.md) | Add a graded/LLM-judge verifier verb to verify_ac DSL for AI-output and qualitative ACs | Complete | Medium | Improvement | 2026-06-20 | -- |
 | [CR-0007](CR0007-add-epic-implement-resume-that-reads-the-workflow.md) | Add epic implement --resume that reads the workflow execution table and restarts at the first non-Done story | Complete | High | Improvement | 2026-06-20 | EP0007 |
 | [CR-0008](CR0008-collapse-three-way-config-defaults-duplication-and.md) | Collapse three-way config-defaults duplication and make one source authoritative that scripts actually read | Complete | Medium | Improvement | 2026-06-20 | EP0008 |
-| [CR-0009](CR0009-make-best-practices-guides-sliceable-and-load-once.md) | Make best-practices guides sliceable and load-once; a TypeScript code plan misses the DOM guidance it delegates to javascript.md | Proposed | Medium | Improvement | 2026-06-20 | -- |
+| [CR-0009](CR0009-make-best-practices-guides-sliceable-and-load-once.md) | Make best-practices guides sliceable and load-once; a TypeScript code plan misses the DOM guidance it delegates to javascript.md | Complete | Medium | Improvement | 2026-06-20 | -- |
 | [CR-0010](CR0010-prd-performance-nfr-cites-non-existent-scripts-tes.md) | PRD Performance NFR cites non-existent 'scripts/tests timings' evidence | Complete | Low | Improvement | 2026-06-20 | -- |
 | [CR-0011](CR0011-prd-plan-file-lifecycle-location-omits-its-backing.md) | PRD Plan-file lifecycle Location omits its backing script scripts/plan.py | Complete | Low | Improvement | 2026-06-20 | -- |
 | [CR-0012](CR0012-trd-adr-001-corpus-counts-contradict-the-component.md) | TRD ADR-001 corpus counts contradict the Component Overview table and reality | Complete | Low | Improvement | 2026-06-20 | -- |
 | [CR-0013](CR0013-trd-deployment-topology-lists-six-targets-but-hide.md) | TRD deployment topology lists six targets but hides that codex and agents share one directory | Complete | Low | Improvement | 2026-06-20 | -- |
 | [CR-0014](CR0014-tsd-and-ep0008-hard-code-181-as-a-gate-ac-criterio.md) | TSD and EP0008 hard-code '181' as a gate/AC criterion, coupling them to a count that changes every release | Complete | Low | Improvement | 2026-06-20 | -- |
-| [CR-0015](CR0015-tsd-claims-a-workspace-write-confinement-test-that.md) | TSD claims a workspace write-confinement test that does not exist | Proposed | Medium | Improvement | 2026-06-20 | -- |
+| [CR-0015](CR0015-tsd-claims-a-workspace-write-confinement-test-that.md) | TSD claims a workspace write-confinement test that does not exist | Complete | Medium | Improvement | 2026-06-20 | -- |
 | [CR-0016](CR0016-all-eight-audit-filed-crs-carry-an-identical-place.md) | All eight audit-filed CRs carry an identical placeholder AC that asserts nothing about the change | Complete | Medium | Improvement | 2026-06-20 | -- |
 | [CR-0017](CR0017-cr0005-evidence-is-partly-false-it-claims-verify-a.md) | CR0005 evidence is partly false: it claims verify_ac writes the report 'with no timestamp', but write_report emits generated_at | Complete | Low | Improvement | 2026-06-20 | -- |
 | [CR-0018](CR0018-sprint-retro-lessons-folder.md) | Sprint retro and committed lessons-learned folder | Complete | Medium | Improvement | 2026-06-20 | -- |
