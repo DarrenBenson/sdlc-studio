@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **repo_map documented honestly (RFC0004 / CR0032):** reframed as a lexical
+  relevance ranker (token overlap + import in-degree bonus), not a semantic call
+  graph or PageRank, with a soft-dependency pointer to Aider's repo map / RepoMapper
+  for graph-based ranking. Documentation only; ranking behaviour unchanged.
 - **`reconcile.apply_type` decomposed (CR0030):** acting on RFC0009's own
   refactor-first signal (the complexity tool flagged it as the top hotspot at
   cognitive 56), `apply_type` is split into single-purpose helpers and reduced to 7,

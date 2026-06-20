@@ -1,10 +1,15 @@
 # SDLC Studio Reference - Repo Map
 
-Pure-Python repository indexer. Produces a ranked file list for the
+Pure-Python **lexical relevance ranker**. Produces a ranked file list for the
 `READ THESE FILES FIRST` section of the Agent Prompt Template and for
 the initial file set during `code plan`. Replaces the hand-authored
 "I think the agent needs these files" guess with a derivation from
 the actual codebase.
+
+It ranks by **token overlap** between the story and each file's declared
+symbols, plus a small import in-degree hub bonus. It is **not** a semantic
+call graph, reference graph, or PageRank over identifiers - for that, see
+[Lexical, not graph-based](#repo-map-limits).
 
 <!-- Load when: building or querying the repo map, writing an Agent Prompt Template, or planning code for a story -->
 
@@ -143,6 +148,17 @@ intentionally shallow. What it does NOT do:
 - **No comments or docstring indexing.** Only declared symbol names
   are indexed. A well-documented function named `do_thing` will only
   match the tokens "do" and "thing", not the words in its docstring.
+- **Lexical, not graph-based ranking.** Scoring is token overlap (story
+  tokens vs declared symbol names) plus a flat import in-degree bonus.
+  There is no reference extraction, edge weighting, personalised
+  PageRank, per-symbol rank, or token-budget fitting. Only Python is
+  parsed via `ast`; the other supported extensions are shallow regex.
+  This is a deliberately cheaper, less informative ranking than a
+  def->ref identifier graph - import-popularity can surface config/util
+  hubs over the functions a story actually needs. **For graph-based
+  ranking** (a weighted def->ref graph with personalised PageRank fit to
+  a token budget, across many languages), use **Aider's repo map** or
+  **RepoMapper** as a soft dependency; this indexer does not replicate it.
 
 These limits are deliberate: the alternative is a language-server
 integration per language, which is a project in itself. The repo map

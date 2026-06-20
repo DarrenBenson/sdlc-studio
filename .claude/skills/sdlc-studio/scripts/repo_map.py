@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
-"""SDLC Studio repo map: pure-Python source indexer and relevance ranker.
+"""SDLC Studio repo map: pure-Python source indexer and LEXICAL relevance ranker.
 
 Build an index of symbols and imports across the repository, then query it
 with a story description to produce a ranked file list for the Agent Prompt
 Template. No ctags dependency.
+
+Ranking is lexical: token overlap between the query and each file's declared
+symbols, plus a flat import in-degree hub bonus. It is NOT a semantic call
+graph, reference graph, or PageRank over identifiers (imports are matched by
+basename, only Python is AST-parsed). For graph-based ranking, use Aider's
+repo map / RepoMapper as a soft dependency. See reference-repo-map.md#repo-map-limits.
 
 Subcommands:
   build  Walk the repo, extract symbols and imports, write the index.

@@ -50,11 +50,12 @@ repo map build feeds the Agent Prompt Template's ranked file list - the implemen
 
 **Rationale:** A(a) PageRank is a high-effort multi-parser build cutting against the pure-stdlib design; A(b) closes the honesty gap cheaply and is reversible if edit-accuracy harm is later shown.
 
-**Spawned CRs:** One CR: redocument repo_map as a lexical relevance ranker + offer Aider/RepoMapper as a soft dependency. A(a) deferred. Created when picked up.
+**Spawned CRs:** CR0032 (redocument repo_map as a lexical relevance ranker + Aider/RepoMapper soft-dep pointer), **delivered**. A(a) PageRank deferred.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Autosprint (rfc-decide session) | Accepted in the RFC decision session - Accepted (Option A(b)) |
+| 2026-06-20 | Autosprint (rfc-tranche) | Delivered as CR0032 (Option A(b) honesty redoc); A(a) deferred |
 | 2026-06-20 | Adversarial Audit | Filed from the 2026-06-20 audit (lens: external-benchmark) |
