@@ -54,7 +54,7 @@ Related: help/story.md, reference-story.md
 - **And** `--type` is required and constrained to those eight choices
 - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/next_id.py allocate --type story | grep -qE "^US[0-9]{4}$"
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-20)
 
 ### AC2: Collision avoidance is max-plus-one, not first-gap
 
@@ -74,7 +74,7 @@ Related: help/story.md, reference-story.md
 - **And** when origin/main is missing or git is unavailable, `remote_available` is `false` and allocation falls back to the local maximum without error
 - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/next_id.py allocate --type epic --remote --format json | python3 -c "import json,sys; assert 'remote_available' in json.load(sys.stdin)"
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-20)
 
 ### AC4: Output shape - text vs JSON, and the ahead-of-local warning
 
@@ -84,7 +84,7 @@ Related: help/story.md, reference-story.md
 - **And** when `--remote` finds origin/main strictly ahead of local, `warning` carries `origin/main is ahead of local for <type> (<prefix><remote_max> > <prefix><local_max>); allocating above the remote maximum` - printed to stderr in text mode, embedded in JSON otherwise; the exit code is `0`
 - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/next_id.py allocate --type story --format json | python3 -c "import json,sys; d=json.load(sys.stdin); assert set(d)>={'type','prefix','local_max','remote_max','remote_available','next_id','warning'}"
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-20)
 
 ### AC5: `scan` lists every ID in use for a type
 
@@ -93,7 +93,7 @@ Related: help/story.md, reference-story.md
 - **Then** the object is `{ "type", "ids": [<sorted zero-padded IDs>], "count" }`; in text mode each ID prints on its own line and a `# <count> <type>(s)` summary goes to stderr
 - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/next_id.py scan --type story --format json | python3 -c "import json,sys; d=json.load(sys.stdin); assert 'ids' in d and 'count' in d"
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-20)
 
 > **Verification target tiers:** `functional` (single round-trip – default) | `conversational` (multi-turn / multi-step session continuity) | `soak` (live traffic over a window) | `live` (operator-confirmed in production). End-to-end ACs default to `conversational`; production-affecting ACs default to `soak`; ACs shipping behind a flag awaiting promotion default to `live`. See `reference-test-best-practices.md#verification-depth-tiers`.
 

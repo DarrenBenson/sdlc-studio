@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 9 |
+| Draft | 11 |
 | In Review | 0 |
 | Accepted | 0 |
 | Superseded | 0 |
 | Withdrawn | 0 |
-| **Total** | **9** |
+| **Total** | **11** |
 
 ## All RFCs
 
@@ -26,3 +26,5 @@
 | [RFC-0007](RFC0007-replace-13-baked-in-fictional-character-personas-1.md) | Replace 13 baked-in fictional-character personas (~1680 lines) with template plus generate-on-demand | Medium | Draft | -- | 2026-06-20 | -- |
 | [RFC-0008](RFC0008-consolidate-the-5-file-test-reference-clique-2030.md) | Consolidate the 5-file test reference clique (~2030 lines, triplicated anti-patterns, two files unreachable from the router) | Medium | Draft | -- | 2026-06-20 | -- |
 | [RFC-0009](RFC0009-code-complexity-signals.md) | Code-complexity signals for estimation, token budgeting, refactor-first and test risk | High | Draft | -- | 2026-06-20 | -- |
+| [RFC-0010](RFC0010-audit-filed-rfcs-0003-0008-have-boilerplate-act-vs.md) | Audit-filed RFCs (0003-0008) have boilerplate 'act vs status quo' options that never weigh the real design choices | Medium | Draft | -- | 2026-06-20 | -- |
+| [RFC-0011](RFC0011-rfc0006-reopens-the-default-autonomy-decision-rfc0.md) | RFC0006 reopens the default-autonomy decision RFC0001 declares settled, with no cross-reference | Medium | Draft | -- | 2026-06-20 | -- |

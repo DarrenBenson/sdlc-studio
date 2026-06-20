@@ -180,3 +180,4 @@ profile; the project profile is the headline.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Darren Benson | RFC drafted from the 2026-06-20 self-audit run (69→28→18; 41 refuted; 221 agents) |
+| 2026-06-20 | Project Audit | Second proving run, project profile (RV0003): 76→40→23, 36 refuted, 245 agents. Surfaced two harness improvements - default to triage for the project profile, and make the filer produce richer artifacts (the shallow auto-filed CRs/RFCs themselves became findings). |

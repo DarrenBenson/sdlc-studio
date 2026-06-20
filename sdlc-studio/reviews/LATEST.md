@@ -41,9 +41,9 @@ Gates green: reconcile drift=0, lint exit 0, 181 script tests pass.
 ──────────────────────────────────────────────────────────
 📝 CHANGE REQUESTS
 
-   CRs: 8 Proposed + 1 Complete (CR0001; CR0002-0009 from the audit)
-   RFCs: 8 Draft (RFC0001 loop, RFC0002 audit feature, RFC0003-0008 from audit)
-   Bugs: 4 Open (BG0001-0004 from audit; note BG0002 - status omits bugs)
+   CRs: 16 Proposed + 1 Complete   RFCs: 11 Draft   Bugs: 17 Open
+   (CR0001 done; the rest from the skill audit RV0002 + project audit RV0003;
+   RFC0009 = code-complexity signals; note BG0002 - status omits bugs)
 
 ──────────────────────────────────────────────────────────
 🔗 CROSS-DOCUMENT CONSISTENCY
@@ -85,4 +85,5 @@ Gates green: reconcile drift=0, lint exit 0, 181 script tests pass.
 ## History
 
 - [RV0001-unified-review-2026-06-20.md](RV0001-unified-review-2026-06-20.md) - first unified review (immutable).
-- [RV0002-adversarial-audit-2026-06-20.md](RV0002-adversarial-audit-2026-06-20.md) - adversarial audit: 69 candidates, 28 survived, 18 filed (4 Bug, 8 CR, 6 RFC); proves RFC0002.
+- [RV0002-adversarial-audit-2026-06-20.md](RV0002-adversarial-audit-2026-06-20.md) - skill-profile audit: 69→28→18 filed; proves RFC0002.
+- [RV0003-project-audit-2026-06-20.md](RV0003-project-audit-2026-06-20.md) - project-profile audit: 76→40→23 filed (13 Bug, mostly artifact contradictions); second RFC0002 proving run.
