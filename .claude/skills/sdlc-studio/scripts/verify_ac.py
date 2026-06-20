@@ -42,6 +42,7 @@ from lib import sdlc_md  # noqa: E402
 # -----------------------------------------------------------------------------
 
 AC_HEADING_RE = sdlc_md.AC_HEADING_RE
+AC_BULLET_RE = sdlc_md.AC_BULLET_RE
 VERIFY_RE = sdlc_md.VERIFY_RE
 VERIFIED_RE = sdlc_md.VERIFIED_RE
 
@@ -83,6 +84,19 @@ def parse_story(text: str) -> list[ACBlock]:
                 heading_line=i,
                 ac_id=m.group(1),
                 title=(m.group(2) or "").strip(),
+            )
+            continue
+
+        # Bullet-style AC: `- **AC1:** ...` (the compact form the shared parser
+        # also recognises). Without this, bullet-AC stories parse to zero ACs
+        # and the verifier passes vacuously.
+        bm = AC_BULLET_RE.match(line)
+        if bm:
+            flush()
+            current = ACBlock(
+                heading_line=i,
+                ac_id=bm.group(1),
+                title=(bm.group(2) or "").strip(),
             )
             continue
 

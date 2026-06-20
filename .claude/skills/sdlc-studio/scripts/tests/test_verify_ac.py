@@ -45,6 +45,22 @@ PASSING_STORY = """\
 - **Then** records exist
 """
 
+BULLET_STORY = """\
+# US0003: Bullet-style AC
+
+## Acceptance Criteria
+
+- **AC1:** Search returns ranked results
+  - **Given** an index
+  - **When** I search
+  - **Verify:** file scripts/repo_map.py
+- **AC2:** Handles empty query
+  - **Given** no query
+  - **Then** a 422
+  - **Verify:** shell echo ok
+  - **Verified:** yes (2026-01-01)
+"""
+
 FAILING_STORY = """\
 # US0002: Broken path
 
@@ -79,6 +95,14 @@ class ParseTests(unittest.TestCase):
         self.assertEqual(len(blocks), 3)
         ids = [b.ac_id for b in blocks]
         self.assertEqual(ids, ["AC1", "AC2", "AC3"])
+
+    def test_parse_extracts_bullet_style_acs(self) -> None:
+        # BG0003: bullet-style AC (- **AC1:**) must be parsed, not ignored.
+        blocks = verify_ac.parse_story(BULLET_STORY)
+        ids = [b.ac_id for b in blocks]
+        self.assertEqual(ids, ["AC1", "AC2"])
+        self.assertEqual(blocks[0].verifier, "file scripts/repo_map.py")
+        self.assertEqual(blocks[1].verified_state, "yes")
 
     def test_verifier_captured_on_ac1(self) -> None:
         blocks = verify_ac.parse_story(PASSING_STORY)
