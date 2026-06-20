@@ -65,6 +65,19 @@ class GatherTests(unittest.TestCase):
             self.assertEqual(data["requirements"]["stories"]["total"], 1)
             self.assertEqual(data["requirements"]["stories_done_pct"], 100)
 
+    def test_gather_counts_bugs_and_workflows(self) -> None:
+        # BG0002: bug and workflow types must appear in the census.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bdir = root / "sdlc-studio" / "bugs"
+            bdir.mkdir(parents=True, exist_ok=True)
+            (bdir / "BG0001-x.md").write_text("# B1\n\n> **Status:** Open\n", encoding="utf-8")
+            (bdir / "BG0002-x.md").write_text("# B2\n\n> **Status:** Fixed\n", encoding="utf-8")
+            data = status.gather(root)
+            self.assertEqual(data["bugs"]["total"], 2)
+            self.assertEqual(data["bugs"]["by_status"].get("Open"), 1)
+            self.assertEqual(data["workflows"]["total"], 0)
+
 
 class HintTests(unittest.TestCase):
     def test_hint_no_prd_first(self) -> None:

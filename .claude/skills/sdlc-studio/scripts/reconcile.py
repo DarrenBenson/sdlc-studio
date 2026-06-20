@@ -30,9 +30,11 @@ SCOPE_TYPES = {
     "rfcs": ["rfc"],
     "plans": ["plan"],
     "test-specs": ["test-spec"],
-    "indexes": ["story", "epic", "cr", "rfc", "plan", "test-spec"],
+    "bugs": ["bug"],
+    "workflows": ["workflow"],
+    "indexes": ["story", "epic", "cr", "rfc", "plan", "test-spec", "bug", "workflow"],
 }
-_DEFAULT_TYPES = ["story", "epic", "cr", "rfc", "plan", "test-spec"]
+_DEFAULT_TYPES = ["story", "epic", "cr", "rfc", "plan", "test-spec", "bug", "workflow"]
 
 # Statuses that do NOT imply a backing file yet. An index row in one of these
 # states (or a non-vocabulary state such as a custom "Retired"/"Reserved") with

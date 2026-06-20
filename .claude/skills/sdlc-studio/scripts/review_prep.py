@@ -75,14 +75,31 @@ def persona_usage(repo_root: Path) -> dict:
     personas for the Persona leg to judge.
     """
     base = repo_root / "sdlc-studio"
+    personas_dir = base / "personas"
     personas_md = base / "personas.md"
     prd_md = base / "prd.md"
     defined: list[str] = []
-    if personas_md.exists():
+    # Prefer the personas/ directory (one file per persona) when present - this is
+    # what the epic completion cascade and the review command read; fall back to
+    # the single personas.md (H2 headings) otherwise. Keeps the source consistent
+    # across the deterministic helpers (BG0004).
+    persona_files = [p for p in sorted(personas_dir.glob("*.md"))
+                     if p.name != "_index.md"] if personas_dir.is_dir() else []
+    method = ""
+    if persona_files:
+        for p in persona_files:
+            for line in p.read_text(encoding="utf-8").splitlines():
+                m = re.match(r"^#\s+(.+?)\s*$", line)
+                if m:
+                    defined.append(m.group(1).strip())
+                    break
+        method = "heuristic: H1 of each personas/*.md (preferred), substring match in prd.md"
+    elif personas_md.exists():
         for line in personas_md.read_text(encoding="utf-8").splitlines():
             m = re.match(r"^##\s+(.+?)\s*$", line)
             if m:
                 defined.append(m.group(1).strip())
+        method = "heuristic: H2 headings in personas.md (fallback), substring match in prd.md"
     prd_text = prd_md.read_text(encoding="utf-8") if prd_md.exists() else ""
     referenced = [name for name in defined if name and name in prd_text]
     unused = [name for name in defined if name not in referenced]
@@ -90,7 +107,7 @@ def persona_usage(repo_root: Path) -> dict:
         "defined": defined,
         "referenced_in_prd": referenced,
         "unused": unused,
-        "method": "heuristic: H2 headings in personas.md, substring match in prd.md",
+        "method": method or "no personas found",
     }
 
 

@@ -33,7 +33,7 @@ Single source of truth for all output formats, file locations, status values, an
 | Story | `sdlc-studio/stories/US{NNNN}-*.md` | US0001, US0002, US0003... | Proposed/Draft/Ready/Planned/In Progress/Review/Done/Won't Implement/Deferred/Superseded |
 | Plan | `sdlc-studio/plans/PL{NNNN}-*.md` | PL0001, PL0002, PL0003... | Draft/In Progress/Complete/Superseded |
 | Bug | `sdlc-studio/bugs/BG{NNNN}-*.md` | BG0001, BG0002, BG0003... | Open/In Progress/Fixed/Verified/Closed/Won't Fix/Superseded |
-| CR | `sdlc-studio/change-requests/CR{NNNN}-*.md` | CR0001, CR0002, CR0003... | Proposed/Approved/In Progress/Complete/Rejected/Deferred/Superseded |
+| CR | `sdlc-studio/change-requests/CR{NNNN}-*.md` | CR0001, CR0002, CR0003... | Proposed/Approved/In Progress/Complete/Rejected/Deferred/Superseded/Blocked |
 | RFC | `sdlc-studio/rfcs/RFC{NNNN}-*.md` | RFC0001, RFC0002, RFC0003... | Draft/In Review/Accepted/Superseded/Withdrawn |
 | Test Spec | `sdlc-studio/test-specs/TS{NNNN}-*.md` | TS0001, TS0002, TS0003... | Draft/Ready/In Progress/Complete/Superseded |
 | Workflow | `sdlc-studio/workflows/WF{NNNN}-*.md` | WF0001, WF0002, WF0003... | Created/Planning/Testing/Implementing/Verifying/Reviewing/Checking/Done/Paused/Superseded |
@@ -219,9 +219,9 @@ Each artifact type has a **canonical set of status values**. Do not use ad-hoc s
 | Plan | Draft, In Progress, Complete, Superseded | Complete, Superseded |
 | Test Spec | Draft, Ready, In Progress, Complete, Superseded | Complete, Superseded |
 | Bug | Open, In Progress, Fixed, Verified, Closed, Won't Fix, Superseded | Closed, Won't Fix, Superseded |
-| CR | Proposed, Approved, In Progress, Complete, Rejected, Deferred, Superseded | Complete, Rejected, Deferred, Superseded |
+| CR | Proposed, Approved, In Progress, Complete, Rejected, Deferred, Superseded, Blocked | Complete, Rejected, Deferred, Superseded |
 | RFC | Draft, In Review, Accepted, Superseded, Withdrawn | Superseded, Withdrawn (Accepted = decision reached, stays live) |
-| Workflow | Created, Planning, Testing, Implementing, Verifying, Reviewing, Checking, Done, Paused, Complete, Superseded | Done, Complete, Superseded |
+| Workflow | Created, Planning, Testing, Implementing, Verifying, Reviewing, Checking, Done, Paused, Superseded | Done, Superseded |
 
 **Validation rule:** When writing or updating a `> **Status:**` header, verify the value is in the allowed set for that artifact type. If a non-standard value is found during `status --full`, flag it in the INTEGRITY section.
 

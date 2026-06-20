@@ -55,6 +55,8 @@ def gather(repo_root: Path) -> dict:
     epics = count_by_status("epic", repo_root)
     stories = count_by_status("story", repo_root)
     test_specs = count_by_status("test-spec", repo_root)
+    bugs = count_by_status("bug", repo_root)
+    workflows = count_by_status("workflow", repo_root)
 
     review_state = sdlc_md.read_json(base / ".local" / "review-state.json", {})
     review_files = sdlc_md.walk_glob(base / "reviews", "RV*.md")
@@ -77,6 +79,8 @@ def gather(repo_root: Path) -> dict:
             "tsd": (base / "tsd.md").exists(),
             "test_specs": test_specs,
         },
+        "bugs": bugs,
+        "workflows": workflows,
         "reviews": {
             "has_review_state": bool(review_state),
             "review_files": len(review_files),
@@ -99,6 +103,9 @@ def cmd_pillars(args: argparse.Namespace) -> int:
     print(f"Code:         TRD={'yes' if data['code']['trd'] else 'no'}")
     print(f"Tests:        TSD={'yes' if data['tests']['tsd'] else 'no'} "
           f"test-specs={data['tests']['test_specs']['total']}")
+    print(f"Bugs:         open={data['bugs']['by_status'].get('Open', 0)} "
+          f"fixed={data['bugs']['by_status'].get('Fixed', 0)} total={data['bugs']['total']}")
+    print(f"Workflows:    total={data['workflows']['total']}")
     print(f"Reviews:      files={data['reviews']['review_files']} "
           f"latest={'yes' if data['reviews']['latest'] else 'no'}")
     return 0
