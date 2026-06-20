@@ -8,3 +8,5 @@
 | 2026-06-20T13:10:46Z | Add tranche-audit step to autosprint (CR0021); CR0003 integrity is its link-integrity lens | operator: tranche readiness should be a defined loop step, not improvised - sprint-zero proved the need |
 | 2026-06-20T13:28:13Z | audit.py _weak_ac gated to the AC section only | critic REJECT: AC markup outside the section let prose-only CRs pass as ready |
 | 2026-06-20T13:38:15Z | review_prep uses git %cI committer time (CR0004) | reproducible across clones; st_mtime fallback only when untracked; datetime compare; malformed->needs+warn |
+| 2026-06-20T13:41:05Z | config.py loader (PyYAML soft-dep); config-defaults.yaml authoritative; remove 12 doc yaml fences; drift-guard test (CR0008) | core scripts stay stdlib; only the new config helper needs yaml (skipUnless in tests); doc Default columns guarded against drift |
+| 2026-06-20T13:49:17Z | status.py reads config via config.py (lazy/graceful) | critic REJECT: AC1 needed a real consumer, not just a loader; staleness_days moved to a guarded table row |

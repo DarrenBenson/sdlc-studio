@@ -22,6 +22,22 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 
 
+def _config_summary(repo_root: Path) -> dict | None:
+    """Representative defaults read from config-defaults.yaml (CR0008).
+
+    Reads the single source via config.py. Lazy + graceful: if PyYAML is absent
+    the census still works (the stdlib core has no hard YAML dependency).
+    """
+    try:
+        import config  # sibling script; scripts dir is on sys.path
+        return {
+            "schema_version": config.get(repo_root, "schema_version"),
+            "coverage": config.get(repo_root, "coverage"),
+        }
+    except Exception:  # pragma: no cover - PyYAML missing or unreadable config
+        return None
+
+
 def count_by_status(type_: str, repo_root: Path) -> dict:
     """Tally a type's files by canonical Status, plus a total.
 
@@ -63,6 +79,7 @@ def gather(repo_root: Path) -> dict:
 
     return {
         "generated_at": sdlc_md.now_iso8601(),
+        "config": _config_summary(repo_root),
         "requirements": {
             "prd": (base / "prd.md").exists(),
             "personas": (base / "personas.md").exists(),

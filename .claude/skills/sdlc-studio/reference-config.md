@@ -23,6 +23,8 @@
 
 Project-level configuration for customising SDLC Studio behaviour.
 
+> `config-defaults.yaml` (in `templates/`) is the single source of truth for default values; the Default columns below mirror it and are guarded against drift by `scripts/tests/test_config.py` (CR0008). Scripts read it via `scripts/config.py`. Project overrides go in `sdlc-studio/.config.yaml`.
+
 ## Configuration Files
 
 | File | Location | Purpose |
@@ -48,13 +50,6 @@ Project config only needs to specify values that differ from defaults.
 
 Control test coverage thresholds used in TSD, status dashboard, and test specs.
 
-```yaml
-coverage:
-  unit: 90          # Target unit test coverage %
-  integration: 85   # Target integration coverage %
-  e2e: 100          # Target feature coverage % (100 = all features)
-```
-
 | Setting | Default | Used In | Notes |
 | --- | --- | --- | --- |
 | `unit` | 90 | TSD, status, test-spec | Core business logic coverage |
@@ -72,22 +67,6 @@ coverage:
 ## Story Quality Gates
 
 Control minimum requirements for story readiness.
-
-```yaml
-story_quality:
-  edge_cases:
-    api: 8          # Minimum edge cases for API stories
-    other: 5        # Minimum edge cases for non-API stories
-  test_scenarios:
-    api: 10         # Minimum test scenarios for API stories
-    ui: 8           # Minimum test scenarios for UI stories
-  sizing:
-    max_ac: 10      # Flag story if AC count exceeds this
-    max_points: 13  # Flag story if points exceed this
-    recommended_ac:
-      min: 3        # Recommended minimum AC per story
-      max: 5        # Recommended maximum AC per story
-```
 
 ### Edge Cases
 
@@ -126,11 +105,6 @@ story_quality:
 
 Control when TDD mode is recommended over Test-After.
 
-```yaml
-tdd:
-  edge_case_threshold: 5  # Use TDD if edge cases > this
-```
-
 | Setting | Default | Used In |
 | --- | --- | --- |
 | `edge_case_threshold` | 5 | reference-decisions, help/code |
@@ -146,11 +120,6 @@ tdd:
 ## E2E Limits
 
 Control when to split E2E spec files.
-
-```yaml
-e2e:
-  max_tests_per_spec: 50  # Split spec if tests exceed this
-```
 
 | Setting | Default | Used In |
 | --- | --- | --- |
@@ -168,7 +137,7 @@ e2e:
 
 Available perspectives for epic breakdown.
 
-```yaml
+```text
 epic:
   perspectives:
     - engineering   # TRD-aligned (components, APIs, data)
@@ -184,7 +153,7 @@ Used by `/sdlc-studio epic --perspective {name}`.
 
 Severity levels for review findings.
 
-```yaml
+```text
 review:
   severity_levels:
     - critical      # Must address before merge
@@ -196,12 +165,11 @@ review:
 
 ## Persona Staleness {#personas-staleness-days}
 
-The Persona Review pass of `/sdlc-studio review` uses this window to decide whether a persona is "stale" (no consult / story / CR reference within the window). Default 90 days.
+The Persona Review pass of `/sdlc-studio review` uses this window to decide whether a persona is "stale" (no consult / story / CR reference within the window).
 
-```yaml
-personas:
-  staleness_days: 90  # Days without a touch before a persona is flagged stale
-```
+| Setting | Default | Notes |
+| --- | --- | --- |
+| `staleness_days` | 90 | Days without a touch before a persona is flagged stale |
 
 A project where personas are consulted rarely by design (e.g. stable archetypes) can extend this; a project where personas are expected to be high-touch can shorten it. See `reference-review.md` for the cross-doc check that reads this value.
 
@@ -211,7 +179,7 @@ A project where personas are consulted rarely by design (e.g. stable archetypes)
 
 The structured tables in PRD and TRD that **are** the feature contract. The default anchors (`§3 Feature Inventory`, `§6 Data Models`) match the v2 PRD/TRD templates.
 
-```yaml
+```text
 contract_tables:
   prd: "§3 Feature Inventory"
   trd: "§6 Data Models"
@@ -227,7 +195,7 @@ The `code implement` workflow uses these anchors for the **ship-time contract sy
 
 Determines which ship-time guidance the workflow emits.
 
-```yaml
+```text
 release_strategy: pr-required    # solo-dev | pr-required | staged-rollout
 ```
 
@@ -256,7 +224,7 @@ Templates can reference config values using `{{config.path.to.value}}` syntax:
 
 ## Example Project Config
 
-```yaml
+```text
 # sdlc-studio/.config.yaml
 # Legacy Python project with relaxed targets
 
@@ -280,7 +248,7 @@ tdd:
 
 The `.version` file tracks schema version for upgrades:
 
-```yaml
+```text
 # sdlc-studio/.version
 schema_version: 2
 upgraded_from: 1          # null for new projects
@@ -302,14 +270,6 @@ created_at: 2026-01-15T09:00:00Z
 ## Project Implementation
 
 Control behaviour of `/sdlc-studio project implement`.
-
-```yaml
-project:
-  commit_strategy: per-epic   # per-wave | per-epic | per-project
-  review_interval: 3          # Epics between quick reviews
-  auto_reconcile: true        # Auto-reconcile after each epic
-  auto_commit: true           # Auto-commit at boundaries
-```
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |

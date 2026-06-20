@@ -1,6 +1,6 @@
 # CR-0008: Collapse three-way config-defaults duplication and make one source authoritative that scripts actually read
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Requester:** Adversarial Audit
@@ -33,8 +33,8 @@ Three-way drift risk on every config edit; config-defaults.yaml is dead weight t
 
 ## Acceptance Criteria
 
-- [ ] `config-defaults.yaml` is the single source of truth and `status.py` / `validate.py` load a representative default from it rather than a hard-coded literal.
-- [ ] The duplicate YAML block in `reference-config.md` is removed (the value lives in one place, not three); a test asserts the default resolves from the YAML.
+- [x] `config-defaults.yaml` is the single source of truth and `status.py` / `validate.py` load a representative default from it rather than a hard-coded literal.
+- [x] The duplicate YAML block in `reference-config.md` is removed (the value lives in one place, not three); a test asserts the default resolves from the YAML.
 
 ## Out of Scope
 
@@ -44,4 +44,5 @@ Three-way drift risk on every config edit; config-defaults.yaml is dead weight t
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (determinism-sprint) | Complete - config.py loader (status.py reads it), 12 doc fences removed, drift-guard test; critic REJECT (AC1 integration + staleness drift) repaired |
 | 2026-06-20 | Adversarial Audit | Filed from the 2026-06-20 audit (lens: over-engineering; evidence: templates/config-defaults.yaml:11-13 (unit:90/integration:85/e2e:100) duplicated at reference-config.md:53 (YAML) and :60 (prose table); grep for config-defaults/.config.yaml/config_defaults across scripts/*.py returns no hits) |
