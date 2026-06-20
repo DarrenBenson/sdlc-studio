@@ -1,6 +1,6 @@
 # CR-0003: Add referential-integrity check for required Epic/Story link fields and dangling ID references
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** High
 > **Type:** Improvement
 > **Requester:** Adversarial Audit
@@ -33,9 +33,9 @@ Broken or missing traceability links (orphan stories, dependencies on deleted ep
 
 ## Acceptance Criteria
 
-- [ ] A story missing its required `Epic` link is flagged with a non-zero exit; a well-formed story passes.
-- [ ] A reference to a non-existent ID (e.g. `EP0099`) is reported as a dangling reference (advisory), resolved via `norm_id` against the on-disk census.
-- [ ] Findings are emitted as JSON and the check is unit-tested.
+- [x] A story missing its required `Epic` link is flagged with a non-zero exit; a well-formed story passes.
+- [x] A reference to a non-existent ID (e.g. `EP0099`) is reported as a dangling reference (advisory), resolved via `norm_id` against the on-disk census.
+- [x] Findings are emitted as JSON and the check is unit-tested.
 
 ## Out of Scope
 
@@ -45,4 +45,5 @@ Broken or missing traceability links (orphan stories, dependencies on deleted ep
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (determinism-sprint) | Complete - delivered as US0012 (scripts/integrity.py), TDD'd, critic-approved |
 | 2026-06-20 | Adversarial Audit | Filed from the 2026-06-20 audit (lens: determinism; evidence: reference-outputs.md:408-413 (link fields marked Required) vs validate.py:66-112 (no Epic/Story-link rule) and reconcile.py:26-35 (per-type isolation, no cross-reference resolution)) |

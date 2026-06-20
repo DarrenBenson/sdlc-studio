@@ -6,15 +6,15 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 12 |
+| Proposed | 11 |
 | Approved | 0 |
-| In Progress | 0 |
-| Complete | 7 |
+| In Progress | 1 |
+| Complete | 8 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **20** |
+| **Total** | **21** |
 
 ## All Changes
 
@@ -22,7 +22,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [CR-0001](CR0001-doc-accuracy-fixes.md) | Documentation accuracy - command-vs-script scope and metadata convention | Complete | Medium | Improvement | 2026-06-20 | -- |
 | [CR-0002](CR0002-add-deterministic-duplicate-id-collision-detector.md) | Add deterministic duplicate-ID / collision detector; census scripts silently collapse colliding IDs | Complete | High | Improvement | 2026-06-20 | -- |
-| [CR-0003](CR0003-add-referential-integrity-check-for-required-epic.md) | Add referential-integrity check for required Epic/Story link fields and dangling ID references | Proposed | High | Improvement | 2026-06-20 | -- |
+| [CR-0003](CR0003-add-referential-integrity-check-for-required-epic.md) | Add referential-integrity check for required Epic/Story link fields and dangling ID references | Complete | High | Improvement | 2026-06-20 | EP0005 |
 | [CR-0004](CR0004-review-prep-staleness-uses-filesystem-mtime-and-ra.md) | review_prep staleness uses filesystem mtime and raw-string timestamp comparison, breaking determinism across clones and timestamp formats | Proposed | High | Improvement | 2026-06-20 | -- |
 | [CR-0005](CR0005-verify-ac-py-writes-no-report-in-dry-run-and-overw.md) | verify_ac.py writes no report in dry-run and overwrites a single report with no run history | Proposed | Medium | Improvement | 2026-06-20 | -- |
 | [CR-0006](CR0006-add-a-graded-llm-judge-verifier-verb-to-verify-ac.md) | Add a graded/LLM-judge verifier verb to verify_ac DSL for AI-output and qualitative ACs | Proposed | Medium | Improvement | 2026-06-20 | -- |
@@ -40,3 +40,4 @@
 | [CR-0018](CR0018-sprint-retro-lessons-folder.md) | Sprint retro and committed lessons-learned folder | Complete | Medium | Improvement | 2026-06-20 | -- |
 | [CR-0019](CR0019-progressive-disclosure-archived-indexes.md) | Progressive-disclosure indexes with release archival | Superseded | High | Improvement | 2026-06-20 | -- |
 | [CR-0020](CR0020-autosprint-phase2-guardrails-ledger.md) | Autosprint Phase 2 - deterministic guardrails, decisions ledger, autonomous wiring | Complete | High | Feature | 2026-06-20 | EP0007 |
+| [CR-0021](CR0021-autosprint-tranche-audit-step.md) | Autosprint tranche-audit step (pre-flight grooming) | In Progress | High | Feature | 2026-06-20 | EP0007 |

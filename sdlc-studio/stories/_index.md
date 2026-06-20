@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 6 |
+| Done | 7 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
-| **Total** | **11** |
+| **Total** | **12** |
 
 ## All Stories
 
@@ -33,3 +33,4 @@
 | [US0009](US0009-decisions-ledger.md) | Persisted decisions ledger | Done | EP0007 | 2026-06-20 | 2026-06-20 |
 | [US0010](US0010-loop-guardrails.md) | Deterministic loop guardrails | Done | EP0007 | 2026-06-20 | 2026-06-20 |
 | [US0011](US0011-autonomous-mode-wiring.md) | Autonomous mode wiring | Done | EP0007 | 2026-06-20 | 2026-06-20 |
+| [US0012](US0012-referential-integrity-check.md) | Referential-integrity check | Done | EP0005 | 2026-06-20 | 2026-06-20 |
