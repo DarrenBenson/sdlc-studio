@@ -358,21 +358,26 @@ Index files track all artifacts with basic metadata:
 - IDs never change once assigned
 - No gaps in sequence (auto-increment from highest)
 
-## Frontmatter Standards {#frontmatter}
+## Metadata Header Standards {#frontmatter}
 
-All artifacts use YAML frontmatter for metadata:
+Numbered artifacts (epics, stories, plans, bugs, test specs, workflows, CRs, RFCs)
+carry metadata as `> **Field:** value` blockquote header lines directly under the
+H1 title. This is the convention the runtime scripts parse: `lib/sdlc_md.py`
+matches `> **Name:** value` (see `METADATA_FIELD_RE`).
 
-```yaml
----
-id: {TYPE}{NNNN}
-title: Brief title
-status: {Status Value}
-epic: EP0001          # For Stories, Plans, Bugs, Test Specs, Workflows
-story: US0001         # For Plans, Bugs, Test Specs, Workflows
-created: 2025-01-15
-updated: 2025-01-20
----
+```markdown
+# US0001: Login form validation
+
+> **Status:** Ready
+> **Epic:** [EP0001: Authentication](../epics/EP0001-authentication.md)
+> **Owner:** A. Developer
+> **Created:** 2026-01-15
 ```
+
+Project-level documents (PRD, TRD, TSD) use bold `**Field:**` lines in their
+header block instead of blockquote headers. SKILL.md itself uses YAML frontmatter
+because the Agent Skills format requires it; that is separate from artifact
+metadata and is not parsed by `lib/sdlc_md.py`.
 
 ## Traceability {#traceability}
 
