@@ -1,6 +1,6 @@
 # CR-0023: Complete the conformance gate - reconciled, reviewed, and a recorded critic verdict
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** High
 > **Type:** Feature
 > **Requester:** Autosprint (determinism-sprint retro)
@@ -69,13 +69,14 @@ units delivered after this CR (or backfill) to avoid retroactively failing histo
 
 ## Acceptance Criteria
 
-- [ ] A Done unit with `reconcile detect` drift on its story/epic is reported non-conformant.
-- [ ] A Done unit with no recorded critic verdict is non-conformant (conformance hard-fails).
-- [ ] A unit whose recorded critic verdict is an unresolved REJECT is non-conformant.
-- [ ] The critic verdict is a committed record (unit, verdict, reviewer, issues, date); reading it back is deterministic. Unit-tested.
+- [x] A Done unit with `reconcile detect` drift on its story/epic is reported non-conformant.
+- [x] A Done unit with no recorded critic verdict is non-conformant (conformance hard-fails).
+- [x] A unit whose recorded critic verdict is an unresolved REJECT is non-conformant.
+- [x] The critic verdict is a committed record (unit, verdict, reviewer, issues, date); reading it back is deterministic. Unit-tested.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (tooling-honesty-sprint) | Complete - US0017: critic.py committed verdict + conformance reconciled/critiqued stages; critic REJECT-then-fix broadened reconciled to missing-row |
 | 2026-06-20 | Autosprint (determinism-sprint retro) | Raised - conformance stubs reconciled/reviewed and never checks the critic; "16/16" overstates assurance |

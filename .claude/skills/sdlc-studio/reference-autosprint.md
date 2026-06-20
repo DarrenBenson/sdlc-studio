@@ -46,11 +46,13 @@ Natural language resolves to the same: "do an autosprint to deliver all open bug
      default. Wraps the existing wave engine (`reference-project.md`); does not
      reinvent it.
    - `verify_ac` - run the AC oracle; back-annotate `Verified:`.
-   - `conformance check` - the deterministic gate (`scripts/conformance.py`):
-     decomposed -> AC -> tested -> verified -> reconciled -> reviewed. **Hard-fail**:
-     a unit cannot reach Done with a stage skipped (D-conformance).
    - **Independent critic (D3)** - a sub-agent that did not write the diff judges it
-     against AC intent, plus adversarial/mutation checks. Reject -> repair.
+     against AC intent, plus adversarial/mutation checks. Reject -> repair. Its
+     verdict is recorded with `critic.py record` (committed) so the gate can require it.
+   - `conformance check` - the deterministic gate (`scripts/conformance.py`):
+     decomposed -> AC -> tested -> verified -> **reconciled** (no index drift) ->
+     **critiqued** (a committed critic APPROVE). **Hard-fail**: a unit cannot reach
+     Done with a stage skipped - including the critic (D-conformance, CR0023).
    - Commit the unit green (trunk-based by default, D6).
 5. **Stall handling (D2).** After 3 failed green attempts a unit is marked
    **Blocked**, logged, and skipped; the run continues. Blocked units surface in
@@ -111,7 +113,8 @@ portable Phase-1 path for tools without the scripts.
 | `scripts/autosprint.py plan` | select + order the batch (the triage plan) |
 | `scripts/audit.py check` | tranche audit: weak-AC, unmet-deps, already-terminal, link-integrity |
 | `scripts/integrity.py check` | referential integrity (required links + dangling refs) |
-| `scripts/conformance.py check` | the lifecycle-conformance gate (hard-fail) |
+| `scripts/conformance.py check` | the lifecycle-conformance gate (hard-fail; incl. reconciled + critiqued) |
+| `scripts/critic.py record` | the committed independent-critic verdict per unit (D3) |
 | `scripts/loop_guard.py` | iteration cap, repetition-breaker, completion oracle |
 | `scripts/ledger.py` | append-only per-tranche decisions ledger (survives compaction) |
 | `reconcile` / `review` / `verify_ac` | the closing gate + per-unit oracle (reused) |

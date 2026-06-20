@@ -70,6 +70,67 @@ class StageTests(unittest.TestCase):
             self.assertIn("verified", u["missing"])
 
 
+def _record_verdict(root, unit, verdict="approve"):
+    spec = importlib.util.spec_from_file_location("critic", SCRIPT.parent / "critic.py")
+    m = importlib.util.module_from_spec(spec)
+    sys.modules["critic"] = m
+    spec.loader.exec_module(m)
+    m.record_verdict(root, unit, verdict)
+
+
+class CritiqueStageTests(unittest.TestCase):
+    def test_done_without_verdict_not_conformant(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, status="Done", verified="yes")  # no critic verdict
+            u = _units(root)["US0001"]
+            self.assertFalse(u["conformant"])
+            self.assertIn("critiqued", u["missing"])
+
+    def test_done_with_approve_verdict_conformant(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, status="Done", verified="yes")
+            _record_verdict(root, "US0001", "approve")
+            u = _units(root)["US0001"]
+            self.assertNotIn("critiqued", u["missing"])
+            self.assertTrue(u["stages"]["critiqued"])
+
+    def test_done_with_reject_verdict_not_conformant(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, status="Done", verified="yes")
+            _record_verdict(root, "US0001", "reject")
+            u = _units(root)["US0001"]
+            self.assertIn("critiqued", u["missing"])  # unresolved REJECT
+
+
+class ReconciledStageTests(unittest.TestCase):
+    def test_done_with_index_drift_not_reconciled(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, status="Done", verified="yes")
+            _record_verdict(root, "US0001", "approve")  # isolate the reconciled stage
+            # index says Ready while the file says Done -> status-mismatch
+            (root / "sdlc-studio" / "stories" / "_index.md").write_text(
+                "# Stories\n\n| ID | Title | Status |\n|---|---|---|\n"
+                "| [US0001](US0001-sample.md) | sample | Ready |\n", encoding="utf-8")
+            u = _units(root)["US0001"]
+            self.assertIn("reconciled", u["missing"])
+            self.assertFalse(u["stages"]["reconciled"])
+
+    def test_done_absent_from_index_not_reconciled(self) -> None:
+        # A Done story missing from the index (missing-row) is not reconciled.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, status="Done", verified="yes")
+            _record_verdict(root, "US0001", "approve")
+            (root / "sdlc-studio" / "stories" / "_index.md").write_text(
+                "# Stories\n\n| ID | Title | Status |\n|---|---|---|\n", encoding="utf-8")
+            u = _units(root)["US0001"]
+            self.assertIn("reconciled", u["missing"])
+
+
 class CliTests(unittest.TestCase):
     def test_exit_and_shape(self) -> None:
         with tempfile.TemporaryDirectory() as d:

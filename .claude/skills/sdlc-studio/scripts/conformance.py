@@ -3,12 +3,11 @@
 
 Asserts each unit (story) passed through the required lifecycle stages -
 decomposed (an Epic link), specified (at least one AC), verifiable (a `Verify:`
-line), and for Done stories verified (AC marked `Verified: yes/manual`). Exits
-non-zero on any non-conformant unit, so the autosprint loop cannot mark a unit
-Done with a stage silently skipped. Read-only over the workspace; pure stdlib.
-
-The reconciled and reviewed stages are layered in later; this v1 covers the
-structural core that the loop produces per story.
+line), and for Done stories: verified (AC marked `Verified: yes/manual`),
+reconciled (no index drift, via reconcile), and critiqued (a committed
+independent-critic APPROVE, via critic.py). Exits non-zero on any non-conformant
+unit, so the autosprint loop cannot mark a unit Done with a stage silently
+skipped - including skipping the critic (CR0023). Read-only; pure stdlib.
 """
 from __future__ import annotations
 
@@ -19,6 +18,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
+import reconcile  # noqa: E402  (sibling scripts; scripts dir is on sys.path)
+import critic  # noqa: E402
 
 
 def detect_conformance(repo_root: Path | str) -> dict:
@@ -30,6 +31,13 @@ def detect_conformance(repo_root: Path | str) -> dict:
     """
     root = Path(repo_root)
     vocab = sdlc_md.STATUS_VOCAB.get("story", [])
+    # A story is "reconciled" only if its index row matches and exists: a drifted
+    # status (status-mismatch) or a story absent from the index (missing-row) both
+    # fail it, and a missing index file fails every story.
+    _drift = reconcile.detect_type("story", root)["drift"]
+    _no_index = any(d["kind"] == "missing-index" for d in _drift)
+    drift_ids = {sdlc_md.norm_id(d["id"]) for d in _drift
+                 if d.get("id") and d["kind"] in ("status-mismatch", "missing-row")}
     units: list[dict] = []
     ok = 0
     for path in sdlc_md.artifact_files("story", root):
@@ -47,18 +55,23 @@ def detect_conformance(repo_root: Path | str) -> dict:
             m = sdlc_md.VERIFIED_RE.match(line)
             if m:
                 verified_states.append(m.group(2).lower())
-        verified = None
+        verified = reconciled = critiqued = None
         if status == "Done":
             verified = bool(verified_states) and all(v in ("yes", "manual") for v in verified_states)
+            reconciled = (not _no_index) and sdlc_md.norm_id(rid) not in drift_ids
+            verdict = critic.verdict_for(root, rid)
+            critiqued = bool(verdict) and verdict["verdict"] == critic.APPROVE
         stages = {
             "decomposed": decomposed,
             "specified": has_ac,
             "verifiable": has_verify,
             "verified": verified,
+            "reconciled": reconciled,
+            "critiqued": critiqued,
         }
         required = ["decomposed", "specified", "verifiable"]
         if status == "Done":
-            required.append("verified")
+            required += ["verified", "reconciled", "critiqued"]
         missing = [s for s in required if not stages[s]]
         conformant = not missing
         ok += int(conformant)
