@@ -56,6 +56,80 @@ class OrderTests(unittest.TestCase):
             self.assertEqual([b["priority"] for b in batch], ["Critical", "Medium", "Low"])
 
 
+def _cr_dep(root, num, priority="Medium", depends=None, status="Proposed"):
+    d = root / "sdlc-studio" / "change-requests"
+    d.mkdir(parents=True, exist_ok=True)
+    body = f"# CR-{num:04d}: c\n\n> **Status:** {status}\n> **Priority:** {priority}\n"
+    if depends:
+        body += f"> **Depends on:** {depends}\n"
+    (d / f"CR{num:04d}-x.md").write_text(body, encoding="utf-8")
+
+
+class DepsOrderTests(unittest.TestCase):
+    def test_deps_first_overrides_priority(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr_dep(root, 1, priority="Low")                      # A (Low)
+            _cr_dep(root, 2, priority="High", depends="CR0001")   # B (High) needs A
+            ids = [b["id"] for b in _load().select_batch(root, "cr", "Proposed")]
+            self.assertLess(ids.index("CR0001"), ids.index("CR0002"))  # A before B
+
+    def test_cycle_raises(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr_dep(root, 1, depends="CR0002")
+            _cr_dep(root, 2, depends="CR0001")
+            with self.assertRaises(ValueError):
+                _load().select_batch(root, "cr", "Proposed")
+
+    def test_out_of_batch_dep_ignored(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr_dep(root, 2, priority="High", depends="CR9099")  # dep not in batch
+            ids = [b["id"] for b in _load().select_batch(root, "cr", "Proposed")]
+            self.assertEqual(ids, ["CR0002"])  # ordered by priority, no error
+
+    def test_prose_id_is_not_a_dependency(self) -> None:
+        # "see CR0001 for background" must NOT create a phantom ordering edge.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr_dep(root, 1, priority="Low")
+            _cr_dep(root, 2, priority="High", depends="see CR0001 for background")
+            ids = [b["id"] for b in _load().select_batch(root, "cr", "Proposed")]
+            self.assertEqual(ids, ["CR0002", "CR0001"])  # priority order, no phantom dep
+
+    def test_parenthetical_dep_parsed(self) -> None:
+        # "CR0001 (referential integrity)" IS a dependency (leading ID token).
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr_dep(root, 1, priority="Low")
+            _cr_dep(root, 2, priority="High", depends="CR0001 (referential integrity)")
+            ids = [b["id"] for b in _load().select_batch(root, "cr", "Proposed")]
+            self.assertLess(ids.index("CR0001"), ids.index("CR0002"))
+
+    def test_transitive_chain_and_diamond(self) -> None:
+        mod = _load()
+        chain = mod._topo_order(
+            [{"id": "C", "priority": "High"}, {"id": "B", "priority": "High"}, {"id": "A", "priority": "High"}],
+            {"C": {"B"}, "B": {"A"}, "A": set()})
+        self.assertEqual([i["id"] for i in chain], ["A", "B", "C"])
+        diamond = mod._topo_order(
+            [{"id": "D", "priority": "High"}, {"id": "B", "priority": "High"},
+             {"id": "C", "priority": "High"}, {"id": "A", "priority": "High"}],
+            {"D": {"B", "C"}, "B": {"A"}, "C": {"A"}, "A": set()})
+        order = [i["id"] for i in diamond]
+        self.assertEqual(order[0], "A")
+        self.assertEqual(order[-1], "D")
+
+    def test_cmd_plan_returns_nonzero_on_cycle(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr_dep(root, 1, depends="CR0002")
+            _cr_dep(root, 2, depends="CR0001")
+            rc = _load().main(["plan", "--crs", "Proposed", "--root", str(root)])
+            self.assertEqual(rc, 2)
+
+
 class CliTests(unittest.TestCase):
     def test_plan_json(self) -> None:
         with tempfile.TemporaryDirectory() as d:

@@ -17,3 +17,4 @@
 | US0007 | APPROVE | backfill-closing-gate | 2026-06-20 | - |
 | US0008 | APPROVE | backfill-closing-gate | 2026-06-20 | - |
 | US0017 | APPROVE | independent-critic | 2026-06-20 | approved after broadening reconciled to missing-row + no-index |
+| US0018 | APPROVE | independent-critic | 2026-06-20 | approved after fixing prose-id phantom edges |

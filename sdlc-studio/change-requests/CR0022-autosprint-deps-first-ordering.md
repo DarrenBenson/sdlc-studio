@@ -1,6 +1,6 @@
 # CR-0022: Dependency-first ordering in autosprint plan
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** High
 > **Type:** Feature
 > **Requester:** Autosprint (determinism-sprint retro)
@@ -52,13 +52,14 @@ batch with no in-batch dependencies.
 
 ## Acceptance Criteria
 
-- [ ] Given units B (High) depends-on A (Low), both in the batch, `plan` orders A before B despite priority.
-- [ ] Given a dependency cycle A->B->A, `plan` aborts non-zero naming the cycle.
-- [ ] Given a dependency on a unit outside the batch, ordering does not reorder for it; the audit reports it as `unmet-deps`.
-- [ ] Priority/severity remains the tiebreak among units with no ordering constraint. Unit-tested.
+- [x] Given units B (High) depends-on A (Low), both in the batch, `plan` orders A before B despite priority.
+- [x] Given a dependency cycle A->B->A, `plan` aborts non-zero naming the cycle.
+- [x] Given a dependency on a unit outside the batch, ordering does not reorder for it; the audit reports it as `unmet-deps`.
+- [x] Priority/severity remains the tiebreak among units with no ordering constraint. Unit-tested.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (tooling-honesty-sprint) | Complete - US0018: _topo_order (Kahn, priority tiebreak, cycle aborts); critic-approved after fixing prose-id phantom edges |
 | 2026-06-20 | Autosprint (determinism-sprint retro) | Raised - ordering ignores Depends on; CR0021 had to be hand-sequenced after CR0003 |

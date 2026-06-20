@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 12 |
+| Done | 13 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
-| **Total** | **17** |
+| **Total** | **18** |
 
 ## All Stories
 
@@ -39,3 +39,4 @@
 | [US0015](US0015-config-single-source.md) | Config single source | Done | EP0008 | 2026-06-20 | 2026-06-20 |
 | [US0016](US0016-epic-implement-resume.md) | epic implement --resume | Done | EP0007 | 2026-06-20 | 2026-06-20 |
 | [US0017](US0017-conformance-completion.md) | Conformance gate completion | Done | EP0007 | 2026-06-20 | 2026-06-20 |
+| [US0018](US0018-deps-first-ordering.md) | Dependency-first batch ordering | Done | EP0007 | 2026-06-20 | 2026-06-20 |

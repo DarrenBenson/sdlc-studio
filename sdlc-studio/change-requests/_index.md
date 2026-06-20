@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 9 |
+| Proposed | 8 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 13 |
+| Complete | 14 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -41,5 +41,5 @@
 | [CR-0019](CR0019-progressive-disclosure-archived-indexes.md) | Progressive-disclosure indexes with release archival | Superseded | High | Improvement | 2026-06-20 | -- |
 | [CR-0020](CR0020-autosprint-phase2-guardrails-ledger.md) | Autosprint Phase 2 - deterministic guardrails, decisions ledger, autonomous wiring | Complete | High | Feature | 2026-06-20 | EP0007 |
 | [CR-0021](CR0021-autosprint-tranche-audit-step.md) | Autosprint tranche-audit step (pre-flight grooming) | Complete | High | Feature | 2026-06-20 | EP0007 |
-| [CR-0022](CR0022-autosprint-deps-first-ordering.md) | Dependency-first ordering in autosprint plan | Proposed | High | Feature | 2026-06-20 | -- |
+| [CR-0022](CR0022-autosprint-deps-first-ordering.md) | Dependency-first ordering in autosprint plan | Complete | High | Feature | 2026-06-20 | -- |
 | [CR-0023](CR0023-complete-conformance-gate.md) | Complete the conformance gate - reconciled, reviewed, and a recorded critic verdict | Complete | High | Feature | 2026-06-20 | -- |

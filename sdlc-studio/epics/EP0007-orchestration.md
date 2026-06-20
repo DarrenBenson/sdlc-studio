@@ -67,6 +67,7 @@ Autosprint (RFC0001) is this epic's centrepiece; Phase 1 delivered:
 - [x] [US0013: Tranche-audit step](../stories/US0013-tranche-audit-step.md) (CR0021, determinism sprint)
 - [x] [US0016: epic implement --resume](../stories/US0016-epic-implement-resume.md) (CR0007, determinism sprint)
 - [x] [US0017: Conformance gate completion](../stories/US0017-conformance-completion.md) (CR0023, tooling-honesty sprint)
+- [x] [US0018: Dependency-first batch ordering](../stories/US0018-deps-first-ordering.md) (CR0022, tooling-honesty sprint)
 - [ ] US: Project plan (dependency graph + wave estimate)
 - [ ] US: Project implement (resume, commit/reconcile/review checkpoints)
 - [ ] US: Epic agentic wave execution
