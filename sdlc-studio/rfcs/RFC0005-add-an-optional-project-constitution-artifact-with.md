@@ -53,4 +53,5 @@ Project-specific rules (security requirements, mandated patterns) are not enforc
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (rfc-decide session) | Decision session 2026-06-20: deferred - revisit when a consuming project needs a machine-checkable principle gate; scope then to structurally-checkable principles only. |
 | 2026-06-20 | Adversarial Audit | Filed from the 2026-06-20 audit (lens: external-benchmark) |

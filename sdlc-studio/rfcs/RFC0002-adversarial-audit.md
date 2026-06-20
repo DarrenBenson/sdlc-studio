@@ -1,6 +1,6 @@
 # RFC-0002: Adversarial Audit (`/sdlc-studio audit`) as a first-class capability
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Priority:** High
 > **Author:** Darren Benson
 > **Date:** 2026-06-20
@@ -100,12 +100,12 @@ profile; the project profile is the headline.
 
 | # | Decision | Options | Owner | How it resolves | Status |
 | --- | --- | --- | --- | --- | --- |
-| D1 | Command vs mode | new `audit` command **[leaning]** / `review --adversarial` | Operator | matches Option B/A | Open |
-| D2 | Harness runtime | Workflow tool (Claude-only) / portable prompt harness (tool-neutral) **[leaning]** / both | Design | tool-neutrality vs power; lean portable-first | Open |
-| D3 | Verify threshold | 3-vote >=2/3 **[proven]** / N-of-M configurable / per-severity | Design | the run validated 3-vote; make N configurable | Open |
-| D4 | Filing default | auto-file **[run default]** / triage-then-approve / per-severity (auto low-risk, triage structural) | Operator | balance speed vs control | Open |
-| D5 | Lens profiles | which per-artifact lenses ship in the project profile; how packs are declared/extended | Design | derive from the per-type pressure-tests below | Open |
-| D6 | Token budget per profile | hard cap + loop-until-dry round limit; the skill profile cost ~6M tokens | Operator | set a default budget; expose `--budget` | Open |
+| D1 | Command vs mode | new `audit` command **[leaning]** / `review --adversarial` | Operator | matches Option B/A | Resolved |
+| D2 | Harness runtime | Workflow tool (Claude-only) / portable prompt harness (tool-neutral) **[leaning]** / both | Design | tool-neutrality vs power; lean portable-first | Resolved |
+| D3 | Verify threshold | 3-vote >=2/3 **[proven]** / N-of-M configurable / per-severity | Design | the run validated 3-vote; make N configurable | Resolved |
+| D4 | Filing default | auto-file **[run default]** / triage-then-approve / per-severity (auto low-risk, triage structural) | Operator | balance speed vs control | Resolved |
+| D5 | Lens profiles | which per-artifact lenses ship in the project profile; how packs are declared/extended | Design | derive from the per-type pressure-tests below | Resolved |
+| D6 | Token budget per profile | hard cap + loop-until-dry round limit; the skill profile cost ~6M tokens | Operator | set a default budget; expose `--budget` | Resolved |
 
 ### Project-profile lens packs (D5 seed)
 
@@ -159,9 +159,11 @@ profile; the project profile is the headline.
 
 > *Filled on acceptance.* Chosen option + rationale + the CRs spawned.
 
-**Outcome:** TBD
-**Rationale:** TBD
-**Spawned CRs:** TBD
+**Outcome:** Accepted (Option A now)
+
+**Rationale:** Ship the portable harness (twice-proven); lock methodology + filer quality before any one-click command. D2 portable-first, D3 N-of-M configurable, D4 triage-first filing, D6 --budget cap.
+
+**Spawned CRs:** WS1 (reference-audit.md + project lens packs) + WS2 (harness templates) + WS3 (deterministic Bug/CR/RFC filer) - created when picked up. WS4 (wired /audit command) deferred until a 3rd run + D4/D6 defaults; WS5 deferred.
 
 ---
 
@@ -179,5 +181,6 @@ profile; the project profile is the headline.
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (rfc-decide session) | Accepted in the RFC decision session - Accepted (Option A now) |
 | 2026-06-20 | Darren Benson | RFC drafted from the 2026-06-20 self-audit run (69→28→18; 41 refuted; 221 agents) |
 | 2026-06-20 | Project Audit | Second proving run, project profile (RV0003): 76→40→23, 36 refuted, 245 agents. Surfaced two harness improvements - default to triage for the project profile, and make the filer produce richer artifacts (the shallow auto-filed CRs/RFCs themselves became findings). |

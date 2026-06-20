@@ -1,6 +1,6 @@
 # RFC-0009: Code-complexity signals for estimation, token budgeting, refactor-first and test risk
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Priority:** High
 > **Author:** Darren Benson
 > **Date:** 2026-06-20
@@ -134,12 +134,12 @@ output advisory.
 
 | # | Decision | Options | Owner | How it resolves | Status |
 | --- | --- | --- | --- | --- | --- |
-| D1 | Which metric(s) | cyclomatic only / + cognitive **[leaning]** (own stdlib scorer or complexipy) / + Halstead / track LM-CC | Design | start cognitive + cyclomatic; revisit with data | Open |
-| D2 | Core dependency | own stdlib cognitive scorer **[leaning]** / soft-dep lizard for multi-language / required dep | Operator | stdlib-first + lizard soft dep; no embeddable multi-language cognitive lib exists | Open |
-| D3 | Refactor-first behaviour | recommend **[leaning]** / block above threshold / silent score only | Operator | recommend, configurable threshold | Open |
-| D4 | Unit of measure | function / file / change blast-radius (function + repo_map neighbourhood) **[leaning]** | Design | blast-radius best predicts agent cost | Open |
-| D5 | What consumes it | estimation / token budget (RFC0001) / wave sizing / test risk - which first | Operator | phase: estimation + refactor reco first | Open |
-| D6 | Refactor-scope guard | how to stop speculative over-refactoring (Beck "make the change easy", scoped) | Design | scope the refactor CR to the change only | Open |
+| D1 | Which metric(s) | cyclomatic only / + cognitive **[leaning]** (own stdlib scorer or complexipy) / + Halstead / track LM-CC | Design | start cognitive + cyclomatic; revisit with data | Resolved |
+| D2 | Core dependency | own stdlib cognitive scorer **[leaning]** / soft-dep lizard for multi-language / required dep | Operator | stdlib-first + lizard soft dep; no embeddable multi-language cognitive lib exists | Resolved |
+| D3 | Refactor-first behaviour | recommend **[leaning]** / block above threshold / silent score only | Operator | recommend, configurable threshold | Resolved |
+| D4 | Unit of measure | function / file / change blast-radius (function + repo_map neighbourhood) **[leaning]** | Design | blast-radius best predicts agent cost | Resolved |
+| D5 | What consumes it | estimation / token budget (RFC0001) / wave sizing / test risk - which first | Operator | phase: estimation + refactor reco first | Resolved |
+| D6 | Refactor-scope guard | how to stop speculative over-refactoring (Beck "make the change easy", scoped) | Design | scope the refactor CR to the change only | Resolved |
 
 ---
 
@@ -181,9 +181,11 @@ output advisory.
 
 > *Filled on acceptance.* Chosen option + rationale + the CRs spawned.
 
-**Outcome:** TBD
-**Rationale:** TBD
-**Spawned CRs:** TBD
+**Outcome:** Accepted (scoped)
+
+**Rationale:** Adopt cognitive + cyclomatic complexity from the AST repo_map (D1); stdlib-first cognitive scorer + lizard soft dep (D2); recommend-not-block, configurable threshold (D3); change blast-radius unit (D4); estimation + refactor-first first (D5); refactor CR scoped to the change (D6).
+
+**Spawned CRs:** WS1 (complexity in repo_map) + WS2 (code plan estimation + refactor-first reco) - created when picked up. WS3 (loop token-budget, unlocks --order wsjf) deferred until RFC0001 consumes it; WS4/WS5 and the composite score deferred until calibration data exists.
 
 ---
 
@@ -202,5 +204,6 @@ output advisory.
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (rfc-decide session) | Accepted in the RFC decision session - Accepted (scoped) |
 | 2026-06-20 | Darren Benson | RFC drafted - complexity signals for estimation, token budget, refactor-first, test risk |
 | 2026-06-20 | Darren Benson | Folded in the cognitive-complexity algorithm + open-source tooling landscape (complexipy/lizard/radon); sharpened D1/D2 to "own stdlib Python scorer + lizard soft dep" |

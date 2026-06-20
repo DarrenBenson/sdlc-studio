@@ -1,6 +1,6 @@
 # RFC-0003: Promote reconcile's mechanical apply into the script; current Phase-3 apply is prose and the documented idempotency guarantee is false
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Priority:** High
 > **Author:** Adversarial Audit
 > **Date:** 2026-06-20
@@ -34,7 +34,7 @@ TBD - pending the Open Decision below.
 
 | # | Decision | Options | Owner | How it resolves | Status |
 | --- | --- | --- | --- | --- | --- |
-| D1 | Act on this finding or keep status quo | Option A / Option B | Operator | spike or operator call | Open |
+| D1 | Act on this finding or keep status quo | Option A / Option B | Operator | spike or operator call | Resolved |
 
 ## Evidence
 
@@ -46,11 +46,15 @@ The largest token cost and largest drift-correctness risk in the skill: every re
 
 ## Decision
 
-**Outcome:** TBD
-**Rationale:** TBD
+**Outcome:** Accepted (Option A, scoped)
+
+**Rationale:** Highest value (removes the biggest token cost + drift risk) but highest corruption risk, so the dry-run contract + round-trip idempotency tests are non-negotiable scope.
+
+**Spawned CRs:** One CR: reconcile `apply` subcommand behind --dry-run, mechanical classes only (index Status cells, counts, AC checkboxes, dependency Status), idempotency tests in the same CR; CR-completion + PRD prose stay report-only. Created when picked up.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (rfc-decide session) | Accepted in the RFC decision session - Accepted (Option A, scoped) |
 | 2026-06-20 | Adversarial Audit | Filed from the 2026-06-20 audit (lens: determinism) |

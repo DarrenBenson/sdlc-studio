@@ -1,6 +1,6 @@
 # RFC-0008: Consolidate the 5-file test reference clique (~2030 lines, triplicated anti-patterns, two files unreachable from the router)
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Priority:** Medium
 > **Author:** Adversarial Audit
 > **Date:** 2026-06-20
@@ -34,7 +34,7 @@ TBD - pending the Open Decision below.
 
 | # | Decision | Options | Owner | How it resolves | Status |
 | --- | --- | --- | --- | --- | --- |
-| D1 | Act on this finding or keep status quo | Option A / Option B | Operator | spike or operator call | Open |
+| D1 | Act on this finding or keep status quo | Option A / Option B | Operator | spike or operator call | Resolved |
 
 ## Evidence
 
@@ -46,11 +46,15 @@ Choosing TDD pulls test-best-practices.md (24KB) which fans out across four more
 
 ## Decision
 
-**Outcome:** TBD
-**Rationale:** TBD
+**Outcome:** Accepted (Option A, A2)
+
+**Rationale:** Triplication + undiscoverability are clear defects worth fixing; full file-merge is higher-churn and reversible, so expose-don't-merge (A2) is the safer default.
+
+**Spawned CRs:** CRs: (1) dedup the anti-patterns into one #test-anti-patterns section + delete reference-test-pitfalls.md; (2) add Progressive Loading Guide rows for test-validation.md + test-e2e-guidelines.md. Created when picked up.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (rfc-decide session) | Accepted in the RFC decision session - Accepted (Option A, A2) |
 | 2026-06-20 | Adversarial Audit | Filed from the 2026-06-20 audit (lens: over-engineering) |

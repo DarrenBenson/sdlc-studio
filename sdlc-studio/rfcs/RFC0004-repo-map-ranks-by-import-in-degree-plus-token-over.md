@@ -1,6 +1,6 @@
 # RFC-0004: repo_map ranks by import in-degree plus token overlap only; decide between an Aider-style PageRank symbol graph or explicitly scoping it down
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Priority:** Medium
 > **Author:** Adversarial Audit
 > **Date:** 2026-06-20
@@ -34,7 +34,7 @@ TBD - pending the Open Decision below.
 
 | # | Decision | Options | Owner | How it resolves | Status |
 | --- | --- | --- | --- | --- | --- |
-| D1 | Act on this finding or keep status quo | Option A / Option B | Operator | spike or operator call | Open |
+| D1 | Act on this finding or keep status quo | Option A / Option B | Operator | spike or operator call | Resolved |
 
 ## Evidence
 
@@ -46,11 +46,15 @@ repo map build feeds the Agent Prompt Template's ranked file list - the implemen
 
 ## Decision
 
-**Outcome:** TBD
-**Rationale:** TBD
+**Outcome:** Accepted (Option A(b))
+
+**Rationale:** A(a) PageRank is a high-effort multi-parser build cutting against the pure-stdlib design; A(b) closes the honesty gap cheaply and is reversible if edit-accuracy harm is later shown.
+
+**Spawned CRs:** One CR: redocument repo_map as a lexical relevance ranker + offer Aider/RepoMapper as a soft dependency. A(a) deferred. Created when picked up.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (rfc-decide session) | Accepted in the RFC decision session - Accepted (Option A(b)) |
 | 2026-06-20 | Adversarial Audit | Filed from the 2026-06-20 audit (lens: external-benchmark) |

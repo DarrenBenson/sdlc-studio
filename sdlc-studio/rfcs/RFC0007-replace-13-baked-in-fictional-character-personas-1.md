@@ -1,6 +1,6 @@
 # RFC-0007: Replace 13 baked-in fictional-character personas (~1680 lines) with template plus generate-on-demand
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Priority:** Medium
 > **Author:** Adversarial Audit
 > **Date:** 2026-06-20
@@ -34,7 +34,7 @@ TBD - pending the Open Decision below.
 
 | # | Decision | Options | Owner | How it resolves | Status |
 | --- | --- | --- | --- | --- | --- |
-| D1 | Act on this finding or keep status quo | Option A / Option B | Operator | spike or operator call | Open |
+| D1 | Act on this finding or keep status quo | Option A / Option B | Operator | spike or operator call | Resolved |
 
 ## Evidence
 
@@ -46,11 +46,15 @@ Every install carries ~1680 lines of fictional biography most consuming projects
 
 ## Decision
 
-**Outcome:** TBD
-**Rationale:** TBD
+**Outcome:** Accepted (Option A)
+
+**Rationale:** Low-effort alignment win with the Create-vs-Generate philosophy; deletion must follow a confirmed generator path, not precede it.
+
+**Spawned CRs:** One CR: confirm `persona create` generates from template + seed, remove the 13 baked character files, wire reference-persona to the seed, add a migration note. Created when picked up.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (rfc-decide session) | Accepted in the RFC decision session - Accepted (Option A) |
 | 2026-06-20 | Adversarial Audit | Filed from the 2026-06-20 audit (lens: over-engineering) |

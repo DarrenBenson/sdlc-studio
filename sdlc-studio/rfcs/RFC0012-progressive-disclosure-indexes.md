@@ -166,4 +166,5 @@ independent first win while B is built.
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (rfc-decide session) | Decision session 2026-06-20: deferred the archival machinery (WS1-3) - high value only at scale, this repo is small; WS4 slice-read can be picked up anytime. Revisit at an index size threshold. |
 | 2026-06-20 | Darren Benson | Promoted from CR0019; weighs cascade vs archive-junction vs threshold vs read-time PD |
