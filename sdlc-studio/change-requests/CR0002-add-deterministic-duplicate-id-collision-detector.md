@@ -1,6 +1,6 @@
 # CR-0002: Add deterministic duplicate-ID / collision detector; census scripts silently collapse colliding IDs
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** High
 > **Type:** Improvement
 > **Requester:** Adversarial Audit
@@ -33,7 +33,7 @@ The one failure mode the doctrine explicitly warns about, and demonstrably hit 8
 
 ## Acceptance Criteria
 
-- [ ] Change implemented and verified; lint and tests green.
+- [x] Change implemented and verified; lint and tests green.
 
 ## Out of Scope
 

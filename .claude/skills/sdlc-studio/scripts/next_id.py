@@ -7,8 +7,9 @@ Scans local files and, with --remote, the highest number already on
 `origin/main` (read-only `git ls-tree`, no fetch - the caller fetches first).
 
 Subcommands:
-  allocate  Print the next free ID for a type.
-  scan      List every ID currently used for a type.
+  allocate    Print the next free ID for a type.
+  scan        List every ID currently used for a type.
+  collisions  Flag any normalised ID claimed by more than one file.
 
 Output: text (the ID) by default, or JSON with --format json.
 """
@@ -116,6 +117,56 @@ def cmd_scan(args: argparse.Namespace) -> int:
     return 0
 
 
+def detect_collisions(repo_root: Path | str) -> dict:
+    """Find every normalised artifact ID claimed by more than one file.
+
+    Scans all artifact types under repo_root, normalises each file's ID
+    (`CR0007` and `CR-0007` collapse to one key), groups files by that key,
+    and flags any key backed by more than one distinct file. Returns the
+    documented shape:
+
+        { "duplicates": [ { "id", "files": [<sorted paths>] } ], "count" }
+
+    `duplicates` is sorted by normalised ID; `files` within each group are
+    sorted. `count` equals len(duplicates).
+    """
+    root = Path(repo_root)
+    groups: dict[str, set[str]] = {}
+    for type_ in sdlc_md.ARTIFACT_TYPES:
+        for path in sdlc_md.artifact_files(type_, root):
+            rec = sdlc_md.extract_record_id(path.stem)
+            if not rec:
+                continue
+            key = sdlc_md.norm_id(rec)
+            groups.setdefault(key, set()).add(str(path))
+    duplicates = [
+        {"id": key, "files": sorted(files)}
+        for key, files in sorted(groups.items())
+        if len(files) > 1
+    ]
+    return {"duplicates": duplicates, "count": len(duplicates)}
+
+
+def cmd_collisions(args: argparse.Namespace) -> int:
+    """Report duplicate artifact IDs; exit non-zero if any are found."""
+    repo_root = Path(args.root).resolve()
+    result = detect_collisions(repo_root)
+    if args.format == "json":
+        print(json.dumps(result, indent=2))
+    else:
+        for group in result["duplicates"]:
+            print(f"{group['id']}:")
+            for path in group["files"]:
+                print(f"  {path}")
+        if result["count"]:
+            print(
+                f"# {result['count']} duplicate ID(s)", file=sys.stderr
+            )
+        else:
+            print("# no duplicate IDs", file=sys.stderr)
+    return 1 if result["count"] else 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Construct the argparse parser for allocate and scan."""
     p = argparse.ArgumentParser(
@@ -138,6 +189,14 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--root", default=".", help="Repo root (default: .)")
     s.add_argument("--format", choices=("text", "json"), default="text")
     s.set_defaults(func=cmd_scan)
+
+    c = sub.add_parser(
+        "collisions",
+        help="Flag any normalised ID claimed by more than one file.",
+    )
+    c.add_argument("--root", default=".", help="Repo root (default: .)")
+    c.add_argument("--format", choices=("text", "json"), default="text")
+    c.set_defaults(func=cmd_collisions)
 
     return p
 

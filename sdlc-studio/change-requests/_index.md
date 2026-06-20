@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 14 |
+| Proposed | 13 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 3 |
+| Complete | 4 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
@@ -21,7 +21,7 @@
 | ID | Title | Status | Priority | Type | Date | Linked Epics |
 | --- | --- | --- | --- | --- | --- | --- |
 | [CR-0001](CR0001-doc-accuracy-fixes.md) | Documentation accuracy - command-vs-script scope and metadata convention | Complete | Medium | Improvement | 2026-06-20 | -- |
-| [CR-0002](CR0002-add-deterministic-duplicate-id-collision-detector.md) | Add deterministic duplicate-ID / collision detector; census scripts silently collapse colliding IDs | Proposed | High | Improvement | 2026-06-20 | -- |
+| [CR-0002](CR0002-add-deterministic-duplicate-id-collision-detector.md) | Add deterministic duplicate-ID / collision detector; census scripts silently collapse colliding IDs | Complete | High | Improvement | 2026-06-20 | -- |
 | [CR-0003](CR0003-add-referential-integrity-check-for-required-epic.md) | Add referential-integrity check for required Epic/Story link fields and dangling ID references | Proposed | High | Improvement | 2026-06-20 | -- |
 | [CR-0004](CR0004-review-prep-staleness-uses-filesystem-mtime-and-ra.md) | review_prep staleness uses filesystem mtime and raw-string timestamp comparison, breaking determinism across clones and timestamp formats | Proposed | High | Improvement | 2026-06-20 | -- |
 | [CR-0005](CR0005-verify-ac-py-writes-no-report-in-dry-run-and-overw.md) | verify_ac.py writes no report in dry-run and overwrites a single report with no run history | Proposed | Medium | Improvement | 2026-06-20 | -- |
