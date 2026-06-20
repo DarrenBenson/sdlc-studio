@@ -12,13 +12,13 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 0 |
+| Done | 1 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
 | **Total** | **6** |
 
-## All Storys
+## All Stories
 
 | ID | Title | Status | Epic | Created | Updated |
 | --- | --- | --- | --- | --- | --- |
@@ -27,4 +27,4 @@
 | [US0003](US0003-review-cadence.md) | Unified review with modified-since detection and cadence | Ready | EP0005 | 2026-06-20 | 2026-06-20 |
 | [US0004](US0004-status-hint.md) | Status dashboard and single-step hint | Ready | EP0005 | 2026-06-20 | 2026-06-20 |
 | [US0005](US0005-next-id-allocation.md) | Deterministic next-ID allocation | Ready | EP0008 | 2026-06-20 | 2026-06-20 |
-| [US0006](US0006-duplicate-id-detector.md) | ? | ? | -- | 2026-06-20 | 2026-06-20 |
+| [US0006](US0006-duplicate-id-detector.md) | Deterministic duplicate-ID detector | Done | EP0008 | 2026-06-20 | 2026-06-20 |
