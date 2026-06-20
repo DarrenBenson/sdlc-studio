@@ -112,6 +112,11 @@ def cmd_check(args: argparse.Namespace) -> int:
             mark = "ERR" if f["severity"] == "error" else "adv"
             ref = f" -> {f['ref']}" if f["kind"] == "dangling" else ""
             print(f"  {mark} {f['id']} ({f['status']}): {f['kind']} {f['field']}{ref}")
+        hints = sdlc_md.remediation_lines("integrity", {f["kind"] for f in res["findings"]})
+        if hints:
+            print("Guidance:")
+            for h in hints:
+                print(f"  - {h}")
     return 1 if res["summary"]["errors"] else 0
 
 

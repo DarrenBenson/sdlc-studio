@@ -256,6 +256,11 @@ def cmd_detect(args: argparse.Namespace) -> int:
             ident = d["id"] or d["type"]
             print(f"{d['kind']:16} {ident}: {d['fix']}")
         print(f"scope={report['scope']} drift_items={len(all_drift)} by_kind={by_kind}")
+        hints = sdlc_md.remediation_lines("reconcile", by_kind)
+        if hints:
+            print("Guidance:")
+            for h in hints:
+                print(f"  - {h}")
         if args.write_report:
             print(f"wrote {out_path}")
     return 1 if all_drift else 0

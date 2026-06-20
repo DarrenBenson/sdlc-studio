@@ -140,6 +140,21 @@ class BugLinkTests(unittest.TestCase):
             self.assertEqual(res["summary"]["errors"], 0)
 
 
+class GuidanceTests(unittest.TestCase):
+    def test_guidance_printed(self) -> None:
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, epic=None)  # active story missing Epic -> missing-required
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                _load().main(["check", "--root", str(root)])
+            out = buf.getvalue()
+            self.assertIn("Guidance:", out)
+            self.assertIn("missing-required ->", out)
+
+
 class TerminalTests(unittest.TestCase):
     def test_terminal_missing_is_advisory(self) -> None:
         with tempfile.TemporaryDirectory() as d:

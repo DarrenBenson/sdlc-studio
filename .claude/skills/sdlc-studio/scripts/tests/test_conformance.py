@@ -157,6 +157,21 @@ class ReconciledStageTests(unittest.TestCase):
             self.assertIn("reconciled", u["missing"])
 
 
+class GuidanceTests(unittest.TestCase):
+    def test_guidance_printed_for_missing_stage(self) -> None:
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, epic=False)  # missing decomposed
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                _load().main(["check", "--root", str(root)])
+            out = buf.getvalue()
+            self.assertIn("Guidance:", out)
+            self.assertIn("decomposed ->", out)
+
+
 class CliTests(unittest.TestCase):
     def test_exit_and_shape(self) -> None:
         with tempfile.TemporaryDirectory() as d:

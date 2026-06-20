@@ -152,9 +152,16 @@ def cmd_check(args: argparse.Namespace) -> int:
     else:
         s = res["summary"]
         print(f"tranche audit: {s['ready']}/{s['total']} ready, {s['not_ready']} not")
+        kinds = set()
         for u in res["units"]:
             if not u["ready"]:
                 print(f"  NOT READY {u['id']} ({u['status']}): {'; '.join(u['issues'])}")
+                kinds.update(i.split(":")[0].strip() for i in u["issues"])  # issue may carry a suffix
+        hints = sdlc_md.remediation_lines("audit", kinds)
+        if hints:
+            print("Guidance:")
+            for h in hints:
+                print(f"  - {h}")
     return 1 if res["summary"]["not_ready"] else 0
 
 

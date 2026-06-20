@@ -192,6 +192,46 @@ STATUS_VOCAB: dict[str, list[str]] = {
 }
 
 
+# Remediation hints: per check, a one-line "how to fix" for each finding-kind, so a
+# check tells the operator what to do, not just what is wrong (CR0025). One source
+# reused by every check's text output.
+REMEDIATION: dict[str, dict[str, str]] = {
+    "conformance": {
+        "decomposed": "add the `> **Epic:**` link to the story",
+        "specified": "add an `## Acceptance Criteria` section with at least one AC",
+        "verifiable": "add a `- **Verify:** <cmd>` line per AC (or, if this project does not use executable AC, scope this stage out)",
+        "verified": "run `verify_ac` and back-annotate `- **Verified:** yes` (Done stories)",
+        "reconciled": "index drift - run `reconcile` and fix the row/counts",
+        "critiqued": "record an independent-critic verdict: `critic.py record --unit <id> --verdict approve`",
+    },
+    "integrity": {
+        "missing-required": "add the required link field (Epic/Story); a standalone bug may leave it (advisory)",
+        "dangling": "fix or remove the reference - the id resolves to no artifact on disk",
+    },
+    "audit": {
+        "weak-AC": "replace the placeholder/empty AC with concrete, checkable acceptance criteria",
+        "underspecified": "add Steps to Reproduce and a Proposed Fix to the bug",
+        "unmet-deps": "deliver or re-order the dependency first (it is not yet done)",
+        "already-terminal": "already Complete/Done - drop it from the batch",
+        "link-integrity": "fix the artifact's required links (see the integrity check)",
+        "not-found": "the id matches no artifact on disk - check the batch list",
+    },
+    "reconcile": {
+        "status-mismatch": "set the index row's Status to match the file (or fix the file)",
+        "missing-row": "add an index row for this artifact",
+        "orphan-row": "remove the index row - no file backs it (or restore the file)",
+        "missing-index": "create the type's `_index.md`",
+        "count-mismatch": "recompute the summary counts from the index rows",
+    },
+}
+
+
+def remediation_lines(check: str, kinds) -> list[str]:
+    """Fix-hint lines for the finding-kinds present, in registry (stable) order."""
+    present = set(kinds)
+    return [f"{kind} -> {hint}" for kind, hint in REMEDIATION.get(check, {}).items() if kind in present]
+
+
 def norm_id(rec: str) -> str:
     """Case- and punctuation-insensitive comparison key for an artifact ID.
 

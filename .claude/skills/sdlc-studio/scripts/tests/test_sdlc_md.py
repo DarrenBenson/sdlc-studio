@@ -218,5 +218,34 @@ class HouseTemplateTests(unittest.TestCase):
         self.assertIsNotNone(sdlc_md.VERIFIED_RE.match("- **Verified:** no"))
 
 
+class RemediationTests(unittest.TestCase):
+    def test_lines_for_present_kinds_in_registry_order(self) -> None:
+        lines = sdlc_md.remediation_lines("conformance", {"critiqued", "decomposed"})
+        self.assertEqual([l.split(" ->")[0] for l in lines], ["decomposed", "critiqued"])
+        self.assertTrue(all(" -> " in l for l in lines))
+
+    def test_absent_kind_yields_no_line(self) -> None:
+        self.assertEqual(sdlc_md.remediation_lines("integrity", {"not-a-kind"}), [])
+
+    def test_unknown_check_is_empty(self) -> None:
+        self.assertEqual(sdlc_md.remediation_lines("nope", {"dangling"}), [])
+
+    def test_registry_covers_every_emitted_finding_kind(self) -> None:
+        # Contract: each check's registry keys are exactly the finding-kinds it can
+        # emit, and every hint is non-empty - so adding a finding-kind without a
+        # hint (or emptying one) fails here instead of silently giving no guidance.
+        expected = {
+            "conformance": {"decomposed", "specified", "verifiable", "verified", "reconciled", "critiqued"},
+            "integrity": {"missing-required", "dangling"},
+            "audit": {"weak-AC", "unmet-deps", "already-terminal", "link-integrity", "underspecified", "not-found"},
+            "reconcile": {"status-mismatch", "missing-row", "orphan-row", "missing-index", "count-mismatch"},
+        }
+        for check, kinds in expected.items():
+            reg = sdlc_md.REMEDIATION[check]
+            self.assertEqual(set(reg), kinds, f"{check} registry keys drift from its finding-kinds")
+            for k, hint in reg.items():
+                self.assertTrue(hint.strip(), f"{check}.{k} has an empty hint")
+
+
 if __name__ == "__main__":
     unittest.main()

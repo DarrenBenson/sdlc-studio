@@ -108,9 +108,21 @@ def cmd_check(args: argparse.Namespace) -> int:
     else:
         s = result["summary"]
         print(f"conformance: {s['conformant']}/{s['total']} conformant, {s['nonconformant']} not")
+        tally: dict[str, int] = {}
         for u in result["units"]:
             if not u["conformant"]:
                 print(f"  {u['id']} ({u['status']}): missing {', '.join(u['missing'])}")
+                for m in u["missing"]:
+                    tally[m] = tally.get(m, 0) + 1
+        hints = sdlc_md.remediation_lines("conformance", tally)
+        if hints:
+            print("Guidance:")
+            for h in hints:
+                print(f"  - {h}")
+            bulk = sorted(k for k, c in tally.items() if s["total"] >= 3 and c >= 0.8 * s["total"])
+            if bulk:
+                print(f"  note: most units miss {', '.join(bulk)} - likely an unadopted "
+                      "discipline or template shape, not per-unit drift; adopt it or scope conformance.")
     return 1 if result["summary"]["nonconformant"] else 0
 
 

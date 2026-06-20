@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 16 |
+| Done | 17 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
-| **Total** | **21** |
+| **Total** | **22** |
 
 ## All Stories
 
@@ -43,3 +43,4 @@
 | [US0019](US0019-verify-ac-report-history.md) | verify_ac report history and dry-run record | Done | EP0005 | 2026-06-20 | 2026-06-20 |
 | [US0020](US0020-verify-ac-graded-verifier.md) | verify_ac graded (eval) verifier verb | Done | EP0005 | 2026-06-20 | 2026-06-20 |
 | [US0021](US0021-rfc-decide-session.md) | rfc decide - multi-RFC decision session | Done | EP0006 | 2026-06-20 | 2026-06-20 |
+| [US0022](US0022-checks-remediation-guidance.md) | deterministic checks emit remediation guidance | Done | EP0005 | 2026-06-20 | 2026-06-20 |

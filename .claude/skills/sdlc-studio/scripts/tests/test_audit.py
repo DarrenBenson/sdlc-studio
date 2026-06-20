@@ -174,6 +174,21 @@ class BugReadinessTests(unittest.TestCase):
             self.assertTrue(u["ready"], u["issues"])
 
 
+class GuidanceTests(unittest.TestCase):
+    def test_guidance_printed(self) -> None:
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1, ac=TAUTOLOGY)  # weak-AC -> not ready
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                _load().main(["check", "--ids", "CR0001", "--root", str(root)])
+            out = buf.getvalue()
+            self.assertIn("Guidance:", out)
+            self.assertIn("weak-AC ->", out)
+
+
 class CliTests(unittest.TestCase):
     def test_batch_json_and_exit(self) -> None:
         with tempfile.TemporaryDirectory() as d:

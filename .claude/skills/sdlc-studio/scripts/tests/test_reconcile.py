@@ -157,6 +157,21 @@ class DriftTests(unittest.TestCase):
             self.assertIn("missing-index", kinds)
 
 
+class GuidanceTests(unittest.TestCase):
+    def test_guidance_printed(self) -> None:
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)  # yields status-mismatch + missing-row + orphan-row
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                reconcile.main(["detect", "--scope", "stories", "--root", str(root)])
+            out = buf.getvalue()
+            self.assertIn("Guidance:", out)
+            self.assertIn("status-mismatch ->", out)
+
+
 class NormalisationTests(unittest.TestCase):
     """Regression cover for the four false-positive classes fixed 2026-06-10."""
 
