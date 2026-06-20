@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -77,7 +78,10 @@ def _table_cells(line: str) -> list[str] | None:
     s = line.strip()
     if not s.startswith("|"):
         return None
-    cells = [c.strip() for c in s.strip("|").split("|")]
+    # Split on UNescaped pipes only, then unescape `\|` - a cell may legitimately
+    # contain a pipe (e.g. a title `string \| string[]`); a naive split shifts
+    # every column after it and misreads the row.
+    cells = [c.replace("\\|", "|").strip() for c in re.split(r"(?<!\\)\|", s.strip("|"))]
     if all(set(c) <= {"-", ":"} and c for c in cells):
         return None  # separator row
     return cells
@@ -266,6 +270,127 @@ def cmd_detect(args: argparse.Namespace) -> int:
     return 1 if all_drift else 0
 
 
+def _join_row(cells: list[str]) -> str:
+    """Render a table row, re-escaping any literal pipe in a cell (so a value that
+    legitimately contains `|` round-trips through _table_cells without shifting)."""
+    return "| " + " | ".join(c.replace("|", "\\|") for c in cells) + " |"
+
+
+def _canonical_counts(rows: dict[str, tuple[str, str]], vocab: list[str]) -> dict[str, int]:
+    """Tally canonical statuses of parse_index rows - the same authority detect uses."""
+    counts: dict[str, int] = {}
+    for _disp, istatus in rows.values():
+        rc = _canonical_status(istatus, vocab)
+        if rc is not None:
+            counts[rc] = counts.get(rc, 0) + 1
+    return counts
+
+
+def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
+    """Apply the two mechanical index fixes for one type: rewrite each drifted data
+    row's Status cell to the file's canonical status, then recompute the summary
+    counts (from the same parse_index authority `detect` uses). Idempotent; cells
+    are re-escaped on write. Structural classes (missing-row/orphan-row/
+    missing-index) are left report-only. Returns {changes: [{id, from, to}], counts_updated}.
+    """
+    root = Path(repo_root)
+    vocab = sdlc_md.STATUS_VOCAB.get(type_, [])
+    index_path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / "_index.md"
+    result: dict = {"changes": [], "counts_updated": False}
+    if not index_path.exists():
+        return result
+    census = file_census(type_, root)
+    rows = parse_index(type_, root)["rows"]
+
+    # Decide the status fixes against the file census (mirrors detect_type), and
+    # model the corrected rows so the count recompute matches detect's authority.
+    fixes: dict[str, str] = {}      # norm id -> new canonical status
+    corrected = dict(rows)
+    for norm, (disp, istatus) in rows.items():
+        if norm not in census:
+            continue
+        fcanon = _canonical_status(census[norm][1], vocab)
+        icanon = _canonical_status(istatus, vocab)
+        target = icanon if icanon is not None else istatus
+        if fcanon is not None and fcanon != target:
+            fixes[norm] = fcanon
+            corrected[norm] = (disp, fcanon)
+            result["changes"].append({"id": disp, "from": istatus, "to": fcanon})
+    counts = _canonical_counts(corrected, vocab)
+
+    original = index_path.read_text(encoding="utf-8")
+    lines = original.splitlines()
+    status_col = id_col = None
+    in_summary = False
+    for i, line in enumerate(lines):
+        cells = _table_cells(line)
+        if not cells:
+            if not line.strip().startswith("|"):
+                in_summary = False  # a blank/non-table line ends a table block (a `---` separator does not)
+            continue
+        lowered = [c.lower() for c in cells]
+        if "status" in lowered:
+            if lowered == ["status", "count"]:  # the summary table header
+                in_summary, status_col, id_col = True, None, None
+                continue
+            if len(cells) >= 2:                  # a data-table header (any layout)
+                status_col = lowered.index("status")
+                id_col = lowered.index("id") if "id" in lowered else None
+                in_summary = False
+                continue
+        if in_summary and len(cells) == 2:        # summary count row
+            raw_label, raw_count = cells
+            if not raw_count.replace("*", "").replace(",", "").strip().isdigit():
+                continue
+            label = raw_label.replace("*", "").strip()
+            if label.lower() == "total":
+                new = sum(counts.values())
+            else:
+                canon = _canonical_status(label, vocab)
+                if canon is None:
+                    continue
+                new = counts.get(canon, 0)
+            bold = "**" if "*" in raw_count else ""
+            newcell = f"{bold}{new}{bold}"
+            if newcell != raw_count:
+                lines[i] = _join_row([raw_label, newcell])
+                result["counts_updated"] = True
+            continue
+        if status_col is None or status_col >= len(cells):
+            continue
+        if id_col is not None and id_col < len(cells):
+            m = sdlc_md.ID_SEARCH_RE.search(cells[id_col])
+            rid = m.group(0) if m else None
+        else:
+            rid = next((sdlc_md.ID_SEARCH_RE.search(c).group(0)
+                        for c in cells if sdlc_md.ID_SEARCH_RE.search(c)), None)
+        if rid and _norm_id(rid) in fixes:
+            cells[status_col] = fixes[_norm_id(rid)]
+            lines[i] = _join_row(cells)
+
+    if (result["changes"] or result["counts_updated"]) and not dry_run:
+        text = "\n".join(lines) + ("\n" if original.endswith("\n") else "")
+        index_path.write_text(text, encoding="utf-8")
+    return result
+
+
+def cmd_apply(args: argparse.Namespace) -> int:
+    """Apply mechanical index fixes (status cells + summary counts); --dry-run reports only."""
+    repo_root = Path(args.root).resolve()
+    types = SCOPE_TYPES.get(args.scope, _DEFAULT_TYPES) if args.scope else _DEFAULT_TYPES
+    n = 0
+    for type_ in types:
+        res = apply_type(type_, repo_root, dry_run=args.dry_run)
+        for c in res["changes"]:
+            print(f"{'WOULD set' if args.dry_run else 'set'} {type_} {c['id']}: {c['from']} -> {c['to']}")
+            n += 1
+        if res["counts_updated"]:
+            print(f"{'WOULD recompute' if args.dry_run else 'recomputed'} {type_} summary counts")
+    print(f"apply: {'would change' if args.dry_run else 'changed'} {n} row(s)"
+          + (" [dry-run]" if args.dry_run else ""))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Construct the argparse parser for the detect subcommand."""
     p = argparse.ArgumentParser(
@@ -281,6 +406,11 @@ def build_parser() -> argparse.ArgumentParser:
     d.add_argument("--write-report", action="store_true",
                    help="Also write sdlc-studio/.local/reconcile-report.json")
     d.set_defaults(func=cmd_detect)
+    a = sub.add_parser("apply", help="Apply mechanical index fixes (status cells + counts).")
+    a.add_argument("--scope", choices=sorted(SCOPE_TYPES), help="Limit to one scope")
+    a.add_argument("--root", default=".", help="Repo root (default: .)")
+    a.add_argument("--dry-run", action="store_true", help="Report changes without writing")
+    a.set_defaults(func=cmd_apply)
     return p
 
 

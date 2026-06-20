@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 17 |
+| Done | 18 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
-| **Total** | **22** |
+| **Total** | **23** |
 
 ## All Stories
 
@@ -44,3 +44,4 @@
 | [US0020](US0020-verify-ac-graded-verifier.md) | verify_ac graded (eval) verifier verb | Done | EP0005 | 2026-06-20 | 2026-06-20 |
 | [US0021](US0021-rfc-decide-session.md) | rfc decide - multi-RFC decision session | Done | EP0006 | 2026-06-20 | 2026-06-20 |
 | [US0022](US0022-checks-remediation-guidance.md) | deterministic checks emit remediation guidance | Done | EP0005 | 2026-06-20 | 2026-06-20 |
+| [US0023](US0023-reconcile-apply.md) | reconcile apply - mechanical index fixes | Done | EP0005 | 2026-06-20 | 2026-06-20 |

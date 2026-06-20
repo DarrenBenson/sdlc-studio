@@ -9,12 +9,12 @@
 | Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 24 |
+| Complete | 25 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **25** |
+| **Total** | **26** |
 
 ## All Changes
 
@@ -45,3 +45,4 @@
 | [CR-0023](CR0023-complete-conformance-gate.md) | Complete the conformance gate - reconciled, reviewed, and a recorded critic verdict | Complete | High | Feature | 2026-06-20 | -- |
 | [CR-0024](CR0024-rfc-decide-decision-session.md) | `rfc decide` - the multi-RFC decision session | Complete | High | Feature | 2026-06-20 | EP0006 |
 | [CR-0025](CR0025-checks-emit-remediation-guidance.md) | deterministic checks emit remediation guidance, not just findings | Complete | High | Feature | 2026-06-20 | EP0005 |
+| [CR-0026](CR0026-reconcile-apply-subcommand.md) | reconcile `apply` - mechanical index fixes behind --dry-run | Complete | High | Feature | 2026-06-20 | EP0005 |

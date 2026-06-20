@@ -60,6 +60,14 @@ class IndexParseTests(unittest.TestCase):
             )
             self.assertEqual(idx["summary"], {"Done": 1, "In Progress": 0})
 
+    def test_table_cells_respects_escaped_pipe(self) -> None:
+        # A cell containing an escaped pipe must not split into extra columns.
+        cells = reconcile._table_cells(r"| US0161 | `string \| string[]` match | CR-0045 | 2 | Done |")
+        self.assertEqual(len(cells), 5)
+        self.assertEqual(cells[0], "US0161")
+        self.assertEqual(cells[1], "`string | string[]` match")
+        self.assertEqual(cells[4], "Done")
+
     def test_table_cells_skips_separator(self) -> None:
         self.assertIsNone(reconcile._table_cells("|---|---|"))
         self.assertEqual(reconcile._table_cells("| a | b |"), ["a", "b"])
@@ -170,6 +178,85 @@ class GuidanceTests(unittest.TestCase):
             out = buf.getvalue()
             self.assertIn("Guidance:", out)
             self.assertIn("status-mismatch ->", out)
+
+
+class ApplyTests(unittest.TestCase):
+    def test_apply_fixes_status_and_counts_idempotent(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)  # US0001 file Done / index Draft; summary Done=1
+            res = reconcile.apply_type("story", root)
+            self.assertIn("US0001", [c["id"] for c in res["changes"]])  # Draft -> Done
+            self.assertTrue(res["counts_updated"])
+            kinds = {dd["kind"] for dd in reconcile.detect_type("story", root)["drift"]}
+            self.assertNotIn("status-mismatch", kinds)
+            self.assertNotIn("count-mismatch", kinds)
+            res2 = reconcile.apply_type("story", root)  # idempotent
+            self.assertEqual(res2["changes"], [])
+            self.assertFalse(res2["counts_updated"])
+
+    def test_apply_dry_run_writes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)
+            idx = root / "sdlc-studio" / "stories" / "_index.md"
+            before = idx.read_text(encoding="utf-8")
+            res = reconcile.apply_type("story", root, dry_run=True)
+            self.assertTrue(res["changes"])           # still reports
+            self.assertEqual(idx.read_text(encoding="utf-8"), before)  # but no write
+
+    def test_apply_preserves_escaped_pipe_and_is_byte_idempotent(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "US0001-x.md").write_text("# US0001: a\n\n> **Status:** Done\n", encoding="utf-8")
+            (sd / "_index.md").write_text(
+                "# Stories\n\n| Status | Count |\n| --- | --- |\n| Done | 0 |\n\n"
+                "| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| US0001 | `a \\| b` | Draft |\n", encoding="utf-8")
+            idx = sd / "_index.md"
+            reconcile.apply_type("story", root)
+            after1 = idx.read_text(encoding="utf-8")
+            self.assertIn("`a \\| b`", after1)  # escaped pipe survived (re-escaped)
+            self.assertEqual(reconcile.parse_index("story", root)["rows"]["US0001"][1], "Done")
+            reconcile.apply_type("story", root)
+            self.assertEqual(idx.read_text(encoding="utf-8"), after1)  # byte-identical
+
+    def test_apply_two_col_data_table_summary_not_zeroed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "US0001-x.md").write_text("# US0001: a\n\n> **Status:** Done\n", encoding="utf-8")
+            (sd / "_index.md").write_text(
+                "# Stories\n\n| Status | Count |\n| --- | --- |\n| Done | 1 |\n\n"
+                "| ID | Status |\n| --- | --- |\n| US0001 | Done |\n", encoding="utf-8")
+            res = reconcile.apply_type("story", root)
+            self.assertEqual(res["changes"], [])
+            self.assertFalse(res["counts_updated"])  # correct summary not zeroed
+
+    def test_apply_leaves_stray_two_col_row(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "US0001-x.md").write_text("# US0001: a\n\n> **Status:** Done\n", encoding="utf-8")
+            (sd / "_index.md").write_text(
+                "# Stories\n\n| Status | Count |\n| --- | --- |\n| Done | 1 |\n\n"
+                "| ID | Title | Status |\n| --- | --- | --- |\n| US0001 | a | Done |\n\n"
+                "## Points by status\n\n| Done | 5 |\n", encoding="utf-8")
+            reconcile.apply_type("story", root)
+            self.assertIn("| Done | 5 |", (sd / "_index.md").read_text(encoding="utf-8"))
+
+    def test_apply_leaves_structural_classes(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)
+            reconcile.apply_type("story", root)
+            kinds = {dd["kind"] for dd in reconcile.detect_type("story", root)["drift"]}
+            self.assertIn("missing-row", kinds)   # US0002 not added
+            self.assertIn("orphan-row", kinds)    # US0099 not removed
 
 
 class NormalisationTests(unittest.TestCase):

@@ -210,6 +210,14 @@ Print the change list as a structured report:
 
 #### Apply mode (default)
 
+> **Deterministic apply (CR0026/RFC0003).** The two index-level mechanical fixes are
+> now done by the script: `reconcile apply [--scope] [--dry-run]` rewrites each
+> drifted index row's Status cell (positionally, by the table header) to the file's
+> status and recomputes the summary counts. It is **idempotent** (a second run
+> writes nothing) and `--dry-run` reports without writing. Structural classes
+> (missing-row / orphan-row / missing-index) and the judgement calls below
+> (CR-completion, PRD prose, breakdown/AC checkboxes) remain Claude-orchestrated.
+
 Apply all mechanical fixes in dependency order:
 
 ```text
