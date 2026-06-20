@@ -36,7 +36,16 @@ External stakeholders who use the product or influence requirements:
 
 ## Archetype Personas {#archetypes}
 
-Pre-built personas available in `templates/personas/`:
+**Archetype seeds** (role + one-line disposition). The skill ships these seeds plus
+`templates/personas/persona-template.md`; `persona create` generates the full persona
+on demand for the consuming project rather than baking ~1680 lines of invented
+backstory into every install (RFC0007). To use one, run `persona create` from its
+seed and customise.
+
+> **Migration (RFC0007):** the 15 pre-built character files under
+> `templates/personas/stakeholders/` and `team/` were removed. A consuming project that
+> referenced those files should regenerate the personas it needs via `persona create`
+> from the seeds below (its own `sdlc-studio/personas/` are unaffected).
 
 **Team - Product:**
 - Sarah Chen (PM) - Strategic, data-driven, scope-conscious
@@ -116,7 +125,7 @@ Interactive creation of rich, detailed personas.
 
 9. **Offer Archetype Start**
    Before detailed questions, offer: "Would you like to start from an archetype and customise?"
-   - If yes: Load archetype, ask what to change
+   - If yes: generate from the archetype seed (#archetypes) + `persona-template.md`, then ask what to change
    - If no: Proceed with full questionnaire
 
 10. **Write Persona File**
@@ -343,12 +352,12 @@ sdlc-studio/
       product/
         sarah-chen-pm.md
       engineering/
-        marcus-johnson-senior.md
+        marcus-johnson-senior-dev.md
       qa/
         priya-sharma-qa-lead.md
     stakeholders/
       users/
-        emma-wilson-power.md
+        emma-wilson-power-user.md
       business/
         james-mitchell-exec.md
       technical/

@@ -15,6 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `All\|Crew`) no longer shifts the columns after it and misreads the row.
   Unified `reconcile`, `critic`, `rfc`, and `ledger` onto it.
 
+### Removed
+
+- **15 baked fictional-character persona files (RFC0007 / CR0034):** the
+  `templates/personas/stakeholders/**` and `team/**` characters (~1680 lines of
+  invented backstory shipped in every install) are removed. Personas now generate on
+  demand: `persona create --from-archetype <slug>` builds the full persona from
+  `persona-template.md` + the retained archetype seeds (role + one-line disposition)
+  in `reference-persona.md#archetypes`. A migration note is in that file; a consuming
+  project regenerates any personas it referenced. Aligns with Create-vs-Generate.
+
 ### Changed
 
 - **Test references consolidated (RFC0008 / CR0033):** the triplicated test

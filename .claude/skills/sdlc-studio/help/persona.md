@@ -205,9 +205,11 @@ Each persona file includes:
 
 ---
 
-## Archetypes Available
+## Archetype Seeds
 
-Pre-built personas in `templates/personas/`:
+Generate any of these on demand with `persona create --from-archetype <slug>` - the
+skill ships the seeds (role + disposition) + `persona-template.md`, not baked character
+files (RFC0007):
 
 **Team - Product:**
 - `sarah-chen-pm` - Product Manager

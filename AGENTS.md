@@ -54,7 +54,7 @@ not drift (progressive disclosure).
 | `.claude/skills/sdlc-studio/reference-*.md` | Domain-specific workflows (42 files total) |
 | `.claude/skills/sdlc-studio/help/` | Type-specific help (31 files) |
 | `.claude/skills/sdlc-studio/lessons/` | Cross-project lessons registry (v1.7.0) |
-| `.claude/skills/sdlc-studio/templates/` | Document and code templates (72 files), incl. `agent-instructions.md` (tool-neutral `AGENTS.md`/`CLAUDE.md` starter for consuming projects) |
+| `.claude/skills/sdlc-studio/templates/` | Document and code templates, incl. `agent-instructions.md` (tool-neutral `AGENTS.md`/`CLAUDE.md` starter for consuming projects) and `personas/persona-template.md` (personas are generated on demand from archetype seeds, not baked - RFC0007) |
 | `.claude/skills/sdlc-studio/scripts/` | Skill-internal Python helpers: `repo_map`, `verify_ac`, `github_sync`, plus read-only JSON helpers `reconcile`, `status`, `validate`, `next_id`, `review_prep`, plus `plan` and `lessons` managers, sharing `lib/sdlc_md.py` |
 | `.claude/skills/sdlc-studio/best-practices/` | Quality guidelines (19 files) |
 | `tools/` | Repo CI checks: `check_links.py`, `lint-style.sh`, `validate_skill.py` |

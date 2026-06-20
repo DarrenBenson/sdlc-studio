@@ -9,12 +9,12 @@
 | Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 32 |
+| Complete | 33 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **33** |
+| **Total** | **34** |
 
 ## All Changes
 
@@ -53,3 +53,4 @@
 | [CR-0031](CR0031-validate-no-ac-adoption-cutoff.md) | validate no-ac honours the conformance adoption cutoff | Complete | Medium | Improvement | 2026-06-20 | EP0005 |
 | [CR-0032](CR0032-repo-map-honest-lexical-ranker.md) | redocument repo_map as a lexical relevance ranker (RFC0004) | Complete | Medium | Improvement | 2026-06-20 | -- |
 | [CR-0033](CR0033-consolidate-test-reference-clique.md) | consolidate the test-reference clique (RFC0008) | Complete | Medium | Improvement | 2026-06-20 | -- |
+| [CR-0034](CR0034-personas-generate-on-demand.md) | personas generate on demand from seeds (RFC0007) | Complete | Medium | Improvement | 2026-06-20 | -- |

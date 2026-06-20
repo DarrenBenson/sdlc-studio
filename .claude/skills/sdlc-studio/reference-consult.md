@@ -34,7 +34,7 @@ Get feedback from one specific persona.
 ### Workflow
 
 1. **Load Persona**
-   - Read persona file from `sdlc-studio/personas/` or archetypes
+   - Read persona file from `sdlc-studio/personas/` (or generate one from an archetype seed - `reference-persona.md#archetypes`)
    - Extract: role, goals, concerns, decision drivers, typical questions
 
 2. **Load Artefact**

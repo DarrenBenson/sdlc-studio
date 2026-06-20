@@ -50,11 +50,12 @@ Every install carries ~1680 lines of fictional biography most consuming projects
 
 **Rationale:** Low-effort alignment win with the Create-vs-Generate philosophy; deletion must follow a confirmed generator path, not precede it.
 
-**Spawned CRs:** One CR: confirm `persona create` generates from template + seed, remove the 13 baked character files, wire reference-persona to the seed, add a migration note. Created when picked up.
+**Spawned CRs:** CR0034 (remove the 15 baked character files; generate on demand from seeds + persona-template.md; reframe reference-persona/help; migration note), **delivered**.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Autosprint (rfc-decide session) | Accepted in the RFC decision session - Accepted (Option A) |
+| 2026-06-20 | Autosprint (rfc-tranche) | Delivered as CR0034 (Option A); 15 baked characters removed, generate-on-demand |
 | 2026-06-20 | Adversarial Audit | Filed from the 2026-06-20 audit (lens: over-engineering) |
