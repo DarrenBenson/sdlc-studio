@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 5 |
+| Ready | 8 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -16,7 +16,7 @@
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
-| **Total** | **8** |
+| **Total** | **11** |
 
 ## All Stories
 
@@ -30,3 +30,6 @@
 | [US0006](US0006-duplicate-id-detector.md) | Deterministic duplicate-ID detector | Done | EP0008 | 2026-06-20 | 2026-06-20 |
 | [US0007](US0007-lifecycle-conformance-check.md) | Lifecycle-conformance check | Done | EP0007 | 2026-06-20 | 2026-06-20 |
 | [US0008](US0008-autosprint-batch-selector.md) | Autosprint batch selector and ordering | Done | EP0007 | 2026-06-20 | 2026-06-20 |
+| [US0009](US0009-decisions-ledger.md) | Persisted decisions ledger | Ready | EP0007 | 2026-06-20 | 2026-06-20 |
+| [US0010](US0010-loop-guardrails.md) | Deterministic loop guardrails | Ready | EP0007 | 2026-06-20 | 2026-06-20 |
+| [US0011](US0011-autonomous-mode-wiring.md) | Autonomous mode wiring | Ready | EP0007 | 2026-06-20 | 2026-06-20 |

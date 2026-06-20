@@ -61,6 +61,9 @@ Autosprint (RFC0001) is this epic's centrepiece; Phase 1 delivered:
 
 - [x] [US0007: Lifecycle-conformance check](../stories/US0007-lifecycle-conformance-check.md)
 - [x] [US0008: Autosprint batch selector and ordering](../stories/US0008-autosprint-batch-selector.md)
+- [ ] [US0009: Persisted decisions ledger](../stories/US0009-decisions-ledger.md) (CR0020 Phase 2)
+- [ ] [US0010: Deterministic loop guardrails](../stories/US0010-loop-guardrails.md) (CR0020 Phase 2)
+- [ ] [US0011: Autonomous mode wiring](../stories/US0011-autonomous-mode-wiring.md) (CR0020 Phase 2)
 - [ ] US: Project plan (dependency graph + wave estimate)
 - [ ] US: Project implement (resume, commit/reconcile/review checkpoints)
 - [ ] US: Epic agentic wave execution
