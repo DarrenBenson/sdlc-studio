@@ -277,9 +277,8 @@ check (WS7) **hard-fails** a unit on any skipped required stage - it cannot reac
 Done until the gap is closed. TDD is checked as **test-exists-and-maps-to-story**
 (deterministic; not git-ordering). `cr action` places stories in the
 **best-matching existing epic, creating a new epic only when none fits**. D7
-(whether PL plan files stay required) is **deferred pending a plan-value review**
-- does a capable model actually need them, or are they a human/audit artifact?
-Until resolved, the conformance check does not demand a PL in agentic mode.
+(whether PL plan files stay required) is **deferred pending a plan-value review** (does a capable model actually need
+them, or are they a human or audit artifact, not a model crutch?). Until resolved, the conformance check does not demand a PL in agentic mode.
 
 ---
 
