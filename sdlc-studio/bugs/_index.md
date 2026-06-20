@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 1 |
+| Open | 0 |
 | In Progress | 0 |
-| Fixed | 18 |
+| Fixed | 19 |
 | Verified | 0 |
 | Closed | 0 |
 | Won't Fix | 0 |
@@ -36,5 +36,5 @@
 | [BG0015](BG0015-epic-ownership-double-mapping-github-sync-review-p.md) | Epic ownership double-mapping: github_sync, review_prep and next_id are each claimed by two epics | Fixed | High | 2026-06-20 | 2026-06-20 |
 | [BG0016](BG0016-ep0004-s-prd-reference-points-to-section-10-with-a.md) | EP0004's PRD Reference points to section 10 with a non-existent 'Validation Requirement' link text | Fixed | Low | 2026-06-20 | 2026-06-20 |
 | [BG0017](BG0017-rfc0003-buries-a-fixable-false-guarantee-reconcile.md) | RFC0003 buries a fixable false-guarantee (reconcile 'Idempotent') inside an unsettled RFC, so the wrong doc stays uncorrected | Fixed | Medium | 2026-06-20 | 2026-06-20 |
-| [BG0018](BG0018-reconcile-index-status-parser-matches-title.md) | reconcile index-status parser matches a status word in the title column | Open | Medium | 2026-06-20 | 2026-06-20 |
+| [BG0018](BG0018-reconcile-index-status-parser-matches-title.md) | reconcile index-status parser matches a status word in the title column | Fixed | Medium | 2026-06-20 | 2026-06-20 |
 | [BG0019](BG0019-determinism-checks-mishandle-bug-artifact-class.md) | integrity and audit mishandle the bug artifact class | Fixed | High | 2026-06-20 | 2026-06-20 |

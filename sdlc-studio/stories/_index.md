@@ -35,6 +35,6 @@
 | [US0011](US0011-autonomous-mode-wiring.md) | Autonomous mode wiring | Done | EP0007 | 2026-06-20 | 2026-06-20 |
 | [US0012](US0012-referential-integrity-check.md) | Referential-integrity check | Done | EP0005 | 2026-06-20 | 2026-06-20 |
 | [US0013](US0013-tranche-audit-step.md) | Tranche-audit step | Done | EP0007 | 2026-06-20 | 2026-06-20 |
-| [US0014](US0014-review-prep-determinism.md) | Staleness determinism for review_prep | Done | EP0005 | 2026-06-20 | 2026-06-20 |
+| [US0014](US0014-review-prep-determinism.md) | review_prep staleness determinism | Done | EP0005 | 2026-06-20 | 2026-06-20 |
 | [US0015](US0015-config-single-source.md) | Config single source | Done | EP0008 | 2026-06-20 | 2026-06-20 |
 | [US0016](US0016-epic-implement-resume.md) | epic implement --resume | Done | EP0007 | 2026-06-20 | 2026-06-20 |

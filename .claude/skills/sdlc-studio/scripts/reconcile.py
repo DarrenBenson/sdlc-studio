@@ -86,9 +86,11 @@ def _table_cells(line: str) -> list[str] | None:
 def parse_index(type_: str, repo_root: Path) -> dict:
     """Parse a type's _index.md into {rows: {id: status}, summary: {status: count}}.
 
-    Resilient to column order: the ID is the first cell containing an artifact
-    ID, the status the first cell whose text is a valid status for the type.
-    The summary table is rows of `| Status | Count |`.
+    The Status (and ID) columns are located by the data table's **header row** and
+    read positionally, so a title cell that begins with a status word (e.g.
+    "review_prep..." -> Review, "Complete the gate..." -> Complete) is never mistaken
+    for the status (BG0018). Falls back to a first-matching-cell scan only when no
+    header is found. The summary table is rows of `| Status | Count |`.
     """
     rel, _prefix = sdlc_md.ARTIFACT_TYPES[type_]
     index_path = repo_root / rel / "_index.md"
@@ -96,6 +98,7 @@ def parse_index(type_: str, repo_root: Path) -> dict:
     if not index_path.exists():
         return result
     vocab = list(sdlc_md.STATUS_VOCAB[type_])
+    status_col = id_col = None  # resolved from the data table's header row
     for line in index_path.read_text(encoding="utf-8").splitlines():
         cells = _table_cells(line)
         if not cells:
@@ -106,18 +109,23 @@ def parse_index(type_: str, repo_root: Path) -> dict:
             if label:
                 result["summary"][label] = int(cells[1].replace(",", ""))
             continue
-        # Data row: find an ID cell and a status cell (status may be decorated).
-        row_id = None
-        row_status = None
-        for c in cells:
-            if row_id is None:
-                m = sdlc_md.ID_SEARCH_RE.search(c)
-                if m:
-                    row_id = m.group(0)
-            if row_status is None:
-                cs = _canonical_status(c, vocab)
-                if cs:
-                    row_status = cs
+        lowered = [c.lower() for c in cells]
+        # Header row of the data table: pin the Status/ID columns by name.
+        if status_col is None and len(cells) > 2 and "status" in lowered:
+            status_col = lowered.index("status")
+            id_col = lowered.index("id") if "id" in lowered else None
+            continue
+        # Data row - read positionally when the header was found.
+        if id_col is not None and id_col < len(cells):
+            m = sdlc_md.ID_SEARCH_RE.search(cells[id_col])
+            row_id = m.group(0) if m else None
+        else:
+            row_id = next((sdlc_md.ID_SEARCH_RE.search(c).group(0)
+                           for c in cells if sdlc_md.ID_SEARCH_RE.search(c)), None)
+        if status_col is not None and status_col < len(cells):
+            row_status = _canonical_status(cells[status_col], vocab)
+        else:  # header-less fallback (legacy): first cell that canonicalises
+            row_status = next((cs for c in cells if (cs := _canonical_status(c, vocab))), None)
         if row_id:
             key = _norm_id(row_id)
             prev = result["rows"].get(key)

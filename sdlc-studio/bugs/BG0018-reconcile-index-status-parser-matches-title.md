@@ -1,6 +1,6 @@
 # BG-0018: reconcile index-status parser matches a status word in the title column
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Reporter:** Autosprint (determinism-sprint)
 > **Date:** 2026-06-20
@@ -62,3 +62,4 @@ column is positional, not inferred.
 | --- | --- | --- |
 | 2026-06-20 | Autosprint (determinism-sprint) | Filed - surfaced by US0014's title during the sprint closing reconcile |
 | 2026-06-20 | Autosprint (determinism-sprint retro) | Recurred live on CR0023's title ("Complete the conformance gate" -> status Complete) - confirms the class; raises severity for a positional-read fix |
+| 2026-06-20 | Autosprint (tooling-honesty-sprint) | Fixed - parse_index locates Status/ID columns by the table header and reads positionally (header-less fallback retained); regression tests for the story + CR cases; restored the US0014/CR0023 natural titles (workarounds removed). Systemic audit: every other canonical_status caller reads the Status field, not a title - only reconcile was affected |

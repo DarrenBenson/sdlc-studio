@@ -66,6 +66,38 @@ class IndexParseTests(unittest.TestCase):
         self.assertIsNone(reconcile._table_cells("not a row"))
 
 
+class StatusWordTitleTests(unittest.TestCase):
+    def test_title_starting_with_status_word_not_misread(self) -> None:
+        # BG0018: a title beginning with a status word must not become the status.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True, exist_ok=True)
+            (sd / "US0001-x.md").write_text("# X\n\n> **Status:** Done\n", encoding="utf-8")
+            (sd / "_index.md").write_text(
+                "# Stories\n\n"
+                "| ID | Title | Status |\n|---|---|---|\n"
+                "| [US0001](US0001-x.md) | Review the login flow | Done |\n",
+                encoding="utf-8")
+            idx = reconcile.parse_index("story", root)
+            self.assertEqual(idx["rows"]["US0001"], ("US0001", "Done"))
+
+    def test_cr_title_complete_read_positionally(self) -> None:
+        # The live CR0023 case: title "Complete the gate" must not read as Complete.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cd = root / "sdlc-studio" / "change-requests"
+            cd.mkdir(parents=True, exist_ok=True)
+            (cd / "CR0001-x.md").write_text("# CR\n\n> **Status:** Proposed\n", encoding="utf-8")
+            (cd / "_index.md").write_text(
+                "# CRs\n\n"
+                "| ID | Title | Status | Priority |\n|---|---|---|---|\n"
+                "| [CR-0001](CR0001-x.md) | Complete the gate | Proposed | High |\n",
+                encoding="utf-8")
+            idx = reconcile.parse_index("cr", root)
+            self.assertEqual(idx["rows"]["CR0001"][1], "Proposed")  # not "Complete"
+
+
 class DriftTests(unittest.TestCase):
     def test_detects_all_three_classes_plus_count(self) -> None:
         with tempfile.TemporaryDirectory() as d:
