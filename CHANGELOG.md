@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Test references consolidated (RFC0008 / CR0033):** the triplicated test
+  anti-patterns are deduped into one `reference-test-best-practices.md#test-anti-patterns`
+  section (8 patterns + the integration-dependency and low-coverage checklists);
+  `reference-test-pitfalls.md` and the subsumed `#common-ai-testing-mistakes` section
+  are removed (no content lost); and `reference-test-validation.md` /
+  `reference-test-e2e-guidelines.md` are now reachable from the SKILL.md router.
 - **repo_map documented honestly (RFC0004 / CR0032):** reframed as a lexical
   relevance ranker (token overlap + import in-degree bonus), not a semantic call
   graph or PageRank, with a soft-dependency pointer to Aider's repo map / RepoMapper

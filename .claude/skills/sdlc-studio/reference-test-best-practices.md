@@ -10,7 +10,6 @@
 - [Anti-patterns](#timeout-anti-patterns)
 - [When the bump is legitimate](#timeout-bump-legitimate)
 - [Why Higher Coverage Matters for AI Code](#why-higher-coverage-for-ai)
-- [Common AI Testing Mistakes](#common-ai-testing-mistakes)
 - [Review Patterns for AI Tests](#review-patterns-for-ai-tests)
 - [Pre-Generation Analysis Checklist](#pre-generation-checklist)
 - [Warning Policy](#warning-policy)
@@ -114,47 +113,6 @@ AI-assisted development changes the testing equation:
 | AI code may drift from spec | Implementation doesn't match requirements | Tests enforce spec compliance |
 
 **Target: 90% coverage** - Proven achievable with AI assistance across multiple projects.
-
-## Common AI Testing Mistakes {#common-ai-testing-mistakes}
-
-### 1. Trusting AI-Generated Mocks {#trusting-ai-mocks}
-
-AI may generate mocks that return exactly what the code expects, creating tests that always pass:
-
-```python
-# BAD: AI generates mock that mirrors implementation
-mock_service.calculate_total.return_value = 100
-result = get_order_total(items)
-assert result == 100  # Always passes - mock dictates answer!
-```
-
-**Fix:** Verify mocks simulate realistic external behaviour, not expected outcomes.
-
-### 2. Over-Mocking in E2E Tests {#over-mocking-e2e}
-
-AI tends to mock everything to avoid setup complexity:
-
-```typescript
-// BAD: Everything mocked - only tests React rendering
-vi.mock('../api/client');
-vi.mock('../services/auth');
-vi.mock('../utils/validation');
-```
-
-**Fix:** E2E tests should exercise real code paths. Mock only at system boundaries.
-
-### 3. Missing Contract Tests {#missing-contract-tests}
-
-AI writes E2E tests with mocked APIs but forgets backend contract tests:
-
-```typescript
-// E2E test mocks server response - passes even if backend broken
-await page.route('/api/servers/*', route =>
-  route.fulfill({ json: { uptime_seconds: 86400 } })
-);
-```
-
-**Fix:** For every mocked field, write a backend contract test asserting the field exists.
 
 ## Review Patterns for AI Tests {#review-patterns-for-ai-tests}
 
@@ -542,7 +500,9 @@ def test_server_offline_after_180_seconds():
 
 ### 4. Tests That Always Pass {#anti-pattern-always-pass}
 
-**Symptom:** Test mocks return exactly what the code expects.
+**Symptom:** Test mocks return exactly what the code expects. AI is especially prone
+to this - it generates mocks that mirror the implementation, so the test passes no
+matter how broken the code is.
 
 **Example:**
 ```python
@@ -594,6 +554,71 @@ def test_server_response_includes_uptime_seconds(client):
     assert 'uptime_seconds' in response.json()['metrics']
 ```
 
+### 7. Conditional Assertions {#anti-pattern-conditional-assertions}
+
+Tests using `if` to guard assertions silently pass when the condition isn't met.
+
+```python
+# NEVER - silently passes if service_alerts is empty
+if service_alerts:
+    response = client.post(f"/api/v1/alerts/{service_alerts[0]['id']}/acknowledge")
+    assert response.status_code == 400
+
+# ALWAYS - assert the precondition, then the behaviour
+assert len(service_alerts) > 0, "Service alerts should be created"
+response = client.post(f"/api/v1/alerts/{service_alerts[0]['id']}/acknowledge")
+assert response.status_code == 400
+```
+
+**Rule:** Never guard a test assertion with `if`. Assert preconditions explicitly.
+
+### 8. Silent Test Helpers {#anti-pattern-silent-helpers}
+
+Helper functions that omit data a feature needs to trigger, so the code under test is
+never reached and the test passes vacuously.
+
+```python
+# BAD - service alerts only fire when metrics are present, but the helper omits them
+def _create_service_down_alert(client, headers, server_id, name):
+    client.post("/api/v1/agents/heartbeat", json={
+        "server_id": server_id, "services": [{"name": name, "status": "stopped"}],
+    }, headers=headers)  # evaluate_services() is inside `if heartbeat.metrics:` - never runs
+
+# GOOD - include the data that triggers the path
+def _create_service_down_alert(client, headers, server_id, name):
+    client.post("/api/v1/agents/heartbeat", json={
+        "server_id": server_id,
+        "metrics": {"cpu_percent": 10.0, "memory_percent": 30.0, "disk_percent": 50.0},
+        "services": [{"name": name, "status": "stopped"}],
+    }, headers=headers)
+```
+
+**Rule:** A helper must include everything the feature needs to fire. Verify by
+asserting the setup worked (e.g. that the alert was actually created) before testing it.
+
+### Integration test dependency checklist {#integration-dependency-checklist}
+
+Before writing an integration test, read the endpoint source and:
+
+- [ ] Identify every `if` condition in the code path
+- [ ] List the data that triggers each condition
+- [ ] Ensure the test data satisfies ALL of them
+- [ ] Add explicit assertions for the preconditions
+
+Common hidden dependencies: service alerts need `metrics` in the heartbeat; threshold
+evaluation needs a `notifications` config; metrics storage needs the server registered
+first; remediation actions need approval.
+
+### Debugging low coverage {#debugging-low-coverage}
+
+When tests pass but coverage stays low, the code path is not being hit:
+
+1. Add temporary `print()` markers in the code under test
+2. Run with output visible: `pytest -s tests/test_file.py::Test::test_method`
+3. If an outer marker prints but an inner one does not, that condition is unmet -
+   trace backwards and fix the test data
+4. Confirm with `pytest --cov=module --cov-report=term-missing`
+
 ---
 
 ## See Also {#see-also}
@@ -603,4 +628,3 @@ def test_server_response_includes_uptime_seconds(client):
 | `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` | Test workflows |
 | `reference-test-validation.md` | Validation workflows and advanced testing patterns |
 | `reference-test-e2e-guidelines.md` | E2E mocking patterns and strategies |
-| `reference-test-pitfalls.md` | Common testing mistakes to avoid |

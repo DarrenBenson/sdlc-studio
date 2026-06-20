@@ -50,11 +50,12 @@ Choosing TDD pulls test-best-practices.md (24KB) which fans out across four more
 
 **Rationale:** Triplication + undiscoverability are clear defects worth fixing; full file-merge is higher-churn and reversible, so expose-don't-merge (A2) is the safer default.
 
-**Spawned CRs:** CRs: (1) dedup the anti-patterns into one #test-anti-patterns section + delete reference-test-pitfalls.md; (2) add Progressive Loading Guide rows for test-validation.md + test-e2e-guidelines.md. Created when picked up.
+**Spawned CRs:** CR0033 (dedup anti-patterns into one #test-anti-patterns section + delete reference-test-pitfalls.md; router rows for test-validation.md + test-e2e-guidelines.md), **delivered** - both items in one CR.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Autosprint (rfc-decide session) | Accepted in the RFC decision session - Accepted (Option A, A2) |
+| 2026-06-20 | Autosprint (rfc-tranche) | Delivered as CR0033 (Option A + A2) |
 | 2026-06-20 | Adversarial Audit | Filed from the 2026-06-20 audit (lens: over-engineering) |

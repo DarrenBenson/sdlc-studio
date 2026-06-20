@@ -124,6 +124,8 @@ Claude loads files progressively based on task needs:
 | Deploy readiness (cold-spawn, smoke budget, rollback, soak) | reference-deploy-readiness.md | reference-test-best-practices.md#verification-depth-tiers | reference-decisions.md#release-strategy-decision |
 | Verification depth tiers (smoke / functional / conversational / soak / live) | reference-test-best-practices.md#verification-depth-tiers | templates/core/bug.md | templates/core/story.md |
 | Test-timeout tuning (measure local + CI variance) | reference-test-best-practices.md#test-timeout-tuning | - | - |
+| Validation workflows / advanced testing patterns | reference-test-validation.md | reference-test-best-practices.md | - |
+| E2E mocking patterns and strategies | reference-test-e2e-guidelines.md | reference-test-best-practices.md#test-anti-patterns | - |
 | Multi-persona pressure-test canvas (unsettled design) | reference-consult.md#pressure-test-canvas | reference-decisions.md | - |
 | Plan-file lifecycle (active / archive / list) | reference-plan-files.md | help/plan.md | - |
 | Reconcile cadence triggers | reference-reconcile.md#cadence-triggers | help/status.md#reconcile-recommendation | - |

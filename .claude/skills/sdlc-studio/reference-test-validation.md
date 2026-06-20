@@ -506,4 +506,4 @@ expect({
 | `reference-test-best-practices.md` | Core testing practices and checklist |
 | `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` | Test workflows |
 | `reference-test-e2e-guidelines.md` | E2E patterns and mocking strategies |
-| `reference-test-pitfalls.md` | Common testing mistakes to avoid |
+| `reference-test-best-practices.md#test-anti-patterns` | Anti-patterns and pitfalls to avoid |
