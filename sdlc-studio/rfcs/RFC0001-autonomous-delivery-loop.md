@@ -67,7 +67,9 @@ material issue.** This RFC captures that as the default and fills the gaps.
   reconciled, reviewed), so "everything was used" is enforced, not assumed.
 - Every run ends with a mandatory **closing reconcile + review (the sprint
   review)** - drift fixed and the unified plus CODE review run - regardless of
-  `--goal`; this also produces the conformance `reviewed` signal.
+  `--goal`; this also produces the conformance `reviewed` signal. The retro writes
+  durable lessons to `sdlc-studio/retros/` (a general capability, CR0018), read at
+  the start of the next sprint - a learning loop.
 
 **Non-Goals**
 

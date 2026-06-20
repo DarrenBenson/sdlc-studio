@@ -107,6 +107,7 @@ Claude loads files progressively based on task needs:
 | Schema upgrade | reference-upgrade.md | reference-config.md | - |
 | Project orchestration | reference-project.md | reference-epic.md | reference-config.md |
 | Agentic execution | reference-agentic-lessons.md | reference-epic.md | - |
+| Autosprint (Goal-Driven Development loop) | reference-autosprint.md | help/autosprint.md | reference-project.md |
 | Building agentic wave prompts | reference-agent-prompt-template.md | reference-repo-map.md | reference-agentic-lessons.md#lessons-accumulation |
 | Change request workflow | help/cr.md | reference-cr.md | reference-outputs.md |
 | RFC / design exploration | help/rfc.md | reference-rfc.md | reference-outputs.md |
@@ -177,6 +178,7 @@ approach decisions. The full index is in `help/references.md`.
 | `cr` | Change requests (post-PRD change proposals) |
 | `rfc` | Request For Comments – design exploration of an unsettled space, pre-CR |
 | `project` | Project-level orchestration across all epics |
+| `autosprint` | Goal-Driven Development loop: a prioritised batch driven to a goal |
 | `plan` | Claude Code plan-file lifecycle (list, archive) |
 | `reconcile` | Detect and fix status drift across all artifacts |
 | `status` | Visual dashboard: Requirements, Code, Tests health |
@@ -195,6 +197,7 @@ The catalogues that used to live inline are now loaded on demand to keep this ro
 | The full `reference-*.md` index and template structure | `help/references.md` |
 | Type-specific commands, prerequisites, output, examples | `help/{type}.md` |
 | Step-by-step workflow detail for an artifact | `reference-{domain}.md` |
+| Autosprint loop (Goal-Driven Development) | `help/autosprint.md` + `reference-autosprint.md` |
 
 ## Error Handling
 
