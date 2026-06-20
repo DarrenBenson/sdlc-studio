@@ -132,6 +132,18 @@ emits the same per-function scores into the map.
 - `scan`: list functions over the cognitive threshold (`complexity.cognitive_high`, default 15)
 - `assess --files ...`: a change's blast-radius difficulty band + refactor-first hotspots (used by `code plan`)
 
+### `file_finding.py`
+
+Deterministic Bug/CR/RFC filer for audit findings (RFC0002). Allocates a
+collision-free ID, renders a STRUCTURED artifact (required sections enforced - it
+refuses a hollow stub), appends the index row, and recomputes the index counts
+(reusing reconcile's pass).
+
+- `file --type bug|cr|rfc --title ... <fields>`: write one artifact
+- `rebuild --type <t>`: recompute a type's index summary counts
+
+Full methodology: `reference-audit.md`.
+
 ### `verify_ac.py`
 
 Executes AC verifiers defined in story files and updates each AC's

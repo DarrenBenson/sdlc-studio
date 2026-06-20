@@ -163,7 +163,7 @@ profile; the project profile is the headline.
 
 **Rationale:** Ship the portable harness (twice-proven); lock methodology + filer quality before any one-click command. D2 portable-first, D3 N-of-M configurable, D4 triage-first filing, D6 --budget cap.
 
-**Spawned CRs:** WS1 (reference-audit.md + project lens packs) + WS2 (harness templates) + WS3 (deterministic Bug/CR/RFC filer) - created when picked up. WS4 (wired /audit command) deferred until a 3rd run + D4/D6 defaults; WS5 deferred.
+**Spawned CRs:** WS1 -> CR0036 (reference-audit.md + lens packs), WS2 -> CR0037 (harness templates), WS3 -> CR0035 (deterministic filer) - all **delivered**. WS4 (wired /audit command) deferred until a 3rd run + D4/D6 defaults; WS5 deferred.
 
 ---
 
@@ -181,6 +181,7 @@ profile; the project profile is the headline.
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (rfc-tranche) | Option A delivered: CR0035 (filer) + CR0036 (reference-audit.md) + CR0037 (harness templates); WS4/WS5 deferred |
 | 2026-06-20 | Autosprint (rfc-decide session) | Accepted in the RFC decision session - Accepted (Option A now) |
 | 2026-06-20 | Darren Benson | RFC drafted from the 2026-06-20 self-audit run (69→28→18; 41 refuted; 221 agents) |
 | 2026-06-20 | Project Audit | Second proving run, project profile (RV0003): 76→40→23, 36 refuted, 245 agents. Surfaced two harness improvements - default to triage for the project profile, and make the filer produce richer artifacts (the shallow auto-filed CRs/RFCs themselves became findings). |

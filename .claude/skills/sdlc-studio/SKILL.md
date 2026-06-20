@@ -104,6 +104,7 @@ Claude loads files progressively based on task needs:
 | Choosing TDD/Test-After | reference-decisions.md#tdd-decision-tree | reference-test-best-practices.md | - |
 | Validating Ready status | reference-decisions.md#{type}-ready | reference-outputs.md | - |
 | Document review | reference-review.md | reference-{doc}.md | - |
+| Adversarial audit (weakness-hunt over the artifact graph) | reference-audit.md | templates/automation/audit-finder.md | scripts/file_finding.py |
 | Schema upgrade | reference-upgrade.md | reference-config.md | - |
 | Project orchestration | reference-project.md | reference-epic.md | reference-config.md |
 | Agentic execution | reference-agentic-lessons.md | reference-epic.md | - |

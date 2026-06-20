@@ -51,6 +51,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Adversarial audit harness (RFC0002 / CR0035-CR0037):** the portable, tool-neutral
+  `audit` methodology - `reference-audit.md` (find -> refute-panel verify -> merge ->
+  file pipeline, project + skill lens profiles, N-of-M refute, budget controls), the
+  `templates/automation/audit-{finder,refute,classify}.md` prompt harness, and a
+  deterministic `scripts/file_finding.py` filer that writes a structured (non-hollow)
+  Bug/CR/RFC, allocates the ID, and keeps the index in sync. The wired `/audit` command
+  (WS4) and skill-profile pack (WS5) remain deferred.
 - **Code-complexity signals (RFC0009 / CR0028 / CR0029):** new `scripts/complexity.py`
   computes cognitive (SonarSource) and cyclomatic complexity per function from Python's
   `ast` (pure stdlib; `lizard` soft-dep for other languages, degrading to unscored).
