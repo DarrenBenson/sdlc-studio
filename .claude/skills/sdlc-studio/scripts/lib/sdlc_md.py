@@ -173,7 +173,7 @@ STATUS_VOCAB: dict[str, list[str]] = {
     ],
     "plan": ["Draft", "In Progress", "Complete", "Superseded"],
     "bug": ["Open", "In Progress", "Fixed", "Verified", "Closed", "Won't Fix", "Superseded"],
-    "cr": ["Proposed", "Approved", "In Progress", "Complete", "Rejected", "Deferred", "Superseded"],
+    "cr": ["Proposed", "Approved", "In Progress", "Complete", "Rejected", "Deferred", "Superseded", "Blocked"],
     "rfc": ["Draft", "In Review", "Accepted", "Superseded", "Withdrawn"],
     "test-spec": ["Draft", "Ready", "In Progress", "Complete", "Superseded"],
     "workflow": [
