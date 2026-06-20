@@ -1,10 +1,22 @@
 # SDLC Studio
 
-**Version 2.0.0** | MIT Licence
+**Version 2.1.0** | MIT Licence
 
-A full software-development-lifecycle skill for AI coding agents - one
-folder of instructions, templates, and tested scripts that takes a
-project from requirements to verified code:
+**Set a goal and acceptance criteria; the agent drives the proven software
+lifecycle to it - and proves the code against it.** SDLC Studio brings back the
+engineering discipline the AI-coding wave dropped - clear requirements, acceptance
+criteria, traceability, a definition of done that means done - and has the *agent*
+carry the cost of the ceremony, so the discipline stays. Its **`autosprint`** loop
+runs a prioritised batch of work to the goal autonomously, closing every run with a
+reconcile and review.
+
+```bash
+/sdlc-studio autosprint --crs proposed --goal done   # set the goal; or just ask in natural language
+```
+
+A full software-development-lifecycle skill for AI coding agents - one folder of
+instructions, templates, and tested scripts that takes a project from requirements
+to verified code:
 
 > **PRD → TRD → Personas → Epics → User Stories → Plan → Code → Tests → Verify**
 
@@ -190,12 +202,26 @@ skill itself: open Agent Skills frontmatter, `$CLAUDE_SKILL_DIR` script
 paths, consolidated reference docs, new helpers and CI guards - see
 [CHANGELOG.md](CHANGELOG.md).
 
+**v2.0 → v2.1** is a drop-in: re-run the installer. No project migration -
+`schema_version` is still 2. v2.1 adds the `autosprint` loop, complexity/test-risk
+signals, the `audit` harness, an optional `constitution`, index archival, and
+per-project config; nothing in the artifact schema changed.
+
 ## Roadmap
 
-Candidates for v2.1 (recorded from the AI-DLC review; not committed):
-task-level dependency DAGs for finer-grained parallel waves, review
-iteration history as first-class artifact fields, and a lightweight
-artifact-relationship graph for impact analysis.
+**Shipped in v2.1 - the autonomous loop + a deterministic control plane:**
+`autosprint` with hard guardrails (decisions ledger, iteration cap, completion
+oracle, conformance gate, independent critic) and complexity-aware `--order wsjf`;
+code-complexity + churn signals driving estimation, refactor-first, and
+complexity-weighted test risk; a portable adversarial `audit` harness with a
+deterministic finding filer; an optional project `constitution` with a
+machine-checkable principle gate; progressive-disclosure index archival for large
+boards; deterministic status transitions; and per-project config (status-vocab
+extensions, conformance adoption cutoff).
+
+**Next:** complexity-weighted wave-sizing (RFC0009 WS5) once per-story run-cost
+telemetry exists; a wired `/audit` command after a third proving run. See the
+RFC registry (`sdlc-studio/rfcs/`) for the full design backlog.
 
 ## Troubleshooting
 

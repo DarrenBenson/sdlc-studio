@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-06-21
+
+Goal-Driven Development arrives: the **`autosprint`** autonomous loop with hard
+guardrails (decisions ledger, iteration cap, completion oracle, conformance gate,
+independent critic), plus a deterministic control plane around it - complexity +
+churn-weighted test risk, a portable adversarial `audit` harness with a deterministic
+filer, an optional project `constitution` gate, progressive-disclosure index archival,
+deterministic status transitions, and per-project config. No artifact-schema change
+(`schema_version` still 2); a drop-in upgrade from v2.0.
+
 ### Fixed
 
 - **Escaped pipes in table cells (BG0021):** every table parser now shares one
