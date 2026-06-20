@@ -41,7 +41,7 @@ stdlib, read-only over the workspace, unit-tested.
 - [ ] Scripts emitting data return machine-readable JSON.
 - [ ] `next_id` prevents collisions and checks `origin/main` with `--remote`.
 - [ ] `repo_map build` produces `.local/repo-map.json` without ctags/tree-sitter.
-- [ ] All scripts covered by `scripts/tests/` (181 passing at extraction).
+- [ ] Every script under `scripts/` has unit tests and the suite passes (`npm test` exits 0; 181 at extraction 2026-06-20).
 
 ## Dependencies
 

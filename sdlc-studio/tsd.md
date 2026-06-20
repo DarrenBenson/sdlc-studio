@@ -40,7 +40,7 @@ footprint must stay within budget. The strategy is built around those two axes.
 - Hold the markdown corpus to its house style (British English, no em dashes, no
   banned jargon) and structural invariants (resolvable links, valid frontmatter,
   line budgets, version consistency) on every commit.
-- Keep the release gate honest: all 181 unit tests pass and `npm run lint` exits 0
+- Keep the release gate honest: the full unit suite passes (`npm test` exits 0) and `npm run lint` exits 0
   before a version is tagged.
 - Make the markdown-behaviour test gap explicit rather than implicit, so a future
   test backlog can close it.
@@ -129,7 +129,7 @@ written. This document records that state rather than overstating coverage.
 | Coverage Target | ~90% statement (goal) [MEDIUM] |
 | Framework | Python `unittest` (stdlib) |
 | Execution | `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests`, also `npm test` |
-| Suite size | 181 tests, all passing; runs in ~0.13s |
+| Suite size | full suite passes (`npm test` exits 0); 181 tests at extraction (2026-06-20), ~0.13s |
 | Location | `.claude/skills/sdlc-studio/scripts/tests/test_<script>.py` |
 
 The suite is fast because the helpers are pure stdlib and operate on small
@@ -245,7 +245,7 @@ Additional gates that back the NFRs but sit outside the four PRD headings:
 
 | Gate | Criteria | Blocking |
 | --- | --- | --- |
-| Unit suite | All 181 tests pass | Yes |
+| Unit suite | The full unittest suite passes (`npm test` exits 0) | Yes |
 | Markdown lint | `npm run lint` exits 0 (all six sub-checks) | Yes |
 | Link integrity | `check_links.py`: every anchor resolves | Yes |
 | Skill frontmatter | `validate_skill.py`: valid against Agent Skills standard | Yes |
@@ -343,7 +343,7 @@ running application exists to exercise.
 
 | Gate | Criteria | Blocking |
 | --- | --- | --- |
-| Unit suite | 181/181 pass | Yes |
+| Unit suite | full suite passes (`npm test` exits 0) | Yes |
 | Markdown lint (`lint:md`) | 0 violations | Yes |
 | Prose style (`lint:style`) | No em dash, no un-allowlisted jargon | Yes |
 | Link integrity (`lint:links`) | All anchors resolve | Yes |

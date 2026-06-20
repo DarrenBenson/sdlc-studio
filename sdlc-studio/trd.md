@@ -353,14 +353,17 @@ The skill is copied into an agent's skills directory. There is no running servic
 `install.sh` and `install.ps1` fetch the skill from the GitHub repo and install it
 into one or more of six targets:
 
-| Target | Directory convention |
+| Target | Local install directory (per `install.sh`) |
 | --- | --- |
 | Claude Code | `.claude/skills/sdlc-studio/` |
-| Codex | Codex skills directory |
-| Gemini CLI | Gemini skills directory |
-| opencode | opencode skills directory |
+| Codex | `.agents/skills/sdlc-studio/` (shared with `agents`) |
+| Gemini CLI | `~/.gemini/skills/sdlc-studio/` |
+| opencode | `~/.config/opencode/skills/sdlc-studio/` |
 | GitHub Copilot | `.github/skills/sdlc-studio/` |
-| `agents` (generic) | `.agents/skills/sdlc-studio/` |
+| `agents` (generic) | `.agents/skills/sdlc-studio/` (shared with Codex) |
+
+The six targets resolve to **five** distinct directories: `codex` and `agents`
+both install to `.agents/skills`.
 
 Both installers support per-target selection, `--global`/`--local`, `--uninstall`,
 `--list-targets`, `--dry-run`, and a `--version` tag. The Windows installer body
@@ -435,8 +438,8 @@ progressive disclosure rather than by a runtime metric.
 **Status:** Accepted
 
 **Context:** A skill's entry file is loaded into the agent's context on every
-invocation. SDLC Studio is large (≈42 reference files, ≈30 help files, ≈63
-templates, ≈15-19 best-practice guides). A monolithic skill file would spend a
+invocation. SDLC Studio is large (42 reference files, 31 help files, 72
+templates, 19 best-practice guides - see the §3 component table). A monolithic skill file would spend a
 large, fixed token cost on every request regardless of the task.
 
 **Decision:** Keep `SKILL.md` as a lean router (~195 lines) carrying only

@@ -1,6 +1,6 @@
 # CR-0017: CR0005 evidence is partly false: it claims verify_ac writes the report 'with no timestamp', but write_report emits generated_at
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Low
 > **Type:** Improvement
 > **Requester:** Project Audit
@@ -33,7 +33,7 @@ A reviewer checking the cited line sees a generated_at timestamp and may reject 
 
 ## Acceptance Criteria
 
-- [ ] Reword CR0005 to say the snapshot carries a generated_at timestamp but no run-id and no append history (single overwriting file), and the dr
+- [x] Reword CR0005 to say the snapshot carries a generated_at timestamp but no run-id and no append history (single overwriting file), and the dr
 
 ## Out of Scope
 
@@ -43,4 +43,5 @@ A reviewer checking the cited line sees a generated_at timestamp and may reject 
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (tooling-honesty-sprint) | Complete - doc-truth fix actioned directly (doc-only) |
 | 2026-06-20 | Project Audit | Filed from the 2026-06-20 project-profile audit (lens: design-rfc) |

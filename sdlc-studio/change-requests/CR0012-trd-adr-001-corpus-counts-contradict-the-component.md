@@ -1,6 +1,6 @@
 # CR-0012: TRD ADR-001 corpus counts contradict the Component Overview table and reality
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Low
 > **Type:** Improvement
 > **Requester:** Project Audit
@@ -33,7 +33,7 @@ An internal numeric contradiction in a load-bearing ADR of a document whose stat
 
 ## Acceptance Criteria
 
-- [ ] Reconcile ADR-001's Context figures to the section-3 table (42 reference, 31 help, 72 templates, 19 best-practices) and drop the approximate
+- [x] Reconcile ADR-001's Context figures to the section-3 table (42 reference, 31 help, 72 templates, 19 best-practices) and drop the approximate
 
 ## Out of Scope
 
@@ -43,4 +43,5 @@ An internal numeric contradiction in a load-bearing ADR of a document whose stat
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (tooling-honesty-sprint) | Complete - doc-truth fix actioned directly (doc-only) |
 | 2026-06-20 | Project Audit | Filed from the 2026-06-20 project-profile audit (lens: trd) |

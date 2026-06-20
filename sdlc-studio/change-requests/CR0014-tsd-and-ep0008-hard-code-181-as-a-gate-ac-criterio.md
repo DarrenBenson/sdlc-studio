@@ -1,6 +1,6 @@
 # CR-0014: TSD and EP0008 hard-code '181' as a gate/AC criterion, coupling them to a count that changes every release
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Low
 > **Type:** Improvement
 > **Requester:** Project Audit
@@ -33,7 +33,7 @@ As soon as one test is added, the stated gate/AC is false in six places and any 
 
 ## Acceptance Criteria
 
-- [ ] Phrase the TSD gate as 'the full unittest suite passes (npm test exits 0)' and EP0008's AC as a durable property ('every script under script
+- [x] Phrase the TSD gate as 'the full unittest suite passes (npm test exits 0)' and EP0008's AC as a durable property ('every script under script
 
 ## Out of Scope
 
@@ -43,4 +43,5 @@ As soon as one test is added, the stated gate/AC is false in six places and any 
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (tooling-honesty-sprint) | Complete - doc-truth fix actioned directly (doc-only) |
 | 2026-06-20 | Project Audit | Filed from the 2026-06-20 project-profile audit (lens: tsd) |

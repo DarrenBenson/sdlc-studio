@@ -1,6 +1,6 @@
 # CR-0013: TRD deployment topology lists six targets but hides that codex and agents share one directory
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Low
 > **Type:** Improvement
 > **Requester:** Project Audit
@@ -33,7 +33,7 @@ A migration following the TRD would expect six separate install locations and mi
 
 ## Acceptance Criteria
 
-- [ ] Replace the vague directory column with concrete paths from install.sh (claude .claude/skills, codex/agents .agents/skills, gemini ~/.gemini
+- [x] Replace the vague directory column with concrete paths from install.sh (claude .claude/skills, codex/agents .agents/skills, gemini ~/.gemini
 
 ## Out of Scope
 
@@ -43,4 +43,5 @@ A migration following the TRD would expect six separate install locations and mi
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (tooling-honesty-sprint) | Complete - doc-truth fix actioned directly (doc-only) |
 | 2026-06-20 | Project Audit | Filed from the 2026-06-20 project-profile audit (lens: trd) |
