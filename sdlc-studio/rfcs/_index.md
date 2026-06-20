@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 8 |
+| Draft | 9 |
 | In Review | 0 |
 | Accepted | 0 |
 | Superseded | 0 |
 | Withdrawn | 0 |
-| **Total** | **8** |
+| **Total** | **9** |
 
 ## All RFCs
 
@@ -25,3 +25,4 @@
 | [RFC-0006](RFC0006-reconsider-the-default-autonomous-execution-model.md) | Reconsider the default autonomous execution model: phase-gating and per-story fresh-context isolation for sequential epic implement | Medium | Draft | -- | 2026-06-20 | -- |
 | [RFC-0007](RFC0007-replace-13-baked-in-fictional-character-personas-1.md) | Replace 13 baked-in fictional-character personas (~1680 lines) with template plus generate-on-demand | Medium | Draft | -- | 2026-06-20 | -- |
 | [RFC-0008](RFC0008-consolidate-the-5-file-test-reference-clique-2030.md) | Consolidate the 5-file test reference clique (~2030 lines, triplicated anti-patterns, two files unreachable from the router) | Medium | Draft | -- | 2026-06-20 | -- |
+| [RFC-0009](RFC0009-code-complexity-signals.md) | Code-complexity signals for estimation, token budgeting, refactor-first and test risk | High | Draft | -- | 2026-06-20 | -- |
