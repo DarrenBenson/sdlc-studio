@@ -78,44 +78,31 @@ def _table_cells(line: str) -> list[str] | None:
     return sdlc_md.table_cells(line)
 
 
-def parse_index(type_: str, repo_root: Path) -> dict:
-    """Parse a type's _index.md into {rows: {id: status}, summary: {status: count}}.
+def _index_rows_and_summary(text: str, vocab: list) -> tuple[dict, dict]:
+    """Parse one index file's table rows into ({norm_id: (disp, status)}, {status: count}).
 
     The Status (and ID) columns are located by the data table's **header row** and
     read positionally, so a title cell that begins with a status word (e.g.
-    "review_prep..." -> Review, "Complete the gate..." -> Complete) is never mistaken
-    for the status (BG0018). Falls back to a first-matching-cell scan only when no
-    header is found. The summary table is rows of `| Status | Count |`.
+    "review_prep..." -> Review) is never mistaken for the status (BG0018). Falls back
+    to a first-matching-cell scan only when no header is found.
     """
-    rel, _prefix = sdlc_md.ARTIFACT_TYPES[type_]
-    index_path = repo_root / rel / "_index.md"
-    result = {"exists": index_path.exists(), "rows": {}, "summary": {}}
-    if not index_path.exists():
-        return result
-    vocab = sdlc_md.status_vocab(type_, repo_root)
-    status_col = id_col = None  # resolved from the data table's header row
-    for line in index_path.read_text(encoding="utf-8").splitlines():
+    rows: dict = {}
+    summary: dict = {}
+    status_col = id_col = None
+    for line in text.splitlines():
         cells = _table_cells(line)
         if not cells:
             continue
-        # Summary row: `| <Status> | <int> |`
-        if len(cells) == 2 and cells[1].replace(",", "").isdigit():
+        if len(cells) == 2 and cells[1].replace(",", "").isdigit():  # `| <Status> | <int> |`
             label = _canonical_status(cells[0], vocab)
             if label:
-                result["summary"][label] = int(cells[1].replace(",", ""))
+                summary[label] = int(cells[1].replace(",", ""))
             continue
         lowered = [c.lower() for c in cells]
-        # Header row of ANY table block: a data row never has a cell that is
-        # literally "status", so this fires only on headers. Re-pin every time
-        # (no first-header latch) so a second table with a different layout - e.g.
-        # per-CR breakdown tables with Status in a different column than the master
-        # table - is read against its own header, not the first one (agent-crew
-        # two-layout indexes).
-        if len(cells) > 2 and "status" in lowered:
+        if len(cells) > 2 and "status" in lowered:  # re-pin per header (two-layout safe)
             status_col = lowered.index("status")
             id_col = lowered.index("id") if "id" in lowered else None
             continue
-        # Data row - read positionally when the header was found.
         if id_col is not None and id_col < len(cells):
             m = sdlc_md.ID_SEARCH_RE.search(cells[id_col])
             row_id = m.group(0) if m else None
@@ -124,15 +111,37 @@ def parse_index(type_: str, repo_root: Path) -> dict:
                            for c in cells if sdlc_md.ID_SEARCH_RE.search(c)), None)
         if status_col is not None and status_col < len(cells):
             row_status = _canonical_status(cells[status_col], vocab)
-        else:  # header-less fallback (legacy): first cell that canonicalises
+        else:
             row_status = next((cs for c in cells if (cs := _canonical_status(c, vocab))), None)
         if row_id:
             key = _norm_id(row_id)
-            prev = result["rows"].get(key)
-            # A real status never gets clobbered by a later status-less row
-            # mentioning the same ID (e.g. a dependency or breakdown table).
-            if row_status is not None or prev is None:
-                result["rows"][key] = (row_id, row_status or "Unknown")
+            if row_status is not None or key not in rows:
+                rows[key] = (row_id, row_status or "Unknown")
+    return rows, summary
+
+
+def parse_index(type_: str, repo_root: Path) -> dict:
+    """Parse a type's _index.md into {rows, summary}. Rows are the live index rows
+    UNIONED with any `<type>/archive/**/*.md` sub-index rows (RFC0012) - so an
+    artifact archived out of the live table is still seen as "in the index" (no false
+    missing-row) and the census stays correct. The summary table is the live index's.
+    """
+    rel, _prefix = sdlc_md.ARTIFACT_TYPES[type_]
+    index_path = repo_root / rel / "_index.md"
+    result = {"exists": index_path.exists(), "rows": {}, "summary": {}}
+    if not index_path.exists():
+        return result
+    vocab = sdlc_md.status_vocab(type_, repo_root)
+    rows, summary = _index_rows_and_summary(index_path.read_text(encoding="utf-8"), vocab)
+    result["summary"] = summary
+    result["rows"] = rows
+    archive_dir = repo_root / rel / "archive"
+    if archive_dir.is_dir():  # RFC0012: archived terminal rows still count toward the census
+        for af in sorted(archive_dir.rglob("*.md")):
+            arows, _ = _index_rows_and_summary(af.read_text(encoding="utf-8"), vocab)
+            for k, v in arows.items():
+                if v[1] != "Unknown" or k not in result["rows"]:
+                    result["rows"][k] = v
     return result
 
 

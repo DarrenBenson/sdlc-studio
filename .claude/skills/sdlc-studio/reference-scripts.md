@@ -132,6 +132,17 @@ emits the same per-function scores into the map.
 - `scan`: list functions over the cognitive threshold (`complexity.cognitive_high`, default 15)
 - `assess --files ...`: a change's blast-radius difficulty band + refactor-first hotspots (used by `code plan`)
 
+### `archive.py`
+
+Index archival for large boards (RFC0012). `archive --type <t> --release <r>` moves a
+type's terminal master-table rows into `<type>/archive/{release}/{type}.md` and leaves a
+bullet pointer in the live index - rows move, artifact files stay. `parse_index` unions
+the archive sub-indexes so the census stays correct. Explicit, idempotent per release.
+
+- `archive`: move terminal rows of one type by release (`--dry-run` to preview)
+
+Convention: `reference-outputs.md#index-archival`.
+
 ### `constitution.py`
 
 Project-constitution principle gate (RFC0005). Asserts the machine-checkable

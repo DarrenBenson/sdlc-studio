@@ -1,6 +1,6 @@
 # RFC-0012: Progressive-disclosure indexes with release archival
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Priority:** High
 > **Author:** Darren Benson
 > **Date:** 2026-06-20
@@ -105,11 +105,11 @@ independent first win while B is built.
 
 | # | Decision | Options | Owner | How it resolves | Status |
 | --- | --- | --- | --- | --- | --- |
-| D1 | Archival trigger | release boundary / threshold-N **[leaning]** / age / on `archive` command | Operator | threshold-auto + release grouping | Open |
-| D2 | Archive scope | index rows only **[leaning]** / move artifact files into `archive/{release}/` too | Design | rows-only first (files stay, links intact); files later | Open |
-| D3 | Census of archived | trust the summary counts **[leaning]** / `reconcile --deep` re-validates archived rows | Design | trust summaries; deep re-validate on demand | Open |
-| D4 | Summary-row schema | range + headline + status counts + pointer | Design | must carry counts so the census stays correct | Open |
-| D5 | Migration | one-off `archive` pass converts an existing flat index | Design | a reconcile/archive subcommand | Open |
+| D1 | Archival trigger | release boundary / threshold-N / age / on `archive` command **[chosen]** | Operator | explicit operator-run command | Resolved |
+| D2 | Archive scope | index rows only **[chosen]** / move artifact files too | Design | rows-only (files stay, links intact); files later | Resolved |
+| D3 | Census of archived | parse_index unions archive sub-index rows **[chosen]** / trust summary counts / deep re-validate | Design | union the full archived rows - census exact, not summary-trust | Resolved |
+| D4 | Pointer schema | bullet: range + count + archive pointer (not a table row) | Design | bullet so the parser ignores it; counts come from the unioned rows | Resolved |
+| D5 | Migration | `archive --type <t> --release <r>` run per type | Design | the archive subcommand is the migration | Resolved |
 
 ---
 
@@ -147,9 +147,11 @@ independent first win while B is built.
 
 > *Filled on acceptance.* Chosen option + rationale + the CRs spawned.
 
-**Outcome:** TBD
-**Rationale:** TBD
-**Spawned CRs:** TBD
+**Outcome:** Accepted (full build: WS1-WS4)
+
+**Rationale:** A consuming project needs it at scale (agent-bridge 196KB/376KB indexes; deferral lifted). D1 explicit `archive` command (predictable over auto-trigger), D2 rows-only (files/links intact), D3 census by UNIONing the full archived rows into parse_index (exact, not summary-trust - removes the 'stale counts' risk), D4 bullet pointer (parser-ignored), D5 the command is the migration. Proven read-only at scale on agent-bridge (371 stories / 407 CRs archivable).
+
+**Spawned CRs:** CR0041 (archive.py + parse_index union + conventions), **delivered**.
 
 ---
 
@@ -166,5 +168,6 @@ independent first win while B is built.
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (rfc0012) | Accepted + delivered as CR0041 (full WS1-4; operator: needed at scale, deferral lifted); census by parse_index union (D3) removes the stale-counts risk |
 | 2026-06-20 | Autosprint (rfc-decide session) | Decision session 2026-06-20: deferred the archival machinery (WS1-3) - high value only at scale, this repo is small; WS4 slice-read can be picked up anytime. Revisit at an index size threshold. |
 | 2026-06-20 | Darren Benson | Promoted from CR0019; weighs cascade vs archive-junction vs threshold vs read-time PD |

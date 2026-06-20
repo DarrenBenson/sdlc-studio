@@ -358,6 +358,39 @@ Index files track all artifacts with basic metadata:
 - IDs never change once assigned
 - No gaps in sequence (auto-increment from highest)
 
+### Progressive disclosure: archival {#index-archival}
+
+On large projects a flat `_index.md` grows O(n) and is loaded whole - mostly terminal
+rows. Keep the live index bounded by archiving terminal rows by release (RFC0012):
+
+- **Live `_index.md`** holds the **active** (non-terminal) rows in its master table,
+  its summary table (counts of active + archived), and an **`## Archived Releases`**
+  section of **bullet pointers** (not a table, so the parser ignores them):
+
+  ```markdown
+  ## Archived Releases
+
+  - **r2.5** (US0023-US0064, 42 archived) -> stories/archive/r2.5/story.md
+  ```
+
+- **`<type>/archive/{release}/{type}.md`** holds the moved **full rows** (the same
+  table columns), so traceability and IDs are intact - **rows move, files stay put**.
+- **The census stays correct:** `reconcile` / `status` union the archive sub-index rows
+  with the live rows (`parse_index`), so an archived artifact is never flagged
+  `missing-row` and the summary counts still cover everything.
+- **Archive on demand:** `archive --type <t> --release <r>` (explicit, operator-run -
+  no auto-trigger) moves the master table's terminal rows and writes the pointer.
+  Re-runnable per release. See `scripts/archive.py`. It assumes one **master** status
+  table per index (the `## All` table whose ID column carries the artifact ids); a
+  secondary status view is never selected.
+
+### Slice-read large indexes {#index-slice-read}
+
+Even before archiving, do not load a large `_index.md` whole just to orient. Slice it:
+`grep` for the IDs/statuses you need, or read only the summary table and the relevant
+section. The deterministic scripts (`reconcile`, `status`) already read positionally;
+a human-facing orientation read should do the same on a big board.
+
 ## Metadata Header Standards {#frontmatter}
 
 Numbered artifacts (epics, stories, plans, bugs, test specs, workflows, CRs, RFCs)

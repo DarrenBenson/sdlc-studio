@@ -36,7 +36,7 @@ ALLOWLIST = {
     "reference-epic.md": 1052,
     "reference-story.md": 1037,
     "reference-code.md": 911,
-    "reference-outputs.md": 743,
+    "reference-outputs.md": 781,  # +RFC0012 index-archival + slice-read conventions (CR0041)
     "reference-decisions.md": 724,
     "reference-test-best-practices.md": 606,
 }

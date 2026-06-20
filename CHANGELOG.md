@@ -51,6 +51,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Progressive-disclosure indexes (RFC0012 / CR0041):** `scripts/archive.py archive
+  --type <t> --release <r>` bounds a large `_index.md` by moving the master table's
+  terminal rows into `<type>/archive/{release}/{type}.md` (rows move, files stay),
+  leaving a bullet pointer. `reconcile.parse_index` now unions the archive sub-indexes,
+  so the census stays exact (archived artifacts are never `missing-row`; counts =
+  active+archived) - the stale-counts risk is removed by counting the real archived
+  rows, not a summary. Conventions + slice-read guidance in reference-outputs.md.
+  Proven read-only at scale on agent-bridge (371 stories / 407 CRs archivable).
 - **Project constitution gate (RFC0005 / CR0040):** an optional
   `sdlc-studio/constitution.md` lets a project declare inviolable principles;
   `scripts/constitution.py check` asserts the machine-checkable ones across the artifact
