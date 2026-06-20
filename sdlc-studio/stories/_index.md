@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 20 |
+| Done | 22 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
-| **Total** | **25** |
+| **Total** | **27** |
 
 ## All Stories
 
@@ -47,3 +47,5 @@
 | [US0023](US0023-reconcile-apply.md) | reconcile apply - mechanical index fixes | Done | EP0005 | 2026-06-20 | 2026-06-20 |
 | [US0024](US0024-config-extensible-status-vocab.md) | config-extensible status vocabulary | Done | EP0008 | 2026-06-20 | 2026-06-20 |
 | [US0025](US0025-conformance-adoption-cutoff.md) | conformance adoption cutoff | Done | EP0005 | 2026-06-20 | 2026-06-20 |
+| [US0026](US0026-complexity-computation.md) | complexity computation (cognitive + cyclomatic) | Done | EP0008 | 2026-06-20 | 2026-06-20 |
+| [US0027](US0027-code-plan-complexity-estimation.md) | code plan complexity estimation + refactor-first | Done | EP0008 | 2026-06-20 | 2026-06-20 |

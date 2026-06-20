@@ -161,6 +161,14 @@ class ParserTests(unittest.TestCase):
         names = {s["name"] for s in symbols}
         self.assertIn("foo", names)
 
+    def test_python_function_symbols_carry_complexity(self) -> None:
+        # RFC0009 WS1: per-function cognitive + cyclomatic emitted into the map.
+        src = "def f(a, b):\n    if a and b:\n        return 1\n    return 0\n"
+        symbols, _ = repo_map.parse_python(src)
+        fn = next(s for s in symbols if s["name"] == "f")
+        self.assertEqual(fn["cognitive"], 2)   # if(1) + boolop(1)
+        self.assertEqual(fn["cyclomatic"], 3)  # 1 + if + boolop branch
+
     def test_go_parser_captures_struct_and_func(self) -> None:
         src = (
             'package main\n'

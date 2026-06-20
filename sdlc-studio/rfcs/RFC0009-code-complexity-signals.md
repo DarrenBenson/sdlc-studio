@@ -185,7 +185,7 @@ output advisory.
 
 **Rationale:** Adopt cognitive + cyclomatic complexity from the AST repo_map (D1); stdlib-first cognitive scorer + lizard soft dep (D2); recommend-not-block, configurable threshold (D3); change blast-radius unit (D4); estimation + refactor-first first (D5); refactor CR scoped to the change (D6).
 
-**Spawned CRs:** WS1 (complexity in repo_map) + WS2 (code plan estimation + refactor-first reco) - created when picked up. WS3 (loop token-budget, unlocks --order wsjf) deferred until RFC0001 consumes it; WS4/WS5 and the composite score deferred until calibration data exists.
+**Spawned CRs:** WS1 -> CR0028 (complexity.py + repo_map emit, **delivered**); WS2 -> CR0029 (code plan estimation + refactor-first, **delivered**). WS3 (loop token-budget, unlocks --order wsjf) deferred until RFC0001 consumes it; WS4/WS5 and the composite score deferred until calibration data exists.
 
 ---
 
@@ -205,5 +205,6 @@ output advisory.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Autosprint (rfc-decide session) | Accepted in the RFC decision session - Accepted (scoped) |
+| 2026-06-20 | Autosprint (RFC0009) | WS1+WS2 delivered (CR0028/CR0029): complexity.py cognitive+cyclomatic, repo_map emit, code plan assess + refactor-first; WS3/4/5 remain deferred |
 | 2026-06-20 | Darren Benson | RFC drafted - complexity signals for estimation, token budget, refactor-first, test risk |
 | 2026-06-20 | Darren Benson | Folded in the cognitive-complexity algorithm + open-source tooling landscape (complexipy/lizard/radon); sharpened D1/D2 to "own stdlib Python scorer + lizard soft dep" |

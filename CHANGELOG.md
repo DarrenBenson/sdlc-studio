@@ -26,6 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Code-complexity signals (RFC0009 / CR0028 / CR0029):** new `scripts/complexity.py`
+  computes cognitive (SonarSource) and cyclomatic complexity per function from Python's
+  `ast` (pure stdlib; `lizard` soft-dep for other languages, degrading to unscored).
+  `repo_map` emits per-function scores into the map. `code plan` (reference-code.md
+  step 6b) runs `complexity assess` over a change's blast radius to weight the estimate
+  by difficulty and recommend a scoped refactor-first for hotspots - advisory, never a
+  gate. Threshold is `complexity.cognitive_high` (default 15). WS3/4/5 stay deferred.
 - **Per-project status vocabulary (CR0027):** a project can declare extra statuses
   in `sdlc-studio/.config.yaml` under `status_vocab.<type>` (e.g. `story: [Gated]`)
   and reconcile/validate/conformance recognise them instead of parsing the row as

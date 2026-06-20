@@ -9,12 +9,12 @@
 | Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 26 |
+| Complete | 28 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **27** |
+| **Total** | **29** |
 
 ## All Changes
 
@@ -47,3 +47,5 @@
 | [CR-0025](CR0025-checks-emit-remediation-guidance.md) | deterministic checks emit remediation guidance, not just findings | Complete | High | Feature | 2026-06-20 | EP0005 |
 | [CR-0026](CR0026-reconcile-apply-subcommand.md) | reconcile `apply` - mechanical index fixes behind --dry-run | Complete | High | Feature | 2026-06-20 | EP0005 |
 | [CR-0027](CR0027-per-project-status-vocab-and-conformance-cutoff.md) | per-project status vocab + conformance adoption cutoff | Complete | High | Feature | 2026-06-20 | EP0005/EP0008 |
+| [CR-0028](CR0028-complexity-computation.md) | complexity computation (RFC0009 WS1) | Complete | High | Feature | 2026-06-20 | EP0008 |
+| [CR-0029](CR0029-code-plan-complexity-estimation.md) | code plan complexity estimation + refactor-first (RFC0009 WS2) | Complete | High | Feature | 2026-06-20 | EP0008 |

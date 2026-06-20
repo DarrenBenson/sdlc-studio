@@ -129,6 +129,29 @@ Detailed workflows for code planning, review, and quality checks.
    The Explore agent augments the repo map result; it does not
    invent it. See `reference-repo-map.md` for scoring details.
 
+6b. **Assess change difficulty (RFC0009)**
+   The ranked files are the change's blast radius. Score their complexity so
+   the estimate reflects the *difficulty* of the code, not just the story shape:
+
+   ```bash
+   python3 "$CLAUDE_SKILL_DIR/scripts/complexity.py" assess \
+     --files {the repo-map top-N files} --format json
+   ```
+
+   Fold the result into the plan:
+
+   - **Estimate.** The `difficulty` band (low / medium / high, by max cognitive
+     complexity vs the configurable `complexity.cognitive_high` threshold, default
+     15) weights the effort/points - a `high` change in a 40-branch function costs
+     more tokens, iterations and error rate than a new file of the same story shape.
+   - **Refactor-first (recommended, never a gate - D3).** For each `refactor_first`
+     hotspot, add a plan step to reduce that function's complexity *before* the
+     feature change, **scoped to the change only** (Beck's "make the change easy",
+     not a wholesale rewrite - D6). LLMs measurably do better on
+     complexity-reduced code.
+
+   The signal is advisory: record it in the plan, do not block on it.
+
 7. **Generate Implementation Plan**
    Use sequential thinking to plan implementation:
 

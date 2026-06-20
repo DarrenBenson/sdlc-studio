@@ -27,6 +27,7 @@ from typing import Iterable
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
+import complexity  # noqa: E402  (sibling; per-function complexity for the map, RFC0009 WS1)
 
 # Languages are identified by extension. Each language provides a symbol
 # extractor and an import extractor. Python uses the stdlib ast module;
@@ -174,7 +175,9 @@ def parse_python(text: str) -> tuple[list[dict], list[str]]:
 
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            symbols.append({"name": node.name, "kind": "function", "line": node.lineno})
+            symbols.append({"name": node.name, "kind": "function", "line": node.lineno,
+                            "cognitive": complexity.cognitive_complexity(node),
+                            "cyclomatic": complexity.cyclomatic_complexity(node)})
         elif isinstance(node, ast.ClassDef):
             symbols.append({"name": node.name, "kind": "class", "line": node.lineno})
         elif isinstance(node, ast.Import):

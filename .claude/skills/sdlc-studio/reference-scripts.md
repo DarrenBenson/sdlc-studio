@@ -122,6 +122,16 @@ and an in-degree score. Queried by the Agent Prompt Template and
 Full workflow: `reference-repo-map.md`. User-facing help:
 `help/repo-map.md`.
 
+### `complexity.py`
+
+Cognitive (SonarSource) + cyclomatic complexity per function from Python's
+`ast` (pure stdlib; `lizard` soft-dep for other languages, unscored without
+it). Advisory signal for estimation and refactor-first (RFC0009); `repo_map`
+emits the same per-function scores into the map.
+
+- `scan`: list functions over the cognitive threshold (`complexity.cognitive_high`, default 15)
+- `assess --files ...`: a change's blast-radius difficulty band + refactor-first hotspots (used by `code plan`)
+
 ### `verify_ac.py`
 
 Executes AC verifiers defined in story files and updates each AC's
