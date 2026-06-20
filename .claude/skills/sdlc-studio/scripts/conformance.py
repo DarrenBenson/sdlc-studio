@@ -46,9 +46,17 @@ def detect_conformance(repo_root: Path | str) -> dict:
         status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab) or "Unknown"
         decomposed = sdlc_md.extract_field(text, "Epic") is not None
         has_ac = has_verify = False
+        in_ac = False
         verified_states: list[str] = []
         for line in text.splitlines():
+            if line.startswith("## "):
+                in_ac = "acceptance criteria" in line.lower()
+                continue
             if sdlc_md.AC_HEADING_RE.match(line) or sdlc_md.AC_BULLET_RE.match(line):
+                has_ac = True
+            # A populated Acceptance Criteria section counts as "specified" even
+            # when the ACs are prose bullets without an ACn id (house templates).
+            if in_ac and line.strip() and not line.startswith("#"):
                 has_ac = True
             if sdlc_md.VERIFY_RE.match(line):
                 has_verify = True

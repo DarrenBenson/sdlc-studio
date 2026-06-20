@@ -110,8 +110,13 @@ def parse_index(type_: str, repo_root: Path) -> dict:
                 result["summary"][label] = int(cells[1].replace(",", ""))
             continue
         lowered = [c.lower() for c in cells]
-        # Header row of the data table: pin the Status/ID columns by name.
-        if status_col is None and len(cells) > 2 and "status" in lowered:
+        # Header row of ANY table block: a data row never has a cell that is
+        # literally "status", so this fires only on headers. Re-pin every time
+        # (no first-header latch) so a second table with a different layout - e.g.
+        # per-CR breakdown tables with Status in a different column than the master
+        # table - is read against its own header, not the first one (agent-crew
+        # two-layout indexes).
+        if len(cells) > 2 and "status" in lowered:
             status_col = lowered.index("status")
             id_col = lowered.index("id") if "id" in lowered else None
             continue

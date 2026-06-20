@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 0 |
 | In Progress | 0 |
-| Fixed | 19 |
+| Fixed | 20 |
 | Verified | 0 |
 | Closed | 0 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **19** |
+| **Total** | **20** |
 
 ## All Bugs
 
@@ -38,3 +38,4 @@
 | [BG0017](BG0017-rfc0003-buries-a-fixable-false-guarantee-reconcile.md) | RFC0003 buries a fixable false-guarantee (reconcile 'Idempotent') inside an unsettled RFC, so the wrong doc stays uncorrected | Fixed | Medium | 2026-06-20 | 2026-06-20 |
 | [BG0018](BG0018-reconcile-index-status-parser-matches-title.md) | reconcile index-status parser matches a status word in the title column | Fixed | Medium | 2026-06-20 | 2026-06-20 |
 | [BG0019](BG0019-determinism-checks-mishandle-bug-artifact-class.md) | integrity and audit mishandle the bug artifact class | Fixed | High | 2026-06-20 | 2026-06-20 |
+| [BG0020](BG0020-parser-rejects-consuming-repo-house-templates.md) | shared parser rejects consuming repos' house templates | Fixed | High | 2026-06-20 | 2026-06-20 |

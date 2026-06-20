@@ -78,6 +78,32 @@ def _record_verdict(root, unit, verdict="approve"):
     m.record_verdict(root, unit, verdict)
 
 
+class SpecifiedStageTests(unittest.TestCase):
+    def test_prose_bullet_ac_section_is_specified(self) -> None:
+        # An AC section of prose bullets (no ACn id) still counts as specified.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "US0001-x.md").write_text(
+                "# US0001: s\n\n> **Status:** Ready\n> **Epic:** [EP0001](../epics/EP0001-x.md)\n\n"
+                "## Acceptance Criteria\n\n- New byModel strategy in group.ts\n- Unit-tested: counts match\n\n"
+                "## Notes\n\nx\n", encoding="utf-8")
+            u = _units(root)["US0001"]
+            self.assertTrue(u["stages"]["specified"])
+
+    def test_empty_ac_section_not_specified(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "US0001-x.md").write_text(
+                "# US0001: s\n\n> **Status:** Ready\n> **Epic:** [EP0001](../epics/EP0001-x.md)\n\n"
+                "## Acceptance Criteria\n\n## Notes\n\nx\n", encoding="utf-8")
+            u = _units(root)["US0001"]
+            self.assertFalse(u["stages"]["specified"])
+
+
 class CritiqueStageTests(unittest.TestCase):
     def test_done_without_verdict_not_conformant(self) -> None:
         with tempfile.TemporaryDirectory() as d:

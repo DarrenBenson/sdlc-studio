@@ -34,13 +34,15 @@ ID_RE = re.compile(r"^((?:EP|US|PL|BG|TS|WF|RFC|CR)-?\d{4})", re.IGNORECASE)
 ID_SEARCH_RE = re.compile(r"(?<![A-Za-z])(?:EP|US|PL|BG|TS|WF|RFC|CR)-?\d{4}", re.IGNORECASE)
 # Acceptance-criterion heading: `### AC1: Title`.
 AC_HEADING_RE = re.compile(r"^###\s+(AC\d+)(?::\s*(.*))?$")
-# Acceptance-criterion bold bullet: `- **AC1:** text` / `* **AC1** text` — the
-# compact inline style many stories use instead of a heading per criterion.
-AC_BULLET_RE = re.compile(r"^\s*[-*]\s+\*\*(AC\d+)[^*]*\*\*[:\s]*(.*)$")
-# AC verifier bullets.
-VERIFY_RE = re.compile(r"^(\s*)-\s*\*\*Verify:\*\*\s*(.+?)\s*$")
+# Acceptance-criterion bold bullet: `- **AC1:** text` / `* **AC1** text` / a
+# checkbox form `- [ ] **AC1** text` (house template) — the compact inline style
+# many stories use instead of a heading per criterion.
+AC_BULLET_RE = re.compile(r"^\s*[-*]\s+(?:\[[ xX]\]\s+)?\*\*(AC\d+)[^*]*\*\*[:\s]*(.*)$")
+# AC verifier bullets. The leading dash is optional — some repos use a standalone
+# `**Verify:**` line rather than a `- **Verify:**` bullet.
+VERIFY_RE = re.compile(r"^(\s*)-?\s*\*\*Verify:\*\*\s*(.+?)\s*$")
 VERIFIED_RE = re.compile(
-    r"^(\s*)-\s*\*\*Verified:\*\*\s*(yes|no|stale|manual)\s*(?:\(([^)]*)\))?\s*$",
+    r"^(\s*)-?\s*\*\*Verified:\*\*\s*(yes|no|stale|manual)\s*(?:\(([^)]*)\))?\s*$",
     re.IGNORECASE,
 )
 
@@ -92,12 +94,19 @@ def read_json(path: Path, default: T) -> T:
 
 
 def extract_field(text: str, name: str) -> str | None:
-    """Value of a `> **Name:** value` metadata line, or None if absent.
+    """Value of a `**Name:** value` metadata field, or None if absent.
 
-    The leading blockquote `>` is optional — older artefacts use a plain
-    `**Name:** value` metadata block, which is just as valid.
+    Handles three shapes: a standalone `> **Name:** value` line, a plain
+    `**Name:** value` line (no blockquote), and an inline run where several fields
+    share one line separated by `·`, e.g.
+    `> **Status:** Done · **Epic:** EP0088 · **Points:** 3`. The field is anchored
+    to a line start (optional `>`) or a `·` separator, so a `**Name:**` mentioned
+    in prose is not matched; the value is captured up to the next `·`, the next
+    `**Field:**`, or end of line, so a field never swallows the ones after it.
     """
-    m = re.search(rf"^>?\s*\*\*{re.escape(name)}:\*\*\s*(.+?)\s*$", text, re.M)
+    m = re.search(
+        rf"(?:^>?\s*|·\s*)\*\*{re.escape(name)}:\*\*\s*(.+?)\s*(?=·|\s\*\*[^*\n]+:\*\*|$)",
+        text, re.M)
     return m.group(1) if m else None
 
 

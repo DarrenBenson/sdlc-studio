@@ -185,5 +185,38 @@ class ArtifactFilesTests(unittest.TestCase):
             self.assertEqual(names, {"EP0001-real.md"})
 
 
+class HouseTemplateTests(unittest.TestCase):
+    """Parse a consuming repo's house template (agent-crew/agent-bridge shapes)."""
+
+    INLINE = "> **Status:** Done (v2.94.0) · **Epic:** EP0088 · **CR:** CR-0092 · **Points:** 3\n"
+
+    def test_extract_field_inline_metadata(self) -> None:
+        self.assertEqual(sdlc_md.extract_field(self.INLINE, "Status"), "Done (v2.94.0)")
+        self.assertEqual(sdlc_md.extract_field(self.INLINE, "Epic"), "EP0088")
+        self.assertEqual(sdlc_md.extract_field(self.INLINE, "CR"), "CR-0092")
+        self.assertEqual(sdlc_md.extract_field(self.INLINE, "Points"), "3")
+
+    def test_extract_field_standalone_still_works(self) -> None:
+        self.assertEqual(sdlc_md.extract_field("> **Status:** Done\n", "Status"), "Done")
+        self.assertEqual(sdlc_md.extract_field("**Epic:** [EP0001: x](../e/EP0001-x.md)\n", "Epic"),
+                         "[EP0001: x](../e/EP0001-x.md)")
+        self.assertIsNone(sdlc_md.extract_field("> **Status:** Done\n", "Epic"))
+
+    def test_ac_bullet_accepts_checkbox(self) -> None:
+        m = sdlc_md.AC_BULLET_RE.match("- [ ] **AC1** A header badge renders the summary")
+        self.assertIsNotNone(m)
+        self.assertEqual(m.group(1), "AC1")
+        # the existing colon style still matches
+        self.assertIsNotNone(sdlc_md.AC_BULLET_RE.match("- **AC2:** does a thing"))
+
+    def test_verify_accepts_dashless(self) -> None:
+        self.assertIsNotNone(sdlc_md.VERIFY_RE.match("**Verify:** unit/component test for the shell"))
+        self.assertIsNotNone(sdlc_md.VERIFY_RE.match("- **Verify:** pytest x"))  # dashed still works
+
+    def test_verified_accepts_dashless(self) -> None:
+        self.assertIsNotNone(sdlc_md.VERIFIED_RE.match("**Verified:** yes (2026-06-20)"))
+        self.assertIsNotNone(sdlc_md.VERIFIED_RE.match("- **Verified:** no"))
+
+
 if __name__ == "__main__":
     unittest.main()

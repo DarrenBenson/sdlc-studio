@@ -98,6 +98,30 @@ class StatusWordTitleTests(unittest.TestCase):
             self.assertEqual(idx["rows"]["CR0001"][1], "Proposed")  # not "Complete"
 
 
+class TwoLayoutIndexTests(unittest.TestCase):
+    def test_status_col_repins_per_header(self) -> None:
+        # A second table with a different layout (Status in a different column)
+        # must be read against its own header, not the first table's (agent-crew).
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "US0001-x.md").write_text("# US0001: a\n\n> **Status:** Done\n", encoding="utf-8")
+            (sd / "US0002-x.md").write_text("# US0002: b\n\n> **Status:** Proposed\n", encoding="utf-8")
+            (sd / "_index.md").write_text(
+                "# Stories\n\n"
+                "| Story | Title | Epic | Status | Points | Dependencies |\n"
+                "| --- | --- | --- | --- | --- | --- |\n"
+                "| US0001 | a | EP0001 | Done | 5 | None |\n\n"
+                "## CR-0001 breakdown\n\n"
+                "| Story | Title | CR | Points | Status |\n"
+                "| --- | --- | --- | --- | --- |\n"
+                "| US0002 | b | CR-0001 | 3 | Proposed |\n", encoding="utf-8")
+            idx = reconcile.parse_index("story", root)
+            self.assertEqual(idx["rows"]["US0001"][1], "Done")      # master: Status @ col 3
+            self.assertEqual(idx["rows"]["US0002"][1], "Proposed")  # breakdown: Status @ col 4 (re-pinned)
+
+
 class DriftTests(unittest.TestCase):
     def test_detects_all_three_classes_plus_count(self) -> None:
         with tempfile.TemporaryDirectory() as d:
