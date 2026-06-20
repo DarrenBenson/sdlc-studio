@@ -1,6 +1,6 @@
 # US0009: Persisted decisions ledger
 
-> **Status:** Ready
+> **Status:** Done
 > **Epic:** [EP0007: Agentic Orchestration](../epics/EP0007-orchestration.md)
 > **Owner:** Autosprint (CR0020, by hand)
 > **Reviewer:** --
@@ -29,7 +29,7 @@ that emptied US0006). Pure stdlib; reuses `lib/sdlc_md` (`now_iso8601`, `slug`).
 - **When** `append_decision(root, "CR0020", "drop PL files", "evidence: 0.27%")` runs
 - **Then** `sdlc-studio/decisions/CR0020.md` exists with a header and one row carrying the timestamp, decision and rationale
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ledger.py::AppendTests::test_creates_and_appends
-- **Verified:** pending
+- **Verified:** yes (2026-06-20)
 
 ### AC2: Append-only (no truncation)
 
@@ -37,7 +37,7 @@ that emptied US0006). Pure stdlib; reuses `lib/sdlc_md` (`now_iso8601`, `slug`).
 - **When** a third is appended
 - **Then** all three rows are present in order (earlier rulings are never lost)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ledger.py::AppendTests::test_append_only_preserves
-- **Verified:** pending
+- **Verified:** yes (2026-06-20)
 
 ### AC3: Read the ledger back
 
@@ -45,7 +45,7 @@ that emptied US0006). Pure stdlib; reuses `lib/sdlc_md` (`now_iso8601`, `slug`).
 - **When** `read_ledger(root, "CR0020")` runs
 - **Then** it returns the rulings as a list of dicts (decision, rationale, at)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ledger.py::ReadTests::test_reads_rows
-- **Verified:** pending
+- **Verified:** yes (2026-06-20)
 
 ### AC4: CLI record + show
 
@@ -53,7 +53,7 @@ that emptied US0006). Pure stdlib; reuses `lib/sdlc_md` (`now_iso8601`, `slug`).
 - **When** `ledger.py record --tranche CR0020 --decision d --rationale r` then `ledger.py show --tranche CR0020`
 - **Then** record exits 0 and show prints the ruling
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ledger.py::CliTests::test_record_then_show
-- **Verified:** pending
+- **Verified:** yes (2026-06-20)
 
 ## Implementation
 
