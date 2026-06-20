@@ -51,6 +51,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **autosprint `--order wsjf` (RFC0009 WS3 / CR0038):** the WSJF stub is now real -
+  priority stays dominant and the cognitive complexity of a unit's `Affects` files
+  (scored by complexity.py) breaks ties within a priority, so the smaller blast-radius
+  job goes first; the plan also carries a complexity-weighted per-unit token budget.
+  Degrades to plain priority when no complexity is known; complexity never overrides
+  priority; dependencies still win.
+- **Packaged skill-audit lens pack (RFC0002 WS5 / CR0039):**
+  `templates/audit-profiles/skill.md` declares the four skill lenses as a loadable
+  profile for the audit harness.
 - **Adversarial audit harness (RFC0002 / CR0035-CR0037):** the portable, tool-neutral
   `audit` methodology - `reference-audit.md` (find -> refute-panel verify -> merge ->
   file pipeline, project + skill lens profiles, N-of-M refute, budget controls), the

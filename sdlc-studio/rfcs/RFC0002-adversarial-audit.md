@@ -163,7 +163,7 @@ profile; the project profile is the headline.
 
 **Rationale:** Ship the portable harness (twice-proven); lock methodology + filer quality before any one-click command. D2 portable-first, D3 N-of-M configurable, D4 triage-first filing, D6 --budget cap.
 
-**Spawned CRs:** WS1 -> CR0036 (reference-audit.md + lens packs), WS2 -> CR0037 (harness templates), WS3 -> CR0035 (deterministic filer) - all **delivered**. WS4 (wired /audit command) deferred until a 3rd run + D4/D6 defaults; WS5 deferred.
+**Spawned CRs:** WS1 -> CR0036 (reference-audit.md + lens packs), WS2 -> CR0037 (harness templates), WS3 -> CR0035 (deterministic filer) - all **delivered**. WS4 (wired /audit command) deferred until a 3rd run + D4/D6 defaults; WS5 -> CR0039 (skill-profile pack), **delivered**.
 
 ---
 

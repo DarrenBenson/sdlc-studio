@@ -71,7 +71,8 @@ Per-artifact-type lenses + cross-artifact coherence:
 ### Skill profile {#audit-skill-profile}
 
 For auditing an agent skill itself - the four lenses proven on 2026-06-20:
-over-engineering, token-economy, determinism, external-benchmark.
+over-engineering, token-economy, determinism, external-benchmark. Packaged as a
+loadable pack at `templates/audit-profiles/skill.md` (each row is a finder lens).
 
 ### Extending {#audit-extend}
 

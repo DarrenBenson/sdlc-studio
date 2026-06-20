@@ -9,12 +9,12 @@
 | Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 36 |
+| Complete | 38 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **37** |
+| **Total** | **39** |
 
 ## All Changes
 
@@ -57,3 +57,5 @@
 | [CR-0035](CR0035-deterministic-finding-filer.md) | deterministic Bug/CR/RFC finding filer (RFC0002 WS3) | Complete | High | Feature | 2026-06-20 | -- |
 | [CR-0036](CR0036-reference-audit-methodology.md) | reference-audit.md methodology + project lens packs (RFC0002 WS1) | Complete | High | Feature | 2026-06-20 | -- |
 | [CR-0037](CR0037-audit-harness-templates.md) | portable audit prompt-harness templates (RFC0002 WS2) | Complete | Medium | Feature | 2026-06-20 | -- |
+| [CR-0038](CR0038-autosprint-wsjf-complexity.md) | autosprint --order wsjf + complexity-weighted budget (RFC0009 WS3) | Complete | Medium | Feature | 2026-06-20 | -- |
+| [CR-0039](CR0039-audit-skill-profile-pack.md) | package the skill-profile lens pack (RFC0002 WS5) | Complete | Low | Feature | 2026-06-20 | -- |

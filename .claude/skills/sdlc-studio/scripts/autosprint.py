@@ -3,9 +3,13 @@
 
 `autosprint plan` selects a batch of work by query (open bugs, proposed CRs, ready
 stories) and orders it, so the operator sees the triage plan before the run starts.
-Ordering is by priority/severity (Critical first); dependency-topological and WSJF
-(priority over RFC0009 complexity) are layered later - `--order wsjf` currently
-falls back to priority until the complexity signal exists. Read-only; pure stdlib.
+Ordering is by priority/severity (Critical first); dependency-topological; and WSJF
+(`--order wsjf`): priority stays the dominant axis and the cognitive complexity of the
+files a unit will touch (its `Affects`, scored by complexity.py - RFC0009 WS3) breaks
+ties within a priority, so the smaller blast-radius job goes first. Complexity never
+overrides priority, and the order degrades to plain priority when no complexity is
+known. The plan also carries a complexity-weighted per-unit token budget. Read-only;
+pure stdlib (complexity is a sibling helper).
 """
 from __future__ import annotations
 
@@ -17,9 +21,43 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
+import complexity  # noqa: E402  (sibling - blast-radius complexity for WSJF, RFC0009 WS3)
 
 PRIORITY_FIELD = {"bug": "Severity", "cr": "Priority", "story": "Priority"}
 PRIORITY_WEIGHT = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}
+BASE_TOKEN_BUDGET = 50_000        # per-unit floor (RFC0009 WS3)
+TOKENS_PER_COGNITIVE = 5_000      # added per point of blast-radius cognitive complexity
+
+
+def _affects_files(text: str) -> list[str]:
+    """File paths a unit declares it will touch (its `Affects` field)."""
+    val = sdlc_md.extract_field(text, "Affects") or ""
+    files = []
+    for tok in val.split(","):
+        tok = re.sub(r"\s*\(.*\)\s*$", "", tok.strip()).strip().strip("`").strip()
+        if tok and ("/" in tok or tok.endswith((".py", ".md", ".yaml", ".yml", ".sh"))):
+            files.append(tok)
+    return files
+
+
+def _resolve(root: Path, p: str) -> Path | None:
+    """Resolve an Affects path against the repo root or the installed skill dir."""
+    for base in (root, root / ".claude" / "skills" / "sdlc-studio"):
+        cand = base / p
+        if cand.exists():
+            return cand
+    return None
+
+
+def _complexity_size(root: Path, text: str) -> int:
+    """Max cognitive complexity across the files a unit will touch (0 if none resolve)."""
+    paths = [str(r) for p in _affects_files(text) if (r := _resolve(root, p))]
+    if not paths:
+        return 0
+    try:
+        return complexity.assess(root, paths)["max_cognitive"]
+    except Exception:  # noqa: BLE001 - WSJF must degrade to priority, never break planning
+        return 0
 
 
 def _dep_ids(value: str) -> set:
@@ -56,7 +94,11 @@ def _topo_order(items: list[dict], deps: dict[str, set]) -> list[dict]:
                 indeg[k] += 1
 
     def rank(k: str):
-        return (PRIORITY_WEIGHT.get(by_id[k]["priority"], 2), by_id[k]["id"])
+        it = by_id[k]
+        w = PRIORITY_WEIGHT.get(it["priority"], 2)
+        if "complexity" in it:  # wsjf: priority first, then the smaller blast-radius job
+            return (w, it["complexity"], it["id"])
+        return (w, it["id"])
 
     ready = sorted([k for k in by_id if indeg[k] == 0], key=rank)
     order: list[dict] = []
@@ -93,7 +135,12 @@ def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "pr
         dval = sdlc_md.extract_field(text, "Depends on") or sdlc_md.extract_field(text, "Depends On") or ""
         deps[sdlc_md.norm_id(rid)] = _dep_ids(dval)
         out.append({"id": rid, "type": kind, "status": st, "priority": pri, "path": str(path)})
-    if order in ("priority", "wsjf"):  # wsjf falls back to priority until RFC0009 ships complexity
+    if order == "wsjf":  # priority-primary; smaller blast-radius job as the tiebreak (RFC0009 WS3)
+        for it in out:
+            size = _complexity_size(root, Path(it["path"]).read_text(encoding="utf-8"))
+            it["complexity"] = size
+            it["token_budget"] = BASE_TOKEN_BUDGET + TOKENS_PER_COGNITIVE * size
+    if order in ("priority", "wsjf"):
         out = _topo_order(out, deps)
     return out
 

@@ -185,7 +185,7 @@ output advisory.
 
 **Rationale:** Adopt cognitive + cyclomatic complexity from the AST repo_map (D1); stdlib-first cognitive scorer + lizard soft dep (D2); recommend-not-block, configurable threshold (D3); change blast-radius unit (D4); estimation + refactor-first first (D5); refactor CR scoped to the change (D6).
 
-**Spawned CRs:** WS1 -> CR0028 (complexity.py + repo_map emit, **delivered**); WS2 -> CR0029 (code plan estimation + refactor-first, **delivered**). WS3 (loop token-budget, unlocks --order wsjf) deferred until RFC0001 consumes it; WS4/WS5 and the composite score deferred until calibration data exists.
+**Spawned CRs:** WS1 -> CR0028 (complexity.py + repo_map emit, **delivered**); WS2 -> CR0029 (code plan estimation + refactor-first, **delivered**). WS3 -> CR0038 (--order wsjf + complexity-weighted token budget), **delivered** (unblocked once RFC0001 + WS1 shipped); WS4/WS5 and the composite score deferred until calibration data exists.
 
 ---
 
