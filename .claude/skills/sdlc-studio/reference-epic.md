@@ -18,6 +18,17 @@ Detailed workflows for Epic generation and management.
 
 ## Epic Workflows
 
+### Resuming a partial epic (`epic implement --resume`) {#epic-implement-resume}
+
+`epic implement --resume EP00xx` restarts a partially-done epic at the **first
+non-Done story** instead of from scratch, mirroring `project implement --resume`.
+The resume point is deterministic: `scripts/resume.py resume --epic EP00xx` reads
+each story's canonical **Status** (the authoritative Done signal, not a
+drift-prone workflow table), skips the Done ones, and persists the run-state to
+`sdlc-studio/.local/epic-state.json` (`resume_at`, the ordered stories, and a
+`complete` flag). On a mid-batch failure, re-running with `--resume` continues
+from `resume_at` rather than re-implementing Done stories.
+
 ## /sdlc-studio epic - Step by Step {#epic-workflow}
 
 1. **Check Prerequisites**

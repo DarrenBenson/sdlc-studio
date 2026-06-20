@@ -10,3 +10,4 @@
 | 2026-06-20T13:38:15Z | review_prep uses git %cI committer time (CR0004) | reproducible across clones; st_mtime fallback only when untracked; datetime compare; malformed->needs+warn |
 | 2026-06-20T13:41:05Z | config.py loader (PyYAML soft-dep); config-defaults.yaml authoritative; remove 12 doc yaml fences; drift-guard test (CR0008) | core scripts stay stdlib; only the new config helper needs yaml (skipUnless in tests); doc Default columns guarded against drift |
 | 2026-06-20T13:49:17Z | status.py reads config via config.py (lazy/graceful) | critic REJECT: AC1 needed a real consumer, not just a loader; staleness_days moved to a guarded table row |
+| 2026-06-20T13:54:53Z | resume skips ALL terminal statuses, matches primary Epic id (CR0007) | critic REJECT: Superseded/Won't-Implement/Deferred must not be resume points; multi-id Epic field must not over-match |

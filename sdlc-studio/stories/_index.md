@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 10 |
+| Done | 11 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
-| **Total** | **15** |
+| **Total** | **16** |
 
 ## All Stories
 
@@ -37,3 +37,4 @@
 | [US0013](US0013-tranche-audit-step.md) | Tranche-audit step | Done | EP0007 | 2026-06-20 | 2026-06-20 |
 | [US0014](US0014-review-prep-determinism.md) | review_prep staleness determinism | Done | EP0005 | 2026-06-20 | 2026-06-20 |
 | [US0015](US0015-config-single-source.md) | Config single source | Done | EP0008 | 2026-06-20 | 2026-06-20 |
+| [US0016](US0016-epic-implement-resume.md) | epic implement --resume | Done | EP0007 | 2026-06-20 | 2026-06-20 |

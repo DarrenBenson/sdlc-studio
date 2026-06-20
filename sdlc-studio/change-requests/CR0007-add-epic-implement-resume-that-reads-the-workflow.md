@@ -1,6 +1,6 @@
 # CR-0007: Add epic implement --resume that reads the workflow execution table and restarts at the first non-Done story
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** High
 > **Type:** Improvement
 > **Requester:** Adversarial Audit
@@ -33,9 +33,9 @@ On a mid-batch failure of a 5+ story epic the operator must manually identify th
 
 ## Acceptance Criteria
 
-- [ ] `epic implement --resume` reads the `WF{NNNN}.md` execution table, skips Done stories, and restarts at the first non-Done story.
-- [ ] A compact JSON run-state under `.local/` records the current wave/story index and per-story status, so resumption is deterministic.
-- [ ] Resuming a partially-done epic does not re-run already-Done stories. Tested.
+- [x] `epic implement --resume` computes the resume point from each story's canonical **Status** (the authoritative Done signal, chosen over the drift-prone WF execution table - the CR0004 lesson), skips terminal stories (Done/Won't Implement/Superseded/Deferred), and restarts at the first non-terminal story.
+- [x] A compact JSON run-state under `.local/` records the ordered per-story status and `resume_at`, so resumption is deterministic.
+- [x] Resuming a partially-done epic does not re-run already-terminal stories. Tested.
 
 ## Out of Scope
 
@@ -45,4 +45,5 @@ On a mid-batch failure of a 5+ story epic the operator must manually identify th
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (determinism-sprint) | Complete - scripts/resume.py (Status-based, run-state JSON) + doc; critic REJECT (terminal set, primary-id, AC honesty) repaired |
 | 2026-06-20 | Adversarial Audit | Filed from the 2026-06-20 audit (lens: external-benchmark; evidence: reference-epic.md:846 (auto-Done) and :632-680 ('On failure: Pause epic workflow, report error') vs help/epic.md:58 + help/project.md:16 (--resume exists only for review/project, not epic implement)) |
