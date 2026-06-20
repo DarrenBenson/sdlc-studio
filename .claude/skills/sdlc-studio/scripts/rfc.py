@@ -40,13 +40,12 @@ def _table_data_rows(lines: list[str]) -> list[list[str]]:
     """Data rows (cells) of the first markdown table in `lines` - header + separator dropped."""
     rows: list[list[str]] = []
     for line in lines:
-        s = line.strip()
-        if not s.startswith("|"):
+        if not line.strip().startswith("|"):
             if rows:
-                break  # table ended
+                break  # table ended (a non-table line)
             continue
-        cells = [c.strip() for c in s.strip("|").split("|")]
-        if all(set(c) <= {"-", ":"} and c for c in cells):
+        cells = sdlc_md.table_cells(line)  # escaped-pipe-aware (BG0021)
+        if cells is None:
             continue  # separator
         rows.append(cells)
     return rows[1:] if rows else []  # drop the header row

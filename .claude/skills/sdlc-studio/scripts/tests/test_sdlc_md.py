@@ -247,5 +247,20 @@ class RemediationTests(unittest.TestCase):
                 self.assertTrue(hint.strip(), f"{check}.{k} has an empty hint")
 
 
+class TableCellsTests(unittest.TestCase):
+    """The shared escaped-pipe-aware splitter (BG0021)."""
+
+    def test_escaped_pipe_does_not_shift_columns(self) -> None:
+        cells = sdlc_md.table_cells(r"| EP0230 | `All\|Crew` match | Done |")
+        self.assertEqual(cells, ["EP0230", "`All|Crew` match", "Done"])
+
+    def test_plain_row(self) -> None:
+        self.assertEqual(sdlc_md.table_cells("| a | b | c |"), ["a", "b", "c"])
+
+    def test_separator_and_non_table_are_none(self) -> None:
+        self.assertIsNone(sdlc_md.table_cells("| --- | :--: |"))
+        self.assertIsNone(sdlc_md.table_cells("not a table row"))
+
+
 if __name__ == "__main__":
     unittest.main()

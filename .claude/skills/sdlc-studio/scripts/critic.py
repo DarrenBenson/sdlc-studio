@@ -55,10 +55,8 @@ def read_verdicts(repo_root: Path | str) -> list[dict]:
         return []
     out: list[dict] = []
     for line in path.read_text(encoding="utf-8").splitlines():
-        if not line.startswith("|"):
-            continue
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        if len(cells) != 5 or cells[0] == "Unit" or set(cells[0]) <= {"-"}:
+        cells = sdlc_md.table_cells(line)  # escaped-pipe-aware (BG0021)
+        if not cells or len(cells) != 5 or cells[0] == "Unit":
             continue
         out.append(dict(zip(("unit", "verdict", "reviewer", "date", "issues"), cells)))
     return out

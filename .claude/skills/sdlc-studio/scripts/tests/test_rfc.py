@@ -121,5 +121,20 @@ class CliTests(unittest.TestCase):
             self.assertIn("rfcs", buf.getvalue())
 
 
+class EscapedPipeTests(unittest.TestCase):
+    """RFC tables are human-authored; an escaped pipe must not shift columns (BG0021)."""
+
+    def test_workstream_cell_with_escaped_pipe(self) -> None:
+        rfc = _load()
+        lines = [
+            "| WS | Workstream | Becomes |",
+            "| --- | --- | --- |",
+            r"| WS1 | match `All\|Crew` fields | CR (TBD) |",
+        ]
+        rows = rfc._table_data_rows(lines)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0], ["WS1", "match `All|Crew` fields", "CR (TBD)"])
+
+
 if __name__ == "__main__":
     unittest.main()

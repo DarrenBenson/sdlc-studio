@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Escaped pipes in table cells (BG0021):** every table parser now shares one
+  `sdlc_md.table_cells` splitter that honours `\|`, so a cell that legitimately
+  contains a pipe (e.g. an index title `string \| string[]`, an RFC workstream
+  `All\|Crew`) no longer shifts the columns after it and misreads the row.
+  Unified `reconcile`, `critic`, `rfc`, and `ledger` onto it.
+
 ### Changed
 
 - **Strict Agent Skills spec conformance:** the Claude-Code-only
@@ -18,6 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`reconcile apply` (RFC0003 / CR0026):** the mechanical index fixes are now a
+  deterministic, idempotent script step - `reconcile apply [--scope] [--dry-run]`
+  rewrites each drifted index row's Status cell (positionally, by header) to the
+  file's status and recomputes the summary counts from the same `parse_index`
+  authority `detect` uses. `--dry-run` reports without writing; cells are
+  re-escaped on write; structural classes (missing/orphan-row, missing-index)
+  stay report-only. Replaces ~3-4k tokens of re-derived prose per cadence trigger.
 - **Generic `agents` installer target:** `--target agents` installs to
   `.agents/skills`, the neutral directory read by Codex, Gemini CLI, Copilot,
   and Cursor - one copy serves all four. `codex` and `agents` resolve to the

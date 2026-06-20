@@ -57,13 +57,11 @@ def read_ledger(repo_root: Path | str, tranche: str) -> list[dict]:
         return []
     rows: list[dict] = []
     for line in path.read_text(encoding="utf-8").splitlines():
-        if not line.startswith("|"):
-            continue
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        if len(cells) != 3:
+        cells = sdlc_md.table_cells(line)  # escaped-pipe-aware (BG0021)
+        if not cells or len(cells) != 3:
             continue
         at, decision, rationale = cells
-        if at == "At" or set(at) <= {"-"}:  # header / separator
+        if at == "At":  # header
             continue
         rows.append({"at": at, "decision": decision, "rationale": rationale})
     return rows

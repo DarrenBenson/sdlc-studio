@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 from pathlib import Path
 
@@ -74,17 +73,9 @@ def file_census(type_: str, repo_root: Path) -> dict[str, tuple[str, str]]:
 
 
 def _table_cells(line: str) -> list[str] | None:
-    """Cells of a markdown table row, or None if the line is not a table row."""
-    s = line.strip()
-    if not s.startswith("|"):
-        return None
-    # Split on UNescaped pipes only, then unescape `\|` - a cell may legitimately
-    # contain a pipe (e.g. a title `string \| string[]`); a naive split shifts
-    # every column after it and misreads the row.
-    cells = [c.replace("\\|", "|").strip() for c in re.split(r"(?<!\\)\|", s.strip("|"))]
-    if all(set(c) <= {"-", ":"} and c for c in cells):
-        return None  # separator row
-    return cells
+    """Cells of a markdown table row, or None if not a table row. Thin alias for
+    the shared escaped-pipe-aware splitter."""
+    return sdlc_md.table_cells(line)
 
 
 def parse_index(type_: str, repo_root: Path) -> dict:

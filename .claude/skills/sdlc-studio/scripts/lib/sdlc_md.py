@@ -93,6 +93,21 @@ def read_json(path: Path, default: T) -> T:
 # -----------------------------------------------------------------------------
 
 
+def table_cells(line: str) -> list[str] | None:
+    """Cells of a markdown table row, or None for a non-table line or a `---`
+    separator row. The single splitter every table parser shares: it splits on
+    UNescaped pipes only and unescapes `\\|`, so a cell that legitimately contains
+    a pipe (e.g. a title `string \\| string[]`) does not shift the columns after it.
+    """
+    s = line.strip()
+    if not s.startswith("|"):
+        return None
+    cells = [c.replace("\\|", "|").strip() for c in re.split(r"(?<!\\)\|", s.strip("|"))]
+    if all(set(c) <= {"-", ":"} and c for c in cells):
+        return None  # separator row
+    return cells
+
+
 def extract_field(text: str, name: str) -> str | None:
     """Value of a `**Name:** value` metadata field, or None if absent.
 
