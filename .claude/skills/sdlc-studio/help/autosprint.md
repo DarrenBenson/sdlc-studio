@@ -36,16 +36,18 @@ Natural language works too: "do an autosprint to deliver all open bugs".
 ## What happens
 
 1. **Plan** - `autosprint plan` selects + orders the batch.
-2. **Triage STOP** - the plan is shown; you approve, then it runs autonomously,
-   re-pausing only on a material issue.
-3. **Per unit** - `cr action` -> `epic implement --agentic` (TDD) -> `verify_ac` ->
+2. **Tranche audit** - `audit.py check` grooms the batch for readiness (weak-AC,
+   unmet-deps, already-terminal, link-integrity) before you approve it.
+3. **Triage STOP** - the groomed plan is shown; you approve, then it runs
+   autonomously, re-pausing only on a material issue.
+4. **Per unit** - `cr action` -> `epic implement --agentic` (TDD) -> `verify_ac` ->
    `conformance check` (hard-fail gate) -> independent critic -> green commit.
    Each ruling is appended to the decisions `ledger` so it survives compaction.
-4. **Stall** - `loop_guard` quarantines a unit at the cap (3 attempts) or on a
+5. **Stall** - `loop_guard` quarantines a unit at the cap (3 attempts) or on a
    repeated failure signature: it is marked Blocked, logged, skipped; the run
    continues. The completion oracle declares the batch done only when every unit
    is terminal (Done or Blocked).
-5. **Sprint review** - every run ends with a mandatory `reconcile` + `review`.
+6. **Sprint review** - every run ends with a mandatory `reconcile` + `review`.
 
 In `--autonomous` mode steps 4's guardrails are deterministic scripts the model
 cannot skip; without it they are model-instructed (the portable Phase-1 path).

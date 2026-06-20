@@ -25,11 +25,20 @@ Natural language resolves to the same: "do an autosprint to deliver all open bug
 
 1. **Define the batch.** `scripts/autosprint.py plan <query> --order <order>`
    returns the dependency-ordered, priority-sorted worklist (the triage plan).
-2. **Triage STOP (D1).** Present the plan and **stop for operator approval**. After
-   approval the loop runs autonomously, re-pausing only on a **material issue**
-   (scope change, broken interface/contract, contradicts a triage answer, no safe
-   reversible default).
-3. **Per unit, in order:**
+2. **Tranche audit (pre-flight).** `scripts/audit.py check <query|--ids>` grooms the
+   batch for readiness *before* the triage STOP, so work never starts on a unit that
+   would pass the downstream gates vacuously. Per unit it flags, deterministically,
+   **weak-AC** (no checkable AC or the tautology placeholder), **unmet-deps** (a
+   `Depends on` referent not yet delivered), **already-terminal** (close it, do not
+   re-work), and **link-integrity** (reuses `scripts/integrity.py`). Not-ready units
+   are sharpened, closed, or flagged-and-deferred; findings go to the decisions
+   ledger. The adversarial "is the problem still real, the change still sound" lens
+   is model-instructed (delegates to RFC0002's audit when built).
+3. **Triage STOP (D1).** Present the groomed plan + the audit verdict and **stop for
+   operator approval**. After approval the loop runs autonomously, re-pausing only on
+   a **material issue** (scope change, broken interface/contract, contradicts a
+   triage answer, no safe reversible default).
+4. **Per unit, in order:**
    - `cr action` - decompose a CR into stories under an existing epic (a new one
      only if none fits, D-decomposition). Stories carry implementation-ready AC and
      a `Verify:` line. Plans (PL) are not created in agentic mode (D7).
@@ -43,15 +52,15 @@ Natural language resolves to the same: "do an autosprint to deliver all open bug
    - **Independent critic (D3)** - a sub-agent that did not write the diff judges it
      against AC intent, plus adversarial/mutation checks. Reject -> repair.
    - Commit the unit green (trunk-based by default, D6).
-4. **Stall handling (D2).** After 3 failed green attempts a unit is marked
+5. **Stall handling (D2).** After 3 failed green attempts a unit is marked
    **Blocked**, logged, and skipped; the run continues. Blocked units surface in
    `status`. Never thrash; never silently drop.
-5. **Closing gate - the sprint review.** Every run ends with a mandatory
+6. **Closing gate - the sprint review.** Every run ends with a mandatory
    `reconcile` (fix any drift) + `review` (the unified PRD/TRD/TSD/persona plus CODE
    review), **regardless of `--goal`**. This is the sprint review and it produces
    the conformance `reviewed` signal. For `--goal design` it reviews the produced
    backlog; for `--goal done` the delivered increment.
-6. **Retro (CR0018).** The closing gate also writes a sprint retro to
+7. **Retro (CR0018).** The closing gate also writes a sprint retro to
    `sdlc-studio/retros/` (delivered, blocked, lessons) and reads the recent retros
    plus `lessons recall` at the **start** - the learning loop. The retro is a
    general capability (CR0018), reused here, not autosprint-only.
@@ -100,6 +109,8 @@ portable Phase-1 path for tools without the scripts.
 | Script | Role |
 | --- | --- |
 | `scripts/autosprint.py plan` | select + order the batch (the triage plan) |
+| `scripts/audit.py check` | tranche audit: weak-AC, unmet-deps, already-terminal, link-integrity |
+| `scripts/integrity.py check` | referential integrity (required links + dangling refs) |
 | `scripts/conformance.py check` | the lifecycle-conformance gate (hard-fail) |
 | `scripts/loop_guard.py` | iteration cap, repetition-breaker, completion oracle |
 | `scripts/ledger.py` | append-only per-tranche decisions ledger (survives compaction) |

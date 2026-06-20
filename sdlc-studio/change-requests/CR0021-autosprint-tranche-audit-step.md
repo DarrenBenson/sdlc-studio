@@ -1,6 +1,6 @@
 # CR-0021: Autosprint tranche-audit step (pre-flight grooming)
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Priority:** High
 > **Type:** Feature
 > **Requester:** Darren Benson
@@ -63,13 +63,14 @@ None. A new pre-flight step and helper; the loop is unchanged downstream.
 
 ## Acceptance Criteria
 
-- [ ] `audit.py` flags a CR with tautological/empty AC as `weak-AC`, and a CR with concrete AC as ready.
-- [ ] It flags a unit whose `Depends on` is unsatisfied as `unmet-deps`, and an already-Complete/Superseded unit as `already-terminal`.
-- [ ] It reuses `integrity.py` for link-integrity and emits a JSON readiness report; non-zero exit when any unit is not ready. Unit-tested.
-- [ ] `reference-autosprint.md` documents the tranche-audit step between `plan` and the triage STOP.
+- [x] `audit.py` flags a CR with tautological/empty AC as `weak-AC`, and a CR with concrete AC as ready.
+- [x] It flags a unit whose `Depends on` is unsatisfied as `unmet-deps`, and an already-Complete/Superseded unit as `already-terminal`.
+- [x] It reuses `integrity.py` for link-integrity and emits a JSON readiness report; non-zero exit when any unit is not ready. Unit-tested.
+- [x] `reference-autosprint.md` documents the tranche-audit step between `plan` and the triage STOP.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (determinism-sprint) | Complete - delivered as US0013 (scripts/audit.py + workflow step); critic REJECT on AC-section scoping repaired |
 | 2026-06-20 | Darren Benson | Raised - tranche readiness should be a defined loop step, not improvised mid-flow (determinism-sprint lesson) |

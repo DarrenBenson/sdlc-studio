@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 7 |
+| Done | 8 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
-| **Total** | **12** |
+| **Total** | **13** |
 
 ## All Stories
 
@@ -34,3 +34,4 @@
 | [US0010](US0010-loop-guardrails.md) | Deterministic loop guardrails | Done | EP0007 | 2026-06-20 | 2026-06-20 |
 | [US0011](US0011-autonomous-mode-wiring.md) | Autonomous mode wiring | Done | EP0007 | 2026-06-20 | 2026-06-20 |
 | [US0012](US0012-referential-integrity-check.md) | Referential-integrity check | Done | EP0005 | 2026-06-20 | 2026-06-20 |
+| [US0013](US0013-tranche-audit-step.md) | Tranche-audit step | Done | EP0007 | 2026-06-20 | 2026-06-20 |
