@@ -86,6 +86,26 @@ a candidate first real `autosprint --crs proposed` tranche (the loop on the back
 ══════════════════════════════════════════════════════════
 ```
 
+## Update 2026-06-20 - Determinism-hardening sprint (in progress)
+
+Running the first real `autosprint` tranche on the backlog (operator-approved).
+Delivered so far, each TDD'd + critic-reviewed, trunk-based green:
+
+- **Sprint-zero:** CR0016 (sharpened the tautological AC on CR0003-CR0009 so the
+  loop can verify them - the BG0003 vacuous-pass class) and CR0018 closed (the
+  retro capability was already shipped).
+- **CR0003 / US0012:** `scripts/integrity.py` - referential-integrity check
+  (required links per the matrix + dangling refs; active=error, terminal=advisory).
+- **CR0021 / US0013:** `scripts/audit.py` + a new **tranche-audit** workflow step
+  (step 2, between plan and the triage STOP): weak-AC, unmet-deps, already-terminal,
+  link-integrity. Operator insight - tranche readiness is now a defined gate, not
+  improvised. Critic REJECTED v1 (AC-section scoping bug); repaired + re-verified.
+
+Gates: reconcile drift 0, conformance 13/13, integrity 0 active errors, 227 tests
+green, installed in sync. **Remaining in the tranche:** CR0004 (review_prep
+git-timestamp determinism), CR0008 (config single-source), CR0007 (epic implement
+--resume, stretch) - all audited **ready**. Decisions ledger: `decisions/determinism-sprint.md`.
+
 ## Known divergences
 
 1. ~~Docs say "YAML frontmatter" vs the parser's `> **Field:**` headers~~ -
