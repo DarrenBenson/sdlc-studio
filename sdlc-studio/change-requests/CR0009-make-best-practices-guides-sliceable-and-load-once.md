@@ -33,7 +33,9 @@ Each code plan/implement of a Go or JS story pays a 370-420 line whole-file load
 
 ## Acceptance Criteria
 
-- [ ] Change implemented and verified; lint and tests green.
+- [ ] The best-practices guides carry section anchors (e.g. `{#testing}`, `{#conventions}`) so the code workflow can pull a slice rather than the whole file.
+- [ ] When the story language resolves to TypeScript, the loader pulls both `javascript.md` and `typescript.md`, so the delegated DOM guidance is present.
+- [ ] (The file-merge into `web.md` is RFC-shaped and deferred; anchors + dual-load are the bounded core here.)
 
 ## Out of Scope
 

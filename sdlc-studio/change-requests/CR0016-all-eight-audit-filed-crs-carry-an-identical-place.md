@@ -1,6 +1,6 @@
 # CR-0016: All eight audit-filed CRs carry an identical placeholder AC that asserts nothing about the change
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Requester:** Project Audit
@@ -33,7 +33,7 @@ Every CR is closeable by a reviewer who runs the existing suite green without im
 
 ## Acceptance Criteria
 
-- [ ] Replace each placeholder with the concrete, checkable assertion already implied by that CR's Proposed Changes (e.g. CR0002: 'next_id.py --co
+- [x] Replace each placeholder with the concrete, checkable assertion already implied by that CR's Proposed Changes (e.g. CR0002: 'next_id.py --co
 
 ## Out of Scope
 
@@ -43,4 +43,5 @@ Every CR is closeable by a reviewer who runs the existing suite green without im
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (determinism-sprint) | Complete - sharpened the tautological AC on CR0003-CR0009 into checkable assertions |
 | 2026-06-20 | Project Audit | Filed from the 2026-06-20 project-profile audit (lens: design-rfc) |

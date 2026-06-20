@@ -33,7 +33,8 @@ For AI-output ACs (a stated target domain) there is currently no executable veri
 
 ## Acceptance Criteria
 
-- [ ] Change implemented and verified; lint and tests green.
+- [ ] The `verify_ac` DSL accepts a graded verb (e.g. `eval <config> --threshold 0.8`) that shells to the eval tool, parses its JSON score, and passes only at or above the threshold.
+- [ ] A below-threshold score fails the AC and the score is recorded in the report. Unit-tested against a stub eval tool.
 
 ## Out of Scope
 

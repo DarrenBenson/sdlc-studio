@@ -33,7 +33,9 @@ On any fresh clone, pull, or worktree the staleness leg reports every artifact a
 
 ## Acceptance Criteria
 
-- [ ] Change implemented and verified; lint and tests green.
+- [ ] `last_modified` derives from `git log -1 --format=%cI -- <path>`, falling back to `st_mtime` only when untracked or git is unavailable, with the method labelled in the JSON.
+- [ ] Both timestamps are parsed with `datetime.fromisoformat` (trailing `Z` normalised, naive treated as UTC) and compared as datetimes, not raw strings.
+- [ ] A malformed `last_reviewed` yields `needs_review` plus a warning, surfaced not silently mis-compared. Unit-tested.
 
 ## Out of Scope
 

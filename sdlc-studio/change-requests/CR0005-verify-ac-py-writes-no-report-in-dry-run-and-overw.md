@@ -33,7 +33,9 @@ The dry-run preview is not auditable (operators told N changes would occur with 
 
 ## Acceptance Criteria
 
-- [ ] Change implemented and verified; lint and tests green.
+- [ ] A report is written in dry-run too (distinct path or `dry_run` flag), enumerating each pending `(ac_id, old_state, new_state)` flip rather than an opaque count.
+- [ ] Each run appends a line to `.local/verify-history.jsonl` (timestamp, story id, per-AC pass/fail/stale, exit code).
+- [ ] Unit-tested.
 
 ## Out of Scope
 

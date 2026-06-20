@@ -1,6 +1,6 @@
 # CR-0018: Sprint retro and committed lessons-learned folder
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Requester:** Darren Benson
@@ -80,10 +80,10 @@ None.
 
 ## Acceptance Criteria
 
-- [ ] A retro can be written at the close of a `review` or an `autosprint`, to committed `sdlc-studio/retros/`.
-- [ ] `review`/`autosprint` read recent retros + `lessons recall` at the start.
-- [ ] Durable lessons promote to the skill tier via `lessons add --global`.
-- [ ] The capability works without autosprint (manual sprint / plain review).
+- [x] A retro can be written at the close of a `review` or an `autosprint`, to committed `sdlc-studio/retros/`.
+- [x] `review`/`autosprint` read recent retros + `lessons recall` at the start.
+- [x] Durable lessons promote to the skill tier via `lessons add --global`.
+- [x] The capability works without autosprint (manual sprint / plain review).
 
 ## Out of Scope
 
@@ -93,4 +93,5 @@ None.
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (determinism-sprint) | Complete - retro capability shipped (templates/reviews/retro.md, sdlc-studio/retros/, RETRO0001, start-of-sprint read in reference-autosprint.md) |
 | 2026-06-20 | Darren Benson | Raised - decouple the retro/lessons-learned from autosprint so any sprint can use it |

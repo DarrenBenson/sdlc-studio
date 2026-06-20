@@ -33,7 +33,9 @@ Broken or missing traceability links (orphan stories, dependencies on deleted ep
 
 ## Acceptance Criteria
 
-- [ ] Change implemented and verified; lint and tests green.
+- [ ] A story missing its required `Epic` link is flagged with a non-zero exit; a well-formed story passes.
+- [ ] A reference to a non-existent ID (e.g. `EP0099`) is reported as a dangling reference (advisory), resolved via `norm_id` against the on-disk census.
+- [ ] Findings are emitted as JSON and the check is unit-tested.
 
 ## Out of Scope
 

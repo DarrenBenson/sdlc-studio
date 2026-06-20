@@ -33,7 +33,8 @@ Three-way drift risk on every config edit; config-defaults.yaml is dead weight t
 
 ## Acceptance Criteria
 
-- [ ] Change implemented and verified; lint and tests green.
+- [ ] `config-defaults.yaml` is the single source of truth and `status.py` / `validate.py` load a representative default from it rather than a hard-coded literal.
+- [ ] The duplicate YAML block in `reference-config.md` is removed (the value lives in one place, not three); a test asserts the default resolves from the YAML.
 
 ## Out of Scope
 

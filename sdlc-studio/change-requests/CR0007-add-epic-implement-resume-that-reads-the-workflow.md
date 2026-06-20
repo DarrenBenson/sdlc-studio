@@ -33,7 +33,9 @@ On a mid-batch failure of a 5+ story epic the operator must manually identify th
 
 ## Acceptance Criteria
 
-- [ ] Change implemented and verified; lint and tests green.
+- [ ] `epic implement --resume` reads the `WF{NNNN}.md` execution table, skips Done stories, and restarts at the first non-Done story.
+- [ ] A compact JSON run-state under `.local/` records the current wave/story index and per-story status, so resumption is deterministic.
+- [ ] Resuming a partially-done epic does not re-run already-Done stories. Tested.
 
 ## Out of Scope
 
