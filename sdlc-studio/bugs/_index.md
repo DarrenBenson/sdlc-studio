@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 0 |
+| Open | 1 |
 | In Progress | 0 |
 | Fixed | 17 |
 | Verified | 0 |
 | Closed | 0 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **17** |
+| **Total** | **18** |
 
 ## All Bugs
 
@@ -36,3 +36,4 @@
 | [BG0015](BG0015-epic-ownership-double-mapping-github-sync-review-p.md) | Epic ownership double-mapping: github_sync, review_prep and next_id are each claimed by two epics | Fixed | High | 2026-06-20 | 2026-06-20 |
 | [BG0016](BG0016-ep0004-s-prd-reference-points-to-section-10-with-a.md) | EP0004's PRD Reference points to section 10 with a non-existent 'Validation Requirement' link text | Fixed | Low | 2026-06-20 | 2026-06-20 |
 | [BG0017](BG0017-rfc0003-buries-a-fixable-false-guarantee-reconcile.md) | RFC0003 buries a fixable false-guarantee (reconcile 'Idempotent') inside an unsettled RFC, so the wrong doc stays uncorrected | Fixed | Medium | 2026-06-20 | 2026-06-20 |
+| [BG0018](BG0018-reconcile-index-status-parser-matches-title.md) | reconcile index-status parser matches a status word in the title column | Open | Medium | 2026-06-20 | 2026-06-20 |

@@ -86,25 +86,28 @@ a candidate first real `autosprint --crs proposed` tranche (the loop on the back
 ══════════════════════════════════════════════════════════
 ```
 
-## Update 2026-06-20 - Determinism-hardening sprint (in progress)
+## Update 2026-06-20 - Determinism-hardening sprint COMPLETE (7/7)
 
-Running the first real `autosprint` tranche on the backlog (operator-approved).
-Delivered so far, each TDD'd + critic-reviewed, trunk-based green:
+First full `autosprint` tranche on the backlog, delivered end to end (RETRO0002),
+each TDD'd + independent-critic-reviewed, trunk-based green:
 
-- **Sprint-zero:** CR0016 (sharpened the tautological AC on CR0003-CR0009 so the
-  loop can verify them - the BG0003 vacuous-pass class) and CR0018 closed (the
-  retro capability was already shipped).
-- **CR0003 / US0012:** `scripts/integrity.py` - referential-integrity check
-  (required links per the matrix + dangling refs; active=error, terminal=advisory).
-- **CR0021 / US0013:** `scripts/audit.py` + a new **tranche-audit** workflow step
-  (step 2, between plan and the triage STOP): weak-AC, unmet-deps, already-terminal,
-  link-integrity. Operator insight - tranche readiness is now a defined gate, not
-  improvised. Critic REJECTED v1 (AC-section scoping bug); repaired + re-verified.
+- **Sprint-zero:** CR0016 (sharpened CR0003-CR0009's tautological AC) + CR0018 closed.
+- **CR0003 / US0012:** `integrity.py` - referential-integrity (required links + dangling refs).
+- **CR0021 / US0013:** `audit.py` + the new **tranche-audit** workflow step (step 2,
+  before the triage STOP): weak-AC, unmet-deps, already-terminal, link-integrity.
+- **CR0004 / US0014:** `review_prep` staleness from git `%cI` + datetime compare + warning.
+- **CR0008 / US0015:** `config.py` - config-defaults.yaml single source (status.py reads it),
+  12 doc fences removed, drift-guard test.
+- **CR0007 / US0016:** `resume.py` - `epic implement --resume` from canonical Status.
 
-Gates: reconcile drift 0, conformance 13/13, integrity 0 active errors, 227 tests
-green, installed in sync. **Remaining in the tranche:** CR0004 (review_prep
-git-timestamp determinism), CR0008 (config single-source), CR0007 (epic implement
---resume, stretch) - all audited **ready**. Decisions ledger: `decisions/determinism-sprint.md`.
+The critic REJECTED 3 of 5 built units (real defects/honesty gaps), all repaired
+before commit. Gates: reconcile drift 0, conformance 16/16, integrity 0 active
+errors, 247 tests, installed in sync. Filed **BG0018** (reconcile misparses a
+title that starts with a status word - surfaced by the closing reconcile).
+
+**Backlog now:** 8 Proposed CRs (CR0005/0006/0009 + doc CRs CR0012-0017), all
+audited **ready**; 1 Open bug (BG0018); 12 Draft RFCs (design track). Decisions
+ledger: `decisions/determinism-sprint.md`.
 
 ## Known divergences
 
