@@ -1,6 +1,6 @@
 # RFC-0006: Reconsider the default autonomous execution model: phase-gating and per-story fresh-context isolation for sequential epic implement
 
-> **Status:** Draft
+> **Status:** Withdrawn
 > **Priority:** Medium
 > **Author:** Adversarial Audit
 > **Date:** 2026-06-20
@@ -54,3 +54,4 @@ In autonomous runs an inaccurate PRD or design flaw propagates uninterrupted wit
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Adversarial Audit | Filed from the 2026-06-20 audit (lens: external-benchmark) |
+| 2026-06-20 | Autosprint (backlog-closeout) | Withdrawn - RFC0001 (Accepted) settled the default autonomy model (D1: stop-after-triage then autonomous); reopening it is out of scope. |

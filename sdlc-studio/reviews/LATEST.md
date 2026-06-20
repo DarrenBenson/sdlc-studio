@@ -132,6 +132,24 @@ installed in sync.
 **Backlog now:** 4 Proposed CRs (CR0005/0006/0009/0015), 0 Open bugs, 12 Draft RFCs
 (design track; RFC0009 unlocks `--order wsjf`). Ledger: `decisions/tooling-honesty-sprint.md`.
 
+## Update 2026-06-20 - Backlog closeout COMPLETE: 0 Proposed CRs, 0 Open bugs
+
+Third autosprint tranche (RETRO0004). The **actionable backlog is now empty**:
+
+- **CR0005 / US0019** - verify_ac dry-run report + flips + `.local/verify-history.jsonl`.
+- **CR0006 / US0020** - graded `eval <cmd> --threshold` verifier verb (soft dep, stubbed).
+- **CR0009** - TS/PostgreSQL dual-load + `{#quick-conventions}` anchors (file-merge deferred).
+- **CR0015** - `test_confinement.py` backs the TSD read-only-confinement claim with a real test.
+- **RFC0006/0010/0011 Withdrawn** - obsolete (RFC0001 settled autonomy; RFC0010 meta-actioned).
+
+Gates: reconcile drift 0 (all 6 scopes), conformance 20/20, integrity clean, no
+collisions, 285 tests, installed in sync. Critic REJECT on CR0006 (threshold crash) repaired.
+
+**Backlog now:** **0 Proposed CRs, 0 Open bugs.** Remaining is the **design backlog**:
+8 Draft RFCs (RFC0002/03/04/05/07/08/09/12) + RFC0001 Accepted. These need
+*decisions* (and accepting spawns CRs), so they are a `--goal design` exercise, not
+an autosprint `--goal done`. RFC0009 (complexity) would unlock `--order wsjf`.
+
 ## Known divergences
 
 1. ~~Docs say "YAML frontmatter" vs the parser's `> **Field:**` headers~~ -

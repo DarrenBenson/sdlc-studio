@@ -1,6 +1,6 @@
 # RFC-0010: Audit-filed RFCs (0003-0008) have boilerplate 'act vs status quo' options that never weigh the real design choices
 
-> **Status:** Draft
+> **Status:** Withdrawn
 > **Priority:** Medium
 > **Author:** Project Audit
 > **Date:** 2026-06-20
@@ -44,3 +44,4 @@ The RFC backlog gives a false impression of design deliberation; an operator can
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Project Audit | Filed from the 2026-06-20 project-profile audit (lens: design-rfc) |
+| 2026-06-20 | Autosprint (backlog-closeout) | Withdrawn - meta-observation actioned: the audit CRs' AC were sharpened (CR0016) and weak-AC is now caught by the tranche audit (CR0021). |

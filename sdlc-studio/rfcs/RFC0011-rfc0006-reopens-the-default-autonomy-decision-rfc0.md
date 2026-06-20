@@ -1,6 +1,6 @@
 # RFC-0011: RFC0006 reopens the default-autonomy decision RFC0001 declares settled, with no cross-reference
 
-> **Status:** Draft
+> **Status:** Withdrawn
 > **Priority:** Medium
 > **Author:** Project Audit
 > **Date:** 2026-06-20
@@ -44,3 +44,4 @@ An operator could accept RFC0001's default-autonomy design while RFC0006 silentl
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Project Audit | Filed from the 2026-06-20 project-profile audit (lens: design-rfc) |
+| 2026-06-20 | Autosprint (backlog-closeout) | Withdrawn - moot once RFC0006 is withdrawn; the autonomy decision stands with RFC0001. |
