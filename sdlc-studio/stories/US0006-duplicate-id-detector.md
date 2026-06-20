@@ -25,24 +25,28 @@ Implements CR0002. `next_id.py` allocated the next free ID but never audited for
 - **When** the detector runs
 - **Then** both collapse to one normalised key `CR0007` (dash-insensitive)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_duplicate_id.py::GroupingTests::test_dash_insensitive_normalisation
+- **Verified:** yes (2026-06-20)
 
 ### AC2: Flag any ID owned by more than one distinct file
 
 - **Given** two distinct files `BG0001-a.md` and `BG0001-b.md`
 - **When** the detector runs
 - **Then** it reports `BG0001` as a duplicate and lists both paths
+- **Verified:** yes (2026-06-20)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_duplicate_id.py::DetectTests::test_two_files_one_id_flagged
 
 ### AC3: Non-zero exit on collision
 
 - **Given** at least one duplicate ID exists
 - **When** `next_id.py collisions` runs
+- **Verified:** yes (2026-06-20)
 - **Then** it exits non-zero (the release-gate signal), and exits 0 when clean
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_duplicate_id.py::ExitTests::test_nonzero_exit_on_collision
 
 ### AC4: Machine-readable output
 
 - **Given** a collision
+- **Verified:** yes (2026-06-20)
 - **When** the detector runs
 - **Then** it returns `{ "duplicates": [ { "id", "files": [...] } ], "count" }`, sorted deterministically
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_duplicate_id.py::OutputTests::test_json_shape
