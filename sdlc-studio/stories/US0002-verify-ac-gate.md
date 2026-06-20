@@ -63,7 +63,7 @@ Through v1.5.0, ACs were Given/When/Then markdown with no executable backing, an
 - **When** I run `python3 scripts/verify_ac.py run --story <path> --repo-root .` (apply mode, no `--dry-run`)
 - **Then** the AC's `Verified:` line is rewritten to `- **Verified:** yes (<today UTC YYYY-MM-DD>)`, preserving the original indentation; if no `Verified:` line exists one is inserted after the `Verify:` line (or the last AC bullet)
 - **And** an AC that currently shows `yes` but now fails is downgraded to `- **Verified:** no (<today>)` and counted as `stale`
-- **Verify:** grep "Verified:" .claude/skills/sdlc-studio/scripts/verify_ac.py
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RunTests::test_apply_mode_updates_verified_state
 - **Verification target:** functional
 - **Verified:** no
 
@@ -84,7 +84,7 @@ Through v1.5.0, ACs were Given/When/Then markdown with no executable backing, an
 - **When** the run finishes
 - **Then** `sdlc-studio/.local/verify-report.json` is written with `generated_at` (ISO-8601 Z) and a `stories` map keyed by story id (filename minus `.md`); each entry has `ac_count`, `verified`, `failed`, `stale`, `manual`, `passed` (list of AC ids), and `failures` (each `{ ac, verifier, kind, exit_code, stderr, duration_ms }`)
 - **And** `verify_ac.py report` re-prints the latest report; a failing `kind: invalid, exit_code: 2` means the expression could not be parsed, `exit_code: 127` means the tool is not on PATH, `exit_code: 124` means timeout
-- **Verify:** grep "generated_at" .claude/skills/sdlc-studio/scripts/verify_ac.py
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RunTests::test_passing_story_reports_zero_stale
 - **Verification target:** functional
 - **Verified:** no
 
@@ -93,7 +93,7 @@ Through v1.5.0, ACs were Given/When/Then markdown with no executable backing, an
 - **Given** `require_ac_verification: true` in `sdlc-studio/config.yaml` (or `templates/config-defaults.yaml`; default `false`)
 - **When** the Story Completion Cascade reaches its pre-flight verifier step before marking the story Done
 - **Then** the story is refused transition to Done unless every AC reports `Verified: yes`; a story that fails the gate stays `In Progress` with the report pointing at the failing ACs (per `reference-verify.md#verify-gate`)
-- **Verify:** grep "require_ac_verification" .claude/skills/sdlc-studio/reference-verify.md
+- **Manual check:** with `require_ac_verification: true`, confirm the Story Completion Cascade refuses a Done transition while any AC reports `Verified: no`; this is a cascade (markdown) behaviour with no script-level verifier (see `reference-verify.md#verify-gate`).
 - **Verification target:** functional
 - **Verified:** no
 

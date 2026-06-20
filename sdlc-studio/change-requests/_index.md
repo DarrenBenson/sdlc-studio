@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 16 |
+| Proposed | 14 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 1 |
+| Complete | 3 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
@@ -29,8 +29,8 @@
 | [CR-0007](CR0007-add-epic-implement-resume-that-reads-the-workflow.md) | Add epic implement --resume that reads the workflow execution table and restarts at the first non-Done story | Proposed | High | Improvement | 2026-06-20 | -- |
 | [CR-0008](CR0008-collapse-three-way-config-defaults-duplication-and.md) | Collapse three-way config-defaults duplication and make one source authoritative that scripts actually read | Proposed | Medium | Improvement | 2026-06-20 | -- |
 | [CR-0009](CR0009-make-best-practices-guides-sliceable-and-load-once.md) | Make best-practices guides sliceable and load-once; a TypeScript code plan misses the DOM guidance it delegates to javascript.md | Proposed | Medium | Improvement | 2026-06-20 | -- |
-| [CR-0010](CR0010-prd-performance-nfr-cites-non-existent-scripts-tes.md) | PRD Performance NFR cites non-existent 'scripts/tests timings' evidence | Proposed | Low | Improvement | 2026-06-20 | -- |
-| [CR-0011](CR0011-prd-plan-file-lifecycle-location-omits-its-backing.md) | PRD Plan-file lifecycle Location omits its backing script scripts/plan.py | Proposed | Low | Improvement | 2026-06-20 | -- |
+| [CR-0010](CR0010-prd-performance-nfr-cites-non-existent-scripts-tes.md) | PRD Performance NFR cites non-existent 'scripts/tests timings' evidence | Complete | Low | Improvement | 2026-06-20 | -- |
+| [CR-0011](CR0011-prd-plan-file-lifecycle-location-omits-its-backing.md) | PRD Plan-file lifecycle Location omits its backing script scripts/plan.py | Complete | Low | Improvement | 2026-06-20 | -- |
 | [CR-0012](CR0012-trd-adr-001-corpus-counts-contradict-the-component.md) | TRD ADR-001 corpus counts contradict the Component Overview table and reality | Proposed | Low | Improvement | 2026-06-20 | -- |
 | [CR-0013](CR0013-trd-deployment-topology-lists-six-targets-but-hide.md) | TRD deployment topology lists six targets but hides that codex and agents share one directory | Proposed | Low | Improvement | 2026-06-20 | -- |
 | [CR-0014](CR0014-tsd-and-ep0008-hard-code-181-as-a-gate-ac-criterio.md) | TSD and EP0008 hard-code '181' as a gate/AC criterion, coupling them to a count that changes every release | Proposed | Low | Improvement | 2026-06-20 | -- |

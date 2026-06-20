@@ -1,6 +1,6 @@
 # BG-0005: PRD Performance NFR falsely claims all scripts are read-only over the workspace
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Reporter:** Project Audit
 > **Date:** 2026-06-20

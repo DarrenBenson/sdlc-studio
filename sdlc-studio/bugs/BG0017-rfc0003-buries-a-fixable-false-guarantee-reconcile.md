@@ -1,6 +1,6 @@
 # BG-0017: RFC0003 buries a fixable false-guarantee (reconcile 'Idempotent') inside an unsettled RFC, so the wrong doc stays uncorrected
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Reporter:** Project Audit
 > **Date:** 2026-06-20

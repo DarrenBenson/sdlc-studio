@@ -28,7 +28,9 @@ Maintainer.
 
 ---
 
-## Orchestrator / Operator  [HIGH]
+## Orchestrator / Operator
+
+> Confidence: HIGH
 
 **Role:** Delivery lead driving the pipeline; primary user
 **Technical Proficiency:** Expert
@@ -77,7 +79,9 @@ every substantive change flows through it.
 
 ---
 
-## Consuming-project Developer  [HIGH]
+## Consuming-project Developer
+
+> Confidence: HIGH
 
 **Role:** Engineer who installs SDLC Studio into their own codebase
 **Technical Proficiency:** Advanced
@@ -125,7 +129,9 @@ tests, not as documentation.
 
 ---
 
-## AI Agent Executing the Skill  [HIGH]
+## AI Agent Executing the Skill
+
+> Confidence: HIGH
 
 **Role:** Non-human operator - the agent that reads SKILL.md and runs the workflows
 **Technical Proficiency:** Expert (context-bounded)
@@ -175,7 +181,9 @@ reset it re-reads `reviews/LATEST.md` to anchor on current state, and recalls
 
 ---
 
-## Skill Maintainer  [MEDIUM]
+## Skill Maintainer
+
+> Confidence: MEDIUM
 
 **Role:** Developer of SDLC Studio itself
 **Technical Proficiency:** Expert

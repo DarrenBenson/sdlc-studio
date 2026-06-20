@@ -113,7 +113,7 @@ ADR-002.
 | `lessons/` | Cross-project lessons registry (`_index.md`, `LL{NNNN}-*.md`), recalled before substantive decisions. | Markdown |
 | `scripts/` (10 scripts) | Deterministic, read-only-over-workspace Python helpers emitting JSON. | Python 3.10+ stdlib |
 | `scripts/lib/sdlc_md.py` | Shared parsing/utility library; single source of truth for markdown conventions. | Python 3.10+ stdlib |
-| `scripts/tests/` | Unit tests (181 passing) for the script layer. | `unittest` |
+| `scripts/tests/` | Unit tests for the script layer (the dev-repo suite also covers repo-root `tools/`, so the exact count varies with checkout layout). | `unittest` |
 | `install.sh` / `install.ps1` | Cross-harness installers for six targets. | Bash / PowerShell |
 
 > **C4 Diagrams:** not generated for this brownfield extraction. Use
@@ -161,7 +161,7 @@ walking directories, simple transforms) stays with the agent's built-in tools.
 | Tool | Purpose |
 | --- | --- |
 | `npm run lint` (markdownlint) | Lints all markdown across the repo. |
-| `python3 -m unittest discover -s scripts/tests` | Runs the 181 script unit tests; all must pass before a release is tagged. |
+| `python3 -m unittest discover -s scripts/tests` | Runs the script unit tests; all must pass before a release is tagged. The dev-repo suite also exercises repo-root `tools/` tests resolved by relative path, so the count and a clean pass assume the full dev checkout (the Windows installer is gated by a separate `pwsh` smoke workflow). |
 | `install.sh` / `install.ps1` | Install/uninstall the skill into one or more agent targets. |
 
 ### Infrastructure Services
@@ -199,8 +199,12 @@ Every script in `scripts/` obeys a fixed contract (`reference-scripts.md`):
 3. `--help` on every subcommand.
 4. Non-zero exit on any failure that should halt the workflow.
 5. Never mutates files outside `sdlc-studio/.local/` or the files passed on the
-   command line. The single exception is `plan.py archive`, which moves files under
-   `~/.claude/plans/` (operator-owned); it never deletes and never overwrites.
+   command line, with three bounded write-exceptions: `plan.py archive` moves files
+   under `~/.claude/plans/` (operator-owned; never deletes, never overwrites);
+   `verify_ac.py` rewrites the `Verified:` line in the story files it discovers
+   under `--dir`/`--story`; and `lessons.py add --global` writes a new
+   `LL{NNNN}.md` and updates `_index.md` inside the bundled `lessons/` registry
+   (never deletes, refuses to overwrite).
 6. No network access except the `gh` CLI wrapper in `github_sync.py` (no token
    handling).
 7. Plain text to stdout by default; `--format json` where machine-parseable output
@@ -465,7 +469,8 @@ judgement in the agent."
 **Consequences:**
 
 - Positive: census, parsing, counting, ID allocation, drift detection run the same
-  way every time, are unit-tested (181 passing), and cost no context tokens.
+  way every time, are covered by the script unit-test suite, and cost no context
+  tokens.
 - Positive: a single parsing source of truth (`lib/sdlc_md.py`) stops convention
   drift across helpers.
 - Negative: adds a Python 3.10+ runtime dependency and a second language to

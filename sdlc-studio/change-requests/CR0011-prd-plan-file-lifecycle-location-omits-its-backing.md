@@ -1,6 +1,6 @@
 # CR-0011: PRD Plan-file lifecycle Location omits its backing script scripts/plan.py
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Low
 > **Type:** Improvement
 > **Requester:** Project Audit
@@ -33,7 +33,7 @@ plan.py is an unmapped deterministic script: a code-to-PRD reconcile cannot tie 
 
 ## Acceptance Criteria
 
-- [ ] Update prd.md:143 Location cell to 'reference-plan-files.md, scripts/plan.py' to match the documented convention and restore code-to-spec tr
+- [x] Update prd.md:143 Location cell to 'reference-plan-files.md, scripts/plan.py' to match the documented convention and restore code-to-spec tr
 
 ## Out of Scope
 

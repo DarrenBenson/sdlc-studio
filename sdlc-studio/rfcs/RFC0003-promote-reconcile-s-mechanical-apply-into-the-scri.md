@@ -20,7 +20,7 @@ reconcile.py is explicitly read-only and emits drift for only status-mismatch, m
 
 ### Option A - act on the finding
 
-Promote the mechanical apply into reconcile.py behind an explicit 'apply' subcommand with a --dry-run contract: rewrite index Status cells from the file census, recompute summary counts by enumeration, tick story-breakdown/AC checkboxes from the truth map, and rewrite dependency-table Status columns by ID lookup. Keep genuinely judgemental items (CR completion, PRD prose) report-only. An apply that round-trips through the same census reconcile already builds is deterministically idempotent. RFC because it converts a read-only tool into a file-mutating one needing idempotency tests and a dry-run contract.
+Promote the mechanical apply into reconcile.py behind an explicit 'apply' subcommand with a --dry-run contract: rewrite index Status cells from the file census, recompute summary counts by enumeration, tick story-breakdown/AC checkboxes from the truth map, and rewrite dependency-table Status columns by ID lookup. Keep genuinely judgemental items (CR completion, PRD prose) report-only. The aim is an apply that round-trips through the same census reconcile already builds, so that idempotency can be made a tested property of the script rather than an asserted one - any such guarantee would need round-trip idempotency tests to back it. RFC because it converts a read-only tool into a file-mutating one needing those idempotency tests and a dry-run contract.
 
 ### Option B - status quo
 

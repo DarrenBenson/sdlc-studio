@@ -7,7 +7,7 @@ Related: help/story.md, reference-story.md
 # US0005: Deterministic next-ID allocation
 
 > **Status:** Ready
-> **Epic:** [EP0005: Quality & Drift Control](../epics/EP0005-quality-drift.md)
+> **Epic:** [EP0008: Tooling & Scripts](../epics/EP0008-tooling-scripts.md)
 > **Owner:** Darren Benson
 > **Reviewer:** --
 > **Created:** 2026-06-20
@@ -62,7 +62,7 @@ Related: help/story.md, reference-story.md
 - **When** I `allocate --type story`
 - **Then** it returns `US0008` (one above the maximum), never re-using the gap, so a deleted-and-recreated ID is never re-issued
 - **And** IDs are de-duplicated and parsed via the 4-digit suffix, so `CR0007` and `CR-0007` count as the same number
-- **Verify:** grep "next_num = base + 1" .claude/skills/sdlc-studio/scripts/next_id.py
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_next_id.py::AllocateTests::test_allocate_next_is_max_plus_one
 - **Verification target:** functional
 - **Verified:** no
 

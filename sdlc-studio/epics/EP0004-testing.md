@@ -13,7 +13,7 @@ Produce test specifications, generate executable tests from them, and stand up a
 containerised test environment. In generate mode this is the validation engine:
 tests run against the existing implementation to prove the extracted spec is true.
 
-**PRD Reference:** [Validation Requirement](../prd.md#10-quality-assessment)
+**PRD Reference:** [Feature Inventory](../prd.md#3-feature-inventory)
 
 ## Scope
 

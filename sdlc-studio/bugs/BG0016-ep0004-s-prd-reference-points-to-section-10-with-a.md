@@ -1,6 +1,6 @@
 # BG-0016: EP0004's PRD Reference points to section 10 with a non-existent 'Validation Requirement' link text
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Reporter:** Project Audit
 > **Date:** 2026-06-20

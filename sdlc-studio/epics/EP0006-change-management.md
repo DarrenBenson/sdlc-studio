@@ -49,14 +49,16 @@ lives here).
 
 ## Sizing
 
-**Estimated Story Count:** 4
+**Estimated Story Count:** 3
 
 ## Story Breakdown
 
 - [ ] US: CR lifecycle + cr action
 - [ ] US: RFC lifecycle + spawn CRs
 - [ ] US: Bug tracking + hypothesis discipline
-- [ ] US: GitHub Issue sync for CR/story/epic
+
+> GitHub Issue sync for CR/story/epic is owned by EP0008 (Tooling & Scripts);
+> this epic consumes it as a cross-epic dependency.
 
 ## Revision History
 

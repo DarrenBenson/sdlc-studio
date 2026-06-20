@@ -54,7 +54,7 @@ mode in this backlog.
 
 ## Sizing
 
-**Estimated Story Count:** 5
+**Estimated Story Count:** 4
 
 ## Story Breakdown
 
@@ -62,7 +62,9 @@ mode in this backlog.
 - [ ] [US0002: Executable AC verification with verify gate](../stories/US0002-verify-ac-gate.md)
 - [ ] [US0003: Unified review with modified-since detection and cadence](../stories/US0003-review-cadence.md)
 - [ ] [US0004: Status dashboard and single-step hint](../stories/US0004-status-hint.md)
-- [ ] [US0005: Deterministic next-ID allocation](../stories/US0005-next-id-allocation.md)
+
+> Deterministic next-ID allocation (US0005) is owned by EP0008 (Tooling &
+> Scripts), not this epic.
 
 ## Revision History
 

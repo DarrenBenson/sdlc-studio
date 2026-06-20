@@ -61,7 +61,7 @@ Through the manual era, reconcile re-read every artifact in-context and trusted 
 - **When** I run `detect`
 - **Then** the `drift` array uses exactly these `kind` values - `status-mismatch`, `missing-row`, `orphan-row`, `count-mismatch`, and `missing-index` (when the whole index file is absent) - and `summary.by_kind` tallies each
 - **And** a row in a non-file-implying status (`Proposed`, `Draft`, `Deferred`, `Superseded`, `Withdrawn`, `Rejected`, `Won't Implement`, `Won't Fix`) or a non-vocabulary status with no file is treated as an intentional reservation, not flagged as `orphan-row`
-- **Verify:** grep "orphan-row" .claude/skills/sdlc-studio/scripts/reconcile.py
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::DriftTests::test_detects_all_three_classes_plus_count
 - **Verification target:** functional
 - **Verified:** no
 
@@ -80,7 +80,7 @@ Through the manual era, reconcile re-read every artifact in-context and trusted 
 - **When** the report is consumed
 - **Then** each drift item carries a mechanical `fix` string (e.g. `add US0007 (Ready) to the index`, `recompute the summary counts from the index rows`) that Claude applies, while judgement calls - checkbox / dependency / PRD-feature drift, CR completion cascades, the changelog - are NOT in the report and stay the operator's call per `reference-reconcile.md`
 - **And** the script itself writes no artifact file; a `status-mismatch` never propagates a status TO `Done` (Done is only ever copied from a file that already declares it)
-- **Verify:** grep "read-only" .claude/skills/sdlc-studio/scripts/reconcile.py
+- **Manual check:** confirm `detect` emits only `fix` strings and writes no artifact file; the read-only contract has no sound one-line verifier (a `status-mismatch` only ever copies `Done` from a file that already declares it).
 - **Verification target:** functional
 - **Verified:** no
 
@@ -91,7 +91,7 @@ Through the manual era, reconcile re-read every artifact in-context and trusted 
 - **Then** the top-level object has keys `generated_at` (ISO-8601 Z), `scope`, `types` (per-type: `census_total`, `census_counts`, `row_counts`, `index_exists`, `index_summary`, `drift`), `drift` (flattened), and `summary` (`drift_items`, `by_kind`)
 - **And** detection is read-only by default; passing `--write-report` also writes `sdlc-studio/.local/reconcile-report.json`
 - **And** the process exits `1` when any drift exists and `0` when clean
-- **Verify:** shell test "$(python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect --scope rfcs --format json >/dev/null; echo $?)" = 0 -o "$?" = 1
+- **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect --scope rfcs --format json >/dev/null 2>&1; rc=$?; test "$rc" = 0 -o "$rc" = 1
 - **Verification target:** functional
 - **Verified:** no
 

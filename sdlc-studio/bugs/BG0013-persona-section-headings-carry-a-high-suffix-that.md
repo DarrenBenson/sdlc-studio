@@ -1,6 +1,6 @@
 # BG-0013: Persona section headings carry a [HIGH] suffix that breaks every story anchor and the review_prep persona-usage oracle
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Reporter:** Project Audit
 > **Date:** 2026-06-20

@@ -1,6 +1,6 @@
 # BG-0003: verify_ac.py only parses ### AC headings, silently ignoring the bullet AC style the rest of the skill accepts, so the release gate passes vacuously
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Critical
 > **Reporter:** Adversarial Audit
 > **Date:** 2026-06-20

@@ -52,7 +52,7 @@ The unified review (PRD - TRD - TSD - Persona - Code) is Claude's judgement call
 - **When** I run `python3 scripts/review_prep.py prep --root . --format json`
 - **Then** `staleness.prd` is `{ "path": "sdlc-studio/prd.md", "last_modified": "<mtime ISO-8601 Z>", "last_reviewed": "2026-06-01T00:00:00Z", "needs_review": true }`, and `needs_review` (top level) is the sorted list of every key whose `needs_review` is true
 - **And** an artifact with no entry in `review-state.json` (`last_reviewed == null`) always reports `needs_review: true`
-- **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/review_prep.py prep --format json | python3 -c "import json,sys; d=json.load(sys.stdin); assert 'staleness' in d and 'needs_review' in d"
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_no_review_state_means_needs_review
 - **Verification target:** functional
 - **Verified:** no
 
@@ -72,7 +72,7 @@ The unified review (PRD - TRD - TSD - Persona - Code) is Claude's judgement call
 - **When** `prep` computes `persona_usage`
 - **Then** `defined` is every H2 (`##`) heading text in personas.md; `referenced_in_prd` is each defined name appearing as a substring of prd.md; `unused` is defined-minus-referenced; and `method` records the heuristic string
 - **And** the `unused` list is what the Persona leg judges (refresh / archive / first-consult)
-- **Verify:** grep "persona_usage" .claude/skills/sdlc-studio/scripts/review_prep.py
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::PersonaUsageTests::test_defined_referenced_and_unused
 - **Verification target:** functional
 - **Verified:** no
 
@@ -82,7 +82,7 @@ The unified review (PRD - TRD - TSD - Persona - Code) is Claude's judgement call
 - **When** `prep` computes `inputs`
 - **Then** `inputs.counts` is a map of every artifact type to its file count, and `inputs.ac_verification` is either `null` (no `sdlc-studio/.local/verify-report.json`) or `{ "stories": <n>, "verified": <sum>, "failed": <sum> }` summed across the report's stories
 - **And** these inputs feed the CODE review leg, whose verdict stays Claude's judgement - the script computes no health score and renders no dashboard
-- **Verify:** grep "ac_verification" .claude/skills/sdlc-studio/scripts/review_prep.py
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::InputsTests::test_counts_and_ac_summary
 - **Verification target:** functional
 - **Verified:** no
 
@@ -91,7 +91,7 @@ The unified review (PRD - TRD - TSD - Persona - Code) is Claude's judgement call
 - **Given** the cadence (every 5 minor releases, per-epic completion, > 4 weeks since last unified review) and the writing of `review-state.json` / `reviews/LATEST.md`
 - **When** the review command runs
 - **Then** `review_prep.py` only *reads* `review-state.json` and *emits* inputs; it has a single `prep` subcommand and never writes review state, never enforces an interval, and provides no pause/resume queue - the cadence decision, the `review-state.json` write (step 4 of `reference-review.md#review-workflow`), and `LATEST.md` are performed by Claude as part of the review command
-- **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/review_prep.py -h | grep -q prep
+- **Verify:** shell f=sdlc-studio/.local/review-state.json; b=$(cat "$f" 2>/dev/null; stat -c %Y "$f" 2>/dev/null); python3 .claude/skills/sdlc-studio/scripts/review_prep.py prep --format json >/dev/null 2>&1; a=$(cat "$f" 2>/dev/null; stat -c %Y "$f" 2>/dev/null); test "$b" = "$a"
 - **Verification target:** functional
 - **Verified:** no
 

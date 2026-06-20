@@ -1,6 +1,6 @@
 # BG-0008: TRD script contract rule 5 is incomplete: verify_ac and lessons.py write outside the stated 'single exception'
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Reporter:** Project Audit
 > **Date:** 2026-06-20

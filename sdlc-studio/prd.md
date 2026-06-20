@@ -140,7 +140,7 @@ column maps each feature to its owning epic (see `sdlc-studio/epics/`).
 | Bug tracking | Bug lifecycle with traceability + hypothesis discipline | Complete | High | reference-bug.md | EP0006 |
 | Code plan | Implementation plan for a story | Complete | High | reference-code.md | EP0003 |
 | Code implement | Execute a plan (TDD-gated) | Complete | High | reference-code.md | EP0003 |
-| Plan-file lifecycle | Claude Code plan files: list/archive | Complete | Low | reference-plan-files.md | EP0003 |
+| Plan-file lifecycle | Claude Code plan files: list/archive | Complete | Low | reference-plan-files.md, scripts/plan.py | EP0003 |
 | Test spec | Consolidated plan + cases + fixtures | Complete | High | reference-test-spec.md | EP0004 |
 | Test automation | Generate executable tests | Complete | High | help/test-automation.md | EP0004 |
 | Test environment | Containerised test env setup | Complete | Low | help/test-env.md | EP0004 |
@@ -206,7 +206,8 @@ against the running code so "Done" means verified, not asserted.
 - Generate mode produces migration-blueprint specs validated by tests; create
   mode authors forward-looking specs interactively.
 - Every numbered artifact has a 4-digit zero-padded ID, an `_index.md` registry,
-  YAML frontmatter, and a canonical status vocabulary.
+  blockquote metadata headers (`> **Field:** value`), and a canonical status
+  vocabulary.
 - Terminal status transitions trigger completion cascades that update all linked
   artifacts, indexes, dependency tables, and PRD feature statuses.
 
@@ -230,8 +231,11 @@ against the running code so "Done" means verified, not asserted.
 
 ### Performance
 
-Scripts are pure stdlib and read-only over the workspace; reconcile/status run in
-well under a second on a typical project (see scripts/tests timings).
+Scripts are pure stdlib. Read-path scripts (status, repo map, next-id,
+review_prep) are read-only over the workspace; reconcile and verify_ac perform
+bounded, opt-in writes (auto-fixes and `Verified:` back-annotation
+respectively). reconcile/status run in well under a second on a typical project
+(observed in normal use, not a gated benchmark).
 
 ### Security
 
@@ -342,6 +346,10 @@ is the main gap a generated test backlog would close.
 
 Known historical ID collisions documented in `reference-outputs.md`. Generate-mode
 validation (tests against behaviour) is not yet wired for the markdown layer.
+
+There are also 17 open audit-filed bugs (incl. 1 Critical) raised against this
+workspace and its scripts; several qualify the feature statuses above. See
+`bugs/_index.md` for the full register.
 
 ---
 

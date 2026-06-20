@@ -172,13 +172,19 @@ checkers; any non-zero exit fails the gate.
 | --- | --- | --- | --- |
 | Markdown house style | `lint:md` | markdownlint rules per `.markdownlint.json` (MD013 off, MD024 siblings-only, MD033 off, MD041 off, MD036 off, fenced code) | markdownlint-cli 0.48.0 |
 | Prose style | `lint:style` | No em dash (U+2014); no banned corporate jargon outside `tools/style-allowlist.txt` | `tools/lint-style.sh` (bash + grep) |
-| Link integrity | `lint:links` | Every `path.md#anchor` reference resolves to an existing file and anchor | `tools/check_links.py` |
+| Link integrity (skill subtree only) | `lint:links` | Every `path.md#anchor` reference resolves to an existing file and anchor, within the skill subtree | `tools/check_links.py` |
 | Skill frontmatter | `lint:skill` | `name` 1-64 chars matching the directory and `^[a-z0-9]+(-[a-z0-9]+)*$`; `description` 1-1024 chars; `metadata.version` X.Y.Z semver; no unknown frontmatter fields | `tools/validate_skill.py` |
 | Version consistency | `lint:versions` | Version agrees across package.json, `templates/version.yaml`, SKILL.md frontmatter, README.md, and (at release) CHANGELOG.md | `tools/check_versions.py` |
 | Line budgets | `lint:budgets` | `SKILL.md` < 500 lines; each `reference-*.md` <= 600 lines (with a recorded allowlist and 1.05 ceiling tolerance) | `tools/check_budgets.py` |
 
 `lint:fix` (`markdownlint --fix`) is available for auto-fixable markdown issues but
 is not part of the gate.
+
+> **Known gap:** `check_links.py` defaults to the `.claude/skills/sdlc-studio`
+> subtree and the `lint:links` npm script passes no `--root`, so only the skill's
+> own markdown is link-checked. The `sdlc-studio/` artifact corpus (PRD, TRD, TSD,
+> personas, epics, stories, RFCs, bugs) is not link-checked, so broken anchors in
+> those documents are not caught by CI. markdownlint still runs repo-wide.
 
 ### Integration Testing (scripts against fixture workspaces)
 
@@ -233,7 +239,7 @@ not-gated rationale. This closes the PRD-to-TSD traceability gap.
 | **Security** - no secrets handled by the skill | Not gated by a secret scanner in this repo. Enforced by design (no token handling; `gh` owns auth) and by code review. N/A as an automated gate. | No (design control) | [MEDIUM] |
 | **Scalability** - progressive disclosure keeps always-loaded context constant | `check_budgets.py` line budgets (as above); new commands add a `help/` file and a guide row, not router bulk. | Yes | [HIGH] |
 | **Scalability** - agentic waves bound concurrency | Not gated. Concurrency bounds are an instruction-level behaviour in `reference-agentic-lessons.md`; no executable test asserts wave sizing. N/A as an automated gate. | No | [MEDIUM] |
-| **Availability** - offline-capable; sync degrades gracefully when `gh`/remotes absent | `github_sync.py` graceful-degradation paths are unit-tested with `gh` absent/mocked; the core pipeline scripts make no network calls (verified by the no-network contract and stdlib-only design). | Yes (unit) | [HIGH] |
+| **Availability** - offline-capable; sync aborts cleanly when `gh`/remotes absent | Offline capability comes from the core pipeline scripts, which make no network calls (verified by the no-network contract and stdlib-only design). `github_sync.py` does not soft no-op: with `gh` absent it aborts with a clear error (exit 127), asserted by `test_github_sync.py`. So the NFR is met for the offline pipeline, but `github_sync` does not degrade gracefully - callers must handle the non-zero exit. | Partial (unit) | [MEDIUM] |
 
 Additional gates that back the NFRs but sit outside the four PRD headings:
 
@@ -244,7 +250,7 @@ Additional gates that back the NFRs but sit outside the four PRD headings:
 | Link integrity | `check_links.py`: every anchor resolves | Yes |
 | Skill frontmatter | `validate_skill.py`: valid against Agent Skills standard | Yes |
 | Version consistency | `check_versions.py`: all homes agree (CHANGELOG advisory between releases, required at release) | Yes (release) |
-| Instruction hygiene | `validate.py instructions` passes | Yes (release) |
+| Instruction hygiene | `validate.py instructions` passes | Manual (recommended; not yet CI-wired - no npm script or workflow invokes it) |
 
 ---
 
@@ -324,9 +330,11 @@ and none is present in the suite.
 1. **Pre-commit (local):** `npm run lint` and `npm test`.
 2. **PR / push:** full lint chain plus the 181-test suite; a Windows pwsh smoke
    test for `install.ps1`.
-3. **Pre-release tag:** all tests pass, full lint passes, `check_versions.py`
-   confirms every version home agrees including CHANGELOG, and
-   `validate.py instructions` passes.
+3. **Pre-release tag:** all tests pass, full lint passes, and `check_versions.py`
+   confirms every version home agrees including CHANGELOG. Running
+   `validate.py instructions` is a recommended manual pre-release check; it is not
+   yet wired into any npm script or workflow, so instruction-file drift is not
+   automatically gated.
 
 There is no merge-to-main E2E stage and no nightly performance stage, because no
 running application exists to exercise.

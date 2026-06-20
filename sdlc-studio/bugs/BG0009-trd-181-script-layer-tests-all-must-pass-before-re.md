@@ -1,6 +1,6 @@
 # BG-0009: TRD '181 script-layer tests, all must pass before release' gate fails in the installed copy
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Reporter:** Project Audit
 > **Date:** 2026-06-20

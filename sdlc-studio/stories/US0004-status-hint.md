@@ -82,7 +82,7 @@ Related: help/story.md, reference-story.md
 - **Given** a type with zero files
 - **When** the percentage is computed
 - **Then** `_pct_done` returns `0` for an empty census (no division by zero), and otherwise `round(100 * done / total)` over the relevant done-states
-- **Verify:** grep "_pct_done" .claude/skills/sdlc-studio/scripts/status.py
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CensusTests::test_pct_done
 - **Verification target:** functional
 - **Verified:** no
 
@@ -91,7 +91,7 @@ Related: help/story.md, reference-story.md
 - **Given** `help/status.md` describes `--full`, `--brief`, `--workflows`, `status-cache.json`, an INTEGRITY section (missing index entries, status mismatches, stale statuses, ID collisions), and non-standard-status flagging
 - **When** I inspect `status.py`
 - **Then** the script exposes only `pillars` and `hint`, each taking only `--root` and `--format` - it has no `--full`/`--brief`/`--workflows` flag, never reads or writes `status-cache.json`, and runs no integrity scan; the cache, the dashboard art, and the integrity/ID-collision checks are performed by Claude when it renders status (it may delegate the integrity scan to `reconcile.py` from US0001)
-- **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/status.py pillars -h | grep -qv -- "--full"
+- **Verify:** shell ! python3 .claude/skills/sdlc-studio/scripts/status.py pillars -h 2>&1 | grep -q -- "--full"
 - **Verification target:** functional
 - **Verified:** no
 

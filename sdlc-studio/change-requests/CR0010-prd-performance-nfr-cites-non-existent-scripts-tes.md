@@ -1,6 +1,6 @@
 # CR-0010: PRD Performance NFR cites non-existent 'scripts/tests timings' evidence
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Low
 > **Type:** Improvement
 > **Requester:** Project Audit
@@ -33,7 +33,7 @@ A reviewer validating the spec against tests (the doctrine's own oracle) finds t
 
 ## Acceptance Criteria
 
-- [ ] Drop the parenthetical false citation and soften to an observed/qualitative statement, or add an actual timing assertion in scripts/tests an
+- [x] Drop the parenthetical false citation and soften to an observed/qualitative statement, or add an actual timing assertion in scripts/tests an
 
 ## Out of Scope
 

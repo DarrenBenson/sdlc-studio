@@ -11,8 +11,8 @@
 
 The deterministic Python layer that side-effecting and analytical work is
 delegated to, so the agent reasons over JSON rather than parsing markdown: repo
-indexing, GitHub sync, ID allocation, validation, review prep, and schema
-upgrade. Pure stdlib, read-only over the workspace, unit-tested.
+indexing, GitHub sync, ID allocation, validation, and schema upgrade. Pure
+stdlib, read-only over the workspace, unit-tested.
 
 **PRD Reference:** [Tech Stack](../prd.md#1-project-overview)
 
@@ -24,12 +24,11 @@ upgrade. Pure stdlib, read-only over the workspace, unit-tested.
 - `github_sync.py` - two-way Issues sync via `gh`.
 - `next_id.py` - deterministic, cross-repo-aware ID allocation.
 - `validate.py` - skill + instructions hygiene checks.
-- `review_prep.py` - review preparation data.
 - Schema upgrade (`reference-upgrade.md`).
 
 ### Out of Scope
 
-- reconcile/verify_ac/status scripts (owned by EP0005, the quality plane).
+- reconcile/verify_ac/review_prep/status scripts (owned by EP0005, the quality plane).
 
 ### Affected Personas
 
@@ -54,15 +53,14 @@ upgrade. Pure stdlib, read-only over the workspace, unit-tested.
 
 ## Sizing
 
-**Estimated Story Count:** 6
+**Estimated Story Count:** 5
 
 ## Story Breakdown
 
 - [ ] US: Repo map indexer + file ranking
 - [ ] US: GitHub Issues two-way sync
-- [ ] US: Deterministic next-ID allocation (cross-repo)
+- [ ] [US0005: Deterministic next-ID allocation (cross-repo)](../stories/US0005-next-id-allocation.md)
 - [ ] US: Skill + instructions validation
-- [ ] US: Review prep data helper
 - [ ] US: Schema upgrade between versions
 
 ## Revision History

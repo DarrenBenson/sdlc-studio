@@ -1,6 +1,6 @@
 # BG-0015: Epic ownership double-mapping: github_sync, review_prep and next_id are each claimed by two epics
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Reporter:** Project Audit
 > **Date:** 2026-06-20
