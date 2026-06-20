@@ -37,6 +37,16 @@ specification, reconcile, repeat - with acceptance criteria as the test that
 closes it. The spec-driven and eval-driven tools arriving now are rediscovering a
 cycle the SDLC described in full long ago.
 
+## Goal-Driven Development
+
+This is the discipline SDLC Studio enables and `autosprint` automates. You set the
+**goal** and the acceptance criteria; the agent drives the proven lifecycle to it -
+decompose, build under TDD, verify, reconcile, review. It sits in the lineage
+**Test-Driven -> Behaviour-Driven -> Eval-Driven -> Goal-Driven Development**. Say
+`/sdlc-studio autosprint --crs proposed --goal done` (or just ask in natural
+language); the loop runs the batch to the goal, stops when its acceptance criteria
+are met, and closes every run with a reconcile and review (the sprint review).
+
 ## The idea (for beginners)
 
 Most AI coding jumps straight from a vague prompt to code, then drifts

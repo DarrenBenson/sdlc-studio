@@ -65,6 +65,9 @@ material issue.** This RFC captures that as the default and fills the gaps.
 - A **deterministic lifecycle-conformance check** confirms each unit went through
   the required stages (decomposed, AC present, tested under TDD, verified,
   reconciled, reviewed), so "everything was used" is enforced, not assumed.
+- Every run ends with a mandatory **closing reconcile + review (the sprint
+  review)** - drift fixed and the unified plus CODE review run - regardless of
+  `--goal`; this also produces the conformance `reviewed` signal.
 
 **Non-Goals**
 

@@ -11,6 +11,11 @@ open format) for managing the full software development lifecycle - from
 PRD creation through Epic decomposition, User Story generation,
 implementation planning, and test automation.
 
+SDLC Studio enables **Goal-Driven Development**: set a goal and acceptance
+criteria, and the agent drives the proven lifecycle to it (TDD -> BDD ->
+Eval-Driven -> Goal-Driven). The `autosprint` command runs it and closes every
+run with a reconcile and review.
+
 **The skill source lives at `.claude/skills/sdlc-studio/`** and installs
 to each tool's skill directory (see `install.sh --list-targets`).
 

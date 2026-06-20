@@ -42,6 +42,12 @@ described in full long ago. SDLC Studio treats the lifecycle as the loop and
 acceptance criteria as the oracle, which is what makes a fully autonomous
 delivery loop (see RFC-0001) a natural next step rather than a new invention.
 
+We call the resulting discipline **Goal-Driven Development**: the human sets the
+goal and acceptance criteria, the agent drives the lifecycle to them (the lineage
+Test-Driven -> Behaviour-Driven -> Eval-Driven -> Goal-Driven). The `autosprint`
+command is its executable form - `autosprint <batch> --goal done` - and every run
+closes with a reconcile and review.
+
 ---
 
 ## 1. Project Overview
