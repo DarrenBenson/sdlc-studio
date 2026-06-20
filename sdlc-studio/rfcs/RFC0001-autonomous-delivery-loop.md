@@ -143,7 +143,7 @@ this RFC through the very loop it describes.
 | D4 | Decisions ledger form | (a) new artifact type under `sdlc-studio/` (e.g. `decisions/DLNNNN`) · (b) extend `project-state.json` · (c) plain append-only `sdlc-studio/.local/decisions.log` | Design | Pick by need for traceability vs. simplicity; reconcile impact | Open |
 | D5 | Where guardrails live | model-instructed (Option A) vs. deterministic script/Stop-Hook (Option C) per guardrail | Design | Decide per guardrail; cap + completion-gate lean deterministic | Open |
 | D6 | Commit strategy coupling | autonomous mode assumes trunk-based green-gate vs. honours existing `--commit-strategy` (per-wave/epic/project) | Operator | Operator call; keep trunk-based as one mode, not the only one | Open |
-| D7 | Are implementation-plan (PL) files required per story? | (a) required / (b) optional in agentic/compressed mode - the agent prompt is the plan **[leaning]** / (c) required only for single-story or audit-sensitive work | Operator | `reference-project.md` already makes PL optional at project scale | Open |
+| D7 | Are implementation-plan (PL) files required per story? | drop (opt-in `--with-plans` for sequential/audit-sensitive work) | Operator | **Resolved by real-world evidence**: agent-bridge + agent-crew shipped ~900 Done stories with 3 PL files total (~0.27%) | Resolved |
 
 ---
 
@@ -278,7 +278,15 @@ Done until the gap is closed. TDD is checked as **test-exists-and-maps-to-story*
 (deterministic; not git-ordering). `cr action` places stories in the
 **best-matching existing epic, creating a new epic only when none fits**. D7
 (whether PL plan files stay required) is **deferred pending a plan-value review** (does a capable model actually need
-them, or are they a human or audit artifact, not a model crutch?). Until resolved, the conformance check does not demand a PL in agentic mode.
+them, or are they a human or audit artifact, not a model crutch?). The conformance check does not demand a PL in agentic mode.
+
+**D7 resolved (2026-06-20):** drop PL files in the autonomous loop; expose an
+opt-in `--with-plans` for sequential or audit-sensitive work. Evidence: two real
+SDLC Studio deliveries (agent-bridge, agent-crew) shipped ~900 Done stories with
+**3 PL files between them (~0.27%)** under full TDD/verify/review discipline - so
+plans add no value in practice for a capable model. The edge-case discovery a PL
+used to force is relocated to the **story Ready criteria** (already mandated), so
+nothing is lost; the conformance check enforces it at the story level.
 
 ---
 
