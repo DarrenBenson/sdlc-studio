@@ -235,5 +235,82 @@ class AssessTests(unittest.TestCase):
             self.assertIn("refactor-first", buf.getvalue())
 
 
+class CompositeRiskTests(unittest.TestCase):
+    """Churn-weighted composite defect-risk band (RFC0009 WS4 / calibration)."""
+
+    def test_churn_outweighs_complexity(self) -> None:
+        # The calibration finding, encoded: at the same distance above threshold (1.5x),
+        # churn ranks strictly above complexity (churn weighted ~3x).
+        churn_only, _ = cx.composite_risk(cognitive=0, churn_count=int(1.5 * cx.DEFAULT_CHURN_HIGH))
+        cplx_only, _ = cx.composite_risk(cognitive=int(1.5 * cx.DEFAULT_COGNITIVE_HIGH), churn_count=0)
+        order = {"low": 0, "medium": 1, "high": 2}
+        self.assertEqual(churn_only, "high")
+        self.assertGreater(order[churn_only], order[cplx_only])
+
+    def test_complex_but_no_churn_floored_to_medium(self) -> None:
+        # A complex file with no churn must not band 'low' (under-warning greenfield code).
+        band, _ = cx.composite_risk(cognitive=cx.DEFAULT_COGNITIVE_HIGH + 5, churn_count=0)
+        self.assertEqual(band, "medium")
+
+    def test_both_at_threshold_is_high(self) -> None:
+        band, score = cx.composite_risk(cx.DEFAULT_COGNITIVE_HIGH, cx.DEFAULT_CHURN_HIGH)
+        self.assertEqual(band, "high")
+        self.assertGreaterEqual(score, 1.0)
+
+    def test_quiet_simple_file_is_low(self) -> None:
+        band, _ = cx.composite_risk(cognitive=1, churn_count=0)
+        self.assertEqual(band, "low")
+
+    def test_churn_from_git_history(self) -> None:
+        import subprocess
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
+                   "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t", "HOME": d}
+            run = lambda *a: subprocess.run(["git", "-C", str(root), *a], env={**env},
+                                            capture_output=True)
+            run("init")
+            for i in range(3):
+                (root / "hot.py").write_text(f"x = {i}\n", encoding="utf-8")
+                run("add", "hot.py")
+                run("commit", "-m", f"c{i}")
+            self.assertEqual(cx.churn(root).get("hot.py"), 3)
+
+    def test_churn_degrades_without_git(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(cx.churn(Path(d)), {})  # not a git repo -> {}
+
+    def test_assess_exposes_risk_band(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "s.py").write_text("def s(a):\n    return a\n", encoding="utf-8")
+            r = cx.assess(root, ["s.py"])
+            self.assertIn(r["risk_band"], ("low", "medium", "high"))  # present; no git -> low
+            self.assertEqual(r["risk_band"], "low")
+
+    def test_assess_finds_churn_for_absolute_path(self) -> None:
+        # The HIGH bug: churn keys are repo-relative; assess must resolve an ABSOLUTE
+        # path (what autosprint passes) back to the repo-relative key, not miss to 0.
+        import subprocess
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
+                   "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t", "HOME": d}
+            run = lambda *a: subprocess.run(["git", "-C", str(root), *a], env={**env},
+                                            capture_output=True)
+            run("init")
+            f = root / "hot.py"
+            for i in range(20):  # lots of churn -> should drive a high band
+                f.write_text(f"def s(a):\n    return a + {i}\n", encoding="utf-8")
+                run("add", "hot.py")
+                run("commit", "-m", f"c{i}")
+            rel = cx.assess(root, ["hot.py"])
+            ab = cx.assess(root, [str(f.resolve())])   # absolute path
+            # churn alone (20 commits) drives high; the absolute path must resolve to the
+            # same repo-relative churn key, not miss to 0 (the HIGH bug).
+            self.assertEqual(rel["risk_band"], "high")
+            self.assertEqual(ab["risk_band"], "high")
+
+
 if __name__ == "__main__":
     unittest.main()

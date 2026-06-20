@@ -185,7 +185,7 @@ output advisory.
 
 **Rationale:** Adopt cognitive + cyclomatic complexity from the AST repo_map (D1); stdlib-first cognitive scorer + lizard soft dep (D2); recommend-not-block, configurable threshold (D3); change blast-radius unit (D4); estimation + refactor-first first (D5); refactor CR scoped to the change (D6).
 
-**Spawned CRs:** WS1 -> CR0028 (complexity.py + repo_map emit, **delivered**); WS2 -> CR0029 (code plan estimation + refactor-first, **delivered**). WS3 -> CR0038 (--order wsjf + complexity-weighted token budget), **delivered** (unblocked once RFC0001 + WS1 shipped); WS4 + composite score: calibration run 2026-06-21 against agent-crew + agent-bridge (read-only) - bug-affected files are ~1.8x more cyclomatically complex and ~4.9x more churned than clean files, and the top-complexity decile carries ~2.2x the bug rate (agent-bridge, n=305); churn is the STRONGER defect predictor than complexity. WS4 (complexity/churn-weighted test risk) + a churn-weighted composite are now empirically justified - buildable. WS5 (wave-sizing by token/iteration cost) stays deferred: the study proves defect risk, not run cost (no per-story cost telemetry).
+**Spawned CRs:** WS1 -> CR0028 (complexity.py + repo_map emit, **delivered**); WS2 -> CR0029 (code plan estimation + refactor-first, **delivered**). WS3 -> CR0038 (--order wsjf + complexity-weighted token budget), **delivered** (unblocked once RFC0001 + WS1 shipped); WS4 + composite score: calibration run 2026-06-21 against agent-crew + agent-bridge (read-only) - bug-affected files are ~1.8x more cyclomatically complex and ~4.9x more churned than clean files, and the top-complexity decile carries ~2.2x the bug rate (agent-bridge, n=305); churn is the STRONGER defect predictor than complexity. WS4 (complexity/churn-weighted test risk) + the churn-weighted composite -> CR0043, **delivered** (complexity.py churn + composite_risk band, assess risk_band, test-depth-by-band guidance). WS5 (wave-sizing by token/iteration cost) stays deferred: the study proves defect risk, not run cost (no per-story cost telemetry).
 
 ---
 
@@ -206,6 +206,7 @@ output advisory.
 | --- | --- | --- |
 | 2026-06-20 | Autosprint (rfc-decide session) | Accepted in the RFC decision session - Accepted (scoped) |
 | 2026-06-20 | Autosprint (RFC0009) | WS1+WS2 delivered (CR0028/CR0029): complexity.py cognitive+cyclomatic, repo_map emit, code plan assess + refactor-first; WS3/4/5 remain deferred |
+| 2026-06-21 | Autosprint (rfc0009-ws4) | WS4 + composite delivered as CR0043 (churn-weighted band, churn 3x complexity per calibration); WS5 still deferred (no cost telemetry) |
 | 2026-06-21 | Autosprint (rfc0009-calibration) | Calibration study vs agent-crew/agent-bridge: complexity AND churn predict defects (bridge 1.8x/4.9x; top-decile 2.2x); churn the stronger term -> WS4 + churn-weighted composite justified; WS5 still needs cost telemetry |
 | 2026-06-20 | Darren Benson | RFC drafted - complexity signals for estimation, token budget, refactor-first, test risk |
 | 2026-06-20 | Darren Benson | Folded in the cognitive-complexity algorithm + open-source tooling landscape (complexipy/lizard/radon); sharpened D1/D2 to "own stdlib Python scorer + lizard soft dep" |

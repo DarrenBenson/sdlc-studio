@@ -10,6 +10,7 @@
 - [Anti-patterns](#timeout-anti-patterns)
 - [When the bump is legitimate](#timeout-bump-legitimate)
 - [Why Higher Coverage Matters for AI Code](#why-higher-coverage-for-ai)
+- [Complexity/churn-weighted test risk](#complexity-test-risk)
 - [Review Patterns for AI Tests](#review-patterns-for-ai-tests)
 - [Pre-Generation Analysis Checklist](#pre-generation-checklist)
 - [Warning Policy](#warning-policy)
@@ -113,6 +114,27 @@ AI-assisted development changes the testing equation:
 | AI code may drift from spec | Implementation doesn't match requirements | Tests enforce spec compliance |
 
 **Target: 90% coverage** - Proven achievable with AI assistance across multiple projects.
+
+## Complexity/churn-weighted test risk {#complexity-test-risk}
+
+Test depth need not be uniform. `complexity.py assess --files <touched>` returns a
+**risk_band** (low / medium / high) - a churn-weighted composite of each file's cognitive
+complexity and its git churn. Churn is weighted ~3x complexity because the 2026-06-21
+calibration against two real boards (agent-bridge n=305) found bug-affected files were
+~1.8x more complex but ~4.9x more churned than clean files, and the top-complexity decile
+carried ~2.2x the bug rate (RFC0009). Defect risk concentrates in complex, frequently-
+changed code - so put the test effort there:
+
+| risk_band | Coverage target | Edge-case scenarios | Verification tier |
+| --- | --- | --- | --- |
+| low | the project default (e.g. 90%) | the minimum | smoke + functional |
+| medium | +5% over default | +50% scenarios; cover each branch | functional |
+| high | ~100% of the touched code | exhaustive branch + boundary + failure cases | functional + a contract/integration test |
+
+This is advisory: it reallocates effort, it does not lower the floor. Thresholds are
+`complexity.cognitive_high` / `complexity.churn_high` in `.config.yaml`. (Wave-sizing by
+token/iteration cost - RFC0009 WS5 - stays deferred: it needs run-cost telemetry, which
+the defect calibration does not provide.)
 
 ## Review Patterns for AI Tests {#review-patterns-for-ai-tests}
 

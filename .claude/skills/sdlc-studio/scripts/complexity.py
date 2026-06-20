@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -29,6 +30,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 
 DEFAULT_COGNITIVE_HIGH = 15  # SonarQube's "high" threshold; configurable (RFC0009)
+DEFAULT_CHURN_HIGH = 12      # commits-touching-a-file "high" threshold (RFC0009 calibration)
+# Churn is weighted ~3x complexity in the composite: the 2026-06-21 calibration against
+# agent-bridge/agent-crew found churn discriminates defects ~4.9x vs complexity's ~1.8x.
+W_CHURN, W_COGNITIVE = 3, 1
 CODE_SUFFIXES = {".py", ".js", ".jsx", ".ts", ".tsx", ".go", ".java", ".rb", ".c",
                  ".cc", ".cpp", ".cs", ".rs", ".php", ".swift", ".kt"}
 IGNORE_DIRS = {".git", "__pycache__", "node_modules", ".local", ".venv", "venv",
@@ -205,6 +210,52 @@ def cognitive_high(repo_root: Path | str = ".") -> int:
         return DEFAULT_COGNITIVE_HIGH
 
 
+def churn_high(repo_root: Path | str = ".") -> int:
+    """The churn 'high' threshold (commits touching a file), overridable via
+    `.config.yaml` `complexity.churn_high` (default 12)."""
+    val = sdlc_md.project_override(repo_root, "complexity.churn_high", DEFAULT_CHURN_HIGH)
+    try:
+        return int(val)
+    except (TypeError, ValueError):
+        return DEFAULT_CHURN_HIGH
+
+
+def churn(repo_root: Path | str = ".") -> dict:
+    """Commits touching each file (repo-relative) from git history. Empty dict when not
+    a git repo or git is unavailable - the composite then degrades to complexity only."""
+    try:
+        out = subprocess.run(["git", "-C", str(repo_root), "-c", "core.quotepath=false",
+                              "log", "--pretty=format:", "--name-only"],
+                             capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    if out.returncode != 0:
+        return {}
+    counts: dict = {}
+    for line in out.stdout.splitlines():
+        f = line.strip()
+        if f:
+            counts[f] = counts.get(f, 0) + 1
+    return counts
+
+
+def composite_risk(cognitive: int, churn_count: int, repo_root: Path | str = ".") -> tuple[str, float]:
+    """Churn-weighted composite defect-risk band for a file (RFC0009 WS4). Normalises each
+    signal to its 'high' threshold and weights churn ~3x complexity (calibrated: churn is
+    the stronger defect predictor). Returns (band, score); score 1.0 = both at threshold."""
+    cog_high, ch_high = cognitive_high(repo_root), churn_high(repo_root)
+    ch = min((churn_count or 0) / ch_high, 2.0)
+    cog = min((cognitive or 0) / cog_high, 2.0)
+    score = round((W_CHURN * ch + W_COGNITIVE * cog) / (W_CHURN + W_COGNITIVE), 3)
+    band = "high" if score >= 1.0 else "medium" if score >= 0.5 else "low"
+    # Floor: either signal alone over its 'high' threshold is at least medium - a complex
+    # (or hot) file never bands 'low' just because the OTHER signal is quiet (e.g. complex
+    # greenfield code with no churn history).
+    if band == "low" and ((cognitive or 0) >= cog_high or (churn_count or 0) >= ch_high):
+        band = "medium"
+    return band, score
+
+
 def _source_files(root: Path):
     for path in sorted(root.rglob("*")):
         if path.is_dir() or path.suffix not in CODE_SUFFIXES:
@@ -253,10 +304,28 @@ def assess(repo_root: Path | str, files, threshold: int | None = None) -> dict:
         "reduce before changing; scope the refactor to this change"
         for h in hotspots
     ]
+    # WS4: churn-weighted composite defect-risk band over the touched files (the worst
+    # file's band). Degrades to complexity-only when there is no git churn.
+    ch_map = churn(root)
+
+    def _rel_key(f: str) -> str:  # churn keys are repo-relative; normalise absolute/relative paths
+        p = Path(f)
+        p = p if p.is_absolute() else root / f
+        try:
+            return str(p.resolve().relative_to(root.resolve()))
+        except (ValueError, OSError):
+            return f
+    for t in touched:
+        t["churn"] = ch_map.get(_rel_key(t["file"]), ch_map.get(t["file"], 0))
+    risk_band, risk_score = "low", 0.0
+    for t in touched:
+        b, s = composite_risk(t.get("cognitive") or 0, t.get("churn") or 0, root)
+        if s > risk_score:
+            risk_band, risk_score = b, s
     return {"threshold": threshold, "touched_functions": len(touched),
             "max_cognitive": max_cog, "total_cognitive": sum(cogs),
-            "difficulty": difficulty, "hotspots": hotspots,
-            "refactor_first": refactor_first}
+            "difficulty": difficulty, "risk_band": risk_band, "risk_score": risk_score,
+            "hotspots": hotspots, "refactor_first": refactor_first}
 
 
 # --- CLI ------------------------------------------------------------------

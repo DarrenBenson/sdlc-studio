@@ -51,6 +51,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Complexity/churn test-risk band (RFC0009 WS4 / CR0043):** `complexity.py` gains a git
+  `churn` signal and a churn-weighted `composite_risk` band (low/medium/high) exposed by
+  `assess` as `risk_band`. Churn is weighted ~3x complexity - grounded in the calibration
+  (bug-affected files were ~4.9x more churned vs ~1.8x more complex). A complex- or
+  hot-alone file floors to at least medium. `reference-test-best-practices.md#complexity-test-risk`
+  maps the band to coverage / scenario / verification-tier depth. WS5 (wave-sizing by run
+  cost) stays deferred - the calibration proves defect risk, not cost.
 - **Deterministic status-transition helper (CR0042):** `scripts/transition.py set --id
   <ID> --status <new>` performs the last hand-driven write cascade - set the artifact's
   `Status`, sync its index row + summary counts (reusing `reconcile.apply_type`), and

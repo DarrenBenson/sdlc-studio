@@ -62,6 +62,14 @@ require_ac_verification: false
 constitution:
   enforce: false
 
+# Code-complexity thresholds (RFC0009). cognitive_high flags a function as a hotspot
+# (SonarQube's 15); churn_high is the commits-touching-a-file threshold for the
+# churn-weighted composite defect-risk band (churn is weighted ~3x complexity, per the
+# 2026-06-21 calibration). See reference-test-best-practices.md#complexity-test-risk.
+complexity:
+  cognitive_high: 15
+  churn_high: 12
+
 # Per-project status vocabulary extensions. The skill ships a base vocabulary per
 # artifact type (see sdlc_md.STATUS_VOCAB). A project that uses extra statuses can
 # declare them here so reconcile/validate/conformance recognise them instead of
