@@ -79,6 +79,7 @@ back to `shell`.
 | `file <path>` | File must exist (`test -e`) | `file src/auth/email.ts` |
 | `grep <regex> <path>` | `rg -q` (or `grep -rqE`) must match | `grep "export class AuthClient" src/**/*.ts` |
 | `http METHOD URL -- <jq>` | curl + jq assertion | `http GET /health -- .status == "ok"` |
+| `eval <cmd> --threshold <f>` | run a graded eval tool; pass when its JSON `{"score": f}` >= threshold | `eval promptfoo eval -c judge.yaml --threshold 0.8` |
 | `shell <cmd>` | Arbitrary shell, pass on exit 0 | `shell test -f dist/bundle.js` |
 
 The `http` form builds a pipeline equivalent to:

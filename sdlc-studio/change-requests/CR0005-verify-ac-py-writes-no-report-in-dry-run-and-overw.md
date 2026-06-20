@@ -1,6 +1,6 @@
 # CR-0005: verify_ac.py writes no report in dry-run and overwrites a single report with no run history
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Requester:** Adversarial Audit
@@ -33,9 +33,9 @@ The dry-run preview is not auditable (operators told N changes would occur with 
 
 ## Acceptance Criteria
 
-- [ ] A report is written in dry-run too (distinct path or `dry_run` flag), enumerating each pending `(ac_id, old_state, new_state)` flip rather than an opaque count.
-- [ ] Each run appends a line to `.local/verify-history.jsonl` (timestamp, story id, per-AC pass/fail/stale, exit code).
-- [ ] Unit-tested.
+- [x] A report is written in dry-run too (distinct path or `dry_run` flag), enumerating each pending `(ac_id, old_state, new_state)` flip rather than an opaque count.
+- [x] Each run appends a line to `.local/verify-history.jsonl` (timestamp, story id, per-AC pass/fail/stale, exit code).
+- [x] Unit-tested.
 
 ## Out of Scope
 
@@ -45,4 +45,5 @@ The dry-run preview is not auditable (operators told N changes would occur with 
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (backlog-closeout) | Complete - US0019: dry-run report enumerates flips + verify-history.jsonl append log |
 | 2026-06-20 | Adversarial Audit | Filed from the 2026-06-20 audit (lens: determinism / external-benchmark; evidence: .claude/skills/sdlc-studio/scripts/verify_ac.py:311-315 (changed incremented in dry-run branch) and :414-416 (write_report only when not dry_run); :350-368 (write_report overwrites a single snapshot with no run-id/append; it does set generated_at)) |

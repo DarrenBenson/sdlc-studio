@@ -1,6 +1,6 @@
 # CR-0006: Add a graded/LLM-judge verifier verb to verify_ac DSL for AI-output and qualitative ACs
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Requester:** Adversarial Audit
@@ -33,8 +33,8 @@ For AI-output ACs (a stated target domain) there is currently no executable veri
 
 ## Acceptance Criteria
 
-- [ ] The `verify_ac` DSL accepts a graded verb (e.g. `eval <config> --threshold 0.8`) that shells to the eval tool, parses its JSON score, and passes only at or above the threshold.
-- [ ] A below-threshold score fails the AC and the score is recorded in the report. Unit-tested against a stub eval tool.
+- [x] The `verify_ac` DSL accepts a graded verb (e.g. `eval <config> --threshold 0.8`) that shells to the eval tool, parses its JSON score, and passes only at or above the threshold.
+- [x] A below-threshold score fails the AC and the score is recorded in the report. Unit-tested against a stub eval tool.
 
 ## Out of Scope
 
@@ -44,4 +44,5 @@ For AI-output ACs (a stated target domain) there is currently no executable veri
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-20 | Autosprint (backlog-closeout) | Complete - US0020: graded eval verb (pluggable, stubbed); critic-approved after guarding non-numeric threshold |
 | 2026-06-20 | Adversarial Audit | Filed from the 2026-06-20 audit (lens: external-benchmark; evidence: .claude/skills/sdlc-studio/scripts/verify_ac.py:449-453 (non-runnable ACs counted 'manual', un-graded); benchmark <https://www.promptfoo.dev/docs/intro/>) |

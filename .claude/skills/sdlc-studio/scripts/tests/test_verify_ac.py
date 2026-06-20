@@ -357,5 +357,89 @@ class HardeningTests(unittest.TestCase):
             shutil.rmtree(tmp, ignore_errors=True)
 
 
+class ReportHistoryTests(unittest.TestCase):
+    """CR0005: dry-run report enumerates pending flips; runs append to history."""
+
+    def test_dry_run_records_flips_without_modifying_file(self) -> None:
+        fr = FixtureRoot()
+        try:
+            p = fr.tmp / "sdlc-studio" / "stories" / "US0001-login.md"
+            before = p.read_text()
+            report = verify_ac.verify_story(p, dry_run=True, timeout=10, repo_root=fr.tmp)
+            flips = {f["ac"]: (f["old_state"], f["new_state"]) for f in report.flips}
+            self.assertEqual(flips.get("AC1"), ("none", "yes"))  # AC1 would flip to yes
+            self.assertEqual(p.read_text(), before)              # dry-run touches nothing
+        finally:
+            fr.cleanup()
+
+    def test_write_report_has_flips_and_dry_run_flag(self) -> None:
+        fr = FixtureRoot()
+        try:
+            p = fr.tmp / "sdlc-studio" / "stories" / "US0001-login.md"
+            rep = verify_ac.verify_story(p, dry_run=True, timeout=10, repo_root=fr.tmp)
+            out = fr.tmp / "r.json"
+            verify_ac.write_report(out, [rep], dry_run=True)
+            data = json.loads(out.read_text())
+            self.assertTrue(data["dry_run"])
+            self.assertTrue(data["stories"]["US0001-login"]["flips"])
+        finally:
+            fr.cleanup()
+
+    def test_history_is_append_only(self) -> None:
+        fr = FixtureRoot()
+        try:
+            p = fr.tmp / "sdlc-studio" / "stories" / "US0001-login.md"
+            rep = verify_ac.verify_story(p, dry_run=True, timeout=10, repo_root=fr.tmp)
+            hist = fr.tmp / "sdlc-studio" / ".local" / "verify-history.jsonl"
+            verify_ac.append_history(hist, [rep], True)
+            verify_ac.append_history(hist, [rep], True)
+            lines = hist.read_text(encoding="utf-8").strip().splitlines()
+            self.assertEqual(len(lines), 2)
+            rec = json.loads(lines[0])
+            self.assertEqual(rec["story"], "US0001-login")
+            self.assertIn("verified", rec)
+        finally:
+            fr.cleanup()
+
+
+class EvalVerbTests(unittest.TestCase):
+    """CR0006: graded `eval <cmd> --threshold X` verifier (pluggable, stubbed)."""
+
+    def _eval(self, expr):
+        return verify_ac.run_verifier(expr, timeout=10, cwd=Path("."))
+
+    def test_passes_at_or_above_threshold(self) -> None:
+        r = self._eval("eval echo '{\"score\": 0.9}' --threshold 0.8")
+        self.assertTrue(r.ok)
+        self.assertEqual(r.score, 0.9)
+        self.assertEqual(r.kind, "eval")
+
+    def test_fails_below_threshold(self) -> None:
+        r = self._eval("eval echo '{\"score\": 0.5}' --threshold 0.8")
+        self.assertFalse(r.ok)
+        self.assertEqual(r.score, 0.5)
+
+    def test_missing_threshold_errors(self) -> None:
+        r = self._eval("eval echo '{\"score\": 0.9}'")
+        self.assertFalse(r.ok)
+        self.assertEqual(r.kind, "eval")
+
+    def test_non_numeric_score_fails(self) -> None:
+        r = self._eval("eval echo 'not json' --threshold 0.5")
+        self.assertFalse(r.ok)
+        self.assertIsNone(r.score)
+
+    def test_exact_threshold_passes(self) -> None:
+        # score == threshold must pass (>=, not >).
+        r = self._eval("eval echo '{\"score\": 0.8}' --threshold 0.8")
+        self.assertTrue(r.ok)
+
+    def test_non_numeric_threshold_fails_cleanly(self) -> None:
+        # A malformed threshold must fail as kind eval, not crash.
+        r = self._eval("eval echo '{\"score\": 0.9}' --threshold 1.2.3")
+        self.assertFalse(r.ok)
+        self.assertEqual(r.kind, "eval")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 13 |
+| Done | 15 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
-| **Total** | **18** |
+| **Total** | **20** |
 
 ## All Stories
 
@@ -40,3 +40,5 @@
 | [US0016](US0016-epic-implement-resume.md) | epic implement --resume | Done | EP0007 | 2026-06-20 | 2026-06-20 |
 | [US0017](US0017-conformance-completion.md) | Conformance gate completion | Done | EP0007 | 2026-06-20 | 2026-06-20 |
 | [US0018](US0018-deps-first-ordering.md) | Dependency-first batch ordering | Done | EP0007 | 2026-06-20 | 2026-06-20 |
+| [US0019](US0019-verify-ac-report-history.md) | verify_ac report history and dry-run record | Done | EP0005 | 2026-06-20 | 2026-06-20 |
+| [US0020](US0020-verify-ac-graded-verifier.md) | verify_ac graded (eval) verifier verb | Done | EP0005 | 2026-06-20 | 2026-06-20 |

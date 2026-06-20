@@ -64,6 +64,8 @@ mode in this backlog.
 - [ ] [US0004: Status dashboard and single-step hint](../stories/US0004-status-hint.md)
 - [x] [US0012: Referential-integrity check](../stories/US0012-referential-integrity-check.md) (CR0003, determinism sprint)
 - [x] [US0014: review_prep staleness determinism](../stories/US0014-review-prep-determinism.md) (CR0004, determinism sprint)
+- [x] [US0019: verify_ac report history and dry-run record](../stories/US0019-verify-ac-report-history.md) (CR0005, backlog-closeout)
+- [x] [US0020: verify_ac graded (eval) verifier verb](../stories/US0020-verify-ac-graded-verifier.md) (CR0006, backlog-closeout)
 
 > Deterministic next-ID allocation (US0005) is owned by EP0008 (Tooling &
 > Scripts), not this epic.

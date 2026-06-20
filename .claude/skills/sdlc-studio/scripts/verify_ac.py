@@ -142,12 +142,48 @@ class VerifierResult:
     stdout: str
     stderr: str
     duration_ms: int
+    score: float | None = None  # graded `eval` verifier score, if any
+
+
+def _run_eval(expr: str, timeout: int, cwd: Path, start: float) -> VerifierResult:
+    """Graded verifier: `eval <command> --threshold <float>`.
+
+    Shells to a configurable eval tool (promptfoo/deepeval/...), parses a numeric
+    `score` from its JSON stdout, and passes only when score >= threshold. The
+    tool is a soft dependency; tests stub it. For AI-output and qualitative ACs.
+    """
+    body = expr[len("eval"):].strip()
+    m = re.search(r"--threshold\s+(\S+)\s*$", body)
+    if not m:
+        return VerifierResult(False, "eval", 2, "", "eval: expected `eval <command> --threshold <float>`", 0)
+    try:
+        threshold = float(m.group(1))
+    except ValueError:
+        return VerifierResult(False, "eval", 2, "", f"eval: non-numeric threshold {m.group(1)!r}", 0)
+    command = body[:m.start()].strip()
+    try:
+        result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=timeout, cwd=str(cwd))
+    except subprocess.TimeoutExpired:
+        return VerifierResult(False, "eval", 124, "", "timeout", int((time.time() - start) * 1000))
+    except FileNotFoundError as e:
+        return VerifierResult(False, "eval", 127, "", str(e), int((time.time() - start) * 1000))
+    duration = int((time.time() - start) * 1000)
+    try:
+        score = float(json.loads(result.stdout).get("score"))
+    except (ValueError, TypeError, AttributeError, json.JSONDecodeError):
+        return VerifierResult(False, "eval", result.returncode or 1, result.stdout[-4000:],
+                              "eval: no numeric 'score' in the tool's JSON output", duration)
+    ok = score >= threshold
+    return VerifierResult(ok, "eval", 0 if ok else 1, result.stdout[-4000:],
+                          f"score={score} threshold={threshold}", duration, score=score)
 
 
 def run_verifier(expression: str, timeout: int, cwd: Path) -> VerifierResult:
     """Parse a verifier expression and execute it."""
     expr = expression.strip()
     start = time.time()
+    if expr.lower() == "eval" or expr.lower().startswith("eval "):
+        return _run_eval(expr, timeout, cwd, start)
     try:
         kind, cmd = _build_command(expr)
     except ValueError as e:
@@ -298,6 +334,7 @@ class StoryReport:
     passed: list[str] = field(default_factory=list)
     failures: list[dict] = field(default_factory=list)
     changed: int = 0
+    flips: list[dict] = field(default_factory=list)  # pending/applied (ac, old_state, new_state)
 
 
 def verify_story(
@@ -322,11 +359,11 @@ def verify_story(
         if result.ok:
             report.verified += 1
             report.passed.append(block.ac_id)
-            if block.verified_state != "yes" and not dry_run:
-                lines = update_verified(lines, block, "yes")
+            if block.verified_state != "yes":
+                report.flips.append({"ac": block.ac_id, "old_state": block.verified_state or "none", "new_state": "yes"})
                 report.changed += 1
-            elif block.verified_state != "yes":
-                report.changed += 1
+                if not dry_run:
+                    lines = update_verified(lines, block, "yes")
         else:
             report.failed += 1
             report.failures.append(
@@ -337,13 +374,15 @@ def verify_story(
                     "exit_code": result.exit_code,
                     "stderr": result.stderr.strip()[:500],
                     "duration_ms": result.duration_ms,
+                    "score": result.score,
                 }
             )
             if block.verified_state == "yes":
                 report.stale += 1
+                report.flips.append({"ac": block.ac_id, "old_state": "yes", "new_state": "no"})
+                report.changed += 1
                 if not dry_run:
                     lines = update_verified(lines, block, "no")
-                report.changed += 1
 
     if report.changed and not dry_run:
         new_text = "\n".join(lines)
@@ -361,10 +400,15 @@ def walk_stories(stories_dir: Path) -> Iterable[Path]:
     return sorted(p for p in stories_dir.glob("US*.md") if p.is_file())
 
 
-def write_report(path: Path, stories: list[StoryReport]) -> None:
-    """Write the per-story verification summary to JSON."""
+def write_report(path: Path, stories: list[StoryReport], dry_run: bool = False) -> None:
+    """Write the per-story verification summary to JSON.
+
+    In dry-run the snapshot enumerates the pending `flips` (ac, old_state,
+    new_state) so the preview's most actionable output is recoverable.
+    """
     data = {
         "generated_at": sdlc_md.now_iso8601(),
+        "dry_run": dry_run,
         "stories": {
             os.path.basename(s.path).replace(".md", ""): {
                 "ac_count": s.ac_count,
@@ -374,12 +418,36 @@ def write_report(path: Path, stories: list[StoryReport]) -> None:
                 "manual": s.manual,
                 "passed": s.passed,
                 "failures": s.failures,
+                "flips": s.flips,
             }
             for s in stories
         },
     }
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+
+def append_history(path: Path, stories: list[StoryReport], dry_run: bool) -> None:
+    """Append one JSONL line per story per run, so the gate has an audit trail.
+
+    Answers "when did AC-3 last pass / regress" that a single overwriting
+    snapshot cannot. Append-only.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    at = sdlc_md.now_iso8601()
+    with path.open("a", encoding="utf-8") as fh:
+        for s in stories:
+            fh.write(json.dumps({
+                "at": at,
+                "dry_run": dry_run,
+                "story": os.path.basename(s.path).replace(".md", ""),
+                "verified": s.verified,
+                "failed": s.failed,
+                "stale": s.stale,
+                "passed": s.passed,
+                "failed_acs": [f["ac"] for f in s.failures],
+                "exit": 1 if s.failed else 0,
+            }) + "\n")
 
 
 # -----------------------------------------------------------------------------
@@ -425,9 +493,14 @@ def cmd_run(args: argparse.Namespace) -> int:
                 for line in stderr_lines[:3]:
                     print(f"          | {line}")
 
-    if not args.dry_run:
-        write_report(Path(args.report), reports)
-        print(f"wrote {args.report}")
+    # Write the report in dry-run too (to a distinct path, so the live report is
+    # not clobbered) and append the run to the history log (CR0005).
+    report_path = Path(args.report)
+    if args.dry_run:
+        report_path = report_path.with_name(report_path.stem + ".dry-run" + report_path.suffix)
+    write_report(report_path, reports, dry_run=args.dry_run)
+    append_history(repo_root / "sdlc-studio" / ".local" / "verify-history.jsonl", reports, args.dry_run)
+    print(f"wrote {report_path}")
 
     return 1 if overall_fail > 0 else 0
 
