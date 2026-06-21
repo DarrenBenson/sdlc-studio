@@ -132,6 +132,19 @@ emits the same per-function scores into the map.
 - `scan`: list functions over the cognitive threshold (`complexity.cognitive_high`, default 15)
 - `assess --files ...`: a change's blast-radius difficulty band + refactor-first hotspots (used by `code plan`)
 
+### `version_check.py`
+
+Skill version check + self-update signal (CR0044). Compares the installed version
+against the latest GitHub release; `status`/`hint` print a one-line notice when newer.
+On by default, opt-out (`version_check.enabled`), TTL-cached, silent offline, per-version
+snooze. Drives the `skill-update` action via `scope`.
+
+- `check`: report {installed, latest, status, scope}
+- `snooze`: dismiss the current latest until a newer release
+- `scope`: print the install scope (user / project / agents)
+
+Action workflow: `reference-skill-update.md`.
+
 ### `transition.py`
 
 Deterministic status transition + cascade (CR0042). `set --id <ID> --status <new>`

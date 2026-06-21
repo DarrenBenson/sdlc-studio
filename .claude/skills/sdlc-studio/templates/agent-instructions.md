@@ -24,6 +24,9 @@ This project runs on the **sdlc-studio** skill. Before substantive work:
    derived; reconcile cadence; TDD by default).
 2. Read `sdlc-studio/reviews/LATEST.md` for current orientation.
 3. Run `/sdlc-studio status` then `/sdlc-studio hint` for the next concrete step.
+   (`status`/`hint` also surface a one-line notice if a newer SDLC Studio release
+   exists - run `/sdlc-studio skill-update` to take it, or it stays quiet until the
+   next release. Opt out with `version_check.enabled: false` in `.config.yaml`.)
 4. Recall relevant cross-project lessons (`/sdlc-studio lessons recall`).
 
 **After any context compaction or reset** (a `/compact`, `/clear`,

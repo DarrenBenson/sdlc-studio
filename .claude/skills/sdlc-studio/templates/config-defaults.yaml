@@ -62,6 +62,15 @@ require_ac_verification: false
 constitution:
   enforce: false
 
+# Skill update check (CR0044). On the first `status`/`hint` of a session the skill
+# compares the installed version against the latest GitHub release and prints a one-line
+# notice if newer (dismiss with `skill-update` decline; quiet until a newer release).
+# On by default; set enabled: false to disable the network check entirely. ttl_hours
+# caps it to one check per window. Silent on any network failure.
+version_check:
+  enabled: true
+  ttl_hours: 24
+
 # Code-complexity thresholds (RFC0009). cognitive_high flags a function as a hotspot
 # (SonarQube's 15); churn_high is the commits-touching-a-file threshold for the
 # churn-weighted composite defect-risk band (churn is weighted ~3x complexity, per the

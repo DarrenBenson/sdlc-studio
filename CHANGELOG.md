@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Skill version check + `skill-update` (CR0044):** on the first `status`/`hint` of a
+  session the skill compares its installed version against the latest GitHub release and
+  prints a one-line notice if newer; `/sdlc-studio skill-update` upgrades the
+  scope-detected install (user / project / agents) via the installer on explicit
+  confirm. Deterministic `scripts/version_check.py` (TTL-cached, silent offline,
+  per-version snooze so it never nags until a newer release); on by default, opt-out via
+  `version_check.enabled: false`. Distinct from `upgrade` (project schema migration).
+
 ## [2.1.0] - 2026-06-21
 
 Goal-Driven Development arrives: the **`autosprint`** autonomous loop with hard

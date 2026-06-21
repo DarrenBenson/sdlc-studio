@@ -105,7 +105,8 @@ Claude loads files progressively based on task needs:
 | Validating Ready status | reference-decisions.md#{type}-ready | reference-outputs.md | - |
 | Document review | reference-review.md | reference-{doc}.md | - |
 | Adversarial audit (weakness-hunt over the artifact graph) | reference-audit.md | templates/automation/audit-finder.md | scripts/file_finding.py |
-| Schema upgrade | reference-upgrade.md | reference-config.md | - |
+| Schema upgrade (project artifacts) | reference-upgrade.md | reference-config.md | - |
+| Skill self-update (check + upgrade the install) | reference-skill-update.md | scripts/version_check.py | help/skill-update.md |
 | Project orchestration | reference-project.md | reference-epic.md | reference-config.md |
 | Agentic execution | reference-agentic-lessons.md | reference-epic.md | - |
 | Autosprint (Goal-Driven Development loop) | reference-autosprint.md | help/autosprint.md | reference-project.md |
@@ -187,6 +188,7 @@ approach decisions. The full index is in `help/references.md`.
 | `autosprint` | Goal-Driven Development loop: a prioritised batch driven to a goal |
 | `plan` | Claude Code plan-file lifecycle (list, archive) |
 | `reconcile` | Detect and fix status drift across all artifacts |
+| `skill-update` | Check for and install a newer SDLC Studio release (the skill itself) |
 | `status` | Visual dashboard: Requirements, Code, Tests health |
 | `hint` | Single actionable next step |
 | `help` | Show command reference and examples |

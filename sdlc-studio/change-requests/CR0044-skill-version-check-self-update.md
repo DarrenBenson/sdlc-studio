@@ -1,6 +1,6 @@
 # CR-0044: skill version check + consent `skill-update`
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Feature
 > **Requester:** Darren Benson
@@ -64,13 +64,14 @@ change. `skill-update` is a new action; the existing `upgrade` (schema) is untou
 
 ## Acceptance Criteria
 
-- [ ] `version_check check` compares the installed `SKILL.md` version to the latest GitHub release tag and returns a status; on any network failure it returns `offline` silently (exit 0, no error output).
-- [ ] Results are TTL-cached (default 24h) so repeat calls within the window do not refetch; a per-version snooze yields `snoozed` when the latest equals the dismissed version; `version_check.enabled: false` yields `disabled` and makes no network call.
-- [ ] `status`/`hint` print a single "vX.Y.Z available - run `/sdlc-studio skill-update`" line only when `update-available`, and nothing when up-to-date / snoozed / offline / disabled.
-- [ ] `skill-update` detects the install scope from the running script path and, on explicit confirm, runs `install.sh` for that target; declining records the snooze. Unit-tested (semver compare, TTL cache, snooze, scope detection, offline + disabled degradation).
+- [x] `version_check check` compares the installed `SKILL.md` version to the latest GitHub release tag and returns a status; on any network failure it returns `offline` silently (exit 0, no error output).
+- [x] Results are TTL-cached (default 24h) so repeat calls within the window do not refetch; a per-version snooze yields `snoozed` when the latest equals the dismissed version; `version_check.enabled: false` yields `disabled` and makes no network call.
+- [x] `status`/`hint` print a single "vX.Y.Z available - run `/sdlc-studio skill-update`" line only when `update-available`, and nothing when up-to-date / snoozed / offline / disabled.
+- [x] `skill-update` detects the install scope from the running script path and, on explicit confirm, runs `install.sh` for that target; declining records the snooze. Unit-tested (semver compare, TTL cache, snooze, scope detection, offline + disabled degradation).
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-21 | Autosprint (CR0044) | Complete - US0030: version_check.py + skill-update action + status/hint notice; critic APPROVE after self-degrading fixes |
 | 2026-06-21 | Darren Benson | Raised - auto version check + consent self-update; design forks settled in discussion (release-tag source, network-on-by-default opt-out, run-on-confirm, `skill-update` name, per-version snooze, on-first-use) |

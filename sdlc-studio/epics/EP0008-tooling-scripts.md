@@ -64,6 +64,7 @@ stdlib, read-only over the workspace, unit-tested.
 - [ ] US: Schema upgrade between versions
 - [x] [US0015: Config single source](../stories/US0015-config-single-source.md) (CR0008, determinism sprint)
 - [x] [US0024: config-extensible status vocabulary](../stories/US0024-config-extensible-status-vocab.md) (CR0027, agent-crew)
+- [x] [US0030: skill version check + self-update signal](../stories/US0030-skill-version-check.md) (CR0044)
 - [x] [US0026: complexity computation (cognitive + cyclomatic)](../stories/US0026-complexity-computation.md) (CR0028, RFC0009 WS1)
 - [x] [US0027: code plan complexity estimation + refactor-first](../stories/US0027-code-plan-complexity-estimation.md) (CR0029, RFC0009 WS2)
 

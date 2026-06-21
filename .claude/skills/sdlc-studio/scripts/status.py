@@ -22,6 +22,25 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 
 
+def _print_update_notice(root: str) -> None:
+    """Surface a one-line skill-update notice (CR0044) on status/hint - the skill's
+    'on first use' check. Fully guarded: a disabled config / offline / any error is
+    silent and never affects the status output."""
+    try:
+        import version_check as vc  # sibling; lazy so status never hard-depends on it
+        enabled = bool(sdlc_md.project_override(root, "version_check.enabled", True))
+        ttl = sdlc_md.project_override(root, "version_check.ttl_hours", vc.DEFAULT_TTL_HOURS)
+        try:
+            ttl = float(ttl)
+        except (TypeError, ValueError):
+            ttl = vc.DEFAULT_TTL_HOURS
+        line = vc.notice(vc.check(ttl_hours=ttl, enabled=enabled))
+        if line:
+            print(line)
+    except Exception:  # noqa: BLE001 - the version check must never break status/hint
+        pass
+
+
 def _config_summary(repo_root: Path) -> dict | None:
     """Representative defaults read from config-defaults.yaml (CR0008).
 
@@ -125,6 +144,7 @@ def cmd_pillars(args: argparse.Namespace) -> int:
     print(f"Workflows:    total={data['workflows']['total']}")
     print(f"Reviews:      files={data['reviews']['review_files']} "
           f"latest={'yes' if data['reviews']['latest'] else 'no'}")
+    _print_update_notice(args.root)
     return 0
 
 
@@ -163,6 +183,7 @@ def cmd_hint(args: argparse.Namespace) -> int:
         print(json.dumps(hint, indent=2))
     else:
         print(f"/sdlc-studio {hint['next_command']}  ({hint['reason']})")
+        _print_update_notice(args.root)
     return 0
 
 
