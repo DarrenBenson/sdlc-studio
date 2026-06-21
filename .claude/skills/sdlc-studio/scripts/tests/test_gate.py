@@ -59,14 +59,15 @@ class GateLogicTests(unittest.TestCase):
 class GateRealWrapperTests(unittest.TestCase):
     def test_default_checks_present(self) -> None:
         self.assertEqual(set(gate.DEFAULT_CHECKS),
-                         {"conformance", "reconcile", "validate", "constitution", "integrity", "doc-coverage"})
+                         {"conformance", "reconcile", "validate", "constitution", "integrity",
+                          "duplicate-id", "provenance", "doc-coverage"})
 
     def test_real_wrappers_run_and_shape(self) -> None:
         # Exercises the real checks end-to-end against this repo; asserts structure,
         # not pass/fail (state-independent, so not fragile).
         r = gate.run_gate(str(REPO))
         self.assertIsInstance(r["ok"], bool)
-        self.assertEqual(len(r["checks"]), 6)
+        self.assertEqual(len(r["checks"]), 8)
         for c in r["checks"]:
             self.assertEqual(set(c), {"check", "count", "blocking", "status", "detail"})
 
@@ -83,6 +84,51 @@ class GateRealWrapperTests(unittest.TestCase):
         finally:
             reconcile.detect_type = orig
         self.assertEqual(count, 2 * len(reconcile._DEFAULT_TYPES))  # 2 drift/type, not 6 keys
+
+
+    def test_duplicate_index_row_fails_gate(self) -> None:
+        # CR0055 regression (hermetic): two rows for one id in an index must FAIL the gate
+        # (reconcile collapses them to one dict key -> zero drift -> false PASS without this).
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            sd = repo / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "_index.md").write_text(
+                "# Index\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| US0001 | a | Done |\n| US0001 | dupe | Done |\n", encoding="utf-8")
+            (sd / "US0001-a.md").write_text("# US0001: a\n\n> **Status:** Done\n", encoding="utf-8")
+            self.assertEqual(gate._duplicate_id(str(repo))["count"], 1)
+            self.assertFalse(gate.run_gate(str(repo), only=["duplicate-id"])["ok"])
+
+
+    def test_provenance_blocking_follows_enforce(self) -> None:
+        import provenance
+        orig = provenance.check
+        try:
+            provenance.check = lambda root: {"findings": [{"blocking": False}], "enforced": False, "ok": True}
+            self.assertFalse(gate._provenance(str(REPO))["blocking"])  # advisory
+            self.assertTrue(gate.run_gate(str(REPO), only=["provenance"])["ok"])  # advisory -> gate PASS
+            provenance.check = lambda root: {"findings": [{"blocking": True}], "enforced": True, "ok": False}
+            self.assertTrue(gate._provenance(str(REPO))["blocking"])   # enforced -> blocks
+            self.assertFalse(gate.run_gate(str(REPO), only=["provenance"])["ok"])
+        finally:
+            provenance.check = orig
+
+    def test_duplicate_id_additivity(self) -> None:
+        # files + rows are independent sources: one dup row -> 1; dup file + dup row -> 2.
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            sd = repo / "sdlc-studio" / "stories"; sd.mkdir(parents=True)
+            (sd / "_index.md").write_text(
+                "# Index\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| US0001 | a | Done |\n| US0001 | dupe-row | Done |\n", encoding="utf-8")
+            (sd / "US0001-a.md").write_text("# US0001: a\n\n> **Status:** Done\n", encoding="utf-8")
+            self.assertEqual(gate._duplicate_id(str(repo))["count"], 1)  # one dup row, no dup file
+            (sd / "US0002-x.md").write_text("# US0002: x\n\n> **Status:** Done\n", encoding="utf-8")
+            (sd / "US0002-y.md").write_text("# US0002: y\n\n> **Status:** Done\n", encoding="utf-8")
+            self.assertEqual(gate._duplicate_id(str(repo))["count"], 2)  # + one dup file
 
     def test_main_returns_exit_code(self) -> None:
         rc = gate.main(["--root", str(REPO), "--format", "json"])

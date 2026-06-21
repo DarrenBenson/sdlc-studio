@@ -1,6 +1,6 @@
 # CR-0055: gate gains a duplicate-id check + optional provenance registration
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** High
 > **Type:** Feature
 > **Date:** 2026-06-21
@@ -11,12 +11,13 @@ Self-audit: gate.py does not detect duplicate artifact ids, and reconcile.detect
 
 ## Acceptance Criteria
 
-- [ ] gate flags duplicate ids in any index as a blocking failure (false-pass closed)
-- [ ] optional: provenance registered in the gate, blocking only when provenance.enforce
-- [ ] tested with a duplicate-id fixture; critic APPROVE
+- [x] gate flags duplicate ids in any index as a blocking failure (false-pass closed)
+- [x] optional: provenance registered in the gate, blocking only when provenance.enforce
+- [x] tested with a duplicate-id fixture; critic APPROVE
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-21 | audit | Raised |
+| 2026-06-21 | Autosprint (CR0055) | Built: duplicate-row detector + duplicate-id/provenance gate checks; critic APPROVE |

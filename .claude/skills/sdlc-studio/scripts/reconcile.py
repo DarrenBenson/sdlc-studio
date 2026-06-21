@@ -120,6 +120,61 @@ def _index_rows_and_summary(text: str, vocab: list) -> tuple[dict, dict]:
     return rows, summary
 
 
+def _index_row_ids(text: str) -> list[str]:
+    """Every data-row normalised id in one index file, in order, duplicates kept.
+
+    Mirrors `_index_rows_and_summary`'s header-pinned id location, but returns the raw
+    sequence (not a {id: ...} dict) so duplicate rows are visible rather than collapsed.
+    """
+    ids: list[str] = []
+    id_col = None
+    for line in text.splitlines():
+        cells = _table_cells(line)
+        if not cells:
+            continue
+        if len(cells) == 2 and cells[1].replace(",", "").isdigit():  # summary row
+            continue
+        lowered = [c.lower() for c in cells]
+        if len(cells) > 2 and "status" in lowered:  # header row - re-pin the id column
+            id_col = lowered.index("id") if "id" in lowered else None
+            continue
+        if id_col is not None and id_col < len(cells):
+            m = sdlc_md.ID_SEARCH_RE.search(cells[id_col])
+            rid = m.group(0) if m else None
+        else:
+            rid = next((sdlc_md.ID_SEARCH_RE.search(c).group(0)
+                        for c in cells if sdlc_md.ID_SEARCH_RE.search(c)), None)
+        if rid:
+            ids.append(_norm_id(rid))
+    return ids
+
+
+def detect_duplicate_rows(repo_root: Path | str) -> dict:
+    """Duplicate index ROWS - the same normalised id appearing in more than one row of a
+    single `_index.md`. `parse_index` keys rows by id into a dict, so a duplicate row
+    silently overwrites the first: zero drift, gate false-PASS (CR0055). This counts the
+    raw rows before that collapse.
+
+        { "duplicates": [ {"type", "id", "count"} ], "count" }
+
+    Assumes one data table per `_index.md` (the project convention): an id legitimately
+    repeated across two sections of the same file (e.g. an "Active" + "Recently closed"
+    recap) would be flagged. Indexes here are single-table, so this holds.
+    """
+    root = Path(repo_root)
+    dups: list[dict] = []
+    for type_ in sdlc_md.ARTIFACT_TYPES:
+        index_path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / "_index.md"
+        if not index_path.exists():
+            continue
+        counts: dict[str, int] = {}
+        for rid in _index_row_ids(index_path.read_text(encoding="utf-8")):
+            counts[rid] = counts.get(rid, 0) + 1
+        dups.extend({"type": type_, "id": rid, "count": n}
+                    for rid, n in sorted(counts.items()) if n > 1)
+    return {"duplicates": dups, "count": len(dups)}
+
+
 def parse_index(type_: str, repo_root: Path) -> dict:
     """Parse a type's _index.md into {rows, summary}. Rows are the live index rows
     UNIONED with any `<type>/archive/**/*.md` sub-index rows (RFC0012) - so an

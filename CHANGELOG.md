@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Gate duplicate-id + provenance checks (CR0055):** the gate now flags duplicate artifact
+  ids - both duplicate files (next_id) and duplicate index ROWS (reconcile keyed rows into a
+  dict, so a second `US0001` row silently overwrote the first: zero drift, false PASS - now
+  `reconcile.detect_duplicate_rows` counts the raw rows). Provenance is also registered as a
+  gate check, blocking only when `provenance.enforce` (the constitution opt-in pattern).
 - **Documentation in the autosprint Definition of Done (CR0053):** a new `documented`
   conformance stage + a deterministic `scripts/doc_coverage.py` gate - every Type-Reference
   command must be in the help catalogue and every script in reference-scripts.md (a prose

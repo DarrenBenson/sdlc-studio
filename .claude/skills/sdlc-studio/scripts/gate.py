@@ -62,6 +62,24 @@ def _integrity(root: str) -> dict:
     return {"count": e, "blocking": True, "detail": f"{e} integrity error(s)"}
 
 
+def _duplicate_id(root: str) -> dict:
+    import next_id
+    import reconcile
+    files = next_id.detect_collisions(root)["count"]      # two files claim one id
+    rows = reconcile.detect_duplicate_rows(root)["count"]  # one index lists an id twice
+    total = files + rows
+    detail = f"{total} duplicate id(s)" + (f" ({files} file, {rows} index-row)" if total else "")
+    return {"count": total, "blocking": True, "detail": detail}
+
+
+def _provenance(root: str) -> dict:
+    import provenance
+    r = provenance.check(root)  # blocking only when provenance.enforce (the constitution pattern)
+    n = len(r["findings"])
+    return {"count": n, "blocking": r["enforced"],
+            "detail": f"{n} unstamped artifact(s) ({'enforced' if r['enforced'] else 'advisory'})"}
+
+
 def _doc_coverage(root: str) -> dict:
     import doc_coverage
     r = doc_coverage.check(root)
@@ -78,6 +96,8 @@ DEFAULT_CHECKS = {
     "validate": _validate,
     "constitution": _constitution,
     "integrity": _integrity,
+    "duplicate-id": _duplicate_id,
+    "provenance": _provenance,
     "doc-coverage": _doc_coverage,
 }
 

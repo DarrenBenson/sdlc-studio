@@ -391,5 +391,37 @@ class NormalisationTests(unittest.TestCase):
             self.assertNotIn("count-mismatch", kinds)
 
 
+
+class DuplicateRowTests(unittest.TestCase):
+    def _idx(self, repo, body):
+        d = repo / "sdlc-studio" / "stories"; d.mkdir(parents=True, exist_ok=True)
+        (d / "_index.md").write_text(
+            "# Index\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n" + body, encoding="utf-8")
+
+    def test_duplicate_row_detected(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            self._idx(repo, "| US0001 | a | Done |\n| US0001 | dupe | Open |\n| US0002 | b | Done |\n")
+            r = reconcile.detect_duplicate_rows(repo)
+            self.assertEqual(r["count"], 1)
+            self.assertEqual(r["duplicates"][0]["id"], reconcile._norm_id("US0001"))
+            self.assertEqual(r["duplicates"][0]["count"], 2)
+
+    def test_norm_id_collapses_dash_variant(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            d2 = repo / "sdlc-studio" / "change-requests"; d2.mkdir(parents=True)
+            (d2 / "_index.md").write_text(
+                "# Index\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| CR0007 | a | Done |\n| CR-0007 | dash | Done |\n", encoding="utf-8")
+            self.assertEqual(reconcile.detect_duplicate_rows(repo)["count"], 1)  # CR0007 == CR-0007
+
+    def test_clean_index_no_duplicates(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            self._idx(repo, "| US0001 | a | Done |\n| US0002 | b | Done |\n")
+            self.assertEqual(reconcile.detect_duplicate_rows(repo)["count"], 0)
+
+
 if __name__ == "__main__":
     unittest.main()
