@@ -45,5 +45,4 @@ coordination is currently living as stale prose in reviews/handovers.
 | --- | --- |
 | `templates/core/pvd.md` | the tiered PVD template |
 | `templates/product-manifest.yaml` | the child-repo manifest |
-| `reference-outputs.md` | the PVD's place above the PRD in the hierarchy |
 | RFC0015 | the design rationale (accepted, scoped WS1-3) |
