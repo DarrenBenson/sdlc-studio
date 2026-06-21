@@ -127,3 +127,4 @@ own `deploy.command` and everything else (gate, smoke, soak, rollback signal) is
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-21 | Darren Benson | Raised - the deploy last-mile, framed neutrality-first; for discussion before deciding |
+| 2026-06-21 | Darren Benson | Decision session: DEFERRED (stays Draft) - needs the most thought + no live deploy need. Trigger: a consuming project needs a coordinated, gated deploy (the lock-in question reopens then) |

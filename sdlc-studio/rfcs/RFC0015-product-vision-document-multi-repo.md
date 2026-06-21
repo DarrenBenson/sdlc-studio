@@ -1,6 +1,6 @@
 # RFC-0015: Product Vision Document (PVD) - the multi-repo product layer
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Priority:** High
 > **Author:** Darren Benson
 > **Date:** 2026-06-21
@@ -99,13 +99,13 @@ where multi-repo products break, and it is the most differentiated thing here.
 
 | # | Decision | Options | Owner | Status |
 | --- | --- | --- | --- | --- |
-| D1 | Master PVD writable home | dedicated product repo (e.g. `product-vision`) **[leaning]** / designate an existing anchor repo | Operator | Open |
-| D2 | Read-only enforcement | OS symlink (prod) + sync (dev), with a checksum/version drift check **[leaning]** / convention + check only | Design | Open |
-| D3 | Feature-map link convention | `PF0003 -> repo-b:F0007` id refs the tooling resolves | Design | Open |
-| D4 | Contract-check depth in v1 | declare + version + migration-deadline (doc-checkable) now; producer==consumer execution later / full cross-repo contract verify now | Operator | Open |
-| D5 | Hierarchy depth | flat (master + project refs) **[leaning]** / domain/team tree from the start | Operator | Open |
-| D6 | Governance gates (G1-G5) | opt-in for large products **[leaning]** / always | Operator | Open |
-| D7 | Cross-repo access for `product reconcile` | sibling local paths + a repo manifest **[leaning]** / shallow clone of child repos | Design | Open |
+| D1 | Master PVD writable home | dedicated product repo (e.g. `product-vision`) **[leaning]** / designate an existing anchor repo | Operator | Resolved |
+| D2 | Read-only enforcement | OS symlink (prod) + sync (dev), with a checksum/version drift check **[leaning]** / convention + check only | Design | Resolved |
+| D3 | Feature-map link convention | `PF0003 -> repo-b:F0007` id refs the tooling resolves | Design | Resolved |
+| D4 | Contract-check depth in v1 | declare + version + migration-deadline (doc-checkable) now; producer==consumer execution later / full cross-repo contract verify now | Operator | Resolved |
+| D5 | Hierarchy depth | flat (master + project refs) **[leaning]** / domain/team tree from the start | Operator | Resolved |
+| D6 | Governance gates (G1-G5) | opt-in for large products **[leaning]** / always | Operator | Resolved |
+| D7 | Cross-repo access for `product reconcile` | sibling local paths + a repo manifest **[leaning]** / shallow clone of child repos | Design | Resolved |
 
 ## Architecture Impact
 
@@ -149,12 +149,13 @@ where multi-repo products break, and it is the most differentiated thing here.
 
 > *Filled on acceptance.* Chosen option + rationale + the CRs spawned.
 
-**Outcome:** TBD - for the follow-up
-**Rationale:** TBD
-**Spawned CRs:** TBD
+**Outcome:** Accepted, scoped to WS1-WS3 (PVD template + manifest; read-only projection + drift check; cross-repo traceability reconcile). WS4-WS5 (contract layer + producer==consumer verify) and WS6 (PVD tree + G1-G5 governance) deferred.
+**Rationale:** The multi-repo coordination gap is real and active; the read-only-projected master + traceability reconcile is the proportionate, build-now core. Contract-verify and governance carry the design/effort risk and wait until the core is in use. Open Decisions resolved to their leanings (D1 dedicated product repo, D2 symlink+sync+checksum, D3 id-ref convention, D5 flat, D7 sibling-paths+manifest); D4 + D6 deferred with their workstreams.
+**Spawned CRs:** CR0047 (WS1), CR0048 (WS2), CR0049 (WS3).
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-21 | Darren Benson | Raised - the PVD product layer; home = read-only-projected master (symlink in prod); PM owns it; contract layer the headline; flat + tiered, tree/gates deferred |
+| 2026-06-21 | Darren Benson | Decision session: ACCEPTED scoped WS1-3 (spawns CR0047-CR0049); WS4-6 + D4/D6 deferred until the core is in use |

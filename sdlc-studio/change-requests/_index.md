@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 2 |
+| Proposed | 7 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 43 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **46** |
+| **Total** | **51** |
 
 ## All Changes
 
@@ -66,3 +66,8 @@
 | [CR-0044](CR0044-skill-version-check-self-update.md) | skill version check + consent `skill-update` | Complete | Medium | Feature | 2026-06-21 | -- |
 | [CR-0045](CR0045-deterministic-artifact-write-cascade.md) | deterministic artifact create + cross-link cascade | Proposed | High | Feature | 2026-06-21 | -- |
 | [CR-0046](CR0046-portable-ci-quality-gate.md) | portable quality-gate entrypoint for CI (ecosystem-neutral) | Proposed | High | Feature | 2026-06-21 | -- |
+| [CR-0047](CR0047-pvd-template-and-manifest.md) | PVD template + product manifest (RFC0015 WS1) | Proposed | High | Feature | 2026-06-21 | -- |
+| [CR-0048](CR0048-read-only-pvd-projection-drift-check.md) | read-only PVD projection + drift check (RFC0015 WS2) | Proposed | High | Feature | 2026-06-21 | -- |
+| [CR-0049](CR0049-product-reconcile-feature-map-traceability.md) | product reconcile - cross-repo feature-map traceability (RFC0015 WS3) | Proposed | High | Feature | 2026-06-21 | -- |
+| [CR-0050](CR0050-telemetry-record-and-schema.md) | telemetry record + .local/telemetry.jsonl schema (RFC0014 WS1) | Proposed | Medium | Feature | 2026-06-21 | -- |
+| [CR-0051](CR0051-telemetry-loop-capture.md) | loop writes a telemetry record per unit close (RFC0014 WS2) | Proposed | Medium | Feature | 2026-06-21 | -- |

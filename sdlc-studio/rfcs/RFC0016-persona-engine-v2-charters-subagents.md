@@ -221,3 +221,4 @@ ledger the skill already keeps, so a human deposits a little authored-ness befor
 | --- | --- | --- |
 | 2026-06-21 | Darren Benson | Reframed around the charter/authored identity substrate distinction (design consult): the selection test, record-outside-stance-inside, broker-or-local consults, the honest fallback detection envelope + human-ratified canon, `shadow` added to the schema, the claim-no-undemonstrable-property integrity rule |
 | 2026-06-21 | Darren Benson | Raised - structured charters + isolated-subagent consults + PM/PO ownership + the unified review primitive |
+| 2026-06-21 | Darren Benson | Decision session: DEFERRED (stays Draft) - substrate model agreed, but awaits the operator's persona deep-dive. Trigger: the deep-dive resolves the charter schema, the Engram-worthy seats, and ratification (D1/D2/D6) |

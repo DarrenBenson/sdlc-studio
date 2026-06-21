@@ -1,6 +1,6 @@
 # RFC-0014: run telemetry + a learning loop
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Priority:** Medium
 > **Author:** Darren Benson (from the v2.2 usage retrospective)
 > **Date:** 2026-06-21
@@ -63,12 +63,12 @@ and WS5; no upload. Revisit B only if a real cross-project need appears, and onl
 
 | # | Decision | Options | Owner | Status |
 | --- | --- | --- | --- | --- |
-| D1 | What to capture | iterations + wall-time + stages + verdict + reopened **[leaning]**; tokens only if the runtime exposes them reliably to the script | Design | Open |
-| D2 | Token cost | record when the agent can pass it (autosprint records it) / omit (not reliably available to a script) | Design | Open |
-| D3 | Who records | the autosprint close cascade + `transition`/`close` | Design | Open |
-| D4 | What consumes it | estimation, RFC0009 complexity calibration, WS5 wave-sizing | Operator | Open |
-| D5 | Privacy default | local-only (A) **[leaning]** / opt-in aggregation (B) | Operator | Open |
-| D6 | "Reopened/regressed" signal | a later transition off a terminal status, or a bug citing the unit's files (the calibration's defect signal) | Design | Open |
+| D1 | What to capture | iterations + wall-time + stages + verdict + reopened **[leaning]**; tokens only if the runtime exposes them reliably to the script | Design | Resolved |
+| D2 | Token cost | record when the agent can pass it (autosprint records it) / omit (not reliably available to a script) | Design | Resolved |
+| D3 | Who records | the autosprint close cascade + `transition`/`close` | Design | Resolved |
+| D4 | What consumes it | estimation, RFC0009 complexity calibration, WS5 wave-sizing | Operator | Resolved |
+| D5 | Privacy default | local-only (A) **[leaning]** / opt-in aggregation (B) | Operator | Resolved |
+| D6 | "Reopened/regressed" signal | a later transition off a terminal status, or a bug citing the unit's files (the calibration's defect signal) | Design | Resolved |
 
 ## Architecture Impact
 
@@ -99,12 +99,13 @@ and WS5; no upload. Revisit B only if a real cross-project need appears, and onl
 
 > *Filled on acceptance.* Chosen option + rationale + the CRs spawned.
 
-**Outcome:** TBD - for discussion
-**Rationale:** TBD
-**Spawned CRs:** TBD
+**Outcome:** Accepted, scoped to WS1-WS2 (telemetry.py record + .local/telemetry.jsonl; loop writes a record per unit close). WS3 (calibrate) + WS4 (RFC0009 WS5 unblock) deferred until data accrues.
+**Rationale:** Start capturing per-unit run outcomes now so the dataset exists when calibration/WS5 are wanted; local-only, no upload. Open Decisions resolved to their leanings (D1 iterations+wall-time+stages+verdict+reopened, D2 tokens only when the runtime exposes them, D3 close cascade records, D5 local-only, D6 reopened signal); D4 deferred with WS3-4.
+**Spawned CRs:** CR0050 (WS1), CR0051 (WS2).
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-21 | Darren Benson | Raised - capture run outcomes to make calibration continuous and unblock RFC0009 WS5; privacy-first |
+| 2026-06-21 | Darren Benson | Decision session: ACCEPTED scoped WS1-2 (spawns CR0050-CR0051); WS3-4 + D4 deferred until run data accrues |

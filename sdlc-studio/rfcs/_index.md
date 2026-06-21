@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 4 |
+| Draft | 2 |
 | In Review | 0 |
-| Accepted | 9 |
+| Accepted | 11 |
 | Superseded | 0 |
 | Withdrawn | 3 |
 | **Total** | **16** |
@@ -30,6 +30,6 @@
 | [RFC-0011](RFC0011-rfc0006-reopens-the-default-autonomy-decision-rfc0.md) | RFC0006 reopens the default-autonomy decision RFC0001 declares settled, with no cross-reference | Medium | Withdrawn | -- | 2026-06-20 | -- |
 | [RFC-0012](RFC0012-progressive-disclosure-indexes.md) | Progressive-disclosure indexes with release archival | High | Accepted | -- | 2026-06-20 | -- |
 | [RFC-0013](RFC0013-ecosystem-neutral-deploy-last-mile.md) | the deploy last-mile, without ecosystem lock-in | High | Draft | -- | 2026-06-21 | -- |
-| [RFC-0014](RFC0014-run-telemetry-learning-loop.md) | run telemetry + a learning loop | Medium | Draft | -- | 2026-06-21 | -- |
-| [RFC-0015](RFC0015-product-vision-document-multi-repo.md) | Product Vision Document - the multi-repo product layer | High | Draft | -- | 2026-06-21 | -- |
+| [RFC-0014](RFC0014-run-telemetry-learning-loop.md) | run telemetry + a learning loop | Medium | Accepted | -- | 2026-06-21 | CR0050-CR0051 |
+| [RFC-0015](RFC0015-product-vision-document-multi-repo.md) | Product Vision Document - the multi-repo product layer | High | Accepted | -- | 2026-06-21 | CR0047-CR0049 |
 | [RFC-0016](RFC0016-persona-engine-v2-charters-subagents.md) | Persona engine v2 - substrate-tiered review seats (charter / authored identity) | High | Draft | -- | 2026-06-21 | -- |
