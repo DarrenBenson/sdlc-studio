@@ -30,7 +30,7 @@ script.
 ## Proposed Changes
 
 - **`new`** - generalise the `file_finding` filer to every numbered type (story, epic,
-  plan, test-spec, in addition to bug/cr/rfc): allocate the ID, render from the type's
+  plan, test-spec, workflow, in addition to bug/cr/rfc) - the full set in `sdlc_md.ARTIFACT_TYPES`: allocate the ID, render from the type's
   template (required sections enforced), write the file, append the type-correct index
   row, recompute counts (reuse `reconcile.apply_type`).
 - **Cross-link wiring** - on `new story`, add its row to the parent epic's Story
@@ -62,4 +62,5 @@ None. Additive; the manual cascade still works, this makes it one command.
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-21 | Darren Benson | Scope: add `workflow` so `new` covers all 8 numbered/indexed types (sdlc_md.ARTIFACT_TYPES), not 7 |
 | 2026-06-21 | Darren Benson | Raised - the artifact write-cascade is the biggest remaining hand-driven step; make create+wire deterministic |
