@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Disclosure backlog driven to zero (CR0064):** fixed the 28 real gaps the disclosure check found
+  in the skill's own source (24 scripts `chmod +x`, 4 `Load when:` markers, 2 section files indexed)
+  and refined the check to clear 38 false-positives - help/<type>.md is reachable via the
+  `help/{type}.md` Progressive-Loading pattern, and the template placeholder check is scoped to
+  `templates/core/` (fill scaffolds), not guidance modules/prompts. `disclosure` now reports 0.
+
 ## [2.4.0] - 2026-06-21
 
 ### Added

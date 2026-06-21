@@ -1,5 +1,7 @@
 # Help: gate
 
+<!-- Load when: /sdlc-studio gate - running the ecosystem-neutral quality gate -->
+
 A single, **ecosystem-neutral** quality gate over the deterministic checks. Run it in
 any CI (or a pre-commit hook) to enforce the discipline on a consuming project's changes.
 

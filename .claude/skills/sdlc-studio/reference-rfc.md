@@ -1,5 +1,7 @@
 # RFC Workflow Reference
 
+<!-- Load when: deep RFC design workflow (with help/rfc.md) - driving an unsettled design to a decision -->
+
 Deep workflow for `/sdlc-studio rfc`. Load with `help/rfc.md`. RFCs capture an
 **unsettled** design space and drive it to a decision; an accepted RFC **spawns
 CRs** (its workstreams) rather than being actioned into epics itself.

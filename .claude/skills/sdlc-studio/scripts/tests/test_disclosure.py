@@ -41,8 +41,10 @@ def _skill(repo, *, refs=None, helps=None, scripts=None, templates=None, indexed
         p = sd / "scripts" / name
         p.write_text(body, encoding="utf-8")
         p.chmod(0o755 if ex else 0o644)
-    for name, body in (templates or {}).items():
-        (sd / "templates" / name).write_text(body, encoding="utf-8")
+    for relpath, body in (templates or {}).items():
+        f = sd / "templates" / relpath
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text(body, encoding="utf-8")
     return sd
 
 
@@ -87,7 +89,7 @@ class DisclosureTests(unittest.TestCase):
 
     def test_template_without_placeholder_flagged(self):
         with tempfile.TemporaryDirectory() as d:
-            _skill(Path(d), templates={"core.md": "# hardcoded, no placeholder\n"})
+            _skill(Path(d), templates={"core/core.md": "# hardcoded, no placeholder\n"})
             self.assertIn("core.md", _kinds(Path(d), "template-no-placeholder"))
 
     def test_consuming_repo_is_noop(self):
@@ -121,6 +123,44 @@ class DisclosureTests(unittest.TestCase):
             # index references qrcode.md; the real orphan code.md must still be flagged
             sd = _skill(Path(d), helps={"code.md": MARKER}, indexed=["qrcode.md"])
             self.assertIn("code.md", _kinds(Path(d), "orphan"))
+
+    def test_help_file_reachable_via_type_pattern_not_orphan(self):
+        # help/<type>.md is reached via the templated help/{type}.md reference (not a literal name)
+        with tempfile.TemporaryDirectory() as d:
+            sd = _skill(Path(d), helps={"bug.md": MARKER}, indexed=[])
+            # inject the pattern into SKILL.md (as the Progressive Loading Guide does)
+            sk = sd / "SKILL.md"; sk.write_text(sk.read_text() + "\n| x | help/{type}.md | - |\n", encoding="utf-8")
+            self.assertNotIn("bug.md", _kinds(Path(d), "orphan"))
+
+    def test_module_template_not_flagged(self):
+        # template check is scoped to templates/core/ - guidance modules are not fill scaffolds
+        with tempfile.TemporaryDirectory() as d:
+            _skill(Path(d), templates={"modules/tsd/contract-tests.md": "# fixed examples, no placeholder\n"})
+            self.assertEqual(_kinds(Path(d), "template-no-placeholder"), [])
+
+    def test_core_template_without_placeholder_still_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            _skill(Path(d), templates={"core/prd.md": "# no placeholder here\n"})
+            self.assertIn("prd.md", _kinds(Path(d), "template-no-placeholder"))
+
+    def test_real_reference_orphan_still_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            _skill(Path(d), refs={"reference-foo.md": MARKER}, indexed=[])  # not in any index, not help/
+            self.assertIn("reference-foo.md", _kinds(Path(d), "orphan"))
+
+    def test_help_orphan_flagged_when_pattern_absent(self):
+        # the safety net: with no help/{type}.md pattern in any index, a help file IS an orphan
+        with tempfile.TemporaryDirectory() as d:
+            _skill(Path(d), helps={"bug.md": MARKER}, indexed=[])  # SKILL.md has no pattern
+            self.assertIn("bug.md", _kinds(Path(d), "orphan"))
+
+    def test_dead_help_file_vouched_by_pattern_is_deliberate_tradeoff(self):
+        # documented trade-off: once the help/{type}.md pattern exists, even an unreferenced help
+        # file is treated as reachable (the pattern vouches for all help files). Advisory; accepted.
+        with tempfile.TemporaryDirectory() as d:
+            sd = _skill(Path(d), helps={"zombie.md": MARKER}, indexed=[])
+            sk = sd / "SKILL.md"; sk.write_text(sk.read_text() + "\n| x | help/{type}.md | - |\n", encoding="utf-8")
+            self.assertNotIn("zombie.md", _kinds(Path(d), "orphan"))
 
 
 if __name__ == "__main__":

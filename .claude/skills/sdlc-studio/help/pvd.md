@@ -1,5 +1,7 @@
 # Help: pvd
 
+<!-- Load when: /sdlc-studio pvd - the Product Vision Document multi-repo layer -->
+
 The **Product Vision Document** - the product layer above the PRD, coordinating the repos
 that form one product. Opt-in: a single repo never needs it.
 

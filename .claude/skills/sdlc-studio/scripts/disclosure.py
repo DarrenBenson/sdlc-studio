@@ -70,7 +70,11 @@ def check(repo_root: Path | str = ".") -> dict:
         if not _LOAD_MARKER.search(head):
             warn("missing-load-marker", f.name,
                  f"{f.name} has no `Load when:` trigger near the top (on-demand discipline)")
-        if not _indexed(f.name, index_text):
+        # help/<type>.md files are reached via the templated `help/{type}.md` reference in the
+        # Progressive Loading Guide / references.md, so the pattern entry vouches for them.
+        reachable = _indexed(f.name, index_text) or (
+            f.parent.name == "help" and "help/{type}.md" in index_text)
+        if not reachable:
             warn("orphan", f.name,
                  f"{f.name} is not referenced from SKILL.md / help/references.md / help/help.md")
 
@@ -84,11 +88,12 @@ def check(repo_root: Path | str = ".") -> dict:
         if "argparse" not in text and "--help" not in text:
             warn("script-no-help", s.name, f"scripts/{s.name} exposes no --help / argparse")
 
-    # best-practice: artifact templates should use {{placeholder}} (not hardcoded)
-    for t in sorted((skill_dir / "templates").rglob("*.md")):
+    # best-practice: fill-in artifact scaffolds should use {{placeholder}}. Scope to templates/core/
+    # (the scaffolds); modules/prompts/pointers are guidance/example content, legitimately fixed.
+    for t in sorted((skill_dir / "templates" / "core").glob("*.md")):
         if "{{" not in _read(t):
             warn("template-no-placeholder", t.name,
-                 f"templates/.../{t.name} has no {{{{placeholder}}}} (hardcoded?)")
+                 f"templates/core/{t.name} has no {{{{placeholder}}}} (hardcoded?)")
 
     # best-practice: SKILL.md carries a When to Use section
     skill_text = _read(skill_dir / "SKILL.md")

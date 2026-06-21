@@ -9,12 +9,12 @@
 | Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 62 |
+| Complete | 63 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **63** |
+| **Total** | **64** |
 
 ## All Changes
 
@@ -83,3 +83,4 @@
 | [CR-0061](CR0061-stakes-scaled-autosprint-review-depth-token-trim.md) | Stakes-scaled autosprint review depth token trim | Complete | Medium | Improvement | 2026-06-21 | -- |
 | [CR-0062](CR0062-project-upgrade-migrate-a-consuming-project-to-current.md) | project upgrade migrate a consuming project to current conventions offered by skill-update | Complete | High | Feature | 2026-06-21 | -- |
 | [CR-0063](CR0063-disclosure-check-progressive-disclosure-and-claude-code-best.md) | disclosure check progressive disclosure and claude code best practice advisory | Complete | Medium | Feature | 2026-06-21 | -- |
+| [CR-0064](CR0064-drive-disclosure-backlog-to-zero-fix-real-gaps.md) | drive disclosure backlog to zero fix real gaps and refine the check | Complete | Medium | Improvement | 2026-06-21 | -- |

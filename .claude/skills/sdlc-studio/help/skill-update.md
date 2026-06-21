@@ -1,5 +1,7 @@
 # Help: skill-update
 
+<!-- Load when: /sdlc-studio skill-update - updating the installed skill to the latest release -->
+
 Update the **installed SDLC Studio skill** to the latest published release, on confirm.
 
 ## Commands
