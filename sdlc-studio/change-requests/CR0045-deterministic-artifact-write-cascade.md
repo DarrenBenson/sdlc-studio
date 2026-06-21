@@ -23,8 +23,9 @@ last big piece of "maximise deterministic tool use."
 ## Problem
 
 The completion cascade is documented in `reference-outputs.md` but executed by hand or
-by the agent re-deriving it each time (~3-4k tokens of bookkeeping per unit, error-prone
-- early hand-edits drove BG0018/CR0026). It is mechanical and should be a script.
+by the agent re-deriving it each time (~3-4k tokens of bookkeeping per unit, and
+error-prone - early hand-edits drove BG0018/CR0026). It is mechanical, so it should be a
+script.
 
 ## Proposed Changes
 

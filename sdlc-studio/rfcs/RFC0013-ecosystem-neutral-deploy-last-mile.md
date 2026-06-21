@@ -30,6 +30,7 @@ the moment a user is on GitLab, a bare VPS, an on-prem runner, or a different cl
 ## Goals / Non-Goals
 
 **Goals**
+
 - Define what "safely deployed" *means* as a checkable contract (pre-deploy gate +
   post-deploy verification tier + rollback trigger), reusing the existing verify/gate.
 - Stay **ecosystem-neutral**: the project supplies the deploy/rollback commands; the
@@ -37,6 +38,7 @@ the moment a user is on GitLab, a bare VPS, an on-prem runner, or a different cl
 - Close the loop: post-deploy outcome recorded back into the artifact graph.
 
 **Non-Goals**
+
 - Becoming a deploy tool / CD platform. The skill orchestrates and verifies; the
   project's own tooling deploys.
 - Touching secrets, credentials, or cloud APIs directly.
@@ -44,6 +46,7 @@ the moment a user is on GitLab, a bare VPS, an on-prem runner, or a different cl
 ## Design Options
 
 ### Option A - Deploy contract + project-supplied hook (neutral)
+
 The skill defines the **contract** (pre-deploy gate -> the configured deploy command ->
 post-deploy verification tier -> rollback on failure) and delegates the *act* to a
 project-configured command (`deploy.command`, `deploy.rollback`, `deploy.smoke` in
@@ -52,14 +55,17 @@ project-configured command (`deploy.command`, `deploy.rollback`, `deploy.smoke` 
 **Cons:** the project must wire its own deploy command (no turnkey magic).
 
 ### Option B - Shipped adapters for common targets
+
 Ship adapters (GitHub Actions, Docker, k8s, serverless, a PaaS or two). **Pros:**
 turnkey. **Cons:** exactly the lock-in/maintenance burden to avoid; picks winners; ages
 badly.
 
 ### Option C - Status quo (patterns only)
+
 Keep `reference-deploy-readiness.md` as guidance, ship no workflow.
 
 ### Option D - Hybrid: A now, optional example adapters later
+
 The neutral contract+hook (A) as the core; a few **optional** example wirings shipped as
 `templates/` (not core code) so they can't couple the skill.
 

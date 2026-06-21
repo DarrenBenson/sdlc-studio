@@ -25,17 +25,20 @@ learn. WS5 explicitly waits on "per-story run-cost telemetry that doesn't exist.
 ## Goals / Non-Goals
 
 **Goals**
+
 - A standing, local capture of per-unit run outcomes the loop writes as it closes units.
 - Feed it into estimation, the complexity/churn calibration (RFC0009), and unblock WS5.
 - Privacy-first: local by default, opt-in for anything that leaves the machine.
 
 **Non-Goals**
+
 - Phone-home / mandatory telemetry. No upload by default.
 - A metrics dashboard / external service.
 
 ## Design Options
 
 ### Option A - Local-only capture (privacy-first)
+
 The autosprint close cascade appends a record per unit to `.local/telemetry.jsonl`
 (`{id, type, iterations, wall_time_s, stages, critic_verdict, complexity, churn,
 reopened}`); a `telemetry calibrate` derives estimation/complexity weights from it.
@@ -43,10 +46,12 @@ Nothing leaves the machine. **Pros:** safe, unblocks WS5, no trust ask. **Cons:*
 per-project only - no cross-project model.
 
 ### Option B - Opt-in aggregation
+
 A, plus an explicit opt-in to aggregate/upload anonymised metrics for a cross-project
 model. **Pros:** better models. **Cons:** trust/privacy surface; off by default anyway.
 
 ### Option C - Status quo (one-off manual studies)
+
 Calibrate by hand when needed (as today).
 
 ## Recommendation
