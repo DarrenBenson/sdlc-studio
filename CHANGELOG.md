@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `--root` fails rather than passing vacuously. No network, no CI/cloud assumption -
   runnable in any CI or a pre-commit hook (`help/gate.md` shows GitHub Actions / GitLab /
   shell wiring).
+- **Product Vision Document - the multi-repo product layer (CR0047, RFC0015 WS1):** a tiered
+  `templates/core/pvd.md` (vision/goals/feature-map/cross-repo-deps/contracts/risks/decisions
+  always; topology tree + G1-G5 gates + release coordination opt-in) and a
+  `templates/product-manifest.yaml` listing the child repos. The PVD coordinates and traces
+  (product feature -> owning repo -> PRD feature), never re-specifies; Product Manager owns it.
 
 ## [2.2.0] - 2026-06-21
 

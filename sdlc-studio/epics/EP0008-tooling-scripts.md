@@ -66,6 +66,7 @@ stdlib, read-only over the workspace, unit-tested.
 - [x] [US0024: config-extensible status vocabulary](../stories/US0024-config-extensible-status-vocab.md) (CR0027, consuming repo A)
 - [x] [US0030: skill version check + self-update signal](../stories/US0030-skill-version-check.md) (CR0044)
 - [x] [US0031: portable CI quality gate](../stories/US0031-portable-ci-gate.md) (CR0046)
+- [x] [US0032: PVD template + product manifest](../stories/US0032-pvd-template-and-manifest.md) (CR0047)
 - [x] [US0026: complexity computation (cognitive + cyclomatic)](../stories/US0026-complexity-computation.md) (CR0028, RFC0009 WS1)
 - [x] [US0027: code plan complexity estimation + refactor-first](../stories/US0027-code-plan-complexity-estimation.md) (CR0029, RFC0009 WS2)
 

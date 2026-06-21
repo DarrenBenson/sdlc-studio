@@ -1,6 +1,6 @@
 # CR-0047: PVD template + product manifest (RFC0015 WS1)
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** High
 > **Type:** Feature
 > **Requester:** Darren Benson (RFC decision session)
@@ -21,12 +21,13 @@ Add the Product Vision Document artifact (tiered: lean v1 sections always, tree/
 
 ## Acceptance Criteria
 
-- [ ] A `pvd create` renders the tiered template; the lean sections are present, the tree/gates are opt-in.
-- [ ] The product manifest lists child repos by path + URL and is read by the tooling.
-- [ ] Unit-tested where code; independent critic APPROVE.
+- [x] A `pvd create` renders the tiered template; the lean sections are present, the tree/gates are opt-in.
+- [x] The product manifest lists child repos by path + URL and is read by the tooling.
+- [x] Unit-tested where code; independent critic APPROVE.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-21 | Autosprint (CR0047) | Complete - US0032: tiered PVD template + manifest + docs |
 | 2026-06-21 | Darren Benson | Raised - RFC decision session |
