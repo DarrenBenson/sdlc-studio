@@ -50,9 +50,3 @@ preserve prose/internal blanks + exact-id idempotency (critic).
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-21 | Autosprint (CR0053) | Created by `new`; the new gate forced 15 doc gaps green (dogfood); critic REJECT->fixed (backtick false-pass, disp-substring drop) |
-
-## Revision History
-
-| Date | Author | Change |
-| --- | --- | --- |
-| 2026-06-21 | Autosprint (CR0053) | Created via `new` (deterministic) |
