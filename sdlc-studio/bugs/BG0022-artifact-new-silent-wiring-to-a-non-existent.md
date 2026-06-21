@@ -1,6 +1,6 @@
 # BG0022: artifact new - silent wiring to a non-existent epic and file-only id allocation
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Created:** 2026-06-21
 
@@ -21,3 +21,4 @@ Warn/raise when a story's parent epic is absent; route allocation through next_i
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-21 | audit | Filed |
+| 2026-06-21 | Autosprint (BG0022) | Fixed: raise on absent epic (pre-write); allocate_number honours index rows + origin/main; critic APPROVE |

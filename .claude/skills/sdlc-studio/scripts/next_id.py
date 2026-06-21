@@ -36,6 +36,32 @@ def local_ids(type_: str, repo_root: Path) -> list[int]:
     return sorted(set(ids))
 
 
+def index_row_ids(type_: str, repo_root: Path) -> list[int]:
+    """Numeric ids present as rows in the type's `_index.md`. Catches an id whose file was
+    deleted but whose index row remains: re-issuing it would collide (BG0022)."""
+    import reconcile  # local import avoids any import cycle
+    rel = sdlc_md.ARTIFACT_TYPES[type_][0]
+    index_path = Path(repo_root) / rel / "_index.md"
+    if not index_path.exists():
+        return []
+    ids = [num for norm in reconcile._index_row_ids(index_path.read_text(encoding="utf-8"))
+           if (num := sdlc_md.id_number(norm)) is not None]
+    return sorted(set(ids))
+
+
+def allocate_number(type_: str, repo_root: Path | str, remote: bool = True) -> int:
+    """The next free numeric id: above the max of local files, index rows, and (when
+    available) origin/main - so a deleted-but-still-indexed id, or an id only on the remote,
+    is never re-issued (BG0022). `remote=False` skips the read-only git lookup."""
+    root = Path(repo_root)
+    base = max([0, *local_ids(type_, root), *index_row_ids(type_, root)])
+    if remote:
+        rids, available = remote_ids(type_, root)
+        if available and rids:
+            base = max(base, max(rids))
+    return base + 1
+
+
 def remote_ids(type_: str, repo_root: Path) -> tuple[list[int], bool]:
     """Numeric IDs on origin/main for `type_`. Returns (ids, available).
 

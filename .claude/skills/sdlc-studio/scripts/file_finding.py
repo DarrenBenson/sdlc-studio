@@ -45,8 +45,9 @@ def _slug(title: str) -> str:
 
 
 def _next_number(repo_root: Path, type_: str) -> int:
-    used = next_id.local_ids(type_, repo_root)
-    return (max(used) + 1) if used else 1
+    # Honour local files, lingering index rows, and origin/main - never re-issue an id
+    # that exists only on the remote or as a stale index row (BG0022).
+    return next_id.allocate_number(type_, repo_root)
 
 
 def _render(type_: str, disp_id: str, title: str, today: str, f: dict) -> str:

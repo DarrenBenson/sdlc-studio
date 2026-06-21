@@ -80,6 +80,8 @@ class NewTests(unittest.TestCase):
             with tempfile.TemporaryDirectory() as d:
                 repo = Path(d)
                 (repo / "sdlc-studio").mkdir(parents=True)
+                if t == "story":
+                    _epic(repo)  # a story needs an existing parent epic (BG0022)
                 fields = {"epic": "EP0001"} if t == "story" else {}
                 r = artifact.new(repo, t, f"a {t}", fields)
                 p = Path(r["path"])
@@ -104,14 +106,38 @@ class NewTests(unittest.TestCase):
 
 
     def test_loose_epic_id_does_not_wire_wrong_epic(self) -> None:
-        # HIGH regression: a loose id must not substring-match a padded epic.
+        # HIGH regression: a loose id must not substring-match a padded epic. EP001 is absent
+        # (only EP0010 exists), so it must RAISE rather than orphan the story (BG0022).
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
             _epic(repo, "EP0010")
-            r = artifact.new(repo, "story", "loose ref", {"epic": "EP001"})  # not EP0010
-            self.assertFalse(r["epic_linked"])
+            with self.assertRaises(ValueError):
+                artifact.new(repo, "story", "loose ref", {"epic": "EP001"})  # not EP0010
             self.assertNotIn("loose ref", (repo / "sdlc-studio" / "epics" / "EP0010-x.md").read_text())
+
+    def test_absent_epic_raises_no_orphan_file(self) -> None:
+        # BG0022: a story for a non-existent epic must raise BEFORE writing any file.
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+            with self.assertRaises(ValueError):
+                artifact.new(repo, "story", "orphan", {"epic": "EP9999"})
+            self.assertEqual(list((repo / "sdlc-studio" / "stories").glob("US*.md")), [])
+
+    def test_allocation_skips_lingering_index_row(self) -> None:
+        # BG0022: an id whose file was deleted but whose index row remains must not be
+        # re-issued (file census alone would re-use it).
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            sd = repo / "sdlc-studio" / "change-requests"; sd.mkdir(parents=True)
+            (sd / "_index.md").write_text(
+                "# Index\n\n## All\n\n| ID | Title | Status | Priority | Type | Date | Linked Epics |\n"
+                "| --- | --- | --- | --- | --- | --- | --- |\n"
+                "| [CR-0005](CR0005-x.md) | gone | Done | Medium | Feature | 2026-01-01 | - |\n",
+                encoding="utf-8")  # row present, file absent
+            r = artifact.new(repo, "cr", "fresh")
+            self.assertEqual(r["file_id"], "CR0006")  # above the lingering CR0005 row, not CR0001
 
     def test_pipe_in_title_escaped_in_row(self) -> None:
         with tempfile.TemporaryDirectory() as d:

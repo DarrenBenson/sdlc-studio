@@ -116,15 +116,19 @@ def _row_from_header(header: list[str], link: str, title: str, status: str, f: d
     return reconcile._join_row(out)
 
 
+def _find_epic(root: Path, epic_id: str) -> Path | None:
+    """The epic file whose id matches exactly (never a substring: EP001 != EP0010)."""
+    eid = sdlc_md.norm_id(epic_id)
+    return next((p for p in sdlc_md.artifact_files("epic", Path(root))
+                 if sdlc_md.norm_id(p.stem.split("-")[0]) == eid), None)
+
+
 def _wire_story_to_epic(root: Path, epic_id: str, disp: str, title: str,
                         file_id: str, slug: str) -> bool:
     """Append the story to its parent epic's Story Breakdown (idempotent)."""
-    eid = sdlc_md.norm_id(epic_id)  # exact id match - never a substring (EP001 != EP0010)
-    files = [p for p in sdlc_md.artifact_files("epic", Path(root))
-             if sdlc_md.norm_id(p.stem.split("-")[0]) == eid]
-    if not files:
+    ep = _find_epic(root, epic_id)
+    if ep is None:
         return False
-    ep = files[0]
     text = ep.read_text(encoding="utf-8")
     line = f"- [ ] [{disp}: {title}](../stories/{file_id}-{slug}.md)"
     if f"[{disp}:" in text or f"[{disp}]" in text:  # already wired (exact, not substring: US0001 != US00012)
@@ -160,8 +164,13 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
     root = Path(repo_root)
     f = dict(fields or {})
     f["date"] = f.get("date") or date.today().isoformat()
-    if type_ == "story" and not f.get("epic"):
-        raise ValueError("a story needs --epic <EPxxxx>")
+    if type_ == "story":
+        if not f.get("epic"):
+            raise ValueError("a story needs --epic <EPxxxx>")
+        # Fail fast before writing - a story wired to a non-existent epic is an orphan whose
+        # dangling link only surfaces at the next integrity run (BG0022).
+        if _find_epic(root, f["epic"]) is None:
+            raise ValueError(f"epic {f['epic']} not found - create it first, or fix the id")
     n = file_finding._next_number(root, type_)
     prefix = sdlc_md.ARTIFACT_TYPES[type_][1]
     file_id = f"{prefix}{n:04d}"

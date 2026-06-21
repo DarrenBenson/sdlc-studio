@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **artifact new correctness (BG0022):** a story created for a non-existent epic now raises
+  before writing any file (no silent orphan), and id allocation honours local files, lingering
+  index rows, AND origin/main (`next_id.allocate_number`) - never re-issuing an id that exists
+  only on the remote or as a stale index row.
 - **Help reframed around autosprint (CR0054):** help now leads with getting-started and the
   autosprint (Goal-Driven Development) loop as the recommended path; the by-hand per-tool
   pipeline is retained but secondary. The catalogue lists every command (pvd, gate, provenance,
