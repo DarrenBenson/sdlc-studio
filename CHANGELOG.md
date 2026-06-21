@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Critic verdicts no longer trip MD037 (BG0023):** `critic._clean` now escapes `_` so an
+  underscored identifier in the issues text cannot pair into markdown emphasis - a recurring lint
+  papercut when recording verdicts about code (`_read`, `_index_row`).
 - **Progressive-disclosure + best-practice check (CR0063):** `scripts/disclosure.py` (advisory) flags
   reference-/help- files missing a `Load when:` trigger or orphaned from every index, plus best-practice
   items (scripts executable + `--help`, templates use `{{placeholder}}`, SKILL.md has When-to-Use). The

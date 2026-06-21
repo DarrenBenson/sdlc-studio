@@ -56,6 +56,18 @@ class CliTests(unittest.TestCase):
             self.assertEqual(rc, 0)
             self.assertEqual(mod.verdict_for(root, "US0017")["verdict"], "APPROVE")
 
+    def test_underscores_escaped_to_avoid_md037(self):
+        # BG0023: underscored identifiers in the issues text must be escaped so they cannot
+        # pair into markdown emphasis (markdownlint MD037).
+        with tempfile.TemporaryDirectory() as d:
+            mod = _load()
+            mod.record_verdict(d, "US0001", "approve",
+                               issues="fixed _read and _index_row and gate.run_gate")
+            text = mod.verdicts_path(d).read_text(encoding="utf-8")
+            self.assertNotIn(" _read", text)        # no bare underscore-led token
+            self.assertIn(r"\_read", text)          # escaped instead
+            self.assertTrue(any(v["unit"] == "US0001" for v in mod.read_verdicts(d)))
+
 
 if __name__ == "__main__":
     unittest.main()

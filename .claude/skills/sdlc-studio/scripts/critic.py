@@ -31,7 +31,9 @@ def verdicts_path(repo_root: Path | str) -> Path:
 
 
 def _clean(value: str) -> str:
-    return value.replace("|", "/").replace("\n", " ").strip()
+    # Escape `_` so an underscored identifier (e.g. `_read`, `_index_row`) in free-text notes
+    # cannot pair across words into markdown emphasis and trip markdownlint MD037 (BG0023).
+    return value.replace("|", "/").replace("\n", " ").strip().replace("_", r"\_")
 
 
 def record_verdict(repo_root: Path | str, unit: str, verdict: str,

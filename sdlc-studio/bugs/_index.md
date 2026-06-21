@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 0 |
 | In Progress | 0 |
-| Fixed | 22 |
+| Fixed | 23 |
 | Verified | 0 |
 | Closed | 0 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **22** |
+| **Total** | **23** |
 
 ## All Bugs
 
@@ -41,3 +41,4 @@
 | [BG0020](BG0020-parser-rejects-consuming-repo-house-templates.md) | shared parser rejects consuming repos' house templates | Fixed | High | 2026-06-20 | 2026-06-20 |
 | [BG0021](BG0021-escaped-pipe-split-other-parsers.md) | escaped-pipe split bug present in three more table parsers | Fixed | Medium | 2026-06-20 | 2026-06-20 |
 | [BG0022](BG0022-artifact-new-silent-wiring-to-a-non-existent.md) | artifact new - silent wiring to a non-existent epic and file-only id allocation | Fixed | Medium | 2026-06-21 | 2026-06-21 |
+| [BG0023](BG0023-critic-verdict-text-with-underscored-identifiers-trips-markdownlint.md) | critic verdict text with underscored identifiers trips markdownlint MD037 | Fixed | Low | 2026-06-21 | 2026-06-21 |
