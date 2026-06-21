@@ -272,7 +272,7 @@ Review and update existing personas.
 
 1. **Read Existing**
    - Load all persona files
-   - Parse each persona
+   - Run `validate.py personas` to flag any not-well-formed for its cast role (advisory)
 
 2. **Gather Updates**
    For each persona:
@@ -315,8 +315,12 @@ not require research backing, and builds no authored-identity machinery (RFC0017
 
 **Cast-role variants.** A **Negative** persona swaps End Goals for *End Goals (stated to exclude)*
 and replaces Experience Goals + Scenario with *Why we are not designing for them* + *how to handle
-a request from them* (a well-formedness check must allow this shape). For **Customer / Served**,
-Experience Goals and Scenario are optional. See the template's "Cast-role variants" note.
+a request from them*. For **Customer / Served**, Experience Goals and Scenario are optional. See
+the template's "Cast-role variants" note.
+
+**Checking it.** `python3 "$CLAUDE_SKILL_DIR/scripts/validate.py" personas` flags a persona that is
+missing a section for its cast role (advisory - it never blocks, and it allows the Negative and
+Customer/Served variants). `persona review` runs it.
 
 ## Template Location
 

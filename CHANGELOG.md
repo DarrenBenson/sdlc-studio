@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Persona well-formedness check (CR0059, RFC0017 WS3):** `validate.py personas` flags a
+  goal-directed persona missing a section for its cast role - advisory (exits 0, not in the hard
+  gate). Cast-role-aware: the Negative variant (Why-not, no Experience Goals) and Customer/Served
+  (Experience + Scenario optional) are not false-flagged; a missing cast role is itself flagged.
+  Prefix-matched headings so an unrelated `## Context` does not satisfy Behaviours. Surfaced via
+  `persona review`.
 - **Cooper goal-directed persona model (CR0058, RFC0017 WS1):** the persona template and
   reference-persona model move from demographic categories to Alan Cooper's goal-directed model -
   a full cast (Primary / Secondary / Supplemental / Negative / Customer / Served), ordered End

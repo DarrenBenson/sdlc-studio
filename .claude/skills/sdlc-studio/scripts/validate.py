@@ -300,6 +300,90 @@ def cmd_instructions(args: argparse.Namespace) -> int:
     return 1 if errors else 0
 
 
+def _persona_cast_role(text: str) -> str | None:
+    """The cast role declared in a persona's Quick Reference, or None."""
+    m = re.search(r"\|\s*\*\*Cast role\*\*\s*\|\s*([^|]+?)\s*\|", text, re.I)
+    if not m:
+        return None
+    val = m.group(1).strip().lower()
+    # the role whose word appears EARLIEST in the cell (not by our tuple order, so
+    # "secondary supporting the primary" reads as secondary, not primary)
+    found = [(val.find(r), r) for r in ("primary", "secondary", "supplemental", "negative",
+                                        "customer", "served") if r in val]
+    return min(found)[1] if found else None
+
+
+def _headings(text: str) -> list[str]:
+    return [h.strip().lower() for h in re.findall(r"^##+\s+(.*)$", text, re.M)]
+
+
+def _starts(headings: list[str], *prefixes: str) -> bool:
+    """True if any heading STARTS WITH any prefix (case-insensitive). Prefix, not substring,
+    so a bare `## Context` does not satisfy `Behaviours & Context`, and `## Why End Goals
+    Matter` does not satisfy `End Goals`."""
+    return any(h.startswith(pfx) for h in headings for pfx in prefixes)
+
+
+def check_personas(root: Path) -> list[dict]:
+    """Cast-role-aware well-formedness check for goal-directed personas (RFC0017 WS3).
+
+    Advisory only - a persona is a design aid, and a draft is legitimate; this never errors and
+    is not in the hard gate. Scans `sdlc-studio/personas/*.md` (skips index.md). A standard
+    persona (primary/secondary/supplemental) wants Who They Are, End Goals, Experience Goals,
+    Behaviours & Context, Frustrations, Scenario; a **Negative** persona swaps Experience Goals
+    for a Why-not (and keeps a Scenario/how-to-handle); Customer/Served make Experience + Scenario
+    optional. No-op for a repo with no personas dir.
+    """
+    out: list[dict] = []
+    pdir = Path(root) / "sdlc-studio" / "personas"
+    if not pdir.is_dir():
+        return out
+    for p in sorted(pdir.glob("*.md")):
+        if p.name == "index.md":
+            continue
+        try:
+            text = p.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        role = _persona_cast_role(text)
+        hs = _headings(text)
+        if role is None:
+            out.append({"severity": "warning", "rule": "persona-cast-role", "file": str(p),
+                        "message": "no Cast role in the Quick Reference "
+                                   "(primary/secondary/supplemental/negative/customer/served)"})
+        checks = [("Who They Are", _starts(hs, "who they are")),
+                  ("End Goals", _starts(hs, "end goals")),
+                  ("Behaviours & Context", _starts(hs, "behaviour")),
+                  ("Frustrations", _starts(hs, "frustrations"))]
+        if role == "negative":
+            # the rationale heading, not any heading with "why" (e.g. "Why this matters")
+            why_not = any(h.startswith("why") and "not" in h for h in hs)
+            checks.append(("Why we are not designing for them", why_not))
+            checks.append(("Scenario / how to handle", _starts(hs, "scenario", "how to handle", "how we handle")))
+        elif role not in ("customer", "served"):  # standard, or unknown role
+            checks.append(("Experience Goals", _starts(hs, "experience goals")))
+            checks.append(("Scenario", _starts(hs, "scenario")))
+        for name, ok in checks:
+            if not ok:
+                out.append({"severity": "warning", "rule": "persona-section", "file": str(p),
+                            "message": f"missing section: {name}"})
+    return out
+
+
+def cmd_personas(args: argparse.Namespace) -> int:
+    """Report persona well-formedness (advisory; exits 0)."""
+    violations = check_personas(Path(args.root).resolve())
+    if args.format == "json":
+        print(json.dumps({"generated_at": sdlc_md.now_iso8601(), "violations": violations,
+                          "summary": {"warnings": len(violations)}}, indent=2))
+    else:
+        for v in violations:
+            print(f"{v['severity'].upper():7} {v['file']}: [{v['rule']}] {v['message']}")
+        print("personas look well-formed." if not violations
+              else f"warnings={len(violations)}")
+    return 0  # advisory - never blocks
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Construct the argparse parser for the check and instructions subcommands."""
     p = argparse.ArgumentParser(
@@ -320,6 +404,12 @@ def build_parser() -> argparse.ArgumentParser:
     i.add_argument("--root", default=".", help="Repo root (default: .)")
     i.add_argument("--format", choices=("text", "json"), default="text")
     i.set_defaults(func=cmd_instructions)
+
+    pp = sub.add_parser("personas",
+                        help="Well-formedness check for goal-directed personas (advisory, RFC0017).")
+    pp.add_argument("--root", default=".", help="Repo root (default: .)")
+    pp.add_argument("--format", choices=("text", "json"), default="text")
+    pp.set_defaults(func=cmd_personas)
     return p
 
 

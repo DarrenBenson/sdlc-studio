@@ -258,5 +258,124 @@ class PlaceholderTests(unittest.TestCase):
         self.assertNotIn("placeholder", [v["rule"] for v in validate.validate_file(f, "story")])
 
 
+class PersonaWellFormedTests(unittest.TestCase):
+    def _persona(self, repo, name, role, *, sections):
+        d = repo / "sdlc-studio" / "personas"; d.mkdir(parents=True, exist_ok=True)
+        body = (f"# {name}\n\n## Quick Reference\n\n| Attribute | Value |\n| --- | --- |\n"
+                f"| **Cast role** | {role} |\n\n")
+        body += "".join(f"## {s}\n\nx\n\n" for s in sections)
+        (d / f"{name}.md").write_text(body, encoding="utf-8")
+
+    STD = ["Who They Are", "End Goals", "Experience Goals", "Behaviours & Context",
+           "Frustrations", "Scenario"]
+    NEG = ["Who They Are", "End Goals (stated to exclude)", "Why We Are Not Designing For Them",
+           "Behaviours & Context", "Frustrations", "Scenario"]
+
+    def test_well_formed_primary_no_findings(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d); self._persona(repo, "maya", "Primary", sections=self.STD)
+            self.assertEqual(validate.check_personas(repo), [])
+
+    def test_primary_missing_scenario_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            self._persona(repo, "maya", "Primary", sections=[s for s in self.STD if s != "Scenario"])
+            msgs = [v["message"] for v in validate.check_personas(repo)]
+            self.assertTrue(any("Scenario" in m for m in msgs))
+
+    def test_negative_variant_well_formed_no_findings(self):
+        # the Negative persona has no Experience Goals - the cast-role-aware check must accept it
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d); self._persona(repo, "trevor", "Negative", sections=self.NEG)
+            self.assertEqual(validate.check_personas(repo), [])
+
+    def test_negative_missing_whynot_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            self._persona(repo, "trevor", "Negative",
+                          sections=[s for s in self.NEG if "Why" not in s])
+            msgs = [v["message"] for v in validate.check_personas(repo)]
+            self.assertTrue(any("Why" in m for m in msgs))
+
+    def test_customer_experience_and_scenario_optional(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            self._persona(repo, "buyer", "Customer",
+                          sections=["Who They Are", "End Goals", "Behaviours & Context", "Frustrations"])
+            self.assertEqual(validate.check_personas(repo), [])
+
+    def test_missing_cast_role_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            dd = repo / "sdlc-studio" / "personas"; dd.mkdir(parents=True)
+            (dd / "x.md").write_text("# X\n\n## Who They Are\n\nx\n", encoding="utf-8")
+            rules = [v["rule"] for v in validate.check_personas(repo)]
+            self.assertIn("persona-cast-role", rules)
+
+
+    def test_collision_headings_do_not_false_pass(self):
+        # prefix matching: unrelated headings that merely contain the keywords must NOT satisfy
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            self._persona(repo, "junk", "Primary",
+                          sections=["Why End Goals Matter", "Some Context We Discuss",
+                                    "Frustrations Of Other People", "Scenario Planning Theory"])
+            rules = [v["rule"] for v in validate.check_personas(repo)]
+            self.assertIn("persona-section", rules)  # flagged, not a clean pass
+
+    def test_negative_loose_why_flagged(self):
+        # "## Why This Matters" must NOT satisfy the Negative why-not rationale
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            self._persona(repo, "t", "Negative",
+                          sections=["Who They Are", "End Goals (stated to exclude)",
+                                    "Why This Matters", "Behaviours & Context", "Frustrations", "Scenario"])
+            msgs = [v["message"] for v in validate.check_personas(repo)]
+            self.assertTrue(any("Why we are not" in m for m in msgs))
+
+    def test_empty_bodies_still_well_formed(self):
+        # well-formed is structural (headings present); bodies are not content-checked (RFC0017)
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d); self._persona(repo, "maya", "Primary", sections=self.STD)
+            self.assertEqual(validate.check_personas(repo), [])
+
+    def test_unknown_role_held_to_standard(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            dd = repo / "sdlc-studio" / "personas"; dd.mkdir(parents=True)
+            # no Cast role; has the common sections but not Experience Goals / Scenario
+            (dd / "x.md").write_text(
+                "# X\n\n## Who They Are\n\nx\n## End Goals\n\nx\n"
+                "## Behaviours & Context\n\nx\n## Frustrations\n\nx\n", encoding="utf-8")
+            out = validate.check_personas(repo)
+            rules = [v["rule"] for v in out]; msgs = [v["message"] for v in out]
+            self.assertIn("persona-cast-role", rules)               # role missing
+            self.assertTrue(any("Experience Goals" in m for m in msgs))  # held to standard
+            self.assertTrue(any("Scenario" in m for m in msgs))
+
+    def test_shipped_personas_are_well_formed(self):
+        # pin the two shipped personas (Maya Primary + Trevor Negative) - a future edit must not break them
+        repo_root = pathlib.Path(__file__).resolve().parents[5]
+        src = repo_root / "sdlc-studio" / "personas"
+        if not (src / "maya-okafor-founder-engineer.md").exists():
+            self.skipTest("shipped personas not present")
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d); dd = repo / "sdlc-studio" / "personas"; dd.mkdir(parents=True)
+            for f in src.glob("*.md"):
+                (dd / f.name).write_text(f.read_text(encoding="utf-8"), encoding="utf-8")
+            self.assertEqual(validate.check_personas(repo), [])
+
+    def test_no_personas_dir_is_noop(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(validate.check_personas(pathlib.Path(d)), [])
+
+    def test_index_md_skipped(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            dd = repo / "sdlc-studio" / "personas"; dd.mkdir(parents=True)
+            (dd / "index.md").write_text("# Index\n\nstuff\n", encoding="utf-8")
+            self.assertEqual(validate.check_personas(repo), [])
+
+
 if __name__ == "__main__":
     unittest.main()
