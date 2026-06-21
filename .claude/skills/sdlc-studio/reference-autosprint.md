@@ -48,9 +48,16 @@ Natural language resolves to the same: "do an autosprint to deliver all open bug
      default. Wraps the existing wave engine (`reference-project.md`); does not
      reinvent it.
    - `verify_ac` - run the AC oracle; back-annotate `Verified:`.
-   - **Independent critic (D3)** - a sub-agent that did not write the diff judges it
-     against AC intent, plus adversarial/mutation checks. Reject -> repair. Its
-     verdict is recorded with `critic.py record` (committed) so the gate can require it.
+   - **Independent critic (D3), scaled to stakes (CR0061)** - the review depth matches the unit's
+     risk, so tokens are spent in proportion:
+     - **Code / logic / parser / security / data-loss-risk** -> a full **independent adversarial
+       sub-agent** that did not write the diff judges it against AC intent, plus adversarial/mutation
+       checks. Reject -> repair.
+     - **Pure-doc / template / mechanical / config** -> a **lighter recorded review** (a checklist
+       self-review or one quick pass), not a full adversarial sub-agent.
+     Either way the verdict is recorded with `critic.py record` (committed) with the **tier noted in
+     the reviewer/issues field**, so the `critiqued` gate still requires a recorded APPROVE - only
+     the depth scales, never the honesty. When unsure of the risk band, use the full critic.
    - `conformance check` - the deterministic gate (`scripts/conformance.py`):
      decomposed -> AC -> tested -> verified -> **reconciled** (no index drift) ->
      **critiqued** (a committed critic APPROVE) -> **documented** (the doc-coverage floor:

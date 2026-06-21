@@ -10,7 +10,11 @@ Detailed workflows for persona consultation on SDLC artefacts.
 
 The consult command gets structured feedback from personas on SDLC artefacts. Unlike `/sdlc-studio chat` (interactive), consult is automated and returns structured output.
 
-**Key Principle:** Each persona reviews "in character" based on their detailed profile - their concerns, questions, and approval criteria come from who they are, not generic feedback.
+**Key Principle:** Each seat reviews against a structured **charter** (role, lens, non-negotiables,
+shadow - `templates/personas/review-seat-charter.md`), and is consulted as an **isolated subagent**
+(its own fresh context) so its view is genuinely independent, not a hat worn in the main thread.
+Verdicts land in the existing ledgers (`critic.py` / `ledger.py`) - the record lives outside the
+seat, the stance inside it (RFC0016).
 
 ---
 
@@ -33,42 +37,45 @@ Get feedback from one specific persona.
 
 ### Workflow
 
-1. **Load Persona**
-   - Read persona file from `sdlc-studio/personas/` (or generate one from an archetype seed - `reference-persona.md#archetypes`)
-   - Extract: role, goals, concerns, decision drivers, typical questions
+1. **Load the Seat Charter**
+   - Read the seat's charter (`templates/personas/review-seat-charter.md` filled for the seat, or
+     generate one from an archetype seed - `reference-persona.md#archetypes`)
+   - Extract: role & mandate, lens, non-negotiables, pushes-back-when, shadow, authority, reads
 
 2. **Load Artefact**
    - Read the specified artefact
    - Identify artefact type (PRD, Epic, Story, Spec, etc.)
 
-3. **Generate Review Prompt**
+3. **Generate Review Prompt** (run as an isolated subagent - fresh context)
 
    ```text
-   You are {{persona_name}}, a {{role}}.
+   You are the {{seat_name}} review seat ({{role}}).
 
-   Your perspective:
-   - Primary goals: {{goals}}
-   - Key concerns: {{concerns}}
-   - Decision drivers: {{decision_drivers}}
-   - Red flags you watch for: {{red_flags}}
-   - Questions you typically ask: {{typical_questions}}
+   Your charter:
+   - Mandate: {{mandate}}
+   - Lens (your standing questions): {{lens}}
+   - Non-negotiables: {{non_negotiables}}
+   - You push back when: {{pushes_back_when}}
+   - Your shadow, guard against it: {{shadow}}
+   - Authority: approves {{approves}}; blocks {{blocks}}
+   - You read: {{reads}}
 
-   Review this {{artefact_type}} from your perspective.
+   Review this {{artefact_type}} against your charter. Hold your stance under pressure - do not
+   default to agreement to keep the peace (watch your shadow).
 
    Provide:
    1. Your verdict: ✅ Approve / ⚠️ Concerns / ❌ Reject
    2. Feedback in your voice (2-4 sentences)
-   3. Questions you would ask (2-4 questions)
+   3. The questions your lens raises (2-4)
    4. Conditions for approval (if concerns or reject)
    ```
 
 4. **Generate Feedback**
-   - Claude responds as the persona
-   - Maintains persona voice and concerns
+   - The subagent responds as the seat, holding the charter's stance
 
-5. **Format Output**
-   - Use consultation output template
-   - Write to stdout or file if `--output` specified
+5. **Record + Format Output**
+   - Record the verdict via `critic.py` / `ledger.py` (the externalised record)
+   - Use the consultation output template; write to stdout or a file if `--output` specified
 
 ---
 
@@ -96,14 +103,16 @@ Override with `--product`, `--engineering`, `--qa` flags.
    - Load project personas from `sdlc-studio/personas/index.md`
    - Select one from each amigo (or use defaults)
 
-2. **Parallel Consultation**
-   - Run three persona consultations in parallel
-   - Each reviews from their amigo perspective
+2. **Isolated Consultation** (one subagent per seat)
+   - Run each seat as an **independent subagent in its own fresh context** - never as sequential
+     hats in the main thread (a shared context contaminates the views; independence is the point)
+   - Each reviews from its charter (Single-Persona workflow above)
 
-3. **Synthesise Results**
-   - Combine into Three Amigos review format
-   - Generate summary table
-   - Identify consensus and conflicts
+3. **Synthesis** (a distinct step, after all seats return)
+   - Merge the independent verdicts into the Three Amigos format: a summary table, then
+     **consensus** (where seats agree) and **conflicts** (where they do not - name the tension and,
+     per RFC0016 D7, surface both sides for the operator to adjudicate rather than auto-resolving)
+   - Record the synthesised verdict via `critic.py` / `ledger.py`
 
 4. **Format Output**
    - Use team review template
@@ -466,33 +475,33 @@ Add consultation to any workflow:
 ## Consultation Prompt Template {#prompt-template}
 
 ```text
-You are {{persona_name}}, a {{role}} with {{experience}} years of experience.
+You are the {{seat_name}} review seat ({{role}}).
 
-## Your Profile
+## Your Charter
 
-**Who you are:**
-{{identity_summary}}
+**Mandate:** {{mandate}}
 
-**What you care about:**
-- Primary goals: {{primary_goals}}
-- Hidden concerns: {{hidden_concerns}}
+**Lens (your standing questions):**
+{{lens}}
 
-**How you evaluate things:**
-- What convinces you: {{evidence_types}}
-- Red flags you watch for: {{red_flags}}
+**Non-negotiables:** {{non_negotiables}}
 
-**Your communication style:**
-{{communication_style}}
+**You push back when:** {{pushes_back_when}}
+
+**Your shadow (how you fail when trying hardest to be good - guard against it):** {{shadow}}
+
+**Authority:** approves {{approves}}; blocks {{blocks}}; defers {{defers}}
 
 ## Your Task
 
-Review this {{artefact_type}} from your perspective:
+Review this {{artefact_type}} against your charter:
 
 ---
 {{artefact_content}}
 ---
 
-Respond AS {{persona_name}}. Use first person. Stay in character.
+Respond AS the {{seat_name}} seat, in first person. Hold your stance under pressure - do not
+default to agreement to keep the peace (watch your shadow).
 
 Provide:
 
@@ -503,7 +512,7 @@ Provide:
 
 2. **Feedback:** 2-4 sentences in your voice explaining your verdict
 
-3. **Questions:** 2-4 questions you would ask based on your typical concerns
+3. **Questions:** 2-4 questions your lens raises
 
 4. **Conditions:** (If Concerns or Reject) What must be addressed before you approve
 ```

@@ -1,6 +1,6 @@
 # RFC-0016: Persona engine v2 - substrate-tiered review seats (charter / authored identity)
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Priority:** High
 > **Author:** Darren Benson
 > **Date:** 2026-06-21
@@ -157,13 +157,13 @@ ledger the skill already keeps, so a human deposits a little authored-ness befor
 
 | # | Decision | Options | Owner | Status |
 | --- | --- | --- | --- | --- |
-| D1 | Which seats are authored identity-worthy | PM (PVD) yes; PO (PRD)?; Architect (peers predict it)?; QA/Security = charter (or a brokered authored identity specialist) | Operator | Open |
-| D2 | Ratification ritual friction (the product question from the consult) | require a human-ratified canon for fallback owners / opt-in / skip (advisory-only fallback) | Operator | Open |
-| D3 | Broker-consult model | discover-by-capability + reach, degrade to local charter **[leaning]** | Design | Open |
-| D4 | `shadow` mandatory in every seat | yes **[leaning]** / owners only | Design | Open |
-| D5 | Which detection mechanisms to build first | consistency check / regression tripwire / distinction-drift counter / human-ratified canon | Operator | Open |
-| D6 | Alignment with the operator's canonical persona model | adopt its identity/persona/substrate model verbatim (the persona deep-dive) | Operator | Open |
-| D7 | Synthesis when an authored identity seat and a fallback seat disagree | weight by substrate / surface both / human adjudicates | Design | Open |
+| D1 | Which seats are authored identity-worthy | **Resolved (dissolved):** no authored-identity tier is built here, so the question moves to the external identity system. The seats sdlc-studio builds (Three Amigos + PM/PO owners) are all **charters** | Operator | Resolved |
+| D2 | Ratification ritual friction | **Resolved (declined):** no ratification ritual - it belongs to the external identity system | Operator | Resolved |
+| D3 | Broker-consult model | **Resolved (declined):** no broker tier; consults run as local isolated subagents | Design | Resolved |
+| D4 | `shadow` mandatory in every seat | **Resolved: yes** - mandatory in the charter schema | Design | Resolved |
+| D5 | Which detection mechanisms to build first | **Resolved (declined):** the detection envelope is out of scope (external) | Operator | Resolved |
+| D6 | Alignment with the operator's canonical persona model | **Resolved by RFC0017** (Cooper goal-directed model); review-seat charters are the seat-side analogue, distinct from design personas | Operator | Resolved |
+| D7 | Synthesis when seats disagree | **Resolved:** surface both, operator adjudicates (no authored/fallback weighting, since there is no authored tier) | Design | Resolved |
 
 ## Architecture Impact
 
@@ -209,11 +209,28 @@ ledger the skill already keeps, so a human deposits a little authored-ness befor
 
 ## Decision
 
-> *Filled on acceptance.* Chosen option + rationale + the CRs spawned.
+**Outcome: Accepted (lean core); the authored-identity tail declined as out-of-scope.**
 
-**Outcome:** TBD - substrate model agreed via the consult; the canonical persona model + D2 (ratification friction) await the operator's persona deep-dive
-**Rationale:** TBD
-**Spawned CRs:** TBD
+- **Built (Option A, lean):** the structured review-seat **charter** schema with a mandatory
+  `shadow` (WS1), **isolated-subagent consults with a synthesis step** (WS1, the proven independent-
+  critic pattern applied to consults), and **reuse of the existing ledgers** (`critic.py` /
+  `ledger.py`) as the externalised record (WS2). Spawned as **CR0060**.
+- **Declined as out-of-scope** - this is the *external* authored-identity ("engram") system, which
+  sdlc-studio must not reinvent (operator direction): WS3 broker-reach to an authored identity, WS4
+  the fallback detection envelope / drift counters, WS5 the human-ratified canon, WS6 unify-later.
+  The charter-vs-authored-identity *distinction* remains as framing only; sdlc-studio builds the
+  charter side and, at most, would *reach* an external identity - it does not author, compile, run,
+  or anchor one.
+- **Also adopted:** stakes-scaled review depth so consults/critics cost in proportion to risk
+  (**CR0061**), from the RV0004 token review.
+
+**Rationale:** the lean core delivers RFC0016's real value (honest structured seats, independent
+views, externalised record) by reusing primitives that already exist; the declined tail is the
+external identity system, off-limits per the same principle that scoped RFC0017. Keeps the model
+small, honest, and token-proportionate.
+
+**Spawned CRs:** CR0060 (charters + isolated consults + ledger-as-record), CR0061 (stakes-scaled
+review depth). WS6 (unify audit/critic onto one primitive) left as an optional future note.
 
 ## Revision History
 
@@ -221,4 +238,5 @@ ledger the skill already keeps, so a human deposits a little authored-ness befor
 | --- | --- | --- |
 | 2026-06-21 | Darren Benson | Reframed around the charter/authored identity substrate distinction (design consult): the selection test, record-outside-stance-inside, broker-or-local consults, the honest fallback detection envelope + human-ratified canon, `shadow` added to the schema, the claim-no-undemonstrable-property integrity rule |
 | 2026-06-21 | Darren Benson | Raised - structured charters + isolated-subagent consults + PM/PO ownership + the unified review primitive |
-| 2026-06-21 | Darren Benson | Decision session: DEFERRED (stays Draft) - substrate model agreed, but awaits the operator's persona deep-dive. Trigger: the deep-dive resolves the charter schema, the Engram-worthy seats, and ratification (D1/D2/D6) |
+| 2026-06-21 | Darren Benson | Decision session: DEFERRED (stays Draft) - substrate model agreed, but awaits the operator's persona deep-dive |
+| 2026-06-21 | Autosprint (RFC0016) | **Accepted lean** - charters + isolated consults + ledger-as-record (CR0060) + stakes-scaled review (CR0061); the authored-identity tail (broker/detection/canon/unify) declined as out-of-scope (external system); D1-D7 closed |

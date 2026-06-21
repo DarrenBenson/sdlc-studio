@@ -9,12 +9,12 @@
 | Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 58 |
+| Complete | 60 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **59** |
+| **Total** | **61** |
 
 ## All Changes
 
@@ -79,3 +79,5 @@
 | [CR-0057](CR0057-unify-the-two-artifact-create-paths-and-share.md) | unify the two artifact create paths and share index helpers | Complete | Medium | Improvement | 2026-06-21 | -- |
 | [CR-0058](CR0058-cooper-goal-directed-persona-template-and-reference-persona.md) | Cooper goal-directed persona template and reference-persona model RFC0017 WS1 | Complete | High | Feature | 2026-06-21 | -- |
 | [CR-0059](CR0059-persona-well-formedness-check-cast-role-aware-advisory.md) | Persona well-formedness check cast-role-aware advisory RFC0017 WS3 | Complete | Medium | Feature | 2026-06-21 | -- |
+| [CR-0060](CR0060-review-seat-charters-and-isolated-subagent-consults-rfc0016.md) | Review-seat charters and isolated-subagent consults RFC0016 lean | Complete | High | Feature | 2026-06-21 | -- |
+| [CR-0061](CR0061-stakes-scaled-autosprint-review-depth-token-trim.md) | Stakes-scaled autosprint review depth token trim | Complete | Medium | Improvement | 2026-06-21 | -- |

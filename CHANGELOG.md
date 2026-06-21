@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **RFC0016 resolved - review-seat charters + isolated consults (CR0060):** review seats (the
+  Three Amigos + PM/PO owners) are now structured **charters** (`review-seat-charter.md`, with a
+  mandatory `shadow`) consulted as **isolated subagents** with an explicit synthesis step, reusing
+  the existing critic/decision ledgers as the externalised record. Clears the stale pre-RFC0017
+  fields from the consult prompts. The authored-identity tail (broker, drift-detection, ratified
+  canon) is declined as out-of-scope (the external identity system). Review seats are distinct
+  from RFC0017's Cooper design personas.
+- **Stakes-scaled review depth (CR0061):** the autosprint independent critic now scales to risk -
+  a full adversarial sub-agent for code/risky units, a lighter recorded review for pure-doc/
+  mechanical ones - so review tokens are spent in proportion. The `critiqued` gate still requires a
+  committed verdict (the tier is noted), so depth scales without losing honesty. From the RV0004
+  over-engineering/token review.
 - **Persona well-formedness check (CR0059, RFC0017 WS3):** `validate.py personas` flags a
   goal-directed persona missing a section for its cast role - advisory (exits 0, not in the hard
   gate). Cast-role-aware: the Negative variant (Why-not, no Experience Goals) and Customer/Served
