@@ -1,0 +1,12 @@
+# Project configuration for sdlc-studio (merged over templates/config-defaults.yaml).
+# Dotted keys are read by scripts via sdlc_md.project_override.
+
+provenance:
+  # Provenance landed mid-stream (CR0052/CR0057). Artifacts created before the tool
+  # stamped were authored by hand; exempt them so `provenance check` judges only new work.
+  # The cutoff is a global id-number threshold (idn <= cutoff is exempt); 57 covers every
+  # artifact that exists today (max is CR0057). The tool stamps all new artifacts, so the
+  # only thing this could miss is a hand-authored future artifact whose type-number is still
+  # below 57 - acceptable, since hand-authoring is the path we are steering away from.
+  adopt_after: 57
+  enforce: false  # advisory (report, do not block) - flip to true to gate on provenance
