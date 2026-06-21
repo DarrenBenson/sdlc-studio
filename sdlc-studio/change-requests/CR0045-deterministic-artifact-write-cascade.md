@@ -1,6 +1,6 @@
 # CR-0045: deterministic artifact create + cross-link cascade
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** High
 > **Type:** Feature
 > **Requester:** Darren Benson (from the v2.2 usage retrospective)
@@ -53,14 +53,15 @@ None. Additive; the manual cascade still works, this makes it one command.
 
 ## Acceptance Criteria
 
-- [ ] `new --type <story|epic|plan|test-spec|bug|cr|rfc> --title ... <fields>` allocates the ID, writes a structured file, appends the index row, and recomputes counts; `reconcile detect` is then clean.
-- [ ] Creating a story wires it into the parent epic's Story Breakdown (idempotent); creating a CR-spawned unit links back.
-- [ ] `close --id <id>` terminal-transitions the artifact and cascades (index row, counts, epic-breakdown tick, AC ticks) with `index_synced` honest.
-- [ ] Unit-tested across types incl. the cross-link wiring; the by-hand cascade in reference-outputs.md is replaced by the command. Independent critic APPROVE.
+- [x] `new --type <story|epic|plan|test-spec|bug|cr|rfc> --title ... <fields>` allocates the ID, writes a structured file, appends the index row, and recomputes counts; `reconcile detect` is then clean.
+- [x] Creating a story wires it into the parent epic's Story Breakdown (idempotent); creating a CR-spawned unit links back.
+- [x] `close --id <id>` terminal-transitions the artifact and cascades (index row, counts, epic-breakdown tick, AC ticks) with `index_synced` honest.
+- [x] Unit-tested across types incl. the cross-link wiring; the by-hand cascade in reference-outputs.md is replaced by the command. Independent critic APPROVE.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-21 | Autosprint (CR0045) | Complete - US0035: scripts/artifact.py new+close (all 8 types); story+CR created/closed by the tool itself (dogfood); critic APPROVE after the loose-epic HIGH fix |
 | 2026-06-21 | Darren Benson | Scope: add `workflow` so `new` covers all 8 numbered/indexed types (sdlc_md.ARTIFACT_TYPES), not 7 |
 | 2026-06-21 | Darren Benson | Raised - the artifact write-cascade is the biggest remaining hand-driven step; make create+wire deterministic |

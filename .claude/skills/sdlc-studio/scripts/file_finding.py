@@ -93,6 +93,32 @@ def _index_row(type_: str, disp_id: str, file_id: str, slug: str, title: str, f:
     return reconcile._join_row(cells)
 
 
+def append_index_row(repo_root: Path | str, type_: str, row_line: str) -> bool:
+    """Insert a pre-built data-table row into a type's `_index.md` and recompute its summary
+    counts (reusing reconcile). Locates the DATA table by its ID-column header so the row
+    never lands in the Summary table. Returns False if the index is absent. Shared by the
+    finding filer and the general `artifact new` (CR0045)."""
+    root = Path(repo_root)
+    index_path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / "_index.md"
+    if not index_path.exists():
+        return False
+    lines = index_path.read_text(encoding="utf-8").splitlines()
+    data_header = None
+    for i, ln in enumerate(lines):
+        cells = reconcile._table_cells(ln)
+        if cells and len(cells) > 2 and "id" in [c.lower() for c in cells]:
+            data_header = i
+    if data_header is None:
+        return False
+    rows_after = [j for j in range(data_header + 1, len(lines))
+                  if lines[j].strip().startswith("| [")]
+    pos = (max(rows_after) + 1) if rows_after else data_header + 2  # past header+separator
+    lines.insert(pos, row_line)
+    index_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    reconcile.apply_type(type_, root)  # recompute summary counts (tested)
+    return True
+
+
 def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict) -> dict:
     """Allocate an ID, write a structured artifact, append its index row, recompute
     counts. Returns {id, path}. Raises ValueError on a missing required field."""
@@ -115,27 +141,8 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict) ->
     if path.exists():
         raise FileExistsError(path)
     path.write_text(_render(type_, disp_id, title, today, fields), encoding="utf-8")
-
-    # Append the row to the index data table, then reuse reconcile to recompute counts.
-    index_path = root / rel_dir / "_index.md"
-    indexed = False
-    if index_path.exists():
-        lines = index_path.read_text(encoding="utf-8").splitlines()
-        # Locate the DATA table by its header (a row with an ID column), so the new row
-        # never lands inside the Summary table (whose header is `| Status | Count |`).
-        data_header = None
-        for i, ln in enumerate(lines):
-            cells = reconcile._table_cells(ln)
-            if cells and len(cells) > 2 and "id" in [c.lower() for c in cells]:
-                data_header = i
-        if data_header is not None:
-            rows_after = [j for j in range(data_header + 1, len(lines))
-                          if lines[j].strip().startswith("| [")]
-            pos = (max(rows_after) + 1) if rows_after else data_header + 2  # past header+separator
-            lines.insert(pos, _index_row(type_, disp_id, file_id, slug, title, fields))
-            index_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-            reconcile.apply_type(type_, root)  # recompute summary counts (tested)
-            indexed = True
+    indexed = append_index_row(root, type_,
+                               _index_row(type_, disp_id, file_id, slug, title, fields))
     return {"id": disp_id, "file_id": file_id, "path": str(path), "indexed": indexed}
 
 

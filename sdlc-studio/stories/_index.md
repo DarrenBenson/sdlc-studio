@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 29 |
+| Done | 30 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
-| **Total** | **34** |
+| **Total** | **35** |
 
 ## All Stories
 
@@ -56,3 +56,4 @@
 | [US0032](US0032-pvd-template-and-manifest.md) | PVD template + product manifest | Done | EP0008 | 2026-06-21 | 2026-06-21 |
 | [US0033](US0033-pvd-projection-drift.md) | read-only PVD projection + drift check | Done | EP0008 | 2026-06-21 | 2026-06-21 |
 | [US0034](US0034-product-reconcile-traceability.md) | product reconcile - cross-repo feature-map traceability | Done | EP0008 | 2026-06-21 | 2026-06-21 |
+| [US0035](US0035-deterministic-artifact-create-and-close-cascade.md) | deterministic artifact create and close cascade | Done | EP0008 | 2026-06-21 | 2026-06-21 |

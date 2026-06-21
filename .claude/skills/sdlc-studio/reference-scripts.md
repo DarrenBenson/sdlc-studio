@@ -132,6 +132,16 @@ emits the same per-function scores into the map.
 - `scan`: list functions over the cognitive threshold (`complexity.cognitive_high`, default 15)
 - `assess --files ...`: a change's blast-radius difficulty band + refactor-first hotspots (used by `code plan`)
 
+### `artifact.py`
+
+Deterministic artifact create + close cascade (CR0045). `new --type <any of the 8 numbered
+types> --title ...` allocates a collision-free id, renders a valid scaffold (vocab-correct
+status; a story gets a populated AC section), appends the index data-table row (built
+generically from that index's own header, so it works for every type), recomputes counts,
+and wires a story into its parent epic's Story Breakdown. `close --id` terminal-transitions
+by id-prefix with the per-type terminal status (reusing transition). Replaces the ~10-step
+hand cascade. Shares `file_finding.append_index_row`.
+
 ### `product_reconcile.py`
 
 Cross-repo feature-map traceability (CR0049, RFC0015 WS3). Verifies every product feature

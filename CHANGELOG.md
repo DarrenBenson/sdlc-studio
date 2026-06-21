@@ -30,6 +30,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its owning repo's PRD (orphan / unknown-repo / missing-path block; absent repo + empty map
   degrade with an un-verified count). Declaration-anchored - a prose mention never false-passes.
   Completes the PVD core (WS1-3); the contract layer + governance stay deferred.
+- **Deterministic artifact create + close (CR0045):** `scripts/artifact.py new --type <any
+  of the 8 numbered types>` allocates the id, renders a valid scaffold, appends the
+  header-matched index row, recomputes counts, and wires a story into its epic's Story
+  Breakdown - one command for what was a ~10-step hand cascade. `close --id` terminal-
+  transitions by id. Shares file_finding.append_index_row. This CR's own story (US0035) was
+  created and closed *by the tool itself* (dogfood).
 
 ## [2.2.0] - 2026-06-21
 
