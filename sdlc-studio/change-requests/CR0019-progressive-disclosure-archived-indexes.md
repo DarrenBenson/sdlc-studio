@@ -23,14 +23,14 @@ Each artifact type has one flat `_index.md` listing every artifact. It is loaded
 whole for `status`, `reconcile`, and orientation, and reconciled whole. On real
 large projects this is expensive and mostly redundant:
 
-| Index | agent-bridge | agent-crew |
+| Index | consuming repo B | consuming repo A |
 | --- | --- | --- |
 | `stories/_index.md` | 196 KB (1,726 lines; 888 Done) | 72 KB |
 | `change-requests/_index.md` | 376 KB | 124 KB |
 | `bugs/_index.md` | 324 KB | 24 KB |
 
 A 376 KB CR index read just to orient is the token-waste the skill warns against -
-and ~888 of the bridge's story rows are terminal `Done`, rarely needed in full.
+and ~888 of consuming repo B's story rows are terminal `Done`, rarely needed in full.
 
 ---
 
@@ -108,5 +108,5 @@ None for small projects (no archive until a threshold/release). Backward compati
 
 | Date | Author | Change |
 | --- | --- | --- |
-| 2026-06-20 | Darren Benson | Raised - flat indexes do not scale (agent-bridge 376 KB CR index); progressive disclosure + release archival |
+| 2026-06-20 | Darren Benson | Raised - flat indexes do not scale (consuming repo B 376 KB CR index); progressive disclosure + release archival |
 | 2026-06-20 | Darren Benson | Superseded - promoted to RFC0012 to weigh the design options |

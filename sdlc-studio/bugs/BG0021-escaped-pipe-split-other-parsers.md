@@ -2,7 +2,7 @@
 
 > **Status:** Fixed
 > **Severity:** Medium
-> **Reporter:** agent-crew (relayed) + systemic audit
+> **Reporter:** consuming repo A (relayed) + systemic audit
 > **Date:** 2026-06-20
 > **Affects:** scripts/critic.py, scripts/rfc.py, scripts/ledger.py, scripts/lib/sdlc_md.py
 > **Related:** BG0020, CR0026 (the reconcile index parser was fixed there)
@@ -11,7 +11,7 @@
 ## Summary
 
 The reconcile index parser was fixed to honour escaped pipes (`\|` in a cell) under
-CR0026, and that fix is live (agent-crew epics drift went to 0). A follow-up agent-crew
+CR0026, and that fix is live (consuming repo A epics drift went to 0). A follow-up consuming repo A
 report re-flagged the class. Auditing every table parser in the skill found the same
 raw `split("|")` in three more readers:
 
@@ -47,4 +47,4 @@ through it - one splitter, no per-script drift.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Autosprint (BG0021) | Fixed - shared `sdlc_md.table_cells`; reconcile/critic/rfc/ledger unified; rfc was the real exposure (human-authored tables) |
-| 2026-06-20 | agent-crew (relayed) | Re-flagged the escaped-pipe class after the index-parser fix; audit found 3 more parsers |
+| 2026-06-20 | consuming repo A (relayed) | Re-flagged the escaped-pipe class after the index-parser fix; audit found 3 more parsers |

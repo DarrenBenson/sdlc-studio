@@ -21,14 +21,14 @@ Each artifact type has one flat `_index.md` listing every artifact, loaded whole
 for `status`, `reconcile`, and orientation. On real large projects this is
 expensive and mostly redundant (measured 2026-06-20):
 
-| Index | agent-bridge | agent-crew |
+| Index | consuming repo B | consuming repo A |
 | --- | --- | --- |
 | `stories/_index.md` | 196 KB (1,726 lines; 888 Done) | 72 KB |
 | `change-requests/_index.md` | 376 KB | 124 KB |
 | `bugs/_index.md` | 324 KB | 24 KB |
 
 A 376 KB CR index read just to orient is the token waste the skill warns against,
-and ~888 of the bridge's story rows are terminal `Done` - rarely needed in full.
+and ~888 of consuming repo B's story rows are terminal `Done` - rarely needed in full.
 This was raised as CR0019; it has multiple viable approaches and cross-cutting
 impact (reconcile, status, the index template, every project), so it is promoted
 to this RFC to weigh them before building.
@@ -149,7 +149,7 @@ independent first win while B is built.
 
 **Outcome:** Accepted (full build: WS1-WS4)
 
-**Rationale:** A consuming project needs it at scale (agent-bridge 196KB/376KB indexes; deferral lifted). D1 explicit `archive` command (predictable over auto-trigger), D2 rows-only (files/links intact), D3 census by UNIONing the full archived rows into parse_index (exact, not summary-trust - removes the 'stale counts' risk), D4 bullet pointer (parser-ignored), D5 the command is the migration. Proven read-only at scale on agent-bridge (371 stories / 407 CRs archivable).
+**Rationale:** A consuming project needs it at scale (consuming repo B 196KB/376KB indexes; deferral lifted). D1 explicit `archive` command (predictable over auto-trigger), D2 rows-only (files/links intact), D3 census by UNIONing the full archived rows into parse_index (exact, not summary-trust - removes the 'stale counts' risk), D4 bullet pointer (parser-ignored), D5 the command is the migration. Proven read-only at scale on consuming repo B (371 stories / 407 CRs archivable).
 
 **Spawned CRs:** CR0041 (archive.py + parse_index union + conventions), **delivered**.
 

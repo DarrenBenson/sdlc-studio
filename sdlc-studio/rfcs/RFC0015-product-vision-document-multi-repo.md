@@ -11,8 +11,7 @@
 ## Summary
 
 The skill tops out at the **PRD = one repo**, but real products are many repos that
-together form a bigger whole (Engram is ~10: agent-crew, agent-bridge, foundry,
-framework, library, studio, ...). Today the cross-repo coordination - shared features,
+together form a bigger whole (the product spans ~10 repos). Today the cross-repo coordination - shared features,
 the API between services, release sequencing - lives as ad-hoc prose in `reviews/` and
 `HANDOVER-*` files that go stale. Introduce a **Product Vision Document**: the
 product-level artifact **above** the PRD that coordinates the repos, owned by a Product
@@ -24,9 +23,9 @@ does not become the stale master-spec that classical big-design-up-front died of
 Each repo has its own `sdlc-studio/` + PRD and works standalone. Nothing captures: the
 **product vision and strategic goals**; the **master feature inventory** (which product
 feature is owned by which repo); the **inter-repo dependencies and API contracts** (the
-seam where multi-repo products actually break - agent-bridge's federation/TLS/messaging
-issues lived exactly here); or **coordinated releases**. Verified twice over: crew and
-bridge already reference each other, but only in handover prose - uncaptured, unchecked,
+seam where multi-repo products actually break - consuming repo B's federation/TLS/messaging
+issues lived exactly here); or **coordinated releases**. Verified twice over: the two repos
+already reference each other, but only in handover prose - uncaptured, unchecked,
 drift-prone.
 
 ## Goals / Non-Goals
@@ -64,7 +63,7 @@ for the check.
 ### Option B - Meta-repo / monorepo aggregation
 
 Pull the product into one repo (submodules or a monorepo) and keep the PVD there.
-**Pros:** everything in one place. **Cons:** forces a repo topology on the user; Engram is
+**Pros:** everything in one place. **Cons:** forces a repo topology on the user; the product is
 deliberately multi-repo; high migration cost.
 
 ### Option C - Status quo (coordination in prose)
@@ -100,9 +99,9 @@ where multi-repo products break, and it is the most differentiated thing here.
 
 | # | Decision | Options | Owner | Status |
 | --- | --- | --- | --- | --- |
-| D1 | Master PVD writable home | dedicated product repo (e.g. `engram-product`) **[leaning]** / designate an existing anchor repo | Operator | Open |
+| D1 | Master PVD writable home | dedicated product repo (e.g. `product-vision`) **[leaning]** / designate an existing anchor repo | Operator | Open |
 | D2 | Read-only enforcement | OS symlink (prod) + sync (dev), with a checksum/version drift check **[leaning]** / convention + check only | Design | Open |
-| D3 | Feature-map link convention | `PF0003 -> agent-bridge:F0007` id refs the tooling resolves | Design | Open |
+| D3 | Feature-map link convention | `PF0003 -> repo-b:F0007` id refs the tooling resolves | Design | Open |
 | D4 | Contract-check depth in v1 | declare + version + migration-deadline (doc-checkable) now; producer==consumer execution later / full cross-repo contract verify now | Operator | Open |
 | D5 | Hierarchy depth | flat (master + project refs) **[leaning]** / domain/team tree from the start | Operator | Open |
 | D6 | Governance gates (G1-G5) | opt-in for large products **[leaning]** / always | Operator | Open |
@@ -144,7 +143,7 @@ where multi-repo products break, and it is the most differentiated thing here.
 | Kind | ID | Title | Status | Relationship |
 | --- | --- | --- | --- | --- |
 | RFC | RFC-0016 | Persona engine v2 | Draft | provides the PM persona that owns the PVD |
-| Example | -- | the Engram product (agent-crew + agent-bridge first) | -- | the proving instance |
+| Example | -- | the product (two repos first) | -- | the proving instance |
 
 ## Decision
 

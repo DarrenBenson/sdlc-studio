@@ -3,7 +3,7 @@
 > **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
-> **Requester:** agent-crew (consuming project, authored the fix)
+> **Requester:** consuming repo A (consuming project, authored the fix)
 > **Date:** 2026-06-20
 > **Affects:** scripts/validate.py, scripts/tests/test_validate.py
 > **Depends on:** CR0027 (the adoption cutoff + project_override it reuses)
@@ -11,7 +11,7 @@
 
 ## Summary
 
-A consuming project (agent-crew) extended CR0027's adoption cutoff to `validate.py`:
+A consuming project (consuming repo A) extended CR0027's adoption cutoff to `validate.py`:
 a story whose id predates `.config.yaml` `conformance.adopt_after` is now exempt from
 the `no-ac` error, just as it is from the conformance gate. Authored live in the
 installed skill and back-ported here so it is preserved (a future forward-port would
@@ -52,5 +52,5 @@ None. Without a configured cutoff, every story is judged exactly as before.
 
 | Date | Author | Change |
 | --- | --- | --- |
-| 2026-06-20 | Autosprint (CR0031) | Complete - US0029: adopted agent-crew's fix, back-ported + 2 fail-safe tests; critic APPROVE |
-| 2026-06-20 | agent-crew | Authored - extended the adoption cutoff to validate's no-ac check |
+| 2026-06-20 | Autosprint (CR0031) | Complete - US0029: adopted consuming repo A's fix, back-ported + 2 fail-safe tests; critic APPROVE |
+| 2026-06-20 | consuming repo A | Authored - extended the adoption cutoff to validate's no-ac check |

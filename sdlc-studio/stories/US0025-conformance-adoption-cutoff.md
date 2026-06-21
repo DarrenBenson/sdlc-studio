@@ -12,7 +12,7 @@
 **As an** operator turning the conformance gate on partway through a project
 **I want** an adoption cutoff
 **So that** legacy stories are reported, not permanently counted non-conformant - the
-discipline applies forward, not retroactively (agent-crew: ~414 permanent findings).
+discipline applies forward, not retroactively (consuming repo A: ~414 permanent findings).
 
 ## Acceptance Criteria
 

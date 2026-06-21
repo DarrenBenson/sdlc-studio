@@ -2,14 +2,14 @@
 
 > **Status:** Fixed
 > **Severity:** High
-> **Reporter:** agent-crew (live-board feedback)
+> **Reporter:** consuming repo A (live-board feedback)
 > **Date:** 2026-06-20
 > **Epic:** --
 > **Story:** --
 
 ## Summary
 
-Run against the real agent-crew and agent-bridge boards, `reconcile` and
+Run against the real consuming repo A and consuming repo B boards, `reconcile` and
 `conformance` were effectively inoperable: `reconcile detect` reported 447 drift
 items (446 false) and `conformance` flagged every story non-conformant - all for
 template-shape reasons, not real drift. Five gaps in the shared parser
@@ -18,8 +18,8 @@ consuming project.
 
 ## Steps to Reproduce
 
-1. `reconcile.py detect --scope stories --root ~/code/Engram-Labs-UK/agent-crew` -> 447 drift.
-2. `conformance.py check --root ~/code/Engram-Labs-UK/agent-crew` -> every story non-conformant.
+1. `reconcile.py detect --scope stories --root ~/code/<org>/<consuming-repo-a>` -> 447 drift.
+2. `conformance.py check --root ~/code/<org>/<consuming-repo-a>` -> every story non-conformant.
 
 ## Gaps
 
@@ -50,11 +50,11 @@ consuming project.
 
 | Board | reconcile drift | decomposed miss | specified miss |
 | --- | --- | --- | --- |
-| agent-crew | 447 -> **6** (genuine) | ~all -> 12 | ~all -> 75 |
-| agent-bridge | -> **3** (genuine) | -> 29 | -> 0 |
+| consuming repo A | 447 -> **6** (genuine) | ~all -> 12 | ~all -> 75 |
+| consuming repo B | -> **3** (genuine) | -> 29 | -> 0 |
 
 The residual `verifiable`/`verified`/`critiqued` non-conformance is a genuine
-discipline gap (only 60/577 agent-crew stories use Verify lines; no critic-verdict
+discipline gap (only 60/577 consuming repo A stories use Verify lines; no critic-verdict
 records there), not a parser defect. Regression fixtures added for the two-layout
 index, inline metadata, checkbox AC, dashless Verify, and prose-bullet AC.
 
@@ -62,5 +62,5 @@ index, inline metadata, checkbox AC, dashless Verify, and prose-bullet AC.
 
 | Date | Author | Change |
 | --- | --- | --- |
-| 2026-06-20 | agent-crew | Reported - parser inoperable on the house template (4 gaps) |
+| 2026-06-20 | consuming repo A | Reported - parser inoperable on the house template (4 gaps) |
 | 2026-06-20 | Autosprint (parser-fix) | Fixed - 5 parser fixes; validated live (447->6 drift); our repo unaffected (21/21) |

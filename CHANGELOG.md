@@ -99,7 +99,7 @@ deterministic status transitions, and per-project config. No artifact-schema cha
   so the census stays exact (archived artifacts are never `missing-row`; counts =
   active+archived) - the stale-counts risk is removed by counting the real archived
   rows, not a summary. Conventions + slice-read guidance in reference-outputs.md.
-  Proven read-only at scale on agent-bridge (371 stories / 407 CRs archivable).
+  Proven read-only at scale on consuming repo B (371 stories / 407 CRs archivable).
 - **Project constitution gate (RFC0005 / CR0040):** an optional
   `sdlc-studio/constitution.md` lets a project declare inviolable principles;
   `scripts/constitution.py check` asserts the machine-checkable ones across the artifact
@@ -107,7 +107,7 @@ deterministic status transitions, and per-project config. No artifact-schema cha
   (story-requires-epic, story-has-ac, ac-requires-verify, links-resolve, status-in-vocab,
   no-index-drift) that maps onto the existing integrity/conformance/validate/reconcile
   checks; free-text principles are advisory. Advisory by default; `constitution.enforce:
-  true` makes a violation fail the check. Proven against agent-crew + agent-bridge.
+  true` makes a violation fail the check. Proven against consuming repo A + consuming repo B.
 - **autosprint `--order wsjf` (RFC0009 WS3 / CR0038):** the WSJF stub is now real -
   priority stays dominant and the cognitive complexity of a unit's `Affects` files
   (scored by complexity.py) breaks ties within a priority, so the smaller blast-radius

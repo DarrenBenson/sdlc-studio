@@ -14,7 +14,7 @@
 The deterministic checks report **findings** (what is wrong) but no **remediation**
 (what to do) or **interpretation** (which kind of problem). A fresh consuming
 project runs `conformance` and gets "575 not conformant" with no idea whether that
-is a parser bug, an unadopted discipline, or real drift (the agent-crew BG0020
+is a parser bug, an unadopted discipline, or real drift (the consuming repo A BG0020
 experience). Add a shared remediation layer to all four checks: a per-finding fix
 hint + a bulk-pattern interpretation.
 
@@ -66,4 +66,4 @@ None. JSON output is unchanged (additive guidance is text-only).
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Autosprint (remediation) | Complete - US0022: shared REMEDIATION registry + Guidance in all 4 checks + bulk note; critic-approved (added registry-completeness contract test) |
-| 2026-06-20 | Darren Benson | Raised - a check should tell the operator what to do, not just what is wrong (agent-crew wall-of-red) |
+| 2026-06-20 | Darren Benson | Raised - a check should tell the operator what to do, not just what is wrong (consuming repo A wall-of-red) |

@@ -65,4 +65,4 @@ None. `detect` is unchanged; `apply` is new and gated behind an explicit subcomm
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Autosprint (RFC0003) | Spawned from RFC0003 (reconcile apply); scoped to status-mismatch + count recompute |
-| 2026-06-20 | Autosprint (RFC0003) | Also fixed `_table_cells` to respect escaped pipes (`\|` in a cell) - found while making apply write-safe; dropped agent-crew stories drift 6->1 (BG0020 class) |
+| 2026-06-20 | Autosprint (RFC0003) | Also fixed `_table_cells` to respect escaped pipes (`\|` in a cell) - found while making apply write-safe; dropped consuming repo A stories drift 6->1 (BG0020 class) |

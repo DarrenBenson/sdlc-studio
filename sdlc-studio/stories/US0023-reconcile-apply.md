@@ -21,7 +21,7 @@ drifted index row's Status cell (positionally, by header) to the file's canonica
 status and recomputes the summary counts; idempotent; `--dry-run` reports without
 writing. Structural classes (missing-row/orphan-row/missing-index) stay report-only.
 Also hardened `_table_cells` to respect escaped pipes (`\|` in a cell) so apply is
-write-safe - this dropped agent-crew's stories drift 6 -> 1.
+write-safe - this dropped consuming repo A's stories drift 6 -> 1.
 
 ## Acceptance Criteria
 

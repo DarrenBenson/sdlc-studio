@@ -35,7 +35,7 @@ violation fail the check.
 - [x] `constitution check` asserts each declared checkable principle (6-rule vocabulary, each mapping onto integrity/conformance/validate/reconcile) and reports violations; advisory principles are listed, not gated.
 - [x] Advisory by default (exit 0 with violations); `constitution.enforce: true` makes a violation exit non-zero; degrades safely when no constitution.md / no PyYAML / malformed config.
 - [x] Each rule fires on a real violation and is silent when satisfied (unit-tested per rule); unknown / bare-prose `rule:` does not misclassify.
-- [x] Dogfooded (this repo passes 5 gated principles); proven against agent-crew (8 findings) and agent-bridge (139) read-only; independent critic APPROVE.
+- [x] Dogfooded (this repo passes 5 gated principles); proven against consuming repo A (8 findings) and consuming repo B (139) read-only; independent critic APPROVE.
 
 ## Revision History
 

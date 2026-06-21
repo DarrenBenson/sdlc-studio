@@ -2,7 +2,7 @@
 
 > **Status:** Done
 > **Epic:** [EP0005: Quality & Drift Control](../epics/EP0005-quality-drift.md)
-> **Owner:** agent-crew (adopted via CR0031)
+> **Owner:** consuming repo A (adopted via CR0031)
 > **Reviewer:** --
 > **Created:** 2026-06-20
 > **GitHub Issue:** --
@@ -44,11 +44,11 @@ consistent with the conformance gate (CR0027) - without suppressing any other ch
 
 `scripts/validate.py`: `_ac_exempt(rec, repo_root)` ANDed onto the `no-ac` condition
 inside the `type_ == "story"` block; reads `conformance.adopt_after` via
-`sdlc_md.project_override`, exempts `id_number(rec) < cutoff`. Authored by agent-crew,
+`sdlc_md.project_override`, exempts `id_number(rec) < cutoff`. Authored by consuming repo A,
 back-ported with fail-safe + boundary tests.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
-| 2026-06-20 | Autosprint (CR0031) | Decomposed from CR0031; agent-crew contribution adopted; critic APPROVE |
+| 2026-06-20 | Autosprint (CR0031) | Decomposed from CR0031; consuming repo A contribution adopted; critic APPROVE |

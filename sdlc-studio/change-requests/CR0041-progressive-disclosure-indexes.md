@@ -13,7 +13,7 @@
 ## Summary
 
 Delivers RFC0012 (full: WS1-WS4; explicit command, rows-only). A flat `_index.md` grows
-O(n) and is loaded whole - mostly terminal rows (agent-bridge: 196 KB stories, 376 KB
+O(n) and is loaded whole - mostly terminal rows (consuming repo B: 196 KB stories, 376 KB
 CRs). Bound the live index by archiving terminal rows by release: the live index keeps
 active rows + a bullet pointer; the terminal rows move to `<type>/archive/{release}/{type}.md`
 (rows move, files stay). `reconcile`/`status` union the archive sub-indexes so the

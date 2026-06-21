@@ -48,7 +48,7 @@ Project-specific rules (security requirements, mandated patterns) are not enforc
 
 **Outcome:** Accepted (Option A, scoped)
 
-**Rationale:** A consuming project needs a machine-checkable principle gate (deferral lifted). Scoped to structurally-checkable principles that reuse the existing integrity/conformance/validate/reconcile detectors; advisory default + `constitution.enforce` opt-in; free-text principles advisory. Proven read-only against agent-crew (8 findings) and agent-bridge (139).
+**Rationale:** A consuming project needs a machine-checkable principle gate (deferral lifted). Scoped to structurally-checkable principles that reuse the existing integrity/conformance/validate/reconcile detectors; advisory default + `constitution.enforce` opt-in; free-text principles advisory. Proven read-only against consuming repo A (8 findings) and consuming repo B (139).
 
 **Spawned CRs:** CR0040 (constitution.py gate + template + dogfood), **delivered**.
 
@@ -56,6 +56,6 @@ Project-specific rules (security requirements, mandated patterns) are not enforc
 
 | Date | Author | Change |
 | --- | --- | --- |
-| 2026-06-20 | Autosprint (rfc0005) | Accepted + delivered as CR0040 (operator: a consuming project needs it; deferral lifted); proven vs agent-crew + agent-bridge |
+| 2026-06-20 | Autosprint (rfc0005) | Accepted + delivered as CR0040 (operator: a consuming project needs it; deferral lifted); proven vs consuming repo A + consuming repo B |
 | 2026-06-20 | Autosprint (rfc-decide session) | Decision session 2026-06-20: deferred - revisit when a consuming project needs a machine-checkable principle gate; scope then to structurally-checkable principles only. |
 | 2026-06-20 | Adversarial Audit | Filed from the 2026-06-20 audit (lens: external-benchmark) |

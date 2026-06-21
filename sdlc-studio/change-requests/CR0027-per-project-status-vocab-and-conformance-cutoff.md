@@ -3,7 +3,7 @@
 > **Status:** Complete
 > **Priority:** High
 > **Type:** Feature
-> **Requester:** agent-crew (relayed) - consuming-project feedback
+> **Requester:** consuming repo A (relayed) - consuming-project feedback
 > **Date:** 2026-06-20
 > **Affects:** scripts/lib/sdlc_md.py, scripts/conformance.py, scripts/validate.py, scripts/reconcile.py, scripts/status.py, scripts/audit.py, scripts/integrity.py, scripts/autosprint.py, scripts/resume.py, scripts/rfc.py, templates/config-defaults.yaml
 > **Depends on:** CR0008 (config), BG0020/BG0021 (parser)
@@ -11,7 +11,7 @@
 
 ## Summary
 
-A consuming project (agent-crew) reported two ways the skill imposes its own reality
+A consuming project (consuming repo A) reported two ways the skill imposes its own reality
 on a project that differs. Both are answered by letting a project declare itself in
 `sdlc-studio/.config.yaml`:
 
@@ -21,7 +21,7 @@ on a project that differs. Both are answered by letting a project declare itself
    per type. `Blocked` (a universal lifecycle state, already valid for epics/CRs/bugs)
    is added to the base story vocabulary outright.
 2. **Conformance judges all history.** A project that turns the gate on partway has
-   hundreds of legacy stories permanently reported non-conformant (agent-crew: ~414).
+   hundreds of legacy stories permanently reported non-conformant (consuming repo A: ~414).
    Now `conformance.adopt_after: USnnnn` exempts pre-adoption stories - the discipline
    applies forward, not retroactively.
 
@@ -70,4 +70,4 @@ story status everywhere (was previously flagged). No project migration needed.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Autosprint (CR0027) | Complete - US0024 (vocab + Blocked) + US0025 (adopt_after); critic APPROVE, LOW follow-ups applied (id_number reuse + degradation tests) |
-| 2026-06-20 | agent-crew (relayed) | Raised - closed status vocab (Gated) + permanent conformance noise on legacy stories |
+| 2026-06-20 | consuming repo A (relayed) | Raised - closed status vocab (Gated) + permanent conformance noise on legacy stories |

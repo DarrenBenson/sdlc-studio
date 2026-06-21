@@ -11,7 +11,7 @@
 
 **As an** operator on a fresh project
 **I want** each check to tell me how to fix what it found and whether it's real
-**So that** a wall of findings (e.g. agent-crew's "575 not conformant") comes with
+**So that** a wall of findings (e.g. consuming repo A's "575 not conformant") comes with
 instructions, not just counts (CR0025).
 
 ## Context

@@ -13,7 +13,7 @@
 ## Summary
 
 Delivers RFC0009 WS4 + the composite score, now empirically grounded by the calibration
-against agent-crew/agent-bridge (churn predicts defects ~3x more strongly than
+against consuming repo A/consuming repo B (churn predicts defects ~3x more strongly than
 complexity). `complexity.py` gains a git `churn` signal and a churn-weighted
 `composite_risk` band; `assess` returns a `risk_band` (low/medium/high). The
 test-strategy reference maps the band to coverage / scenario / verification-tier depth,
