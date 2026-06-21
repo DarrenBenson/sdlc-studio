@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 0 |
+| Draft | 2 |
 | In Review | 0 |
 | Accepted | 9 |
 | Superseded | 0 |
 | Withdrawn | 3 |
-| **Total** | **12** |
+| **Total** | **14** |
 
 ## All RFCs
 
@@ -29,3 +29,5 @@
 | [RFC-0010](RFC0010-audit-filed-rfcs-0003-0008-have-boilerplate-act-vs.md) | Audit-filed RFCs (0003-0008) have boilerplate 'act vs status quo' options that never weigh the real design choices | Medium | Withdrawn | -- | 2026-06-20 | -- |
 | [RFC-0011](RFC0011-rfc0006-reopens-the-default-autonomy-decision-rfc0.md) | RFC0006 reopens the default-autonomy decision RFC0001 declares settled, with no cross-reference | Medium | Withdrawn | -- | 2026-06-20 | -- |
 | [RFC-0012](RFC0012-progressive-disclosure-indexes.md) | Progressive-disclosure indexes with release archival | High | Accepted | -- | 2026-06-20 | -- |
+| [RFC-0013](RFC0013-ecosystem-neutral-deploy-last-mile.md) | the deploy last-mile, without ecosystem lock-in | High | Draft | -- | 2026-06-21 | -- |
+| [RFC-0014](RFC0014-run-telemetry-learning-loop.md) | run telemetry + a learning loop | Medium | Draft | -- | 2026-06-21 | -- |

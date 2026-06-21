@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 0 |
+| Proposed | 2 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 43 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **44** |
+| **Total** | **46** |
 
 ## All Changes
 
@@ -64,3 +64,5 @@
 | [CR-0042](CR0042-transition-helper.md) | deterministic status-transition helper | Complete | Medium | Feature | 2026-06-21 | -- |
 | [CR-0043](CR0043-complexity-churn-test-risk.md) | churn-weighted composite + complexity-driven test risk (RFC0009 WS4) | Complete | Medium | Feature | 2026-06-21 | -- |
 | [CR-0044](CR0044-skill-version-check-self-update.md) | skill version check + consent `skill-update` | Complete | Medium | Feature | 2026-06-21 | -- |
+| [CR-0045](CR0045-deterministic-artifact-write-cascade.md) | deterministic artifact create + cross-link cascade | Proposed | High | Feature | 2026-06-21 | -- |
+| [CR-0046](CR0046-portable-ci-quality-gate.md) | portable quality-gate entrypoint for CI (ecosystem-neutral) | Proposed | High | Feature | 2026-06-21 | -- |
