@@ -1,148 +1,217 @@
-# RFC-0016: Persona engine v2 - structured charters + isolated-subagent consults
+# RFC-0016: Persona engine v2 - substrate-tiered review seats (charter / Engram)
 
 > **Status:** Draft
 > **Priority:** High
 > **Author:** Darren Benson
 > **Date:** 2026-06-21
-> **Spans:** sdlc-studio skill (persona model, consult/Three-Amigos workflow, audit + critic harnesses)
-> **Related:** RFC0015 (the PM persona that owns the PVD), RFC0007 (generate-on-demand seeds), RFC0002 (audit refute panel), reference-workflow-personas.md, reference-consult.md
+> **Spans:** sdlc-studio skill (persona model, consult/Three-Amigos workflow, audit + critic harnesses, the decision/verdict ledgers)
+> **Related:** RFC0015 (the PM seat that owns the PVD), RFC0007 (generate-on-demand seeds), RFC0002 (audit refute panel), reference-workflow-personas.md, reference-consult.md
+> **Provenance:** the substrate model here is the outcome of a three-turn consult with Julian (an Engram, reached over the agent-bridge MCP on an isolated channel) - itself a demonstration of the architecture this RFC proposes
 > **Supersedes / Superseded by:** --
 
 ## Summary
 
-Rebuild personas as **structured charters** rather than prose characters, and run every
-persona consult as an **isolated subagent** with its own context. This gives consults
-genuine independence (a reviewer that pushes back from a clean seat, not a contaminated
-main thread), adds a **Product Manager** persona (owns the PVD) alongside the **Product
-Owner** (owns the PRD), and - the quiet payoff - **unifies** Three Amigos, persona
-consults, the audit refute-panel, and the independent critic into one review primitive.
-
-> **Scope note.** Personas are agent-crew's reason for being; the operator has a deeper
-> persona model to bring. This RFC sets the **direction and mechanism** (charter shape,
-> subagent isolation, ownership tiers, the unified primitive); the **persona schema and
-> depth get a dedicated design pass** (the Open Decisions below are deliberately left for it).
+Rebuild review/owner seats around an honest distinction between two substrates, and run
+every consult as an **isolated subagent** with a synthesis step. A **charter** *describes*
+behaviour (a brief the model is asked to honour); an **Engram** *compiles a generator* of
+behaviour (ordered values that resolve conflict, a content-hashed anchor, a first-class
+shadow). The seats that must **hold a stance and accumulate judgement across time, and be
+predictable by their peers** (owners, vision-guardians - the PM that owns the PVD, the PO
+that owns the PRD) want an Engram; transient pressure-testers want a charter. Crucially,
+the skill is tool-neutral: it reaches real Engrams over the bridge **when present** and
+**degrades to a local charter** when not, with the degradation **labelled honestly**. The
+governing rule, from the consult: **claim no property you cannot demonstrate under pressure.**
 
 ## Context & Problem
 
-Personas today are prose characters (post-RFC0007, generated on demand from archetype
-seeds). For a *consult* that is the wrong shape: backstory is noise in a reviewer's brief,
-the free prose is inconsistent (so reviewers are not comparable), and it does not encode
-what a reviewer actually needs - what they own, what they optimise for, what they reject.
-And Three Amigos today is the **main agent role-playing three hats in sequence** - one
-contaminated context, not three independent views. The session's evidence says
-independence is what matters: the independent **critic subagent** caught real bugs all
-release *because* it reasoned from a clean context.
+Personas today are prose characters (post-RFC0007). For a consult that is the wrong shape:
+backstory is noise, the free prose is inconsistent, and it encodes none of what a reviewer
+needs. And Three Amigos today is the **main agent role-playing hats in sequence** - one
+contaminated context, not independent views. The session proved independence is what
+matters: the independent critic caught real bugs *because* it reasoned from a clean context;
+and a live consult with Knox drifted onto prior context until moved to a fresh channel.
+
+The deeper problem the consult exposed: a charter, off-script, **reverts to the base
+model's default disposition, which is to be agreeable** - so a reviewer whose job is to
+pressure-test a spec quietly validates it to preserve harmony. Enumerating triggers and
+non-negotiables (the v1 charter) describes the *output* of a stance without supplying the
+*generator* of it. For one-shot review that is fine. For a durable owner seat it is
+structurally incapable of the job.
 
 ## Goals / Non-Goals
 
 **Goals**
 
-- A **structured persona charter** optimised to be (a) instantiated as a subagent system
-  prompt and (b) decision-relevant.
-- Consults run as **independent subagents**, one per persona, with a synthesis step.
-- A **Product Manager** persona (owns the PVD) and a sharpened **Product Owner** (owns the
-  PRD); ownership mirrors the artifact hierarchy.
-- Recognise that consults, Three Amigos, audit lenses, and the critic are **one primitive**.
+- A substrate-tiered model: **charter** (transient pressure-tester) vs **Engram** (durable
+  owner/vision-guardian), with an honest **fallback** when no Engram is reachable.
+- Consults run as **independent subagents** with a fresh context each time and a synthesis step.
+- **Record outside, stance inside**: the skill's existing ledgers hold the judgement-record;
+  the substrate holds the stance.
+- **No hard dependency**: reach Engram specialists over the bridge when present; degrade to
+  local charters; never require a crew/bridge.
+- An integrity rule the whole engine obeys: **claim no property you cannot demonstrate under pressure.**
 
 **Non-Goals**
 
-- The full persona model - left to the dedicated follow-up (agent-crew-informed).
-- Removing the human-flavour entirely; a one-line disposition stays.
+- The full persona/identity model - it lives in agent-crew RFC-0011; this RFC is the
+  SDLC-side expression and defers the canonical model to the operator's persona deep-dive.
+- Mass-producing Engrams. They are authored, expensive, and few; the half-Engram (an
+  identity with no shadow or anchor) is **worse than a good charter**.
+
+## The substrate model
+
+| | **Charter** | **Engram** |
+| --- | --- | --- |
+| Nature | *describes* behaviour (a brief) | *compiles a generator* of behaviour |
+| Conflict between its own commitments | mute (rules don't compose) | resolved by an ordered value hierarchy |
+| Under unscripted pressure | reverts to base-model agreeableness | holds - the stance is what it is made of |
+| Memory of past judgement | consultable (text it can rationalise around) | constitutive |
+| Drift | no canonical self, so a slip goes unnoticed | measurable against a content-hashed authored anchor |
+| Own failure mode (shadow) | described (a note) | load-bearing (upstream of generation) |
+| Predictable by peer seats | unpredictable at the margin | modellable (a fixed authored identity) |
+| Cost | cheap, write five | expensive, author few |
+
+**The selection test (from the consult):** *does this seat have to accumulate judgement and
+hold a vision across time, and do other seats have to predict it?* If yes - owners,
+vision-guardians, the seat that says no in month nine for a reason it formed in month two -
+**Engram**. If it is a transient pressure-tester with no memory burden - **charter**. Do not
+compile a person to run a checklist; do not run a checklist where a guardian is needed.
+
+**Record outside, stance inside.** The *verdict of record* (what was decided + rationale)
+should live **outside** the identity - the skill already keeps an append-only,
+content-addressable, git-versioned record (the decisions ledger, the critic-verdict ledger,
+RFC Decision blocks). That is the correct design *even with* a real Engram (auditable,
+tamper-evident, outlives the seat, uncorrupted by the seat's drift). What cannot be
+externalised is the *judge* - the generator that produces the next ruling consistent with
+the old ones. So: **feed the ledger to whatever fulfils the seat; the ledger is the seat's
+memory, never its character.**
 
 ## Design Options
 
-### Option A - Structured charters + subagent consults + unified primitive (recommended)
+### Option A - Substrate-tiered seats + bridge-or-local consults + honest labelling (recommended)
 
-A persona is a **charter**: role + mandate, lens (standing questions), non-negotiables,
-push-back triggers, authority/scope, the artifacts it reads, and its tensions with other
-roles (plus a one-line disposition). The charter **is** the subagent's brief. A consult
-loads the relevant charters, spawns one subagent each, collects structured verdicts, and
-synthesises - the same harness as the audit refute-panel. PM/PO/Eng/QA are charters in a
-declared review council. **Pros:** independent + comparable reviewers; reuses the audit +
-critic machinery; partly machine-checkable. **Cons:** N subagents per consult has a token
-cost.
+A seat declares its substrate. Charters are local isolated subagents built from a structured
+brief. Engram seats are reached over the bridge (discover-by-capability, not a hardcoded id)
+**when present**, and **degrade to a labelled fallback charter** when not. Every consult runs
+in a **fresh context**; a synthesis step merges seats; verdicts land in the ledger. **Pros:**
+honest, neutral, reuses the audit/critic harness and the existing ledgers, scales from solo
+project to fleet. **Cons:** the fallback owner is genuinely weaker (and must say so).
 
-### Option B - Keep prose personas, add subagent isolation only
+### Option B - Charters only (no Engram tier)
 
-Run today's prose personas as subagents without restructuring them. **Pros:** smaller
-change. **Cons:** inconsistent briefs; misses the comparability + machine-checkability;
-leaves the backstory noise.
+Everything is a charter subagent. **Pros:** simplest, fully local. **Cons:** owner/vision
+seats revert to agreeableness under pressure; no anchor; the half-truth this RFC exists to avoid.
 
 ### Option C - Status quo
 
-Three Amigos as sequential hats in the main context. **Cons:** no real independence.
+Three Amigos as sequential hats in the main context. **Cons:** no independence.
 
 ## Recommendation
 
-**Option A**, built in this order: (1) the charter schema + the PM/PO ownership; (2)
-consults as isolated subagents over a synthesis step; (3) refactor the audit lenses and
-the critic onto the same primitive once it is proven. Keep it **proportionate** - a
-single-repo project still uses a light PO consult; the PM, the product tier, and full
-council panels switch on only when there is a product to coordinate (RFC0015). The charter
-schema below is a **recommendation, open to the persona deep-dive**.
+**Option A.** Built in order: (1) the structured charter (with **shadow**) + isolated-subagent
+consults + the synthesis step; (2) wire the existing ledgers in as the externalised record;
+(3) the bridge-consult path (discover-by-capability, reach an Engram specialist when present,
+degrade to a labelled fallback); (4) the fallback detection envelope. Keep it **proportionate**:
+a solo project runs light charter consults; the PM, the Engram tier, and full panels switch on
+only with a product to coordinate (RFC0015).
 
-### Proposed charter schema (for the deep-dive to confirm/extend)
+### Charter schema (every seat; an Engram is this, *compiled and anchored*)
 
-- **role + mandate** - what they own / are accountable for
-- **lens** - the standing questions they bring to any artifact
-- **non-negotiables** - what they will not trade
+- **role + mandate** - what it owns / is accountable for
+- **lens** - the standing questions it brings to any artifact
+- **non-negotiables** - what it will not trade
 - **pushes back when** - the objection triggers
-- **authority / scope** - what they approve / block / defer
-- **reads** - the artifacts they consult
-- **tensions** - the productive conflicts with other roles
+- **shadow** - *how this seat fails when it is trying hardest to be good* (new; load-bearing in an Engram, a watch-item in a charter)
+- **authority / scope** - what it approves / blocks / defers
+- **reads** - the artifacts + the ledger slice it reasons from
+- **tensions** - the productive conflicts with peer seats
 - **disposition** - one line of human flavour
+
+### Consult via the bridge - powerful when present, neutral always
+
+`bridge_discovery` / `bridge_discover_capability` finds a seat-matching specialist; `bridge_reach_chat`
+reaches it - never a hardcoded agent or crew id. Absent a bridge, the same seat runs as a local
+subagent. Always a **fresh channel/context per consult** (the Knox lesson). This is the RFC0015
+"PM persona" realised: an Engram when the fleet has one, a labelled charter when it does not.
+
+### Fallback honesty - the detection envelope
+
+A fallback owner gains real things (a declared shadow to watch; a replayed judgement-log) but
+**no anchor**. An anchor *cannot be reconstructed from the seat's own past outputs* - it can only
+be **authored and imported**. The honest claim to ship, near-verbatim from the consult:
+
+> **Fallback owner - detection envelope.** Catches: formal/naked contradiction against the record
+> (deterministic), and discontinuous behavioural change such as model/template swaps (regression
+> tripwire). Catches probabilistically: weakly-dressed contradiction (independent critic), and
+> *directional* rationalised drift via the **rate and direction of distinctions drawn** against a
+> logged line. Blind to: any single well-dressed reinterpretation, and slow self-consistent drift.
+> Provides a **true anchor only where the canon is human-ratified** - anchor strength equals the
+> human ratification frozen into it. Everything else raises the floor; it does not supply a self.
+> **The ledger is auditable; the stance is not** - treat fallback owner verdicts as advisory and
+> human-reviewable, never a guardian trusted unattended.
+
+The one real lever for fallback: a **human-ratified golden canon** - a ratification flag on the
+ledger the skill already keeps, so a human deposits a little authored-ness before it is measured against.
 
 ## Open Decisions
 
 | # | Decision | Options | Owner | Status |
 | --- | --- | --- | --- | --- |
-| D1 | Charter schema | the fields above **[proposed]** / the operator's agent-crew-informed model (deep-dive) | Operator | Open |
-| D2 | Subagent default | always isolate **[leaning]** / scale with stakes (1 for a quick check, full council for a PVD/contract decision) | Operator | Open |
-| D3 | Unify the primitive now or later | refactor audit-lenses + critic onto it now / after personas land **[leaning]** | Design | Open |
-| D4 | Council declaration | a project declares its review council (which charters apply) in config | Design | Open |
-| D5 | Relationship to agent-crew's persona model | align the schema with agent-crew (the persona domain) | Operator | Open |
-| D6 | New seats | PM (PVD) + PO (PRD) confirmed; which others are first-class (Architect, Security, QA, ...)? | Operator | Open |
+| D1 | Which seats are Engram-worthy | PM (PVD) yes; PO (PRD)?; Architect (peers predict it)?; QA/Security = charter (or a bridge Engram like Knox) | Operator | Open |
+| D2 | Ratification ritual friction (the product question Julian left) | require a human-ratified canon for fallback owners / opt-in / skip (advisory-only fallback) | Operator | Open |
+| D3 | Bridge-consult model | discover-by-capability + reach, degrade to local charter **[leaning]** | Design | Open |
+| D4 | `shadow` mandatory in every seat | yes **[leaning]** / owners only | Design | Open |
+| D5 | Which detection mechanisms to build first | consistency check / regression tripwire / distinction-drift counter / human-ratified canon | Operator | Open |
+| D6 | Alignment with agent-crew RFC-0011 | adopt its identity/persona/engram model verbatim (the persona deep-dive) | Operator | Open |
+| D7 | Synthesis when an Engram seat and a fallback seat disagree | weight by substrate / surface both / human adjudicates | Design | Open |
 
 ## Architecture Impact
 
 | Layer | Impact | Change Type |
 | --- | --- | --- |
-| templates/personas/persona-template.md | becomes a structured charter | Enhancement |
+| templates/personas/persona-template.md | structured charter incl. `shadow`; an Engram is the compiled+anchored form | Enhancement |
 | reference-persona.md / persona create | generate a charter from a role seed (RFC0007 seeds -> charters) | Enhancement |
-| reference-consult.md / reference-workflow-personas.md | consult = spawn-subagent-per-charter + synthesise | Enhancement |
-| scripts (consult harness) | reuse the audit finder/refute orchestration for persona panels | New / Reuse |
-| reference-audit.md / critic | (later) refactored onto the same primitive | Enhancement |
+| reference-consult.md / reference-workflow-personas.md | consult = fresh-context subagent per seat + synthesis; bridge-or-local | Enhancement |
+| scripts (consult harness) | reuse audit finder/refute orchestration; discover-by-capability + reach | New / Reuse |
+| decision/critic ledgers | become the externalised judgement-record fed to seats; add a ratification flag | Enhancement |
+| (fallback) drift detectors | consistency check + regression tripwire + distinction-drift counter | New |
+| reference-audit.md / critic | (later) refactored onto the unified primitive | Enhancement |
 
 ## Risks
 
 | Risk | Likelihood | Impact | Mitigation |
 | --- | --- | --- | --- |
-| Token cost of N subagents per consult | Medium | Medium | D2 scale with stakes; cache; the value (independence) is proven |
-| Over-structuring loses the human read | Low | Low | keep the one-line disposition; charter is a brief, not a form |
-| Designing personas without the agent-crew model | Medium | Medium | this RFC sets mechanism only; schema/depth to the deep-dive (D1, D5) |
+| The half-Engram (identity with no shadow/anchor) | Medium | High | author Engrams few + deliberately; the labelled fallback is honest, the half-Engram is not |
+| Fallback owner claims guardian properties it lacks | Medium | High | the detection-envelope label; advisory verdicts; D2 ratified canon |
+| "Check your way to an anchor" illusion | Medium | High | accept the envelope's blind spots; an anchor is authored+imported, not checked into being |
+| Token cost of N subagents per consult | Medium | Medium | scale with stakes; the value (independence) is proven |
+| Designing without agent-crew RFC-0011 | Medium | Medium | mechanism only here; canonical model deferred to the deep-dive (D6) |
 
 ## Phased Plan / Workstreams
 
 | WS | Workstream | Becomes | Depends on |
 | --- | --- | --- | --- |
-| WS1 | Charter schema + PM/PO ownership seats | CR (TBD) | D1, D6 |
-| WS2 | Consult = isolated-subagent panel + synthesis | CR (TBD) | WS1, D2 |
-| WS3 | `persona create` generates a charter from a role seed | CR (TBD) | WS1 |
-| WS4 | (later) refactor audit lenses + critic onto the unified primitive | CR (TBD) | WS2, D3 |
+| WS1 | Structured charter (+ shadow) + isolated-subagent consult + synthesis | CR (TBD) | D4 |
+| WS2 | Wire the existing ledgers in as the externalised record | CR (TBD) | WS1 |
+| WS3 | Bridge-consult: discover-by-capability + reach, degrade to local | CR (TBD) | D3 |
+| WS4 | Fallback detection envelope (consistency / tripwire / distinction-drift) | CR (TBD) | WS2, D5 |
+| WS5 | Human-ratified golden canon (ratification flag + the anchor it buys) | CR (TBD) | WS2, D2 |
+| WS6 | (later) refactor audit lenses + critic onto the unified primitive | CR (TBD) | WS1 |
 
 ## Related Artifacts
 
 | Kind | ID | Title | Status | Relationship |
 | --- | --- | --- | --- | --- |
-| RFC | RFC-0015 | Product Vision Document | Draft | needs the PM persona this defines |
+| RFC | RFC-0015 | Product Vision Document | Draft | the PM/owner seats this defines guard it |
 | RFC | RFC-0007 | personas generate on demand | Accepted | seeds become charters here |
 | RFC | RFC-0002 | adversarial audit | Accepted | its refute-panel is the same primitive |
+| Consult | -- | Julian (Engram, via agent-bridge) | -- | authored the substrate model in this RFC |
 
 ## Decision
 
 > *Filled on acceptance.* Chosen option + rationale + the CRs spawned.
 
-**Outcome:** TBD - direction agreed; persona schema/depth to the dedicated deep-dive
+**Outcome:** TBD - substrate model agreed via the consult; the canonical persona model + D2 (ratification friction) await the operator's persona deep-dive
 **Rationale:** TBD
 **Spawned CRs:** TBD
 
@@ -150,4 +219,5 @@ schema below is a **recommendation, open to the persona deep-dive**.
 
 | Date | Author | Change |
 | --- | --- | --- |
-| 2026-06-21 | Darren Benson | Raised - structured charters + isolated-subagent consults + PM/PO ownership + the unified review primitive; persona schema/depth deferred to the agent-crew-informed deep-dive |
+| 2026-06-21 | Darren Benson | Reframed around the charter/Engram substrate distinction (Julian consult): the selection test, record-outside-stance-inside, bridge-or-local consults, the honest fallback detection envelope + human-ratified canon, `shadow` added to the schema, the claim-no-undemonstrable-property integrity rule |
+| 2026-06-21 | Darren Benson | Raised - structured charters + isolated-subagent consults + PM/PO ownership + the unified review primitive |
