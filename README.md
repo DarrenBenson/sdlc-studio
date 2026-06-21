@@ -1,6 +1,6 @@
 # SDLC Studio
 
-**Version 2.3.0** | MIT Licence
+**Version 2.4.0** | MIT Licence
 
 **Set a goal and acceptance criteria; the agent drives the proven software
 lifecycle to it - and proves the code against it.** SDLC Studio brings back the
@@ -214,6 +214,20 @@ check is on by default, silent offline, and never nags once dismissed; opt out w
 `version_check.enabled: false`.
 
 ## Roadmap
+
+**Shipped in v2.4:** **`project upgrade`** migrates an existing project to the current
+conventions - it detects the version/convention gap, auto-corrects the safe set (config,
+provenance cutoff, index drift) on confirm, and reports the judgement items; `skill-update`
+offers it after a bump. Plus an advisory **progressive-disclosure + best-practice check** that
+keeps the skill's own token footprint honest (Load-when markers, no orphans, lean router).
+
+**Shipped in v2.3 - a product layer, determinism, and a documentation DoD:** the **Product
+Vision Document** (a multi-repo product layer above the PRD, with read-only projection and
+cross-repo feature-map traceability); fully **deterministic artifact create/close** for every
+numbered type, with **provenance** stamping; local **run telemetry**; a portable,
+ecosystem-neutral **CI gate** bundling every deterministic check; a **doc-coverage Definition
+of Done** (docs ship with the code); the **Cooper goal-directed persona model** plus isolated
+review-seat charters (RFC0016/RFC0017); and help reframed around the autosprint loop.
 
 **Shipped in v2.2:** a built-in version check + **`skill-update`** - the skill notices
 new releases on `status`/`hint` and upgrades itself (scope-detected) on confirm, with a
