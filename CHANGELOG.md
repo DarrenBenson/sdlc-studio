@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **version_check no longer serves a stale `latest` older than installed (BG0024):** a fresh
+  TTL cache whose `latest` predates the installed version is treated as stale and re-fetched (you
+  cannot install newer-than-latest), so post-release the check stops reporting the old version.
+
 ### Changed
 
 - **Disclosure backlog driven to zero (CR0064):** fixed the 28 real gaps the disclosure check found

@@ -155,6 +155,24 @@ class ScopeTests(unittest.TestCase):
             with mock.patch("pathlib.Path.home", return_value=Path(home)):
                 self.assertEqual(vc.scope(sd), "project")
 
+    def test_stale_cache_older_than_installed_refetches(self) -> None:
+        # BG0024: a fresh cache whose latest is older than the installed version is provably stale
+        # (a release shipped since the cache) -> refetch, never report the old latest as "latest".
+        with tempfile.TemporaryDirectory() as d:
+            sd = _skill(Path(d), version="2.4.0")
+            vc._write_cache(sd, {"latest": "2.1.0", "fetched_at": 1000})  # fresh-but-stale
+            r = vc.check(sd, _fetch=lambda: "2.4.0", now=1000 + 3600)     # within 24h TTL
+            self.assertEqual(r["latest"], "2.4.0")                         # refetched, not stale 2.1.0
+            self.assertEqual(r["status"], "up-to-date")
+
+    def test_fresh_cache_at_installed_version_still_avoids_refetch(self) -> None:
+        # no over-refetch: a fresh cache equal to installed is trusted (_boom proves no fetch).
+        with tempfile.TemporaryDirectory() as d:
+            sd = _skill(Path(d), version="2.4.0")
+            vc._write_cache(sd, {"latest": "2.4.0", "fetched_at": 1000})
+            r = vc.check(sd, _fetch=_boom, now=1000 + 3600)
+            self.assertEqual((r["latest"], r["status"]), ("2.4.0", "up-to-date"))
+
 
 if __name__ == "__main__":
     unittest.main()

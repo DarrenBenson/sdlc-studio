@@ -117,8 +117,13 @@ def check(skill_dir: Path | str | None = None, repo: str = REPO,
         result["status"] = "disabled"
         return result
     cache = _read_cache(sd)
-    if cache.get("latest") and (now - cache.get("fetched_at", 0)) < ttl_hours * 3600:
-        latest = cache["latest"]  # fresh cache - no network call
+    cached = cache.get("latest")
+    fresh = bool(cached) and (now - cache.get("fetched_at", 0)) < ttl_hours * 3600
+    # A cached latest OLDER than what's installed is provably stale - a release shipped since the
+    # cache was written (you cannot install newer-than-latest), so re-fetch instead of trusting it
+    # (BG0024: post-release the TTL window otherwise reports the old latest until it expires).
+    if fresh and not _gt(result["installed"] or "0.0.0", cached):
+        latest = cached  # fresh cache - no network call
     else:
         try:
             latest = (_fetch or (lambda: latest_release(repo)))()
