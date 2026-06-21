@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   always; topology tree + G1-G5 gates + release coordination opt-in) and a
   `templates/product-manifest.yaml` listing the child repos. The PVD coordinates and traces
   (product feature -> owning repo -> PRD feature), never re-specifies; Product Manager owns it.
+- **PVD projection + drift (CR0048, RFC0015 WS2):** `scripts/pvd.py sync` projects the one
+  writable master PVD into each child repo read-only (copy in dev, symlink in prod);
+  `drift` reports in-sync / stale / behind / missing, and an unreadable/missing master
+  reports error rather than a vacuous in-sync.
 
 ## [2.2.0] - 2026-06-21
 

@@ -132,6 +132,14 @@ emits the same per-function scores into the map.
 - `scan`: list functions over the cognitive threshold (`complexity.cognitive_high`, default 15)
 - `assess --files ...`: a change's blast-radius difficulty band + refactor-first hotspots (used by `code plan`)
 
+### `pvd.py`
+
+PVD projection + drift (CR0048, RFC0015 WS2). `sync` projects the one writable master
+Product Vision Document into a child repo read-only (copy in dev, symlink in prod);
+`drift` compares a projected copy against the master (in-sync / stale / behind / missing /
+error) via sha256 + version. An unreadable/missing master reports `error`, never a vacuous
+in-sync. `read_manifest` parses `product-manifest.yaml` (no PyYAML). See `reference-pvd.md`.
+
 ### `gate.py`
 
 Portable, ecosystem-neutral CI quality gate (CR0046). Aggregates the deterministic checks

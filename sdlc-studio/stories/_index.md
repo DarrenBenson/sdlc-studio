@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 27 |
+| Done | 28 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
-| **Total** | **32** |
+| **Total** | **33** |
 
 ## All Stories
 
@@ -54,3 +54,4 @@
 | [US0030](US0030-skill-version-check.md) | skill version check + self-update signal | Done | EP0008 | 2026-06-21 | 2026-06-21 |
 | [US0031](US0031-portable-ci-gate.md) | portable CI quality gate | Done | EP0008 | 2026-06-21 | 2026-06-21 |
 | [US0032](US0032-pvd-template-and-manifest.md) | PVD template + product manifest | Done | EP0008 | 2026-06-21 | 2026-06-21 |
+| [US0033](US0033-pvd-projection-drift.md) | read-only PVD projection + drift check | Done | EP0008 | 2026-06-21 | 2026-06-21 |
