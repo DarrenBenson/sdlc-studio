@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Progressive-disclosure + best-practice check (CR0063):** `scripts/disclosure.py` (advisory) flags
+  reference-/help- files missing a `Load when:` trigger or orphaned from every index, plus best-practice
+  items (scripts executable + `--help`, templates use `{{placeholder}}`, SKILL.md has When-to-Use). The
+  skill is loaded into sessions, so disclosure discipline is a token lever; the check holds new files to
+  it and reports the existing backlog. Skill-dev only (no-op for consuming repos); wired into the gate
+  NON-BLOCKING; `--strict` opts into enforcement. `npm run lint:disclosure`.
 - **`project upgrade` - migrate a consuming project to current conventions (CR0062):** `skill-update`
   updates the tool; `project upgrade` (`scripts/project_upgrade.py`) updates a consuming PROJECT's
   artefacts. It detects the version/convention gap and reports a migration plan split into

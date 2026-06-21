@@ -1,5 +1,8 @@
 # Best Practices: Skills
 
+> **Machine-surfaced:** `scripts/disclosure.py` (advisory) checks much of this list - Load-when
+> markers, orphan-freedom, scripts `--help`/executable, template placeholders, SKILL.md sections.
+
 Based on [official Claude Code documentation](https://code.claude.com/docs/en/skills) and [Anthropic engineering guidance](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills).
 
 ## Template

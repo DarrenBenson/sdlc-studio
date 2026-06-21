@@ -80,6 +80,14 @@ def _provenance(root: str) -> dict:
             "detail": f"{n} unstamped artifact(s) ({'enforced' if r['enforced'] else 'advisory'})"}
 
 
+def _disclosure(root: str) -> dict:
+    import disclosure
+    r = disclosure.check(root)
+    n = len(r["findings"])
+    detail = "N/A (not the skill repo)" if not r["applicable"] else f"{n} advisory finding(s)"
+    return {"count": n, "blocking": False, "detail": detail}  # advisory: never blocks
+
+
 def _doc_coverage(root: str) -> dict:
     import doc_coverage
     r = doc_coverage.check(root)
@@ -99,6 +107,7 @@ DEFAULT_CHECKS = {
     "duplicate-id": _duplicate_id,
     "provenance": _provenance,
     "doc-coverage": _doc_coverage,
+    "disclosure": _disclosure,
 }
 
 
@@ -120,10 +129,14 @@ def run_gate(root: str = ".", only: list[str] | None = None,
                 if (not only or n in only) and (not skip or n not in skip)]
     results = []
     for name in selected:
-        r = registry[name](root)
-        results.append({"check": name, "count": r["count"], "blocking": r["blocking"],
-                        "status": "pass" if r["count"] == 0 else "fail",
-                        "detail": r.get("detail", "")})
+        try:
+            r = registry[name](root)
+            results.append({"check": name, "count": r["count"], "blocking": r["blocking"],
+                            "status": "pass" if r["count"] == 0 else "fail",
+                            "detail": r.get("detail", "")})
+        except Exception as exc:  # noqa: BLE001 - one buggy check must not abort the whole gate
+            results.append({"check": name, "count": 1, "blocking": False, "status": "error",
+                            "detail": f"check raised, skipped: {exc}"})
     ok = all(r["status"] == "pass" for r in results if r["blocking"])
     return {"ok": ok, "checks": results}
 

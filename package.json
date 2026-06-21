@@ -10,6 +10,7 @@
     "lint:links": "python3 tools/check_links.py",
     "lint:skill": "python3 tools/validate_skill.py",
     "lint:versions": "python3 tools/check_versions.py",
+    "lint:disclosure": "python3 .claude/skills/sdlc-studio/scripts/disclosure.py --root .",
     "lint:budgets": "python3 tools/check_budgets.py",
     "lint:fix": "markdownlint '**/*.md' --ignore node_modules --fix",
     "test": "python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests"

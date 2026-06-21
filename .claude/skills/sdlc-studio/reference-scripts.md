@@ -353,6 +353,15 @@ ships with the skill); project-tier writes stay in `.local/`. Full workflow:
 
 ## Orchestration, checks & helpers
 
+### `disclosure.py`
+
+Progressive-disclosure + Claude Code best-practice check (CR0063), **advisory**. Flags reference-/
+help- files missing a `Load when:` trigger or orphaned from every index (SKILL.md / help/references.md
+/ help/help.md), plus best-practice items from `best-practices/claude-skill.md` (scripts executable +
+expose `--help`, templates use `{{placeholder}}`, SKILL.md has a When-to-Use section). Skill-dev only
+(no-op for consuming repos). Wired into the gate as NON-BLOCKING; `--strict` opts into a non-zero exit.
+The token lever: a doc with no load-trigger and no index entry gets pulled in without discipline.
+
 ### `project_upgrade.py`
 
 Migrate a CONSUMING project to the current skill conventions (CR0062), the project-side complement

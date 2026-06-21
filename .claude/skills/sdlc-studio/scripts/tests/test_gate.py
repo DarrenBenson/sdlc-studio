@@ -60,14 +60,14 @@ class GateRealWrapperTests(unittest.TestCase):
     def test_default_checks_present(self) -> None:
         self.assertEqual(set(gate.DEFAULT_CHECKS),
                          {"conformance", "reconcile", "validate", "constitution", "integrity",
-                          "duplicate-id", "provenance", "doc-coverage"})
+                          "duplicate-id", "provenance", "doc-coverage", "disclosure"})
 
     def test_real_wrappers_run_and_shape(self) -> None:
         # Exercises the real checks end-to-end against this repo; asserts structure,
         # not pass/fail (state-independent, so not fragile).
         r = gate.run_gate(str(REPO))
         self.assertIsInstance(r["ok"], bool)
-        self.assertEqual(len(r["checks"]), 8)
+        self.assertEqual(len(r["checks"]), 9)
         for c in r["checks"]:
             self.assertEqual(set(c), {"check", "count", "blocking", "status", "detail"})
 
@@ -129,6 +129,16 @@ class GateRealWrapperTests(unittest.TestCase):
             (sd / "US0002-x.md").write_text("# US0002: x\n\n> **Status:** Done\n", encoding="utf-8")
             (sd / "US0002-y.md").write_text("# US0002: y\n\n> **Status:** Done\n", encoding="utf-8")
             self.assertEqual(gate._duplicate_id(str(repo))["count"], 2)  # + one dup file
+
+
+    def test_a_crashing_check_does_not_abort_the_gate(self):
+        def boom(root):
+            raise RuntimeError("kaboom")
+        r = gate.run_gate(".", checks={"a": _fake(0), "boom": boom})
+        statuses = {c["check"]: c["status"] for c in r["checks"]}
+        self.assertEqual(statuses["boom"], "error")     # reported, not raised
+        self.assertEqual(statuses["a"], "pass")          # other checks still ran
+        self.assertTrue(r["ok"])                          # error is non-blocking, gate not failed
 
     def test_main_returns_exit_code(self) -> None:
         rc = gate.main(["--root", str(REPO), "--format", "json"])
