@@ -56,7 +56,8 @@ class NewTests(unittest.TestCase):
             p = Path(r["path"])
             self.assertTrue(p.exists())
             # file validates clean (no error-severity violations)
-            errs = [v for v in validate.validate_file(p, "story", repo) if v["severity"] == "error"]
+            errs = [v for v in validate.validate_file(p, "story", repo)
+                    if v["severity"] == "error" and v["rule"] != "placeholder"]
             self.assertEqual(errs, [])
             # epic breakdown now references the story; placeholder gone
             ep = (repo / "sdlc-studio" / "epics" / "EP0001-x.md").read_text()
@@ -82,7 +83,8 @@ class NewTests(unittest.TestCase):
                 fields = {"epic": "EP0001"} if t == "story" else {}
                 r = artifact.new(repo, t, f"a {t}", fields)
                 p = Path(r["path"])
-                errs = [v for v in validate.validate_file(p, t, repo) if v["severity"] == "error"]
+                errs = [v for v in validate.validate_file(p, t, repo)
+                        if v["severity"] == "error" and v["rule"] != "placeholder"]
                 self.assertEqual(errs, [], f"{t} scaffold has validate errors: {errs}")
 
     def test_story_requires_epic(self) -> None:

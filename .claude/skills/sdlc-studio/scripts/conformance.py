@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -21,6 +22,19 @@ from lib import sdlc_md  # noqa: E402
 import reconcile  # noqa: E402  (sibling scripts; scripts dir is on sys.path)
 import critic  # noqa: E402
 import doc_coverage  # noqa: E402  (CR0053: the `documented` stage)
+
+_PLACEHOLDER = re.compile(r"\{\{[^}]*\}\}")
+# A bullet's fillable value: strip the leading marker (checkbox, **Label:**) -> group(1).
+_BULLET_VAL = re.compile(r"^\s*[-*]\s+(?:\[[ xX]\]\s+)?(?:\*\*[^*]+\*\*:?\s*)?(.*)$")
+
+
+def _real(value: str | None) -> bool:
+    """True when a line's fillable value has substance beyond a {{placeholder}} (CR0056):
+    a scaffold whose AC/Verify slots are still `{{...}}` is not yet specified. Punctuation
+    or markdown left after stripping the placeholder is not substance (so `{{x}}.` is not
+    real - this keeps conformance consistent with validate, which flags that line)."""
+    residue = _PLACEHOLDER.sub("", value or "")
+    return re.sub(r"[\s.,;:!?*_`>~\-]+", "", residue) != ""
 
 
 def detect_conformance(repo_root: Path | str) -> dict:
@@ -60,13 +74,21 @@ def detect_conformance(repo_root: Path | str) -> dict:
             if line.startswith("## "):
                 in_ac = "acceptance criteria" in line.lower()
                 continue
-            if sdlc_md.AC_HEADING_RE.match(line) or sdlc_md.AC_BULLET_RE.match(line):
+            hm = sdlc_md.AC_HEADING_RE.match(line)
+            bm_ac = sdlc_md.AC_BULLET_RE.match(line)
+            if hm and _real(hm.group(2)):
                 has_ac = True
-            # A populated Acceptance Criteria section counts as "specified" even
-            # when the ACs are prose bullets without an ACn id (house templates).
-            if in_ac and line.strip() and not line.startswith("#"):
+            elif bm_ac and _real(bm_ac.group(2)):
                 has_ac = True
-            if sdlc_md.VERIFY_RE.match(line):
+            # A populated Acceptance Criteria section counts as "specified" even when the
+            # ACs are prose bullets without an ACn id (house templates) - but a line whose
+            # fillable value is only a {{placeholder}} does not count (CR0056).
+            elif in_ac and line.strip() and not line.startswith("#"):
+                bm = _BULLET_VAL.match(line)
+                if _real(bm.group(1) if bm else line):
+                    has_ac = True
+            vm = sdlc_md.VERIFY_RE.match(line)
+            if vm and _real(vm.group(2)):
                 has_verify = True
             m = sdlc_md.VERIFIED_RE.match(line)
             if m:

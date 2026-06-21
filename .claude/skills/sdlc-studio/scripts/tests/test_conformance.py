@@ -103,6 +103,48 @@ class SpecifiedStageTests(unittest.TestCase):
             u = _units(root)["US0001"]
             self.assertFalse(u["stages"]["specified"])
 
+    def test_placeholder_only_ac_not_specified_or_verifiable(self) -> None:
+        # CR0056: a fresh scaffold whose AC/Verify slots are still {{...}} is NOT specified
+        # and NOT verifiable - it cannot reach Done.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "US0001-x.md").write_text(
+                "# US0001: s\n\n> **Status:** Draft\n> **Epic:** [EP0001](../epics/EP0001-x.md)\n\n"
+                "## Acceptance Criteria\n\n### AC1: {{define}}\n\n- **Given** {{context}}\n"
+                "- **When** {{action}}\n- **Then** {{outcome}}\n- **Verify:** {{check}}\n", encoding="utf-8")
+            u = _units(root)["US0001"]
+            self.assertFalse(u["stages"]["specified"])
+            self.assertFalse(u["stages"]["verifiable"])
+
+    def test_one_real_ac_among_placeholders_is_specified(self) -> None:
+        # A real Verify/AC line still counts even if a sibling slot is a placeholder.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "US0001-x.md").write_text(
+                "# US0001: s\n\n> **Status:** Ready\n> **Epic:** [EP0001](../epics/EP0001-x.md)\n\n"
+                "## Acceptance Criteria\n\n### AC1: login works\n\n- **Given** a real precondition\n"
+                "- **Verify:** pytest tests/test_login.py\n", encoding="utf-8")
+            u = _units(root)["US0001"]
+            self.assertTrue(u["stages"]["specified"])
+            self.assertTrue(u["stages"]["verifiable"])
+
+
+    def test_placeholder_with_trailing_punct_not_specified(self) -> None:
+        # CR0056 (critic): `{{x}}.` is not real content - conformance must agree with validate.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "stories"; sd.mkdir(parents=True)
+            (sd / "US0001-x.md").write_text(
+                "# US0001: s\n\n> **Status:** Draft\n> **Epic:** [EP0001](../epics/EP0001-x.md)\n\n"
+                "## Acceptance Criteria\n\n### AC1: {{define}}.\n\n- **Verify:** {{check}}.\n", encoding="utf-8")
+            u = _units(root)["US0001"]
+            self.assertFalse(u["stages"]["specified"])
+            self.assertFalse(u["stages"]["verifiable"])
+
 
 class CritiqueStageTests(unittest.TestCase):
     def test_done_without_verdict_not_conformant(self) -> None:

@@ -110,7 +110,56 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
                 "story has no acceptance criteria (`### ACn`, `- **ACn:**`, or a "
                 "populated `## Acceptance Criteria` section)")
 
+    _check_placeholders(text, add)
     return out
+
+
+_PLACEHOLDER = re.compile(r"\{\{[^}]*\}\}")
+_GWT = re.compile(r"\s*[-*]\s+\*\*(Given|When|Then)\b")
+_META = re.compile(r">\s*\*\*[\w ]+:\*\*")
+_CHECKBOX = re.compile(r"\s*[-*]\s+\[[ xX]\]")  # `- [ ] {{criterion}}` (CR/story AC checklist)
+_BULLET_VAL = re.compile(r"^\s*[-*]\s+(?:\[[ xX]\]\s+)?(?:\*\*[^*]+\*\*:?\s*)?(.*)$")
+
+
+def _unfilled(value: str | None) -> bool:
+    """True when a value is a placeholder slot, not real content: nothing of substance
+    remains after the `{{...}}` and surrounding punctuation are removed. Mirrors
+    conformance._real so the two gates agree on what counts as filled (CR0056)."""
+    residue = _PLACEHOLDER.sub("", value or "")
+    return re.sub(r"[\s.,;:!?*_`>~\-]+", "", residue) == ""
+
+
+def _ac_value(line: str) -> str:
+    """The fillable value of an AC structural line (text after the heading/marker)."""
+    for rx in (sdlc_md.AC_HEADING_RE, sdlc_md.AC_BULLET_RE, sdlc_md.VERIFY_RE):
+        m = rx.match(line)
+        if m:
+            return m.group(2) or ""
+    m = _BULLET_VAL.match(line)  # Given/When/Then or `- [ ]` checkbox bullet
+    return m.group(1) if m else line
+
+
+def _check_placeholders(text: str, add) -> None:
+    """Flag an unresolved `{{...}}` slot left in a metadata line or an acceptance-criteria
+    structural line (AC heading, ACn / Given / When / Then / checkbox bullet, Verify) - an
+    unfilled scaffold (CR0056). Flags only a line whose *value* is placeholder-ONLY, so prose
+    that legitimately discusses `{{placeholder}}` syntax, and a real AC that merely references
+    a token, are never flagged (consistent with conformance._real)."""
+    in_ac = False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            in_ac = "acceptance criteria" in line.lower()
+            continue
+        if not _PLACEHOLDER.search(line):
+            continue
+        if _META.match(line):
+            if _unfilled(line[_META.match(line).end():]):
+                add("error", "placeholder", f"unresolved placeholder in metadata: {line.strip()}")
+        elif in_ac and (sdlc_md.AC_HEADING_RE.match(line) or sdlc_md.AC_BULLET_RE.match(line)
+                        or sdlc_md.VERIFY_RE.match(line) or _GWT.match(line) or _CHECKBOX.match(line)):
+            if _unfilled(_ac_value(line)):
+                add("error", "placeholder",
+                    f"unresolved placeholder in acceptance criteria: {line.strip()}")
 
 
 def _ac_exempt(rec: str | None, repo_root: Path | None) -> bool:

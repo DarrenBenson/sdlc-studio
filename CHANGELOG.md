@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Unfilled-placeholder gate (CR0056):** a freshly-scaffolded story used to pass conformance
+  (specified + verifiable) and validate with pure `{{placeholder}}` AC/Verify content - a hidden
+  hole. validate now flags a metadata or AC-structural line whose value is placeholder-ONLY as
+  an error, and conformance treats a placeholder-only AC/Verify as not-yet-specified (a scaffold
+  cannot reach Done with unfilled slots). Scoped to placeholder-only values, so prose that
+  references `{{...}}` syntax and a real AC that mentions a token are never flagged; the two
+  gates agree on what counts as filled.
 - **Gate duplicate-id + provenance checks (CR0055):** the gate now flags duplicate artifact
   ids - both duplicate files (next_id) and duplicate index ROWS (reconcile keyed rows into a
   dict, so a second `US0001` row silently overwrote the first: zero drift, false PASS - now

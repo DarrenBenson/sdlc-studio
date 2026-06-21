@@ -8,6 +8,7 @@ from __future__ import annotations
 import importlib.util
 import sys
 import tempfile
+import pathlib
 import unittest
 from pathlib import Path
 
@@ -209,6 +210,52 @@ class InstructionsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             (Path(d) / "AGENTS.md").write_text(GOOD_AGENTS, encoding="utf-8")
             self.assertEqual(validate.main(["instructions", "--root", d]), 0)
+
+
+class PlaceholderTests(unittest.TestCase):
+    def _story(self, body):
+        import tempfile
+        d = tempfile.mkdtemp()
+        f = pathlib.Path(d) / "US0001-x.md"
+        f.write_text(body, encoding="utf-8")
+        return f
+
+    def test_placeholder_ac_flagged(self):
+        f = self._story("# US0001: x\n\n> **Status:** Draft\n\n## Acceptance Criteria\n\n"
+                        "### AC1: {{define}}\n\n- **Given** {{context}}\n- **Verify:** {{check}}\n")
+        rules = [v["rule"] for v in validate.validate_file(f, "story") if v["severity"] == "error"]
+        self.assertIn("placeholder", rules)
+
+    def test_placeholder_metadata_flagged(self):
+        f = self._story("# US0001: x\n\n> **Status:** {{status}}\n\n## Acceptance Criteria\n\n"
+                        "- some real criterion\n")
+        self.assertIn("placeholder", [v["rule"] for v in validate.validate_file(f, "story")])
+
+    def test_prose_placeholder_not_flagged(self):
+        # meta-artifact discussing {{placeholder}} syntax in prose must NOT be flagged
+        f = self._story("# US0001: x\n\n> **Status:** Draft\n\n## Description\n\n"
+                        "Templates use {{placeholder}} syntax for fields.\n\n"
+                        "## Acceptance Criteria\n\n- a real filled criterion\n")
+        self.assertNotIn("placeholder", [v["rule"] for v in validate.validate_file(f, "story")])
+
+    def test_checkbox_placeholder_flagged(self):
+        # CR/story AC checklist `- [ ] {{criterion}}` is a structural AC line (CR0056 critic gap).
+        f = self._story("# US0001: x\n\n> **Status:** Draft\n\n## Acceptance Criteria\n\n"
+                        "- [ ] {{criterion}}\n")
+        self.assertIn("placeholder", [v["rule"] for v in validate.validate_file(f, "story")])
+
+    def test_checkbox_real_text_not_flagged(self):
+        f = self._story("# US0001: x\n\n> **Status:** Draft\n\n## Acceptance Criteria\n\n"
+                        "- [ ] a genuine filled criterion\n")
+        self.assertNotIn("placeholder", [v["rule"] for v in validate.validate_file(f, "story")])
+
+    def test_embedded_token_in_real_ac_not_flagged(self):
+        # A real, filled AC that references a {{...}} token in its text (this repo's own
+        # meta-CRs) must NOT be flagged - only placeholder-ONLY values are (CR0056 critic).
+        f = self._story("# US0001: x\n\n> **Status:** Draft\n\n## Acceptance Criteria\n\n"
+                        "- [ ] validate flags unresolved {{...}} placeholders as an error\n"
+                        "- [x] All three use `{{placeholder}}` syntax and pass lint\n")
+        self.assertNotIn("placeholder", [v["rule"] for v in validate.validate_file(f, "story")])
 
 
 if __name__ == "__main__":
