@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **reconcile no longer corrupts per-epic count tables (BG0026):** `reconcile --apply` (and thus
+  gate/autosprint/`project upgrade`) recomputes only the canonical global summary (the `Status|Count`
+  block with a `**Total**` row, or the sole summary); scoped per-epic/per-section count tables are left
+  to the author. Previously it stamped the fleet total into every one (hit agent-crew: per-epic Done 6 -> 590).
 - **project upgrade dry-run now reports the stale `.version` bump (BG0025):** a present-but-stale
   `.version` (older skill than installed) is reported as auto-correctable, matching what `--apply`
   does - the dry-run no longer says "nothing auto-correctable" while apply bumps it.

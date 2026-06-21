@@ -423,5 +423,74 @@ class DuplicateRowTests(unittest.TestCase):
             self.assertEqual(reconcile.detect_duplicate_rows(repo)["count"], 0)
 
 
+
+class CountBlockScopeTests(unittest.TestCase):
+    def test_per_epic_count_table_not_corrupted(self):
+        # BG0026: per-epic Status|Count tables (no Total) must survive; only the global summary
+        # (the block with a Total, or the sole summary) is recomputed.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); sd = root / "sdlc-studio" / "stories"; sd.mkdir(parents=True)
+            (sd / "US0001-a.md").write_text("# US0001: a\n\n> **Status:** Done\n", encoding="utf-8")
+            (sd / "US0002-b.md").write_text("# US0002: b\n\n> **Status:** Done\n", encoding="utf-8")
+            (sd / "_index.md").write_text(
+                "# Stories\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [US0001](US0001-a.md) | a | Done |\n| [US0002](US0002-b.md) | b | Done |\n\n"
+                "### EP0001\n\n| Status | Count |\n| --- | --- |\n| Done | 6 |\n\n"
+                "## Status summary\n\n| Status | Count |\n| --- | --- |\n| Done | 99 |\n| **Total** | **99** |\n",
+                encoding="utf-8")
+            reconcile.apply_type("story", root)
+            out = (sd / "_index.md").read_text()
+            self.assertIn("| Done | 6 |", out)        # per-epic preserved (the BG0026 corruption)
+            self.assertIn("| Done | 2 |", out)        # global recomputed (was 99 -> 2)
+            self.assertIn("**Total** | **2**", out)   # global total recomputed
+
+    def test_sole_summary_without_total_still_recomputed(self):
+        # no regression: a single summary (even Total-less) is still managed
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); sd = root / "sdlc-studio" / "stories"; sd.mkdir(parents=True)
+            (sd / "US0001-a.md").write_text("# US0001: a\n\n> **Status:** Done\n", encoding="utf-8")
+            (sd / "_index.md").write_text(
+                "# Stories\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [US0001](US0001-a.md) | a | Done |\n\n"
+                "## Summary\n\n| Status | Count |\n| --- | --- |\n| Done | 5 |\n", encoding="utf-8")
+            reconcile.apply_type("story", root)
+            self.assertIn("| Done | 1 |", (sd / "_index.md").read_text())  # recomputed (sole summary)
+
+
+    def test_adjacent_blocks_no_scan_bleed(self):
+        # the Total-scan must stop at the block boundary: a per-epic block (no Total) directly
+        # before the global block (with Total) must NOT inherit the global's Total.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); sd = root / "sdlc-studio" / "stories"; sd.mkdir(parents=True)
+            (sd / "US0001-a.md").write_text("# US0001: a\n\n> **Status:** Done\n", encoding="utf-8")
+            (sd / "_index.md").write_text(
+                "# S\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [US0001](US0001-a.md) | a | Done |\n\n"
+                "### EP0001\n\n| Status | Count |\n| --- | --- |\n| Done | 6 |\n\n"
+                "## Summary\n\n| Status | Count |\n| --- | --- |\n| Done | 9 |\n| **Total** | **9** |\n",
+                encoding="utf-8")
+            reconcile.apply_type("story", root)
+            out = (sd / "_index.md").read_text()
+            self.assertIn("| Done | 6 |", out)        # per-epic untouched (no scan-bleed)
+            self.assertIn("**Total** | **1**", out)   # global recomputed to 1
+
+    def test_multiple_summaries_none_with_total_left_alone(self):
+        # documented boundary: 2+ summaries, none with a Total -> none recomputed (don't-corrupt
+        # beats don't-recompute). Both per-epic-style counts are preserved verbatim.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); sd = root / "sdlc-studio" / "stories"; sd.mkdir(parents=True)
+            (sd / "US0001-a.md").write_text("# US0001: a\n\n> **Status:** Done\n", encoding="utf-8")
+            (sd / "_index.md").write_text(
+                "# S\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [US0001](US0001-a.md) | a | Done |\n\n"
+                "### EP0001\n\n| Status | Count |\n| --- | --- |\n| Done | 6 |\n\n"
+                "### EP0002\n\n| Status | Count |\n| --- | --- |\n| Done | 8 |\n",
+                encoding="utf-8")
+            reconcile.apply_type("story", root)
+            out = (sd / "_index.md").read_text()
+            self.assertIn("| Done | 6 |", out)
+            self.assertIn("| Done | 8 |", out)        # both preserved; neither stamped
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -414,6 +414,12 @@ def _rewrite_index_lines(lines: list, fixes: dict, counts: dict, vocab: list) ->
     counts_updated = False
     status_col = id_col = None
     in_summary = False
+    # An index may carry many `Status | Count` tables (per-epic/per-section roll-ups) plus the one
+    # global summary. Only the canonical global summary is reconcile-managed: the block carrying a
+    # `Total` row (the template signature), or the sole summary in the file. A scoped per-epic table
+    # is author-maintained - stamping the global total into it corrupts it (BG0026).
+    n_summary = sum(1 for ln in lines
+                    if (c := _table_cells(ln)) and [x.lower() for x in c] == ["status", "count"])
     for i, line in enumerate(lines):
         cells = _table_cells(line)
         if not cells:
@@ -422,7 +428,19 @@ def _rewrite_index_lines(lines: list, fixes: dict, counts: dict, vocab: list) ->
             continue
         kind, sc, ic = _header_kind(cells, [c.lower() for c in cells])
         if kind == "summary":
-            in_summary, status_col, id_col = True, None, None
+            has_total = False
+            for j in range(i + 1, len(lines)):  # scan this block for a Total row
+                cj = _table_cells(lines[j])
+                if cj is None:
+                    if not lines[j].strip().startswith("|"):
+                        break  # blank/prose ends the block
+                    continue   # separator row
+                if "status" in [c.lower() for c in cj]:
+                    break  # next header - block ended
+                if len(cj) == 2 and cj[0].replace("*", "").strip().lower() == "total":
+                    has_total = True
+                    break
+            in_summary, status_col, id_col = (has_total or n_summary == 1), None, None
             continue
         if kind == "data":
             in_summary, status_col, id_col = False, sc, ic

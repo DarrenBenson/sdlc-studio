@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 0 |
+| Open | 2 |
 | In Progress | 0 |
-| Fixed | 25 |
+| Fixed | 26 |
 | Verified | 0 |
 | Closed | 0 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **25** |
+| **Total** | **28** |
 
 ## All Bugs
 
@@ -44,3 +44,6 @@
 | [BG0023](BG0023-critic-verdict-text-with-underscored-identifiers-trips-markdownlint.md) | critic verdict text with underscored identifiers trips markdownlint MD037 | Fixed | Low | 2026-06-21 | 2026-06-21 |
 | [BG0024](BG0024-version-check-serves-stale-cached-latest-older-than.md) | version_check serves stale cached latest older than installed reports up-to-date wrongly | Fixed | Medium | 2026-06-21 | 2026-06-21 |
 | [BG0025](BG0025-project-upgrade-dry-run-omits-the-stale-version.md) | project_upgrade dry-run omits the stale .version bump that --apply performs | Fixed | Medium | 2026-06-21 | 2026-06-21 |
+| [BG0026](BG0026-reconcile-count-block-rewrite-stamps-global-total-into.md) | reconcile count-block rewrite stamps global total into per-epic count sub-tables | Fixed | High | 2026-06-22 | 2026-06-22 |
+| [BG0027](BG0027-persona-checks-flag-non-persona-files-and-review.md) | persona checks flag non-persona files and review-seat charters as old/ill-formed | Open | Medium | 2026-06-22 | 2026-06-22 |
+| [BG0028](BG0028-verify-ac-shells-out-prose-verify-lines-and.md) | verify_ac shells out prose Verify lines and times out reporting failed not manual | Open | Medium | 2026-06-22 | 2026-06-22 |
