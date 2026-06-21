@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-06-21
+
 ### Added
 
 - **RFC0016 resolved - review-seat charters + isolated consults (CR0060):** review seats (the
