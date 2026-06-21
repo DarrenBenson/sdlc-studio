@@ -120,7 +120,7 @@ AI-assisted development changes the testing equation:
 Test depth need not be uniform. `complexity.py assess --files <touched>` returns a
 **risk_band** (low / medium / high) - a churn-weighted composite of each file's cognitive
 complexity and its git churn. Churn is weighted ~3x complexity because the 2026-06-21
-calibration against two real boards (agent-bridge n=305) found bug-affected files were
+calibration against two real boards (consuming repo B n=305) found bug-affected files were
 ~1.8x more complex but ~4.9x more churned than clean files, and the top-complexity decile
 carried ~2.2x the bug rate (RFC0009). Defect risk concentrates in complex, frequently-
 changed code - so put the test effort there:

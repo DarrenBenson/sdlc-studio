@@ -192,7 +192,7 @@ class ArtifactFilesTests(unittest.TestCase):
 
 
 class HouseTemplateTests(unittest.TestCase):
-    """Parse a consuming repo's house template (agent-crew/agent-bridge shapes)."""
+    """Parse a consuming repo's house template (consuming repo A/consuming repo B shapes)."""
 
     INLINE = "> **Status:** Done (v2.94.0) · **Epic:** EP0088 · **CR:** CR-0092 · **Points:** 3\n"
 

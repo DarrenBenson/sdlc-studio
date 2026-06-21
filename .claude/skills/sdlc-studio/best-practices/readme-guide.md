@@ -98,15 +98,15 @@ How to work with contents.
 ### Good
 
 ```markdown
-# Engram Foundry
+# Acme Pipeline
 
-Multi-agent pipeline for creating and validating engram identity files.
+Multi-agent pipeline for creating and validating identity files.
 
 ## Quick Start
 
-1. Place input in `foundry/input/`
-2. Run `/foundry-backlog`
-3. Review output in `foundry/output/`
+1. Place input in `pipeline/input/`
+2. Run `/pipeline-backlog`
+3. Review output in `pipeline/output/`
 ```
 
 ### Bad

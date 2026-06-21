@@ -268,7 +268,7 @@ judgement call - see `help/lessons.md`.
 
 - **Epic:** EP0004
 - **Wave:** 2
-- **Symptom:** Agent added `created_at` to the Bridge schema as
+- **Symptom:** Agent added `created_at` to the service schema as
   camelCase but existing tests expected snake_case
 - **Root cause:** `READ THESE FILES FIRST` omitted `src/db/schema.ts`
   so the agent guessed the naming convention

@@ -109,7 +109,7 @@ class StatusWordTitleTests(unittest.TestCase):
 class TwoLayoutIndexTests(unittest.TestCase):
     def test_status_col_repins_per_header(self) -> None:
         # A second table with a different layout (Status in a different column)
-        # must be read against its own header, not the first table's (agent-crew).
+        # must be read against its own header, not the first table's (consuming repo A).
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             sd = root / "sdlc-studio" / "stories"

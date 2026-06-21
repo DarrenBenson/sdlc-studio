@@ -32,7 +32,7 @@ from lib import sdlc_md  # noqa: E402
 DEFAULT_COGNITIVE_HIGH = 15  # SonarQube's "high" threshold; configurable (RFC0009)
 DEFAULT_CHURN_HIGH = 12      # commits-touching-a-file "high" threshold (RFC0009 calibration)
 # Churn is weighted ~3x complexity in the composite: the 2026-06-21 calibration against
-# agent-bridge/agent-crew found churn discriminates defects ~4.9x vs complexity's ~1.8x.
+# consuming repo B/consuming repo A found churn discriminates defects ~4.9x vs complexity's ~1.8x.
 W_CHURN, W_COGNITIVE = 3, 1
 CODE_SUFFIXES = {".py", ".js", ".jsx", ".ts", ".tsx", ".go", ".java", ".rb", ".c",
                  ".cc", ".cpp", ".cs", ".rs", ".php", ".swift", ".kt"}

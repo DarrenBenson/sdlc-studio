@@ -158,8 +158,8 @@ Enhance OpenAPI output:
 
 ```python
 app = FastAPI(
-    title="Engram Library API",
-    description="API for managing engram identities",
+    title="Acme Library API",
+    description="API for managing identities",
     version="1.0.0",
     contact={"name": "Support", "email": "support@example.com"},
     license_info={"name": "MIT"},
