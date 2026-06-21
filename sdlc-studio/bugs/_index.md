@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 0 |
 | In Progress | 0 |
-| Fixed | 24 |
+| Fixed | 25 |
 | Verified | 0 |
 | Closed | 0 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **24** |
+| **Total** | **25** |
 
 ## All Bugs
 
@@ -43,3 +43,4 @@
 | [BG0022](BG0022-artifact-new-silent-wiring-to-a-non-existent.md) | artifact new - silent wiring to a non-existent epic and file-only id allocation | Fixed | Medium | 2026-06-21 | 2026-06-21 |
 | [BG0023](BG0023-critic-verdict-text-with-underscored-identifiers-trips-markdownlint.md) | critic verdict text with underscored identifiers trips markdownlint MD037 | Fixed | Low | 2026-06-21 | 2026-06-21 |
 | [BG0024](BG0024-version-check-serves-stale-cached-latest-older-than.md) | version_check serves stale cached latest older than installed reports up-to-date wrongly | Fixed | Medium | 2026-06-21 | 2026-06-21 |
+| [BG0025](BG0025-project-upgrade-dry-run-omits-the-stale-version.md) | project_upgrade dry-run omits the stale .version bump that --apply performs | Fixed | Medium | 2026-06-21 | 2026-06-21 |

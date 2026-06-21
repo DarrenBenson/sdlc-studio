@@ -158,6 +158,22 @@ class SafetyAndReconcileTests(unittest.TestCase):
             self.assertEqual(pu.main(["--root", d, "--apply"]), 0)
             self.assertTrue((sd / ".config.yaml").exists())          # not stranded by the "behind" gate
 
+    def test_stale_version_reported_as_auto(self):
+        # BG0025: a present-but-stale .version is auto-correctable (apply bumps it), so the dry-run
+        # must report it - not silently omit it.
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d, version=(pu.CURRENT_SCHEMA, "1.6.0"))
+            (sd / ".config.yaml").write_text("provenance:\n  adopt_after: 0\n", encoding="utf-8")
+            self.assertIn("stale-version", [f["kind"] for f in pu.audit(d)["auto"]])
+
+    def test_current_version_no_stale_finding(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d, version=(pu.CURRENT_SCHEMA, INSTALLED))
+            (sd / ".config.yaml").write_text("provenance:\n  adopt_after: 0\n", encoding="utf-8")
+            kinds = [f["kind"] for f in pu.audit(d)["auto"]]
+            self.assertNotIn("stale-version", kinds)
+            self.assertNotIn("missing-version", kinds)
+
 
 if __name__ == "__main__":
     unittest.main()

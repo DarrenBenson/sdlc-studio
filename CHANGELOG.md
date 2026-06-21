@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **project upgrade dry-run now reports the stale `.version` bump (BG0025):** a present-but-stale
+  `.version` (older skill than installed) is reported as auto-correctable, matching what `--apply`
+  does - the dry-run no longer says "nothing auto-correctable" while apply bumps it.
 - **version_check no longer serves a stale `latest` older than installed (BG0024):** a fresh
   TTL cache whose `latest` predates the installed version is treated as stale and re-fetched (you
   cannot install newer-than-latest), so post-release the check stops reporting the old version.

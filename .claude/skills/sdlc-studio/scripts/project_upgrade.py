@@ -107,8 +107,14 @@ def audit(root: Path | str) -> dict:
     manual: list[dict] = []
     if not (sd / ".config.yaml").exists():
         auto.append({"kind": "missing-config", "detail": "no sdlc-studio/.config.yaml (provenance cutoff, overrides)"})
+    pv_schema, pv_skill = _read_version(root)
+    installed = version_check.installed_version(version_check.skill_root())
     if not (sd / ".version").exists():
         auto.append({"kind": "missing-version", "detail": "no sdlc-studio/.version (records the skill/schema version)"})
+    elif (installed and pv_skill != installed) or (pv_schema or 0) < CURRENT_SCHEMA:
+        # present but stale - apply() bumps it, so the dry-run must report it too (BG0025)
+        auto.append({"kind": "stale-version",
+                     "detail": f"sdlc-studio/.version records skill {pv_skill or '?'}; bump to {installed or '?'}"})
     drift = sum(len(reconcile.detect_type(t, root)["drift"]) for t in sdlc_md.ARTIFACT_TYPES)
     if drift:
         auto.append({"kind": "index-drift", "count": drift, "detail": f"{drift} index/status drift item(s) (reconcile --apply)"})
