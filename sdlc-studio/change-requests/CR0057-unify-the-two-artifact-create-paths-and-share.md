@@ -1,6 +1,6 @@
 # CR-0057: unify the two artifact create paths and share index helpers
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-06-21
@@ -11,13 +11,14 @@ Self-audit: artifact.new and file_finding.file are two create paths for cr/rfc/b
 
 ## Acceptance Criteria
 
-- [ ] file_finding-created artifacts carry a provenance stamp (provenance check no longer false-flags them)
-- [ ] one shared index-row builder + data-header finder + _join_row (in lib) used by both paths
-- [ ] --dry-run added to artifact new/close, file_finding file, pvd sync (parity with reconcile apply / provenance remake)
-- [ ] tested; critic APPROVE
+- [x] file_finding-created artifacts carry a provenance stamp (provenance check no longer false-flags them)
+- [x] one shared index-row builder + data-header finder + _join_row (in lib) used by both paths
+- [x] --dry-run added to artifact new/close, file_finding file, pvd sync (parity with reconcile apply / provenance remake)
+- [x] tested; critic APPROVE
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-21 | audit | Raised |
+| 2026-06-21 | Autosprint (CR0057) | Unified: filer stamps; shared row_from_header/find_data_header/join_row in lib; --dry-run on new/close/file/pvd sync; critic APPROVE (rows byte-identical) |

@@ -49,7 +49,7 @@ Full command-line argument reference. For the common subset, see `help/help.md`
 | `--commit-strategy` | Commit granularity: `per-wave`, `per-epic` (default), `per-project` | per-epic |
 | `--from` | Generation starting point for project implement: `stories`, `epics` | none |
 | `--yes` | Auto-approve generated artifacts (skip pause after `--from`) | false |
-| `--dry-run` | Preview changes without applying (for refactor) | false |
+| `--dry-run` | Preview changes without applying (refactor; also artifact new/close, file_finding file, pvd sync) | false |
 | `--focus` | Review focus area (patterns, security, performance, testing, all) | all |
 | `--severity` | Minimum severity to report (for review) | all |
 | `--quick` | Use cached status results (for status), skip cascade (for epic review) | varies |

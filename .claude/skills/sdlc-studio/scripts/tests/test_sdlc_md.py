@@ -312,5 +312,32 @@ class StatusVocabTests(unittest.TestCase):
                 self.assertEqual(sdlc_md.status_vocab("story", root), base, body)
 
 
+
+class RowAndHeaderTests(unittest.TestCase):
+    def test_row_from_header_rfc_cells_under_named_columns(self):
+        hdr = ["ID", "Title", "Priority", "Status", "Author", "Date", "Spawned CRs"]
+        row = sdlc_md.row_from_header(hdr, "[RFC-0001](x.md)", "a title", "Draft",
+                                      {"priority": "High", "author": "me", "date": "2026-06-21"})
+        self.assertEqual(sdlc_md.table_cells(row),
+                         ["[RFC-0001](x.md)", "a title", "High", "Draft", "me", "2026-06-21", "--"])
+
+    def test_row_from_header_cr_cells_under_named_columns(self):
+        hdr = ["ID", "Title", "Status", "Priority", "Type", "Date", "Linked Epics"]
+        row = sdlc_md.row_from_header(hdr, "[CR-0001](x.md)", "t", "Proposed",
+                                      {"priority": "High", "ctype": "Improvement", "date": "2026-06-21"})
+        self.assertEqual(sdlc_md.table_cells(row),
+                         ["[CR-0001](x.md)", "t", "Proposed", "High", "Improvement", "2026-06-21", "--"])
+
+    def test_find_data_header_skips_summary_table(self):
+        lines = ["| Status | Count |", "| --- | --- |", "| Open | 1 |", "",
+                 "| ID | Title | Status |", "| --- | --- | --- |"]
+        idx, cells = sdlc_md.find_data_header(lines)
+        self.assertEqual((idx, cells), (4, ["ID", "Title", "Status"]))
+        self.assertIsNone(sdlc_md.find_data_header(["| Status | Count |", "| Open | 1 |"]))
+
+    def test_join_row_round_trips_pipe(self):
+        self.assertEqual(sdlc_md.table_cells(sdlc_md.join_row(["a | b", "c"])), ["a | b", "c"])
+
+
 if __name__ == "__main__":
     unittest.main()

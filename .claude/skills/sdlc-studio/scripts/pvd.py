@@ -38,11 +38,13 @@ def _version(text: str) -> str | None:
     return m.group(1) if m else None
 
 
-def sync(master: Path, target_repo: Path, mode: str = "copy") -> dict:
+def sync(master: Path, target_repo: Path, mode: str = "copy", dry_run: bool = False) -> dict:
     """Project master -> <target_repo>/sdlc-studio/product/pvd.md, read-only.
     mode 'copy' writes a chmod-readonly copy (dev); 'symlink' links to the master (prod)."""
     master = Path(master)
     dest = Path(target_repo) / PROJECTED
+    if dry_run:  # preview: write nothing (CR0057)
+        return {"action": "would-sync", "target": str(dest), "mode": mode, "dry_run": True}
     dest.parent.mkdir(parents=True, exist_ok=True)
     if dest.exists() or dest.is_symlink():
         try:
@@ -102,7 +104,8 @@ def read_manifest(path: Path) -> dict:
 
 
 def cmd_sync(args: argparse.Namespace) -> int:
-    print(json.dumps(sync(args.master, args.target, args.mode), indent=2))
+    print(json.dumps(sync(args.master, args.target, args.mode,
+                          dry_run=getattr(args, "dry_run", False)), indent=2))
     return 0
 
 
@@ -120,6 +123,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--master", required=True)
     s.add_argument("--target", required=True, help="Target repo root")
     s.add_argument("--mode", choices=("copy", "symlink"), default="copy")
+    s.add_argument("--dry-run", action="store_true", dest="dry_run", help="preview; write nothing")
     s.set_defaults(func=cmd_sync)
     d = sub.add_parser("drift", help="Compare a projected copy vs the master.")
     d.add_argument("--master", required=True)

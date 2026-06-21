@@ -326,9 +326,8 @@ def cmd_detect(args: argparse.Namespace) -> int:
 
 
 def _join_row(cells: list[str]) -> str:
-    """Render a table row, re-escaping any literal pipe in a cell (so a value that
-    legitimately contains `|` round-trips through _table_cells without shifting)."""
-    return "| " + " | ".join(c.replace("|", "\\|") for c in cells) + " |"
+    """Render a table row (escaped-pipe-safe). Thin alias for the shared row writer."""
+    return sdlc_md.join_row(cells)
 
 
 def _canonical_counts(rows: dict[str, tuple[str, str]], vocab: list[str]) -> dict[str, int]:

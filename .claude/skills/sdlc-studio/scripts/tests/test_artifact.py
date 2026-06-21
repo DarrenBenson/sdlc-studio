@@ -219,6 +219,31 @@ class NewTests(unittest.TestCase):
             self.assertIn("[US0001:", ep.read_text())  # actually inserted, not falsely skipped
 
 
+    def test_new_dry_run_writes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
+            idx = repo / "sdlc-studio" / "change-requests" / "_index.md"
+            before = idx.read_text()
+            r = artifact.new(repo, "cr", "preview", dry_run=True)
+            self.assertTrue(r["dry_run"])
+            self.assertFalse(Path(r["path"]).exists())
+            self.assertEqual(idx.read_text(), before)
+
+    def test_close_dry_run_does_not_transition(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+            _epic(repo)
+            r = artifact.new(repo, "story", "to keep open", {"epic": "EP0001"})
+            before = Path(r["path"]).read_text()
+            import telemetry
+            res = artifact.close(repo, r["id"], dry_run=True)
+            self.assertTrue(res["dry_run"])
+            self.assertEqual(Path(r["path"]).read_text(), before)  # status unchanged
+            self.assertEqual(telemetry.read_all(repo), [])         # no telemetry recorded
+
+
 class CloseTests(unittest.TestCase):
     def test_close_unknown_prefix_raises(self) -> None:
         with tempfile.TemporaryDirectory() as d:

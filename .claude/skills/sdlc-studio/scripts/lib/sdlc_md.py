@@ -108,6 +108,50 @@ def table_cells(line: str) -> list[str] | None:
     return cells
 
 
+def join_row(cells: list[str]) -> str:
+    """Render a table row, re-escaping any literal pipe in a cell so a value that contains
+    `|` round-trips through `table_cells` without shifting columns. The single row writer
+    every index builder shares (CR0057)."""
+    return "| " + " | ".join(c.replace("|", "\\|") for c in cells) + " |"
+
+
+def find_data_header(lines: list[str]) -> tuple[int, list[str]] | None:
+    """The last index DATA-table header (the row carrying an `ID` column) as (line, cells),
+    or None. Locates the data table so a new row never lands in the Summary table. Shared by
+    `artifact new` and the finding filer (CR0057)."""
+    found = None
+    for i, ln in enumerate(lines):
+        cells = table_cells(ln)
+        if cells and len(cells) > 2 and "id" in [c.lower() for c in cells]:
+            found = (i, cells)
+    return found
+
+
+def row_from_header(header: list[str], link: str, title: str, status: str, f: dict) -> str:
+    """Build an index data row matching the index's own columns - generic across every type,
+    so both create paths emit identical rows (CR0057). `f` supplies priority/type/severity/
+    author/epic/date; unknown columns get `--`."""
+    field_for = {"priority": ("priority", "Medium"), "type": ("ctype", "Feature"),
+                 "epic": ("epic", "--"), "severity": ("severity", "--"), "author": ("author", "--")}
+    out: list[str] = []
+    for h in header:
+        hl = h.strip().lower()
+        if hl == "id":
+            out.append(link)
+        elif hl in ("title", "description", "feature", "name"):
+            out.append(title)
+        elif hl == "status":
+            out.append(status)
+        elif hl in ("created", "date", "raised", "updated"):
+            out.append(f["date"])
+        elif hl in field_for:
+            key, default = field_for[hl]
+            out.append(f.get(key, default))
+        else:
+            out.append("--")
+    return join_row(out)
+
+
 def extract_field(text: str, name: str) -> str | None:
     """Value of a `**Name:** value` metadata field, or None if absent.
 

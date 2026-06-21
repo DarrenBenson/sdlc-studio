@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 55 |
+| Complete | 56 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -76,4 +76,4 @@
 | [CR-0054](CR0054-review-and-reframe-all-help-text-around-getting.md) | review and reframe all help text around getting-started and autosprint | Complete | High | Improvement | 2026-06-21 | -- |
 | [CR-0055](CR0055-gate-gains-a-duplicate-id-check-optional-provenance.md) | gate gains a duplicate-id check + optional provenance registration | Complete | High | Feature | 2026-06-21 | -- |
 | [CR-0056](CR0056-conformance-and-validate-flag-unresolved-placeholder-content.md) | conformance and validate flag unresolved placeholder content | Complete | Medium | Improvement | 2026-06-21 | -- |
-| [CR-0057](CR0057-unify-the-two-artifact-create-paths-and-share.md) | unify the two artifact create paths and share index helpers | Proposed | Medium | Improvement | 2026-06-21 | -- |
+| [CR-0057](CR0057-unify-the-two-artifact-create-paths-and-share.md) | unify the two artifact create paths and share index helpers | Complete | Medium | Improvement | 2026-06-21 | -- |

@@ -145,5 +145,28 @@ class FileTests(unittest.TestCase):
             self.assertNotIn("[CR-0001]", (cd / "_index.md").read_text(encoding="utf-8"))
 
 
+
+class ProvenanceAndDryRunTests(unittest.TestCase):
+    def test_filed_artifact_is_stamped(self) -> None:
+        # CR0057: the filer stamps like `artifact new`, so provenance check no longer
+        # false-flags filer-created artifacts.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); _seed_index(root, "bug")
+            r = ff.file_finding(root, "bug", "a defect",
+                                {"severity": "High", "summary": "s", "steps": "x", "fix": "y"})
+            self.assertIn("> **Created-by:** sdlc-studio", Path(r["path"]).read_text())
+
+    def test_dry_run_writes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); idx = _seed_index(root, "bug")
+            before = idx.read_text()
+            r = ff.file_finding(root, "bug", "preview only",
+                                {"severity": "Low", "summary": "s", "steps": "x", "fix": "y"},
+                                dry_run=True)
+            self.assertTrue(r["dry_run"])
+            self.assertFalse(Path(r["path"]).exists())   # no artifact written
+            self.assertEqual(idx.read_text(), before)    # index untouched
+
+
 if __name__ == "__main__":
     unittest.main()

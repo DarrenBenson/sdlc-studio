@@ -50,12 +50,17 @@ def _next_number(repo_root: Path, type_: str) -> int:
     return next_id.allocate_number(type_, repo_root)
 
 
+# Provenance stamp (CR0052/CR0057) - marks this artifact as tool-created, same as
+# `artifact new`, so `provenance check` no longer false-flags filer-created artifacts.
+_STAMP = "> **Created-by:** sdlc-studio file\n"
+
+
 def _render(type_: str, disp_id: str, title: str, today: str, f: dict) -> str:
     """A structured artifact body (required sections populated)."""
     if type_ == "bug":
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** Open\n> **Severity:** {f['severity']}\n"
-                f"> **Created:** {today}\n\n"
+                f"> **Created:** {today}\n{_STAMP}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
                 f"## Steps to Reproduce\n\n{f['steps']}\n\n"
                 f"## Proposed Fix\n\n{f['fix']}\n\n"
@@ -65,14 +70,14 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict) -> str:
         acs = "\n".join(f"- [ ] {a}" for a in f["acs"])
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** Proposed\n> **Priority:** {f['priority']}\n"
-                f"> **Type:** {f['ctype']}\n> **Date:** {today}\n\n"
+                f"> **Type:** {f['ctype']}\n> **Date:** {today}\n{_STAMP}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
                 f"## Acceptance Criteria\n\n{acs}\n\n"
                 f"## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
                 f"| {today} | audit | Raised |\n")
     options = "\n".join(f"- **{o}**" for o in f["options"])
     return (f"# {disp_id}: {title}\n\n"
-            f"> **Status:** Draft\n> **Date:** {today}\n\n"
+            f"> **Status:** Draft\n> **Date:** {today}\n{_STAMP}\n"
             f"## Summary\n\n{f['summary']}\n\n"
             f"## Design Options\n\n{options}\n\n"
             f"## Recommendation\n\n{f.get('recommendation', 'TBD - pending decision.')}\n\n"
@@ -80,18 +85,6 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict) -> str:
             f"| D1 | Act on this finding or keep status quo | Open |\n\n"
             f"## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
             f"| {today} | audit | Filed |\n")
-
-
-def _index_row(type_: str, disp_id: str, file_id: str, slug: str, title: str, f: dict) -> str:
-    link = f"[{disp_id}]({file_id}-{slug}.md)"
-    if type_ == "bug":
-        cells = [link, title, "Open", f["severity"], f["date"], f["date"]]
-    elif type_ == "cr":
-        cells = [link, title, "Proposed", f["priority"], f["ctype"], f["date"], "--"]
-    else:  # rfc
-        cells = [link, title, f.get("priority", "Medium"), "Draft", f.get("author", "audit"),
-                 f["date"], "--"]
-    return reconcile._join_row(cells)
 
 
 def append_index_row(repo_root: Path | str, type_: str, row_line: str) -> bool:
@@ -104,13 +97,10 @@ def append_index_row(repo_root: Path | str, type_: str, row_line: str) -> bool:
     if not index_path.exists():
         return False
     lines = index_path.read_text(encoding="utf-8").splitlines()
-    data_header = None
-    for i, ln in enumerate(lines):
-        cells = reconcile._table_cells(ln)
-        if cells and len(cells) > 2 and "id" in [c.lower() for c in cells]:
-            data_header = i
-    if data_header is None:
+    hdr = sdlc_md.find_data_header(lines)
+    if hdr is None:
         return False
+    data_header = hdr[0]
     rows_after = [j for j in range(data_header + 1, len(lines))
                   if lines[j].strip().startswith("| [")]
     pos = (max(rows_after) + 1) if rows_after else data_header + 2  # past header+separator
@@ -120,7 +110,8 @@ def append_index_row(repo_root: Path | str, type_: str, row_line: str) -> bool:
     return True
 
 
-def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict) -> dict:
+def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
+                 dry_run: bool = False) -> dict:
     """Allocate an ID, write a structured artifact, append its index row, recompute
     counts. Returns {id, path}. Raises ValueError on a missing required field."""
     if type_ not in TYPES:
@@ -141,9 +132,21 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict) ->
     path = root / rel_dir / f"{file_id}-{slug}.md"
     if path.exists():
         raise FileExistsError(path)
+    if dry_run:  # preview: write nothing (CR0057)
+        indexed = (root / rel_dir / "_index.md").exists()
+        return {"id": disp_id, "file_id": file_id, "path": str(path),
+                "indexed": indexed, "dry_run": True}
     path.write_text(_render(type_, disp_id, title, today, fields), encoding="utf-8")
-    indexed = append_index_row(root, type_,
-                               _index_row(type_, disp_id, file_id, slug, title, fields))
+    # One shared header-driven row builder for both create paths (CR0057): read the index's
+    # own columns and fill by name, identical to `artifact new`.
+    indexed = False
+    idx = root / rel_dir / "_index.md"
+    if idx.exists():
+        hdr = sdlc_md.find_data_header(idx.read_text(encoding="utf-8").splitlines())
+        if hdr:
+            link = f"[{disp_id}]({file_id}-{slug}.md)"
+            row = sdlc_md.row_from_header(hdr[1], link, title, spec["status"], fields)
+            indexed = append_index_row(root, type_, row)
     return {"id": disp_id, "file_id": file_id, "path": str(path), "indexed": indexed}
 
 
@@ -156,9 +159,10 @@ def cmd_file(args: argparse.Namespace) -> int:
         fields["acs"] = args.ac
     if args.option:
         fields["options"] = args.option
-    result = file_finding(args.root, args.type, args.title, fields)
+    result = file_finding(args.root, args.type, args.title, fields, dry_run=args.dry_run)
+    verb = "would file" if result.get("dry_run") else "filed"
     print(json.dumps(result, indent=2) if args.format == "json"
-          else f"filed {result['id']} -> {result['path']}")
+          else f"{verb} {result['id']} -> {result['path']}")
     return 0
 
 
@@ -185,6 +189,7 @@ def build_parser() -> argparse.ArgumentParser:
     f.add_argument("--recommendation", help="rfc recommendation")
     f.add_argument("--author", default="audit")
     f.add_argument("--root", default=".")
+    f.add_argument("--dry-run", action="store_true", dest="dry_run", help="preview; write nothing")
     f.add_argument("--format", choices=("text", "json"), default="text")
     f.set_defaults(func=cmd_file)
     r = sub.add_parser("rebuild", help="Recompute a type's index summary counts.")

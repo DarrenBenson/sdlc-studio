@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Unified artifact create paths (CR0057):** the two create paths (`artifact new` and the
+  finding filer `file_finding`) no longer diverge - the filer now writes the same provenance
+  stamp (so `provenance check` stops false-flagging filer-created artifacts), both build index
+  rows through one shared header-driven builder (`sdlc_md.row_from_header` + `find_data_header`
+  + `join_row`, also used by reconcile), and `--dry-run` (preview, write nothing) is available
+  on `artifact new`/`close`, `file_finding file`, and `pvd sync`.
 - **artifact new correctness (BG0022):** a story created for a non-existent epic now raises
   before writing any file (no silent orphan), and id allocation honours local files, lingering
   index rows, AND origin/main (`next_id.allocate_number`) - never re-issuing an id that exists

@@ -80,40 +80,8 @@ def _header_cells(root: Path, type_: str) -> list[str] | None:
     idx = Path(root) / sdlc_md.ARTIFACT_TYPES[type_][0] / "_index.md"
     if not idx.exists():
         return None
-    found = None
-    for ln in idx.read_text(encoding="utf-8").splitlines():
-        cells = reconcile._table_cells(ln)
-        if cells and len(cells) > 2 and "id" in [c.lower() for c in cells]:
-            found = cells  # last matching header (consistent with append_index_row)
-    return found
-
-
-def _row_from_header(header: list[str], link: str, title: str, status: str, f: dict) -> str:
-    """Build a data row matching the index's own columns - generic across types."""
-    out = []
-    for h in header:
-        hl = h.strip().lower()
-        if hl == "id":
-            out.append(link)
-        elif hl in ("title", "description", "feature", "name"):
-            out.append(title)
-        elif hl == "status":
-            out.append(status)
-        elif hl == "priority":
-            out.append(f.get("priority", "Medium"))
-        elif hl == "type":
-            out.append(f.get("ctype", "Feature"))
-        elif hl == "epic":
-            out.append(f.get("epic", "--"))
-        elif hl == "severity":
-            out.append(f.get("severity", "--"))
-        elif hl == "author":
-            out.append(f.get("author", "--"))
-        elif hl in ("created", "date", "raised", "updated"):
-            out.append(f["date"])
-        else:
-            out.append("--")
-    return reconcile._join_row(out)
+    found = sdlc_md.find_data_header(idx.read_text(encoding="utf-8").splitlines())
+    return found[1] if found else None
 
 
 def _find_epic(root: Path, epic_id: str) -> Path | None:
@@ -158,7 +126,8 @@ def _wire_story_to_epic(root: Path, epic_id: str, disp: str, title: str,
     return False
 
 
-def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = None) -> dict:
+def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = None,
+        dry_run: bool = False) -> dict:
     if type_ not in SPEC:
         raise ValueError(f"unknown type {type_!r} (expected one of {', '.join(SPEC)})")
     root = Path(repo_root)
@@ -179,22 +148,26 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
     path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / f"{file_id}-{slug}.md"
     if path.exists():
         raise FileExistsError(path)
+    if dry_run:  # preview: write nothing, report what would happen (CR0057)
+        return {"id": disp, "file_id": file_id, "path": str(path),
+                "indexed": _header_cells(root, type_) is not None,
+                "epic_linked": (type_ == "story") or None, "dry_run": True}
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(_render(type_, disp, title, f["date"], f), encoding="utf-8")
     header = _header_cells(root, type_)
     indexed = False
     if header:
-        row = _row_from_header(header, f"[{disp}]({file_id}-{slug}.md)", title,
-                               SPEC[type_]["status"], f)
+        row = sdlc_md.row_from_header(header, f"[{disp}]({file_id}-{slug}.md)", title,
+                                      SPEC[type_]["status"], f)
         indexed = file_finding.append_index_row(root, type_, row)
     linked = _wire_story_to_epic(root, f["epic"], disp, title, file_id, slug) \
         if type_ == "story" else None
     return {"id": disp, "file_id": file_id, "path": str(path),
-            "indexed": indexed, "epic_linked": linked}
+            "indexed": indexed, "epic_linked": linked, "dry_run": False}
 
 
 def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
-          metrics: dict | None = None) -> dict:
+          metrics: dict | None = None, dry_run: bool = False) -> dict:
     """Terminal-transition an artifact and cascade (reuse transition), then record a
     telemetry event (CR0051 / RFC0014 WS2). Telemetry is advisory - it never affects the
     close result (the recorder swallows its own failures)."""
@@ -203,6 +176,8 @@ def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
     if type_ is None:
         raise ValueError(f"cannot infer type from id {artifact_id!r}")
     st = status or SPEC[type_]["terminal"]
+    if dry_run:  # preview the transition target, write nothing, record nothing (CR0057)
+        return {"id": artifact_id, "type": type_, "to": st, "dry_run": True}
     result = transition.transition(repo_root, artifact_id, st)
     telemetry.record(repo_root, {"id": artifact_id, "type": type_, **(metrics or {})})
     return result
@@ -211,9 +186,10 @@ def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
 def cmd_new(args: argparse.Namespace) -> int:
     f = {k: v for k, v in {"epic": args.epic, "priority": args.priority, "ctype": args.ctype,
                            "severity": args.severity, "author": args.author}.items() if v}
-    r = new(args.root, args.type, args.title, f)
+    r = new(args.root, args.type, args.title, f, dry_run=args.dry_run)
+    verb = "would create" if r.get("dry_run") else "created"
     print(json.dumps(r, indent=2) if args.format == "json"
-          else f"created {r['id']} -> {r['path']} (indexed={r['indexed']}, epic_linked={r['epic_linked']})")
+          else f"{verb} {r['id']} -> {r['path']} (indexed={r['indexed']}, epic_linked={r['epic_linked']})")
     return 0
 
 
@@ -227,8 +203,9 @@ def cmd_close(args: argparse.Namespace) -> int:
         metrics["wall_time_s"] = int(args.wall_time_s)
     if args.stages:
         metrics["stages"] = args.stages
-    r = close(args.root, args.id, args.status, metrics or None)
-    print(json.dumps(r, indent=2) if args.format == "json" else f"closed {args.id}")
+    r = close(args.root, args.id, args.status, metrics or None, dry_run=args.dry_run)
+    verb = "would close" if r.get("dry_run") else "closed"
+    print(json.dumps(r, indent=2) if args.format == "json" else f"{verb} {args.id}")
     return 0
 
 
@@ -244,6 +221,7 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--severity", help="bug severity")
     n.add_argument("--author")
     n.add_argument("--root", default=".")
+    n.add_argument("--dry-run", action="store_true", dest="dry_run", help="preview; write nothing")
     n.add_argument("--format", choices=("text", "json"), default="text")
     n.set_defaults(func=cmd_new)
     c = sub.add_parser("close", help="Terminal-transition an artifact + cascade + record telemetry.")
@@ -254,6 +232,7 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--wall-time-s", dest="wall_time_s", help="run metric: wall time (telemetry)")
     c.add_argument("--stages", help="run metric: stages passed (telemetry)")
     c.add_argument("--root", default=".")
+    c.add_argument("--dry-run", action="store_true", dest="dry_run", help="preview; write nothing")
     c.add_argument("--format", choices=("text", "json"), default="text")
     c.set_defaults(func=cmd_close)
     return p
