@@ -168,7 +168,7 @@ my-skill/
 
 | Convention | Example |
 |------------|---------|
-| Use `{{placeholder}}` syntax | `{{engram_name}}`, `{{test_date}}` |
+| Use `{{placeholder}}` syntax | `{{profile_name}}`, `{{test_date}}` |
 | Include comments for complex sections | `<!-- Repeat for each test -->` |
 | Keep templates self-documenting | Add section headers even if brief |
 
@@ -189,7 +189,7 @@ description: "Extract text and tables from PDF files, fill forms, merge document
 When a skill is invoked via a command wrapper (`.claude/commands/*.md`), you can prefix the description with the command syntax for documentation clarity:
 
 ```yaml
-description: "/search [query] - Search engrams by name, slug, nationality, MBTI, or role. Use when looking up or finding engrams."
+description: "/search [query] - Search profiles by name, slug, nationality, MBTI, or role. Use when looking up or finding profiles."
 ```
 
 This pattern:
@@ -199,7 +199,7 @@ This pattern:
 
 **Command file** (`.claude/commands/search.md`):
 ```markdown
-/search [query] - Search engrams by name, slug, or filters
+/search [query] - Search profiles by name, slug, or filters
 
 ## Instructions
 Follow the skill instructions in `.claude/skills/library-search/SKILL.md`.
@@ -209,7 +209,7 @@ Follow the skill instructions in `.claude/skills/library-search/SKILL.md`.
 ```yaml
 ---
 name: library-search
-description: "/search [query] - Search engrams by name, slug, nationality, MBTI, or role. Use when looking up or finding engrams."
+description: "/search [query] - Search profiles by name, slug, nationality, MBTI, or role. Use when looking up or finding profiles."
 ---
 ```
 
@@ -228,9 +228,9 @@ description: Helps with documents
 ```markdown
 ## When to Use
 
-- "Run tests on this engram"
-- "Check if the engram passes validation"
-- When user wants to verify engram quality before deployment
+- "Run tests on this profile"
+- "Check if the profile passes validation"
+- When user wants to verify profile quality before deployment
 ```
 
 ### Bad: When to Use

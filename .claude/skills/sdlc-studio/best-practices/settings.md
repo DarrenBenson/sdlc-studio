@@ -143,16 +143,16 @@ Minimal safe starting point:
 }
 ```
 
-### Engram Project
+### Profile Project
 
 ```json
 {
   "permissions": {
     "allow": [
-      "Read(engrams/**)",
+      "Read(profiles/**)",
       "Read(scenarios/**)",
       "Read(realities/**)",
-      "Edit(engrams/**)",
+      "Edit(profiles/**)",
       "Bash(git :*)",
       "Bash(python3 :*)",
       "Bash(./scripts/*)"

@@ -173,14 +173,14 @@ Before writing any test code, complete this checklist:
 
 - [ ] **Read output templates**: Get exact section/header names from templates
   ```bash
-  grep "^##\|^###" prompts/user-manual-template.md
+  grep "^##\|^###" prompts/template.md
   ```
 
 - [ ] **Create verified import block FIRST**: Write and test imports before test code
   ```python
   # Test this imports correctly before proceeding
-  from api.models import Job, StageResult, HeadshotStatus
-  from api.services.headshot import HeadshotService, HeadshotResult
+  from api.models import Job, StageResult, ThumbnailStatus
+  from api.services.thumbnail import ThumbnailService, ThumbnailResult
   ```
 
 ---

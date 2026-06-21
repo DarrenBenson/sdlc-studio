@@ -236,17 +236,17 @@ For validation tests, check current schema version:
 
 ```python
 # BAD: Used outdated schema fields from old specs
-valid_engram = {
+valid_record = {
     "name": "Test",           # Old V1 field
-    "core_identity": {...},   # Old V1 field
+    "summary": {...},   # Old V1 field
 }
 
 # GOOD: Check api/services/validation.py for REQUIRED_TOP_LEVEL
-valid_engram = {
+valid_record = {
     "schema_version": "2.3.0",
     "id": "test-001",
     "slug": "test",
-    "identity_and_background": {...},  # V2.3.0 structure
+    "details": {...},  # V2.3.0 structure
 }
 ```
 

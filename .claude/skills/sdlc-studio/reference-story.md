@@ -347,17 +347,17 @@ Cohesion review results are stored as part of the review findings system:
    a. **Write precise AC** - not "returns data" but exact shapes:
 
       ```text
-      - Given an engram exists with slug "test-person"
-      - When I GET /engrams/test-person
+      - Given a profile exists with slug "sample-profile"
+      - When I GET /profiles/sample-profile
       - Then I receive 200 with JSON containing:
-        - slug: "test-person"
-        - name: string (extracted from engram file)
+        - slug: "sample-profile"
+        - name: string (extracted from profile file)
         - role: string
-        - category: "fictional" or "real"
-        - el_rating: string or null
-        - engram_content: string (full .engram file)
-        - psychometrics: object or null
-        - user_manual: string or null
+        - category: "draft" or "published"
+        - version: string or null
+        - content: string (full .profile file)
+        - metadata: object or null
+        - summary: string or null
         - labels: array of strings
       ```
 
@@ -366,8 +366,8 @@ Cohesion review results are stored as part of the review findings system:
       ```text
       | Scenario | Input | Expected |
       |----------|-------|----------|
-      | Not found | GET /engrams/nonexistent | 404, {"detail": "Engram not found: nonexistent"} |
-      | Invalid slug chars | GET /engrams/has spaces | 404 or 422 depending on routing |
+      | Not found | GET /profiles/nonexistent | 404, {"detail": "Profile not found: nonexistent"} |
+      | Invalid slug chars | GET /profiles/has spaces | 404 or 422 depending on routing |
       ```
 
    c. **Extract actual validation rules** from code:

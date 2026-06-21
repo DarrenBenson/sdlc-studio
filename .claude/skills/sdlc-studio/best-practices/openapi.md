@@ -34,9 +34,9 @@ Never remove old versions abruptly - deprecate with clear headers first.
 
 ## Resource Naming
 
-- **Use nouns**, not verbs: `/engrams` not `/getEngrams`
-- **Plural collections**: `/engrams`, `/users`, `/files`
-- **Consistent hierarchy**: `/engrams/{slug}/files/{filename}`
+- **Use nouns**, not verbs: `/profiles` not `/getProfiles`
+- **Plural collections**: `/profiles`, `/users`, `/files`
+- **Consistent hierarchy**: `/profiles/{slug}/files/{filename}`
 - **Lowercase with hyphens**: `/user-guides` not `/userGuides`
 
 ## HTTP Methods
@@ -101,19 +101,19 @@ class PaginatedResponse(BaseModel, Generic[T]):
     limit: int
     pages: int
 
-@router.get("/engrams")
-async def list_engrams(
+@router.get("/profiles")
+async def list_profiles(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     sort_by: str = Query("name"),
     order: str = Query("asc", pattern="^(asc|desc)$")
-) -> PaginatedResponse[EngramSummary]:
+) -> PaginatedResponse[ProfileSummary]:
     ...
 ```
 
 ## Query Parameters
 
-- **Filtering**: `?category=fictional&status=active`
+- **Filtering**: `?status=published&sort=created`
 - **Sorting**: `?sort_by=name&order=desc`
 - **Pagination**: `?page=1&limit=20`
 - **Search**: `?q=search+term`
@@ -124,15 +124,15 @@ Use components and `$ref` to avoid repetition:
 
 ```python
 # Define reusable models in models.py
-class EngramBase(BaseModel):
+class ProfileBase(BaseModel):
     name: str
     role: str
 
-class EngramCreate(EngramBase):
+class ProfileCreate(ProfileBase):
     slug: str
     category: str
 
-class EngramResponse(EngramBase):
+class ProfileResponse(ProfileBase):
     slug: str
     category: str
     created_at: datetime
@@ -174,10 +174,10 @@ Add descriptions to endpoints:
 
 ```python
 @router.get(
-    "/engrams/{slug}",
-    summary="Get engram by slug",
-    description="Retrieves full engram details including psychometrics and user manual.",
-    response_description="The engram details"
+    "/profiles/{slug}",
+    summary="Get profile by slug",
+    description="Retrieves full profile details including metadata and documentation.",
+    response_description="The profile details"
 )
 ```
 
@@ -189,7 +189,7 @@ For file uploads/downloads:
 from fastapi import UploadFile, File
 from fastapi.responses import FileResponse
 
-@router.post("/engrams/{slug}/files")
+@router.post("/profiles/{slug}/files")
 async def upload_file(
     slug: str,
     file: UploadFile = File(...),
@@ -197,7 +197,7 @@ async def upload_file(
 ):
     ...
 
-@router.get("/engrams/{slug}/files/{filename}")
+@router.get("/profiles/{slug}/files/{filename}")
 async def get_file(slug: str, filename: str):
     return FileResponse(path, filename=filename)
 ```

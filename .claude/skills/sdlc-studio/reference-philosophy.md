@@ -80,7 +80,7 @@ Only when tests pass against the existing implementation do you have a valid spe
 **Good (specification-style):**
 ```
 ### AC1: Search returns ranked results by relevance
-- Given the index contains engrams with slugs "alice-smith", "bob-jones", and "alice-wong"
+- Given the index contains profiles with slugs "alice-smith", "bob-jones", and "alice-wong"
 - When I GET /search?q=alice
 - Then I receive results with alice-smith and alice-wong
 - And alice-smith has match_score >= 0.9 (exact slug match)
@@ -104,28 +104,28 @@ Don't just note "handles errors". Document every edge case:
 
 ### API Contracts Must Be Precise {#api-contracts-precise}
 
-Not "returns engram data" but:
+Not "returns profile data" but:
 
 ```
-GET /engrams/{slug}
+GET /profiles/{slug}
 
 Response 200:
 {
   "slug": "string",           // URL-safe identifier
   "name": "string",           // Display name
   "role": "string",           // Job title or role
-  "category": "fictional|real",
-  "el_rating": "string|null", // EL-1 through EL-5, or null
-  "engram_content": "string", // Full .engram file content (JSON)
-  "psychometrics": object|null,
-  "user_manual": "string|null",
-  "headshot_path": "string|null",
+  "status": "draft|published",
+  "version": "string|null", // semver, or null
+  "content": "string", // Full .profile file content (JSON)
+  "metadata": object|null,
+  "summary": "string|null",
+  "image_path": "string|null",
   "labels": ["string"]
 }
 
 Response 404:
 {
-  "detail": "Engram not found: {slug}"
+  "detail": "Profile not found: {slug}"
 }
 ```
 

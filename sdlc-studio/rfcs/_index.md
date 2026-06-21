@@ -32,4 +32,4 @@
 | [RFC-0013](RFC0013-ecosystem-neutral-deploy-last-mile.md) | the deploy last-mile, without ecosystem lock-in | High | Draft | -- | 2026-06-21 | -- |
 | [RFC-0014](RFC0014-run-telemetry-learning-loop.md) | run telemetry + a learning loop | Medium | Draft | -- | 2026-06-21 | -- |
 | [RFC-0015](RFC0015-product-vision-document-multi-repo.md) | Product Vision Document - the multi-repo product layer | High | Draft | -- | 2026-06-21 | -- |
-| [RFC-0016](RFC0016-persona-engine-v2-charters-subagents.md) | Persona engine v2 - substrate-tiered review seats (charter / Engram) | High | Draft | -- | 2026-06-21 | -- |
+| [RFC-0016](RFC0016-persona-engine-v2-charters-subagents.md) | Persona engine v2 - substrate-tiered review seats (charter / authored identity) | High | Draft | -- | 2026-06-21 | -- |

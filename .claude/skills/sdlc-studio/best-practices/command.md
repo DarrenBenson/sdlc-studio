@@ -20,7 +20,7 @@ Before considering a command complete:
 - [ ] Clear instructions for AI execution
 - [ ] Examples showing common use cases
 - [ ] "See Also" links to related commands/skills
-- [ ] Added to `/engram-help` command list
+- [ ] Added to `/project-help` command list
 
 ## Structure
 
@@ -68,14 +68,14 @@ When this command is invoked:
 ### Good
 
 ```markdown
-/foundry-cleanup [archive|delete] - Clean up foundry/output/ folder
+/project-cleanup [archive|delete] - Clean up project/output/ folder
 
 ## Usage
 
 ```
-/foundry-cleanup           # Asks which action
-/foundry-cleanup archive   # Zip to foundry/archive/ then delete
-/foundry-cleanup delete    # Delete without archiving
+/project-cleanup           # Asks which action
+/project-cleanup archive   # Zip to project/archive/ then delete
+/project-cleanup delete    # Delete without archiving
 ```
 ```
 
@@ -97,7 +97,7 @@ This command cleans things up.
 | Missing usage syntax | Unclear how to invoke | Add `## Usage` with exact syntax |
 | Instructions as prose | Hard to follow | Numbered steps with clear actions |
 | No examples | User guesses at usage | Add 2-3 concrete examples |
-| Missing from help | Undiscoverable | Update `/engram-help` |
+| Missing from help | Undiscoverable | Update `/project-help` |
 | Duplicates skill docs | Maintenance burden | Reference skill, don't duplicate |
 
 ## Commands vs Skills
@@ -113,7 +113,7 @@ This command cleans things up.
 
 ## Help Index Commands
 
-Help commands (like `/engram-help`) are special - they're reference indexes, not actions.
+Help commands (like `/project-help`) are special - they're reference indexes, not actions.
 
 **Template:** `.claude/templates/command/help-index.md`
 
@@ -154,14 +154,14 @@ Help commands (like `/engram-help`) are special - they're reference indexes, not
 
 ## Naming Convention
 
-- Use kebab-case: `foundry-cleanup`, `framework-test`
-- Group related commands with prefix: `foundry-*`, `chat-*`
-- Be specific: `/foundry-regrade` not `/regrade`
+- Use kebab-case: `project-cleanup`, `framework-test`
+- Group related commands with prefix: `project-*`, `chat-*`
+- Be specific: `/project-regrade` not `/regrade`
 
 ## Registration
 
 After creating a command:
 
 1. Test it works: `/command-name --help` or similar
-2. Add to `.claude/commands/engram-help.md`
+2. Add to `.claude/commands/project-help.md`
 3. Update the project's agent-instructions file (`AGENTS.md` / `CLAUDE.md`) commands table if significant

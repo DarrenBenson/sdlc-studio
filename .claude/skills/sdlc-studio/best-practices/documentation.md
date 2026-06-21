@@ -96,26 +96,26 @@ Example 2...
 ### Good
 
 ```markdown
-## Creating an Engram
+## Creating a Profile
 
-Engrams are created through the foundry pipeline. This guide walks through
+Profiles are created through the build pipeline. This guide walks through
 the three creation modes.
 
 ### Mode 1: Interactive Creation
 
 Use when you have a general concept but no source material.
 
-1. Run `/foundry-create "description"`
+1. Run `/profile-create "description"`
 2. Answer the calibration questions
-3. Review the generated engram
+3. Review the generated profile
 ```
 
 ### Bad
 
 ```markdown
-## Engrams
+## Profiles
 
-Engrams are JSON files. They have many fields. You can create them
+Profiles are JSON files. They have many fields. You can create them
 in different ways. See the schema for details.
 ```
 
