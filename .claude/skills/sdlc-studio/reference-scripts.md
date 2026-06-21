@@ -132,6 +132,15 @@ emits the same per-function scores into the map.
 - `scan`: list functions over the cognitive threshold (`complexity.cognitive_high`, default 15)
 - `assess --files ...`: a change's blast-radius difficulty band + refactor-first hotspots (used by `code plan`)
 
+### `gate.py`
+
+Portable, ecosystem-neutral CI quality gate (CR0046). Aggregates the deterministic checks
+(conformance, reconcile drift, validate, constitution, integrity) into one consolidated
+pass/fail and exits non-zero only when a blocking check fails. `--only` / `--skip` select
+checks; constitution blocks only when `constitution.enforce` is set. No network, no CI
+assumption - runnable in any CI or a pre-commit hook (see `help/gate.md` for wiring). The
+check registry is injectable, so the aggregation logic is unit-tested without a full repo.
+
 ### `version_check.py`
 
 Skill version check + self-update signal (CR0044). Compares the installed version

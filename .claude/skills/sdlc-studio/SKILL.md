@@ -107,6 +107,7 @@ Claude loads files progressively based on task needs:
 | Adversarial audit (weakness-hunt over the artifact graph) | reference-audit.md | templates/automation/audit-finder.md | scripts/file_finding.py |
 | Schema upgrade (project artifacts) | reference-upgrade.md | reference-config.md | - |
 | Skill self-update (check + upgrade the install) | reference-skill-update.md | scripts/version_check.py | help/skill-update.md |
+| Portable CI quality gate (run the checks in any CI) | help/gate.md | scripts/gate.py | reference-scripts.md |
 | Project orchestration | reference-project.md | reference-epic.md | reference-config.md |
 | Agentic execution | reference-agentic-lessons.md | reference-epic.md | - |
 | Autosprint (Goal-Driven Development loop) | reference-autosprint.md | help/autosprint.md | reference-project.md |
@@ -188,6 +189,7 @@ approach decisions. The full index is in `help/references.md`.
 | `autosprint` | Goal-Driven Development loop: a prioritised batch driven to a goal |
 | `plan` | Claude Code plan-file lifecycle (list, archive) |
 | `reconcile` | Detect and fix status drift across all artifacts |
+| `gate` | Portable, ecosystem-neutral CI quality gate over the deterministic checks |
 | `skill-update` | Check for and install a newer SDLC Studio release (the skill itself) |
 | `status` | Visual dashboard: Requirements, Code, Tests health |
 | `hint` | Single actionable next step |

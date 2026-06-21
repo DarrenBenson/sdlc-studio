@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 25 |
+| Done | 26 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
-| **Total** | **30** |
+| **Total** | **31** |
 
 ## All Stories
 
@@ -52,3 +52,4 @@
 | [US0028](US0028-decompose-apply-type.md) | decompose apply_type | Done | EP0005 | 2026-06-20 | 2026-06-20 |
 | [US0029](US0029-validate-no-ac-adoption-cutoff.md) | validate no-ac honours the adoption cutoff | Done | EP0005 | 2026-06-20 | 2026-06-20 |
 | [US0030](US0030-skill-version-check.md) | skill version check + self-update signal | Done | EP0008 | 2026-06-21 | 2026-06-21 |
+| [US0031](US0031-portable-ci-gate.md) | portable CI quality gate | Done | EP0008 | 2026-06-21 | 2026-06-21 |

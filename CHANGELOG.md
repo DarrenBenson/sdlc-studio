@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Portable CI quality gate (CR0046):** `scripts/gate.py` aggregates the
+  deterministic checks (conformance, reconcile drift, validate, constitution, integrity)
+  into one consolidated pass/fail and exits non-zero only on a blocking failure; `--only`
+  /`--skip` select checks, constitution blocks only when enforced, and a wrong/missing
+  `--root` fails rather than passing vacuously. No network, no CI/cloud assumption -
+  runnable in any CI or a pre-commit hook (`help/gate.md` shows GitHub Actions / GitLab /
+  shell wiring).
+
 ## [2.2.0] - 2026-06-21
 
 Self-update: the skill now notices new releases itself. On the first `status`/`hint`
