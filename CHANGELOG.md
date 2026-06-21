@@ -40,6 +40,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   per-unit run outcome to the gitignored `sdlc-studio/.local/telemetry.jsonl` (local-only, no
   network, advisory - never raises into the loop; only whitelisted non-None fields written).
   Feeds the deferred calibrate step + RFC0009 WS5.
+- **Close cascade records telemetry (CR0051, RFC0014 WS2):** `artifact close` records a
+  telemetry event (id, type, plus `--iterations`/`--verdict`/`--wall-time-s`/`--stages`)
+  after the transition - advisory, never affects the close. Run data now accrues
+  automatically on every unit close.
 
 ## [2.2.0] - 2026-06-21
 

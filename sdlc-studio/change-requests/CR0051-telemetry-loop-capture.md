@@ -1,6 +1,6 @@
 # CR-0051: loop writes a telemetry record per unit close (RFC0014 WS2)
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Feature
 > **Requester:** Darren Benson (RFC decision session)
@@ -20,11 +20,12 @@ Wire the autosprint/close cascade to call `telemetry record` when a unit reaches
 
 ## Acceptance Criteria
 
-- [ ] Closing a unit appends a telemetry record; the loop never fails if telemetry recording fails (guarded).
-- [ ] Unit-tested where code; independent critic APPROVE.
+- [x] Closing a unit appends a telemetry record; the loop never fails if telemetry recording fails (guarded).
+- [x] Unit-tested where code; independent critic APPROVE.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-21 | Autosprint (CR0051) | Complete - US0037: close records a telemetry event; story+CR closed by the tool, each recording its own event (meta-dogfood) |
 | 2026-06-21 | Darren Benson | Raised - RFC decision session |

@@ -62,6 +62,10 @@ Natural language resolves to the same: "do an autosprint to deliver all open bug
    review), **regardless of `--goal`**. This is the sprint review and it produces
    the conformance `reviewed` signal. For `--goal design` it reviews the produced
    backlog; for `--goal done` the delivered increment.
+   On each unit **close** (`artifact close`), a telemetry event (id, type, plus any run
+   metrics passed: `--iterations`/`--verdict`/`--wall-time-s`/`--stages`) is appended to
+   the gitignored `sdlc-studio/.local/telemetry.jsonl` (CR0051 / RFC0014 WS2). Advisory -
+   it never affects the close; it feeds the deferred calibrate step (WS3) + RFC0009 WS5.
 7. **Retro (CR0018).** The closing gate also writes a sprint retro to
    `sdlc-studio/retros/` (delivered, blocked, lessons) and reads the recent retros
    plus `lessons recall` at the **start** - the learning loop. The retro is a

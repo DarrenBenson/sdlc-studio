@@ -73,6 +73,7 @@ stdlib, read-only over the workspace, unit-tested.
 - [x] [US0027: code plan complexity estimation + refactor-first](../stories/US0027-code-plan-complexity-estimation.md) (CR0029, RFC0009 WS2)
 - [x] [US0035: deterministic artifact create and close cascade](../stories/US0035-deterministic-artifact-create-and-close-cascade.md)
 - [x] [US0036: telemetry recorder and local jsonl schema](../stories/US0036-telemetry-recorder-and-local-jsonl-schema.md)
+- [x] [US0037: close cascade records telemetry per unit](../stories/US0037-close-cascade-records-telemetry-per-unit.md)
 
 ## Revision History
 

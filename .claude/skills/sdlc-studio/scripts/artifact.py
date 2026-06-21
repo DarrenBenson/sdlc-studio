@@ -22,6 +22,7 @@ from lib import sdlc_md  # noqa: E402
 import file_finding  # noqa: E402  (reuse _slug, _next_number, append_index_row)
 import reconcile  # noqa: E402
 import transition  # noqa: E402
+import telemetry  # noqa: E402  (CR0051: record a telemetry event on close)
 
 # Per-type create status, terminal (close) status, and disp-id form (cr/rfc carry a dash).
 SPEC = {
@@ -174,14 +175,19 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
             "indexed": indexed, "epic_linked": linked}
 
 
-def close(repo_root: Path | str, artifact_id: str, status: str | None = None) -> dict:
-    """Terminal-transition an artifact and cascade (reuse transition)."""
+def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
+          metrics: dict | None = None) -> dict:
+    """Terminal-transition an artifact and cascade (reuse transition), then record a
+    telemetry event (CR0051 / RFC0014 WS2). Telemetry is advisory - it never affects the
+    close result (the recorder swallows its own failures)."""
     prefix = "".join(c for c in artifact_id if c.isalpha()).upper()
     type_ = _PREFIX_TYPE.get(prefix)
     if type_ is None:
         raise ValueError(f"cannot infer type from id {artifact_id!r}")
     st = status or SPEC[type_]["terminal"]
-    return transition.transition(repo_root, artifact_id, st)
+    result = transition.transition(repo_root, artifact_id, st)
+    telemetry.record(repo_root, {"id": artifact_id, "type": type_, **(metrics or {})})
+    return result
 
 
 def cmd_new(args: argparse.Namespace) -> int:
@@ -194,7 +200,16 @@ def cmd_new(args: argparse.Namespace) -> int:
 
 
 def cmd_close(args: argparse.Namespace) -> int:
-    r = close(args.root, args.id, args.status)
+    metrics = {}
+    if args.iterations is not None:
+        metrics["iterations"] = int(args.iterations)
+    if args.verdict:
+        metrics["critic_verdict"] = args.verdict
+    if args.wall_time_s is not None:
+        metrics["wall_time_s"] = int(args.wall_time_s)
+    if args.stages:
+        metrics["stages"] = args.stages
+    r = close(args.root, args.id, args.status, metrics or None)
     print(json.dumps(r, indent=2) if args.format == "json" else f"closed {args.id}")
     return 0
 
@@ -213,9 +228,13 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--root", default=".")
     n.add_argument("--format", choices=("text", "json"), default="text")
     n.set_defaults(func=cmd_new)
-    c = sub.add_parser("close", help="Terminal-transition an artifact + cascade.")
+    c = sub.add_parser("close", help="Terminal-transition an artifact + cascade + record telemetry.")
     c.add_argument("--id", required=True)
     c.add_argument("--status", help="override the per-type terminal status")
+    c.add_argument("--iterations", help="run metric: iterations to green (telemetry)")
+    c.add_argument("--verdict", help="run metric: critic verdict (telemetry)")
+    c.add_argument("--wall-time-s", dest="wall_time_s", help="run metric: wall time (telemetry)")
+    c.add_argument("--stages", help="run metric: stages passed (telemetry)")
     c.add_argument("--root", default=".")
     c.add_argument("--format", choices=("text", "json"), default="text")
     c.set_defaults(func=cmd_close)

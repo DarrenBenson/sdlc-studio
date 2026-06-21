@@ -161,6 +161,20 @@ class CloseTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 artifact.close(Path(d), "ZZ0001")
 
+    def test_close_records_telemetry_event(self) -> None:
+        import telemetry
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+            _epic(repo)
+            r = artifact.new(repo, "story", "tel close", {"epic": "EP0001"})
+            artifact.close(repo, r["id"], metrics={"iterations": 2, "critic_verdict": "approve"})
+            recs = telemetry.read_all(repo)
+            self.assertEqual(recs[-1]["id"], r["id"])
+            self.assertEqual(recs[-1]["type"], "story")
+            self.assertEqual(recs[-1]["iterations"], 2)
+            self.assertEqual(recs[-1]["critic_verdict"], "approve")
+
     def test_close_transitions_to_terminal(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
