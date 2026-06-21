@@ -7,11 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.1] - 2026-06-22
+
 ### Added
 
-- **Charter review fast-follows:** the review-seat charter template notes that RFC0016/0017 are the
-  *framework's* RFCs (don't cite as project RFCs); the agent-instructions starter documents the
-  one-canonical-summary index convention and the `Verify: manual` / never-hand-stamp rule.
+- **Charter review fast-follow:** the agent-instructions starter documents the one-canonical-summary
+  index convention and the `Verify: manual` / never-hand-stamp rules.
 
 ### Fixed
 
@@ -34,6 +35,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Consumer-copied templates carry no framework tracking IDs:** the persona template, review-seat
+  charter, `config-defaults.yaml`, and `product-manifest.yaml` no longer cite the framework's internal
+  RFC/CR numbers in their comments, so a project that copies them gets no framework-provenance noise.
 - **Disclosure backlog driven to zero (CR0064):** fixed the 28 real gaps the disclosure check found
   in the skill's own source (24 scripts `chmod +x`, 4 `Load when:` markers, 2 section files indexed)
   and refined the check to clear 38 false-positives - help/<type>.md is reachable via the

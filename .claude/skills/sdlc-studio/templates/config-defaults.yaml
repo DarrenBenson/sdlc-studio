@@ -55,14 +55,14 @@ review:
 # manual: 0 for the whole repository. See reference-verify.md.
 require_ac_verification: false
 
-# Project constitution (RFC0005). When `sdlc-studio/constitution.md` exists, its
+# Project constitution. When `sdlc-studio/constitution.md` exists, its
 # machine-checkable principles are asserted by `constitution check`. Advisory by
 # default - set enforce: true to make a violation fail the check (exit non-zero), the
 # same incremental-adoption pattern as require_ac_verification. See reference-doctrine.md.
 constitution:
   enforce: false
 
-# Skill update check (CR0044). On the first `status`/`hint` of a session the skill
+# Skill update check. On the first `status`/`hint` of a session the skill
 # compares the installed version against the latest GitHub release and prints a one-line
 # notice if newer (dismiss with `skill-update` decline; quiet until a newer release).
 # On by default; set enabled: false to disable the network check entirely. ttl_hours
@@ -71,7 +71,7 @@ version_check:
   enabled: true
   ttl_hours: 24
 
-# Code-complexity thresholds (RFC0009). cognitive_high flags a function as a hotspot
+# Code-complexity thresholds. cognitive_high flags a function as a hotspot
 # (SonarQube's 15); churn_high is the commits-touching-a-file threshold for the
 # churn-weighted composite defect-risk band (churn is weighted ~3x complexity, per the
 # 2026-06-21 calibration). See reference-test-best-practices.md#complexity-test-risk.
@@ -125,7 +125,7 @@ contract_tables:
 #                    soak window before promoting to "live".
 release_strategy: pr-required
 
-# Artifact provenance (CR0052). `new` stamps tool-created artifacts; `provenance check`
+# Artifact provenance. `new` stamps tool-created artifacts; `provenance check`
 # flags un-stamped ones past adopt_after (advisory unless enforce). `remake` backfills the
 # stamp. Standalone/advisory by default - not wired into the gate.
 provenance:

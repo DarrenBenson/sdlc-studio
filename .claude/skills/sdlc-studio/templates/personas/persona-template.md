@@ -1,5 +1,5 @@
 <!--
-Template: Cooper goal-directed persona (RFC0017)
+Template: Cooper goal-directed persona
 Usage: Copy and customise. A persona is "well-formed" when every section below is filled.
 Related: reference-persona.md, help/persona.md
 -->

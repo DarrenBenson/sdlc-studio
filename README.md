@@ -1,6 +1,6 @@
 # SDLC Studio
 
-**Version 2.4.0** | MIT Licence
+**Version 2.4.1** | MIT Licence
 
 **Set a goal and acceptance criteria; the agent drives the proven software
 lifecycle to it - and proves the code against it.** SDLC Studio brings back the
@@ -152,10 +152,11 @@ criteria can carry executable `Verify:` lines that `reconcile --verify`
 actually runs. A blind-review gate checks that a plan's tasks logically
 satisfy every AC *before* implementation.
 
-**Determinism in scripts, judgement in the model.** Eight stdlib-only
-Python helpers (census, status, validation, ID allocation, repo
-indexing, AC verification, GitHub sync, plan/lessons management) with
-180 unit tests do the mechanical work; the model does the thinking.
+**Determinism in scripts, judgement in the model.** A suite of stdlib-only
+Python helpers (census, status, validation, ID allocation, repo indexing, AC
+verification, the portable quality gate, deterministic artifact create/close,
+GitHub sync, plan/lessons management) with 590+ unit tests do the mechanical
+work; the model does the thinking.
 
 **Agentic execution.** `epic implement --agentic` analyses the story
 dependency graph and hub-file overlap, then runs safe waves of parallel

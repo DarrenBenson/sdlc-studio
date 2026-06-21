@@ -1,6 +1,6 @@
 # SDLC Studio Reference - Reconcile
 
-> **Count blocks: one canonical summary per index.** `reconcile --apply` recomputes the counts of the **global** summary only - the `| Status | Count |` table that carries a `**Total**` row, or the sole summary in the file. Scoped per-epic/per-section `Status | Count` tables (no `Total`) are left to the author; do **not** add a `Total` row to a scoped count table or reconcile will treat it as the global summary (BG0026).
+> **Count blocks: one canonical summary per index.** `reconcile --apply` recomputes the counts of the **global** summary only - the `| Status | Count |` table that carries a `**Total**` row, or the sole summary in the file. Scoped per-epic/per-section `Status | Count` tables (no `Total`) are left to the author; do **not** add a `Total` row to a scoped count table or reconcile will treat it as the global summary.
 
 Detailed workflow for the reconcile command that detects and fixes status drift across all artifacts.
 

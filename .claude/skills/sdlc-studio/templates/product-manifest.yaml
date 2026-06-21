@@ -1,4 +1,4 @@
-# sdlc-studio/product/manifest.yaml - the repos that form this product (CR0047, RFC0015).
+# sdlc-studio/product/manifest.yaml - the repos that form this product.
 # Lives beside the master PVD. Read by `pvd sync` (read-only projection into each repo)
 # and `product reconcile` (cross-repo feature-map traceability). Degrades if a repo is
 # absent - it is a coordination manifest, not a hard dependency.
