@@ -3,6 +3,8 @@ Template: Review-seat charter (RFC0016)
 Usage: Copy and customise for a review SEAT - a role that critiques artefacts (the Three Amigos:
 Product / Engineering / QA, plus PM / PO owners). This is NOT a Cooper design persona (who the
 product is *for*, RFC0017/persona-template.md) - it is who *reviews the work*.
+NOTE: RFC0016/RFC0017 are the SDLC Studio FRAMEWORK's RFCs (the model's provenance) - do not cite
+them in a filled charter as if they were your project's own RFCs.
 Related: reference-consult.md, reference-workflow-personas.md
 -->
 # {{seat_name}} - {{Product | Engineering | QA | PM | PO}} seat

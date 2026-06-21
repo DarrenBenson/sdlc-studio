@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Charter review fast-follows:** the review-seat charter template notes that RFC0016/0017 are the
+  *framework's* RFCs (don't cite as project RFCs); the agent-instructions starter documents the
+  one-canonical-summary index convention and the `Verify: manual` / never-hand-stamp rule.
+
 ### Fixed
 
 - **verify_ac handles prose/manual Verify lines (BG0028):** a Verify line led by `manual`/`manually`

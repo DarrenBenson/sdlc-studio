@@ -53,6 +53,12 @@ In order, before tagging any release:
 Triage and **fix** the findings before tagging. No exceptions - even a genuine
 production hotfix files a `bug` (rationale + `Verify:` expression + audit pin).
 
+**Index & verification conventions.** Keep **one canonical status summary** per `_index.md` - the
+`| Status | Count |` table with a `**Total**` row, which `reconcile` maintains. Per-section / per-epic
+count tables are author-maintained; do not give them a `Total` row (reconcile would treat them as the
+global summary). For a human-checked AC, write `Verify: manual <what to check>` so it is counted
+*manual*, never shelled out - and never hand-stamp `Verified:` for an AC a machine did not check.
+
 Every substantive change flows through the skill:
 **CR / RFC -> Epic -> Story -> code plan -> code implement -> code verify ->
 reconcile -> review.** No ad-hoc coding. Default to TDD: author the `Verify:`
