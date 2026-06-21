@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **verify_ac handles prose/manual Verify lines (BG0028):** a Verify line led by `manual`/`manually`
+  is counted **manual** (never executed), so a human-checked AC can't be shelled out, time out, and
+  report a false `failed`. Real commands are unaffected. `Verify: manual <description>` documented.
 - **persona checks ignore non-design files (BG0027):** `project upgrade`'s old-model detector and
   `validate personas` no longer flag a `consult-guide`, a README, or the `seats/` review-seat charters
   as old/ill-formed design personas - so a migrated project stops reporting a phantom persona item.

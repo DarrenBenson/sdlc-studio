@@ -337,6 +337,14 @@ class StoryReport:
     flips: list[dict] = field(default_factory=list)  # pending/applied (ac, old_state, new_state)
 
 
+def _is_manual(expression: str) -> bool:
+    """True for a human-checked AC authored as `Verify: manual ...` (or `manually ...`) - counted
+    manual, never executed (BG0028). Keyed on the leading token so a real command like `pnpm test`
+    is unaffected."""
+    toks = expression.strip().lstrip("`*_ ").split()
+    return bool(toks) and toks[0].strip("`*:.,").lower() in {"manual", "manually"}
+
+
 def verify_story(
     story_path: Path,
     dry_run: bool,
@@ -350,7 +358,10 @@ def verify_story(
     report = StoryReport(path=str(story_path), ac_count=len(blocks))
 
     for block in blocks:
-        if block.verifier is None:
+        # No verifier, or a human-checked AC authored as `Verify: manual ...` -> count it MANUAL,
+        # never shell it out. Shelling prose timed out and reported "failed" instead of "manual"
+        # (BG0028): "manual/unverified" is honest; "failed" is not.
+        if block.verifier is None or _is_manual(block.verifier):
             report.manual += 1
             continue
 

@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 1 |
+| Open | 0 |
 | In Progress | 0 |
-| Fixed | 27 |
+| Fixed | 28 |
 | Verified | 0 |
 | Closed | 0 |
 | Won't Fix | 0 |
@@ -46,4 +46,4 @@
 | [BG0025](BG0025-project-upgrade-dry-run-omits-the-stale-version.md) | project_upgrade dry-run omits the stale .version bump that --apply performs | Fixed | Medium | 2026-06-21 | 2026-06-21 |
 | [BG0026](BG0026-reconcile-count-block-rewrite-stamps-global-total-into.md) | reconcile count-block rewrite stamps global total into per-epic count sub-tables | Fixed | High | 2026-06-22 | 2026-06-22 |
 | [BG0027](BG0027-persona-checks-flag-non-persona-files-and-review.md) | persona checks flag non-persona files and review-seat charters as old/ill-formed | Fixed | Medium | 2026-06-22 | 2026-06-22 |
-| [BG0028](BG0028-verify-ac-shells-out-prose-verify-lines-and.md) | verify_ac shells out prose Verify lines and times out reporting failed not manual | Open | Medium | 2026-06-22 | 2026-06-22 |
+| [BG0028](BG0028-verify-ac-shells-out-prose-verify-lines-and.md) | verify_ac shells out prose Verify lines and times out reporting failed not manual | Fixed | Medium | 2026-06-22 | 2026-06-22 |

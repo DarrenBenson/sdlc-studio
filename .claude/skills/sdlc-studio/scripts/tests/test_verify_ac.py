@@ -440,6 +440,34 @@ class EvalVerbTests(unittest.TestCase):
         self.assertFalse(r.ok)
         self.assertEqual(r.kind, "eval")
 
+    def test_manual_verify_line_counted_not_shelled(self) -> None:
+        # BG0028: `Verify: manual ...` is counted manual, never executed (shelling timed out -> failed)
+        tmp = Path(tempfile.mkdtemp(prefix="verify_ac_manual_"))
+        try:
+            story = tmp / "US0001-x.md"
+            story.write_text(
+                "# US0001: x\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n"
+                "### AC1: human check\n- **Given** a thing\n- **Verify:** manual confirm the dashboard loads\n\n"
+                "### AC2: mixed\n- **Given** y\n- **Verify:** manual + `pnpm test`\n", encoding="utf-8")
+            rep = verify_ac.verify_story(story, dry_run=True, timeout=5, repo_root=tmp)
+            self.assertEqual(rep.manual, 2)
+            self.assertEqual(rep.failed, 0)   # not shelled, not failed
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_real_command_not_treated_as_manual(self) -> None:
+        tmp = Path(tempfile.mkdtemp(prefix="verify_ac_cmd_"))
+        try:
+            story = tmp / "US0002-y.md"
+            story.write_text(
+                "# US0002: y\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n"
+                "### AC1: runs\n- **Given** y\n- **Verify:** shell echo ok\n", encoding="utf-8")
+            rep = verify_ac.verify_story(story, dry_run=True, timeout=5, repo_root=tmp)
+            self.assertEqual(rep.manual, 0)   # a real command is not manual
+            self.assertEqual(rep.verified, 1)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
 
 if __name__ == "__main__":
     unittest.main()

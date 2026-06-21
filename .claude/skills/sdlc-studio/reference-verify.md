@@ -1,5 +1,9 @@
 # SDLC Studio Reference - Executable Acceptance Criteria
 
+> **Human-checked ACs:** author the Verify line as `Verify: manual <what to check>`. A line led
+> by `manual` (or `manually`) is counted **manual** - never executed - so a prose check can't be
+> shelled out and time out into a false `failed` (BG0028).
+
 Acceptance criteria in story files can declare a `Verify:` expression
 that `/sdlc-studio reconcile --verify` executes against the live
 codebase. Each AC gains a machine-maintained `Verified:` state so the
