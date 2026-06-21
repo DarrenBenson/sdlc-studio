@@ -9,12 +9,12 @@
 | Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 56 |
+| Complete | 57 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **57** |
+| **Total** | **58** |
 
 ## All Changes
 
@@ -77,3 +77,4 @@
 | [CR-0055](CR0055-gate-gains-a-duplicate-id-check-optional-provenance.md) | gate gains a duplicate-id check + optional provenance registration | Complete | High | Feature | 2026-06-21 | -- |
 | [CR-0056](CR0056-conformance-and-validate-flag-unresolved-placeholder-content.md) | conformance and validate flag unresolved placeholder content | Complete | Medium | Improvement | 2026-06-21 | -- |
 | [CR-0057](CR0057-unify-the-two-artifact-create-paths-and-share.md) | unify the two artifact create paths and share index helpers | Complete | Medium | Improvement | 2026-06-21 | -- |
+| [CR-0058](CR0058-cooper-goal-directed-persona-template-and-reference-persona.md) | Cooper goal-directed persona template and reference-persona model RFC0017 WS1 | Complete | High | Feature | 2026-06-21 | -- |

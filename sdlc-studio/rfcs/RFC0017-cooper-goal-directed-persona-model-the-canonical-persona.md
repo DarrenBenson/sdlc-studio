@@ -1,6 +1,6 @@
 # RFC-0017: Cooper goal-directed persona model (the canonical persona model)
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Priority:** High
 > **Author:** Darren Benson
 > **Date:** 2026-06-21
@@ -165,14 +165,21 @@ persona file as the bar, no research/evidence machinery, no identity compiler.
 
 ## Decision
 
-> *Filled on acceptance.* Chosen option + rationale + the CRs spawned.
+**Outcome:** **Accepted (Option A).** The canonical persona model is Cooper goal-directed: the full
+cast, End + Experience goals, a well-formed persona file as the bar - no research/evidence
+apparatus, no authored-identity machinery. Resolves the canonical model RFC0016 D1/D6 awaited.
 
-**Outcome:** TBD
-**Rationale:** TBD
-**Spawned CRs:** TBD
+**Rationale:** goal-directed personas are a better design target (adoption) and good input to an
+external authored-identity system (RFC0016) without sdlc-studio reinventing one. Keeping the scope
+to "a well-formed file" keeps the model small and honest.
+
+**Spawned CRs:** CR0058 (WS1: template + reference-persona model) - **Complete**. WS2 (generate
+emits the goal-directed draft - largely folded into CR0058's reference update), WS3 (optional
+well-formedness check, D4), WS4 (migration of existing personas, D2) - raise as needed.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-21 | Darren Benson | Raised - Cooper goal-directed model: full cast, End + Experience goals; the deliverable is a well-formed persona file (no research/evidence apparatus, no identity compiler - personas are good input to an external authored-identity system, nothing more); resolves RFC0016 D1/D6 |
+| 2026-06-21 | Autosprint (RFC0017) | Accepted (Option A); WS1 delivered as CR0058 (Complete) |

@@ -1,108 +1,60 @@
 <!--
-Template: Enhanced Persona
-Usage: Copy and customise for project-specific personas
+Template: Cooper goal-directed persona (RFC0017)
+Usage: Copy and customise. A persona is "well-formed" when every section below is filled.
 Related: reference-persona.md, help/persona.md
 -->
 # {{full_name}}
 
+> A specific person, not a type. The Primary is the one the product is designed *for*.
+
 ## Quick Reference
 
 | Attribute | Value |
-|-----------|-------|
-| **Category** | {{team/stakeholder}} |
-| **Amigo** | {{product/engineering/qa/n-a}} |
-| **Role** | {{role_title}} |
-| **Age** | {{age}} |
-| **Experience** | {{years}} years |
-| **Technical Level** | {{novice/intermediate/advanced/expert}} |
+| --- | --- |
+| **Cast role** | {{primary / secondary / supplemental / negative / customer / served}} |
+| **Role** | {{job_title}} |
+| **Context** | {{where and how they work - one line}} |
 
-## Identity
+## Who They Are
 
-### Who They Are
+{{2-3 sentences: a specific individual - name, role, and what shapes how they approach this
+product. Concrete and particular, never a demographic average.}}
 
-{{2-3 sentence background describing who this person is, their career path, and what shaped their perspective}}
+## End Goals
 
-### Personality Traits
+*What they are trying to accomplish, most important first. The design is judged against these.*
 
-- **{{trait_1}}:** {{how this manifests in their work}}
-- **{{trait_2}}:** {{how this manifests in their work}}
-- **{{trait_3}}:** {{how this manifests in their work}}
+1. {{the most important thing they want to achieve}}
+2. {{the next}}
+3. {{...}}
 
-### Communication Style
+## Experience Goals
 
-{{Brief description of how they communicate}}
+*How they want to feel while using it.*
 
-- **Formality:** {{formal/casual/adaptive}}
-- **Verbosity:** {{concise/moderate/detailed}}
-- **Directness:** {{blunt/diplomatic/measured}}
+- {{e.g. in control, not rushed}}
+- {{e.g. confident they have not broken anything}}
 
-## Professional Context
+## Behaviours & Context
 
-### Background
+- **Environment:** {{device, setting, interruptions, constraints}}
+- **Frequency:** {{how often, under what pressure, they use it}}
+- **Proficiency:** {{what they know well, what they avoid}}
 
-{{Career history relevant to their current role and perspective}}
+## Frustrations
 
-### Expertise Areas
-
-- {{area_1}}
-- {{area_2}}
-- {{area_3}}
-
-### Blind Spots
-
-- {{limitation_1}}
-- {{limitation_2}}
-
-## Psychology
-
-### Primary Goals
-
-{{What success looks like to them - what they're trying to achieve}}
-
-### Hidden Concerns
-
-{{Worries they may not voice openly but influence their decisions}}
-
-### Decision Drivers
-
-- **Values:** {{what matters most to them}}
-- **Evidence:** {{what type of evidence convinces them}}
-- **Red Flags:** {{what makes them nervous or sceptical}}
-
-### Frustrations
+*What trips them up with the current tools or status quo.*
 
 - {{frustration_1_with_context}}
 - {{frustration_2_with_context}}
 
-### Delights
+## Scenario
 
-- {{what_makes_them_enthusiastic_1}}
-- {{what_makes_them_enthusiastic_2}}
+*A short narrative of this persona using the product to reach an End goal, in context.*
 
-## Interaction Guide
-
-### Questions They Typically Ask
-
-- "{{typical_question_1}}"
-- "{{typical_question_2}}"
-- "{{typical_question_3}}"
-
-### What Makes Them Approve
-
-{{Criteria and evidence that leads to their approval}}
-
-### What Makes Them Push Back
-
-{{Triggers that cause them to raise concerns or reject}}
-
-### Representative Quote
-
-> "{{characteristic_quote_that_captures_their_mindset}}"
-
-## Backstory
-
-{{A specific past experience - project, incident, or situation - that shaped their current viewpoint. This humanises the persona and explains why they hold certain positions.}}
+{{One short paragraph: the trigger, what they do, the outcome they need. Concrete.}}
 
 ---
 
-*Consult this persona when: {{situations where this persona's perspective is most valuable}}*
+- **Negative persona:** state who this is and **why we are deliberately not designing for them**.
+- **Customer / Served:** the End goals are the buyer's, or the affected party's, not a user's.

@@ -8,33 +8,39 @@ Detailed workflows for User Persona creation, management, and consultation.
 
 # Persona Framework
 
-## Categories {#categories}
+## The cast (goal-directed design personas) {#categories}
 
-Personas are organised into two categories:
+A persona is a **specific, goal-directed person** the product serves - defined by its **goals**,
+not demographics (Alan Cooper's model, RFC0017). Use the full **cast**; the **Primary** is the one
+the product is designed *for*.
 
-### Team Personas
+| Cast role | What it is |
+| --- | --- |
+| **Primary** | The single precise individual the product is designed for (one per product/epic) |
+| **Secondary** | Mostly served by the primary design, with one or two extra needs |
+| **Supplemental** | Fully covered by the primary design; listed for completeness |
+| **Negative** | The anti-persona - explicitly *not* designed for |
+| **Customer** | Buys or authorises but does not use |
+| **Served** | Affected by the product without using it |
 
-Internal team members who create and review artefacts. Organised by Three Amigos:
+Only **Primary + Negative** are mandatory; add the rest as the product needs them.
 
-| Amigo | Focus | Example Roles |
-|-------|-------|---------------|
-| **Product** | What and Why | PM, BA, Product Owner |
-| **Engineering** | How | Senior Dev, Architect, DevOps |
-| **QA** | What If | QA Lead, Test Automation |
+**Goals define the persona.** Each carries ordered **End goals** (what they accomplish, most
+important first - the design is judged against these) and **Experience goals** (how they want to
+feel). The full schema is under [Enhanced Persona Structure](#enhanced-structure).
 
-### Stakeholder Personas
-
-External stakeholders who use the product or influence requirements:
-
-| Category | Focus | Example Roles |
-|----------|-------|---------------|
-| **Users** | Day-to-day usage | Power User, Novice, Accessibility |
-| **Business** | Organisational impact | Executive, Operations |
-| **Technical** | Non-functional concerns | Security, Compliance |
+> **Design personas vs review seats.** This cast is the product's *users* - who you design for.
+> The internal *review seats* that critique artefacts (the Three Amigos: Product / Engineering /
+> QA) are a separate concern - their substrate and consult mechanics are RFC0016. A goal-directed
+> design persona is good input to that system, but is not the same thing.
 
 ---
 
 ## Archetype Personas {#archetypes}
+
+> These are **review-seat** seeds (consult roles that critique artefacts - RFC0016), not the
+> goal-directed design cast above. Design personas describe the product's users; review seats
+> describe who reviews the work.
 
 **Archetype seeds** (role + one-line disposition). The skill ships these seeds plus
 `templates/personas/persona-template.md`; `persona create` generates the full persona
@@ -80,61 +86,51 @@ seed and customise.
 
 ## /sdlc-studio persona create {#persona-create-workflow}
 
-Interactive creation of rich, detailed personas.
+Interactive creation of a goal-directed, well-formed persona (the Cooper model, RFC0017).
 
 1. **Check Existing**
    - Check if `sdlc-studio/personas/` directory exists
    - If exists without `--force`: ask to add or replace
 
-2. **Select Category**
-   Ask: "Is this a Team persona or Stakeholder persona?"
-   - Team: Ask which amigo (Product/Engineering/QA)
-   - Stakeholder: Ask type (User/Business/Technical)
+2. **Choose Cast Role**
+   Ask which role in the cast: Primary / Secondary / Supplemental / Negative / Customer / Served.
+   Start with the **Primary** (the one the product is designed for); only Primary + Negative are
+   mandatory.
 
 3. **Gather Identity**
-   - Full name (humanising, memorable)
-   - Age and career stage
-   - Role/job title
-   - Years of experience
-   - Technical proficiency level
+   - Full name (a specific, memorable individual - not a type)
+   - Role / job title
+   - One-line context (where and how they work)
 
-4. **Gather Personality**
-   - 3 key personality traits with descriptions
-   - Communication style (formality, verbosity, directness)
+4. **Gather End Goals**
+   - What they are trying to accomplish, as an **ordered** list (most important first)
+   - These are the design target - the product is judged against them
 
-5. **Gather Professional Context**
-   - Background/career history (2-3 sentences)
-   - Expertise areas (3-5 items)
-   - Blind spots (2-3 items)
+5. **Gather Experience Goals**
+   - How they want to feel while using it (in control, unhurried, not made to feel stupid)
 
-6. **Gather Psychology**
-   - Primary goals (what success looks like)
-   - Hidden concerns (worries they may not voice)
-   - Decision drivers (values, evidence types, red flags)
-   - Frustrations (3-5 items)
-   - Delights (2-3 items)
+6. **Gather Behaviours & Context**
+   - Environment (device, setting, interruptions, constraints)
+   - Frequency / pressure of use
+   - Proficiency (what they know well, what they avoid)
 
-7. **Gather Interaction Guide**
-   - Questions they typically ask (3-5)
-   - What makes them approve
-   - What makes them push back
-   - Representative quote
+7. **Gather Frustrations**
+   - What trips them up with the current tools or status quo
 
-8. **Gather Backstory**
-   - A specific past experience that shapes their viewpoint
+8. **Gather a Scenario**
+   - A short narrative of the persona using the product to reach an End goal, in context
 
 9. **Offer Archetype Start**
-   Before detailed questions, offer: "Would you like to start from an archetype and customise?"
-   - If yes: generate from the archetype seed (#archetypes) + `persona-template.md`, then ask what to change
-   - If no: Proceed with full questionnaire
+   Offer: "Start from an archetype seed and customise?" - if yes, seed from `#archetypes` +
+   `persona-template.md`, then refine to the cast role and goals above.
 
 10. **Write Persona File**
-    - Use `templates/personas/persona-template.md`
-    - Write to `sdlc-studio/personas/[category]/[name].md`
+    - Use `templates/personas/persona-template.md` (fill every section - that is "well-formed")
+    - Write to `sdlc-studio/personas/[name].md`
     - Update `sdlc-studio/personas/index.md`
 
 11. **Ask for More**
-    After each persona, ask to add another.
+    After each persona, ask to add another (e.g. the Negative persona, then Secondary).
 
 ---
 
@@ -162,15 +158,16 @@ Reverse engineer personas from existing artefacts.
    ```
 
 3. **Interactive Enrichment**
-   For each persona:
-   - "Is this a Team persona or Stakeholder?"
-   - "What's their typical day like?"
+   For each persona, fill the Cooper schema:
+   - "Which cast role - Primary, Secondary, Supplemental, Negative, Customer, Served?"
+   - "What are they trying to accomplish, most important first?" (ordered End goals)
+   - "How do they want to feel using it?" (Experience goals)
+   - "What's their environment and how often do they use it?" (behaviours & context)
    - "What frustrates them about current solutions?"
-   - "How do they make decisions?"
-   - "Any backstory that shapes their viewpoint?"
+   - "Walk me through one time they'd use this." (scenario)
 
 4. **Write Persona Files**
-   - Mark as [GENERATED FROM PRD]
+   - The generated file is a draft; the author fleshes it to **well-formed** (every section filled)
    - Write individual files
    - Update index
 
@@ -190,15 +187,16 @@ Reverse engineer personas from existing artefacts.
 
 2. **Build Persona Drafts**
    For each user type found:
-   - Map to role name
-   - Infer technical proficiency from UI complexity
-   - Draft goals from permissions/features available
+   - Assign a cast role (the main one is usually the Primary)
+   - Draft ordered End goals from the permissions / features available to that type
+   - Infer behaviours & context (proficiency) from UI complexity
 
-3. **Validate and Enrich**
-   Present drafts, ask for corrections and additional detail.
+3. **Enrich to Well-Formed**
+   Present drafts, ask for corrections and the missing Cooper sections (Experience goals,
+   frustrations, a scenario).
 
 4. **Write Persona Files**
-   - Mark as [INFERRED FROM CODE]
+   - The generated file is a draft; the author fleshes it to well-formed
    - Write individual files
    - Update index
 
@@ -232,12 +230,12 @@ Import existing persona markdown files.
    - Check for required sections
    - Warn about missing fields
 
-3. **Categorise**
-   Ask: "Is this a Team or Stakeholder persona?"
-   - Determine amigo/type
+3. **Assign Cast Role**
+   Ask which cast role it fills (Primary / Secondary / Supplemental / Negative / Customer /
+   Served), and note any sections missing for it to be well-formed.
 
 4. **Write to Project**
-   - Copy to appropriate directory
+   - Copy into `sdlc-studio/personas/`
    - Update index
 
 ---
@@ -249,29 +247,22 @@ Display all personas for current project.
 1. **Read Index**
    - Load `sdlc-studio/personas/index.md`
 
-2. **Display Summary**
+2. **Display Summary** (grouped by cast role)
    ```
-   TEAM PERSONAS (Three Amigos)
+   PRIMARY (the design target)
+     Emma Wilson (Power User) - file a claim in under two minutes
 
-   Product:
-     Sarah Chen (PM) - Strategic decisions, scope control
-     Alex Rivera (BA) - Requirements clarity
+   SECONDARY
+     Tom Bradley (Occasional User) - same flow, needs more guidance
 
-   Engineering:
-     Marcus Johnson (Senior Dev) - Technical quality
+   NEGATIVE (not designed for)
+     Batch-integrator - wants a bulk API, deliberately out of scope
 
-   QA:
-     Priya Sharma (QA Lead) - Test strategy
-
-   STAKEHOLDER PERSONAS
-
-   Users:
-     Emma Wilson (Power User) - Efficiency needs
-     Tom Bradley (Novice) - Onboarding experience
-
-   Business:
-     James Mitchell (Exec) - ROI, timelines
+   CUSTOMER / SERVED
+     James Mitchell (Buyer) - ROI, rollout risk
    ```
+
+   Flag any persona that is not yet **well-formed** (missing a schema section).
 
 ---
 
@@ -285,14 +276,15 @@ Review and update existing personas.
 
 2. **Gather Updates**
    For each persona:
-   - "Any changes to role or context?"
-   - "New concerns or frustrations?"
-   - "Updated decision drivers?"
+   - "Any changes to cast role or context?"
+   - "Have the End goals changed, or their order?"
+   - "New frustrations, or a better scenario?"
+   - "Is it still well-formed (every section filled)?"
    - "Should this persona be retired?"
 
 3. **Check for New**
-   - "Are there user types not covered?"
-   - "Any new team members to represent?"
+   - "Are there user types not covered by the cast?"
+   - "Is the Negative persona still right (who are we deliberately not serving)?"
 
 4. **Update Files**
    - Apply changes
@@ -304,16 +296,22 @@ Review and update existing personas.
 
 # Enhanced Persona Structure {#enhanced-structure}
 
-## Required Sections
+## Required Sections (a well-formed persona)
+
+A persona is **well-formed** when it has all of (the Cooper goal-directed schema, RFC0017):
 
 | Section | Purpose |
-|---------|---------|
-| Quick Reference | At-a-glance summary table |
-| Identity | Who they are, personality, communication |
-| Professional Context | Background, expertise, blind spots |
-| Psychology | Goals, concerns, decision drivers |
-| Interaction Guide | Questions, approval/rejection triggers |
-| Backstory | Humanising past experience |
+| --- | --- |
+| Quick Reference | cast role, job title, one-line context |
+| Who They Are | a specific named individual, not a demographic average |
+| End Goals | ordered - what they accomplish; the design is judged against these |
+| Experience Goals | how they want to feel using it |
+| Behaviours & Context | environment, frequency, proficiency |
+| Frustrations | what trips them up with the status quo |
+| Scenario | a short narrative of the persona reaching an End goal in context |
+
+"Well-formed" is **structural** (the file has these sections), not evidential - sdlc-studio does
+not require research backing, and builds no authored-identity machinery (RFC0017).
 
 ## Template Location
 
@@ -347,22 +345,15 @@ Review and update existing personas.
 ```
 sdlc-studio/
   personas/
-    index.md                    # Project persona index
-    team/
-      product/
-        sarah-chen-pm.md
-      engineering/
-        marcus-johnson-senior-dev.md
-      qa/
-        priya-sharma-qa-lead.md
-    stakeholders/
-      users/
-        emma-wilson-power-user.md
-      business/
-        james-mitchell-exec.md
-      technical/
-        david-park-security.md
+    index.md                    # Project persona index (cast role per persona)
+    emma-wilson-power-user.md   # Primary
+    tom-bradley-occasional.md   # Secondary
+    batch-integrator.md         # Negative (deliberately not designed for)
+    james-mitchell-buyer.md     # Customer
 ```
+
+A flat `personas/` directory; each file declares its cast role in its Quick Reference. (Design
+personas only - review seats live with the consult workflow, RFC0016.)
 
 ---
 

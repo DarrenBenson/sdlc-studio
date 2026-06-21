@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Cooper goal-directed persona model (CR0058, RFC0017 WS1):** the persona template and
+  reference-persona model move from demographic categories to Alan Cooper's goal-directed model -
+  a full cast (Primary / Secondary / Supplemental / Negative / Customer / Served), ordered End
+  goals + Experience goals, and a **well-formed persona file** as the bar (structural, not
+  research-gated). Design personas (the product's users) are distinguished from review seats
+  (the Three Amigos, RFC0016). No research/evidence apparatus and no authored-identity machinery -
+  a goal-directed persona is good input to an external identity system, nothing sdlc-studio builds.
 - **Unified artifact create paths (CR0057):** the two create paths (`artifact new` and the
   finding filer `file_finding`) no longer diverge - the filer now writes the same provenance
   stamp (so `provenance check` stops false-flagging filer-created artifacts), both build index

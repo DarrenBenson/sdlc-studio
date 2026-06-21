@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 3 |
+| Draft | 2 |
 | In Review | 0 |
-| Accepted | 11 |
+| Accepted | 12 |
 | Superseded | 0 |
 | Withdrawn | 3 |
 | **Total** | **17** |
@@ -33,4 +33,4 @@
 | [RFC-0014](RFC0014-run-telemetry-learning-loop.md) | run telemetry + a learning loop | Medium | Accepted | -- | 2026-06-21 | CR0050-CR0051 |
 | [RFC-0015](RFC0015-product-vision-document-multi-repo.md) | Product Vision Document - the multi-repo product layer | High | Accepted | -- | 2026-06-21 | CR0047-CR0049 |
 | [RFC-0016](RFC0016-persona-engine-v2-charters-subagents.md) | Persona engine v2 - substrate-tiered review seats (charter / authored identity) | High | Draft | -- | 2026-06-21 | -- |
-| [RFC-0017](RFC0017-cooper-goal-directed-persona-model-the-canonical-persona.md) | Cooper goal-directed persona model the canonical persona model | High | Draft | Darren Benson | 2026-06-21 | -- |
+| [RFC-0017](RFC0017-cooper-goal-directed-persona-model-the-canonical-persona.md) | Cooper goal-directed persona model the canonical persona model | High | Accepted | Darren Benson | 2026-06-21 | -- |
