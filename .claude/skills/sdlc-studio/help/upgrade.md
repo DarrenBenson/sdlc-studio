@@ -24,6 +24,22 @@ Upgrade project artifacts from legacy (v1) to modular (v2) schema.
 4. **Updates indexes** to simplified format
 5. **Creates version file** to track schema version
 
+## Related: `/sdlc-studio project upgrade` (conventions)
+
+`upgrade` (above) is the v1 -> v2 doc-shape transform. **`project upgrade`** is the broader
+convention migration a long-lived project needs when the skill moves on - it detects the gap,
+auto-corrects the safe set (scaffold `.config.yaml` with a provenance cutoff, scaffold/bump
+`.version`, reconcile drift), and **reports** the judgement items (old personas -> Cooper / review
+seats, AGENTS refresh, missing `Verify:`). `skill-update` offers it after a version bump.
+
+```bash
+/sdlc-studio project upgrade               # dry-run: the migration plan (auto vs judgement)
+/sdlc-studio project upgrade --apply       # perform only the safe deterministic corrections
+```
+
+Dry-run by default; `--apply` is explicit; nothing destructive; idempotent; never files CRs. See
+`reference-upgrade.md#project-upgrade-workflow`.
+
 ## Flags
 
 | Flag | Description |

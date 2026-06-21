@@ -353,6 +353,18 @@ ships with the skill); project-tier writes stay in `.local/`. Full workflow:
 
 ## Orchestration, checks & helpers
 
+### `project_upgrade.py`
+
+Migrate a CONSUMING project to the current skill conventions (CR0062), the project-side complement
+to `skill-update` (which updates the tool, not the project). `detect` reports the version/convention
+gap (project `sdlc-studio/.version` vs the installed skill); the dry-run (default) prints a migration
+plan split into **auto-correctable** (scaffold `.config.yaml` with a `provenance.adopt_after` cutoff
+so existing artefacts are exempt, scaffold/bump `.version`, `reconcile` index/status drift) and
+**needs-judgement** (old personas -> Cooper model / review-seat charters, AGENTS hygiene, missing
+`Verify:`/AC - reported, never auto-applied, never filed as CRs). `--apply` performs only the safe
+deterministic set; idempotent. Reuses reconcile/validate/next_id/version_check. `skill-update` offers
+it after a version bump.
+
 ### `audit.py`
 
 Adversarial audit / tranche pre-flight (RFC0002). `check` grooms a batch for readiness - weak-AC, unmet-deps, already-terminal, link-integrity - before the triage STOP, so work never starts on a unit that would pass the gates vacuously.

@@ -1,0 +1,163 @@
+"""Unit tests for project_upgrade.py - migrate a consuming project to current conventions (CR0062)."""
+from __future__ import annotations
+
+import importlib.util
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+SCR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(SCR))
+
+
+def _load():
+    spec = importlib.util.spec_from_file_location("project_upgrade", SCR / "project_upgrade.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["project_upgrade"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+pu = _load()
+import version_check  # noqa: E402
+INSTALLED = version_check.installed_version(version_check.skill_root()) or "2.3.0"
+
+
+def _project(d, *, version=None, personas=None, story_id=None):
+    """Minimal consuming project under tmp dir `d`. version=(schema, skill) writes .version."""
+    sd = Path(d) / "sdlc-studio"
+    sd.mkdir(parents=True, exist_ok=True)
+    if version is not None:
+        schema, skill = version
+        (sd / ".version").write_text(
+            f"schema_version: {schema}\nskill_version: \"{skill}\"\n", encoding="utf-8")
+    if story_id is not None:
+        sdir = sd / "stories"; sdir.mkdir(exist_ok=True)
+        (sdir / f"US{story_id:04d}-x.md").write_text(
+            f"# US{story_id:04d}: x\n\n> **Status:** Done\n", encoding="utf-8")
+    if personas:  # personas = list of (relpath, body)
+        for rel, body in personas:
+            f = sd / "personas" / rel
+            f.parent.mkdir(parents=True, exist_ok=True)
+            f.write_text(body, encoding="utf-8")
+    return sd
+
+
+class DetectTests(unittest.TestCase):
+    def test_no_version_is_behind(self):
+        with tempfile.TemporaryDirectory() as d:
+            _project(d)
+            self.assertTrue(pu.detect(d)["behind"])
+
+    def test_current_not_behind(self):
+        with tempfile.TemporaryDirectory() as d:
+            _project(d, version=(pu.CURRENT_SCHEMA, INSTALLED))
+            self.assertFalse(pu.detect(d)["behind"])
+
+    def test_old_schema_is_behind(self):
+        with tempfile.TemporaryDirectory() as d:
+            _project(d, version=(1, INSTALLED))
+            self.assertTrue(pu.detect(d)["behind"])
+
+
+class AuditTests(unittest.TestCase):
+    def test_flags_missing_config_and_version(self):
+        with tempfile.TemporaryDirectory() as d:
+            _project(d)
+            kinds = [f["kind"] for f in pu.audit(d)["auto"]]
+            self.assertIn("missing-config", kinds)
+            self.assertIn("missing-version", kinds)
+
+    def test_old_nested_personas_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            _project(d, personas=[("team/product/sarah.md", "# Sarah\n\n## Psychology\n\nx\n")])
+            self.assertTrue(any(f["kind"] == "personas" for f in pu.audit(d)["manual"]))
+
+    def test_old_persona_headings_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            _project(d, personas=[("emma.md", "# Emma\n\n## Backstory\n\nx\n")])
+            self.assertTrue(pu._old_persona_model(Path(d) / "sdlc-studio"))
+
+    def test_cooper_persona_not_flagged_as_old(self):
+        with tempfile.TemporaryDirectory() as d:
+            body = ("# Maya\n\n## Quick Reference\n\n| **Cast role** | Primary |\n\n"
+                    "## Who They Are\n\nx\n## End Goals\n\nx\n## Experience Goals\n\nx\n"
+                    "## Behaviours & Context\n\nx\n## Frustrations\n\nx\n## Scenario\n\nx\n")
+            _project(d, personas=[("maya.md", body)])
+            self.assertFalse(pu._old_persona_model(Path(d) / "sdlc-studio"))
+
+
+class ApplyTests(unittest.TestCase):
+    def test_apply_creates_config_with_cutoff_and_version(self):
+        with tempfile.TemporaryDirectory() as d:
+            _project(d, story_id=5)  # max id -> cutoff 5
+            actions = pu.apply(d)
+            sd = Path(d) / "sdlc-studio"
+            self.assertTrue((sd / ".config.yaml").exists())
+            self.assertIn("adopt_after: 5", (sd / ".config.yaml").read_text())
+            self.assertTrue((sd / ".version").exists())
+            self.assertIn(f'skill_version: "{INSTALLED}"', (sd / ".version").read_text())
+            self.assertTrue(any("config.yaml" in a for a in actions))
+
+    def test_apply_idempotent(self):
+        with tempfile.TemporaryDirectory() as d:
+            _project(d, version=(pu.CURRENT_SCHEMA, INSTALLED))
+            pu.apply(d)
+            self.assertEqual(pu.apply(d), [])  # second run is a no-op
+
+    def test_apply_updates_stale_version(self):
+        with tempfile.TemporaryDirectory() as d:
+            _project(d, version=(pu.CURRENT_SCHEMA, "1.0.0"))
+            actions = pu.apply(d)
+            self.assertIn(f'skill_version: "{INSTALLED}"', (Path(d) / "sdlc-studio" / ".version").read_text())
+            self.assertTrue(any("updated" in a and ".version" in a for a in actions))
+
+    def test_dry_run_writes_nothing(self):
+        with tempfile.TemporaryDirectory() as d:
+            _project(d)
+            import hashlib
+            def snap():
+                return {str(f): hashlib.sha256(f.read_bytes()).hexdigest()
+                        for f in Path(d).rglob("*") if f.is_file()}
+            before = snap()
+            pu.detect(d); pu.audit(d)            # read-only paths
+            pu.main(["--root", d, "--format", "json"])  # dry-run (no --apply)
+            pu.main(["--root", d])
+            self.assertEqual(before, snap())     # byte-identical: dry-run writes nothing
+
+
+class SafetyAndReconcileTests(unittest.TestCase):
+    def test_apply_refuses_non_project(self):
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(FileNotFoundError):
+                pu.apply(d)                       # no sdlc-studio/ dir
+            self.assertEqual(pu.main(["--root", d, "--apply"]), 1)  # CLI exits 1, no scaffold
+            self.assertFalse((Path(d) / "sdlc-studio").exists())
+
+    def test_apply_preserves_existing_config(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d, version=(pu.CURRENT_SCHEMA, INSTALLED))
+            (sd / ".config.yaml").write_text("# custom\nprovenance:\n  enforce: true\n", encoding="utf-8")
+            pu.apply(d)
+            self.assertEqual((sd / ".config.yaml").read_text(), "# custom\nprovenance:\n  enforce: true\n")
+
+    def test_apply_reports_reconcile_fix(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d, version=(pu.CURRENT_SCHEMA, INSTALLED), story_id=1)  # file Status: Done
+            (sd / "stories" / "_index.md").write_text(
+                "# Index\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [US0001](US0001-x.md) | x | In Progress |\n", encoding="utf-8")  # row drifts from file
+            actions = pu.apply(d)
+            self.assertTrue(any("reconcil" in a for a in actions))  # the fix is reported, not silent
+            self.assertIn("Done", (sd / "stories" / "_index.md").read_text())
+
+    def test_current_version_missing_config_still_applies(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d, version=(pu.CURRENT_SCHEMA, INSTALLED))  # current, but no .config.yaml
+            self.assertEqual(pu.main(["--root", d, "--apply"]), 0)
+            self.assertTrue((sd / ".config.yaml").exists())          # not stranded by the "behind" gate
+
+
+if __name__ == "__main__":
+    unittest.main()

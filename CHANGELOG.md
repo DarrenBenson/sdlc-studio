@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`project upgrade` - migrate a consuming project to current conventions (CR0062):** `skill-update`
+  updates the tool; `project upgrade` (`scripts/project_upgrade.py`) updates a consuming PROJECT's
+  artefacts. It detects the version/convention gap and reports a migration plan split into
+  auto-correctable (scaffold `.config.yaml` with a `provenance.adopt_after` cutoff, scaffold/bump
+  `.version`, reconcile drift - applied only with `--apply`) and needs-judgement (old personas ->
+  Cooper / review-seat charters, AGENTS refresh, missing `Verify:` - reported, never auto-applied,
+  never filed as CRs). Dry-run by default, idempotent; skill-update offers it after a version bump.
+
 ## [2.3.0] - 2026-06-21
 
 ### Added

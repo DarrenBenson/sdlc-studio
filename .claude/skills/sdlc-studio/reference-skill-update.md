@@ -47,6 +47,12 @@ runs `skill-update` to act on it. The check is on by default, opt-out via
 5. **Tell the user to reload** so the new version activates (the running session keeps the
    old one until reloaded).
 
+   Then **offer a project upgrade** if the consuming project is behind the new skill: run
+   `python3 "$CLAUDE_SKILL_DIR/scripts/project_upgrade.py" --root <project>` (dry-run); if it
+   reports BEHIND, surface the one-line gap and suggest `/sdlc-studio project upgrade` to migrate
+   the project's artefacts (config, provenance cutoff, index drift, and a report of the
+   judgement items). Never auto-applies - see `reference-upgrade.md#project-upgrade-workflow`.
+
 6. **On decline, snooze** so the notice does not nag until a newer release:
 
    ```bash
@@ -58,8 +64,9 @@ runs `skill-update` to act on it. The check is on by default, opt-out via
 - Scope detection reads the running script's path: a tool dir directly in `$HOME` is a
   user install; otherwise it is a project (`.agents/` is the shared agents target).
 - The version compared is the latest **published GitHub release tag**, not `main`.
-- This never changes a project's `sdlc-studio/` artifacts; for schema migration use
-  `upgrade` (`reference-upgrade.md`).
+- This never changes a project's `sdlc-studio/` artifacts directly; to migrate a project to the
+  new conventions use `project upgrade` (`reference-upgrade.md#project-upgrade-workflow`), which
+  skill-update offers after a bump.
 
 ## See Also
 

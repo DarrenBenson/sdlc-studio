@@ -266,6 +266,33 @@ When `--dry-run` is specified:
 
 ---
 
+## /sdlc-studio project upgrade - convention migration {#project-upgrade-workflow}
+
+`skill-update` updates the **skill** (the tool); `project upgrade` migrates a **consuming project's
+artefacts** to what the new skill expects (CR0062). It is broader than the schema transform above:
+it also covers the convention drift a long-lived project accumulates (no `.config.yaml`, old
+personas, missing provenance, stale AGENTS.md, missing `Verify:` lines). The schema `upgrade` (the
+v1 -> v2 doc-shape transform) is one part; if the project is schema v1, run `/sdlc-studio upgrade`
+first, then `project upgrade` for the conventions.
+
+Backed by `scripts/project_upgrade.py`. **Dry-run by default; `--apply` performs only the safe
+deterministic set; nothing destructive; idempotent.**
+
+1. **Detect** the gap: `project_upgrade.py --root <project>` reads `sdlc-studio/.version` (schema +
+   skill) vs the installed skill. "Already current" -> stop.
+2. **Dry-run plan** (default): the migration report, split into
+   - **Auto-correctable** (applied on `--apply`): scaffold `sdlc-studio/.config.yaml` (with
+     `provenance.adopt_after` = the highest existing id, so existing artefacts are exempt - not
+     mass-stamped), scaffold or bump `sdlc-studio/.version`, and `reconcile` index/status drift.
+   - **Needs judgement** (reported, **never auto-applied, never filed as CRs**): old personas ->
+     the Cooper model (`persona-template.md`) and review-seat charters (`review-seat-charter.md`);
+     AGENTS.md/CLAUDE.md refresh from `templates/agent-instructions.md` **preserving project
+     sections**; missing `Verify:` lines and informal AC; an optional `constitution.md`.
+3. **Confirm, then `--apply`** the auto-correctable set.
+4. **Work the report** by hand for the judgement items (the agent-assisted steps - rewrite
+   personas, refresh AGENTS, backfill Verify), guided by this file.
+5. **Run the gate** (`scripts/gate.py`) - the residual is the judgement work still to do.
+
 ## Backward Compatibility
 
 ### v2 Skill Reading v1 Artifacts

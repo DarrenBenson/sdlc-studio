@@ -9,12 +9,12 @@
 | Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 60 |
+| Complete | 61 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **61** |
+| **Total** | **62** |
 
 ## All Changes
 
@@ -81,3 +81,4 @@
 | [CR-0059](CR0059-persona-well-formedness-check-cast-role-aware-advisory.md) | Persona well-formedness check cast-role-aware advisory RFC0017 WS3 | Complete | Medium | Feature | 2026-06-21 | -- |
 | [CR-0060](CR0060-review-seat-charters-and-isolated-subagent-consults-rfc0016.md) | Review-seat charters and isolated-subagent consults RFC0016 lean | Complete | High | Feature | 2026-06-21 | -- |
 | [CR-0061](CR0061-stakes-scaled-autosprint-review-depth-token-trim.md) | Stakes-scaled autosprint review depth token trim | Complete | Medium | Improvement | 2026-06-21 | -- |
+| [CR-0062](CR0062-project-upgrade-migrate-a-consuming-project-to-current.md) | project upgrade migrate a consuming project to current conventions offered by skill-update | Complete | High | Feature | 2026-06-21 | -- |
