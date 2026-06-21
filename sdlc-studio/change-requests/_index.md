@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 5 |
+| Proposed | 4 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 51 |
+| Complete | 52 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -72,7 +72,7 @@
 | [CR-0050](CR0050-telemetry-record-and-schema.md) | telemetry record + .local/telemetry.jsonl schema (RFC0014 WS1) | Complete | Medium | Feature | 2026-06-21 | -- |
 | [CR-0051](CR0051-telemetry-loop-capture.md) | loop writes a telemetry record per unit close (RFC0014 WS2) | Complete | Medium | Feature | 2026-06-21 | -- |
 | [CR-0052](CR0052-asset-provenance-stamp-misuse-check-remake.md) | asset provenance stamp + misuse check + remake migration | Complete | Medium | Feature | 2026-06-21 | -- |
-| [CR-0053](CR0053-autosprint-dod-includes-documentation-deterministic-doc-coverage-gate.md) | autosprint DoD includes documentation + deterministic doc-coverage gate | Proposed | High | Feature | 2026-06-21 | -- |
+| [CR-0053](CR0053-autosprint-dod-includes-documentation-deterministic-doc-coverage-gate.md) | autosprint DoD includes documentation + deterministic doc-coverage gate | Complete | High | Feature | 2026-06-21 | -- |
 | [CR-0054](CR0054-review-and-reframe-all-help-text-around-getting.md) | review and reframe all help text around getting-started and autosprint | Proposed | High | Improvement | 2026-06-21 | -- |
 | [CR-0055](CR0055-gate-gains-a-duplicate-id-check-optional-provenance.md) | gate gains a duplicate-id check + optional provenance registration | Proposed | High | Feature | 2026-06-21 | -- |
 | [CR-0056](CR0056-conformance-and-validate-flag-unresolved-placeholder-content.md) | conformance and validate flag unresolved placeholder content | Proposed | Medium | Improvement | 2026-06-21 | -- |

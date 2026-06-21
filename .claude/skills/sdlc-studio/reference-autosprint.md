@@ -34,10 +34,12 @@ Natural language resolves to the same: "do an autosprint to deliver all open bug
    are sharpened, closed, or flagged-and-deferred; findings go to the decisions
    ledger. The adversarial "is the problem still real, the change still sound" lens
    is model-instructed (delegates to RFC0002's audit when built).
-3. **Triage STOP (D1).** Present the groomed plan + the audit verdict and **stop for
-   operator approval**. After approval the loop runs autonomously, re-pausing only on
-   a **material issue** (scope change, broken interface/contract, contradicts a
-   triage answer, no safe reversible default).
+3. **Clarify + Triage STOP (D1).** First batch **every clarifying question** (scope
+   boundaries, priority conflicts, ambiguous AC) into one numbered list, answered once.
+   Then present the groomed plan + the audit verdict and **stop for operator approval**.
+   After approval the loop runs autonomously, re-pausing only on a **material issue**
+   (scope change, broken interface/contract, contradicts a triage answer, no safe
+   reversible default).
 4. **Per unit, in order:**
    - `cr action` - decompose a CR into stories under an existing epic (a new one
      only if none fits, D-decomposition). Stories carry implementation-ready AC and
@@ -51,8 +53,13 @@ Natural language resolves to the same: "do an autosprint to deliver all open bug
      verdict is recorded with `critic.py record` (committed) so the gate can require it.
    - `conformance check` - the deterministic gate (`scripts/conformance.py`):
      decomposed -> AC -> tested -> verified -> **reconciled** (no index drift) ->
-     **critiqued** (a committed critic APPROVE). **Hard-fail**: a unit cannot reach
-     Done with a stage skipped - including the critic (D-conformance, CR0023).
+     **critiqued** (a committed critic APPROVE) -> **documented** (the doc-coverage floor:
+     every Type-Reference command catalogued in help, every script in reference-scripts -
+     CR0053). **Hard-fail**: a unit cannot reach Done with a stage skipped - including the
+     critic and the docs (D-conformance, CR0023/CR0053).
+   - **Update the docs in the same unit.** A unit that adds a command/script/flag updates
+     its user docs (help catalogue + reference) before it is Done - the `documented` stage
+     enforces the floor deterministically; content accuracy is judged by the closing review.
    - Commit the unit green (trunk-based by default, D6).
 5. **Stall handling (D2).** After 3 failed green attempts a unit is marked
    **Blocked**, logged, and skipped; the run continues. Blocked units surface in
@@ -61,7 +68,9 @@ Natural language resolves to the same: "do an autosprint to deliver all open bug
    `reconcile` (fix any drift) + `review` (the unified PRD/TRD/TSD/persona plus CODE
    review), **regardless of `--goal`**. This is the sprint review and it produces
    the conformance `reviewed` signal. For `--goal design` it reviews the produced
-   backlog; for `--goal done` the delivered increment.
+   backlog; for `--goal done` the delivered increment. The closing gate also emits the
+   **final report** (items actioned / rejected with rationale / blocked with blocker /
+   assumptions / decisions-ledger reference / anything needing the operator).
    On each unit **close** (`artifact close`), a telemetry event (id, type, plus any run
    metrics passed: `--iterations`/`--verdict`/`--wall-time-s`/`--stages`) is appended to
    the gitignored `sdlc-studio/.local/telemetry.jsonl` (CR0051 / RFC0014 WS2). Advisory -
@@ -70,6 +79,22 @@ Natural language resolves to the same: "do an autosprint to deliver all open bug
    `sdlc-studio/retros/` (delivered, blocked, lessons) and reads the recent retros
    plus `lessons recall` at the **start** - the learning loop. The retro is a
    general capability (CR0018), reused here, not autosprint-only.
+
+## Definition of Done
+
+A tranche is Done when (CR0053, aligned to the operator's orchestrator discipline):
+
+- every worklist item is **implemented, raised** as a tracked CR/bug, or **explicitly
+  rejected/blocked** with rationale (verified against source of truth - "partly done" is
+  not "done");
+- all sdlc-studio artefacts are complete + internally consistent (`reconcile` drift 0);
+- a **reconcile-and-review** pass ran against main with the full suite + **gate** green;
+- **user and operator documentation updated** to reflect the changes - the deterministic
+  doc-coverage floor (`documented` stage) plus review-judged content accuracy;
+- a **final report**: items actioned / rejected (rationale) / blocked (blocker named) /
+  assumptions / decisions-ledger reference / anything needing the operator afterwards.
+
+A unit-level Done is the per-unit conformance gate (decomposed -> ... -> documented), all green.
 
 ## Goals
 

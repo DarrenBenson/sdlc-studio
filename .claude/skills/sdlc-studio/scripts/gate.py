@@ -62,12 +62,23 @@ def _integrity(root: str) -> dict:
     return {"count": e, "blocking": True, "detail": f"{e} integrity error(s)"}
 
 
+def _doc_coverage(root: str) -> dict:
+    import doc_coverage
+    r = doc_coverage.check(root)
+    blocking = sum(1 for f in r["findings"] if f["blocking"])
+    advisory = len(r["findings"]) - blocking
+    detail = ("N/A (not the skill repo)" if not r["applicable"]
+              else f"{blocking} undocumented" + (f" (+{advisory} advisory)" if advisory else ""))
+    return {"count": blocking, "blocking": True, "detail": detail}
+
+
 DEFAULT_CHECKS = {
     "conformance": _conformance,
     "reconcile": _reconcile,
     "validate": _validate,
     "constitution": _constitution,
     "integrity": _integrity,
+    "doc-coverage": _doc_coverage,
 }
 
 

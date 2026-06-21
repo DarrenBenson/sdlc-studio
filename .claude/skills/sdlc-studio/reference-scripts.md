@@ -350,3 +350,49 @@ ships with the skill); project-tier writes stay in `.local/`. Full workflow:
 - `best-practices/script.md` - Style rules for shell and Python scripts
 - `scripts/README.md` - Directory overview for contributors
 - `reference-repo-map.md`, `reference-verify.md`, `reference-github-sync.md` - Consumer workflows
+
+## Orchestration, checks & helpers
+
+### `audit.py`
+
+Adversarial audit / tranche pre-flight (RFC0002). `check` grooms a batch for readiness - weak-AC, unmet-deps, already-terminal, link-integrity - before the triage STOP, so work never starts on a unit that would pass the gates vacuously.
+
+### `autosprint.py`
+
+The Goal-Driven Development loop's planner (RFC0001). `plan <query> --order priority|wsjf` selects + dependency-orders the batch (the triage plan); priority dominates, complexity breaks ties. See reference-autosprint.md.
+
+### `config.py`
+
+Merged per-project configuration reader. Layers `templates/config-defaults.yaml` under the project's `sdlc-studio/.config.yaml` (degrading without PyYAML); the source of `status_vocab`, adoption cutoffs, `complexity`, `constitution`, `version_check`, `provenance`, etc.
+
+### `conformance.py`
+
+The lifecycle-conformance gate. `detect_conformance` reports per-story stages (decomposed -> AC -> verifiable -> verified -> reconciled -> critiqued -> documented) and hard-fails any terminal unit with a stage missing. Repo-global signals (reconciled, documented) apply to every Done unit.
+
+### `critic.py`
+
+The independent-critic verdict ledger (RFC0001 D3). `record` writes a committed verdict to `sdlc-studio/reviews/critic-verdicts.md`; `verdict_for` reads it. Conformance's `critiqued` stage requires a committed APPROVE.
+
+### `doc_coverage.py`
+
+The documentation-coverage check (CR0053) - the `documented` DoD floor. Hard-fails when a Type-Reference command lacks a help/help.md catalogue entry or a script lacks a reference-scripts.md entry; warns on an empty CHANGELOG [Unreleased]. No-op for consuming repos (no SKILL.md). Wired into the gate + conformance.
+
+### `integrity.py`
+
+Referential integrity. `detect_integrity` flags missing required links (e.g. a story with no epic) and dangling references across the artifact graph; errors vs advisories.
+
+### `ledger.py`
+
+The append-only per-tranche decisions ledger (RFC0001 D4). `record` appends a decision + rationale to `sdlc-studio/decisions/<tranche>.md`; survives context compaction so a reset resumes from disk.
+
+### `loop_guard.py`
+
+The autosprint deterministic guardrails (RFC0001 D5). The iteration cap, the repetition-breaker (repeated failure signature), and the completion oracle (`is_complete`) - persisted to `.local/loop-state.json` so an unattended run cannot thrash or declare itself done early.
+
+### `resume.py`
+
+Resume an interrupted autosprint from the persisted ledger + loop-state, so a context reset or crash continues the tranche from disk rather than a lost transcript.
+
+### `rfc.py`
+
+RFC helpers - the `rfc decide` multi-RFC decision digest (per-draft open-decision + workstream counts + ready flag) and RFC index/table helpers (escaped-pipe-aware via sdlc_md).

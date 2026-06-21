@@ -145,6 +145,25 @@ class NewTests(unittest.TestCase):
             self.assertEqual(out[h - 1].strip(), "")           # blank line before the heading
             self.assertTrue(out[h - 2].strip().startswith("- ["))  # last list item precedes the blank
 
+
+    def test_wiring_preserves_prose_and_internal_blanks(self) -> None:
+        # Regression (CR0053): a breakdown with prose + a list must keep its internal blank
+        # lines on wire (a full rebuild collapsed them -> MD032).
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+            ep = repo / "sdlc-studio" / "epics" / "EP0001-x.md"
+            ep.parent.mkdir(parents=True)
+            ep.write_text("# EP0001: x\n\n> **Status:** Draft\n\n## Story Breakdown\n\n"
+                          "Phase 1 delivered:\n\n- [x] [US0009: a](../stories/US0009-a.md)\n\n"
+                          "## Revision History\n\n", encoding="utf-8")
+            artifact.new(repo, "story", "wired2", {"epic": "EP0001"})
+            out = ep.read_text()
+            self.assertIn("Phase 1 delivered:\n\n- [x]", out)   # prose->list blank preserved
+            lines = out.splitlines()
+            h = lines.index("## Revision History")
+            self.assertEqual(lines[h - 1].strip(), "")            # blank before next heading
+
     def test_epic_without_breakdown_link_false(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
@@ -153,6 +172,23 @@ class NewTests(unittest.TestCase):
                 "# EP0001: x\n\n> **Status:** Draft\n\n## Summary\n\nno breakdown section\n", encoding="utf-8")
             r = artifact.new(repo, "story", "s", {"epic": "EP0001"})
             self.assertFalse(r["epic_linked"])  # no crash, just not wired
+
+
+    def test_wiring_disp_substring_not_falsely_idempotent(self) -> None:
+        # HIGH regression: US0001 must wire even when US00012 is already listed (the old
+        # `disp in text` substring check silently dropped it).
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+            ep = repo / "sdlc-studio" / "epics" / "EP0001-x.md"
+            ep.parent.mkdir(parents=True)
+            ep.write_text("# EP0001: x\n\n> **Status:** Draft\n\n## Story Breakdown\n\n"
+                          "- [x] [US00012: big](../stories/US00012-big.md)\n\n## Revision History\n\n",
+                          encoding="utf-8")
+            r = artifact.new(repo, "story", "small", {"epic": "EP0001"})
+            self.assertEqual(r["id"], "US0001")
+            self.assertTrue(r["epic_linked"])
+            self.assertIn("[US0001:", ep.read_text())  # actually inserted, not falsely skipped
 
 
 class CloseTests(unittest.TestCase):

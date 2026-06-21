@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Documentation in the autosprint Definition of Done (CR0053):** a new `documented`
+  conformance stage + a deterministic `scripts/doc_coverage.py` gate - every Type-Reference
+  command must be in the help catalogue and every script in reference-scripts.md (a prose
+  mention does not count); empty CHANGELOG [Unreleased] is a soft warn; no-op for consuming
+  repos. Wired into the gate (blocking) + conformance. reference-autosprint's DoD now requires
+  user/operator docs updated, a structured final report, and a Phase-1 clarify step. Closing
+  the gap the self-audit found - it immediately forced 15 undocumented commands/scripts green.
 - **Artifact provenance: stamp + check + remake (CR0052):** `new` stamps every artifact
   it creates (`> **Created-by:** sdlc-studio ...`); `scripts/provenance.py check` flags
   un-stamped artifacts past `provenance.adopt_after` with remediation (advisory;

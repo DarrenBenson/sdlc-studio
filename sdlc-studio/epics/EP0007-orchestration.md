@@ -72,6 +72,7 @@ Autosprint (RFC0001) is this epic's centrepiece; Phase 1 delivered:
 - [ ] US: Project implement (resume, commit/reconcile/review checkpoints)
 - [ ] US: Epic agentic wave execution
 - [ ] US: Quality gates + agentic lessons
+- [x] [US0039: documented conformance stage and doc-coverage gate](../stories/US0039-documented-conformance-stage-and-doc-coverage-gate.md)
 
 ## Revision History
 

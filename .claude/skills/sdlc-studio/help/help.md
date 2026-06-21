@@ -52,6 +52,15 @@ reference-file and template catalogue see `help/references.md`.
 
 ## All Commands
 
+### Autosprint, Product Layer & Maintenance
+
+| Command | Description |
+| --- | --- |
+| `/sdlc-studio autosprint <batch> --goal done` | Goal-Driven Development loop: drive a prioritised tranche to a goal (the primary delivery workflow) |
+| `/sdlc-studio pvd create` / `pvd sync` / `product reconcile` | Product Vision Document: the multi-repo product layer above the PRD |
+| `/sdlc-studio gate` | Portable, ecosystem-neutral CI quality gate over the deterministic checks |
+| `/sdlc-studio skill-update` | Check for and install a newer SDLC Studio release |
+
 ### Pipeline Status
 
 | Command | Description |

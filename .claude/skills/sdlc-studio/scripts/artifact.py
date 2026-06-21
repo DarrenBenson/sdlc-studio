@@ -127,7 +127,7 @@ def _wire_story_to_epic(root: Path, epic_id: str, disp: str, title: str,
     ep = files[0]
     text = ep.read_text(encoding="utf-8")
     line = f"- [ ] [{disp}: {title}](../stories/{file_id}-{slug}.md)"
-    if disp in text:  # already wired
+    if f"[{disp}:" in text or f"[{disp}]" in text:  # already wired (exact, not substring: US0001 != US00012)
         return True
     lines = text.splitlines()
     for i, ln in enumerate(lines):
@@ -135,13 +135,20 @@ def _wire_story_to_epic(root: Path, epic_id: str, disp: str, title: str,
             j = i + 1
             while j < len(lines) and not lines[j].strip().startswith("## "):
                 j += 1
-            # Rebuild the section with clean blank-line formatting so an inserted item can
-            # never orphan against the next heading (MD032/MD022). Preserve existing content
-            # (drop the placeholder), append the new item.
-            content = [lines[k] for k in range(i + 1, j)
-                       if lines[k].strip() and not lines[k].strip().startswith("_No stories")]
-            content.append(line)
-            lines[i:j] = [lines[i], ""] + content + [""]
+            # Insert after the LAST list item, preserving the section's existing structure
+            # (prose, internal blanks) - a full rebuild would collapse blanks and orphan a
+            # list against neighbouring prose (MD032). Only an item-less section is rebuilt.
+            last_item = max((k for k in range(i + 1, j)
+                             if lines[k].strip().startswith("- [")), default=None)
+            if last_item is not None:
+                lines.insert(last_item + 1, line)
+                nxt = last_item + 2  # guard: a blank before the next heading (no orphan)
+                if nxt < len(lines) and lines[nxt].lstrip().startswith("## "):
+                    lines.insert(nxt, "")
+            else:  # empty section (e.g. "_No stories yet._") - rebuild cleanly
+                keep = [lines[k] for k in range(i + 1, j)
+                        if lines[k].strip() and not lines[k].strip().startswith("_No stories")]
+                lines[i:j] = [lines[i], ""] + keep + [line, ""]
             ep.write_text("\n".join(lines) + "\n", encoding="utf-8")
             return True
     return False

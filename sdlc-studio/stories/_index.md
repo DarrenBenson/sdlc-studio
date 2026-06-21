@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 33 |
+| Done | 34 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
-| **Total** | **38** |
+| **Total** | **39** |
 
 ## All Stories
 
@@ -60,3 +60,4 @@
 | [US0036](US0036-telemetry-recorder-and-local-jsonl-schema.md) | telemetry recorder and local jsonl schema | Done | EP0008 | 2026-06-21 | 2026-06-21 |
 | [US0037](US0037-close-cascade-records-telemetry-per-unit.md) | close cascade records telemetry per unit | Done | EP0008 | 2026-06-21 | 2026-06-21 |
 | [US0038](US0038-provenance-stamp-misuse-check-and-remake.md) | provenance stamp misuse check and remake | Done | EP0008 | 2026-06-21 | 2026-06-21 |
+| [US0039](US0039-documented-conformance-stage-and-doc-coverage-gate.md) | documented conformance stage and doc-coverage gate | Done | EP0007 | 2026-06-21 | 2026-06-21 |

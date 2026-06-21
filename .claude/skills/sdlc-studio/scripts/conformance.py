@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 import reconcile  # noqa: E402  (sibling scripts; scripts dir is on sys.path)
 import critic  # noqa: E402
+import doc_coverage  # noqa: E402  (CR0053: the `documented` stage)
 
 
 def detect_conformance(repo_root: Path | str) -> dict:
@@ -43,6 +44,8 @@ def detect_conformance(repo_root: Path | str) -> dict:
     _no_index = any(d["kind"] == "missing-index" for d in _drift)
     drift_ids = {sdlc_md.norm_id(d["id"]) for d in _drift
                  if d.get("id") and d["kind"] in ("status-mismatch", "missing-row")}
+    # Repo-global doc-coverage (CR0053) - the `documented` stage, like `reconciled`.
+    _doc_ok = doc_coverage.check(root)["ok"]
     units: list[dict] = []
     ok = 0
     for path in sdlc_md.artifact_files("story", root):
@@ -68,12 +71,13 @@ def detect_conformance(repo_root: Path | str) -> dict:
             m = sdlc_md.VERIFIED_RE.match(line)
             if m:
                 verified_states.append(m.group(2).lower())
-        verified = reconciled = critiqued = None
+        verified = reconciled = critiqued = documented = None
         if status == "Done":
             verified = bool(verified_states) and all(v in ("yes", "manual") for v in verified_states)
             reconciled = (not _no_index) and sdlc_md.norm_id(rid) not in drift_ids
             verdict = critic.verdict_for(root, rid)
             critiqued = bool(verdict) and verdict["verdict"] == critic.APPROVE
+            documented = _doc_ok
         stages = {
             "decomposed": decomposed,
             "specified": has_ac,
@@ -81,10 +85,11 @@ def detect_conformance(repo_root: Path | str) -> dict:
             "verified": verified,
             "reconciled": reconciled,
             "critiqued": critiqued,
+            "documented": documented,
         }
         required = ["decomposed", "specified", "verifiable"]
         if status == "Done":
-            required += ["verified", "reconciled", "critiqued"]
+            required += ["verified", "reconciled", "critiqued", "documented"]
         rid_num = sdlc_md.id_number(rid)
         exempt = cutoff_num is not None and rid_num is not None and rid_num < cutoff_num
         missing = [] if exempt else [s for s in required if not stages[s]]

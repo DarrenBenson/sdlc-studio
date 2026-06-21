@@ -59,14 +59,14 @@ class GateLogicTests(unittest.TestCase):
 class GateRealWrapperTests(unittest.TestCase):
     def test_default_checks_present(self) -> None:
         self.assertEqual(set(gate.DEFAULT_CHECKS),
-                         {"conformance", "reconcile", "validate", "constitution", "integrity"})
+                         {"conformance", "reconcile", "validate", "constitution", "integrity", "doc-coverage"})
 
     def test_real_wrappers_run_and_shape(self) -> None:
         # Exercises the real checks end-to-end against this repo; asserts structure,
         # not pass/fail (state-independent, so not fragile).
         r = gate.run_gate(str(REPO))
         self.assertIsInstance(r["ok"], bool)
-        self.assertEqual(len(r["checks"]), 5)
+        self.assertEqual(len(r["checks"]), 6)
         for c in r["checks"]:
             self.assertEqual(set(c), {"check", "count", "blocking", "status", "detail"})
 
