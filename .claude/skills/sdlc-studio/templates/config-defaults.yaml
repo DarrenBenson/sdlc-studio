@@ -124,3 +124,10 @@ contract_tables:
 #   staged-rollout — tagged-deploy + soak gate. Ship via tag + deploy +
 #                    soak window before promoting to "live".
 release_strategy: pr-required
+
+# Artifact provenance (CR0052). `new` stamps tool-created artifacts; `provenance check`
+# flags un-stamped ones past adopt_after (advisory unless enforce). `remake` backfills the
+# stamp. Standalone/advisory by default - not wired into the gate.
+provenance:
+  enforce: false
+  adopt_after: 0   # per-type id cutoff; ids <= this are exempt (legacy)

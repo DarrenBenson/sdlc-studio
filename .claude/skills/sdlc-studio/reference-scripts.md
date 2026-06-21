@@ -132,6 +132,16 @@ emits the same per-function scores into the map.
 - `scan`: list functions over the cognitive threshold (`complexity.cognitive_high`, default 15)
 - `assess --files ...`: a change's blast-radius difficulty band + refactor-first hotspots (used by `code plan`)
 
+### `provenance.py`
+
+Artifact provenance (CR0052). Makes deterministic creation the *checkable* path: `new`
+stamps every artifact (`> **Created-by:** sdlc-studio ...`); `check` flags artifacts past
+the `provenance.adopt_after` id cutoff that lack the stamp (hand-authored), with
+remediation - advisory by default, `provenance.enforce: true` to block; `remake` content-
+preservingly backfills the stamp into un-stamped artifacts (idempotent, dry-run-able,
+stamp-only - never re-lays-out content). Standalone + advisory by design (not wired into
+the gate); adopting it is a project choice.
+
 ### `telemetry.py`
 
 Run telemetry recorder (CR0050, RFC0014 WS1). `record` appends a per-unit run outcome

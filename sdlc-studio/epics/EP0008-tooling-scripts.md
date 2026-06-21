@@ -74,6 +74,7 @@ stdlib, read-only over the workspace, unit-tested.
 - [x] [US0035: deterministic artifact create and close cascade](../stories/US0035-deterministic-artifact-create-and-close-cascade.md)
 - [x] [US0036: telemetry recorder and local jsonl schema](../stories/US0036-telemetry-recorder-and-local-jsonl-schema.md)
 - [x] [US0037: close cascade records telemetry per unit](../stories/US0037-close-cascade-records-telemetry-per-unit.md)
+- [x] [US0038: provenance stamp misuse check and remake](../stories/US0038-provenance-stamp-misuse-check-and-remake.md)
 
 ## Revision History
 

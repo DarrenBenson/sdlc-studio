@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Artifact provenance: stamp + check + remake (CR0052):** `new` stamps every artifact
+  it creates (`> **Created-by:** sdlc-studio ...`); `scripts/provenance.py check` flags
+  un-stamped artifacts past `provenance.adopt_after` with remediation (advisory;
+  `provenance.enforce` to block; legacy exempt); `remake` content-preservingly backfills
+  the stamp (idempotent, dry-run-able, header-anchored - never touches the body). Makes
+  deterministic creation the checkable path.
 - **Portable CI quality gate (CR0046):** `scripts/gate.py` aggregates the
   deterministic checks (conformance, reconcile drift, validate, constitution, integrity)
   into one consolidated pass/fail and exits non-zero only on a blocking failure; `--only`

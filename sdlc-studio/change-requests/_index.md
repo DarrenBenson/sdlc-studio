@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 50 |
+| Complete | 51 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -71,4 +71,4 @@
 | [CR-0049](CR0049-product-reconcile-feature-map-traceability.md) | product reconcile - cross-repo feature-map traceability (RFC0015 WS3) | Complete | High | Feature | 2026-06-21 | -- |
 | [CR-0050](CR0050-telemetry-record-and-schema.md) | telemetry record + .local/telemetry.jsonl schema (RFC0014 WS1) | Complete | Medium | Feature | 2026-06-21 | -- |
 | [CR-0051](CR0051-telemetry-loop-capture.md) | loop writes a telemetry record per unit close (RFC0014 WS2) | Complete | Medium | Feature | 2026-06-21 | -- |
-| [CR-0052](CR0052-asset-provenance-stamp-misuse-check-remake.md) | asset provenance stamp + misuse check + remake migration | Proposed | Medium | Feature | 2026-06-21 | -- |
+| [CR-0052](CR0052-asset-provenance-stamp-misuse-check-remake.md) | asset provenance stamp + misuse check + remake migration | Complete | Medium | Feature | 2026-06-21 | -- |

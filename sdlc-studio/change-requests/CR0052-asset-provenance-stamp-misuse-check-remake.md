@@ -1,6 +1,6 @@
 # CR-0052: asset provenance stamp + misuse check + remake migration
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Feature
 > **Requester:** Darren Benson
@@ -53,13 +53,14 @@ None. The misuse check is advisory + cutoff-gated; `remake` is opt-in and dry-ru
 
 ## Acceptance Criteria
 
-- [ ] `new` writes a provenance stamp; a tool-created asset is distinguishable from a hand-made one (check + eye).
-- [ ] `validate` flags un-stamped / malformed assets with a remediation message, is advisory by default, and exempts assets before `provenance.adopt_after`.
-- [ ] `remake --dry-run` reports what it would change; `remake` normalises layout + stamps, preserving all content, and is idempotent (a second run is a no-op).
-- [ ] Unit-tested incl. content-preservation + idempotence + cutoff exemption; independent critic APPROVE.
+- [x] `new` writes a provenance stamp; a tool-created asset is distinguishable from a hand-made one (check + eye).
+- [x] `validate` flags un-stamped / malformed assets with a remediation message, is advisory by default, and exempts assets before `provenance.adopt_after`.
+- [x] `remake --dry-run` reports what it would change; `remake` normalises layout + stamps, preserving all content, and is idempotent (a second run is a no-op).
+- [x] Unit-tested incl. content-preservation + idempotence + cutoff exemption; independent critic APPROVE.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-21 | Autosprint (CR0052) | Complete - US0038: provenance.py stamp+check+remake; `new` stamps; created/closed by the tool (dogfood); critic REJECT->fixed (HIGH content-corruption in remake) |
 | 2026-06-21 | Darren Benson | Raised - make deterministic creation authoritative: provenance stamp + misuse check (advisory, cutoff) + content-preserving remake migration |

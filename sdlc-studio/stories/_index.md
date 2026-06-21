@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 32 |
+| Done | 33 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
-| **Total** | **37** |
+| **Total** | **38** |
 
 ## All Stories
 
@@ -59,3 +59,4 @@
 | [US0035](US0035-deterministic-artifact-create-and-close-cascade.md) | deterministic artifact create and close cascade | Done | EP0008 | 2026-06-21 | 2026-06-21 |
 | [US0036](US0036-telemetry-recorder-and-local-jsonl-schema.md) | telemetry recorder and local jsonl schema | Done | EP0008 | 2026-06-21 | 2026-06-21 |
 | [US0037](US0037-close-cascade-records-telemetry-per-unit.md) | close cascade records telemetry per unit | Done | EP0008 | 2026-06-21 | 2026-06-21 |
+| [US0038](US0038-provenance-stamp-misuse-check-and-remake.md) | provenance stamp misuse check and remake | Done | EP0008 | 2026-06-21 | 2026-06-21 |

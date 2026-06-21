@@ -45,7 +45,9 @@ def _disp(type_: str, n: int) -> str:
 
 def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
     st = SPEC[type_]["status"]
-    head = f"# {disp}: {title}\n\n> **Status:** {st}\n> **Created:** {today}\n"
+    # Provenance stamp (CR0052) - marks this artifact as tool-created (deterministic path).
+    head = (f"# {disp}: {title}\n\n> **Status:** {st}\n> **Created:** {today}\n"
+            f"> **Created-by:** sdlc-studio new\n")
     rev = (f"\n## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
            f"| {today} | {f.get('author', 'sdlc')} | Created via `new` (deterministic) |\n")
     if type_ == "story":
