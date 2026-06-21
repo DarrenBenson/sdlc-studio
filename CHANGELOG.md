@@ -36,6 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Breakdown - one command for what was a ~10-step hand cascade. `close --id` terminal-
   transitions by id. Shares file_finding.append_index_row. This CR's own story (US0035) was
   created and closed *by the tool itself* (dogfood).
+- **Run telemetry recorder (CR0050, RFC0014 WS1):** `scripts/telemetry.py record` appends a
+  per-unit run outcome to the gitignored `sdlc-studio/.local/telemetry.jsonl` (local-only, no
+  network, advisory - never raises into the loop; only whitelisted non-None fields written).
+  Feeds the deferred calibrate step + RFC0009 WS5.
 
 ## [2.2.0] - 2026-06-21
 

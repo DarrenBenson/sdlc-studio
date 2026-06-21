@@ -1,6 +1,6 @@
 # CR-0050: telemetry record + .local/telemetry.jsonl schema (RFC0014 WS1)
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Feature
 > **Requester:** Darren Benson (RFC decision session)
@@ -20,12 +20,13 @@ A deterministic `telemetry record` that appends a per-unit run outcome to a giti
 
 ## Acceptance Criteria
 
-- [ ] `telemetry record` appends a well-formed JSONL line with the declared fields; a missing optional field is omitted, never errors.
-- [ ] Nothing leaves the machine (no network call).
-- [ ] Unit-tested where code; independent critic APPROVE.
+- [x] `telemetry record` appends a well-formed JSONL line with the declared fields; a missing optional field is omitted, never errors.
+- [x] Nothing leaves the machine (no network call).
+- [x] Unit-tested where code; independent critic APPROVE.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
+| 2026-06-21 | Autosprint (CR0050) | Complete - US0036: telemetry.py recorder; created+closed by the tool (dogfood); critic REJECT->fixed (gitignored path) |
 | 2026-06-21 | Darren Benson | Raised - RFC decision session |

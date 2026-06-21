@@ -132,6 +132,15 @@ emits the same per-function scores into the map.
 - `scan`: list functions over the cognitive threshold (`complexity.cognitive_high`, default 15)
 - `assess --files ...`: a change's blast-radius difficulty band + refactor-first hotspots (used by `code plan`)
 
+### `telemetry.py`
+
+Run telemetry recorder (CR0050, RFC0014 WS1). `record` appends a per-unit run outcome
+(id, type, iterations, wall-time, stages, critic verdict, complexity, churn, reopened,
+tokens-when-supplied) to the gitignored `sdlc-studio/.local/telemetry.jsonl`. Local-only,
+no network, no upload; advisory (a write failure is swallowed, never raised into the loop);
+only whitelisted non-None fields are written; `read_all`/`show` skip malformed lines. Feeds
+the deferred calibrate step (WS3) and RFC0009 WS5.
+
 ### `artifact.py`
 
 Deterministic artifact create + close cascade (CR0045). `new --type <any of the 8 numbered
