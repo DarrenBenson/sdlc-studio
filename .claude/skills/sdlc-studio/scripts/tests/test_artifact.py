@@ -130,6 +130,21 @@ class NewTests(unittest.TestCase):
             self.assertFalse(r["indexed"])
             self.assertTrue(Path(r["path"]).exists())
 
+    def test_wiring_keeps_blank_before_next_heading(self) -> None:
+        # Regression: inserting an item must not orphan it against the next heading (MD032/MD022).
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+            ep = repo / "sdlc-studio" / "epics" / "EP0001-x.md"
+            ep.parent.mkdir(parents=True)
+            ep.write_text("# EP0001: x\n\n> **Status:** Draft\n\n## Story Breakdown\n\n"
+                          "- [x] [US0009: a](../stories/US0009-a.md)\n## Revision History\n\n", encoding="utf-8")
+            artifact.new(repo, "story", "wired", {"epic": "EP0001"})
+            out = ep.read_text().splitlines()
+            h = out.index("## Revision History")
+            self.assertEqual(out[h - 1].strip(), "")           # blank line before the heading
+            self.assertTrue(out[h - 2].strip().startswith("- ["))  # last list item precedes the blank
+
     def test_epic_without_breakdown_link_false(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)

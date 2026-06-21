@@ -132,12 +132,13 @@ def _wire_story_to_epic(root: Path, epic_id: str, disp: str, title: str,
             j = i + 1
             while j < len(lines) and not lines[j].strip().startswith("## "):
                 j += 1
-            # drop a "_No stories yet._" placeholder if present
-            block = [k for k in range(i + 1, j) if lines[k].strip().startswith("_No stories")]
-            for k in reversed(block):
-                lines.pop(k)
-                j -= 1
-            lines.insert(j, line)
+            # Rebuild the section with clean blank-line formatting so an inserted item can
+            # never orphan against the next heading (MD032/MD022). Preserve existing content
+            # (drop the placeholder), append the new item.
+            content = [lines[k] for k in range(i + 1, j)
+                       if lines[k].strip() and not lines[k].strip().startswith("_No stories")]
+            content.append(line)
+            lines[i:j] = [lines[i], ""] + content + [""]
             ep.write_text("\n".join(lines) + "\n", encoding="utf-8")
             return True
     return False

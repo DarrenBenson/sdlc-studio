@@ -71,8 +71,8 @@ stdlib, read-only over the workspace, unit-tested.
 - [x] [US0034: product reconcile - cross-repo feature-map traceability](../stories/US0034-product-reconcile-traceability.md) (CR0049)
 - [x] [US0026: complexity computation (cognitive + cyclomatic)](../stories/US0026-complexity-computation.md) (CR0028, RFC0009 WS1)
 - [x] [US0027: code plan complexity estimation + refactor-first](../stories/US0027-code-plan-complexity-estimation.md) (CR0029, RFC0009 WS2)
-
 - [x] [US0035: deterministic artifact create and close cascade](../stories/US0035-deterministic-artifact-create-and-close-cascade.md)
+
 ## Revision History
 
 | Date | Author | Change |
