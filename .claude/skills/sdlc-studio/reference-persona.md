@@ -313,6 +313,11 @@ A persona is **well-formed** when it has all of (the Cooper goal-directed schema
 "Well-formed" is **structural** (the file has these sections), not evidential - sdlc-studio does
 not require research backing, and builds no authored-identity machinery (RFC0017).
 
+**Cast-role variants.** A **Negative** persona swaps End Goals for *End Goals (stated to exclude)*
+and replaces Experience Goals + Scenario with *Why we are not designing for them* + *how to handle
+a request from them* (a well-formedness check must allow this shape). For **Customer / Served**,
+Experience Goals and Scenario are optional. See the template's "Cast-role variants" note.
+
 ## Template Location
 
 `templates/personas/persona-template.md`

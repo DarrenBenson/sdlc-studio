@@ -56,5 +56,15 @@ product. Concrete and particular, never a demographic average.}}
 
 ---
 
-- **Negative persona:** state who this is and **why we are deliberately not designing for them**.
-- **Customer / Served:** the End goals are the buyer's, or the affected party's, not a user's.
+## Cast-role variants
+
+Primary / Secondary / Supplemental use every section above. Two roles bend the schema:
+
+- **Negative persona** (the anti-persona). Replace **End Goals** with **End Goals (stated to
+  exclude)** - their goals are real, but serving them would pull the product off its Primary.
+  Replace **Experience Goals** and **Scenario** with **Why we are not designing for them** and a
+  short **how to handle a request from them** (decline and redirect). A Negative persona is
+  well-formed with: cast role, Who They Are, End Goals (stated to exclude), Why-not, Behaviours &
+  Context, Frustrations, How-to-handle.
+- **Customer / Served.** The End goals are the buyer's, or the affected party's, not a user's;
+  Experience Goals and Scenario are optional.

@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   reference-persona model move from demographic categories to Alan Cooper's goal-directed model -
   a full cast (Primary / Secondary / Supplemental / Negative / Customer / Served), ordered End
   goals + Experience goals, and a **well-formed persona file** as the bar (structural, not
-  research-gated). Design personas (the product's users) are distinguished from review seats
+  research-gated; a Negative persona uses a variant shape - goals stated-to-exclude + a why-not -
+  per the dogfood learning). Design personas (the product's users) are distinguished from review seats
   (the Three Amigos, RFC0016). No research/evidence apparatus and no authored-identity machinery -
   a goal-directed persona is good input to an external identity system, nothing sdlc-studio builds.
 - **Unified artifact create paths (CR0057):** the two create paths (`artifact new` and the
