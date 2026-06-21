@@ -1,6 +1,6 @@
 # SDLC Studio
 
-**Version 2.1.0** | MIT Licence
+**Version 2.2.0** | MIT Licence
 
 **Set a goal and acceptance criteria; the agent drives the proven software
 lifecycle to it - and proves the code against it.** SDLC Studio brings back the
@@ -207,7 +207,17 @@ paths, consolidated reference docs, new helpers and CI guards - see
 signals, the `audit` harness, an optional `constitution`, index archival, and
 per-project config; nothing in the artifact schema changed.
 
+**v2.1 → v2.2** is a drop-in too. New in v2.2: the skill checks for a newer release on
+`status`/`hint` and **`/sdlc-studio skill-update`** upgrades the install (user / project
+/ agents, auto-detected) on confirm - so from here on, upgrading is one command. The
+check is on by default, silent offline, and never nags once dismissed; opt out with
+`version_check.enabled: false`.
+
 ## Roadmap
+
+**Shipped in v2.2:** a built-in version check + **`skill-update`** - the skill notices
+new releases on `status`/`hint` and upgrades itself (scope-detected) on confirm, with a
+per-version snooze so it never nags.
 
 **Shipped in v2.1 - the autonomous loop + a deterministic control plane:**
 `autosprint` with hard guardrails (decisions ledger, iteration cap, completion

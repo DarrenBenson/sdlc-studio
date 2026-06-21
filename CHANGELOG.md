@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-06-21
+
+Self-update: the skill now notices new releases itself. On the first `status`/`hint`
+of a session it compares its installed version against the latest GitHub release and
+prints a one-line notice if newer; **`skill-update`** upgrades the scope-detected
+install on confirm, with a per-version snooze so it never nags. On by default, silent
+offline, opt-out via `version_check.enabled`. Drop-in upgrade from v2.1.
+
 ### Added
 
 - **Skill version check + `skill-update` (CR0044):** on the first `status`/`hint` of a
