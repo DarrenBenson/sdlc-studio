@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Help reframed around autosprint (CR0054):** help now leads with getting-started and the
+  autosprint (Goal-Driven Development) loop as the recommended path; the by-hand per-tool
+  pipeline is retained but secondary. The catalogue lists every command (pvd, gate, provenance,
+  telemetry, artifact new/close, skill-update, product reconcile); references.md adds
+  reference-autosprint/-pvd/-skill-update; arguments.md adds the autosprint and gate flags.
 - **Unfilled-placeholder gate (CR0056):** a freshly-scaffolded story used to pass conformance
   (specified + verifiable) and validate with pure `{{placeholder}}` AC/Verify content - a hidden
   hole. validate now flags a metadata or AC-structural line whose value is placeholder-ONLY as

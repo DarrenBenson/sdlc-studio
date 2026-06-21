@@ -55,3 +55,20 @@ Full command-line argument reference. For the common subset, see `help/help.md`
 | `--quick` | Use cached status results (for status), skip cascade (for epic review) | varies |
 | `--full` | Run fresh status analysis | false |
 | `--resume` | Resume cascading review from pause point | false |
+
+## Autosprint, Gate & Product
+
+| Argument | Description | Default |
+| --- | --- | --- |
+| `--goal` | Autosprint stop condition: `done` (deliver) or `design` (groom a backlog) | done |
+| `--order` | Autosprint batch order: `priority` then WSJF, or `manual` | priority |
+| `--bugs` | Autosprint batch: bugs by state (e.g. `--bugs open`) | - |
+| `--crs` | Autosprint batch: CRs by state (e.g. `--crs proposed`) | - |
+| `--only` | Gate: run only these checks (comma-separated) | all |
+| `--skip` | Gate: skip these checks (comma-separated) | none |
+| `--root` | Repo root for scripts (gate, reconcile, doc_coverage, ...) | . |
+| `--format` | Output format where supported: `text` or `json` | text |
+
+Autosprint reuses `--epic` (deliver one epic) and `--agentic` / `--commit-strategy` from the
+rows above. The gate's checks are conformance, reconcile, validate, constitution, integrity,
+duplicate-id, provenance, doc-coverage (see `reference-autosprint.md` and `scripts/gate.py`).
