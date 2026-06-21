@@ -132,6 +132,15 @@ emits the same per-function scores into the map.
 - `scan`: list functions over the cognitive threshold (`complexity.cognitive_high`, default 15)
 - `assess --files ...`: a change's blast-radius difficulty band + refactor-first hotspots (used by `code plan`)
 
+### `product_reconcile.py`
+
+Cross-repo feature-map traceability (CR0049, RFC0015 WS3). Verifies every product feature
+`PF####` in the PVD's §3 table maps to a feature actually DECLARED (a table cell or heading,
+not free-text) in its owning repo's PRD, resolving repos via the manifest. Findings:
+orphan-feature + unknown-repo + missing-path (blocking); repo-absent + empty-feature-map
+(advisory, with an un-verified count so a degraded run is not mistaken for full coverage).
+Never silently reads the wrong PRD; exits non-zero on a blocking inconsistency.
+
 ### `pvd.py`
 
 PVD projection + drift (CR0048, RFC0015 WS2). `sync` projects the one writable master

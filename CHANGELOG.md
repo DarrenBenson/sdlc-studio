@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   writable master PVD into each child repo read-only (copy in dev, symlink in prod);
   `drift` reports in-sync / stale / behind / missing, and an unreadable/missing master
   reports error rather than a vacuous in-sync.
+- **Cross-repo feature-map traceability (CR0049, RFC0015 WS3):** `scripts/product_reconcile.py`
+  verifies every product feature `PF####` in the PVD maps to a feature actually declared in
+  its owning repo's PRD (orphan / unknown-repo / missing-path block; absent repo + empty map
+  degrade with an un-verified count). Declaration-anchored - a prose mention never false-passes.
+  Completes the PVD core (WS1-3); the contract layer + governance stay deferred.
 
 ## [2.2.0] - 2026-06-21
 
