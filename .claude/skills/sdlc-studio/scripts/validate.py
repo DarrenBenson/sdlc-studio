@@ -339,7 +339,9 @@ def check_personas(root: Path) -> list[dict]:
     if not pdir.is_dir():
         return out
     for p in sorted(pdir.glob("*.md")):
-        if p.name == "index.md":
+        # design personas only - skip index / readme / a consult-guide / underscore files, and the
+        # seats/ subdir (review-seat charters, a different schema) is already excluded by the flat glob
+        if p.name.lower() in {"index.md", "readme.md", "consult-guide.md"} or p.name.startswith("_"):
             continue
         try:
             text = p.read_text(encoding="utf-8")

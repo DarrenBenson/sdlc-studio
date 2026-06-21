@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **persona checks ignore non-design files (BG0027):** `project upgrade`'s old-model detector and
+  `validate personas` no longer flag a `consult-guide`, a README, or the `seats/` review-seat charters
+  as old/ill-formed design personas - so a migrated project stops reporting a phantom persona item.
 - **reconcile no longer corrupts per-epic count tables (BG0026):** `reconcile --apply` (and thus
   gate/autosprint/`project upgrade`) recomputes only the canonical global summary (the `Status|Count`
   block with a `**Total**` row, or the sole summary); scoped per-epic/per-section count tables are left

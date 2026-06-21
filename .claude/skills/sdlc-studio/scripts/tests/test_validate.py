@@ -376,6 +376,14 @@ class PersonaWellFormedTests(unittest.TestCase):
             (dd / "index.md").write_text("# Index\n\nstuff\n", encoding="utf-8")
             self.assertEqual(validate.check_personas(repo), [])
 
+    def test_consult_guide_and_readme_not_flagged(self):
+        # BG0027: non-design-persona files in personas/ are not checked for the Cooper schema
+        import tempfile, pathlib as _pl
+        d = tempfile.mkdtemp(); pd = _pl.Path(d) / "sdlc-studio" / "personas"; pd.mkdir(parents=True)
+        (pd / "consult-guide.md").write_text("# Consult guide\n\nrun consult team\n", encoding="utf-8")
+        (pd / "README.md").write_text("# Personas\n\noverview\n", encoding="utf-8")
+        self.assertEqual([f["file"] for f in validate.check_personas(_pl.Path(d))], [])
+
 
 if __name__ == "__main__":
     unittest.main()

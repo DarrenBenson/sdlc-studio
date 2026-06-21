@@ -81,15 +81,20 @@ def _old_persona_model(sd: Path) -> bool:
         return False
     if (pdir / "team").is_dir() or (pdir / "stakeholders").is_dir():
         return True
-    for p in pdir.rglob("*.md"):
+    # top-level design personas only: the seats/ subdir holds review-seat charters (a different
+    # schema, RFC0016) and a consult-guide - none of those are "old design personas" (BG0027).
+    for p in pdir.glob("*.md"):
         try:
             text = p.read_text(encoding="utf-8")
         except OSError:
             continue
+        if p.name == "index.md":  # personas catalogued inline in the old two-category index
+            if re.search(r"team personas?|stakeholder personas?|\bamigo\b", text, re.I):
+                return True
+            continue
+        if p.name.lower() in {"readme.md", "consult-guide.md"} or p.name.startswith("_"):
+            continue
         if _OLD_PERSONA_HEADING.search(text):
-            return True
-        # personas described only inline in index.md (the two-category catalogue)
-        if p.name == "index.md" and re.search(r"team personas?|stakeholder personas?|\bamigo\b", text, re.I):
             return True
     return False
 

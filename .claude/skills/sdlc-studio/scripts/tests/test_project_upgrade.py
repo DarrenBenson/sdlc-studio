@@ -174,6 +174,20 @@ class SafetyAndReconcileTests(unittest.TestCase):
             self.assertNotIn("stale-version", kinds)
             self.assertNotIn("missing-version", kinds)
 
+    def test_seats_charters_and_guide_not_flagged_old(self):
+        # BG0027: review-seat charters (seats/) + a consult-guide are not "old design personas"
+        with tempfile.TemporaryDirectory() as d:
+            _project(d, version=(pu.CURRENT_SCHEMA, INSTALLED), personas=[
+                ("seats/sarah.md", "# Sarah\n\n## Role & Mandate\n\nx\n## Lens\n\nx\n## Shadow\n\nx\n"),
+                ("consult-guide.md", "# Consult guide\n\nrun consult team for a review\n"),
+                ("maya.md", "# Maya\n\n## Quick Reference\n\n| **Cast role** | Primary |\n\n## End Goals\n\nx\n")])
+            self.assertFalse(pu._old_persona_model(Path(d) / "sdlc-studio"))
+
+    def test_old_top_level_persona_still_detected(self):
+        with tempfile.TemporaryDirectory() as d:
+            _project(d, personas=[("sarah.md", "# Sarah\n\n## Psychology\n\nx\n")])  # old heading
+            self.assertTrue(pu._old_persona_model(Path(d) / "sdlc-studio"))
+
 
 if __name__ == "__main__":
     unittest.main()
