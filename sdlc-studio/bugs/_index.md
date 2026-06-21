@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 0 |
+| Open | 1 |
 | In Progress | 0 |
 | Fixed | 21 |
 | Verified | 0 |
 | Closed | 0 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **21** |
+| **Total** | **22** |
 
 ## All Bugs
 
@@ -40,3 +40,4 @@
 | [BG0019](BG0019-determinism-checks-mishandle-bug-artifact-class.md) | integrity and audit mishandle the bug artifact class | Fixed | High | 2026-06-20 | 2026-06-20 |
 | [BG0020](BG0020-parser-rejects-consuming-repo-house-templates.md) | shared parser rejects consuming repos' house templates | Fixed | High | 2026-06-20 | 2026-06-20 |
 | [BG0021](BG0021-escaped-pipe-split-other-parsers.md) | escaped-pipe split bug present in three more table parsers | Fixed | Medium | 2026-06-20 | 2026-06-20 |
+| [BG0022](BG0022-artifact-new-silent-wiring-to-a-non-existent.md) | artifact new - silent wiring to a non-existent epic and file-only id allocation | Open | Medium | 2026-06-21 | 2026-06-21 |
