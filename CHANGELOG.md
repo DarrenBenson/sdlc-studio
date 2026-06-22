@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **CI coverage + security gates (CR0076):** `lint.yml` now runs a coverage floor (>= 80% of the
+  runtime scripts; currently 83%) and a `bandit` Python security scan. Three intentional patterns got
+  justified `# nosec` (the project-authored AC verifier's `shell=True`; the https-only version check).
 - **Test-reference routing map (CR0075):** `help/references.md` now maps the five `reference-test-*.md`
   to their distinct tasks (spec / automation / best-practices / brownfield-validation / E2E), so the
   right one is obvious. (A physical file-merge was assessed and deferred - the files are genuinely

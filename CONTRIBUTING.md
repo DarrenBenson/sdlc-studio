@@ -75,7 +75,8 @@ SDLC Studio dogfoods itself - it is built with its own lifecycle. A few non-nego
   Lint covers markdown, house style, links, SKILL.md, versions, budgets, and the neutrality guard;
   the gate covers conformance, reconcile drift, validation, integrity, duplicate ids, and docs.
 - **Trunk-based, small green units.** Commit to `main` in small, individually-green increments; CI
-  re-runs the same gate on push. Branches are for isolation, not ceremony.
+  re-runs the same gate on push, plus a coverage floor (>= 80% of the runtime scripts) and a
+  `bandit` security scan. Branches are for isolation, not ceremony.
 - **Paperwork in the same commit.** Every behaviour or doc change carries its `CHANGELOG.md`
   `[Unreleased]` entry and any help/reference update in the same commit.
 - **Bug to CR to RFC lifecycle.** Track work as artifacts created and closed with

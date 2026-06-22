@@ -162,7 +162,7 @@ def _run_eval(expr: str, timeout: int, cwd: Path, start: float) -> VerifierResul
         return VerifierResult(False, "eval", 2, "", f"eval: non-numeric threshold {m.group(1)!r}", 0)
     command = body[:m.start()].strip()
     try:
-        result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=timeout, cwd=str(cwd))
+        result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=timeout, cwd=str(cwd))  # nosec B602 - project-authored AC verifier, trusted input (reference-verify.md trust boundary)
     except subprocess.TimeoutExpired:
         return VerifierResult(False, "eval", 124, "", "timeout", int((time.time() - start) * 1000))
     except FileNotFoundError as e:
@@ -192,7 +192,7 @@ def run_verifier(expression: str, timeout: int, cwd: Path) -> VerifierResult:
     try:
         result = subprocess.run(
             cmd,
-            shell=isinstance(cmd, str),
+            shell=isinstance(cmd, str),  # nosec B602 - project-authored AC verifier, trusted input
             capture_output=True,
             text=True,
             timeout=timeout,

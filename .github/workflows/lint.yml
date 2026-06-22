@@ -27,6 +27,22 @@ jobs:
       - name: Run script unit tests
         run: npm test
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Coverage gate (runtime scripts, >= 80%)
+        run: |
+          python -m pip install --quiet coverage
+          coverage run --source=.claude/skills/sdlc-studio/scripts -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests
+          coverage report --omit='*/tests/*' --fail-under=80
+
+      - name: Python security scan (bandit)
+        run: |
+          python -m pip install --quiet bandit
+          bandit -r .claude/skills/sdlc-studio/scripts -ll -x '*/tests/*' -q
+
   windows-smoke:
     runs-on: windows-latest
     steps:

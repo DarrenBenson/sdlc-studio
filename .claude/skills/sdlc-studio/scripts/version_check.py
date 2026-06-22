@@ -63,7 +63,7 @@ def latest_release(repo: str = REPO, timeout: int = 5) -> str | None:
         headers={"User-Agent": "sdlc-studio-version-check",  # GitHub API 403s without a UA
                  "Accept": "application/vnd.github+json"})
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:  # noqa: S310 - https only
+        with urllib.request.urlopen(req, timeout=timeout) as r:  # noqa: S310  # nosec B310 - https GitHub API only
             tag = (json.loads(r.read().decode("utf-8")).get("tag_name") or "").lstrip("v")
         return tag or None
     except Exception:  # noqa: BLE001 - any failure is "offline"; never surface it
