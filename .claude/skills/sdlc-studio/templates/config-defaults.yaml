@@ -131,3 +131,18 @@ release_strategy: pr-required
 provenance:
   enforce: false
   adopt_after: 0   # per-type id cutoff; ids <= this are exempt (legacy)
+
+# Deploy contract (RFC0013) - the orchestrate-only deploy last-mile. The skill GATES before and
+# VERIFIES after a deploy; it never holds the production trigger, never auto-rolls-back, and never
+# deploys inside the autonomous loop. Secrets are never read - only the command you configure is
+# invoked, and only on an explicit, interactive `/sdlc-studio deploy`. See reference-deploy.md.
+# All keys are optional: with none set, `deploy` is a pure gate + verification harness around a
+# deploy you trigger yourself.
+deploy:
+  command: ""        # (optional) the project's own deploy command, invoked only after the gate is
+                     #  green AND only on an interactive `deploy` - never in autosprint.
+  smoke: ""          # post-deploy check (a verify_ac-style expression, e.g. `http GET /health -- ...`).
+                     #  Smoke green == "rolled out".
+  soak_minutes: 0    # soak window before a deploy is "verified" (Done). Smoke alone is not enough.
+  rollback: ""       # a documented PROCEDURE (steps, or a command an operator runs by hand). The
+                     #  agent never fires this; `deploy` only SURFACES it on a failed smoke.

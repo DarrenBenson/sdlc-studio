@@ -113,6 +113,10 @@ A unit-level Done is the per-unit conformance gate (decomposed -> ... -> documen
 
 ## Guardrails (settled in RFC0001)
 
+- **Never deploys.** `deploy` is a stop-condition (hard-to-reverse) action: the loop may prepare up
+  to "gate green, artefact ready" and **hand back**, but it never runs `/sdlc-studio deploy` and the
+  triage approval never authorises a production rollout (RFC0013). Deploy is operator-triggered and
+  interactive, always.
 - **Deterministic** (the model cannot skip them): the iteration cap, the
   repetition-breaker, the completion oracle (`scripts/loop_guard.py`), and the
   **conformance check** (`scripts/conformance.py`).

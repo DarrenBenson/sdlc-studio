@@ -64,6 +64,7 @@ catalogue and worked workflows below cover every tool.
 | `/sdlc-studio autosprint <batch> --goal done` | Goal-Driven Development loop: drive a prioritised tranche to a goal (the primary delivery workflow) |
 | `/sdlc-studio pvd create` / `pvd sync` / `product reconcile` | Product Vision Document: the multi-repo product layer above the PRD |
 | `/sdlc-studio gate` | Portable, ecosystem-neutral CI quality gate over the deterministic checks |
+| `/sdlc-studio deploy` | Orchestrate-only deploy last-mile: gate, verify, record (operator-triggered, never autonomous) |
 | `/sdlc-studio skill-update` | Check for and install a newer SDLC Studio release |
 | `/sdlc-studio project upgrade` | Migrate a consuming project's artefacts to the new skill's conventions (dry-run; `--apply` for the safe set; reports the judgement items) |
 

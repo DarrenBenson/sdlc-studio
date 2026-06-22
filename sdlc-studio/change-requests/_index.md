@@ -9,12 +9,12 @@
 | Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 64 |
+| Complete | 67 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **65** |
+| **Total** | **68** |
 
 ## All Changes
 
@@ -85,3 +85,6 @@
 | [CR-0063](CR0063-disclosure-check-progressive-disclosure-and-claude-code-best.md) | disclosure check progressive disclosure and claude code best practice advisory | Complete | Medium | Feature | 2026-06-21 | -- |
 | [CR-0064](CR0064-drive-disclosure-backlog-to-zero-fix-real-gaps.md) | drive disclosure backlog to zero fix real gaps and refine the check | Complete | Medium | Improvement | 2026-06-21 | -- |
 | [CR-0065](CR0065-product-owner-owns-prd-and-product-manager-owns.md) | Product Owner owns PRD and Product Manager owns PVD as review seats with requirements-met sign-off | Complete | Medium | Feature | 2026-06-22 | -- |
+| [CR-0066](CR0066-deploy-contract-and-config-yaml-deploy-schema-rfc0013.md) | deploy contract and .config.yaml deploy schema (RFC0013 WS1) | Complete | Medium | Feature | 2026-06-22 | -- |
+| [CR-0067](CR0067-deploy-workflow-gate-to-operator-triggered-deploy-to.md) | deploy workflow gate to operator-triggered deploy to verify tier to surface rollback (RFC0013 WS2) | Complete | Medium | Feature | 2026-06-22 | -- |
+| [CR-0068](CR0068-record-deploy-outcome-into-the-artifact-graph-rfc0013.md) | record deploy outcome into the artifact graph (RFC0013 WS3) | Complete | Medium | Feature | 2026-06-22 | -- |

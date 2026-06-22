@@ -112,6 +112,7 @@ Claude loads files progressively based on task needs:
 | Project orchestration | reference-project.md | reference-epic.md | reference-config.md |
 | Agentic execution | reference-agentic-lessons.md | reference-epic.md | - |
 | Autosprint (Goal-Driven Development loop) | reference-autosprint.md | help/autosprint.md | reference-project.md |
+| Deploy last-mile (gate, verify, record - orchestrate-only) | reference-deploy.md | help/deploy.md | reference-config.md#deploy |
 | Building agentic wave prompts | reference-agent-prompt-template.md | reference-repo-map.md | reference-agentic-lessons.md#lessons-accumulation |
 | Change request workflow | help/cr.md | reference-cr.md | reference-outputs.md |
 | RFC / design exploration | help/rfc.md | reference-rfc.md | reference-outputs.md |
@@ -192,6 +193,7 @@ approach decisions. The full index is in `help/references.md`.
 | `plan` | Claude Code plan-file lifecycle (list, archive) |
 | `reconcile` | Detect and fix status drift across all artifacts |
 | `gate` | Portable, ecosystem-neutral CI quality gate over the deterministic checks |
+| `deploy` | Orchestrate-only deploy last-mile: gate, verify, record (operator-triggered, never autonomous) |
 | `skill-update` | Check for and install a newer SDLC Studio release (the skill itself) |
 | `status` | Visual dashboard: Requirements, Code, Tests health |
 | `hint` | Single actionable next step |

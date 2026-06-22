@@ -187,6 +187,19 @@ checks; constitution blocks only when `constitution.enforce` is set. No network,
 assumption - runnable in any CI or a pre-commit hook (see `help/gate.md` for wiring). The
 check registry is injectable, so the aggregation logic is unit-tested without a full repo.
 
+### `deploy.py`
+
+Orchestrate-only deploy last-mile (RFC0013). Read-only, ecosystem-neutral: it never deploys, never
+rolls back, never reads secrets, and never runs inside `autosprint`.
+
+- `preflight`: read `deploy.*` config, run the pre-deploy gate, emit the readiness verdict + the
+  operator hand-off (the deploy command to run, the rollback procedure to keep ready). Exit 0 when
+  the gate is green, 1 otherwise. Never executes the deploy.
+- `record --status <rolled-out|verified|rolled-back|failed> [--detail ...]`: append a timestamped
+  outcome to `sdlc-studio/deploy-log.md` (the WS3 feedback loop).
+
+Workflow: `reference-deploy.md`; schema: `reference-config.md#deploy`.
+
 ### `version_check.py`
 
 Skill version check + self-update signal (CR0044). Compares the installed version

@@ -1,6 +1,6 @@
 # RFC-0013: the deploy last-mile, without ecosystem lock-in
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Priority:** High
 > **Author:** Darren Benson (from the v2.2 usage retrospective)
 > **Date:** 2026-06-21
@@ -70,6 +70,9 @@ The neutral contract+hook (A) as the core; a few **optional** example wirings sh
 `templates/` (not core code) so they can't couple the skill.
 
 ## Recommendation
+
+> **Superseded 2026-06-22:** accepted by operator override - the WS1-WS3 orchestrate-only MVS is
+> being built now (see Decision). The "defer" reasoning below is retained as the design record.
 
 **A, orchestrate-only - and defer the build until the trigger fires.** Refined after the
 2026-06-22 pressure-test (below). Define the deploy **contract + verification oracle** and have
@@ -160,7 +163,10 @@ unmet - building now would be ceremony over scripts they already trust.
 **Trigger to build:** a consuming project needs the skill to *sequence and gate* a deploy it cannot
 already sequence itself. MVS then = WS1+WS2 collapsed into one CR, orchestrate-only, excluding WS3
 (feedback plumbing) and WS4 (example adapters).
-**Spawned CRs:** none (deferred).
+**Spawned CRs:** CR0066 (WS1 - deploy contract + `.config.yaml` schema), CR0067 (WS2 - the
+`deploy` workflow: gate -> operator-triggered deploy -> verify tier -> surface rollback), CR0068
+(WS3 - record the deploy outcome into the artifact graph). Accepted 2026-06-22 by operator override
+of the defer - build the WS1-WS3 orchestrate-only MVS now; WS4 (example adapters) stays out.
 
 ## Revision History
 
@@ -168,4 +174,5 @@ already sequence itself. MVS then = WS1+WS2 collapsed into one CR, orchestrate-o
 | --- | --- | --- |
 | 2026-06-21 | Darren Benson | Raised - the deploy last-mile, framed neutrality-first; for discussion before deciding |
 | 2026-06-21 | Darren Benson | Decision session: DEFERRED (stays Draft) - needs the most thought + no live deploy need. Trigger: a consuming project needs a coordinated, gated deploy (the lock-in question reopens then) |
+| 2026-06-22 | Operator | ACCEPTED (override of the defer): autosprint the WS1-WS3 orchestrate-only MVS; spawned CR0066/CR0067/CR0068; WS4 excluded |
 | 2026-06-22 | Pressure-test (4 adversarial lenses) | Design settled: A orchestrate-only (no auto-execute / no auto-rollback / never in the autonomous loop); D1-D7 decided; B and the adapter tail killed; build remains deferred until the trigger fires. MVS scoped to WS1+WS2 |
