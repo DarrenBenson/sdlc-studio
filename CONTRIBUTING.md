@@ -64,6 +64,36 @@ Before submitting changes, review the relevant best practice guide:
 - Check that templates render correctly
 - Ensure all internal links work
 
+## Development Workflow
+
+SDLC Studio dogfoods itself - it is built with its own lifecycle. A few non-negotiables:
+
+- **Setup:** Node (for the markdown lint suite) + Python 3.10+ (for the scripts and their tests).
+  Run `npm install` once; the Python scripts are pure stdlib (nothing to pip install).
+- **Gate every commit.** Before each commit, all three must pass:
+  `npm run lint && npm test && python3 .claude/skills/sdlc-studio/scripts/gate.py --root .`
+  Lint covers markdown, house style, links, SKILL.md, versions, budgets, and the neutrality guard;
+  the gate covers conformance, reconcile drift, validation, integrity, duplicate ids, and docs.
+- **Trunk-based, small green units.** Commit to `main` in small, individually-green increments; CI
+  re-runs the same gate on push. Branches are for isolation, not ceremony.
+- **Paperwork in the same commit.** Every behaviour or doc change carries its `CHANGELOG.md`
+  `[Unreleased]` entry and any help/reference update in the same commit.
+- **Bug to CR to RFC lifecycle.** Track work as artifacts created and closed with
+  `scripts/artifact.py` (`BG` bugs, `CR` change requests, `RFC` design exploration; globally
+  numbered). A change request implements a concrete improvement; a bug fixes something broken; an
+  RFC explores an unsettled design before either.
+- **Every bug ships a regression test.** A fix is not done until a test would catch the bug's return.
+- **Forward-port skill edits.** Changes under `.claude/skills/sdlc-studio/` are mirrored to each
+  install target (see `install.sh --list-targets`); verify the installed copy matches the repo.
+
+## Architecture
+
+Start with `AGENTS.md` (the operating doctrine) and
+`.claude/skills/sdlc-studio/best-practices/architecture.md`. The skill is a lean always-loaded
+router (`SKILL.md`) plus on-demand `reference-*.md` workflows, `help/` command docs, `templates/`,
+and stdlib Python helpers in `scripts/` (sharing `scripts/lib/sdlc_md.py`). Repo CI checks live in
+`tools/`. Volatile project state lives in `sdlc-studio/reviews/LATEST.md` - read it first.
+
 ## Questions?
 
 If you have questions about contributing, open an issue for discussion.
