@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-06-22
+
 ### Added
 
 - **CI coverage + security gates (CR0076):** `lint.yml` now runs a coverage floor (>= 80% of the

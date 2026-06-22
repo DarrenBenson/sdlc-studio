@@ -1,11 +1,11 @@
-# LATEST - current project state (v2.4.4)
+# LATEST - current project state (v2.5.0)
 
 > The current-state anchor. **Re-read this and run `/sdlc-studio status` after any context reset
 > or compaction.** Durable guidance lives in AGENTS.md; per-tranche detail lives in CHANGELOG.md
 > and `sdlc-studio/retros/`; the original v2.0 unified review is `RV0001-unified-review-2026-06-20.md`.
 >
-> **Project version:** 2.4.4 · **Date:** 2026-06-22 · **Gates:** lint clean, 789 script tests pass,
-> `gate` PASS, reconcile drift 0, disclosure 0, npm audit 0.
+> **Project version:** 2.5.0 · **Date:** 2026-06-22 · **Gates:** lint clean, 796 script tests pass,
+> `gate` PASS, reconcile drift 0, disclosure 0, npm audit 0, coverage 83%.
 
 ## Headline
 

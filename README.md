@@ -1,6 +1,6 @@
 # SDLC Studio
 
-**Version 2.4.4** | MIT Licence
+**Version 2.5.0** | MIT Licence
 
 **Set a goal and acceptance criteria; the agent drives the proven software
 lifecycle to it - and proves the code against it.** SDLC Studio brings back the
