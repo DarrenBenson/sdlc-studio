@@ -4,6 +4,19 @@ Detailed workflows for User Persona creation, management, and consultation.
 
 <!-- Load when: creating, reviewing, or consulting Personas -->
 
+## Which persona doc? {#which-doc}
+
+| You want to... | Read |
+| --- | --- |
+| Define who the product is *for* (a goal-directed **design persona**) | this file + `templates/personas/persona-template.md` |
+| Reverse-engineer personas from existing code / users | `reference-persona-generate.md` |
+| Set up a **review seat** that critiques artefacts (Three Amigos, PO/PM owners) | `reference-workflow-personas.md` + `templates/personas/review-seat-charter.md` |
+| Consult personas or seats on an artefact | `reference-consult.md` |
+| Run an interactive persona session | `reference-chat.md` |
+
+**Design personas** (who the product serves, RFC0017) and **review seats** (who reviews the work,
+RFC0016) are distinct - see `reference-workflow-personas.md#document-owner-seats`.
+
 ---
 
 # Persona Framework

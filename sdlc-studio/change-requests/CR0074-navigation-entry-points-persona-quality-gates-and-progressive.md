@@ -1,6 +1,6 @@
 # CR-0074: navigation entry points persona quality-gates and progressive-loading rows (review WS B2bc)
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-22
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
@@ -12,9 +12,9 @@ World-class review WS B2b+B2c. Navigation gaps from the token-economy lens: unde
 
 ## Acceptance Criteria
 
-- [ ] a 'which persona doc do I use' routing table across reference-persona / persona-generate / workflow-personas / consult / chat
-- [ ] a section naming the four artifact-quality gates and when each fires
-- [ ] any genuinely-missing Progressive-Loading rows added to SKILL.md
+- [x] a 'which persona doc do I use' routing table across reference-persona / persona-generate / workflow-personas / consult / chat
+- [x] a section naming the four artifact-quality gates and when each fires
+- [x] added Progressive-Loading rows (persona create/consult; test-spec/automation); other claimed-missing Progressive-Loading rows added to SKILL.md
 
 ## Revision History
 

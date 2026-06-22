@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Navigation entry points (CR0074):** a 'which persona doc do I use' routing table
+  (`reference-persona.md#which-doc`), a grouped overview of the gate's checks in `help/gate.md`
+  (artifact-quality / index / provenance / skill-docs - replacing its stale 5-check line), and
+  Progressive-Loading rows for persona create/consult and test-spec/automation.
 - **doc-freshness advisory gate check (CR0073):** a new non-blocking `gate.py` check that flags when
   `LATEST.md`'s claimed version / test count / disclosure count drift from reality - the state-anchor
   staleness the audit caught by hand. Skill-only, read-only; only checks facts LATEST.md actually states.

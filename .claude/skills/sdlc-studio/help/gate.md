@@ -13,10 +13,20 @@ python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --only conformance,reconcile
 python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --skip constitution --format json
 ```
 
-Runs **conformance + reconcile (drift) + validate + constitution + integrity**, prints a
-consolidated report, and exits non-zero only when a **blocking** check fails. Constitution
-is blocking only when the project sets `constitution.enforce: true`; a non-blocking failure
-is reported (`warn`) but does not fail the gate. No network, no CI/cloud assumption.
+Prints a consolidated report and exits non-zero only when a **blocking** check fails; a non-blocking
+failure is reported (`warn`) but does not fail the gate. No network, no CI/cloud assumption.
+
+### The checks
+
+| Group | Checks | Blocks? |
+| --- | --- | --- |
+| **Artifact quality** | `conformance` (lifecycle stages), `validate` (structure/vocab), `integrity` (required links/refs), `constitution` (project principles) | yes (constitution only when `constitution.enforce`) |
+| **Index consistency** | `reconcile` (file-census drift), `duplicate-id` | yes |
+| **Provenance** | `provenance` (tool-created stamps) | only when `provenance.enforce` |
+| **Skill docs (skill repo only)** | `doc-coverage` (every command/script documented), `disclosure` (progressive-disclosure hygiene), `doc-freshness` (LATEST.md vs reality) | doc-coverage yes; disclosure + doc-freshness advisory |
+
+The four **artifact-quality** checks are the ones that police every artifact; the rest guard the
+index, provenance, and the skill's own docs. `--only` / `--skip` select a subset.
 
 ## CI wiring (the gate is the mechanism; these are just examples)
 

@@ -133,6 +133,8 @@ Claude loads files progressively based on task needs:
 | Validation workflows / advanced testing patterns | reference-test-validation.md | reference-test-best-practices.md | - |
 | E2E mocking patterns and strategies | reference-test-e2e-guidelines.md | reference-test-best-practices.md#test-anti-patterns | - |
 | Multi-persona pressure-test canvas (unsettled design) | reference-consult.md#pressure-test-canvas | reference-decisions.md | - |
+| Creating or consulting personas / review seats | reference-persona.md#which-doc | help/persona.md | reference-consult.md |
+| Test spec / test automation | help/test-spec.md | reference-test-spec.md | reference-test-automation.md |
 | Plan-file lifecycle (active / archive / list) | reference-plan-files.md | help/plan.md | - |
 | Reconcile cadence triggers | reference-reconcile.md#cadence-triggers | help/status.md#reconcile-recommendation | - |
 | Transition an artifact's status (+ index/epic cascade) | scripts/transition.py | reference-outputs.md#status-transitions | reference-reconcile.md |

@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 3 |
+| Proposed | 2 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 72 |
+| Complete | 73 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -93,6 +93,6 @@
 | [CR-0071](CR0071-project-upgrade-determinism-hygiene-sorted-globs-and-injectable.md) | project_upgrade determinism hygiene sorted globs and injectable date (review WS B1) | Complete | Medium | Feature | 2026-06-22 | -- |
 | [CR-0072](CR0072-contributing-dev-bootstrap-plus-architecture-pointer-review-ws.md) | CONTRIBUTING dev bootstrap plus architecture pointer (review WS B3b) | Complete | Medium | Feature | 2026-06-22 | -- |
 | [CR-0073](CR0073-doc-freshness-advisory-gate-check-latest-claims-vs.md) | doc-freshness advisory gate check LATEST claims vs reality (review WS B4) | Complete | Medium | Feature | 2026-06-22 | -- |
-| [CR-0074](CR0074-navigation-entry-points-persona-quality-gates-and-progressive.md) | navigation entry points persona quality-gates and progressive-loading rows (review WS B2bc) | Proposed | Medium | Feature | 2026-06-22 | -- |
+| [CR-0074](CR0074-navigation-entry-points-persona-quality-gates-and-progressive.md) | navigation entry points persona quality-gates and progressive-loading rows (review WS B2bc) | Complete | Medium | Feature | 2026-06-22 | -- |
 | [CR-0075](CR0075-consolidate-the-reference-test-doc-set-with-routing.md) | consolidate the reference-test doc set with routing maps (review WS B2a) | Proposed | Medium | Feature | 2026-06-22 | -- |
 | [CR-0076](CR0076-ci-coverage-gate-plus-python-security-scan-bandit.md) | CI coverage gate plus python security scan bandit (review WS B3c) | Proposed | Medium | Feature | 2026-06-22 | -- |
