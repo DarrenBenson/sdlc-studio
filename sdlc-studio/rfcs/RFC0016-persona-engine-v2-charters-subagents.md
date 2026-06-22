@@ -215,7 +215,7 @@ ledger the skill already keeps, so a human deposits a little authored-ness befor
   `shadow` (WS1), **isolated-subagent consults with a synthesis step** (WS1, the proven independent-
   critic pattern applied to consults), and **reuse of the existing ledgers** (`critic.py` /
   `ledger.py`) as the externalised record (WS2). Spawned as **CR0060**.
-- **Declined as out-of-scope** - this is the *external* authored-identity ("engram") system, which
+- **Declined as out-of-scope** - this is the *external* authored-identity system, which
   sdlc-studio must not reinvent (operator direction): WS3 broker-reach to an authored identity, WS4
   the fallback detection envelope / drift counters, WS5 the human-ratified canon, WS6 unify-later.
   The charter-vs-authored-identity *distinction* remains as framing only; sdlc-studio builds the

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Domain-neutrality lint guard (`lint:neutrality`):** a CI check fails if a private
+  project/product/repo name appears in a tracked file. The blocklist is stored as SHA-256
+  **hashes** (never plaintext) so the guard - itself a public file - does not reveal the names it
+  guards, and its output redacts matches to a hash prefix. Sub-token aware (a base name catches
+  hyphenated variants). Caught and cleared 3 pre-existing leaks on first run.
+
 ## [2.4.3] - 2026-06-22
 
 ### Added

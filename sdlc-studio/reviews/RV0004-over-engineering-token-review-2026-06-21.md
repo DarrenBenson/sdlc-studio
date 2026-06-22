@@ -29,7 +29,7 @@
 ## RFC0016 scope correction
 
 RFC0016 as drafted leaned into the **external authored-identity machinery** (broker-reach,
-drift-detection envelope, human-ratified canon) - the "engram" side the owner said sdlc-studio must
+drift-detection envelope, human-ratified canon) - the external-identity side the owner said sdlc-studio must
 not reinvent. **Action:** accept the lean core (charters + isolated-subagent consults + ledger-as-
 record), decline the heavy tail as out-of-scope (RFC0016 Decision, CR-A).
 

@@ -22,7 +22,7 @@ skill-update offers it after a version bump. Reuses reconcile/validate/next_id/v
   reconcile drift); idempotent; nothing destructive; never files CRs
 - [x] detects the old (pre-RFC0017) persona model incl. the nested two-category structure
 - [x] `reference-upgrade.md` orchestration + `reference-skill-update.md` offer + help + reference-scripts entry
-- [x] tested; validated read-only against a real consuming project (engram-studio) - report matches the recon
+- [x] tested; validated read-only against a real consuming project - report matches the recon
 
 ## Implementation
 
