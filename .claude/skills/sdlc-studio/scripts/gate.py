@@ -88,6 +88,15 @@ def _disclosure(root: str) -> dict:
     return {"count": n, "blocking": False, "detail": detail}  # advisory: never blocks
 
 
+def _doc_freshness(root: str) -> dict:
+    import doc_freshness
+    r = doc_freshness.check(root)
+    n = len(r["findings"])
+    detail = "N/A (not the skill repo)" if not r["applicable"] else (
+        f"{n} stale LATEST.md claim(s)" if n else "LATEST.md fresh")
+    return {"count": n, "blocking": False, "detail": detail}  # advisory: never blocks
+
+
 def _doc_coverage(root: str) -> dict:
     import doc_coverage
     r = doc_coverage.check(root)
@@ -108,6 +117,7 @@ DEFAULT_CHECKS = {
     "provenance": _provenance,
     "doc-coverage": _doc_coverage,
     "disclosure": _disclosure,
+    "doc-freshness": _doc_freshness,
 }
 
 

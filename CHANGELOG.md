@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **doc-freshness advisory gate check (CR0073):** a new non-blocking `gate.py` check that flags when
+  `LATEST.md`'s claimed version / test count / disclosure count drift from reality - the state-anchor
+  staleness the audit caught by hand. Skill-only, read-only; only checks facts LATEST.md actually states.
+
 ## [2.4.4] - 2026-06-22
 
 ### Fixed
