@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 3 |
+| Proposed | 2 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 68 |
+| Complete | 69 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -88,7 +88,7 @@
 | [CR-0066](CR0066-deploy-contract-and-config-yaml-deploy-schema-rfc0013.md) | deploy contract and .config.yaml deploy schema (RFC0013 WS1) | Complete | Medium | Feature | 2026-06-22 | -- |
 | [CR-0067](CR0067-deploy-workflow-gate-to-operator-triggered-deploy-to.md) | deploy workflow gate to operator-triggered deploy to verify tier to surface rollback (RFC0013 WS2) | Complete | Medium | Feature | 2026-06-22 | -- |
 | [CR-0068](CR0068-record-deploy-outcome-into-the-artifact-graph-rfc0013.md) | record deploy outcome into the artifact graph (RFC0013 WS3) | Complete | Medium | Feature | 2026-06-22 | -- |
-| [CR-0069](CR0069-harden-shared-table-parser-edge-cases-plus-regression.md) | harden shared table-parser edge cases plus regression battery (review WS B1a) | Proposed | Medium | Feature | 2026-06-22 | -- |
+| [CR-0069](CR0069-harden-shared-table-parser-edge-cases-plus-regression.md) | harden shared table-parser edge cases plus regression battery (review WS B1a) | Complete | Medium | Feature | 2026-06-22 | -- |
 | [CR-0070](CR0070-test-density-backfill-for-repo-map-github-sync.md) | test-density backfill for repo_map github_sync lessons (review WS B1b) | Proposed | Medium | Feature | 2026-06-22 | -- |
 | [CR-0071](CR0071-project-upgrade-determinism-hygiene-sorted-globs-and-injectable.md) | project_upgrade determinism hygiene sorted globs and injectable date (review WS B1) | Complete | Medium | Feature | 2026-06-22 | -- |
 | [CR-0072](CR0072-contributing-dev-bootstrap-plus-architecture-pointer-review-ws.md) | CONTRIBUTING dev bootstrap plus architecture pointer (review WS B3b) | Proposed | Medium | Feature | 2026-06-22 | -- |

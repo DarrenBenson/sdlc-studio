@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Table-parser regression battery (CR0069):** a 20-test edge-case suite (`test_table_parsers.py`)
+  locks the shared `table_cells` / `join_row` / `canonical_status` primitives - escaped pipes,
+  ragged/empty/unicode cells, separator variants, join round-trip, status-token boundaries. Closes the
+  reconcile-lineage fault class at the parser level (no live bug found; pure hardening).
 - **`deploy` - the orchestrate-only deploy last-mile (RFC0013, CR0066-0068):** a new workflow that
   **gates** before, **verifies** after, and **records** a deploy - without owning the runtime. The
   project supplies `deploy.{command,smoke,soak_minutes,rollback}` in `.config.yaml`; the skill never
