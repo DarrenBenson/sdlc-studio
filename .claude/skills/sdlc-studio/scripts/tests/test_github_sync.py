@@ -7,7 +7,9 @@ touch the network.
 """
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 import shutil
 import sys
@@ -251,6 +253,608 @@ def subprocess_result(returncode: int, stdout: str, stderr: str):
         stdout=stdout,
         stderr=stderr,
     )
+
+
+# -----------------------------------------------------------------------------
+# gh wrapper-layer tests (gh() itself stubbed, never reaching subprocess)
+# -----------------------------------------------------------------------------
+
+
+class GhIssueListTests(unittest.TestCase):
+    """gh_issue_list parses JSON and degrades on error/garbage."""
+
+    def test_parses_issue_array(self) -> None:
+        payload = '[{"number": 7, "title": "x", "labels": []}]'
+        with mock.patch.object(
+            github_sync, "gh", return_value=subprocess_result(0, payload, "")
+        ):
+            issues = github_sync.gh_issue_list("sdlc:cr")
+        self.assertEqual(issues, [{"number": 7, "title": "x", "labels": []}])
+
+    def test_returns_empty_on_nonzero_returncode(self) -> None:
+        with mock.patch.object(
+            github_sync, "gh", return_value=subprocess_result(1, "", "boom")
+        ):
+            self.assertEqual(github_sync.gh_issue_list("sdlc:cr"), [])
+
+    def test_returns_empty_on_malformed_json(self) -> None:
+        # Non-zero would mask the parse path, so use a success exit with garbage.
+        with mock.patch.object(
+            github_sync, "gh", return_value=subprocess_result(0, "not json{", "")
+        ):
+            self.assertEqual(github_sync.gh_issue_list("sdlc:cr"), [])
+
+    def test_returns_empty_on_blank_stdout(self) -> None:
+        with mock.patch.object(
+            github_sync, "gh", return_value=subprocess_result(0, "   ", "")
+        ):
+            self.assertEqual(github_sync.gh_issue_list("sdlc:cr"), [])
+
+    def test_passes_state_all_and_label_filter(self) -> None:
+        with mock.patch.object(
+            github_sync, "gh", return_value=subprocess_result(0, "[]", "")
+        ) as gh_mock:
+            github_sync.gh_issue_list("sdlc:epic")
+        called_args = gh_mock.call_args.args
+        self.assertIn("--label", called_args)
+        self.assertIn("sdlc:epic", called_args)
+        self.assertIn("all", called_args)
+
+
+class GhIssueCreateTests(unittest.TestCase):
+    """gh_issue_create extracts the issue number from the returned URL."""
+
+    def test_extracts_number_from_url(self) -> None:
+        with mock.patch.object(
+            github_sync,
+            "gh",
+            return_value=subprocess_result(
+                0, "https://github.com/o/r/issues/123\n", ""
+            ),
+        ):
+            number = github_sync.gh_issue_create("t", "b", ["sdlc:cr"])
+        self.assertEqual(number, 123)
+
+    def test_returns_none_when_url_has_no_number(self) -> None:
+        with mock.patch.object(
+            github_sync, "gh", return_value=subprocess_result(0, "no url here", "")
+        ):
+            self.assertIsNone(github_sync.gh_issue_create("t", "b", []))
+
+    def test_returns_none_on_failure(self) -> None:
+        with mock.patch.object(
+            github_sync, "gh", return_value=subprocess_result(1, "", "denied")
+        ):
+            self.assertIsNone(github_sync.gh_issue_create("t", "b", ["sdlc:cr"]))
+
+    def test_each_label_passed_as_separate_flag(self) -> None:
+        with mock.patch.object(
+            github_sync,
+            "gh",
+            return_value=subprocess_result(0, "/issues/1", ""),
+        ) as gh_mock:
+            github_sync.gh_issue_create("Title", "Body", ["sdlc:cr", "sdlc:status:proposed"])
+        args = list(gh_mock.call_args.args)
+        # Two labels -> two --label occurrences.
+        self.assertEqual(args.count("--label"), 2)
+        self.assertIn("sdlc:status:proposed", args)
+
+
+class GhIssueEditTests(unittest.TestCase):
+    """gh_issue_edit short-circuits and builds add/remove flags."""
+
+    def test_no_labels_is_noop_success_without_calling_gh(self) -> None:
+        with mock.patch.object(github_sync, "gh") as gh_mock:
+            self.assertTrue(github_sync.gh_issue_edit(5, [], []))
+            gh_mock.assert_not_called()
+
+    def test_builds_add_and_remove_flags(self) -> None:
+        with mock.patch.object(
+            github_sync, "gh", return_value=subprocess_result(0, "", "")
+        ) as gh_mock:
+            ok = github_sync.gh_issue_edit(9, ["sdlc:status:done"], ["sdlc:status:ready"])
+        self.assertTrue(ok)
+        args = list(gh_mock.call_args.args)
+        self.assertEqual(args[:3], ["issue", "edit", "9"])
+        self.assertIn("--add-label", args)
+        self.assertIn("sdlc:status:done", args)
+        self.assertIn("--remove-label", args)
+        self.assertIn("sdlc:status:ready", args)
+
+    def test_returns_false_on_failure(self) -> None:
+        with mock.patch.object(
+            github_sync, "gh", return_value=subprocess_result(1, "", "nope")
+        ):
+            self.assertFalse(github_sync.gh_issue_edit(9, ["sdlc:cr"], []))
+
+
+class GhPrListMergedTests(unittest.TestCase):
+    """gh_pr_list_merged filters by since_ref and degrades on error."""
+
+    PRS = json.dumps(
+        [
+            {"number": 1, "body": "", "mergedAt": "2026-01-01T00:00:00Z"},
+            {"number": 2, "body": "", "mergedAt": "2026-03-01T00:00:00Z"},
+            {"number": 3, "body": "", "mergedAt": "2026-05-01T00:00:00Z"},
+        ]
+    )
+
+    def test_no_since_returns_all(self) -> None:
+        with mock.patch.object(
+            github_sync, "gh", return_value=subprocess_result(0, self.PRS, "")
+        ):
+            prs = github_sync.gh_pr_list_merged(None)
+        self.assertEqual([p["number"] for p in prs], [1, 2, 3])
+
+    def test_since_excludes_older_and_equal(self) -> None:
+        with mock.patch.object(
+            github_sync, "gh", return_value=subprocess_result(0, self.PRS, "")
+        ):
+            prs = github_sync.gh_pr_list_merged("2026-03-01T00:00:00Z")
+        # Strictly-greater comparison: only the May PR survives.
+        self.assertEqual([p["number"] for p in prs], [3])
+
+    def test_returns_empty_on_error(self) -> None:
+        with mock.patch.object(
+            github_sync, "gh", return_value=subprocess_result(2, "", "fail")
+        ):
+            self.assertEqual(github_sync.gh_pr_list_merged(None), [])
+
+    def test_pr_missing_mergedat_is_filtered_out_when_since_set(self) -> None:
+        payload = json.dumps([{"number": 8, "body": ""}])
+        with mock.patch.object(
+            github_sync, "gh", return_value=subprocess_result(0, payload, "")
+        ):
+            prs = github_sync.gh_pr_list_merged("2020-01-01T00:00:00Z")
+        self.assertEqual(prs, [])
+
+
+# -----------------------------------------------------------------------------
+# Hashing and field-extraction edge cases
+# -----------------------------------------------------------------------------
+
+
+class HashAndExtractTests(unittest.TestCase):
+    def test_hash_is_stable_and_content_sensitive(self) -> None:
+        h1 = github_sync._hash_body("alpha")
+        self.assertEqual(h1, github_sync._hash_body("alpha"))
+        self.assertNotEqual(h1, github_sync._hash_body("beta"))
+        self.assertTrue(h1.startswith("sha256:"))
+
+    def test_extract_github_issue_none_when_absent(self) -> None:
+        self.assertIsNone(github_sync._extract_github_issue("# Title\n\nNo metadata."))
+
+    def test_extract_github_issue_parses_hashed_number(self) -> None:
+        text = "> **GitHub Issue:** #314\n"
+        self.assertEqual(github_sync._extract_github_issue(text), 314)
+
+
+# -----------------------------------------------------------------------------
+# _resolve_types
+# -----------------------------------------------------------------------------
+
+
+class ResolveTypesTests(unittest.TestCase):
+    def test_all_expands_to_three_types(self) -> None:
+        self.assertEqual(github_sync._resolve_types("all"), ["cr", "story", "epic"])
+
+    def test_single_type_passes_through(self) -> None:
+        self.assertEqual(github_sync._resolve_types("story"), ["story"])
+
+    def test_unknown_type_raises_systemexit(self) -> None:
+        with self.assertRaises(SystemExit):
+            github_sync._resolve_types("widget")
+
+
+# -----------------------------------------------------------------------------
+# set_github_issue_field idempotency and placement
+# -----------------------------------------------------------------------------
+
+
+class SetGithubIssueFieldTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp(prefix="ghsf_"))
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_noop_when_already_correct(self) -> None:
+        p = self.tmp / "cr.md"
+        p.write_text(SAMPLE_CR_WITH_ISSUE)
+        before = p.read_text()
+        github_sync.set_github_issue_field(p, 42)  # already #42
+        self.assertEqual(p.read_text(), before)
+
+    def test_inserts_after_status_line(self) -> None:
+        p = self.tmp / "cr.md"
+        p.write_text(SAMPLE_CR)  # has a Status line, no GitHub Issue
+        github_sync.set_github_issue_field(p, 77)
+        lines = p.read_text().splitlines()
+        status_idx = next(i for i, l in enumerate(lines) if "**Status:**" in l)
+        self.assertIn("**GitHub Issue:** #77", lines[status_idx + 1])
+
+    def test_appends_when_no_status_line(self) -> None:
+        p = self.tmp / "bare.md"
+        p.write_text("# CR-0099: Bare record\n\nNo metadata block.\n")
+        github_sync.set_github_issue_field(p, 12)
+        self.assertIn("**GitHub Issue:** #12", p.read_text())
+
+
+# -----------------------------------------------------------------------------
+# Push: label diff/sync, idempotency, state persistence
+# -----------------------------------------------------------------------------
+
+
+class PushLabelSyncTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.fixture = FixtureRepo()
+        self._cwd = Path.cwd()
+        import os
+        os.chdir(self.fixture.tmp)
+
+    def tearDown(self) -> None:
+        import os
+        os.chdir(self._cwd)
+        self.fixture.cleanup()
+
+    def _state_path(self) -> Path:
+        return self.fixture.tmp / github_sync.STATE_PATH
+
+    def test_mapped_cr_with_stale_labels_gets_diffed(self) -> None:
+        """CR-0002 (#42) carries P1/in-progress locally; issue has wrong labels.
+
+        The push must add the desired sdlc labels and remove the stale ones,
+        touching only `sdlc:` labels (a foreign label must be left alone).
+        """
+        captured: dict[str, list[str]] = {}
+
+        def fake_gh(*args, capture=True):
+            if args[:2] == ("issue", "list"):
+                issue = {
+                    "number": 42,
+                    "labels": [
+                        {"name": "sdlc:cr"},
+                        {"name": "sdlc:status:proposed"},  # stale -> remove
+                        {"name": "sdlc:priority:P3"},      # stale -> remove
+                        {"name": "needs-triage"},          # foreign -> keep
+                    ],
+                }
+                return subprocess_result(0, json.dumps([issue]), "")
+            if args[:2] == ("issue", "edit"):
+                arglist = list(args)
+                captured["add"] = [
+                    arglist[i + 1]
+                    for i, a in enumerate(arglist)
+                    if a == "--add-label"
+                ]
+                captured["remove"] = [
+                    arglist[i + 1]
+                    for i, a in enumerate(arglist)
+                    if a == "--remove-label"
+                ]
+                return subprocess_result(0, "", "")
+            return subprocess_result(0, "", "")
+
+        with mock.patch.object(github_sync, "gh", side_effect=fake_gh):
+            rc = github_sync.main(["push", "--type", "cr"])
+        self.assertEqual(rc, 0)
+        # Desired labels for CR-0002: in-progress, P1, production-feedback.
+        self.assertIn("sdlc:status:in-progress", captured["add"])
+        self.assertIn("sdlc:priority:P1", captured["add"])
+        self.assertIn("sdlc:type:production-feedback", captured["add"])
+        # Stale sdlc labels removed; foreign label untouched.
+        self.assertIn("sdlc:status:proposed", captured["remove"])
+        self.assertIn("sdlc:priority:P3", captured["remove"])
+        self.assertNotIn("needs-triage", captured["remove"])
+
+    def test_idempotent_when_hash_matches_state(self) -> None:
+        """If the mapping hash equals the current body hash, skip the issue entirely."""
+        rec = next(
+            r for r in github_sync.walk_local("cr") if r.rec_id == "CR-0002"
+        )
+        state = github_sync._empty_state()
+        state["mappings"]["CR-0002"] = {
+            "type": "cr",
+            "issue": 42,
+            "hash": rec.content_hash,
+            "updated_at": "2026-01-01T00:00:00Z",
+        }
+        github_sync.save_state(state, self._state_path())
+
+        list_called = {"n": 0}
+
+        def fake_gh(*args, capture=True):
+            if args[:2] == ("issue", "list"):
+                list_called["n"] += 1
+                return subprocess_result(0, "[]", "")
+            if args[:2] == ("issue", "create"):
+                # CR-0001 (unmapped) still needs creating.
+                return subprocess_result(0, "/issues/60", "")
+            return subprocess_result(0, "", "")
+
+        with mock.patch.object(github_sync, "gh", side_effect=fake_gh):
+            rc = github_sync.main(["push", "--type", "cr"])
+        self.assertEqual(rc, 0)
+        # Hash matched, so no label-sync occurred -> issue list never fetched.
+        self.assertEqual(list_called["n"], 0)
+
+    def test_missing_remote_issue_is_skipped_not_fatal(self) -> None:
+        """A local CR points at #42 but gh returns no such issue -> skip, rc 0."""
+        def fake_gh(*args, capture=True):
+            if args[:2] == ("issue", "list"):
+                return subprocess_result(0, "[]", "")  # #42 absent
+            if args[:2] == ("issue", "create"):
+                return subprocess_result(0, "/issues/61", "")
+            return subprocess_result(0, "", "")
+
+        with mock.patch.object(github_sync, "gh", side_effect=fake_gh):
+            rc = github_sync.main(["push", "--type", "cr"])
+        self.assertEqual(rc, 0)
+        # CR-0002 mapping must not be written, since the edit never happened.
+        state = github_sync.load_state(self._state_path())
+        self.assertNotIn("CR-0002", state.get("mappings", {}))
+
+    def test_create_failure_does_not_write_mapping(self) -> None:
+        def fake_gh(*args, capture=True):
+            if args[:2] == ("issue", "create"):
+                return subprocess_result(1, "", "create failed")
+            if args[:2] == ("issue", "list"):
+                return subprocess_result(0, "[]", "")
+            return subprocess_result(0, "", "")
+
+        with mock.patch.object(github_sync, "gh", side_effect=fake_gh):
+            rc = github_sync.main(["push", "--type", "cr"])
+        self.assertEqual(rc, 0)
+        state = github_sync.load_state(self._state_path())
+        self.assertNotIn("CR-0001", state.get("mappings", {}))
+        # And the file must not have gained a bogus issue number.
+        path = self.fixture.tmp / "sdlc-studio/change-requests/CR-0001-rate-limit.md"
+        self.assertNotIn("**GitHub Issue:**", path.read_text())
+
+    def test_apply_push_persists_state_and_mapping(self) -> None:
+        def fake_gh(*args, capture=True):
+            if args[:2] == ("issue", "create"):
+                return subprocess_result(0, "/issues/70", "")
+            if args[:2] == ("issue", "list"):
+                return subprocess_result(0, "[]", "")
+            return subprocess_result(0, "", "")
+
+        with mock.patch.object(github_sync, "gh", side_effect=fake_gh):
+            github_sync.main(["push", "--type", "cr"])
+        state = github_sync.load_state(self._state_path())
+        self.assertIsNotNone(state["last_push"])
+        self.assertEqual(state["mappings"]["CR-0001"]["issue"], 70)
+        # The persisted hash matches the file as written (post issue-field edit).
+        rec = next(
+            r for r in github_sync.walk_local("cr") if r.rec_id == "CR-0001"
+        )
+        self.assertEqual(state["mappings"]["CR-0001"]["hash"], rec.content_hash)
+
+    def test_dry_run_does_not_persist_state(self) -> None:
+        with mock.patch.object(github_sync, "gh") as gh_mock:
+            github_sync.main(["push", "--type", "cr", "--dry-run"])
+            gh_mock.assert_not_called()
+        # No state file written on a dry run.
+        self.assertFalse(self._state_path().exists())
+
+
+# -----------------------------------------------------------------------------
+# Pull command
+# -----------------------------------------------------------------------------
+
+
+class PullTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.fixture = FixtureRepo()
+        self._cwd = Path.cwd()
+        import os
+        os.chdir(self.fixture.tmp)
+
+    def tearDown(self) -> None:
+        import os
+        os.chdir(self._cwd)
+        self.fixture.cleanup()
+
+    def _state_path(self) -> Path:
+        return self.fixture.tmp / github_sync.STATE_PATH
+
+    def test_pull_skips_already_linked_issue(self) -> None:
+        """Issue #42 is already linked to CR-0002 locally, so no ingest needed."""
+        def fake_gh(*args, capture=True):
+            if args[:2] == ("issue", "list"):
+                issue = {"number": 42, "title": "Linked", "body": "x", "labels": []}
+                return subprocess_result(0, json.dumps([issue]), "")
+            return subprocess_result(0, "", "")
+
+        out = io.StringIO()
+        with mock.patch.object(github_sync, "gh", side_effect=fake_gh):
+            with contextlib.redirect_stdout(out):
+                rc = github_sync.main(["pull", "--type", "cr"])
+        self.assertEqual(rc, 0)
+        self.assertIn("issues_needing_ingest=0", out.getvalue())
+
+    def test_pull_flags_unlinked_issue_for_ingest(self) -> None:
+        def fake_gh(*args, capture=True):
+            if args[:2] == ("issue", "list"):
+                issue = {"number": 500, "title": "New CR", "body": "x", "labels": []}
+                return subprocess_result(0, json.dumps([issue]), "")
+            return subprocess_result(0, "", "")
+
+        out = io.StringIO()
+        with mock.patch.object(github_sync, "gh", side_effect=fake_gh):
+            with contextlib.redirect_stdout(out):
+                rc = github_sync.main(["pull", "--type", "cr"])
+        self.assertEqual(rc, 0)
+        text = out.getvalue()
+        self.assertIn("issues_needing_ingest=1", text)
+        self.assertIn("--from-issue 500", text)
+
+    def test_pull_dry_run_does_not_write_state(self) -> None:
+        def fake_gh(*args, capture=True):
+            if args[:2] == ("issue", "list"):
+                issue = {"number": 500, "title": "New CR", "body": "x", "labels": []}
+                return subprocess_result(0, json.dumps([issue]), "")
+            return subprocess_result(0, "", "")
+
+        with mock.patch.object(github_sync, "gh", side_effect=fake_gh):
+            with contextlib.redirect_stdout(io.StringIO()):
+                github_sync.main(["pull", "--type", "cr", "--dry-run"])
+        self.assertFalse(self._state_path().exists())
+
+    def test_pull_apply_stamps_last_pull(self) -> None:
+        with mock.patch.object(
+            github_sync, "gh", return_value=subprocess_result(0, "[]", "")
+        ):
+            with contextlib.redirect_stdout(io.StringIO()):
+                github_sync.main(["pull", "--type", "cr"])
+        state = github_sync.load_state(self._state_path())
+        self.assertIsNotNone(state["last_pull"])
+
+
+# -----------------------------------------------------------------------------
+# Cascade command
+# -----------------------------------------------------------------------------
+
+
+class CascadeCommandTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.fixture = FixtureRepo()
+        # Add a story dir with a story linked to issue #42.
+        stories = self.fixture.tmp / "sdlc-studio" / "stories"
+        stories.mkdir(parents=True)
+        (stories / "US0023-login.md").write_text(
+            "# US0023: Login story\n\n"
+            "> **Status:** In Progress\n"
+            "> **GitHub Issue:** #42\n\n"
+            "## Summary\n\nStory body.\n"
+        )
+        self._cwd = Path.cwd()
+        import os
+        os.chdir(self.fixture.tmp)
+
+    def tearDown(self) -> None:
+        import os
+        os.chdir(self._cwd)
+        self.fixture.cleanup()
+
+    def _state_path(self) -> Path:
+        return self.fixture.tmp / github_sync.STATE_PATH
+
+    def test_no_prs_returns_early(self) -> None:
+        out = io.StringIO()
+        with mock.patch.object(github_sync, "gh_pr_list_merged", return_value=[]):
+            with contextlib.redirect_stdout(out):
+                rc = github_sync.main(["cascade"])
+        self.assertEqual(rc, 0)
+        self.assertIn("no merged PRs", out.getvalue())
+
+    def test_prs_without_sdlc_refs_report_none(self) -> None:
+        prs = [{"number": 1, "body": "just a normal merge", "mergedAt": "2026-05-01T00:00:00Z"}]
+        out = io.StringIO()
+        with mock.patch.object(github_sync, "gh_pr_list_merged", return_value=prs):
+            with contextlib.redirect_stdout(out):
+                rc = github_sync.main(["cascade"])
+        self.assertEqual(rc, 0)
+        self.assertIn("no sdlc references", out.getvalue())
+
+    def test_closes_ref_maps_issue_number_to_local_story(self) -> None:
+        prs = [
+            {
+                "number": 11,
+                "body": "Closes #42",
+                "mergedAt": "2026-05-02T00:00:00Z",
+            }
+        ]
+        out = io.StringIO()
+        with mock.patch.object(github_sync, "gh_pr_list_merged", return_value=prs):
+            with contextlib.redirect_stdout(out):
+                rc = github_sync.main(["cascade"])
+        self.assertEqual(rc, 0)
+        text = out.getvalue()
+        # Issue #42 maps to local US0023 via its GitHub Issue field.
+        self.assertIn("US0023", text)
+
+    def test_explicit_sdlc_refs_are_reported(self) -> None:
+        prs = [
+            {
+                "number": 12,
+                "body": "sdlc:story US0099 and sdlc:cr CR-0007",
+                "mergedAt": "2026-05-03T00:00:00Z",
+            }
+        ]
+        out = io.StringIO()
+        with mock.patch.object(github_sync, "gh_pr_list_merged", return_value=prs):
+            with contextlib.redirect_stdout(out):
+                rc = github_sync.main(["cascade"])
+        self.assertEqual(rc, 0)
+        text = out.getvalue()
+        self.assertIn("US0099", text)
+        self.assertIn("CR-0007", text)
+
+    def test_apply_records_last_cascade_ref(self) -> None:
+        prs = [
+            {"number": 13, "body": "Closes #42", "mergedAt": "2026-05-09T12:00:00Z"},
+        ]
+        with mock.patch.object(github_sync, "gh_pr_list_merged", return_value=prs):
+            with contextlib.redirect_stdout(io.StringIO()):
+                github_sync.main(["cascade"])
+        state = github_sync.load_state(self._state_path())
+        self.assertEqual(state["last_cascade_ref"], "2026-05-09T12:00:00Z")
+
+    def test_dry_run_does_not_record_cascade_ref(self) -> None:
+        prs = [
+            {"number": 14, "body": "Closes #42", "mergedAt": "2026-05-10T00:00:00Z"},
+        ]
+        with mock.patch.object(github_sync, "gh_pr_list_merged", return_value=prs):
+            with contextlib.redirect_stdout(io.StringIO()):
+                github_sync.main(["cascade", "--dry-run"])
+        self.assertFalse(self._state_path().exists())
+
+    def test_since_arg_is_passed_to_pr_lister(self) -> None:
+        with mock.patch.object(
+            github_sync, "gh_pr_list_merged", return_value=[]
+        ) as lister:
+            with contextlib.redirect_stdout(io.StringIO()):
+                github_sync.main(["cascade", "--since", "2026-01-01T00:00:00Z"])
+        lister.assert_called_once_with("2026-01-01T00:00:00Z")
+
+    def test_state_last_cascade_ref_used_when_since_absent(self) -> None:
+        state = github_sync._empty_state()
+        state["last_cascade_ref"] = "2026-02-02T00:00:00Z"
+        github_sync.save_state(state, self._state_path())
+        with mock.patch.object(
+            github_sync, "gh_pr_list_merged", return_value=[]
+        ) as lister:
+            with contextlib.redirect_stdout(io.StringIO()):
+                github_sync.main(["cascade"])
+        lister.assert_called_once_with("2026-02-02T00:00:00Z")
+
+
+# -----------------------------------------------------------------------------
+# state subcommand
+# -----------------------------------------------------------------------------
+
+
+class StateCommandTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.fixture = FixtureRepo()
+        self._cwd = Path.cwd()
+        import os
+        os.chdir(self.fixture.tmp)
+
+    def tearDown(self) -> None:
+        import os
+        os.chdir(self._cwd)
+        self.fixture.cleanup()
+
+    def test_state_prints_valid_json_empty_when_unsynced(self) -> None:
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = github_sync.main(["state"])
+        self.assertEqual(rc, 0)
+        parsed = json.loads(out.getvalue())
+        self.assertEqual(parsed["version"], 1)
+        self.assertEqual(parsed["mappings"], {})
 
 
 if __name__ == "__main__":

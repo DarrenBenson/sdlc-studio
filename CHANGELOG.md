@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Test-density backfill (CR0070):** +145 substantive tests on the highest-risk under-tested scripts
+  - `repo_map` (13->69), `github_sync` (15->59, `gh` fully mocked), `lessons` (13->58) - covering AST
+  parsing, the sync diff/state logic, recall/prune, and edge cases. Suite now 789 tests. (Surfaced two
+  documented behaviour-limits; a lessons docstring was corrected.)
 - **CONTRIBUTING dev-bootstrap (CR0072):** a Development Workflow section (setup, gate-every-commit,
   trunk-based discipline, the bug/CR/RFC lifecycle, the regression-test obligation, forward-porting)
   plus an Architecture pointer - so a new contributor can get productive without reading the source.

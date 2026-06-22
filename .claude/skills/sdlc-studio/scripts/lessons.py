@@ -89,7 +89,8 @@ def project_header_of(text: str) -> str:
 
 
 def refresh_last_updated(header: str) -> str:
-    """Set the header's `**Last Updated:**` line to today (add if missing)."""
+    """Set the header's `**Last Updated:**` line to today when present (the PROJECT_HEADER template
+    always carries it); a header without the line is returned unchanged."""
     today = sdlc_md.now_date()
     if "**Last Updated:**" in header:
         return re.sub(r"\*\*Last Updated:\*\*.*", f"**Last Updated:** {today}", header)
