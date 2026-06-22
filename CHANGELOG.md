@@ -7,8 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.3] - 2026-06-22
+
 ### Added
 
+- **RFC0013 (deploy last-mile) pressure-tested and settled:** four adversarial lenses sharpened it
+  to **Option A orchestrate-only** (skill gates + verifies + records around an operator-triggered
+  deploy; no auto-execute, no auto-rollback, never inside the autonomous loop); D1-D7 decided, build
+  deferred until a consuming project needs a deploy it cannot already sequence itself.
 - **Document-owner review seats + requirements-met sign-off (CR0065):** the **Product Owner** seat
   owns the PRD and signs a "PRD requirements satisfied" verdict in `review` (every project); the
   **Product Manager** seat owns the PVD and signs a "PVD requirements satisfied" verdict via a new
@@ -50,7 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **reconcile no longer corrupts per-epic count tables (BG0026):** `reconcile --apply` (and thus
   gate/autosprint/`project upgrade`) recomputes only the canonical global summary (the `Status|Count`
   block with a `**Total**` row, or the sole summary); scoped per-epic/per-section count tables are left
-  to the author. Previously it stamped the fleet total into every one (hit agent-crew: per-epic Done 6 -> 590).
+  to the author. Previously it stamped the fleet total into every one (hit a consuming project: per-epic Done 6 -> 590).
 - **project upgrade dry-run now reports the stale `.version` bump (BG0025):** a present-but-stale
   `.version` (older skill than installed) is reported as auto-correctable, matching what `--apply`
   does - the dry-run no longer says "nothing auto-correctable" while apply bumps it.

@@ -15,7 +15,7 @@ On a migrated project: `project upgrade` reports the persona judgement item even
 
 ## Proposed Fix
 
-`_old_persona_model` now scans top-level design personas only (seats/ excluded) and skips readme/consult-guide/`_*`; `check_personas` skips index/readme/consult-guide/`_*`. Verified read-only on agent-crew: audit manual=[] , _old_persona_model False, personas well-formed.
+`_old_persona_model` now scans top-level design personas only (seats/ excluded) and skips readme/consult-guide/`_*`; `check_personas` skips index/readme/consult-guide/`_*`. Verified read-only on a consuming project: audit manual=[] , _old_persona_model False, personas well-formed.
 
 ## Revision History
 

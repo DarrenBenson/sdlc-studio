@@ -7,7 +7,7 @@
 
 ## Summary
 
-`project_upgrade.apply()` ran `reconcile.apply_type` over every type unconditionally - so `project upgrade --apply` rewrote indexes. On a project with reconcile false-positives (multi-schema/inline rows) that corrupts them. agent-bridge had to bypass the whole script.
+`project_upgrade.apply()` ran `reconcile.apply_type` over every type unconditionally - so `project upgrade --apply` rewrote indexes. On a project with reconcile false-positives (multi-schema/inline rows) that corrupts them. the operator had to bypass the whole script.
 
 ## Steps to Reproduce
 
@@ -15,7 +15,7 @@
 
 ## Proposed Fix
 
-apply() does the safe deterministic set only (config + .version); reconcile is opt-in via `--with-reconcile` (default off). The audit reports index-drift as a manual 'review with reconcile' item, not auto. Verified read-only on agent-bridge: audit AUTO=[], index-drift now manual.
+apply() does the safe deterministic set only (config + .version); reconcile is opt-in via `--with-reconcile` (default off). The audit reports index-drift as a manual 'review with reconcile' item, not auto. Verified read-only on a consuming project: audit AUTO=[], index-drift now manual.
 
 ## Revision History
 

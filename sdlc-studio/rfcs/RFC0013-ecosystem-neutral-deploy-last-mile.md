@@ -71,22 +71,55 @@ The neutral contract+hook (A) as the core; a few **optional** example wirings sh
 
 ## Recommendation
 
-**A, evolving to D.** Define the deploy contract + verification oracle and delegate the
-runtime to a project-configured command - the skill owns "is it safe to ship and did the
-ship succeed," never "how to ship to vendor X." Optional example wirings can follow as
-templates. This answers the lock-in worry directly: a user not on GitHub configures their
-own `deploy.command` and everything else (gate, smoke, soak, rollback signal) is identical.
+**A, orchestrate-only - and defer the build until the trigger fires.** Refined after the
+2026-06-22 pressure-test (below). Define the deploy **contract + verification oracle** and have
+the skill **gate, verify, and record around an operator-triggered deploy** - it owns "is it safe
+to ship, and did the ship succeed," and it never holds the production trigger, never auto-rolls-back,
+and never runs inside an autonomous loop. The read-only gate half is the honest analogue of
+`verify_ac`; the act half (execute / rollback) is where lock-in, blast-radius, and false-neutrality
+live, so the skill orchestrates around it rather than performing it. Drop the "evolving to B-style
+adapters" framing; if examples are ever needed they are illustrative snippets in the reference, not a
+maintained per-ecosystem adapter surface. **Build is deferred:** the skill's live consuming projects
+already deploy with their own `deploy.sh` / `rollback.sh` / `smoke.sh`, so the trigger - "a project
+needs the skill to *sequence and gate* a deploy it cannot already sequence itself" - is unmet.
+
+## Pressure-test (2026-06-22)
+
+Four independent adversarial lenses (RFC0016 isolated-seat model) attacked the original "A->D"
+recommendation. Convergent findings:
+
+- **The value is the contract, not the execution (~80%).** A pre-deploy gate that refuses to ship
+  unverified code + a post-deploy verification oracle (smoke / soak) + a rollback *trigger* + the
+  outcome recorded back (D6). Running `deploy.command` is the commodity part every CI already does.
+  Sell "refuses to let unverified code ship and proves the ship worked, around whatever deploy you
+  already have" - not "let the skill deploy for you."
+- **The `verify_ac` analogy holds for the gate, breaks for the act.** Verify is read-only,
+  idempotent, local; deploy is stateful, irreversible, credentialed, networked. The four-key contract
+  silently assumes a *reachable, reversible, single-shot, locally-observable* deployment (a 12-factor
+  world) - itself an ecosystem. Keep the contract honest about the read-only half.
+- **Safety:** deploy is a stop-condition (c) action; an autosprint triage approval must **not**
+  transitively authorise a prod rollout. Deploy is a separate, explicitly operator-invoked step the
+  loop can prepare up to (gate green, artefact ready) and **hand back** - never trigger. Agent
+  auto-rollback is unsafe (cannot tell a flaky / cold-spawn smoke failure from a real one, cannot
+  reverse a forward migration, cannot reason about partial state).
+- **Timing:** the consumers already own deploy tooling - building now is ceremony over scripts they
+  trust. WS3 (feedback plumbing) and WS4 (example adapters) are the most wasteful / most
+  lock-in-prone parts; exclude them. MVS, only when triggered, = WS1+WS2 collapsed, orchestrate-only.
+- **The adapter tail (D) split the lenses** (neutrality: kill it - "non-core" is an unenforceable
+  fiction; adoption: needed so users know what to put in `deploy.command` / `rollback`). Resolved:
+  illustrative snippets in the reference doc at build time, never a maintained adapter file set.
 
 ## Open Decisions
 
-| # | Decision | Options | Owner | Status |
+| # | Decision | Resolution (2026-06-22 pressure-test) | Owner | Status |
 | --- | --- | --- | --- | --- |
-| D1 | Neutrality model | contract+hook (A) **[leaning]** / shipped adapters (B) / hybrid (D) | Operator | Open |
-| D2 | Execute vs orchestrate | skill runs `deploy.command` / skill only gates+verifies around an operator-triggered deploy | Operator | Open |
-| D3 | Mandatory post-deploy tier | smoke required / + soak / advisory only | Design | Open |
-| D4 | Rollback | auto-rollback on smoke failure (run `deploy.rollback`) / surface the procedure for the operator | Operator | Open |
-| D5 | Config surface | `deploy.{command,rollback,smoke,soak_minutes}` in `.config.yaml`; secrets stay out of scope | Design | Open |
-| D6 | Feedback | record the deploy outcome to a deploy-readiness artifact / LATEST.md | Design | Open |
+| D1 | Neutrality model | **A (contract+hook), orchestrate-only subset.** Kill B; the D adapter tail becomes illustrative snippets at build time, never maintained adapter files | Operator | Decided |
+| D2 | Execute vs orchestrate | **Orchestrate.** Skill gates + verifies + records around an operator-triggered deploy; it never holds the production trigger | Operator | Decided |
+| D3 | Mandatory post-deploy tier | **Smoke required** to call a deploy *rolled out*; **soak required** to call it *verified / Done*. Smoke-green alone is never "verified" | Design | Decided |
+| D4 | Rollback | **Surface the procedure; the agent never auto-fires `deploy.rollback`.** A project's own deploy script may self-rollback internally | Operator | Decided |
+| D5 | Config surface | `deploy.{command (optional), smoke, soak_minutes}` + `deploy.rollback` as a documented *procedure*; one command is not assumed sufficient; secrets out of scope | Design | Decided |
+| D6 | Feedback | **Record the outcome** (rolled-out / verified + smoke/soak results) to LATEST.md / a deploy-readiness note - part of the contract's value | Design | Decided |
+| D7 | Autonomy | **Deploy never runs inside autosprint's autonomous loop.** It is a stop-condition (c) hard pause that does not inherit triage approval | Operator | Decided |
 
 ## Architecture Impact
 
@@ -116,11 +149,18 @@ own `deploy.command` and everything else (gate, smoke, soak, rollback signal) is
 
 ## Decision
 
-> *Filled on acceptance.* Chosen option + rationale + the CRs spawned.
-
-**Outcome:** TBD - for discussion (the lock-in question is the crux)
-**Rationale:** TBD
-**Spawned CRs:** TBD
+**Outcome:** Design **settled** (Option A, orchestrate-only) and **build deferred.** The pressure-test
+resolved D1-D7; the recommendation is sharpened from "A -> D, execute" to "A orchestrate-only - no
+auto-execute, no auto-rollback, never in the autonomous loop." No CRs spawned now.
+**Rationale:** the value is the read-only contract (pre-deploy gate, post-deploy verification oracle,
+rollback trigger, recorded outcome), which is honestly ecosystem-neutral; the execute/rollback half
+smuggles topology assumptions and production blast-radius, so the skill orchestrates around it rather
+than performing it. Both live consumers already own their deploy tooling, so the build trigger is
+unmet - building now would be ceremony over scripts they already trust.
+**Trigger to build:** a consuming project needs the skill to *sequence and gate* a deploy it cannot
+already sequence itself. MVS then = WS1+WS2 collapsed into one CR, orchestrate-only, excluding WS3
+(feedback plumbing) and WS4 (example adapters).
+**Spawned CRs:** none (deferred).
 
 ## Revision History
 
@@ -128,3 +168,4 @@ own `deploy.command` and everything else (gate, smoke, soak, rollback signal) is
 | --- | --- | --- |
 | 2026-06-21 | Darren Benson | Raised - the deploy last-mile, framed neutrality-first; for discussion before deciding |
 | 2026-06-21 | Darren Benson | Decision session: DEFERRED (stays Draft) - needs the most thought + no live deploy need. Trigger: a consuming project needs a coordinated, gated deploy (the lock-in question reopens then) |
+| 2026-06-22 | Pressure-test (4 adversarial lenses) | Design settled: A orchestrate-only (no auto-execute / no auto-rollback / never in the autonomous loop); D1-D7 decided; B and the adapter tail killed; build remains deferred until the trigger fires. MVS scoped to WS1+WS2 |

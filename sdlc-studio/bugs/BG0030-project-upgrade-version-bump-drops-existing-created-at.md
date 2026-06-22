@@ -7,7 +7,7 @@
 
 ## Summary
 
-The `.version` bump rewrote the file from a template, dropping any author fields (e.g. `created_at`). The agent-bridge operator hand-edited to avoid the loss.
+The `.version` bump rewrote the file from a template, dropping any author fields (e.g. `created_at`). The a consuming project operator hand-edited to avoid the loss.
 
 ## Steps to Reproduce
 

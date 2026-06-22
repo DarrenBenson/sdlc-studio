@@ -7,7 +7,7 @@
 
 ## Summary
 
-Concern from the agent-bridge run: `--apply` would delete 'orphan' rows (inline-only bug records BG0081-0086). In current code `apply_type` already leaves structural classes (orphan/missing) report-only - but it was untested, so the guarantee could regress.
+Concern from a consuming-project run: `--apply` would delete 'orphan' rows (inline-only bug records BG0081-0086). In current code `apply_type` already leaves structural classes (orphan/missing) report-only - but it was untested, so the guarantee could regress.
 
 ## Steps to Reproduce
 
