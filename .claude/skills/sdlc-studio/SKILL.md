@@ -4,7 +4,7 @@ description: "Full software development lifecycle pipeline: create or reverse-en
 license: MIT
 compatibility: "Requires Python 3.10+ for bundled scripts; gh CLI (authenticated) for GitHub sync commands. Agentic wave execution (--agentic) is Claude-Code-only."
 metadata:
-  version: "2.4.3"
+  version: "2.4.4"
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash, Agent
 ---
 
