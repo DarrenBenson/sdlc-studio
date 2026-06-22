@@ -1,6 +1,6 @@
 # BG0033: five moderate npm dependency vulnerabilities via markdownlint-cli
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-06-22
 > **Created-by:** sdlc-studio new
 > **Severity:** Medium

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **npm vulnerabilities cleared (BG0033):** the 5 moderate advisories (brace-expansion, js-yaml,
+  markdown-it, smol-toml via `markdownlint-cli`) are gone - `npm audit fix` + `markdownlint-cli` ^0.49.0.
+  `npm audit` reports 0; lint still passes on the new line.
+
 ### Changed
 
 - **project_upgrade determinism hygiene (CR0071):** `.version` date is now injectable (deterministic

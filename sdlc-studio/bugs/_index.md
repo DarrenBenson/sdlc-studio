@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 1 |
+| Open | 0 |
 | In Progress | 0 |
-| Fixed | 32 |
+| Fixed | 33 |
 | Verified | 0 |
 | Closed | 0 |
 | Won't Fix | 0 |
@@ -51,4 +51,4 @@
 | [BG0030](BG0030-project-upgrade-version-bump-drops-existing-created-at.md) | project upgrade version bump drops existing created_at field | Fixed | Medium | 2026-06-22 | 2026-06-22 |
 | [BG0031](BG0031-reconcile-apply-auto-deletes-orphan-rows-destroying-inline.md) | reconcile apply auto-deletes orphan rows destroying inline-only records | Fixed | High | 2026-06-22 | 2026-06-22 |
 | [BG0032](BG0032-reconcile-reads-fixed-status-column-misreads-multi-schema.md) | reconcile reads fixed status column misreads multi-schema index tables | Fixed | High | 2026-06-22 | 2026-06-22 |
-| [BG0033](BG0033-five-moderate-npm-dependency-vulnerabilities-via-markdownlint-cli.md) | five moderate npm dependency vulnerabilities via markdownlint-cli | Open | Medium | 2026-06-22 | 2026-06-22 |
+| [BG0033](BG0033-five-moderate-npm-dependency-vulnerabilities-via-markdownlint-cli.md) | five moderate npm dependency vulnerabilities via markdownlint-cli | Fixed | Medium | 2026-06-22 | 2026-06-22 |
