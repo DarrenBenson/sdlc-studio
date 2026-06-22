@@ -47,8 +47,11 @@ In order, before tagging any release:
    `Verify:` expression and fails on any `no` or `stale`. This is what makes "Done"
    mean done.
 2. `/sdlc-studio review` - the full review set, **all five legs: PRD - TRD - TSD -
-   Persona - CODE**. The CODE leg is not optional; doc-only review never finds a crash
-   bug, a deploy gap, or an untested hot path.
+   Persona - CODE** (plus a **PVD** leg when the product spans repos and a
+   `sdlc-studio/product/pvd.md` exists). The CODE leg is not optional; doc-only review
+   never finds a crash bug, a deploy gap, or an untested hot path. The review confirms
+   the **PRD requirements are met** (the Product Owner's sign-off) - and, where a PVD
+   exists, the **PVD requirements are met** (the Product Manager's sign-off).
 
 Triage and **fix** the findings before tagging. No exceptions - even a genuine
 production hotfix files a `bug` (rationale + `Verify:` expression + audit pin).
@@ -81,7 +84,7 @@ expression or failing test first, then make it pass.
    destructive / hard-to-reverse action (force-push, branch or table deletion, sending
    an external message).
    - **When you need another opinion, consult personas instead of stopping.**
-     `/sdlc-studio consult team` (Three Amigos: PM, Engineering, QA) on any epic or
+     `/sdlc-studio consult team` (Three Amigos: Product Owner, Engineering, QA) on any epic or
      story design. `/sdlc-studio consult stakeholders` when the change touches the
      running system. Concerns are advisory - record them and proceed unless one is a
      hard technical blocker.

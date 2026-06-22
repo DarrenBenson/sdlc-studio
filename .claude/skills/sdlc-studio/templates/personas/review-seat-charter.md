@@ -1,11 +1,12 @@
 <!--
 Template: Review-seat charter
 Usage: Copy and customise for a review SEAT - a role that critiques artefacts (the Three Amigos:
-Product / Engineering / QA, plus PM / PO owners). This is NOT a Cooper design persona (who the
+Product / Engineering / QA, plus the document owners: Product Owner who owns the PRD and, for
+multi-repo products, Product Manager who owns the PVD). This is NOT a Cooper design persona (who the
 product is *for* - see persona-template.md) - it is who *reviews the work*.
 Related: reference-consult.md, reference-workflow-personas.md
 -->
-# {{seat_name}} - {{Product | Engineering | QA | PM | PO}} seat
+# {{seat_name}} - {{Product Owner | Product Manager | Engineering | QA | UX}} seat
 
 > A charter *describes* a review stance (a brief the consult is run against). It is consulted as an
 > isolated subagent so its view is independent. The authored-identity version of a seat lives in an

@@ -123,7 +123,7 @@ Override with `--product`, `--engineering`, `--qa` flags.
 ```markdown
 ## Three Amigos Review: User Authentication PRD
 
-### Product Perspective - Sarah Chen (PM)
+### Product Perspective - Sarah Chen (PO)
 **Verdict:** ⚠️ Concerns
 
 "The scope is reasonable, but I'm not seeing success metrics..."
@@ -367,7 +367,7 @@ When using `--relevant`, personas are scored:
 
 | Factor | Weight | Example |
 | --- | --- | --- |
-| Role match | 40% | PM reviewing PRD = high |
+| Role match | 40% | Product Owner reviewing PRD = high |
 | Expertise overlap | 30% | Security lead reviewing auth feature = high |
 | Artefact mentions persona | 20% | PRD mentions "power users" = Emma relevant |
 | Historical feedback acted upon | 10% | Previously useful feedback = higher weight |
@@ -449,9 +449,9 @@ Consult is triggered automatically in workflows (Three Amigos is the default for
 | --- | --- | --- |
 | PRD create | After draft complete | Three Amigos + relevant stakeholders |
 | Epic create | After generation | Three Amigos + affected stakeholders |
-| Story create | After cohesion review | Three Amigos (PM: completeness, Eng: TRD, QA: testability) |
-| Story plan | After plan creation | Three Amigos (PM: scope, Eng: approach, QA: test strategy) |
-| Bug fix | After root cause analysis | Three Amigos (PM: impact, Eng: root cause, QA: regression) |
+| Story create | After cohesion review | Three Amigos (PO: completeness, Eng: TRD, QA: testability) |
+| Story plan | After plan creation | Three Amigos (PO: scope, Eng: approach, QA: test strategy) |
+| Bug fix | After root cause analysis | Three Amigos (PO: impact, Eng: root cause, QA: regression) |
 | Bug verify | After fix complete | QA Lead |
 | Spec review | Before implementation | Engineering team |
 

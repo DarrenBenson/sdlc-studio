@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Document-owner review seats + requirements-met sign-off (CR0065):** the **Product Owner** seat
+  owns the PRD and signs a "PRD requirements satisfied" verdict in `review` (every project); the
+  **Product Manager** seat owns the PVD and signs a "PVD requirements satisfied" verdict via a new
+  PVD review leg - **only when `sdlc-studio/product/pvd.md` exists** (a single-repo project has no
+  PVD, so neither the seat nor the leg applies). Corrects the prior workflow-personas mislabel that
+  called the product/PRD seat "PM".
+
 ## [2.4.2] - 2026-06-22
 
 ### Fixed

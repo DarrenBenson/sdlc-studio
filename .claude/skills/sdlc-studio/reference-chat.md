@@ -207,7 +207,7 @@ the table.
 
 Sarah, from a product perspective, what are your thoughts?"
 
-**Sarah Chen (PM):** "My main concern is time to market. If
+**Sarah Chen (PO):** "My main concern is time to market. If
 microservices will slow us down initially, I need to understand
 the long-term payoff. What problem are we solving that our
 current architecture can't handle?"
@@ -414,7 +414,7 @@ In workshops:
 - May have predictable alliances or tensions
 
 Example tensions:
-- Sarah (PM) vs Marcus (Dev) on timeline feasibility
+- Sarah (PO) vs Marcus (Dev) on timeline feasibility
 - Emma (Power User) vs Tom (Novice) on feature complexity
 - James (Exec) vs Engineering on scope
 

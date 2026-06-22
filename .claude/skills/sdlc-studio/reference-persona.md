@@ -54,7 +54,7 @@ seed and customise.
 > from the seeds below (its own `sdlc-studio/personas/` are unaffected).
 
 **Team - Product:**
-- Sarah Chen (PM) - Strategic, data-driven, scope-conscious
+- Sarah Chen (PO) - Strategic, data-driven, scope-conscious
 - Alex Rivera (BA) - Detail-oriented, requirements expert
 
 **Team - Engineering:**

@@ -117,6 +117,11 @@ Detailed workflows for Product Requirements Document creation and management.
 
 ## /sdlc-studio prd review - Step by Step {#prd-review-workflow}
 
+> **The PRD is owned by the Product Owner seat.** A review of the PRD (here, and the PRD leg of the
+> unified `review`) ends with the Product Owner's "PRD requirements satisfied: yes / no (gaps: …)"
+> sign-off - the review is not complete until the requirements are confirmed met or the gaps are
+> named and tracked. See `reference-workflow-personas.md#document-owner-seats`.
+
 1. **Read Existing PRD**
    - Load from sdlc-studio/prd.md
    - Parse Feature Inventory section

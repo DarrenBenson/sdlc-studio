@@ -141,7 +141,7 @@ Get feedback from Team AND Stakeholders. Most comprehensive but highest cost.
 ## Examples
 
 ```bash
-# Quick PRD review from PM
+# Quick PRD review from Product Owner
 /sdlc-studio consult sarah-chen sdlc-studio/prd.md --quick
 
 # Thorough Three Amigos review

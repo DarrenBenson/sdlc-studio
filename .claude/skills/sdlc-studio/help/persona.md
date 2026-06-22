@@ -24,14 +24,14 @@ Personas are organised into two categories:
 
 | Category | Purpose | Examples |
 |----------|---------|----------|
-| **Team** | Internal team (Three Amigos) | PM, Developer, QA Lead |
+| **Team** | Internal team (Three Amigos) | Product Owner, Developer, QA Lead |
 | **Stakeholder** | External users and business | End User, Executive, Security |
 
 ### Three Amigos (Team)
 
 | Amigo | Focus | Archetype Examples |
 |-------|-------|-------------------|
-| Product | What & Why | Sarah Chen (PM), Alex Rivera (BA) |
+| Product | What & Why | Sarah Chen (PO), Alex Rivera (BA) |
 | Engineering | How | Marcus Johnson (Senior Dev), Nadia Okonkwo (Architect) |
 | QA | What If | Priya Sharma (QA Lead), Jordan Lee (Automation) |
 
@@ -106,7 +106,7 @@ Display all personas for current project.
 TEAM PERSONAS
 
 Product:
-  Sarah Chen (PM) - Strategic decisions, scope control
+  Sarah Chen (PO) - Strategic decisions, scope control
 
 Engineering:
   Marcus Johnson (Senior Dev) - Technical quality

@@ -53,8 +53,9 @@ The most recent unified review is always written to `sdlc-studio/reviews/LATEST.
 
 | Flag | Effect | Default |
 | --- | --- | --- |
-| (none) | Run all document reviews (PRD + TRD + TSD + Persona) | - |
+| (none) | Run all document reviews (PVD if present + PRD + TRD + TSD + Persona) | - |
 | `--quick` | Use cached data, skip codebase analysis | false |
+| `--focus pvd` | Run only PVD review (multi-repo products) | all |
 | `--focus prd` | Run only PRD review | all |
 | `--focus trd` | Run only TRD review | all |
 | `--focus tsd` | Run only TSD review | all |
@@ -63,11 +64,31 @@ The most recent unified review is always written to `sdlc-studio/reviews/LATEST.
 
 If `sdlc-studio/personas/` does not exist or contains no persona files, Persona Review is skipped automatically – no flag required. The four-doc default applies whenever personas exist.
 
+**PVD review is conditional.** The PVD leg runs **only when `sdlc-studio/product/pvd.md` exists** (a multi-repo product). A single-repo project has no PVD - the leg, and the Product Manager sign-off it carries, do not apply; the PRD is the top document and the Product Owner signs it.
+
 **RFC review (if `sdlc-studio/rfcs/` exists).** As part of the unified pass, scan the RFCs: flag any **Draft / In Review** RFC stalled > ~14 days with no Revision-History movement; flag **Open Decisions** unresolved > 7 days (name the owner); and for **Accepted** RFCs verify each workstream has a spawned CR that exists and links back. This catches design exploration that has gone quiet before it silently blocks the dependent CRs. Report-only – RFC acceptance is always a judgement call.
 
 ### 2. Run Document Reviews
 
 Execute reviews in sequence, collecting findings:
+
+#### PVD Review (only if `sdlc-studio/product/pvd.md` exists)
+
+Skip this leg entirely for a single-repo project (no PVD). When a PVD exists:
+
+```text
+1. Load sdlc-studio/product/pvd.md (+ product/manifest.yaml)
+2. For each PVD product requirement / shared feature, locate the child repo(s) that own it
+3. Coverage: every PVD requirement maps to a child PRD feature (flag any with no PRD home)
+4. Satisfaction: each mapped requirement is met in the child repos (verified epics / shipped)
+5. Identify cross-repo drift, stale coordination prose, and inter-repo API mismatches
+```
+
+> **Product Manager sign-off (the gate):** the PVD leg ends with an explicit verdict - **"PVD
+> requirements satisfied: yes / no (gaps: …)"**. The Product Manager seat owns this; it is the
+> review's answer to "are the product-level requirements actually met across the repos?"
+
+See `reference-pvd.md` for the PVD layer.
 
 #### PRD Review
 
@@ -78,6 +99,10 @@ Execute reviews in sequence, collecting findings:
 4. Calculate status percentages
 5. Identify gaps and stale content
 ```
+
+> **Product Owner sign-off (the gate):** the PRD leg ends with an explicit verdict - **"PRD
+> requirements satisfied: yes / no (gaps: …)"**. The Product Owner seat owns this; a review is not
+> complete until the PRD requirements are confirmed met (or the gaps are named and tracked).
 
 See `reference-prd.md#prd-review-workflow` for details.
 

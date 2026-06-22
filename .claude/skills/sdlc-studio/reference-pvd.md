@@ -16,7 +16,9 @@ coordination is currently living as stale prose in reviews/handovers.
 ## Layout
 
 - **One writable master:** `sdlc-studio/product/pvd.md` in a product/anchor repo, owned by
-  the **Product Manager** persona (the PRD stays owned by the Product Owner).
+  the **Product Manager** persona (the PRD stays owned by the Product Owner). The Product Manager is
+  the review seat that signs the **PVD review leg** ("PVD requirements satisfied") - that leg exists
+  only where a PVD does (see `reference-review.md`, `reference-workflow-personas.md#document-owner-seats`).
 - **The manifest:** `sdlc-studio/product/manifest.yaml` (from `templates/product-manifest.yaml`)
   lists the child repos by short id + local path + git URL.
 - **Read-only projection:** every child repo gets the master read-only (symlink in prod,

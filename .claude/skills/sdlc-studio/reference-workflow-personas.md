@@ -11,11 +11,25 @@ How personas integrate across all SDLC Studio workflows.
 Personas can be consulted at key decision points throughout the SDLC pipeline. This reference describes when persona consultation adds value, when to skip it, and how to control integration behaviour.
 
 > **Review seats are charters, consulted in isolation (RFC0016).** The seats that review artefacts
-> (the Three Amigos: Product / Engineering / QA, plus PM / PO owners) are structured **charters**
-> (`templates/personas/review-seat-charter.md`), each consulted as an **independent subagent** with
-> a synthesis step (see `reference-consult.md`). These review seats are distinct from the Cooper
-> goal-directed **design personas** (who the product is *for*, RFC0017) - design personas describe
-> users; review seats describe who reviews the work.
+> (the Three Amigos: Product / Engineering / QA, plus the document owners below) are structured
+> **charters** (`templates/personas/review-seat-charter.md`), each consulted as an **independent
+> subagent** with a synthesis step (see `reference-consult.md`). These review seats are distinct from
+> the Cooper goal-directed **design personas** (who the product is *for*, RFC0017) - design personas
+> describe users; review seats describe who reviews the work.
+
+### Document-owner seats
+
+Two seats are **accountable** for a top-level requirements document - they carry the "are the
+requirements actually met?" question into every review of work derived from it:
+
+| Seat | Owns | Accountable for | Applies |
+| --- | --- | --- | --- |
+| **Product Owner** | the **PRD** | PRD requirements are complete, current, and **satisfied** by the work; signs the PRD review leg | every project |
+| **Product Manager** | the **PVD** | PVD product requirements are satisfied and each maps to a child PRD; signs the PVD review leg | **only when a PVD exists** (`sdlc-studio/product/pvd.md`) |
+
+A single-repo project has no PVD: it runs with the Product Owner only. The Product Manager seat (and
+the PVD review) is needed once several repos form one product and a PVD coordinates them
+(`reference-pvd.md`) - absent a PVD, neither applies.
 
 ---
 
@@ -29,10 +43,10 @@ Personas can be consulted at key decision points throughout the SDLC pipeline. T
 | PRD Generate | After generation | Recommended | Team + relevant stakeholders | HIGH |
 | PRD Review | If significant changes | Optional (prompt) | Team | MEDIUM |
 | Epic Create | After generation | **Always** | Three Amigos + affected stakeholders | HIGH |
-| Story Create | After AC defined | **Always** | Three Amigos (PM: completeness, Eng: TRD alignment, QA: testability) | HIGH |
-| Story Plan | After plan created | **Always** | Three Amigos (PM: scope, Eng: approach, QA: test strategy) | HIGH |
+| Story Create | After AC defined | **Always** | Three Amigos (PO: completeness, Eng: TRD alignment, QA: testability) | HIGH |
+| Story Plan | After plan created | **Always** | Three Amigos (PO: scope, Eng: approach, QA: test strategy) | HIGH |
 | Story Review | On status change | Optional (prompt) | Three Amigos | MEDIUM |
-| Bug Fix | After root cause analysis | **Always** | Three Amigos (PM: impact, Eng: root cause, QA: regression) | HIGH |
+| Bug Fix | After root cause analysis | **Always** | Three Amigos (PO: impact, Eng: root cause, QA: regression) | HIGH |
 | Bug Verify | After fix complete | Optional (prompt) | QA Lead | MEDIUM |
 | Spec Review | Before implementation | Off | Engineering team | MEDIUM |
 | Test Strategy | After TSD draft | Off | QA team | LOW |
@@ -72,7 +86,7 @@ Personas can be consulted at key decision points throughout the SDLC pipeline. T
 
 **Personas consulted:**
 
-- Sarah Chen (PM) - Requirements completeness
+- Sarah Chen (PO) - Requirements completeness
 - Marcus Johnson (Senior Dev) - Technical feasibility
 - Priya Sharma (QA Lead) - Testability
 
@@ -124,11 +138,11 @@ Personas can be consulted at key decision points throughout the SDLC pipeline. T
 
 **Default:** Always (Three Amigos)
 
-**Rationale:** Epics define scope boundaries and technical approach. Three Amigos ensure requirements completeness (PM), technical feasibility (Eng), and testability (QA). Affected stakeholder personas provide additional domain-specific feedback.
+**Rationale:** Epics define scope boundaries and technical approach. Three Amigos ensure requirements completeness (PO), technical feasibility (Eng), and testability (QA). Affected stakeholder personas provide additional domain-specific feedback.
 
 **Personas consulted:**
 
-- **Sarah Chen (PM):** Validates scope, success metrics, user value, and feature boundaries
+- **Sarah Chen (PO):** Validates scope, success metrics, user value, and feature boundaries
 - **Marcus Johnson (Eng):** Reviews TRD alignment, architecture impact, dependency graph, and technical risks
 - **Priya Sharma (QA):** Assesses testability, edge case coverage, TSD alignment, and quality gates
 - Personas mentioned in epic's "Affected Personas" section (additional)
@@ -164,11 +178,11 @@ Personas can be consulted at key decision points throughout the SDLC pipeline. T
 
 **Default:** Always (Three Amigos)
 
-**Rationale:** Stories define the implementation contract. Three Amigos ensure completeness (PM), technical alignment (Eng), and testability (QA). Each amigo reviews from their professional perspective against the relevant source documents.
+**Rationale:** Stories define the implementation contract. Three Amigos ensure completeness (PO), technical alignment (Eng), and testability (QA). Each amigo reviews from their professional perspective against the relevant source documents.
 
 **Personas consulted:**
 
-- **Sarah Chen (PM):** Validates user value, AC completeness, persona alignment, and that the story addresses the right user problem
+- **Sarah Chen (PO):** Validates user value, AC completeness, persona alignment, and that the story addresses the right user problem
 - **Marcus Johnson (Eng):** Reviews TRD alignment, technical notes accuracy, dependency correctness, and that implementation guidance is feasible
 - **Priya Sharma (QA):** Assesses AC testability, edge case completeness, TSD alignment, and that test scenarios cover the risk profile
 
@@ -195,7 +209,7 @@ Personas can be consulted at key decision points throughout the SDLC pipeline. T
 
 **Personas consulted:**
 
-- **Sarah Chen (PM):** Validates scope alignment, that plan addresses all ACs, and no scope creep
+- **Sarah Chen (PO):** Validates scope alignment, that plan addresses all ACs, and no scope creep
 - **Marcus Johnson (Eng):** Reviews implementation approach, architecture alignment, edge case handling plan
 - **Priya Sharma (QA):** Validates test strategy recommendation (TDD vs Test-After), test coverage plan
 
@@ -233,11 +247,11 @@ Personas can be consulted at key decision points throughout the SDLC pipeline. T
 
 **Default:** Always (Three Amigos)
 
-**Rationale:** Bug fixes need multi-perspective review: user impact assessment (PM), root cause validation and fix approach review (Eng), and regression test planning (QA).
+**Rationale:** Bug fixes need multi-perspective review: user impact assessment (PO), root cause validation and fix approach review (Eng), and regression test planning (QA).
 
 **Personas consulted:**
 
-- **Sarah Chen (PM):** Assesses user impact, validates fix priority against roadmap
+- **Sarah Chen (PO):** Assesses user impact, validates fix priority against roadmap
 - **Marcus Johnson (Eng):** Reviews root cause analysis, validates fix approach, checks for architectural implications
 - **Priya Sharma (QA):** Plans regression tests, identifies related test scenarios, assesses risk of fix introducing new issues
 
@@ -359,12 +373,12 @@ User can run consultation at any time:
 
 | Artefact Type | Primary Personas | Secondary Personas |
 | --- | --- | --- |
-| PRD | PM, End Users | Executive, Security |
+| PRD | Product Owner, End Users | Executive, Security |
 | TRD | Senior Dev, Architect | DevOps, Security |
-| Epic | Three Amigos (PM, Eng, QA) | Affected stakeholders |
-| Story | Three Amigos (PM, Eng, QA) | Story persona |
-| Plan | Three Amigos (PM, Eng, QA) | - |
-| Bug | Three Amigos (PM, Eng, QA) | Affected story persona |
+| Epic | Three Amigos (PO, Eng, QA) | Affected stakeholders |
+| Story | Three Amigos (PO, Eng, QA) | Story persona |
+| Plan | Three Amigos (PO, Eng, QA) | - |
+| Bug | Three Amigos (PO, Eng, QA) | Affected story persona |
 | Test Strategy | QA Lead, QA Team | Senior Dev |
 | Technical Spec | Engineering Team | Security, Compliance |
 

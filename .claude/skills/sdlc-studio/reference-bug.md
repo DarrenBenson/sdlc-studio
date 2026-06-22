@@ -126,7 +126,7 @@ Detailed workflows for Bug tracking and management.
 4b. **Three Amigos Consultation (Default)**
    Unless `--skip-personas` flag used, run Three Amigos review of the fix plan:
 
-- **Sarah Chen (PM):** Assesses user impact of the bug, validates fix priority against roadmap, confirms scope of fix is appropriate (not over/under-scoped)
+- **Sarah Chen (PO):** Assesses user impact of the bug, validates fix priority against roadmap, confirms scope of fix is appropriate (not over/under-scoped)
 - **Marcus Johnson (Eng):** Reviews root cause analysis for accuracy, validates fix approach for architectural soundness, checks for potential side effects or regression risks
 - **Priya Sharma (QA):** Plans regression test coverage, identifies related test scenarios that need updating, assesses risk of fix introducing new issues, validates that reproduction steps are captured
 
