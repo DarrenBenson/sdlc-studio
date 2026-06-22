@@ -492,5 +492,82 @@ class CountBlockScopeTests(unittest.TestCase):
             self.assertIn("| Done | 8 |", out)        # both preserved; neither stamped
 
 
+class MultiSchemaStatusTests(unittest.TestCase):
+    def _bug(self, d, id_, status):
+        (d / f"{id_}-x.md").write_text(f"# {id_}: x\n\n> **Status:** {status}\n", encoding="utf-8")
+
+    def test_offschema_row_status_read_by_vocab_not_position(self):
+        # BG0032: a stacked/off-schema row (extra column) must have its Status found by vocab token,
+        # not the pinned column - else it reads "Unknown" -> phantom status-mismatch.
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td); bd = root / "sdlc-studio" / "bugs"; bd.mkdir(parents=True)
+            self._bug(bd, "BG0001", "Fixed"); self._bug(bd, "BG0002", "Fixed")
+            (bd / "_index.md").write_text(
+                "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| BG0001 | a | Fixed |\n| BG0002 | b | note | Fixed |\n", encoding="utf-8")
+            drift = reconcile.detect_type("bug", root)["drift"]
+            self.assertEqual([x for x in drift if x["kind"] == "status-mismatch"], [])
+
+    def test_perblock_header_multischema_rewrites_correct_column(self):
+        # real stacked-schema case: each block has its own header, so status_col re-pins per block
+        # and apply rewrites the right column (block 2 has Status at col1).
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td); bd = root / "sdlc-studio" / "bugs"; bd.mkdir(parents=True)
+            self._bug(bd, "BG0001", "Fixed"); self._bug(bd, "BG0002", "Fixed")
+            (bd / "_index.md").write_text(
+                "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n| BG0001 | a | Fixed |\n\n"
+                "## Older\n\n| ID | Status | Severity |\n| --- | --- | --- |\n| BG0002 | Open | High |\n",
+                encoding="utf-8")
+            reconcile.apply_type("bug", root)
+            out = (bd / "_index.md").read_text()
+            self.assertIn("| BG0002 | Fixed | High |", out)   # col1 (re-pinned) corrected, severity intact
+
+    def test_offschema_extra_column_row_not_clobbered_on_apply(self):
+        # BG0032 safety: when the pinned column is NOT a status (off-schema extra-column row), apply
+        # declines rather than guess - it must never overwrite the title/another field.
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td); bd = root / "sdlc-studio" / "bugs"; bd.mkdir(parents=True)
+            self._bug(bd, "BG0002", "Fixed")
+            (bd / "_index.md").write_text(
+                "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| BG0002 | b | note | Open |\n", encoding="utf-8")
+            reconcile.apply_type("bug", root)
+            out = (bd / "_index.md").read_text()
+            self.assertIn("| BG0002 | b | note | Open |", out)  # left intact - no clobber, no guess
+
+    def test_orphan_row_never_deleted_by_apply(self):
+        # BG0031: an inline-only record (index row, no file) is report-only - apply must not remove it.
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td); bd = root / "sdlc-studio" / "bugs"; bd.mkdir(parents=True)
+            self._bug(bd, "BG0001", "Fixed")
+            (bd / "_index.md").write_text(
+                "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| BG0001 | a | Fixed |\n| BG0081 | inline-only | Fixed |\n", encoding="utf-8")
+            reconcile.apply_type("bug", root)
+            self.assertIn("| BG0081 | inline-only | Fixed |", (bd / "_index.md").read_text())
+
+    def test_apply_never_clobbers_title_starting_with_status_word(self):
+        # critic edge: pinned col is a non-vocab value AND the title leads with a status word. apply
+        # must NOT relocate the status into the title (data loss) - it declines.
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td); bd = root / "sdlc-studio" / "bugs"; bd.mkdir(parents=True)
+            self._bug(bd, "BG0003", "Fixed")
+            (bd / "_index.md").write_text(
+                "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| BG0003 | Open the dialog on load | TBD |\n", encoding="utf-8")  # title leads 'Open'; col2 non-vocab
+            reconcile.apply_type("bug", root)
+            self.assertIn("| BG0003 | Open the dialog on load | TBD |", (bd / "_index.md").read_text())
+
+    def test_headerless_block_status_read_by_vocab(self):
+        # the legitimate fallback: a block with no Status header -> status found by vocab token.
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td); bd = root / "sdlc-studio" / "bugs"; bd.mkdir(parents=True)
+            self._bug(bd, "BG0005", "Fixed")
+            (bd / "_index.md").write_text(
+                "# Bugs\n\n- prose, no table header\n\n| BG0005 | x | Fixed |\n", encoding="utf-8")
+            drift = reconcile.detect_type("bug", root)["drift"]
+            self.assertEqual([x for x in drift if x["kind"] == "status-mismatch"], [])
+
+
 if __name__ == "__main__":
     unittest.main()

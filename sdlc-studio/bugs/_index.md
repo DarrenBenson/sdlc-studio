@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 0 |
 | In Progress | 0 |
-| Fixed | 28 |
+| Fixed | 32 |
 | Verified | 0 |
 | Closed | 0 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **28** |
+| **Total** | **32** |
 
 ## All Bugs
 
@@ -47,3 +47,7 @@
 | [BG0026](BG0026-reconcile-count-block-rewrite-stamps-global-total-into.md) | reconcile count-block rewrite stamps global total into per-epic count sub-tables | Fixed | High | 2026-06-22 | 2026-06-22 |
 | [BG0027](BG0027-persona-checks-flag-non-persona-files-and-review.md) | persona checks flag non-persona files and review-seat charters as old/ill-formed | Fixed | Medium | 2026-06-22 | 2026-06-22 |
 | [BG0028](BG0028-verify-ac-shells-out-prose-verify-lines-and.md) | verify_ac shells out prose Verify lines and times out reporting failed not manual | Fixed | Medium | 2026-06-22 | 2026-06-22 |
+| [BG0029](BG0029-project-upgrade-apply-bundles-reconcile-no-granular-flag.md) | project upgrade apply bundles reconcile no granular flag can corrupt indexes | Fixed | High | 2026-06-22 | 2026-06-22 |
+| [BG0030](BG0030-project-upgrade-version-bump-drops-existing-created-at.md) | project upgrade version bump drops existing created_at field | Fixed | Medium | 2026-06-22 | 2026-06-22 |
+| [BG0031](BG0031-reconcile-apply-auto-deletes-orphan-rows-destroying-inline.md) | reconcile apply auto-deletes orphan rows destroying inline-only records | Fixed | High | 2026-06-22 | 2026-06-22 |
+| [BG0032](BG0032-reconcile-reads-fixed-status-column-misreads-multi-schema.md) | reconcile reads fixed status column misreads multi-schema index tables | Fixed | High | 2026-06-22 | 2026-06-22 |

@@ -47,6 +47,20 @@ def _sdlc(root: Path) -> Path:
     return Path(root) / "sdlc-studio"
 
 
+def _bump_version_text(text: str, installed: str, prev_skill: str | None) -> str:
+    """Surgically bump an EXISTING .version - update schema/skill, stamp upgraded_from/upgraded_at,
+    and PRESERVE every other line (e.g. an author's `created_at`) (BG0030)."""
+    def setline(t: str, key: str, value: str) -> str:
+        pat = re.compile(rf"^{key}:.*$", re.M)
+        line = f"{key}: {value}"
+        return pat.sub(line, t, count=1) if pat.search(t) else t.rstrip("\n") + f"\n{line}\n"
+    t = setline(text, "schema_version", str(CURRENT_SCHEMA))
+    t = setline(t, "skill_version", f'"{installed}"')
+    t = setline(t, "upgraded_from", prev_skill or "null")
+    t = setline(t, "upgraded_at", date.today().isoformat())
+    return t
+
+
 def _read_version(root: Path) -> tuple[int | None, str | None]:
     v = _sdlc(root) / ".version"
     if not v.exists():
@@ -122,7 +136,11 @@ def audit(root: Path | str) -> dict:
                      "detail": f"sdlc-studio/.version records skill {pv_skill or '?'}; bump to {installed or '?'}"})
     drift = sum(len(reconcile.detect_type(t, root)["drift"]) for t in sdlc_md.ARTIFACT_TYPES)
     if drift:
-        auto.append({"kind": "index-drift", "count": drift, "detail": f"{drift} index/status drift item(s) (reconcile --apply)"})
+        # NOT auto-applied by upgrade (BG0029): reconcile can be destructive on multi-schema / inline-row
+        # projects. Review it deliberately with `/sdlc-studio reconcile`.
+        manual.append({"kind": "index-drift", "count": drift,
+                       "detail": f"{drift} index/status drift item(s) - review with `/sdlc-studio reconcile` "
+                                 "(not auto-applied by upgrade)"})
     # advisory dirs (report, not auto - see module docstring)
     missing = [d for d in STANDARD_DIRS if not (sd / d).is_dir()]
     if missing:
@@ -145,10 +163,12 @@ def audit(root: Path | str) -> dict:
     return {"auto": auto, "manual": manual}
 
 
-def apply(root: Path | str) -> list[str]:
-    """Perform the SAFE deterministic corrections. Idempotent. Returns the actions taken.
-    Refuses a path that is not already an sdlc-studio project (no `sdlc-studio/` dir) so a
-    mistyped --root cannot scaffold a phantom project."""
+def apply(root: Path | str, with_reconcile: bool = False) -> list[str]:
+    """Perform the SAFE deterministic corrections (scaffold .config.yaml, bump .version). Idempotent.
+    Reconcile is NOT run unless with_reconcile=True - it can rewrite indexes destructively on
+    multi-schema/inline-convention projects, so it is a separate, deliberate step (BG0029). Returns
+    the actions taken. Refuses a path that is not already an sdlc-studio project so a mistyped --root
+    cannot scaffold a phantom project."""
     root = Path(root)
     sd = _sdlc(root)
     if not sd.is_dir():
@@ -167,20 +187,22 @@ def apply(root: Path | str) -> list[str]:
                                        today=date.today().isoformat(), skill=installed), encoding="utf-8")
         actions.append(f"created sdlc-studio/.version (schema {CURRENT_SCHEMA}, skill {installed})")
     elif prev_skill != installed:
-        ver.write_text(_VERSION.format(schema=CURRENT_SCHEMA, prev=prev_skill or "null",
-                                       today=date.today().isoformat(), skill=installed), encoding="utf-8")
+        ver.write_text(_bump_version_text(ver.read_text(encoding="utf-8"), installed, prev_skill), encoding="utf-8")
         actions.append(f"updated sdlc-studio/.version (skill {prev_skill or '?'} -> {installed})")
     elif (prev_schema or 0) < CURRENT_SCHEMA:
-        ver.write_text(_VERSION.format(schema=CURRENT_SCHEMA, prev=prev_skill or "null",
-                                       today=date.today().isoformat(), skill=installed), encoding="utf-8")
+        ver.write_text(_bump_version_text(ver.read_text(encoding="utf-8"), installed, prev_skill), encoding="utf-8")
         actions.append(f"repaired sdlc-studio/.version (schema -> {CURRENT_SCHEMA})")
-    rows = counts = 0
-    for t in sdlc_md.ARTIFACT_TYPES:
-        r = reconcile.apply_type(t, root)
-        rows += len(r.get("changes", []))
-        counts += int(bool(r.get("counts_updated")))
-    if rows or counts:
-        actions.append(f"reconciled {rows} index row(s)" + (f", {counts} count block(s)" if counts else ""))
+    # Reconcile is OFF by default (BG0029): it can rewrite indexes, and on multi-schema/inline-convention
+    # projects that is destructive - so an "upgrade" must not bundle it. Opt in with with_reconcile, or
+    # run `/sdlc-studio reconcile` deliberately after reviewing its report.
+    if with_reconcile:
+        rows = counts = 0
+        for t in sdlc_md.ARTIFACT_TYPES:
+            r = reconcile.apply_type(t, root)
+            rows += len(r.get("changes", []))
+            counts += int(bool(r.get("counts_updated")))
+        if rows or counts:
+            actions.append(f"reconciled {rows} index row(s)" + (f", {counts} count block(s)" if counts else ""))
     return actions
 
 
@@ -194,7 +216,7 @@ def cmd_upgrade(args: argparse.Namespace) -> int:
     has_work = d["behind"] or bool(a["auto"]) or bool(a["manual"])
     applied: list[str] = []
     if args.apply and (d["behind"] or a["auto"]):  # apply whenever there is safe work, even if "current"
-        applied = apply(root)
+        applied = apply(root, with_reconcile=args.with_reconcile)
     if args.format == "json":
         print(json.dumps({"detect": d, "audit": a, "applied": applied}, indent=2))
         return 0
@@ -228,6 +250,8 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Migrate a consuming project to current skill conventions (CR0062).")
     p.add_argument("--root", default=".")
     p.add_argument("--apply", action="store_true", help="perform the safe deterministic corrections (default: dry-run)")
+    p.add_argument("--with-reconcile", action="store_true",
+                   help="also run reconcile --apply (OFF by default - it can rewrite indexes; review first)")
     p.add_argument("--format", choices=("text", "json"), default="text")
     p.set_defaults(func=cmd_upgrade)
     return p

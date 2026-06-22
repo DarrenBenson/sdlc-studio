@@ -112,6 +112,11 @@ def _index_rows_and_summary(text: str, vocab: list) -> tuple[dict, dict]:
         if status_col is not None and status_col < len(cells):
             row_status = _canonical_status(cells[status_col], vocab)
         else:
+            row_status = None
+        if row_status is None:
+            # the pinned column held no status - a header-less block, or a stacked table whose Status
+            # sits in a different column. Find the status by canonical-vocab token, not position, so an
+            # off-schema row is not misread as "Unknown" -> phantom status-mismatch (BG0032).
             row_status = next((cs for c in cells if (cs := _canonical_status(c, vocab))), None)
         if row_id:
             key = _norm_id(row_id)
@@ -397,9 +402,14 @@ def _header_kind(cells: list, lowered: list) -> tuple[str | None, int | None, in
 
 
 def _data_row_rewrite(cells: list, status_col: int | None, id_col: int | None,
-                      fixes: dict) -> str | None:
-    """The rewritten line for a data row whose Status drifts (per `fixes`), else None."""
+                      fixes: dict, vocab: list) -> str | None:
+    """The rewritten line for a data row whose Status drifts (per `fixes`), else None. Rewrites ONLY
+    when the pinned Status column actually holds a status - so per-block headers in a stacked index
+    are followed correctly, while an off-schema / header-less row is left for the operator rather
+    than guessing a cell and risking a clobbered title/field (BG0032). Detect still reports it."""
     if status_col is None or status_col >= len(cells):
+        return None
+    if not _canonical_status(cells[status_col], vocab):  # pinned col is not a status -> don't guess
         return None
     rid = _row_id(cells, status_col, id_col)
     if rid and _norm_id(rid) in fixes:
@@ -451,7 +461,7 @@ def _rewrite_index_lines(lines: list, fixes: dict, counts: dict, vocab: list) ->
                 lines[i] = new_line
                 counts_updated = True
             continue
-        new_line = _data_row_rewrite(cells, status_col, id_col, fixes)
+        new_line = _data_row_rewrite(cells, status_col, id_col, fixes, vocab)
         if new_line is not None:
             lines[i] = new_line
     return counts_updated

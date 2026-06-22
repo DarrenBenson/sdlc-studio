@@ -142,15 +142,28 @@ class SafetyAndReconcileTests(unittest.TestCase):
             pu.apply(d)
             self.assertEqual((sd / ".config.yaml").read_text(), "# custom\nprovenance:\n  enforce: true\n")
 
-    def test_apply_reports_reconcile_fix(self):
+    def test_apply_does_not_bundle_reconcile_by_default(self):
+        # BG0029: an upgrade must not rewrite indexes - reconcile is off unless explicitly requested.
         with tempfile.TemporaryDirectory() as d:
             sd = _project(d, version=(pu.CURRENT_SCHEMA, INSTALLED), story_id=1)  # file Status: Done
-            (sd / "stories" / "_index.md").write_text(
+            idx = sd / "stories" / "_index.md"
+            idx.write_text(
                 "# Index\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
                 "| [US0001](US0001-x.md) | x | In Progress |\n", encoding="utf-8")  # row drifts from file
-            actions = pu.apply(d)
-            self.assertTrue(any("reconcil" in a for a in actions))  # the fix is reported, not silent
-            self.assertIn("Done", (sd / "stories" / "_index.md").read_text())
+            actions = pu.apply(d)  # default: no reconcile
+            self.assertFalse(any("reconcil" in a for a in actions))
+            self.assertIn("In Progress", idx.read_text())  # index left untouched
+
+    def test_apply_with_reconcile_opt_in_runs_it(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d, version=(pu.CURRENT_SCHEMA, INSTALLED), story_id=1)
+            idx = sd / "stories" / "_index.md"
+            idx.write_text(
+                "# Index\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [US0001](US0001-x.md) | x | In Progress |\n", encoding="utf-8")
+            actions = pu.apply(d, with_reconcile=True)
+            self.assertTrue(any("reconcil" in a for a in actions))
+            self.assertIn("Done", idx.read_text())
 
     def test_current_version_missing_config_still_applies(self):
         with tempfile.TemporaryDirectory() as d:
@@ -187,6 +200,18 @@ class SafetyAndReconcileTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             _project(d, personas=[("sarah.md", "# Sarah\n\n## Psychology\n\nx\n")])  # old heading
             self.assertTrue(pu._old_persona_model(Path(d) / "sdlc-studio"))
+
+    def test_version_bump_preserves_created_at(self):
+        # BG0030: bumping an existing .version keeps author fields (e.g. created_at) the template drops
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d, version=(pu.CURRENT_SCHEMA, "1.4.0"))  # stale skill -> bump
+            (sd / ".version").write_text(
+                'schema_version: 2\ncreated_at: 2025-01-01\nskill_version: "1.4.0"\n', encoding="utf-8")
+            pu.apply(d)
+            txt = (sd / ".version").read_text()
+            self.assertIn("created_at: 2025-01-01", txt)            # preserved
+            self.assertIn(f'skill_version: "{INSTALLED}"', txt)     # bumped
+            self.assertIn("upgraded_from: 1.4.0", txt)
 
 
 if __name__ == "__main__":

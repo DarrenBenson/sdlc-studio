@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.2] - 2026-06-22
+
+### Fixed
+
+- **reconcile reads the Status cell by vocab token, not a fixed column (BG0032):** indexes whose
+  tables stack multiple schemas (Status in different columns) or have header-less blocks no longer
+  misread off-schema rows as `Unknown` (which produced phantom status/count drift); apply rewrites
+  only when the pinned column holds a status, never guessing a cell. (~90 phantom drifts -> 9 on a real repo.)
+- **`project upgrade --apply` no longer bundles reconcile (BG0029):** it applies only the safe
+  deterministic set (config + `.version`); reconcile is opt-in via `--with-reconcile`, so an upgrade
+  can't rewrite/corrupt indexes. Index drift is reported as a `review with reconcile` item.
+- **`.version` bump preserves author fields (BG0030):** the skill/schema bump is a surgical update
+  that keeps `created_at` (and any other lines) instead of overwriting from a template.
+- **reconcile `--apply` never deletes index rows (BG0031):** orphan/missing rows stay report-only;
+  an inline-only record is never removed. Locked with a regression test.
+
 ## [2.4.1] - 2026-06-22
 
 ### Added
