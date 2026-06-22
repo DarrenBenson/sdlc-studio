@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 0 |
+| Draft | 1 |
 | In Review | 0 |
 | Accepted | 14 |
 | Superseded | 0 |
 | Withdrawn | 3 |
-| **Total** | **17** |
+| **Total** | **18** |
 
 ## All RFCs
 
@@ -34,3 +34,4 @@
 | [RFC-0015](RFC0015-product-vision-document-multi-repo.md) | Product Vision Document - the multi-repo product layer | High | Accepted | -- | 2026-06-21 | CR0047-CR0049 |
 | [RFC-0016](RFC0016-persona-engine-v2-charters-subagents.md) | Persona engine v2 - substrate-tiered review seats (charter / authored identity) | High | Accepted | -- | 2026-06-21 | -- |
 | [RFC-0017](RFC0017-cooper-goal-directed-persona-model-the-canonical-persona.md) | Cooper goal-directed persona model the canonical persona model | High | Accepted | Darren Benson | 2026-06-21 | -- |
+| [RFC-0018](RFC0018-self-check-candidates-vocabulary-consistency-verb-taxonomy-and.md) | self-check candidates vocabulary-consistency verb-taxonomy and telemetry surfacing | Medium | Draft | -- | 2026-06-22 | -- |
