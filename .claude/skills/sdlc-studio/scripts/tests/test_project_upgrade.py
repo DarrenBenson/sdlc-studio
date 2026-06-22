@@ -213,6 +213,20 @@ class SafetyAndReconcileTests(unittest.TestCase):
             self.assertIn(f'skill_version: "{INSTALLED}"', txt)     # bumped
             self.assertIn("upgraded_from: 1.4.0", txt)
 
+    def test_apply_date_is_injectable_on_bump(self):
+        # CR0071: deterministic date for tests - bump path
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d, version=(pu.CURRENT_SCHEMA, "1.4.0"))
+            pu.apply(d, today="2025-09-09")
+            self.assertIn("upgraded_at: 2025-09-09", (sd / ".version").read_text())
+
+    def test_apply_date_is_injectable_on_create(self):
+        # CR0071: deterministic date for tests - new-file path
+        with tempfile.TemporaryDirectory() as d:
+            _project(d)  # no .version -> created
+            pu.apply(d, today="2025-09-09")
+            self.assertIn("2025-09-09", (Path(d) / "sdlc-studio" / ".version").read_text())
+
 
 if __name__ == "__main__":
     unittest.main()

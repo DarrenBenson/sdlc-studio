@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **project_upgrade determinism hygiene (CR0071):** `.version` date is now injectable (deterministic
+  tests) and the persona scan uses a sorted glob - reproducible regardless of filesystem order.
+
 ### Added
 
 - **`deploy` - the orchestrate-only deploy last-mile (RFC0013, CR0066-0068):** a new workflow that

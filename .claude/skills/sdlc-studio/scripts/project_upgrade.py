@@ -47,9 +47,11 @@ def _sdlc(root: Path) -> Path:
     return Path(root) / "sdlc-studio"
 
 
-def _bump_version_text(text: str, installed: str, prev_skill: str | None) -> str:
+def _bump_version_text(text: str, installed: str, prev_skill: str | None,
+                       today: str | None = None) -> str:
     """Surgically bump an EXISTING .version - update schema/skill, stamp upgraded_from/upgraded_at,
-    and PRESERVE every other line (e.g. an author's `created_at`) (BG0030)."""
+    and PRESERVE every other line (e.g. an author's `created_at`) (BG0030). `today` is injectable
+    for deterministic tests (CR0071)."""
     def setline(t: str, key: str, value: str) -> str:
         pat = re.compile(rf"^{key}:.*$", re.M)
         line = f"{key}: {value}"
@@ -57,7 +59,7 @@ def _bump_version_text(text: str, installed: str, prev_skill: str | None) -> str
     t = setline(text, "schema_version", str(CURRENT_SCHEMA))
     t = setline(t, "skill_version", f'"{installed}"')
     t = setline(t, "upgraded_from", prev_skill or "null")
-    t = setline(t, "upgraded_at", date.today().isoformat())
+    t = setline(t, "upgraded_at", today or date.today().isoformat())
     return t
 
 
@@ -97,7 +99,8 @@ def _old_persona_model(sd: Path) -> bool:
         return True
     # top-level design personas only: the seats/ subdir holds review-seat charters (a different
     # schema, RFC0016) and a consult-guide - none of those are "old design personas" (BG0027).
-    for p in pdir.glob("*.md"):
+    # sorted() for filesystem-independent, reproducible scanning (CR0071).
+    for p in sorted(pdir.glob("*.md")):
         try:
             text = p.read_text(encoding="utf-8")
         except OSError:
@@ -163,12 +166,13 @@ def audit(root: Path | str) -> dict:
     return {"auto": auto, "manual": manual}
 
 
-def apply(root: Path | str, with_reconcile: bool = False) -> list[str]:
+def apply(root: Path | str, with_reconcile: bool = False, today: str | None = None) -> list[str]:
     """Perform the SAFE deterministic corrections (scaffold .config.yaml, bump .version). Idempotent.
     Reconcile is NOT run unless with_reconcile=True - it can rewrite indexes destructively on
-    multi-schema/inline-convention projects, so it is a separate, deliberate step (BG0029). Returns
-    the actions taken. Refuses a path that is not already an sdlc-studio project so a mistyped --root
-    cannot scaffold a phantom project."""
+    multi-schema/inline-convention projects, so it is a separate, deliberate step (BG0029). `today`
+    is injectable for deterministic tests (CR0071). Returns the actions taken. Refuses a path that is
+    not already an sdlc-studio project so a mistyped --root cannot scaffold a phantom project."""
+    today = today or date.today().isoformat()
     root = Path(root)
     sd = _sdlc(root)
     if not sd.is_dir():
@@ -184,13 +188,13 @@ def apply(root: Path | str, with_reconcile: bool = False) -> list[str]:
     installed = version_check.installed_version(version_check.skill_root()) or "unknown"
     if not ver.exists():
         ver.write_text(_VERSION.format(schema=CURRENT_SCHEMA, prev="null",
-                                       today=date.today().isoformat(), skill=installed), encoding="utf-8")
+                                       today=today, skill=installed), encoding="utf-8")
         actions.append(f"created sdlc-studio/.version (schema {CURRENT_SCHEMA}, skill {installed})")
     elif prev_skill != installed:
-        ver.write_text(_bump_version_text(ver.read_text(encoding="utf-8"), installed, prev_skill), encoding="utf-8")
+        ver.write_text(_bump_version_text(ver.read_text(encoding="utf-8"), installed, prev_skill, today), encoding="utf-8")
         actions.append(f"updated sdlc-studio/.version (skill {prev_skill or '?'} -> {installed})")
     elif (prev_schema or 0) < CURRENT_SCHEMA:
-        ver.write_text(_bump_version_text(ver.read_text(encoding="utf-8"), installed, prev_skill), encoding="utf-8")
+        ver.write_text(_bump_version_text(ver.read_text(encoding="utf-8"), installed, prev_skill, today), encoding="utf-8")
         actions.append(f"repaired sdlc-studio/.version (schema -> {CURRENT_SCHEMA})")
     # Reconcile is OFF by default (BG0029): it can rewrite indexes, and on multi-schema/inline-convention
     # projects that is destructive - so an "upgrade" must not bundle it. Opt in with with_reconcile, or
