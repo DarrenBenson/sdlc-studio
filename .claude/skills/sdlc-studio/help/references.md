@@ -26,6 +26,18 @@ For detailed step-by-step workflows:
 - `reference-test-spec.md` - Test specification workflows
 - `reference-test-automation.md` - Test automation, test environment workflows
 
+### Test references - which to read
+
+Five test references, each with a distinct scope - load the one that matches the task:
+
+| Read when you are... | File |
+| --- | --- |
+| Creating a test **spec** (plan + cases + fixtures) | `reference-test-spec.md` |
+| Generating executable test **code** / setting up a test env | `reference-test-automation.md` |
+| Writing/reviewing tests, choosing **verification depth**, tuning timeouts | `reference-test-best-practices.md` |
+| **Validating** generated specs/tests against the real codebase (brownfield) | `reference-test-validation.md` |
+| Generating **E2E / integration** tests (mocking, environments) | `reference-test-e2e-guidelines.md` |
+
 ## Foundational References
 
 **Philosophy:** `reference-philosophy.md` - **Read this first.** Explains Create vs Generate modes and why generate mode produces migration blueprints, not documentation.

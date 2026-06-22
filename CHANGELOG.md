@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Test-reference routing map (CR0075):** `help/references.md` now maps the five `reference-test-*.md`
+  to their distinct tasks (spec / automation / best-practices / brownfield-validation / E2E), so the
+  right one is obvious. (A physical file-merge was assessed and deferred - the files are genuinely
+  distinct and a merge would bloat an at-ceiling file for marginal gain.)
 - **Navigation entry points (CR0074):** a 'which persona doc do I use' routing table
   (`reference-persona.md#which-doc`), a grouped overview of the gate's checks in `help/gate.md`
   (artifact-quality / index / provenance / skill-docs - replacing its stale 5-check line), and
