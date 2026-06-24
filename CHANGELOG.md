@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **reconcile-before-plan (CR0094):** `sprint plan` runs `reconcile detect` first and surfaces
+  index drift - warns by default, refuses under `--strict`. The planner reads each unit's file
+  `Status`, so a stale index misleads selection; reconcile-first guarantees a clean census.
+  Mechanical drift only - semantic staleness (a unit whose feature shipped elsewhere) still
+  needs the audit + grooming (LL0007). Documented as step 0 of the loop in `reference-sprint.md`.
+
 - **authoring sprint - PRD to a reviewable backlog (RFC0019, CR0088-0093):** `sprint` now drives
   greenfield authoring. `sprint <prd.md> --goal design` bootstraps **PRD → epics → stories**
   (CR0088 PRD-input planner; CR0089 decomposition via the shared `epic`/`story` core + batch

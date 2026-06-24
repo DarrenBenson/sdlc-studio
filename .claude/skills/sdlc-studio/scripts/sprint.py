@@ -22,6 +22,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 import complexity  # noqa: E402  (sibling - blast-radius complexity for WSJF, RFC0009 WS3)
+import reconcile  # noqa: E402  (sibling - reconcile-before-plan, CR0094)
 
 PRIORITY_FIELD = {"bug": "Severity", "cr": "Priority", "story": "Priority"}
 PRIORITY_WEIGHT = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}
@@ -196,6 +197,18 @@ def cmd_plan(args: argparse.Namespace) -> int:
     else:  # pragma: no cover - argparse marks the group required
         print("specify one of --bugs/--crs/--stories/--prd", file=sys.stderr)
         return 2
+    # CR0094: reconcile before plan - a plan must be built on a drift-free census. Mechanical
+    # drift only (index vs file); semantic staleness still needs the audit + human grooming.
+    try:
+        drift = reconcile.detect_type(kind, Path(args.root)).get("drift", [])
+    except Exception:  # noqa: BLE001 - reconcile is advisory here, never block planning on its failure
+        drift = []
+    if drift:
+        print(f"reconcile: {len(drift)} drift item(s) in the {kind} index - reconcile before "
+              f"planning (the plan reads file Status; a stale index misleads selection)",
+              file=sys.stderr)
+        if getattr(args, "strict", False):
+            return 2
     try:
         data = build_plan(args.root, kind, status, args.order)
     except ValueError as exc:  # dependency cycle
@@ -227,6 +240,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--order", choices=("priority", "wsjf", "manual"), default="priority")
     p.add_argument("--write", action="store_true",
                    help="persist the sprint plan to sdlc-studio/.local/sprint-plan.json (CR0091)")
+    p.add_argument("--strict", action="store_true",
+                   help="refuse to plan when the index has drift (reconcile-before-plan, CR0094)")
     p.add_argument("--root", default=".", help="Repo root (default: .)")
     p.add_argument("--format", choices=("text", "json"), default="text")
     p.set_defaults(func=cmd_plan)

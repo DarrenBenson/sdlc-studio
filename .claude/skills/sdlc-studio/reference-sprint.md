@@ -33,6 +33,10 @@ Natural language resolves to the same: "do an sprint to deliver all open bugs"
 
 ## The loop
 
+0. **Reconcile before plan (CR0094).** `scripts/sprint.py plan` runs `reconcile detect` first
+   and surfaces index drift (warns; refuses under `--strict`) - the plan reads each unit's file
+   `Status`, so a stale index misleads selection. Mechanical drift only; **semantic** staleness
+   (a unit whose feature shipped under a different artifact) still needs the audit + grooming.
 1. **Define the batch.** `scripts/sprint.py plan <query> --order <order>`
    returns the dependency-ordered, priority-sorted worklist (the triage plan).
 2. **Tranche audit (pre-flight).** `scripts/audit.py check <query|--ids>` grooms the

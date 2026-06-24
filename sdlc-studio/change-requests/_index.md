@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 6 |
+| Proposed | 5 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 92 |
+| Complete | 93 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -113,7 +113,7 @@
 | [CR-0091](CR0091-goal-plan-rung-select-sequence-estimate-to-a.md) | goal plan rung select sequence estimate to a sprint plan artifact | Complete | Medium | Feature | 2026-06-24 | -- |
 | [CR-0092](CR0092-goal-design-assigns-story-points-projected-into-the.md) | goal design assigns story points projected into the index | Complete | Medium | Feature | 2026-06-24 | -- |
 | [CR-0093](CR0093-authoring-closing-consistency-pass-ac-scope-ts-check.md) | authoring closing consistency pass ac-scope ts-check reconcile integrity | Complete | Medium | Feature | 2026-06-24 | -- |
-| [CR-0094](CR0094-the-sprint-loop-runs-reconcile-before-plan-surfacing.md) | the sprint loop runs reconcile before plan, surfacing drift before selection | Proposed | Medium | Improvement | 2026-06-24 | -- |
+| [CR-0094](CR0094-the-sprint-loop-runs-reconcile-before-plan-surfacing.md) | the sprint loop runs reconcile before plan, surfacing drift before selection | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0095](CR0095-done-requires-verified-config-toggle-plus-a-status.md) | done-requires-verified config toggle plus a status unverified-manual lane | Proposed | Medium | Feature | 2026-06-24 | -- |
 | [CR-0096](CR0096-hard-epic-scope-test-spec-requirement-wired-into.md) | hard epic-scope test-spec requirement wired into epic implement | Proposed | Medium | Feature | 2026-06-24 | -- |
 | [CR-0097](CR0097-persona-index-projection-in-reconcile-fields-via-a.md) | persona index projection in reconcile fields via a canonical persona field | Proposed | Medium | Improvement | 2026-06-24 | -- |

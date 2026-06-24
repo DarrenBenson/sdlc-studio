@@ -263,5 +263,23 @@ class AuthoringPlanTests(unittest.TestCase):
             self.assertTrue((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
 
 
+class ReconcileBeforePlanTests(unittest.TestCase):
+    """CR0094: the planner surfaces index drift before selecting; --strict refuses."""
+
+    def test_strict_refuses_on_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1, status="Proposed")   # a CR file but no _index.md -> missing-index drift
+            rc = _load().main(["plan", "--crs", "Proposed", "--strict", "--root", str(root)])
+            self.assertEqual(rc, 2)            # refused
+
+    def test_warns_but_proceeds_without_strict(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1, status="Proposed")
+            rc = _load().main(["plan", "--crs", "Proposed", "--root", str(root)])
+            self.assertEqual(rc, 0)            # warns, still plans
+
+
 if __name__ == "__main__":
     unittest.main()
