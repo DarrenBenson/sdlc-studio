@@ -5,7 +5,7 @@
 > and `sdlc-studio/retros/`; the original v2.0 unified review is `RV0001-unified-review-2026-06-20.md`.
 >
 > **Project version:** 2.5.0 (+ unreleased v2.6.0 work) · **Date:** 2026-06-24 · **Gates:** lint
-> clean, 835 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0, npm audit 0, coverage 83%.
+> clean, 850 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0, npm audit 0, coverage 83%.
 > **Command rename:** `autosprint` → `sprint` (CR0087; `autosprint` is a deprecated alias).
 
 ## Headline
@@ -50,6 +50,14 @@ critic per unit.
   greenfield **authoring** from a PRD - `sprint <prd.md> --goal design` drives PRD -> epics ->
   stories with two STOPs (CR0088-0090); `design` assigns story points (CR0092); a closing
   consistency pass over the backlog (CR0093). The loop is documented in `reference-sprint.md`.
+- **Unreleased - sprint-2 hygiene + hardening (CR0094-0099, Part A stories):** dogfood-run via
+  the sprint lifecycle (plan -> breakdown -> run). The 5 stale v2.0 Ready stories (US0001-0005)
+  verified-and-closed - the Done-gate (CR0084) blocked a false close on a stale verifier, proving
+  the loop. New: reconcile-before-plan (CR0094); `quality.done_requires_verified` toggle + status
+  verify lane (CR0095); hard epic-scope test-spec requirement `verify_ac epic-ts` (CR0096);
+  persona index-projection via a canonical field (CR0097); the audit flags **already-satisfied**
+  Ready units (CR0098); **seat-scored WSJF** sprint planning (CR0099). LL0007 captured the
+  planning learnings. 850 tests, gate clean.
 - **In flight - review + optimise programme (to v2.5.0):** a dogfooded world-class review ran the
   audit skill-profile + the deterministic gates. Outcome: over-engineering and determinism are
   **clean** (the determinism candidates were refuted as false positives). The real backlog is two
