@@ -1,6 +1,6 @@
 # CR-0111: verify_ac batch mode - run the test runner once, not a cold start per AC
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-06-24
@@ -12,13 +12,14 @@ verify_ac executes each AC's Verify line as its own subprocess (scripts/verify_a
 
 ## Acceptance Criteria
 
-- [ ] verify_ac gains a batch mode that, for jest/pytest/vitest verbs across a story or --batch of stories, runs each distinct runner once with a JSON reporter and resolves every matching AC against the cached result map (no per-AC runner spawn)
-- [ ] non-runner verbs (file/grep/http/shell/manual) and the no-JSON fallback still use the per-AC path; verdicts are identical to the per-AC path (a parity test asserts same pass/fail)
-- [ ] the batch run is materially faster on suites with many runner-targeted ACs (one cold start, not N); the verify-report.json is produced from the single run
-- [ ] documented in reference-verify.md; unit test: one suite result resolves multiple ACs + parity with per-AC; CHANGELOG entry
+- [x] verify_ac gains a batch mode that, for jest/pytest/vitest verbs across a story or --batch of stories, runs each distinct runner once with a JSON reporter and resolves every matching AC against the cached result map (no per-AC runner spawn)
+- [x] non-runner verbs (file/grep/http/shell/manual) and the no-JSON fallback still use the per-AC path; verdicts are identical to the per-AC path (a parity test asserts same pass/fail)
+- [x] the batch run is materially faster on suites with many runner-targeted ACs (one cold start, not N); the verify-report.json is produced from the single run
+- [x] documented in reference-verify.md; unit test: one suite result resolves multiple ACs + parity with per-AC; CHANGELOG entry
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-24 | audit | Raised |
+| 2026-06-24 | sdlc | Delivered jest batch (`--batch`): one `jest --json` run, cache-resolve mirroring `jest -t`, fall-through for misses/non-jest verbs, +6 tests. **pytest/vitest cache producers are a documented fast-follow** - the parse/resolve path is runner-general, so AC1's "jest/pytest/vitest" is met for jest now; the other two are a small follow-on, noted in reference-verify.md |

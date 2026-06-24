@@ -369,13 +369,63 @@ def _is_manual(expression: str) -> bool:
     return bool(toks) and toks[0].strip("`*:.,").lower() in {"manual", "manually"}
 
 
+def _parse_jest_json(stdout: str) -> list[dict]:
+    """Flatten `jest --json` output to [{name, ok}] over every assertion (CR0111). Tolerates
+    leading non-JSON noise; returns [] when no JSON object is present or it does not parse."""
+    out = stdout.strip()
+    start = out.find("{")
+    if start < 0:
+        return []
+    try:
+        data = json.loads(out[start:])
+    except ValueError:
+        return []
+    asserts: list[dict] = []
+    for tr in data.get("testResults", []):
+        for a in tr.get("assertionResults", []):
+            name = a.get("fullName") or a.get("title") or ""
+            asserts.append({"name": name, "ok": a.get("status") == "passed"})
+    return asserts
+
+
+def jest_batch_cache(repo_root: Path, timeout: int) -> list[dict]:
+    """Run jest ONCE with --json and return its flattened assertions (CR0111), so per-AC jest
+    verifiers resolve against the result set instead of a cold `jest -t` start each. Empty on any
+    failure -> callers fall back to the per-AC path."""
+    try:
+        result = subprocess.run(["npx", "jest", "--json", "--silent"], cwd=str(repo_root),
+                                capture_output=True, text=True, timeout=timeout)  # nosec B603 B607
+    except (FileNotFoundError, OSError, subprocess.TimeoutExpired):
+        return []
+    return _parse_jest_json(result.stdout)
+
+
+def resolve_jest_from_cache(verifier: str, asserts: list[dict]) -> VerifierResult | None:
+    """Resolve a `jest <pattern>` verifier against cached assertions (CR0111), mirroring `jest -t`:
+    pass iff >=1 assertion name contains the pattern and all matching pass. None when the verb is
+    not jest or nothing matches -> the caller runs the authoritative per-AC subprocess."""
+    head, _, tail = verifier.strip().partition(" ")
+    if head.lower() != "jest" or not tail:
+        return None
+    pat = tail.strip().strip('"\'')
+    matches = [a for a in asserts if pat in a["name"]]
+    if not matches:
+        return None
+    ok = all(a["ok"] for a in matches)
+    return VerifierResult(ok, "jest", 0 if ok else 1, "",
+                          "" if ok else f"cached jest failure for {pat!r}", 0)
+
+
 def verify_story(
     story_path: Path,
     dry_run: bool,
     timeout: int,
     repo_root: Path,
+    jest_cache: list[dict] | None = None,
 ) -> StoryReport:
-    """Run every AC verifier in one story and update its Verified state."""
+    """Run every AC verifier in one story and update its Verified state. With `jest_cache`
+    (CR0111 batch mode) a jest verifier resolves against the cached single run; anything not
+    found there falls through to the authoritative per-AC subprocess."""
     text = story_path.read_text(encoding="utf-8")
     lines = text.splitlines()
     blocks = parse_story(text)
@@ -389,7 +439,11 @@ def verify_story(
             report.manual += 1
             continue
 
-        result = run_verifier(block.verifier, timeout, repo_root)
+        result = None
+        if jest_cache is not None:
+            result = resolve_jest_from_cache(block.verifier, jest_cache)
+        if result is None:
+            result = run_verifier(block.verifier, timeout, repo_root)
 
         if result.ok:
             report.verified += 1
@@ -522,6 +576,12 @@ def cmd_run(args: argparse.Namespace) -> int:
         print("no stories found", file=sys.stderr)
         return 2
 
+    # CR0111: with --batch, run jest once and resolve jest verifiers from the cached assertions
+    # instead of a cold `jest -t` start per AC (a field sprint measured ~48 cold starts / 70s).
+    jest_cache = jest_batch_cache(repo_root, args.timeout) if getattr(args, "batch", False) else None
+    if getattr(args, "batch", False):
+        print(f"batch: cached {len(jest_cache)} jest assertion(s) from one run", file=sys.stderr)
+
     reports: list[StoryReport] = []
     overall_fail = 0
     overall_pass = 0
@@ -529,7 +589,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         if not p.exists():
             print(f"skip: {p} not found", file=sys.stderr)
             continue
-        report = verify_story(p, args.dry_run, args.timeout, repo_root)
+        report = verify_story(p, args.dry_run, args.timeout, repo_root, jest_cache=jest_cache)
         reports.append(report)
         overall_fail += report.failed
         overall_pass += report.verified
@@ -737,6 +797,8 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--dry-run", action="store_true", help="Do not modify story files")
     r.add_argument("--fresh", action="store_true",
                    help="rebuild the report from this run only (default merges into it, BG0037)")
+    r.add_argument("--batch", action="store_true",
+                   help="run jest once and resolve jest verifiers from the cached result (CR0111)")
     r.add_argument("--timeout", type=int, default=120, help="Per-verifier timeout in seconds")
     r.add_argument(
         "--report",

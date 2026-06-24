@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`verify_ac --batch` jest mode - run the runner once, not a cold start per AC (CR0111, field
+  report):** `reconcile --verify --batch` runs `jest --json` once and resolves jest-targeted ACs
+  against that result set (a field sprint measured ~48 cold `jest -t` starts / 70s collapsing to
+  one run). Mirrors `jest -t` (pass iff matches exist and all pass); cache misses + non-jest verbs
+  fall through to the per-AC path. pytest/vitest caches are a fast-follow (the parse/resolve path
+  is runner-general).
 - **the `--goal design` rung authors the test-spec AC Coverage Matrix (CR0110, field report):**
   the breakdown produced Ready stories + points but never authored the test-spec, so the AC↔test
   bridge (CR0085) was reverse-engineered at *implement* (a field delivery repointed ~48 Verify

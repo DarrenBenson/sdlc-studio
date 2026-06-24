@@ -543,6 +543,42 @@ class EpicTestSpecTests(unittest.TestCase):
             self.assertFalse(verify_ac.epic_test_spec_check(root, "EP0001")["ok"])
 
 
+class JestBatchTests(unittest.TestCase):
+    """CR0111: resolve jest verifiers from one cached --json run."""
+
+    SAMPLE = json.dumps({"testResults": [{"assertionResults": [
+        {"fullName": "US0011: adds a valid item", "title": "adds a valid item", "status": "passed"},
+        {"fullName": "US0016: equal positions resolve deterministically", "status": "failed"},
+    ]}]})
+
+    def test_parse_flattens_assertions(self):
+        asserts = verify_ac._parse_jest_json("noise\n" + self.SAMPLE)
+        self.assertEqual(len(asserts), 2)
+        self.assertTrue(asserts[0]["ok"])
+        self.assertFalse(asserts[1]["ok"])
+
+    def test_parse_bad_json_is_empty(self):
+        self.assertEqual(verify_ac._parse_jest_json("not json"), [])
+
+    def test_resolve_pass(self):
+        asserts = verify_ac._parse_jest_json(self.SAMPLE)
+        r = verify_ac.resolve_jest_from_cache('jest "US0011: adds a valid item"', asserts)
+        self.assertIsNotNone(r)
+        self.assertTrue(r.ok)
+
+    def test_resolve_fail(self):
+        asserts = verify_ac._parse_jest_json(self.SAMPLE)
+        r = verify_ac.resolve_jest_from_cache('jest "equal positions resolve deterministically"', asserts)
+        self.assertFalse(r.ok)
+
+    def test_resolve_no_match_falls_through(self):
+        asserts = verify_ac._parse_jest_json(self.SAMPLE)
+        self.assertIsNone(verify_ac.resolve_jest_from_cache('jest "nonexistent title"', asserts))
+
+    def test_resolve_non_jest_verb_is_none(self):
+        self.assertIsNone(verify_ac.resolve_jest_from_cache("pytest tests/x.py", [{"name": "x", "ok": True}]))
+
+
 class WriteReportMergeTests(unittest.TestCase):
     """BG0037: per-story runs merge into the report instead of clobbering it."""
 

@@ -184,6 +184,17 @@ python3 "$CLAUDE_SKILL_DIR/scripts/verify_ac.py" run \
    in config): Step 10 refuses to mark a story Done unless all ACs
    have `Verified: yes`
 
+## Batch verification {#batch}
+
+`reconcile --verify --batch` (CR0111) runs **jest once** (`jest --json`) and resolves every
+jest-targeted AC against that single result set, instead of a cold `jest -t` start per AC - a field
+sprint measured ~48 cold starts / 70s collapsing to one run. A jest pattern passes iff at least one
+assertion name contains it and all matching pass (mirroring `jest -t`); anything not found in the
+cache falls through to the authoritative per-AC subprocess, as do non-jest verbs
+(`pytest`/`vitest`/`file`/`grep`/`http`/`shell`/`manual`). pytest and vitest batch caches are a
+fast-follow - the parse/resolve path is runner-general; only the per-runner cache producer is
+jest-specific today.
+
 ## Report Format {#verify-report}
 
 Written to `sdlc-studio/.local/verify-report.json` after every apply
