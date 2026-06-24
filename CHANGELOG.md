@@ -5,7 +5,10 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.3.0] - 2026-06-24
+## [3.0.1] - 2026-06-24
+
+> The v3 line: the `autosprint`->`sprint` rename + sprint lifecycle, greenfield authoring,
+> the RV0005 self-review, and the field-dogfooding fixes - consolidated into one release.
 
 ### Added
 
@@ -15,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   one run). Mirrors `jest -t` (pass iff matches exist and all pass); cache misses + non-jest verbs
   fall through to the per-AC path. pytest/vitest caches are a fast-follow (the parse/resolve path
   is runner-general).
+
 - **the `--goal design` rung authors the test-spec AC Coverage Matrix (CR0110, field report):**
   the breakdown produced Ready stories + points but never authored the test-spec, so the AC↔test
   bridge (CR0085) was reverse-engineered at *implement* (a field delivery repointed ~48 Verify
@@ -22,24 +26,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Matrix - every AC mapped to a planned test case/title, Verify lines runner-targeted by
   construction - so implement binds to the matrix and the test-spec `epic-ts` (CR0096) requires at
   Done is produced up front. Documented in `reference-sprint.md` + `reference-test-spec.md`.
+
 - **the tranche audit runs `verify_ac lint` + `ac_scope` (CR0109, field report):** `audit check`
   (the sprint breakdown's readiness groom) now flags **weak-verify** (a non-executable / prose
   Verify line, reusing `verify_ac.lint_verifier`) and **cross-epic-ac** (an AC owned by another
   epic, reusing `ac_scope`). Two readiness problems the skill already had tools for - but which a
   field breakdown re-discovered by hand - are now surfaced deterministically at design time.
-
-### Fixed
-
-- **`verify_ac` merges per-story results into the report instead of clobbering it (BG0037, field
-  report):** `write_report` rebuilt verify-report.json from only the current run, so verifying a
-  sprint one story at a time left the report holding only the last story - and `transition -> Done`
-  (CR0084) reads that report, so the gate failed for every earlier story. Runs now merge (this
-  run's entries win, others preserved); per-story verification accumulates and the Done-gate finds
-  every verified story. `--fresh` forces a clean rebuild. No more `--dir`-re-stamps-everything.
-
-## [3.2.0] - 2026-06-24
-
-### Added
 
 - **`sprint plan` emits dependency waves (CR0107, field report):** the planner returned a flat
   order; the parallelisable wave structure (L1/L2/L3...) was only computed by the model at
@@ -49,10 +41,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   parallelisable - printed in the plan output and persisted by `--write`. Reuses the existing dep
   graph; within-wave order keeps WSJF/priority rank.
 
-## [3.1.0] - 2026-06-24
-
-### Added
-
 - **`sprint plan --epic` scopes a story batch to one or more epics (CR0106, field report):**
   the planner filtered only by status, so `--stories Draft` pulled every Draft story across all
   epics - a field agent planning the next tranche (EP0002+EP0003) had to hand-scope and hand-build
@@ -60,77 +48,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (repeatable, union) now restricts to the named epics; dependency ordering, `--write`, and WSJF
   operate on the scoped batch. Story-only (errors with `--crs`/`--bugs`).
 
-## [3.0.2] - 2026-06-24
-
-### Fixed
-
-- **`init` now gitignores the runtime-state dir (BG0036, field report):** `init` created
-  `sdlc-studio/.local/` (caches, verify reports, lessons) but wrote no `.gitignore`, so greenfield
-  projects committed derived state (this repo only avoided it via a hand-written root entry). `init`
-  now drops a self-contained `sdlc-studio/.gitignore` (`.local/`) - never touching the project's own
-  root `.gitignore`. Idempotent.
-
-## [3.0.1] - 2026-06-24
-
-### Fixed
-
-- **duplicate-id gate false-positived on the canonical two-table story index (BG0035, field
-  report):** `reconcile.detect_duplicate_rows` counted an id across ALL tables in an `_index.md`,
-  but the story-index template ships two id-bearing views (`Stories by Epic` + `All Stories`), so
-  every story id was flagged twice (a field upgrade saw duplicate-id: 33). Detection is now
-  **per-table**: an id once-per-view across the two tables is not a duplicate; a repeat *within*
-  one table (the silent-collapse bug it guards, CR0055/BG0022) still flags. The template's
-  two-view layout is valid again - no need to gut the per-epic view to pass the gate.
-
-## [3.0.0] - 2026-06-24
-
-### Added
-
 - **deterministic id-allocation extended to the meta-artifacts (CR0105):** `next_id.py allocate
   --type` now covers `review` (RV####) and `retro` (RETRO####) in addition to the 8 pipeline
   types, so review/retro ids are allocated collision-free (respecting `--remote`) instead of
   hand-picked by reading the directory. Kept out of `ARTIFACT_TYPES` so reconcile/conformance
   ignore them. (Lessons `LL####` keep their own `lessons.py` manager; personas are named.)
+
 - **SOTA linter coverage in the quality guides (CR0103, RV0005 audit):** `best-practices/script.md`
   gains a Tooling section (ShellCheck + shfmt as the baseline; the anti-pattern table reframed as
   what ShellCheck enforces) and teaches `set -euo pipefail` instead of bare `set -e`;
   `best-practices/python.md` gains a Tooling section (Ruff + mypy/pyright, 3.10+ floor) and its
   Type Hints example uses PEP 604 `X | None` rather than `typing.Optional`; `help/code.md` `code
   check` now lists a shell linter so every language the repo ships is covered.
+
 - **v3.0 capabilities surfaced in the always-loaded router + help catalogue (CR0104, RV0005
   review):** `help/help.md` now lists the `decisions` command (add/list/promote) and names the
   sprint **goal ladder** `triage -> plan -> design -> done`; the SKILL.md Type Reference gains
   `init` (greenfield step 1) and `decisions` and names the ladder; `artifact batch`,
   `--template full`, and `next_id allocate` are in the deterministic-tooling catalogue; the
   greenfield manual workflow leads with `init`. Closes the `decisions` doc-coverage false-green.
+
 - **seat-scored WSJF sprint planning (CR0099, from LL0007):** `sprint plan --order wsjf` now
   orders by **WSJF = (value + time-criticality + risk-reduction) / size**. The review seats score
   the numerator (Product Owner = value, QA = risk, Engineering = effort seeded by the complexity
   signal) into `.local/wsjf-inputs.json`; the planner computes and records the components in the
   sprint-plan artifact. Degrades gracefully to priority + complexity with no inputs or under
   `--skip-personas`. Sprint planning becomes a value/risk judgement, not a bare-priority sort.
+
 - **already-satisfied flag in the tranche audit (CR0098, from LL0007):** `audit check` (the
   sprint pre-flight) now flags a Ready unit whose executable ACs all pass in the verify-report as
   **already-satisfied** - a close-candidate, not work to build. The audit can't see a feature
   shipped under a different artifact, but a green verifier set is the deterministic signal - the
   exact gap that let 5 stale Ready stories through this session's first plan. Advisory; reuses the
   verify-report.
+
 - **persona index-projection via a canonical field (CR0097):** the deferred half of CR0082. The
   story template + scaffold now carry a canonical `> **Persona:**` field, and `reconcile fields`
   projects it into the index `Persona` column alongside Title/Points (absent field left untouched,
   BG0032). The "As a {persona}" prose stays; the metadata field is the projection source - so the
   index Persona column is derived, not hand-kept.
+
 - **hard epic-scope test-spec requirement (CR0096):** the deferred half of CR0085 - the
   AC-to-test bridge is now mandatory at epic scale. `verify_ac epic-ts --epic EPxxxx` requires an
   epic to have a test-spec (linked by its `Epic:` field) whose AC Coverage Matrix passes
   `ts-check`; gated by `quality.epic_requires_test_spec` (default true), single-story work exempt.
   Reuses `ts-check` (no new verification logic); documented in `reference-epic.md`.
+
 - **done-requires-verified toggle + status verification lane (CR0095):** the deferred half of
   CR0084. `quality.done_requires_verified` (default true) lets a project set the story->Done
   AC-verify gate policy in `.config.yaml` - false downgrades it to advisory-warn project-wide
   (per-call `--force` still overrides). And `status` now reads `verify-report.json` and surfaces
   a verification lane (stories with unverified ACs; the manual-AC count), so env-bound/manual ACs
   read as "deferred", not silent gaps.
+
 - **reconcile-before-plan (CR0094):** `sprint plan` runs `reconcile detect` first and surfaces
   index drift - warns by default, refuses under `--strict`. The planner reads each unit's file
   `Status`, so a stale index misleads selection; reconcile-first guarantees a clean census.
@@ -148,6 +118,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ac_scope` + `ts-check` + `reconcile fields` + `validate` + `integrity` over the produced
   backlog (CR0093). The loop is documented in `reference-sprint.md`; never implements at
   `design`/`plan`.
+
 - **greenfield runbook (CR0081):** `help/getting-started.md` gives the canonical command order
   from an empty repo to a reviewable backlog (`init -> prd -> persona -> trd -> tsd -> epic ->
   story -> reconcile/validate`) and on through the implementation handoff, each step with
@@ -155,6 +126,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   decisions log and the future authoring loop at the right points, and documents autosprint's
   **cold-start precondition** (a runnable gate) plus the foundation-first handoff - also
   mirrored into `reference-autosprint.md`.
+
 - **agent-instructions enforce the tool-first discipline (CR0083):** the shipped
   `templates/agent-instructions.md` (read by every consuming-project agent; `.CLAUDE.md`
   inherits it via `@AGENTS.md`) gains a mandatory "use the deterministic tooling" rule -
@@ -162,11 +134,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   derived, a story reaches Done only when its executable ACs pass, foundation-first then
   autosprint. The root cause every greenfield friction shared: agents improvise because
   nothing tells them to trust the tooling. Dogfooded into this repo's own `AGENTS.md`.
+
 - **cross-epic AC scope lint (CR0086):** `ac_scope.py check` flags, advisory, a story whose
   acceptance criteria reference a distinctive capability keyword owned by a different epic's
   title (the un-Done-able-in-its-own-epic defect the field audit found - US0002/US0018 reached
   into EP0006/EP0003). Heuristic, read-only, never auto-edits; the operator splits or
   re-scopes. The "single most useful defect" the dogfooding surfaced, now caught at authoring.
+
 - **Definition-of-Done gate on `transition`/`close` (CR0084):** a story moving to Done is
   refused when it declares executable (non-`manual`) ACs that are red or never run in
   `verify-report.json` - the safety net for the hand-driven path that a diligent agent
@@ -174,6 +148,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (the verifier result); `--force` overrides (recorded). Scoped to stories - CR/epic/bug
   closures, manual-only / AC-less stories, and dry-runs are never gated. Pairs with CR0085
   (the gate is a clean signal only once the TS matrix makes names converge).
+
 - **test-spec as the AC-to-test bridge, enforceable (CR0085):** `verify_ac ts-check --spec
   <ts> [--verify-report <json>]` validates an AC Coverage Matrix is not decorative - every AC
   mapped to a passing test case, no placeholders, cross-checked against the live report.
@@ -183,12 +158,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The TS-bridge + DSL discipline is documented in `reference-verify.md`. (Deferred to a
   follow-up: a hard epic-scope TS requirement wired into epic-implement, and a status manual
   lane - both touch the model-driven workflow surface.)
+
 - **reconcile projects file-owned index cells (CR0082):** `reconcile fields` (`--apply`)
   syncs the index's `Title` and `Points` cells from the backing story files, so the index is
   fully derived (LL0001) and the audited story-points hand-copy disappears. A field absent in
   the file is left untouched (BG0032 no-clobber); persona is deferred (no single canonical
   field in a story). `apply` and `fields` are now documented (the entry was stale at
   read-only/`detect`).
+
 - **project decisions log (CR0080):** `scripts/decisions.py` (`add` / `list`) maintains
   `sdlc-studio/decisions.md` - the canonical, append-only home for load-bearing decisions,
   both product (scope cuts, resolved PRD open questions) and implementation conventions
@@ -196,12 +173,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   empty. The project "spine" lives in one place and feeds the delegated-agent handoff
   context, instead of being scattered and pasted per prompt. Distinct from the autosprint
   per-tranche ledger.
+
 - **batch artifact creation (CR0078):** `artifact.py batch --type <t> --spec <items.json>`
   creates many artifacts of one type in one atomic pass - a reserved contiguous id block
   (LL0002), every index row, and every story-to-epic link wired together; a missing epic or
   id collision aborts before any write; `--dry-run` previews the id map. Defaults to
   `--template full` (the fan-out case where delegated agents fill pre-wired scaffolds rather
   than coordinate structure).
+
 - **executable `init` (CR0079):** `init` was a manual checklist; it is now `scripts/init.py`.
   `init run` creates the full `sdlc-studio/` directory tree, pre-creates every per-type
   `_index.md` (reusing the CR0077 helper, so the first `new` of any type is indexed), seeds
@@ -210,6 +189,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   idempotent (never overwrites without `--force`); `--dry-run` previews every write so the
   workflow can confirm config before applying. The CR0077 index-bootstrap moved to the shared
   `file_finding.ensure_index` (single source, used by both `new` and `init`).
+
 - **greenfield `new`: lazy index creation + full-template scaffolds (CR0077):** `artifact.py new`
   now creates a missing `<dir>/_index.md` from `templates/indexes/<type>.md` on first use (the empty-
   project first run), so the very first artifact of a type is indexed like every later one - closing
@@ -230,16 +210,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`verify_ac` merges per-story results into the report instead of clobbering it (BG0037, field
+  report):** `write_report` rebuilt verify-report.json from only the current run, so verifying a
+  sprint one story at a time left the report holding only the last story - and `transition -> Done`
+  (CR0084) reads that report, so the gate failed for every earlier story. Runs now merge (this
+  run's entries win, others preserved); per-story verification accumulates and the Done-gate finds
+  every verified story. `--fresh` forces a clean rebuild. No more `--dir`-re-stamps-everything.
+
+- **`init` now gitignores the runtime-state dir (BG0036, field report):** `init` created
+  `sdlc-studio/.local/` (caches, verify reports, lessons) but wrote no `.gitignore`, so greenfield
+  projects committed derived state (this repo only avoided it via a hand-written root entry). `init`
+  now drops a self-contained `sdlc-studio/.gitignore` (`.local/`) - never touching the project's own
+  root `.gitignore`. Idempotent.
+
+- **duplicate-id gate false-positived on the canonical two-table story index (BG0035, field
+  report):** `reconcile.detect_duplicate_rows` counted an id across ALL tables in an `_index.md`,
+  but the story-index template ships two id-bearing views (`Stories by Epic` + `All Stories`), so
+  every story id was flagged twice (a field upgrade saw duplicate-id: 33). Detection is now
+  **per-table**: an id once-per-view across the two tables is not a duplicate; a repeat *within*
+  one table (the silent-collapse bug it guards, CR0055/BG0022) still flags. The template's
+  two-view layout is valid again - no need to gut the per-epic view to pass the gate.
+
 - **`--no-artifacts` behaviour de-duplicated to one canonical anchor (CR0102, RV0005 audit):**
   the suppressed-files / still-enforced-gates lists were restated verbatim across
   `reference-epic.md`, `reference-story.md`, and `reference-outputs.md` (drift risk on any change
   to the gate set). `reference-epic.md#flag-no-artifacts` is now the single source; story and
   outputs point to it and keep only their file-local framing (story-phase flow / status-flow shape).
+
 - **Story Completion Cascade re-anchored on the deterministic close (CR0100, RV0005 audit):**
   `reference-outputs.md#story-completion-cascade` led with prose telling the agent to hand-edit the
   story Status, index rows, summary counts, and epic checkbox - exactly what `artifact.py close` /
   `transition.py` now own. It now leads with the deterministic close and marks steps 7-8 as
   script-owned (do not hand-edit), leaving only the genuine judgement residue as model steps.
+
 - **`help/reconcile.md` now names the deterministic `scripts/reconcile.py` (CR0101, RV0005
   audit):** the per-command help framed all index/count/status fixes as model prose with no
   pointer to the script, inviting hand-recomputed counts (a recorded corruption mode). It now

@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 2 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 109 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **111** |
+| **Total** | **112** |
 
 ## All Changes
 
@@ -131,3 +131,4 @@
 | [CR-0109](CR0109-tranche-audit-sprint-breakdown-should-run-verify-ac.md) | Tranche audit (sprint breakdown) should run verify_ac lint + ac_scope, not leave them hand-found | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0110](CR0110-author-the-test-spec-ac-coverage-matrix-at.md) | Author the test-spec AC Coverage Matrix at --goal design (shift the AC-to-test bridge left) | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0111](CR0111-verify-ac-batch-mode-run-the-test-runner.md) | verify_ac batch mode - run the test runner once, not a cold start per AC | Complete | Medium | Improvement | 2026-06-24 | -- |
+| [CR-0112](CR0112-strip-internal-provenance-tags-cr-bg-rfc-from.md) | Strip internal provenance tags (CR/BG/RFC) from consuming-facing docs + shipped code | Proposed | Medium | Improvement | 2026-06-24 | -- |

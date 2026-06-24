@@ -1,19 +1,18 @@
-# LATEST - current project state (v3.2.0)
+# LATEST - current project state (v3.0.1)
 
 > The current-state anchor. **Re-read this and run `/sdlc-studio status` after any context reset
 > or compaction.** Durable guidance lives in AGENTS.md; per-tranche detail lives in CHANGELOG.md
 > and `sdlc-studio/retros/`; the original v2.0 unified review is `RV0001-unified-review-2026-06-20.md`.
 >
-> **Project version:** 3.2.0 (released 2026-06-24) · **Date:** 2026-06-24 · **Gates:** lint
-> clean, 861 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0, npm audit 0, coverage 83%.
-> **v3.0.1:** BG0035 - duplicate-id gate now scopes per-table, so the canonical two-view story
-> index (per-epic + All Stories the template ships) no longer false-flags (field report).
-> **v3.0.2:** BG0036 - `init` now writes `sdlc-studio/.gitignore` (`.local/`), so greenfield
-> projects no longer commit runtime caches/reports (field report).
-> **v3.1.0:** CR0106 - `sprint plan --epic EPxxxx` scopes a story batch to one or more epics
-> (repeatable), so the next tranche need not pull every Draft story (field report).
-> **v3.2.0:** CR0107 - `sprint plan` emits dependency **waves** (parallelisable levels), persisted
-> by `--write`, so operators no longer hand-derive the L1/L2/L3 structure (field report).
+> **Project version:** 3.0.1 (the consolidated v3 line; release pending) · **Date:** 2026-06-24 ·
+> **Gates:** lint clean, 873 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0,
+> npm audit 0, coverage 83%.
+> **v3.0.1 folds the whole v3 line into one release** (the per-fix v3.0.x/v3.1/v3.2 tags were
+> consolidated away to keep version numbers low): the `autosprint`→`sprint` rename + sprint
+> lifecycle + greenfield authoring + RV0005 self-review, then the field-dogfood fixes - BG0035
+> (per-table duplicate-id), BG0036 (`init` gitignores `.local/`), CR0106 (`sprint plan --epic`),
+> CR0107 (dependency waves), BG0037 (verify-report merge), CR0109 (audit lint), CR0110 (design-time
+> TS matrix), CR0111 (`verify_ac --batch`).
 > **Command rename:** `autosprint` → `sprint` (CR0087; `autosprint` is a deprecated alias).
 
 ## Headline
@@ -42,22 +41,22 @@ critic per unit.
 
 - **Backlog:** the actionable CR/bug backlog is clear (CRs through **CR0105** closed; 0 Proposed;
   BG0034 fixed). RFCs accepted: RFC0001/0002/0013/0014/0015/0016/0017/**0019**. `disclosure` **0**.
-- **v3.0.0 - greenfield + implementation DevEx (v2.6.0 work, dogfooded):** the
+- **v3.0.1 - greenfield + implementation DevEx (v2.6.0 work, dogfooded):** the
   greenfield-friction workstream (CR0077-CR0086), built by the skill's own autosprint loop from a
   field agent's greenfield + tranche-1 dogfooding. Authoring: lazy index creation + full-template
   scaffolds (CR0077), executable `init` (CR0079), batch create (CR0078), decisions log (CR0080),
   reconcile field projection (CR0082), greenfield runbook (CR0081). Implementation/conformance:
   the test-spec AC-to-test bridge (CR0085), the Definition-of-Done verify gate (CR0084), the
   cross-epic AC lint (CR0086), and agent-instructions that enforce the tool-first discipline
-  (CR0083). Released in v3.0.0.
-- **v3.0.0 - the `sprint` lifecycle (RFC0019 Accepted, CR0087-0093):** dogfood-built next.
+  (CR0083). Released in v3.0.1.
+- **v3.0.1 - the `sprint` lifecycle (RFC0019 Accepted, CR0087-0093):** dogfood-built next.
   `autosprint` renamed to **`sprint`** (CR0087; deprecated alias kept). The command is now the
   whole sprint lifecycle via the **goal ladder** `triage -> plan -> design -> done` (cumulative
   stop-points; NL maps to the furthest rung). New: `--goal plan` sprint planning (CR0091);
   greenfield **authoring** from a PRD - `sprint <prd.md> --goal design` drives PRD -> epics ->
   stories with two STOPs (CR0088-0090); `design` assigns story points (CR0092); a closing
   consistency pass over the backlog (CR0093). The loop is documented in `reference-sprint.md`.
-- **v3.0.0 - sprint-2 hygiene + hardening (CR0094-0099, Part A stories):** dogfood-run via
+- **v3.0.1 - sprint-2 hygiene + hardening (CR0094-0099, Part A stories):** dogfood-run via
   the sprint lifecycle (plan -> breakdown -> run). The 5 stale v2.0 Ready stories (US0001-0005)
   verified-and-closed - the Done-gate (CR0084) blocked a false close on a stale verifier, proving
   the loop. New: reconcile-before-plan (CR0094); `quality.done_requires_verified` toggle + status
@@ -65,7 +64,7 @@ critic per unit.
   persona index-projection via a canonical field (CR0097); the audit flags **already-satisfied**
   Ready units (CR0098); **seat-scored WSJF** sprint planning (CR0099). LL0007 captured the
   planning learnings. 855 tests, gate clean.
-- **v3.0.0 release + RV0005 self-review (2026-06-24):** a full adversarial sweep (the audit
+- **v3.0.1 release + RV0005 self-review (2026-06-24):** a full adversarial sweep (the audit
   skill-profile, 4 lenses) plus best-practice / progressive-disclosure / token-economy review.
   ~61 candidates -> refute panel -> 6 actionable survivors, all fixed before the tag (BG0034 the
   lowercase-status silent-empty-batch bug; CR0100 cascade re-anchored on `artifact.py close`;
@@ -73,8 +72,8 @@ critic per unit.
   CR0103 SOTA linters in the best-practice guides; CR0104 surfaced `decisions`/goal-ladder/`init`
   in the router; CR0105 id-allocation for review/retro). Verdict: **lean and coherent** - the
   always-loaded Type Reference and the baked language guides were assessed and *kept* (panel
-  refuted their removal). Tagged **v3.0.0** (the `autosprint` -> `sprint` rename is the major-bump
-  signal; alias preserved). Full record: `RV0005-skill-review-v3.md`.
+  refuted their removal). Consolidated into **v3.0.1** (the `autosprint` -> `sprint` rename; alias
+  preserved). Full record: `RV0005-skill-review-v3.md`.
 
 ## Operating reminders
 

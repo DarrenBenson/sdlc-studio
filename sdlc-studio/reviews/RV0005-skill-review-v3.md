@@ -1,4 +1,4 @@
-# RV0005 - Full skill review for best-practice + progressive disclosure + token efficiency (v3.0.0)
+# RV0005 - Full skill review for best-practice + progressive disclosure + token efficiency (v3.0.1)
 
 > Review record for the post-v2.6 holistic skill review (plan:
 > `ultrathink-a-plan-to-steady-meadow`). Open; findings land here as they clear the refute panel.
@@ -9,7 +9,7 @@
 - **Lenses (Claude best-practice angle):** over-engineering, token-economy, determinism,
   external-benchmark (the skill audit profile) + best-practice conformance (`claude-skill.md`),
   progressive-disclosure correctness, and the always-loaded token surface.
-- **Operator decisions:** full adversarial sweep; version **3.0.0** (rename signalled, alias kept);
+- **Operator decisions:** full adversarial sweep; version **3.0.1** (rename signalled, alias kept);
   **fix every confirmed finding before release**.
 
 ## Baseline (2026-06-24, read-only)
@@ -61,7 +61,7 @@ refuter: a duplicate `{#database-default}` anchor in `reference-architecture.md`
 
 ## Verdict
 
-**Lean and coherent; shipped as v3.0.0.** The full adversarial sweep (4 lenses, ~61 candidates)
+**Lean and coherent; shipped as v3.0.1.** The full adversarial sweep (4 lenses, ~61 candidates)
 plus the targeted best-practice / progressive-disclosure / token reviews produced **6 actionable
 survivors** (refute rate ~90%), all fixed before the tag: BG0034 (lowercase-status silent-empty
 bug), CR0100 (cascade re-anchored on `artifact.py close`), CR0101 (reconcile help -> script),
@@ -70,5 +70,5 @@ CR0102 (`--no-artifacts` to one anchor), CR0103 (SOTA linters), CR0104 (router d
 **kept** the always-loaded Type Reference and the 11 baked language guides (removal refuted -
 progressive disclosure already tiers them). Token surface: SKILL.md stayed at ~225/500 lines; the
 description is the invocation-trigger surface (kept). 855 tests, gate clean, versions consistent
-at 3.0.0 across the five homes (package.json, version.yaml, SKILL.md, README, CHANGELOG).
+at 3.0.1 across the five homes (package.json, version.yaml, SKILL.md, README, CHANGELOG).
 Forward-ported to all three install targets.

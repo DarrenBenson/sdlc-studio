@@ -1,6 +1,6 @@
 # SDLC Studio
 
-**Version 3.2.0** | MIT Licence
+**Version 3.0.1** | MIT Licence
 
 **Set a goal and acceptance criteria; the agent drives the proven software
 lifecycle to it - and proves the code against it.** SDLC Studio brings back the
@@ -237,7 +237,7 @@ check is on by default, silent offline, and never nags once dismissed; opt out w
 
 ## Roadmap
 
-**Shipped in v3.0.0 - the sprint lifecycle, greenfield authoring, and a self-review pass:**
+**Shipped in v3.0.1 - the sprint lifecycle, greenfield authoring, and a self-review pass:**
 **`autosprint` is renamed `sprint`** (the command is the whole lifecycle; autonomy is the
 `--autonomous` flag) - `autosprint` stays as a deprecated alias, so nothing breaks. The sprint
 **goal ladder** `triage -> plan -> design -> done` makes each rung a reviewable stop-point;
