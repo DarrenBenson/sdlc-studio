@@ -275,10 +275,11 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
 
 
 def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
-          metrics: dict | None = None, dry_run: bool = False) -> dict:
+          metrics: dict | None = None, dry_run: bool = False, force: bool = False) -> dict:
     """Terminal-transition an artifact and cascade (reuse transition), then record a
     telemetry event (CR0051 / RFC0014 WS2). Telemetry is advisory - it never affects the
-    close result (the recorder swallows its own failures)."""
+    close result (the recorder swallows its own failures). `force` bypasses the story->Done
+    AC-verify gate (CR0084); it is inert for non-story types."""
     prefix = "".join(c for c in artifact_id if c.isalpha()).upper()
     type_ = _PREFIX_TYPE.get(prefix)
     if type_ is None:
@@ -286,7 +287,7 @@ def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
     st = status or SPEC[type_]["terminal"]
     if dry_run:  # preview the transition target, write nothing, record nothing (CR0057)
         return {"id": artifact_id, "type": type_, "to": st, "dry_run": True}
-    result = transition.transition(repo_root, artifact_id, st)
+    result = transition.transition(repo_root, artifact_id, st, force=force)
     telemetry.record(repo_root, {"id": artifact_id, "type": type_, **(metrics or {})})
     return result
 
@@ -328,7 +329,8 @@ def cmd_close(args: argparse.Namespace) -> int:
         metrics["wall_time_s"] = int(args.wall_time_s)
     if args.stages:
         metrics["stages"] = args.stages
-    r = close(args.root, args.id, args.status, metrics or None, dry_run=args.dry_run)
+    r = close(args.root, args.id, args.status, metrics or None, dry_run=args.dry_run,
+              force=getattr(args, "force", False))
     verb = "would close" if r.get("dry_run") else "closed"
     print(json.dumps(r, indent=2) if args.format == "json" else f"{verb} {args.id}")
     return 0
@@ -363,6 +365,8 @@ def build_parser() -> argparse.ArgumentParser:
     c = sub.add_parser("close", help="Terminal-transition an artifact + cascade + record telemetry.")
     c.add_argument("--id", required=True)
     c.add_argument("--status", help="override the per-type terminal status")
+    c.add_argument("--force", action="store_true",
+                   help="bypass the story->Done AC-verify gate (CR0084; inert for non-stories)")
     c.add_argument("--iterations", help="run metric: iterations to green (telemetry)")
     c.add_argument("--verdict", help="run metric: critic verdict (telemetry)")
     c.add_argument("--wall-time-s", dest="wall_time_s", help="run metric: wall time (telemetry)")

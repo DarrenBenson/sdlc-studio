@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Definition-of-Done gate on `transition`/`close` (CR0084):** a story moving to Done is
+  refused when it declares executable (non-`manual`) ACs that are red or never run in
+  `verify-report.json` - the safety net for the hand-driven path that a diligent agent
+  bypassed (shipping 0/7 by its own green suite). The block is the one deterministic fact
+  (the verifier result); `--force` overrides (recorded). Scoped to stories - CR/epic/bug
+  closures, manual-only / AC-less stories, and dry-runs are never gated. Pairs with CR0085
+  (the gate is a clean signal only once the TS matrix makes names converge).
 - **test-spec as the AC-to-test bridge, enforceable (CR0085):** `verify_ac ts-check --spec
   <ts> [--verify-report <json>]` validates an AC Coverage Matrix is not decorative - every AC
   mapped to a passing test case, no placeholders, cross-checked against the live report.

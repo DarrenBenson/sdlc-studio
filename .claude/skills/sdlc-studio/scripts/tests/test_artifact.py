@@ -260,7 +260,8 @@ class CloseTests(unittest.TestCase):
             _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
             _epic(repo)
             r = artifact.new(repo, "story", "tel close", {"epic": "EP0001"})
-            artifact.close(repo, r["id"], metrics={"iterations": 2, "critic_verdict": "approve"})
+            artifact.close(repo, r["id"], metrics={"iterations": 2, "critic_verdict": "approve"},
+                           force=True)  # CR0084 gate bypassed: testing the close cascade
             recs = telemetry.read_all(repo)
             self.assertEqual(recs[-1]["id"], r["id"])
             self.assertEqual(recs[-1]["type"], "story")
@@ -273,7 +274,7 @@ class CloseTests(unittest.TestCase):
             _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
             _epic(repo)
             r = artifact.new(repo, "story", "to be closed", {"epic": "EP0001"})
-            artifact.close(repo, r["id"])  # default terminal = Done
+            artifact.close(repo, r["id"], force=True)  # default terminal = Done (gate bypassed)
             self.assertIn("Done", Path(r["path"]).read_text())
 
 

@@ -560,10 +560,11 @@ def _report_failed_acs(report_path: Path | str) -> set[str]:
     except (ValueError, OSError):
         return set()
     failed = set()
-    for st in data.get("stories", data if isinstance(data, list) else []):
-        for ac in st.get("acs", []):
-            if ac.get("state") in ("no", "stale"):
-                failed.add(str(ac.get("ac", "")).upper())
+    stories = data.get("stories", {})
+    entries = stories.values() if isinstance(stories, dict) else stories
+    for st in entries:
+        for f in st.get("failures", []):  # each failure carries the failing AC id
+            failed.add(str(f.get("ac", "")).upper())
     return failed
 
 

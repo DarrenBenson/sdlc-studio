@@ -6,6 +6,7 @@ Run from the repo root:
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 import tempfile
 import unittest
@@ -53,7 +54,7 @@ class TransitionTests(unittest.TestCase):
     def test_sets_status_syncs_index_and_ticks_epic(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = _repo(Path(d))
-            res = tr.transition(root, "US0001", "Done")
+            res = tr.transition(root, "US0001", "Done", force=True)  # gate bypassed: cascade test
             self.assertEqual((res["from"], res["to"]), ("Ready", "Done"))
             self.assertIn("> **Status:** Done", _read(root, "stories", "US0001-x.md"))
             idx = _read(root, "stories", "_index.md")
@@ -67,7 +68,7 @@ class TransitionTests(unittest.TestCase):
     def test_reopen_unticks_epic(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = _repo(Path(d))
-            tr.transition(root, "US0001", "Done")
+            tr.transition(root, "US0001", "Done", force=True)  # gate bypassed: cascade test
             tr.transition(root, "US0001", "In Progress")
             self.assertIn("- [ ] [US0001: s]", _read(root, "epics", "EP0001-e.md"))
             self.assertIn("> **Status:** In Progress", _read(root, "stories", "US0001-x.md"))
@@ -105,11 +106,67 @@ class TransitionTests(unittest.TestCase):
             sp.write_text("# US0001: s\n\n> **Status:** Ready · **Epic:** EP0001 · **Points:** 3\n\n"
                           "## Acceptance Criteria\n\n### AC1\n- **Verify:** shell echo ok\n",
                           encoding="utf-8")
-            tr.transition(root, "US0001", "Done")
+            tr.transition(root, "US0001", "Done", force=True)  # gate bypassed: cascade test
             line = next(ln for ln in sp.read_text(encoding="utf-8").splitlines() if "Status" in ln)
             self.assertIn("**Status:** Done", line)
             self.assertIn("**Epic:** EP0001", line)   # neighbours intact
             self.assertIn("**Points:** 3", line)
+
+
+class DoneGateTests(unittest.TestCase):
+    """CR0084: a story may not reach Done with red / never-run executable ACs."""
+
+    def _story(self, root: Path, body: str) -> None:
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True, exist_ok=True)
+        (sd / "US0001-x.md").write_text(body, encoding="utf-8")
+        (sd / "_index.md").write_text(
+            "# Stories\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Ready | 1 |\n"
+            "| Done | 0 |\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [US0001](US0001-x.md) | s | Ready |\n", encoding="utf-8")
+
+    def _report(self, root: Path, payload: dict) -> None:
+        rp = root / "sdlc-studio" / ".local" / "verify-report.json"
+        rp.parent.mkdir(parents=True, exist_ok=True)
+        rp.write_text(json.dumps(payload), encoding="utf-8")
+
+    def test_blocks_when_executable_ac_never_verified(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, "# US0001: s\n\n> **Status:** Ready\n\n### AC1\n- **Verify:** shell true\n")
+            with self.assertRaises(ValueError):
+                tr.transition(root, "US0001", "Done")        # no report -> blocked
+
+    def test_blocks_when_report_red(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, "# US0001: s\n\n> **Status:** Ready\n\n### AC1\n- **Verify:** shell true\n")
+            self._report(root, {"stories": {"US0001-x": {"failed": 1, "stale": 0,
+                                                          "failures": [{"ac": "AC1"}]}}})
+            with self.assertRaises(ValueError):
+                tr.transition(root, "US0001", "Done")
+
+    def test_passes_when_report_green(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, "# US0001: s\n\n> **Status:** Ready\n\n### AC1\n- **Verify:** shell true\n")
+            self._report(root, {"stories": {"US0001-x": {"failed": 0, "stale": 0, "failures": []}}})
+            res = tr.transition(root, "US0001", "Done")
+            self.assertEqual(res["to"], "Done")
+
+    def test_manual_only_story_not_blocked(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, "# US0001: s\n\n> **Status:** Ready\n\n### AC1\n- **Verify:** manual eyeball it\n")
+            res = tr.transition(root, "US0001", "Done")     # only manual ACs -> nothing to gate
+            self.assertEqual(res["to"], "Done")
+
+    def test_force_overrides(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, "# US0001: s\n\n> **Status:** Ready\n\n### AC1\n- **Verify:** shell true\n")
+            res = tr.transition(root, "US0001", "Done", force=True)
+            self.assertEqual(res["to"], "Done")
 
 
 class HonestSyncTests(unittest.TestCase):
@@ -180,7 +237,7 @@ class HonestSyncTests(unittest.TestCase):
             sp.write_text(sp.read_text(encoding="utf-8").replace(
                 "[EP0001: e](../epics/EP0001-e.md)", "[EP0099: gone](../epics/EP0099-gone.md)"),
                 encoding="utf-8")
-            res = tr.transition(root, "US0001", "Done")  # must not crash
+            res = tr.transition(root, "US0001", "Done", force=True)  # must not crash (cascade test)
             self.assertIsNone(res["epic"])
             self.assertTrue(res["index_synced"])
 

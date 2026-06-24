@@ -249,7 +249,11 @@ sets the artifact's `Status`, syncs its index row + summary counts (reusing
 `reconcile.apply_type`), and ticks/unticks a story's checkbox in the parent epic's Story
 Breakdown. `index_synced` is the true post-state (warns if a row is archived or the new
 status has no summary row). Replaces the hand-edited "mark it Done + update the index"
-cascade.
+cascade. **A story -> Done is gated on its AC-verify result (CR0084):** if it declares
+executable (non-`manual`) ACs that are red or never run in `verify-report.json`, the
+transition is refused - the Definition-of-Done safety net for the hand-driven path that the
+autosprint conformance gate already covers. `--force` overrides; manual-only / AC-less
+stories and non-story types are never gated.
 
 ### `archive.py`
 
