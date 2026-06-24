@@ -168,6 +168,23 @@ class DoneGateTests(unittest.TestCase):
             res = tr.transition(root, "US0001", "Done", force=True)
             self.assertEqual(res["to"], "Done")
 
+    def test_config_toggle_downgrades_to_advisory(self) -> None:  # CR0095
+        import config
+        orig = config.get
+        config.get = lambda root, dotted, default=None: (
+            False if dotted == "quality.done_requires_verified" else orig(root, dotted, default))
+        try:
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._story(root, "# US0001: s\n\n> **Status:** Ready\n\n### AC1\n- **Verify:** shell true\n")
+                self._report(root, {"stories": {"US0001-x": {"failed": 1, "stale": 0,
+                                                             "failures": [{"ac": "AC1"}]}}})
+                res = tr.transition(root, "US0001", "Done")   # toggle off -> warns, does not raise
+                self.assertEqual(res["to"], "Done")
+                self.assertIn("advisory", (res["warning"] or "").lower())
+        finally:
+            config.get = orig
+
 
 class HonestSyncTests(unittest.TestCase):
     """index_synced reflects the real post-transition state (critic CR0042)."""

@@ -1,6 +1,6 @@
 # CR-0095: done-requires-verified config toggle plus a status unverified-manual lane
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
@@ -17,12 +17,12 @@ own line, so env-bound/manual ACs read as "deferred", not as silent gaps.
 
 ## Acceptance Criteria
 
-- [ ] `quality.done_requires_verified` (default true) is read via `config.py`; when false the
+- [x] `quality.done_requires_verified` (default true) is read via `config.py`; when false the
       story->Done gate (CR0084) is advisory-warn instead of blocking
-- [ ] `status` reads `verify-report.json` and reports a lane: stories Done-with-unverified-ACs
+- [x] `status` reads `verify-report.json` and reports a lane: stories Done-with-unverified-ACs
       (drift) and the manual-AC count (informational), distinct from failures
-- [ ] reuses the existing report + config readers (no new verification path)
-- [ ] unit tests: toggle flips the gate; status surfaces the lane; CHANGELOG entry (LL0004)
+- [x] reuses the existing report + config readers (no new verification path)
+- [x] unit tests: toggle flips the gate; status surfaces the lane; CHANGELOG entry (LL0004)
 
 ## Revision History
 

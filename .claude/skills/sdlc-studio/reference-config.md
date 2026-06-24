@@ -261,6 +261,12 @@ coverage:
   unit: 75
   integration: 70
 
+# quality.done_requires_verified (default true, CR0095): when true a story cannot transition
+# to Done while its executable ACs are red/never-run (the CR0084 gate blocks); set false to
+# downgrade the gate to advisory-warn for the whole project (per-call --force always overrides).
+quality:
+  done_requires_verified: true
+
 story_quality:
   edge_cases:
     api: 6

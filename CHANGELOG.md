@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **done-requires-verified toggle + status verification lane (CR0095):** the deferred half of
+  CR0084. `quality.done_requires_verified` (default true) lets a project set the story->Done
+  AC-verify gate policy in `.config.yaml` - false downgrades it to advisory-warn project-wide
+  (per-call `--force` still overrides). And `status` now reads `verify-report.json` and surfaces
+  a verification lane (stories with unverified ACs; the manual-AC count), so env-bound/manual ACs
+  read as "deferred", not silent gaps.
 - **reconcile-before-plan (CR0094):** `sprint plan` runs `reconcile detect` first and surfaces
   index drift - warns by default, refuses under `--strict`. The planner reads each unit's file
   `Status`, so a stale index misleads selection; reconcile-first guarantees a clean census.

@@ -129,18 +129,24 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
     if sdlc_md.canonical_status(new_status, vocab) is None:
         raise ValueError(f"{new_status!r} is not a valid {type_} status ({', '.join(vocab)})")
     text = path.read_text(encoding="utf-8")
+    gate_warn = None
     if (type_ == "story" and not force and not dry_run
             and sdlc_md.canonical_status(new_status, vocab) == "Done"):
         block = _done_verify_gate(root, path, text)
         if block:
-            raise ValueError(f"{artifact_id} -> Done blocked: {block}. Override with --force.")
+            # CR0095: the gate is hard by default; `quality.done_requires_verified: false`
+            # downgrades it to advisory-warn (the project sets the policy in .config.yaml).
+            import config  # sibling
+            if config.get(root, "quality.done_requires_verified", True):
+                raise ValueError(f"{artifact_id} -> Done blocked: {block}. Override with --force.")
+            gate_warn = f"AC-verify advisory (quality.done_requires_verified=false): {block}"
     current = sdlc_md.extract_field(text, "Status")
     new_text, ok = _set_field(text, "Status", new_status)
     if not ok:
         raise ValueError(f"{path.name} has no `Status` field to transition")
     result = {"id": sdlc_md.extract_record_id(path.stem), "type": type_,
               "from": current, "to": new_status, "index_synced": False, "epic": None,
-              "warning": None}
+              "warning": gate_warn}
     if dry_run:
         return result
     path.write_text(new_text, encoding="utf-8")
@@ -153,8 +159,9 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
                 if (d.get("id") and sdlc_md.norm_id(d["id"]) == norm) or d["kind"] == "count-mismatch"]
     result["index_synced"] = not residual
     if residual:
-        result["warning"] = ("index not fully synced (the artifact may be archived, or its "
-                             "new status has no summary row) - run reconcile")
+        sync_warn = ("index not fully synced (the artifact may be archived, or its "
+                     "new status has no summary row) - run reconcile")
+        result["warning"] = f"{gate_warn}; {sync_warn}" if gate_warn else sync_warn
     if type_ == "story":
         result["epic"] = _cascade_epic(root, result["id"],
                                        sdlc_md.canonical_status(new_status, vocab) in _STORY_TICKED)

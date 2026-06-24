@@ -84,6 +84,19 @@ def _pct_done(census: dict, done_states: tuple[str, ...]) -> int:
     return round(100 * done / total)
 
 
+def _verify_lane(repo_root: Path) -> dict:
+    """The AC-verification lane (CR0095): from `verify-report.json`, surface stories with
+    unverified ACs (`no`/`stale` failures) and the manual-AC count as their own line - so
+    env-bound / manual ACs read as 'deferred', not as silent gaps. Empty when no report."""
+    report = sdlc_md.read_json(repo_root / "sdlc-studio" / ".local" / "verify-report.json", {})
+    stories = report.get("stories", {})
+    entries = stories.values() if isinstance(stories, dict) else stories
+    unverified = sum(1 for s in entries if s.get("failed", 0) or s.get("stale", 0))
+    manual = sum(s.get("manual", 0) for s in entries)
+    return {"has_report": bool(stories), "stories_with_unverified_acs": unverified,
+            "manual_acs": manual}
+
+
 def gather(repo_root: Path) -> dict:
     """Compute all four pillars from the artifact files and review state."""
     base = repo_root / "sdlc-studio"
@@ -114,6 +127,7 @@ def gather(repo_root: Path) -> dict:
         "tests": {
             "tsd": (base / "tsd.md").exists(),
             "test_specs": test_specs,
+            "verification": _verify_lane(repo_root),
         },
         "bugs": bugs,
         "workflows": workflows,

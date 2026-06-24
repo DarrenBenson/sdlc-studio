@@ -100,5 +100,29 @@ class HintTests(unittest.TestCase):
             self.assertIn("story", hint["next_command"])
 
 
+class VerifyLaneTests(unittest.TestCase):
+    """CR0095: status surfaces the AC-verification lane from verify-report.json."""
+
+    def test_lane_counts_unverified_and_manual(self) -> None:
+        import json
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rp = root / "sdlc-studio" / ".local" / "verify-report.json"
+            rp.parent.mkdir(parents=True)
+            rp.write_text(json.dumps({"stories": {
+                "US0001-x": {"failed": 1, "stale": 0, "manual": 0, "failures": [{"ac": "AC1"}]},
+                "US0002-x": {"failed": 0, "stale": 0, "manual": 2, "failures": []},
+            }}), encoding="utf-8")
+            lane = status._verify_lane(root)
+            self.assertTrue(lane["has_report"])
+            self.assertEqual(lane["stories_with_unverified_acs"], 1)
+            self.assertEqual(lane["manual_acs"], 2)
+
+    def test_lane_empty_without_report(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            lane = status._verify_lane(Path(d))
+            self.assertFalse(lane["has_report"])
+
+
 if __name__ == "__main__":
     unittest.main()
