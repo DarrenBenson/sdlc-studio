@@ -84,6 +84,35 @@ class EpicScopeTests(unittest.TestCase):
             self.assertEqual(sorted(got), ["US0001", "US0003"])
 
 
+class WaveTests(unittest.TestCase):
+    """CR0107: build_plan emits dependency waves (parallelisable levels)."""
+
+    def _story(self, root, num, depends=None, status="Draft"):
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        dep = f"> **Depends on:** {depends}\n" if depends else ""
+        (d / f"US{num:04d}-x.md").write_text(
+            f"# US{num:04d}: s\n\n> **Status:** {status}\n{dep}", encoding="utf-8")
+
+    def test_waves_are_dependency_levels(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, 1)                       # wave 1
+            self._story(root, 2, depends="US0001")     # wave 2
+            self._story(root, 3, depends="US0001")     # wave 2 (parallel with US0002)
+            self._story(root, 4, depends="US0002")     # wave 3
+            waves = _load().build_plan(root, "story", "Draft")["waves"]
+            self.assertEqual(waves[0], ["US0001"])
+            self.assertEqual(sorted(waves[1]), ["US0002", "US0003"])
+            self.assertEqual(waves[2], ["US0004"])
+
+    def test_manual_order_has_no_waves(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, 1)
+            self.assertIsNone(_load().build_plan(root, "story", "Draft", order="manual")["waves"])
+
+
 class SelectTests(unittest.TestCase):
     def test_selects_by_status(self) -> None:
         with tempfile.TemporaryDirectory() as d:

@@ -5,6 +5,18 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-06-24
+
+### Added
+
+- **`sprint plan` emits dependency waves (CR0107, field report):** the planner returned a flat
+  order; the parallelisable wave structure (L1/L2/L3...) was only computed by the model at
+  `--agentic` implement time, so operators hand-derived it and stored the rich plan externally.
+  `build_plan` now returns **waves** (dependency levels) for priority/wsjf order - wave 1 = units
+  with no in-batch dep, wave n+1 = units whose deps are all in earlier waves, units in a wave
+  parallelisable - printed in the plan output and persisted by `--write`. Reuses the existing dep
+  graph; within-wave order keeps WSJF/priority rank.
+
 ## [3.1.0] - 2026-06-24
 
 ### Added

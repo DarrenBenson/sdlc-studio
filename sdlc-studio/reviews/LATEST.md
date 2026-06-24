@@ -1,17 +1,19 @@
-# LATEST - current project state (v3.1.0)
+# LATEST - current project state (v3.2.0)
 
 > The current-state anchor. **Re-read this and run `/sdlc-studio status` after any context reset
 > or compaction.** Durable guidance lives in AGENTS.md; per-tranche detail lives in CHANGELOG.md
 > and `sdlc-studio/retros/`; the original v2.0 unified review is `RV0001-unified-review-2026-06-20.md`.
 >
-> **Project version:** 3.1.0 (released 2026-06-24) · **Date:** 2026-06-24 · **Gates:** lint
-> clean, 859 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0, npm audit 0, coverage 83%.
+> **Project version:** 3.2.0 (released 2026-06-24) · **Date:** 2026-06-24 · **Gates:** lint
+> clean, 861 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0, npm audit 0, coverage 83%.
 > **v3.0.1:** BG0035 - duplicate-id gate now scopes per-table, so the canonical two-view story
 > index (per-epic + All Stories the template ships) no longer false-flags (field report).
 > **v3.0.2:** BG0036 - `init` now writes `sdlc-studio/.gitignore` (`.local/`), so greenfield
 > projects no longer commit runtime caches/reports (field report).
 > **v3.1.0:** CR0106 - `sprint plan --epic EPxxxx` scopes a story batch to one or more epics
 > (repeatable), so the next tranche need not pull every Draft story (field report).
+> **v3.2.0:** CR0107 - `sprint plan` emits dependency **waves** (parallelisable levels), persisted
+> by `--write`, so operators no longer hand-derive the L1/L2/L3 structure (field report).
 > **Command rename:** `autosprint` → `sprint` (CR0087; `autosprint` is a deprecated alias).
 
 ## Headline

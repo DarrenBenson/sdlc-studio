@@ -79,12 +79,19 @@ def _dep_ids(value: str) -> set:
     return ids
 
 
-def _topo_order(items: list[dict], deps: dict[str, set]) -> list[dict]:
-    """Dependency-topological order - a unit follows its in-batch deps - with
-    priority/severity (then id) as the tiebreak among ready units. A dependency on
-    a unit outside the batch is ignored here (the tranche audit reports it as
-    unmet-deps). Raises ValueError naming the units in a dependency cycle.
-    """
+def _rank_key(it: dict):
+    """Tiebreak order among ready units: highest WSJF first (CR0099), else priority then the
+    smaller blast-radius job (RFC0009), else priority then id. Shared by topo order + waves."""
+    w = PRIORITY_WEIGHT.get(it["priority"], 2)
+    if "wsjf" in it:
+        return (-it["wsjf"], w, it["id"])
+    if "complexity" in it:
+        return (w, it["complexity"], it["id"])
+    return (w, it["id"])
+
+
+def _build_dag(items: list[dict], deps: dict[str, set]) -> tuple[dict, dict, dict]:
+    """(by_id, adjacency dep->dependents, indegree) over the in-batch dependency graph."""
     by_id = {sdlc_md.norm_id(it["id"]): it for it in items}
     adj: dict[str, set] = {k: set() for k in by_id}
     indeg: dict[str, int] = {k: 0 for k in by_id}
@@ -93,15 +100,43 @@ def _topo_order(items: list[dict], deps: dict[str, set]) -> list[dict]:
             if dep in by_id and dep != k and k not in adj[dep]:
                 adj[dep].add(k)        # dep must come before k
                 indeg[k] += 1
+    return by_id, adj, indeg
+
+
+def _topo_waves(items: list[dict], deps: dict[str, set]) -> list[list[dict]]:
+    """Dependency LEVELS (CR0107): wave 0 = units with no in-batch deps; wave n+1 = units all of
+    whose in-batch deps sit in waves <= n. Units in one wave are independent (parallelisable),
+    ordered within the wave by `_rank_key`. Raises ValueError naming a dependency cycle."""
+    by_id, adj, indeg = _build_dag(items, deps)
+    waves: list[list[dict]] = []
+    placed = 0
+    current = sorted([k for k in by_id if indeg[k] == 0], key=lambda k: _rank_key(by_id[k]))
+    while current:
+        waves.append([by_id[k] for k in current])
+        placed += len(current)
+        nxt: list[str] = []
+        for k in current:
+            for m in adj[k]:
+                indeg[m] -= 1
+                if indeg[m] == 0:
+                    nxt.append(m)
+        current = sorted(nxt, key=lambda k: _rank_key(by_id[k]))
+    if placed != len(by_id):
+        raise ValueError("dependency cycle among: "
+                         + ", ".join(sorted(k for k in by_id if indeg[k] > 0)))
+    return waves
+
+
+def _topo_order(items: list[dict], deps: dict[str, set]) -> list[dict]:
+    """Dependency-topological order - a unit follows its in-batch deps - with
+    priority/severity (then id) as the tiebreak among ready units. A dependency on
+    a unit outside the batch is ignored here (the tranche audit reports it as
+    unmet-deps). Raises ValueError naming the units in a dependency cycle.
+    """
+    by_id, adj, indeg = _build_dag(items, deps)
 
     def rank(k: str):
-        it = by_id[k]
-        w = PRIORITY_WEIGHT.get(it["priority"], 2)
-        if "wsjf" in it:  # CR0099: highest WSJF first (negate; lower tuple sorts earlier)
-            return (-it["wsjf"], w, it["id"])
-        if "complexity" in it:  # wsjf-without-seat-inputs: priority, then smaller blast-radius
-            return (w, it["complexity"], it["id"])
-        return (w, it["id"])
+        return _rank_key(by_id[k])
 
     ready = sorted([k for k in by_id if indeg[k] == 0], key=rank)
     order: list[dict] = []
@@ -187,8 +222,19 @@ def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "pr
 
 def build_plan(repo_root: Path | str, kind: str, status: str, order: str = "priority",
                skip_personas: bool = False, epics: set[str] | None = None) -> dict:
-    """The triage plan: the ordered batch plus a count."""
+    """The triage plan: the ordered batch, a count, and (for ordered modes) the dependency
+    WAVES (CR0107) - the parallelisable levels operators otherwise hand-derive."""
     batch = select_batch(repo_root, kind, status, order, skip_personas=skip_personas, epics=epics)
+    waves = None
+    if order in ("priority", "wsjf") and batch:
+        deps: dict[str, set] = {}
+        for it in batch:
+            text = Path(it["path"]).read_text(encoding="utf-8")
+            dval = (sdlc_md.extract_field(text, "Depends on")
+                    or sdlc_md.extract_field(text, "Depends On") or "")
+            deps[sdlc_md.norm_id(it["id"])] = _dep_ids(dval)
+        # batch already passed _topo_order in select_batch, so the graph is acyclic here.
+        waves = [[it["id"] for it in w] for w in _topo_waves(batch, deps)]
     return {
         "generated_at": sdlc_md.now_iso8601(),
         "kind": kind,
@@ -196,6 +242,7 @@ def build_plan(repo_root: Path | str, kind: str, status: str, order: str = "prio
         "order": order,
         "batch": batch,
         "count": len(batch),
+        "waves": waves,
     }
 
 
@@ -269,8 +316,13 @@ def cmd_plan(args: argparse.Namespace) -> int:
     else:
         scope = f", epics {', '.join(sorted(epics))}" if epics else ""
         print(f"batch: {data['count']} {kind}(s) with Status {status}{scope}, order={args.order}")
-        for b in data["batch"]:
-            print(f"  {b['id']} [{b['priority']}]")
+        if data.get("waves"):  # CR0107: show the parallelisable dependency levels
+            for i, wave in enumerate(data["waves"], 1):
+                par = " (parallel)" if len(wave) > 1 else ""
+                print(f"  wave {i}{par}: {', '.join(wave)}")
+        else:
+            for b in data["batch"]:
+                print(f"  {b['id']} [{b['priority']}]")
     return 0
 
 

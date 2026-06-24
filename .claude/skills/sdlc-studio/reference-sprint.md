@@ -138,6 +138,12 @@ dependency, and **estimate** it - reusing `--order wsjf` + the complexity-weight
 persists the sprint-plan artifact; then stop for review. (Distinct from `triage`, which grooms
 the *whole given batch* for readiness; `plan` selects a sprint's *worth*.)
 
+**Dependency waves (CR0107).** For `priority`/`wsjf` order, the plan emits **waves** - the
+dependency levels - alongside the flat order: wave 1 is the units with no in-batch dependency,
+wave *n+1* is everything whose deps all sit in earlier waves, and units in one wave are
+independent (parallelisable). `plan --write` persists them, so the operator no longer hand-derives
+the L1/L2/L3 structure; `--agentic` execution runs these same levels as its waves.
+
 **Scope by epic (CR0106).** A sprint is usually the next epic or two, not a whole status class, so
 `plan --stories <status> --epic EPxxxx [--epic EPyyyy]` restricts the batch to stories in the named
 epic(s) - repeatable, union. Without it, `--stories Draft` selects every Draft story across all
