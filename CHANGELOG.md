@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **batch artifact creation (CR0078):** `artifact.py batch --type <t> --spec <items.json>`
+  creates many artifacts of one type in one atomic pass - a reserved contiguous id block
+  (LL0002), every index row, and every story-to-epic link wired together; a missing epic or
+  id collision aborts before any write; `--dry-run` previews the id map. Defaults to
+  `--template full` (the fan-out case where delegated agents fill pre-wired scaffolds rather
+  than coordinate structure).
 - **executable `init` (CR0079):** `init` was a manual checklist; it is now `scripts/init.py`.
   `init run` creates the full `sdlc-studio/` directory tree, pre-creates every per-type
   `_index.md` (reusing the CR0077 helper, so the first `new` of any type is indexed), seeds

@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 8 |
+| Proposed | 7 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 77 |
+| Complete | 78 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -97,7 +97,7 @@
 | [CR-0075](CR0075-consolidate-the-reference-test-doc-set-with-routing.md) | consolidate the reference-test doc set with routing maps (review WS B2a) | Complete | Medium | Feature | 2026-06-22 | -- |
 | [CR-0076](CR0076-ci-coverage-gate-plus-python-security-scan-bandit.md) | CI coverage gate plus python security scan bandit (review WS B3c) | Complete | Medium | Feature | 2026-06-22 | -- |
 | [CR-0077](CR0077-greenfield-new-lazy-index-creation-plus-full-template.md) | greenfield new - lazy index creation plus full-template scaffolds | Complete | High | Feature | 2026-06-24 | -- |
-| [CR-0078](CR0078-batch-artifact-creation-reserve-an-id-range-and.md) | batch artifact creation - reserve an ID range and wire many stories in one pass | Proposed | Medium | Feature | 2026-06-24 | -- |
+| [CR-0078](CR0078-batch-artifact-creation-reserve-an-id-range-and.md) | batch artifact creation - reserve an ID range and wire many stories in one pass | Complete | Medium | Feature | 2026-06-24 | -- |
 | [CR-0079](CR0079-init-scaffold-seed-singleton-docs-and-index-files.md) | init becomes executable - create the folder structure, indexes, and singleton docs | Complete | High | Feature | 2026-06-24 | -- |
 | [CR-0080](CR0080-first-class-project-decisions-log-a-canonical-home.md) | first-class project decisions log - a canonical home for resolved decisions and open questions | Proposed | Medium | Feature | 2026-06-24 | -- |
 | [CR-0081](CR0081-greenfield-runbook-the-canonical-command-order-from-init.md) | greenfield runbook - the canonical path from init through the autosprint handoff | Proposed | Medium | Improvement | 2026-06-24 | -- |

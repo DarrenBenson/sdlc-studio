@@ -1,6 +1,6 @@
 # CR-0078: batch artifact creation - reserve an ID range and wire many stories in one pass
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
@@ -77,15 +77,15 @@ build are shared rather than re-implemented.
 
 ## Acceptance Criteria
 
-- [ ] `new --batch <spec> --type story` creates all N files with a contiguous id
+- [x] `new --batch <spec> --type story` creates all N files with a contiguous id
       range, one index-write, and all epic Story-Breakdown links wired in one pass
-- [ ] the batch is atomic: a single missing epic or id collision writes nothing and
+- [x] the batch is atomic: a single missing epic or id collision writes nothing and
       reports the offending entries (no partial state)
-- [ ] `--dry-run` prints the full allocated id map and the planned epic wiring without
+- [x] `--dry-run` prints the full allocated id map and the planned epic wiring without
       writing
-- [ ] `--batch` defaults to `--template full` (CR0077 Item 2); `--minimal` opts out
-- [ ] concurrent-collision guard documented per LL0002 (batch reserves before writing)
-- [ ] unit tests cover: happy-path batch, atomic rollback on a bad epic, dry-run id
+- [x] `--batch` defaults to `--template full` (CR0077 Item 2); `--minimal` opts out
+- [x] concurrent-collision guard documented per LL0002 (batch reserves before writing)
+- [x] unit tests cover: happy-path batch, atomic rollback on a bad epic, dry-run id
       map; CHANGELOG `[Unreleased]` entry in the same commit (LL0004)
 
 ## Revision History
@@ -94,3 +94,4 @@ build are shared rather than re-implemented.
 | --- | --- | --- |
 | 2026-06-24 | sdlc | Created via `new` (deterministic) |
 | 2026-06-24 | sdlc | Confirmed by a greenfield agent ("yes, strongly"): pre-wired scaffolds flip delegated agents from "create file" to "fill file", collapsing the consistency risk to content-only (~80% of the worry was structural) |
+| 2026-06-24 | sdlc | Delivered as `artifact.py batch --type <t> --spec <json>` (a subcommand, cleaner than a `--batch` flag on `new` which requires `--title`). Item 2 (route story/project generation through the batch path) deferred - it touches the model-driven generation prose, not a script |

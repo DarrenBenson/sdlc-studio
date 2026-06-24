@@ -163,6 +163,10 @@ hand cascade. Shares `file_finding.append_index_row`. On the empty-project first
 creates a missing `<dir>/_index.md` from `templates/indexes/` (CR0077, via
 `file_finding.ensure_index`), so the first artifact of a type is indexed like every later
 one; `--template full` grafts the rich `templates/core/` body onto the deterministic head.
+`batch --type <t> --spec <items.json>` creates many artifacts of one type in a single
+atomic pass (CR0078): a reserved contiguous id block, every index row, and every story-to-
+epic link wired in one go; a missing epic or id collision aborts before any write;
+`--dry-run` previews the id map. Batch defaults to `--template full` (the fan-out case).
 
 ### `init.py`
 

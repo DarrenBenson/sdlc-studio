@@ -212,6 +212,68 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
             "epic_linked": linked, "dry_run": False}
 
 
+def new_batch(repo_root: Path | str, type_: str, items: list[dict],
+              template: str = "full", dry_run: bool = False) -> dict:
+    """Create many artifacts of one type in a single atomic pass (CR0078).
+
+    Reserve a contiguous id block up front (LL0002: reserve before writing), render each
+    file (full template by default - batch is the fan-out case where structure must be
+    guaranteed), append every index row, and wire each story into its parent epic - one pass.
+    All-or-nothing: a missing epic or a file collision aborts before any write. `--dry-run`
+    returns the full id map and planned wiring."""
+    if type_ not in SPEC:
+        raise ValueError(f"unknown type {type_!r}")
+    root = Path(repo_root)
+    today = date.today().isoformat()
+    if not items:
+        raise ValueError("batch is empty")
+    # Validate the whole batch BEFORE writing anything (atomic) - a story wired to a
+    # missing epic is an orphan (BG0022); a colliding id would corrupt the run.
+    if type_ == "story":
+        for it in items:
+            if not it.get("epic"):
+                raise ValueError("each story item needs an 'epic'")
+            if _find_epic(root, it["epic"]) is None:
+                raise ValueError(f"epic {it['epic']} not found - create it first")
+    n0 = file_finding._next_number(root, type_)
+    prefix = sdlc_md.ARTIFACT_TYPES[type_][1]
+    plan = []
+    for i, it in enumerate(items):
+        if not it.get("title"):
+            raise ValueError("each item needs a 'title'")
+        n = n0 + i
+        file_id = f"{prefix}{n:04d}"
+        slug = file_finding._slug(it["title"])
+        path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / f"{file_id}-{slug}.md"
+        if path.exists():
+            raise FileExistsError(f"{path} (batch aborted, nothing written)")
+        plan.append({"n": n, "file_id": file_id, "disp": _disp(type_, n),
+                     "slug": slug, "path": path, "item": it})
+    if dry_run:
+        return {"type": type_, "count": len(plan), "template": template, "dry_run": True,
+                "ids": [{"id": p["disp"], "path": str(p["path"]),
+                         "epic": p["item"].get("epic")} for p in plan]}
+    render = _render_full if template == "full" else _render
+    _ensure_index(root, type_, today)
+    created = []
+    for p in plan:
+        it = p["item"]
+        f = dict(it)
+        f["date"] = today
+        p["path"].parent.mkdir(parents=True, exist_ok=True)
+        p["path"].write_text(render(type_, p["disp"], it["title"], today, f), encoding="utf-8")
+        header = _header_cells(root, type_)
+        link = f"[{p['disp']}]({p['file_id']}-{p['slug']}.md)"
+        if header:
+            row = sdlc_md.row_from_header(header, link, it["title"], SPEC[type_]["status"], f)
+            file_finding.append_index_row(root, type_, row)
+        if type_ == "story":
+            _wire_story_to_epic(root, it["epic"], p["disp"], it["title"], p["file_id"], p["slug"])
+        created.append({"id": p["disp"], "file_id": p["file_id"], "path": str(p["path"])})
+    return {"type": type_, "count": len(created), "template": template,
+            "created": created, "dry_run": False}
+
+
 def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
           metrics: dict | None = None, dry_run: bool = False) -> dict:
     """Terminal-transition an artifact and cascade (reuse transition), then record a
@@ -237,6 +299,22 @@ def cmd_new(args: argparse.Namespace) -> int:
     verb = "would create" if r.get("dry_run") else "created"
     print(json.dumps(r, indent=2) if args.format == "json"
           else f"{verb} {r['id']} -> {r['path']} (indexed={r['indexed']}, epic_linked={r['epic_linked']})")
+    return 0
+
+
+def cmd_batch(args: argparse.Namespace) -> int:
+    items = json.loads(Path(args.spec).read_text(encoding="utf-8"))
+    if not isinstance(items, list):
+        print("error: --spec must be a JSON list of items", file=sys.stderr)
+        return 1
+    r = new_batch(args.root, args.type, items, template=args.template, dry_run=args.dry_run)
+    if args.format == "json":
+        print(json.dumps(r, indent=2))
+        return 0
+    verb = "would create" if r.get("dry_run") else "created"
+    print(f"batch: {verb} {r['count']} {args.type}(s) (template={r['template']})")
+    for row in (r.get("ids") or r.get("created") or []):
+        print(f"  {row['id']} -> {row['path']}")
     return 0
 
 
@@ -273,6 +351,15 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--dry-run", action="store_true", dest="dry_run", help="preview; write nothing")
     n.add_argument("--format", choices=("text", "json"), default="text")
     n.set_defaults(func=cmd_new)
+    b = sub.add_parser("batch", help="Create many artifacts of one type in one atomic pass (CR0078).")
+    b.add_argument("--type", required=True, choices=tuple(SPEC))
+    b.add_argument("--spec", required=True, help="JSON file: a list of {title, epic?, ...} items")
+    b.add_argument("--template", choices=("minimal", "full"), default="full",
+                   help="batch defaults to full (the fan-out case); --template minimal opts out")
+    b.add_argument("--root", default=".")
+    b.add_argument("--dry-run", action="store_true", dest="dry_run", help="preview the id map; write nothing")
+    b.add_argument("--format", choices=("text", "json"), default="text")
+    b.set_defaults(func=cmd_batch)
     c = sub.add_parser("close", help="Terminal-transition an artifact + cascade + record telemetry.")
     c.add_argument("--id", required=True)
     c.add_argument("--status", help="override the per-type terminal status")

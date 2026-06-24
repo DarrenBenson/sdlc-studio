@@ -314,6 +314,56 @@ class LazyIndexTests(unittest.TestCase):
             self.assertFalse(Path(r["path"]).exists())
 
 
+class BatchTests(unittest.TestCase):
+    """CR0078: many artifacts of one type in one atomic, contiguous-id pass."""
+
+    def test_batch_creates_wires_and_keeps_drift_zero(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+            _epic(repo)
+            items = [{"title": "rest conventions", "epic": "EP0001"},
+                     {"title": "auth middleware", "epic": "EP0001"},
+                     {"title": "persistence", "epic": "EP0001"}]
+            r = artifact.new_batch(repo, "story", items)
+            self.assertEqual(r["count"], 3)
+            ids = [c["id"] for c in r["created"]]
+            self.assertEqual(ids, ["US0001", "US0002", "US0003"])  # contiguous block
+            ep = (repo / "sdlc-studio" / "epics" / "EP0001-x.md").read_text()
+            for i in ids:
+                self.assertIn(i, ep)                               # each wired to the epic
+            self.assertEqual(reconcile.detect_type("story", repo)["drift"], [])  # counts in sync
+
+    def test_batch_defaults_to_full_template(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+            _epic(repo)
+            r = artifact.new_batch(repo, "story", [{"title": "x", "epic": "EP0001"}])
+            self.assertEqual(r["template"], "full")
+            self.assertIn("## Context", Path(r["created"][0]["path"]).read_text())  # rich body
+
+    def test_batch_is_atomic_on_bad_epic(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+            _epic(repo)
+            items = [{"title": "good", "epic": "EP0001"}, {"title": "bad", "epic": "EP9999"}]
+            with self.assertRaises(ValueError):
+                artifact.new_batch(repo, "story", items)
+            self.assertEqual(list((repo / "sdlc-studio" / "stories").glob("US*.md")), [])
+
+    def test_batch_dry_run_writes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+            _epic(repo)
+            r = artifact.new_batch(repo, "story", [{"title": "x", "epic": "EP0001"}], dry_run=True)
+            self.assertTrue(r["dry_run"])
+            self.assertEqual(r["ids"][0]["id"], "US0001")
+            self.assertEqual(list((repo / "sdlc-studio" / "stories").glob("US*.md")), [])
+
+
 class FullTemplateTests(unittest.TestCase):
     """CR0077 Item 2: `--template full` grafts the rich core body onto the provenance head."""
 
