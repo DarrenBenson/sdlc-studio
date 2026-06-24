@@ -61,7 +61,8 @@ catalogue and worked workflows below cover every tool.
 
 | Command | Description |
 | --- | --- |
-| `/sdlc-studio sprint <batch> --goal done` | Goal-Driven Development loop: drive a prioritised tranche to a goal (the primary delivery workflow) |
+| `/sdlc-studio sprint <batch> --goal <rung>` | Goal-Driven Development loop: drive a prioritised tranche along the **goal ladder** `triage -> plan -> design -> done` (cumulative stop-points; natural language maps to the furthest rung). The primary delivery workflow |
+| `/sdlc-studio decisions add` / `list` / `promote` | Project decisions log (the project spine + delegated-agent handoff context): append a decision, list them, or promote a resolved open question |
 | `/sdlc-studio pvd create` / `pvd sync` / `product reconcile` | Product Vision Document: the multi-repo product layer above the PRD |
 | `/sdlc-studio gate` | Portable, ecosystem-neutral CI quality gate over the deterministic checks |
 | `/sdlc-studio deploy` | Orchestrate-only deploy last-mile: gate, verify, record (operator-triggered, never autonomous) |
@@ -76,6 +77,9 @@ The tooling sprint uses to create and close artifacts the same way every time (t
 | Command | Description |
 | --- | --- |
 | `scripts/artifact.py new --type <type> --title ...` | Create any of the 8 numbered artifacts: collision-free id, valid scaffold, index row, parent-epic wiring, `Created-by` stamp |
+| `scripts/artifact.py new --template full` | Scaffold the full template (all sections) instead of the minimal stub |
+| `scripts/artifact.py batch --type <type> --count N` | Reserve an id range and write N pre-wired scaffolds atomically (fan-out authoring); implies `--template full` |
+| `scripts/next_id.py allocate --type <type>` | The next collision-free id for a type (what `new`/`batch`/`file_finding` call internally; `--remote` also considers `origin/main`) |
 | `scripts/artifact.py close --id <ID> --verdict approve` | Terminal-transition an artifact and record run telemetry |
 | `scripts/provenance.py check` / `remake` | Flag artifacts that were not created by the tool (advisory; `provenance.enforce` to gate); backfill the stamp |
 | `scripts/telemetry.py show` | Per-run outcomes (iterations, wall-time, stages, critic verdict) - local only, gitignored |
@@ -365,6 +369,7 @@ tests/                        # Generated test code
 ### Greenfield Project (Manual)
 
 ```text
+/sdlc-studio init                                  # step 1: folder tree, indexes, config, agent-instructions
 /sdlc-studio prd create
 /sdlc-studio trd create
 /sdlc-studio persona

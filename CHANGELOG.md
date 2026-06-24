@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **v3.0 capabilities surfaced in the always-loaded router + help catalogue (CR0104, RV0005
+  review):** `help/help.md` now lists the `decisions` command (add/list/promote) and names the
+  sprint **goal ladder** `triage -> plan -> design -> done`; the SKILL.md Type Reference gains
+  `init` (greenfield step 1) and `decisions` and names the ladder; `artifact batch`,
+  `--template full`, and `next_id allocate` are in the deterministic-tooling catalogue; the
+  greenfield manual workflow leads with `init`. Closes the `decisions` doc-coverage false-green.
 - **seat-scored WSJF sprint planning (CR0099, from LL0007):** `sprint plan --order wsjf` now
   orders by **WSJF = (value + time-criticality + risk-reduction) / size**. The review seats score
   the numerator (Product Owner = value, QA = risk, Engineering = effort seeded by the complexity

@@ -175,6 +175,7 @@ approach decisions. The full index is in `help/references.md`.
 
 | Type | Description |
 | --- | --- |
+| `init` | Initialise an empty project: folder tree, indexes, config, agent-instructions (greenfield step 1) |
 | `pvd` | Product Vision Document - the multi-repo product layer above the PRD (opt-in) |
 | `prd` | Product Requirements Document |
 | `trd` | Technical Requirements Document |
@@ -192,8 +193,9 @@ approach decisions. The full index is in `help/references.md`.
 | `cr` | Change requests (post-PRD change proposals) |
 | `rfc` | Request For Comments – design exploration of an unsettled space, pre-CR |
 | `project` | Project-level orchestration across all epics |
-| `sprint` | Goal-Driven Development loop: a prioritised batch driven to a goal |
+| `sprint` | Goal-Driven Development loop: a prioritised batch driven along the goal ladder `triage -> plan -> design -> done` |
 | `plan` | Claude Code plan-file lifecycle (list, archive) |
+| `decisions` | Project decisions log (the project spine + delegated-agent handoff): `add` / `list` / `promote` |
 | `reconcile` | Detect and fix status drift across all artifacts |
 | `gate` | Portable, ecosystem-neutral CI quality gate over the deterministic checks |
 | `deploy` | Orchestrate-only deploy last-mile: gate, verify, record (operator-triggered, never autonomous) |

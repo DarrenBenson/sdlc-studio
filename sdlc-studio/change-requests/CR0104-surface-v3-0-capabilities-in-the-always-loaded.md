@@ -1,6 +1,6 @@
 # CR-0104: Surface v3.0 capabilities in the always-loaded router + help catalogue (decisions, goal ladder, init-first, batch)
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** High
 > **Type:** Improvement
 > **Date:** 2026-06-24
@@ -12,10 +12,10 @@ Post-v2.6 discoverability gaps confirmed by the deterministic baseline: /sdlc-st
 
 ## Acceptance Criteria
 
-- [ ] help/help.md lists the decisions command (add/list/promote) and names the sprint goal ladder triage->plan->design->done
-- [ ] SKILL.md Type Reference includes init and decisions; the Sprint row/prose names the goal ladder
-- [ ] init is surfaced as greenfield step 1 and batch/--template full are discoverable where bulk authoring is described
-- [ ] doc_coverage no longer false-greens on decisions (the command registry sees it); CHANGELOG entry same commit
+- [x] help/help.md lists the decisions command (add/list/promote) and names the sprint goal ladder triage->plan->design->done
+- [x] SKILL.md Type Reference includes init and decisions; the Sprint row/prose names the goal ladder
+- [x] init is surfaced as greenfield step 1 and batch/--template full are discoverable where bulk authoring is described
+- [x] doc_coverage no longer false-greens on decisions (the command registry sees it); CHANGELOG entry same commit
 
 ## Revision History
 

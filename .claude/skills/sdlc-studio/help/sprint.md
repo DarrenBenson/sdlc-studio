@@ -18,14 +18,14 @@ conformance -> review) to it. Add `--autonomous` to run unattended. See
 ## Quick Reference
 
 ```bash
-/sdlc-studio sprint --crs proposed --goal done      # deliver the proposed CRs
-/sdlc-studio sprint --bugs open --goal done         # deliver the open bugs
+/sdlc-studio sprint --crs Proposed --goal done      # deliver the proposed CRs
+/sdlc-studio sprint --bugs Open --goal done         # deliver the open bugs
 /sdlc-studio sprint --epic EP0007 --goal done       # deliver an epic
-/sdlc-studio sprint --crs proposed --goal design    # just the backlog (no code)
-/sdlc-studio sprint --crs proposed --goal plan       # select+sequence+estimate a sprint, stop
+/sdlc-studio sprint --crs Proposed --goal design    # just the backlog (no code)
+/sdlc-studio sprint --crs Proposed --goal plan       # select+sequence+estimate a sprint, stop
 /sdlc-studio sprint prd.md --goal design             # greenfield: PRD -> epics -> stories
 /sdlc-studio sprint <worklist.md> --order wsjf       # a tranche file, WSJF order
-/sdlc-studio sprint --bugs open --autonomous         # unattended: deterministic guardrails on
+/sdlc-studio sprint --bugs Open --autonomous         # unattended: deterministic guardrails on
 ```
 
 Natural language works too: "do a sprint to deliver all open bugs"; "plan and break down the
