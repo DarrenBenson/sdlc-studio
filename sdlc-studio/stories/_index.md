@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 5 |
+| Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 34 |
+| Done | 39 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
@@ -22,11 +22,11 @@
 
 | ID | Title | Status | Epic | Created | Updated |
 | --- | --- | --- | --- | --- | --- |
-| [US0001](US0001-reconcile-census-autofix.md) | Census-based reconcile with scoped auto-fix | Ready | EP0005 | 2026-06-20 | 2026-06-20 |
-| [US0002](US0002-verify-ac-gate.md) | Executable AC verification with verify gate | Ready | EP0005 | 2026-06-20 | 2026-06-20 |
-| [US0003](US0003-review-cadence.md) | Unified review with modified-since detection and cadence | Ready | EP0005 | 2026-06-20 | 2026-06-20 |
-| [US0004](US0004-status-hint.md) | Status dashboard and single-step hint | Ready | EP0005 | 2026-06-20 | 2026-06-20 |
-| [US0005](US0005-next-id-allocation.md) | Deterministic next-ID allocation | Ready | EP0008 | 2026-06-20 | 2026-06-20 |
+| [US0001](US0001-reconcile-census-autofix.md) | Census-based reconcile with scoped auto-fix | Done | EP0005 | 2026-06-20 | 2026-06-20 |
+| [US0002](US0002-verify-ac-gate.md) | Executable AC verification with verify gate | Done | EP0005 | 2026-06-20 | 2026-06-20 |
+| [US0003](US0003-review-cadence.md) | Unified review with modified-since detection and cadence | Done | EP0005 | 2026-06-20 | 2026-06-20 |
+| [US0004](US0004-status-hint.md) | Status dashboard and single-step hint | Done | EP0005 | 2026-06-20 | 2026-06-20 |
+| [US0005](US0005-next-id-allocation.md) | Deterministic next-ID allocation | Done | EP0008 | 2026-06-20 | 2026-06-20 |
 | [US0006](US0006-duplicate-id-detector.md) | Deterministic duplicate-ID detector | Done | EP0008 | 2026-06-20 | 2026-06-20 |
 | [US0007](US0007-lifecycle-conformance-check.md) | Lifecycle-conformance check | Done | EP0007 | 2026-06-20 | 2026-06-20 |
 | [US0008](US0008-autosprint-batch-selector.md) | Autosprint batch selector and ordering | Done | EP0007 | 2026-06-20 | 2026-06-20 |

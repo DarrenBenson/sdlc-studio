@@ -58,10 +58,10 @@ mode in this backlog.
 
 ## Story Breakdown
 
-- [ ] [US0001: Census-based reconcile with scoped auto-fix](../stories/US0001-reconcile-census-autofix.md)
-- [ ] [US0002: Executable AC verification with verify gate](../stories/US0002-verify-ac-gate.md)
-- [ ] [US0003: Unified review with modified-since detection and cadence](../stories/US0003-review-cadence.md)
-- [ ] [US0004: Status dashboard and single-step hint](../stories/US0004-status-hint.md)
+- [x] [US0001: Census-based reconcile with scoped auto-fix](../stories/US0001-reconcile-census-autofix.md)
+- [x] [US0002: Executable AC verification with verify gate](../stories/US0002-verify-ac-gate.md)
+- [x] [US0003: Unified review with modified-since detection and cadence](../stories/US0003-review-cadence.md)
+- [x] [US0004: Status dashboard and single-step hint](../stories/US0004-status-hint.md)
 - [x] [US0012: Referential-integrity check](../stories/US0012-referential-integrity-check.md) (CR0003, determinism sprint)
 - [x] [US0014: review_prep staleness determinism](../stories/US0014-review-prep-determinism.md) (CR0004, determinism sprint)
 - [x] [US0019: verify_ac report history and dry-run record](../stories/US0019-verify-ac-report-history.md) (CR0005, backlog-closeout)

@@ -6,7 +6,7 @@ Related: help/story.md, reference-story.md
 -->
 # US0005: Deterministic next-ID allocation
 
-> **Status:** Ready
+> **Status:** Done
 > **Epic:** [EP0008: Tooling & Scripts](../epics/EP0008-tooling-scripts.md)
 > **Owner:** Darren Benson
 > **Reviewer:** --
@@ -64,7 +64,7 @@ Related: help/story.md, reference-story.md
 - **And** IDs are de-duplicated and parsed via the 4-digit suffix, so `CR0007` and `CR-0007` count as the same number
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_next_id.py::AllocateTests::test_allocate_next_is_max_plus_one
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-24)
 
 ### AC3: `--remote` consults origin/main read-only
 

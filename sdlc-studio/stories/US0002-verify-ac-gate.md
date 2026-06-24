@@ -6,7 +6,7 @@ Related: help/story.md, reference-story.md
 -->
 # US0002: Executable AC verification with verify gate
 
-> **Status:** Ready
+> **Status:** Done
 > **Epic:** [EP0005: Quality & Drift Control](../epics/EP0005-quality-drift.md)
 > **Owner:** Darren Benson
 > **Reviewer:** --
@@ -55,7 +55,7 @@ Through v1.5.0, ACs were Given/When/Then markdown with no executable backing, an
 - **And** the verifier passes only on subprocess exit code `0`
 - **Verify:** grep "def _build_command" .claude/skills/sdlc-studio/scripts/verify_ac.py
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-24)
 
 ### AC2: Per-AC `Verified: yes/no` maintained in place
 
@@ -65,7 +65,7 @@ Through v1.5.0, ACs were Given/When/Then markdown with no executable backing, an
 - **And** an AC that currently shows `yes` but now fails is downgraded to `- **Verified:** no (<today>)` and counted as `stale`
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RunTests::test_apply_mode_updates_verified_state
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-24)
 
 ### AC3: Pass / fail / manual counts and `run` vs `--dry-run`
 
@@ -76,7 +76,7 @@ Through v1.5.0, ACs were Given/When/Then markdown with no executable backing, an
 - **And** the process exits `1` if any AC failed across all stories, else `0`; with no stories found it prints `no stories found` and exits `2`
 - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/verify_ac.py run --dir /tmp/nope-$$ ; test $? -eq 2
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-24)
 
 ### AC4: `.local/verify-report.json` shape
 
@@ -86,16 +86,16 @@ Through v1.5.0, ACs were Given/When/Then markdown with no executable backing, an
 - **And** `verify_ac.py report` re-prints the latest report; a failing `kind: invalid, exit_code: 2` means the expression could not be parsed, `exit_code: 127` means the tool is not on PATH, `exit_code: 124` means timeout
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RunTests::test_passing_story_reports_zero_stale
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-24)
 
 ### AC5: `require_ac_verification` gate aborts the completion cascade
 
 - **Given** `require_ac_verification: true` in `sdlc-studio/config.yaml` (or `templates/config-defaults.yaml`; default `false`)
 - **When** the Story Completion Cascade reaches its pre-flight verifier step before marking the story Done
 - **Then** the story is refused transition to Done unless every AC reports `Verified: yes`; a story that fails the gate stays `In Progress` with the report pointing at the failing ACs (per `reference-verify.md#verify-gate`)
-- **Manual check:** with `require_ac_verification: true`, confirm the Story Completion Cascade refuses a Done transition while any AC reports `Verified: no`; this is a cascade (markdown) behaviour with no script-level verifier (see `reference-verify.md#verify-gate`).
+- **Verify:** manual with `require_ac_verification: true`, confirm the cascade refuses a Done transition while any AC reports `Verified: no` (markdown-cascade behaviour; CR0084 since made this a deterministic gate in `transition.py`)
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** manual
 
 > **Verification target tiers:** `functional` (single round-trip – default) | `conversational` (multi-turn / multi-step session continuity) | `soak` (live traffic over a window) | `live` (operator-confirmed in production). End-to-end ACs default to `conversational`; production-affecting ACs default to `soak`; ACs shipping behind a flag awaiting promotion default to `live`. See `reference-test-best-practices.md#verification-depth-tiers`.
 

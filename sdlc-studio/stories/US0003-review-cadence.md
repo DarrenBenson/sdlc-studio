@@ -6,7 +6,7 @@ Related: help/story.md, reference-story.md
 -->
 # US0003: Unified review with modified-since detection and cadence
 
-> **Status:** Ready
+> **Status:** Done
 > **Epic:** [EP0005: Quality & Drift Control](../epics/EP0005-quality-drift.md)
 > **Owner:** Darren Benson
 > **Reviewer:** --
@@ -54,7 +54,7 @@ The unified review (PRD - TRD - TSD - Persona - Code) is Claude's judgement call
 - **And** an artifact with no entry in `review-state.json` (`last_reviewed == null`) always reports `needs_review: true`
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_no_review_state_means_needs_review
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-24)
 
 ### AC2: Staleness covers project docs and every artifact
 
@@ -62,9 +62,9 @@ The unified review (PRD - TRD - TSD - Persona - Code) is Claude's judgement call
 - **When** `prep` builds the staleness map
 - **Then** it considers the four project docs `prd`, `trd`, `tsd`, `personas` (keyed by name) plus every artifact file of every type (keyed by record ID, e.g. `EP0001`, `US0042`), skipping any that does not exist on disk
 - **And** the "last modified" signal is the file mtime rendered as an ISO-8601 Z string (NOT a git timestamp), so the comparison is string-lexicographic against `last_reviewed`
-- **Verify:** grep "_mtime_iso" .claude/skills/sdlc-studio/scripts/review_prep.py
+- **Verify:** grep "PROJECT_DOCS" .claude/skills/sdlc-studio/scripts/review_prep.py
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-24)
 
 ### AC3: Persona usage - defined vs referenced in the PRD
 
@@ -74,7 +74,7 @@ The unified review (PRD - TRD - TSD - Persona - Code) is Claude's judgement call
 - **And** the `unused` list is what the Persona leg judges (refresh / archive / first-consult)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::PersonaUsageTests::test_defined_referenced_and_unused
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-24)
 
 ### AC4: Count and AC-verification inputs for the CODE and test legs
 
@@ -84,7 +84,7 @@ The unified review (PRD - TRD - TSD - Persona - Code) is Claude's judgement call
 - **And** these inputs feed the CODE review leg, whose verdict stays Claude's judgement - the script computes no health score and renders no dashboard
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::InputsTests::test_counts_and_ac_summary
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-24)
 
 ### AC5: Cadence and review-state lifecycle are review-command, not script, concerns
 
@@ -93,7 +93,7 @@ The unified review (PRD - TRD - TSD - Persona - Code) is Claude's judgement call
 - **Then** `review_prep.py` only *reads* `review-state.json` and *emits* inputs; it has a single `prep` subcommand and never writes review state, never enforces an interval, and provides no pause/resume queue - the cadence decision, the `review-state.json` write (step 4 of `reference-review.md#review-workflow`), and `LATEST.md` are performed by Claude as part of the review command
 - **Verify:** shell f=sdlc-studio/.local/review-state.json; b=$(cat "$f" 2>/dev/null; stat -c %Y "$f" 2>/dev/null); python3 .claude/skills/sdlc-studio/scripts/review_prep.py prep --format json >/dev/null 2>&1; a=$(cat "$f" 2>/dev/null; stat -c %Y "$f" 2>/dev/null); test "$b" = "$a"
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-24)
 
 > **Verification target tiers:** `functional` (single round-trip – default) | `conversational` (multi-turn / multi-step session continuity) | `soak` (live traffic over a window) | `live` (operator-confirmed in production). End-to-end ACs default to `conversational`; production-affecting ACs default to `soak`; ACs shipping behind a flag awaiting promotion default to `live`. See `reference-test-best-practices.md#verification-depth-tiers`.
 

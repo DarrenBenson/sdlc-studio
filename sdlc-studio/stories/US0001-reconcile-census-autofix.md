@@ -6,7 +6,7 @@ Related: help/story.md, reference-story.md
 -->
 # US0001: Census-based reconcile with scoped auto-fix
 
-> **Status:** Ready
+> **Status:** Done
 > **Epic:** [EP0005: Quality & Drift Control](../epics/EP0005-quality-drift.md)
 > **Owner:** Darren Benson
 > **Reviewer:** --
@@ -53,7 +53,7 @@ Through the manual era, reconcile re-read every artifact in-context and trusted 
 - **Then** the report `types.story.census_total` counts the on-disk file, and the `drift` array contains an item with `"kind": "status-mismatch"`, `"id": "US0001"`, `"file_status": "Done"`, `"index_status": "Draft"`, and `"fix": "set index status of US0001 to Done"`
 - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect --scope stories --format json | python3 -c "import json,sys; d=json.load(sys.stdin); assert 'story' in d.get('types', {})"
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-24)
 
 ### AC2: Four drift classes plus summary-count drift
 
@@ -63,7 +63,7 @@ Through the manual era, reconcile re-read every artifact in-context and trusted 
 - **And** a row in a non-file-implying status (`Proposed`, `Draft`, `Deferred`, `Superseded`, `Withdrawn`, `Rejected`, `Won't Implement`, `Won't Fix`) or a non-vocabulary status with no file is treated as an intentional reservation, not flagged as `orphan-row`
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::DriftTests::test_detects_all_three_classes_plus_count
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-24)
 
 ### AC3: `--scope` limits the types examined
 
@@ -72,7 +72,7 @@ Through the manual era, reconcile re-read every artifact in-context and trusted 
 - **Then** only that scope's types are censused - `report.scope` echoes the value, `indexes` expands to all six index-driven types (`story`, `epic`, `cr`, `rfc`, `plan`, `test-spec`), and omitting `--scope` defaults to all six with `report.scope == "all"`
 - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect --scope epics --format json | python3 -c "import json,sys; assert json.load(sys.stdin).get('scope')=='epics'"
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-24)
 
 ### AC4: Mechanical auto-fix versus judgement-call reporting
 
@@ -80,9 +80,9 @@ Through the manual era, reconcile re-read every artifact in-context and trusted 
 - **When** the report is consumed
 - **Then** each drift item carries a mechanical `fix` string (e.g. `add US0007 (Ready) to the index`, `recompute the summary counts from the index rows`) that Claude applies, while judgement calls - checkbox / dependency / PRD-feature drift, CR completion cascades, the changelog - are NOT in the report and stay the operator's call per `reference-reconcile.md`
 - **And** the script itself writes no artifact file; a `status-mismatch` never propagates a status TO `Done` (Done is only ever copied from a file that already declares it)
-- **Manual check:** confirm `detect` emits only `fix` strings and writes no artifact file; the read-only contract has no sound one-line verifier (a `status-mismatch` only ever copies `Done` from a file that already declares it).
+- **Verify:** manual confirm `detect` emits only `fix` strings and writes no artifact file; the read-only contract has no sound one-line verifier (a `status-mismatch` only ever copies `Done` from a file that already declares it)
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** manual
 
 ### AC5: JSON report shape, dry-run default, and `--write-report`
 
@@ -93,7 +93,7 @@ Through the manual era, reconcile re-read every artifact in-context and trusted 
 - **And** the process exits `1` when any drift exists and `0` when clean
 - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect --scope rfcs --format json >/dev/null 2>&1; rc=$?; test "$rc" = 0 -o "$rc" = 1
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-24)
 
 > **Verification target tiers:** `functional` (single round-trip – default) | `conversational` (multi-turn / multi-step session continuity) | `soak` (live traffic over a window) | `live` (operator-confirmed in production). End-to-end ACs default to `conversational`; production-affecting ACs default to `soak`; ACs shipping behind a flag awaiting promotion default to `live`. See `reference-test-best-practices.md#verification-depth-tiers`.
 

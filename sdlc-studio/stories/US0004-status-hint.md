@@ -6,7 +6,7 @@ Related: help/story.md, reference-story.md
 -->
 # US0004: Status dashboard and single-step hint
 
-> **Status:** Ready
+> **Status:** Done
 > **Epic:** [EP0005: Quality & Drift Control](../epics/EP0005-quality-drift.md)
 > **Owner:** Darren Benson
 > **Reviewer:** --
@@ -54,7 +54,7 @@ Related: help/story.md, reference-story.md
 - **And** statuses are canonicalised (`Done (v2.66.0)` collapses to `Done`) and `*-consultations.md` files are excluded from counts
 - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/status.py pillars --format json | python3 -c "import json,sys; d=json.load(sys.stdin); assert {'requirements','code','tests','reviews'} <= set(d)"
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-24)
 
 ### AC2: `hint` returns a single next step from a mechanical ladder
 
@@ -65,7 +65,7 @@ Related: help/story.md, reference-story.md
 - **And** the `generate` vs `create` choice depends on whether any of `src`, `lib`, `app`, `cmd` directories exist (brownfield -> `generate`)
 - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/status.py hint --format json | python3 -c "import json,sys; assert 'next_command' in json.load(sys.stdin)"
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-24)
 
 ### AC3: Text rendering of pillars and hint
 
@@ -75,7 +75,7 @@ Related: help/story.md, reference-story.md
 - **And** `status.py hint` (text) prints `/sdlc-studio <next_command>  (<reason>)`
 - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/status.py hint | grep -q "/sdlc-studio"
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-24)
 
 ### AC4: Done-percentage maths is empty-safe
 
@@ -84,7 +84,7 @@ Related: help/story.md, reference-story.md
 - **Then** `_pct_done` returns `0` for an empty census (no division by zero), and otherwise `round(100 * done / total)` over the relevant done-states
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py::CensusTests::test_pct_done
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-24)
 
 ### AC5: Cache, `--full`, and integrity flagging are consumer concerns, not script behaviour
 
@@ -93,7 +93,7 @@ Related: help/story.md, reference-story.md
 - **Then** the script exposes only `pillars` and `hint`, each taking only `--root` and `--format` - it has no `--full`/`--brief`/`--workflows` flag, never reads or writes `status-cache.json`, and runs no integrity scan; the cache, the dashboard art, and the integrity/ID-collision checks are performed by Claude when it renders status (it may delegate the integrity scan to `reconcile.py` from US0001)
 - **Verify:** shell ! python3 .claude/skills/sdlc-studio/scripts/status.py pillars -h 2>&1 | grep -q -- "--full"
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-24)
 
 > **Verification target tiers:** `functional` (single round-trip – default) | `conversational` (multi-turn / multi-step session continuity) | `soak` (live traffic over a window) | `live` (operator-confirmed in production). End-to-end ACs default to `conversational`; production-affecting ACs default to `soak`; ACs shipping behind a flag awaiting promotion default to `live`. See `reference-test-best-practices.md#verification-depth-tiers`.
 

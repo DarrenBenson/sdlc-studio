@@ -59,7 +59,7 @@ stdlib, read-only over the workspace, unit-tested.
 
 - [ ] US: Repo map indexer + file ranking
 - [ ] US: GitHub Issues two-way sync
-- [ ] [US0005: Deterministic next-ID allocation (cross-repo)](../stories/US0005-next-id-allocation.md)
+- [x] [US0005: Deterministic next-ID allocation (cross-repo)](../stories/US0005-next-id-allocation.md)
 - [ ] US: Skill + instructions validation
 - [ ] US: Schema upgrade between versions
 - [x] [US0015: Config single source](../stories/US0015-config-single-source.md) (CR0008, determinism sprint)
