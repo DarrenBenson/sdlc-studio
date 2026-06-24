@@ -5,6 +5,18 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1] - 2026-06-24
+
+### Fixed
+
+- **duplicate-id gate false-positived on the canonical two-table story index (BG0035, field
+  report):** `reconcile.detect_duplicate_rows` counted an id across ALL tables in an `_index.md`,
+  but the story-index template ships two id-bearing views (`Stories by Epic` + `All Stories`), so
+  every story id was flagged twice (a field upgrade saw duplicate-id: 33). Detection is now
+  **per-table**: an id once-per-view across the two tables is not a duplicate; a repeat *within*
+  one table (the silent-collapse bug it guards, CR0055/BG0022) still flags. The template's
+  two-view layout is valid again - no need to gut the per-epic view to pass the gate.
+
 ## [3.0.0] - 2026-06-24
 
 ### Added

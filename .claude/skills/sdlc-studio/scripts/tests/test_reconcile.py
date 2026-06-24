@@ -422,6 +422,35 @@ class DuplicateRowTests(unittest.TestCase):
             self._idx(repo, "| US0001 | a | Done |\n| US0002 | b | Done |\n")
             self.assertEqual(reconcile.detect_duplicate_rows(repo)["count"], 0)
 
+    def test_two_view_index_not_flagged(self):  # BG0035
+        """The canonical story index ships a per-epic view + an All Stories table; each id
+        appears once per view, which is not a duplicate."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            dd = repo / "sdlc-studio" / "stories"; dd.mkdir(parents=True)
+            (dd / "_index.md").write_text(
+                "# Story Index\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Done | 2 |\n\n"
+                "## Stories by Epic\n\n### EP0001\n\n| ID | Title | Status | Points | Owner |\n"
+                "| --- | --- | --- | --- | --- |\n| US0001 | a | Done | 3 | x |\n"
+                "| US0002 | b | Done | 2 | x |\n\n"
+                "## All Stories\n\n| ID | Title | Epic | Status | Points | Persona |\n"
+                "| --- | --- | --- | --- | --- | --- |\n| US0001 | a | EP0001 | Done | 3 | p |\n"
+                "| US0002 | b | EP0001 | Done | 2 | p |\n", encoding="utf-8")
+            self.assertEqual(reconcile.detect_duplicate_rows(repo)["count"], 0)
+
+    def test_within_table_dup_in_two_view_index_still_flagged(self):  # BG0035 guard preserved
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            dd = repo / "sdlc-studio" / "stories"; dd.mkdir(parents=True)
+            (dd / "_index.md").write_text(
+                "# Story Index\n\n## Stories by Epic\n\n### EP0001\n\n| ID | Title | Status |\n"
+                "| --- | --- | --- |\n| US0001 | a | Done |\n\n"
+                "## All Stories\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| US0001 | a | Done |\n| US0001 | dupe-in-same-table | Open |\n", encoding="utf-8")
+            r = reconcile.detect_duplicate_rows(repo)
+            self.assertEqual(r["count"], 1)
+            self.assertEqual(r["duplicates"][0]["count"], 2)
+
 
 
 class CountBlockScopeTests(unittest.TestCase):

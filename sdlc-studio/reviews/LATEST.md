@@ -4,8 +4,10 @@
 > or compaction.** Durable guidance lives in AGENTS.md; per-tranche detail lives in CHANGELOG.md
 > and `sdlc-studio/retros/`; the original v2.0 unified review is `RV0001-unified-review-2026-06-20.md`.
 >
-> **Project version:** 3.0.0 (released 2026-06-24) · **Date:** 2026-06-24 · **Gates:** lint
-> clean, 855 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0, npm audit 0, coverage 83%.
+> **Project version:** 3.0.1 (released 2026-06-24) · **Date:** 2026-06-24 · **Gates:** lint
+> clean, 857 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0, npm audit 0, coverage 83%.
+> **v3.0.1:** BG0035 - duplicate-id gate now scopes per-table, so the canonical two-view story
+> index (per-epic + All Stories the template ships) no longer false-flags (field report).
 > **Command rename:** `autosprint` → `sprint` (CR0087; `autosprint` is a deprecated alias).
 
 ## Headline

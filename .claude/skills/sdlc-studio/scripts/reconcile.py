@@ -155,17 +155,60 @@ def _index_row_ids(text: str) -> list[str]:
     return ids
 
 
+def _within_table_dup_counts(text: str) -> dict[str, int]:
+    """For each id, the most times it appears in a SINGLE data table of one index file.
+
+    Scoped per-table (BG0035): an index may legitimately show an id once in each of several
+    table views - the story index ships a per-epic "Stories by Epic" view plus an "All Stories"
+    table, so every id appears twice across views without being a duplicate. The bug
+    `detect_duplicate_rows` guards is an id repeated WITHIN one table, which `parse_index`
+    silently collapses (CR0055/BG0022). Resets the per-id tally at each table header (mirroring
+    `_index_row_ids`' header re-pin). Returns {id: count} only for ids whose within-table count > 1.
+    """
+    best: dict[str, int] = {}
+    table: dict[str, int] = {}
+    id_col: int | None = None
+
+    def flush() -> None:
+        for rid, n in table.items():
+            if n > best.get(rid, 0):
+                best[rid] = n
+
+    for line in text.splitlines():
+        cells = _table_cells(line)
+        if not cells:
+            continue
+        if len(cells) == 2 and cells[1].replace(",", "").isdigit():  # summary row
+            continue
+        lowered = [c.lower() for c in cells]
+        if len(cells) > 2 and "status" in lowered:  # new table header - flush + reset scope
+            flush()
+            table = {}
+            id_col = lowered.index("id") if "id" in lowered else None
+            continue
+        if id_col is not None and id_col < len(cells):
+            m = sdlc_md.ID_SEARCH_RE.search(cells[id_col])
+            rid = m.group(0) if m else None
+        else:
+            rid = next((sdlc_md.ID_SEARCH_RE.search(c).group(0)
+                        for c in cells if sdlc_md.ID_SEARCH_RE.search(c)), None)
+        if rid:
+            k = _norm_id(rid)
+            table[k] = table.get(k, 0) + 1
+    flush()
+    return {rid: n for rid, n in best.items() if n > 1}
+
+
 def detect_duplicate_rows(repo_root: Path | str) -> dict:
-    """Duplicate index ROWS - the same normalised id appearing in more than one row of a
-    single `_index.md`. `parse_index` keys rows by id into a dict, so a duplicate row
-    silently overwrites the first: zero drift, gate false-PASS (CR0055). This counts the
-    raw rows before that collapse.
+    """Duplicate index ROWS - the same normalised id appearing more than once **within a single
+    data table** of an `_index.md`. `parse_index` keys rows by id into a dict, so a within-table
+    duplicate silently overwrites the first: zero drift, gate false-PASS (CR0055).
 
         { "duplicates": [ {"type", "id", "count"} ], "count" }
 
-    Assumes one data table per `_index.md` (the project convention): an id legitimately
-    repeated across two sections of the same file (e.g. an "Active" + "Recently closed"
-    recap) would be flagged. Indexes here are single-table, so this holds.
+    Detection is per-table (BG0035): a multi-view index (the story index's per-epic view + its
+    All Stories table) lists each id once per view, which is not a duplicate; only a repeat inside
+    one table is.
     """
     root = Path(repo_root)
     dups: list[dict] = []
@@ -173,11 +216,9 @@ def detect_duplicate_rows(repo_root: Path | str) -> dict:
         index_path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / "_index.md"
         if not index_path.exists():
             continue
-        counts: dict[str, int] = {}
-        for rid in _index_row_ids(index_path.read_text(encoding="utf-8")):
-            counts[rid] = counts.get(rid, 0) + 1
+        counts = _within_table_dup_counts(index_path.read_text(encoding="utf-8"))
         dups.extend({"type": type_, "id": rid, "count": n}
-                    for rid, n in sorted(counts.items()) if n > 1)
+                    for rid, n in sorted(counts.items()))
     return {"duplicates": dups, "count": len(dups)}
 
 
