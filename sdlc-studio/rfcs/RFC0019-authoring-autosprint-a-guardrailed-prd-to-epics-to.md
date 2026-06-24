@@ -87,13 +87,42 @@ captured below.
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Extend `autosprint` (Option A) vs a new `author` command (Option B) | Open - leaning A |
+| D1 | Extend `autosprint` (Option A) vs a new `author` command (Option B) | **Resolved: A (extend).** The gap is only that the batch resolver can't take a PRD; extending reuses every guardrail (STOP, ledger, critic, closing gate, retro). A separate command would clone the loop and risk drift |
 | D2 | How many STOPs? | **Two, confirmed.** Agent: two non-negotiable pauses - (1) approve the **epic cut** before any story is written (the highest-stakes judgement call; getting it wrong silently wastes all 33); (2) resolve the PRD's **open questions** / state the assumptions about to be baked in, before story authoring |
 | D3 | Content authoring: orchestrator-inline vs per-epic sub-agent fan-out | **Fan-out wanted as an option**, over pre-wired scaffolds, "with the tool owning structure, parallelism stops being risky" |
-| D4 | Reuse `--goal design` vs a distinct `--goal author` for the PRD-bootstrap case | Open |
-| D5 | Dedupe with `project implement --from epics` and `cr action` (shared decomposition core, not a parallel path) | Open |
+| D4 | Reuse `--goal design` vs a distinct `--goal author` for the PRD-bootstrap case | **Resolved: reuse `design`.** The goal names the stop condition ("a reviewable backlog") - identical for both cases. The **input** (a PRD path vs a `--crs`/`--epic` query) triggers the bootstrap, not a new goal. `--goal author` would conflate input-type with stop-condition |
+| D5 | Dedupe with `project implement --from epics` and `cr action` | **Resolved: shared decomposition core.** The bootstrap reuses `epic`-from-PRD + `story`-from-epic generation + `cr action`; the loop is the guardrailed wrapper stopping before implementation - the "generation half" of `--from epics`, not a parallel path |
+| D8 | A `--goal plan` rung for sprint planning (operator idea, 2026-06-24) | **Open - leaning yes, as a thin rung.** See "Goal ladder" below |
 | D6 | Does the loop seed the PRD, or require one? | **Require one.** PRD is the precondition; seeding is the `init`/CR0079 concern |
 | D7 | Where does it stop? | **At a reviewable backlog, confirmed** - all story files at Draft, indexes built, `validate`/`reconcile` green, every epic link resolves, every story meets its minimum ACs/edge-cases. "Not one step further" - no code plan, no implementation. The closing **consistency check** "is the thing that would actually replace me as the structural coordinator" |
+
+## Goal ladder (D8 - the `--goal plan` rung)
+
+Today's ladder is how far the loop drives: `triage` (groom + approve) -> `design` (decompose
+to a Ready backlog) -> `done` (deliver). A **`plan`** rung for *sprint planning* fits between
+`triage` and `design`:
+
+The ladder is the **operator's review workflow** - drive one rung at a time, reviewing between:
+
+> **plan** the next autosprint -> *review* -> **breakdown** (design) to ready-to-work, with
+> story-point estimates -> *review* -> **run** (done).
+
+| `--goal` | Stops when... | Output | Operator phrase |
+| --- | --- | --- | --- |
+| `triage` | the groomed plan is approved | ordered worklist (readiness of the given batch) | - |
+| **`plan`** *(proposed)* | a sprint-sized batch is **selected and sequenced** | a committed **sprint plan** | "plan the next autosprint" |
+| `design` | units decomposed to Ready stories with AC **and story-point estimates** | a reviewable, estimated backlog | "break it down, make sure it's ready to work on" |
+| `done` | every unit is delivered | the delivered increment | "run the next autosprint" |
+
+The distinction from `triage`: triage grooms the *whole given batch* for readiness; `plan`
+**selects a sprint's worth** (capacity / budget fit) and sequences it. It reuses what already
+exists - `--order wsjf` + the complexity-weighted budget (CR0038) and `project plan`'s
+dependency order + wave estimation - and emits a persisted sprint-plan artifact, then stops.
+**`design` assigns story points** (written into each story as `**Story Points:**`), which
+`reconcile fields` (CR0082) projects into the index - closing the hand-copy the field agent
+hit. **Recommendation: add `plan` as a thin rung** (selection + estimation, not new
+machinery); it is orthogonal to the PRD-authoring bootstrap (D1/D4) and ships as its own
+work-stream. Each rung stops for operator review by default.
 
 ## Dependencies
 
