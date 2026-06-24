@@ -1,6 +1,6 @@
 # CR-0081: greenfield runbook - the canonical path from init through the autosprint handoff
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
@@ -70,15 +70,15 @@ greenfield runbook"), so the route is one hop from the first command a newcomer 
 
 ## Acceptance Criteria
 
-- [ ] a single greenfield runbook page lists the canonical command order start to
+- [x] a single greenfield runbook page lists the canonical command order start to
       reviewable backlog, each step with why / command / output / next
-- [ ] the runbook is linked from the SKILL router and from `init`'s reported next steps
-- [ ] it names the decisions log (CR0080) and the future authoring loop (RFC0019) at the
+- [x] the runbook is linked from the SKILL router and from `init`'s reported next steps
+- [x] it names the decisions log (CR0080) and the future authoring loop (RFC0019) at the
       right points in the path
-- [ ] the runbook states the implementation handoff (foundation epic by hand to a green
+- [x] the runbook states the implementation handoff (foundation epic by hand to a green
       gate, then `autosprint --epic EPxx --goal done`) and autosprint's runnable-gate
       precondition; the precondition is mirrored into `reference-autosprint.md`
-- [ ] anchor links resolve (`tools/check_links.py`); CHANGELOG `[Unreleased]` entry same
+- [x] anchor links resolve (`tools/check_links.py`); CHANGELOG `[Unreleased]` entry same
       commit (LL0004)
 
 ## Revision History

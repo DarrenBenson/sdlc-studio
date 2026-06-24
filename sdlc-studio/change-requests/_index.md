@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 84 |
+| Complete | 85 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -100,7 +100,7 @@
 | [CR-0078](CR0078-batch-artifact-creation-reserve-an-id-range-and.md) | batch artifact creation - reserve an ID range and wire many stories in one pass | Complete | Medium | Feature | 2026-06-24 | -- |
 | [CR-0079](CR0079-init-scaffold-seed-singleton-docs-and-index-files.md) | init becomes executable - create the folder structure, indexes, and singleton docs | Complete | High | Feature | 2026-06-24 | -- |
 | [CR-0080](CR0080-first-class-project-decisions-log-a-canonical-home.md) | first-class project decisions log - a canonical home for resolved decisions and open questions | Complete | Medium | Feature | 2026-06-24 | -- |
-| [CR-0081](CR0081-greenfield-runbook-the-canonical-command-order-from-init.md) | greenfield runbook - the canonical path from init through the autosprint handoff | Proposed | Medium | Improvement | 2026-06-24 | -- |
+| [CR-0081](CR0081-greenfield-runbook-the-canonical-command-order-from-init.md) | greenfield runbook - the canonical path from init through the autosprint handoff | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0082](CR0082-reconcile-projects-file-owned-index-fields-title-points.md) | reconcile projects file-owned index fields (title, points, persona) not just status and counts | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0083](CR0083-agent-instructions-enforce-the-deterministic-tooling-discipline-never.md) | agent-instructions enforce the deterministic-tooling discipline (never hand-roll IDs or indexes) | Complete | High | Improvement | 2026-06-24 | -- |
 | [CR-0084](CR0084-transition-to-done-consults-the-ac-verify-report.md) | transition to Done consults the AC-verify report - definition-of-done safety net on the hand-driven path | Complete | High | Feature | 2026-06-24 | -- |

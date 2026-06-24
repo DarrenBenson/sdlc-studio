@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **greenfield runbook (CR0081):** `help/getting-started.md` gives the canonical command order
+  from an empty repo to a reviewable backlog (`init -> prd -> persona -> trd -> tsd -> epic ->
+  story -> reconcile/validate`) and on through the implementation handoff, each step with
+  why/command/output/next. Linked from the SKILL router and `init`'s next-steps. It names the
+  decisions log and the future authoring loop at the right points, and documents autosprint's
+  **cold-start precondition** (a runnable gate) plus the foundation-first handoff - also
+  mirrored into `reference-autosprint.md`.
 - **agent-instructions enforce the tool-first discipline (CR0083):** the shipped
   `templates/agent-instructions.md` (read by every consuming-project agent; `.CLAUDE.md`
   inherits it via `@AGENTS.md`) gains a mandatory "use the deterministic tooling" rule -

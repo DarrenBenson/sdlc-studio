@@ -7,6 +7,16 @@ criteria, the loop drives the proven SDLC lifecycle to it. It is a prioritised
 batch of work delivered to a goal - a sprint, run by an agent. RFC0001 is the
 design home; the decisions below are settled there (D1-D7).
 
+## Precondition - a runnable gate (cold start)
+
+The loop (implement -> test -> gate -> critic -> commit-green) leans on a quality gate it
+can **actually run** each iteration. On a greenfield repo that gate does not exist yet, so
+autosprint cannot bootstrap itself. **Do not invoke autosprint before the gate is runnable
+and green.** The canonical greenfield handoff: build the **foundation epic by hand** to a
+green gate (the toolchain + test harness - an in-memory substitute like `pg-mem` is enough;
+the gate need only run - and the conventions every later story inherits), commit it, *then*
+hand subsequent epics to `autosprint --epic EPxx --goal done`. See `help/getting-started.md`.
+
 ## Invocation
 
 ```bash
