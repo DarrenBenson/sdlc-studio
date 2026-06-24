@@ -4,15 +4,17 @@
 > or compaction.** Durable guidance lives in AGENTS.md; per-tranche detail lives in CHANGELOG.md
 > and `sdlc-studio/retros/`; the original v2.0 unified review is `RV0001-unified-review-2026-06-20.md`.
 >
-> **Project version:** 3.0.1 (the consolidated v3 line; release pending) · **Date:** 2026-06-24 ·
-> **Gates:** lint clean, 873 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0,
+> **Project version:** 3.0.1 (the consolidated v3 line, released 2026-06-24) · **Date:** 2026-06-24 ·
+> **Gates:** lint clean, 876 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0,
 > npm audit 0, coverage 83%.
 > **v3.0.1 folds the whole v3 line into one release** (the per-fix v3.0.x/v3.1/v3.2 tags were
 > consolidated away to keep version numbers low): the `autosprint`→`sprint` rename + sprint
 > lifecycle + greenfield authoring + RV0005 self-review, then the field-dogfood fixes - BG0035
 > (per-table duplicate-id), BG0036 (`init` gitignores `.local/`), CR0106 (`sprint plan --epic`),
 > CR0107 (dependency waves), BG0037 (verify-report merge), CR0109 (audit lint), CR0110 (design-time
-> TS matrix), CR0111 (`verify_ac --batch`).
+> TS matrix), CR0111 (`verify_ac --batch`), plus the DX pass - **CR0108** (natural-language
+> "You can just ask" help blocks) and **CR0112** (stripped internal provenance tags from
+> consuming-facing docs + a guard).
 > **Command rename:** `autosprint` → `sprint` (CR0087; `autosprint` is a deprecated alias).
 
 ## Headline
