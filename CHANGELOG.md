@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **reconcile projects file-owned index cells (CR0082):** `reconcile fields` (`--apply`)
+  syncs the index's `Title` and `Points` cells from the backing story files, so the index is
+  fully derived (LL0001) and the audited story-points hand-copy disappears. A field absent in
+  the file is left untouched (BG0032 no-clobber); persona is deferred (no single canonical
+  field in a story). `apply` and `fields` are now documented (the entry was stale at
+  read-only/`detect`).
 - **project decisions log (CR0080):** `scripts/decisions.py` (`add` / `list`) maintains
   `sdlc-studio/decisions.md` - the canonical, append-only home for load-bearing decisions,
   both product (scope cuts, resolved PRD open questions) and implementation conventions

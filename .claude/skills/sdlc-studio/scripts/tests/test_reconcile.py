@@ -569,5 +569,55 @@ class MultiSchemaStatusTests(unittest.TestCase):
             self.assertEqual([x for x in drift if x["kind"] == "status-mismatch"], [])
 
 
+class FieldProjectionTests(unittest.TestCase):
+    """CR0082: reconcile projects file-owned index cells (title, points) from the files."""
+
+    def _setup(self, root: Path) -> None:
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "US0001-login.md").write_text(
+            "# US0001: Login flow\n\n> **Status:** Draft\n\n**Story Points:** 5\n", encoding="utf-8")
+        (d / "_index.md").write_text(
+            "# Stories\n\n## All Stories\n\n"
+            "| ID | Title | Epic | Status | Points | Persona |\n"
+            "|---|---|---|---|---|---|\n"
+            "| [US0001](US0001-login.md) | Login | EP0001 | Draft | -- | Priya |\n",
+            encoding="utf-8")
+
+    def test_detect_reports_title_and_points_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._setup(root)
+            r = reconcile.project_fields(root, dry_run=True)
+            fields = {x["field"]: x for x in r["drift"]}
+            self.assertEqual(fields["title"]["file"], "Login flow")
+            self.assertEqual(fields["points"]["file"], "5")
+            # dry-run wrote nothing
+            self.assertIn("| Login |", (root / "sdlc-studio" / "stories" / "_index.md").read_text())
+
+    def test_apply_syncs_cells_then_clean(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._setup(root)
+            reconcile.project_fields(root, dry_run=False)
+            text = (root / "sdlc-studio" / "stories" / "_index.md").read_text()
+            self.assertIn("| Login flow | EP0001 | Draft | 5 | Priya |", text)
+            self.assertEqual(reconcile.project_fields(root, dry_run=True)["drift"], [])  # idempotent
+
+    def test_absent_file_field_left_untouched(self) -> None:
+        # Persona has no canonical file field, and a file without Points must not blank the cell.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._setup(root)
+            # remove the Points field from the file -> the index Points cell must stay as-is
+            f = root / "sdlc-studio" / "stories" / "US0001-login.md"
+            f.write_text("# US0001: Login\n\n> **Status:** Draft\n", encoding="utf-8")
+            (root / "sdlc-studio" / "stories" / "_index.md").write_text(
+                "# Stories\n\n## All\n\n| ID | Title | Status | Points |\n|---|---|---|---|\n"
+                "| [US0001](US0001-login.md) | Login | Draft | 8 |\n", encoding="utf-8")
+            reconcile.project_fields(root, dry_run=False)
+            self.assertIn("| 8 |", (root / "sdlc-studio" / "stories" / "_index.md").read_text())
+
+
 if __name__ == "__main__":
     unittest.main()

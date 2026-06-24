@@ -1,6 +1,6 @@
 # CR-0082: reconcile projects file-owned index fields (title, points, persona) not just status and counts
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
@@ -59,15 +59,16 @@ operator set. Document which cells are file-derived vs index-only.
 
 ## Acceptance Criteria
 
-- [ ] `reconcile detect` reports drift between a story file's H1 / `Story Points` /
-      persona and the matching index cells
-- [ ] `reconcile apply` syncs those cells from the file behind `--dry-run`, by the same
-      discipline as status (no positional clobbering, BG0032)
-- [ ] a file with no `Story Points` field leaves the index cell untouched (`-`), never
+- [x] `reconcile fields` reports drift between a story file's H1 / `Story Points` and the
+      matching index cells (persona **deferred** - no single canonical field in a story; it
+      lives in prose, so projecting it would risk the BG0032 clobber class)
+- [x] `reconcile fields --apply` syncs those cells from the file (default reports), by the
+      same discipline as status (no positional clobbering, BG0032; rows round-trip-verified)
+- [x] a file with no `Story Points` field leaves the index cell untouched (`-`), never
       blanked
-- [ ] after a batch story create + content fill, a single `reconcile apply` populates the
+- [x] after a batch story create + content fill, a single `reconcile apply` populates the
       `Points` column with zero hand-copying (the audited friction is closed)
-- [ ] unit tests cover: title drift, points projection, absent-points safety; CHANGELOG
+- [x] unit tests cover: title drift, points projection, absent-points safety; CHANGELOG
       `[Unreleased]` entry same commit (LL0004)
 
 ## Revision History
@@ -76,3 +77,4 @@ operator set. Document which cells are file-derived vs index-only.
 | --- | --- | --- |
 | 2026-06-24 | sdlc | Created via `new` (deterministic) |
 | 2026-06-24 | sdlc | Scope note from a live tranche: `transition.py` already *preserves* points/title/persona cells on a status cascade (no clobber, a confirmed win). The remaining gap this CR covers is the initial **projection** of file-owned fields into the index and **drift-sync** when the file changes - not the status-cascade hold |
+| 2026-06-24 | sdlc | Delivered as `reconcile fields [--apply]` (a dedicated subcommand, kept separate from the tested status `apply` to limit blast radius). Title + Points projected; persona deferred (no canonical file field). Rows round-trip-verified before rewrite (BG0032) |

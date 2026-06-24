@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -497,6 +498,89 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
     return result
 
 
+# --- File-owned index-cell projection (CR0082) ----------------------------------------
+# The index displays per-row fields the FILE owns - Title and Points. `detect`/`apply`
+# above sync only Status + counts, so these drift and must be hand-copied (the audited
+# story-points read-back). Project them from the file too, so the index is fully derived
+# (LL0001). Persona is deferred: it has no single canonical field in a story (it lives in
+# prose), so projecting it would risk the BG0032 clobber class.
+_POINTS_RE = re.compile(r"\*\*(?:Story )?Points:\*\*\s*([0-9]+)", re.IGNORECASE)
+_TITLE_RE = re.compile(r"^#\s+[A-Za-z]+-?\d+:\s*(.+?)\s*$", re.MULTILINE)
+
+
+def _file_field_values(text: str) -> dict:
+    t = _TITLE_RE.search(text)
+    p = _POINTS_RE.search(text)
+    return {"title": t.group(1).strip() if t else None, "points": p.group(1) if p else None}
+
+
+def project_fields(repo_root: Path | str, type_: str = "story", dry_run: bool = True) -> dict:
+    """Sync the index's file-owned cells (Title, Points) from the backing files (CR0082).
+
+    Detect-or-apply by the same discipline as status. A field absent in the file leaves the
+    cell untouched (never blank a value an operator set - BG0032). Columns are located by the
+    data-table header, so an off-schema layout is skipped, not clobbered. Returns
+    {drift: [{id, field, index, file}], applied: n}."""
+    root = Path(repo_root)
+    index_path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / "_index.md"
+    if not index_path.exists():
+        return {"drift": [], "applied": 0}
+    fvals: dict = {}
+    for path in sdlc_md.artifact_files(type_, root):
+        rec = sdlc_md.extract_record_id(path.stem)
+        if rec:
+            fvals[_norm_id(rec)] = _file_field_values(path.read_text(encoding="utf-8"))
+    original = index_path.read_text(encoding="utf-8")
+    lines = original.splitlines()
+    cols: dict = {}
+    drift: list = []
+    changed = False
+    for i, line in enumerate(lines):
+        cells = _table_cells(line)
+        if not cells:
+            continue
+        lowered = [c.strip().lower() for c in cells]
+        if "id" in lowered and ("title" in lowered or "points" in lowered):  # re-pin per header
+            cols = {n: lowered.index(n) for n in ("id", "title", "points") if n in lowered}
+            continue
+        if "id" not in cols or cols["id"] >= len(cells):
+            continue
+        m = sdlc_md.ID_SEARCH_RE.search(cells[cols["id"]])
+        if not m:
+            continue
+        fv = fvals.get(_norm_id(m.group(0)))
+        if not fv:
+            continue
+        row_changed = False
+        for field in ("title", "points"):
+            if field in cols and cols[field] < len(cells) and fv[field] is not None:
+                cur = cells[cols[field]].strip()
+                if cur != fv[field]:
+                    drift.append({"id": m.group(0), "field": field, "index": cur, "file": fv[field]})
+                    cells[cols[field]] = fv[field]
+                    row_changed = True
+        if row_changed:
+            lines[i] = _join_row(cells)
+            changed = True
+    if changed and not dry_run:
+        index_path.write_text("\n".join(lines) + ("\n" if original.endswith("\n") else ""),
+                              encoding="utf-8")
+    return {"drift": drift, "applied": len(drift) if (changed and not dry_run) else 0}
+
+
+def cmd_fields(args: argparse.Namespace) -> int:
+    """Project file-owned index cells (title/points); --apply writes, default reports (CR0082)."""
+    r = project_fields(args.root, args.type, dry_run=not args.apply)
+    if args.format == "json":
+        print(json.dumps(r, indent=2))
+        return 0
+    for d in r["drift"]:
+        verb = "set" if args.apply else "WOULD set"
+        print(f"{verb} {d['id']} {d['field']}: {d['index']!r} -> {d['file']!r}")
+    print(f"fields: {len(r['drift'])} drift{' (applied)' if args.apply else ''}")
+    return 0
+
+
 def cmd_apply(args: argparse.Namespace) -> int:
     """Apply mechanical index fixes (status cells + summary counts); --dry-run reports only."""
     repo_root = Path(args.root).resolve()
@@ -534,6 +618,12 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--root", default=".", help="Repo root (default: .)")
     a.add_argument("--dry-run", action="store_true", help="Report changes without writing")
     a.set_defaults(func=cmd_apply)
+    fi = sub.add_parser("fields", help="Project file-owned index cells (title/points) - CR0082.")
+    fi.add_argument("--type", default="story", help="Artifact type (default: story)")
+    fi.add_argument("--apply", action="store_true", help="Write the cells (default: report only)")
+    fi.add_argument("--root", default=".", help="Repo root (default: .)")
+    fi.add_argument("--format", choices=("text", "json"), default="text")
+    fi.set_defaults(func=cmd_fields)
     return p
 
 
