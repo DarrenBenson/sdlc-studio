@@ -263,6 +263,51 @@ class AuthoringPlanTests(unittest.TestCase):
             self.assertTrue((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
 
 
+class SeatWsjfTests(unittest.TestCase):
+    """CR0099: seat-scored WSJF ordering, with graceful fallback."""
+
+    def test_wsjf_score_math(self) -> None:
+        # (value + tc + rr) / size
+        self.assertEqual(_load().wsjf_score(8, 2, 3, 4), round(13 / 4, 3))
+        self.assertEqual(_load().wsjf_score(5, 0, 0, 0), 5.0)   # size floored to 1
+
+    def _inputs(self, root, mapping):
+        import json
+        p = root / "sdlc-studio" / ".local" / "wsjf-inputs.json"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(mapping), encoding="utf-8")
+
+    def test_orders_by_wsjf_when_seats_scored(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1, priority="Low")     # low priority but high seat value
+            _cr(root, 2, priority="High")    # high priority but low seat value
+            self._inputs(root, {"CR0001": {"value": 20, "time_criticality": 0, "risk_reduction": 0},
+                                "CR0002": {"value": 1, "time_criticality": 0, "risk_reduction": 0}})
+            batch = _load().select_batch(root, "cr", "Proposed", order="wsjf")
+            self.assertEqual([b["id"] for b in batch][0], "CR0001")  # WSJF beat raw priority
+            self.assertIn("wsjf", batch[0])
+
+    def test_falls_back_without_inputs(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1, priority="Low")
+            _cr(root, 2, priority="High")
+            batch = _load().select_batch(root, "cr", "Proposed", order="wsjf")   # no inputs
+            self.assertEqual([b["id"] for b in batch][0], "CR0002")  # priority wins
+            self.assertNotIn("wsjf", batch[0])
+
+    def test_skip_personas_ignores_inputs(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1, priority="Low")
+            _cr(root, 2, priority="High")
+            self._inputs(root, {"CR0001": {"value": 20}})
+            batch = _load().select_batch(root, "cr", "Proposed", order="wsjf", skip_personas=True)
+            self.assertEqual([b["id"] for b in batch][0], "CR0002")  # inputs ignored -> priority
+            self.assertNotIn("wsjf", batch[0])
+
+
 class ReconcileBeforePlanTests(unittest.TestCase):
     """CR0094: the planner surfaces index drift before selecting; --strict refuses."""
 

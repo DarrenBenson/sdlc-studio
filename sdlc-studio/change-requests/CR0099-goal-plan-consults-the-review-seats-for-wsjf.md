@@ -1,6 +1,6 @@
 # CR-0099: goal plan consults the review seats for WSJF inputs and defaults to WSJF order
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
@@ -19,17 +19,18 @@ the denominator (size) but not the value/risk numerator. This supplies it from t
 
 ## Acceptance Criteria
 
-- [ ] `--goal plan` consults the PO/Eng/QA review seats (the existing isolated-subagent
+- [x] `--goal plan` consults the PO/Eng/QA review seats (the existing isolated-subagent
       consult, CR0060) to score value / effort / risk per unit; consult is recorded
-- [ ] WSJF = (value + time-criticality + risk-reduction) / size; size seeded by the complexity
+- [x] WSJF = (value + time-criticality + risk-reduction) / size; size seeded by the complexity
       signal (RFC0009); `--goal plan` orders by WSJF by default (overridable to priority/manual)
-- [ ] the sprint-plan artifact (CR0091) records the per-unit value/effort/risk + WSJF score
-- [ ] degrades gracefully when no personas/seats exist (falls back to the current
+- [x] the sprint-plan artifact (CR0091) records the per-unit value/effort/risk + WSJF score
+- [x] degrades gracefully when no personas/seats exist (falls back to the current
       priority+complexity WSJF); `--skip-personas` honoured
-- [ ] unit tests cover the WSJF computation + the seat-input wiring; CHANGELOG entry (LL0004)
+- [x] unit tests cover the WSJF computation + the seat-input wiring; CHANGELOG entry (LL0004)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-24 | sdlc | Created via `new` (deterministic) |
+| 2026-06-24 | sdlc | Delivered: `wsjf_score` + seat-input ingestion (`.local/wsjf-inputs.json`) + WSJF ordering, graceful fallback, `--skip-personas`. "WSJF by default" is the plan-rung workflow default (documented in reference-sprint.md); the planner CLI `--order` default stays `priority`. The seat consult itself is the model-instructed isolated-subagent step (CR0060); the planner math is deterministic + tested |

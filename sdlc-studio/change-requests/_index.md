@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 97 |
+| Complete | 98 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -118,4 +118,4 @@
 | [CR-0096](CR0096-hard-epic-scope-test-spec-requirement-wired-into.md) | hard epic-scope test-spec requirement wired into epic implement | Complete | Medium | Feature | 2026-06-24 | -- |
 | [CR-0097](CR0097-persona-index-projection-in-reconcile-fields-via-a.md) | persona index projection in reconcile fields via a canonical persona field | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0098](CR0098-plan-and-audit-flag-ready-units-whose-verifiers.md) | plan and audit flag Ready units whose verifiers already pass as already-satisfied | Complete | Medium | Feature | 2026-06-24 | -- |
-| [CR-0099](CR0099-goal-plan-consults-the-review-seats-for-wsjf.md) | goal plan consults the review seats for WSJF inputs and defaults to WSJF order | Proposed | Medium | Feature | 2026-06-24 | -- |
+| [CR-0099](CR0099-goal-plan-consults-the-review-seats-for-wsjf.md) | goal plan consults the review seats for WSJF inputs and defaults to WSJF order | Complete | Medium | Feature | 2026-06-24 | -- |

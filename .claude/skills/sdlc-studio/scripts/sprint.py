@@ -97,7 +97,9 @@ def _topo_order(items: list[dict], deps: dict[str, set]) -> list[dict]:
     def rank(k: str):
         it = by_id[k]
         w = PRIORITY_WEIGHT.get(it["priority"], 2)
-        if "complexity" in it:  # wsjf: priority first, then the smaller blast-radius job
+        if "wsjf" in it:  # CR0099: highest WSJF first (negate; lower tuple sorts earlier)
+            return (-it["wsjf"], w, it["id"])
+        if "complexity" in it:  # wsjf-without-seat-inputs: priority, then smaller blast-radius
             return (w, it["complexity"], it["id"])
         return (w, it["id"])
 
@@ -116,11 +118,26 @@ def _topo_order(items: list[dict], deps: dict[str, set]) -> list[dict]:
     return order
 
 
-def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "priority") -> list[dict]:
+def wsjf_score(value: float, time_criticality: float, risk_reduction: float, size: float) -> float:
+    """WSJF = (value + time-criticality + risk-reduction) / job size (CR0099). Size >= 1."""
+    return round((value + time_criticality + risk_reduction) / max(size, 1), 3)
+
+
+def _wsjf_inputs(root: Path) -> dict:
+    """Per-unit value/time-criticality/risk-reduction the review seats scored (CR0099), written
+    to `sdlc-studio/.local/wsjf-inputs.json` by the model after the PO/Eng/QA consult. Keyed by
+    normalised id. Absent -> {} -> the planner falls back to priority + complexity."""
+    raw = sdlc_md.read_json(root / "sdlc-studio" / ".local" / "wsjf-inputs.json", {})
+    return {sdlc_md.norm_id(k): v for k, v in raw.items()} if isinstance(raw, dict) else {}
+
+
+def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "priority",
+                 skip_personas: bool = False) -> list[dict]:
     """Files of `kind` whose Status matches, with priority, ordered.
 
-    `priority`/`wsjf` order deps-first (topological) with priority as the tiebreak;
-    `manual` preserves discovery order.
+    `priority`/`wsjf` order deps-first (topological). `wsjf` orders by the WSJF score when the
+    review seats have scored value/risk (CR0099); otherwise it falls back to priority with the
+    smaller blast-radius job as the tiebreak (RFC0009). `manual` preserves discovery order.
     """
     root = Path(repo_root)
     vocab = sdlc_md.status_vocab(kind, root)
@@ -136,19 +153,28 @@ def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "pr
         dval = sdlc_md.extract_field(text, "Depends on") or sdlc_md.extract_field(text, "Depends On") or ""
         deps[sdlc_md.norm_id(rid)] = _dep_ids(dval)
         out.append({"id": rid, "type": kind, "status": st, "priority": pri, "path": str(path)})
-    if order == "wsjf":  # priority-primary; smaller blast-radius job as the tiebreak (RFC0009 WS3)
+    if order == "wsjf":  # CR0099: seat-scored WSJF when available, else priority+complexity
+        seat_inputs = {} if skip_personas else _wsjf_inputs(root)
         for it in out:
             size = _complexity_size(root, Path(it["path"]).read_text(encoding="utf-8"))
             it["complexity"] = size
             it["token_budget"] = BASE_TOKEN_BUDGET + TOKENS_PER_COGNITIVE * size
+            inp = seat_inputs.get(sdlc_md.norm_id(it["id"]))
+            if inp:  # the review seats scored this unit (value / time-criticality / risk)
+                it["value"] = inp.get("value", 0)
+                it["time_criticality"] = inp.get("time_criticality", 0)
+                it["risk_reduction"] = inp.get("risk_reduction", 0)
+                it["wsjf"] = wsjf_score(it["value"], it["time_criticality"],
+                                        it["risk_reduction"], size)
     if order in ("priority", "wsjf"):
         out = _topo_order(out, deps)
     return out
 
 
-def build_plan(repo_root: Path | str, kind: str, status: str, order: str = "priority") -> dict:
+def build_plan(repo_root: Path | str, kind: str, status: str, order: str = "priority",
+               skip_personas: bool = False) -> dict:
     """The triage plan: the ordered batch plus a count."""
-    batch = select_batch(repo_root, kind, status, order)
+    batch = select_batch(repo_root, kind, status, order, skip_personas=skip_personas)
     return {
         "generated_at": sdlc_md.now_iso8601(),
         "kind": kind,
@@ -210,7 +236,8 @@ def cmd_plan(args: argparse.Namespace) -> int:
         if getattr(args, "strict", False):
             return 2
     try:
-        data = build_plan(args.root, kind, status, args.order)
+        data = build_plan(args.root, kind, status, args.order,
+                          skip_personas=getattr(args, "skip_personas", False))
     except ValueError as exc:  # dependency cycle
         print(f"cannot order the batch: {exc}", file=sys.stderr)
         return 2
@@ -242,6 +269,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="persist the sprint plan to sdlc-studio/.local/sprint-plan.json (CR0091)")
     p.add_argument("--strict", action="store_true",
                    help="refuse to plan when the index has drift (reconcile-before-plan, CR0094)")
+    p.add_argument("--skip-personas", action="store_true", dest="skip_personas",
+                   help="ignore review-seat WSJF inputs; order by priority + complexity (CR0099)")
     p.add_argument("--root", default=".", help="Repo root (default: .)")
     p.add_argument("--format", choices=("text", "json"), default="text")
     p.set_defaults(func=cmd_plan)

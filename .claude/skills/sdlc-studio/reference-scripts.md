@@ -447,7 +447,7 @@ Adversarial audit / tranche pre-flight (RFC0002). `check` grooms a batch for rea
 
 ### `sprint.py`
 
-The Goal-Driven Development loop's planner (RFC0001; renamed from `autosprint.py`, CR0087). `plan <query> --order priority|wsjf` selects + dependency-orders the batch (the triage plan); priority dominates, complexity breaks ties. `plan --prd <path>` bootstraps greenfield authoring (CR0088); `plan --write` persists the sprint-plan artifact (CR0091); `plan` runs `reconcile detect` first and surfaces drift, refusing under `--strict` (reconcile-before-plan, CR0094). See reference-sprint.md.
+The Goal-Driven Development loop's planner (RFC0001; renamed from `autosprint.py`, CR0087). `plan <query> --order priority|wsjf` selects + dependency-orders the batch (the triage plan); priority dominates, complexity breaks ties. `plan --prd <path>` bootstraps greenfield authoring (CR0088); `plan --write` persists the sprint-plan artifact (CR0091); `plan` runs `reconcile detect` first and surfaces drift, refusing under `--strict` (reconcile-before-plan, CR0094). `--order wsjf` orders by seat-scored WSJF = (value+time-criticality+risk-reduction)/size from `.local/wsjf-inputs.json`, degrading to priority+complexity without inputs or under `--skip-personas` (CR0099). See reference-sprint.md.
 
 ### `autosprint.py`
 

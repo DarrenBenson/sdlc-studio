@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **seat-scored WSJF sprint planning (CR0099, from LL0007):** `sprint plan --order wsjf` now
+  orders by **WSJF = (value + time-criticality + risk-reduction) / size**. The review seats score
+  the numerator (Product Owner = value, QA = risk, Engineering = effort seeded by the complexity
+  signal) into `.local/wsjf-inputs.json`; the planner computes and records the components in the
+  sprint-plan artifact. Degrades gracefully to priority + complexity with no inputs or under
+  `--skip-personas`. Sprint planning becomes a value/risk judgement, not a bare-priority sort.
 - **already-satisfied flag in the tranche audit (CR0098, from LL0007):** `audit check` (the
   sprint pre-flight) now flags a Ready unit whose executable ACs all pass in the verify-report as
   **already-satisfied** - a close-candidate, not work to build. The audit can't see a feature

@@ -138,6 +138,16 @@ dependency, and **estimate** it - reusing `--order wsjf` + the complexity-weight
 persists the sprint-plan artifact; then stop for review. (Distinct from `triage`, which grooms
 the *whole given batch* for readiness; `plan` selects a sprint's *worth*.)
 
+**Seat-scored WSJF (CR0099).** Sprint planning is a value/effort/risk judgement, not a bare
+priority sort (LL0007). At the plan rung, consult the review seats - **Product Owner** for value
+(+ time-criticality, risk-reduction), **Engineering** for effort (seeded by the complexity
+signal), **QA** for risk - and write their scores to `sdlc-studio/.local/wsjf-inputs.json`
+(`{<id>: {value, time_criticality, risk_reduction}}`). `sprint plan --order wsjf` then orders by
+**WSJF = (value + time-criticality + risk-reduction) / size**, recording the components in the
+sprint-plan artifact. With no seat inputs (or `--skip-personas`) it degrades gracefully to
+priority + complexity. The seat consult is the isolated-subagent consult (CR0060); the planner
+math is deterministic.
+
 ## Authoring mode - greenfield, from a PRD (RFC0019)
 
 The batch source can be a **PRD** instead of existing units (CR0088): `sprint <prd.md>
