@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from datetime import date
 from pathlib import Path
@@ -74,6 +75,63 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
                 "## Summary\n\n{{symptom}}\n\n## Steps to Reproduce\n\n{{steps}}\n\n"
                 "## Proposed Fix\n\n{{fix}}\n" + rev)
     return head + "\n## Overview\n\n{{purpose}}\n" + rev  # plan / test-spec / workflow
+
+
+def _core_template(type_: str) -> Path:
+    return _skill_root() / "templates" / "core" / f"{type_}.md"
+
+
+def _render_full(type_: str, disp: str, title: str, today: str, f: dict) -> str:
+    """`--template full` (CR0077 Item 2): the deterministic provenance head (identical to
+    minimal, so validate/provenance behave the same) followed by the rich section body from
+    `templates/core/<type>.md`. Placeholders stay unresolved for the agent, exactly as in
+    minimal. Falls back to minimal when no core template ships for the type."""
+    minimal = _render(type_, disp, title, today, f)
+    core_path = _core_template(type_)
+    if "\n## " not in minimal or not core_path.exists():
+        return minimal
+    head = minimal[:minimal.index("\n## ")]  # provenance + metadata block, no trailing newline
+    core = re.sub(r"^<!--.*?-->\n+", "", core_path.read_text(encoding="utf-8"),
+                  count=1, flags=re.DOTALL)
+    lines = core.splitlines()
+    start = next((i for i, ln in enumerate(lines) if ln.startswith("## ")), None)
+    if start is None:  # no section body to graft - keep minimal
+        return minimal
+    body = "\n".join(lines[start:]).rstrip()
+    return f"{head}\n\n{body}\n"
+
+
+def _skill_root() -> Path:
+    """The skill directory (…/sdlc-studio/), where templates live - this script is in scripts/."""
+    return Path(__file__).resolve().parent.parent
+
+
+def _index_template(type_: str) -> Path:
+    return _skill_root() / "templates" / "indexes" / f"{type_}.md"
+
+
+def _ensure_index(root: Path, type_: str, today: str) -> bool:
+    """Create `<dir>/_index.md` from `templates/indexes/<type>.md` when it is missing (CR0077).
+
+    The empty-project first run otherwise leaves no index, so `new` cannot append a row and
+    reports a misleading `indexed=false`. Instantiate a clean *empty* index: the summary
+    counts zeroed, the data-table headers kept (so `append_index_row` can add rows), and the
+    template's sample rows/headings dropped (real content never carries `{{ }}`). Idempotent:
+    never clobbers an existing index. Returns True iff it created the file."""
+    idx = Path(root) / sdlc_md.ARTIFACT_TYPES[type_][0] / "_index.md"
+    if idx.exists():
+        return False
+    tmpl = _index_template(type_)
+    if not tmpl.exists():
+        return False
+    text = tmpl.read_text(encoding="utf-8")
+    text = re.sub(r"^<!--.*?-->\n+", "", text, count=1, flags=re.DOTALL)  # strip template comment
+    text = text.replace("{{last_updated}}", today)
+    text = re.sub(r"\{\{[a-z_]*count\}\}", "0", text)  # zero the summary counts
+    lines = [ln for ln in text.splitlines() if "{{" not in ln]  # drop sample rows/headings
+    idx.parent.mkdir(parents=True, exist_ok=True)
+    idx.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    return True
 
 
 def _header_cells(root: Path, type_: str) -> list[str] | None:
@@ -149,11 +207,16 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
     if path.exists():
         raise FileExistsError(path)
     if dry_run:  # preview: write nothing, report what would happen (CR0057)
+        idx_exists = _header_cells(root, type_) is not None
+        would_create_index = (not idx_exists) and _index_template(type_).exists()
         return {"id": disp, "file_id": file_id, "path": str(path),
-                "indexed": _header_cells(root, type_) is not None,
+                "indexed": idx_exists or would_create_index,
+                "would_create_index": would_create_index,
                 "epic_linked": (type_ == "story") or None, "dry_run": True}
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(_render(type_, disp, title, f["date"], f), encoding="utf-8")
+    render = _render_full if f.get("template") == "full" else _render  # CR0077 Item 2
+    path.write_text(render(type_, disp, title, f["date"], f), encoding="utf-8")
+    index_created = _ensure_index(root, type_, f["date"])  # greenfield first run (CR0077)
     header = _header_cells(root, type_)
     indexed = False
     if header:
@@ -163,7 +226,8 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
     linked = _wire_story_to_epic(root, f["epic"], disp, title, file_id, slug) \
         if type_ == "story" else None
     return {"id": disp, "file_id": file_id, "path": str(path),
-            "indexed": indexed, "epic_linked": linked, "dry_run": False}
+            "indexed": indexed, "index_created": index_created,
+            "epic_linked": linked, "dry_run": False}
 
 
 def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
@@ -185,7 +249,8 @@ def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
 
 def cmd_new(args: argparse.Namespace) -> int:
     f = {k: v for k, v in {"epic": args.epic, "priority": args.priority, "ctype": args.ctype,
-                           "severity": args.severity, "author": args.author}.items() if v}
+                           "severity": args.severity, "author": args.author,
+                           "template": args.template}.items() if v}
     r = new(args.root, args.type, args.title, f, dry_run=args.dry_run)
     verb = "would create" if r.get("dry_run") else "created"
     print(json.dumps(r, indent=2) if args.format == "json"
@@ -220,6 +285,8 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--ctype", help="cr type")
     n.add_argument("--severity", help="bug severity")
     n.add_argument("--author")
+    n.add_argument("--template", choices=("minimal", "full"), default="minimal",
+                   help="scaffold richness: minimal (default) or the full templates/core body")
     n.add_argument("--root", default=".")
     n.add_argument("--dry-run", action="store_true", dest="dry_run", help="preview; write nothing")
     n.add_argument("--format", choices=("text", "json"), default="text")

@@ -6,15 +6,15 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 0 |
+| Proposed | 9 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 75 |
+| Complete | 76 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **76** |
+| **Total** | **86** |
 
 ## All Changes
 
@@ -96,3 +96,13 @@
 | [CR-0074](CR0074-navigation-entry-points-persona-quality-gates-and-progressive.md) | navigation entry points persona quality-gates and progressive-loading rows (review WS B2bc) | Complete | Medium | Feature | 2026-06-22 | -- |
 | [CR-0075](CR0075-consolidate-the-reference-test-doc-set-with-routing.md) | consolidate the reference-test doc set with routing maps (review WS B2a) | Complete | Medium | Feature | 2026-06-22 | -- |
 | [CR-0076](CR0076-ci-coverage-gate-plus-python-security-scan-bandit.md) | CI coverage gate plus python security scan bandit (review WS B3c) | Complete | Medium | Feature | 2026-06-22 | -- |
+| [CR-0077](CR0077-greenfield-new-lazy-index-creation-plus-full-template.md) | greenfield new - lazy index creation plus full-template scaffolds | Complete | High | Feature | 2026-06-24 | -- |
+| [CR-0078](CR0078-batch-artifact-creation-reserve-an-id-range-and.md) | batch artifact creation - reserve an ID range and wire many stories in one pass | Proposed | Medium | Feature | 2026-06-24 | -- |
+| [CR-0079](CR0079-init-scaffold-seed-singleton-docs-and-index-files.md) | init becomes executable - create the folder structure, indexes, and singleton docs | Proposed | High | Feature | 2026-06-24 | -- |
+| [CR-0080](CR0080-first-class-project-decisions-log-a-canonical-home.md) | first-class project decisions log - a canonical home for resolved decisions and open questions | Proposed | Medium | Feature | 2026-06-24 | -- |
+| [CR-0081](CR0081-greenfield-runbook-the-canonical-command-order-from-init.md) | greenfield runbook - the canonical path from init through the autosprint handoff | Proposed | Medium | Improvement | 2026-06-24 | -- |
+| [CR-0082](CR0082-reconcile-projects-file-owned-index-fields-title-points.md) | reconcile projects file-owned index fields (title, points, persona) not just status and counts | Proposed | Medium | Improvement | 2026-06-24 | -- |
+| [CR-0083](CR0083-agent-instructions-enforce-the-deterministic-tooling-discipline-never.md) | agent-instructions enforce the deterministic-tooling discipline (never hand-roll IDs or indexes) | Proposed | High | Improvement | 2026-06-24 | -- |
+| [CR-0084](CR0084-transition-to-done-consults-the-ac-verify-report.md) | transition to Done consults the AC-verify report - definition-of-done safety net on the hand-driven path | Proposed | High | Feature | 2026-06-24 | -- |
+| [CR-0085](CR0085-authored-verify-lines-must-use-the-verifier-dsl.md) | enforce the test-spec as the AC-to-test bridge at epic scope (runner-targeted Verify lines as a sub-fix) | Proposed | High | Improvement | 2026-06-24 | -- |
+| [CR-0086](CR0086-authoring-lint-a-story-s-acceptance-criteria-must.md) | authoring lint - a story's acceptance criteria must be satisfiable within its own epic | Proposed | Medium | Improvement | 2026-06-24 | -- |

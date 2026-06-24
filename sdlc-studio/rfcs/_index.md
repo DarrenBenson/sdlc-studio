@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 1 |
+| Draft | 2 |
 | In Review | 0 |
 | Accepted | 14 |
 | Superseded | 0 |
 | Withdrawn | 3 |
-| **Total** | **18** |
+| **Total** | **19** |
 
 ## All RFCs
 
@@ -35,3 +35,4 @@
 | [RFC-0016](RFC0016-persona-engine-v2-charters-subagents.md) | Persona engine v2 - substrate-tiered review seats (charter / authored identity) | High | Accepted | -- | 2026-06-21 | -- |
 | [RFC-0017](RFC0017-cooper-goal-directed-persona-model-the-canonical-persona.md) | Cooper goal-directed persona model the canonical persona model | High | Accepted | Darren Benson | 2026-06-21 | -- |
 | [RFC-0018](RFC0018-self-check-candidates-vocabulary-consistency-verb-taxonomy-and.md) | self-check candidates vocabulary-consistency verb-taxonomy and telemetry surfacing | Medium | Draft | -- | 2026-06-22 | -- |
+| [RFC-0019](RFC0019-authoring-autosprint-a-guardrailed-prd-to-epics-to.md) | authoring autosprint - a guardrailed PRD to epics to stories loop (greenfield first-mile) | Medium | Draft | sdlc | 2026-06-24 | -- |

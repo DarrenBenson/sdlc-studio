@@ -150,12 +150,15 @@ class NewTests(unittest.TestCase):
             self.assertIn("a | b piped", cells)  # round-trips, column count intact
             self.assertEqual(len(cells), 7)
 
-    def test_index_absent_still_creates(self) -> None:
+    def test_index_absent_is_created_then_indexed(self) -> None:
+        # CR0077: a missing index is created from the template, then the row appended
+        # (was: indexed=False on the greenfield first run, the misleading signal).
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             (repo / "sdlc-studio").mkdir(parents=True)
             r = artifact.new(repo, "bug", "no index here")
-            self.assertFalse(r["indexed"])
+            self.assertTrue(r["index_created"])
+            self.assertTrue(r["indexed"])
             self.assertTrue(Path(r["path"]).exists())
 
     def test_wiring_keeps_blank_before_next_heading(self) -> None:
@@ -272,6 +275,67 @@ class CloseTests(unittest.TestCase):
             r = artifact.new(repo, "story", "to be closed", {"epic": "EP0001"})
             artifact.close(repo, r["id"])  # default terminal = Done
             self.assertIn("Done", Path(r["path"]).read_text())
+
+
+class LazyIndexTests(unittest.TestCase):
+    """CR0077 Item 1: `new` creates a missing index from templates/indexes/ on first use."""
+
+    def test_first_artifact_creates_index_and_indexes(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)  # no _index.md anywhere - the greenfield first run
+            r = artifact.new(repo, "epic", "platform foundation")
+            self.assertTrue(r["index_created"], "should create the missing index")
+            self.assertTrue(r["indexed"], "and append the row to it")
+            idx = repo / "sdlc-studio" / "epics" / "_index.md"
+            self.assertTrue(idx.exists())
+            text = idx.read_text(encoding="utf-8")
+            self.assertIn(r["id"], text)            # the row landed
+            self.assertNotIn("{{", text)            # no leftover template placeholders
+
+    def test_index_creation_is_idempotent(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            first = artifact.new(repo, "epic", "one")
+            second = artifact.new(repo, "epic", "two")
+            self.assertTrue(first["index_created"])
+            self.assertFalse(second["index_created"], "must not recreate an existing index")
+            self.assertTrue(second["indexed"])
+            text = (repo / "sdlc-studio" / "epics" / "_index.md").read_text()
+            self.assertIn(first["id"], text)
+            self.assertIn(second["id"], text)       # both rows present
+
+    def test_dry_run_reports_would_create_index_without_writing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            r = artifact.new(repo, "epic", "preview", dry_run=True)
+            self.assertTrue(r["would_create_index"])
+            self.assertTrue(r["indexed"])
+            self.assertFalse((repo / "sdlc-studio" / "epics" / "_index.md").exists())
+            self.assertFalse(Path(r["path"]).exists())
+
+
+class FullTemplateTests(unittest.TestCase):
+    """CR0077 Item 2: `--template full` grafts the rich core body onto the provenance head."""
+
+    def test_full_epic_has_rich_sections_and_provenance(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            r = artifact.new(repo, "epic", "rich epic", {"template": "full"})
+            text = Path(r["path"]).read_text(encoding="utf-8")
+            self.assertIn("**Created-by:** sdlc-studio new", text)   # provenance head intact
+            self.assertIn("## Inherited Constraints", text)      # a section only the full body has
+            self.assertTrue(text.startswith(f"# {r['id']}: rich epic"))
+            errs = [v for v in validate.validate_file(Path(r["path"]), "epic", repo)
+                    if v["severity"] == "error" and v["rule"] != "placeholder"]
+            self.assertEqual(errs, [], f"full scaffold should validate clean: {errs}")
+
+    def test_minimal_is_default_and_lean(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            r = artifact.new(repo, "epic", "lean epic")  # no template -> minimal
+            text = Path(r["path"]).read_text(encoding="utf-8")
+            self.assertNotIn("## Inherited Constraints", text)   # minimal stays terse
+            self.assertIn("**Created-by:** sdlc-studio new", text)
 
 
 if __name__ == "__main__":

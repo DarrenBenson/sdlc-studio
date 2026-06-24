@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **greenfield `new`: lazy index creation + full-template scaffolds (CR0077):** `artifact.py new`
+  now creates a missing `<dir>/_index.md` from `templates/indexes/<type>.md` on first use (the empty-
+  project first run), so the very first artifact of a type is indexed like every later one - closing
+  the misleading `indexed=false` signal that taught a greenfield agent to hand-manage indexes.
+  `--dry-run` reports `would_create_index`. New opt-in `--template full` grafts the rich
+  `templates/core/<type>.md` body onto the deterministic provenance head (minimal stays the default;
+  validate/provenance behave identically). Part of the greenfield-friction workstream (CR0077-0086).
+
 ## [2.5.0] - 2026-06-22
 
 ### Added
