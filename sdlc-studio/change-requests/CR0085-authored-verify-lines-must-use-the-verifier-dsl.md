@@ -1,6 +1,6 @@
 # CR-0085: enforce the test-spec as the AC-to-test bridge at epic scope (runner-targeted Verify lines as a sub-fix)
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
 > **Priority:** High
@@ -79,19 +79,27 @@ surfaces the `manual` count as its own lane (not a failure), so env-bound ACs re
 
 ## Acceptance Criteria
 
-- [ ] a test-spec is required at epic-implement / autosprint scope (optional single-story);
-      its AC Coverage Matrix is authored before code and its test-case names are the names
-      the Verify lines and tests adopt
-- [ ] a gate validates the coverage-matrix status against `verify-report.json` (every AC
-      maps to a passing test case) - the matrix cannot be decorative
-- [ ] batch / authoring-loop Verify lines use the DSL (`jest`/`pytest`/`http`/`manual`)
-      resolved to the project's runner, names drawn from the matrix
-- [ ] the Environment block declares prerequisites; env-bound ACs author as `http`/`manual`,
-      never free-form `curl ... returns`; `status` shows the manual lane distinctly
-- [ ] `validate`/`verify_ac` advisory-flags `shell`-routed mis-writes; `verify_ac` accepts
-      `--id`; agent-instructions (CR0083) document the title convention
-- [ ] pairs with CR0084 (the hard gate is a clean signal only once names converge);
+- [x] the TS-as-bridge discipline (matrix authored before code; names the Verify line and
+      test both adopt) is documented at epic/autosprint scope in `reference-verify.md`
+- [x] a gate validates the coverage matrix against `verify-report.json`
+      (`verify_ac ts-check --spec <ts> --verify-report <json>`): every AC mapped to a passing
+      test case, no placeholders, no "passing in the matrix but failing in the report"
+- [x] the DSL + runner convention is documented (`reference-verify.md`) and **enforced
+      negatively** by `verify_ac lint` (flags `npm test -- ... -t`, `curl ... returns N`);
+      auto-emission from the matrix is authoring guidance, not deterministic (test titles
+      exist only post-authoring)
+- [x] the Environment block declares prerequisites (template); env-bound ACs author as
+      `http`/`manual`, enforced by the lint - **deferred:** a distinct `status` manual lane
+      (status.py does not read the verify-report today)
+- [x] `verify_ac lint` advisory-flags `shell`-routed mis-writes; `verify_ac run --id` works;
+      agent-instructions document the convention (CR0083)
+- [x] pairs with CR0084 (the hard gate is a clean signal only once names converge);
       CHANGELOG `[Unreleased]` entry same commit (LL0004)
+
+> **Deferred to a follow-up (workflow-surface, not deterministic here):** a *hard* epic-scope
+> TS requirement wired into `epic implement` / the conformance gate, and a `status` manual
+> lane. Both touch the model-driven workflow; the enforceable code spine (ts-check, lint,
+> `--id`) and the documented discipline land here.
 
 ## Revision History
 

@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **test-spec as the AC-to-test bridge, enforceable (CR0085):** `verify_ac ts-check --spec
+  <ts> [--verify-report <json>]` validates an AC Coverage Matrix is not decorative - every AC
+  mapped to a passing test case, no placeholders, cross-checked against the live report.
+  `verify_ac lint` flags Verify lines that fall through to `shell` as mis-written runner
+  calls (`npm test -- ... -t`, `curl ... returns N`), nudging to the DSL - catching the 0/7
+  drift at author time. `verify_ac run --id USNNNN` adds grammar parity with `transition`.
+  The TS-bridge + DSL discipline is documented in `reference-verify.md`. (Deferred to a
+  follow-up: a hard epic-scope TS requirement wired into epic-implement, and a status manual
+  lane - both touch the model-driven workflow surface.)
 - **reconcile projects file-owned index cells (CR0082):** `reconcile fields` (`--apply`)
   syncs the index's `Title` and `Points` cells from the backing story files, so the index is
   fully derived (LL0001) and the audited story-points hand-copy disappears. A field absent in

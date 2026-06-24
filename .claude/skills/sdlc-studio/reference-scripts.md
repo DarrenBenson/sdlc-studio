@@ -290,8 +290,13 @@ Full methodology: `reference-audit.md`.
 Executes AC verifiers defined in story files and updates each AC's
 `Verified:` line. Drives `/sdlc-studio reconcile --verify`.
 
-- `run`: walk stories, run verifiers, write report
+- `run`: walk stories, run verifiers, write report (`--id USNNNN` resolves one story, CR0085)
 - `report`: print the latest verification report
+- `lint`: advisory - flag Verify lines that fall through to `shell` as mis-written runner
+  calls (`npm test -- ... -t`, `curl ... returns N`), nudging to the DSL (CR0085)
+- `ts-check --spec <ts>`: validate a test-spec's AC Coverage Matrix is not decorative -
+  every AC mapped to a passing test case, no placeholders; `--verify-report` cross-checks the
+  matrix's claimed status against the live report (CR0085)
 
 Full workflow: `reference-verify.md`. User-facing help:
 `help/verify.md`.

@@ -215,6 +215,30 @@ def run_verifier(expression: str, timeout: int, cwd: Path) -> VerifierResult:
         return VerifierResult(False, kind, 127, "", str(e), duration)
 
 
+# DSL verbs the verifier recognises; anything else falls through to `shell` (and may be a
+# mis-written runner invocation - the 0/7 class). `manual`/`manually` are handled upstream.
+_DSL_VERBS = {"pytest", "jest", "vitest", "go", "file", "grep", "http", "shell",
+              "manual", "manually"}
+
+
+def lint_verifier(expr: str) -> str | None:
+    """Flag a Verify expression that would fall through to `shell` but looks like a
+    mis-written runner invocation (CR0085) - the drift that silently fails at verify time
+    (US0001 was 0/7). Advisory: returns a nudge to the DSL, or None when the expression is
+    a legitimate DSL verb or a deliberate shell command."""
+    head = (expr.split(None, 1)[0].lower() if expr.split() else "")
+    if head in _DSL_VERBS:
+        return None
+    low = expr.lower()
+    if head in {"npm", "npx", "yarn", "pnpm"}:
+        return "use the `jest <pattern>` / `pytest <node>` verb, not a raw package-manager call"
+    if head == "curl" or " returns " in low:
+        return "use `http METHOD URL -- <jq>` for a service AC (or `manual` if no runner can run it)"
+    if head in {"psql", "docker", "docker-compose"}:
+        return "needs a live service - author as `http`, or mark `manual` if it cannot run here"
+    return None
+
+
 def _build_command(expr: str) -> tuple[str, list[str] | str]:
     """Translate a verifier expression into a subprocess command.
 
@@ -472,6 +496,12 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     if args.story:
         paths = [Path(args.story)]
+    elif getattr(args, "id", None):  # CR0085: resolve --id USNNNN under --dir (grammar parity)
+        matches = sorted(Path(args.dir).glob(f"{args.id}-*.md"))
+        if not matches:
+            print(f"no story file for id {args.id} under {args.dir}", file=sys.stderr)
+            return 2
+        paths = matches[:1]
     else:
         paths = list(walk_stories(Path(args.dir)))
 
@@ -514,6 +544,101 @@ def cmd_run(args: argparse.Namespace) -> int:
     print(f"wrote {report_path}")
 
     return 1 if overall_fail > 0 else 0
+
+
+_PASS_TOKENS = {"pass", "passing", "passed", "done", "verified", "covered", "green"}
+
+
+def _report_failed_acs(report_path: Path | str) -> set[str]:
+    """ACs the latest verify-report marks failing/unverified (id::ac upper-cased), for the
+    matrix cross-check. Missing/unreadable report -> empty set (cross-check is then skipped)."""
+    p = Path(report_path)
+    if not p.exists():
+        return set()
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+    except (ValueError, OSError):
+        return set()
+    failed = set()
+    for st in data.get("stories", data if isinstance(data, list) else []):
+        for ac in st.get("acs", []):
+            if ac.get("state") in ("no", "stale"):
+                failed.add(str(ac.get("ac", "")).upper())
+    return failed
+
+
+def ts_check(spec_path: Path | str, verify_report: Path | str | None = None) -> list[dict]:
+    """Validate a test-spec's AC Coverage Matrix is not decorative (CR0085): every AC row
+    must map a Test Case and carry a passing Status, and no placeholders may remain. The
+    matrix authored before code is what makes the AC and its test converge by construction.
+    When `verify_report` is given, also cross-check: an AC the matrix calls passing but the
+    verify-report marks failing is flagged (the matrix cannot claim green over a red runner).
+    Returns a list of {ac, issue} findings (empty = the matrix is complete and honest)."""
+    text = Path(spec_path).read_text(encoding="utf-8")
+    failed_in_report = _report_failed_acs(verify_report) if verify_report else set()
+    issues: list[dict] = []
+    cols: dict = {}
+    for line in text.splitlines():
+        cells = sdlc_md.table_cells(line)
+        if not cells:
+            continue
+        low = [c.strip().lower() for c in cells]
+        if "ac" in low and ("test cases" in low or "test case" in low):  # matrix header
+            cols = {n: low.index(n) for n in ("ac", "test cases", "test case", "status") if n in low}
+            continue
+        if not cols or "ac" not in cols:
+            continue
+        if all(set(c.strip()) <= {"-", ":"} for c in cells):  # separator row
+            continue
+        ac = cells[cols["ac"]].strip() if cols["ac"] < len(cells) else ""
+        if not ac or ac.lower() == "ac":
+            continue
+        if "{{" in line:
+            issues.append({"ac": ac, "issue": "unfilled placeholder in the matrix row"})
+            continue
+        tc_col = cols.get("test cases", cols.get("test case"))
+        tc = cells[tc_col].strip() if tc_col is not None and tc_col < len(cells) else ""
+        st = cells[cols["status"]].strip() if "status" in cols and cols["status"] < len(cells) else ""
+        if not tc or tc in {"--", "-", "tbd", "TBD"}:
+            issues.append({"ac": ac, "issue": "no test case mapped"})
+        elif st.lower() not in _PASS_TOKENS:
+            issues.append({"ac": ac, "issue": f"status {st!r} is not passing"})
+        elif ac.upper() in failed_in_report:
+            issues.append({"ac": ac, "issue": "matrix says passing but the verify-report marks it failing"})
+    return issues
+
+
+def cmd_ts_check(args: argparse.Namespace) -> int:
+    issues = ts_check(args.spec, args.verify_report)
+    if args.format == "json":
+        print(json.dumps(issues, indent=2))
+        return 1 if issues else 0
+    for it in issues:
+        print(f"  {it['ac']}: {it['issue']}")
+    print(f"ts-check: {len(issues)} incomplete matrix row(s) in {Path(args.spec).name}")
+    return 1 if issues else 0
+
+
+def cmd_lint(args: argparse.Namespace) -> int:
+    """Advisory: flag Verify lines that would fall through to `shell` but look like a
+    mis-written runner invocation (CR0085). Catches the AC↔test drift at author time
+    instead of discovering it 0/7 at verify time. Never fails the build."""
+    paths = [Path(args.story)] if args.story else list(walk_stories(Path(args.dir)))
+    flagged = 0
+    for p in paths:
+        if not p.exists():
+            continue
+        for line in p.read_text(encoding="utf-8").splitlines():
+            m = VERIFY_RE.match(line)
+            if not m:
+                continue
+            expr = m.group(2).strip()
+            reason = lint_verifier(expr)
+            if reason:
+                flagged += 1
+                print(f"{p.name}: {expr!r}\n    -> {reason}")
+    print(f"verify-lint: {flagged} suspicious Verify line(s) (advisory)")
+    return 0
 
 
 def cmd_report(args: argparse.Namespace) -> int:
@@ -563,6 +688,7 @@ def build_parser() -> argparse.ArgumentParser:
     r = sub.add_parser("run", help="Run verifiers and update story files")
     r.add_argument("--dir", default="sdlc-studio/stories", help="Stories directory")
     r.add_argument("--story", help="Single story file (overrides --dir)")
+    r.add_argument("--id", help="Single story by id, e.g. US0001 (resolved under --dir; CR0085)")
     r.add_argument("--dry-run", action="store_true", help="Do not modify story files")
     r.add_argument("--timeout", type=int, default=120, help="Per-verifier timeout in seconds")
     r.add_argument(
@@ -576,6 +702,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Repository root used as cwd for verifier commands",
     )
     r.set_defaults(func=cmd_run)
+
+    ln = sub.add_parser("lint", help="Advisory: flag non-DSL / mis-written Verify lines (CR0085)")
+    ln.add_argument("--dir", default="sdlc-studio/stories", help="Stories directory")
+    ln.add_argument("--story", help="Single story file (overrides --dir)")
+    ln.set_defaults(func=cmd_lint)
+
+    tc = sub.add_parser("ts-check", help="Validate a test-spec's AC Coverage Matrix (CR0085)")
+    tc.add_argument("--spec", required=True, help="Path to the test-spec file")
+    tc.add_argument("--verify-report", dest="verify_report",
+                    help="cross-check the matrix against this verify-report.json")
+    tc.add_argument("--format", choices=("text", "json"), default="text")
+    tc.set_defaults(func=cmd_ts_check)
 
     rep = sub.add_parser("report", help="Print the latest verification report")
     rep.add_argument(

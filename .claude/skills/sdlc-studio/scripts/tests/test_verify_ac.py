@@ -469,5 +469,50 @@ class EvalVerbTests(unittest.TestCase):
             shutil.rmtree(tmp, ignore_errors=True)
 
 
+class LintVerifierTests(unittest.TestCase):
+    """CR0085: flag Verify lines that fall through to shell as mis-written runner calls."""
+
+    def test_dsl_verbs_pass(self) -> None:
+        for ok in ('jest "login happy path"', "pytest tests/test_x.py::test_y",
+                   'http GET /health -- .status == "ok"', "manual check the dashboard",
+                   "shell test -f dist/bundle.js"):
+            self.assertIsNone(verify_ac.lint_verifier(ok), ok)
+
+    def test_miswritten_forms_flagged(self) -> None:
+        self.assertIsNotNone(verify_ac.lint_verifier('npm test -- api/test/x.test.ts -t "json"'))
+        self.assertIsNotNone(verify_ac.lint_verifier("curl http://localhost:3000/health returns 200"))
+        self.assertIsNotNone(verify_ac.lint_verifier("psql -c 'select 1'"))
+
+
+class TsCheckTests(unittest.TestCase):
+    """CR0085: the AC Coverage Matrix must not be decorative."""
+
+    def _spec(self, root: Path, body: str) -> Path:
+        p = root / "ts.md"
+        p.write_text("# TS0001\n\n### AC Coverage Matrix\n\n"
+                     "| Story | AC | Description | Test Cases | Status |\n"
+                     "| --- | --- | --- | --- | --- |\n" + body, encoding="utf-8")
+        return p
+
+    def test_complete_matrix_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            p = self._spec(Path(d), '| US0001 | AC1 | login | jest "login" | pass |\n')
+            self.assertEqual(verify_ac.ts_check(p), [])
+
+    def test_unmapped_and_unpassing_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            p = self._spec(Path(d),
+                           "| US0001 | AC1 | login | -- | pass |\n"
+                           '| US0001 | AC2 | logout | jest "logout" | TODO |\n')
+            issues = {i["ac"]: i["issue"] for i in verify_ac.ts_check(p)}
+            self.assertIn("AC1", issues)   # no test case mapped
+            self.assertIn("AC2", issues)   # status not passing
+
+    def test_placeholder_row_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            p = self._spec(Path(d), "| {{story}} | {{ac}} | {{desc}} | {{tc}} | {{status}} |\n")
+            self.assertTrue(verify_ac.ts_check(p))
+
+
 if __name__ == "__main__":
     unittest.main()

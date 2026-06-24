@@ -4,6 +4,19 @@
 > by `manual` (or `manually`) is counted **manual** - never executed - so a prose check can't be
 > shelled out and time out into a false `failed`.
 
+> **The test-spec is the AC-to-test bridge (CR0085).** When an epic is fanned out, the AC's
+> test name and the implementation's test title are chosen by different processes and drift
+> into two parallel descriptions (the 0/7 class). Authoring the test-spec's **AC Coverage
+> Matrix** *before* code fixes the test-case names that the Verify line and the test both
+> adopt - convergence by construction. So at **epic-implement / autosprint scope** author a
+> test-spec (optional for a single story); keep the matrix honest with
+> `verify_ac ts-check --spec <ts> [--verify-report <json>]` (every AC mapped to a passing
+> test case, cross-checked against the live report - it cannot be decorative). Write Verify
+> lines in the **DSL** (`jest <pattern>` / `pytest <node>` / `http METHOD URL -- <jq>` /
+> `manual <what>`) against the project's real runner, never free-form `npm test -- ... -t` or
+> `curl ... returns N` (those fall through to `shell` and silently fail); `verify_ac lint`
+> flags those at author time. Env-bound ACs use `http` or `manual`, not raw `curl`/`psql`.
+
 Acceptance criteria in story files can declare a `Verify:` expression
 that `/sdlc-studio reconcile --verify` executes against the live
 codebase. Each AC gains a machine-maintained `Verified:` state so the
