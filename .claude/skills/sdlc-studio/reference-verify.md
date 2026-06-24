@@ -187,7 +187,10 @@ python3 "$CLAUDE_SKILL_DIR/scripts/verify_ac.py" run \
 ## Report Format {#verify-report}
 
 Written to `sdlc-studio/.local/verify-report.json` after every apply
-run. The `report` subcommand prints it in text or JSON:
+run. Each run **merges** its stories into the report (this run's entries win, others are
+preserved, BG0037), so verifying a sprint one story at a time accumulates and the Done-gate finds
+every verified story - you need not re-run the whole `--dir` to populate it. Use `--fresh` to
+rebuild from the current run only. The `report` subcommand prints it in text or JSON:
 
 ```text
 /sdlc-studio reconcile --verify report

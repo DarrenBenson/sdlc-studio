@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 0 |
+| Proposed | 4 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 106 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **107** |
+| **Total** | **111** |
 
 ## All Changes
 
@@ -127,3 +127,7 @@
 | [CR-0105](CR0105-extend-deterministic-id-allocation-to-the-meta-artifacts.md) | Extend deterministic id-allocation to the meta-artifacts (review/retro/persona/lessons) | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0106](CR0106-sprint-plan-should-scope-a-story-batch-by.md) | sprint plan should scope a story batch by epic, not only by status | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0107](CR0107-sprint-plan-should-emit-dependency-waves-not-just.md) | sprint plan should emit dependency waves, not just a flat order | Complete | Medium | Improvement | 2026-06-24 | -- |
+| [CR-0108](CR0108-lead-every-command-help-file-with-a-natural.md) | Lead every command help file with a natural-language 'You can just ask' block + enforce it | Proposed | Medium | Improvement | 2026-06-24 | -- |
+| [CR-0109](CR0109-tranche-audit-sprint-breakdown-should-run-verify-ac.md) | Tranche audit (sprint breakdown) should run verify_ac lint + ac_scope, not leave them hand-found | Proposed | Medium | Improvement | 2026-06-24 | -- |
+| [CR-0110](CR0110-author-the-test-spec-ac-coverage-matrix-at.md) | Author the test-spec AC Coverage Matrix at --goal design (shift the AC-to-test bridge left) | Proposed | Medium | Improvement | 2026-06-24 | -- |
+| [CR-0111](CR0111-verify-ac-batch-mode-run-the-test-runner.md) | verify_ac batch mode - run the test runner once, not a cold start per AC | Proposed | Medium | Improvement | 2026-06-24 | -- |

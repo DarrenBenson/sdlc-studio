@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 0 |
 | In Progress | 0 |
-| Fixed | 36 |
+| Fixed | 37 |
 | Verified | 0 |
 | Closed | 0 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **36** |
+| **Total** | **37** |
 
 ## All Bugs
 
@@ -55,3 +55,4 @@
 | [BG0034](BG0034-sprint-plan-silently-selects-an-empty-batch-for.md) | sprint plan silently selects an empty batch for lowercase --crs/--bugs/--stories status args | Fixed | high | 2026-06-24 | 2026-06-24 |
 | [BG0035](BG0035-duplicate-id-gate-false-positives-on-the-canonical.md) | duplicate-id gate false-positives on the canonical two-table story index (per-epic + All Stories) | Fixed | high | 2026-06-24 | 2026-06-24 |
 | [BG0036](BG0036-init-creates-sdlc-studio-local-but-no-gitignore.md) | init creates sdlc-studio/.local but no .gitignore, so consuming projects commit runtime caches/reports | Fixed | medium | 2026-06-24 | 2026-06-24 |
+| [BG0037](BG0037-verify-ac-run-story-overwrites-the-whole-verify.md) | verify_ac run --story overwrites the whole verify-report.json instead of merging, breaking the Done-gate for batch sprints | Fixed | high | 2026-06-24 | 2026-06-24 |

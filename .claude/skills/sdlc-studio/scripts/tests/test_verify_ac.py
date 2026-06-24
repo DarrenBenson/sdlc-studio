@@ -543,5 +543,35 @@ class EpicTestSpecTests(unittest.TestCase):
             self.assertFalse(verify_ac.epic_test_spec_check(root, "EP0001")["ok"])
 
 
+class WriteReportMergeTests(unittest.TestCase):
+    """BG0037: per-story runs merge into the report instead of clobbering it."""
+
+    def _keys(self, p):
+        return set(json.loads(p.read_text(encoding="utf-8"))["stories"].keys())
+
+    def test_sequential_runs_accumulate(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "verify-report.json"
+            verify_ac.write_report(p, [verify_ac.StoryReport(path="US0011-x.md", ac_count=1, verified=1)])
+            verify_ac.write_report(p, [verify_ac.StoryReport(path="US0012-x.md", ac_count=1, verified=1)])
+            self.assertEqual(self._keys(p), {"US0011-x", "US0012-x"})  # both present, not clobbered
+
+    def test_rerun_updates_in_place(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "verify-report.json"
+            verify_ac.write_report(p, [verify_ac.StoryReport(path="US0011-x.md", ac_count=1, failed=1)])
+            verify_ac.write_report(p, [verify_ac.StoryReport(path="US0011-x.md", ac_count=1, verified=1)])
+            stories = json.loads(p.read_text(encoding="utf-8"))["stories"]
+            self.assertEqual(stories["US0011-x"]["verified"], 1)  # latest result wins
+            self.assertEqual(stories["US0011-x"]["failed"], 0)
+
+    def test_fresh_rebuilds(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "verify-report.json"
+            verify_ac.write_report(p, [verify_ac.StoryReport(path="US0011-x.md", ac_count=1, verified=1)])
+            verify_ac.write_report(p, [verify_ac.StoryReport(path="US0012-x.md", ac_count=1, verified=1)], merge=False)
+            self.assertEqual(self._keys(p), {"US0012-x"})  # --fresh path drops the prior entry
+
+
 if __name__ == "__main__":
     unittest.main()

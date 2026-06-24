@@ -5,6 +5,17 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2026-06-24
+
+### Fixed
+
+- **`verify_ac` merges per-story results into the report instead of clobbering it (BG0037, field
+  report):** `write_report` rebuilt verify-report.json from only the current run, so verifying a
+  sprint one story at a time left the report holding only the last story - and `transition -> Done`
+  (CR0084) reads that report, so the gate failed for every earlier story. Runs now merge (this
+  run's entries win, others preserved); per-story verification accumulates and the Done-gate finds
+  every verified story. `--fresh` forces a clean rebuild. No more `--dir`-re-stamps-everything.
+
 ## [3.2.0] - 2026-06-24
 
 ### Added

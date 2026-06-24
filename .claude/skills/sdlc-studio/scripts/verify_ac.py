@@ -435,28 +435,41 @@ def walk_stories(stories_dir: Path) -> Iterable[Path]:
     return sorted(p for p in stories_dir.glob("US*.md") if p.is_file())
 
 
-def write_report(path: Path, stories: list[StoryReport], dry_run: bool = False) -> None:
+def write_report(path: Path, stories: list[StoryReport], dry_run: bool = False,
+                 merge: bool = True) -> None:
     """Write the per-story verification summary to JSON.
 
-    In dry-run the snapshot enumerates the pending `flips` (ac, old_state,
-    new_state) so the preview's most actionable output is recoverable.
+    BG0037: by default this MERGES the run's stories into any existing report (this run's
+    entries win, others are preserved), so verifying a sprint one story at a time accumulates
+    and the Done-gate finds every verified story. `merge=False` rebuilds the report from this
+    run only (the `--fresh` path). In dry-run the snapshot enumerates the pending `flips`
+    (ac, old_state, new_state) so the preview's most actionable output is recoverable.
     """
+    new_stories = {
+        os.path.basename(s.path).replace(".md", ""): {
+            "ac_count": s.ac_count,
+            "verified": s.verified,
+            "failed": s.failed,
+            "stale": s.stale,
+            "manual": s.manual,
+            "passed": s.passed,
+            "failures": s.failures,
+            "flips": s.flips,
+        }
+        for s in stories
+    }
+    merged = new_stories
+    if merge and path.exists():
+        try:
+            prior = json.loads(path.read_text(encoding="utf-8")).get("stories", {})
+            if isinstance(prior, dict):
+                merged = {**prior, **new_stories}  # this run's entries take precedence
+        except (ValueError, OSError):
+            pass
     data = {
         "generated_at": sdlc_md.now_iso8601(),
         "dry_run": dry_run,
-        "stories": {
-            os.path.basename(s.path).replace(".md", ""): {
-                "ac_count": s.ac_count,
-                "verified": s.verified,
-                "failed": s.failed,
-                "stale": s.stale,
-                "manual": s.manual,
-                "passed": s.passed,
-                "failures": s.failures,
-                "flips": s.flips,
-            }
-            for s in stories
-        },
+        "stories": merged,
     }
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
@@ -539,7 +552,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     report_path = Path(args.report)
     if args.dry_run:
         report_path = report_path.with_name(report_path.stem + ".dry-run" + report_path.suffix)
-    write_report(report_path, reports, dry_run=args.dry_run)
+    write_report(report_path, reports, dry_run=args.dry_run, merge=not getattr(args, "fresh", False))
     append_history(repo_root / "sdlc-studio" / ".local" / "verify-history.jsonl", reports, args.dry_run)
     print(f"wrote {report_path}")
 
@@ -722,6 +735,8 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--story", help="Single story file (overrides --dir)")
     r.add_argument("--id", help="Single story by id, e.g. US0001 (resolved under --dir; CR0085)")
     r.add_argument("--dry-run", action="store_true", help="Do not modify story files")
+    r.add_argument("--fresh", action="store_true",
+                   help="rebuild the report from this run only (default merges into it, BG0037)")
     r.add_argument("--timeout", type=int, default=120, help="Per-verifier timeout in seconds")
     r.add_argument(
         "--report",
