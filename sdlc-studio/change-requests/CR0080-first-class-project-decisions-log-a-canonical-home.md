@@ -1,6 +1,6 @@
 # CR-0080: first-class project decisions log - a canonical home for resolved decisions and open questions
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
@@ -81,22 +81,23 @@ collapses to a single reference plus a few epic-specific lines.
 
 ## Acceptance Criteria
 
-- [ ] `sdlc-studio/decisions.md` template exists with the structured table
+- [x] `sdlc-studio/decisions.md` template exists with the structured table
       (ID/Decision/Rationale/Status/Supersedes/Date); `init` seeds an empty one
-- [ ] a `decisions` helper appends an entry and lists by status; entries are append-only
+- [x] a `decisions` helper appends an entry and lists by status; entries are append-only
       and survive context compaction
-- [ ] resolving a PRD open question promotes it into the table with a back-link
+- [x] resolving a PRD open question promotes it into the table with a back-link
       (`from PRD-OQNN`); it is never duplicated as free text in both (one record, two views)
-- [ ] the log is referenced by the greenfield runbook (CR0081) and named as part of the
+- [x] the log is referenced by the greenfield runbook (CR0081) and named as part of the
       authoring loop's handoff context (RFC0019); no overlap with the autosprint
       per-tranche ledger (`ledger.py`) - the relationship is documented
-- [ ] the log covers **implementation conventions** (error shape, ID scheme, token
+- [x] the log covers **implementation conventions** (error shape, ID scheme, token
       strategy, migration style, test harness) as well as product decisions, and is
       injected into delegated-agent / autosprint context (`grep` of `sdlc-studio/` finds them)
-- [ ] docs: help entry + reference pointer; CHANGELOG `[Unreleased]` entry same commit (LL0004)
+- [x] docs: help entry + reference pointer; CHANGELOG `[Unreleased]` entry same commit (LL0004)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-24 | sdlc | Created via `new` (deterministic) |
+| 2026-06-24 | sdlc | Delivered: `decisions.py` add/list/promote, template, `init` seeding, tests. AC4's greenfield-runbook cross-reference is completed in CR0081 (same release); RFC0019 already names the log in its handoff context and the ledger distinction is documented |

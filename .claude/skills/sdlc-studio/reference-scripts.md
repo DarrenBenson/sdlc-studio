@@ -177,6 +177,18 @@ checklist. `run` creates the full `sdlc-studio/` directory tree, pre-creates eve
 from templates, and with `--scaffold` seeds the singleton docs (prd/trd/tsd/personas).
 `--detect` infers the stack; idempotent (never overwrites without `--force`); `--dry-run`
 previews every write so the workflow can show the config and confirm once before applying.
+It also seeds an empty `sdlc-studio/decisions.md` (CR0080).
+
+### `decisions.py`
+
+Project decisions log (CR0080) - the canonical home for load-bearing decisions, both
+product (scope cuts, resolved PRD open questions) and implementation conventions (error
+envelope, ID scheme, token strategy, migrations, test harness). `add --decision ...
+--rationale ...` appends an auto-numbered, dated row to `sdlc-studio/decisions.md`; `list`
+prints it (filterable by status); `promote --from PRD-OQ3 ...` records a resolved PRD open
+question with a back-link (one record, two views). Append-only and greppable, so the spine lives
+in one place and feeds the handoff context delegated agents read - distinct from the
+autosprint per-tranche ledger (`ledger.py`).
 
 ### `product_reconcile.py`
 

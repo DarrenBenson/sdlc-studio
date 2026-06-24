@@ -117,7 +117,12 @@ def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
         if st.exists():
             _write(dst, _fill_known(_strip_comment(st.read_text(encoding="utf-8")), fields))
 
-    # 5. singleton docs (opt-in)
+    # 5. decisions log (CR0080 - project infrastructure, always seeded empty)
+    dec_tmpl = SKILL / "templates" / "decisions.md"
+    if dec_tmpl.exists():
+        _write(f"{SDLC}/decisions.md", _strip_comment(dec_tmpl.read_text(encoding="utf-8")))
+
+    # 6. singleton docs (opt-in)
     if scaffold:
         for name in SINGLETONS:
             st = SKILL / "templates" / "core" / f"{name}.md"

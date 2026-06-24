@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **project decisions log (CR0080):** `scripts/decisions.py` (`add` / `list`) maintains
+  `sdlc-studio/decisions.md` - the canonical, append-only home for load-bearing decisions,
+  both product (scope cuts, resolved PRD open questions) and implementation conventions
+  (error envelope, ID scheme, token strategy, migrations, test harness). `init` seeds it
+  empty. The project "spine" lives in one place and feeds the delegated-agent handoff
+  context, instead of being scattered and pasted per prompt. Distinct from the autosprint
+  per-tranche ledger.
 - **batch artifact creation (CR0078):** `artifact.py batch --type <t> --spec <items.json>`
   creates many artifacts of one type in one atomic pass - a reserved contiguous id block
   (LL0002), every index row, and every story-to-epic link wired together; a missing epic or
