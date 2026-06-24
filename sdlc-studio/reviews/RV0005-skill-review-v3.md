@@ -61,4 +61,14 @@ refuter: a duplicate `{#database-default}` anchor in `reference-architecture.md`
 
 ## Verdict
 
-*Filled at close.*
+**Lean and coherent; shipped as v3.0.0.** The full adversarial sweep (4 lenses, ~61 candidates)
+plus the targeted best-practice / progressive-disclosure / token reviews produced **6 actionable
+survivors** (refute rate ~90%), all fixed before the tag: BG0034 (lowercase-status silent-empty
+bug), CR0100 (cascade re-anchored on `artifact.py close`), CR0101 (reconcile help -> script),
+CR0102 (`--no-artifacts` to one anchor), CR0103 (SOTA linters), CR0104 (router discoverability:
+`decisions` / goal ladder / `init`), CR0105 (id-allocation for review/retro). The refute panel
+**kept** the always-loaded Type Reference and the 11 baked language guides (removal refuted -
+progressive disclosure already tiers them). Token surface: SKILL.md stayed at ~225/500 lines; the
+description is the invocation-trigger surface (kept). 855 tests, gate clean, versions consistent
+at 3.0.0 across the five homes (package.json, version.yaml, SKILL.md, README, CHANGELOG).
+Forward-ported to all three install targets.

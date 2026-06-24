@@ -1,17 +1,17 @@
 # SDLC Studio
 
-**Version 2.5.0** | MIT Licence
+**Version 3.0.0** | MIT Licence
 
 **Set a goal and acceptance criteria; the agent drives the proven software
 lifecycle to it - and proves the code against it.** SDLC Studio brings back the
 engineering discipline the AI-coding wave dropped - clear requirements, acceptance
 criteria, traceability, a definition of done that means done - and has the *agent*
-carry the cost of the ceremony, so the discipline stays. Its **`autosprint`** loop
-runs a prioritised batch of work to the goal autonomously, closing every run with a
-reconcile and review.
+carry the cost of the ceremony, so the discipline stays. Its **`sprint`** loop
+runs a prioritised batch of work along a goal ladder (`triage -> plan -> design ->
+done`), closing every run with a reconcile and review.
 
 ```bash
-/sdlc-studio autosprint --crs proposed --goal done   # set the goal; or just ask in natural language
+/sdlc-studio sprint --crs Proposed --goal done   # set the goal; or just ask in natural language
 ```
 
 A full software-development-lifecycle skill for AI coding agents - one folder of
@@ -51,13 +51,14 @@ cycle the SDLC described in full long ago.
 
 ## Goal-Driven Development
 
-This is the discipline SDLC Studio enables and `autosprint` automates. You set the
+This is the discipline SDLC Studio enables and `sprint` automates. You set the
 **goal** and the acceptance criteria; the agent drives the proven lifecycle to it -
 decompose, build under TDD, verify, reconcile, review. It sits in the lineage
 **Test-Driven -> Behaviour-Driven -> Eval-Driven -> Goal-Driven Development**. Say
-`/sdlc-studio autosprint --crs proposed --goal done` (or just ask in natural
-language); the loop runs the batch to the goal, stops when its acceptance criteria
-are met, and closes every run with a reconcile and review (the sprint review).
+`/sdlc-studio sprint --crs Proposed --goal done` (or just ask in natural
+language); the loop runs the batch along the goal ladder (`triage -> plan -> design
+-> done`), stops when its acceptance criteria are met, and closes every run with a
+reconcile and review (the sprint review).
 
 ## The idea (for beginners)
 
@@ -124,6 +125,7 @@ should see the pipeline dashboard.
 ## Quick start
 
 ```text
+/sdlc-studio init              # New project: scaffold the tree, indexes, config (greenfield step 1)
 /sdlc-studio status            # Where am I? (four-pillar dashboard)
 /sdlc-studio hint              # The single next thing to do
 /sdlc-studio prd create        # New project: interview -> PRD
@@ -155,7 +157,7 @@ satisfy every AC *before* implementation.
 **Determinism in scripts, judgement in the model.** A suite of stdlib-only
 Python helpers (census, status, validation, ID allocation, repo indexing, AC
 verification, the portable quality gate, deterministic artifact create/close,
-GitHub sync, plan/lessons management) with 590+ unit tests do the mechanical
+GitHub sync, plan/lessons management) with 850+ unit tests do the mechanical
 work; the model does the thinking.
 
 **Agentic execution.** `epic implement --agentic` analyses the story
@@ -193,6 +195,12 @@ tests/                     # generated test code (project root)
 - `gh` CLI (authenticated) only for the GitHub sync commands
 - Whatever test runners your AC verifiers invoke (pytest, vitest, go...)
 
+## Upgrading
+
+**v2.x → v3.0** is a drop-in: re-run the installer, no project migration (`schema_version` is
+still 2). The one rename to know: **`autosprint` is now `sprint`** - the old command still works
+as a deprecated alias, so existing scripts and habits keep running.
+
 ## Upgrading from v1.x
 
 Re-run the installer - it replaces the skill in place and sweeps other
@@ -215,6 +223,17 @@ check is on by default, silent offline, and never nags once dismissed; opt out w
 `version_check.enabled: false`.
 
 ## Roadmap
+
+**Shipped in v3.0.0 - the sprint lifecycle, greenfield authoring, and a self-review pass:**
+**`autosprint` is renamed `sprint`** (the command is the whole lifecycle; autonomy is the
+`--autonomous` flag) - `autosprint` stays as a deprecated alias, so nothing breaks. The sprint
+**goal ladder** `triage -> plan -> design -> done` makes each rung a reviewable stop-point;
+greenfield **authoring** drives a PRD into epics and stories (`sprint <prd.md> --goal design`);
+planning orders by **seat-scored WSJF**. Greenfield gets an executable **`init`** (step 1) and a
+project **`decisions`** log. A full adversarial **self-review** (RV0005) then hardened the skill:
+the AC-to-test bridge is mandatory at epic scope, a Done-gate consults the AC-verify result,
+docs point at the deterministic scripts rather than hand-edits, and the best-practice guides
+adopt the SOTA linters (ShellCheck/shfmt, Ruff/mypy).
 
 **Shipped in v2.4:** **`project upgrade`** migrates an existing project to the current
 conventions - it detects the version/convention gap, auto-corrects the safe set (config,
