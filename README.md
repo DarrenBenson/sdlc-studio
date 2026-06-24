@@ -10,8 +10,18 @@ carry the cost of the ceremony, so the discipline stays. Its **`sprint`** loop
 runs a prioritised batch of work along a goal ladder (`triage -> plan -> design ->
 done`), closing every run with a reconcile and review.
 
-```bash
-/sdlc-studio sprint --crs Proposed --goal done   # set the goal; or just ask in natural language
+**You don't memorise commands - you just ask.** SDLC Studio is model-invoked, so plain
+language drives the whole lifecycle. That is the point: **a non-technical founder can put a
+fully trained software-engineering team to work** - say what you want built and the agent runs
+the proven lifecycle (requirements, acceptance criteria, TDD, review, a definition of done that
+means done) on your behalf. Every phrase also has an explicit command if you prefer it:
+
+```text
+"plan the next sprint"                              →  /sdlc-studio sprint --crs Proposed --goal plan
+"build the proposed change requests"                →  /sdlc-studio sprint --crs Proposed --goal done
+"create a change request to delete archived records" →  /sdlc-studio cr create
+"what should I work on next?"                       →  /sdlc-studio hint
+"where is the project up to?"                       →  /sdlc-studio status
 ```
 
 A full software-development-lifecycle skill for AI coding agents - one folder of
@@ -123,6 +133,9 @@ Code) or confirm the skill is listed (`/skills` in Codex/Gemini). You
 should see the pipeline dashboard.
 
 ## Quick start
+
+You can drive all of this in plain language ("start a new project", "extract the spec from this
+code", "plan the next story") - these are the explicit commands behind those asks:
 
 ```text
 /sdlc-studio init              # New project: scaffold the tree, indexes, config (greenfield step 1)
