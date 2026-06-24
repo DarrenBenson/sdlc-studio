@@ -1,6 +1,6 @@
 # RFC-0019: authoring autosprint - a guardrailed PRD to epics to stories loop (greenfield first-mile)
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
 
