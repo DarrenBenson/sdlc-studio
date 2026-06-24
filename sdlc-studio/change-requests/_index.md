@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 2 |
+| Proposed | 3 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 111 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **114** |
+| **Total** | **115** |
 
 ## All Changes
 
@@ -134,3 +134,4 @@
 | [CR-0112](CR0112-strip-internal-provenance-tags-cr-bg-rfc-from.md) | Strip internal provenance tags (CR/BG/RFC) from consuming-facing docs + shipped code | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0113](CR0113-ac-scope-cross-epic-ac-false-positives-on.md) | ac_scope / cross-epic-ac false-positives on shared domain vocabulary (cry-wolf in the audit) | Proposed | High | Improvement | 2026-06-25 | -- |
 | [CR-0114](CR0114-establish-inter-story-depends-on-at-design-so.md) | Establish inter-story Depends on at design so sprint-plan waves are real, not flat | Proposed | Medium | Improvement | 2026-06-25 | -- |
+| [CR-0115](CR0115-scaffold-the-test-spec-ac-coverage-matrix-from.md) | Scaffold the test-spec AC Coverage Matrix from an epic stories ACs at design time | Proposed | Medium | Improvement | 2026-06-25 | -- |
