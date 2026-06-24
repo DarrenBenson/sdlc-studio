@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 3 |
+| Proposed | 2 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 107 |
+| Complete | 108 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -129,5 +129,5 @@
 | [CR-0107](CR0107-sprint-plan-should-emit-dependency-waves-not-just.md) | sprint plan should emit dependency waves, not just a flat order | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0108](CR0108-lead-every-command-help-file-with-a-natural.md) | Lead every command help file with a natural-language 'You can just ask' block + enforce it | Proposed | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0109](CR0109-tranche-audit-sprint-breakdown-should-run-verify-ac.md) | Tranche audit (sprint breakdown) should run verify_ac lint + ac_scope, not leave them hand-found | Complete | Medium | Improvement | 2026-06-24 | -- |
-| [CR-0110](CR0110-author-the-test-spec-ac-coverage-matrix-at.md) | Author the test-spec AC Coverage Matrix at --goal design (shift the AC-to-test bridge left) | Proposed | Medium | Improvement | 2026-06-24 | -- |
+| [CR-0110](CR0110-author-the-test-spec-ac-coverage-matrix-at.md) | Author the test-spec AC Coverage Matrix at --goal design (shift the AC-to-test bridge left) | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0111](CR0111-verify-ac-batch-mode-run-the-test-runner.md) | verify_ac batch mode - run the test runner once, not a cold start per AC | Proposed | Medium | Improvement | 2026-06-24 | -- |

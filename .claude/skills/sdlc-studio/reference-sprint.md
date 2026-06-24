@@ -178,11 +178,20 @@ core (`epic`-from-PRD + `story`-from-epic + `cr action`), not a parallel path (D
 3. **Story points at `design` (CR0092).** Each story gets a `**Story Points:**` estimate (seeded
    from the complexity signal); `reconcile fields` (CR0082) projects them into the index - no
    hand-copying.
-4. **Closing consistency pass (CR0093).** The closing gate runs `ac_scope` (CR0086, cross-epic
+4. **Test-spec bridge authored at design (CR0110).** Author each epic's **test-spec** with its
+   **AC Coverage Matrix** - every story AC mapped to a *planned* test case/title - and write the
+   stories' `Verify:` lines as runner-targeted DSL pointing at those planned titles (or `manual`
+   where no runner can run the AC). This shifts the AC↔test bridge (CR0085) **left**: implement
+   then binds tests to the matrix by construction instead of reverse-engineering the mapping and
+   repointing dozens of Verify lines at delivery time. Epic scope (single-story exempt, per
+   CR0096). The test-spec the Done-gate / `epic-ts` (CR0096) requires is thus produced here, not
+   discovered missing at Done.
+5. **Closing consistency pass (CR0093).** The closing gate runs `ac_scope` (CR0086, cross-epic
    AC references), `reconcile`/`reconcile fields` (drift 0, index derived), `validate` (0
-   errors), `integrity` (every epic link resolves), and `ts-check` (CR0085) where a test-spec
-   exists. Structural failures block the "reviewable backlog" sign-off; advisory findings are
-   reported. This is the check that replaces the operator as the structural coordinator.
+   errors), `integrity` (every epic link resolves), `verify_ac lint` (no non-executable Verify
+   lines), and `ts-check` (CR0085) over the test-spec authored in step 4. Structural failures
+   block the "reviewable backlog" sign-off; advisory findings are reported. This is the check
+   that replaces the operator as the structural coordinator.
 
 ## Guardrails (settled in RFC0001)
 

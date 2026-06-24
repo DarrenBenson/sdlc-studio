@@ -42,6 +42,12 @@ Detailed workflows for test specification creation and management.
 
 5. **Build AC Coverage Matrix (MANDATORY)**
 
+   > **Author this at `--goal design`, not at implement (CR0110).** The sprint breakdown produces
+   > this matrix - every AC mapped to a *planned* test case/title - so `Verify:` lines are
+   > runner-targeted by construction and implement binds tests to the matrix, instead of
+   > reverse-engineering the mapping and repointing Verify lines at delivery. See
+   > `reference-sprint.md` (the `design` rung).
+
    Every Acceptance Criterion from covered Stories MUST have at least one test case:
 
    a) Extract all ACs from each Story in scope

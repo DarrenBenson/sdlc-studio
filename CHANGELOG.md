@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **the `--goal design` rung authors the test-spec AC Coverage Matrix (CR0110, field report):**
+  the breakdown produced Ready stories + points but never authored the test-spec, so the AC↔test
+  bridge (CR0085) was reverse-engineered at *implement* (a field delivery repointed ~48 Verify
+  lines + backfilled coverage gaps by hand). The design rung now authors each epic's AC Coverage
+  Matrix - every AC mapped to a planned test case/title, Verify lines runner-targeted by
+  construction - so implement binds to the matrix and the test-spec `epic-ts` (CR0096) requires at
+  Done is produced up front. Documented in `reference-sprint.md` + `reference-test-spec.md`.
 - **the tranche audit runs `verify_ac lint` + `ac_scope` (CR0109, field report):** `audit check`
   (the sprint breakdown's readiness groom) now flags **weak-verify** (a non-executable / prose
   Verify line, reusing `verify_ac.lint_verifier`) and **cross-epic-ac** (an AC owned by another

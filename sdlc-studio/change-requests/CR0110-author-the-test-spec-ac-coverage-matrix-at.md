@@ -1,6 +1,6 @@
 # CR-0110: Author the test-spec AC Coverage Matrix at --goal design (shift the AC-to-test bridge left)
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-06-24
@@ -12,10 +12,10 @@ The --goal design breakdown produces Ready stories + story points but never auth
 
 ## Acceptance Criteria
 
-- [ ] --goal design authors (or requires) the epic's test-spec with an AC Coverage Matrix mapping every story AC to a planned test case/title, at epic scope (single-story exempt, per CR0096)
-- [ ] Verify lines produced/repointed at design are executable (runner-targeted DSL) or explicitly 'manual' - no prose-curl placeholders; the CR0109 audit lint passes on the designed backlog
-- [ ] the TS that the Done-gate / epic-ts (CR0096) requires is produced at design, not discovered missing at implement/Done; ts-check passes on the produced matrix
-- [ ] documented in reference-sprint.md (the design rung) + reference-test-spec.md; degrades for single-story scope; CHANGELOG entry
+- [x] --goal design authors (or requires) the epic's test-spec with an AC Coverage Matrix mapping every story AC to a planned test case/title, at epic scope (single-story exempt, per CR0096)
+- [x] Verify lines produced/repointed at design are executable (runner-targeted DSL) or explicitly 'manual' - no prose-curl placeholders; the CR0109 audit lint passes on the designed backlog
+- [x] the TS that the Done-gate / epic-ts (CR0096) requires is produced at design, not discovered missing at implement/Done; ts-check passes on the produced matrix
+- [x] documented in reference-sprint.md (the design rung) + reference-test-spec.md; degrades for single-story scope; CHANGELOG entry
 
 ## Revision History
 
