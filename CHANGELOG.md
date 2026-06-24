@@ -142,6 +142,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`help/reconcile.md` now names the deterministic `scripts/reconcile.py` (CR0101, RV0005
+  audit):** the per-command help framed all index/count/status fixes as model prose with no
+  pointer to the script, inviting hand-recomputed counts (a recorded corruption mode). It now
+  names the script (`detect`/`apply`/`--dry-run`), carries a do-not-hand-edit caution, and lists
+  it in the See Also REQUIRED block.
+
 - **`sprint plan` silently selected an empty batch for a lowercase status arg (BG0034, RV0005
   audit):** the documented form (`sprint --crs proposed`) never matched, because `select_batch`
   compared the raw arg against the canonical title-case vocab. The arg is now canonicalised

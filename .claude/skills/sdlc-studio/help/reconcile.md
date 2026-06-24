@@ -24,7 +24,14 @@ Related: reference-reconcile.md (deep workflow), reference-outputs.md (cascade c
 
 ## What It Does
 
-Three-phase workflow: **collect ground truth** from artifact files, **detect drift** by comparing against indexes and cross-references, **apply fixes** for all mechanical discrepancies.
+`/sdlc-studio reconcile` runs the deterministic **`scripts/reconcile.py`** - `detect` previews the
+drift (also `--dry-run`), `apply` writes the fixes. Three-phase: **collect ground truth** from a
+file census, **detect drift** against indexes and cross-references, **apply fixes** for all
+mechanical discrepancies.
+
+> **Do not hand-recompute counts or hand-edit index rows.** `scripts/reconcile.py` owns the census
+> and the summary-count maths; hand-patching them is a recorded corruption source (the count-block
+> scoping bug). Always run the script (or `/sdlc-studio reconcile`), never edit the index by hand.
 
 ### What It Fixes (mechanical bookkeeping)
 
@@ -146,6 +153,7 @@ Three-phase workflow: **collect ground truth** from artifact files, **detect dri
 
 **REQUIRED for this workflow:**
 
+- `scripts/reconcile.py` -- the deterministic actor (`detect` / `apply` / `--dry-run`); run it, do not hand-fix
 - `reference-reconcile.md` -- Step-by-step reconcile procedure
 
 **Related:**
