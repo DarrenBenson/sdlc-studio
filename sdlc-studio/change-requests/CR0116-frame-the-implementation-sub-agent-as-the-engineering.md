@@ -17,8 +17,16 @@ The skill's persona/seat machinery is entirely review-side: RFC0016 seats (Produ
 - [ ] the Engineering charter is referenced from a single source (review-seat-charter or a build variant); degrades gracefully when no personas exist (--skip-personas)
 - [ ] documented in reference-agent-prompt-template.md + reference-workflow-personas.md; CHANGELOG entry
 
+## Relationship
+
+The **Engineering-build slice** of **RFC0020 (Maximise persona use)** - the operator's
+lifecycle-wide direction that Product authors stories, Engineering builds, QA tests, and the
+review seats review, each as its persona. The QA-test and Product-author slices live in RFC0020;
+this CR is the proven first slice. Implement under RFC0020 once accepted.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-25 | audit | Raised |
+| 2026-06-25 | audit | Linked as the Engineering slice of RFC0020 (maximise persona use); QA-test + Product-author are sibling slices in the RFC |

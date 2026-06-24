@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 1 |
+| Draft | 2 |
 | In Review | 0 |
 | Accepted | 15 |
 | Superseded | 0 |
 | Withdrawn | 3 |
-| **Total** | **19** |
+| **Total** | **20** |
 
 ## All RFCs
 
@@ -36,3 +36,4 @@
 | [RFC-0017](RFC0017-cooper-goal-directed-persona-model-the-canonical-persona.md) | Cooper goal-directed persona model the canonical persona model | High | Accepted | Darren Benson | 2026-06-21 | -- |
 | [RFC-0018](RFC0018-self-check-candidates-vocabulary-consistency-verb-taxonomy-and.md) | self-check candidates vocabulary-consistency verb-taxonomy and telemetry surfacing | Medium | Draft | -- | 2026-06-22 | -- |
 | [RFC-0019](RFC0019-authoring-autosprint-a-guardrailed-prd-to-epics-to.md) | authoring autosprint - a guardrailed PRD to epics to stories loop (greenfield first-mile) | Medium | Accepted | sdlc | 2026-06-24 | -- |
+| [RFC-0020](RFC0020-maximise-persona-use-persona-shaped-delegation-across-the.md) | Maximise persona use - persona-shaped delegation across the SDLC lifecycle | High | Draft | operator vision | 2026-06-25 | -- |
