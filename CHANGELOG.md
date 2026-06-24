@@ -142,6 +142,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Story Completion Cascade re-anchored on the deterministic close (CR0100, RV0005 audit):**
+  `reference-outputs.md#story-completion-cascade` led with prose telling the agent to hand-edit the
+  story Status, index rows, summary counts, and epic checkbox - exactly what `artifact.py close` /
+  `transition.py` now own. It now leads with the deterministic close and marks steps 7-8 as
+  script-owned (do not hand-edit), leaving only the genuine judgement residue as model steps.
 - **`help/reconcile.md` now names the deterministic `scripts/reconcile.py` (CR0101, RV0005
   audit):** the per-command help framed all index/count/status fixes as model prose with no
   pointer to the script, inviting hand-recomputed counts (a recorded corruption mode). It now

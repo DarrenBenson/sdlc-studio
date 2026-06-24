@@ -694,15 +694,25 @@ When a story reaches any **terminal status** (Done, Won't Implement, Deferred, S
 
 **Mandatory cascade steps:**
 
-0. **AC verification gate (if `require_ac_verification: true`):** Run `scripts/verify_ac.py run --story <path>` before ticking indexes. If any AC reports `Verified: no` or a failure, abort the cascade and leave the story In Progress. The gate is disabled by default; flip it in `templates/config-defaults.yaml` or a project-local `sdlc-studio/config.yaml`. See `reference-verify.md#verify-gate`.
+> **First, run the deterministic close - do not hand-edit what it owns.**
+> `scripts/artifact.py close --id US<NNNN> --status <terminal>` (or `scripts/transition.py set`)
+> runs the AC-verify gate (step 0), then sets the story `Status`, syncs the story row in **both**
+> the per-epic and All Stories tables of `stories/_index.md`, recalculates the story summary
+> counts, and ticks this story's checkbox in the parent epic's Story Breakdown. **Steps 7 and 8 are
+> therefore done for you - never hand-edit those index rows, counts, or the epic checkbox**
+> (hand-editing them is a recorded corruption source). The remaining steps are the residue the
+> close does not cover: the linked plan/test-spec/workflow, the epic-Done judgement, downstream
+> dependency tables, test-scenario checkboxes, and external sync.
+
+0. **AC verification gate (if `require_ac_verification: true`):** `scripts/artifact.py close` runs `scripts/verify_ac.py run --story <path>` and refuses the close if any AC reports `Verified: no` or a failure, leaving the story In Progress. The gate is disabled by default; flip it in `templates/config-defaults.yaml` or a project-local `sdlc-studio/config.yaml`. See `reference-verify.md#verify-gate`.
 1. **Find and update plan:** Search `sdlc-studio/plans/` for the plan linked to this story. Update `> **Status:**` to the target status from the table above. Update `plans/_index.md` entry.
 2. **Find and update test spec:** Search `sdlc-studio/test-specs/` for the spec linked to this story. Update `> **Status:**` to the target status. Update `test-specs/_index.md` entry. For epic-scoped specs, see [Epic-Scoped Coverage](reference-test-spec.md#epic-scoped-coverage) - only cascade when ALL covered stories are terminal.
 3. **Find and update workflow:** Search `sdlc-studio/workflows/WF*` for the workflow linked to this story. Update `> **Status:**` to the target status. Update any non-terminal phase statuses.
 4. **Recalculate index counts:** Update summary counts in `plans/_index.md`, `test-specs/_index.md`, and `workflows/_index.md` if they contain summary sections.
 5. **Check epic status:** If all stories in the parent epic are now terminal, suggest marking the epic as Done (user confirms - never auto-assign).
 6. **Document reason:** For non-Done terminal statuses, ensure the story file contains a reason (e.g. "Superseded by US0026 which combines US0025 and US0027").
-7. **Update story index entries:** Set the story's status in `stories/_index.md` -- both the per-epic table and the All Stories table. Recalculate summary counts (Draft↓, Done↑). This is mechanical bookkeeping, not a status decision.
-8. **Update epic story breakdown:** In the parent epic file, tick the checkbox for this story in the Story Breakdown section (`- [ ]` → `- [x]`).
+7. **Story index entries** -- *(done by `artifact.py close`; do not hand-edit - listed for completeness):* the story's status in `stories/_index.md` (both the per-epic and All Stories tables) and the summary counts (Draft↓, Done↑) are synced by the close. This is mechanical bookkeeping, not a status decision.
+8. **Epic story breakdown** -- *(done by `artifact.py close`; do not hand-edit):* this story's checkbox in the parent epic's Story Breakdown section is ticked (`- [ ]` → `- [x]`) by the close.
 9. **Update downstream story dependency tables:** Search all story files (`sdlc-studio/stories/US*.md`) for dependency tables referencing this story. Update the Status column to match this story's terminal status. This prevents downstream stories from showing stale dependency statuses (e.g. "Draft" when the dependency is Done).
 10. **Tick test scenario checkboxes:** If the story has a `## Test Scenarios` section with `- [ ]` checkboxes, tick all items that have corresponding passing tests. Match by test description -- if a test file contains a test matching the scenario description, tick it (`- [ ]` → `- [x]`).
 11. **Cascade epic completion:** If step 5 resulted in the epic being marked Done (user confirmed), execute the **[Epic Completion Cascade](#epic-completion-cascade)** immediately. This cascades outward to PRD feature statuses, dependency tables in other epics, and all indexes.
