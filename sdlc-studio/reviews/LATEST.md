@@ -5,7 +5,8 @@
 > and `sdlc-studio/retros/`; the original v2.0 unified review is `RV0001-unified-review-2026-06-20.md`.
 >
 > **Project version:** 2.5.0 (+ unreleased v2.6.0 work) · **Date:** 2026-06-24 · **Gates:** lint
-> clean, 831 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0, npm audit 0, coverage 83%.
+> clean, 835 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0, npm audit 0, coverage 83%.
+> **Command rename:** `autosprint` → `sprint` (CR0087; `autosprint` is a deprecated alias).
 
 ## Headline
 
@@ -42,6 +43,13 @@ critic per unit.
   the test-spec AC-to-test bridge (CR0085), the Definition-of-Done verify gate (CR0084), the
   cross-epic AC lint (CR0086), and agent-instructions that enforce the tool-first discipline
   (CR0083). All green + committed; not yet tagged.
+- **Unreleased - the `sprint` lifecycle (RFC0019 Accepted, CR0087-0093):** dogfood-built next.
+  `autosprint` renamed to **`sprint`** (CR0087; deprecated alias kept). The command is now the
+  whole sprint lifecycle via the **goal ladder** `triage -> plan -> design -> done` (cumulative
+  stop-points; NL maps to the furthest rung). New: `--goal plan` sprint planning (CR0091);
+  greenfield **authoring** from a PRD - `sprint <prd.md> --goal design` drives PRD -> epics ->
+  stories with two STOPs (CR0088-0090); `design` assigns story points (CR0092); a closing
+  consistency pass over the backlog (CR0093). The loop is documented in `reference-sprint.md`.
 - **In flight - review + optimise programme (to v2.5.0):** a dogfooded world-class review ran the
   audit skill-profile + the deterministic gates. Outcome: over-engineering and determinism are
   **clean** (the determinism candidates were refuted as false positives). The real backlog is two
