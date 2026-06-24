@@ -190,7 +190,7 @@ After init:
 ## See Also
 
 - `help/getting-started.md` - **the greenfield runbook**: the canonical command order from
-  here to a reviewable backlog and on through the autosprint handoff (run this next)
+  here to a reviewable backlog and on through the sprint handoff (run this next)
 - `/sdlc-studio status help` - Pipeline status
 - `/sdlc-studio prd help` - Product requirements
 - `reference-outputs.md` - Output formats

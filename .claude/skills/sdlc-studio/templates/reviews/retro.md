@@ -1,10 +1,10 @@
 <!--
-Template: Sprint Retro (autosprint)
+Template: Sprint Retro (sprint)
 File: sdlc-studio/retros/RETRO{NNNN}-{slug}.md  (committed)
-Written at the close of every autosprint (the sprint review + retro); read at the
+Written at the close of every sprint (the sprint review + retro); read at the
 start of the next sprint so the loop learns. Promote durable, generalisable
 lessons to the skill tier with `lessons add --global`.
-Related: reference-autosprint.md, help/lessons.md, RFC0001
+Related: reference-sprint.md, help/lessons.md, RFC0001
 -->
 # RETRO-{{retro_id}}: {{sprint_title}}
 

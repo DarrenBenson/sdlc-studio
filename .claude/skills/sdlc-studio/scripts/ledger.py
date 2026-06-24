@@ -2,7 +2,7 @@
 """SDLC Studio decisions ledger (RFC0001 D4/WS5).
 
 A committed, append-only per-tranche ledger under `sdlc-studio/decisions/`. Records
-rulings (timestamp, decision, rationale) so an autosprint run's decisions survive
+rulings (timestamp, decision, rationale) so an sprint run's decisions survive
 context compaction and resume, instead of being re-litigated after a reset.
 Append-only: opened in append mode, never read-modify-truncate (the footgun that
 emptied US0006). Pure stdlib.

@@ -67,7 +67,7 @@ class CompleteTests(unittest.TestCase):
 
     def test_empty_batch_is_complete(self) -> None:
         # Pin the semantics: an empty batch is vacuously complete (nothing to do).
-        # The caller (autosprint plan) is responsible for not handing over an
+        # The caller (sprint plan) is responsible for not handing over an
         # empty batch when work exists.
         self.assertTrue(_load().is_complete([]))
 

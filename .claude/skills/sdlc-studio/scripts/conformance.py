@@ -6,7 +6,7 @@ decomposed (an Epic link), specified (at least one AC), verifiable (a `Verify:`
 line), and for Done stories: verified (AC marked `Verified: yes/manual`),
 reconciled (no index drift, via reconcile), and critiqued (a committed
 independent-critic APPROVE, via critic.py). Exits non-zero on any non-conformant
-unit, so the autosprint loop cannot mark a unit Done with a stage silently
+unit, so the sprint loop cannot mark a unit Done with a stage silently
 skipped - including skipping the critic (CR0023). Read-only; pure stdlib.
 """
 from __future__ import annotations

@@ -1,8 +1,8 @@
-# Autosprint Reference - Goal-Driven Development loop
+# Sprint Reference - Goal-Driven Development loop
 
-<!-- Load when: /sdlc-studio autosprint - the autonomous delivery loop (RFC0001) -->
+<!-- Load when: /sdlc-studio sprint - the autonomous delivery loop (RFC0001) -->
 
-`autosprint` runs **Goal-Driven Development**: you set the goal and the acceptance
+`sprint` runs **Goal-Driven Development**: you set the goal and the acceptance
 criteria, the loop drives the proven SDLC lifecycle to it. It is a prioritised
 batch of work delivered to a goal - a sprint, run by an agent. RFC0001 is the
 design home; the decisions below are settled there (D1-D7).
@@ -11,16 +11,16 @@ design home; the decisions below are settled there (D1-D7).
 
 The loop (implement -> test -> gate -> critic -> commit-green) leans on a quality gate it
 can **actually run** each iteration. On a greenfield repo that gate does not exist yet, so
-autosprint cannot bootstrap itself. **Do not invoke autosprint before the gate is runnable
+sprint cannot bootstrap itself. **Do not invoke sprint before the gate is runnable
 and green.** The canonical greenfield handoff: build the **foundation epic by hand** to a
 green gate (the toolchain + test harness - an in-memory substitute like `pg-mem` is enough;
 the gate need only run - and the conventions every later story inherits), commit it, *then*
-hand subsequent epics to `autosprint --epic EPxx --goal done`. See `help/getting-started.md`.
+hand subsequent epics to `sprint --epic EPxx --goal done`. See `help/getting-started.md`.
 
 ## Invocation
 
 ```bash
-/sdlc-studio autosprint <batch>  --goal done   [--order priority]
+/sdlc-studio sprint <batch>  --goal done   [--order priority]
 
   <batch>   a worklist/tranche file, OR a query: --bugs <status> | --crs <status>
             | --stories <status> | --epic EP00xx
@@ -28,12 +28,12 @@ hand subsequent epics to `autosprint --epic EPxx --goal done`. See `help/getting
   --order   priority (default) | wsjf | manual
 ```
 
-Natural language resolves to the same: "do an autosprint to deliver all open bugs"
--> `autosprint --bugs open --goal done`.
+Natural language resolves to the same: "do an sprint to deliver all open bugs"
+-> `sprint --bugs open --goal done`.
 
 ## The loop
 
-1. **Define the batch.** `scripts/autosprint.py plan <query> --order <order>`
+1. **Define the batch.** `scripts/sprint.py plan <query> --order <order>`
    returns the dependency-ordered, priority-sorted worklist (the triage plan).
 2. **Tranche audit (pre-flight).** `scripts/audit.py check <query|--ids>` grooms the
    batch for readiness *before* the triage STOP, so work never starts on a unit that
@@ -95,7 +95,7 @@ Natural language resolves to the same: "do an autosprint to deliver all open bug
 7. **Retro (CR0018).** The closing gate also writes a sprint retro to
    `sdlc-studio/retros/` (delivered, blocked, lessons) and reads the recent retros
    plus `lessons recall` at the **start** - the learning loop. The retro is a
-   general capability (CR0018), reused here, not autosprint-only.
+   general capability (CR0018), reused here, not sprint-only.
 
 ## Definition of Done
 
@@ -160,7 +160,7 @@ portable Phase-1 path for tools without the scripts.
 
 | Script | Role |
 | --- | --- |
-| `scripts/autosprint.py plan` | select + order the batch (the triage plan) |
+| `scripts/sprint.py plan` | select + order the batch (the triage plan) |
 | `scripts/audit.py check` | tranche audit: weak-AC, unmet-deps, already-terminal, link-integrity |
 | `scripts/integrity.py check` | referential integrity (required links + dangling refs) |
 | `scripts/conformance.py check` | the lifecycle-conformance gate (hard-fail; incl. reconciled + critiqued) |
@@ -172,6 +172,6 @@ portable Phase-1 path for tools without the scripts.
 ## See Also
 
 - `RFC0001-autonomous-delivery-loop.md` - the design + decisions (D1-D7)
-- `reference-project.md` - the wave engine autosprint wraps
+- `reference-project.md` - the wave engine sprint wraps
 - `reference-cr.md` - `cr action` (CR -> stories)
-- `help/autosprint.md` - command quick reference
+- `help/sprint.md` - command quick reference

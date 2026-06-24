@@ -25,5 +25,5 @@ agents read, so a decision is referenced once, not pasted N times.
 - Append with `scripts/decisions.py add`; list with `scripts/decisions.py list`.
 - `Status`: `accepted` | `superseded` | `revisited`. A superseding decision names the one
   it replaces in `Supersedes`.
-- Distinct from the autosprint per-tranche ledger (`scripts/ledger.py`), which is scoped to
+- Distinct from the sprint per-tranche ledger (`scripts/ledger.py`), which is scoped to
   a single delivery run; this is the durable project spine.

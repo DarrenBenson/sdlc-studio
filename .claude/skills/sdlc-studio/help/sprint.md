@@ -1,28 +1,32 @@
 <!--
-Load when: /sdlc-studio autosprint or /sdlc-studio autosprint help
+Load when: /sdlc-studio sprint or /sdlc-studio sprint help
 Dependencies: SKILL.md (always loaded first)
-Related: reference-autosprint.md (full workflow), RFC0001
+Related: reference-sprint.md (full workflow), RFC0001
 -->
 
-# /sdlc-studio autosprint - Goal-Driven Development loop
+# /sdlc-studio sprint - Goal-Driven Development loop
 
-Run a prioritised batch of work to a goal, autonomously. You set the goal and the
-acceptance criteria; the loop drives the proven lifecycle (decompose -> TDD ->
-verify -> conformance -> review) to it. See `reference-autosprint.md` for the full
-workflow.
+Run a prioritised batch of work to a goal. You set the goal and the acceptance
+criteria; the loop drives the proven lifecycle (decompose -> TDD -> verify ->
+conformance -> review) to it. Add `--autonomous` to run unattended. See
+`reference-sprint.md` for the full workflow.
+
+> **Renamed from `autosprint` (CR0087).** `/sdlc-studio autosprint ...` still works as a
+> **deprecated alias** (the command is now the whole sprint lifecycle - `--goal plan` /
+> `design` / `done` - so autonomy is the `--autonomous` flag, not the name). Prefer `sprint`.
 
 ## Quick Reference
 
 ```bash
-/sdlc-studio autosprint --crs proposed --goal done      # deliver the proposed CRs
-/sdlc-studio autosprint --bugs open --goal done         # deliver the open bugs
-/sdlc-studio autosprint --epic EP0007 --goal done       # deliver an epic
-/sdlc-studio autosprint --crs proposed --goal design    # just the backlog (no code)
-/sdlc-studio autosprint <worklist.md> --order wsjf       # a tranche file, WSJF order
-/sdlc-studio autosprint --bugs open --autonomous         # unattended: deterministic guardrails on
+/sdlc-studio sprint --crs proposed --goal done      # deliver the proposed CRs
+/sdlc-studio sprint --bugs open --goal done         # deliver the open bugs
+/sdlc-studio sprint --epic EP0007 --goal done       # deliver an epic
+/sdlc-studio sprint --crs proposed --goal design    # just the backlog (no code)
+/sdlc-studio sprint <worklist.md> --order wsjf       # a tranche file, WSJF order
+/sdlc-studio sprint --bugs open --autonomous         # unattended: deterministic guardrails on
 ```
 
-Natural language works too: "do an autosprint to deliver all open bugs".
+Natural language works too: "do an sprint to deliver all open bugs".
 
 ## Flags
 
@@ -35,7 +39,7 @@ Natural language works too: "do an autosprint to deliver all open bugs".
 
 ## What happens
 
-1. **Plan** - `autosprint plan` selects + orders the batch.
+1. **Plan** - `sprint plan` selects + orders the batch.
 2. **Tranche audit** - `audit.py check` grooms the batch for readiness (weak-AC,
    unmet-deps, already-terminal, link-integrity) before you approve it.
 3. **Triage STOP** - the groomed plan is shown; you approve, then it runs
@@ -55,11 +59,11 @@ cannot skip; without it they are model-instructed (the portable Phase-1 path).
 ## Prerequisites
 
 - A batch to run (CRs/bugs/stories on disk, or a worklist file).
-- The scripts: `autosprint.py`, `conformance.py`, `ledger.py`, `loop_guard.py`,
+- The scripts: `sprint.py`, `conformance.py`, `ledger.py`, `loop_guard.py`,
   plus the reused `verify_ac`, `reconcile`, `review`.
 
 ## See Also
 
-- `reference-autosprint.md` - full workflow and guardrails
+- `reference-sprint.md` - full workflow and guardrails
 - `/sdlc-studio status` - shows Blocked units after a run
 - `RFC0001` - the design and decisions

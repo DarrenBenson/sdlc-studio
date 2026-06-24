@@ -220,7 +220,7 @@ gate + verification harness around a deploy you trigger yourself.
 ```text
 deploy:
   command: ""        # (optional) project's own deploy command; invoked only after a green gate and
-                     #  only on an interactive deploy - never in autosprint
+                     #  only on an interactive deploy - never in sprint
   smoke: ""          # post-deploy check (a verify_ac expression). Smoke green == "rolled out"
   soak_minutes: 0    # soak window before a deploy is "verified" (Done). Smoke alone is not enough
   rollback: ""       # a documented PROCEDURE; the agent never fires it - deploy SURFACES it on a fail
@@ -228,7 +228,7 @@ deploy:
 
 | Key | Meaning | Default |
 | --- | --- | --- |
-| `deploy.command` | The project's own deploy command (any ecosystem). Invoked only after the pre-deploy gate is green, and only on an interactive `deploy` - never by autosprint. Leave empty to keep the skill gate-and-verify only. | `""` |
+| `deploy.command` | The project's own deploy command (any ecosystem). Invoked only after the pre-deploy gate is green, and only on an interactive `deploy` - never by sprint. Leave empty to keep the skill gate-and-verify only. | `""` |
 | `deploy.smoke` | Post-deploy smoke check, a `verify_ac` expression (e.g. `http GET /health -- .status == "ok"`). Smoke green marks the deploy **rolled out**. | `""` |
 | `deploy.soak_minutes` | Minutes a rolled-out deploy must soak before it is **verified** (Done). Smoke alone never means verified. | `0` |
 | `deploy.rollback` | A documented rollback **procedure** (steps, or a command an operator runs by hand). The agent never executes it; `deploy` surfaces it on a failed smoke. | `""` |

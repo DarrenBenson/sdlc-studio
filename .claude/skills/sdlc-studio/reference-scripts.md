@@ -197,7 +197,7 @@ envelope, ID scheme, token strategy, migrations, test harness). `add --decision 
 prints it (filterable by status); `promote --from PRD-OQ3 ...` records a resolved PRD open
 question with a back-link (one record, two views). Append-only and greppable, so the spine lives
 in one place and feeds the handoff context delegated agents read - distinct from the
-autosprint per-tranche ledger (`ledger.py`).
+sprint per-tranche ledger (`ledger.py`).
 
 ### `product_reconcile.py`
 
@@ -228,7 +228,7 @@ check registry is injectable, so the aggregation logic is unit-tested without a 
 ### `deploy.py`
 
 Orchestrate-only deploy last-mile (RFC0013). Read-only, ecosystem-neutral: it never deploys, never
-rolls back, never reads secrets, and never runs inside `autosprint`.
+rolls back, never reads secrets, and never runs inside `sprint`.
 
 - `preflight`: read `deploy.*` config, run the pre-deploy gate, emit the readiness verdict + the
   operator hand-off (the deploy command to run, the rollback procedure to keep ready). Exit 0 when
@@ -261,7 +261,7 @@ status has no summary row). Replaces the hand-edited "mark it Done + update the 
 cascade. **A story -> Done is gated on its AC-verify result (CR0084):** if it declares
 executable (non-`manual`) ACs that are red or never run in `verify-report.json`, the
 transition is refused - the Definition-of-Done safety net for the hand-driven path that the
-autosprint conformance gate already covers. `--force` overrides; manual-only / AC-less
+sprint conformance gate already covers. `--force` overrides; manual-only / AC-less
 stories and non-story types are never gated.
 
 ### `archive.py`
@@ -442,9 +442,13 @@ it after a version bump.
 
 Adversarial audit / tranche pre-flight (RFC0002). `check` grooms a batch for readiness - weak-AC, unmet-deps, already-terminal, link-integrity - before the triage STOP, so work never starts on a unit that would pass the gates vacuously.
 
+### `sprint.py`
+
+The Goal-Driven Development loop's planner (RFC0001; renamed from `autosprint.py`, CR0087). `plan <query> --order priority|wsjf` selects + dependency-orders the batch (the triage plan); priority dominates, complexity breaks ties. See reference-sprint.md.
+
 ### `autosprint.py`
 
-The Goal-Driven Development loop's planner (RFC0001). `plan <query> --order priority|wsjf` selects + dependency-orders the batch (the triage plan); priority dominates, complexity breaks ties. See reference-autosprint.md.
+Deprecated alias for `sprint.py` (CR0087) - re-exports it so `import autosprint` and the `autosprint.py` CLI keep working, emitting a deprecation pointer to `sprint`. Prefer `sprint`.
 
 ### `config.py`
 
@@ -476,11 +480,11 @@ The append-only per-tranche decisions ledger (RFC0001 D4). `record` appends a de
 
 ### `loop_guard.py`
 
-The autosprint deterministic guardrails (RFC0001 D5). The iteration cap, the repetition-breaker (repeated failure signature), and the completion oracle (`is_complete`) - persisted to `.local/loop-state.json` so an unattended run cannot thrash or declare itself done early.
+The sprint deterministic guardrails (RFC0001 D5). The iteration cap, the repetition-breaker (repeated failure signature), and the completion oracle (`is_complete`) - persisted to `.local/loop-state.json` so an unattended run cannot thrash or declare itself done early.
 
 ### `resume.py`
 
-Resume an interrupted autosprint from the persisted ledger + loop-state, so a context reset or crash continues the tranche from disk rather than a lost transcript.
+Resume an interrupted sprint from the persisted ledger + loop-state, so a context reset or crash continues the tranche from disk rather than a lost transcript.
 
 ### `rfc.py`
 

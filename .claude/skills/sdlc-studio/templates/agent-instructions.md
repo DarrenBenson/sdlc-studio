@@ -103,9 +103,9 @@ expression or failing test first, then make it pass.
    - **A story reaches Done only when its executable ACs pass.** Author `Verify:` lines in the
      DSL (`jest`/`pytest`/`http`/`manual`) against the real runner; `transition -> Done` is
      gated on the verify result. Record load-bearing decisions in `decisions.md`, not scattered.
-   - **Foundation first, then autosprint.** Build the foundation epic by hand to a green gate
-     (it sets conventions every later story inherits); autosprint needs a runnable gate, so
-     hand subsequent epics to `autosprint --epic EPxx --goal done` once it is green.
+   - **Foundation first, then sprint.** Build the foundation epic by hand to a green gate
+     (it sets conventions every later story inherits); sprint needs a runnable gate, so
+     hand subsequent epics to `sprint --epic EPxx --goal done` once it is green.
 
 ## Project specifics
 

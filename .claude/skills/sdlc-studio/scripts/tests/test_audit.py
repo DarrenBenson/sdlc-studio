@@ -1,4 +1,4 @@
-"""Unit tests for audit.py - autosprint tranche readiness (RED first)."""
+"""Unit tests for audit.py - sprint tranche readiness (RED first)."""
 from __future__ import annotations
 
 import importlib.util

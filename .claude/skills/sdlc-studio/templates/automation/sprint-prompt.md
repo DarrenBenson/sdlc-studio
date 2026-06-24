@@ -1,12 +1,12 @@
 <!--
-Template: Autosprint prompt (Goal-Driven Development loop)
-File: paste into a /goal-driven run, or used by /sdlc-studio autosprint
-Related: reference-autosprint.md, RFC0001
+Template: Sprint prompt (Goal-Driven Development loop)
+File: paste into a /goal-driven run, or used by /sdlc-studio sprint
+Related: reference-sprint.md, RFC0001
 Fill {{placeholders}} then run.
 -->
-# Autosprint: {{batch}} -> {{goal}}
+# Sprint: {{batch}} -> {{goal}}
 
-ROLE: You are the autosprint loop for this batch, running Goal-Driven Development
+ROLE: You are the sprint loop for this batch, running Goal-Driven Development
 with the sdlc-studio skill. Apply full reasoning effort to triage and sequencing.
 
 BATCH: {{batch}}            <!-- e.g. "all Proposed CRs", or a worklist file -->
@@ -15,7 +15,7 @@ ORDER: {{order}}           <!-- priority (default) | wsjf | manual -->
 SOURCE OF TRUTH: the sdlc-studio/ workspace - verify state against it, not the
 batch text. Treat "partly done / blocked" as distinct from "done".
 
-PHASE 1 - PLAN: run `autosprint plan {{batch_query}} --order {{order}}` to select and
+PHASE 1 - PLAN: run `sprint plan {{batch_query}} --order {{order}}` to select and
 order the batch. Triage each item (action / reject-with-reason / blocked-with-blocker).
 
 PHASE 2 - TRIAGE STOP: present the plan and STOP for my approval. This checkpoint is

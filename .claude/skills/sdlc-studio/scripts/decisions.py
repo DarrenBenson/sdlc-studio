@@ -5,7 +5,7 @@
 `list` prints the table (optionally filtered by status). Append-only and greppable, so the
 project's "spine" - product decisions and implementation conventions - lives in one place
 and feeds the handoff context delegated agents read, instead of being pasted per prompt.
-Distinct from the autosprint per-tranche ledger (`ledger.py`). Pure stdlib.
+Distinct from the sprint per-tranche ledger (`ledger.py`). Pure stdlib.
 """
 from __future__ import annotations
 

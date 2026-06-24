@@ -31,8 +31,8 @@ trigger yourself.
 
 ## Safety - deploy is never autonomous
 
-Deploy is a stop-condition (hard-to-reverse) action. **It must not run inside `autosprint`** and an
-autosprint triage approval must **not** transitively authorise a production rollout. The loop may
+Deploy is a stop-condition (hard-to-reverse) action. **It must not run inside `sprint`** and an
+sprint triage approval must **not** transitively authorise a production rollout. The loop may
 prepare up to "gate green, artefact ready" and **hand back**; the operator runs `deploy` explicitly
 and interactively. The skill's role is to *gate, hand off, verify, and record* - never to execute the
 deploy or the rollback.

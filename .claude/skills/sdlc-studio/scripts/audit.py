@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""SDLC Studio tranche audit - autosprint pre-flight readiness (CR0021).
+"""SDLC Studio tranche audit - sprint pre-flight readiness (CR0021).
 
-Runs between `autosprint plan` and the triage STOP, so the operator approves a
+Runs between `sprint plan` and the triage STOP, so the operator approves a
 clean, verifiable batch. Per unit it flags, deterministically:
 
 - **weak-AC**       - no checkable AC, or the tautology placeholder (the BG0003
@@ -25,7 +25,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 import integrity  # noqa: E402  (sibling script; scripts dir is on sys.path)
-import autosprint  # noqa: E402
+import sprint  # noqa: E402
 
 TAUTOLOGY = "lint and tests green"
 # A dependency counts as met once it has been delivered (or replaced).
@@ -145,7 +145,7 @@ def cmd_check(args: argparse.Namespace) -> int:
         kind, status = (("cr", args.crs) if args.crs is not None
                         else ("bug", args.bugs) if args.bugs is not None
                         else ("story", args.stories))
-        ids = [b["id"] for b in autosprint.select_batch(args.root, kind, status)]
+        ids = [b["id"] for b in sprint.select_batch(args.root, kind, status)]
     res = audit_batch(args.root, ids)
     if args.format == "json":
         print(json.dumps(res, indent=2))
@@ -166,7 +166,7 @@ def cmd_check(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="SDLC Studio tranche audit (autosprint pre-flight).")
+    parser = argparse.ArgumentParser(description="SDLC Studio tranche audit (sprint pre-flight).")
     sub = parser.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("check", help="Audit a batch for readiness before the triage STOP.")
     g = c.add_mutually_exclusive_group(required=True)

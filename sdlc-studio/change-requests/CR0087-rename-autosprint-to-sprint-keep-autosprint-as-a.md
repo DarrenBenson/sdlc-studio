@@ -1,6 +1,6 @@
 # CR-0087: rename autosprint to sprint, keep autosprint as a deprecated alias
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
 > **Priority:** High
@@ -28,14 +28,14 @@ breaks. Done first so the rest of the sprint's docs are written against the fina
 
 ## Acceptance Criteria
 
-- [ ] `/sdlc-studio sprint ...` is the canonical command; `scripts/sprint.py` is the script
+- [x] `/sdlc-studio sprint ...` is the canonical command; `scripts/sprint.py` is the script
       and its tests pass under the new name
-- [ ] `/sdlc-studio autosprint ...` still works as a deprecated alias (NL + shim), emitting a
+- [x] `/sdlc-studio autosprint ...` still works as a deprecated alias (NL + shim), emitting a
       deprecation pointer to `sprint`; no behaviour change
-- [ ] all live docs (SKILL rows, help, reference-sprint, getting-started, agent-instructions,
+- [x] all live docs (SKILL rows, help, reference-sprint, getting-started, agent-instructions,
       reference-verify) say `sprint`; the doc-coverage gate passes for the renamed command
-- [ ] historical records (CHANGELOG, closed CRs, RFC0001) are left unchanged
-- [ ] `npm run lint && npm test && gate` green; CHANGELOG `[Unreleased]` entry (LL0004)
+- [x] historical records (CHANGELOG, closed CRs, RFC0001) are left unchanged
+- [x] `npm run lint && npm test && gate` green; CHANGELOG `[Unreleased]` entry (LL0004)
 
 ## Revision History
 

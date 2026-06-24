@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Deterministic documentation-coverage check (CR0053).
 
-The `documented` half of the autosprint Definition of Done. Enforces the discoverability
+The `documented` half of the sprint Definition of Done. Enforces the discoverability
 floor so docs cannot drift (the gap the self-audit found - pvd/gate/skill-update shipped
 without a help-catalogue entry):
   - every command in SKILL.md's Type Reference has a help/help.md catalogue entry  (HARD)

@@ -1,7 +1,7 @@
 <!--
 Load when: starting a greenfield project, or asking "what order do I run things in?"
 Dependencies: SKILL.md (always loaded first)
-Related: help/init.md, reference-verify.md, reference-autosprint.md, reference-scripts.md
+Related: help/init.md, reference-verify.md, reference-sprint.md, reference-scripts.md
 -->
 
 # Greenfield Runbook - From Empty Repo to Shipped
@@ -31,9 +31,9 @@ handoff context.
 > drive the PRD to a reviewable backlog, pausing to approve the epic cut and resolve open
 > questions, then stop. Until then, run the steps above in order.
 
-## 2. Implementation - the autosprint handoff
+## 2. Implementation - the sprint handoff
 
-**autosprint needs a runnable verification environment.** Its loop (implement -> test ->
+**sprint needs a runnable verification environment.** Its loop (implement -> test ->
 gate -> critic -> commit-green) leans on a gate it can actually run each iteration. On
 greenfield that does not exist yet, so:
 
@@ -41,13 +41,13 @@ greenfield that does not exist yet, so:
    testable scaffold (toolchain, test harness - an in-memory substitute like `pg-mem` is
    enough; the gate need only *run*) and the high-judgement conventions every later story
    inherits (error-envelope shape, ID scheme, migration strategy). Commit it green.
-2. **Then hand subsequent epics to autosprint:** `autosprint --epic EPxx --goal done`. Now
+2. **Then hand subsequent epics to sprint:** `sprint --epic EPxx --goal done`. Now
    there are working tests and a gate for the loop to lean on.
 
-> **Rule: do not invoke autosprint before the quality gate is runnable and green.**
+> **Rule: do not invoke sprint before the quality gate is runnable and green.**
 
 ## See Also
 
 - `help/init.md` - the bootstrap step in detail
 - `reference-verify.md` - the test-spec AC-to-test bridge + the `Verify:` DSL
-- `reference-autosprint.md` - the autonomous delivery loop (and its cold-start precondition)
+- `reference-sprint.md` - the autonomous delivery loop (and its cold-start precondition)

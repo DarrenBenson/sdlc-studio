@@ -1,6 +1,6 @@
 ---
 name: sdlc-studio
-description: "Full software development lifecycle pipeline: create or reverse-engineer PRDs, TRDs, personas, epics, and user stories with acceptance criteria, then plan, implement, test, and verify code against them - plus an autonomous Goal-Driven autosprint loop that drives a prioritised batch to a goal, an adversarial audit, status dashboards, reconciliation, change requests, RFCs, test specs, test automation, and bug tracking. Use when asked about PRDs, requirements documents, epics, user stories, personas, implementation planning, autosprint or autonomous delivery, audit, test specs, test automation, project status, bugs, change requests, or any /sdlc-studio [type] [action] command. Run /sdlc-studio help for the catalogue and /sdlc-studio status for next steps."
+description: "Full software development lifecycle pipeline: create or reverse-engineer PRDs, TRDs, personas, epics, and user stories with acceptance criteria, then plan, implement, test, and verify code against them - plus an autonomous Goal-Driven sprint loop that drives a prioritised batch to a goal, an adversarial audit, status dashboards, reconciliation, change requests, RFCs, test specs, test automation, and bug tracking. Use when asked about PRDs, requirements documents, epics, user stories, personas, implementation planning, sprint or autonomous delivery, audit, test specs, test automation, project status, bugs, change requests, or any /sdlc-studio [type] [action] command. Run /sdlc-studio help for the catalogue and /sdlc-studio status for next steps."
 license: MIT
 compatibility: "Requires Python 3.10+ for bundled scripts; gh CLI (authenticated) for GitHub sync commands. Agentic wave execution (--agentic) is Claude-Code-only."
 metadata:
@@ -111,7 +111,7 @@ Claude loads files progressively based on task needs:
 | Product layer / PVD (multi-repo product) | reference-pvd.md | templates/core/pvd.md | help/pvd.md |
 | Project orchestration | reference-project.md | reference-epic.md | reference-config.md |
 | Agentic execution | reference-agentic-lessons.md | reference-epic.md | - |
-| Autosprint (Goal-Driven Development loop) | reference-autosprint.md | help/autosprint.md | reference-project.md |
+| Sprint (Goal-Driven Development loop) | reference-sprint.md | help/sprint.md | reference-project.md |
 | Deploy last-mile (gate, verify, record - orchestrate-only) | reference-deploy.md | help/deploy.md | reference-config.md#deploy |
 | Building agentic wave prompts | reference-agent-prompt-template.md | reference-repo-map.md | reference-agentic-lessons.md#lessons-accumulation |
 | Change request workflow | help/cr.md | reference-cr.md | reference-outputs.md |
@@ -121,7 +121,7 @@ Claude loads files progressively based on task needs:
 | Verifying ACs against codebase | reference-verify.md | help/verify.md | reference-reconcile.md#verify-scope |
 | Syncing CR/Story/Epic with GitHub | reference-github-sync.md | help/github-sync.md | reference-cr.md#cr-sync-workflow |
 | Onboarding to a project / operating doctrine | reference-doctrine.md | help/init.md | lessons/_index.md |
-| Starting greenfield / "what order do I run things in?" | help/getting-started.md | help/init.md | reference-autosprint.md |
+| Starting greenfield / "what order do I run things in?" | help/getting-started.md | help/init.md | reference-sprint.md |
 | Project constitution / machine-checkable principle gate | templates/constitution.md | scripts/constitution.py | reference-doctrine.md#constitution |
 | Recording and loading project lessons | reference-agentic-lessons.md#lessons-accumulation | help/lessons.md | reference-agent-prompt-template.md#agentic-execution |
 | Recalling cross-project lessons (before a decision) | lessons/_index.md | help/lessons.md | reference-doctrine.md |
@@ -192,7 +192,7 @@ approach decisions. The full index is in `help/references.md`.
 | `cr` | Change requests (post-PRD change proposals) |
 | `rfc` | Request For Comments – design exploration of an unsettled space, pre-CR |
 | `project` | Project-level orchestration across all epics |
-| `autosprint` | Goal-Driven Development loop: a prioritised batch driven to a goal |
+| `sprint` | Goal-Driven Development loop: a prioritised batch driven to a goal |
 | `plan` | Claude Code plan-file lifecycle (list, archive) |
 | `reconcile` | Detect and fix status drift across all artifacts |
 | `gate` | Portable, ecosystem-neutral CI quality gate over the deterministic checks |
@@ -214,7 +214,7 @@ The catalogues that used to live inline are now loaded on demand to keep this ro
 | The full `reference-*.md` index and template structure | `help/references.md` |
 | Type-specific commands, prerequisites, output, examples | `help/{type}.md` |
 | Step-by-step workflow detail for an artifact | `reference-{domain}.md` |
-| Autosprint loop (Goal-Driven Development) | `help/autosprint.md` + `reference-autosprint.md` |
+| Sprint loop (Goal-Driven Development) | `help/sprint.md` + `reference-sprint.md` |
 
 ## Error Handling
 

@@ -11,7 +11,7 @@
 > test name and the implementation's test title are chosen by different processes and drift
 > into two parallel descriptions (the 0/7 class). Authoring the test-spec's **AC Coverage
 > Matrix** *before* code fixes the test-case names that the Verify line and the test both
-> adopt - convergence by construction. So at **epic-implement / autosprint scope** author a
+> adopt - convergence by construction. So at **epic-implement / sprint scope** author a
 > test-spec (optional for a single story); keep the matrix honest with
 > `verify_ac ts-check --spec <ts> [--verify-report <json>]` (every AC mapped to a passing
 > test case, cross-checked against the live report - it cannot be decorative). Write Verify

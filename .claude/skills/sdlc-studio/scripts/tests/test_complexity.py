@@ -290,7 +290,7 @@ class CompositeRiskTests(unittest.TestCase):
 
     def test_assess_finds_churn_for_absolute_path(self) -> None:
         # The HIGH bug: churn keys are repo-relative; assess must resolve an ABSOLUTE
-        # path (what autosprint passes) back to the repo-relative key, not miss to 0.
+        # path (what sprint passes) back to the repo-relative key, not miss to 0.
         import subprocess
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

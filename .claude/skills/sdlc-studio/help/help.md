@@ -12,18 +12,18 @@ reference-file and template catalogue see `help/references.md`.
 
 ## Getting Started
 
-**Autosprint (recommended) - Goal-Driven Development.** Set a batch and a goal; the loop
+**Sprint (recommended) - Goal-Driven Development.** Set a batch and a goal; the loop
 drives the proven lifecycle - decompose -> TDD -> verify -> conformance -> independent critic
 -> green commit - to that goal, pausing only for the triage approval and any material issue.
 
 ```text
 /sdlc-studio status                                  # where the pipeline is right now
-/sdlc-studio autosprint --crs proposed --goal done   # drive a tranche of CRs to done
-/sdlc-studio autosprint --bugs open --goal done      # clear the open bugs
-/sdlc-studio autosprint --epic EP0007 --goal done    # deliver one epic end to end
+/sdlc-studio sprint --crs proposed --goal done   # drive a tranche of CRs to done
+/sdlc-studio sprint --bugs open --goal done      # clear the open bugs
+/sdlc-studio sprint --epic EP0007 --goal done    # deliver one epic end to end
 ```
 
-See `reference-autosprint.md` for the loop, the Definition of Done, and `--goal` / `--order`.
+See `reference-sprint.md` for the loop, the Definition of Done, and `--goal` / `--order`.
 
 **By hand.** The full per-tool pipeline is still here for fine control - greenfield authoring,
 brownfield `generate`, a one-off story. Lead with `hint` and follow the step it gives you; the
@@ -57,11 +57,11 @@ catalogue and worked workflows below cover every tool.
 
 ## All Commands
 
-### Autosprint, Product Layer & Maintenance
+### Sprint, Product Layer & Maintenance
 
 | Command | Description |
 | --- | --- |
-| `/sdlc-studio autosprint <batch> --goal done` | Goal-Driven Development loop: drive a prioritised tranche to a goal (the primary delivery workflow) |
+| `/sdlc-studio sprint <batch> --goal done` | Goal-Driven Development loop: drive a prioritised tranche to a goal (the primary delivery workflow) |
 | `/sdlc-studio pvd create` / `pvd sync` / `product reconcile` | Product Vision Document: the multi-repo product layer above the PRD |
 | `/sdlc-studio gate` | Portable, ecosystem-neutral CI quality gate over the deterministic checks |
 | `/sdlc-studio deploy` | Orchestrate-only deploy last-mile: gate, verify, record (operator-triggered, never autonomous) |
@@ -70,8 +70,8 @@ catalogue and worked workflows below cover every tool.
 
 ### Deterministic Artifact Tooling
 
-The tooling autosprint uses to create and close artifacts the same way every time (the
-[scripts](../reference-scripts.md); run them directly or let autosprint drive them):
+The tooling sprint uses to create and close artifacts the same way every time (the
+[scripts](../reference-scripts.md); run them directly or let sprint drive them):
 
 | Command | Description |
 | --- | --- |
@@ -358,7 +358,7 @@ tests/                        # Generated test code
 
 ```text
 /sdlc-studio status                                # see full pipeline state
-/sdlc-studio autosprint --crs proposed --goal done # drive a tranche (recommended)
+/sdlc-studio sprint --crs proposed --goal done # drive a tranche (recommended)
 /sdlc-studio hint                                  # or get a single next step by hand
 ```
 
@@ -418,12 +418,12 @@ Flow: `prd generate → trd generate → persona generate → epic → story gen
 
 ### Automated Workflow (Recommended)
 
-**Tranche level - autosprint (the recommended default).** Drive a whole prioritised batch
+**Tranche level - sprint (the recommended default).** Drive a whole prioritised batch
 to a goal in one autonomous loop, with a triage approval up front and a reconcile + review at
 the end:
 
 ```text
-/sdlc-studio autosprint --crs proposed --goal done
+/sdlc-studio sprint --crs proposed --goal done
         │
 triage plan + STOP for approval
         │

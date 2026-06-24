@@ -1,4 +1,4 @@
-"""Unit tests for autosprint.py (RED first - the script does not exist yet)."""
+"""Unit tests for sprint.py (RED first - the script does not exist yet)."""
 from __future__ import annotations
 
 import importlib.util
@@ -7,14 +7,14 @@ import tempfile
 import unittest
 from pathlib import Path
 
-SCRIPT = Path(__file__).resolve().parent.parent / "autosprint.py"
+SCRIPT = Path(__file__).resolve().parent.parent / "sprint.py"
 
 
 def _load():
-    spec = importlib.util.spec_from_file_location("autosprint", SCRIPT)
+    spec = importlib.util.spec_from_file_location("sprint", SCRIPT)
     assert spec and spec.loader
     mod = importlib.util.module_from_spec(spec)
-    sys.modules["autosprint"] = mod
+    sys.modules["sprint"] = mod
     spec.loader.exec_module(mod)
     return mod
 

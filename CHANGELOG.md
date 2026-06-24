@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **`autosprint` renamed to `sprint` (CR0087, WS0 of RFC0019):** the command is now the whole
+  sprint lifecycle (`--goal plan` / `design` / `done`), not just autonomous delivery - autonomy
+  is the `--autonomous` flag, not the name. `scripts/autosprint.py` → `scripts/sprint.py`,
+  `reference-autosprint.md` → `reference-sprint.md`, `help/autosprint.md` → `help/sprint.md`, and
+  the live command surface now says `sprint`. **`autosprint` stays as a deprecated alias** (a
+  re-export shim + NL resolution) so nothing breaks. History (closed CRs, RFC0001, prior
+  CHANGELOG entries) keeps the original name.
+
 ### Added
 
 - **greenfield runbook (CR0081):** `help/getting-started.md` gives the canonical command order

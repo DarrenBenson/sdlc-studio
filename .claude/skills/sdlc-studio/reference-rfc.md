@@ -53,7 +53,7 @@ For each RFC:
 
 ## decide
 The **multi-RFC decision session** - groom the whole Draft backlog to dispositions
-in one pass (the front-of-pipe analogue of the autosprint tranche-audit). Use when
+in one pass (the front-of-pipe analogue of the sprint tranche-audit). Use when
 several RFCs have accumulated and need triaging together.
 
 1. **Digest** - `scripts/rfc.py decide` reports, per Draft / In Review RFC, the
