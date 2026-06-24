@@ -88,6 +88,24 @@ expression or failing test first, then make it pass.
      story design. `/sdlc-studio consult stakeholders` when the change touches the
      running system. Concerns are advisory - record them and proceed unless one is a
      hard technical blocker.
+5. **Use the deterministic tooling - never hand-roll what it wires.**
+   - **Bootstrap with `init`** (it creates the directory tree, the per-type `_index.md`
+     files, config, and the agent-instructions). After `init` the first `new` of any type is
+     indexed - a bare `indexed=false` means "no index yet", not "the tool does not index".
+   - **Create every artifact with `artifact.py new` / `/sdlc-studio` create.** It allocates a
+     collision-free id, writes the file, appends the index row, and wires a story into its
+     parent epic. **Never hand-allocate ids or hand-author `_index.md`** - the file is truth,
+     the index is derived. For many at once use `artifact.py batch` (one atomic pass).
+   - **Fan out only over pre-wired scaffolds.** Delegated sub-agents fill **content**; the
+     tool owns structure (ids, slugs, filenames, links, index).
+   - **The index is derived:** run `reconcile` / `reconcile fields` / `validate` to sync;
+     never hand-copy file-owned cells (story points, titles).
+   - **A story reaches Done only when its executable ACs pass.** Author `Verify:` lines in the
+     DSL (`jest`/`pytest`/`http`/`manual`) against the real runner; `transition -> Done` is
+     gated on the verify result. Record load-bearing decisions in `decisions.md`, not scattered.
+   - **Foundation first, then autosprint.** Build the foundation epic by hand to a green gate
+     (it sets conventions every later story inherits); autosprint needs a runnable gate, so
+     hand subsequent epics to `autosprint --epic EPxx --goal done` once it is green.
 
 ## Project specifics
 

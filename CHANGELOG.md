@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **agent-instructions enforce the tool-first discipline (CR0083):** the shipped
+  `templates/agent-instructions.md` (read by every consuming-project agent; `.CLAUDE.md`
+  inherits it via `@AGENTS.md`) gains a mandatory "use the deterministic tooling" rule -
+  bootstrap with `init`, create via `new`/`batch` (never hand-roll ids/indexes), the index is
+  derived, a story reaches Done only when its executable ACs pass, foundation-first then
+  autosprint. The root cause every greenfield friction shared: agents improvise because
+  nothing tells them to trust the tooling. Dogfooded into this repo's own `AGENTS.md`.
 - **cross-epic AC scope lint (CR0086):** `ac_scope.py check` flags, advisory, a story whose
   acceptance criteria reference a distinctive capability keyword owned by a different epic's
   title (the un-Done-able-in-its-own-epic defect the field audit found - US0002/US0018 reached

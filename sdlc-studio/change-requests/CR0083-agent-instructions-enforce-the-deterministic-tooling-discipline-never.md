@@ -1,6 +1,6 @@
 # CR-0083: agent-instructions enforce the deterministic-tooling discipline (never hand-roll IDs or indexes)
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
 > **Priority:** High
@@ -71,13 +71,13 @@ pipeline against its source.
 
 ## Acceptance Criteria
 
-- [ ] `templates/agent-instructions.md` (+ `.CLAUDE.md` variant) gains a mandatory
+- [x] `templates/agent-instructions.md` (+ `.CLAUDE.md` variant) gains a mandatory
       tool-first section: create via `new`, never hand-roll IDs/indexes, index is derived,
       bulk = fill pre-wired scaffolds, foundation-first-then-autosprint, decisions logged
-- [ ] each rule reflects currently-shipped behaviour; capability-dependent rules are
+- [x] each rule reflects currently-shipped behaviour; capability-dependent rules are
       marked as activating with their CR
-- [ ] this repo's `AGENTS.md` carries a matching tool-first pointer (dogfood)
-- [ ] no contradiction with the greenfield runbook (CR0081) or `reference-doctrine.md`;
+- [x] this repo's `AGENTS.md` carries a matching tool-first pointer (dogfood)
+- [x] no contradiction with the greenfield runbook (CR0081) or `reference-doctrine.md`;
       links resolve; CHANGELOG `[Unreleased]` entry same commit (LL0004)
 
 ## Revision History

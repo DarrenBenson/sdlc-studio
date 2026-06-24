@@ -105,6 +105,12 @@ When modifying the skill:
   its `CHANGELOG.md` [Unreleased] entry (see `lessons/LL0004`)
 - **Recall lessons first:** read `.claude/skills/sdlc-studio/lessons/_index.md`
   before substantive design decisions
+- **Use the deterministic tooling - never hand-roll what it wires:** create artifacts with
+  `scripts/artifact.py new` / `batch` (collision-free id + index row + epic wiring); never
+  hand-author `_index.md` or hand-allocate ids; the index is derived (`reconcile` syncs it);
+  a story reaches Done only when its executable ACs pass (`transition -> Done` is gated).
+  This is the discipline the shipped `agent-instructions.md` enforces for consuming projects
+  (CR0083) - dogfooded here.
 
 ## Style Requirements
 

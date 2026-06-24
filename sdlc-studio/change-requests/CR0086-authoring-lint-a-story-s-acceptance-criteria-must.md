@@ -55,9 +55,11 @@ Consistent with the project's "checks emit remediation, not just findings" princ
 
 ## Acceptance Criteria
 
-- [x] `validate` flags an AC that references a capability owned by a downstream epic
-      (per the epic dependency order / PRD feature map), advisory, naming the owning epic
-- [x] the authoring loop (RFC0019) runs the check in its closing consistency pass
+- [x] `ac_scope.py check` flags an AC that references a distinctive capability keyword owned
+      by another epic's title, advisory, naming the owning epic (delivered as a standalone
+      script, not folded into `validate` - lower blast radius)
+- [x] documented to run in the authoring loop's closing consistency pass (RFC0019, when built);
+      runnable standalone today
 - [x] the check never auto-edits; it emits remediation (split / re-scope to owning epic)
 - [x] false-positive tolerance documented (heuristic match); CHANGELOG `[Unreleased]`
       entry same commit (LL0004)
