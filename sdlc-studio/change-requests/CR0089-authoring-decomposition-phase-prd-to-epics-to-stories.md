@@ -1,6 +1,6 @@
 # CR-0089: authoring decomposition phase PRD to epics to stories via shared core
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
 > **Priority:** High
@@ -18,13 +18,13 @@ path; D7: stop at the backlog).
 
 ## Acceptance Criteria
 
-- [ ] `sprint <prd.md> --goal design` produces epics from the PRD and Ready stories per epic,
+- [x] `sprint <prd.md> --goal design` produces epics from the PRD and Ready stories per epic,
       reusing the existing `epic`/`story` generation (no duplicated decomposition logic)
-- [ ] stories are created via the batch path (contiguous ids, index rows, epic wiring in one
+- [x] stories are created via the batch path (contiguous ids, index rows, epic wiring in one
       pass); the run stops at a reviewable backlog with no implementation
-- [ ] the backlog passes the closing consistency pass (CR0093) - reconcile drift 0, validate 0
-- [ ] `--dry-run` previews the epic/story plan without writing
-- [ ] unit tests cover the decomposition + batch wiring; CHANGELOG `[Unreleased]` entry (LL0004)
+- [x] the backlog passes the closing consistency pass (CR0093) - reconcile drift 0, validate 0
+- [x] `--dry-run` previews the epic/story plan without writing
+- [x] unit tests cover the decomposition + batch wiring; CHANGELOG `[Unreleased]` entry (LL0004)
 
 ## Revision History
 

@@ -22,19 +22,23 @@ conformance -> review) to it. Add `--autonomous` to run unattended. See
 /sdlc-studio sprint --bugs open --goal done         # deliver the open bugs
 /sdlc-studio sprint --epic EP0007 --goal done       # deliver an epic
 /sdlc-studio sprint --crs proposed --goal design    # just the backlog (no code)
+/sdlc-studio sprint --crs proposed --goal plan       # select+sequence+estimate a sprint, stop
+/sdlc-studio sprint prd.md --goal design             # greenfield: PRD -> epics -> stories
 /sdlc-studio sprint <worklist.md> --order wsjf       # a tranche file, WSJF order
 /sdlc-studio sprint --bugs open --autonomous         # unattended: deterministic guardrails on
 ```
 
-Natural language works too: "do an sprint to deliver all open bugs".
+Natural language works too: "do a sprint to deliver all open bugs"; "plan and break down the
+next sprint" resolves to `--goal design` (the goals are cumulative stop-points).
 
 ## Flags
 
 | Flag | Description | Default |
 | --- | --- | --- |
-| `<batch>` | a worklist file, or `--bugs`/`--crs`/`--stories <status>` / `--epic EPxxxx` | required |
-| `--goal` | `triage` (plan only) / `design` (Ready backlog) / `done` (delivered) | `done` |
+| `<batch>` | a worklist file, `--bugs`/`--crs`/`--stories <status>` / `--epic EPxxxx`, or a **PRD path** (greenfield authoring, CR0088) | required |
+| `--goal` | `triage` (plan) / `plan` (sprint plan) / `design` (Ready, estimated backlog) / `done` (delivered) | `done` |
 | `--order` | `priority` / `wsjf` (priority over RFC0009 complexity) / `manual` | `priority` |
+| `--write` | (with `plan`) persist the sprint plan to `.local/sprint-plan.json` | off |
 | `--autonomous` | unattended mode: the deterministic guardrails (cap, repetition-breaker, completion oracle) enforce stop/stall instead of model discretion | off |
 
 ## What happens

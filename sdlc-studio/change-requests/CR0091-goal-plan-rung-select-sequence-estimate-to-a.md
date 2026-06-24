@@ -1,6 +1,6 @@
 # CR-0091: goal plan rung select sequence estimate to a sprint plan artifact
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
@@ -17,14 +17,14 @@ so it is assembly, not new machinery. "Plan the next sprint" resolves here.
 
 ## Acceptance Criteria
 
-- [ ] `sprint <batch> --goal plan` selects + sequences + estimates a sprint-sized batch and
+- [x] `sprint <batch> --goal plan` selects + sequences + estimates a sprint-sized batch and
       writes a sprint-plan artifact (e.g. `sdlc-studio/.local/sprint-plan.json` + a readable
       summary), then stops for review
-- [ ] selection honours capacity/budget; ordering reuses `--order wsjf` + complexity (CR0038)
+- [x] selection honours capacity/budget; ordering reuses `--order wsjf` + complexity (CR0038)
       and `project plan` dependency/wave logic (no reimplementation)
-- [ ] the goal ladder (`triage`/`plan`/`design`/`done`) is documented; NL "plan the next
+- [x] the goal ladder (`triage`/`plan`/`design`/`done`) is documented; NL "plan the next
       sprint" resolves to `--goal plan`
-- [ ] unit tests cover selection, sequencing, the artifact shape; CHANGELOG entry (LL0004)
+- [x] unit tests cover selection, sequencing, the artifact shape; CHANGELOG entry (LL0004)
 
 ## Revision History
 

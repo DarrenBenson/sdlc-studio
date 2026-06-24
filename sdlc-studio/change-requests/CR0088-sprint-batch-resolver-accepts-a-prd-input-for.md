@@ -1,6 +1,6 @@
 # CR-0088: sprint batch resolver accepts a PRD input for the authoring bootstrap
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
 > **Priority:** High
@@ -16,12 +16,12 @@ the gap RFC0019 closes (D1: extend, don't fork).
 
 ## Acceptance Criteria
 
-- [ ] `sprint <prd.md>` is recognised as a PRD-input batch and selects "authoring" mode (the
+- [x] `sprint <prd.md>` is recognised as a PRD-input batch and selects "authoring" mode (the
       planner reports the mode); a missing/invalid PRD path fails fast with a clear message
-- [ ] the existing query inputs (`--bugs`/`--crs`/`--stories`/`--epic`) are unchanged
-- [ ] NL resolves a PRD-shaped request (e.g. "plan a sprint from the PRD") to this path
+- [x] the existing query inputs (`--bugs`/`--crs`/`--stories`/`--epic`) are unchanged
+- [x] NL resolves a PRD-shaped request (e.g. "plan a sprint from the PRD") to this path
       (RFC0001 NL-to-goal resolution, extended)
-- [ ] unit tests cover: PRD input selected, bad path rejected, query inputs untouched;
+- [x] unit tests cover: PRD input selected, bad path rejected, query inputs untouched;
       CHANGELOG `[Unreleased]` entry (LL0004)
 
 ## Revision History

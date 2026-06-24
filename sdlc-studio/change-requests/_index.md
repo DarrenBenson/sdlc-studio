@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 6 |
+| Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 86 |
+| Complete | 92 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -107,9 +107,9 @@
 | [CR-0085](CR0085-authored-verify-lines-must-use-the-verifier-dsl.md) | enforce the test-spec as the AC-to-test bridge at epic scope (runner-targeted Verify lines as a sub-fix) | Complete | High | Improvement | 2026-06-24 | -- |
 | [CR-0086](CR0086-authoring-lint-a-story-s-acceptance-criteria-must.md) | authoring lint - a story's acceptance criteria must be satisfiable within its own epic | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0087](CR0087-rename-autosprint-to-sprint-keep-autosprint-as-a.md) | rename autosprint to sprint, keep autosprint as a deprecated alias | Complete | High | Improvement | 2026-06-24 | -- |
-| [CR-0088](CR0088-sprint-batch-resolver-accepts-a-prd-input-for.md) | sprint batch resolver accepts a PRD input for the authoring bootstrap | Proposed | High | Feature | 2026-06-24 | -- |
-| [CR-0089](CR0089-authoring-decomposition-phase-prd-to-epics-to-stories.md) | authoring decomposition phase PRD to epics to stories via shared core | Proposed | High | Feature | 2026-06-24 | -- |
-| [CR-0090](CR0090-the-two-authoring-stops-epic-cut-and-open.md) | the two authoring STOPs epic cut and open questions plus autonomy ceiling | Proposed | High | Feature | 2026-06-24 | -- |
-| [CR-0091](CR0091-goal-plan-rung-select-sequence-estimate-to-a.md) | goal plan rung select sequence estimate to a sprint plan artifact | Proposed | Medium | Feature | 2026-06-24 | -- |
-| [CR-0092](CR0092-goal-design-assigns-story-points-projected-into-the.md) | goal design assigns story points projected into the index | Proposed | Medium | Feature | 2026-06-24 | -- |
-| [CR-0093](CR0093-authoring-closing-consistency-pass-ac-scope-ts-check.md) | authoring closing consistency pass ac-scope ts-check reconcile integrity | Proposed | Medium | Feature | 2026-06-24 | -- |
+| [CR-0088](CR0088-sprint-batch-resolver-accepts-a-prd-input-for.md) | sprint batch resolver accepts a PRD input for the authoring bootstrap | Complete | High | Feature | 2026-06-24 | -- |
+| [CR-0089](CR0089-authoring-decomposition-phase-prd-to-epics-to-stories.md) | authoring decomposition phase PRD to epics to stories via shared core | Complete | High | Feature | 2026-06-24 | -- |
+| [CR-0090](CR0090-the-two-authoring-stops-epic-cut-and-open.md) | the two authoring STOPs epic cut and open questions plus autonomy ceiling | Complete | High | Feature | 2026-06-24 | -- |
+| [CR-0091](CR0091-goal-plan-rung-select-sequence-estimate-to-a.md) | goal plan rung select sequence estimate to a sprint plan artifact | Complete | Medium | Feature | 2026-06-24 | -- |
+| [CR-0092](CR0092-goal-design-assigns-story-points-projected-into-the.md) | goal design assigns story points projected into the index | Complete | Medium | Feature | 2026-06-24 | -- |
+| [CR-0093](CR0093-authoring-closing-consistency-pass-ac-scope-ts-check.md) | authoring closing consistency pass ac-scope ts-check reconcile integrity | Complete | Medium | Feature | 2026-06-24 | -- |

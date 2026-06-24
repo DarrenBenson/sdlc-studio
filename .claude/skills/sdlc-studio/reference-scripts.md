@@ -444,7 +444,7 @@ Adversarial audit / tranche pre-flight (RFC0002). `check` grooms a batch for rea
 
 ### `sprint.py`
 
-The Goal-Driven Development loop's planner (RFC0001; renamed from `autosprint.py`, CR0087). `plan <query> --order priority|wsjf` selects + dependency-orders the batch (the triage plan); priority dominates, complexity breaks ties. See reference-sprint.md.
+The Goal-Driven Development loop's planner (RFC0001; renamed from `autosprint.py`, CR0087). `plan <query> --order priority|wsjf` selects + dependency-orders the batch (the triage plan); priority dominates, complexity breaks ties. `plan --prd <path>` bootstraps greenfield authoring (CR0088); `plan --write` persists the sprint-plan artifact (CR0091). See reference-sprint.md.
 
 ### `autosprint.py`
 

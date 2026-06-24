@@ -115,11 +115,48 @@ A unit-level Done is the per-unit conformance gate (decomposed -> ... -> documen
 
 ## Goals
 
-| `--goal` | The loop stops when... | Output |
-| --- | --- | --- |
-| `triage` | the plan is approved | the ordered worklist |
-| `design` | every unit is decomposed to Ready stories with AC | a reviewable backlog |
-| `done` | every unit is implemented, verified, conformant, reviewed | the delivered increment |
+The goals are **cumulative stop-points** - how far the loop drives. Natural language maps to
+the furthest named rung ("plan the next sprint" -> `plan`; "plan **and break down**" ->
+`design`; "run it" -> `done`); the operator need not name the flag (RFC0001 NL resolution).
+
+| `--goal` | The loop stops when... | Output | Operator phrase |
+| --- | --- | --- | --- |
+| `triage` | the plan is approved | the ordered worklist (readiness of the given batch) | - |
+| `plan` | a sprint-sized batch is selected + sequenced + estimated | a committed **sprint plan** | "plan the next sprint" |
+| `design` | every unit is decomposed to Ready stories with AC **and story points** | a reviewable, estimated backlog | "break it down, make it ready" |
+| `done` | every unit is implemented, verified, conformant, reviewed | the delivered increment | "run the sprint" |
+
+### `--goal plan` - sprint planning (RFC0019 D8 / CR0091)
+
+From a backlog, **select** a sprint-sized batch (capacity / budget fit), **sequence** it by
+dependency, and **estimate** it - reusing `--order wsjf` + the complexity-weighted budget
+(CR0038) and `project plan`'s dependency order + wave estimation. `sprint.py plan --write`
+persists the sprint-plan artifact; then stop for review. (Distinct from `triage`, which grooms
+the *whole given batch* for readiness; `plan` selects a sprint's *worth*.)
+
+## Authoring mode - greenfield, from a PRD (RFC0019)
+
+The batch source can be a **PRD** instead of existing units (CR0088): `sprint <prd.md>
+--goal design` drives **PRD -> epics -> stories** to a reviewable, estimated backlog, then
+stops - never implementing (that is a later `--goal done`). It reuses the existing generation
+core (`epic`-from-PRD + `story`-from-epic + `cr action`), not a parallel path (D5).
+
+1. **Decomposition phase (CR0089).** Decompose the PRD into epics, then each epic into Ready
+   stories created through the **batch** path (CR0078) - so ids, slugs, filenames, epic links,
+   and indexes are wired by construction and delegated agents fill content only.
+2. **Two STOPs (CR0090).** (1) Present the **epic cut** (count, titles, PRD-feature mapping) and
+   stop for approval before any story is authored. (2) Surface the PRD's **open questions** -
+   the operator answers, or the assumptions are recorded (`decisions.py promote`, CR0080) -
+   before story authoring. Under `--autonomous` both become record-the-assumption-and-proceed
+   (logged to the ledger), per the autonomy ceiling - never silent.
+3. **Story points at `design` (CR0092).** Each story gets a `**Story Points:**` estimate (seeded
+   from the complexity signal); `reconcile fields` (CR0082) projects them into the index - no
+   hand-copying.
+4. **Closing consistency pass (CR0093).** The closing gate runs `ac_scope` (CR0086, cross-epic
+   AC references), `reconcile`/`reconcile fields` (drift 0, index derived), `validate` (0
+   errors), `integrity` (every epic link resolves), and `ts-check` (CR0085) where a test-spec
+   exists. Structural failures block the "reviewable backlog" sign-off; advisory findings are
+   reported. This is the check that replaces the operator as the structural coordinator.
 
 ## Guardrails (settled in RFC0001)
 

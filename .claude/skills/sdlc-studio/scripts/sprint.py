@@ -158,8 +158,35 @@ def build_plan(repo_root: Path | str, kind: str, status: str, order: str = "prio
     }
 
 
+def build_authoring_plan(repo_root: Path | str, prd_path: str) -> dict:
+    """The greenfield authoring plan (CR0088): the batch source is a PRD, not existing units.
+    The planner validates the PRD and signals **authoring mode**; the decomposition itself
+    (PRD -> epics -> stories) is the model-instructed phase the loop runs next (CR0089). It
+    cannot enumerate epics/stories here - they do not exist yet."""
+    prd = Path(prd_path)
+    if not prd.exists():
+        raise FileNotFoundError(f"PRD not found: {prd_path}")
+    return {
+        "generated_at": sdlc_md.now_iso8601(),
+        "mode": "authoring",
+        "prd": str(prd),
+        "next": "decompose the PRD into epics, then Ready stories (the authoring phase); "
+                "stop at the epic-cut STOP for approval before authoring stories",
+        "count": 0,
+    }
+
+
 def cmd_plan(args: argparse.Namespace) -> int:
     """Print the ordered batch the operator approves before a run."""
+    if getattr(args, "prd", None):  # CR0088: greenfield authoring - the batch is a PRD
+        try:
+            data = build_authoring_plan(args.root, args.prd)
+        except FileNotFoundError as exc:
+            print(f"{exc}", file=sys.stderr)
+            return 2
+        print(json.dumps(data, indent=2) if args.format == "json"
+              else f"authoring plan: bootstrap from {data['prd']} (PRD -> epics -> stories)")
+        return 0
     if args.bugs is not None:
         kind, status = "bug", args.bugs
     elif args.crs is not None:
@@ -167,13 +194,18 @@ def cmd_plan(args: argparse.Namespace) -> int:
     elif args.stories is not None:
         kind, status = "story", args.stories
     else:  # pragma: no cover - argparse marks the group required
-        print("specify one of --bugs/--crs/--stories <STATUS>", file=sys.stderr)
+        print("specify one of --bugs/--crs/--stories/--prd", file=sys.stderr)
         return 2
     try:
         data = build_plan(args.root, kind, status, args.order)
     except ValueError as exc:  # dependency cycle
         print(f"cannot order the batch: {exc}", file=sys.stderr)
         return 2
+    if getattr(args, "write", False):  # CR0091: persist the sprint-plan artifact for review
+        out = Path(args.root) / "sdlc-studio" / ".local" / "sprint-plan.json"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        print(f"wrote sprint plan -> {out}")
     if args.format == "json":
         print(json.dumps(data, indent=2))
     else:
@@ -191,7 +223,10 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--bugs", metavar="STATUS", help="Bugs with this Status (e.g. Open)")
     g.add_argument("--crs", metavar="STATUS", help="CRs with this Status (e.g. Proposed)")
     g.add_argument("--stories", metavar="STATUS", help="Stories with this Status (e.g. Ready)")
+    g.add_argument("--prd", metavar="PATH", help="Greenfield authoring: bootstrap from a PRD (CR0088)")
     p.add_argument("--order", choices=("priority", "wsjf", "manual"), default="priority")
+    p.add_argument("--write", action="store_true",
+                   help="persist the sprint plan to sdlc-studio/.local/sprint-plan.json (CR0091)")
     p.add_argument("--root", default=".", help="Repo root (default: .)")
     p.add_argument("--format", choices=("text", "json"), default="text")
     p.set_defaults(func=cmd_plan)

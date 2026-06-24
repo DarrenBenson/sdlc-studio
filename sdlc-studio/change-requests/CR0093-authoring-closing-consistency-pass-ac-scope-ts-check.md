@@ -1,6 +1,6 @@
 # CR-0093: authoring closing consistency pass ac-scope ts-check reconcile integrity
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
@@ -19,13 +19,13 @@ reported, not blocking.
 
 ## Acceptance Criteria
 
-- [ ] the closing pass runs `ac_scope` + `reconcile`/`reconcile fields` + `validate` +
+- [x] the closing pass runs `ac_scope` + `reconcile`/`reconcile fields` + `validate` +
       `integrity` (+ `ts-check` where a test-spec exists) and emits a consolidated report
-- [ ] a structural failure (drift, dangling link, validate error) blocks the
+- [x] a structural failure (drift, dangling link, validate error) blocks the
       "reviewable backlog" sign-off; advisory findings (cross-epic AC) are reported only
-- [ ] reuses the shipped checkers (no new verification logic); runs at the `design`/`plan`
+- [x] reuses the shipped checkers (no new verification logic); runs at the `design`/`plan`
       closing gate
-- [ ] unit/flow tests cover a clean backlog (passes) and a seeded defect (flagged);
+- [x] unit/flow tests cover a clean backlog (passes) and a seeded defect (flagged);
       CHANGELOG `[Unreleased]` entry (LL0004)
 
 ## Revision History

@@ -7,18 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- **`autosprint` renamed to `sprint` (CR0087, WS0 of RFC0019):** the command is now the whole
-  sprint lifecycle (`--goal plan` / `design` / `done`), not just autonomous delivery - autonomy
-  is the `--autonomous` flag, not the name. `scripts/autosprint.py` → `scripts/sprint.py`,
-  `reference-autosprint.md` → `reference-sprint.md`, `help/autosprint.md` → `help/sprint.md`, and
-  the live command surface now says `sprint`. **`autosprint` stays as a deprecated alias** (a
-  re-export shim + NL resolution) so nothing breaks. History (closed CRs, RFC0001, prior
-  CHANGELOG entries) keeps the original name.
-
 ### Added
 
+- **authoring sprint - PRD to a reviewable backlog (RFC0019, CR0088-0093):** `sprint` now drives
+  greenfield authoring. `sprint <prd.md> --goal design` bootstraps **PRD → epics → stories**
+  (CR0088 PRD-input planner; CR0089 decomposition via the shared `epic`/`story` core + batch
+  create) with two STOPs - approve the epic cut, resolve open questions (CR0090; `--autonomous`
+  records-and-proceeds). The **goal ladder** gains `--goal plan` for sprint planning
+  (select + sequence + estimate → `sprint.py plan --write` artifact; CR0091); the rungs are
+  cumulative stop-points and NL maps to the furthest one. `--goal design` assigns story points,
+  projected into the index by `reconcile fields` (CR0092); the closing **consistency pass** runs
+  `ac_scope` + `ts-check` + `reconcile fields` + `validate` + `integrity` over the produced
+  backlog (CR0093). The loop is documented in `reference-sprint.md`; never implements at
+  `design`/`plan`.
 - **greenfield runbook (CR0081):** `help/getting-started.md` gives the canonical command order
   from an empty repo to a reviewable backlog (`init -> prd -> persona -> trd -> tsd -> epic ->
   story -> reconcile/validate`) and on through the implementation handoff, each step with
@@ -88,6 +89,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `--dry-run` reports `would_create_index`. New opt-in `--template full` grafts the rich
   `templates/core/<type>.md` body onto the deterministic provenance head (minimal stays the default;
   validate/provenance behave identically). Part of the greenfield-friction workstream (CR0077-0086).
+
+### Changed
+
+- **`autosprint` renamed to `sprint` (CR0087, WS0 of RFC0019):** the command is now the whole
+  sprint lifecycle (`--goal plan` / `design` / `done`), not just autonomous delivery - autonomy
+  is the `--autonomous` flag, not the name. `scripts/autosprint.py` → `scripts/sprint.py`,
+  `reference-autosprint.md` → `reference-sprint.md`, `help/autosprint.md` → `help/sprint.md`, and
+  the live command surface now says `sprint`. **`autosprint` stays as a deprecated alias** (a
+  re-export shim + NL resolution) so nothing breaks. History (closed CRs, RFC0001, prior
+  CHANGELOG entries) keeps the original name.
 
 ## [2.5.0] - 2026-06-22
 

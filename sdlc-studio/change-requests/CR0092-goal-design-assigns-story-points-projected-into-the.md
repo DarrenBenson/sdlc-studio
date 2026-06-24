@@ -1,6 +1,6 @@
 # CR-0092: goal design assigns story points projected into the index
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
@@ -17,12 +17,12 @@ index - closing the hand-copy the field agent hit, end to end.
 
 ## Acceptance Criteria
 
-- [ ] `--goal design` writes a `**Story Points:**` estimate into each story it produces (seeded
+- [x] `--goal design` writes a `**Story Points:**` estimate into each story it produces (seeded
       from the complexity signal; the operator can override)
-- [ ] `reconcile fields` projects those points into the index `Points` column (verified end to
+- [x] `reconcile fields` projects those points into the index `Points` column (verified end to
       end against a generated backlog) - zero hand-copying
-- [ ] a story left unestimated is reported, not silently zeroed
-- [ ] unit tests cover point assignment + projection; CHANGELOG `[Unreleased]` entry (LL0004)
+- [x] a story left unestimated is reported, not silently zeroed
+- [x] unit tests cover point assignment + projection; CHANGELOG `[Unreleased]` entry (LL0004)
 
 ## Revision History
 

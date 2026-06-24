@@ -227,5 +227,41 @@ class WsjfTests(unittest.TestCase):
         self.assertEqual(files, ["scripts/x.py", "reference-y.md", "scripts/z.py"])
 
 
+class AuthoringPlanTests(unittest.TestCase):
+    """CR0088: the sprint planner accepts a PRD input (greenfield authoring bootstrap)."""
+
+    def test_prd_input_signals_authoring_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            prd = root / "sdlc-studio" / "prd.md"
+            prd.parent.mkdir(parents=True)
+            prd.write_text("# PRD\n", encoding="utf-8")
+            plan = _load().build_authoring_plan(root, str(prd))
+            self.assertEqual(plan["mode"], "authoring")
+            self.assertEqual(plan["prd"], str(prd))
+            self.assertEqual(plan["count"], 0)   # epics/stories don't exist yet
+
+    def test_missing_prd_errors(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(FileNotFoundError):
+                _load().build_authoring_plan(Path(d), str(Path(d) / "nope.md"))
+
+    def test_prd_cli_path(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            prd = root / "prd.md"
+            prd.write_text("# PRD\n", encoding="utf-8")
+            rc = _load().main(["plan", "--prd", str(prd), "--root", str(root)])
+            self.assertEqual(rc, 0)
+
+    def test_plan_write_persists_artifact(self) -> None:  # CR0091
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1, status="Proposed")
+            rc = _load().main(["plan", "--crs", "Proposed", "--write", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            self.assertTrue((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
+
+
 if __name__ == "__main__":
     unittest.main()

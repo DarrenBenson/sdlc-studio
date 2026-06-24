@@ -1,6 +1,6 @@
 # CR-0090: the two authoring STOPs epic cut and open questions plus autonomy ceiling
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
 > **Priority:** High
@@ -18,13 +18,13 @@ autonomy ceiling - not silent.
 
 ## Acceptance Criteria
 
-- [ ] STOP 1 presents the proposed epic cut (count, titles, mapping to PRD features) and waits
+- [x] STOP 1 presents the proposed epic cut (count, titles, mapping to PRD features) and waits
       for approve/edit before authoring any story
-- [ ] STOP 2 surfaces unresolved PRD open questions; the operator answers, or the assumptions
+- [x] STOP 2 surfaces unresolved PRD open questions; the operator answers, or the assumptions
       are recorded (promoted into `decisions.md` via `decisions.py promote`, CR0080)
-- [ ] `--autonomous` converts both STOPs to record-and-proceed, logged to the per-tranche
+- [x] `--autonomous` converts both STOPs to record-and-proceed, logged to the per-tranche
       ledger (never silent); interactive mode keeps them as hard pauses
-- [ ] unit/flow tests cover both STOPs + the autonomous ceiling; CHANGELOG entry (LL0004)
+- [x] unit/flow tests cover both STOPs + the autonomous ceiling; CHANGELOG entry (LL0004)
 
 ## Revision History
 
