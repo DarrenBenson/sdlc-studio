@@ -21,12 +21,40 @@ import subprocess
 import sys
 from pathlib import Path
 
+import re  # noqa: E402
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 
+# CR0105: meta-artifacts that carry a numeric id but are NOT pipeline artifacts (no status vocab,
+# no reconcile/conformance). Kept out of sdlc_md.ARTIFACT_TYPES so the pipeline machinery ignores
+# them; the allocator resolves them here so review/retro ids are never hand-picked. (lessons LL####
+# have their own manager in lessons.py; personas are named, not numbered.)
+META_TYPES: dict[str, tuple[str, str]] = {
+    "review": ("sdlc-studio/reviews", "RV"),
+    "retro": ("sdlc-studio/retros", "RETRO"),
+}
+
+
+def _spec(type_: str) -> tuple[str, str]:
+    """(relative dir, id prefix) for a pipeline or meta type."""
+    return sdlc_md.ARTIFACT_TYPES.get(type_) or META_TYPES[type_]
+
+
+def _meta_nums(prefix: str, stems) -> list[int]:
+    """Numeric ids from file stems for a meta prefix (e.g. RV0005, RETRO0001) - the standard
+    extract_record_id does not recognise these prefixes, so match prefix + 3-4 digits directly."""
+    pat = re.compile(rf"^{re.escape(prefix)}-?(\d{{3,4}})", re.IGNORECASE)
+    return sorted({int(m.group(1)) for s in stems if (m := pat.match(s))})
+
 
 def local_ids(type_: str, repo_root: Path) -> list[int]:
-    """Numeric IDs of all local artifact files of `type_`."""
+    """Numeric IDs of all local artifact files of `type_` (pipeline or meta)."""
+    if type_ in META_TYPES:
+        rel, prefix = META_TYPES[type_]
+        d = Path(repo_root) / rel
+        stems = [p.stem for p in d.glob("*.md") if p.name != "_index.md"] if d.exists() else []
+        return _meta_nums(prefix, stems)
     ids: list[int] = []
     for path in sdlc_md.artifact_files(type_, repo_root):
         rec = sdlc_md.extract_record_id(path.stem)
@@ -39,6 +67,8 @@ def local_ids(type_: str, repo_root: Path) -> list[int]:
 def index_row_ids(type_: str, repo_root: Path) -> list[int]:
     """Numeric ids present as rows in the type's `_index.md`. Catches an id whose file was
     deleted but whose index row remains: re-issuing it would collide (BG0022)."""
+    if type_ in META_TYPES:  # meta-artifacts have no derived _index.md
+        return []
     import reconcile  # local import avoids any import cycle
     rel = sdlc_md.ARTIFACT_TYPES[type_][0]
     index_path = Path(repo_root) / rel / "_index.md"
@@ -68,7 +98,7 @@ def remote_ids(type_: str, repo_root: Path) -> tuple[list[int], bool]:
     Uses `git ls-tree` (read-only, no network). `available` is False when the
     repo has no origin/main or git is unavailable.
     """
-    rel, prefix = sdlc_md.ARTIFACT_TYPES[type_]
+    rel, prefix = _spec(type_)
     try:
         result = subprocess.run(
             ["git", "ls-tree", "-r", "--name-only", "origin/main", "--", rel],
@@ -78,9 +108,11 @@ def remote_ids(type_: str, repo_root: Path) -> tuple[list[int], bool]:
         return [], False
     if result.returncode != 0:
         return [], False
+    stems = [Path(line).stem for line in result.stdout.splitlines()]
+    if type_ in META_TYPES:
+        return _meta_nums(prefix, stems), True
     ids: list[int] = []
-    for line in result.stdout.splitlines():
-        stem = Path(line).stem
+    for stem in stems:
         rec = sdlc_md.extract_record_id(stem)
         num = sdlc_md.id_number(rec) if rec else None
         if num is not None:
@@ -92,7 +124,7 @@ def cmd_allocate(args: argparse.Namespace) -> int:
     """Print the next free ID for a type."""
     type_ = args.type
     repo_root = Path(args.root).resolve()
-    prefix = sdlc_md.ARTIFACT_TYPES[type_][1]
+    prefix = _spec(type_)[1]
     local = local_ids(type_, repo_root)
     local_max = max(local) if local else 0
     remote_max = 0
@@ -131,7 +163,7 @@ def cmd_scan(args: argparse.Namespace) -> int:
     """List all IDs currently used for a type."""
     type_ = args.type
     repo_root = Path(args.root).resolve()
-    prefix = sdlc_md.ARTIFACT_TYPES[type_][1]
+    prefix = _spec(type_)[1]
     local = local_ids(type_, repo_root)
     ids = [f"{prefix}{n:04d}" for n in local]
     if args.format == "json":
@@ -200,7 +232,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="Allocate the next free sdlc-studio artifact ID.",
     )
     sub = p.add_subparsers(dest="cmd", required=True)
-    types = sorted(sdlc_md.ARTIFACT_TYPES)
+    types = sorted({*sdlc_md.ARTIFACT_TYPES, *META_TYPES})
 
     a = sub.add_parser("allocate", help="Print the next free ID for a type.")
     a.add_argument("--type", required=True, choices=types)

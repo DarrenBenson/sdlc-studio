@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **deterministic id-allocation extended to the meta-artifacts (CR0105):** `next_id.py allocate
+  --type` now covers `review` (RV####) and `retro` (RETRO####) in addition to the 8 pipeline
+  types, so review/retro ids are allocated collision-free (respecting `--remote`) instead of
+  hand-picked by reading the directory. Kept out of `ARTIFACT_TYPES` so reconcile/conformance
+  ignore them. (Lessons `LL####` keep their own `lessons.py` manager; personas are named.)
 - **SOTA linter coverage in the quality guides (CR0103, RV0005 audit):** `best-practices/script.md`
   gains a Tooling section (ShellCheck + shfmt as the baseline; the anti-pattern table reframed as
   what ShellCheck enforces) and teaches `set -euo pipefail` instead of bare `set -e`;

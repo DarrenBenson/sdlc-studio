@@ -1,6 +1,6 @@
 # CR-0105: Extend deterministic id-allocation to the meta-artifacts (review/retro/persona/lessons)
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-06-24
@@ -12,10 +12,10 @@ next_id.py allocate and artifact.py new cover the 8 pipeline types (bug/cr/epic/
 
 ## Acceptance Criteria
 
-- [ ] next_id.py allocate --type accepts review, retro, persona, and lessons, returning the next collision-free id (respecting --remote)
-- [ ] The review/retro creation paths consume the allocator rather than hand-picking the number (artifact.py new extended where it has a sensible template, else documented in reference-scripts.md)
-- [ ] A unit test covers allocation for at least review and retro (gap detection + next-number)
-- [ ] CHANGELOG [Unreleased] entry in the same commit
+- [x] next_id.py allocate --type accepts review, retro, persona, and lessons, returning the next collision-free id (respecting --remote)
+- [x] The review/retro creation paths consume the allocator rather than hand-picking the number (artifact.py new extended where it has a sensible template, else documented in reference-scripts.md)
+- [x] A unit test covers allocation for at least review and retro (gap detection + next-number)
+- [x] CHANGELOG [Unreleased] entry in the same commit
 
 ## Revision History
 

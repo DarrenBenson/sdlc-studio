@@ -369,8 +369,12 @@ checks (`reference-decisions.md`) and as a reconcile pre-step.
 - `allocate`: next free ID for a type (`--remote` also scans `origin/main`)
 - `scan`: list IDs in use
 
-Read-only; runs `git ls-tree` (no fetch - the caller fetches first per the
-contract). Backs ID assignment in `reference-cr.md` and doctrine rule 13.
+Covers the 8 pipeline types plus the **meta-artifacts** `review` (RV####) and `retro`
+(RETRO####) (CR0105), so review/retro ids are allocated, never hand-picked - run
+`next_id.py allocate --type review` before writing a new review/retro, the same discipline as
+`artifact.py new` for pipeline types. (Lessons `LL####` have their own manager in `lessons.py`;
+personas are named, not numbered.) Read-only; runs `git ls-tree` (no fetch - the caller fetches
+first per the contract). Backs ID assignment in `reference-cr.md` and doctrine rule 13.
 
 ### `review_prep.py` (read-only)
 

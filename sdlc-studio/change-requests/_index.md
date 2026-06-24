@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 103 |
+| Complete | 104 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -124,4 +124,4 @@
 | [CR-0102](CR0102-no-artifacts-suppress-enforce-behaviour-is-restated-verbatim.md) | --no-artifacts suppress/enforce behaviour is restated verbatim across epic, story, and outputs references | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0103](CR0103-best-practices-code-check-omit-sota-linters-shellcheck.md) | best-practices + code check omit SOTA linters (ShellCheck/shfmt, Ruff/mypy) and teach bare set -e | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0104](CR0104-surface-v3-0-capabilities-in-the-always-loaded.md) | Surface v3.0 capabilities in the always-loaded router + help catalogue (decisions, goal ladder, init-first, batch) | Complete | High | Improvement | 2026-06-24 | -- |
-| [CR-0105](CR0105-extend-deterministic-id-allocation-to-the-meta-artifacts.md) | Extend deterministic id-allocation to the meta-artifacts (review/retro/persona/lessons) | Proposed | Medium | Improvement | 2026-06-24 | -- |
+| [CR-0105](CR0105-extend-deterministic-id-allocation-to-the-meta-artifacts.md) | Extend deterministic id-allocation to the meta-artifacts (review/retro/persona/lessons) | Complete | Medium | Improvement | 2026-06-24 | -- |

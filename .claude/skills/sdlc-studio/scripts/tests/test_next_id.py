@@ -27,6 +27,35 @@ def _make_stories(root: Path, nums: list[int]) -> None:
         (d / f"US{n:04d}-x.md").write_text(f"# S{n}\n\n> **Status:** Draft\n", encoding="utf-8")
 
 
+def _make_meta(root: Path, rel: str, prefix: str, nums: list[int]) -> None:
+    d = root / rel
+    d.mkdir(parents=True, exist_ok=True)
+    for n in nums:
+        (d / f"{prefix}{n:04d}-x.md").write_text(f"# {prefix}{n}\n", encoding="utf-8")
+
+
+class MetaTypeTests(unittest.TestCase):
+    """CR0105: review/retro carry a numeric id and must allocate deterministically."""
+
+    def test_review_allocates_above_max(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _make_meta(root, "sdlc-studio/reviews", "RV", [1, 4])
+            self.assertEqual(next_id.local_ids("review", root), [1, 4])
+            self.assertEqual(next_id.allocate_number("review", root, remote=False), 5)
+
+    def test_retro_first_id_when_empty(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(next_id.allocate_number("retro", Path(d), remote=False), 1)
+
+    def test_retro_ignores_non_index_noise(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _make_meta(root, "sdlc-studio/retros", "RETRO", [2])
+            (root / "sdlc-studio" / "retros" / "_index.md").write_text("# x\n", encoding="utf-8")
+            self.assertEqual(next_id.allocate_number("retro", root, remote=False), 3)
+
+
 class LocalIdsTests(unittest.TestCase):
     def test_local_ids_sorted_unique(self) -> None:
         with tempfile.TemporaryDirectory() as d:
