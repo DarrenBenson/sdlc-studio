@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **cross-epic AC scope lint (CR0086):** `ac_scope.py check` flags, advisory, a story whose
+  acceptance criteria reference a distinctive capability keyword owned by a different epic's
+  title (the un-Done-able-in-its-own-epic defect the field audit found - US0002/US0018 reached
+  into EP0006/EP0003). Heuristic, read-only, never auto-edits; the operator splits or
+  re-scopes. The "single most useful defect" the dogfooding surfaced, now caught at authoring.
 - **Definition-of-Done gate on `transition`/`close` (CR0084):** a story moving to Done is
   refused when it declares executable (non-`manual`) ACs that are red or never run in
   `verify-report.json` - the safety net for the hand-driven path that a diligent agent

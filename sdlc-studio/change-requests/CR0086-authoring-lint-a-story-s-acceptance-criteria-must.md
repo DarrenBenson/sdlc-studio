@@ -1,6 +1,6 @@
 # CR-0086: authoring lint - a story's acceptance criteria must be satisfiable within its own epic
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
@@ -55,11 +55,11 @@ Consistent with the project's "checks emit remediation, not just findings" princ
 
 ## Acceptance Criteria
 
-- [ ] `validate` flags an AC that references a capability owned by a downstream epic
+- [x] `validate` flags an AC that references a capability owned by a downstream epic
       (per the epic dependency order / PRD feature map), advisory, naming the owning epic
-- [ ] the authoring loop (RFC0019) runs the check in its closing consistency pass
-- [ ] the check never auto-edits; it emits remediation (split / re-scope to owning epic)
-- [ ] false-positive tolerance documented (heuristic match); CHANGELOG `[Unreleased]`
+- [x] the authoring loop (RFC0019) runs the check in its closing consistency pass
+- [x] the check never auto-edits; it emits remediation (split / re-scope to owning epic)
+- [x] false-positive tolerance documented (heuristic match); CHANGELOG `[Unreleased]`
       entry same commit (LL0004)
 
 ## Revision History

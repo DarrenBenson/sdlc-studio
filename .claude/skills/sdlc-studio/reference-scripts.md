@@ -179,6 +179,15 @@ from templates, and with `--scaffold` seeds the singleton docs (prd/trd/tsd/pers
 previews every write so the workflow can show the config and confirm once before applying.
 It also seeds an empty `sdlc-studio/decisions.md` (CR0080).
 
+### `ac_scope.py`
+
+Authoring lint (CR0086, advisory): `check` flags a story whose acceptance criteria mention a
+distinctive capability keyword owned by a **different** epic's title (e.g. an EP0001 story
+asserting an "account token" when accounts are EP0006) - such a story is un-Done-able in its
+own epic and should be split or re-scoped. Heuristic and read-only; false positives are
+expected (the operator decides); never auto-edits. Run by the authoring loop's closing
+consistency pass.
+
 ### `decisions.py`
 
 Project decisions log (CR0080) - the canonical home for load-bearing decisions, both
