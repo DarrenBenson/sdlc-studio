@@ -37,6 +37,6 @@ Related: help/bug.md, reference-bug.md
 
 ## Notes
 
-- Bugs are numbered globally (BG0001, BG0002, etc.)
+- Bugs are numbered globally - BG0001, BG0002, and so on
 - Severity: Critical > High > Medium > Low
 - Critical bugs should be fixed within 24 hours

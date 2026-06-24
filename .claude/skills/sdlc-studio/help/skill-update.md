@@ -4,6 +4,17 @@
 
 Update the **installed SDLC Studio skill** to the latest published release, on confirm.
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Is there a new version of SDLC Studio?" | `/sdlc-studio skill-update` |
+| "Update the skill to the latest release" | `/sdlc-studio skill-update` |
+| "Stop telling me about updates for now" | decline `/sdlc-studio skill-update` (snoozes the notice) |
+| "What version am I on, and is it the newest?" | `/sdlc-studio skill-update` |
+
 ## Commands
 
 ```bash

@@ -1,6 +1,6 @@
 # Audit Finder Prompt (per-lens, loop-until-dry)
 
-Portable finder for one audit lens (RFC0002 / reference-audit.md). Run one agent per
+Portable finder for one audit lens (the adversarial audit, see reference-audit.md). Run one agent per
 lens; re-run the same lens until **{{dry_rounds}}** consecutive rounds return nothing
 new. Tool-neutral - any agent harness can drive it.
 

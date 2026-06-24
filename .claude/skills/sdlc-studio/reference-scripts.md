@@ -32,7 +32,7 @@ unset; never guess between multiple installed copies.
 
 SDLC Studio was Claude-native through v1.5.0: every workflow was a
 markdown instruction that Claude executed using built-in tools (Read,
-Grep, Bash, Edit). v1.6.0 introduces three capabilities that need
+Grep, Bash, Edit). Three capabilities need
 deterministic computation:
 
 1. **AST repository indexing** (`repo_map.py`) – reinventing a ranked
@@ -126,7 +126,7 @@ Full workflow: `reference-repo-map.md`. User-facing help:
 
 Cognitive (SonarSource) + cyclomatic complexity per function from Python's
 `ast` (pure stdlib; `lizard` soft-dep for other languages, unscored without
-it). Advisory signal for estimation and refactor-first (RFC0009); `repo_map`
+it). Advisory signal for estimation and refactor-first; `repo_map`
 emits the same per-function scores into the map.
 
 - `scan`: list functions over the cognitive threshold (`complexity.cognitive_high`, default 15)
@@ -134,7 +134,7 @@ emits the same per-function scores into the map.
 
 ### `provenance.py`
 
-Artifact provenance (CR0052). Makes deterministic creation the *checkable* path: `new`
+Artifact provenance. Makes deterministic creation the *checkable* path: `new`
 stamps every artifact (`> **Created-by:** sdlc-studio ...`); `check` flags artifacts past
 the `provenance.adopt_after` id cutoff that lack the stamp (hand-authored), with
 remediation - advisory by default, `provenance.enforce: true` to block; `remake` content-
@@ -144,44 +144,44 @@ the gate); adopting it is a project choice.
 
 ### `telemetry.py`
 
-Run telemetry recorder (CR0050, RFC0014 WS1). `record` appends a per-unit run outcome
+Run telemetry recorder. `record` appends a per-unit run outcome
 (id, type, iterations, wall-time, stages, critic verdict, complexity, churn, reopened,
 tokens-when-supplied) to the gitignored `sdlc-studio/.local/telemetry.jsonl`. Local-only,
 no network, no upload; advisory (a write failure is swallowed, never raised into the loop);
 only whitelisted non-None fields are written; `read_all`/`show` skip malformed lines. Feeds
-the deferred calibrate step (WS3) and RFC0009 WS5.
+the deferred calibrate step.
 
 ### `artifact.py`
 
-Deterministic artifact create + close cascade (CR0045). `new --type <any of the 8 numbered
+Deterministic artifact create + close cascade. `new --type <any of the 8 numbered
 types> --title ...` allocates a collision-free id, renders a valid scaffold (vocab-correct
 status; a story gets a populated AC section), appends the index data-table row (built
 generically from that index's own header, so it works for every type), recomputes counts,
 and wires a story into its parent epic's Story Breakdown. `close --id` terminal-transitions
 by id-prefix with the per-type terminal status (reusing transition). Replaces the ~10-step
 hand cascade. Shares `file_finding.append_index_row`. On the empty-project first run it
-creates a missing `<dir>/_index.md` from `templates/indexes/` (CR0077, via
+creates a missing `<dir>/_index.md` from `templates/indexes/` (via
 `file_finding.ensure_index`), so the first artifact of a type is indexed like every later
 one; `--template full` grafts the rich `templates/core/` body onto the deterministic head.
 `batch --type <t> --spec <items.json>` creates many artifacts of one type in a single
-atomic pass (CR0078): a reserved contiguous id block, every index row, and every story-to-
+atomic pass: a reserved contiguous id block, every index row, and every story-to-
 epic link wired in one go; a missing epic or id collision aborts before any write;
 `--dry-run` previews the id map. Batch defaults to `--template full` (the fan-out case).
 
 ### `init.py`
 
-Deterministic greenfield initialiser (CR0079) - `init` is now an executable, not a manual
+Deterministic greenfield initialiser - `init` is now an executable, not a manual
 checklist. `run` creates the full `sdlc-studio/` directory tree, pre-creates every per-type
-`_index.md` (reusing `file_finding.ensure_index`, the CR0077 helper), seeds
+`_index.md` (reusing `file_finding.ensure_index`), seeds
 `sdlc-studio/.config.yaml` and the agent-instructions starters (`AGENTS.md`/`CLAUDE.md`)
 from templates, and with `--scaffold` seeds the singleton docs (prd/trd/tsd/personas).
 `--detect` infers the stack; idempotent (never overwrites without `--force`); `--dry-run`
 previews every write so the workflow can show the config and confirm once before applying.
-It also seeds an empty `sdlc-studio/decisions.md` (CR0080).
+It also seeds an empty `sdlc-studio/decisions.md`.
 
 ### `ac_scope.py`
 
-Authoring lint (CR0086, advisory): `check` flags a story whose acceptance criteria mention a
+Authoring lint (advisory): `check` flags a story whose acceptance criteria mention a
 distinctive capability keyword owned by a **different** epic's title (e.g. an EP0001 story
 asserting an "account token" when accounts are EP0006) - such a story is un-Done-able in its
 own epic and should be split or re-scoped. Heuristic and read-only; false positives are
@@ -190,7 +190,7 @@ consistency pass.
 
 ### `decisions.py`
 
-Project decisions log (CR0080) - the canonical home for load-bearing decisions, both
+Project decisions log - the canonical home for load-bearing decisions, both
 product (scope cuts, resolved PRD open questions) and implementation conventions (error
 envelope, ID scheme, token strategy, migrations, test harness). `add --decision ...
 --rationale ...` appends an auto-numbered, dated row to `sdlc-studio/decisions.md`; `list`
@@ -201,7 +201,7 @@ sprint per-tranche ledger (`ledger.py`).
 
 ### `product_reconcile.py`
 
-Cross-repo feature-map traceability (CR0049, RFC0015 WS3). Verifies every product feature
+Cross-repo feature-map traceability. Verifies every product feature
 `PF####` in the PVD's §3 table maps to a feature actually DECLARED (a table cell or heading,
 not free-text) in its owning repo's PRD, resolving repos via the manifest. Findings:
 orphan-feature + unknown-repo + missing-path (blocking); repo-absent + empty-feature-map
@@ -210,7 +210,7 @@ Never silently reads the wrong PRD; exits non-zero on a blocking inconsistency.
 
 ### `pvd.py`
 
-PVD projection + drift (CR0048, RFC0015 WS2). `sync` projects the one writable master
+PVD projection + drift. `sync` projects the one writable master
 Product Vision Document into a child repo read-only (copy in dev, symlink in prod);
 `drift` compares a projected copy against the master (in-sync / stale / behind / missing /
 error) via sha256 + version. An unreadable/missing master reports `error`, never a vacuous
@@ -218,7 +218,7 @@ in-sync. `read_manifest` parses `product-manifest.yaml` (no PyYAML). See `refere
 
 ### `gate.py`
 
-Portable, ecosystem-neutral CI quality gate (CR0046). Aggregates the deterministic checks
+Portable, ecosystem-neutral CI quality gate. Aggregates the deterministic checks
 (conformance, reconcile drift, validate, constitution, integrity) into one consolidated
 pass/fail and exits non-zero only when a blocking check fails. `--only` / `--skip` select
 checks; constitution blocks only when `constitution.enforce` is set. No network, no CI
@@ -227,7 +227,7 @@ check registry is injectable, so the aggregation logic is unit-tested without a 
 
 ### `deploy.py`
 
-Orchestrate-only deploy last-mile (RFC0013). Read-only, ecosystem-neutral: it never deploys, never
+Orchestrate-only deploy last-mile. Read-only, ecosystem-neutral: it never deploys, never
 rolls back, never reads secrets, and never runs inside `sprint`.
 
 - `preflight`: read `deploy.*` config, run the pre-deploy gate, emit the readiness verdict + the
@@ -240,7 +240,7 @@ Workflow: `reference-deploy.md`; schema: `reference-config.md#deploy`.
 
 ### `version_check.py`
 
-Skill version check + self-update signal (CR0044). Compares the installed version
+Skill version check + self-update signal. Compares the installed version
 against the latest GitHub release; `status`/`hint` print a one-line notice when newer.
 On by default, opt-out (`version_check.enabled`), TTL-cached, silent offline, per-version
 snooze. Drives the `skill-update` action via `scope`.
@@ -253,12 +253,12 @@ Action workflow: `reference-skill-update.md`.
 
 ### `transition.py`
 
-Deterministic status transition + cascade (CR0042). `set --id <ID> --status <new>`
+Deterministic status transition + cascade. `set --id <ID> --status <new>`
 sets the artifact's `Status`, syncs its index row + summary counts (reusing
 `reconcile.apply_type`), and ticks/unticks a story's checkbox in the parent epic's Story
 Breakdown. `index_synced` is the true post-state (warns if a row is archived or the new
 status has no summary row). Replaces the hand-edited "mark it Done + update the index"
-cascade. **A story -> Done is gated on its AC-verify result (CR0084):** if it declares
+cascade. **A story -> Done is gated on its AC-verify result:** if it declares
 executable (non-`manual`) ACs that are red or never run in `verify-report.json`, the
 transition is refused - the Definition-of-Done safety net for the hand-driven path that the
 sprint conformance gate already covers. `--force` overrides; manual-only / AC-less
@@ -266,7 +266,7 @@ stories and non-story types are never gated.
 
 ### `archive.py`
 
-Index archival for large boards (RFC0012). `archive --type <t> --release <r>` moves a
+Index archival for large boards. `archive --type <t> --release <r>` moves a
 type's terminal master-table rows into `<type>/archive/{release}/{type}.md` and leaves a
 bullet pointer in the live index - rows move, artifact files stay. `parse_index` unions
 the archive sub-indexes so the census stays correct. Explicit, idempotent per release.
@@ -277,7 +277,7 @@ Convention: `reference-outputs.md#index-archival`.
 
 ### `constitution.py`
 
-Project-constitution principle gate (RFC0005). Asserts the machine-checkable
+Project-constitution principle gate. Asserts the machine-checkable
 principles declared in `sdlc-studio/constitution.md` - each `rule:` maps onto an
 existing detector (integrity/conformance/validate/reconcile). Advisory by default;
 `constitution.enforce: true` makes a violation exit non-zero.
@@ -288,7 +288,7 @@ Full methodology: `reference-doctrine.md#constitution`.
 
 ### `file_finding.py`
 
-Deterministic Bug/CR/RFC filer for audit findings (RFC0002). Allocates a
+Deterministic Bug/CR/RFC filer for audit findings. Allocates a
 collision-free ID, renders a STRUCTURED artifact (required sections enforced - it
 refuses a hollow stub), appends the index row, and recomputes the index counts
 (reusing reconcile's pass).
@@ -303,15 +303,15 @@ Full methodology: `reference-audit.md`.
 Executes AC verifiers defined in story files and updates each AC's
 `Verified:` line. Drives `/sdlc-studio reconcile --verify`.
 
-- `run`: walk stories, run verifiers, write report (`--id USNNNN` resolves one story, CR0085)
+- `run`: walk stories, run verifiers, write report (`--id USNNNN` resolves one story)
 - `report`: print the latest verification report
 - `lint`: advisory - flag Verify lines that fall through to `shell` as mis-written runner
-  calls (`npm test -- ... -t`, `curl ... returns N`), nudging to the DSL (CR0085)
+  calls (`npm test -- ... -t`, `curl ... returns N`), nudging to the DSL
 - `ts-check --spec <ts>`: validate a test-spec's AC Coverage Matrix is not decorative -
   every AC mapped to a passing test case, no placeholders; `--verify-report` cross-checks the
-  matrix's claimed status against the live report (CR0085)
+  matrix's claimed status against the live report
 - `epic-ts --epic EPxxxx`: require an epic to have a test-spec (linked by its `Epic:` field)
-  whose matrix passes `ts-check` - the hard epic-scope TS requirement (CR0096), gated by
+  whose matrix passes `ts-check` - the hard epic-scope TS requirement, gated by
   `quality.epic_requires_test_spec` (default true; single-story work is exempt)
 
 Full workflow: `reference-verify.md`. User-facing help:
@@ -335,10 +335,10 @@ Full workflow: `reference-github-sync.md`. User-facing help:
 Builds the artifact-file census and reports `_index.md` drift as JSON.
 
 - `detect`: census + drift report (`--scope`, `--write-report`)
-- `apply`: mechanical fixes - status cells + summary counts (CR0026), behind `--dry-run`
+- `apply`: mechanical fixes - status cells + summary counts, behind `--dry-run`
 - `fields`: project file-owned cells (Title, Points, Persona) from the files into the index, so
-  it is fully derived (CR0082, CR0097); `--apply` writes, default reports. A field absent in the
-  file is left untouched (BG0032). Persona reads the canonical `> **Persona:**` story field (CR0097)
+  it is fully derived; `--apply` writes, default reports. A field absent in the
+  file is left untouched. Persona reads the canonical `> **Persona:**` story field
 
 Drift kinds: `status-mismatch`, `missing-row`, `orphan-row`, `count-mismatch`,
 `missing-index`. Claude consumes the report, applies the edits, and handles the
@@ -370,7 +370,7 @@ checks (`reference-decisions.md`) and as a reconcile pre-step.
 - `scan`: list IDs in use
 
 Covers the 8 pipeline types plus the **meta-artifacts** `review` (RV####) and `retro`
-(RETRO####) (CR0105), so review/retro ids are allocated, never hand-picked - run
+(RETRO####), so review/retro ids are allocated, never hand-picked - run
 `next_id.py allocate --type review` before writing a new review/retro, the same discipline as
 `artifact.py new` for pipeline types. (Lessons `LL####` have their own manager in `lessons.py`;
 personas are named, not numbered.) Read-only; runs `git ls-tree` (no fetch - the caller fetches
@@ -426,7 +426,7 @@ ships with the skill); project-tier writes stay in `.local/`. Full workflow:
 
 ### `disclosure.py`
 
-Progressive-disclosure + Claude Code best-practice check (CR0063), **advisory**. Flags reference-/
+Progressive-disclosure + Claude Code best-practice check, **advisory**. Flags reference-/
 help- files missing a `Load when:` trigger or orphaned from every index (SKILL.md / help/references.md
 / help/help.md), plus best-practice items from `best-practices/claude-skill.md` (scripts executable +
 expose `--help`, templates use `{{placeholder}}`, SKILL.md has a When-to-Use section). Skill-dev only
@@ -435,7 +435,7 @@ The token lever: a doc with no load-trigger and no index entry gets pulled in wi
 
 ### `project_upgrade.py`
 
-Migrate a CONSUMING project to the current skill conventions (CR0062), the project-side complement
+Migrate a CONSUMING project to the current skill conventions, the project-side complement
 to `skill-update` (which updates the tool, not the project). `detect` reports the version/convention
 gap (project `sdlc-studio/.version` vs the installed skill); the dry-run (default) prints a migration
 plan split into **auto-correctable** (scaffold `.config.yaml` with a `provenance.adopt_after` cutoff
@@ -447,15 +447,15 @@ it after a version bump.
 
 ### `audit.py`
 
-Adversarial audit / tranche pre-flight (RFC0002). `check` grooms a batch for readiness - weak-AC, unmet-deps, already-terminal, link-integrity, **already-satisfied** (a Ready unit whose executable ACs all pass in the verify-report - a close-candidate, not work to build, CR0098), **weak-verify** (a non-executable Verify line, reusing `verify_ac lint`, CR0109) and **cross-epic-ac** (an AC owned by another epic, reusing `ac_scope`, CR0109) - before the triage STOP, so work never starts on a unit that would pass the gates vacuously or be reverse-engineered at implement time.
+Adversarial audit / tranche pre-flight. `check` grooms a batch for readiness - weak-AC, unmet-deps, already-terminal, link-integrity, **already-satisfied** (a Ready unit whose executable ACs all pass in the verify-report - a close-candidate, not work to build), **weak-verify** (a non-executable Verify line, reusing `verify_ac lint`) and **cross-epic-ac** (an AC owned by another epic, reusing `ac_scope`) - before the triage STOP, so work never starts on a unit that would pass the gates vacuously or be reverse-engineered at implement time.
 
 ### `sprint.py`
 
-The Goal-Driven Development loop's planner (RFC0001; renamed from `autosprint.py`, CR0087). `plan <query> --order priority|wsjf` selects + dependency-orders the batch (the triage plan); priority dominates, complexity breaks ties. `plan --prd <path>` bootstraps greenfield authoring (CR0088); `plan --write` persists the sprint-plan artifact (CR0091); `plan` runs `reconcile detect` first and surfaces drift, refusing under `--strict` (reconcile-before-plan, CR0094). `--order wsjf` orders by seat-scored WSJF = (value+time-criticality+risk-reduction)/size from `.local/wsjf-inputs.json`, degrading to priority+complexity without inputs or under `--skip-personas` (CR0099). See reference-sprint.md.
+The Goal-Driven Development loop's planner (renamed from `autosprint.py`). `plan <query> --order priority|wsjf` selects + dependency-orders the batch (the triage plan); priority dominates, complexity breaks ties. `plan --prd <path>` bootstraps greenfield authoring; `plan --write` persists the sprint-plan artifact; `plan` runs `reconcile detect` first and surfaces drift, refusing under `--strict` (reconcile-before-plan). `--order wsjf` orders by seat-scored WSJF = (value+time-criticality+risk-reduction)/size from `.local/wsjf-inputs.json`, degrading to priority+complexity without inputs or under `--skip-personas`. See reference-sprint.md.
 
 ### `autosprint.py`
 
-Deprecated alias for `sprint.py` (CR0087) - re-exports it so `import autosprint` and the `autosprint.py` CLI keep working, emitting a deprecation pointer to `sprint`. Prefer `sprint`.
+Deprecated alias for `sprint.py` - re-exports it so `import autosprint` and the `autosprint.py` CLI keep working, emitting a deprecation pointer to `sprint`. Prefer `sprint`.
 
 ### `config.py`
 
@@ -467,15 +467,15 @@ The lifecycle-conformance gate. `detect_conformance` reports per-story stages (d
 
 ### `critic.py`
 
-The independent-critic verdict ledger (RFC0001 D3). `record` writes a committed verdict to `sdlc-studio/reviews/critic-verdicts.md`; `verdict_for` reads it. Conformance's `critiqued` stage requires a committed APPROVE.
+The independent-critic verdict ledger. `record` writes a committed verdict to `sdlc-studio/reviews/critic-verdicts.md`; `verdict_for` reads it. Conformance's `critiqued` stage requires a committed APPROVE.
 
 ### `doc_coverage.py`
 
-The documentation-coverage check (CR0053) - the `documented` DoD floor. Hard-fails when a Type-Reference command lacks a help/help.md catalogue entry or a script lacks a reference-scripts.md entry; warns on an empty CHANGELOG [Unreleased]. No-op for consuming repos (no SKILL.md). Wired into the gate + conformance.
+The documentation-coverage check - the `documented` DoD floor. Hard-fails when a Type-Reference command lacks a help/help.md catalogue entry or a script lacks a reference-scripts.md entry; warns on an empty CHANGELOG [Unreleased]. No-op for consuming repos (no SKILL.md). Wired into the gate + conformance.
 
 ### `doc_freshness.py`
 
-Advisory freshness check (CR0073) for `sdlc-studio/reviews/LATEST.md` - the state anchor drifts silently. Compares the facts LATEST.md *claims* (version, script-test count, disclosure count) against reality (SKILL.md version, the `def test_` census, `disclosure.check`) and flags mismatches. Only checks a fact LATEST.md actually states; never blocks; no-op off the skill repo. Wired into the gate as advisory.
+Advisory freshness check for `sdlc-studio/reviews/LATEST.md` - the state anchor drifts silently. Compares the facts LATEST.md *claims* (version, script-test count, disclosure count) against reality (SKILL.md version, the `def test_` census, `disclosure.check`) and flags mismatches. Only checks a fact LATEST.md actually states; never blocks; no-op off the skill repo. Wired into the gate as advisory.
 
 ### `integrity.py`
 
@@ -483,11 +483,11 @@ Referential integrity. `detect_integrity` flags missing required links (e.g. a s
 
 ### `ledger.py`
 
-The append-only per-tranche decisions ledger (RFC0001 D4). `record` appends a decision + rationale to `sdlc-studio/decisions/<tranche>.md`; survives context compaction so a reset resumes from disk.
+The append-only per-tranche decisions ledger. `record` appends a decision + rationale to `sdlc-studio/decisions/<tranche>.md`; survives context compaction so a reset resumes from disk.
 
 ### `loop_guard.py`
 
-The sprint deterministic guardrails (RFC0001 D5). The iteration cap, the repetition-breaker (repeated failure signature), and the completion oracle (`is_complete`) - persisted to `.local/loop-state.json` so an unattended run cannot thrash or declare itself done early.
+The sprint deterministic guardrails. The iteration cap, the repetition-breaker (repeated failure signature), and the completion oracle (`is_complete`) - persisted to `.local/loop-state.json` so an unattended run cannot thrash or declare itself done early.
 
 ### `resume.py`
 

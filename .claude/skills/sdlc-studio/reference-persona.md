@@ -14,8 +14,8 @@ Detailed workflows for User Persona creation, management, and consultation.
 | Consult personas or seats on an artefact | `reference-consult.md` |
 | Run an interactive persona session | `reference-chat.md` |
 
-**Design personas** (who the product serves, RFC0017) and **review seats** (who reviews the work,
-RFC0016) are distinct - see `reference-workflow-personas.md#document-owner-seats`.
+**Design personas** (who the product serves) and **review seats** (who reviews the work) are
+distinct - see `reference-workflow-personas.md#document-owner-seats`.
 
 ---
 
@@ -24,7 +24,7 @@ RFC0016) are distinct - see `reference-workflow-personas.md#document-owner-seats
 ## The cast (goal-directed design personas) {#categories}
 
 A persona is a **specific, goal-directed person** the product serves - defined by its **goals**,
-not demographics (Alan Cooper's model, RFC0017). Use the full **cast**; the **Primary** is the one
+not demographics (Alan Cooper's model). Use the full **cast**; the **Primary** is the one
 the product is designed *for*.
 
 | Cast role | What it is |
@@ -44,24 +44,24 @@ feel). The full schema is under [Enhanced Persona Structure](#enhanced-structure
 
 > **Design personas vs review seats.** This cast is the product's *users* - who you design for.
 > The internal *review seats* that critique artefacts (the Three Amigos: Product / Engineering /
-> QA) are a separate concern - their substrate and consult mechanics are RFC0016. A goal-directed
-> design persona is good input to that system, but is not the same thing.
+> QA) are a separate concern - their substrate and consult mechanics are covered separately. A
+> goal-directed design persona is good input to that system, but is not the same thing.
 
 ---
 
 ## Archetype Personas {#archetypes}
 
-> These are **review-seat** seeds (consult roles that critique artefacts - RFC0016), not the
+> These are **review-seat** seeds (consult roles that critique artefacts), not the
 > goal-directed design cast above. Design personas describe the product's users; review seats
 > describe who reviews the work.
 
 **Archetype seeds** (role + one-line disposition). The skill ships these seeds plus
 `templates/personas/persona-template.md`; `persona create` generates the full persona
 on demand for the consuming project rather than baking ~1680 lines of invented
-backstory into every install (RFC0007). To use one, run `persona create` from its
+backstory into every install. To use one, run `persona create` from its
 seed and customise.
 
-> **Migration (RFC0007):** the 15 pre-built character files under
+> **Migration:** the 15 pre-built character files under
 > `templates/personas/stakeholders/` and `team/` were removed. A consuming project that
 > referenced those files should regenerate the personas it needs via `persona create`
 > from the seeds below (its own `sdlc-studio/personas/` are unaffected).
@@ -99,7 +99,7 @@ seed and customise.
 
 ## /sdlc-studio persona create {#persona-create-workflow}
 
-Interactive creation of a goal-directed, well-formed persona (the Cooper model, RFC0017).
+Interactive creation of a goal-directed, well-formed persona (the Cooper model).
 
 1. **Check Existing**
    - Check if `sdlc-studio/personas/` directory exists
@@ -311,7 +311,7 @@ Review and update existing personas.
 
 ## Required Sections (a well-formed persona)
 
-A persona is **well-formed** when it has all of (the Cooper goal-directed schema, RFC0017):
+A persona is **well-formed** when it has all of (the Cooper goal-directed schema):
 
 | Section | Purpose |
 | --- | --- |
@@ -324,7 +324,7 @@ A persona is **well-formed** when it has all of (the Cooper goal-directed schema
 | Scenario | a short narrative of the persona reaching an End goal in context |
 
 "Well-formed" is **structural** (the file has these sections), not evidential - sdlc-studio does
-not require research backing, and builds no authored-identity machinery (RFC0017).
+not require research backing, and builds no authored-identity machinery.
 
 **Cast-role variants.** A **Negative** persona swaps End Goals for *End Goals (stated to exclude)*
 and replaces Experience Goals + Scenario with *Why we are not designing for them* + *how to handle
@@ -375,7 +375,7 @@ sdlc-studio/
 ```
 
 A flat `personas/` directory; each file declares its cast role in its Quick Reference. (Design
-personas only - review seats live with the consult workflow, RFC0016.)
+personas only - review seats live with the consult workflow.)
 
 ---
 

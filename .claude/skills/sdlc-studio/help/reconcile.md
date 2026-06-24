@@ -6,6 +6,19 @@ Related: reference-reconcile.md (deep workflow), reference-outputs.md (cascade c
 
 # /sdlc-studio reconcile - Status Reconciliation
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Tidy up the statuses so everything matches" | `/sdlc-studio reconcile` |
+| "Show me what's out of sync first, don't change anything" | `/sdlc-studio reconcile --dry-run` |
+| "Just fix the epic statuses" | `/sdlc-studio reconcile --scope epics` |
+| "Fix the index files and the counts" | `/sdlc-studio reconcile --scope indexes` |
+| "Check the acceptance criteria actually pass" | `/sdlc-studio reconcile --verify` |
+| "Correct the test counts in the docs too" | `/sdlc-studio reconcile --scope docs --fix-counts` |
+
 ## Quick Reference
 
 ```text

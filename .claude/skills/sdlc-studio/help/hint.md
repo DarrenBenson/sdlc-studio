@@ -6,6 +6,18 @@ Related: None (standalone utility command)
 
 # /sdlc-studio hint - Next Step Suggestion
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "What should I do next?" | `/sdlc-studio hint` |
+| "I'm stuck, where do I go from here?" | `/sdlc-studio hint` |
+| "What's the next step on this project?" | `/sdlc-studio hint` |
+| "Is anything blocking me?" | `/sdlc-studio hint` |
+| "Give me the big picture instead" | `/sdlc-studio status` |
+
 Get a single actionable next step based on current pipeline state.
 
 > **Deterministic helper.** `python3 "$CLAUDE_SKILL_DIR/scripts/status.py" hint --format json`

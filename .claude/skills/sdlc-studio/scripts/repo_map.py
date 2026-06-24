@@ -33,7 +33,7 @@ from typing import Iterable
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
-import complexity  # noqa: E402  (sibling; per-function complexity for the map, RFC0009 WS1)
+import complexity  # noqa: E402  (sibling; per-function complexity for the map)
 
 # Languages are identified by extension. Each language provides a symbol
 # extractor and an import extractor. Python uses the stdlib ast module;

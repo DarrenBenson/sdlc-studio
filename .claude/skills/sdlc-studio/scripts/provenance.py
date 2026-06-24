@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Artifact provenance: stamp check + remake backfill (CR0052).
+"""Artifact provenance: stamp check + remake backfill.
 
-Makes deterministic creation (CR0045) the *checkable* path. `new` stamps every artifact it
+Makes deterministic creation the *checkable* path. `new` stamps every artifact it
 creates (`> **Created-by:** sdlc-studio ...`); this module:
   check    flags artifacts past the adoption cutoff that LACK the stamp (hand-authored),
            with remediation. Advisory by default; `provenance.enforce: true` makes it block.
@@ -136,7 +136,7 @@ def cmd_remake(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Artifact provenance check + remake (CR0052).")
+    p = argparse.ArgumentParser(description="Artifact provenance check + remake.")
     sub = p.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("check", help="Flag un-stamped artifacts past the adoption cutoff.")
     c.add_argument("--type"); c.add_argument("--root", default=".")

@@ -10,6 +10,19 @@ This is the full command catalogue. SKILL.md stays lean and routes here on
 `/sdlc-studio help`. For the full flag reference see `help/arguments.md`; for the
 reference-file and template catalogue see `help/references.md`.
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "where are we?" | `/sdlc-studio status` |
+| "what should I do next?" | `/sdlc-studio hint` |
+| "clear the open bugs" | `/sdlc-studio sprint --bugs Open --goal done` |
+| "drive the proposed changes to done" | `/sdlc-studio sprint --crs Proposed --goal done` |
+| "build the docs from the existing codebase" | `/sdlc-studio prd generate` |
+| "fix any status drift" | `/sdlc-studio reconcile` |
+
 ## Getting Started
 
 **Sprint (recommended) - Goal-Driven Development.** Set a batch and a goal; the loop

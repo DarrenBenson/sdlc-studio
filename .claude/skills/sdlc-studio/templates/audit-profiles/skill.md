@@ -1,6 +1,6 @@
 # Audit Profile: skill
 
-The packaged lens pack for auditing an **agent skill itself** (RFC0002 WS5). The four
+The packaged lens pack for auditing an **agent skill itself**. The four
 lenses proven on the 2026-06-20 self-audit run. Load this pack as the profile when the
 project under audit *is* a skill (vs the default project profile in
 `reference-audit.md#audit-project-profile`).

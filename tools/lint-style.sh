@@ -37,4 +37,18 @@ if [ -n "$jargon_hits" ]; then
   status=1
 fi
 
+# 3. No internal provenance tags in consuming-facing docs / shipped code. A change-request id
+#    (CRxxxx / BGxxxx / RFCxxxx) in parenthetical form is traceability that belongs in the skill's
+#    own change-requests/, CHANGELOG, and git blame - not in files a consuming agent reads against
+#    its OWN project, whose id namespace collides. The skill's artifacts keep their ids; this guards
+#    only reference-*.md, help/*.md, and scripts/*.py. Bare example ids (BG0001 in `--bug BG0001`,
+#    the ID-format tables) are not flagged - only the parenthetical provenance form.
+skill="$repo_root/.claude/skills/sdlc-studio"
+prov_hits="$(grep -InE '\((CR|BG|RFC)[0-9]{4}' "$skill"/reference-*.md "$skill"/help/*.md "$skill"/scripts/*.py 2>/dev/null || true)"
+if [ -n "$prov_hits" ]; then
+  echo "Style error: internal provenance tag in a consuming-facing file. Strip it - traceability lives in change-requests/CHANGELOG/git, not in docs a consuming project reads."
+  printf '%s\n' "$prov_hits"
+  status=1
+fi
+
 exit "$status"

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Advisory check: does `sdlc-studio/reviews/LATEST.md` still tell the truth? (CR0073)
+"""Advisory check: does `sdlc-studio/reviews/LATEST.md` still tell the truth?
 
 LATEST.md is the project's state anchor - read first after every reset. It drifts silently: it once
-claimed 606 tests (was 622), ~66 disclosure advisories (was 0), and RFC0013 "deferred" (was shipped),
-and nothing caught it. This check compares the facts LATEST.md *claims* against reality and flags the
+claimed 606 tests (was 622), ~66 disclosure advisories (was 0), and a workstream "deferred" (was
+shipped), and nothing caught it. This check compares the facts LATEST.md *claims* against reality and flags the
 mismatches. Advisory (never blocks) and skill-only (no-op where there is no SKILL.md). It only checks
 a fact LATEST.md actually states - it never demands one.
 """

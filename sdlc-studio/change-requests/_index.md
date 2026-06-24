@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 2 |
+| Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 109 |
+| Complete | 111 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -127,8 +127,8 @@
 | [CR-0105](CR0105-extend-deterministic-id-allocation-to-the-meta-artifacts.md) | Extend deterministic id-allocation to the meta-artifacts (review/retro/persona/lessons) | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0106](CR0106-sprint-plan-should-scope-a-story-batch-by.md) | sprint plan should scope a story batch by epic, not only by status | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0107](CR0107-sprint-plan-should-emit-dependency-waves-not-just.md) | sprint plan should emit dependency waves, not just a flat order | Complete | Medium | Improvement | 2026-06-24 | -- |
-| [CR-0108](CR0108-lead-every-command-help-file-with-a-natural.md) | Lead every command help file with a natural-language 'You can just ask' block + enforce it | Proposed | Medium | Improvement | 2026-06-24 | -- |
+| [CR-0108](CR0108-lead-every-command-help-file-with-a-natural.md) | Lead every command help file with a natural-language 'You can just ask' block + enforce it | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0109](CR0109-tranche-audit-sprint-breakdown-should-run-verify-ac.md) | Tranche audit (sprint breakdown) should run verify_ac lint + ac_scope, not leave them hand-found | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0110](CR0110-author-the-test-spec-ac-coverage-matrix-at.md) | Author the test-spec AC Coverage Matrix at --goal design (shift the AC-to-test bridge left) | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0111](CR0111-verify-ac-batch-mode-run-the-test-runner.md) | verify_ac batch mode - run the test runner once, not a cold start per AC | Complete | Medium | Improvement | 2026-06-24 | -- |
-| [CR-0112](CR0112-strip-internal-provenance-tags-cr-bg-rfc-from.md) | Strip internal provenance tags (CR/BG/RFC) from consuming-facing docs + shipped code | Proposed | Medium | Improvement | 2026-06-24 | -- |
+| [CR-0112](CR0112-strip-internal-provenance-tags-cr-bg-rfc-from.md) | Strip internal provenance tags (CR/BG/RFC) from consuming-facing docs + shipped code | Complete | Medium | Improvement | 2026-06-24 | -- |

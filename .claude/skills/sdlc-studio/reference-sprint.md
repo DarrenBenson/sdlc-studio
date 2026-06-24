@@ -1,11 +1,11 @@
 # Sprint Reference - Goal-Driven Development loop
 
-<!-- Load when: /sdlc-studio sprint - the autonomous delivery loop (RFC0001) -->
+<!-- Load when: /sdlc-studio sprint - the autonomous delivery loop -->
 
 `sprint` runs **Goal-Driven Development**: you set the goal and the acceptance
 criteria, the loop drives the proven SDLC lifecycle to it. It is a prioritised
-batch of work delivered to a goal - a sprint, run by an agent. RFC0001 is the
-design home; the decisions below are settled there (D1-D7).
+batch of work delivered to a goal - a sprint, run by an agent. The decisions
+below are settled in the design home (D1-D7).
 
 ## Precondition - a runnable gate (cold start)
 
@@ -33,7 +33,7 @@ Natural language resolves to the same: "do an sprint to deliver all open bugs"
 
 ## The loop
 
-0. **Reconcile before plan (CR0094).** `scripts/sprint.py plan` runs `reconcile detect` first
+0. **Reconcile before plan.** `scripts/sprint.py plan` runs `reconcile detect` first
    and surfaces index drift (warns; refuses under `--strict`) - the plan reads each unit's file
    `Status`, so a stale index misleads selection. Mechanical drift only; **semantic** staleness
    (a unit whose feature shipped under a different artifact) still needs the audit + grooming.
@@ -47,8 +47,8 @@ Natural language resolves to the same: "do an sprint to deliver all open bugs"
    re-work), and **link-integrity** (reuses `scripts/integrity.py`). Not-ready units
    are sharpened, closed, or flagged-and-deferred; findings go to the decisions
    ledger. The adversarial "is the problem still real, the change still sound" lens
-   is model-instructed (delegates to RFC0002's audit when built).
-3. **Clarify + Triage STOP (D1).** First batch **every clarifying question** (scope
+   is model-instructed (delegates to the adversarial audit when built).
+3. **Clarify + Triage STOP (D1).** First, batch **every clarifying question** (scope
    boundaries, priority conflicts, ambiguous AC) into one numbered list, answered once.
    Then present the groomed plan + the audit verdict and **stop for operator approval**.
    After approval the loop runs autonomously, re-pausing only on a **material issue**
@@ -62,7 +62,7 @@ Natural language resolves to the same: "do an sprint to deliver all open bugs"
      default. Wraps the existing wave engine (`reference-project.md`); does not
      reinvent it.
    - `verify_ac` - run the AC oracle; back-annotate `Verified:`.
-   - **Independent critic (D3), scaled to stakes (CR0061)** - the review depth matches the unit's
+   - **Independent critic (D3), scaled to stakes** - the review depth matches the unit's
      risk, so tokens are spent in proportion:
      - **Code / logic / parser / security / data-loss-risk** -> a full **independent adversarial
        sub-agent** that did not write the diff judges it against AC intent, plus adversarial/mutation
@@ -75,9 +75,9 @@ Natural language resolves to the same: "do an sprint to deliver all open bugs"
    - `conformance check` - the deterministic gate (`scripts/conformance.py`):
      decomposed -> AC -> tested -> verified -> **reconciled** (no index drift) ->
      **critiqued** (a committed critic APPROVE) -> **documented** (the doc-coverage floor:
-     every Type-Reference command catalogued in help, every script in reference-scripts -
-     CR0053). **Hard-fail**: a unit cannot reach Done with a stage skipped - including the
-     critic and the docs (D-conformance, CR0023/CR0053).
+     every Type-Reference command catalogued in help, every script in reference-scripts).
+     **Hard-fail**: a unit cannot reach Done with a stage skipped - including the
+     critic and the docs (D-conformance).
    - **Update the docs in the same unit.** A unit that adds a command/script/flag updates
      its user docs (help catalogue + reference) before it is Done - the `documented` stage
      enforces the floor deterministically; content accuracy is judged by the closing review.
@@ -94,16 +94,16 @@ Natural language resolves to the same: "do an sprint to deliver all open bugs"
    assumptions / decisions-ledger reference / anything needing the operator).
    On each unit **close** (`artifact close`), a telemetry event (id, type, plus any run
    metrics passed: `--iterations`/`--verdict`/`--wall-time-s`/`--stages`) is appended to
-   the gitignored `sdlc-studio/.local/telemetry.jsonl` (CR0051 / RFC0014 WS2). Advisory -
-   it never affects the close; it feeds the deferred calibrate step (WS3) + RFC0009 WS5.
-7. **Retro (CR0018).** The closing gate also writes a sprint retro to
+   the gitignored `sdlc-studio/.local/telemetry.jsonl`. Advisory -
+   it never affects the close; it feeds the deferred calibrate step.
+7. **Retro.** The closing gate also writes a sprint retro to
    `sdlc-studio/retros/` (delivered, blocked, lessons) and reads the recent retros
    plus `lessons recall` at the **start** - the learning loop. The retro is a
-   general capability (CR0018), reused here, not sprint-only.
+   general capability, reused here, not sprint-only.
 
 ## Definition of Done
 
-A tranche is Done when (CR0053, aligned to the operator's orchestrator discipline):
+A tranche is Done when (aligned to the operator's orchestrator discipline):
 
 - every worklist item is **implemented, raised** as a tracked CR/bug, or **explicitly
   rejected/blocked** with rationale (verified against source of truth - "partly done" is
@@ -121,7 +121,7 @@ A unit-level Done is the per-unit conformance gate (decomposed -> ... -> documen
 
 The goals are **cumulative stop-points** - how far the loop drives. Natural language maps to
 the furthest named rung ("plan the next sprint" -> `plan`; "plan **and break down**" ->
-`design`; "run it" -> `done`); the operator need not name the flag (RFC0001 NL resolution).
+`design`; "run it" -> `done`); the operator need not name the flag (NL resolution).
 
 | `--goal` | The loop stops when... | Output | Operator phrase |
 | --- | --- | --- | --- |
@@ -130,74 +130,73 @@ the furthest named rung ("plan the next sprint" -> `plan`; "plan **and break dow
 | `design` | every unit is decomposed to Ready stories with AC **and story points** | a reviewable, estimated backlog | "break it down, make it ready" |
 | `done` | every unit is implemented, verified, conformant, reviewed | the delivered increment | "run the sprint" |
 
-### `--goal plan` - sprint planning (RFC0019 D8 / CR0091)
+### `--goal plan` - sprint planning
 
 From a backlog, **select** a sprint-sized batch (capacity / budget fit), **sequence** it by
-dependency, and **estimate** it - reusing `--order wsjf` + the complexity-weighted budget
-(CR0038) and `project plan`'s dependency order + wave estimation. `sprint.py plan --write`
+dependency, and **estimate** it - reusing `--order wsjf` + the complexity-weighted budget and `project plan`'s dependency order + wave estimation. `sprint.py plan --write`
 persists the sprint-plan artifact; then stop for review. (Distinct from `triage`, which grooms
 the *whole given batch* for readiness; `plan` selects a sprint's *worth*.)
 
-**Dependency waves (CR0107).** For `priority`/`wsjf` order, the plan emits **waves** - the
+**Dependency waves.** For `priority`/`wsjf` order, the plan emits **waves** - the
 dependency levels - alongside the flat order: wave 1 is the units with no in-batch dependency,
 wave *n+1* is everything whose deps all sit in earlier waves, and units in one wave are
 independent (parallelisable). `plan --write` persists them, so the operator no longer hand-derives
 the L1/L2/L3 structure; `--agentic` execution runs these same levels as its waves.
 
-**Scope by epic (CR0106).** A sprint is usually the next epic or two, not a whole status class, so
+**Scope by epic.** A sprint is usually the next epic or two, not a whole status class, so
 `plan --stories <status> --epic EPxxxx [--epic EPyyyy]` restricts the batch to stories in the named
 epic(s) - repeatable, union. Without it, `--stories Draft` selects every Draft story across all
 epics (the friction that forces hand-scoping). Dependency ordering, `--write`, and WSJF all operate
 on the scoped batch. Epic-scoping is story-only (it errors with `--crs`/`--bugs`).
 
-**Seat-scored WSJF (CR0099).** Sprint planning is a value/effort/risk judgement, not a bare
-priority sort (LL0007). At the plan rung, consult the review seats - **Product Owner** for value
+**Seat-scored WSJF.** Sprint planning is a value/effort/risk judgement, not a bare
+priority sort. At the plan rung, consult the review seats - **Product Owner** for value
 (+ time-criticality, risk-reduction), **Engineering** for effort (seeded by the complexity
 signal), **QA** for risk - and write their scores to `sdlc-studio/.local/wsjf-inputs.json`
 (`{<id>: {value, time_criticality, risk_reduction}}`). `sprint plan --order wsjf` then orders by
 **WSJF = (value + time-criticality + risk-reduction) / size**, recording the components in the
 sprint-plan artifact. With no seat inputs (or `--skip-personas`) it degrades gracefully to
-priority + complexity. The seat consult is the isolated-subagent consult (CR0060); the planner
+priority + complexity. The seat consult is the isolated-subagent consult; the planner
 math is deterministic.
 
-## Authoring mode - greenfield, from a PRD (RFC0019)
+## Authoring mode - greenfield, from a PRD
 
-The batch source can be a **PRD** instead of existing units (CR0088): `sprint <prd.md>
+The batch source can be a **PRD** instead of existing units: `sprint <prd.md>
 --goal design` drives **PRD -> epics -> stories** to a reviewable, estimated backlog, then
 stops - never implementing (that is a later `--goal done`). It reuses the existing generation
 core (`epic`-from-PRD + `story`-from-epic + `cr action`), not a parallel path (D5).
 
-1. **Decomposition phase (CR0089).** Decompose the PRD into epics, then each epic into Ready
-   stories created through the **batch** path (CR0078) - so ids, slugs, filenames, epic links,
+1. **Decomposition phase.** Decompose the PRD into epics, then each epic into Ready
+   stories created through the **batch** path - so ids, slugs, filenames, epic links,
    and indexes are wired by construction and delegated agents fill content only.
-2. **Two STOPs (CR0090).** (1) Present the **epic cut** (count, titles, PRD-feature mapping) and
+2. **Two STOPs.** (1) Present the **epic cut** (count, titles, PRD-feature mapping) and
    stop for approval before any story is authored. (2) Surface the PRD's **open questions** -
-   the operator answers, or the assumptions are recorded (`decisions.py promote`, CR0080) -
+   the operator answers, or the assumptions are recorded (`decisions.py promote`) -
    before story authoring. Under `--autonomous` both become record-the-assumption-and-proceed
    (logged to the ledger), per the autonomy ceiling - never silent.
-3. **Story points at `design` (CR0092).** Each story gets a `**Story Points:**` estimate (seeded
-   from the complexity signal); `reconcile fields` (CR0082) projects them into the index - no
+3. **Story points at `design`.** Each story gets a `**Story Points:**` estimate (seeded
+   from the complexity signal); `reconcile fields` projects them into the index - no
    hand-copying.
-4. **Test-spec bridge authored at design (CR0110).** Author each epic's **test-spec** with its
+4. **Test-spec bridge authored at design.** Author each epic's **test-spec** with its
    **AC Coverage Matrix** - every story AC mapped to a *planned* test case/title - and write the
    stories' `Verify:` lines as runner-targeted DSL pointing at those planned titles (or `manual`
-   where no runner can run the AC). This shifts the AC↔test bridge (CR0085) **left**: implement
+   where no runner can run the AC). This shifts the AC↔test bridge **left**: implement
    then binds tests to the matrix by construction instead of reverse-engineering the mapping and
-   repointing dozens of Verify lines at delivery time. Epic scope (single-story exempt, per
-   CR0096). The test-spec the Done-gate / `epic-ts` (CR0096) requires is thus produced here, not
+   repointing dozens of Verify lines at delivery time. Epic scope (single-story exempt).
+   The test-spec the Done-gate / `epic-ts` requires is thus produced here, not
    discovered missing at Done.
-5. **Closing consistency pass (CR0093).** The closing gate runs `ac_scope` (CR0086, cross-epic
+5. **Closing consistency pass.** The closing gate runs `ac_scope` (cross-epic
    AC references), `reconcile`/`reconcile fields` (drift 0, index derived), `validate` (0
    errors), `integrity` (every epic link resolves), `verify_ac lint` (no non-executable Verify
-   lines), and `ts-check` (CR0085) over the test-spec authored in step 4. Structural failures
+   lines), and `ts-check` over the test-spec authored in step 4. Structural failures
    block the "reviewable backlog" sign-off; advisory findings are reported. This is the check
    that replaces the operator as the structural coordinator.
 
-## Guardrails (settled in RFC0001)
+## Guardrails
 
 - **Never deploys.** `deploy` is a stop-condition (hard-to-reverse) action: the loop may prepare up
   to "gate green, artefact ready" and **hand back**, but it never runs `/sdlc-studio deploy` and the
-  triage approval never authorises a production rollout (RFC0013). Deploy is operator-triggered and
+  triage approval never authorises a production rollout. Deploy is operator-triggered and
   interactive, always.
 - **Deterministic** (the model cannot skip them): the iteration cap, the
   repetition-breaker, the completion oracle (`scripts/loop_guard.py`), and the
@@ -243,7 +242,6 @@ portable Phase-1 path for tools without the scripts.
 
 ## See Also
 
-- `RFC0001-autonomous-delivery-loop.md` - the design + decisions (D1-D7)
 - `reference-project.md` - the wave engine sprint wraps
 - `reference-cr.md` - `cr action` (CR -> stories)
 - `help/sprint.md` - command quick reference

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Deterministic project initialiser (CR0079).
+"""Deterministic project initialiser.
 
 `init` is the executable greenfield bootstrap - previously a manual checklist. It:
   1. creates the full `sdlc-studio/` directory tree,
-  2. pre-creates every per-type `_index.md` (reusing the CR0077 index helper),
+  2. pre-creates every per-type `_index.md` (reusing the index helper),
   3. seeds the config, a `.gitignore` for the runtime-state dir, and the agent-instructions files,
   4. with `--scaffold`, seeds the singleton docs (prd/trd/tsd/personas).
 
@@ -23,7 +23,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
-import file_finding  # noqa: E402  (reuse ensure_index - the CR0077 helper)
+import file_finding  # noqa: E402  (reuse ensure_index - the index helper)
 
 SKILL = Path(__file__).resolve().parent.parent
 SDLC = "sdlc-studio"
@@ -93,7 +93,7 @@ def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
             if not dry_run:
                 (root / rel).mkdir(parents=True, exist_ok=True)
 
-    # 2. per-type indexes (reuse the CR0077 helper; idempotent)
+    # 2. per-type indexes (reuse the index helper; idempotent)
     for t in INDEX_TYPES:
         idx_rel = f"{sdlc_md.ARTIFACT_TYPES[t][0]}/_index.md"
         if (root / idx_rel).exists():
@@ -112,7 +112,7 @@ def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
         _write(f"{SDLC}/.config.yaml", header + "\n" + cfg_tmpl.read_text(encoding="utf-8"))
 
     # 3b. gitignore the runtime-state dir so derived caches/reports/lessons are never committed
-    # (BG0036). Self-contained in sdlc-studio/ - never touches the project's own root .gitignore.
+    #. Self-contained in sdlc-studio/ - never touches the project's own root .gitignore.
     _write(f"{SDLC}/.gitignore",
            "# SDLC Studio runtime state (caches, verify reports, lessons) - derived, not source\n"
            ".local/\n")
@@ -123,7 +123,7 @@ def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
         if st.exists():
             _write(dst, _fill_known(_strip_comment(st.read_text(encoding="utf-8")), fields))
 
-    # 5. decisions log (CR0080 - project infrastructure, always seeded empty)
+    # 5. decisions log (project infrastructure, always seeded empty)
     dec_tmpl = SKILL / "templates" / "decisions.md"
     if dec_tmpl.exists():
         _write(f"{SDLC}/decisions.md", _strip_comment(dec_tmpl.read_text(encoding="utf-8")))
@@ -157,7 +157,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Deterministic project initialiser (CR0079).")
+    p = argparse.ArgumentParser(description="Deterministic project initialiser.")
     sub = p.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("run", help="Create the tree, indexes, config, and agent-instructions.")
     r.add_argument("--root", default=".")

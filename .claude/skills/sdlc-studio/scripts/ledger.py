@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SDLC Studio decisions ledger (RFC0001 D4/WS5).
+"""SDLC Studio decisions ledger.
 
 A committed, append-only per-tranche ledger under `sdlc-studio/decisions/`. Records
 rulings (timestamp, decision, rationale) so an sprint run's decisions survive
@@ -57,7 +57,7 @@ def read_ledger(repo_root: Path | str, tranche: str) -> list[dict]:
         return []
     rows: list[dict] = []
     for line in path.read_text(encoding="utf-8").splitlines():
-        cells = sdlc_md.table_cells(line)  # escaped-pipe-aware (BG0021)
+        cells = sdlc_md.table_cells(line)  # escaped-pipe-aware
         if not cells or len(cells) != 3:
             continue
         at, decision, rationale = cells

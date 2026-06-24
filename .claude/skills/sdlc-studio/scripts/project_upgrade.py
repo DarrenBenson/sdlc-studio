@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""project upgrade (CR0062): migrate a consuming project to the current skill conventions.
+"""project upgrade: migrate a consuming project to the current skill conventions.
 
 `skill-update` updates the skill (the tool); this updates a consuming PROJECT's artefacts to match
 what the new skill expects. It DETECTS the version/convention gap, AUDITS the project, and reports a
@@ -50,8 +50,8 @@ def _sdlc(root: Path) -> Path:
 def _bump_version_text(text: str, installed: str, prev_skill: str | None,
                        today: str | None = None) -> str:
     """Surgically bump an EXISTING .version - update schema/skill, stamp upgraded_from/upgraded_at,
-    and PRESERVE every other line (e.g. an author's `created_at`) (BG0030). `today` is injectable
-    for deterministic tests (CR0071)."""
+    and PRESERVE every other line (e.g. an author's `created_at`). `today` is injectable
+    for deterministic tests."""
     def setline(t: str, key: str, value: str) -> str:
         pat = re.compile(rf"^{key}:.*$", re.M)
         line = f"{key}: {value}"
@@ -89,7 +89,7 @@ _OLD_PERSONA_HEADING = re.compile(r"^##+\s+(Backstory|Psychology|Decision Driver
 
 
 def _old_persona_model(sd: Path) -> bool:
-    """True if the project uses the pre-RFC0017 persona model: the nested two-category structure
+    """True if the project uses the legacy persona model: the nested two-category structure
     (personas/team or personas/stakeholders), or a persona with old-model section headings. Catches
     nested personas that the flat Cooper well-formedness check (validate.check_personas) misses."""
     pdir = sd / "personas"
@@ -98,8 +98,8 @@ def _old_persona_model(sd: Path) -> bool:
     if (pdir / "team").is_dir() or (pdir / "stakeholders").is_dir():
         return True
     # top-level design personas only: the seats/ subdir holds review-seat charters (a different
-    # schema, RFC0016) and a consult-guide - none of those are "old design personas" (BG0027).
-    # sorted() for filesystem-independent, reproducible scanning (CR0071).
+    # schema) and a consult-guide - none of those are "old design personas".
+    # sorted() for filesystem-independent, reproducible scanning.
     for p in sorted(pdir.glob("*.md")):
         try:
             text = p.read_text(encoding="utf-8")
@@ -134,12 +134,12 @@ def audit(root: Path | str) -> dict:
     if not (sd / ".version").exists():
         auto.append({"kind": "missing-version", "detail": "no sdlc-studio/.version (records the skill/schema version)"})
     elif (installed and pv_skill != installed) or (pv_schema or 0) < CURRENT_SCHEMA:
-        # present but stale - apply() bumps it, so the dry-run must report it too (BG0025)
+        # present but stale - apply() bumps it, so the dry-run must report it too
         auto.append({"kind": "stale-version",
                      "detail": f"sdlc-studio/.version records skill {pv_skill or '?'}; bump to {installed or '?'}"})
     drift = sum(len(reconcile.detect_type(t, root)["drift"]) for t in sdlc_md.ARTIFACT_TYPES)
     if drift:
-        # NOT auto-applied by upgrade (BG0029): reconcile can be destructive on multi-schema / inline-row
+        # NOT auto-applied by upgrade: reconcile can be destructive on multi-schema / inline-row
         # projects. Review it deliberately with `/sdlc-studio reconcile`.
         manual.append({"kind": "index-drift", "count": drift,
                        "detail": f"{drift} index/status drift item(s) - review with `/sdlc-studio reconcile` "
@@ -169,8 +169,8 @@ def audit(root: Path | str) -> dict:
 def apply(root: Path | str, with_reconcile: bool = False, today: str | None = None) -> list[str]:
     """Perform the SAFE deterministic corrections (scaffold .config.yaml, bump .version). Idempotent.
     Reconcile is NOT run unless with_reconcile=True - it can rewrite indexes destructively on
-    multi-schema/inline-convention projects, so it is a separate, deliberate step (BG0029). `today`
-    is injectable for deterministic tests (CR0071). Returns the actions taken. Refuses a path that is
+    multi-schema/inline-convention projects, so it is a separate, deliberate step. `today`
+    is injectable for deterministic tests. Returns the actions taken. Refuses a path that is
     not already an sdlc-studio project so a mistyped --root cannot scaffold a phantom project."""
     today = today or date.today().isoformat()
     root = Path(root)
@@ -196,7 +196,7 @@ def apply(root: Path | str, with_reconcile: bool = False, today: str | None = No
     elif (prev_schema or 0) < CURRENT_SCHEMA:
         ver.write_text(_bump_version_text(ver.read_text(encoding="utf-8"), installed, prev_skill, today), encoding="utf-8")
         actions.append(f"repaired sdlc-studio/.version (schema -> {CURRENT_SCHEMA})")
-    # Reconcile is OFF by default (BG0029): it can rewrite indexes, and on multi-schema/inline-convention
+    # Reconcile is OFF by default: it can rewrite indexes, and on multi-schema/inline-convention
     # projects that is destructive - so an "upgrade" must not bundle it. Opt in with with_reconcile, or
     # run `/sdlc-studio reconcile` deliberately after reviewing its report.
     if with_reconcile:
@@ -251,7 +251,7 @@ def cmd_upgrade(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Migrate a consuming project to current skill conventions (CR0062).")
+    p = argparse.ArgumentParser(description="Migrate a consuming project to current skill conventions.")
     p.add_argument("--root", default=".")
     p.add_argument("--apply", action="store_true", help="perform the safe deterministic corrections (default: dry-run)")
     p.add_argument("--with-reconcile", action="store_true",

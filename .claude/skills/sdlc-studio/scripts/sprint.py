@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""SDLC Studio sprint - batch selection and ordering (RFC0001 WS2).
+"""SDLC Studio sprint - batch selection and ordering.
 
 `sprint plan` selects a batch of work by query (open bugs, proposed CRs, ready
 stories) and orders it, so the operator sees the triage plan before the run starts.
 Ordering is by priority/severity (Critical first); dependency-topological; and WSJF
 (`--order wsjf`): priority stays the dominant axis and the cognitive complexity of the
-files a unit will touch (its `Affects`, scored by complexity.py - RFC0009 WS3) breaks
+files a unit will touch (its `Affects`, scored by complexity.py) breaks
 ties within a priority, so the smaller blast-radius job goes first. Complexity never
 overrides priority, and the order degrades to plain priority when no complexity is
 known. The plan also carries a complexity-weighted per-unit token budget. Read-only;
@@ -21,12 +21,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
-import complexity  # noqa: E402  (sibling - blast-radius complexity for WSJF, RFC0009 WS3)
-import reconcile  # noqa: E402  (sibling - reconcile-before-plan, CR0094)
+import complexity  # noqa: E402  (sibling - blast-radius complexity for WSJF)
+import reconcile  # noqa: E402  (sibling - reconcile before plan)
 
 PRIORITY_FIELD = {"bug": "Severity", "cr": "Priority", "story": "Priority"}
 PRIORITY_WEIGHT = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}
-BASE_TOKEN_BUDGET = 50_000        # per-unit floor (RFC0009 WS3)
+BASE_TOKEN_BUDGET = 50_000        # per-unit floor
 TOKENS_PER_COGNITIVE = 5_000      # added per point of blast-radius cognitive complexity
 
 
@@ -64,9 +64,9 @@ def _complexity_size(root: Path, text: str) -> int:
 def _dep_ids(value: str) -> set:
     """The leading artifact-ID tokens of a `Depends on` field, normalised.
 
-    Stops at the first non-ID word, so prose like "see CR0001 for background" or
-    "supersedes CR0001" does not become a hard ordering dependency. Handles
-    comma/space-separated lists and a trailing parenthetical (`CR0003 (note)`).
+    Stops at the first non-ID word, so prose like "see US0001 for background" or
+    "supersedes US0001" does not become a hard ordering dependency. Handles
+    comma/space-separated lists and a trailing parenthetical (`US0003 (note)`).
     """
     ids: set = set()
     for tok in re.split(r"[,\s]+", value.strip()):
@@ -80,8 +80,8 @@ def _dep_ids(value: str) -> set:
 
 
 def _rank_key(it: dict):
-    """Tiebreak order among ready units: highest WSJF first (CR0099), else priority then the
-    smaller blast-radius job (RFC0009), else priority then id. Shared by topo order + waves."""
+    """Tiebreak order among ready units: highest WSJF first, else priority then the
+    smaller blast-radius job, else priority then id. Shared by topo order + waves."""
     w = PRIORITY_WEIGHT.get(it["priority"], 2)
     if "wsjf" in it:
         return (-it["wsjf"], w, it["id"])
@@ -104,7 +104,7 @@ def _build_dag(items: list[dict], deps: dict[str, set]) -> tuple[dict, dict, dic
 
 
 def _topo_waves(items: list[dict], deps: dict[str, set]) -> list[list[dict]]:
-    """Dependency LEVELS (CR0107): wave 0 = units with no in-batch deps; wave n+1 = units all of
+    """Dependency LEVELS: wave 0 = units with no in-batch deps; wave n+1 = units all of
     whose in-batch deps sit in waves <= n. Units in one wave are independent (parallelisable),
     ordered within the wave by `_rank_key`. Raises ValueError naming a dependency cycle."""
     by_id, adj, indeg = _build_dag(items, deps)
@@ -154,12 +154,12 @@ def _topo_order(items: list[dict], deps: dict[str, set]) -> list[dict]:
 
 
 def wsjf_score(value: float, time_criticality: float, risk_reduction: float, size: float) -> float:
-    """WSJF = (value + time-criticality + risk-reduction) / job size (CR0099). Size >= 1."""
+    """WSJF = (value + time-criticality + risk-reduction) / job size. Size >= 1."""
     return round((value + time_criticality + risk_reduction) / max(size, 1), 3)
 
 
 def _wsjf_inputs(root: Path) -> dict:
-    """Per-unit value/time-criticality/risk-reduction the review seats scored (CR0099), written
+    """Per-unit value/time-criticality/risk-reduction the review seats scored, written
     to `sdlc-studio/.local/wsjf-inputs.json` by the model after the PO/Eng/QA consult. Keyed by
     normalised id. Absent -> {} -> the planner falls back to priority + complexity."""
     raw = sdlc_md.read_json(root / "sdlc-studio" / ".local" / "wsjf-inputs.json", {})
@@ -170,16 +170,16 @@ def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "pr
                  skip_personas: bool = False, epics: set[str] | None = None) -> list[dict]:
     """Files of `kind` whose Status matches, with priority, ordered.
 
-    `epics` (story scope only, CR0106) restricts the batch to stories whose `Epic:` field is in
+    `epics` (story scope only) restricts the batch to stories whose `Epic:` field is in
     that set - so a sprint can be planned for one or more epics, not just a whole status class.
     `priority`/`wsjf` order deps-first (topological). `wsjf` orders by the WSJF score when the
-    review seats have scored value/risk (CR0099); otherwise it falls back to priority with the
-    smaller blast-radius job as the tiebreak (RFC0009). `manual` preserves discovery order.
+    review seats have scored value/risk; otherwise it falls back to priority with the
+    smaller blast-radius job as the tiebreak. `manual` preserves discovery order.
     """
     root = Path(repo_root)
     vocab = sdlc_md.status_vocab(kind, root)
     epic_filter = {sdlc_md.norm_id(e) for e in epics} if epics else None
-    # BG0034: canonicalise the user-supplied status arg so a lowercase '--crs proposed' (the
+    # canonicalise the user-supplied status arg so a lowercase '--crs proposed' (the
     # documented form) matches the title-case vocab token, instead of silently selecting nothing.
     target = sdlc_md.canonical_status(status, vocab) or status
     if vocab and target not in vocab:
@@ -192,7 +192,7 @@ def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "pr
         st = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab) or "Unknown"
         if st != target:
             continue
-        if epic_filter is not None:  # CR0106: scope to the named epic(s)
+        if epic_filter is not None:  # scope to the named epic(s)
             ef = sdlc_md.extract_field(text, "Epic") or ""
             m = sdlc_md.ID_SEARCH_RE.search(ef)
             if not (m and sdlc_md.norm_id(m.group(0)) in epic_filter):
@@ -202,7 +202,7 @@ def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "pr
         dval = sdlc_md.extract_field(text, "Depends on") or sdlc_md.extract_field(text, "Depends On") or ""
         deps[sdlc_md.norm_id(rid)] = _dep_ids(dval)
         out.append({"id": rid, "type": kind, "status": st, "priority": pri, "path": str(path)})
-    if order == "wsjf":  # CR0099: seat-scored WSJF when available, else priority+complexity
+    if order == "wsjf":  # seat-scored WSJF when available, else priority+complexity
         seat_inputs = {} if skip_personas else _wsjf_inputs(root)
         for it in out:
             size = _complexity_size(root, Path(it["path"]).read_text(encoding="utf-8"))
@@ -223,7 +223,7 @@ def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "pr
 def build_plan(repo_root: Path | str, kind: str, status: str, order: str = "priority",
                skip_personas: bool = False, epics: set[str] | None = None) -> dict:
     """The triage plan: the ordered batch, a count, and (for ordered modes) the dependency
-    WAVES (CR0107) - the parallelisable levels operators otherwise hand-derive."""
+    WAVES - the parallelisable levels operators otherwise hand-derive."""
     batch = select_batch(repo_root, kind, status, order, skip_personas=skip_personas, epics=epics)
     waves = None
     if order in ("priority", "wsjf") and batch:
@@ -247,9 +247,9 @@ def build_plan(repo_root: Path | str, kind: str, status: str, order: str = "prio
 
 
 def build_authoring_plan(repo_root: Path | str, prd_path: str) -> dict:
-    """The greenfield authoring plan (CR0088): the batch source is a PRD, not existing units.
+    """The greenfield authoring plan: the batch source is a PRD, not existing units.
     The planner validates the PRD and signals **authoring mode**; the decomposition itself
-    (PRD -> epics -> stories) is the model-instructed phase the loop runs next (CR0089). It
+    (PRD -> epics -> stories) is the model-instructed phase the loop runs next. It
     cannot enumerate epics/stories here - they do not exist yet."""
     prd = Path(prd_path)
     if not prd.exists():
@@ -266,7 +266,7 @@ def build_authoring_plan(repo_root: Path | str, prd_path: str) -> dict:
 
 def cmd_plan(args: argparse.Namespace) -> int:
     """Print the ordered batch the operator approves before a run."""
-    if getattr(args, "prd", None):  # CR0088: greenfield authoring - the batch is a PRD
+    if getattr(args, "prd", None):  # greenfield authoring - the batch is a PRD
         try:
             data = build_authoring_plan(args.root, args.prd)
         except FileNotFoundError as exc:
@@ -284,7 +284,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
     else:  # pragma: no cover - argparse marks the group required
         print("specify one of --bugs/--crs/--stories/--prd", file=sys.stderr)
         return 2
-    # CR0094: reconcile before plan - a plan must be built on a drift-free census. Mechanical
+    # reconcile before plan - a plan must be built on a drift-free census. Mechanical
     # drift only (index vs file); semantic staleness still needs the audit + human grooming.
     try:
         drift = reconcile.detect_type(kind, Path(args.root)).get("drift", [])
@@ -297,7 +297,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
         if getattr(args, "strict", False):
             return 2
     epics = set(getattr(args, "epic", None) or []) or None
-    if epics and kind != "story":  # CR0106: epic-scoping is meaningful for stories only
+    if epics and kind != "story":  # epic-scoping is meaningful for stories only
         print("--epic scopes a story batch; use it with --stories", file=sys.stderr)
         return 2
     try:
@@ -306,7 +306,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
     except ValueError as exc:  # dependency cycle
         print(f"cannot order the batch: {exc}", file=sys.stderr)
         return 2
-    if getattr(args, "write", False):  # CR0091: persist the sprint-plan artifact for review
+    if getattr(args, "write", False):  # persist the sprint-plan artifact for review
         out = Path(args.root) / "sdlc-studio" / ".local" / "sprint-plan.json"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(data, indent=2), encoding="utf-8")
@@ -316,7 +316,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
     else:
         scope = f", epics {', '.join(sorted(epics))}" if epics else ""
         print(f"batch: {data['count']} {kind}(s) with Status {status}{scope}, order={args.order}")
-        if data.get("waves"):  # CR0107: show the parallelisable dependency levels
+        if data.get("waves"):  # show the parallelisable dependency levels
             for i, wave in enumerate(data["waves"], 1):
                 par = " (parallel)" if len(wave) > 1 else ""
                 print(f"  wave {i}{par}: {', '.join(wave)}")
@@ -334,16 +334,16 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--bugs", metavar="STATUS", help="Bugs with this Status (e.g. Open)")
     g.add_argument("--crs", metavar="STATUS", help="CRs with this Status (e.g. Proposed)")
     g.add_argument("--stories", metavar="STATUS", help="Stories with this Status (e.g. Ready)")
-    g.add_argument("--prd", metavar="PATH", help="Greenfield authoring: bootstrap from a PRD (CR0088)")
+    g.add_argument("--prd", metavar="PATH", help="Greenfield authoring: bootstrap from a PRD")
     p.add_argument("--epic", action="append", metavar="EPxxxx",
-                   help="scope a story batch to one or more epics (repeatable; with --stories, CR0106)")
+                   help="scope a story batch to one or more epics (repeatable; with --stories)")
     p.add_argument("--order", choices=("priority", "wsjf", "manual"), default="priority")
     p.add_argument("--write", action="store_true",
-                   help="persist the sprint plan to sdlc-studio/.local/sprint-plan.json (CR0091)")
+                   help="persist the sprint plan to sdlc-studio/.local/sprint-plan.json")
     p.add_argument("--strict", action="store_true",
-                   help="refuse to plan when the index has drift (reconcile-before-plan, CR0094)")
+                   help="refuse to plan when the index has drift (reconcile before plan)")
     p.add_argument("--skip-personas", action="store_true", dest="skip_personas",
-                   help="ignore review-seat WSJF inputs; order by priority + complexity (CR0099)")
+                   help="ignore review-seat WSJF inputs; order by priority + complexity")
     p.add_argument("--root", default=".", help="Repo root (default: .)")
     p.add_argument("--format", choices=("text", "json"), default="text")
     p.set_defaults(func=cmd_plan)

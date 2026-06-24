@@ -63,7 +63,7 @@ several RFCs have accumulated and need triaging together.
    Recommendation, state: the core decision, the options + the RFC's leaning, what
    acceptance spawns (workstreams → CRs), effort/value, and a recommended
    disposition. The "is the problem still real / option still sound" judgement is
-   model-instructed (delegates to the RFC0002 audit when built).
+   model-instructed (delegates to the adversarial audit when built).
 3. **Decide (operator)** - present the briefs together; per RFC choose **accept**
    (optionally scoped to a subset of workstreams), **defer** (stays Draft; record
    the trigger that would revisit it), or **withdraw/supersede**.

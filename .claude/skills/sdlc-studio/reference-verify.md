@@ -7,7 +7,7 @@
 > by `manual` (or `manually`) is counted **manual** - never executed - so a prose check can't be
 > shelled out and time out into a false `failed`.
 
-> **The test-spec is the AC-to-test bridge (CR0085).** When an epic is fanned out, the AC's
+> **The test-spec is the AC-to-test bridge.** When an epic is fanned out, the AC's
 > test name and the implementation's test title are chosen by different processes and drift
 > into two parallel descriptions (the 0/7 class). Authoring the test-spec's **AC Coverage
 > Matrix** *before* code fixes the test-case names that the Verify line and the test both
@@ -186,7 +186,7 @@ python3 "$CLAUDE_SKILL_DIR/scripts/verify_ac.py" run \
 
 ## Batch verification {#batch}
 
-`reconcile --verify --batch` (CR0111) runs **jest once** (`jest --json`) and resolves every
+`reconcile --verify --batch` runs **jest once** (`jest --json`) and resolves every
 jest-targeted AC against that single result set, instead of a cold `jest -t` start per AC - a field
 sprint measured ~48 cold starts / 70s collapsing to one run. A jest pattern passes iff at least one
 assertion name contains it and all matching pass (mirroring `jest -t`); anything not found in the
@@ -199,7 +199,7 @@ jest-specific today.
 
 Written to `sdlc-studio/.local/verify-report.json` after every apply
 run. Each run **merges** its stories into the report (this run's entries win, others are
-preserved, BG0037), so verifying a sprint one story at a time accumulates and the Done-gate finds
+preserved), so verifying a sprint one story at a time accumulates and the Done-gate finds
 every verified story - you need not re-run the whole `--dir` to populate it. Use `--fresh` to
 rebuild from the current run only. The `report` subcommand prints it in text or JSON:
 

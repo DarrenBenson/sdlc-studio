@@ -6,6 +6,18 @@ Related: reference-refactor.md (deep workflow), reference-code.md (implementatio
 
 # /sdlc-studio code refactor - Guided Refactoring
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Tidy up this code without changing what it does" | `/sdlc-studio code refactor` |
+| "Pull this big function apart into smaller ones" | `/sdlc-studio code refactor --type extract-method` |
+| "Rename this everywhere it's used" | `/sdlc-studio code refactor --type rename` |
+| "Clean up the code for story US0003" | `/sdlc-studio code refactor --story US0003` |
+| "Show me the changes first, don't apply them yet" | `/sdlc-studio code refactor --dry-run` |
+
 > **Source of truth:** `reference-refactor.md` - Detailed workflow steps
 
 ## Quick Reference

@@ -117,14 +117,14 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
 _PLACEHOLDER = re.compile(r"\{\{[^}]*\}\}")
 _GWT = re.compile(r"\s*[-*]\s+\*\*(Given|When|Then)\b")
 _META = re.compile(r">\s*\*\*[\w ]+:\*\*")
-_CHECKBOX = re.compile(r"\s*[-*]\s+\[[ xX]\]")  # `- [ ] {{criterion}}` (CR/story AC checklist)
+_CHECKBOX = re.compile(r"\s*[-*]\s+\[[ xX]\]")  # `- [ ] {{criterion}}` (change-request / story AC checklist)
 _BULLET_VAL = re.compile(r"^\s*[-*]\s+(?:\[[ xX]\]\s+)?(?:\*\*[^*]+\*\*:?\s*)?(.*)$")
 
 
 def _unfilled(value: str | None) -> bool:
     """True when a value is a placeholder slot, not real content: nothing of substance
     remains after the `{{...}}` and surrounding punctuation are removed. Mirrors
-    conformance._real so the two gates agree on what counts as filled (CR0056)."""
+    conformance._real so the two gates agree on what counts as filled."""
     residue = _PLACEHOLDER.sub("", value or "")
     return re.sub(r"[\s.,;:!?*_`>~\-]+", "", residue) == ""
 
@@ -142,7 +142,7 @@ def _ac_value(line: str) -> str:
 def _check_placeholders(text: str, add) -> None:
     """Flag an unresolved `{{...}}` slot left in a metadata line or an acceptance-criteria
     structural line (AC heading, ACn / Given / When / Then / checkbox bullet, Verify) - an
-    unfilled scaffold (CR0056). Flags only a line whose *value* is placeholder-ONLY, so prose
+    unfilled scaffold. Flags only a line whose *value* is placeholder-ONLY, so prose
     that legitimately discusses `{{placeholder}}` syntax, and a real AC that merely references
     a token, are never flagged (consistent with conformance._real)."""
     in_ac = False
@@ -325,7 +325,7 @@ def _starts(headings: list[str], *prefixes: str) -> bool:
 
 
 def check_personas(root: Path) -> list[dict]:
-    """Cast-role-aware well-formedness check for goal-directed personas (RFC0017 WS3).
+    """Cast-role-aware well-formedness check for goal-directed personas.
 
     Advisory only - a persona is a design aid, and a draft is legitimate; this never errors and
     is not in the hard gate. Scans `sdlc-studio/personas/*.md` (skips index.md). A standard
@@ -408,7 +408,7 @@ def build_parser() -> argparse.ArgumentParser:
     i.set_defaults(func=cmd_instructions)
 
     pp = sub.add_parser("personas",
-                        help="Well-formedness check for goal-directed personas (advisory, RFC0017).")
+                        help="Well-formedness check for goal-directed personas (advisory).")
     pp.add_argument("--root", default=".", help="Repo root (default: .)")
     pp.add_argument("--format", choices=("text", "json"), default="text")
     pp.set_defaults(func=cmd_personas)

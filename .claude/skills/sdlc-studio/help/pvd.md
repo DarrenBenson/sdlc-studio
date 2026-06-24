@@ -5,12 +5,23 @@
 The **Product Vision Document** - the product layer above the PRD, coordinating the repos
 that form one product. Opt-in: a single repo never needs it.
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Set up a product vision across our repos" | `/sdlc-studio pvd create` |
+| "Push the vision out to each child repo" | `/sdlc-studio pvd sync` |
+| "Check the features and contracts line up across repos" | `/sdlc-studio product reconcile` |
+| "Which repo owns this feature?" | `/sdlc-studio product reconcile` |
+
 ## Commands
 
 ```bash
 /sdlc-studio pvd create      # render the tiered master PVD into the product repo
-/sdlc-studio pvd sync        # project the master read-only into each child repo (CR0048)
-/sdlc-studio product reconcile   # verify the feature map + contracts across repos (CR0049)
+/sdlc-studio pvd sync        # project the master read-only into each child repo
+/sdlc-studio product reconcile   # verify the feature map + contracts across repos
 ```
 
 ## What it is
@@ -26,4 +37,4 @@ that form one product. Opt-in: a single repo never needs it.
 
 - `reference-pvd.md` - the workflow
 - `templates/core/pvd.md`, `templates/product-manifest.yaml`
-- RFC0015 - the design (accepted, scoped WS1-3)
+- the design rationale (accepted)

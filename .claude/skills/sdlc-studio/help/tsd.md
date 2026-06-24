@@ -6,6 +6,17 @@ Related: reference-tsd.md (deep workflow), templates/core/tsd.md
 
 # /sdlc-studio tsd - Test Strategy Document
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Set up our testing strategy" | `/sdlc-studio tsd` |
+| "Work out how this project is already tested" | `/sdlc-studio tsd generate` |
+| "We switched test frameworks - update the strategy" | `/sdlc-studio tsd review` |
+| "What coverage gates should block our builds?" | `/sdlc-studio tsd` |
+
 ## Quick Reference
 
 ```

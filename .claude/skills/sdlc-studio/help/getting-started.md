@@ -6,6 +6,19 @@ Related: help/init.md, reference-verify.md, reference-sprint.md, reference-scrip
 
 # Greenfield Runbook - From Empty Repo to Shipped
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Set up a brand new project here" | `/sdlc-studio init --scaffold` |
+| "Draft the product requirements" | `/sdlc-studio prd` |
+| "Break the PRD into epics" | `/sdlc-studio epic` |
+| "Write the stories for this epic" | `/sdlc-studio story --epic EPxx` |
+| "Check the backlog is wired and clean" | `/sdlc-studio reconcile` then `validate` |
+| "Take this epic to done on its own" | `/sdlc-studio sprint --epic EPxx --goal done` |
+
 The canonical command order for a new project, start to a reviewable backlog and on through
 the implementation handoff. Each step: why, the command, what it produces, what it unblocks.
 You do not reconstruct this from scattered "Next steps" footers - it is the path.
@@ -27,9 +40,9 @@ product decisions and implementation conventions; resolved PRD open questions ar
 in with `decisions.py promote --from PRD-OQn`). Delegated authoring agents read it as their
 handoff context.
 
-> **Authoring loop (when RFC0019 lands):** a single guarded loop will collapse steps 5-7 -
-> drive the PRD to a reviewable backlog, pausing to approve the epic cut and resolve open
-> questions, then stop. Until then, run the steps above in order.
+> **Authoring loop:** a single guarded loop can collapse steps 5-7 - drive the PRD to a
+> reviewable backlog, pausing to approve the epic cut and resolve open questions, then stop.
+> Where it is not available, run the steps above in order.
 
 ## 2. Implementation - the sprint handoff
 

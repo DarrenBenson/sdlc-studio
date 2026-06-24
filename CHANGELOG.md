@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **natural-language "You can just ask" blocks on every command help file (CR0108):** the skill
+  is model-invoked, so each `help/*.md` now opens with a `Just say... | Runs` table mapping plain
+  phrasings to commands - a non-technical operator can just ask. A `disclosure` check enforces the
+  block on every non-meta help file. Authored across 35 files via a multi-agent sweep.
+
 - **`verify_ac --batch` jest mode - run the runner once, not a cold start per AC (CR0111, field
   report):** `reconcile --verify --batch` runs `jest --json` once and resolves jest-targeted ACs
   against that result set (a field sprint measured ~48 cold `jest -t` starts / 70s collapsing to
@@ -199,6 +204,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   validate/provenance behave identically). Part of the greenfield-friction workstream (CR0077-0086).
 
 ### Changed
+
+- **stripped internal provenance tags from consuming-facing docs + shipped code (CR0112):** the
+  skill's own change-request ids (CR/BG/RFC) were embedded pervasively in `reference-*.md`,
+  `help/*.md`, and `scripts/*.py` - where they collide with a consuming project's own id
+  namespace. ~420 tags removed (a deterministic pass + an 82-file grammar-aware sweep); a
+  `lint-style.sh` guard blocks the parenthetical provenance form from creeping back. The skill's
+  own artifacts (change-requests/, CHANGELOG, rfcs/, reviews/) keep their ids; example ids stay.
 
 - **`autosprint` renamed to `sprint` (CR0087, WS0 of RFC0019):** the command is now the whole
   sprint lifecycle (`--goal plan` / `design` / `done`), not just autonomous delivery - autonomy

@@ -8,6 +8,19 @@ Related: reference-tsd.md (status workflow details)
 
 Shows a visual dashboard of project health across three pillars: Requirements, Code, and Tests.
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "How is the project doing?" | `/sdlc-studio status` |
+| "Give me the one-line summary" | `/sdlc-studio status --brief` |
+| "Refresh the numbers after that test run" | `/sdlc-studio status --full` |
+| "How is test coverage looking?" | `/sdlc-studio status --testing` |
+| "What's in flight right now?" | `/sdlc-studio status --workflows` |
+| "What should I do next?" | `/sdlc-studio hint` |
+
 > **Deterministic helper.** Compute the census with the script rather than reading every artifact:
 > `python3 "$CLAUDE_SKILL_DIR/scripts/status.py" pillars --format json`.
 > Render the dashboard from that JSON. Run live lint / type-check / coverage yourself - the

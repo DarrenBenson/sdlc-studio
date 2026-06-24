@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SDLC Studio config loader (CR0008).
+"""SDLC Studio config loader.
 
 `templates/config-defaults.yaml` is the single source of truth for skill defaults.
 This loader reads it (merged with an optional project `sdlc-studio/.config.yaml`

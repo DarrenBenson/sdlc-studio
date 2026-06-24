@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SDLC Studio loop guardrails (RFC0001 D5/D2, WS3).
+"""SDLC Studio loop guardrails.
 
 The three judgements the loop-engineering consensus says the model must not own,
 as deterministic mechanisms:

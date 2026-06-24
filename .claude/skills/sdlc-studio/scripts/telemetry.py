@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Run telemetry recorder (CR0050, RFC0014 WS1).
+"""Run telemetry recorder.
 
 Append a per-unit run outcome to the gitignored `sdlc-studio/.local/telemetry.jsonl` so estimation and
-the complexity/churn calibration can become continuous (RFC0009 WS5) instead of one-off.
+the complexity/churn calibration can become continuous instead of one-off.
 **Local-only, no upload, no network.** Tokens are recorded only when the caller passes them
-(a script cannot read them reliably). The loop wires `record` on each unit close (CR0051).
+(a script cannot read them reliably). The loop wires `record` on each unit close.
 
 Subcommands:
   record   Append one run-outcome record.
@@ -19,7 +19,7 @@ from pathlib import Path
 
 # The project's gitignored state dir (sdlc-studio/.local/), not repo-root .local/.
 LOCAL = Path("sdlc-studio") / ".local" / "telemetry.jsonl"
-# The captured fields (RFC0014 D1). Optional ones are omitted when not supplied.
+# The captured fields. Optional ones are omitted when not supplied.
 FIELDS = ("id", "type", "iterations", "wall_time_s", "stages", "critic_verdict",
           "complexity", "churn", "reopened", "tokens")
 
@@ -84,7 +84,7 @@ def cmd_show(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Run telemetry recorder (CR0050).")
+    p = argparse.ArgumentParser(description="Run telemetry recorder.")
     sub = p.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("record", help="Append one run-outcome record.")
     r.add_argument("--id"); r.add_argument("--type"); r.add_argument("--iterations")

@@ -3,6 +3,18 @@
 
 # /sdlc-studio reconcile --verify - Help
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Check our acceptance criteria actually pass" | `/sdlc-studio reconcile --verify` |
+| "Show me what to expect first, do not change anything" | `/sdlc-studio reconcile --verify --dry-run` |
+| "Just verify the login story" | `/sdlc-studio reconcile --verify --story US0001` |
+| "What is failing right now?" | `/sdlc-studio reconcile --verify report` |
+| "Give me the verification results as JSON" | `/sdlc-studio reconcile --verify report --format json` |
+
 > **Source of truth:** `reference-verify.md` - Full design, DSL, report format
 
 Execute acceptance-criterion verifiers across story files and update

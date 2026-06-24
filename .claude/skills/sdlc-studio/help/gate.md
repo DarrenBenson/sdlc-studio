@@ -2,6 +2,18 @@
 
 <!-- Load when: /sdlc-studio gate - running the ecosystem-neutral quality gate -->
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Are we clear to commit this?" | `/sdlc-studio gate` |
+| "Run the quality checks before I push" | `/sdlc-studio gate` |
+| "Just check the index and drift, nothing else" | `/sdlc-studio gate --only reconcile,duplicate-id` |
+| "Skip the principles check this time" | `/sdlc-studio gate --skip constitution` |
+| "Give me the gate result as JSON for the pipeline" | `/sdlc-studio gate --format json` |
+
 A single, **ecosystem-neutral** quality gate over the deterministic checks. Run it in
 any CI (or a pre-commit hook) to enforce the discipline on a consuming project's changes.
 

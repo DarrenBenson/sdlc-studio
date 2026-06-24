@@ -130,7 +130,7 @@ def persona_usage(repo_root: Path) -> dict:
     # Prefer the personas/ directory (one file per persona) when present - this is
     # what the epic completion cascade and the review command read; fall back to
     # the single personas.md (H2 headings) otherwise. Keeps the source consistent
-    # across the deterministic helpers (BG0004).
+    # across the deterministic helpers.
     persona_files = [p for p in sorted(personas_dir.glob("*.md"))
                      if p.name != "_index.md"] if personas_dir.is_dir() else []
     method = ""

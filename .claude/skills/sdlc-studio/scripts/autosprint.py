@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deprecated alias for `sprint.py` (CR0087). `autosprint` was renamed to `sprint` when the
+"""Deprecated alias for `sprint.py`. `autosprint` was renamed to `sprint` when the
 command became the whole sprint lifecycle (plan/design/done); autonomy is the `--autonomous`
 flag, not the name. This shim re-exports `sprint` so `import autosprint` and the
 `autosprint.py` CLI keep working (incl. `--help`, via the re-exported argparse parser).

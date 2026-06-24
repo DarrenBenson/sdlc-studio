@@ -23,7 +23,7 @@ from lib import sdlc_md  # noqa: E402
 
 
 def _print_update_notice(root: str) -> None:
-    """Surface a one-line skill-update notice (CR0044) on status/hint - the skill's
+    """Surface a one-line skill-update notice on status/hint - the skill's
     'on first use' check. Fully guarded: a disabled config / offline / any error is
     silent and never affects the status output."""
     try:
@@ -42,7 +42,7 @@ def _print_update_notice(root: str) -> None:
 
 
 def _config_summary(repo_root: Path) -> dict | None:
-    """Representative defaults read from config-defaults.yaml (CR0008).
+    """Representative defaults read from config-defaults.yaml.
 
     Reads the single source via config.py. Lazy + graceful: if PyYAML is absent
     the census still works (the stdlib core has no hard YAML dependency).
@@ -85,7 +85,7 @@ def _pct_done(census: dict, done_states: tuple[str, ...]) -> int:
 
 
 def _verify_lane(repo_root: Path) -> dict:
-    """The AC-verification lane (CR0095): from `verify-report.json`, surface stories with
+    """The AC-verification lane: from `verify-report.json`, surface stories with
     unverified ACs (`no`/`stale` failures) and the manual-AC count as their own line - so
     env-bound / manual ACs read as 'deferred', not as silent gaps. Empty when no report."""
     report = sdlc_md.read_json(repo_root / "sdlc-studio" / ".local" / "verify-report.json", {})

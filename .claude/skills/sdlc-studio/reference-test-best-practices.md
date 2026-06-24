@@ -122,7 +122,7 @@ Test depth need not be uniform. `complexity.py assess --files <touched>` returns
 complexity and its git churn. Churn is weighted ~3x complexity because the 2026-06-21
 calibration against two real boards (consuming repo B n=305) found bug-affected files were
 ~1.8x more complex but ~4.9x more churned than clean files, and the top-complexity decile
-carried ~2.2x the bug rate (RFC0009). Defect risk concentrates in complex, frequently-
+carried ~2.2x the bug rate. Defect risk concentrates in complex, frequently-
 changed code - so put the test effort there:
 
 | risk_band | Coverage target | Edge-case scenarios | Verification tier |
@@ -133,8 +133,8 @@ changed code - so put the test effort there:
 
 This is advisory: it reallocates effort, it does not lower the floor. Thresholds are
 `complexity.cognitive_high` / `complexity.churn_high` in `.config.yaml`. (Wave-sizing by
-token/iteration cost - RFC0009 WS5 - stays deferred: it needs run-cost telemetry, which
-the defect calibration does not provide.)
+token/iteration cost stays deferred: it needs run-cost telemetry, which the defect
+calibration does not provide.)
 
 ## Review Patterns for AI Tests {#review-patterns-for-ai-tests}
 

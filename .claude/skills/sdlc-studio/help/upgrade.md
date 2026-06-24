@@ -8,6 +8,18 @@ Related: reference-upgrade.md
 
 Upgrade project artifacts from legacy (v1) to modular (v2) schema.
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Show me what the upgrade would change first" | `/sdlc-studio upgrade --dry-run` |
+| "Bring our docs up to the latest format" | `/sdlc-studio upgrade` |
+| "Just upgrade it, no questions" | `/sdlc-studio upgrade --force` |
+| "Our project is on an old version - sort out the conventions" | `/sdlc-studio project upgrade` |
+| "Apply the safe migration fixes" | `/sdlc-studio project upgrade --apply` |
+
 ## Quick Reference
 
 ```bash

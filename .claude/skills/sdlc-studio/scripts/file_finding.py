@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SDLC Studio deterministic finding filer (RFC0002 WS3).
+"""SDLC Studio deterministic finding filer.
 
 Files a Bug / CR / RFC from an audit (or any) finding: allocate a collision-free ID,
 render a STRUCTURED artifact (required sections enforced, so it cannot emit a hollow
@@ -44,7 +44,7 @@ def index_template_path(type_: str) -> Path:
 
 
 def ensure_index(repo_root: Path | str, type_: str, today: str) -> bool:
-    """Create `<dir>/_index.md` from `templates/indexes/<type>.md` when missing (CR0077).
+    """Create `<dir>/_index.md` from `templates/indexes/<type>.md` when missing.
 
     The canonical index-bootstrap, shared by `artifact new` (lazy, first-use) and `init`
     (front-loaded). Yields a clean *empty* index: summary counts zeroed, data-table headers
@@ -74,11 +74,11 @@ def _slug(title: str) -> str:
 
 def _next_number(repo_root: Path, type_: str) -> int:
     # Honour local files, lingering index rows, and origin/main - never re-issue an id
-    # that exists only on the remote or as a stale index row (BG0022).
+    # that exists only on the remote or as a stale index row.
     return next_id.allocate_number(type_, repo_root)
 
 
-# Provenance stamp (CR0052/CR0057) - marks this artifact as tool-created, same as
+# Provenance stamp - marks this artifact as tool-created, same as
 # `artifact new`, so `provenance check` no longer false-flags filer-created artifacts.
 _STAMP = "> **Created-by:** sdlc-studio file\n"
 
@@ -119,7 +119,7 @@ def append_index_row(repo_root: Path | str, type_: str, row_line: str) -> bool:
     """Insert a pre-built data-table row into a type's `_index.md` and recompute its summary
     counts (reusing reconcile). Locates the DATA table by its ID-column header so the row
     never lands in the Summary table. Returns False if the index is absent. Shared by the
-    finding filer and the general `artifact new` (CR0045)."""
+    finding filer and the general `artifact new`."""
     root = Path(repo_root)
     index_path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / "_index.md"
     if not index_path.exists():
@@ -160,12 +160,12 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     path = root / rel_dir / f"{file_id}-{slug}.md"
     if path.exists():
         raise FileExistsError(path)
-    if dry_run:  # preview: write nothing (CR0057)
+    if dry_run:  # preview: write nothing
         indexed = (root / rel_dir / "_index.md").exists()
         return {"id": disp_id, "file_id": file_id, "path": str(path),
                 "indexed": indexed, "dry_run": True}
     path.write_text(_render(type_, disp_id, title, today, fields), encoding="utf-8")
-    # One shared header-driven row builder for both create paths (CR0057): read the index's
+    # One shared header-driven row builder for both create paths: read the index's
     # own columns and fill by name, identical to `artifact new`.
     indexed = False
     idx = root / rel_dir / "_index.md"
@@ -201,7 +201,7 @@ def cmd_rebuild(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Deterministic Bug/CR/RFC finding filer (RFC0002).")
+    p = argparse.ArgumentParser(description="Deterministic Bug/CR/RFC finding filer.")
     sub = p.add_subparsers(dest="cmd", required=True)
     f = sub.add_parser("file", help="File one structured artifact from a finding.")
     f.add_argument("--type", required=True, choices=("bug", "cr", "rfc"))

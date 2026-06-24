@@ -2,7 +2,20 @@
 
 <!-- Load when: /sdlc-studio deploy - the orchestrate-only deploy last-mile -->
 
-Gate, verify, and record a deploy **without owning the runtime** (RFC0013). The skill never holds the
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Is it safe to ship this?" | `/sdlc-studio deploy` (preflight gate) |
+| "Walk me through the release" | `/sdlc-studio deploy` |
+| "Check we're ready, then hand it to me" | `deploy.py preflight` |
+| "The deploy went out and smoke is green" | `deploy.py record --status rolled-out` |
+| "It's soaked clean, mark it verified" | `deploy.py record --status verified` |
+| "We had to roll back" | `deploy.py record --status rolled-back` |
+
+Gate, verify, and record a deploy **without owning the runtime**. The skill never holds the
 production trigger, never auto-rolls-back, and **never deploys inside `sprint`** - the deploy is
 operator-triggered and interactive. With no `deploy.*` configured it is a pure gate + verification
 harness around a deploy you run yourself.

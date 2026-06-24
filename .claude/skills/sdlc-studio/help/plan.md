@@ -3,6 +3,17 @@
 
 # /sdlc-studio plan - Help
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "What plans are still open?" | `/sdlc-studio plan list` |
+| "Show me every plan, archived ones too" | `/sdlc-studio plan list --all` |
+| "Which plans have gone stale?" | `/sdlc-studio plan list --stale` |
+| "That work is finished - file the plan away" | `/sdlc-studio plan archive {slug}` |
+
 > **Source of truth:** `reference-plan-files.md` - File layout, states, pickup behaviour, anti-patterns
 
 Manage Claude Code plan-mode files (`~/.claude/plans/`). One file per task,

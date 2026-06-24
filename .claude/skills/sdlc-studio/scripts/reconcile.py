@@ -84,7 +84,7 @@ def _index_rows_and_summary(text: str, vocab: list) -> tuple[dict, dict]:
 
     The Status (and ID) columns are located by the data table's **header row** and
     read positionally, so a title cell that begins with a status word (e.g.
-    "review_prep..." -> Review) is never mistaken for the status (BG0018). Falls back
+    "review_prep..." -> Review) is never mistaken for the status. Falls back
     to a first-matching-cell scan only when no header is found.
     """
     rows: dict = {}
@@ -117,7 +117,7 @@ def _index_rows_and_summary(text: str, vocab: list) -> tuple[dict, dict]:
         if row_status is None:
             # the pinned column held no status - a header-less block, or a stacked table whose Status
             # sits in a different column. Find the status by canonical-vocab token, not position, so an
-            # off-schema row is not misread as "Unknown" -> phantom status-mismatch (BG0032).
+            # off-schema row is not misread as "Unknown" -> phantom status-mismatch.
             row_status = next((cs for c in cells if (cs := _canonical_status(c, vocab))), None)
         if row_id:
             key = _norm_id(row_id)
@@ -158,11 +158,11 @@ def _index_row_ids(text: str) -> list[str]:
 def _within_table_dup_counts(text: str) -> dict[str, int]:
     """For each id, the most times it appears in a SINGLE data table of one index file.
 
-    Scoped per-table (BG0035): an index may legitimately show an id once in each of several
+    Scoped per-table: an index may legitimately show an id once in each of several
     table views - the story index ships a per-epic "Stories by Epic" view plus an "All Stories"
     table, so every id appears twice across views without being a duplicate. The bug
     `detect_duplicate_rows` guards is an id repeated WITHIN one table, which `parse_index`
-    silently collapses (CR0055/BG0022). Resets the per-id tally at each table header (mirroring
+    silently collapses. Resets the per-id tally at each table header (mirroring
     `_index_row_ids`' header re-pin). Returns {id: count} only for ids whose within-table count > 1.
     """
     best: dict[str, int] = {}
@@ -202,11 +202,11 @@ def _within_table_dup_counts(text: str) -> dict[str, int]:
 def detect_duplicate_rows(repo_root: Path | str) -> dict:
     """Duplicate index ROWS - the same normalised id appearing more than once **within a single
     data table** of an `_index.md`. `parse_index` keys rows by id into a dict, so a within-table
-    duplicate silently overwrites the first: zero drift, gate false-PASS (CR0055).
+    duplicate silently overwrites the first: zero drift, gate false-PASS.
 
         { "duplicates": [ {"type", "id", "count"} ], "count" }
 
-    Detection is per-table (BG0035): a multi-view index (the story index's per-epic view + its
+    Detection is per-table: a multi-view index (the story index's per-epic view + its
     All Stories table) lists each id once per view, which is not a duplicate; only a repeat inside
     one table is.
     """
@@ -224,7 +224,7 @@ def detect_duplicate_rows(repo_root: Path | str) -> dict:
 
 def parse_index(type_: str, repo_root: Path) -> dict:
     """Parse a type's _index.md into {rows, summary}. Rows are the live index rows
-    UNIONED with any `<type>/archive/**/*.md` sub-index rows (RFC0012) - so an
+    UNIONED with any `<type>/archive/**/*.md` sub-index rows - so an
     artifact archived out of the live table is still seen as "in the index" (no false
     missing-row) and the census stays correct. The summary table is the live index's.
     """
@@ -238,7 +238,7 @@ def parse_index(type_: str, repo_root: Path) -> dict:
     result["summary"] = summary
     result["rows"] = rows
     archive_dir = repo_root / rel / "archive"
-    if archive_dir.is_dir():  # RFC0012: archived terminal rows still count toward the census
+    if archive_dir.is_dir():  # archived terminal rows still count toward the census
         for af in sorted(archive_dir.rglob("*.md")):
             arows, _ = _index_rows_and_summary(af.read_text(encoding="utf-8"), vocab)
             for k, v in arows.items():
@@ -448,7 +448,7 @@ def _data_row_rewrite(cells: list, status_col: int | None, id_col: int | None,
     """The rewritten line for a data row whose Status drifts (per `fixes`), else None. Rewrites ONLY
     when the pinned Status column actually holds a status - so per-block headers in a stacked index
     are followed correctly, while an off-schema / header-less row is left for the operator rather
-    than guessing a cell and risking a clobbered title/field (BG0032). Detect still reports it."""
+    than guessing a cell and risking a clobbered title/field. Detect still reports it."""
     if status_col is None or status_col >= len(cells):
         return None
     if not _canonical_status(cells[status_col], vocab):  # pinned col is not a status -> don't guess
@@ -469,7 +469,7 @@ def _rewrite_index_lines(lines: list, fixes: dict, counts: dict, vocab: list) ->
     # An index may carry many `Status | Count` tables (per-epic/per-section roll-ups) plus the one
     # global summary. Only the canonical global summary is reconcile-managed: the block carrying a
     # `Total` row (the template signature), or the sole summary in the file. A scoped per-epic table
-    # is author-maintained - stamping the global total into it corrupts it (BG0026).
+    # is author-maintained - stamping the global total into it corrupts it.
     n_summary = sum(1 for ln in lines
                     if (c := _table_cells(ln)) and [x.lower() for x in c] == ["status", "count"])
     for i, line in enumerate(lines):
@@ -539,15 +539,15 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
     return result
 
 
-# --- File-owned index-cell projection (CR0082) ----------------------------------------
+# --- File-owned index-cell projection ----------------------------------------
 # The index displays per-row fields the FILE owns - Title and Points. `detect`/`apply`
 # above sync only Status + counts, so these drift and must be hand-copied (the audited
 # story-points read-back). Project them from the file too, so the index is fully derived
 # (LL0001). Persona is deferred: it has no single canonical field in a story (it lives in
-# prose), so projecting it would risk the BG0032 clobber class.
+# prose), so projecting it would risk the value-clobber class.
 _POINTS_RE = re.compile(r"\*\*(?:Story )?Points:\*\*\s*([0-9]+)", re.IGNORECASE)
 _TITLE_RE = re.compile(r"^#\s+[A-Za-z]+-?\d+:\s*(.+?)\s*$", re.MULTILINE)
-_PERSONA_RE = re.compile(r"^>?\s*\*\*Persona:\*\*\s*(.+?)\s*$", re.MULTILINE)  # canonical field (CR0097)
+_PERSONA_RE = re.compile(r"^>?\s*\*\*Persona:\*\*\s*(.+?)\s*$", re.MULTILINE)  # canonical field
 
 
 def _file_field_values(text: str) -> dict:
@@ -560,10 +560,10 @@ def _file_field_values(text: str) -> dict:
 
 
 def project_fields(repo_root: Path | str, type_: str = "story", dry_run: bool = True) -> dict:
-    """Sync the index's file-owned cells (Title, Points, Persona) from the backing files (CR0082, CR0097).
+    """Sync the index's file-owned cells (Title, Points, Persona) from the backing files.
 
     Detect-or-apply by the same discipline as status. A field absent in the file leaves the
-    cell untouched (never blank a value an operator set - BG0032). Columns are located by the
+    cell untouched (never blank a value an operator set). Columns are located by the
     data-table header, so an off-schema layout is skipped, not clobbered. Returns
     {drift: [{id, field, index, file}], applied: n}."""
     root = Path(repo_root)
@@ -614,7 +614,7 @@ def project_fields(repo_root: Path | str, type_: str = "story", dry_run: bool = 
 
 
 def cmd_fields(args: argparse.Namespace) -> int:
-    """Project file-owned index cells (title/points); --apply writes, default reports (CR0082)."""
+    """Project file-owned index cells (title/points); --apply writes, default reports."""
     r = project_fields(args.root, args.type, dry_run=not args.apply)
     if args.format == "json":
         print(json.dumps(r, indent=2))
@@ -663,7 +663,7 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--root", default=".", help="Repo root (default: .)")
     a.add_argument("--dry-run", action="store_true", help="Report changes without writing")
     a.set_defaults(func=cmd_apply)
-    fi = sub.add_parser("fields", help="Project file-owned index cells (title/points) - CR0082.")
+    fi = sub.add_parser("fields", help="Project file-owned index cells (title/points).")
     fi.add_argument("--type", default="story", help="Artifact type (default: story)")
     fi.add_argument("--apply", action="store_true", help="Write the cells (default: report only)")
     fi.add_argument("--root", default=".", help="Repo root (default: .)")

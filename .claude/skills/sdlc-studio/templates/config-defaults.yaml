@@ -132,7 +132,7 @@ provenance:
   enforce: false
   adopt_after: 0   # per-type id cutoff; ids <= this are exempt (legacy)
 
-# Deploy contract (RFC0013) - the orchestrate-only deploy last-mile. The skill GATES before and
+# Deploy contract - the orchestrate-only deploy last-mile. The skill GATES before and
 # VERIFIES after a deploy; it never holds the production trigger, never auto-rolls-back, and never
 # deploys inside the autonomous loop. Secrets are never read - only the command you configure is
 # invoked, and only on an explicit, interactive `/sdlc-studio deploy`. See reference-deploy.md.

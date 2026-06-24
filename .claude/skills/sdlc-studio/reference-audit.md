@@ -4,7 +4,7 @@ The portable methodology for `audit`: a multi-agent adversarial pressure-test ov
 project's whole artifact graph that hunts for **weakness and incoherence** (not just
 consistency), verifies every candidate with an independent refute panel, and files the
 survivors as Bugs / CRs / RFCs. Tool-neutral - any AGENTS.md-capable harness can drive
-it (RFC0002, Option A).
+it (Option A).
 
 <!-- Load when: running an adversarial audit, or building/extending a lens profile -->
 

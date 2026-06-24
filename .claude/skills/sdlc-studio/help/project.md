@@ -6,6 +6,19 @@ Related: reference-project.md (deep workflow), reference-epic.md
 
 # /sdlc-studio project - Project Implementation
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Build out the whole product from the PRD" | `/sdlc-studio project implement --agentic --no-artifacts` |
+| "Show me the build order before we start" | `/sdlc-studio project plan` |
+| "Pick the build back up from epic 4" | `/sdlc-studio project implement --resume EP0004` |
+| "Skip that broken epic and carry on" | `/sdlc-studio project implement --skip EP0008` |
+| "Generate the stories first, then build it all" | `/sdlc-studio project implement --from stories --agentic --no-artifacts` |
+| "Walk through it carefully, step by step" | `/sdlc-studio project implement` |
+
 ## Quick Reference
 
 ```text

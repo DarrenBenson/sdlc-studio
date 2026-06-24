@@ -75,6 +75,21 @@ class DisclosureTests(unittest.TestCase):
             _skill(Path(d), helps={"bug.md": "# bug help\n"}, indexed=[])
             self.assertIn("bug.md", _kinds(Path(d), "missing-load-marker"))
 
+    def test_help_missing_nl_block_flagged(self):  # CR0108
+        with tempfile.TemporaryDirectory() as d:
+            _skill(Path(d), helps={"bug.md": "# bug help\n"}, indexed=[])
+            self.assertIn("bug.md", _kinds(Path(d), "help-missing-nl-block"))
+
+    def test_help_with_nl_block_passes(self):  # CR0108
+        with tempfile.TemporaryDirectory() as d:
+            _skill(Path(d), helps={"bug.md": "# bug\n\n## You can just ask\n\n| x | y |\n"}, indexed=[])
+            self.assertNotIn("bug.md", _kinds(Path(d), "help-missing-nl-block"))
+
+    def test_meta_help_files_exempt_from_nl_block(self):  # CR0108: arguments/references exempt
+        with tempfile.TemporaryDirectory() as d:
+            _skill(Path(d), indexed=[])
+            self.assertNotIn("references.md", _kinds(Path(d), "help-missing-nl-block"))
+
     def test_script_not_executable_and_no_help_flagged(self):
         with tempfile.TemporaryDirectory() as d:
             _skill(Path(d), scripts={"foo.py": ("x = 1\n", False)})  # not executable, no argparse

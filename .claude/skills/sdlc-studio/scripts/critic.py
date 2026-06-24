@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""SDLC Studio critic-verdict record (CR0023).
+"""SDLC Studio critic-verdict record.
 
-The independent non-author critic (RFC0001 D3) judges each unit's diff against the
+The independent non-author critic judges each unit's diff against the
 AC intent. Its verdict used to be ephemeral, so nothing could confirm the critic
 actually ran. Here it is a committed, append-only record
 (`sdlc-studio/reviews/critic-verdicts.md`), so the conformance gate can require it:
 "the critic ran" becomes a deterministic, auditable signal - the cheap part of
-RFC0001's deferred Stop-Hook, with no harness dependency. Pure stdlib.
+the deferred Stop-Hook, with no harness dependency. Pure stdlib.
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from lib import sdlc_md  # noqa: E402
 APPROVE, REJECT = "APPROVE", "REJECT"
 HEADER = (
     "# Critic Verdicts\n\n"
-    "> Append-only. The independent non-author critic's verdict per unit (RFC0001 D3).\n"
+    "> Append-only. The independent non-author critic's verdict per unit.\n"
     "> APPROVE = ready; REJECT = repair before Done. Latest row per unit wins.\n\n"
     "| Unit | Verdict | Reviewer | Date | Issues |\n| --- | --- | --- | --- | --- |\n"
 )
@@ -32,7 +32,7 @@ def verdicts_path(repo_root: Path | str) -> Path:
 
 def _clean(value: str) -> str:
     # Escape `_` so an underscored identifier (e.g. `_read`, `_index_row`) in free-text notes
-    # cannot pair across words into markdown emphasis and trip markdownlint MD037 (BG0023).
+    # cannot pair across words into markdown emphasis and trip markdownlint MD037.
     return value.replace("|", "/").replace("\n", " ").strip().replace("_", r"\_")
 
 
@@ -57,7 +57,7 @@ def read_verdicts(repo_root: Path | str) -> list[dict]:
         return []
     out: list[dict] = []
     for line in path.read_text(encoding="utf-8").splitlines():
-        cells = sdlc_md.table_cells(line)  # escaped-pipe-aware (BG0021)
+        cells = sdlc_md.table_cells(line)  # escaped-pipe-aware
         if not cells or len(cells) != 5 or cells[0] == "Unit":
             continue
         out.append(dict(zip(("unit", "verdict", "reviewer", "date", "issues"), cells)))

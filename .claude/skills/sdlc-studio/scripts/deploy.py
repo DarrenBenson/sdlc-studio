@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The orchestrate-only deploy last-mile (RFC0013).
+"""The orchestrate-only deploy last-mile.
 
 The skill GATES before a deploy and helps VERIFY + RECORD after it. It never holds the production
 trigger, never auto-rolls-back, and never deploys inside the autonomous loop - the *act* of
@@ -10,7 +10,7 @@ the deterministic, read-only pieces:
                operator hand-off (the deploy command to run, the rollback procedure to keep ready).
                Never executes the deploy.
   record     - append the deploy outcome (rolled-out / verified / rolled-back / failed) to the
-               project's deploy log, so the last mile is closed back into the artifact graph (WS3).
+               project's deploy log, so the last mile is closed back into the artifact graph.
 
 Ecosystem-neutral: the project supplies `deploy.command` / `deploy.smoke` / `deploy.rollback` in
 `.config.yaml`; this script assumes no CI, cloud, or registry. Secrets are never read.
@@ -81,7 +81,7 @@ def record(root: Path | str, status: str, detail: str = "",
     safe = detail.replace("|", "/").replace("\n", " ").strip()
     row = f"| {stamp} | {status} | {safe} |"
     if not log.exists():
-        log.write_text("# Deploy Log\n\nAppend-only record of deploy outcomes (RFC0013 WS3).\n\n"
+        log.write_text("# Deploy Log\n\nAppend-only record of deploy outcomes.\n\n"
                        "| When | Status | Detail |\n| --- | --- | --- |\n", encoding="utf-8")
     with log.open("a", encoding="utf-8") as fh:
         fh.write(row + "\n")
@@ -116,7 +116,7 @@ def cmd_record(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parent = argparse.ArgumentParser(add_help=False)  # --root works before OR after the subcommand
     parent.add_argument("--root", default=".")
-    p = argparse.ArgumentParser(description="Orchestrate-only deploy last-mile (RFC0013).",
+    p = argparse.ArgumentParser(description="Orchestrate-only deploy last-mile.",
                                parents=[parent])
     sub = p.add_subparsers(dest="cmd", required=True)
     pf = sub.add_parser("preflight", parents=[parent],

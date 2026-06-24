@@ -2,7 +2,7 @@
 
 <!-- Load when: /sdlc-studio deploy - gating, verifying, and recording a deploy without owning the runtime -->
 
-Deep workflow for `/sdlc-studio deploy` (RFC0013). The skill carries the project from PRD to
+Deep workflow for `/sdlc-studio deploy`. The skill carries the project from PRD to
 **verified** code; `deploy` carries it the last mile to **shipped** - without baking the skill into
 any ecosystem. It **gates** before a deploy and helps **verify** and **record** after it. It never
 holds the production trigger, never auto-rolls-back, and never deploys inside the autonomous loop.

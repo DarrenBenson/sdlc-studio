@@ -9,6 +9,19 @@ Two-way sync between local CRs, Stories, and Epics and GitHub Issues
 via the `gh` CLI. Teams that live in GitHub Issues get SDLC Studio
 value without abandoning their tracker.
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Push our change requests up to GitHub Issues" | `/sdlc-studio cr sync push --type cr` |
+| "Show me what would sync without changing anything" | `/sdlc-studio cr sync --dry-run` |
+| "Sync everything - CRs, stories and epics - with GitHub" | `/sdlc-studio project sync` |
+| "Which merged PRs are ready to mark stories done?" | `/sdlc-studio project sync cascade` |
+| "Pull in any GitHub issues we don't have locally yet" | `/sdlc-studio project sync pull --type all` |
+| "Show me the current sync state" | `/sdlc-studio project sync state` |
+
 ## Quick Reference
 
 ```bash

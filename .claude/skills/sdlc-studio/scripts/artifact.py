@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic artifact create + close cascade (CR0045).
+"""Deterministic artifact create + close cascade.
 
 `new` creates ANY numbered/indexed artifact (epic, story, plan, bug, cr, rfc, test-spec,
 workflow) as a structured scaffold AND wires it: allocate a collision-free id, render a
@@ -23,7 +23,7 @@ from lib import sdlc_md  # noqa: E402
 import file_finding  # noqa: E402  (reuse _slug, _next_number, append_index_row)
 import reconcile  # noqa: E402
 import transition  # noqa: E402
-import telemetry  # noqa: E402  (CR0051: record a telemetry event on close)
+import telemetry  # noqa: E402  (record a telemetry event on close)
 
 # Per-type create status, terminal (close) status, and disp-id form (cr/rfc carry a dash).
 SPEC = {
@@ -46,7 +46,7 @@ def _disp(type_: str, n: int) -> str:
 
 def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
     st = SPEC[type_]["status"]
-    # Provenance stamp (CR0052) - marks this artifact as tool-created (deterministic path).
+    # Provenance stamp - marks this artifact as tool-created (deterministic path).
     head = (f"# {disp}: {title}\n\n> **Status:** {st}\n> **Created:** {today}\n"
             f"> **Created-by:** sdlc-studio new\n")
     rev = (f"\n## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
@@ -82,7 +82,7 @@ def _core_template(type_: str) -> Path:
 
 
 def _render_full(type_: str, disp: str, title: str, today: str, f: dict) -> str:
-    """`--template full` (CR0077 Item 2): the deterministic provenance head (identical to
+    """`--template full`: the deterministic provenance head (identical to
     minimal, so validate/provenance behave the same) followed by the rich section body from
     `templates/core/<type>.md`. Placeholders stay unresolved for the agent, exactly as in
     minimal. Falls back to minimal when no core template ships for the type."""
@@ -111,8 +111,8 @@ def _index_template(type_: str) -> Path:
 
 
 def _ensure_index(root: Path, type_: str, today: str) -> bool:
-    """Create a missing `<dir>/_index.md` on the empty-project first run (CR0077).
-    Delegates to the shared `file_finding.ensure_index` (also used by `init`, CR0079)."""
+    """Create a missing `<dir>/_index.md` on the empty-project first run.
+    Delegates to the shared `file_finding.ensure_index` (also used by `init`)."""
     return file_finding.ensure_index(root, type_, today)
 
 
@@ -177,7 +177,7 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
         if not f.get("epic"):
             raise ValueError("a story needs --epic <EPxxxx>")
         # Fail fast before writing - a story wired to a non-existent epic is an orphan whose
-        # dangling link only surfaces at the next integrity run (BG0022).
+        # dangling link only surfaces at the next integrity run.
         if _find_epic(root, f["epic"]) is None:
             raise ValueError(f"epic {f['epic']} not found - create it first, or fix the id")
     n = file_finding._next_number(root, type_)
@@ -188,7 +188,7 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
     path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / f"{file_id}-{slug}.md"
     if path.exists():
         raise FileExistsError(path)
-    if dry_run:  # preview: write nothing, report what would happen (CR0057)
+    if dry_run:  # preview: write nothing, report what would happen
         idx_exists = _header_cells(root, type_) is not None
         would_create_index = (not idx_exists) and _index_template(type_).exists()
         return {"id": disp, "file_id": file_id, "path": str(path),
@@ -196,9 +196,9 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
                 "would_create_index": would_create_index,
                 "epic_linked": (type_ == "story") or None, "dry_run": True}
     path.parent.mkdir(parents=True, exist_ok=True)
-    render = _render_full if f.get("template") == "full" else _render  # CR0077 Item 2
+    render = _render_full if f.get("template") == "full" else _render
     path.write_text(render(type_, disp, title, f["date"], f), encoding="utf-8")
-    index_created = _ensure_index(root, type_, f["date"])  # greenfield first run (CR0077)
+    index_created = _ensure_index(root, type_, f["date"])  # greenfield first run
     header = _header_cells(root, type_)
     indexed = False
     if header:
@@ -214,7 +214,7 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
 
 def new_batch(repo_root: Path | str, type_: str, items: list[dict],
               template: str = "full", dry_run: bool = False) -> dict:
-    """Create many artifacts of one type in a single atomic pass (CR0078).
+    """Create many artifacts of one type in a single atomic pass.
 
     Reserve a contiguous id block up front (LL0002: reserve before writing), render each
     file (full template by default - batch is the fan-out case where structure must be
@@ -228,7 +228,7 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
     if not items:
         raise ValueError("batch is empty")
     # Validate the whole batch BEFORE writing anything (atomic) - a story wired to a
-    # missing epic is an orphan (BG0022); a colliding id would corrupt the run.
+    # missing epic is an orphan; a colliding id would corrupt the run.
     if type_ == "story":
         for it in items:
             if not it.get("epic"):
@@ -277,15 +277,15 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
 def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
           metrics: dict | None = None, dry_run: bool = False, force: bool = False) -> dict:
     """Terminal-transition an artifact and cascade (reuse transition), then record a
-    telemetry event (CR0051 / RFC0014 WS2). Telemetry is advisory - it never affects the
+    telemetry event. Telemetry is advisory - it never affects the
     close result (the recorder swallows its own failures). `force` bypasses the story->Done
-    AC-verify gate (CR0084); it is inert for non-story types."""
+    AC-verify gate; it is inert for non-story types."""
     prefix = "".join(c for c in artifact_id if c.isalpha()).upper()
     type_ = _PREFIX_TYPE.get(prefix)
     if type_ is None:
         raise ValueError(f"cannot infer type from id {artifact_id!r}")
     st = status or SPEC[type_]["terminal"]
-    if dry_run:  # preview the transition target, write nothing, record nothing (CR0057)
+    if dry_run:  # preview the transition target, write nothing, record nothing
         return {"id": artifact_id, "type": type_, "to": st, "dry_run": True}
     result = transition.transition(repo_root, artifact_id, st, force=force)
     telemetry.record(repo_root, {"id": artifact_id, "type": type_, **(metrics or {})})
@@ -337,7 +337,7 @@ def cmd_close(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Deterministic artifact create + close (CR0045).")
+    p = argparse.ArgumentParser(description="Deterministic artifact create + close.")
     sub = p.add_subparsers(dest="cmd", required=True)
     n = sub.add_parser("new", help="Create + wire any numbered artifact.")
     n.add_argument("--type", required=True, choices=tuple(SPEC))
@@ -353,7 +353,7 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--dry-run", action="store_true", dest="dry_run", help="preview; write nothing")
     n.add_argument("--format", choices=("text", "json"), default="text")
     n.set_defaults(func=cmd_new)
-    b = sub.add_parser("batch", help="Create many artifacts of one type in one atomic pass (CR0078).")
+    b = sub.add_parser("batch", help="Create many artifacts of one type in one atomic pass.")
     b.add_argument("--type", required=True, choices=tuple(SPEC))
     b.add_argument("--spec", required=True, help="JSON file: a list of {title, epic?, ...} items")
     b.add_argument("--template", choices=("minimal", "full"), default="full",
@@ -366,7 +366,7 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--id", required=True)
     c.add_argument("--status", help="override the per-type terminal status")
     c.add_argument("--force", action="store_true",
-                   help="bypass the story->Done AC-verify gate (CR0084; inert for non-stories)")
+                   help="bypass the story->Done AC-verify gate (inert for non-stories)")
     c.add_argument("--iterations", help="run metric: iterations to green (telemetry)")
     c.add_argument("--verdict", help="run metric: critic verdict (telemetry)")
     c.add_argument("--wall-time-s", dest="wall_time_s", help="run metric: wall time (telemetry)")

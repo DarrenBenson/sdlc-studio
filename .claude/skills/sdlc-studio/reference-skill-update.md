@@ -1,7 +1,7 @@
 # SDLC Studio Reference - Skill Update
 
 `skill-update` upgrades the **installed skill** to the latest published release, on
-explicit confirm (CR0044). It is distinct from `upgrade`, which migrates a *project's*
+explicit confirm. It is distinct from `upgrade`, which migrates a *project's*
 artifacts between schema versions - this updates the skill itself.
 
 <!-- Load when: the user runs /sdlc-studio skill-update or accepts an update notice -->

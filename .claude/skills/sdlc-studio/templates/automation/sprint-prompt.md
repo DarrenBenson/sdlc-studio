@@ -1,7 +1,7 @@
 <!--
 Template: Sprint prompt (Goal-Driven Development loop)
 File: paste into a /goal-driven run, or used by /sdlc-studio sprint
-Related: reference-sprint.md, RFC0001
+Related: reference-sprint.md
 Fill {{placeholders}} then run.
 -->
 # Sprint: {{batch}} -> {{goal}}

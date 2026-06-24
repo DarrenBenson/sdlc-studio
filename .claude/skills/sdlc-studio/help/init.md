@@ -6,6 +6,18 @@ Related: reference-outputs.md, templates/
 
 # /sdlc-studio init - Project Context
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Set this project up for SDLC Studio" | `/sdlc-studio init` |
+| "Work out what stack this project uses" | `/sdlc-studio init --detect` |
+| "Set it up and seed the starter docs too" | `/sdlc-studio init --scaffold` |
+| "Show me what setup would write before it does it" | `/sdlc-studio init --dry-run` |
+| "Reconfigure this project from scratch" | `/sdlc-studio init --force` |
+
 Gather project context before starting SDLC workflow. Creates a configuration file with project-specific settings.
 
 ## Quick Reference
@@ -18,7 +30,7 @@ Gather project context before starting SDLC workflow. Creates a configuration fi
 /sdlc-studio init --force           # Overwrite existing files
 ```
 
-Backed by `scripts/init.py` (CR0079) - deterministic, idempotent (never overwrites
+Backed by `scripts/init.py` - deterministic, idempotent (never overwrites
 without `--force`), and it pre-creates every `_index.md` so the first `new` of any type is
 indexed (no empty-project `indexed=false`). The directory tree, indexes, and
 agent-instructions are written without prompting; config is load-bearing, so review the

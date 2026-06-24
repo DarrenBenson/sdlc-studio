@@ -8,6 +8,19 @@ Related: reference-bug.md (deep workflow), templates/core/bug.md
 
 > **Source of truth:** `reference-bug.md` - Detailed workflow steps
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Log a bug - the player keeps falling through the floor" | `/sdlc-studio bug` |
+| "Show me the open bugs" | `/sdlc-studio bug list --status open` |
+| "What critical bugs are still open?" | `/sdlc-studio bug list --severity critical` |
+| "Start fixing the floor bug" | `/sdlc-studio bug fix --bug BG0003` |
+| "Check that fix worked and close it" | `/sdlc-studio bug verify --bug BG0003` |
+| "That bug is back - reopen it" | `/sdlc-studio bug reopen --bug BG0003` |
+
 ## Quick Reference
 
 ```

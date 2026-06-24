@@ -223,7 +223,7 @@ _DSL_VERBS = {"pytest", "jest", "vitest", "go", "file", "grep", "http", "shell",
 
 def lint_verifier(expr: str) -> str | None:
     """Flag a Verify expression that would fall through to `shell` but looks like a
-    mis-written runner invocation (CR0085) - the drift that silently fails at verify time
+    mis-written runner invocation - the drift that silently fails at verify time
     (US0001 was 0/7). Advisory: returns a nudge to the DSL, or None when the expression is
     a legitimate DSL verb or a deliberate shell command."""
     head = (expr.split(None, 1)[0].lower() if expr.split() else "")
@@ -363,14 +363,14 @@ class StoryReport:
 
 def _is_manual(expression: str) -> bool:
     """True for a human-checked AC authored as `Verify: manual ...` (or `manually ...`) - counted
-    manual, never executed (BG0028). Keyed on the leading token so a real command like `pnpm test`
+    manual, never executed. Keyed on the leading token so a real command like `pnpm test`
     is unaffected."""
     toks = expression.strip().lstrip("`*_ ").split()
     return bool(toks) and toks[0].strip("`*:.,").lower() in {"manual", "manually"}
 
 
 def _parse_jest_json(stdout: str) -> list[dict]:
-    """Flatten `jest --json` output to [{name, ok}] over every assertion (CR0111). Tolerates
+    """Flatten `jest --json` output to [{name, ok}] over every assertion. Tolerates
     leading non-JSON noise; returns [] when no JSON object is present or it does not parse."""
     out = stdout.strip()
     start = out.find("{")
@@ -389,7 +389,7 @@ def _parse_jest_json(stdout: str) -> list[dict]:
 
 
 def jest_batch_cache(repo_root: Path, timeout: int) -> list[dict]:
-    """Run jest ONCE with --json and return its flattened assertions (CR0111), so per-AC jest
+    """Run jest ONCE with --json and return its flattened assertions, so per-AC jest
     verifiers resolve against the result set instead of a cold `jest -t` start each. Empty on any
     failure -> callers fall back to the per-AC path."""
     try:
@@ -401,7 +401,7 @@ def jest_batch_cache(repo_root: Path, timeout: int) -> list[dict]:
 
 
 def resolve_jest_from_cache(verifier: str, asserts: list[dict]) -> VerifierResult | None:
-    """Resolve a `jest <pattern>` verifier against cached assertions (CR0111), mirroring `jest -t`:
+    """Resolve a `jest <pattern>` verifier against cached assertions, mirroring `jest -t`:
     pass iff >=1 assertion name contains the pattern and all matching pass. None when the verb is
     not jest or nothing matches -> the caller runs the authoritative per-AC subprocess."""
     head, _, tail = verifier.strip().partition(" ")
@@ -424,7 +424,7 @@ def verify_story(
     jest_cache: list[dict] | None = None,
 ) -> StoryReport:
     """Run every AC verifier in one story and update its Verified state. With `jest_cache`
-    (CR0111 batch mode) a jest verifier resolves against the cached single run; anything not
+    (batch mode) a jest verifier resolves against the cached single run; anything not
     found there falls through to the authoritative per-AC subprocess."""
     text = story_path.read_text(encoding="utf-8")
     lines = text.splitlines()
@@ -434,7 +434,7 @@ def verify_story(
     for block in blocks:
         # No verifier, or a human-checked AC authored as `Verify: manual ...` -> count it MANUAL,
         # never shell it out. Shelling prose timed out and reported "failed" instead of "manual"
-        # (BG0028): "manual/unverified" is honest; "failed" is not.
+        #: "manual/unverified" is honest; "failed" is not.
         if block.verifier is None or _is_manual(block.verifier):
             report.manual += 1
             continue
@@ -493,7 +493,7 @@ def write_report(path: Path, stories: list[StoryReport], dry_run: bool = False,
                  merge: bool = True) -> None:
     """Write the per-story verification summary to JSON.
 
-    BG0037: by default this MERGES the run's stories into any existing report (this run's
+    by default this MERGES the run's stories into any existing report (this run's
     entries win, others are preserved), so verifying a sprint one story at a time accumulates
     and the Done-gate finds every verified story. `merge=False` rebuilds the report from this
     run only (the `--fresh` path). In dry-run the snapshot enumerates the pending `flips`
@@ -563,7 +563,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     if args.story:
         paths = [Path(args.story)]
-    elif getattr(args, "id", None):  # CR0085: resolve --id USNNNN under --dir (grammar parity)
+    elif getattr(args, "id", None):  # resolve --id USNNNN under --dir (grammar parity)
         matches = sorted(Path(args.dir).glob(f"{args.id}-*.md"))
         if not matches:
             print(f"no story file for id {args.id} under {args.dir}", file=sys.stderr)
@@ -576,7 +576,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         print("no stories found", file=sys.stderr)
         return 2
 
-    # CR0111: with --batch, run jest once and resolve jest verifiers from the cached assertions
+    # with --batch, run jest once and resolve jest verifiers from the cached assertions
     # instead of a cold `jest -t` start per AC (a field sprint measured ~48 cold starts / 70s).
     jest_cache = jest_batch_cache(repo_root, args.timeout) if getattr(args, "batch", False) else None
     if getattr(args, "batch", False):
@@ -608,7 +608,7 @@ def cmd_run(args: argparse.Namespace) -> int:
                     print(f"          | {line}")
 
     # Write the report in dry-run too (to a distinct path, so the live report is
-    # not clobbered) and append the run to the history log (CR0005).
+    # not clobbered) and append the run to the history log.
     report_path = Path(args.report)
     if args.dry_run:
         report_path = report_path.with_name(report_path.stem + ".dry-run" + report_path.suffix)
@@ -642,7 +642,7 @@ def _report_failed_acs(report_path: Path | str) -> set[str]:
 
 
 def ts_check(spec_path: Path | str, verify_report: Path | str | None = None) -> list[dict]:
-    """Validate a test-spec's AC Coverage Matrix is not decorative (CR0085): every AC row
+    """Validate a test-spec's AC Coverage Matrix is not decorative: every AC row
     must map a Test Case and carry a passing Status, and no placeholders may remain. The
     matrix authored before code is what makes the AC and its test converge by construction.
     When `verify_report` is given, also cross-check: an AC the matrix calls passing but the
@@ -683,7 +683,7 @@ def ts_check(spec_path: Path | str, verify_report: Path | str | None = None) -> 
 
 
 def epic_test_spec_check(repo_root: Path | str, epic_id: str) -> dict:
-    """Hard epic-scope test-spec requirement (CR0096): an epic must have a test-spec (linked by
+    """Hard epic-scope test-spec requirement: an epic must have a test-spec (linked by
     its `Epic:` field) whose AC Coverage Matrix passes `ts-check`. Returns {epic, ok, specs,
     issues}. The caller gates on it per `quality.epic_requires_test_spec` (default true);
     single-story work is exempt. Reuses `ts_check` - no new verification logic."""
@@ -726,7 +726,7 @@ def cmd_ts_check(args: argparse.Namespace) -> int:
 
 def cmd_lint(args: argparse.Namespace) -> int:
     """Advisory: flag Verify lines that would fall through to `shell` but look like a
-    mis-written runner invocation (CR0085). Catches the AC↔test drift at author time
+    mis-written runner invocation. Catches the AC↔test drift at author time
     instead of discovering it 0/7 at verify time. Never fails the build."""
     paths = [Path(args.story)] if args.story else list(walk_stories(Path(args.dir)))
     flagged = 0
@@ -793,12 +793,12 @@ def build_parser() -> argparse.ArgumentParser:
     r = sub.add_parser("run", help="Run verifiers and update story files")
     r.add_argument("--dir", default="sdlc-studio/stories", help="Stories directory")
     r.add_argument("--story", help="Single story file (overrides --dir)")
-    r.add_argument("--id", help="Single story by id, e.g. US0001 (resolved under --dir; CR0085)")
+    r.add_argument("--id", help="Single story by id, e.g. US0001 (resolved under --dir)")
     r.add_argument("--dry-run", action="store_true", help="Do not modify story files")
     r.add_argument("--fresh", action="store_true",
-                   help="rebuild the report from this run only (default merges into it, BG0037)")
+                   help="rebuild the report from this run only (default merges into it)")
     r.add_argument("--batch", action="store_true",
-                   help="run jest once and resolve jest verifiers from the cached result (CR0111)")
+                   help="run jest once and resolve jest verifiers from the cached result")
     r.add_argument("--timeout", type=int, default=120, help="Per-verifier timeout in seconds")
     r.add_argument(
         "--report",
@@ -812,19 +812,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     r.set_defaults(func=cmd_run)
 
-    ln = sub.add_parser("lint", help="Advisory: flag non-DSL / mis-written Verify lines (CR0085)")
+    ln = sub.add_parser("lint", help="Advisory: flag non-DSL / mis-written Verify lines")
     ln.add_argument("--dir", default="sdlc-studio/stories", help="Stories directory")
     ln.add_argument("--story", help="Single story file (overrides --dir)")
     ln.set_defaults(func=cmd_lint)
 
-    tc = sub.add_parser("ts-check", help="Validate a test-spec's AC Coverage Matrix (CR0085)")
+    tc = sub.add_parser("ts-check", help="Validate a test-spec's AC Coverage Matrix")
     tc.add_argument("--spec", required=True, help="Path to the test-spec file")
     tc.add_argument("--verify-report", dest="verify_report",
                     help="cross-check the matrix against this verify-report.json")
     tc.add_argument("--format", choices=("text", "json"), default="text")
     tc.set_defaults(func=cmd_ts_check)
 
-    et = sub.add_parser("epic-ts", help="Require an epic to have a ts-check-passing test-spec (CR0096)")
+    et = sub.add_parser("epic-ts", help="Require an epic to have a ts-check-passing test-spec")
     et.add_argument("--epic", required=True, help="Epic id, e.g. EP0001")
     et.add_argument("--root", default=".")
     et.add_argument("--format", choices=("text", "json"), default="text")

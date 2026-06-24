@@ -6,6 +6,18 @@ Related: reference-prd.md (deep workflow), templates/core/prd.md
 
 # /sdlc-studio prd - Product Requirements Document
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Help me write a requirements doc for a new project" | `/sdlc-studio prd create` |
+| "Work out what this codebase already does and write it up" | `/sdlc-studio prd generate` |
+| "Check the requirements still match the code" | `/sdlc-studio prd review` |
+| "Document this existing app from scratch, replace the old doc" | `/sdlc-studio prd generate --force` |
+| "What should I do after the requirements are done?" | `/sdlc-studio epic` |
+
 ## Quick Reference
 
 ```

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""SDLC Studio tranche audit - sprint pre-flight readiness (CR0021).
+"""SDLC Studio tranche audit - sprint pre-flight readiness.
 
 Runs between `sprint plan` and the triage STOP, so the operator approves a
 clean, verifiable batch. Per unit it flags, deterministically:
 
-- **weak-AC**       - no checkable AC, or the tautology placeholder (the BG0003
+- **weak-AC**       - no checkable AC, or the tautology placeholder (the
                       vacuous-pass class the downstream verify/conformance miss),
 - **unmet-deps**    - a `Depends on` referent that is not yet delivered,
 - **already-terminal** - already Complete/Superseded/Done (close, do not re-work),
@@ -12,7 +12,7 @@ clean, verifiable batch. Per unit it flags, deterministically:
 
 Emits a JSON readiness report; exits non-zero when any unit is not ready. The
 adversarial "is the problem still real" lens stays model-instructed (delegates to
-RFC0002's audit when built). Read-only; pure stdlib.
+the adversarial audit when built). Read-only; pure stdlib.
 """
 from __future__ import annotations
 
@@ -26,8 +26,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 import integrity  # noqa: E402  (sibling script; scripts dir is on sys.path)
 import sprint  # noqa: E402
-import verify_ac  # noqa: E402  (CR0109: reuse the Verify-line lint)
-import ac_scope  # noqa: E402  (CR0109: reuse the cross-epic AC check)
+import verify_ac  # noqa: E402  (reuse the Verify-line lint)
+import ac_scope  # noqa: E402  (reuse the cross-epic AC check)
 
 TAUTOLOGY = "lint and tests green"
 # A dependency counts as met once it has been delivered (or replaced).
@@ -100,7 +100,7 @@ def _unmet_deps(root: Path, text: str) -> list[str]:
 
 
 def _already_satisfied(root: Path, rid: str) -> bool:
-    """True if the unit's executable ACs all pass in the verify-report (CR0098): verified > 0,
+    """True if the unit's executable ACs all pass in the verify-report: verified > 0,
     no failures, no stale. Such a Ready unit is already delivered (the audit cannot see a feature
     shipped under a different artifact, but a green verifier set is the deterministic signal) -
     surface it as a close-candidate, not work to build. Manual-only / AC-less units never match."""
@@ -114,7 +114,7 @@ def _already_satisfied(root: Path, rid: str) -> bool:
 
 
 def _weak_verify(text: str) -> bool:
-    """True if a story has a non-executable / mis-written Verify line (CR0109): reuses
+    """True if a story has a non-executable / mis-written Verify line: reuses
     verify_ac.lint_verifier, so the breakdown flags prose-curl verifiers at design time instead
     of discovering them 0/7 at verify time."""
     for line in text.splitlines():
@@ -142,9 +142,9 @@ def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None 
             issues.append("underspecified")
     elif _weak_ac(text):
         issues.append("weak-AC")
-    if type_ == "story" and _weak_verify(text):  # CR0109: non-executable Verify line
+    if type_ == "story" and _weak_verify(text):  # non-executable Verify line
         issues.append("weak-verify")
-    if cross_epic_ids and sdlc_md.norm_id(rid) in cross_epic_ids:  # CR0109: cross-epic AC leakage
+    if cross_epic_ids and sdlc_md.norm_id(rid) in cross_epic_ids:  # cross-epic AC leakage
         issues.append("cross-epic-ac")
     unmet = _unmet_deps(root, text)
     if unmet:
@@ -154,7 +154,7 @@ def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None 
     if integrity_errors and rid in integrity_errors:
         issues.append("link-integrity")
     if status not in integrity.TERMINAL and _already_satisfied(root, rid):
-        issues.append("already-satisfied")  # CR0098: verifiers pass -> close-candidate, don't build
+        issues.append("already-satisfied")  # verifiers pass -> close-candidate, don't build
     return {"id": rid, "type": type_, "status": status, "issues": issues, "ready": not issues}
 
 
@@ -162,7 +162,7 @@ def audit_batch(repo_root: Path | str, ids: list[str]) -> dict:
     """Readiness report over a batch of unit ids."""
     root = Path(repo_root)
     ierr = {f["id"] for f in integrity.detect_integrity(root)["findings"] if f["severity"] == "error"}
-    # CR0109: cross-epic AC leakage, computed once for the batch (ac_scope is repo-wide)
+    # cross-epic AC leakage, computed once for the batch (ac_scope is repo-wide)
     try:
         cross = {sdlc_md.norm_id(f["story"]) for f in ac_scope.check(root) if f.get("story")}
     except Exception:  # noqa: BLE001 - advisory readiness check, never break the audit

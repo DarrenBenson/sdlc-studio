@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SDLC Studio status transition (CR0042).
+"""SDLC Studio status transition.
 
 `transition --id <ID> --status <new>` performs the one mechanical write-side cascade
 that was still hand-driven: set an artifact's `Status` field, sync its index row and the
@@ -39,7 +39,7 @@ def _story_has_executable_acs(text: str) -> bool:
 
 
 def _done_verify_gate(root: Path, path: Path, text: str) -> str | None:
-    """Definition-of-Done safety net on the hand-driven path (CR0084). A story may not reach
+    """Definition-of-Done safety net on the hand-driven path. A story may not reach
     Done with executable ACs that are red or never run - the 0/7 a hand-driving agent shipped.
     Returns a block reason, or None to allow. Manual-only / AC-less stories are never blocked;
     a green report passes. The hard gate is the one deterministic fact - the verifier result;
@@ -118,7 +118,7 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
     """Set `artifact_id`'s status to `new_status`, sync its index, and cascade the epic
     breakdown for a story. Returns {id, type, from, to, index_synced, epic}.
 
-    A story moving to Done is gated on its AC-verify result (CR0084): red or never-run
+    A story moving to Done is gated on its AC-verify result: red or never-run
     executable ACs block the transition unless `force=True`. Scoped to stories - CR/epic/bug
     closures are unaffected. Manual-only / AC-less stories are never blocked."""
     root = Path(repo_root)
@@ -134,7 +134,7 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
             and sdlc_md.canonical_status(new_status, vocab) == "Done"):
         block = _done_verify_gate(root, path, text)
         if block:
-            # CR0095: the gate is hard by default; `quality.done_requires_verified: false`
+            # the gate is hard by default; `quality.done_requires_verified: false`
             # downgrades it to advisory-warn (the project sets the policy in .config.yaml).
             import config  # sibling
             if config.get(root, "quality.done_requires_verified", True):
@@ -183,14 +183,14 @@ def cmd_set(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Transition an artifact's status + cascade (CR0042).")
+    p = argparse.ArgumentParser(description="Transition an artifact's status + cascade.")
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("set", help="Set an artifact's status and sync index + epic breakdown.")
     s.add_argument("--id", required=True, help="Artifact id, e.g. CR0042 / US0023")
     s.add_argument("--status", required=True, help="New status (must be in the type vocabulary)")
     s.add_argument("--root", default=".")
     s.add_argument("--force", action="store_true",
-                   help="bypass the story->Done AC-verify gate (CR0084); recorded as an override")
+                   help="bypass the story->Done AC-verify gate; recorded as an override")
     s.add_argument("--dry-run", action="store_true")
     s.add_argument("--format", choices=("text", "json"), default="text")
     s.set_defaults(func=cmd_set)

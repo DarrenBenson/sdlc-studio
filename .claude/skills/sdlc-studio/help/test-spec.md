@@ -10,6 +10,18 @@ Related: reference-test-spec.md (deep workflow), reference-test-best-practices.m
 
 Generates consolidated test specifications that combine test plans, suites, cases, and fixtures into a single document per Epic.
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Write the test specs for our features" | `/sdlc-studio test-spec` |
+| "Just do the test plan for the login epic" | `/sdlc-studio test-spec --epic EP0001` |
+| "We have tests already - write up specs from them" | `/sdlc-studio test-spec generate` |
+| "Check our test specs are up to date" | `/sdlc-studio test-spec review` |
+| "Are all our acceptance criteria covered by tests?" | `/sdlc-studio test-spec review` |
+
 ## Actions
 
 | Action | Description |

@@ -359,7 +359,7 @@ Index files track all artifacts with basic metadata:
 ### Progressive disclosure: archival {#index-archival}
 
 On large projects a flat `_index.md` grows O(n) and is loaded whole - mostly terminal
-rows. Keep the live index bounded by archiving terminal rows by release (RFC0012):
+rows. Keep the live index bounded by archiving terminal rows by release:
 
 - **Live `_index.md`** holds the **active** (non-terminal) rows in its master table,
   its summary table (counts of active + archived), and an **`## Archived Releases`**
@@ -417,14 +417,14 @@ Artifacts link hierarchically for full traceability:
 ```text
 
 PRD
- ├─ CR (CR0001) ← change request, actioned into epics via /sdlc-studio cr action
+ ├─ CR ← change request, actioned into epics via /sdlc-studio cr action
  │   └─ Epic (EP0013) ← created from CR
  ├─ Epic (EP0001)
  │   ├─ Story (US0001)
  │   │   ├─ Plan (PL0001)
  │   │   ├─ Test Spec (TS0001)
  │   │   ├─ Workflow (WF0001)
- │   │   └─ Bug (BG0001)
+ │   │   └─ Bug
  │   └─ Story (US0002)
  │       ├─ Plan (PL0002)
  │       └─ Test Spec (TS0002)
@@ -438,7 +438,7 @@ TRD
 
 **Link fields in frontmatter:**
 
-- **Epic:** Required in Story, Plan, Test Spec, Workflow; **recommended** (not required) in Bug - bugs are often filed pre-triage with no epic, so `integrity` treats a missing bug link as advisory, never an error (BG0019)
+- **Epic:** Required in Story, Plan, Test Spec, Workflow; **recommended** (not required) in Bug - bugs are often filed pre-triage with no epic, so `integrity` treats a missing bug link as advisory, never an error
 - **Story:** Required in Plan, Test Spec, Workflow; **recommended** in Bug
 - **Plan:** Referenced in Workflow
 - **Test Spec:** Referenced in Workflow

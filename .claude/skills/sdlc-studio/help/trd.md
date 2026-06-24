@@ -8,6 +8,18 @@ Related: reference-trd.md (deep workflow), reference-architecture.md, templates/
 
 Create and maintain Technical Requirements Documents that bridge product requirements and implementation.
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Write up the technical design for this product" | `/sdlc-studio trd create` |
+| "Work out the architecture from the existing code" | `/sdlc-studio trd generate` |
+| "Check the design doc still matches the code" | `/sdlc-studio trd review` |
+| "Redraw the architecture diagrams" | `/sdlc-studio trd visualise` |
+| "Add the container and Docker decisions" | `/sdlc-studio trd containerize` |
+
 ## Usage
 
 ```

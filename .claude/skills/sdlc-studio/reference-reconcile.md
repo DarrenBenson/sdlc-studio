@@ -76,8 +76,8 @@ Compare ground truth against indexes and cross-references. Collect all discrepan
 
 `reconcile.py` normalises real-world artefact conventions before comparing, so the following are **not** flagged as drift (they were a recurring false-positive class fixed in v1.9.1):
 
-- **ID format / case.** A file named `cr0001.md` matches an index row `CR-0001`. IDs compare case- and punctuation-insensitively (`norm_id`), so the same artefact is never double-counted as both a missing row and an orphan row.
-- **Decorated statuses.** A status line such as `Done (v2.83.0) · **CR:** CR-0088 · **Points:** 8` canonicalises to its leading vocabulary token (`Done`) before comparison. The decoration is informational and does not register as a mismatch.
+- **ID format / case.** A lower-case filename matches an upper-case, punctuated index row. IDs compare case- and punctuation-insensitively (`norm_id`), so the same artefact is never double-counted as both a missing row and an orphan row.
+- **Decorated statuses.** A status line such as `Done (v2.83.0) · **Points:** 8`, carrying trailing metadata, canonicalises to its leading vocabulary token (`Done`) before comparison. The decoration is informational and does not register as a mismatch.
 - **Metadata without a blockquote.** Both `> **Status:** Done` and a plain `**Status:** Done` are read as the status field.
 - **Status-less files assert nothing.** A file with no `> **Status:**` line (legacy docs, and most CRs) is not compared against its index row, so it never status-mismatches every run. The summary count is reconciled against the **index rows** for these types, not the file census.
 - **`*-consultations.md` are not artefacts.** Supplementary notes filed under an artefact's ID (e.g. `EP0025-consultations.md`) are excluded from the census, so they do not clobber the real artefact's status or inflate counts.
@@ -212,7 +212,7 @@ Print the change list as a structured report:
 
 #### Apply mode (default)
 
-> **Deterministic apply (CR0026/RFC0003).** The two index-level mechanical fixes are
+> **Deterministic apply.** The two index-level mechanical fixes are
 > now done by the script: `reconcile apply [--scope] [--dry-run]` rewrites each
 > drifted index row's Status cell (positionally, by the table header) to the file's
 > status and recomputes the summary counts. It is **idempotent** (a second run

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""SDLC Studio index archival (RFC0012 WS3).
+"""SDLC Studio index archival.
 
 `archive --type <t> --release <r>` moves a type's TERMINAL index rows out of the live
 `_index.md` master table into `<type>/archive/{release}/{type}.md`, leaving a bullet
 pointer in the live index. Rows-only: the artifact FILES stay put (IDs and links
 intact). `reconcile`/`status` still count the archived rows because `parse_index` unions
-the archive sub-indexes (WS2), so the census stays correct and the live index stays
+the archive sub-indexes, so the census stays correct and the live index stays
 bounded - the read-cost win on large projects.
 
 Explicit, operator-run (no auto-trigger). Idempotent per release. Read-then-write.
@@ -150,7 +150,7 @@ def archive(repo_root: Path | str, type_: str, release: str,
     else:
         archive_path.write_text(
             f"# {type_} archive - {release}\n\n"
-            "Terminal rows archived from the live index (RFC0012). Artifact files are "
+            "Terminal rows archived from the live index. Artifact files are "
             "unchanged; these rows keep the census correct via parse_index's union.\n\n"
             f"{header_line}\n{sep_line}\n" + "\n".join(moved_lines) + "\n", encoding="utf-8")
 
@@ -187,7 +187,7 @@ def cmd_archive(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Archive terminal index rows by release (RFC0012).")
+    p = argparse.ArgumentParser(description="Archive terminal index rows by release.")
     sub = p.add_subparsers(dest="cmd", required=True)
     a = sub.add_parser("archive", help="Move a type's terminal rows into an archive sub-index.")
     a.add_argument("--type", required=True, choices=sorted(TERMINAL))

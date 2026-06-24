@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SDLC Studio skill version check + self-update signal (CR0044).
+"""SDLC Studio skill version check + self-update signal.
 
 Compares the installed skill version (its own SKILL.md) against the latest published
 GitHub release, so `status`/`hint` can surface a one-line "update available" notice on
@@ -121,7 +121,7 @@ def check(skill_dir: Path | str | None = None, repo: str = REPO,
     fresh = bool(cached) and (now - cache.get("fetched_at", 0)) < ttl_hours * 3600
     # A cached latest OLDER than what's installed is provably stale - a release shipped since the
     # cache was written (you cannot install newer-than-latest), so re-fetch instead of trusting it
-    # (BG0024: post-release the TTL window otherwise reports the old latest until it expires).
+    # (post-release the TTL window otherwise reports the old latest until it expires).
     if fresh and not _gt(result["installed"] or "0.0.0", cached):
         latest = cached  # fresh cache - no network call
     else:
@@ -194,7 +194,7 @@ def cmd_scope(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Skill version check + self-update signal (CR0044).")
+    p = argparse.ArgumentParser(description="Skill version check + self-update signal.")
     sub = p.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("check", help="Report the version status.")
     c.add_argument("--root", default=".", help="Project root for config (default: .)")

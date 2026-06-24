@@ -2,7 +2,7 @@
 
 The PVD is the **product layer above the PRD** - it coordinates the repos that together
 form one product, and traces each product feature to its owning repo's PRD feature. It
-**coordinates and traces, never re-specifies** (RFC0015). One writable master, read-only
+**coordinates and traces, never re-specifies**. One writable master, read-only
 everywhere else, kept honest by cross-repo tooling so it cannot rot.
 
 <!-- Load when: the user works with a multi-repo product / runs pvd or product reconcile -->
@@ -22,7 +22,7 @@ coordination is currently living as stale prose in reviews/handovers.
 - **The manifest:** `sdlc-studio/product/manifest.yaml` (from `templates/product-manifest.yaml`)
   lists the child repos by short id + local path + git URL.
 - **Read-only projection:** every child repo gets the master read-only (symlink in prod,
-  synced copy in dev) - see `pvd sync` (CR0048).
+  synced copy in dev) - see `pvd sync`.
 
 ## Workflow {#pvd-workflow}
 
@@ -31,8 +31,8 @@ coordination is currently living as stale prose in reviews/handovers.
    tree, G1-G5 gates, release coordination) are only for large multi-team products.
 2. **Manifest** - list each repo (id / path / url) in `manifest.yaml`.
 3. **Feature map** - in §3, map each product feature `PF####` to `<repo-id>:<PRD-feature>`.
-4. **`pvd sync`** (CR0048) - project the master read-only into each child repo.
-5. **`product reconcile`** (CR0049) - verify the feature map + contracts across the repos.
+4. **`pvd sync`** - project the master read-only into each child repo.
+5. **`product reconcile`** - verify the feature map + contracts across the repos.
 
 ## Tiering (proportionality)
 
@@ -47,4 +47,3 @@ coordination is currently living as stale prose in reviews/handovers.
 | --- | --- |
 | `templates/core/pvd.md` | the tiered PVD template |
 | `templates/product-manifest.yaml` | the child-repo manifest |
-| RFC0015 | the design rationale (accepted, scoped WS1-3) |

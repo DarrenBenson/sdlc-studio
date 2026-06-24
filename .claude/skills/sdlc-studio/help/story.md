@@ -6,6 +6,19 @@ Related: reference-story.md (deep workflow), reference-philosophy.md (create vs 
 
 # /sdlc-studio story - User Stories
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Break the epics down into user stories" | `/sdlc-studio story` |
+| "Write out the stories for the login epic" | `/sdlc-studio story --epic EP0001` |
+| "Reverse-engineer stories from the existing code" | `/sdlc-studio story generate` |
+| "Where do the stories stand?" | `/sdlc-studio story review` |
+| "Plan story US0024 and let me look it over" | `/sdlc-studio story plan --story US0024` |
+| "Build out story US0024 start to finish" | `/sdlc-studio story implement --story US0024` |
+
 ## Quick Reference
 
 ```

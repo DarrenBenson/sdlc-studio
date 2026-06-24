@@ -6,6 +6,19 @@ Related: reference-persona.md, reference-persona-generate.md
 
 # /sdlc-studio persona - User Personas
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Who are the users of this product?" | `/sdlc-studio persona list` |
+| "Build out the people we are designing for" | `/sdlc-studio persona create` |
+| "Work out the user types from our requirements" | `/sdlc-studio persona generate --from-prd` |
+| "Figure out the users from the existing code" | `/sdlc-studio persona generate --from-code` |
+| "Take another look at our personas and tidy them up" | `/sdlc-studio persona review` |
+| "Bring in this persona file we already have" | `/sdlc-studio persona import [file]` |
+
 ## Quick Reference
 
 ```
@@ -209,7 +222,7 @@ Each persona file includes:
 
 Generate any of these on demand with `persona create --from-archetype <slug>` - the
 skill ships the seeds (role + disposition) + `persona-template.md`, not baked character
-files (RFC0007):
+files:
 
 **Team - Product:**
 - `sarah-chen-pm` - Product Manager

@@ -6,6 +6,18 @@ Related: reference-consult.md, reference-persona.md
 
 # /sdlc-studio consult - Persona Consultation
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Get the team to review the PRD" | `/sdlc-studio consult team sdlc-studio/prd.md` |
+| "What would Sarah think of this story?" | `/sdlc-studio consult sarah-chen sdlc-studio/stories/US0001.md` |
+| "Ask all the stakeholders about this before we ship" | `/sdlc-studio consult stakeholders prd.md` |
+| "Give me a quick gut-check on this epic" | `/sdlc-studio consult team epic.md --quick` |
+| "Have engineering and QA pull this spec apart" | `/sdlc-studio consult team auth-spec.md --thorough` |
+
 > **Source of truth:** `reference-consult.md` - Detailed workflow steps
 
 Get structured feedback from personas on SDLC artefacts.

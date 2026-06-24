@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PVD projection + drift check (CR0048, RFC0015 WS2).
+"""PVD projection + drift check.
 
 Project the one writable master Product Vision Document into each child repo **read-only**
 (a symlink in production, a synced copy in dev) and detect when a project's copy has drifted
@@ -43,7 +43,7 @@ def sync(master: Path, target_repo: Path, mode: str = "copy", dry_run: bool = Fa
     mode 'copy' writes a chmod-readonly copy (dev); 'symlink' links to the master (prod)."""
     master = Path(master)
     dest = Path(target_repo) / PROJECTED
-    if dry_run:  # preview: write nothing (CR0057)
+    if dry_run:  # preview: write nothing
         return {"action": "would-sync", "target": str(dest), "mode": mode, "dry_run": True}
     dest.parent.mkdir(parents=True, exist_ok=True)
     if dest.exists() or dest.is_symlink():
@@ -117,7 +117,7 @@ def cmd_drift(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="PVD projection + drift (CR0048).")
+    p = argparse.ArgumentParser(description="PVD projection + drift.")
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("sync", help="Project the master into a target repo, read-only.")
     s.add_argument("--master", required=True)

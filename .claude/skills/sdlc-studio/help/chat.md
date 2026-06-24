@@ -6,6 +6,18 @@ Related: reference-chat.md, reference-persona.md, reference-consult.md
 
 # /sdlc-studio chat - Interactive Persona Sessions
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Let me talk to our senior dev about this" | `/sdlc-studio chat marcus-johnson` |
+| "Get the team in a room to discuss microservices" | `/sdlc-studio chat --workshop "Should we adopt microservices?" --team` |
+| "Run a quick Three Amigos on the MVP scope" | `/sdlc-studio chat --workshop "MVP scope" --amigos` |
+| "Walk a new user through this story" | `/sdlc-studio chat tom-bradley --context sdlc-studio/stories/US0001.md` |
+| "Ask the architect about event-driven design, and save the chat" | `/sdlc-studio chat nadia-okonkwo --save transcripts/architecture-chat.md` |
+
 > **Source of truth:** `reference-chat.md` - Detailed workflow steps
 
 Have conversations with personas for requirements discovery, design validation, and decision-making.

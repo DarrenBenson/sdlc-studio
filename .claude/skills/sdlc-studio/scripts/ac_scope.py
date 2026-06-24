@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Authoring lint: a story's ACs should be satisfiable within its own epic (CR0086).
+"""Authoring lint: a story's ACs should be satisfiable within its own epic.
 
 When stories are fanned out per epic, an agent authoring epic E can write an acceptance
 criterion that quietly depends on epic F's capability (e.g. an EP0001 auth story asserting
@@ -7,7 +7,7 @@ criterion that quietly depends on epic F's capability (e.g. an EP0001 auth story
 structurally un-Done-able in its own epic. This flags, advisory and heuristic, any AC that
 mentions a distinctive capability keyword owned by a *different* epic's title - so it can be
 split or re-scoped at authoring time, before it becomes an un-passable AC (the symptom
-CR0084 catches downstream). Never auto-edits; false positives are expected (it is a keyword
+the Done-gate catches downstream). Never auto-edits; false positives are expected (it is a keyword
 heuristic) - the operator decides. Pure stdlib.
 """
 from __future__ import annotations
@@ -96,7 +96,7 @@ def cmd_check(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Cross-epic AC scope lint (CR0086, advisory).")
+    p = argparse.ArgumentParser(description="Cross-epic AC scope lint (advisory).")
     sub = p.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("check", help="Flag ACs referencing a capability owned by another epic.")
     c.add_argument("--root", default=".")

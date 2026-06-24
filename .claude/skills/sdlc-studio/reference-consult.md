@@ -14,7 +14,7 @@ The consult command gets structured feedback from personas on SDLC artefacts. Un
 shadow - `templates/personas/review-seat-charter.md`), and is consulted as an **isolated subagent**
 (its own fresh context) so its view is genuinely independent, not a hat worn in the main thread.
 Verdicts land in the existing ledgers (`critic.py` / `ledger.py`) - the record lives outside the
-seat, the stance inside it (RFC0016).
+seat, the stance inside it.
 
 ---
 
@@ -110,8 +110,8 @@ Override with `--product`, `--engineering`, `--qa` flags.
 
 3. **Synthesis** (a distinct step, after all seats return)
    - Merge the independent verdicts into the Three Amigos format: a summary table, then
-     **consensus** (where seats agree) and **conflicts** (where they do not - name the tension and,
-     per RFC0016 D7, surface both sides for the operator to adjudicate rather than auto-resolving)
+     **consensus** (where seats agree) and **conflicts** (where they do not - name the tension and
+     surface both sides for the operator to adjudicate rather than auto-resolving)
    - Record the synthesised verdict via `critic.py` / `ledger.py`
 
 4. **Format Output**

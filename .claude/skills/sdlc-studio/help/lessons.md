@@ -24,6 +24,18 @@ not a lesson – keep those in the project's memory store.
 All actions are backed by `python3 "$CLAUDE_SKILL_DIR/scripts/lessons.py"`
 (`list` / `add` / `prune` / `recall`).
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "What have we learnt the hard way on this project?" | `/sdlc-studio lessons list` |
+| "Note that down so we don't trip over it again" | `/sdlc-studio lessons add` |
+| "Anything we should know before deciding this?" | `/sdlc-studio lessons recall` |
+| "That mistake could bite any project - save it for all of them" | `/sdlc-studio lessons add --global` |
+| "Clear out the old lessons from the early epics" | `/sdlc-studio lessons prune --older EP0003` |
+
 ## Quick Reference
 
 ```bash

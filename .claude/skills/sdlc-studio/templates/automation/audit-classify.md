@@ -1,6 +1,6 @@
 # Audit Merge & Classify Prompt
 
-Portable merge/classify step (RFC0002 / reference-audit.md#audit-taxonomy). Runs once
+Portable merge/classify step (see reference-audit.md#audit-taxonomy). Runs once
 over all refute-panel survivors before filing.
 
 ---

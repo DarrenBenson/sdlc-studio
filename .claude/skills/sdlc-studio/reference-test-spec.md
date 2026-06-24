@@ -42,7 +42,7 @@ Detailed workflows for test specification creation and management.
 
 5. **Build AC Coverage Matrix (MANDATORY)**
 
-   > **Author this at `--goal design`, not at implement (CR0110).** The sprint breakdown produces
+   > **Author this at `--goal design`, not at implement.** The sprint breakdown produces
    > this matrix - every AC mapped to a *planned* test case/title - so `Verify:` lines are
    > runner-targeted by construction and implement binds tests to the matrix, instead of
    > reverse-engineering the mapping and repointing Verify lines at delivery. See

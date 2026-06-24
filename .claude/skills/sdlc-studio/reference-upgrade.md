@@ -269,7 +269,7 @@ When `--dry-run` is specified:
 ## /sdlc-studio project upgrade - convention migration {#project-upgrade-workflow}
 
 `skill-update` updates the **skill** (the tool); `project upgrade` migrates a **consuming project's
-artefacts** to what the new skill expects (CR0062). It is broader than the schema transform above:
+artefacts** to what the new skill expects. It is broader than the schema transform above:
 it also covers the convention drift a long-lived project accumulates (no `.config.yaml`, old
 personas, missing provenance, stale AGENTS.md, missing `Verify:` lines). The schema `upgrade` (the
 v1 -> v2 doc-shape transform) is one part; if the project is schema v1, run `/sdlc-studio upgrade`

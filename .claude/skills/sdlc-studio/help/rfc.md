@@ -6,6 +6,19 @@ Related: reference-rfc.md (deep workflow), templates/core/rfc.md
 
 # /sdlc-studio rfc – Design Exploration (Request For Comments)
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "We've got a couple of design options to weigh up - write them up" | `/sdlc-studio rfc create` |
+| "Which design decisions are still open?" | `/sdlc-studio rfc list --status draft` |
+| "Which of these proposals have gone stale?" | `/sdlc-studio rfc review` |
+| "Let's go through the open proposals and decide each one" | `/sdlc-studio rfc decide` |
+| "We've picked the approach - lock it in and raise the work" | `/sdlc-studio rfc accept --rfc RFC-0001` |
+| "We're not doing this one - close it off" | `/sdlc-studio rfc close --rfc RFC-0001` |
+
 > **Source of truth:** `reference-rfc.md` – detailed workflow steps.
 
 An **RFC** captures an *unsettled* design space – multiple viable options and open

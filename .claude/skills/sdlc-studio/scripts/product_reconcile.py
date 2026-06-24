@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cross-repo feature-map traceability (CR0049, RFC0015 WS3).
+"""Cross-repo feature-map traceability.
 
 Verify the PVD's master feature inventory against the child repos: every product feature
 `PF####` must map to a real feature in its owning repo's PRD. Reads sibling repos via the
@@ -112,7 +112,7 @@ def cmd_reconcile(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Cross-repo PVD feature-map traceability (CR0049).")
+    p = argparse.ArgumentParser(description="Cross-repo PVD feature-map traceability.")
     p.add_argument("--pvd", required=True, help="The master PVD")
     p.add_argument("--manifest", required=True, help="The product manifest")
     p.add_argument("--format", choices=("text", "json"), default="text")

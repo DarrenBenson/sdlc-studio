@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SDLC Studio lifecycle-conformance check (RFC0001 WS7).
+"""SDLC Studio lifecycle-conformance check.
 
 Asserts each unit (story) passed through the required lifecycle stages -
 decomposed (an Epic link), specified (at least one AC), verifiable (a `Verify:`
@@ -7,7 +7,7 @@ line), and for Done stories: verified (AC marked `Verified: yes/manual`),
 reconciled (no index drift, via reconcile), and critiqued (a committed
 independent-critic APPROVE, via critic.py). Exits non-zero on any non-conformant
 unit, so the sprint loop cannot mark a unit Done with a stage silently
-skipped - including skipping the critic (CR0023). Read-only; pure stdlib.
+skipped - including skipping the critic. Read-only; pure stdlib.
 """
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 import reconcile  # noqa: E402  (sibling scripts; scripts dir is on sys.path)
 import critic  # noqa: E402
-import doc_coverage  # noqa: E402  (CR0053: the `documented` stage)
+import doc_coverage  # noqa: E402  (the `documented` stage)
 
 _PLACEHOLDER = re.compile(r"\{\{[^}]*\}\}")
 # A bullet's fillable value: strip the leading marker (checkbox, **Label:**) -> group(1).
@@ -29,7 +29,7 @@ _BULLET_VAL = re.compile(r"^\s*[-*]\s+(?:\[[ xX]\]\s+)?(?:\*\*[^*]+\*\*:?\s*)?(.
 
 
 def _real(value: str | None) -> bool:
-    """True when a line's fillable value has substance beyond a {{placeholder}} (CR0056):
+    """True when a line's fillable value has substance beyond a {{placeholder}}:
     a scaffold whose AC/Verify slots are still `{{...}}` is not yet specified. Punctuation
     or markdown left after stripping the placeholder is not substance (so `{{x}}.` is not
     real - this keeps conformance consistent with validate, which flags that line)."""
@@ -58,7 +58,7 @@ def detect_conformance(repo_root: Path | str) -> dict:
     _no_index = any(d["kind"] == "missing-index" for d in _drift)
     drift_ids = {sdlc_md.norm_id(d["id"]) for d in _drift
                  if d.get("id") and d["kind"] in ("status-mismatch", "missing-row")}
-    # Repo-global doc-coverage (CR0053) - the `documented` stage, like `reconciled`.
+    # Repo-global doc-coverage - the `documented` stage, like `reconciled`.
     _doc_ok = doc_coverage.check(root)["ok"]
     units: list[dict] = []
     ok = 0
@@ -82,7 +82,7 @@ def detect_conformance(repo_root: Path | str) -> dict:
                 has_ac = True
             # A populated Acceptance Criteria section counts as "specified" even when the
             # ACs are prose bullets without an ACn id (house templates) - but a line whose
-            # fillable value is only a {{placeholder}} does not count (CR0056).
+            # fillable value is only a {{placeholder}} does not count.
             elif in_ac and line.strip() and not line.startswith("#"):
                 bm = _BULLET_VAL.match(line)
                 if _real(bm.group(1) if bm else line):

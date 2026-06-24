@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SDLC Studio RFC decision-readiness digest (CR0024).
+"""SDLC Studio RFC decision-readiness digest.
 
 `rfc decide` is the multi-RFC decision session: triage the Draft backlog into
 per-RFC briefs, then accept / defer / withdraw across them. This script is the
@@ -44,7 +44,7 @@ def _table_data_rows(lines: list[str]) -> list[list[str]]:
             if rows:
                 break  # table ended (a non-table line)
             continue
-        cells = sdlc_md.table_cells(line)  # escaped-pipe-aware (BG0021)
+        cells = sdlc_md.table_cells(line)  # escaped-pipe-aware
         if cells is None:
             continue  # separator
         rows.append(cells)

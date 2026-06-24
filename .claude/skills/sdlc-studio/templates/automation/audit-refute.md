@@ -1,6 +1,6 @@
 # Audit Refute Prompt (panel skeptic)
 
-Portable refute-panel skeptic (RFC0002 / reference-audit.md#audit-refute). Run
+Portable refute-panel skeptic (see reference-audit.md#audit-refute). Run
 **{{n_votes}}** independent instances per candidate; the candidate survives only on
 **>= {{survive_threshold}}** non-refutations. Give each instance a distinct lens
 (correctness / does-it-reproduce / is-it-already-handled) rather than identical prompts.

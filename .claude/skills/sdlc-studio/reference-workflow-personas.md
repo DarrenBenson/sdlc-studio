@@ -10,11 +10,11 @@ How personas integrate across all SDLC Studio workflows.
 
 Personas can be consulted at key decision points throughout the SDLC pipeline. This reference describes when persona consultation adds value, when to skip it, and how to control integration behaviour.
 
-> **Review seats are charters, consulted in isolation (RFC0016).** The seats that review artefacts
+> **Review seats are charters, consulted in isolation.** The seats that review artefacts
 > (the Three Amigos: Product / Engineering / QA, plus the document owners below) are structured
 > **charters** (`templates/personas/review-seat-charter.md`), each consulted as an **independent
 > subagent** with a synthesis step (see `reference-consult.md`). These review seats are distinct from
-> the Cooper goal-directed **design personas** (who the product is *for*, RFC0017) - design personas
+> the Cooper goal-directed **design personas** (who the product is *for*) - design personas
 > describe users; review seats describe who reviews the work.
 
 ### Document-owner seats

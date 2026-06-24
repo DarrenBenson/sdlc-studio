@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Progressive-disclosure + Claude Code best-practice check (CR0063).
+"""Progressive-disclosure + Claude Code best-practice check.
 
 The skill is loaded into agent sessions, so disclosure discipline is a token lever. This is an
 **advisory** check (it never blocks the gate): it surfaces where reference/help files lack a
@@ -78,6 +78,15 @@ def check(repo_root: Path | str = ".") -> dict:
             warn("orphan", f.name,
                  f"{f.name} is not referenced from SKILL.md / help/references.md / help/help.md")
 
+    # CR0108: every command help file leads with a natural-language "You can just ask" block - the
+    # skill is model-invoked, so plain language is the real interface. Meta catalogues are exempt.
+    for h in sorted((skill_dir / "help").glob("*.md")):
+        if h.name in ("arguments.md", "references.md"):
+            continue
+        if "## You can just ask" not in _read(h):
+            warn("help-missing-nl-block", h.name,
+                 f"help/{h.name} has no `## You can just ask` natural-language block")
+
     # best-practice (best-practices/claude-skill.md): scripts hygiene
     for s in sorted((skill_dir / "scripts").glob("*.py")):
         if s.stem in _NON_SCRIPTS or s.stem.startswith("test"):
@@ -118,7 +127,7 @@ def cmd_check(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Progressive-disclosure + best-practice check (CR0063).")
+    p = argparse.ArgumentParser(description="Progressive-disclosure + best-practice check.")
     p.add_argument("--root", default=".")
     p.add_argument("--strict", action="store_true", help="exit non-zero if any finding (opt-in)")
     p.add_argument("--format", choices=("text", "json"), default="text")

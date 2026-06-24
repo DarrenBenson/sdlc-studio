@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Portable, ecosystem-neutral CI quality gate (CR0046).
+"""Portable, ecosystem-neutral CI quality gate.
 
 One command that runs the deterministic checks (conformance, reconcile drift, validate,
 constitution, integrity) over the artifact graph, prints a consolidated pass/fail, and
@@ -168,7 +168,7 @@ def cmd_gate(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Portable CI quality gate (CR0046).")
+    p = argparse.ArgumentParser(description="Portable CI quality gate.")
     p.add_argument("--root", default=".", help="Repo root (default: .)")
     p.add_argument("--only", help="Comma-separated checks to run (default: all)")
     p.add_argument("--skip", help="Comma-separated checks to skip")

@@ -99,7 +99,7 @@ rules, the agents/services) live in that project's agent-instructions file
 
 A project may declare its inviolable principles in an optional
 `sdlc-studio/constitution.md` (seed from `templates/constitution.md`). It is loaded as a
-generation constraint, and `constitution check` (`scripts/constitution.py`, RFC0005)
+generation constraint, and `constitution check` (`scripts/constitution.py`)
 asserts the **machine-checkable** principles across the artifact graph - a principle
 carries a `` `rule:` `` from a fixed vocabulary (e.g. `story-requires-epic`,
 `ac-requires-verify`, `status-in-vocab`, `no-index-drift`) that maps onto the existing

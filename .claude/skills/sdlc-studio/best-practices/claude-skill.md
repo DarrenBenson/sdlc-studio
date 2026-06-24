@@ -147,6 +147,17 @@ Link from SKILL.md: "For detailed API reference, see `reference.md`."
 2. **Triggered**: Full `SKILL.md` loads when skill is relevant
 3. **On-demand**: Bundled files load selectively as needed
 
+**Two conventions for consuming-facing docs (reference/help):**
+
+- **Lead command help with natural language.** A skill is model-invoked, so plain language is the
+  real interface. Each command help file opens with a `## You can just ask` block - a short
+  `Just say... | Runs` table mapping natural phrasings to commands - so a non-technical operator
+  sees they can just ask. Meta catalogues (argument/reference indexes) are exempt.
+- **No internal provenance tags.** Do not embed your own change-request ids (e.g. an issue or
+  ticket number) in the docs a consuming agent reads - they collide with the *consuming* project's
+  id namespace and are noise. Keep traceability in your own change log and git history. Bare
+  example ids in command samples are fine; the parenthetical provenance form is what to avoid.
+
 ### Optional: templates/
 
 For skills that generate reports, artifacts, or structured output:

@@ -129,7 +129,7 @@ Detailed workflows for code planning, review, and quality checks.
    The Explore agent augments the repo map result; it does not
    invent it. See `reference-repo-map.md` for scoring details.
 
-6b. **Assess change difficulty (RFC0009)**
+6b. **Assess change difficulty**
    The ranked files are the change's blast radius. Score their complexity so
    the estimate reflects the *difficulty* of the code, not just the story shape:
 

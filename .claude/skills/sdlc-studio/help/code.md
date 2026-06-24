@@ -8,6 +8,19 @@ Related: reference-code.md (deep workflow), reference-test-best-practices.md (TD
 
 > **Source of truth:** `reference-code.md` - Detailed workflow steps
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Plan out how to build the next story" | `/sdlc-studio code plan` |
+| "Now build it" | `/sdlc-studio code implement` |
+| "Build this one test-first" | `/sdlc-studio code implement --tdd` |
+| "Run the tests" | `/sdlc-studio code test` |
+| "Check it meets what we asked for" | `/sdlc-studio code verify` |
+| "Tidy up the code style" | `/sdlc-studio code check` |
+
 ## Quick Reference
 
 ```

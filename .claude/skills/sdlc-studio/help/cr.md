@@ -6,6 +6,19 @@ Related: reference-cr.md (deep workflow), templates/core/cr.md
 
 # /sdlc-studio cr - Change Requests
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Log a change request for the new search feature" | `/sdlc-studio cr create` |
+| "Show me the change requests still waiting" | `/sdlc-studio cr list --status proposed` |
+| "Which changes are most urgent?" | `/sdlc-studio cr list --priority P1` |
+| "Break CR-0001 into work for the team" | `/sdlc-studio cr action --cr CR-0001` |
+| "How are our change requests doing?" | `/sdlc-studio cr review` |
+| "Mark CR-0001 as finished" | `/sdlc-studio cr close --cr CR-0001` |
+
 > **Source of truth:** `reference-cr.md` - Detailed workflow steps
 
 ## Quick Reference

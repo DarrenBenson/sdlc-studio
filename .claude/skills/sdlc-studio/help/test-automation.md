@@ -10,6 +10,18 @@ Related: reference-test-automation.md (deep workflow), reference-test-best-pract
 
 Generates executable test code from test specifications. Supports multiple languages and frameworks with automatic detection.
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Write the actual test code from our specs" | `/sdlc-studio test-automation` |
+| "Generate the tests for spec TS0001" | `/sdlc-studio test-automation --spec TS0001` |
+| "Just do the end-to-end tests for now" | `/sdlc-studio test-automation --type e2e` |
+| "Only the unit tests, please" | `/sdlc-studio test-automation --type unit` |
+| "Use pytest, not whatever it picked" | `/sdlc-studio test-automation --framework pytest` |
+
 ## Usage
 
 ```bash

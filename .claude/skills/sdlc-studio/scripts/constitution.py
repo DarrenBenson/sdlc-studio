@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SDLC Studio project-constitution gate (RFC0005).
+"""SDLC Studio project-constitution gate.
 
 An optional `sdlc-studio/constitution.md` lets a project declare its inviolable
 principles. A principle is either machine-checkable - carrying a `rule:` from the fixed
@@ -151,7 +151,7 @@ def cmd_check(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Project-constitution principle gate (RFC0005).")
+    p = argparse.ArgumentParser(description="Project-constitution principle gate.")
     sub = p.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("check", help="Assert declared checkable principles.")
     c.add_argument("--root", default=".", help="Repo root (default: .)")

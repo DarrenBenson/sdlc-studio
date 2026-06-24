@@ -1,6 +1,6 @@
 # CR-0112: Strip internal provenance tags (CR/BG/RFC) from consuming-facing docs + shipped code
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-06-24
@@ -12,10 +12,10 @@ The skill embeds its own change-request ids as provenance tags pervasively: ~199
 
 ## Acceptance Criteria
 
-- [ ] CR/BG/RFC#### tags removed from reference-*.md, help/*.md, templates/**, and scripts/*.py (comments) - grammar kept clean; US/EP examples and code blocks preserved
-- [ ] the skill's own artifacts (change-requests/, CHANGELOG.md, rfcs/, reviews/) keep their ids - that is the provenance home
-- [ ] a guard (lint-style.sh or a checker) flags a bare (CR|BG|RFC)#### in reference/help/scripts so the convention does not creep back; documented in best-practices/claude-skill.md
-- [ ] lint + gate green; CHANGELOG entry under [3.1.0]
+- [x] CR/BG/RFC#### tags removed from reference-*.md, help/*.md, templates/**, and scripts/*.py (comments) - grammar kept clean; US/EP examples and code blocks preserved
+- [x] the skill's own artifacts (change-requests/, CHANGELOG.md, rfcs/, reviews/) keep their ids - that is the provenance home
+- [x] a guard (lint-style.sh or a checker) flags a bare (CR|BG|RFC)#### in reference/help/scripts so the convention does not creep back; documented in best-practices/claude-skill.md
+- [x] lint + gate green; CHANGELOG entry under [3.1.0]
 
 ## Revision History
 

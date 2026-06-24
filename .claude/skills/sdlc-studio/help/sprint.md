@@ -1,17 +1,30 @@
 <!--
 Load when: /sdlc-studio sprint or /sdlc-studio sprint help
 Dependencies: SKILL.md (always loaded first)
-Related: reference-sprint.md (full workflow), RFC0001
+Related: reference-sprint.md (full workflow)
 -->
 
 # /sdlc-studio sprint - Goal-Driven Development loop
+
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Do a sprint to deliver all the open bugs" | `/sdlc-studio sprint --bugs Open --goal done` |
+| "Plan and break down the next sprint, but don't write code" | `/sdlc-studio sprint --crs Proposed --goal design` |
+| "Build out epic 7 from end to end" | `/sdlc-studio sprint --epic EP0007 --goal done` |
+| "Turn this PRD into epics and stories" | `/sdlc-studio sprint prd.md --goal design` |
+| "Select and estimate a sprint, then stop for my sign-off" | `/sdlc-studio sprint --crs Proposed --goal plan` |
+| "Run the whole thing unattended" | `/sdlc-studio sprint --bugs Open --autonomous` |
 
 Run a prioritised batch of work to a goal. You set the goal and the acceptance
 criteria; the loop drives the proven lifecycle (decompose -> TDD -> verify ->
 conformance -> review) to it. Add `--autonomous` to run unattended. See
 `reference-sprint.md` for the full workflow.
 
-> **Renamed from `autosprint` (CR0087).** `/sdlc-studio autosprint ...` still works as a
+> **Renamed from `autosprint`.** `/sdlc-studio autosprint ...` still works as a
 > **deprecated alias** (the command is now the whole sprint lifecycle - `--goal plan` /
 > `design` / `done` - so autonomy is the `--autonomous` flag, not the name). Prefer `sprint`.
 
@@ -35,12 +48,12 @@ next sprint" resolves to `--goal design` (the goals are cumulative stop-points).
 
 | Flag | Description | Default |
 | --- | --- | --- |
-| `<batch>` | a worklist file, `--bugs`/`--crs`/`--stories <status>` / `--epic EPxxxx`, or a **PRD path** (greenfield authoring, CR0088) | required |
+| `<batch>` | a worklist file, `--bugs`/`--crs`/`--stories <status>` / `--epic EPxxxx`, or a **PRD path** (greenfield authoring) | required |
 | `--goal` | `triage` (plan) / `plan` (sprint plan) / `design` (Ready, estimated backlog) / `done` (delivered) | `done` |
-| `--order` | `priority` / `wsjf` (priority over RFC0009 complexity) / `manual` | `priority` |
-| `--epic EPxxxx` | (with `--stories`, repeatable) scope a story plan to one or more epics, not the whole status class (CR0106) | all epics |
+| `--order` | `priority` / `wsjf` (priority over complexity) / `manual` | `priority` |
+| `--epic EPxxxx` | (with `--stories`, repeatable) scope a story plan to one or more epics, not the whole status class | all epics |
 | `--write` | (with `plan`) persist the sprint plan to `.local/sprint-plan.json` | off |
-| `--strict` | (with `plan`) refuse to plan when the index has drift (reconcile-before-plan, CR0094) | off |
+| `--strict` | (with `plan`) refuse to plan when the index has drift (reconcile-before-plan) | off |
 | `--autonomous` | unattended mode: the deterministic guardrails (cap, repetition-breaker, completion oracle) enforce stop/stall instead of model discretion | off |
 
 ## What happens
@@ -72,4 +85,3 @@ cannot skip; without it they are model-instructed (the portable Phase-1 path).
 
 - `reference-sprint.md` - full workflow and guardrails
 - `/sdlc-studio status` - shows Blocked units after a run
-- `RFC0001` - the design and decisions

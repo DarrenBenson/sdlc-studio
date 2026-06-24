@@ -6,6 +6,19 @@ Related: reference-review.md (document review), reference-refactor.md (code revi
 
 # Review Commands
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Check our specs all line up" | `/sdlc-studio review` |
+| "Just give me a quick health check on the docs" | `/sdlc-studio review --quick` |
+| "Look over the PRD for me" | `/sdlc-studio review --focus prd` |
+| "Review the work on this epic and what changed" | `/sdlc-studio epic review` |
+| "Go through the login code for security problems" | `/sdlc-studio code review --focus security` |
+| "Check the code for that story" | `/sdlc-studio code review --story US0001` |
+
 SDLC Studio supports three types of reviews:
 - **Document review:** Unified PRD, TRD, TSD review with cross-document consistency
 - **Epic review:** Cascading review of epic and changed stories (default behaviour)

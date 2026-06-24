@@ -6,6 +6,18 @@ Related: reference-epic.md (deep workflow), templates/core/epic.md
 
 # /sdlc-studio epic - Epics
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Break the requirements into epics" | `/sdlc-studio epic` |
+| "Group these features from a technical angle" | `/sdlc-studio epic --perspective engineering` |
+| "How are the epics coming along?" | `/sdlc-studio epic review` |
+| "Sketch out the work for the agent engine epic" | `/sdlc-studio epic plan --epic EP0004` |
+| "Build out everything in the agent engine epic" | `/sdlc-studio epic implement --epic EP0004` |
+
 ## Quick Reference
 
 ```

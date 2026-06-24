@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""SDLC Studio epic resume helper (CR0007).
+"""SDLC Studio epic resume helper.
 
 `epic implement --resume` restarts a partially-done epic at the first non-Done
 story instead of from scratch. The resume point is computed from each story's
 canonical **Status** - the authoritative Done signal - not from a workflow
-execution table, which is a derived view that can drift (the CR0004 lesson). The
+execution table, which is a derived view that can drift. The
 run-state is persisted to `sdlc-studio/.local/epic-state.json` so resumption is
 deterministic rather than reconstructed from prose. Read-only census; pure stdlib.
 """

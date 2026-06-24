@@ -26,7 +26,7 @@ import re  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 
-# CR0105: meta-artifacts that carry a numeric id but are NOT pipeline artifacts (no status vocab,
+# meta-artifacts that carry a numeric id but are NOT pipeline artifacts (no status vocab,
 # no reconcile/conformance). Kept out of sdlc_md.ARTIFACT_TYPES so the pipeline machinery ignores
 # them; the allocator resolves them here so review/retro ids are never hand-picked. (lessons LL####
 # have their own manager in lessons.py; personas are named, not numbered.)
@@ -66,7 +66,7 @@ def local_ids(type_: str, repo_root: Path) -> list[int]:
 
 def index_row_ids(type_: str, repo_root: Path) -> list[int]:
     """Numeric ids present as rows in the type's `_index.md`. Catches an id whose file was
-    deleted but whose index row remains: re-issuing it would collide (BG0022)."""
+    deleted but whose index row remains: re-issuing it would collide."""
     if type_ in META_TYPES:  # meta-artifacts have no derived _index.md
         return []
     import reconcile  # local import avoids any import cycle
@@ -82,7 +82,7 @@ def index_row_ids(type_: str, repo_root: Path) -> list[int]:
 def allocate_number(type_: str, repo_root: Path | str, remote: bool = True) -> int:
     """The next free numeric id: above the max of local files, index rows, and (when
     available) origin/main - so a deleted-but-still-indexed id, or an id only on the remote,
-    is never re-issued (BG0022). `remote=False` skips the read-only git lookup."""
+    is never re-issued. `remote=False` skips the read-only git lookup."""
     root = Path(repo_root)
     base = max([0, *local_ids(type_, root), *index_row_ids(type_, root)])
     if remote:
@@ -179,7 +179,7 @@ def detect_collisions(repo_root: Path | str) -> dict:
     """Find every normalised artifact ID claimed by more than one file.
 
     Scans all artifact types under repo_root, normalises each file's ID
-    (`CR0007` and `CR-0007` collapse to one key), groups files by that key,
+    (`US0007` and `US-0007` collapse to one key), groups files by that key,
     and flags any key backed by more than one distinct file. Returns the
     documented shape:
 

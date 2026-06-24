@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SDLC Studio referential-integrity check (CR0003).
+"""SDLC Studio referential-integrity check.
 
 Two deterministic guards `validate.py` does not cover:
 

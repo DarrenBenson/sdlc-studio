@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""SDLC Studio code-complexity signals (RFC0009 WS1).
+"""SDLC Studio code-complexity signals.
 
 Computes cognitive complexity (SonarSource / Campbell 2018) and cyclomatic
 complexity per function from Python's `ast`, with no third-party dependency. Non-
 Python files are scored via `lizard` (a pure-Python multi-language cyclomatic tool)
 when it is importable, and reported unscored otherwise - the same soft-dep pattern
 as `gh` and the test runners. The signal is advisory: it feeds estimation and a
-refactor-first recommendation (WS2), never a gate (RFC0009 D3).
+refactor-first recommendation, never a gate.
 
-Cognitive complexity (the metric this leans on, RFC0009 D1) scores understandability:
+Cognitive complexity (the metric this leans on) scores understandability:
 +1 for each break in linear flow (if/elif/else, for/while, except, ternary, each
 boolean-operator sequence, match), and an extra +1 per nesting level for flow-breakers
 nested inside others - the part cyclomatic complexity ignores. Python's parser already
@@ -29,8 +29,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 
-DEFAULT_COGNITIVE_HIGH = 15  # SonarQube's "high" threshold; configurable (RFC0009)
-DEFAULT_CHURN_HIGH = 12      # commits-touching-a-file "high" threshold (RFC0009 calibration)
+DEFAULT_COGNITIVE_HIGH = 15  # SonarQube's "high" threshold; configurable
+DEFAULT_CHURN_HIGH = 12      # commits-touching-a-file "high" threshold (calibrated)
 # Churn is weighted ~3x complexity in the composite: the 2026-06-21 calibration against
 # consuming repo B/consuming repo A found churn discriminates defects ~4.9x vs complexity's ~1.8x.
 W_CHURN, W_COGNITIVE = 3, 1
@@ -240,7 +240,7 @@ def churn(repo_root: Path | str = ".") -> dict:
 
 
 def composite_risk(cognitive: int, churn_count: int, repo_root: Path | str = ".") -> tuple[str, float]:
-    """Churn-weighted composite defect-risk band for a file (RFC0009 WS4). Normalises each
+    """Churn-weighted composite defect-risk band for a file. Normalises each
     signal to its 'high' threshold and weights churn ~3x complexity (calibrated: churn is
     the stronger defect predictor). Returns (band, score); score 1.0 = both at threshold."""
     cog_high, ch_high = cognitive_high(repo_root), churn_high(repo_root)
@@ -276,13 +276,13 @@ def scan(repo_root: Path | str = ".") -> list[dict]:
     return out
 
 
-# --- WS2: change blast-radius assessment for `code plan` ------------------
+# --- change blast-radius assessment for `code plan` -----------------------
 
 def assess(repo_root: Path | str, files, threshold: int | None = None) -> dict:
-    """Difficulty signal + refactor-first recommendation for a change's blast radius
-    (RFC0009 WS2/D4). `files` is the set a story will touch (e.g. repo_map's ranked
-    neighbourhood). Advisory only (D3): a high score recommends a scoped refactor
-    first (D6), it never blocks. Returns the difficulty band, the hot functions, and
+    """Difficulty signal + refactor-first recommendation for a change's blast radius.
+    `files` is the set a story will touch (e.g. repo_map's ranked
+    neighbourhood). Advisory only: a high score recommends a scoped refactor
+    first, it never blocks. Returns the difficulty band, the hot functions, and
     a refactor-first line per hotspot."""
     root = Path(repo_root)
     threshold = threshold if threshold is not None else cognitive_high(root)
@@ -304,7 +304,7 @@ def assess(repo_root: Path | str, files, threshold: int | None = None) -> dict:
         "reduce before changing; scope the refactor to this change"
         for h in hotspots
     ]
-    # WS4: churn-weighted composite defect-risk band over the touched files (the worst
+    # churn-weighted composite defect-risk band over the touched files (the worst
     # file's band). Degrades to complexity-only when there is no git churn.
     ch_map = churn(root)
 
@@ -366,7 +366,7 @@ def cmd_assess(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Code-complexity signals (RFC0009).")
+    p = argparse.ArgumentParser(description="Code-complexity signals.")
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("scan", help="Cognitive + cyclomatic complexity per function.")
     s.add_argument("--root", default=".", help="Repo root (default: .)")

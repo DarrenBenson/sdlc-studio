@@ -3,6 +3,18 @@
 
 # /sdlc-studio repo map - Help
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Index the codebase so you know your way around" | `/sdlc-studio repo map build` |
+| "Which files matter for the login story?" | `/sdlc-studio repo map query --story US0001` |
+| "What handles email notifications in here?" | `/sdlc-studio repo map query --story "email notifications"` |
+| "Show me the most-used files in this project" | `/sdlc-studio repo map stats` |
+| "Re-index, we just did a big refactor" | `/sdlc-studio repo map build` |
+
 > **Source of truth:** `reference-repo-map.md` - Detailed workflow and design
 
 Pure-Python repository indexer that ranks source files by relevance

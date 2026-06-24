@@ -8,6 +8,17 @@ Related: reference-test-automation.md (test workflows), templates/docker-compose
 
 Generate and manage containerised test environments for integration and E2E testing.
 
+## You can just ask
+
+SDLC Studio is model-invoked - say it in plain language:
+
+| Just say... | Runs |
+| --- | --- |
+| "Set up a test environment from the TRD" | `/sdlc-studio test-env setup` |
+| "Spin up the test containers" | `/sdlc-studio test-env up` |
+| "Are the test services healthy?" | `/sdlc-studio test-env status` |
+| "Shut down the test environment and clean up" | `/sdlc-studio test-env down` |
+
 ## Quick Reference
 
 ```bash

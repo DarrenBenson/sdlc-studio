@@ -2,7 +2,7 @@
 
 The project's inviolable principles. Optional. When present at
 `sdlc-studio/constitution.md` it is loaded as a constraint during artifact generation,
-and `constitution check` (RFC0005) asserts the machine-checkable principles across the
+and `constitution check` asserts the machine-checkable principles across the
 artifact graph.
 
 A principle is **checkable** when it carries a `` `rule: <name>` `` from the vocabulary

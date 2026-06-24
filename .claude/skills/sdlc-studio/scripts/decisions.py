@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Project decisions log - the canonical home for load-bearing decisions (CR0080).
+"""Project decisions log - the canonical home for load-bearing decisions.
 
 `add` appends a decision (auto-numbered `D{NNNN}`, dated) to `sdlc-studio/decisions.md`;
 `list` prints the table (optionally filtered by status). Append-only and greppable, so the
@@ -67,7 +67,7 @@ def add(root: Path | str, decision: str, rationale: str, status: str = "accepted
 
 def promote(root: Path | str, source: str, decision: str, rationale: str,
             today: str | None = None) -> dict:
-    """Promote a resolved PRD open question into the log with a back-link (CR0080). One
+    """Promote a resolved PRD open question into the log with a back-link. One
     record, two views: the question stays in `PRD §Open Questions`; this records the
     resolution here as `[from <source>]`, never duplicating it as free text in both."""
     return add(root, decision, f"{rationale} [from {source}]", today=today)
@@ -118,7 +118,7 @@ def cmd_list(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Project decisions log (CR0080).")
+    p = argparse.ArgumentParser(description="Project decisions log.")
     sub = p.add_subparsers(dest="cmd", required=True)
     a = sub.add_parser("add", help="Append a decision (auto-numbered, dated).")
     a.add_argument("--decision", required=True)

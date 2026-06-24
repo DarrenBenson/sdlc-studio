@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic documentation-coverage check (CR0053).
+"""Deterministic documentation-coverage check.
 
 The `documented` half of the sprint Definition of Done. Enforces the discoverability
 floor so docs cannot drift (the gap the self-audit found - pvd/gate/skill-update shipped
@@ -93,7 +93,7 @@ def cmd_check(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Documentation-coverage check (CR0053).")
+    p = argparse.ArgumentParser(description="Documentation-coverage check.")
     p.add_argument("--root", default=".")
     p.add_argument("--format", choices=("text", "json"), default="text")
     p.set_defaults(func=cmd_check)

@@ -23,7 +23,7 @@
 
 Project-level configuration for customising SDLC Studio behaviour.
 
-> `config-defaults.yaml` (in `templates/`) is the single source of truth for default values; the Default columns below mirror it and are guarded against drift by `scripts/tests/test_config.py` (CR0008). Scripts read it via `scripts/config.py`. Project overrides go in `sdlc-studio/.config.yaml`.
+> `config-defaults.yaml` (in `templates/`) is the single source of truth for default values; the Default columns below mirror it and are guarded against drift by `scripts/tests/test_config.py`. Scripts read it via `scripts/config.py`. Project overrides go in `sdlc-studio/.config.yaml`.
 
 ## Configuration Files
 
@@ -211,7 +211,7 @@ release_strategy: pr-required    # solo-dev | pr-required | staged-rollout
 
 ## Deploy Contract {#deploy}
 
-The orchestrate-only deploy last-mile (RFC0013). The skill **gates** before and **verifies** after a
+The orchestrate-only deploy last-mile. The skill **gates** before and **verifies** after a
 deploy; it never holds the production trigger, never auto-rolls-back, and never deploys inside the
 autonomous loop. Secrets are never read - only the command you configure is invoked, and only on an
 explicit, interactive `/sdlc-studio deploy`. All keys are optional; with none set, `deploy` is a pure
@@ -261,12 +261,12 @@ coverage:
   unit: 75
   integration: 70
 
-# quality.done_requires_verified (default true, CR0095): when true a story cannot transition
-# to Done while its executable ACs are red/never-run (the CR0084 gate blocks); set false to
+# quality.done_requires_verified (default true): when true a story cannot transition
+# to Done while its executable ACs are red/never-run (the Done-gate blocks); set false to
 # downgrade the gate to advisory-warn for the whole project (per-call --force always overrides).
 quality:
   done_requires_verified: true
-  # epic_requires_test_spec (default true, CR0096): an epic must have a test-spec (linked by its
+  # epic_requires_test_spec (default true): an epic must have a test-spec (linked by its
   # Epic: field) whose AC Coverage Matrix passes `verify_ac epic-ts`. Single-story work is exempt.
   epic_requires_test_spec: true
 
