@@ -26,6 +26,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 import integrity  # noqa: E402  (sibling script; scripts dir is on sys.path)
 import sprint  # noqa: E402
+import verify_ac  # noqa: E402  (CR0109: reuse the Verify-line lint)
+import ac_scope  # noqa: E402  (CR0109: reuse the cross-epic AC check)
 
 TAUTOLOGY = "lint and tests green"
 # A dependency counts as met once it has been delivered (or replaced).
@@ -111,7 +113,19 @@ def _already_satisfied(root: Path, rid: str) -> bool:
     return False
 
 
-def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None = None) -> dict:
+def _weak_verify(text: str) -> bool:
+    """True if a story has a non-executable / mis-written Verify line (CR0109): reuses
+    verify_ac.lint_verifier, so the breakdown flags prose-curl verifiers at design time instead
+    of discovering them 0/7 at verify time."""
+    for line in text.splitlines():
+        m = verify_ac.VERIFY_RE.match(line)
+        if m and verify_ac.lint_verifier(m.group(2).strip()):
+            return True
+    return False
+
+
+def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None = None,
+               cross_epic_ids: set[str] | None = None) -> dict:
     """Readiness verdict for a single unit."""
     root = Path(root)
     found = find_artifact(root, rec_id)
@@ -128,6 +142,10 @@ def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None 
             issues.append("underspecified")
     elif _weak_ac(text):
         issues.append("weak-AC")
+    if type_ == "story" and _weak_verify(text):  # CR0109: non-executable Verify line
+        issues.append("weak-verify")
+    if cross_epic_ids and sdlc_md.norm_id(rid) in cross_epic_ids:  # CR0109: cross-epic AC leakage
+        issues.append("cross-epic-ac")
     unmet = _unmet_deps(root, text)
     if unmet:
         issues.append("unmet-deps: " + ", ".join(unmet))
@@ -144,7 +162,12 @@ def audit_batch(repo_root: Path | str, ids: list[str]) -> dict:
     """Readiness report over a batch of unit ids."""
     root = Path(repo_root)
     ierr = {f["id"] for f in integrity.detect_integrity(root)["findings"] if f["severity"] == "error"}
-    units = [audit_unit(root, i, ierr) for i in ids]
+    # CR0109: cross-epic AC leakage, computed once for the batch (ac_scope is repo-wide)
+    try:
+        cross = {sdlc_md.norm_id(f["story"]) for f in ac_scope.check(root) if f.get("story")}
+    except Exception:  # noqa: BLE001 - advisory readiness check, never break the audit
+        cross = set()
+    units = [audit_unit(root, i, ierr, cross) for i in ids]
     ready = sum(1 for u in units if u["ready"])
     return {
         "generated_at": sdlc_md.now_iso8601(),

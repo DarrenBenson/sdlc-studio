@@ -1,6 +1,6 @@
 # CR-0109: Tranche audit (sprint breakdown) should run verify_ac lint + ac_scope, not leave them hand-found
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-06-24
@@ -12,10 +12,10 @@ The --goal design breakdown grooms readiness via audit.py check (weak-AC, unmet-
 
 ## Acceptance Criteria
 
-- [ ] audit check runs verify_ac lint over the batch's stories and surfaces non-executable/decorative Verify lines as a readiness finding (e.g. weak-verify), reusing scripts/verify_ac.py (no new logic)
-- [ ] audit check runs ac_scope over the batch and surfaces cross-epic AC leakage (an AC owned by another epic) as a finding (e.g. cross-epic-ac), reusing scripts/ac_scope.py
-- [ ] both are advisory readiness findings (like weak-AC) in the audit output, not hard blocks; reuse the existing scripts; behaviour is documented in reference-audit.md + the reference-sprint.md breakdown step
-- [ ] unit tests: a story with a prose Verify line is flagged + a runner-targeted one passes; a cross-epic AC is flagged; CHANGELOG entry
+- [x] audit check runs verify_ac lint over the batch's stories and surfaces non-executable/decorative Verify lines as a readiness finding (e.g. weak-verify), reusing scripts/verify_ac.py (no new logic)
+- [x] audit check runs ac_scope over the batch and surfaces cross-epic AC leakage (an AC owned by another epic) as a finding (e.g. cross-epic-ac), reusing scripts/ac_scope.py
+- [x] both are advisory readiness findings (like weak-AC) in the audit output, not hard blocks; reuse the existing scripts; behaviour is documented in reference-audit.md + the reference-sprint.md breakdown step
+- [x] unit tests: a story with a prose Verify line is flagged + a runner-targeted one passes; a cross-epic AC is flagged; CHANGELOG entry
 
 ## Revision History
 

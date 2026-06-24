@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.3.0] - 2026-06-24
 
+### Added
+
+- **the tranche audit runs `verify_ac lint` + `ac_scope` (CR0109, field report):** `audit check`
+  (the sprint breakdown's readiness groom) now flags **weak-verify** (a non-executable / prose
+  Verify line, reusing `verify_ac.lint_verifier`) and **cross-epic-ac** (an AC owned by another
+  epic, reusing `ac_scope`). Two readiness problems the skill already had tools for - but which a
+  field breakdown re-discovered by hand - are now surfaced deterministically at design time.
+
 ### Fixed
 
 - **`verify_ac` merges per-story results into the report instead of clobbering it (BG0037, field

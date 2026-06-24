@@ -447,7 +447,7 @@ it after a version bump.
 
 ### `audit.py`
 
-Adversarial audit / tranche pre-flight (RFC0002). `check` grooms a batch for readiness - weak-AC, unmet-deps, already-terminal, link-integrity, and **already-satisfied** (a Ready unit whose executable ACs all pass in the verify-report - a close-candidate, not work to build, CR0098) - before the triage STOP, so work never starts on a unit that would pass the gates vacuously.
+Adversarial audit / tranche pre-flight (RFC0002). `check` grooms a batch for readiness - weak-AC, unmet-deps, already-terminal, link-integrity, **already-satisfied** (a Ready unit whose executable ACs all pass in the verify-report - a close-candidate, not work to build, CR0098), **weak-verify** (a non-executable Verify line, reusing `verify_ac lint`, CR0109) and **cross-epic-ac** (an AC owned by another epic, reusing `ac_scope`, CR0109) - before the triage STOP, so work never starts on a unit that would pass the gates vacuously or be reverse-engineered at implement time.
 
 ### `sprint.py`
 

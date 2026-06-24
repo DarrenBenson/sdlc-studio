@@ -239,5 +239,39 @@ class AlreadySatisfiedTests(unittest.TestCase):
             self.assertNotIn("already-satisfied", r["issues"])
 
 
+class CR0109AuditChecks(unittest.TestCase):
+    """The tranche audit flags non-executable Verify lines + cross-epic AC leakage."""
+
+    def _story(self, root, num, verify=None, ac_text="given a thing, when acted, then result",
+               epic="EP0001", status="Draft"):
+        d = root / "sdlc-studio" / "stories"; d.mkdir(parents=True, exist_ok=True)
+        v = f"- **Verify:** {verify}\n" if verify else ""
+        (d / f"US{num:04d}-x.md").write_text(
+            f"# US{num:04d}: s\n\n> **Status:** {status}\n> **Epic:** [{epic}](../epics/{epic}-x.md)\n\n"
+            f"## Acceptance Criteria\n\n### AC1\n- {ac_text}\n{v}", encoding="utf-8")
+
+    def test_weak_verify_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, 1, verify="curl $API/x prints < 0.300")
+            self.assertIn("weak-verify", _load().audit_unit(root, "US0001")["issues"])
+
+    def test_executable_verify_not_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, 2, verify='jest "US0002 works"')
+            self.assertNotIn("weak-verify", _load().audit_unit(root, "US0002")["issues"])
+
+    def test_cross_epic_ac_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            ed = root / "sdlc-studio" / "epics"; ed.mkdir(parents=True)
+            (ed / "EP0001-x.md").write_text("# EP0001: authentication\n", encoding="utf-8")
+            (ed / "EP0002-x.md").write_text("# EP0002: billing\n", encoding="utf-8")
+            self._story(root, 1, ac_text="the billing total updates correctly", epic="EP0001")
+            r = _load().audit_batch(root, ["US0001"])
+            self.assertIn("cross-epic-ac", r["units"][0]["issues"])
+
+
 if __name__ == "__main__":
     unittest.main()
