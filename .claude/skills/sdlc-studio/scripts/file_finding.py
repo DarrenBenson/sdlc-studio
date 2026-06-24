@@ -39,6 +39,34 @@ TYPES = {
 }
 
 
+def index_template_path(type_: str) -> Path:
+    return Path(__file__).resolve().parent.parent / "templates" / "indexes" / f"{type_}.md"
+
+
+def ensure_index(repo_root: Path | str, type_: str, today: str) -> bool:
+    """Create `<dir>/_index.md` from `templates/indexes/<type>.md` when missing (CR0077).
+
+    The canonical index-bootstrap, shared by `artifact new` (lazy, first-use) and `init`
+    (front-loaded). Yields a clean *empty* index: summary counts zeroed, data-table headers
+    kept (so `append_index_row` works), template sample rows/headings dropped (real content
+    never carries `{{ }}`). Idempotent: never clobbers an existing index. Returns True iff
+    it created the file."""
+    idx = Path(repo_root) / sdlc_md.ARTIFACT_TYPES[type_][0] / "_index.md"
+    if idx.exists():
+        return False
+    tmpl = index_template_path(type_)
+    if not tmpl.exists():
+        return False
+    text = tmpl.read_text(encoding="utf-8")
+    text = re.sub(r"^<!--.*?-->\n+", "", text, count=1, flags=re.DOTALL)  # strip template comment
+    text = text.replace("{{last_updated}}", today)
+    text = re.sub(r"\{\{[a-z_]*count\}\}", "0", text)  # zero the summary counts
+    lines = [ln for ln in text.splitlines() if "{{" not in ln]  # drop sample rows/headings
+    idx.parent.mkdir(parents=True, exist_ok=True)
+    idx.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    return True
+
+
 def _slug(title: str) -> str:
     s = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
     return "-".join(s.split("-")[:8]) or "untitled"

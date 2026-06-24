@@ -159,7 +159,20 @@ status; a story gets a populated AC section), appends the index data-table row (
 generically from that index's own header, so it works for every type), recomputes counts,
 and wires a story into its parent epic's Story Breakdown. `close --id` terminal-transitions
 by id-prefix with the per-type terminal status (reusing transition). Replaces the ~10-step
-hand cascade. Shares `file_finding.append_index_row`.
+hand cascade. Shares `file_finding.append_index_row`. On the empty-project first run it
+creates a missing `<dir>/_index.md` from `templates/indexes/` (CR0077, via
+`file_finding.ensure_index`), so the first artifact of a type is indexed like every later
+one; `--template full` grafts the rich `templates/core/` body onto the deterministic head.
+
+### `init.py`
+
+Deterministic greenfield initialiser (CR0079) - `init` is now an executable, not a manual
+checklist. `run` creates the full `sdlc-studio/` directory tree, pre-creates every per-type
+`_index.md` (reusing `file_finding.ensure_index`, the CR0077 helper), seeds
+`sdlc-studio/.config.yaml` and the agent-instructions starters (`AGENTS.md`/`CLAUDE.md`)
+from templates, and with `--scaffold` seeds the singleton docs (prd/trd/tsd/personas).
+`--detect` infers the stack; idempotent (never overwrites without `--force`); `--dry-run`
+previews every write so the workflow can show the config and confirm once before applying.
 
 ### `product_reconcile.py`
 

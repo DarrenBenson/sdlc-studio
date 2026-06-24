@@ -1,6 +1,6 @@
 # CR-0079: init becomes executable - create the folder structure, indexes, and singleton docs
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
 > **Priority:** High
@@ -81,19 +81,19 @@ of the default scaffold.
 
 ## Acceptance Criteria
 
-- [ ] `init` creates the full directory tree, config, and agent-instructions files
+- [x] `init` creates the full directory tree, config, and agent-instructions files
       deterministically; re-running never overwrites (reported and skipped)
-- [ ] config is presented as a diff for one confirmation (`[Y]`/edit; `--yes` skips on an
+- [x] config is presented as a diff for one confirmation (`[Y]`/edit; `--yes` skips on an
       unambiguous brownfield stack); the directory tree, agent-instructions, and empty
       indexes are written without a prompt
-- [ ] every per-type `_index.md` is created with zero rows and zeroed counts, sharing the
+- [x] every per-type `_index.md` is created with zero rows and zeroed counts, sharing the
       CR0077 index helper (no duplicate logic) - depends on CR0077
-- [ ] after `init`, the first `new` of any type reports `indexed=true` (the empty-project
+- [x] after `init`, the first `new` of any type reports `indexed=true` (the empty-project
       trap is closed)
-- [ ] `init --scaffold` seeds `prd`/`trd`/`tsd`/`personas` from `templates/core/*` with
+- [x] `init --scaffold` seeds `prd`/`trd`/`tsd`/`personas` from `templates/core/*` with
       known placeholders filled and high-judgement fields left visibly empty
-- [ ] scaffolded singletons pass `validate` (placeholder handling per CR0056)
-- [ ] unit tests cover: tree+config+indexes created, idempotent re-run, `--scaffold`
+- [x] scaffolded singletons pass `validate` (placeholder handling per CR0056)
+- [x] unit tests cover: tree+config+indexes created, idempotent re-run, `--scaffold`
       singletons; help/init.md updated; CHANGELOG `[Unreleased]` entry same commit (LL0004)
 
 ## Dependencies

@@ -107,31 +107,13 @@ def _skill_root() -> Path:
 
 
 def _index_template(type_: str) -> Path:
-    return _skill_root() / "templates" / "indexes" / f"{type_}.md"
+    return file_finding.index_template_path(type_)
 
 
 def _ensure_index(root: Path, type_: str, today: str) -> bool:
-    """Create `<dir>/_index.md` from `templates/indexes/<type>.md` when it is missing (CR0077).
-
-    The empty-project first run otherwise leaves no index, so `new` cannot append a row and
-    reports a misleading `indexed=false`. Instantiate a clean *empty* index: the summary
-    counts zeroed, the data-table headers kept (so `append_index_row` can add rows), and the
-    template's sample rows/headings dropped (real content never carries `{{ }}`). Idempotent:
-    never clobbers an existing index. Returns True iff it created the file."""
-    idx = Path(root) / sdlc_md.ARTIFACT_TYPES[type_][0] / "_index.md"
-    if idx.exists():
-        return False
-    tmpl = _index_template(type_)
-    if not tmpl.exists():
-        return False
-    text = tmpl.read_text(encoding="utf-8")
-    text = re.sub(r"^<!--.*?-->\n+", "", text, count=1, flags=re.DOTALL)  # strip template comment
-    text = text.replace("{{last_updated}}", today)
-    text = re.sub(r"\{\{[a-z_]*count\}\}", "0", text)  # zero the summary counts
-    lines = [ln for ln in text.splitlines() if "{{" not in ln]  # drop sample rows/headings
-    idx.parent.mkdir(parents=True, exist_ok=True)
-    idx.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
-    return True
+    """Create a missing `<dir>/_index.md` on the empty-project first run (CR0077).
+    Delegates to the shared `file_finding.ensure_index` (also used by `init`, CR0079)."""
+    return file_finding.ensure_index(root, type_, today)
 
 
 def _header_cells(root: Path, type_: str) -> list[str] | None:

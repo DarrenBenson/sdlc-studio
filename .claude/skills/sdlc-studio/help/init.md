@@ -11,10 +11,18 @@ Gather project context before starting SDLC workflow. Creates a configuration fi
 ## Quick Reference
 
 ```bash
-/sdlc-studio init                   # Interactive project setup
-/sdlc-studio init --detect          # Auto-detect from project files
-/sdlc-studio init --force           # Overwrite existing config
+/sdlc-studio init                   # Create tree + indexes + config + agent-instructions
+/sdlc-studio init --detect          # Infer the stack from project files
+/sdlc-studio init --scaffold        # Also seed prd/trd/tsd/personas from templates
+/sdlc-studio init --dry-run         # Preview every write (show config, confirm, then run)
+/sdlc-studio init --force           # Overwrite existing files
 ```
+
+Backed by `scripts/init.py` (CR0079) - deterministic, idempotent (never overwrites
+without `--force`), and it pre-creates every `_index.md` so the first `new` of any type is
+indexed (no empty-project `indexed=false`). The directory tree, indexes, and
+agent-instructions are written without prompting; config is load-bearing, so review the
+`--dry-run` preview and confirm before a real run on greenfield.
 
 ## Purpose
 

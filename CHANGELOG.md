@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **executable `init` (CR0079):** `init` was a manual checklist; it is now `scripts/init.py`.
+  `init run` creates the full `sdlc-studio/` directory tree, pre-creates every per-type
+  `_index.md` (reusing the CR0077 helper, so the first `new` of any type is indexed), seeds
+  `sdlc-studio/.config.yaml` + the `AGENTS.md`/`CLAUDE.md` starters from templates, and with
+  `--scaffold` seeds the singleton docs (prd/trd/tsd/personas). `--detect` infers the stack;
+  idempotent (never overwrites without `--force`); `--dry-run` previews every write so the
+  workflow can confirm config before applying. The CR0077 index-bootstrap moved to the shared
+  `file_finding.ensure_index` (single source, used by both `new` and `init`).
 - **greenfield `new`: lazy index creation + full-template scaffolds (CR0077):** `artifact.py new`
   now creates a missing `<dir>/_index.md` from `templates/indexes/<type>.md` on first use (the empty-
   project first run), so the very first artifact of a type is indexed like every later one - closing
