@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 4 |
+| Proposed | 5 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 111 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **116** |
+| **Total** | **117** |
 
 ## All Changes
 
@@ -136,3 +136,4 @@
 | [CR-0114](CR0114-establish-inter-story-depends-on-at-design-so.md) | Establish inter-story Depends on at design so sprint-plan waves are real, not flat | Proposed | Medium | Improvement | 2026-06-25 | -- |
 | [CR-0115](CR0115-scaffold-the-test-spec-ac-coverage-matrix-from.md) | Scaffold the test-spec AC Coverage Matrix from an epic stories ACs at design time | Proposed | Medium | Improvement | 2026-06-25 | -- |
 | [CR-0116](CR0116-frame-the-implementation-sub-agent-as-the-engineering.md) | Frame the implementation sub-agent as the Engineering persona/seat, not a generic agent | Proposed | Medium | Improvement | 2026-06-25 | -- |
+| [CR-0117](CR0117-mechanically-enforce-author-reviewer-independence-gate-not-an.md) | Mechanically enforce author != reviewer (independence gate), not an honour-system convention | Proposed | High | Improvement | 2026-06-25 | -- |

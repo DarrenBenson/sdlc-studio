@@ -1,6 +1,6 @@
 # RFC-0020: Maximise persona use - persona-shaped delegation across the SDLC lifecycle
 
-> **Status:** Draft
+> **Status:** In Review (consulted Three Amigos 2026-06-25; recommendation revised A -> B)
 > **Date:** 2026-06-25
 > **Created-by:** sdlc-studio file
 
@@ -14,18 +14,41 @@ The skill has rich persona machinery (RFC0016 review seats - Product/Engineering
 - **B: persona-shape only the highest-value delegations (Engineering build + QA test); leave PRD/story authoring to the main loop**
 - **C: status quo - personas review only; workers stay generic**
 
-## Recommendation
+## Recommendation (revised after consultation)
 
-A - the role->seat mapping is the natural completion of the Three Amigos model (they already review; let them also author/build/test as separate seats), maximising persona use while preserving author/critic separation. Frame at the delegation layer; degrade gracefully. CR0116 is the proven first slice (Engineering build); add QA-test and Product-author slices on acceptance
+**Option B**, not A. The Three Amigos seats - consulted independently (dogfooding `reference-consult.md`) - all three flipped the recommendation from A to B: persona-shape **Engineering build** and **QA test**; **defer Product-author** (reject PRD-authoring outright). The seats' core finding: a charter's value is **independence**, not flavour (the RFC0016 lesson), and a thin **stance** delivers it - not a full charter. Symmetry ("complete the Three Amigos") is aesthetic, not a value argument.
 
-## Open Decisions
+## Consultation Outcome - Three Amigos (2026-06-25)
 
-| # | Decision | Status |
+Each seat was consulted as an independent subagent; verdicts converged strongly.
+
+- **Overall:** unanimous **B**. Engineering-build + QA-test are the high-value, independence-bearing slices; Product-author earns its place later on evidence, not symmetry.
+- **The load-bearing requirement (all three INSISTED, the RFC only asserted it in prose): make author != reviewer a MECHANICAL gate, not an honour-system convention.** `critic.py` records a `reviewer` but does not prove `reviewer != author`. Required: stamp an **author identity** (seat/delegation instance id) on the unit when the diff/tests are produced; the conformance gate **hard-fails** any unit whose critic verdict `reviewer` id equals its `author` id. *"Independence you cannot verify is independence you do not have."* This is the prerequisite for everything else (filed as its own CR).
+- **The persona is a thin STANCE PREAMBLE appended to the existing prompt, NOT a charter rewrite (Engineering).** `reference-agent-prompt-template.md` already carries the load-bearing contract (READ THESE FILES FIRST, verbatim AC, Files to Create/Modify/DO NOT Modify, quality gates) - that, not a persona, is 80% of build quality. The persona adds ~10 lines of standing disposition (tests must be able to fail; red gate is a stop; never weaken an AC to go green). Persona text goes *after* the contract, never woven through it.
+- **QA runs the oracle, it does not judge green.** The QA seat authors the test-spec/matrix + tests, but pass/fail stays the deterministic `verify_ac` oracle + the conformance gate. Tests must trace to the **canonical AC `Verify:` line**, not the seat's paraphrase (else self-fulfilling green / parallel descriptions).
+- **Product: defer.** Reject PRD-authoring by the Product seat - it is *accountable that the PRD is satisfied*, so authoring it collapses accountability (it would review its own work). Story-authoring framing is optional/weak and earns its place only with measured value over the generic main loop.
+
+## Decisions (resolved by the consultation)
+
+| # | Decision | Resolution |
 | --- | --- | --- |
-| D1 | Act on this finding or keep status quo | Open |
+| D1 | Which stages get persona framing | Engineering build + QA test now; Product story-author later (optional); PRD-author **rejected** |
+| D2 | Main loop adopts the seat vs only delegated subagents framed | **Only delegated subagents** are framed; the main loop stays the neutral orchestrator/critic-router (else the later review is self-review) |
+| D3 | Enforce author != reviewer | **Mechanical, gate-enforced** - author id stamped on the unit; conformance hard-fails if `reviewer == author`. Prerequisite slice |
+| D4 | Charter source | Extend the existing review-seat charter with a thin **stance/render-mode** (build / test), not a forked heavyweight charter taxonomy |
+| D5 | Degradation without personas | `--skip-personas` -> generic workers, but the **independence gate + the verify oracle survive the fallback** (independence is the floor; persona is the optional layer) |
+| D6 | Review-seats (RFC0016) vs design-personas (RFC0017) | Design (Cooper) personas are an **input/target** (who the story is for), never the author; review/worker seats are the actors; the independent critic stays terminal + separate |
+
+## Slices (on acceptance of B)
+
+1. **CR (prerequisite): mechanical author != reviewer independence gate** - the floor all three seats insisted on; valuable standalone (hardens the existing critic). Candidate for v3.0.2.
+2. **CR0116: Engineering build stance** - reframed as a thin stance preamble over the existing contract; `--skip-personas` yields a byte-equivalent contract that still builds + passes the same gated ACs.
+3. **CR: QA test stance** - QA seat authors test-spec + tests as a separate instance; green stays the oracle; tests trace to the canonical `Verify:` line.
+4. **Product-author: deferred** - revisit only with measured value; PRD-author rejected.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-25 | audit | Filed |
+| 2026-06-25 | Three Amigos consult | Consulted Product/Engineering/QA seats independently; all three recommend **B**; recorded the mechanical author!=reviewer gate as the load-bearing prerequisite; resolved D1-D6 |

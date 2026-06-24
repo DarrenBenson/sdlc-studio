@@ -10,11 +10,15 @@
 
 The skill's persona/seat machinery is entirely review-side: RFC0016 seats (Product/Engineering/QA) are charters consulted to REVIEW artefacts (Spec Review, the independent critic). But when the sprint loop DELEGATES implementation - the agentic wave or a sub-agent build - reference-agent-prompt-template.md carries no persona framing, so the builder is a blank general-purpose agent. A field agent delivering EP0005 spawned a generic general-purpose sub-agent for the whole SPA build; the operator asked why not the Engineer persona. Frame the implementer with the Engineering seat charter (engineering discipline, the project's conventions + best-practices, the quality bar) so the builder works AS the engineer, not an identity-less agent. KEY constraint: the independent critic must remain a SEPARATE Engineering-seat instance - the building seat and the reviewing seat are different subagents, never self-review (preserve author/critic separation).
 
-## Acceptance Criteria
+> **Depends on:** CR0117 (the mechanical author != reviewer gate - the prerequisite all three
+> seats insisted on).
 
-- [ ] the wave-delegation prompt template frames the implementer with the Engineering seat charter (discipline, project conventions/best-practices, quality bar) - the builder acts as the engineer
-- [ ] the independent critic stays a separate Engineering-seat instance; the build seat never reviews its own output (author/critic separation preserved)
-- [ ] the Engineering charter is referenced from a single source (review-seat-charter or a build variant); degrades gracefully when no personas exist (--skip-personas)
+## Acceptance Criteria (revised by the RFC0020 consult)
+
+- [ ] the wave-delegation prompt **appends a thin Engineering stance preamble** (the non-negotiables + shadow: tests must be able to fail; red gate is a stop; never weaken an AC to go green; no `any`) **AFTER** the existing contract - it never rewrites or dilutes READ THESE FILES FIRST / Files to Create-Modify-DO NOT Modify / AC / quality gates (the Engineering seat: those concrete sections are 80% of build quality)
+- [ ] the stance is a render-mode of the existing review-seat charter, not a forked heavyweight charter; persona text sits after the contract, never woven through it
+- [ ] `--skip-personas` yields a **byte-equivalent contract** that still builds and passes the same gated executable ACs (prove with a fixture wave both ways); the independence floor is preserved by CR0117 regardless of persona presence
+- [ ] the independent critic stays a separate seat instance (enforced by CR0117, not prose); the build seat never reviews its own output
 - [ ] documented in reference-agent-prompt-template.md + reference-workflow-personas.md; CHANGELOG entry
 
 ## Relationship
