@@ -609,6 +609,37 @@ def ts_check(spec_path: Path | str, verify_report: Path | str | None = None) -> 
     return issues
 
 
+def epic_test_spec_check(repo_root: Path | str, epic_id: str) -> dict:
+    """Hard epic-scope test-spec requirement (CR0096): an epic must have a test-spec (linked by
+    its `Epic:` field) whose AC Coverage Matrix passes `ts-check`. Returns {epic, ok, specs,
+    issues}. The caller gates on it per `quality.epic_requires_test_spec` (default true);
+    single-story work is exempt. Reuses `ts_check` - no new verification logic."""
+    root = Path(repo_root)
+    eid = sdlc_md.norm_id(epic_id)
+    specs = []
+    for p in sdlc_md.artifact_files("test-spec", root):
+        ef = sdlc_md.extract_field(p.read_text(encoding="utf-8"), "Epic") or ""
+        m = sdlc_md.ID_SEARCH_RE.search(ef)
+        if m and sdlc_md.norm_id(m.group(0)) == eid:
+            specs.append(p)
+    if not specs:
+        return {"epic": epic_id, "ok": False, "specs": [],
+                "issues": [{"issue": "no test-spec links to this epic (epic-scope TS required)"}]}
+    issues = [{**i, "spec": sp.name} for sp in specs for i in ts_check(sp)]
+    return {"epic": epic_id, "ok": not issues, "specs": [s.name for s in specs], "issues": issues}
+
+
+def cmd_epic_ts(args: argparse.Namespace) -> int:
+    r = epic_test_spec_check(args.root, args.epic)
+    if args.format == "json":
+        print(json.dumps(r, indent=2))
+    else:
+        for it in r["issues"]:
+            print(f"  {it.get('spec', args.epic)}: {it.get('ac', '')} {it['issue']}")
+        print(f"epic-ts: {args.epic} {'OK' if r['ok'] else 'FAIL'} ({len(r['specs'])} spec(s))")
+    return 0 if r["ok"] else 1
+
+
 def cmd_ts_check(args: argparse.Namespace) -> int:
     issues = ts_check(args.spec, args.verify_report)
     if args.format == "json":
@@ -715,6 +746,12 @@ def build_parser() -> argparse.ArgumentParser:
                     help="cross-check the matrix against this verify-report.json")
     tc.add_argument("--format", choices=("text", "json"), default="text")
     tc.set_defaults(func=cmd_ts_check)
+
+    et = sub.add_parser("epic-ts", help="Require an epic to have a ts-check-passing test-spec (CR0096)")
+    et.add_argument("--epic", required=True, help="Epic id, e.g. EP0001")
+    et.add_argument("--root", default=".")
+    et.add_argument("--format", choices=("text", "json"), default="text")
+    et.set_defaults(func=cmd_epic_ts)
 
     rep = sub.add_parser("report", help="Print the latest verification report")
     rep.add_argument(

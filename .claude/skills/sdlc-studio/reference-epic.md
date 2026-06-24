@@ -18,6 +18,12 @@ Detailed workflows for Epic generation and management.
 
 ## Epic Workflows
 
+> **Epic-scope test-spec requirement (CR0096).** An epic must have a test-spec (linked by its
+> `Epic:` field) whose AC Coverage Matrix passes `verify_ac epic-ts --epic EPxxxx` before it
+> reaches Done - the AC-to-test bridge (CR0085) made mandatory at epic scale. Gated by
+> `quality.epic_requires_test_spec` (default true); single-story work (`story implement`) is
+> exempt. This is what makes the bridge non-optional for fan-out-sized work.
+
 ### Resuming a partial epic (`epic implement --resume`) {#epic-implement-resume}
 
 `epic implement --resume EP00xx` restarts a partially-done epic at the **first

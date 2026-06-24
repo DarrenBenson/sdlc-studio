@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **hard epic-scope test-spec requirement (CR0096):** the deferred half of CR0085 - the
+  AC-to-test bridge is now mandatory at epic scale. `verify_ac epic-ts --epic EPxxxx` requires an
+  epic to have a test-spec (linked by its `Epic:` field) whose AC Coverage Matrix passes
+  `ts-check`; gated by `quality.epic_requires_test_spec` (default true), single-story work exempt.
+  Reuses `ts-check` (no new verification logic); documented in `reference-epic.md`.
 - **done-requires-verified toggle + status verification lane (CR0095):** the deferred half of
   CR0084. `quality.done_requires_verified` (default true) lets a project set the story->Done
   AC-verify gate policy in `.config.yaml` - false downgrades it to advisory-warn project-wide

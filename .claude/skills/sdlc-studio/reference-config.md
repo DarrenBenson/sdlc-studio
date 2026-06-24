@@ -266,6 +266,9 @@ coverage:
 # downgrade the gate to advisory-warn for the whole project (per-call --force always overrides).
 quality:
   done_requires_verified: true
+  # epic_requires_test_spec (default true, CR0096): an epic must have a test-spec (linked by its
+  # Epic: field) whose AC Coverage Matrix passes `verify_ac epic-ts`. Single-story work is exempt.
+  epic_requires_test_spec: true
 
 story_quality:
   edge_cases:

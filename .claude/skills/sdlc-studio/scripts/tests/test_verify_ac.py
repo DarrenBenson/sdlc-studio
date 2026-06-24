@@ -514,5 +514,34 @@ class TsCheckTests(unittest.TestCase):
             self.assertTrue(verify_ac.ts_check(p))
 
 
+class EpicTestSpecTests(unittest.TestCase):
+    """CR0096: an epic must have a test-spec whose AC Coverage Matrix passes ts-check."""
+
+    def _ts(self, root: Path, epic: str, matrix_row: str) -> None:
+        d = root / "sdlc-studio" / "test-specs"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "TS0001-x.md").write_text(
+            f"# TS0001: x\n\n> **Epic:** [{epic}]({epic}-x.md)\n\n### AC Coverage Matrix\n\n"
+            "| Story | AC | Description | Test Cases | Status |\n| --- | --- | --- | --- | --- |\n"
+            + matrix_row, encoding="utf-8")
+
+    def test_missing_test_spec_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            r = verify_ac.epic_test_spec_check(Path(d), "EP0001")
+            self.assertFalse(r["ok"])
+
+    def test_passing_matrix_ok(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._ts(root, "EP0001", '| US0001 | AC1 | x | jest "x" | pass |\n')
+            self.assertTrue(verify_ac.epic_test_spec_check(root, "EP0001")["ok"])
+
+    def test_failing_matrix_not_ok(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._ts(root, "EP0001", "| US0001 | AC1 | x | -- | pass |\n")  # no test case mapped
+            self.assertFalse(verify_ac.epic_test_spec_check(root, "EP0001")["ok"])
+
+
 if __name__ == "__main__":
     unittest.main()

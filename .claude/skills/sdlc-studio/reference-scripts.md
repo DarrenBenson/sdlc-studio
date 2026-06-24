@@ -310,6 +310,9 @@ Executes AC verifiers defined in story files and updates each AC's
 - `ts-check --spec <ts>`: validate a test-spec's AC Coverage Matrix is not decorative -
   every AC mapped to a passing test case, no placeholders; `--verify-report` cross-checks the
   matrix's claimed status against the live report (CR0085)
+- `epic-ts --epic EPxxxx`: require an epic to have a test-spec (linked by its `Epic:` field)
+  whose matrix passes `ts-check` - the hard epic-scope TS requirement (CR0096), gated by
+  `quality.epic_requires_test_spec` (default true; single-story work is exempt)
 
 Full workflow: `reference-verify.md`. User-facing help:
 `help/verify.md`.

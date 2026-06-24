@@ -1,6 +1,6 @@
 # CR-0096: hard epic-scope test-spec requirement wired into epic implement
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
@@ -17,12 +17,12 @@ optional, for epic-scale work. Single-story work stays exempt.
 
 ## Acceptance Criteria
 
-- [ ] `conformance`/`epic implement` requires a test-spec at epic scope; an epic with no TS (or
+- [x] `conformance`/`epic implement` requires a test-spec at epic scope; an epic with no TS (or
       a TS failing `ts-check`) cannot reach Done (gated, with a clear message)
-- [ ] single-story implementation is exempt (a full TS is overkill there)
-- [ ] the requirement is configurable (a project can opt out via `.config.yaml`), default on for
+- [x] single-story implementation is exempt (a full TS is overkill there)
+- [x] the requirement is configurable (a project can opt out via `.config.yaml`), default on for
       epic scope; reuses `ts-check` (CR0085), no new verification logic
-- [ ] unit tests: epic without a passing TS is blocked, with TS passes; CHANGELOG entry (LL0004)
+- [x] unit tests: epic without a passing TS is blocked, with TS passes; CHANGELOG entry (LL0004)
 
 ## Revision History
 
