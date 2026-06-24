@@ -124,6 +124,13 @@ hit. **Recommendation: add `plan` as a thin rung** (selection + estimation, not 
 machinery); it is orthogonal to the PRD-authoring bootstrap (D1/D4) and ships as its own
 work-stream. Each rung stops for operator review by default.
 
+**The rungs are cumulative stop-points; natural language maps to the furthest named rung.**
+"Plan the next autosprint" -> stop at `plan`; "plan **and break down** the next autosprint"
+-> drive through to `design` (design entails having planned and broken down); "run it" ->
+`done`. This reuses autosprint's existing NL-to-goal resolution (RFC0001) - the agent works
+out the target goal from the phrasing; the operator need not name the flag or drive one rung
+at a time. The intermediate review gates remain available ("stop after plan").
+
 ## Dependencies
 
 This loop is the **orchestration**; it stands on deterministic create primitives that
