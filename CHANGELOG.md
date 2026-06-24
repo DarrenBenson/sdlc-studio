@@ -5,6 +5,16 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.2] - 2026-06-24
+
+### Fixed
+
+- **`init` now gitignores the runtime-state dir (BG0036, field report):** `init` created
+  `sdlc-studio/.local/` (caches, verify reports, lessons) but wrote no `.gitignore`, so greenfield
+  projects committed derived state (this repo only avoided it via a hand-written root entry). `init`
+  now drops a self-contained `sdlc-studio/.gitignore` (`.local/`) - never touching the project's own
+  root `.gitignore`. Idempotent.
+
 ## [3.0.1] - 2026-06-24
 
 ### Fixed

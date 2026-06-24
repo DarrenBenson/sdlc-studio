@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 0 |
 | In Progress | 0 |
-| Fixed | 35 |
+| Fixed | 36 |
 | Verified | 0 |
 | Closed | 0 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **35** |
+| **Total** | **36** |
 
 ## All Bugs
 
@@ -54,3 +54,4 @@
 | [BG0033](BG0033-five-moderate-npm-dependency-vulnerabilities-via-markdownlint-cli.md) | five moderate npm dependency vulnerabilities via markdownlint-cli | Fixed | Medium | 2026-06-22 | 2026-06-22 |
 | [BG0034](BG0034-sprint-plan-silently-selects-an-empty-batch-for.md) | sprint plan silently selects an empty batch for lowercase --crs/--bugs/--stories status args | Fixed | high | 2026-06-24 | 2026-06-24 |
 | [BG0035](BG0035-duplicate-id-gate-false-positives-on-the-canonical.md) | duplicate-id gate false-positives on the canonical two-table story index (per-epic + All Stories) | Fixed | high | 2026-06-24 | 2026-06-24 |
+| [BG0036](BG0036-init-creates-sdlc-studio-local-but-no-gitignore.md) | init creates sdlc-studio/.local but no .gitignore, so consuming projects commit runtime caches/reports | Fixed | medium | 2026-06-24 | 2026-06-24 |

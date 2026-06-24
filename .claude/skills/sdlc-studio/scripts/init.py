@@ -4,7 +4,7 @@
 `init` is the executable greenfield bootstrap - previously a manual checklist. It:
   1. creates the full `sdlc-studio/` directory tree,
   2. pre-creates every per-type `_index.md` (reusing the CR0077 index helper),
-  3. seeds the config and the agent-instructions files from templates,
+  3. seeds the config, a `.gitignore` for the runtime-state dir, and the agent-instructions files,
   4. with `--scaffold`, seeds the singleton docs (prd/trd/tsd/personas).
 
 Idempotent: never overwrites an existing file (reported and skipped) unless `--force`.
@@ -110,6 +110,12 @@ def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
         if lang:
             header += f"# Detected stack: {lang}\n"
         _write(f"{SDLC}/.config.yaml", header + "\n" + cfg_tmpl.read_text(encoding="utf-8"))
+
+    # 3b. gitignore the runtime-state dir so derived caches/reports/lessons are never committed
+    # (BG0036). Self-contained in sdlc-studio/ - never touches the project's own root .gitignore.
+    _write(f"{SDLC}/.gitignore",
+           "# SDLC Studio runtime state (caches, verify reports, lessons) - derived, not source\n"
+           ".local/\n")
 
     # 4. agent-instructions (tool-neutral starters; copied verbatim if absent)
     for src, dst in AGENT_FILES:

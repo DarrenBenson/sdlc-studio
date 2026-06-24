@@ -40,6 +40,10 @@ class InitTests(unittest.TestCase):
             self.assertTrue((repo / "sdlc-studio" / ".config.yaml").exists())
             self.assertTrue((repo / "AGENTS.md").exists())
             self.assertTrue((repo / "CLAUDE.md").exists())
+            # BG0036: a .gitignore so the runtime-state dir is never committed
+            gi = repo / "sdlc-studio" / ".gitignore"
+            self.assertTrue(gi.exists())
+            self.assertIn(".local/", gi.read_text(encoding="utf-8"))
             self.assertFalse(r["dry_run"])
 
     def test_idempotent_second_run_creates_nothing(self) -> None:
