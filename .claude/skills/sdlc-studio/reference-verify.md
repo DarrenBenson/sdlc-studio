@@ -1,5 +1,8 @@
 # SDLC Studio Reference - Executable Acceptance Criteria
 
+<!-- Load when: authoring/running AC `Verify:` lines, `reconcile --verify`, or test-specs -->
+
+
 > **Human-checked ACs:** author the Verify line as `Verify: manual <what to check>`. A line led
 > by `manual` (or `manually`) is counted **manual** - never executed - so a prose check can't be
 > shelled out and time out into a false `failed`.

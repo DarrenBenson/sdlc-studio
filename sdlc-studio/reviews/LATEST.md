@@ -4,8 +4,8 @@
 > or compaction.** Durable guidance lives in AGENTS.md; per-tranche detail lives in CHANGELOG.md
 > and `sdlc-studio/retros/`; the original v2.0 unified review is `RV0001-unified-review-2026-06-20.md`.
 >
-> **Project version:** 2.5.0 · **Date:** 2026-06-22 · **Gates:** lint clean, 796 script tests pass,
-> `gate` PASS, reconcile drift 0, disclosure 0, npm audit 0, coverage 83%.
+> **Project version:** 2.5.0 (+ unreleased v2.6.0 work) · **Date:** 2026-06-24 · **Gates:** lint
+> clean, 831 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0, npm audit 0, coverage 83%.
 
 ## Headline
 
@@ -31,8 +31,17 @@ critic per unit.
 
 ## State
 
-- **Backlog:** the actionable CR/bug backlog is clear (all raised CRs/bugs through CR0068/BG0032
-  are closed). RFCs accepted: RFC0001/0002/0013/0014/0015/0016/0017. `disclosure` reports **0**.
+- **Backlog:** the actionable CR/bug backlog is clear (CRs through **CR0086** closed; 0 Proposed).
+  RFCs accepted: RFC0001/0002/0013/0014/0015/0016/0017; **RFC0019** (authoring autosprint) is Draft.
+  `disclosure` reports **0**.
+- **Unreleased - greenfield + implementation DevEx (v2.6.0 work, dogfooded):** the
+  greenfield-friction workstream (CR0077-CR0086), built by the skill's own autosprint loop from a
+  field agent's greenfield + tranche-1 dogfooding. Authoring: lazy index creation + full-template
+  scaffolds (CR0077), executable `init` (CR0079), batch create (CR0078), decisions log (CR0080),
+  reconcile field projection (CR0082), greenfield runbook (CR0081). Implementation/conformance:
+  the test-spec AC-to-test bridge (CR0085), the Definition-of-Done verify gate (CR0084), the
+  cross-epic AC lint (CR0086), and agent-instructions that enforce the tool-first discipline
+  (CR0083). All green + committed; not yet tagged.
 - **In flight - review + optimise programme (to v2.5.0):** a dogfooded world-class review ran the
   audit skill-profile + the deterministic gates. Outcome: over-engineering and determinism are
   **clean** (the determinism candidates were refuted as false positives). The real backlog is two
