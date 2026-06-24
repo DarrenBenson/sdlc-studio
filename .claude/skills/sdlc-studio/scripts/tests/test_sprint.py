@@ -33,6 +33,27 @@ def _cr(root, num, status="Proposed", priority="Medium"):
         f"# CR-{num:04d}: c\n\n> **Status:** {status}\n> **Priority:** {priority}\n", encoding="utf-8")
 
 
+class StatusArgCanonicalisationTests(unittest.TestCase):
+    """BG0034: a lowercase status arg (the documented form) must match the title-case vocab."""
+
+    def test_lowercase_status_selects_same_as_titlecase(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1, status="Proposed")
+            _cr(root, 2, status="Complete")
+            lower = [b["id"] for b in _load().select_batch(root, "cr", "proposed")]
+            title = [b["id"] for b in _load().select_batch(root, "cr", "Proposed")]
+            self.assertEqual(lower, ["CR0001"])
+            self.assertEqual(lower, title)
+
+    def test_unknown_status_raises(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1, status="Proposed")
+            with self.assertRaises(ValueError):
+                _load().select_batch(root, "cr", "notastatus")
+
+
 class SelectTests(unittest.TestCase):
     def test_selects_by_status(self) -> None:
         with tempfile.TemporaryDirectory() as d:

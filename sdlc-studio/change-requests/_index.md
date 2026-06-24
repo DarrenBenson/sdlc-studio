@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 0 |
+| Proposed | 5 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 98 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **99** |
+| **Total** | **104** |
 
 ## All Changes
 
@@ -119,3 +119,8 @@
 | [CR-0097](CR0097-persona-index-projection-in-reconcile-fields-via-a.md) | persona index projection in reconcile fields via a canonical persona field | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0098](CR0098-plan-and-audit-flag-ready-units-whose-verifiers.md) | plan and audit flag Ready units whose verifiers already pass as already-satisfied | Complete | Medium | Feature | 2026-06-24 | -- |
 | [CR-0099](CR0099-goal-plan-consults-the-review-seats-for-wsjf.md) | goal plan consults the review seats for WSJF inputs and defaults to WSJF order | Complete | Medium | Feature | 2026-06-24 | -- |
+| [CR-0100](CR0100-re-anchor-the-story-completion-cascade-on-the.md) | Re-anchor the Story Completion Cascade on the deterministic close (artifact.py close / transition.py) | Proposed | High | Improvement | 2026-06-24 | -- |
+| [CR-0101](CR0101-reconcile-per-command-help-help-reconcile-md-must.md) | reconcile per-command help (help/reconcile.md) must point at the deterministic scripts/reconcile.py | Proposed | High | Improvement | 2026-06-24 | -- |
+| [CR-0102](CR0102-no-artifacts-suppress-enforce-behaviour-is-restated-verbatim.md) | --no-artifacts suppress/enforce behaviour is restated verbatim across epic, story, and outputs references | Proposed | Medium | Improvement | 2026-06-24 | -- |
+| [CR-0103](CR0103-best-practices-code-check-omit-sota-linters-shellcheck.md) | best-practices + code check omit SOTA linters (ShellCheck/shfmt, Ruff/mypy) and teach bare set -e | Proposed | Medium | Improvement | 2026-06-24 | -- |
+| [CR-0104](CR0104-surface-v3-0-capabilities-in-the-always-loaded.md) | Surface v3.0 capabilities in the always-loaded router + help catalogue (decisions, goal ladder, init-first, batch) | Proposed | High | Improvement | 2026-06-24 | -- |

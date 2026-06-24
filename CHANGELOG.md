@@ -134,6 +134,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   re-export shim + NL resolution) so nothing breaks. History (closed CRs, RFC0001, prior
   CHANGELOG entries) keeps the original name.
 
+### Fixed
+
+- **`sprint plan` silently selected an empty batch for a lowercase status arg (BG0034, RV0005
+  audit):** the documented form (`sprint --crs proposed`) never matched, because `select_batch`
+  compared the raw arg against the canonical title-case vocab. The arg is now canonicalised
+  (`proposed` == `Proposed`) and an unknown status fails loudly listing the valid vocabulary,
+  instead of returning a silent zero-item batch. Docs aligned to title-case. (Found by the
+  adversarial determinism lens; it was an untested path.)
+
 ## [2.5.0] - 2026-06-22
 
 ### Added

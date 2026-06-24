@@ -18,8 +18,8 @@ drives the proven lifecycle - decompose -> TDD -> verify -> conformance -> indep
 
 ```text
 /sdlc-studio status                                  # where the pipeline is right now
-/sdlc-studio sprint --crs proposed --goal done   # drive a tranche of CRs to done
-/sdlc-studio sprint --bugs open --goal done      # clear the open bugs
+/sdlc-studio sprint --crs Proposed --goal done   # drive a tranche of CRs to done
+/sdlc-studio sprint --bugs Open --goal done      # clear the open bugs
 /sdlc-studio sprint --epic EP0007 --goal done    # deliver one epic end to end
 ```
 
@@ -358,7 +358,7 @@ tests/                        # Generated test code
 
 ```text
 /sdlc-studio status                                # see full pipeline state
-/sdlc-studio sprint --crs proposed --goal done # drive a tranche (recommended)
+/sdlc-studio sprint --crs Proposed --goal done # drive a tranche (recommended)
 /sdlc-studio hint                                  # or get a single next step by hand
 ```
 
@@ -423,7 +423,7 @@ to a goal in one autonomous loop, with a triage approval up front and a reconcil
 the end:
 
 ```text
-/sdlc-studio sprint --crs proposed --goal done
+/sdlc-studio sprint --crs Proposed --goal done
         │
 triage plan + STOP for approval
         │

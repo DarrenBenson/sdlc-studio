@@ -141,12 +141,18 @@ def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "pr
     """
     root = Path(repo_root)
     vocab = sdlc_md.status_vocab(kind, root)
+    # BG0034: canonicalise the user-supplied status arg so a lowercase '--crs proposed' (the
+    # documented form) matches the title-case vocab token, instead of silently selecting nothing.
+    target = sdlc_md.canonical_status(status, vocab) or status
+    if vocab and target not in vocab:
+        raise ValueError(
+            f"status '{status}' is not a {kind} status; valid: {', '.join(vocab)}")
     out: list[dict] = []
     deps: dict[str, set] = {}
     for path in sdlc_md.artifact_files(kind, root):
         text = path.read_text(encoding="utf-8")
         st = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab) or "Unknown"
-        if st != status:
+        if st != target:
             continue
         pri = sdlc_md.extract_field(text, PRIORITY_FIELD.get(kind, "Priority")) or "Medium"
         rid = sdlc_md.extract_record_id(path.stem) or path.stem

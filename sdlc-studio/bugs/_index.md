@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 0 |
 | In Progress | 0 |
-| Fixed | 33 |
+| Fixed | 34 |
 | Verified | 0 |
 | Closed | 0 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **33** |
+| **Total** | **34** |
 
 ## All Bugs
 
@@ -52,3 +52,4 @@
 | [BG0031](BG0031-reconcile-apply-auto-deletes-orphan-rows-destroying-inline.md) | reconcile apply auto-deletes orphan rows destroying inline-only records | Fixed | High | 2026-06-22 | 2026-06-22 |
 | [BG0032](BG0032-reconcile-reads-fixed-status-column-misreads-multi-schema.md) | reconcile reads fixed status column misreads multi-schema index tables | Fixed | High | 2026-06-22 | 2026-06-22 |
 | [BG0033](BG0033-five-moderate-npm-dependency-vulnerabilities-via-markdownlint-cli.md) | five moderate npm dependency vulnerabilities via markdownlint-cli | Fixed | Medium | 2026-06-22 | 2026-06-22 |
+| [BG0034](BG0034-sprint-plan-silently-selects-an-empty-batch-for.md) | sprint plan silently selects an empty batch for lowercase --crs/--bugs/--stories status args | Fixed | high | 2026-06-24 | 2026-06-24 |
