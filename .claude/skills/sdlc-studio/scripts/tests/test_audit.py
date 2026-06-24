@@ -206,5 +206,38 @@ class CliTests(unittest.TestCase):
             self.assertIn("summary", buf.getvalue())
 
 
+class AlreadySatisfiedTests(unittest.TestCase):
+    """CR0098: a Ready unit whose verifiers all pass is flagged already-satisfied."""
+
+    def _story(self, root, num=1, status="Ready"):
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"US{num:04d}-x.md").write_text(
+            f"# US{num:04d}: s\n\n> **Status:** {status}\n\n## Acceptance Criteria\n\n"
+            "### AC1\n- **Verify:** shell true\n", encoding="utf-8")
+
+    def _report(self, root, stem, payload):
+        import json
+        rp = root / "sdlc-studio" / ".local" / "verify-report.json"
+        rp.parent.mkdir(parents=True, exist_ok=True)
+        rp.write_text(json.dumps({"stories": {stem: payload}}), encoding="utf-8")
+
+    def test_all_green_ready_unit_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, 1)
+            self._report(root, "US0001-x", {"ac_count": 1, "verified": 1, "failed": 0, "stale": 0})
+            r = _load().audit_unit(root, "US0001")
+            self.assertIn("already-satisfied", r["issues"])
+
+    def test_failing_unit_not_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, 2)
+            self._report(root, "US0002-x", {"ac_count": 2, "verified": 1, "failed": 1, "stale": 0})
+            r = _load().audit_unit(root, "US0002")
+            self.assertNotIn("already-satisfied", r["issues"])
+
+
 if __name__ == "__main__":
     unittest.main()

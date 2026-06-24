@@ -1,6 +1,6 @@
 # CR-0098: plan and audit flag Ready units whose verifiers already pass as already-satisfied
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
@@ -18,12 +18,12 @@ build. Advisory - the operator confirms (the feature may legitimately want a fre
 
 ## Acceptance Criteria
 
-- [ ] `audit check` (and `sprint plan`) flag a Ready unit whose executable ACs are all `yes`
+- [x] `audit check` (and `sprint plan`) flag a Ready unit whose executable ACs are all `yes`
       in `verify-report.json` as `already-satisfied` (a close-candidate), distinct from ready
-- [ ] manual-only / AC-less units are not flagged (nothing executable to confirm)
-- [ ] the flag is advisory (reported, never auto-closes); remediation names the likely action
+- [x] manual-only / AC-less units are not flagged (nothing executable to confirm)
+- [x] the flag is advisory (reported, never auto-closes); remediation names the likely action
       (verify + transition to Done, or close superseded)
-- [ ] reuses the verify-report (no new verification path); unit test: an all-green Ready story
+- [x] reuses the verify-report (no new verification path); unit test: an all-green Ready story
       is flagged, a partially-verified one is not; CHANGELOG `[Unreleased]` entry (LL0004)
 
 ## Revision History

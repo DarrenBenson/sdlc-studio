@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **already-satisfied flag in the tranche audit (CR0098, from LL0007):** `audit check` (the
+  sprint pre-flight) now flags a Ready unit whose executable ACs all pass in the verify-report as
+  **already-satisfied** - a close-candidate, not work to build. The audit can't see a feature
+  shipped under a different artifact, but a green verifier set is the deterministic signal - the
+  exact gap that let 5 stale Ready stories through this session's first plan. Advisory; reuses the
+  verify-report.
 - **persona index-projection via a canonical field (CR0097):** the deferred half of CR0082. The
   story template + scaffold now carry a canonical `> **Persona:**` field, and `reconcile fields`
   projects it into the index `Persona` column alongside Title/Points (absent field left untouched,

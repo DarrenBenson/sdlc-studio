@@ -97,6 +97,20 @@ def _unmet_deps(root: Path, text: str) -> list[str]:
     return unmet
 
 
+def _already_satisfied(root: Path, rid: str) -> bool:
+    """True if the unit's executable ACs all pass in the verify-report (CR0098): verified > 0,
+    no failures, no stale. Such a Ready unit is already delivered (the audit cannot see a feature
+    shipped under a different artifact, but a green verifier set is the deterministic signal) -
+    surface it as a close-candidate, not work to build. Manual-only / AC-less units never match."""
+    report = sdlc_md.read_json(root / "sdlc-studio" / ".local" / "verify-report.json", {})
+    stories = report.get("stories", {})
+    items = stories.items() if isinstance(stories, dict) else []
+    for stem, e in items:
+        if sdlc_md.norm_id(stem.split("-")[0]) == sdlc_md.norm_id(rid):
+            return e.get("verified", 0) > 0 and not e.get("failed", 0) and not e.get("stale", 0)
+    return False
+
+
 def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None = None) -> dict:
     """Readiness verdict for a single unit."""
     root = Path(root)
@@ -121,6 +135,8 @@ def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None 
         issues.append("already-terminal")
     if integrity_errors and rid in integrity_errors:
         issues.append("link-integrity")
+    if status not in integrity.TERMINAL and _already_satisfied(root, rid):
+        issues.append("already-satisfied")  # CR0098: verifiers pass -> close-candidate, don't build
     return {"id": rid, "type": type_, "status": status, "issues": issues, "ready": not issues}
 
 
