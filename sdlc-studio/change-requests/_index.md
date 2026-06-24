@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 0 |
+| Proposed | 2 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 111 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **112** |
+| **Total** | **114** |
 
 ## All Changes
 
@@ -132,3 +132,5 @@
 | [CR-0110](CR0110-author-the-test-spec-ac-coverage-matrix-at.md) | Author the test-spec AC Coverage Matrix at --goal design (shift the AC-to-test bridge left) | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0111](CR0111-verify-ac-batch-mode-run-the-test-runner.md) | verify_ac batch mode - run the test runner once, not a cold start per AC | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0112](CR0112-strip-internal-provenance-tags-cr-bg-rfc-from.md) | Strip internal provenance tags (CR/BG/RFC) from consuming-facing docs + shipped code | Complete | Medium | Improvement | 2026-06-24 | -- |
+| [CR-0113](CR0113-ac-scope-cross-epic-ac-false-positives-on.md) | ac_scope / cross-epic-ac false-positives on shared domain vocabulary (cry-wolf in the audit) | Proposed | High | Improvement | 2026-06-25 | -- |
+| [CR-0114](CR0114-establish-inter-story-depends-on-at-design-so.md) | Establish inter-story Depends on at design so sprint-plan waves are real, not flat | Proposed | Medium | Improvement | 2026-06-25 | -- |
