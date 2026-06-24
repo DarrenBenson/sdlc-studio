@@ -144,7 +144,7 @@ Run linters and best practice checks.
 
 **What happens:** Detects language → Runs linter with auto-fix → Reports findings.
 
-**Linters:** Python (ruff), TypeScript (eslint), Go (fmt + vet), Rust (clippy)
+**Linters:** Python (ruff), TypeScript (eslint), Go (fmt + vet), Rust (clippy), shell (shellcheck + shfmt)
 
 ### test
 

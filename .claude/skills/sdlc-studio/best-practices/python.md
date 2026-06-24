@@ -155,9 +155,8 @@ Use type hints for function signatures:
 
 ```python
 from pathlib import Path
-from typing import Optional
 
-def find_item(name: str) -> Optional[tuple[Path, dict]]:
+def find_item(name: str) -> tuple[Path, dict] | None:  # PEP 604, no typing.Optional
     """Find item by name or path."""
     ...
 
@@ -165,6 +164,17 @@ def process_file(path: Path, *, dry_run: bool = False) -> bool:
     """Process a file, return success status."""
     ...
 ```
+
+On the project's Python 3.10+ floor, prefer the PEP 604 `X | None` form and builtin generics
+(`list[str]`, `dict[str, int]`) over `typing.Optional` / `typing.List` - pyupgrade and Ruff's `UP`
+rules flag the legacy forms.
+
+## Tooling
+
+- **Lint + format:** [Ruff](https://docs.astral.sh/ruff/) (lint and format in one fast tool;
+  enable the `UP` pyupgrade rules to keep type hints modern).
+- **Types:** a static checker - mypy or pyright - in CI.
+- Floor: Python 3.10+ (matches the bundled scripts).
 
 ## Logging
 

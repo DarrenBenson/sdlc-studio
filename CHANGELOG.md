@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **SOTA linter coverage in the quality guides (CR0103, RV0005 audit):** `best-practices/script.md`
+  gains a Tooling section (ShellCheck + shfmt as the baseline; the anti-pattern table reframed as
+  what ShellCheck enforces) and teaches `set -euo pipefail` instead of bare `set -e`;
+  `best-practices/python.md` gains a Tooling section (Ruff + mypy/pyright, 3.10+ floor) and its
+  Type Hints example uses PEP 604 `X | None` rather than `typing.Optional`; `help/code.md` `code
+  check` now lists a shell linter so every language the repo ships is covered.
 - **v3.0 capabilities surfaced in the always-loaded router + help catalogue (CR0104, RV0005
   review):** `help/help.md` now lists the `decisions` command (add/list/promote) and names the
   sprint **goal ladder** `triage -> plan -> design -> done`; the SKILL.md Type Reference gains

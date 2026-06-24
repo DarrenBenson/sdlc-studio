@@ -22,7 +22,7 @@ Before considering a script complete:
 # Brief description of what this script does
 # Usage: ./scripts/name.sh [args]
 
-set -e  # Exit on error
+set -euo pipefail  # exit on error, unset var, or any failure in a pipeline
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -98,7 +98,7 @@ if __name__ == '__main__':
 
 ```bash
 #!/bin/bash
-set -e
+set -euo pipefail
 
 if [[ -z "${1:-}" ]]; then
     echo "Usage: $0 <name>" >&2
@@ -122,12 +122,21 @@ python test.py
 
 | Pattern | Problem | Fix |
 |---------|---------|-----|
-| No `set -e` | Continues after errors | Add `set -e` at top |
+| Bare `set -e` (or none) | `set -e` alone ignores unset vars and pipeline failures | Use `set -euo pipefail` |
 | Hardcoded paths | Breaks on other machines | Use `$SCRIPT_DIR` or config |
 | No `--help` | Undiscoverable | Add help flag handling |
 | Silent failures | Hard to debug | Echo status, exit non-zero |
 | Bare `except:` | Hides errors | Catch specific exceptions |
 | Print to stdout for errors | Mixed output | Use `>&2` or `stderr` |
+
+## Tooling
+
+- **Lint:** [ShellCheck](https://www.shellcheck.net/) is the static-analysis baseline - it catches
+  the whole anti-pattern class above mechanically (SC2086 unquoted expansion, SC2164 unchecked
+  `cd`, and more). Treat the anti-pattern table as *what ShellCheck enforces for you*, not a
+  hand-curated substitute.
+- **Format:** `shfmt` for consistent indentation and style.
+- Both are single binaries with no runtime; wire them into `code check` and CI.
 
 ## Configuration
 

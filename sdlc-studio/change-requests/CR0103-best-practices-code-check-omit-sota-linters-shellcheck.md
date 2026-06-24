@@ -1,6 +1,6 @@
 # CR-0103: best-practices + code check omit SOTA linters (ShellCheck/shfmt, Ruff/mypy) and teach bare set -e
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-06-24
@@ -12,10 +12,10 @@ best-practices/script.md hand-maintains an anti-pattern table but never mentions
 
 ## Acceptance Criteria
 
-- [ ] script.md adds a Tooling section recommending ShellCheck + shfmt (framing the anti-pattern table as what ShellCheck enforces mechanically) and teaches set -euo pipefail with a one-line why
-- [ ] python.md gains a Tooling section (Ruff + mypy/pyright, 3.10+ floor) parallel to typescript.md/rust.md, and its Type Hints example uses PEP 604 'tuple[Path, dict] | None' dropping typing.Optional
-- [ ] help/code.md code check lists a shell linter (ShellCheck + shfmt) so every language the repo ships is covered
-- [ ] CHANGELOG entry same commit
+- [x] script.md adds a Tooling section recommending ShellCheck + shfmt (framing the anti-pattern table as what ShellCheck enforces mechanically) and teaches set -euo pipefail with a one-line why
+- [x] python.md gains a Tooling section (Ruff + mypy/pyright, 3.10+ floor) parallel to typescript.md/rust.md, and its Type Hints example uses PEP 604 'tuple[Path, dict] | None' dropping typing.Optional
+- [x] help/code.md code check lists a shell linter (ShellCheck + shfmt) so every language the repo ships is covered
+- [x] CHANGELOG entry same commit
 
 ## Revision History
 
