@@ -604,6 +604,19 @@ class FieldProjectionTests(unittest.TestCase):
             self.assertIn("| Login flow | EP0001 | Draft | 5 | Priya |", text)
             self.assertEqual(reconcile.project_fields(root, dry_run=True)["drift"], [])  # idempotent
 
+    def test_persona_projected_from_canonical_field(self) -> None:  # CR0097
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True, exist_ok=True)
+            (sd / "US0001-x.md").write_text(
+                "# US0001: Login\n\n> **Status:** Draft\n> **Persona:** Priya\n", encoding="utf-8")
+            (sd / "_index.md").write_text(
+                "# Stories\n\n## All\n\n| ID | Title | Status | Persona |\n|---|---|---|---|\n"
+                "| [US0001](US0001-x.md) | Login | Draft | -- |\n", encoding="utf-8")
+            reconcile.project_fields(root, dry_run=False)
+            self.assertIn("| Priya |", (sd / "_index.md").read_text())
+
     def test_absent_file_field_left_untouched(self) -> None:
         # Persona has no canonical file field, and a file without Points must not blank the cell.
         with tempfile.TemporaryDirectory() as d:

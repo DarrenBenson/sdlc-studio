@@ -52,7 +52,7 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
     rev = (f"\n## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
            f"| {today} | {f.get('author', 'sdlc')} | Created via `new` (deterministic) |\n")
     if type_ == "story":
-        return (head + f"> **Epic:** {f['epic']}\n\n"
+        return (head + f"> **Epic:** {f['epic']}\n> **Persona:** {{{{persona}}}}\n\n"
                 "## User Story\n\n**As a** {{role}}\n**I want** {{capability}}\n"
                 "**So that** {{benefit}}\n\n## Acceptance Criteria\n\n"
                 "### AC1: {{define}}\n\n- **Given** {{context}}\n- **When** {{action}}\n"

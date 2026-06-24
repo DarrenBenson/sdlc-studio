@@ -8,6 +8,7 @@ Related: help/story.md, reference-story.md
 
 > **Status:** {{status}}
 > **Epic:** [EP{{epic_id}}: {{epic_title}}](../epics/EP{{epic_id}}-{{epic_slug}}.md)
+> **Persona:** {{persona_name}}
 > **Owner:** {{owner}}
 > **Reviewer:** {{reviewer}}
 > **Created:** {{created_date}}

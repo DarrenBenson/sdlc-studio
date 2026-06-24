@@ -506,16 +506,20 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
 # prose), so projecting it would risk the BG0032 clobber class.
 _POINTS_RE = re.compile(r"\*\*(?:Story )?Points:\*\*\s*([0-9]+)", re.IGNORECASE)
 _TITLE_RE = re.compile(r"^#\s+[A-Za-z]+-?\d+:\s*(.+?)\s*$", re.MULTILINE)
+_PERSONA_RE = re.compile(r"^>?\s*\*\*Persona:\*\*\s*(.+?)\s*$", re.MULTILINE)  # canonical field (CR0097)
 
 
 def _file_field_values(text: str) -> dict:
     t = _TITLE_RE.search(text)
     p = _POINTS_RE.search(text)
-    return {"title": t.group(1).strip() if t else None, "points": p.group(1) if p else None}
+    pe = _PERSONA_RE.search(text)
+    return {"title": t.group(1).strip() if t else None,
+            "points": p.group(1) if p else None,
+            "persona": pe.group(1).strip() if pe else None}
 
 
 def project_fields(repo_root: Path | str, type_: str = "story", dry_run: bool = True) -> dict:
-    """Sync the index's file-owned cells (Title, Points) from the backing files (CR0082).
+    """Sync the index's file-owned cells (Title, Points, Persona) from the backing files (CR0082, CR0097).
 
     Detect-or-apply by the same discipline as status. A field absent in the file leaves the
     cell untouched (never blank a value an operator set - BG0032). Columns are located by the
@@ -541,7 +545,7 @@ def project_fields(repo_root: Path | str, type_: str = "story", dry_run: bool = 
             continue
         lowered = [c.strip().lower() for c in cells]
         if "id" in lowered and ("title" in lowered or "points" in lowered):  # re-pin per header
-            cols = {n: lowered.index(n) for n in ("id", "title", "points") if n in lowered}
+            cols = {n: lowered.index(n) for n in ("id", "title", "points", "persona") if n in lowered}
             continue
         if "id" not in cols or cols["id"] >= len(cells):
             continue
@@ -552,7 +556,7 @@ def project_fields(repo_root: Path | str, type_: str = "story", dry_run: bool = 
         if not fv:
             continue
         row_changed = False
-        for field in ("title", "points"):
+        for field in ("title", "points", "persona"):
             if field in cols and cols[field] < len(cells) and fv[field] is not None:
                 cur = cells[cols[field]].strip()
                 if cur != fv[field]:

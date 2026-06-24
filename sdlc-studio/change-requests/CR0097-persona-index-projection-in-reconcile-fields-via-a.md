@@ -1,6 +1,6 @@
 # CR-0097: persona index projection in reconcile fields via a canonical persona field
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
@@ -17,12 +17,12 @@ not hand-kept. Stories without the field leave the cell untouched (BG0032).
 
 ## Acceptance Criteria
 
-- [ ] the story template + `new`/batch scaffold carry a `> **Persona:**` metadata field
-- [ ] `reconcile fields` projects `Persona` from that field into the index (alongside
+- [x] the story template + `new`/batch scaffold carry a `> **Persona:**` metadata field
+- [x] `reconcile fields` projects `Persona` from that field into the index (alongside
       Title/Points); absent field leaves the cell untouched (no clobber, BG0032)
-- [ ] the "As a {persona}" prose stays; the metadata field is the canonical projection source
+- [x] the "As a {persona}" prose stays; the metadata field is the canonical projection source
       (documented in reference-scripts.md / the story template)
-- [ ] unit tests: persona drift detected + synced, absent-field safe; CHANGELOG entry (LL0004)
+- [x] unit tests: persona drift detected + synced, absent-field safe; CHANGELOG entry (LL0004)
 
 ## Revision History
 

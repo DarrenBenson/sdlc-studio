@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **persona index-projection via a canonical field (CR0097):** the deferred half of CR0082. The
+  story template + scaffold now carry a canonical `> **Persona:**` field, and `reconcile fields`
+  projects it into the index `Persona` column alongside Title/Points (absent field left untouched,
+  BG0032). The "As a {persona}" prose stays; the metadata field is the projection source - so the
+  index Persona column is derived, not hand-kept.
 - **hard epic-scope test-spec requirement (CR0096):** the deferred half of CR0085 - the
   AC-to-test bridge is now mandatory at epic scale. `verify_ac epic-ts --epic EPxxxx` requires an
   epic to have a test-spec (linked by its `Epic:` field) whose AC Coverage Matrix passes

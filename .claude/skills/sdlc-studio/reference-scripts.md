@@ -336,9 +336,9 @@ Builds the artifact-file census and reports `_index.md` drift as JSON.
 
 - `detect`: census + drift report (`--scope`, `--write-report`)
 - `apply`: mechanical fixes - status cells + summary counts (CR0026), behind `--dry-run`
-- `fields`: project file-owned cells (Title, Points) from the files into the index, so it is
-  fully derived (CR0082); `--apply` writes, default reports. A field absent in the file is
-  left untouched (BG0032); persona is deferred (no single canonical field in a story)
+- `fields`: project file-owned cells (Title, Points, Persona) from the files into the index, so
+  it is fully derived (CR0082, CR0097); `--apply` writes, default reports. A field absent in the
+  file is left untouched (BG0032). Persona reads the canonical `> **Persona:**` story field (CR0097)
 
 Drift kinds: `status-mismatch`, `missing-row`, `orphan-row`, `count-mismatch`,
 `missing-index`. Claude consumes the report, applies the edits, and handles the
