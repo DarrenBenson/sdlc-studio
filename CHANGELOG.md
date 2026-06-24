@@ -148,6 +148,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`--no-artifacts` behaviour de-duplicated to one canonical anchor (CR0102, RV0005 audit):**
+  the suppressed-files / still-enforced-gates lists were restated verbatim across
+  `reference-epic.md`, `reference-story.md`, and `reference-outputs.md` (drift risk on any change
+  to the gate set). `reference-epic.md#flag-no-artifacts` is now the single source; story and
+  outputs point to it and keep only their file-local framing (story-phase flow / status-flow shape).
 - **Story Completion Cascade re-anchored on the deterministic close (CR0100, RV0005 audit):**
   `reference-outputs.md#story-completion-cascade` led with prose telling the agent to hand-edit the
   story Status, index rows, summary counts, and epic checkbox - exactly what `artifact.py close` /

@@ -94,12 +94,10 @@ Test Spec: (not created)
 Workflow:  (not created)
 ```
 
-The compressed flow is valid **only** during batch agentic execution where:
-
-- The agent prompt serves as the plan
-- Tests are written inline (TDD within agent)
-- Verification runs at wave boundaries (typecheck + test suite)
-- Quality gates (phases 5-7) are still enforced
+The compressed flow is valid **only** during batch agentic execution (the agent prompt serves as
+the plan; tests are written inline; the wave-boundary gates still run). The canonical list of what
+`--no-artifacts` suppresses and what it still enforces lives in
+`reference-epic.md#flag-no-artifacts`; this section owns only the status-flow shape.
 
 For sequential single-story work, use the full status flow above.
 

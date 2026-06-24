@@ -728,11 +728,10 @@ When called from `epic implement --agentic` or `project implement --agentic`, th
 - **Status transitions compressed:** Story goes Ready -> Done directly.
 - **Reconcile still runs after each wave** to keep indexes and dependency tables in sync.
 
-**In both modes, quality gates are enforced at wave boundaries:**
-
-- Typecheck must pass
-- Full test suite must pass
-- Reconcile runs (scoped to wave's stories)
+In both modes the wave-boundary quality gates still run; only intermediate artifacts and
+transitions are suppressed. The canonical list of **what `--no-artifacts` suppresses and what it
+still enforces** lives in `reference-epic.md#flag-no-artifacts` - this section keeps only the
+story-phase framing above.
 
 The full 8-phase sequential workflow below applies when NOT in agentic mode (i.e. `story implement` called directly).
 

@@ -1,6 +1,6 @@
 # CR-0102: --no-artifacts suppress/enforce behaviour is restated verbatim across epic, story, and outputs references
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-06-24
@@ -12,10 +12,10 @@ The --no-artifacts behaviour (suppressed PL/TS/WF + intermediate transitions; st
 
 ## Acceptance Criteria
 
-- [ ] The canonical --no-artifacts definition lives in exactly one reference file (natural home reference-epic.md#flag-no-artifacts)
-- [ ] reference-story.md and reference-outputs.md point to that single anchor rather than restating the bullet lists, keeping only the file-local framing they need
-- [ ] No suppressed-files / enforced-gates claim appears verbatim in more than one file; a future change edits only the canonical location
-- [ ] CHANGELOG entry same commit
+- [x] The canonical --no-artifacts definition lives in exactly one reference file (natural home reference-epic.md#flag-no-artifacts)
+- [x] reference-story.md and reference-outputs.md point to that single anchor rather than restating the bullet lists, keeping only the file-local framing they need
+- [x] No suppressed-files / enforced-gates claim appears verbatim in more than one file; a future change edits only the canonical location
+- [x] CHANGELOG entry same commit
 
 ## Revision History
 
