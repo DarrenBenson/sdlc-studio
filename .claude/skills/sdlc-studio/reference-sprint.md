@@ -138,6 +138,12 @@ dependency, and **estimate** it - reusing `--order wsjf` + the complexity-weight
 persists the sprint-plan artifact; then stop for review. (Distinct from `triage`, which grooms
 the *whole given batch* for readiness; `plan` selects a sprint's *worth*.)
 
+**Scope by epic (CR0106).** A sprint is usually the next epic or two, not a whole status class, so
+`plan --stories <status> --epic EPxxxx [--epic EPyyyy]` restricts the batch to stories in the named
+epic(s) - repeatable, union. Without it, `--stories Draft` selects every Draft story across all
+epics (the friction that forces hand-scoping). Dependency ordering, `--write`, and WSJF all operate
+on the scoped batch. Epic-scoping is story-only (it errors with `--crs`/`--bugs`).
+
 **Seat-scored WSJF (CR0099).** Sprint planning is a value/effort/risk judgement, not a bare
 priority sort (LL0007). At the plan rung, consult the review seats - **Product Owner** for value
 (+ time-criticality, risk-reduction), **Engineering** for effort (seeded by the complexity

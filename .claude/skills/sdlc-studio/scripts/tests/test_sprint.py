@@ -54,6 +54,36 @@ class StatusArgCanonicalisationTests(unittest.TestCase):
                 _load().select_batch(root, "cr", "notastatus")
 
 
+class EpicScopeTests(unittest.TestCase):
+    """CR0106: sprint plan can scope a story batch to one or more epics."""
+
+    def _story(self, root, num, epic, status="Draft"):
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"US{num:04d}-x.md").write_text(
+            f"# US{num:04d}: s\n\n> **Status:** {status}\n> **Epic:** [{epic}: t](../epics/{epic}-t.md)\n",
+            encoding="utf-8")
+
+    def test_epic_scopes_the_batch(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, 1, "EP0002"); self._story(root, 2, "EP0002")
+            self._story(root, 3, "EP0003")
+            all_ids = [b["id"] for b in _load().select_batch(root, "story", "Draft")]
+            ep2 = [b["id"] for b in _load().select_batch(root, "story", "Draft", epics={"EP0002"})]
+            self.assertEqual(len(all_ids), 3)
+            self.assertEqual(sorted(ep2), ["US0001", "US0002"])
+
+    def test_multiple_epics_union(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, 1, "EP0002"); self._story(root, 3, "EP0003")
+            self._story(root, 5, "EP0009")
+            got = [b["id"] for b in _load().select_batch(
+                root, "story", "Draft", epics={"EP0002", "EP0003"})]
+            self.assertEqual(sorted(got), ["US0001", "US0003"])
+
+
 class SelectTests(unittest.TestCase):
     def test_selects_by_status(self) -> None:
         with tempfile.TemporaryDirectory() as d:

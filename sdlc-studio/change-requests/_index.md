@@ -9,12 +9,12 @@
 | Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 104 |
+| Complete | 105 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **105** |
+| **Total** | **106** |
 
 ## All Changes
 
@@ -125,3 +125,4 @@
 | [CR-0103](CR0103-best-practices-code-check-omit-sota-linters-shellcheck.md) | best-practices + code check omit SOTA linters (ShellCheck/shfmt, Ruff/mypy) and teach bare set -e | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0104](CR0104-surface-v3-0-capabilities-in-the-always-loaded.md) | Surface v3.0 capabilities in the always-loaded router + help catalogue (decisions, goal ladder, init-first, batch) | Complete | High | Improvement | 2026-06-24 | -- |
 | [CR-0105](CR0105-extend-deterministic-id-allocation-to-the-meta-artifacts.md) | Extend deterministic id-allocation to the meta-artifacts (review/retro/persona/lessons) | Complete | Medium | Improvement | 2026-06-24 | -- |
+| [CR-0106](CR0106-sprint-plan-should-scope-a-story-batch-by.md) | sprint plan should scope a story batch by epic, not only by status | Complete | Medium | Improvement | 2026-06-24 | -- |

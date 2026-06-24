@@ -38,6 +38,7 @@ next sprint" resolves to `--goal design` (the goals are cumulative stop-points).
 | `<batch>` | a worklist file, `--bugs`/`--crs`/`--stories <status>` / `--epic EPxxxx`, or a **PRD path** (greenfield authoring, CR0088) | required |
 | `--goal` | `triage` (plan) / `plan` (sprint plan) / `design` (Ready, estimated backlog) / `done` (delivered) | `done` |
 | `--order` | `priority` / `wsjf` (priority over RFC0009 complexity) / `manual` | `priority` |
+| `--epic EPxxxx` | (with `--stories`, repeatable) scope a story plan to one or more epics, not the whole status class (CR0106) | all epics |
 | `--write` | (with `plan`) persist the sprint plan to `.local/sprint-plan.json` | off |
 | `--strict` | (with `plan`) refuse to plan when the index has drift (reconcile-before-plan, CR0094) | off |
 | `--autonomous` | unattended mode: the deterministic guardrails (cap, repetition-breaker, completion oracle) enforce stop/stall instead of model discretion | off |

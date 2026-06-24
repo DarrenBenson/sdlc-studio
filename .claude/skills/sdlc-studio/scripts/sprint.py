@@ -132,15 +132,18 @@ def _wsjf_inputs(root: Path) -> dict:
 
 
 def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "priority",
-                 skip_personas: bool = False) -> list[dict]:
+                 skip_personas: bool = False, epics: set[str] | None = None) -> list[dict]:
     """Files of `kind` whose Status matches, with priority, ordered.
 
+    `epics` (story scope only, CR0106) restricts the batch to stories whose `Epic:` field is in
+    that set - so a sprint can be planned for one or more epics, not just a whole status class.
     `priority`/`wsjf` order deps-first (topological). `wsjf` orders by the WSJF score when the
     review seats have scored value/risk (CR0099); otherwise it falls back to priority with the
     smaller blast-radius job as the tiebreak (RFC0009). `manual` preserves discovery order.
     """
     root = Path(repo_root)
     vocab = sdlc_md.status_vocab(kind, root)
+    epic_filter = {sdlc_md.norm_id(e) for e in epics} if epics else None
     # BG0034: canonicalise the user-supplied status arg so a lowercase '--crs proposed' (the
     # documented form) matches the title-case vocab token, instead of silently selecting nothing.
     target = sdlc_md.canonical_status(status, vocab) or status
@@ -154,6 +157,11 @@ def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "pr
         st = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab) or "Unknown"
         if st != target:
             continue
+        if epic_filter is not None:  # CR0106: scope to the named epic(s)
+            ef = sdlc_md.extract_field(text, "Epic") or ""
+            m = sdlc_md.ID_SEARCH_RE.search(ef)
+            if not (m and sdlc_md.norm_id(m.group(0)) in epic_filter):
+                continue
         pri = sdlc_md.extract_field(text, PRIORITY_FIELD.get(kind, "Priority")) or "Medium"
         rid = sdlc_md.extract_record_id(path.stem) or path.stem
         dval = sdlc_md.extract_field(text, "Depends on") or sdlc_md.extract_field(text, "Depends On") or ""
@@ -178,9 +186,9 @@ def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "pr
 
 
 def build_plan(repo_root: Path | str, kind: str, status: str, order: str = "priority",
-               skip_personas: bool = False) -> dict:
+               skip_personas: bool = False, epics: set[str] | None = None) -> dict:
     """The triage plan: the ordered batch plus a count."""
-    batch = select_batch(repo_root, kind, status, order, skip_personas=skip_personas)
+    batch = select_batch(repo_root, kind, status, order, skip_personas=skip_personas, epics=epics)
     return {
         "generated_at": sdlc_md.now_iso8601(),
         "kind": kind,
@@ -241,9 +249,13 @@ def cmd_plan(args: argparse.Namespace) -> int:
               file=sys.stderr)
         if getattr(args, "strict", False):
             return 2
+    epics = set(getattr(args, "epic", None) or []) or None
+    if epics and kind != "story":  # CR0106: epic-scoping is meaningful for stories only
+        print("--epic scopes a story batch; use it with --stories", file=sys.stderr)
+        return 2
     try:
         data = build_plan(args.root, kind, status, args.order,
-                          skip_personas=getattr(args, "skip_personas", False))
+                          skip_personas=getattr(args, "skip_personas", False), epics=epics)
     except ValueError as exc:  # dependency cycle
         print(f"cannot order the batch: {exc}", file=sys.stderr)
         return 2
@@ -255,7 +267,8 @@ def cmd_plan(args: argparse.Namespace) -> int:
     if args.format == "json":
         print(json.dumps(data, indent=2))
     else:
-        print(f"batch: {data['count']} {kind}(s) with Status {status}, order={args.order}")
+        scope = f", epics {', '.join(sorted(epics))}" if epics else ""
+        print(f"batch: {data['count']} {kind}(s) with Status {status}{scope}, order={args.order}")
         for b in data["batch"]:
             print(f"  {b['id']} [{b['priority']}]")
     return 0
@@ -270,6 +283,8 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--crs", metavar="STATUS", help="CRs with this Status (e.g. Proposed)")
     g.add_argument("--stories", metavar="STATUS", help="Stories with this Status (e.g. Ready)")
     g.add_argument("--prd", metavar="PATH", help="Greenfield authoring: bootstrap from a PRD (CR0088)")
+    p.add_argument("--epic", action="append", metavar="EPxxxx",
+                   help="scope a story batch to one or more epics (repeatable; with --stories, CR0106)")
     p.add_argument("--order", choices=("priority", "wsjf", "manual"), default="priority")
     p.add_argument("--write", action="store_true",
                    help="persist the sprint plan to sdlc-studio/.local/sprint-plan.json (CR0091)")

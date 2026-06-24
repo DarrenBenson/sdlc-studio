@@ -5,6 +5,17 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-06-24
+
+### Added
+
+- **`sprint plan --epic` scopes a story batch to one or more epics (CR0106, field report):**
+  the planner filtered only by status, so `--stories Draft` pulled every Draft story across all
+  epics - a field agent planning the next tranche (EP0002+EP0003) had to hand-scope and hand-build
+  the waves instead of using `plan --write`. `sprint plan --stories <status> --epic EPxxxx`
+  (repeatable, union) now restricts to the named epics; dependency ordering, `--write`, and WSJF
+  operate on the scoped batch. Story-only (errors with `--crs`/`--bugs`).
+
 ## [3.0.2] - 2026-06-24
 
 ### Fixed
