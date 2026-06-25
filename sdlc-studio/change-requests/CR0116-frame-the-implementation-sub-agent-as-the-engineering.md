@@ -1,6 +1,6 @@
 # CR-0116: Frame the implementation sub-agent as the Engineering persona/seat, not a generic agent
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-06-25
@@ -15,11 +15,11 @@ The skill's persona/seat machinery is entirely review-side: RFC0016 seats (Produ
 
 ## Acceptance Criteria (revised by the RFC0020 consult)
 
-- [ ] the wave-delegation prompt **appends a thin Engineering stance preamble** (the non-negotiables + shadow: tests must be able to fail; red gate is a stop; never weaken an AC to go green; no `any`) **AFTER** the existing contract - it never rewrites or dilutes READ THESE FILES FIRST / Files to Create-Modify-DO NOT Modify / AC / quality gates (the Engineering seat: those concrete sections are 80% of build quality)
-- [ ] the stance is a render-mode of the existing review-seat charter, not a forked heavyweight charter; persona text sits after the contract, never woven through it
-- [ ] `--skip-personas` yields a **byte-equivalent contract** that still builds and passes the same gated executable ACs (prove with a fixture wave both ways); the independence floor is preserved by CR0117 regardless of persona presence
-- [ ] the independent critic stays a separate seat instance (enforced by CR0117, not prose); the build seat never reviews its own output
-- [ ] documented in reference-agent-prompt-template.md + reference-workflow-personas.md; CHANGELOG entry
+- [x] the wave-delegation prompt **appends a thin Engineering stance preamble** (the non-negotiables + shadow: tests must be able to fail; red gate is a stop; never weaken an AC to go green; no `any`) **AFTER** the existing contract - it never rewrites or dilutes READ THESE FILES FIRST / Files to Create-Modify-DO NOT Modify / AC / quality gates (the Engineering seat: those concrete sections are 80% of build quality)
+- [x] the stance is a render-mode of the existing review-seat charter, not a forked heavyweight charter; persona text sits after the contract, never woven through it
+- [x] `--skip-personas` yields a **byte-equivalent contract** that still builds and passes the same gated executable ACs (prove with a fixture wave both ways); the independence floor is preserved by CR0117 regardless of persona presence
+- [x] the independent critic stays a separate seat instance (enforced by CR0117, not prose); the build seat never reviews its own output
+- [x] documented in reference-agent-prompt-template.md + reference-workflow-personas.md; CHANGELOG entry
 
 ## Relationship
 

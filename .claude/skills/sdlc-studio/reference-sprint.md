@@ -60,7 +60,11 @@ Natural language resolves to the same: "do an sprint to deliver all open bugs"
      a `Verify:` line. Plans (PL) are not created in agentic mode (D7).
    - `epic implement --agentic` - implement under **TDD** (failing test first), the
      default. Wraps the existing wave engine (`reference-project.md`); does not
-     reinvent it.
+     reinvent it. Each worker is **framed as an amigo seat**, not a generic agent:
+     append `persona_resolve.py resolve --seat engineering --render build` after the
+     contract (and `--seat qa` for the test author). See
+     `reference-agent-prompt-template.md#seat-framing` - the stance never overrides the
+     contract, and the reviewer is always a separate seat instance.
    - `verify_ac` - run the AC oracle; back-annotate `Verified:`.
    - **Independent critic (D3), scaled to stakes** - the review depth matches the unit's
      risk, so tokens are spent in proportion. **Independence is the floor, not the variable:**

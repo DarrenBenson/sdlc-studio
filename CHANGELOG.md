@@ -37,6 +37,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   default amigo cards into a consuming project's `sdlc-studio/personas/amigos/` when absent
   (idempotent, never overwriting a customised amigo) and reports the v3.1 persona enrichment, so
   upgrading projects gain the editable engineering team (scripts/project_upgrade.py, reference-upgrade.md).
+- **persona-shaped delegation: workers are framed as amigo seats (CR0116, RFC0020 Accepted):** a new
+  `persona_resolve.py` resolves the worker identity most-specific-first - a project-authored
+  practitioner amigo overrides the skill default (Dani / Sam / Lena), which overrides generic. The
+  agentic wave appends the resolved stance *after* the contract (file list / ACs / gates stay law),
+  the build and review seats are always separate instances (the CR0117 independence gate), and
+  `--skip-personas` yields a byte-equivalent contract that still builds. Wired in
+  reference-agent-prompt-template.md + reference-sprint.md; RFC0020 accepted on Option B.
 
 ### Fixed
 

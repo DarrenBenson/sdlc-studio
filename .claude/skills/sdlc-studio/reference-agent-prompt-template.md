@@ -11,6 +11,7 @@ receives during `epic implement --agentic` and `project implement
 ## Contents
 
 - [Prompt Structure](#agent-prompt-template) - the mandatory sections in order
+- [Seat Framing](#seat-framing) - append the amigo stance after the contract
 - [What Makes a Good Prompt](#good-prompt) - bad vs good examples
 - [Building the Prompt](#agentic-execution) - orchestrator pre-work
 - [Structured Clarifications](#structured-clarifications) - pause format
@@ -110,6 +111,35 @@ Use in-memory SQLite for DB tests.
 4. British English in comments and user-facing strings
 
 ```text
+
+## Seat Framing {#seat-framing}
+
+Each delegated worker is framed as an **amigo seat**, not a generic agent. After the
+contract above is assembled, append the resolved amigo stance as the FINAL section of the prompt:
+
+```bash
+# build worker (the implementer):
+python3 "$CLAUDE_SKILL_DIR/scripts/persona_resolve.py" resolve --seat engineering --render build --root .
+# test worker (the QA author):
+python3 "$CLAUDE_SKILL_DIR/scripts/persona_resolve.py" resolve --seat qa --render build --root .
+```
+
+The resolver picks the most-specific identity: a project-authored practitioner amigo at
+`sdlc-studio/personas/amigos/<seat>.md`, else the skill default (Dani / Sam / Lena), else nothing.
+Four rules govern the framing, none negotiable:
+
+1. **Stance after contract, never through it.** The amigo card is appended *after* Quality Gates as a
+   disposition layer. It never rewrites or dilutes READ THESE FILES FIRST / Files to Create-Modify-DO
+   NOT Modify / Acceptance Criteria / Quality Gates - those concrete sections are most of the build
+   quality.
+2. **Independence is the floor.** The build seat and the reviewing seat are always *separate
+   instances*; the worker never reviews its own diff. The critic verdict records both ids and the
+   conformance gate proves `reviewer != author`.
+3. **`--skip-personas` is byte-equivalent.** With no personas the resolver emits nothing, so the
+   prompt is the bare contract and must still build and pass the same gated executable ACs. If a
+   build only works *with* the persona, the contract was underspecified - fix the contract.
+4. **Green stays the oracle.** The QA seat authors and runs the tests, but pass/fail is `verify_ac`
+   plus the conformance gate, never the seat's judgement.
 
 ## What Makes a Good Prompt {#good-prompt}
 

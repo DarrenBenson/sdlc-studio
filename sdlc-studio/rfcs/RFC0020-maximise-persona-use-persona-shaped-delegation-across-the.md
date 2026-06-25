@@ -1,6 +1,6 @@
 # RFC-0020: Maximise persona use - persona-shaped delegation across the SDLC lifecycle
 
-> **Status:** In Review (consulted Three Amigos 2026-06-25; recommendation revised A -> B)
+> **Status:** Accepted - Option B, delivered v3.1.0 (consulted Three Amigos 2026-06-25)
 > **Date:** 2026-06-25
 > **Created-by:** sdlc-studio file
 

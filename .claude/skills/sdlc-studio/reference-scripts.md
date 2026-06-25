@@ -467,7 +467,11 @@ The lifecycle-conformance gate. `detect_conformance` reports per-story stages (d
 
 ### `critic.py`
 
-The independent-critic verdict ledger. `record` writes a committed verdict to `sdlc-studio/reviews/critic-verdicts.md`; `verdict_for` reads it. Conformance's `critiqued` stage requires a committed APPROVE.
+The independent-critic verdict ledger. `record` writes a committed verdict to `sdlc-studio/reviews/critic-verdicts.md` stamping both the **reviewer and the author** (the authoring seat / delegation id); `verdict_for` reads it. `is_independent` proves `reviewer != author`; `is_pre_gate` flags units closed before the gate (the visible `pre-gate` marker, grandfathered). Conformance's `critiqued` stage requires a committed APPROVE that is independent or pre-gate.
+
+### `persona_resolve.py`
+
+Resolves the worker amigo for a delegated sub-agent, most-specific-first: a project-authored practitioner amigo (`sdlc-studio/personas/amigos/<seat>.md`), else the skill default (Dani / Sam / Lena), else generic. `resolve` prints the framing the orchestrator appends *after* the contract; `--skip-personas` emits nothing (byte-equivalent generic). The stance never overrides the concrete contract, and the worker is always a separate instance from its reviewer.
 
 ### `doc_coverage.py`
 
