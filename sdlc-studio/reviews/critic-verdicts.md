@@ -87,3 +87,5 @@
 | BG0043 | APPROVE | sam-eriksson-qa-review | dani-okafor-eng-build | 2026-06-25 | - |
 | BG0044 | APPROVE | sam-eriksson-qa-review | dani-okafor-eng-build | 2026-06-25 | - |
 | CR0122 | APPROVE | sam-eriksson-qa-review | dani-okafor-eng-build | 2026-06-25 | - |
+| BG0039 | APPROVE | sam-eriksson-qa-review | dani-okafor-eng-build | 2026-06-25 | - |
+| CR0121 | APPROVE | sam-eriksson-qa-review | dani-okafor-eng-build | 2026-06-25 | - |

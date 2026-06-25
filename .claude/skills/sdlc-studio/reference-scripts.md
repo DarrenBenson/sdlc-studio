@@ -465,6 +465,8 @@ Merged per-project configuration reader. Layers `templates/config-defaults.yaml`
 
 The lifecycle-conformance gate. `detect_conformance` reports per-story stages (decomposed -> AC -> verifiable -> verified -> reconciled -> critiqued -> documented) and hard-fails any terminal unit with a stage missing. Repo-global signals (reconciled, documented) apply to every Done unit.
 
+A failure does not just print a count. The gate and `conformance check` name the two whole-batch remedies inline: set `conformance.adopt_after` (forward-only adoption - accepts a bare id `103` or prefixed `US0103`, and ids up to and including the cutoff are exempt), or run `verify_ac` and back-annotate `- **Verified:**` to clear per-unit debt. The output also distinguishes unadopted-discipline debt (most units mass-missing the same stage - pre-existing, forward-only) from scattered per-unit gaps that may be a regression, so a grown-but-accepted count is not mistaken for a fresh breakage. The cutoff is parsed by the shared `sdlc_md.parse_cutoff` (one parser for both gates), which raises a clear error on an unparseable value rather than silently disabling the cutoff.
+
 ### `critic.py`
 
 The independent-critic verdict ledger. `record` writes a committed verdict to `sdlc-studio/reviews/critic-verdicts.md` stamping both the **reviewer and the author** (the authoring seat / delegation id); `verdict_for` reads it. `is_independent` proves `reviewer != author`; `is_pre_gate` flags units closed before the gate (the visible `pre-gate` marker, grandfathered). Conformance's `critiqued` stage requires a committed APPROVE that is independent or pre-gate.

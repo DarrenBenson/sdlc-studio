@@ -90,8 +90,9 @@ class ValidateFileTests(unittest.TestCase):
             rules = {v["rule"] for v in validate.validate_file(p, "story", root)}
             self.assertIn("no-ac", rules)
 
-    def test_no_ac_at_cutoff_still_flagged(self) -> None:
-        # The cutoff is exclusive: the cutoff story itself is still judged.
+    def test_no_ac_at_cutoff_is_exempt(self) -> None:
+        # The cutoff is inclusive (<=): the cutoff story itself is grandfathered, matching
+        # conformance/provenance ("this id and earlier are exempt").
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _write(root, "sdlc-studio/.config.yaml",
@@ -99,7 +100,24 @@ class ValidateFileTests(unittest.TestCase):
             p = _write(root, "sdlc-studio/stories/US0100-x.md",
                        "# X\n\n> **Status:** Draft\n")
             rules = {v["rule"] for v in validate.validate_file(p, "story", root)}
-            self.assertIn("no-ac", rules)
+            self.assertNotIn("no-ac", rules)  # boundary id exempt
+
+    def test_no_ac_bare_int_cutoff_exempts_at_boundary(self) -> None:
+        # BG0039: a bare-integer cutoff used to silently fail here (id_number("103") -> None),
+        # so a pre-cutoff story was wrongly flagged. It must now exempt ids <= the cutoff.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "sdlc-studio/.config.yaml",
+                   "conformance:\n  adopt_after: 103\n")  # bare int
+            at = _write(root, "sdlc-studio/stories/US0103-x.md",
+                        "# X\n\n> **Status:** Draft\n")     # 103 <= 103 -> exempt
+            below = _write(root, "sdlc-studio/stories/US0050-y.md",
+                           "# Y\n\n> **Status:** Draft\n")  # 50 <= 103 -> exempt
+            above = _write(root, "sdlc-studio/stories/US0200-z.md",
+                           "# Z\n\n> **Status:** Draft\n")  # 200 > 103 -> judged
+            self.assertNotIn("no-ac", {v["rule"] for v in validate.validate_file(at, "story", root)})
+            self.assertNotIn("no-ac", {v["rule"] for v in validate.validate_file(below, "story", root)})
+            self.assertIn("no-ac", {v["rule"] for v in validate.validate_file(above, "story", root)})
 
     def test_bad_id_format(self) -> None:
         with tempfile.TemporaryDirectory() as d:

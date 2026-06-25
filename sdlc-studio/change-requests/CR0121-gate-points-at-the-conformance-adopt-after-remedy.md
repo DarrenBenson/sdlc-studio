@@ -1,6 +1,6 @@
 # CR-0121: gate points at the conformance adopt_after remedy instead of burying it in a docstring
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-25
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium

@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The `adopt_after` cutoff is parsed by one shared helper and never silently disabled (BG0039).**
+  `conformance.adopt_after` and `provenance.adopt_after` looked identical in `.config.yaml` but
+  were parsed by two different code paths with two different value formats and two different
+  boundary operators - and the conformance side dropped a bare-integer cutoff with no error
+  (`id_number("103")` returned `None`), leaving the gate red and unexplained. A third reader,
+  `validate`'s no-ac exemption, carried the same silent-fail and the same strict `<`. All three
+  now route through `sdlc_md.parse_cutoff`, which accepts a bare integer (`103`) or a prefixed id
+  (`US0103`, `CR0103`) interchangeably and raises a clear, loud config error on an unparseable
+  value instead of returning `None` and silently judging everything (LL0008). The conformance and
+  validate boundaries are aligned from strict `<` to `<=` to match the name and provenance's
+  existing behaviour: ids up to and including the cutoff are exempt ("this id and earlier are
+  grandfathered"). The repo's own `provenance.adopt_after: 57` keeps exempting ids <= 57 unchanged.
 - **`reconcile apply` no longer reports a status flip it did not persist (BG0043).** A status
   fix the writer could not place in the row (an off-schema/header-less layout it declines to
   guess) was still printed as `set <id>: A -> B` and counted as a changed row, while the index
@@ -34,6 +46,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **A conformance failure names its remedies inline instead of burying them in a docstring (CR0121).**
+  The gate and `conformance check` previously printed a bare `N non-conformant unit(s)`; the two
+  mechanisms that legitimately resolve it - the `conformance.adopt_after` cutoff (forward-only
+  adoption, now stated with the correct value format) and the `verify_ac` backfill path - were
+  documented only in the script's source. The output now names both, and distinguishes
+  unadopted-discipline debt (most units mass-missing the same stage - pre-existing, forward-only)
+  from scattered per-unit gaps that may be a regression from the current change, so a
+  grown-but-accepted count no longer reads as a new breakage. No stale count is hard-coded in the
+  config comment - any count shown is the live computed figure.
 - **`reconcile detect` signposts the fix order and names the file to link (CR0122).** When both
   status drift and count drift are present, the report now states the recommended order - resolve
   the file/index status mismatches first, re-sync the index rows, recompute counts/summaries LAST

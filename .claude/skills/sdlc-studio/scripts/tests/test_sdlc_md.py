@@ -339,5 +339,35 @@ class RowAndHeaderTests(unittest.TestCase):
         self.assertEqual(sdlc_md.table_cells(sdlc_md.join_row(["a | b", "c"])), ["a | b", "c"])
 
 
+class ParseCutoffTests(unittest.TestCase):
+    """One shared adoption-cutoff parser: accepts a bare int OR a prefixed id, returns
+    the numeric id, and fails loud on garbage (BG0039, lesson LL0008)."""
+
+    def test_bare_int_parses(self):
+        self.assertEqual(sdlc_md.parse_cutoff(57), 57)
+        self.assertEqual(sdlc_md.parse_cutoff(103), 103)
+
+    def test_bare_int_string_parses(self):
+        self.assertEqual(sdlc_md.parse_cutoff("57"), 57)
+        self.assertEqual(sdlc_md.parse_cutoff("103"), 103)
+
+    def test_prefixed_id_parses(self):
+        self.assertEqual(sdlc_md.parse_cutoff("US0103"), 103)
+        self.assertEqual(sdlc_md.parse_cutoff("CR0103"), 103)
+        self.assertEqual(sdlc_md.parse_cutoff("US-0103"), 103)
+
+    def test_none_returns_none(self):
+        # An absent cutoff is a legitimate "no cutoff", not an error.
+        self.assertIsNone(sdlc_md.parse_cutoff(None))
+
+    def test_unparseable_raises_clear_error(self):
+        # LL0008: a typo must fail loud, never silently disable the gate (return None).
+        for bad in ("oops", "US", "abc", ""):
+            with self.assertRaises(ValueError) as cm:
+                sdlc_md.parse_cutoff(bad)
+            self.assertIn("adopt_after", str(cm.exception).lower())  # message names the key
+            self.assertIn(str(bad), str(cm.exception))  # message echoes the offending value
+
+
 if __name__ == "__main__":
     unittest.main()

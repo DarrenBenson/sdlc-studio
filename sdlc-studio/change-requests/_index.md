@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 2 |
+| Proposed | 1 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 120 |
+| Complete | 121 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -140,6 +140,6 @@
 | [CR-0118](CR0118-enriched-amigo-template-instantiate-the-three-default-amigos.md) | Enriched amigo template + instantiate the three default amigos (Cooper depth + seat discipline) | Complete | Medium | Improvement | 2026-06-25 | -- |
 | [CR-0119](CR0119-project-upgrade-installs-the-v3-1-amigo-defaults.md) | project upgrade installs the v3.1 amigo defaults into consuming projects | Complete | Medium | Improvement | 2026-06-25 | -- |
 | [CR-0120](CR0120-project-upgrade-enriches-existing-review-seats-in-place.md) | project upgrade enriches existing review seats in place instead of installing a parallel amigo set | Proposed | High | Improvement | 2026-06-25 | -- |
-| [CR-0121](CR0121-gate-points-at-the-conformance-adopt-after-remedy.md) | gate points at the conformance adopt_after remedy instead of burying it in a docstring | Proposed | Medium | Improvement | 2026-06-25 | -- |
+| [CR-0121](CR0121-gate-points-at-the-conformance-adopt-after-remedy.md) | gate points at the conformance adopt_after remedy instead of burying it in a docstring | Complete | Medium | Improvement | 2026-06-25 | -- |
 | [CR-0122](CR0122-reconcile-apply-signposts-fix-order-and-emits-expected.md) | reconcile apply signposts fix-order and emits expected filenames for new index rows | Complete | Medium | Improvement | 2026-06-25 | -- |
 | [CR-0123](CR0123-disambiguate-the-three-upgrade-surfaces-skill-update-project.md) | disambiguate the three upgrade surfaces skill-update project-upgrade and schema upgrade | Complete | Low | Improvement | 2026-06-25 | -- |

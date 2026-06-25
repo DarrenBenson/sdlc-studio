@@ -166,6 +166,47 @@ class GateRealWrapperTests(unittest.TestCase):
             constitution.check_constitution = orig
 
 
+class ConformanceRemedyTests(unittest.TestCase):
+    """CR0121: a conformance failure must name the remedies inline, not print a bare count."""
+
+    def _repo(self, d, *, done_no_anno: int = 0) -> Path:
+        repo = Path(d)
+        sd = repo / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True)
+        for n in range(1, done_no_anno + 1):
+            (sd / f"US{n:04d}-x.md").write_text(
+                f"# US{n:04d}: s\n\n> **Status:** Done\n"
+                "> **Epic:** [EP0001](../epics/EP0001-x.md)\n\n"
+                "## Acceptance Criteria\n\n### AC1: works\n- **Verify:** shell echo ok\n",
+                encoding="utf-8")
+        return repo
+
+    def test_failure_detail_names_adopt_after_and_verify_ac(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, done_no_anno=3)  # 3 Done units, none annotated -> non-conformant
+            detail = gate._conformance(str(repo))["detail"]
+            self.assertIn("conformance.adopt_after", detail)  # the cutoff remedy
+            self.assertIn("verify_ac", detail)                # the backfill remedy
+
+    def test_bulk_miss_reads_as_debt_not_regression(self) -> None:
+        # All Done units mass-miss the same stage -> unadopted discipline (forward-only debt),
+        # not a regression introduced by this change.
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, done_no_anno=4)
+            detail = gate._conformance(str(repo))["detail"]
+            self.assertIn("unadopted", detail.lower())
+
+    def test_clean_repo_no_remedy_noise(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, done_no_anno=0)
+            r = gate._conformance(str(repo))
+            self.assertEqual(r["count"], 0)
+            self.assertNotIn("adopt_after", r["detail"])  # no remedy noise on a green check
+
+
 class GateExitContractTests(unittest.TestCase):
     def test_cmd_gate_maps_ok_to_exit_code(self) -> None:
         import argparse

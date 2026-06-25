@@ -66,9 +66,11 @@ def _add_stamp(text: str) -> tuple[str, bool]:
 
 def check(repo_root: Path | str, types: list[str] | None = None) -> dict:
     root = Path(repo_root)
-    try:
-        cutoff = int(sdlc_md.project_override(root, "provenance.adopt_after", 0) or 0)
-    except (TypeError, ValueError):
+    # Shared cutoff parser: accepts a bare int (57) or a prefixed id (US0057), and raises
+    # loud on a typo rather than coercing to 0 and judging everything (lesson LL0008).
+    # ids <= cutoff are legacy/exempt; None means no cutoff (judge all).
+    cutoff = sdlc_md.parse_cutoff(sdlc_md.project_override(root, "provenance.adopt_after"))
+    if cutoff is None:
         cutoff = 0
     enforce = _truthy(sdlc_md.project_override(root, "provenance.enforce", False))
     findings = []

@@ -23,8 +23,12 @@ from lib import sdlc_md  # noqa: E402
 
 def _conformance(root: str) -> dict:
     import conformance
-    n = conformance.detect_conformance(root)["summary"]["nonconformant"]
-    return {"count": n, "blocking": True, "detail": f"{n} non-conformant unit(s)"}
+    result = conformance.detect_conformance(root)
+    n = result["summary"]["nonconformant"]
+    # Name the remedies inline (the adopt_after cutoff + the verify_ac backfill) and flag
+    # whether the shape reads as pre-existing forward-only debt vs a fresh regression, so a
+    # grown-but-accepted count does not read as a new breakage.
+    return {"count": n, "blocking": True, "detail": conformance.remedy_detail(result)}
 
 
 def _reconcile(root: str) -> dict:

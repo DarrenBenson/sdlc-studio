@@ -163,16 +163,17 @@ def _check_placeholders(text: str, add) -> None:
 
 
 def _ac_exempt(rec: str | None, repo_root: Path | None) -> bool:
-    """A story is exempt from the no-ac check when its id predates the project's
-    forward-only adoption cutoff (`.config.yaml` `conformance.adopt_after`). Mirrors
-    conformance.py so a project that adopts the executable-AC discipline partway
-    does not retroactively fail every already-shipped story."""
+    """A story is exempt from the no-ac check when its id is at or before the project's
+    forward-only adoption cutoff (`.config.yaml` `conformance.adopt_after`). Shares the
+    one cutoff parser (`sdlc_md.parse_cutoff`) and the `<=` boundary with conformance and
+    provenance - a bare int or a prefixed id both parse, and an unparseable value raises
+    loud rather than silently exempting nothing - so a project that adopts the
+    executable-AC discipline partway does not retroactively fail every shipped story."""
     if repo_root is None or rec is None:
         return False
-    cutoff = sdlc_md.project_override(repo_root, "conformance.adopt_after")
-    cutoff_num = sdlc_md.id_number(str(cutoff)) if cutoff is not None else None
+    cutoff_num = sdlc_md.parse_cutoff(sdlc_md.project_override(repo_root, "conformance.adopt_after"))
     rid_num = sdlc_md.id_number(rec)
-    return cutoff_num is not None and rid_num is not None and rid_num < cutoff_num
+    return cutoff_num is not None and rid_num is not None and rid_num <= cutoff_num
 
 
 def collect_targets(args: argparse.Namespace) -> list[tuple[Path, str]]:

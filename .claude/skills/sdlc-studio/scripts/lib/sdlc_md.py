@@ -387,3 +387,30 @@ def id_number(record_id: str) -> int | None:
     """Numeric part of an artifact ID ('US0042' -> 42, 'CR-0007' -> 7)."""
     m = re.search(r"(\d{4})$", record_id)
     return int(m.group(1)) if m else None
+
+
+def parse_cutoff(value) -> int | None:
+    """The one adoption-cutoff parser shared by every gate (conformance, provenance).
+
+    Accepts both spellings the operator might write in `.config.yaml` `*.adopt_after`:
+    a bare integer (`57`, `103`, or the string `"57"`) AND a prefixed id (`US0103`,
+    `CR0103`, `US-0103`). Returns the numeric id. `None` means no cutoff is set (a
+    legitimate "judge everything"). An unparseable value raises ValueError rather than
+    returning None - a config typo must fail loud, never silently disable the gate
+    (lesson LL0008). The cutoff is the highest id treated as legacy: ids <= it are exempt.
+    """
+    if value is None:
+        return None
+    if isinstance(value, bool):  # bool is an int subclass; a YAML true/false is not a cutoff
+        raise ValueError(f"adopt_after cutoff is not a number or id: {value!r}")
+    if isinstance(value, int):
+        return value
+    s = str(value).strip()
+    if re.fullmatch(r"\d+", s):  # bare integer, possibly as a string
+        return int(s)
+    n = id_number(s)  # prefixed id (US0103, CR-0103)
+    if n is not None:
+        return n
+    raise ValueError(
+        f"adopt_after cutoff is not a number or id: {value!r} - "
+        "use a bare integer (103) or a prefixed id (US0103)")

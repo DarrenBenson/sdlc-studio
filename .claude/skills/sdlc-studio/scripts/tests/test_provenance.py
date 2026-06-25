@@ -107,6 +107,40 @@ class CheckTests(unittest.TestCase):
             ids = [f["id"] for f in prov.check(repo, ["story"])["findings"]]
             self.assertEqual(ids, ["US0009"])
 
+    def test_adopt_after_prefixed_id_exempts_legacy(self) -> None:
+        # BG0039: the shared parser now accepts a prefixed id on provenance too,
+        # matching conformance - US0007 exempts ids <= 7.
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            (repo / "sdlc-studio").mkdir(parents=True)
+            (repo / "sdlc-studio" / ".config.yaml").write_text(
+                "provenance:\n  adopt_after: US0007\n", encoding="utf-8")
+            _story(repo, "US0005-x.md", UNSTAMPED)   # 5 <= 7 -> exempt
+            _story(repo, "US0009-z.md", UNSTAMPED.replace("US0005", "US0009"))  # 9 > 7 -> checked
+            ids = [f["id"] for f in prov.check(repo, ["story"])["findings"]]
+            self.assertEqual(ids, ["US0009"])
+
+    def test_boundary_id_is_exempt(self) -> None:
+        # BG0039: <= boundary - the cutoff id itself is exempt.
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            (repo / "sdlc-studio").mkdir(parents=True)
+            (repo / "sdlc-studio" / ".config.yaml").write_text(
+                "provenance:\n  adopt_after: 5\n", encoding="utf-8")
+            _story(repo, "US0005-x.md", UNSTAMPED)   # 5 <= 5 -> exempt
+            self.assertEqual(prov.check(repo, ["story"])["findings"], [])
+
+    def test_unparseable_cutoff_raises_not_silent(self) -> None:
+        # LL0008: a typo'd cutoff must fail loud, not coerce to 0 and judge everything.
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            (repo / "sdlc-studio").mkdir(parents=True)
+            (repo / "sdlc-studio" / ".config.yaml").write_text(
+                "provenance:\n  adopt_after: oops\n", encoding="utf-8")
+            _story(repo, "US0005-x.md", UNSTAMPED)
+            with self.assertRaises(ValueError):
+                prov.check(repo, ["story"])
+
     def test_enforce_makes_blocking(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)

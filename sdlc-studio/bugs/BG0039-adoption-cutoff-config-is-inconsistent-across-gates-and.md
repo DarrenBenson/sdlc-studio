@@ -1,6 +1,6 @@
 # BG0039: adoption cutoff config is inconsistent across gates and silently fails
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-06-25
 > **Created-by:** sdlc-studio new
 > **Severity:** high

@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 3 |
+| Open | 2 |
 | In Progress | 0 |
-| Fixed | 41 |
+| Fixed | 42 |
 | Verified | 0 |
 | Closed | 0 |
 | Won't Fix | 0 |
@@ -57,7 +57,7 @@
 | [BG0036](BG0036-init-creates-sdlc-studio-local-but-no-gitignore.md) | init creates sdlc-studio/.local but no .gitignore, so consuming projects commit runtime caches/reports | Fixed | medium | 2026-06-24 | 2026-06-24 |
 | [BG0037](BG0037-verify-ac-run-story-overwrites-the-whole-verify.md) | verify_ac run --story overwrites the whole verify-report.json instead of merging, breaking the Done-gate for batch sprints | Fixed | high | 2026-06-24 | 2026-06-24 |
 | [BG0038](BG0038-integrity-requires-a-story-link-on-test-specs.md) | integrity requires a Story link on test-specs, breaking epic-scoped test-specs | Fixed | high | 2026-06-25 | 2026-06-25 |
-| [BG0039](BG0039-adoption-cutoff-config-is-inconsistent-across-gates-and.md) | adoption cutoff config is inconsistent across gates and silently fails | Open | high | 2026-06-25 | 2026-06-25 |
+| [BG0039](BG0039-adoption-cutoff-config-is-inconsistent-across-gates-and.md) | adoption cutoff config is inconsistent across gates and silently fails | Fixed | high | 2026-06-25 | 2026-06-25 |
 | [BG0040](BG0040-validate-personas-reports-well-formed-when-personas-are.md) | validate personas reports well-formed when personas are nested | Fixed | medium | 2026-06-25 | 2026-06-25 |
 | [BG0041](BG0041-old-persona-model-detector-is-name-based-and.md) | old-persona-model detector is name-based and its remediation hint misdirects | Open | medium | 2026-06-25 | 2026-06-25 |
 | [BG0042](BG0042-persona-resolve-ignores-existing-review-seats-so-authored.md) | persona_resolve ignores existing review seats so authored seats are shadowed by generic defaults | Open | high | 2026-06-25 | 2026-06-25 |

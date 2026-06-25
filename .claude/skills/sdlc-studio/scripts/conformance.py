@@ -50,10 +50,11 @@ def detect_conformance(repo_root: Path | str) -> dict:
     root = Path(repo_root)
     vocab = sdlc_md.status_vocab("story", root)
     # Adoption cutoff: a project that turns the gate on partway can set
-    # `conformance.adopt_after: US0360` in .config.yaml so units before that id are
-    # exempt (reported, not judged) - the discipline applies forward, not retroactively.
-    cutoff = sdlc_md.project_override(root, "conformance.adopt_after")
-    cutoff_num = sdlc_md.id_number(str(cutoff)) if cutoff is not None else None
+    # `conformance.adopt_after: US0360` (or the bare `360`) in .config.yaml so units up
+    # to and including that id are exempt (reported, not judged) - the discipline applies
+    # forward, not retroactively. parse_cutoff accepts both spellings and raises loud on a
+    # typo rather than silently dropping the cutoff.
+    cutoff_num = sdlc_md.parse_cutoff(sdlc_md.project_override(root, "conformance.adopt_after"))
     # A story is "reconciled" only if its index row matches and exists: a drifted
     # status (status-mismatch) or a story absent from the index (missing-row) both
     # fail it, and a missing index file fails every story.
@@ -122,7 +123,7 @@ def detect_conformance(repo_root: Path | str) -> dict:
         if status == "Done":
             required += ["verified", "reconciled", "critiqued", "documented"]
         rid_num = sdlc_md.id_number(rid)
-        exempt = cutoff_num is not None and rid_num is not None and rid_num < cutoff_num
+        exempt = cutoff_num is not None and rid_num is not None and rid_num <= cutoff_num
         missing = [] if exempt else [s for s in required if not stages[s]]
         conformant = not missing
         ok += int(conformant and not exempt)
@@ -147,6 +148,47 @@ def detect_conformance(repo_root: Path | str) -> dict:
     }
 
 
+# The two mechanisms that legitimately resolve a conformance failure, named inline at the
+# gate so an operator does not have to already know they exist. Not the remediation
+# per-stage hints (those are per-unit); these are the two whole-batch levers.
+REMEDY_CUTOFF = ("set `conformance.adopt_after` in sdlc-studio/.config.yaml to grandfather "
+                 "pre-adoption ids forward-only (accepts a bare id `103` or prefixed `US0103`; "
+                 "ids <= it are exempt)")
+REMEDY_BACKFILL = ("run `verify_ac` and back-annotate `- **Verified:**` to clear the "
+                   "per-unit debt")
+
+
+def _bulk_missed(result: dict) -> list[str]:
+    """Stages that the bulk of judged units miss - the signal that this is an unadopted
+    discipline / template shape (forward-only debt), not per-unit regressions. Mirrors the
+    note in cmd_check so the gate and the CLI agree."""
+    s = result["summary"]
+    judged = s["total"] - s.get("exempt", 0)
+    tally: dict[str, int] = {}
+    for u in result["units"]:
+        if not u["conformant"]:
+            for m in u["missing"]:
+                tally[m] = tally.get(m, 0) + 1
+    return sorted(k for k, c in tally.items() if judged >= 3 and c >= 0.8 * judged)
+
+
+def remedy_detail(result: dict) -> str:
+    """Gate-facing one-liner for a conformance failure: the bare count PLUS the two remedies
+    (the adopt_after cutoff and the verify_ac backfill), and whether the shape reads as
+    pre-existing unadopted-discipline debt (forward-only) rather than a fresh regression.
+    Returns just the count when nothing is non-conformant."""
+    n = result["summary"]["nonconformant"]
+    if not n:
+        return f"{n} non-conformant unit(s)"
+    bulk = _bulk_missed(result)
+    if bulk:
+        nature = (f"most miss {', '.join(bulk)} - likely unadopted-discipline debt "
+                  "(pre-existing, forward-only), not a regression from this change")
+    else:
+        nature = "scattered per-unit gaps - check whether this change regressed them"
+    return f"{n} non-conformant unit(s): {nature}. Remedies: {REMEDY_CUTOFF}; or {REMEDY_BACKFILL}"
+
+
 def cmd_check(args: argparse.Namespace) -> int:
     """Run the conformance check; exit non-zero if any unit is non-conformant."""
     result = detect_conformance(args.root)
@@ -167,11 +209,13 @@ def cmd_check(args: argparse.Namespace) -> int:
             print("Guidance:")
             for h in hints:
                 print(f"  - {h}")
-            judged = s["total"] - s.get("exempt", 0)
-            bulk = sorted(k for k, c in tally.items() if judged >= 3 and c >= 0.8 * judged)
+            bulk = _bulk_missed(result)
             if bulk:
                 print(f"  note: most units miss {', '.join(bulk)} - likely an unadopted "
                       "discipline or template shape, not per-unit drift; adopt it or scope conformance.")
+            # The two whole-batch levers, named so the operator need not already know them.
+            print(f"  remedy: {REMEDY_CUTOFF}")
+            print(f"  remedy: {REMEDY_BACKFILL}")
     return 1 if result["summary"]["nonconformant"] else 0
 
 

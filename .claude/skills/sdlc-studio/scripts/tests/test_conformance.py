@@ -302,6 +302,35 @@ class AdoptCutoffTests(unittest.TestCase):
             args = mod.build_parser().parse_args(["check", "--root", str(root)])
             self.assertEqual(args.func(args), 0)  # nothing judged-and-failing
 
+    def test_bare_int_cutoff_now_exempts(self) -> None:
+        # BG0039: a bare integer cutoff was silently dropped (id_number("5") -> None);
+        # it must now exempt pre-cutoff stories exactly as the prefixed form does.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, epic=False, ac=False)
+            _story(root, 10, epic=False, ac=False)
+            self._config(root, "conformance:\n  adopt_after: 5\n")  # bare int
+            units = _units(root)
+            self.assertTrue(units["US0001"]["exempt"])
+            self.assertFalse(units["US0010"]["exempt"])
+
+    def test_boundary_id_itself_is_exempt(self) -> None:
+        # BG0039: <= alignment - the cutoff id itself is grandfathered, not judged.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 5, epic=False, ac=False)
+            self._config(root, "conformance:\n  adopt_after: 5\n")
+            self.assertTrue(_units(root)["US0005"]["exempt"])
+
+    def test_unparseable_cutoff_raises_not_silent(self) -> None:
+        # LL0008: a typo'd cutoff must fail loud, NOT silently judge everything.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, epic=False, ac=False)
+            self._config(root, "conformance:\n  adopt_after: oops\n")
+            with self.assertRaises(ValueError):
+                _load().detect_conformance(root)
+
 
 if __name__ == "__main__":
     unittest.main()
