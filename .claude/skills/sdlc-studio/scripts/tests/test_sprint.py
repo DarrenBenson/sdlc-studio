@@ -113,6 +113,88 @@ class WaveTests(unittest.TestCase):
             self.assertIsNone(_load().build_plan(root, "story", "Draft", order="manual")["waves"])
 
 
+class NoDepsHintTests(unittest.TestCase):
+    """CR0114: a flat single wave with no declared deps must be flagged, not mistaken
+    for 'no dependencies exist'."""
+
+    def _story(self, root, num, depends=None, status="Draft"):
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        dep = f"> **Depends on:** {depends}\n" if depends else ""
+        (d / f"US{num:04d}-x.md").write_text(
+            f"# US{num:04d}: s\n\n> **Status:** {status}\n{dep}", encoding="utf-8")
+
+    def test_plan_flags_no_declared_deps(self) -> None:
+        # >1 unit, no Depends on anywhere -> deps_declared False, one flat parallel wave.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, 1); self._story(root, 2); self._story(root, 3)
+            plan = _load().build_plan(root, "story", "Draft")
+            self.assertFalse(plan["deps_declared"])
+            self.assertEqual(len(plan["waves"]), 1)            # everything in one flat wave
+            self.assertEqual(len(plan["waves"][0]), 3)
+
+    def test_declared_deps_not_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, 1); self._story(root, 2, depends="US0001")
+            plan = _load().build_plan(root, "story", "Draft")
+            self.assertTrue(plan["deps_declared"])
+            self.assertEqual(len(plan["waves"]), 2)            # real levels
+
+    def test_single_unit_not_flagged(self) -> None:
+        # A lone unit is genuinely parallel-by-default; no hint needed.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, 1)
+            self.assertFalse(_load().build_plan(root, "story", "Draft")["deps_declared"])
+
+    def test_manual_order_omits_deps_signal(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, 1); self._story(root, 2)
+            plan = _load().build_plan(root, "story", "Draft", order="manual")
+            self.assertIsNone(plan["deps_declared"])
+
+    def test_cli_prints_no_deps_hint(self) -> None:
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, 1); self._story(root, 2)
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                rc = _load().main(["plan", "--stories", "Draft", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            out = buf.getvalue()
+            self.assertIn("Depends on", out)        # the hint names the missing field
+            self.assertIn("parallel", out.lower())
+
+    def test_cli_no_hint_for_single_unit(self) -> None:
+        # A lone unit is parallel-by-default; the hint targets a >1-unit flat batch only
+        # (AC2: "a batch of >1 story ... a flat single wave"). The CLI must suppress it here.
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, 1)
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                _load().main(["plan", "--stories", "Draft", "--root", str(root)])
+            self.assertNotIn("no `Depends on:` is declared", buf.getvalue())
+
+    def test_cli_no_hint_when_deps_declared(self) -> None:
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, 1); self._story(root, 2, depends="US0001")
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                _load().main(["plan", "--stories", "Draft", "--root", str(root)])
+            self.assertNotIn("no `Depends on:` is declared", buf.getvalue())
+
+
 class SelectTests(unittest.TestCase):
     def test_selects_by_status(self) -> None:
         with tempfile.TemporaryDirectory() as d:

@@ -70,6 +70,67 @@ class AcScopeTests(unittest.TestCase):
                    "### AC1\n- **Then** data will sync across devices\n")
             self.assertEqual([f for f in ac_scope.check(root) if f["keyword"] == "sync"], [])
 
+    def test_shared_domain_vocabulary_suppressed(self) -> None:
+        # "list" is distinctive to EP0002's title, but it is shared domain vocabulary:
+        # stories across many epics legitimately display lists. High document frequency
+        # across distinct epics -> suppress, do not cry wolf. CR0113.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _epic(root, "EP0002", "List Management")
+            _epic(root, "EP0005", "Web Client")
+            # the keyword turns up in stories owned by three distinct other epics
+            _story(root, "US0002", "EP0005",
+                   "### AC1\n- **Then** the web client renders the list\n")
+            _story(root, "US0003", "EP0001",
+                   "### AC1\n- **Then** the API returns the list\n")
+            _story(root, "US0004", "EP0003",
+                   "### AC1\n- **Then** a saved list appears\n")
+            self.assertEqual([f for f in ac_scope.check(root) if f["keyword"] == "list"], [])
+
+    def test_concentrated_cross_epic_keyword_still_flags(self) -> None:
+        # the same threshold must not blunt a genuine, concentrated reference: "accounts"
+        # appears in just one other epic's stories -> still a real cross-epic leak. CR0113.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _epic(root, "EP0002", "List Management")
+            _epic(root, "EP0005", "Web Client")
+            _epic(root, "EP0006", "Accounts & Cross-Device Sync")
+            # "list" is shared across three distinct epics -> suppressed
+            _story(root, "US0002", "EP0005",
+                   "### AC1\n- **Then** the web client renders the list\n")
+            _story(root, "US0003", "EP0001",
+                   "### AC1\n- **Then** the API returns the list\n")
+            _story(root, "US0004", "EP0003",
+                   "### AC1\n- **Then** a saved list appears\n")
+            # "accounts" reaches in from exactly one EP0005 story -> still flags
+            _story(root, "US0005", "EP0005",
+                   "### AC1\n- **Then** a valid account token resolves a userId\n")
+            findings = ac_scope.check(root)
+            self.assertEqual([f for f in findings if f["keyword"] == "list"], [])
+            self.assertTrue(any(f["keyword"] == "accounts" and f["owner_epic"] == "EP0006"
+                                for f in findings))
+
+    def test_two_distinct_epics_below_threshold_still_flags(self) -> None:
+        # Boundary, pinned to the canonical AC ("across stories of MANY epics"): a keyword
+        # reaching in from exactly TWO distinct non-owner epics is still concentrated leakage,
+        # not shared domain vocabulary, so it must still flag. The threshold is 3 by design;
+        # this fails if the constant drifts down to 2 or the comparison loosens to <=. CR0113.
+        # Intentionally NOT parameterised on ac_scope._SHARED_EPIC_THRESHOLD - that would track
+        # the very value under test and never catch its drift (a tautology).
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _epic(root, "EP0002", "List Management")
+            # "list" (owned by EP0002) named by stories in exactly two distinct other epics
+            _story(root, "US0003", "EP0001",
+                   "### AC1\n- **Then** the API returns the list\n")
+            _story(root, "US0004", "EP0003",
+                   "### AC1\n- **Then** a saved list appears\n")
+            findings = ac_scope.check(root)
+            flagged = [f for f in findings if f["keyword"] == "list"]
+            # two distinct epics < threshold (3) -> not suppressed -> both stories flag "list"
+            self.assertEqual(len(flagged), 2)
+            self.assertTrue(all(f["owner_epic"] == "EP0002" for f in flagged))
+
 
 if __name__ == "__main__":
     unittest.main()

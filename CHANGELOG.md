@@ -9,12 +9,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **sprint plan flags an undeclared dependency graph so its waves are real (CR0114, field
+  report):** the `--goal design` rung now establishes inter-story `Depends on:` as part of
+  grooming Draft -> Ready, so a designed backlog carries the dependency graph the planner needs.
+  When `plan` selects a batch of >1 unit with no declared in-batch dependency, it prints a hint
+  that all units are parallel because no `Depends on:` is declared - so a flat single wave is not
+  mistaken for "no dependencies exist", the prose-derived sequencing the waves feature exists to
+  remove (scripts/sprint.py, reference-sprint.md).
 - **the Three Amigos are now a rich, instantiated engineering team (CR0118, RFC0020 D4):** an
   enriched amigo card (`templates/personas/amigo-template.md`) fuses Cooper goal-directed depth
   (Who They Are, Craft Goals, Proficiency, Scenario) with seat discipline (Non-Negotiables, Shadow,
   Tensions) and a dual render (build/author vs review, separate instances). Three default amigos
   ship instantiated - Engineering (Dani), QA (Sam), Product (Lena) - editable per project; a richer
   project-authored practitioner amigo overrides a default. Documented in reference-workflow-personas.md.
+- **the test-spec AC Coverage Matrix scaffolds from an epic's stories (CR0115, field report):**
+  `verify_ac` can emit a matrix pre-filled with one row per AC across an epic's stories, so the
+  design rung no longer hand-extracts dozens of ACs and no AC is silently omitted - the model fills
+  the Test Cases column, ts-check validates completeness (scripts/verify_ac.py).
+- **mechanical author != reviewer independence gate (CR0117, RFC0020):** `critic.py record` now
+  stamps both the reviewer and the author (the authoring seat / delegation id); the conformance
+  gate hard-fails any Done unit whose critic verdict reviewer id equals its author id, or that has
+  no recorded author - a self-review never clears Done, and the floor holds for generic workers too,
+  not only persona-framed ones. Units closed before the gate carry a visible `pre-gate` marker and
+  are grandfathered (one-time migration); the policy is reconciled in reference-sprint.md
+  (independence is the floor for every risk tier, only the review depth scales).
+- **project upgrade installs the amigo defaults (CR0119):** `project upgrade` installs the three
+  default amigo cards into a consuming project's `sdlc-studio/personas/amigos/` when absent
+  (idempotent, never overwriting a customised amigo) and reports the v3.1 persona enrichment, so
+  upgrading projects gain the editable engineering team (scripts/project_upgrade.py, reference-upgrade.md).
+
+### Fixed
+
+- **ac_scope no longer cries wolf on shared domain vocabulary (CR0113, field report):** the
+  cross-epic AC lint flagged any story whose AC named a keyword distinctive to another epic's
+  title, but a noun like "list" or "item" appears in the ACs of stories across many epics - it is
+  shared domain vocabulary, not epic-specific leakage. ac_scope now measures document frequency
+  across distinct epics and suppresses a keyword that spreads beyond a threshold, so a genuine,
+  concentrated cross-epic reference still flags while the noise that trained operators to ignore
+  the advisory is gone (scripts/ac_scope.py).
+- **integrity no longer requires a Story link on test-specs (BG0038, field report):** an
+  epic-scoped test-spec carries an Epic link and covers a whole epic with no single Story field
+  (reference-test-spec.md#epic-scoped-coverage), yet `integrity.py` listed both Epic and Story as
+  required and flagged the very artifact the skill mandates at epic scope. Story is dropped from the
+  test-spec required-link set; Epic stays required, so a test-spec with neither still flags.
 
 ## [3.0.1] - 2026-06-24
 

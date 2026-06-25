@@ -682,6 +682,52 @@ def ts_check(spec_path: Path | str, verify_report: Path | str | None = None) -> 
     return issues
 
 
+def epic_stories(repo_root: Path | str, epic_id: str) -> list[Path]:
+    """Story files whose `Epic:` field links to `epic_id`, sorted by id. The same epic
+    membership rule `epic_test_spec_check` uses for test-specs, applied to stories - so the
+    matrix scaffold covers exactly the stories that belong to the epic, no more, no less."""
+    root = Path(repo_root)
+    eid = sdlc_md.norm_id(epic_id)
+    out: list[Path] = []
+    for p in sdlc_md.artifact_files("story", root):
+        ef = sdlc_md.extract_field(p.read_text(encoding="utf-8"), "Epic") or ""
+        m = sdlc_md.ID_SEARCH_RE.search(ef)
+        if m and sdlc_md.norm_id(m.group(0)) == eid:
+            out.append(p)
+    return out
+
+
+def scaffold_ac_matrix(repo_root: Path | str, epic_id: str) -> str:
+    """Render an AC Coverage Matrix pre-filled with one row per AC across the epic's stories.
+
+    Every AC in every story of the epic becomes exactly one row (Story, AC id, Description),
+    with Test Cases and Status left blank for the model to map - determinism in the script,
+    judgement in the model. The header matches the canonical matrix
+    (`reference-test-spec.md`) so `ts-check` validates it unchanged once the model fills the
+    two blank columns. This removes the manual AC hand-extraction the design rung otherwise
+    requires (the missed-AC coverage gap the matrix exists to prevent).
+    """
+    header = ["Story", "AC", "Description", "Test Cases", "Status"]
+    rows = [sdlc_md.join_row(header),
+            sdlc_md.join_row(["---"] * len(header))]
+    for story in epic_stories(repo_root, epic_id):
+        story_id = sdlc_md.extract_record_id(story.stem) or story.stem
+        for block in parse_story(story.read_text(encoding="utf-8")):
+            rows.append(sdlc_md.join_row([story_id, block.ac_id, block.title, "", ""]))
+    return "### AC Coverage Matrix\n\n" + "\n".join(rows) + "\n"
+
+
+def cmd_scaffold(args: argparse.Namespace) -> int:
+    """Emit the pre-filled AC Coverage Matrix for an epic to stdout (or a file)."""
+    matrix = scaffold_ac_matrix(args.root, args.epic)
+    if getattr(args, "out", None):
+        Path(args.out).write_text(matrix, encoding="utf-8")
+        print(f"wrote {args.out}")
+    else:
+        print(matrix, end="")
+    return 0
+
+
 def epic_test_spec_check(repo_root: Path | str, epic_id: str) -> dict:
     """Hard epic-scope test-spec requirement: an epic must have a test-spec (linked by
     its `Epic:` field) whose AC Coverage Matrix passes `ts-check`. Returns {epic, ok, specs,
@@ -829,6 +875,13 @@ def build_parser() -> argparse.ArgumentParser:
     et.add_argument("--root", default=".")
     et.add_argument("--format", choices=("text", "json"), default="text")
     et.set_defaults(func=cmd_epic_ts)
+
+    sc = sub.add_parser("scaffold-matrix",
+                        help="Emit an epic's AC Coverage Matrix pre-filled (one row per AC)")
+    sc.add_argument("--epic", required=True, help="Epic id, e.g. EP0001")
+    sc.add_argument("--root", default=".")
+    sc.add_argument("--out", help="Write the matrix here instead of stdout")
+    sc.set_defaults(func=cmd_scaffold)
 
     rep = sub.add_parser("report", help="Print the latest verification report")
     rep.add_argument(

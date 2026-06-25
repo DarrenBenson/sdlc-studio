@@ -226,6 +226,7 @@ def build_plan(repo_root: Path | str, kind: str, status: str, order: str = "prio
     WAVES - the parallelisable levels operators otherwise hand-derive."""
     batch = select_batch(repo_root, kind, status, order, skip_personas=skip_personas, epics=epics)
     waves = None
+    deps_declared: bool | None = None  # None for manual order (no wave computation)
     if order in ("priority", "wsjf") and batch:
         deps: dict[str, set] = {}
         for it in batch:
@@ -235,6 +236,9 @@ def build_plan(repo_root: Path | str, kind: str, status: str, order: str = "prio
             deps[sdlc_md.norm_id(it["id"])] = _dep_ids(dval)
         # batch already passed _topo_order in select_batch, so the graph is acyclic here.
         waves = [[it["id"] for it in w] for w in _topo_waves(batch, deps)]
+        # whether ANY in-batch dependency edge was declared - a flat single wave with no
+        # edges is parallel because no one declared a `Depends on:`, not because none exist.
+        deps_declared = any(deps[k] & set(deps) for k in deps)
     return {
         "generated_at": sdlc_md.now_iso8601(),
         "kind": kind,
@@ -243,6 +247,7 @@ def build_plan(repo_root: Path | str, kind: str, status: str, order: str = "prio
         "batch": batch,
         "count": len(batch),
         "waves": waves,
+        "deps_declared": deps_declared,
     }
 
 
@@ -320,6 +325,12 @@ def cmd_plan(args: argparse.Namespace) -> int:
             for i, wave in enumerate(data["waves"], 1):
                 par = " (parallel)" if len(wave) > 1 else ""
                 print(f"  wave {i}{par}: {', '.join(wave)}")
+            # a flat single wave of >1 unit with no declared deps is not 'no dependencies
+            # exist' - it is undeclared. Flag it so the operator grooms `Depends on:` (the
+            # --goal design rung) rather than treating the flat list as the real sequence.
+            if data.get("deps_declared") is False and data["count"] > 1:
+                print("  hint: all units are parallel because no `Depends on:` is declared "
+                      "- groom inter-story dependencies (the --goal design rung) for real waves")
         else:
             for b in data["batch"]:
                 print(f"  {b['id']} [{b['priority']}]")

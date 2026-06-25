@@ -70,12 +70,14 @@ class StageTests(unittest.TestCase):
             self.assertIn("verified", u["missing"])
 
 
-def _record_verdict(root, unit, verdict="approve"):
+def _record_verdict(root, unit, verdict="approve", reviewer="independent-critic", author="builder"):
     spec = importlib.util.spec_from_file_location("critic", SCRIPT.parent / "critic.py")
     m = importlib.util.module_from_spec(spec)
     sys.modules["critic"] = m
     spec.loader.exec_module(m)
-    m.record_verdict(root, unit, verdict)
+    # Independence floor (CR0117): the critic stage needs author != reviewer, so the helper
+    # records distinct ids by default; self-review/missing-author cases are covered in test_critic.
+    m.record_verdict(root, unit, verdict, reviewer=reviewer, author=author)
 
 
 class SpecifiedStageTests(unittest.TestCase):
@@ -171,6 +173,31 @@ class CritiqueStageTests(unittest.TestCase):
             _record_verdict(root, "US0001", "reject")
             u = _units(root)["US0001"]
             self.assertIn("critiqued", u["missing"])  # unresolved REJECT
+
+    def test_new_self_review_not_conformant(self) -> None:
+        # CR0117: a NEW self-review (reviewer == author, no grandfather) never clears.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, status="Done", verified="yes")
+            _record_verdict(root, "US0001", "approve", reviewer="dani", author="dani")
+            u = _units(root)["US0001"]
+            self.assertIn("critiqued", u["missing"])  # self-review blocked
+
+    def test_pre_gate_unit_is_grandfathered(self) -> None:
+        # A unit closed before the gate (PRE_GATE marker, prior risk-scaled policy)
+        # is grandfathered conformant even though it is not real independence.
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "critic", Path(__file__).resolve().parent.parent / "critic.py")
+        critic = importlib.util.module_from_spec(spec); spec.loader.exec_module(critic)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, status="Done", verified="yes")
+            _record_verdict(root, "US0001", "approve",
+                            reviewer="self-review (light, docs)", author=critic.PRE_GATE)
+            u = _units(root)["US0001"]
+            self.assertNotIn("critiqued", u["missing"])  # grandfathered
+            self.assertTrue(u["stages"]["critiqued"])
 
 
 class ReconciledStageTests(unittest.TestCase):

@@ -28,7 +28,9 @@ REQUIRED_LINKS = {
     "story": ["Epic"],
     "plan": ["Epic", "Story"],
     "bug": ["Epic", "Story"],
-    "test-spec": ["Epic", "Story"],
+    # Epic only: a test-spec always carries an Epic but may be story- or epic-scoped
+    # (reference-test-spec.md#epic-scoped-coverage), so Story cannot be required. BG0038.
+    "test-spec": ["Epic"],
     "workflow": ["Epic", "Story"],
 }
 

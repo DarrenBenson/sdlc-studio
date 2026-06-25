@@ -109,6 +109,66 @@ class DanglingTests(unittest.TestCase):
             self.assertEqual(mod.main(["check", "--root", str(root)]), 0)  # no errors
 
 
+def _testspec(root, num, status="Draft", epic="EP0001", story=None):
+    d = root / "sdlc-studio" / "test-specs"
+    d.mkdir(parents=True, exist_ok=True)
+    body = f"# TS{num:04d}: t\n\n> **Status:** {status}\n"
+    if epic is not None:
+        body += f"> **Epic:** [link](../epics/{epic}-x.md)\n"
+    if story is not None:
+        body += f"> **Story:** [link](../stories/{story}-x.md)\n"
+    (d / f"TS{num:04d}-x.md").write_text(body, encoding="utf-8")
+
+
+class TestSpecLinkTests(unittest.TestCase):
+    def test_epic_scoped_testspec_no_story_passes(self) -> None:
+        # An epic-scoped test-spec carries an Epic link but no single Story field
+        # (reference-test-spec.md#epic-scoped-coverage). Story must not be required,
+        # so this must not raise a missing-required error.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _epic(root, 1)
+            _testspec(root, 5, status="Active", epic="EP0001", story=None)
+            mod = _load()
+            res = mod.detect_integrity(root)
+            errs = [f for f in res["findings"] if f["severity"] == "error" and f["id"] == "TS0005"]
+            self.assertEqual(errs, [])
+            self.assertEqual(res["summary"]["errors"], 0)
+            self.assertEqual(mod.main(["check", "--root", str(root)]), 0)
+
+    def test_testspec_missing_epic_still_errors(self) -> None:
+        # Epic stays required: an active test-spec with neither Epic nor Story
+        # still flags a missing-required error on Epic.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _testspec(root, 6, status="Active", epic=None, story=None)
+            mod = _load()
+            res = mod.detect_integrity(root)
+            errs = [f for f in res["findings"] if f["severity"] == "error" and f["id"] == "TS0006"]
+            self.assertEqual(len(errs), 1)
+            self.assertEqual(errs[0]["kind"], "missing-required")
+            self.assertEqual(errs[0]["field"], "Epic")
+            self.assertEqual(mod.main(["check", "--root", str(root)]), 1)
+
+    def test_story_scoped_testspec_still_passes(self) -> None:
+        # The other half of the scope contract (reference-test-spec.md, Story-level
+        # row): a story-scoped test-spec with both Epic and a resolvable Story link
+        # passes clean - no missing-required, no dangling. Guards against a fix that
+        # over-corrects by ignoring test-specs, and locks that Epic still resolves
+        # through the census for this type.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _epic(root, 1)
+            _story(root, 7, epic="EP0001")
+            _testspec(root, 7, status="Active", epic="EP0001", story="US0007")
+            mod = _load()
+            res = mod.detect_integrity(root)
+            ts_findings = [f for f in res["findings"] if f["id"] == "TS0007"]
+            self.assertEqual(ts_findings, [])
+            self.assertEqual(res["summary"]["errors"], 0)
+            self.assertEqual(mod.main(["check", "--root", str(root)]), 0)
+
+
 class BugLinkTests(unittest.TestCase):
     def test_open_bug_missing_link_is_advisory(self) -> None:
         # A bug's Epic/Story link is recommended, not required: missing -> advisory

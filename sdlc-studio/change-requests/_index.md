@@ -6,15 +6,15 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 5 |
+| Proposed | 1 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 112 |
+| Complete | 117 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **118** |
+| **Total** | **119** |
 
 ## All Changes
 
@@ -132,9 +132,10 @@
 | [CR-0110](CR0110-author-the-test-spec-ac-coverage-matrix-at.md) | Author the test-spec AC Coverage Matrix at --goal design (shift the AC-to-test bridge left) | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0111](CR0111-verify-ac-batch-mode-run-the-test-runner.md) | verify_ac batch mode - run the test runner once, not a cold start per AC | Complete | Medium | Improvement | 2026-06-24 | -- |
 | [CR-0112](CR0112-strip-internal-provenance-tags-cr-bg-rfc-from.md) | Strip internal provenance tags (CR/BG/RFC) from consuming-facing docs + shipped code | Complete | Medium | Improvement | 2026-06-24 | -- |
-| [CR-0113](CR0113-ac-scope-cross-epic-ac-false-positives-on.md) | ac_scope / cross-epic-ac false-positives on shared domain vocabulary (cry-wolf in the audit) | Proposed | High | Improvement | 2026-06-25 | -- |
-| [CR-0114](CR0114-establish-inter-story-depends-on-at-design-so.md) | Establish inter-story Depends on at design so sprint-plan waves are real, not flat | Proposed | Medium | Improvement | 2026-06-25 | -- |
-| [CR-0115](CR0115-scaffold-the-test-spec-ac-coverage-matrix-from.md) | Scaffold the test-spec AC Coverage Matrix from an epic stories ACs at design time | Proposed | Medium | Improvement | 2026-06-25 | -- |
+| [CR-0113](CR0113-ac-scope-cross-epic-ac-false-positives-on.md) | ac_scope / cross-epic-ac false-positives on shared domain vocabulary (cry-wolf in the audit) | Complete | High | Improvement | 2026-06-25 | -- |
+| [CR-0114](CR0114-establish-inter-story-depends-on-at-design-so.md) | Establish inter-story Depends on at design so sprint-plan waves are real, not flat | Complete | Medium | Improvement | 2026-06-25 | -- |
+| [CR-0115](CR0115-scaffold-the-test-spec-ac-coverage-matrix-from.md) | Scaffold the test-spec AC Coverage Matrix from an epic stories ACs at design time | Complete | Medium | Improvement | 2026-06-25 | -- |
 | [CR-0116](CR0116-frame-the-implementation-sub-agent-as-the-engineering.md) | Frame the implementation sub-agent as the Engineering persona/seat, not a generic agent | Proposed | Medium | Improvement | 2026-06-25 | -- |
-| [CR-0117](CR0117-mechanically-enforce-author-reviewer-independence-gate-not-an.md) | Mechanically enforce author != reviewer (independence gate), not an honour-system convention | Proposed | High | Improvement | 2026-06-25 | -- |
+| [CR-0117](CR0117-mechanically-enforce-author-reviewer-independence-gate-not-an.md) | Mechanically enforce author != reviewer (independence gate), not an honour-system convention | Complete | High | Improvement | 2026-06-25 | -- |
 | [CR-0118](CR0118-enriched-amigo-template-instantiate-the-three-default-amigos.md) | Enriched amigo template + instantiate the three default amigos (Cooper depth + seat discipline) | Complete | Medium | Improvement | 2026-06-25 | -- |
+| [CR-0119](CR0119-project-upgrade-installs-the-v3-1-amigo-defaults.md) | project upgrade installs the v3.1 amigo defaults into consuming projects | Complete | Medium | Improvement | 2026-06-25 | -- |

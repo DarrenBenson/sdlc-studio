@@ -19,6 +19,7 @@ assert _spec and _spec.loader
 verify_ac = importlib.util.module_from_spec(_spec)
 sys.modules["verify_ac"] = verify_ac
 _spec.loader.exec_module(verify_ac)
+sdlc_md = verify_ac.sdlc_md  # shared parsing helpers, via the loaded module
 
 
 PASSING_STORY = """\
@@ -607,6 +608,109 @@ class WriteReportMergeTests(unittest.TestCase):
             verify_ac.write_report(p, [verify_ac.StoryReport(path="US0011-x.md", ac_count=1, verified=1)])
             verify_ac.write_report(p, [verify_ac.StoryReport(path="US0012-x.md", ac_count=1, verified=1)], merge=False)
             self.assertEqual(self._keys(p), {"US0012-x"})  # --fresh path drops the prior entry
+
+
+class ScaffoldMatrixTests(unittest.TestCase):
+    """CR0115: scaffold the AC Coverage Matrix from an epic's stories' ACs at design time."""
+
+    def _story(self, root: Path, story_id: str, epic: str, acs: list[tuple[str, str]]) -> None:
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        body = [f"# {story_id}: x", "", f"> **Epic:** [{epic}]({epic}-x.md)", "",
+                "## Acceptance Criteria", ""]
+        for ac_id, title in acs:
+            body += [f"### {ac_id}: {title}", "- **Given** x", "- **Then** y", ""]
+        (d / f"{story_id}-x.md").write_text("\n".join(body), encoding="utf-8")
+
+    def test_one_row_per_ac_across_n_stories(self) -> None:
+        # 3 stories totalling 6 ACs -> a matrix with exactly 6 data rows.
+        with tempfile.TemporaryDirectory() as dd:
+            root = Path(dd)
+            self._story(root, "US0001", "EP0001", [("AC1", "login"), ("AC2", "logout")])
+            self._story(root, "US0002", "EP0001", [("AC1", "search"), ("AC2", "page"), ("AC3", "empty")])
+            self._story(root, "US0003", "EP0001", [("AC1", "rate limit")])
+            matrix = verify_ac.scaffold_ac_matrix(root, "EP0001")
+            data_rows = [c for ln in matrix.splitlines()
+                         if (c := sdlc_md.table_cells(ln)) and c[0] != "Story"]
+            self.assertEqual(len(data_rows), 6)
+            pairs = {(r[0], r[1]) for r in data_rows}
+            self.assertEqual(pairs, {
+                ("US0001", "AC1"), ("US0001", "AC2"),
+                ("US0002", "AC1"), ("US0002", "AC2"), ("US0002", "AC3"),
+                ("US0003", "AC1"),
+            })
+
+    def test_every_ac_appears_exactly_once(self) -> None:
+        with tempfile.TemporaryDirectory() as dd:
+            root = Path(dd)
+            self._story(root, "US0001", "EP0001", [("AC1", "a"), ("AC2", "b"), ("AC3", "c")])
+            matrix = verify_ac.scaffold_ac_matrix(root, "EP0001")
+            keys = [(c[0], c[1]) for ln in matrix.splitlines()
+                    if (c := sdlc_md.table_cells(ln)) and c[0] != "Story"]
+            self.assertEqual(len(keys), len(set(keys)))  # no AC duplicated, none dropped
+            self.assertEqual(set(keys), {("US0001", "AC1"), ("US0001", "AC2"), ("US0001", "AC3")})
+
+    def test_description_carries_the_ac_title(self) -> None:
+        with tempfile.TemporaryDirectory() as dd:
+            root = Path(dd)
+            self._story(root, "US0001", "EP0001", [("AC1", "valid email login")])
+            row = next(c for ln in verify_ac.scaffold_ac_matrix(root, "EP0001").splitlines()
+                       if (c := sdlc_md.table_cells(ln)) and c[0] == "US0001")
+            self.assertEqual(row[2], "valid email login")  # Description column
+
+    def test_test_cases_and_status_left_blank_so_ts_check_flags_them(self) -> None:
+        # The two judgement columns must ship blank - proven by ts-check rejecting the
+        # un-filled scaffold (a no-test-case finding per AC). If the scaffold pre-filled
+        # them, ts-check would pass and the coverage guard would be defeated.
+        with tempfile.TemporaryDirectory() as dd:
+            root = Path(dd)
+            self._story(root, "US0001", "EP0001", [("AC1", "a"), ("AC2", "b")])
+            spec = root / "ts.md"
+            spec.write_text("# TS0001\n\n" + verify_ac.scaffold_ac_matrix(root, "EP0001"),
+                            encoding="utf-8")
+            issues = {i["ac"]: i["issue"] for i in verify_ac.ts_check(spec)}
+            self.assertEqual(set(issues), {"AC1", "AC2"})
+            self.assertTrue(all("no test case mapped" in v for v in issues.values()))
+
+    def test_other_epics_stories_excluded(self) -> None:
+        with tempfile.TemporaryDirectory() as dd:
+            root = Path(dd)
+            self._story(root, "US0001", "EP0001", [("AC1", "in scope")])
+            self._story(root, "US0002", "EP0002", [("AC1", "other epic")])
+            keys = {(c[0], c[1]) for ln in verify_ac.scaffold_ac_matrix(root, "EP0001").splitlines()
+                    if (c := sdlc_md.table_cells(ln)) and c[0] != "Story"}
+            self.assertEqual(keys, {("US0001", "AC1")})
+
+    def test_bullet_form_acs_are_not_silently_dropped(self) -> None:
+        # The compact bullet AC (`- **AC1:** ...`) is a real story shape `parse_story`
+        # handles explicitly; without that branch bullet-AC stories parse to zero ACs.
+        # The scaffold must surface them too, else a whole story's ACs vanish from the
+        # matrix - the exact silent coverage gap this CR exists to close. Boundary case
+        # for the parse-form the other tests (heading ACs) never exercise.
+        with tempfile.TemporaryDirectory() as dd:
+            root = Path(dd)
+            d = root / "sdlc-studio" / "stories"
+            d.mkdir(parents=True, exist_ok=True)
+            (d / "US0001-x.md").write_text(
+                "# US0001: x\n\n> **Epic:** [EP0001](EP0001-x.md)\n\n"
+                "## Acceptance Criteria\n\n"
+                "- **AC1:** first criterion\n- **AC2:** second criterion\n",
+                encoding="utf-8")
+            keys = [(c[0], c[1]) for ln in verify_ac.scaffold_ac_matrix(root, "EP0001").splitlines()
+                    if (c := sdlc_md.table_cells(ln)) and c[0] != "Story"]
+            self.assertEqual(keys, [("US0001", "AC1"), ("US0001", "AC2")])
+
+    def test_epic_with_no_stories_yields_header_only(self) -> None:
+        # Boundary: an epic with no member stories must not crash and must emit a
+        # well-formed header-only matrix (zero data rows), not a placeholder row.
+        with tempfile.TemporaryDirectory() as dd:
+            root = Path(dd)
+            self._story(root, "US0001", "EP0002", [("AC1", "elsewhere")])
+            matrix = verify_ac.scaffold_ac_matrix(root, "EP0001")
+            data_rows = [c for ln in matrix.splitlines()
+                         if (c := sdlc_md.table_cells(ln)) and c[0] != "Story"]
+            self.assertEqual(data_rows, [])
+            self.assertIn("| Story | AC | Description | Test Cases | Status |", matrix)
 
 
 if __name__ == "__main__":

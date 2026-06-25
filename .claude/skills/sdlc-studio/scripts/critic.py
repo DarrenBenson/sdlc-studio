@@ -6,7 +6,13 @@ AC intent. Its verdict used to be ephemeral, so nothing could confirm the critic
 actually ran. Here it is a committed, append-only record
 (`sdlc-studio/reviews/critic-verdicts.md`), so the conformance gate can require it:
 "the critic ran" becomes a deterministic, auditable signal - the cheap part of
-the deferred Stop-Hook, with no harness dependency. Pure stdlib.
+the deferred Stop-Hook, with no harness dependency.
+
+Each verdict now stamps both the reviewer and the author (the authoring seat /
+delegation id that produced the diff and tests). The conformance gate hard-fails any
+unit whose reviewer id equals its author id, or that has no recorded author - a
+self-review never clears the Done gate. This independence floor holds for generic
+workers too, not only persona-framed ones. Pure stdlib.
 """
 from __future__ import annotations
 
@@ -18,12 +24,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 
 APPROVE, REJECT = "APPROVE", "REJECT"
+# Visible grandfather marker for units closed before the independence gate existed
+# (under the prior risk-scaled policy that permitted light-tier self-review). Stamped
+# once by the migration; never produced by the sprint loop. See is_pre_gate.
+PRE_GATE = "pre-gate"
 HEADER = (
     "# Critic Verdicts\n\n"
     "> Append-only. The independent non-author critic's verdict per unit.\n"
-    "> APPROVE = ready; REJECT = repair before Done. Latest row per unit wins.\n\n"
-    "| Unit | Verdict | Reviewer | Date | Issues |\n| --- | --- | --- | --- | --- |\n"
+    "> APPROVE = ready; REJECT = repair before Done. Latest row per unit wins.\n"
+    "> Reviewer must differ from Author - a self-review never clears the Done gate.\n\n"
+    "| Unit | Verdict | Reviewer | Author | Date | Issues |\n"
+    "| --- | --- | --- | --- | --- | --- |\n"
 )
+_COLS = ("unit", "verdict", "reviewer", "author", "date", "issues")
 
 
 def verdicts_path(repo_root: Path | str) -> Path:
@@ -37,13 +50,20 @@ def _clean(value: str) -> str:
 
 
 def record_verdict(repo_root: Path | str, unit: str, verdict: str,
-                   reviewer: str = "independent-critic", issues: str = "") -> Path:
-    """Append a critic verdict for a unit (creating the table if absent)."""
+                   reviewer: str = "independent-critic", author: str = "",
+                   issues: str = "") -> Path:
+    """Append a critic verdict for a unit (creating the table if absent).
+
+    `author` is the authoring seat / delegation instance id that produced the diff
+    and tests. It is recorded alongside the reviewer so the conformance gate can prove
+    reviewer != author - independence you cannot verify is independence you do not have.
+    """
     path = verdicts_path(repo_root)
     path.parent.mkdir(parents=True, exist_ok=True)
     if not path.exists():
         path.write_text(HEADER, encoding="utf-8")
     row = (f"| {sdlc_md.norm_id(unit)} | {verdict.upper()} | {_clean(reviewer)} | "
+           f"{_clean(author) or '-'} | "
            f"{sdlc_md.now_date()} | {_clean(issues) or '-'} |\n")
     with path.open("a", encoding="utf-8") as fh:  # append-only
         fh.write(row)
@@ -51,16 +71,25 @@ def record_verdict(repo_root: Path | str, unit: str, verdict: str,
 
 
 def read_verdicts(repo_root: Path | str) -> list[dict]:
-    """All recorded verdicts in order, as {unit, verdict, reviewer, date, issues}."""
+    """All recorded verdicts in order, as {unit, verdict, reviewer, author, date, issues}.
+
+    Reads both the current 6-column rows and any legacy 5-column rows (no Author) that
+    pre-date the independence gate; a legacy row's author is the empty string.
+    """
     path = verdicts_path(repo_root)
     if not path.exists():
         return []
     out: list[dict] = []
     for line in path.read_text(encoding="utf-8").splitlines():
         cells = sdlc_md.table_cells(line)  # escaped-pipe-aware
-        if not cells or len(cells) != 5 or cells[0] == "Unit":
+        if not cells or cells[0] in ("Unit",):
             continue
-        out.append(dict(zip(("unit", "verdict", "reviewer", "date", "issues"), cells)))
+        if len(cells) == 6:
+            out.append(dict(zip(_COLS, cells)))
+        elif len(cells) == 5:  # legacy: Unit, Verdict, Reviewer, Date, Issues
+            legacy = dict(zip(("unit", "verdict", "reviewer", "date", "issues"), cells))
+            legacy["author"] = ""
+            out.append(legacy)
     return out
 
 
@@ -74,9 +103,48 @@ def verdict_for(repo_root: Path | str, unit: str):
     return latest
 
 
+def _id(value: str) -> str:
+    """Normalise an author/reviewer id for comparison: case-folded, stripped, with the
+    markdown escaping that `_clean` adds on write removed, so `Dani\\_Okafor` and
+    `dani_okafor` compare equal. The empty-cell placeholder `-` normalises to empty,
+    so a missing author is treated as no author, not a real id."""
+    out = (value or "").replace("\\_", "_").strip()
+    return "" if out == "-" else out.casefold()
+
+
+def is_independent(verdict: dict | None) -> bool:
+    """True when a verdict was authored and reviewed by distinct identities.
+
+    Independence is the floor, not a persona feature: it holds for generic workers too.
+    A verdict with no recorded author, or whose reviewer id equals its author id
+    (a self-review), is NOT independent and must not clear the Done gate. The
+    grandfather marker PRE_GATE is not real independence either - it is handled
+    separately by is_pre_gate, so this stays a truthful test.
+    """
+    if not verdict:
+        return False
+    author = _id(verdict.get("author", ""))
+    reviewer = _id(verdict.get("reviewer", ""))
+    if author == PRE_GATE:
+        return False
+    return bool(author) and reviewer != author
+
+
+def is_pre_gate(verdict: dict | None) -> bool:
+    """True for a unit closed BEFORE the independence gate, under the prior
+    risk-scaled policy (which permitted light-tier self-review). Marked by the
+    visible PRE_GATE author sentinel from the one-time migration - auditable in the
+    ledger, and never producible by the sprint loop (which stamps a real delegation
+    id). These are grandfathered as conformant; the gate applies to all work closed
+    after it."""
+    return bool(verdict) and _id(verdict.get("author", "")) == PRE_GATE
+
+
 def cmd_record(args: argparse.Namespace) -> int:
-    path = record_verdict(args.root, args.unit, args.verdict, args.reviewer, args.issues)
-    print(f"recorded {sdlc_md.norm_id(args.unit)} {args.verdict.upper()} -> {path}")
+    path = record_verdict(args.root, args.unit, args.verdict, args.reviewer,
+                          args.author, args.issues)
+    note = "" if _id(args.author) != _id(args.reviewer) else "  (WARNING: self-review - blocked at the Done gate)"
+    print(f"recorded {sdlc_md.norm_id(args.unit)} {args.verdict.upper()} -> {path}{note}")
     return 0
 
 
@@ -97,6 +165,8 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--unit", required=True)
     r.add_argument("--verdict", required=True, choices=("approve", "reject", "APPROVE", "REJECT"))
     r.add_argument("--reviewer", default="independent-critic")
+    r.add_argument("--author", required=True,
+                   help="Authoring seat / delegation id that produced the diff (must differ from --reviewer).")
     r.add_argument("--issues", default="")
     r.add_argument("--root", default=".")
     r.set_defaults(func=cmd_record)

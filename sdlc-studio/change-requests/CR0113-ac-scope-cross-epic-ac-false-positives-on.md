@@ -1,6 +1,6 @@
 # CR-0113: ac_scope / cross-epic-ac false-positives on shared domain vocabulary (cry-wolf in the audit)
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** High
 > **Type:** Improvement
 > **Date:** 2026-06-25
@@ -12,10 +12,10 @@ ac_scope flags a story whose AC contains a keyword distinctive to ANOTHER epic's
 
 ## Acceptance Criteria
 
-- [ ] ac_scope suppresses a 'distinctive' keyword when it has high document frequency across stories (it appears in stories of many epics / above a threshold) - such a word is shared domain vocabulary, not epic-specific leakage
-- [ ] the EP0005 web-client stories (and done stories) no longer trip cross-epic-ac on 'list'/'item'; a genuine reference to another epic's distinctive concept still flags
-- [ ] unit test: a domain noun used across >=N stories is not flagged; a concentrated cross-epic keyword is; CHANGELOG entry
-- [ ] if precision cannot be made high enough, reconsider whether cross-epic-ac belongs in the default audit vs an opt-in lint (do not cry-wolf)
+- [x] ac_scope suppresses a 'distinctive' keyword when it has high document frequency across stories (it appears in stories of many epics / above a threshold) - such a word is shared domain vocabulary, not epic-specific leakage
+- [x] the EP0005 web-client stories (and done stories) no longer trip cross-epic-ac on 'list'/'item'; a genuine reference to another epic's distinctive concept still flags
+- [x] unit test: a domain noun used across >=N stories is not flagged; a concentrated cross-epic keyword is; CHANGELOG entry
+- [x] if precision cannot be made high enough, reconsider whether cross-epic-ac belongs in the default audit vs an opt-in lint (do not cry-wolf)
 
 ## Revision History
 

@@ -228,5 +228,59 @@ class SafetyAndReconcileTests(unittest.TestCase):
             self.assertIn("2025-09-09", (Path(d) / "sdlc-studio" / ".version").read_text())
 
 
+class AmigoDefaultsTests(unittest.TestCase):
+    # CR0119: project upgrade installs the v3.1 default amigo cards when absent, idempotently.
+    AMIGOS = ("engineering.md", "qa.md", "product.md")
+
+    def test_apply_installs_amigos_when_absent(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d)
+            actions = pu.apply(d)
+            adir = sd / "personas" / "amigos"
+            for name in self.AMIGOS:
+                self.assertTrue((adir / name).exists(), f"{name} not installed")
+            # the cards match the skill's shipped source byte-for-byte
+            src = pu._amigos_source()
+            self.assertEqual((adir / "engineering.md").read_text(encoding="utf-8"),
+                             (src / "engineering.md").read_text(encoding="utf-8"))
+            self.assertTrue(any("amigo" in a.lower() for a in actions))
+
+    def test_apply_skips_customised_amigo(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d)
+            adir = sd / "personas" / "amigos"
+            adir.mkdir(parents=True, exist_ok=True)
+            custom = "# Our own engineer\n\nproject-specific amigo\n"
+            (adir / "engineering.md").write_text(custom, encoding="utf-8")
+            pu.apply(d)
+            # customised card untouched
+            self.assertEqual((adir / "engineering.md").read_text(encoding="utf-8"), custom)
+            # the missing ones still get installed
+            self.assertTrue((adir / "qa.md").exists())
+            self.assertTrue((adir / "product.md").exists())
+
+    def test_apply_idempotent_for_amigos(self):
+        with tempfile.TemporaryDirectory() as d:
+            _project(d)
+            pu.apply(d)
+            self.assertEqual(pu.apply(d), [])  # second run installs nothing new
+
+    def test_audit_flags_missing_amigos(self):
+        with tempfile.TemporaryDirectory() as d:
+            _project(d)
+            kinds = [f["kind"] for f in pu.audit(d)["auto"]]
+            self.assertIn("missing-amigos", kinds)
+
+    def test_audit_no_flag_when_all_amigos_present(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d, version=(pu.CURRENT_SCHEMA, INSTALLED))
+            adir = sd / "personas" / "amigos"
+            adir.mkdir(parents=True, exist_ok=True)
+            for name in self.AMIGOS:
+                (adir / name).write_text("# x\n", encoding="utf-8")
+            kinds = [f["kind"] for f in pu.audit(d)["auto"]]
+            self.assertNotIn("missing-amigos", kinds)
+
+
 if __name__ == "__main__":
     unittest.main()

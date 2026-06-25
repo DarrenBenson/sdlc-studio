@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 1 |
+| Open | 0 |
 | In Progress | 0 |
-| Fixed | 37 |
+| Fixed | 38 |
 | Verified | 0 |
 | Closed | 0 |
 | Won't Fix | 0 |
@@ -56,4 +56,4 @@
 | [BG0035](BG0035-duplicate-id-gate-false-positives-on-the-canonical.md) | duplicate-id gate false-positives on the canonical two-table story index (per-epic + All Stories) | Fixed | high | 2026-06-24 | 2026-06-24 |
 | [BG0036](BG0036-init-creates-sdlc-studio-local-but-no-gitignore.md) | init creates sdlc-studio/.local but no .gitignore, so consuming projects commit runtime caches/reports | Fixed | medium | 2026-06-24 | 2026-06-24 |
 | [BG0037](BG0037-verify-ac-run-story-overwrites-the-whole-verify.md) | verify_ac run --story overwrites the whole verify-report.json instead of merging, breaking the Done-gate for batch sprints | Fixed | high | 2026-06-24 | 2026-06-24 |
-| [BG0038](BG0038-integrity-requires-a-story-link-on-test-specs.md) | integrity requires a Story link on test-specs, breaking epic-scoped test-specs | Open | high | 2026-06-25 | 2026-06-25 |
+| [BG0038](BG0038-integrity-requires-a-story-link-on-test-specs.md) | integrity requires a Story link on test-specs, breaking epic-scoped test-specs | Fixed | high | 2026-06-25 | 2026-06-25 |

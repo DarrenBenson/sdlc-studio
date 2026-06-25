@@ -1,6 +1,6 @@
 # CR-0117: Mechanically enforce author != reviewer (independence gate), not an honour-system convention
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** High
 > **Type:** Improvement
 > **Date:** 2026-06-25
@@ -12,10 +12,10 @@ RFC0020's Three Amigos consult (Product/Engineering/QA, independent) unanimously
 
 ## Acceptance Criteria
 
-- [ ] critic.py record requires an --author (authoring seat/delegation id) and records both author and reviewer on the unit verdict
-- [ ] the conformance gate hard-fails a unit whose recorded critic reviewer id equals its author id (self-review blocked at the Done gate); a distinct reviewer passes
-- [ ] the check is independent of persona presence - it applies to generic workers too (independence is the floor, not a persona feature)
-- [ ] unit tests: reviewer==author blocks, reviewer!=author passes, missing author is flagged; documented in reference-sprint.md + the critic docs; CHANGELOG entry
+- [x] critic.py record requires an --author (authoring seat/delegation id) and records both author and reviewer on the unit verdict
+- [x] the conformance gate hard-fails a unit whose recorded critic reviewer id equals its author id (self-review blocked at the Done gate); a distinct reviewer passes
+- [x] the check is independent of persona presence - it applies to generic workers too (independence is the floor, not a persona feature)
+- [x] unit tests: reviewer==author blocks, reviewer!=author passes, missing author is flagged; documented in reference-sprint.md + the critic docs; CHANGELOG entry
 
 ## Revision History
 

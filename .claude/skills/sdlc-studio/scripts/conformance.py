@@ -4,10 +4,13 @@
 Asserts each unit (story) passed through the required lifecycle stages -
 decomposed (an Epic link), specified (at least one AC), verifiable (a `Verify:`
 line), and for Done stories: verified (AC marked `Verified: yes/manual`),
-reconciled (no index drift, via reconcile), and critiqued (a committed
-independent-critic APPROVE, via critic.py). Exits non-zero on any non-conformant
-unit, so the sprint loop cannot mark a unit Done with a stage silently
-skipped - including skipping the critic. Read-only; pure stdlib.
+reconciled (no index drift, via reconcile), and critiqued (a committed APPROVE from
+a critic whose reviewer id differs from the unit's author id, via critic.py). The
+critic stage is an independence gate: a self-review, or a verdict with no recorded
+author, never clears Done - and that floor applies to generic workers too, not only
+persona-framed ones. Exits non-zero on any non-conformant unit, so the sprint loop
+cannot mark a unit Done with a stage silently skipped - including skipping the critic
+or self-reviewing it. Read-only; pure stdlib.
 """
 from __future__ import annotations
 
@@ -98,7 +101,13 @@ def detect_conformance(repo_root: Path | str) -> dict:
             verified = bool(verified_states) and all(v in ("yes", "manual") for v in verified_states)
             reconciled = (not _no_index) and sdlc_md.norm_id(rid) not in drift_ids
             verdict = critic.verdict_for(root, rid)
-            critiqued = bool(verdict) and verdict["verdict"] == critic.APPROVE
+            # The critic stage requires an APPROVE AND proven author != reviewer
+            # independence - a self-review (or a verdict with no recorded author) never
+            # clears the Done gate. The floor holds for generic workers too. Units
+            # closed before the gate (the visible PRE_GATE marker, under the prior
+            # risk-scaled policy) are grandfathered; the gate applies to all new work.
+            critiqued = (bool(verdict) and verdict["verdict"] == critic.APPROVE
+                         and (critic.is_independent(verdict) or critic.is_pre_gate(verdict)))
             documented = _doc_ok
         stages = {
             "decomposed": decomposed,

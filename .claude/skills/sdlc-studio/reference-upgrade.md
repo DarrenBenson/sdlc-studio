@@ -283,7 +283,8 @@ deterministic set; nothing destructive; idempotent.**
 2. **Dry-run plan** (default): the migration report, split into
    - **Auto-correctable** (applied on `--apply`): scaffold `sdlc-studio/.config.yaml` (with
      `provenance.adopt_after` = the highest existing id, so existing artefacts are exempt - not
-     mass-stamped), scaffold or bump `sdlc-studio/.version`, and `reconcile` index/status drift.
+     mass-stamped), scaffold or bump `sdlc-studio/.version`, install the **v3.1 default amigo
+     cards** (see below), and `reconcile` index/status drift.
    - **Needs judgement** (reported, **never auto-applied, never filed as CRs**): old personas ->
      the Cooper model (`persona-template.md`) and review-seat charters (`review-seat-charter.md`);
      AGENTS.md/CLAUDE.md refresh from `templates/agent-instructions.md` **preserving project
@@ -292,6 +293,15 @@ deterministic set; nothing destructive; idempotent.**
 4. **Work the report** by hand for the judgement items (the agent-assisted steps - rewrite
    personas, refresh AGENTS, backfill Verify), guided by this file.
 5. **Run the gate** (`scripts/gate.py`) - the residual is the judgement work still to do.
+
+### v3.1 default amigo cards
+
+v3.1 ships the enriched **amigo defaults** - the Engineering, QA, and Product amigos
+(`templates/personas/amigos/`, RFC0020): a personal engineering team that both builds and reviews.
+`--apply` installs any missing card into the project's `sdlc-studio/personas/amigos/`, so an
+upgrading project gets an editable team. The step is idempotent and never overwrites: a card
+already present - a default the project kept, or one it customised - is left untouched; only the
+absent ones are written. The upgrade output names each card it added.
 
 ## Backward Compatibility
 

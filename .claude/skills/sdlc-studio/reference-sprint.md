@@ -63,15 +63,19 @@ Natural language resolves to the same: "do an sprint to deliver all open bugs"
      reinvent it.
    - `verify_ac` - run the AC oracle; back-annotate `Verified:`.
    - **Independent critic (D3), scaled to stakes** - the review depth matches the unit's
-     risk, so tokens are spent in proportion:
+     risk, so tokens are spent in proportion. **Independence is the floor, not the variable:**
+     the reviewer is always a *separate instance* from the author (the gate proves `reviewer !=
+     author`, CR0117); only the *depth* scales:
      - **Code / logic / parser / security / data-loss-risk** -> a full **independent adversarial
        sub-agent** that did not write the diff judges it against AC intent, plus adversarial/mutation
        checks. Reject -> repair.
-     - **Pure-doc / template / mechanical / config** -> a **lighter recorded review** (a checklist
-       self-review or one quick pass), not a full adversarial sub-agent.
-     Either way the verdict is recorded with `critic.py record` (committed) with the **tier noted in
-     the reviewer/issues field**, so the `critiqued` gate still requires a recorded APPROVE - only
-     the depth scales, never the honesty. When unsure of the risk band, use the full critic.
+     - **Pure-doc / template / mechanical / config** -> a **lighter independent review** (a quick
+       pass by a different instance), not a full adversarial sub-agent - cheaper, but still not the
+       author grading their own work.
+     Either way the verdict is recorded with `critic.py record` (committed) with both the **reviewer
+     and author ids** and the **tier noted in the issues field**, so the `critiqued` gate requires a
+     recorded APPROVE whose reviewer differs from the author - the depth scales, independence and
+     honesty never do. When unsure of the risk band, use the full critic.
    - `conformance check` - the deterministic gate (`scripts/conformance.py`):
      decomposed -> AC -> tested -> verified -> **reconciled** (no index drift) ->
      **critiqued** (a committed critic APPROVE) -> **documented** (the doc-coverage floor:
@@ -143,6 +147,13 @@ wave *n+1* is everything whose deps all sit in earlier waves, and units in one w
 independent (parallelisable). `plan --write` persists them, so the operator no longer hand-derives
 the L1/L2/L3 structure; `--agentic` execution runs these same levels as its waves.
 
+The waves are only as real as the declared `Depends on:` metadata. When the batch is >1 unit
+and **no** in-batch `Depends on:` is declared, the planner collapses to a single flat parallel
+wave - which means "no one declared a dependency", not "no dependencies exist". In that case
+`plan` prints a hint naming the missing `Depends on:` field, so a flat list is not mistaken for a
+genuinely independent batch. The fix is to declare the dependencies (the `--goal design` rung
+below), then re-plan.
+
 **Scope by epic.** A sprint is usually the next epic or two, not a whole status class, so
 `plan --stories <status> --epic EPxxxx [--epic EPyyyy]` restricts the batch to stories in the named
 epic(s) - repeatable, union. Without it, `--stories Draft` selects every Draft story across all
@@ -158,6 +169,17 @@ signal), **QA** for risk - and write their scores to `sdlc-studio/.local/wsjf-in
 sprint-plan artifact. With no seat inputs (or `--skip-personas`) it degrades gracefully to
 priority + complexity. The seat consult is the isolated-subagent consult; the planner
 math is deterministic.
+
+### `--goal design` - establish the dependency graph
+
+Grooming a backlog Draft -> Ready is also where the **inter-story dependency graph** is
+established. As each story is sharpened, declare its `Depends on:` against the sibling stories it
+truly needs first - a story that consumes another's schema, endpoint, or migration depends on it.
+This is model-instructed grooming: read the story prose, decide the real ordering, and write the
+`Depends on:` field by construction so a designed backlog already carries the graph the planner
+needs. Without it, `plan` degrades to a flat single wave and only the prose holds the W1-W4
+sequence - the hand-derivation the waves feature exists to remove. Declare the edges at design,
+and the existing wave computation produces the real levels at plan.
 
 ## Authoring mode - greenfield, from a PRD
 

@@ -1,6 +1,6 @@
 # CR-0115: Scaffold the test-spec AC Coverage Matrix from an epic stories ACs at design time
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-06-25
@@ -12,10 +12,10 @@ CR0110 made the design rung author the test-spec AC Coverage Matrix, but nothing
 
 ## Acceptance Criteria
 
-- [ ] a helper (e.g. a verify_ac or test-spec mode) takes an epic and emits an AC Coverage Matrix pre-filled with one row per AC across that epic stories (Story, AC id, Description), Test Cases + Status blank
-- [ ] every AC in the epic stories appears as exactly one matrix row - no AC can be silently omitted; the model fills Test Cases + Status, then ts-check (CR0085) validates completeness
-- [ ] this removes the manual AC hand-extraction at --goal design (CR0110); documented in reference-test-spec.md + the reference-sprint.md design rung
-- [ ] unit test: an epic with N stories totalling M ACs yields a matrix with M rows; CHANGELOG entry
+- [x] a helper (e.g. a verify_ac or test-spec mode) takes an epic and emits an AC Coverage Matrix pre-filled with one row per AC across that epic stories (Story, AC id, Description), Test Cases + Status blank
+- [x] every AC in the epic stories appears as exactly one matrix row - no AC can be silently omitted; the model fills Test Cases + Status, then ts-check (CR0085) validates completeness
+- [x] this removes the manual AC hand-extraction at --goal design (CR0110); documented in reference-test-spec.md + the reference-sprint.md design rung
+- [x] unit test: an epic with N stories totalling M ACs yields a matrix with M rows; CHANGELOG entry
 
 ## Revision History
 

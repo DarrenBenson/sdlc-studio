@@ -29,6 +29,9 @@ CURRENT_SCHEMA = 2  # templates/config-defaults.yaml schema_version
 # Dirs newer projects carry; absent ones are advisory (created on first use), not auto-made
 # (empty dirs do not persist in git, and guessing per-type index headers would over-reach).
 STANDARD_DIRS = ("change-requests", "rfcs", "decisions", "retros")
+# The v3.1 default amigo cards (templates/personas/amigos/, RFC0020). Installed into a project's
+# persona dir when absent so it gets an editable engineering team; never overwritten once present.
+AMIGO_CARDS = ("engineering.md", "qa.md", "product.md")
 
 _CONFIG = ("# Project configuration for sdlc-studio (merged over templates/config-defaults.yaml).\n"
            "provenance:\n"
@@ -45,6 +48,20 @@ _VERSION = ("# SDLC Studio Project Version (sdlc-studio/.version)\n"
 
 def _sdlc(root: Path) -> Path:
     return Path(root) / "sdlc-studio"
+
+
+def _amigos_source() -> Path:
+    """The skill's shipped amigo cards (templates/personas/amigos/)."""
+    return version_check.skill_root() / "templates" / "personas" / "amigos"
+
+
+def _missing_amigos(root: Path) -> list[str]:
+    """The default amigo cards a project lacks (present source, absent in the project's
+    personas/amigos/). A card already in the project - default or customised - is left alone."""
+    src = _amigos_source()
+    dest = _sdlc(root) / "personas" / "amigos"
+    return [name for name in AMIGO_CARDS
+            if (src / name).exists() and not (dest / name).exists()]
 
 
 def _bump_version_text(text: str, installed: str, prev_skill: str | None,
@@ -137,6 +154,11 @@ def audit(root: Path | str) -> dict:
         # present but stale - apply() bumps it, so the dry-run must report it too
         auto.append({"kind": "stale-version",
                      "detail": f"sdlc-studio/.version records skill {pv_skill or '?'}; bump to {installed or '?'}"})
+    missing_amigos = _missing_amigos(root)
+    if missing_amigos:
+        auto.append({"kind": "missing-amigos", "names": missing_amigos,
+                     "detail": f"missing v3.1 default amigo cards ({', '.join(missing_amigos)}) - "
+                               "install to sdlc-studio/personas/amigos/ (editable, never overwritten)"})
     drift = sum(len(reconcile.detect_type(t, root)["drift"]) for t in sdlc_md.ARTIFACT_TYPES)
     if drift:
         # NOT auto-applied by upgrade: reconcile can be destructive on multi-schema / inline-row
@@ -196,6 +218,17 @@ def apply(root: Path | str, with_reconcile: bool = False, today: str | None = No
     elif (prev_schema or 0) < CURRENT_SCHEMA:
         ver.write_text(_bump_version_text(ver.read_text(encoding="utf-8"), installed, prev_skill, today), encoding="utf-8")
         actions.append(f"repaired sdlc-studio/.version (schema -> {CURRENT_SCHEMA})")
+    # v3.1 amigo defaults: install each missing default card into the project's personas/amigos/.
+    # Idempotent - a card already present (default or customised) is never overwritten.
+    missing_amigos = _missing_amigos(root)
+    if missing_amigos:
+        src = _amigos_source()
+        dest = sd / "personas" / "amigos"
+        dest.mkdir(parents=True, exist_ok=True)
+        for name in missing_amigos:
+            (dest / name).write_text((src / name).read_text(encoding="utf-8"), encoding="utf-8")
+        actions.append(f"installed {len(missing_amigos)} v3.1 amigo card(s) to "
+                       f"sdlc-studio/personas/amigos/ ({', '.join(missing_amigos)})")
     # Reconcile is OFF by default: it can rewrite indexes, and on multi-schema/inline-convention
     # projects that is destructive - so an "upgrade" must not bundle it. Opt in with with_reconcile, or
     # run `/sdlc-studio reconcile` deliberately after reviewing its report.

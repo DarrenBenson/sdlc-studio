@@ -1,6 +1,6 @@
 # CR-0114: Establish inter-story Depends on at design so sprint-plan waves are real, not flat
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-06-25
@@ -12,9 +12,9 @@ sprint plan emits dependency waves (CR0107), but they are only as good as the de
 
 ## Acceptance Criteria
 
-- [ ] the --goal design rung establishes inter-story `Depends on:` (model-instructed grooming) so a designed backlog carries the dependency graph the planner needs; documented in reference-sprint.md
-- [ ] when sprint plan selects a batch of >1 story with NO declared dependencies and order is priority/wsjf, it prints a hint that all units are parallel because no `Depends on:` is declared (so a flat single wave is not mistaken for 'no dependencies exist')
-- [ ] with deps declared, the existing wave computation (CR0107) produces the real levels; unit test covers the no-deps hint; CHANGELOG entry
+- [x] the --goal design rung establishes inter-story `Depends on:` (model-instructed grooming) so a designed backlog carries the dependency graph the planner needs; documented in reference-sprint.md
+- [x] when sprint plan selects a batch of >1 story with NO declared dependencies and order is priority/wsjf, it prints a hint that all units are parallel because no `Depends on:` is declared (so a flat single wave is not mistaken for 'no dependencies exist')
+- [x] with deps declared, the existing wave computation (CR0107) produces the real levels; unit test covers the no-deps hint; CHANGELOG entry
 
 ## Revision History
 

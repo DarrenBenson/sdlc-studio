@@ -26,6 +26,11 @@ _STOP = {"and", "the", "for", "with", "management", "system", "foundation", "pla
          "support", "feature", "features", "power", "core", "experience", "client",
          "service", "services", "data", "user", "users", "from", "into", "this", "that"}
 
+# A distinctive title keyword that turns up in the ACs of stories across this many or more
+# distinct epics is shared domain vocabulary (e.g. "list", "item"), not epic-specific leakage,
+# so it is suppressed - it would otherwise cry wolf on every story that mentions it. CR0113.
+_SHARED_EPIC_THRESHOLD = 3
+
 
 def _keywords(title: str) -> set[str]:
     return {w for w in re.findall(r"[a-z]+", title.lower()) if len(w) > 3 and w not in _STOP}
@@ -40,6 +45,12 @@ def _ac_block(text: str) -> str:
         return ""
     end = next((j for j in range(start + 1, len(lines)) if lines[j].startswith("## ")), len(lines))
     return "\n".join(lines[start + 1:end]).lower()
+
+
+def _mentions(block: str, kw: str) -> bool:
+    """Whether the AC block names the keyword, matching singular/plural (account[s])."""
+    stem = kw[:-1] if kw.endswith("s") else kw
+    return bool(re.search(rf"\b{re.escape(stem)}s?\b", block))
 
 
 def check(repo_root: Path | str) -> list[dict]:
@@ -61,7 +72,8 @@ def check(repo_root: Path | str) -> list[dict]:
             owners.setdefault(kw, set()).add(eid)
     distinctive = {kw: next(iter(es)) for kw, es in owners.items() if len(es) == 1}
 
-    findings: list[dict] = []
+    # First pass: read each story's AC block once, keyed by its own epic.
+    stories: list[tuple[str | None, str, str | None]] = []  # (own_eid, ac_block, record_id)
     for path in sdlc_md.artifact_files("story", root):
         text = path.read_text(encoding="utf-8")
         own = sdlc_md.extract_field(text, "Epic") or ""
@@ -70,15 +82,28 @@ def check(repo_root: Path | str) -> list[dict]:
         block = _ac_block(text)
         if not block:
             continue
+        stories.append((own_eid, block, sdlc_md.extract_record_id(path.stem)))
+
+    # Document frequency: how many distinct epics own a story whose AC names the keyword.
+    # A distinctive title keyword spread across many epics is shared domain vocabulary - drop it.
+    epics_mentioning: dict[str, set[str | None]] = {}
+    for own_eid, block, _ in stories:
+        for kw in distinctive:
+            if _mentions(block, kw):
+                epics_mentioning.setdefault(kw, set()).add(own_eid)
+    distinctive = {kw: owner for kw, owner in distinctive.items()
+                   if len(epics_mentioning.get(kw, set())) < _SHARED_EPIC_THRESHOLD}
+
+    findings: list[dict] = []
+    for own_eid, block, rec_id in stories:
         hits = set()
         for kw, owner_eid in distinctive.items():
             if owner_eid == own_eid:
                 continue
-            root = kw[:-1] if kw.endswith("s") else kw   # match singular/plural (account[s])
-            if re.search(rf"\b{re.escape(root)}s?\b", block):
+            if _mentions(block, kw):
                 hits.add((kw, owner_eid))
         for kw, owner_eid in sorted(hits):
-            findings.append({"story": sdlc_md.extract_record_id(path.stem), "keyword": kw,
+            findings.append({"story": rec_id, "keyword": kw,
                              "owner_epic": owner_eid, "owner_title": titles.get(owner_eid, "")})
     return findings
 
