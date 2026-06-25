@@ -84,3 +84,6 @@
 | US0005 | APPROVE | retroactive-close-review | pre-gate | 2026-06-24 | feature shipped + reviewed under its v2.x CR; ACs verified green 2026-06-24 (CR0084 gate) |
 | BG0040 | APPROVE | sam-eriksson-qa-review | dani-okafor-eng-build | 2026-06-25 | - |
 | CR0123 | APPROVE | sam-eriksson-qa-review | dani-okafor-eng-build | 2026-06-25 | - |
+| BG0043 | APPROVE | sam-eriksson-qa-review | dani-okafor-eng-build | 2026-06-25 | - |
+| BG0044 | APPROVE | sam-eriksson-qa-review | dani-okafor-eng-build | 2026-06-25 | - |
+| CR0122 | APPROVE | sam-eriksson-qa-review | dani-okafor-eng-build | 2026-06-25 | - |

@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`reconcile apply` no longer reports a status flip it did not persist (BG0043).** A status
+  fix the writer could not place in the row (an off-schema/header-less layout it declines to
+  guess) was still printed as `set <id>: A -> B` and counted as a changed row, while the index
+  stayed untouched - a no-op dressed as a clean apply. `apply_type` now partitions planned fixes
+  by what actually landed in the buffer: only persisted fixes are reported as changes, an
+  unpersisted one is surfaced (a `WARNING: could not apply ...` on stderr, named in the summary
+  line, non-zero exit) so it is hand-edited rather than trusted. The writer also preserves inline
+  emphasis on a status cell - a bold-wrapped `**Proposed**` is rewritten to `**Complete**`, not
+  flattened to `Complete` - mirroring the reader's tolerant canonicalisation. This is the
+  fail-loud discipline (LL0008): never announce an edit you did not make.
+- **`reconcile` verified to scope the count recompute to the canonical global summary, sparing
+  per-epic count sub-tables (BG0044).** An index carrying per-epic `| Done | N |` blocks plus a
+  global summary recomputes only the global summary (identified by its `Total`-row signature, or
+  as the sole summary); the per-section blocks survive unchanged rather than being stamped with
+  the project-wide total. Locked with a regression test on the exact field shape.
 - **`validate personas` no longer reports a vacuous clean pass on a nested persona layout (BG0040).**
   The flat `personas/*.md` glob matched zero files when a project keeps its personas nested (e.g.
   `personas/team/`, `personas/stakeholders/`), and the check still printed "personas look
@@ -19,6 +34,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`reconcile detect` signposts the fix order and names the file to link (CR0122).** When both
+  status drift and count drift are present, the report now states the recommended order - resolve
+  the file/index status mismatches first, re-sync the index rows, recompute counts/summaries LAST
+  (because fixing statuses moves the counts) - so the operator no longer learns it by watching the
+  count move the wrong way. A `fix_order` field is added to the JSON report. A missing-row finding
+  now emits the artifact's actual filename relative to its type directory (and carries a `file`
+  field), so the index link can be wired without guessing.
 - **Disambiguated the three "upgrade" surfaces in one place (CR0123).** `skill-update` (the
   installed skill), `project upgrade` (a consuming project's conventions), and `upgrade` (a
   project's v1 -> v2 artifact schema) were all called "upgrade". `reference-upgrade.md` now carries

@@ -1,6 +1,6 @@
 # BG0043: reconcile apply drops bold-markup CR-index row statuses and skips the CR-summary recompute
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-06-25
 > **Created-by:** sdlc-studio new
 > **Severity:** medium

@@ -5,7 +5,7 @@
 > and `sdlc-studio/retros/`; the original v2.0 unified review is `RV0001-unified-review-2026-06-20.md`.
 >
 > **Project version:** 3.1.0 (released 2026-06-25) · **Date:** 2026-06-25 ·
-> **Gates:** lint clean, 922 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0,
+> **Gates:** lint clean, 929 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0,
 > npm audit 0.
 > **v3.1.0 - your personal engineering team (RFC0020):** the Three Amigos are now rich, instantiated,
 > editable amigos (Dani/Engineering, Sam/QA, Lena/Product) that both do and review the work; the

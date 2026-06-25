@@ -1,6 +1,6 @@
 # BG0044: reconcile flattens per-epic Done count blocks corrupting per-section sub-tables
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-06-25
 > **Created-by:** sdlc-studio new
 > **Severity:** high
@@ -10,7 +10,7 @@
 `reconcile` stamps the global status total into every per-section count sub-table, flattening
 per-epic `Done | N` blocks. An index that carries small per-epic count tables (one per epic section)
 has each of those overwritten with the project-wide totals, corrupting the per-section breakdown. This
-was first hit in the field on agent-crew and has sat as a known-but-unfiled defect; a second upgrade
+was first hit in the field on a consuming project and has sat as a known-but-unfiled defect; a second upgrade
 run re-confirmed it as a standing hazard - the operator kept `--with-reconcile` OFF and diffed every
 index by hand precisely because of this, even though that particular index turned out to have no
 per-epic blocks (so the bug could not fire there). The fear was justified but unquantifiable up front,

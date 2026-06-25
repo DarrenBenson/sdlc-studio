@@ -220,6 +220,33 @@ Print the change list as a structured report:
 > (missing-row / orphan-row / missing-index) and the judgement calls below
 > (CR-completion, PRD prose, breakdown/AC checkboxes) remain Claude-orchestrated.
 
+> **Apply reports only what it persisted.** A planned status fix the writer cannot place in the row
+> (an off-schema or header-less layout it declines to guess, rather than risk clobbering a title or
+> another field) is **not** reported as a change. It is surfaced as `WARNING: could not apply ...`
+> on stderr, named in the summary line, and the command exits non-zero, so the operator hand-edits
+> that row rather than trusting a flip that never landed. A bold-wrapped status cell
+> (`| **Proposed** |`) is rewritten with its emphasis preserved (`| **Complete** |`), mirroring the
+> reader's tolerant canonicalisation. The summary line is a contract: `set` means written.
+
+#### Fix order when status and counts both drift {#fix-order}
+
+Fixing a file's status value immediately creates a new index status-mismatch (file and index now
+disagree), which then shifts the counts - so recomputing the summary first gives the wrong total and
+the drift count moves the wrong way. When `detect` finds both status drift and count drift it prints
+a **recommended order** (and adds a `fix_order` field to the JSON report):
+
+```text
+Recommended order: resolve the file/index status mismatches first, re-sync the index rows,
+then recompute counts/summaries LAST (fixing statuses moves the counts).
+```
+
+Run the row fixes to settle, then recompute counts last - `reconcile apply` already sequences it
+this way internally (it models the corrected rows before recomputing the summary).
+
+A `missing-row` finding emits the artifact's **filename** (relative to its type directory, also in a
+`file` field on the finding), not just the bare id, so the index link is wired without guessing the
+descriptive slug.
+
 Apply all mechanical fixes in dependency order:
 
 ```text

@@ -661,5 +661,146 @@ class FieldProjectionTests(unittest.TestCase):
             self.assertIn("| 8 |", (root / "sdlc-studio" / "stories" / "_index.md").read_text())
 
 
+class WriterFidelityTests(unittest.TestCase):
+    """The reconcile writer must persist what it claims and report what it could not -
+    never present a no-op as a clean apply (the fail-loud discipline)."""
+
+    def test_claimed_edit_that_does_not_persist_is_not_reported_as_changed(self) -> None:
+        # The sharpest field defect: a row whose Status the reader finds by vocab fallback
+        # (off-schema, status not in the pinned column) is planned as a fix, but the writer
+        # declines to guess the cell - so nothing persists. apply must NOT report it as a
+        # change; it must surface it as unapplied. Buffer-diff is the contract.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cd = root / "sdlc-studio" / "change-requests"
+            cd.mkdir(parents=True)
+            (cd / "CR0265-x.md").write_text("# CR-0265: t\n\n> **Status:** Complete\n", encoding="utf-8")
+            (cd / "_index.md").write_text(
+                "# CRs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [CR-0265](CR0265-x.md) | t | extra | **Proposed** |\n", encoding="utf-8")
+            before = (cd / "_index.md").read_text(encoding="utf-8")
+            res = reconcile.apply_type("cr", root)
+            after = (cd / "_index.md").read_text(encoding="utf-8")
+            self.assertEqual(after, before)  # nothing actually changed on disk
+            # the claimed-but-unapplied fix must not be reported as a landed change
+            self.assertEqual(res["changes"], [])
+            self.assertIn("CR-0265", [u["id"] for u in res["unapplied"]])
+
+    def test_apply_command_warns_on_unapplied_edit(self) -> None:
+        # The text command must warn (stderr) and return non-zero, never a clean "set ... -> ...".
+        import io
+        from contextlib import redirect_stderr, redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cd = root / "sdlc-studio" / "change-requests"
+            cd.mkdir(parents=True)
+            (cd / "CR0265-x.md").write_text("# CR-0265: t\n\n> **Status:** Complete\n", encoding="utf-8")
+            (cd / "_index.md").write_text(
+                "# CRs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [CR-0265](CR0265-x.md) | t | extra | **Proposed** |\n", encoding="utf-8")
+            out_buf, err_buf = io.StringIO(), io.StringIO()
+            with redirect_stdout(out_buf), redirect_stderr(err_buf):
+                rc = reconcile.main(["apply", "--scope", "crs", "--root", str(root)])
+            out, err = out_buf.getvalue(), err_buf.getvalue()
+            self.assertEqual(rc, 1)  # non-zero: an edit could not be made
+            self.assertIn("could not apply", err)
+            self.assertNotIn("set cr CR-0265", out)  # not reported as a landed flip
+            self.assertIn("could not be applied", out)  # summary line is honest
+
+    def test_bold_wrapped_status_persisted_with_emphasis_preserved(self) -> None:
+        # BG0043 (a): a bold-wrapped status cell is rewritten AND keeps its emphasis on write,
+        # mirroring the reader's tolerant canonicalisation rather than flattening to plain text.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cd = root / "sdlc-studio" / "change-requests"
+            cd.mkdir(parents=True)
+            (cd / "CR0265-x.md").write_text("# CR-0265: t\n\n> **Status:** Complete\n", encoding="utf-8")
+            (cd / "_index.md").write_text(
+                "# CRs\n\n| ID | Title | Status | Priority |\n| --- | --- | --- | --- |\n"
+                "| [CR-0265](CR0265-x.md) | t | **Proposed** | High |\n", encoding="utf-8")
+            res = reconcile.apply_type("cr", root)
+            out = (cd / "_index.md").read_text(encoding="utf-8")
+            self.assertIn("CR-0265", [c["id"] for c in res["changes"]])
+            self.assertIn("| **Complete** |", out)  # re-wrapped, not flattened to | Complete |
+            self.assertNotIn("| Complete |", out)
+
+
+class FixOrderSignpostTests(unittest.TestCase):
+    """CR0122 (a): when both status drift and count drift are present, the detect output must
+    state the recommended order - resolve status mismatches first, recompute counts/summaries last."""
+
+    def test_signpost_emitted_when_status_and_count_both_drift(self) -> None:
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)  # US0001 status-mismatch + a count-mismatch
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                reconcile.main(["detect", "--scope", "stories", "--root", str(root)])
+            out = buf.getvalue().lower()
+            self.assertIn("recommended order", out)
+            # counts/summaries recomputed last
+            self.assertIn("last", out)
+
+    def test_no_signpost_when_only_count_drift(self) -> None:
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "US0001-x.md").write_text("# X\n\n> **Status:** Done\n", encoding="utf-8")
+            (sd / "_index.md").write_text(
+                "| Status | Count |\n|---|---|\n| Done | 9 |\n\n"
+                "| ID | Status |\n|---|---|\n| [US0001](US0001-x.md) | Done |\n", encoding="utf-8")
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                reconcile.main(["detect", "--scope", "stories", "--root", str(root)])
+            self.assertNotIn("recommended order", buf.getvalue().lower())
+
+
+class MissingRowFilenameTests(unittest.TestCase):
+    """CR0122 (b): a missing/mismatched index-row finding emits the artifact's actual filename
+    / relative path on disk, not just the bare id, so the index link can be wired without guessing."""
+
+    def test_missing_row_fix_carries_filename(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bd = root / "sdlc-studio" / "bugs"
+            bd.mkdir(parents=True)
+            (bd / "BG0136-suspense-csr-bail.md").write_text(
+                "# BG0136: x\n\n> **Status:** Open\n", encoding="utf-8")
+            (bd / "_index.md").write_text(
+                "# Bugs\n\n| ID | Status |\n|---|---|\n", encoding="utf-8")
+            drift = reconcile.detect_type("bug", root)["drift"]
+            missing = [x for x in drift if x["kind"] == "missing-row"]
+            self.assertEqual(len(missing), 1)
+            self.assertEqual(missing[0]["file"], "BG0136-suspense-csr-bail.md")
+            self.assertIn("BG0136-suspense-csr-bail.md", missing[0]["fix"])
+
+
+class BG0044RegressionTests(unittest.TestCase):
+    """BG0044: the per-epic count sub-tables must survive the global summary recompute -
+    the count recompute is scoped to the canonical global summary (its Total-row signature)."""
+
+    def test_per_epic_done_block_survives_global_recompute(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "US0001-a.md").write_text("# US0001: a\n\n> **Status:** Done\n", encoding="utf-8")
+            (sd / "_index.md").write_text(
+                "# Stories\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [US0001](US0001-a.md) | a | Done |\n\n"
+                "### EP0001\n\n| Status | Count |\n| --- | --- |\n| Done | 6 |\n\n"
+                "## Status summary\n\n| Status | Count |\n| --- | --- |\n"
+                "| Done | 99 |\n| **Total** | **99** |\n", encoding="utf-8")
+            reconcile.apply_type("story", root)
+            out = (sd / "_index.md").read_text(encoding="utf-8")
+            self.assertIn("| Done | 6 |", out)        # per-epic block unchanged
+            self.assertIn("**Total** | **1**", out)   # global summary recomputed only
+
+
 if __name__ == "__main__":
     unittest.main()

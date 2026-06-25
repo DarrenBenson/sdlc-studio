@@ -1,6 +1,6 @@
 # CR-0122: reconcile apply signposts fix-order and emits expected filenames for new index rows
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-25
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium

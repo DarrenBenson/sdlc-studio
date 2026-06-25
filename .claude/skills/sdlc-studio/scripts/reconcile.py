@@ -247,10 +247,23 @@ def parse_index(type_: str, repo_root: Path) -> dict:
     return result
 
 
+def _census_filenames(type_: str, repo_root: Path) -> dict[str, str]:
+    """Map normalised artifact id -> the file's name relative to its type directory, so a
+    missing-row finding can name the file to link rather than leaving the operator to guess it."""
+    names: dict[str, str] = {}
+    rel = repo_root / sdlc_md.ARTIFACT_TYPES[type_][0]
+    for path in sdlc_md.artifact_files(type_, repo_root):
+        rec = sdlc_md.extract_record_id(path.stem)
+        if rec:
+            names[_norm_id(rec)] = path.relative_to(rel).as_posix()
+    return names
+
+
 def detect_type(type_: str, repo_root: Path) -> dict:
     """Compute drift for one type."""
     census = file_census(type_, repo_root)
     index = parse_index(type_, repo_root)
+    filenames = _census_filenames(type_, repo_root)
     drift: list[dict] = []
     vocab = sdlc_md.status_vocab(type_, repo_root)
 
@@ -264,9 +277,11 @@ def detect_type(type_: str, repo_root: Path) -> dict:
     rows = index["rows"]
     for norm, (disp, fstatus) in sorted(census.items()):
         if norm not in rows:
+            fname = filenames.get(norm)
             drift.append({"type": type_, "id": disp, "kind": "missing-row",
-                          "file_status": fstatus, "index_status": None,
-                          "fix": f"add {disp} ({fstatus}) to the index"})
+                          "file_status": fstatus, "index_status": None, "file": fname,
+                          "fix": (f"add {disp} ({fstatus}) to the index, linking {fname}"
+                                  if fname else f"add {disp} ({fstatus}) to the index")})
         else:
             istatus = rows[norm][1]
             fcanon = _canonical_status(fstatus, vocab)
@@ -342,11 +357,21 @@ def cmd_detect(args: argparse.Namespace) -> int:
     for d in all_drift:
         by_kind[d["kind"]] = by_kind.get(d["kind"], 0) + 1
 
+    # When both status drift and count drift are present, fixing the statuses moves the counts -
+    # so the summary must be recomputed LAST, after every status edit settles. Signpost that order
+    # rather than leave the operator to learn it by watching the count move the wrong way.
+    fix_order = None
+    if {"status-mismatch", "missing-row", "orphan-row"} & set(by_kind) and "count-mismatch" in by_kind:
+        fix_order = ("Recommended order: resolve the file/index status mismatches first, "
+                     "re-sync the index rows, then recompute counts/summaries LAST "
+                     "(fixing statuses moves the counts).")
+
     report = {
         "generated_at": sdlc_md.now_iso8601(),
         "scope": args.scope or "all",
         "types": per_type,
         "drift": all_drift,
+        "fix_order": fix_order,
         "summary": {"drift_items": len(all_drift), "by_kind": by_kind},
     }
 
@@ -367,6 +392,8 @@ def cmd_detect(args: argparse.Namespace) -> int:
             print("Guidance:")
             for h in hints:
                 print(f"  - {h}")
+        if fix_order:
+            print(fix_order)
         if args.write_report:
             print(f"wrote {out_path}")
     return 1 if all_drift else 0
@@ -443,27 +470,48 @@ def _header_kind(cells: list, lowered: list) -> tuple[str | None, int | None, in
     return None, None, None
 
 
+_EMPHASIS_RE = re.compile(r"^(\**|`*)(.*?)(\**|`*)$")
+
+
+def _reapply_emphasis(old_cell: str, new_token: str) -> str:
+    """Re-wrap `new_token` in whatever inline emphasis the old cell carried.
+
+    The reader canonicalises a status by stripping `**`/`*`/backticks (see
+    `sdlc_md.canonical_status`); the writer must mirror that on the way out, so a
+    bold-wrapped cell stays bold rather than flattening to plain text.
+    """
+    m = _EMPHASIS_RE.match(old_cell.strip())
+    lead, trail = (m.group(1), m.group(3)) if m else ("", "")
+    wrap = lead if lead and lead == trail else ""
+    return f"{wrap}{new_token}{wrap}"
+
+
 def _data_row_rewrite(cells: list, status_col: int | None, id_col: int | None,
-                      fixes: dict, vocab: list) -> str | None:
-    """The rewritten line for a data row whose Status drifts (per `fixes`), else None. Rewrites ONLY
-    when the pinned Status column actually holds a status - so per-block headers in a stacked index
-    are followed correctly, while an off-schema / header-less row is left for the operator rather
-    than guessing a cell and risking a clobbered title/field. Detect still reports it."""
+                      fixes: dict, vocab: list) -> tuple[str, str] | None:
+    """The (rewritten line, norm_id) for a data row whose Status drifts (per `fixes`), else None.
+    Rewrites ONLY when the pinned Status column actually holds a status - so per-block headers in a
+    stacked index are followed correctly, while an off-schema / header-less row is left for the
+    operator rather than guessing a cell and risking a clobbered title/field. Detect still reports
+    it. Inline emphasis on the status cell (`**Proposed**`) is preserved on write."""
     if status_col is None or status_col >= len(cells):
         return None
     if not _canonical_status(cells[status_col], vocab):  # pinned col is not a status -> don't guess
         return None
     rid = _row_id(cells, status_col, id_col)
     if rid and _norm_id(rid) in fixes:
-        cells[status_col] = fixes[_norm_id(rid)]
-        return _join_row(cells)
+        cells[status_col] = _reapply_emphasis(cells[status_col], fixes[_norm_id(rid)])
+        return _join_row(cells), _norm_id(rid)
     return None
 
 
-def _rewrite_index_lines(lines: list, fixes: dict, counts: dict, vocab: list) -> bool:
+def _rewrite_index_lines(lines: list, fixes: dict, counts: dict, vocab: list) -> tuple[bool, set]:
     """Rewrite drifted data-row Status cells (per `fixes`) and summary counts in
-    `lines`, in place. Returns whether any summary count changed."""
+    `lines`, in place. Returns (whether any summary count changed, the set of norm-ids whose
+    Status cell was actually rewritten). A planned fix whose row the writer declines to touch
+    (off-schema/header-less) is absent from that set, so the caller can report it as unapplied
+    rather than as a landed change."""
     counts_updated = False
+    applied: set = set()
     status_col = id_col = None
     in_summary = False
     # An index may carry many `Status | Count` tables (per-epic/per-section roll-ups) plus the one
@@ -503,10 +551,11 @@ def _rewrite_index_lines(lines: list, fixes: dict, counts: dict, vocab: list) ->
                 lines[i] = new_line
                 counts_updated = True
             continue
-        new_line = _data_row_rewrite(cells, status_col, id_col, fixes, vocab)
-        if new_line is not None:
-            lines[i] = new_line
-    return counts_updated
+        rewritten = _data_row_rewrite(cells, status_col, id_col, fixes, vocab)
+        if rewritten is not None:
+            lines[i], rid = rewritten
+            applied.add(rid)
+    return counts_updated, applied
 
 
 def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
@@ -514,16 +563,21 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
     row's Status cell to the file's canonical status, then recompute the summary
     counts (from the same parse_index authority `detect` uses). Idempotent; cells
     are re-escaped on write. Structural classes (missing-row/orphan-row/
-    missing-index) are left report-only. Returns {changes: [{id, from, to}], counts_updated}.
+    missing-index) are left report-only.
+
+    `changes` lists only the fixes that actually landed in the buffer. A planned fix the
+    writer could not persist (an off-schema/header-less row it declines to guess) is reported in
+    `unapplied`, never as a change - the tool must not announce an edit it did not make. Returns
+    {changes: [{id, from, to}], unapplied: [{id, from, to}], counts_updated}.
     """
     root = Path(repo_root)
     vocab = sdlc_md.status_vocab(type_, repo_root)
     index_path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / "_index.md"
-    result: dict = {"changes": [], "counts_updated": False}
+    result: dict = {"changes": [], "unapplied": [], "counts_updated": False}
     if not index_path.exists():
         return result
     rows = parse_index(type_, root)["rows"]
-    fixes, result["changes"] = _plan_status_fixes(rows, file_census(type_, root), vocab)
+    fixes, planned = _plan_status_fixes(rows, file_census(type_, root), vocab)
     # Model the corrected rows so the count recompute matches detect's authority.
     corrected = dict(rows)
     for norm, new in fixes.items():
@@ -532,7 +586,11 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
 
     original = index_path.read_text(encoding="utf-8")
     lines = original.splitlines()
-    result["counts_updated"] = _rewrite_index_lines(lines, fixes, counts, vocab)
+    result["counts_updated"], applied = _rewrite_index_lines(lines, fixes, counts, vocab)
+    # Partition the planned status fixes by what the writer actually rewrote, so a row it
+    # declined to touch is surfaced as unapplied rather than fabricated as a clean flip.
+    for ch in planned:
+        (result["changes"] if _norm_id(ch["id"]) in applied else result["unapplied"]).append(ch)
     if (result["changes"] or result["counts_updated"]) and not dry_run:
         text = "\n".join(lines) + ("\n" if original.endswith("\n") else "")
         index_path.write_text(text, encoding="utf-8")
@@ -631,6 +689,7 @@ def cmd_apply(args: argparse.Namespace) -> int:
     repo_root = Path(args.root).resolve()
     types = SCOPE_TYPES.get(args.scope, _DEFAULT_TYPES) if args.scope else _DEFAULT_TYPES
     n = 0
+    unapplied = 0
     for type_ in types:
         res = apply_type(type_, repo_root, dry_run=args.dry_run)
         for c in res["changes"]:
@@ -638,9 +697,16 @@ def cmd_apply(args: argparse.Namespace) -> int:
             n += 1
         if res["counts_updated"]:
             print(f"{'WOULD recompute' if args.dry_run else 'recomputed'} {type_} summary counts")
+        for u in res["unapplied"]:
+            # fail loud: a status the writer could not place in the row (off-schema/header-less)
+            # is reported as needing a hand-edit, never as a landed change.
+            print(f"WARNING: could not apply {type_} {u['id']}: {u['from']} -> {u['to']} "
+                  "- row not in a rewritable layout; edit it by hand", file=sys.stderr)
+            unapplied += 1
     print(f"apply: {'would change' if args.dry_run else 'changed'} {n} row(s)"
+          + (f", {unapplied} could not be applied" if unapplied else "")
           + (" [dry-run]" if args.dry_run else ""))
-    return 0
+    return 1 if unapplied else 0
 
 
 def build_parser() -> argparse.ArgumentParser:
