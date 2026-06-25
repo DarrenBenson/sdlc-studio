@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 2 |
+| Open | 0 |
 | In Progress | 0 |
-| Fixed | 42 |
+| Fixed | 44 |
 | Verified | 0 |
 | Closed | 0 |
 | Won't Fix | 0 |
@@ -59,7 +59,7 @@
 | [BG0038](BG0038-integrity-requires-a-story-link-on-test-specs.md) | integrity requires a Story link on test-specs, breaking epic-scoped test-specs | Fixed | high | 2026-06-25 | 2026-06-25 |
 | [BG0039](BG0039-adoption-cutoff-config-is-inconsistent-across-gates-and.md) | adoption cutoff config is inconsistent across gates and silently fails | Fixed | high | 2026-06-25 | 2026-06-25 |
 | [BG0040](BG0040-validate-personas-reports-well-formed-when-personas-are.md) | validate personas reports well-formed when personas are nested | Fixed | medium | 2026-06-25 | 2026-06-25 |
-| [BG0041](BG0041-old-persona-model-detector-is-name-based-and.md) | old-persona-model detector is name-based and its remediation hint misdirects | Open | medium | 2026-06-25 | 2026-06-25 |
-| [BG0042](BG0042-persona-resolve-ignores-existing-review-seats-so-authored.md) | persona_resolve ignores existing review seats so authored seats are shadowed by generic defaults | Open | high | 2026-06-25 | 2026-06-25 |
+| [BG0041](BG0041-old-persona-model-detector-is-name-based-and.md) | old-persona-model detector is name-based and its remediation hint misdirects | Fixed | medium | 2026-06-25 | 2026-06-25 |
+| [BG0042](BG0042-persona-resolve-ignores-existing-review-seats-so-authored.md) | persona_resolve ignores existing review seats so authored seats are shadowed by generic defaults | Fixed | high | 2026-06-25 | 2026-06-25 |
 | [BG0043](BG0043-reconcile-apply-drops-bold-markup-cr-index-row.md) | reconcile apply drops bold-markup CR-index row statuses and skips the CR-summary recompute | Fixed | medium | 2026-06-25 | 2026-06-25 |
 | [BG0044](BG0044-reconcile-flattens-per-epic-done-count-blocks-corrupting.md) | reconcile flattens per-epic Done count blocks corrupting per-section sub-tables | Fixed | high | 2026-06-25 | 2026-06-25 |

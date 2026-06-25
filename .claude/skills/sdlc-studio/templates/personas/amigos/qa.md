@@ -2,6 +2,7 @@
 Default QA amigo (RFC0020). A specific, skilled seat that authors tests + runs the oracle, and
 reviews (separate instances). Customise or replace per project. See amigo-template.md.
 -->
+<!-- role: qa -->
 # Sam Eriksson - QA amigo
 
 > **Dual render:** the work render (Craft Goals + How They Work + Non-Negotiables) frames Sam when

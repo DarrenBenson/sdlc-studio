@@ -7,7 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **A declared, machine-readable seat-role field; the resolver keys on it (RFC0021 slice 1, D6).**
+  Each amigo/seat card now carries a `<!-- role: engineering|qa|product -->` comment, and the three
+  default cards plus the amigo template declare theirs. `persona_resolve.card_role(path)` reads this
+  field - never the H1 prose or the filename - so a seat card named after a person ("Sarah") maps
+  to its seat deterministically. The form is an HTML comment: invisible in rendered markdown,
+  unambiguous to a single regex, and independent of prose a translation or rename could change.
+
 ### Fixed
+
+- **The old-persona-model upgrade hint names the actual signal that fired, not a misdirecting
+  content-rewrite instruction (BG0041).** `project upgrade`'s persona finding now separates
+  structural-layout drift (a nested `team/`/`stakeholders/` dir, or the word "amigo" in `index.md`
+  - fixed by a dir move / index reword) from content-model drift (an old-model heading in a named
+  file - fixed by a rewrite), and names the offending dir/file. A faithful content rewrite alone no
+  longer leaves the operator chasing a flag that only clears on a layout change.
 
 - **The `adopt_after` cutoff is parsed by one shared helper and never silently disabled (BG0039).**
   `conformance.adopt_after` and `provenance.adopt_after` looked identical in `.config.yaml` but
@@ -46,6 +62,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`persona_resolve` reads a project's review seats, not only `personas/amigos/` (BG0042, RFC0021
+  D6).** The resolution chain is now most-specific-first: an explicit `personas/amigos/<seat>.md`
+  override, then a role-matched `personas/seats/*.md` card (matched by the declared `role:` field),
+  then the skill default, then generic. A project's hand-authored "Three Amigos" are no longer
+  shadowed by the generic defaults. Two seat cards declaring one role resolve lexically by filename
+  with a warning; zero declaring it falls through to the default and never crashes. A seat resolved
+  for `--render review` that lacks its review-render sections (Lens / Pushes Back When / Shadow) is
+  a **hard error** (`RenderError`, RFC0021 D4), never a silent fallback. New floor tests prove a
+  role-matched seat resolves over the default, the two-claim/zero-claim cases, the render-less hard
+  error, and that build and review framed from one seat card stay separate instances the critic
+  `author != reviewer` gate still requires (RFC0021 D5).
+- **`project upgrade` is seat-aware - it enriches in place instead of manufacturing a parallel
+  amigo set (CR0120 AC1-4, RFC0021 D2).** `_missing_amigos` no longer reports a role as missing
+  when an existing `personas/seats/*.md` card declares it; the generic cards are installed
+  **greenfield only**, when no seat or amigo fills the role, so an authored seat is never doubled
+  by a generic card beside it. When a seat and an amigo both claim a role, the upgrade emits an
+  explicit **overlap heads-up** naming the roles - in `--dry-run` too - so the parallel role
+  systems are never a silent collision.
 - **A conformance failure names its remedies inline instead of burying them in a docstring (CR0121).**
   The gate and `conformance check` previously printed a bare `N non-conformant unit(s)`; the two
   mechanisms that legitimately resolve it - the `conformance.adopt_after` cutoff (forward-only

@@ -27,6 +27,20 @@ def _project_amigo(root: Path, seat: str, text: str) -> Path:
     return p
 
 
+def _seat(root: Path, filename: str, text: str) -> Path:
+    d = root / "sdlc-studio" / "personas" / "seats"
+    d.mkdir(parents=True, exist_ok=True)
+    p = d / filename
+    p.write_text(text, encoding="utf-8")
+    return p
+
+
+# A minimal seat card with a declared role and the three review-render sections present.
+def _seat_body(role: str, name: str = "Sarah") -> str:
+    return (f"<!-- role: {role} -->\n# {name} - {role} seat\n\n"
+            "## Lens\n\nx\n## Pushes Back When\n\nx\n## Shadow\n\nx\n")
+
+
 class ResolutionTests(unittest.TestCase):
     def test_default_card_used_when_no_project_override(self) -> None:
         # The skill ships engineering.md, so with no project override the default resolves.
@@ -82,6 +96,144 @@ class ResolutionTests(unittest.TestCase):
                 rc = mod.main(["resolve", "--seat", "product", "--root", str(root), "--path-only"])
             self.assertEqual(rc, 0)
             self.assertEqual(buf.getvalue().strip(), str(mine))
+
+
+class RoleFieldTests(unittest.TestCase):
+    """The declared role field (RFC0021 D6): the resolver keys on it, never H1 prose or filename."""
+
+    def test_card_role_reads_declared_field(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            p = _seat(Path(d), "sarah.md", _seat_body("engineering"))
+            self.assertEqual(mod.card_role(p), "engineering")
+
+    def test_card_role_ignores_h1_prose(self) -> None:
+        # The H1 says "Engineering" but the declared role is qa - the field wins, not the prose.
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            p = _seat(Path(d), "marcus.md",
+                      "<!-- role: qa -->\n# Marcus - Engineering lead\n\n"
+                      "## Lens\n\nx\n## Pushes Back When\n\nx\n## Shadow\n\nx\n")
+            self.assertEqual(mod.card_role(p), "qa")
+
+    def test_card_role_none_when_undeclared(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            p = _seat(Path(d), "nobody.md", "# Nobody - just prose\n\n## Lens\n\nx\n")
+            self.assertIsNone(mod.card_role(p))
+
+    def test_default_cards_declare_their_role(self) -> None:
+        # The shipped defaults carry a machine-readable role, not just an H1.
+        mod = _load()
+        for seat in ("engineering", "qa", "product"):
+            card = mod.default_card(seat)
+            self.assertIsNotNone(card, seat)
+            self.assertEqual(mod.card_role(card), seat)
+
+
+class SeatResolutionTests(unittest.TestCase):
+    """BG0042 / RFC0021 D6: the resolver reads role-matched seats, not just amigos/."""
+
+    def test_role_matched_seat_resolves_over_default(self) -> None:
+        # The load-bearing BG0042 AC: a project seat (no amigo override) must beat the skill default.
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            seat = _seat(root, "sarah.md", _seat_body("engineering"))
+            card = mod.resolve_card(root, "engineering")
+            self.assertEqual(card, seat)  # the authored seat, not Dani the default
+
+    def test_amigo_override_beats_seat(self) -> None:
+        # Explicit personas/amigos/<seat>.md stays the most-specific (legacy override).
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seat(root, "sarah.md", _seat_body("engineering"))
+            amigo = _project_amigo(root, "engineering", "<!-- role: engineering -->\n# Mine\n")
+            self.assertEqual(mod.resolve_card(root, "engineering"), amigo)
+
+    def test_zero_claim_role_falls_through_to_default(self) -> None:
+        # No seat declares the role -> fall through to the skill default, never crash (D6).
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seat(root, "sarah.md", _seat_body("qa"))  # qa seat present, engineering absent
+            card = mod.resolve_card(root, "engineering")
+            self.assertIsNotNone(card)
+            self.assertIn("templates", str(card))  # fell through to the default, not the qa seat
+
+    def test_two_claim_role_is_deterministic_lexical(self) -> None:
+        # Two seats declare engineering -> deterministic lexical-by-filename pick, no crash (D6).
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seat(root, "zoe.md", _seat_body("engineering", "Zoe"))
+            first = _seat(root, "anna.md", _seat_body("engineering", "Anna"))
+            self.assertEqual(mod.resolve_card(root, "engineering"), first)  # anna.md < zoe.md
+
+    def test_two_claim_role_warns(self) -> None:
+        # The ambiguity must surface a warning, not resolve silently (D6).
+        import io
+        from contextlib import redirect_stderr
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seat(root, "zoe.md", _seat_body("engineering", "Zoe"))
+            _seat(root, "anna.md", _seat_body("engineering", "Anna"))
+            buf = io.StringIO()
+            with redirect_stderr(buf):
+                mod.resolve_card(root, "engineering")
+            self.assertIn("engineering", buf.getvalue())
+            self.assertIn("anna.md", buf.getvalue())
+
+    def test_render_less_review_seat_is_hard_error(self) -> None:
+        # RFC0021 D4: a resolved seat lacking its review render is a HARD ERROR for --render review,
+        # not a silent fallback to the generic default.
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seat(root, "sarah.md", "<!-- role: engineering -->\n# Sarah\n\nno review sections\n")
+            with self.assertRaises(mod.RenderError):
+                mod.resolve_card(root, "engineering", render="review")
+
+    def test_render_less_seat_ok_for_build(self) -> None:
+        # The hard error is render-scoped: a build render does not require the review sections.
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            seat = _seat(root, "sarah.md", "<!-- role: engineering -->\n# Sarah\n\nbuild only\n")
+            self.assertEqual(mod.resolve_card(root, "engineering", render="build"), seat)
+
+
+class IndependenceFloorTests(unittest.TestCase):
+    """RFC0021 D5: build and review of ONE seat card are separate instances."""
+
+    def test_build_and_review_both_carry_independence_note(self) -> None:
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            seat = _seat(root, "sarah.md", _seat_body("engineering"))
+            build = mod.frame(seat, "engineering", "build")
+            review = mod.frame(seat, "engineering", "review")
+            for out in (build, review):
+                self.assertIn("separate instance", out)
+                self.assertIn("never sign off your own work", out)
+
+    def test_critic_requires_author_differs_even_from_one_card(self) -> None:
+        # Build and review framed from one seat card are distinct delegation instances; the critic
+        # gate still demands author != reviewer. One id (a self-review) is NOT independent.
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "critic", SCRIPT.parent / "critic.py")
+        critic = importlib.util.module_from_spec(spec)
+        sys.modules["critic"] = critic
+        spec.loader.exec_module(critic)
+        # two instances of the one seat -> independent
+        self.assertTrue(critic.is_independent(
+            {"author": "sarah-build-7", "reviewer": "sarah-review-9"}))
+        # one shared instance (signed off own work) -> NOT independent
+        self.assertFalse(critic.is_independent(
+            {"author": "sarah-build-7", "reviewer": "sarah-build-7"}))
 
 
 if __name__ == "__main__":

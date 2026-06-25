@@ -124,8 +124,24 @@ python3 "$CLAUDE_SKILL_DIR/scripts/persona_resolve.py" resolve --seat engineerin
 python3 "$CLAUDE_SKILL_DIR/scripts/persona_resolve.py" resolve --seat qa --render build --root .
 ```
 
-The resolver picks the most-specific identity: a project-authored practitioner amigo at
-`sdlc-studio/personas/amigos/<seat>.md`, else the skill default (Dani / Sam / Lena), else nothing.
+The resolver picks the most-specific identity, most-specific-first:
+
+1. an explicit practitioner amigo at `sdlc-studio/personas/amigos/<seat>.md` (the legacy filename
+   override);
+2. a **role-matched review seat** in `sdlc-studio/personas/seats/*.md` - the project's authored
+   "Three Amigos", consulted as isolated subagents. Seats are named after people, so the resolver
+   matches on a **declared role field**, the machine-readable `<!-- role: engineering -->` comment
+   on the card, never the H1 prose or the filename. This is what stops a hand-authored seat from
+   being shadowed by the generic default;
+3. the skill default amigo (Dani / Sam / Lena);
+4. nothing (the generic path).
+
+The declared role field is deterministic at the boundary: two seat cards declaring one role resolve
+lexically by filename and the resolver warns; zero declaring it falls through to the default and
+never crashes. A resolved seat card requested for `--render review` that lacks its review-render
+sections (Lens / Pushes Back When / Shadow) is a **hard error**, never a silent fallback to the
+generic card - a half-authored seat is surfaced, not quietly dropped.
+
 Four rules govern the framing, none negotiable:
 
 1. **Stance after contract, never through it.** The amigo card is appended *after* Quality Gates as a

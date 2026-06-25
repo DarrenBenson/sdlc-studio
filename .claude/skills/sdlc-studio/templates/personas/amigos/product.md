@@ -2,6 +2,7 @@
 Default Product amigo (RFC0020). A specific, skilled seat that authors stories (NOT the PRD it is
 accountable for) and reviews. Customise or replace per project. See amigo-template.md.
 -->
+<!-- role: product -->
 # Lena Marsh - Product amigo
 
 > **Dual render:** the work render frames Lena when decomposing a ratified PRD into Ready stories;

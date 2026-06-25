@@ -4,8 +4,12 @@ Usage: Copy and customise for a Three Amigos seat (Engineering / QA / Product) t
 work and REVIEWS it. Fuses Cooper goal-directed depth (persona-template.md) with review-seat
 discipline (review-seat-charter.md). An amigo is "well-formed" when every section is filled and the
 Shadow is honest. Three default amigos ship instantiated under `amigos/`.
+Declare the seat role in the machine-readable `<!-- role: ... -->` comment below (one of
+engineering / qa / product). The resolver keys on THIS field, never the H1 prose or the filename,
+so a card named after a person still maps deterministically to its seat. Keep it filled.
 Related: reference-workflow-personas.md, reference-consult.md, persona-template.md
 -->
+<!-- role: {{engineering | qa | product}} -->
 # {{full_name}} - {{Engineering | QA | Product}} amigo
 
 > A specific, skilled person, not a role label. **Dual render:** the **work render** (Craft Goals +

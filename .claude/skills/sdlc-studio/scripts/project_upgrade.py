@@ -30,8 +30,12 @@ CURRENT_SCHEMA = 2  # templates/config-defaults.yaml schema_version
 # (empty dirs do not persist in git, and guessing per-type index headers would over-reach).
 STANDARD_DIRS = ("change-requests", "rfcs", "decisions", "retros")
 # The v3.1 default amigo cards (templates/personas/amigos/, RFC0020). Installed into a project's
-# persona dir when absent so it gets an editable engineering team; never overwritten once present.
+# persona dir GREENFIELD ONLY - when no review seat already fills the role; never overwritten once
+# present.
 AMIGO_CARDS = ("engineering.md", "qa.md", "product.md")
+# The machine-readable seat-role declaration the resolver keys on. Same form as
+# persona_resolve._ROLE_RE - matched here, not the filename, so a person-named seat maps to a role.
+_ROLE_RE = re.compile(r"<!--\s*role:\s*([a-z][a-z0-9-]*)\s*-->", re.I)
 
 _CONFIG = ("# Project configuration for sdlc-studio (merged over templates/config-defaults.yaml).\n"
            "provenance:\n"
@@ -55,13 +59,51 @@ def _amigos_source() -> Path:
     return version_check.skill_root() / "templates" / "personas" / "amigos"
 
 
+def _seat_roles(root: Path) -> set[str]:
+    """The roles covered by the project's existing review seats (personas/seats/*.md), read from
+    each card's declared `<!-- role: ... -->` field, never the filename - seats are
+    named after people. Used to make the upgrade seat-aware: a seat-covered role is not a missing
+    amigo, and generic cards are scaffolded greenfield only."""
+    sdir = _sdlc(root) / "personas" / "seats"
+    if not sdir.is_dir():
+        return set()
+    roles: set[str] = set()
+    for p in sorted(sdir.glob("*.md")):
+        try:
+            text = p.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        m = _ROLE_RE.search(text)
+        if m:
+            roles.add(m.group(1).lower())
+    return roles
+
+
 def _missing_amigos(root: Path) -> list[str]:
-    """The default amigo cards a project lacks (present source, absent in the project's
-    personas/amigos/). A card already in the project - default or customised - is left alone."""
+    """The default amigo cards a project lacks AND no existing review seat covers.
+    A card already in personas/amigos/ - default or customised - is left alone; a role already
+    filled by a role-matched seat in personas/seats/ is NOT reported as a missing amigo, so the
+    upgrade enriches in place rather than manufacturing a parallel set. Generic cards are therefore
+    installed greenfield only - when no seat or amigo fills the role."""
     src = _amigos_source()
     dest = _sdlc(root) / "personas" / "amigos"
+    covered = _seat_roles(root)  # role names: engineering / qa / product
     return [name for name in AMIGO_CARDS
-            if (src / name).exists() and not (dest / name).exists()]
+            if (src / name).exists()
+            and not (dest / name).exists()
+            and Path(name).stem not in covered]
+
+
+def _seat_amigo_overlap(root: Path) -> list[str]:
+    """The roles where an existing review seat and a project amigo BOTH claim the same role - the
+    silent-collision CR0120 was raised for. Named in an explicit heads-up (even in --dry-run) so
+    the operator is never left to notice two parallel role systems unaided. Read-only."""
+    seats = _seat_roles(root)
+    if not seats:
+        return []
+    adir = _sdlc(root) / "personas" / "amigos"
+    amigo_roles = {Path(name).stem for name in AMIGO_CARDS if (adir / name).is_file()}
+    return sorted(seats & amigo_roles)
 
 
 def _bump_version_text(text: str, installed: str, prev_skill: str | None,
@@ -105,15 +147,21 @@ _OLD_PERSONA_HEADING = re.compile(r"^##+\s+(Backstory|Psychology|Decision Driver
                                   re.M | re.I)
 
 
-def _old_persona_model(sd: Path) -> bool:
-    """True if the project uses the legacy persona model: the nested two-category structure
-    (personas/team or personas/stakeholders), or a persona with old-model section headings. Catches
-    nested personas that the flat Cooper well-formedness check (validate.check_personas) misses."""
+def _old_persona_signals(sd: Path) -> list[str]:
+    """The legacy-persona-model signals that actually fired, each naming its own trigger so the
+    operator fixes the right thing first time. Two kinds of drift surface distinctly:
+    structural layout (nested dirs, the word 'amigo' in index.md) needs a dir move / index reword;
+    content-model (old-model section headings) needs a content rewrite. Empty list = no signal."""
     pdir = sd / "personas"
     if not pdir.is_dir():
-        return False
-    if (pdir / "team").is_dir() or (pdir / "stakeholders").is_dir():
-        return True
+        return []
+    signals: list[str] = []
+    nested = [name for name in ("team", "stakeholders") if (pdir / name).is_dir()]
+    if nested:
+        dirs = ", ".join(f"personas/{n}/" for n in nested)
+        signals.append(f"structural layout drift: nested persona dir(s) {dirs} present - "
+                       f"move personas flat under personas/ (a content rewrite alone does not "
+                       f"clear this)")
     # top-level design personas only: the seats/ subdir holds review-seat charters (a different
     # schema) and a consult-guide - none of those are "old design personas".
     # sorted() for filesystem-independent, reproducible scanning.
@@ -124,13 +172,22 @@ def _old_persona_model(sd: Path) -> bool:
             continue
         if p.name == "index.md":  # personas catalogued inline in the old two-category index
             if re.search(r"team personas?|stakeholder personas?|\bamigo\b", text, re.I):
-                return True
+                signals.append("structural layout drift: index.md names the old two-category "
+                               "model (team/stakeholder personas, or 'amigo') - reword index.md "
+                               "(a content rewrite alone does not clear this)")
             continue
         if p.name.lower() in {"readme.md", "consult-guide.md"} or p.name.startswith("_"):
             continue
         if _OLD_PERSONA_HEADING.search(text):
-            return True
-    return False
+            signals.append(f"content-model drift: old-model heading found in {p.name} - rewrite "
+                           f"it to the Cooper model (persona-template.md) / review-seat charter "
+                           f"(review-seat-charter.md)")
+    return signals
+
+
+def _old_persona_model(sd: Path) -> bool:
+    """True if any legacy-persona-model signal fired. See `_old_persona_signals` for the detail."""
+    return bool(_old_persona_signals(sd))
 
 
 def _max_id(root: Path) -> int:
@@ -159,6 +216,14 @@ def audit(root: Path | str) -> dict:
         auto.append({"kind": "missing-amigos", "names": missing_amigos,
                      "detail": f"missing v3.1 default amigo cards ({', '.join(missing_amigos)}) - "
                                "install to sdlc-studio/personas/amigos/ (editable, never overwritten)"})
+    overlap = _seat_amigo_overlap(root)
+    if overlap:
+        # CR0120 AC4: amigos and seats both claim these roles - name the overlap (no silent
+        # collision), even in --dry-run. The resolver prefers the amigo override; converge on one.
+        manual.append({"kind": "seat-amigo-overlap", "names": overlap,
+                       "detail": f"overlap: review seat(s) and amigo card(s) both cover "
+                                 f"{', '.join(overlap)} - two parallel role systems. Converge on "
+                                 "the seats/ home; the resolver prefers the amigo override"})
     drift = sum(len(reconcile.detect_type(t, root)["drift"]) for t in sdlc_md.ARTIFACT_TYPES)
     if drift:
         # NOT auto-applied by upgrade: reconcile can be destructive on multi-schema / inline-row
@@ -171,10 +236,13 @@ def audit(root: Path | str) -> dict:
     if missing:
         manual.append({"kind": "missing-dirs", "names": missing,
                        "detail": f"no {', '.join(missing)} dir(s) - created when you first use them"})
-    if _old_persona_model(sd) or validate.check_personas(root):
-        manual.append({"kind": "personas",
-                       "detail": "old persona model present - rewrite to the Cooper model "
-                                 "(persona-template.md) / review-seat charters (review-seat-charter.md)"})
+    signals = _old_persona_signals(sd)
+    if validate.check_personas(root):
+        signals.append("content-model drift: a flat persona is not well-formed against the Cooper "
+                       "model - rewrite it (persona-template.md)")
+    if signals:
+        manual.append({"kind": "personas", "signals": signals,
+                       "detail": "old persona model present - " + "; ".join(signals)})
     instr = validate.check_instructions(root)
     if instr:
         manual.append({"kind": "agents", "count": len(instr),

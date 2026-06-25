@@ -302,8 +302,10 @@ deterministic set; nothing destructive; idempotent.**
      `provenance.adopt_after` = the highest existing id, so existing artefacts are exempt - not
      mass-stamped), scaffold or bump `sdlc-studio/.version`, install the **v3.1 default amigo
      cards** (see below), and `reconcile` index/status drift.
-   - **Needs judgement** (reported, **never auto-applied, never filed as CRs**): old personas ->
-     the Cooper model (`persona-template.md`) and review-seat charters (`review-seat-charter.md`);
+   - **Needs judgement** (reported, **never auto-applied, never filed as CRs**): old personas, with
+     the finding naming the actual signal - structural-layout drift (move `team/`/`stakeholders/`
+     dirs, reword `index.md`) vs content-model drift (rewrite to `persona-template.md` / a review
+     seat); any seat/amigo role overlap heads-up;
      AGENTS.md/CLAUDE.md refresh from `templates/agent-instructions.md` **preserving project
      sections**; missing `Verify:` lines and informal AC; an optional `constitution.md`.
 3. **Confirm, then `--apply`** the auto-correctable set.
@@ -311,14 +313,32 @@ deterministic set; nothing destructive; idempotent.**
    personas, refresh AGENTS, backfill Verify), guided by this file.
 5. **Run the gate** (`scripts/gate.py`) - the residual is the judgement work still to do.
 
-### v3.1 default amigo cards
+### v3.1 default amigo cards (seat-aware, greenfield-only)
 
 v3.1 ships the enriched **amigo defaults** - the Engineering, QA, and Product amigos
-(`templates/personas/amigos/`, RFC0020): a personal engineering team that both builds and reviews.
-`--apply` installs any missing card into the project's `sdlc-studio/personas/amigos/`, so an
-upgrading project gets an editable team. The step is idempotent and never overwrites: a card
-already present - a default the project kept, or one it customised - is left untouched; only the
-absent ones are written. The upgrade output names each card it added.
+(`templates/personas/amigos/`): a personal engineering team that both builds and reviews. The
+upgrade is **seat-aware**: a project that already has review seats (`personas/seats/`) filling a
+role keeps them - the default for a covered role is **enrich in place**, never a parallel generic
+card beside the authored seat. The match is on each seat card's **declared role field** (the
+machine-readable `<!-- role: engineering -->` comment), never the filename, since seats are named
+after people.
+
+- **Greenfield only:** `--apply` installs a generic amigo card into `sdlc-studio/personas/amigos/`
+  **only when no seat or amigo already fills that role**. A role covered by a seat is not reported
+  as a missing amigo and no parallel card is written.
+- **Idempotent, never overwrites:** a card already present - a default the project kept or one it
+  customised - is left untouched; only the absent, uncovered roles are written. The upgrade output
+  names each card it added.
+- **Overlap heads-up (no silent collision):** when a review seat and an amigo card both claim the
+  same role, the upgrade emits an **explicit heads-up naming the overlap** - in `--dry-run` too -
+  so the operator is never left to notice two parallel role systems unaided. The model is one
+  role-based actor system on the `seats/` home; converge the overlap onto it.
+
+The persona finding from `project upgrade` also names the **actual structural signal** that fired
+(a nested `team/` or `stakeholders/` dir, the word "amigo" in `index.md`, or an old-model heading in
+a named file), separating structural-layout drift (move dirs / reword index) from content-model
+drift (rewrite to the Cooper model), so the operator fixes the right thing first - a content rewrite
+alone does not clear a layout signal.
 
 ## Backward Compatibility
 

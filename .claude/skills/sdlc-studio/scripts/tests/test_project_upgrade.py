@@ -282,5 +282,98 @@ class AmigoDefaultsTests(unittest.TestCase):
             self.assertNotIn("missing-amigos", kinds)
 
 
+class BG0041HintTests(unittest.TestCase):
+    """The old-persona-model finding names the actual structural signal that fired, not a
+    generic 'rewrite content' hint that does not clear the detector."""
+
+    def _personas_finding(self, d):
+        return next((f for f in pu.audit(d)["manual"] if f["kind"] == "personas"), None)
+
+    def test_nested_dirs_hint_names_the_dirs(self):
+        with tempfile.TemporaryDirectory() as d:
+            _project(d, personas=[("team/sarah.md", "# Sarah\n\nx\n")])
+            f = self._personas_finding(d)
+            self.assertIsNotNone(f)
+            self.assertIn("team", f["detail"])  # names the real trigger (the nested dir)
+            self.assertNotIn("rewrite to the Cooper model", f["detail"])  # not the misdirecting hint
+
+    def test_amigo_in_index_hint_names_index(self):
+        with tempfile.TemporaryDirectory() as d:
+            _project(d, personas=[("index.md", "# Personas\n\nthe amigo set\n")])
+            f = self._personas_finding(d)
+            self.assertIsNotNone(f)
+            self.assertIn("amigo", f["detail"])
+            self.assertIn("index.md", f["detail"])
+
+    def test_old_heading_hint_names_the_file(self):
+        with tempfile.TemporaryDirectory() as d:
+            _project(d, personas=[("emma.md", "# Emma\n\n## Backstory\n\nx\n")])
+            f = self._personas_finding(d)
+            self.assertIsNotNone(f)
+            self.assertIn("emma.md", f["detail"])  # names the offending file
+
+
+class CR0120SeatAwareTests(unittest.TestCase):
+    """CR0120 AC1-4 + RFC0021 D2/D4: upgrade is seat-aware; no parallel install when seats cover
+    the role; overlap heads-up even in --dry-run."""
+
+    AMIGOS = ("engineering.md", "qa.md", "product.md")
+
+    def _seat(self, sd, filename, role):
+        d = sd / "personas" / "seats"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / filename).write_text(
+            f"<!-- role: {role} -->\n# Person - {role} seat\n\n"
+            "## Lens\n\nx\n## Pushes Back When\n\nx\n## Shadow\n\nx\n", encoding="utf-8")
+
+    def test_seat_covered_role_not_reported_missing(self):
+        # AC1: a role covered by a seat (by declared role, not filename) is NOT a missing amigo.
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d)
+            self._seat(sd, "sarah.md", "engineering")
+            self.assertNotIn("engineering.md", pu._missing_amigos(Path(d)))
+            # the uncovered roles are still missing
+            self.assertIn("qa.md", pu._missing_amigos(Path(d)))
+
+    def test_all_roles_seat_covered_installs_no_parallel_set(self):
+        # AC2/AC3: when seats cover every role, --apply installs no parallel amigos/ set.
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d)
+            self._seat(sd, "sarah.md", "engineering")
+            self._seat(sd, "marcus.md", "qa")
+            self._seat(sd, "priya.md", "product")
+            pu.apply(d)
+            self.assertFalse((sd / "personas" / "amigos").exists())  # no parallel set manufactured
+
+    def test_greenfield_installs_generic(self):
+        # AC3: no seat/persona fills the role -> generic cards are installed (greenfield).
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d)
+            pu.apply(d)
+            for name in self.AMIGOS:
+                self.assertTrue((sd / "personas" / "amigos" / name).exists())
+
+    def test_overlap_headsup_in_dry_run(self):
+        # AC4: when amigos and seats coexist (overlap), the heads-up fires even in --dry-run.
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d)
+            self._seat(sd, "sarah.md", "engineering")
+            adir = sd / "personas" / "amigos"; adir.mkdir(parents=True, exist_ok=True)
+            (adir / "engineering.md").write_text("<!-- role: engineering -->\n# Dani\n", encoding="utf-8")
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                pu.main(["--root", d])  # dry-run, no --apply
+            out = buf.getvalue().lower()
+            self.assertIn("overlap", out)
+            self.assertIn("engineering", out)
+
+    def test_no_overlap_headsup_when_no_seats(self):
+        with tempfile.TemporaryDirectory() as d:
+            _project(d)
+            self.assertEqual(pu._seat_amigo_overlap(Path(d)), [])
+
+
 if __name__ == "__main__":
     unittest.main()
