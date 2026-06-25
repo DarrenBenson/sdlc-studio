@@ -17,6 +17,11 @@ a generic agent. This resolver picks the identity to frame it with, most-specifi
 contract (file list, ACs, gates) the caller supplies - it never replaces it. Independence is the
 floor regardless of identity: the resolved worker is a separate instance from its reviewer, proven
 by the critic author != reviewer gate. Read-only; pure stdlib.
+
+The `resolve-consult` subcommand exposes the same declared-role chain to the consult workflow, so an
+authored seat drives a consult too (not only a delegated worker). It resolves by declared role:
+a role-matched project seat, else the skill default seat, else the generic enriched seat schema; a
+consult needs the review render, so a matched project seat lacking it is a hard error.
 """
 from __future__ import annotations
 
@@ -93,6 +98,15 @@ def default_card(seat: str) -> Path | None:
     return p if p.is_file() else None
 
 
+def generic_schema() -> Path | None:
+    """The generic enriched seat schema - the consult fallback when no seat fills the role."""
+    skill = version_check.skill_root()
+    if not skill:
+        return None
+    p = Path(skill) / "templates" / "personas" / "amigo-template.md"
+    return p if p.is_file() else None
+
+
 def _has_review_render(path: Path) -> bool:
     """True if the card carries every review-render section heading."""
     try:
@@ -122,6 +136,27 @@ def resolve_card(root: Path | str, seat: str, skip_personas: bool = False,
                 f"the resolver will not silently fall back to the generic default.")
         return card
     return default_card(seat)
+
+
+def resolve_consult(root: Path | str, role: str) -> Path | None:
+    """The seat card a consult runs against, by declared `role:`, most-specific-first:
+    a project review seat whose declared role matches, else the skill default seat for that role,
+    else the generic enriched seat schema. Reuses the delegation chain (`seat_card` keys on the
+    declared field, never the filename or H1 prose), so consult and delegation honour the same
+    authored seat.
+
+    A consult always critiques, so the resolved card needs its review render: a matched PROJECT seat
+    missing those sections is a HARD ERROR (RenderError), never a silent fallback to the generic
+    schema. The shipped default and the generic schema always carry the sections."""
+    card = seat_card(root, role)
+    if card is not None:
+        if not _has_review_render(card):
+            raise RenderError(
+                f"seat card {card} (role '{role}') is missing its review render "
+                f"({', '.join(_REVIEW_SECTIONS)}); fill it or remove the card - "
+                f"a consult will not silently fall back to the generic schema.")
+        return card
+    return default_card(role) or generic_schema()
 
 
 def frame(card: Path | None, seat: str, render: str) -> str:
@@ -155,6 +190,19 @@ def cmd_resolve(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_resolve_consult(args: argparse.Namespace) -> int:
+    try:
+        card = resolve_consult(args.root, args.role.lower())
+    except RenderError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    if args.path_only:
+        print(str(card) if card else "")
+        return 0
+    print(frame(card, args.role.lower(), "review"))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Resolve the worker amigo for a delegated sub-agent.")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -165,6 +213,12 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--skip-personas", action="store_true", help="force the generic path (no framing)")
     r.add_argument("--path-only", action="store_true", help="print the resolved card path, not its body")
     r.set_defaults(func=cmd_resolve)
+    c = sub.add_parser("resolve-consult",
+                       help="Resolve the seat a consult runs against, by declared role (review render).")
+    c.add_argument("--role", required=True, help="the declared seat role to resolve (e.g. engineering, qa, product, ux)")
+    c.add_argument("--root", default=".", help="project root")
+    c.add_argument("--path-only", action="store_true", help="print the resolved card path, not its body")
+    c.set_defaults(func=cmd_resolve_consult)
     args = parser.parse_args(argv)
     return args.func(args)
 

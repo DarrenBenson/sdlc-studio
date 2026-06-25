@@ -1,6 +1,6 @@
 # CR-0124: migrate consult to the declared-role resolver so authored seats are honoured there too
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-25
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium

@@ -11,10 +11,26 @@ Detailed workflows for persona consultation on SDLC artefacts.
 The consult command gets structured feedback from personas on SDLC artefacts. Unlike `/sdlc-studio chat` (interactive), consult is automated and returns structured output.
 
 **Key Principle:** Each seat reviews against a structured **charter** (role, lens, non-negotiables,
-shadow - `templates/personas/review-seat-charter.md`), and is consulted as an **isolated subagent**
-(its own fresh context) so its view is genuinely independent, not a hat worn in the main thread.
-Verdicts land in the existing ledgers (`critic.py` / `ledger.py`) - the record lives outside the
-seat, the stance inside it.
+shadow), and is consulted as an **isolated subagent** (its own fresh context) so its view is
+genuinely independent, not a hat worn in the main thread. Verdicts land in the existing ledgers
+(`critic.py` / `ledger.py`) - the record lives outside the seat, the stance inside it.
+
+**Resolve the seat through the declared-`role:` chain - the same resolver delegation uses, not the
+template name or H1 prose.** A consult must run from the project's authored seat when one fills the
+role, exactly as `persona_resolve` frames a delegated worker:
+
+1. a project review seat in `sdlc-studio/personas/seats/` whose declared `<!-- role: ... -->` field
+   matches the seat (named after a person, matched on the field, never the filename or H1 prose);
+   then
+2. the skill default seat (`templates/personas/amigos/<seat>.md`); then
+3. the generic enriched seat schema (`templates/personas/amigo-template.md`) as the fallback when no
+   seat fills the role.
+
+Resolve the **review render** of the matched seat (a consult critiques). A seat present but missing
+its review render is a **hard error**, never a silent fallback to the generic schema.
+Use `persona_resolve.py resolve-consult --role <role> --root <root>` to pick the card by declared
+role and surface the render-less error - it reuses the delegation resolver, so consult and
+delegation honour the same authored seat.
 
 ---
 
@@ -37,9 +53,13 @@ Get feedback from one specific persona.
 
 ### Workflow
 
-1. **Load the Seat Charter**
-   - Read the seat's charter (`templates/personas/review-seat-charter.md` filled for the seat, or
-     generate one from an archetype seed - `reference-persona.md#archetypes`)
+1. **Resolve the Seat Charter** (declared-`role:` chain - see the Key Principle above)
+   - Resolve the card through the chain: a project `personas/seats/` card whose declared role
+     matches, else the skill default seat, else the generic enriched seat schema
+     (`templates/personas/amigo-template.md`) - via
+     `persona_resolve.py resolve-consult --role <role> --root <root>`. When no authored seat exists
+     and no default fits, generate one from an archetype seed (`reference-persona.md#archetypes`)
+   - Use the matched seat's **review render**; a render-less seat is a hard error
    - Extract: role & mandate, lens, non-negotiables, pushes-back-when, shadow, authority, reads
 
 2. **Load Artefact**
@@ -523,6 +543,8 @@ Provide:
 
 - `reference-persona.md` - Persona management
 - `reference-chat.md` - Interactive persona sessions (Phase 5)
+- `scripts/persona_resolve.py` - the declared-`role:` resolver consult and delegation share
+- `templates/personas/amigo-template.md` - the enriched seat schema (the fallback charter)
 - `help/consult.md` - Quick command reference
 - `templates/reviews/consultation-*.md` - Output templates
 

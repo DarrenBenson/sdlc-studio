@@ -180,8 +180,8 @@ def _old_persona_signals(sd: Path) -> list[str]:
             continue
         if _OLD_PERSONA_HEADING.search(text):
             signals.append(f"content-model drift: old-model heading found in {p.name} - rewrite "
-                           f"it to the Cooper model (persona-template.md) / review-seat charter "
-                           f"(review-seat-charter.md)")
+                           f"it to the Cooper model (persona-template.md) / enriched seat schema "
+                           f"(amigo-template.md)")
     return signals
 
 

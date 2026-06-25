@@ -1,6 +1,6 @@
 # CR-0120: project upgrade enriches existing review seats in place instead of installing a parallel amigo set
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-25
 > **Created-by:** sdlc-studio new
 > **Priority:** High

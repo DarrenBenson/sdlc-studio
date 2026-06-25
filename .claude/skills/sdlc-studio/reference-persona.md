@@ -10,7 +10,7 @@ Detailed workflows for User Persona creation, management, and consultation.
 | --- | --- |
 | Define who the product is *for* (a goal-directed **design persona**) | this file + `templates/personas/persona-template.md` |
 | Reverse-engineer personas from existing code / users | `reference-persona-generate.md` |
-| Set up a **review seat** that critiques artefacts (Three Amigos, PO/PM owners) | `reference-workflow-personas.md` + `templates/personas/review-seat-charter.md` |
+| Set up a **review seat** that critiques artefacts (Three Amigos, PO/PM owners) | `reference-workflow-personas.md` + `templates/personas/amigo-template.md` (the enriched seat schema) |
 | Consult personas or seats on an artefact | `reference-consult.md` |
 | Run an interactive persona session | `reference-chat.md` |
 

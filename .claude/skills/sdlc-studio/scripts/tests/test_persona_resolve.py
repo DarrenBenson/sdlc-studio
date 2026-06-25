@@ -236,5 +236,65 @@ class IndependenceFloorTests(unittest.TestCase):
             {"author": "sarah-build-7", "reviewer": "sarah-build-7"}))
 
 
+class ConsultResolutionTests(unittest.TestCase):
+    """CR0124: consult resolves its seat through the same declared-`role:` chain as delegation,
+    so an authored seat is honoured in consult, not only in delegation."""
+
+    def test_consult_resolves_authored_seat_over_generic(self) -> None:
+        # The load-bearing CR0124 AC: a project seat (role-matched) drives the consult, not the
+        # generic enriched seat schema.
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            seat = _seat(root, "sarah.md", _seat_body("engineering"))
+            card = mod.resolve_consult(root, "engineering")
+            self.assertEqual(card, seat)  # the authored seat, not the generic template
+
+    def test_consult_falls_back_to_generic_schema_when_no_seat(self) -> None:
+        # No seat fills the role and no default exists -> the generic enriched seat schema is the
+        # fallback (the consult still has a charter to run against).
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            card = mod.resolve_consult(root, "ux")  # a role the skill ships no default for
+            self.assertIsNotNone(card)
+            self.assertEqual(card.name, "amigo-template.md")  # the generic schema fallback
+
+    def test_consult_uses_skill_default_when_no_authored_seat(self) -> None:
+        # A role the skill ships a default for, with no authored seat -> the default seat, not the
+        # bare generic schema.
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            card = mod.resolve_consult(root, "engineering")
+            self.assertIsNotNone(card)
+            self.assertEqual(card.name, "engineering.md")
+            self.assertIn("templates", str(card))
+
+    def test_consult_render_less_seat_is_hard_error(self) -> None:
+        # RFC0021 D4: a consult needs the review render; a render-less authored seat is a hard error,
+        # never a silent fallback to the generic schema.
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seat(root, "sarah.md", "<!-- role: engineering -->\n# Sarah\n\nno review sections\n")
+            with self.assertRaises(mod.RenderError):
+                mod.resolve_consult(root, "engineering")
+
+    def test_consult_cli_path_only_prints_authored_seat(self) -> None:
+        import io
+        from contextlib import redirect_stdout
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            seat = _seat(root, "sarah.md", _seat_body("engineering"))
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                rc = mod.main(["resolve-consult", "--role", "engineering",
+                               "--root", str(root), "--path-only"])
+            self.assertEqual(rc, 0)
+            self.assertEqual(buf.getvalue().strip(), str(seat))
+
+
 if __name__ == "__main__":
     unittest.main()

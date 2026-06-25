@@ -91,3 +91,5 @@
 | CR0121 | APPROVE | sam-eriksson-qa-review | dani-okafor-eng-build | 2026-06-25 | - |
 | BG0041 | APPROVE | sam-eriksson-qa-review | dani-okafor-eng-build | 2026-06-25 | - |
 | BG0042 | APPROVE | sam-eriksson-qa-review | dani-okafor-eng-build | 2026-06-25 | - |
+| CR0120 | APPROVE | sam-eriksson-qa-review | dani-okafor-eng-build | 2026-06-25 | - |
+| CR0124 | APPROVE | sam-eriksson-qa-review | dani-okafor-eng-build | 2026-06-25 | - |

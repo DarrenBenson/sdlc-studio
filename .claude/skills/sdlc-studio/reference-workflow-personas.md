@@ -22,8 +22,10 @@ Personas can be consulted at key decision points throughout the SDLC pipeline. T
 > Each is still consulted as an **independent subagent** with a synthesis step (see
 > `reference-consult.md`). The amigos are distinct from the Cooper goal-directed **design personas**
 > (who the product is *for*) - design personas describe users and are the **target/lens** the amigos
-> work toward; the amigos are the team that does and reviews the work. (`review-seat-charter.md`
-> remains the lean charter for pure-review document-owner seats below.)
+> work toward; the amigos are the team that does and reviews the work. There is one seat schema:
+> `amigo-template.md` (the enriched seat schema) covers both a build-capable amigo and a pure-review
+> document-owner seat below - a review-only seat fills its review render and marks the work-render
+> sections "n/a".
 
 ### Document-owner seats
 

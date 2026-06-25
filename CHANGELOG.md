@@ -102,6 +102,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a single side-by-side table naming what each changes and when to reach for which, cross-linked
   from each command's help; the command and help wording names its target so "upgrade" is never
   bare. Documentation only; no behaviour change.
+- **One seat schema: the enriched amigo template supersedes the lean review-seat charter (RFC0021
+  slice 2, CR0120 AC5, D3).** `amigo-template.md` is now the single seat schema. It already was a
+  strict superset of the old `review-seat-charter.md` (Cooper depth + charter discipline + the dual
+  render + the declared role field), and it is now explicit that the one schema covers both a
+  build-capable "Three Amigos" seat and a review-only document-owner seat (Product Owner / Product
+  Manager / UX): a review-only seat fills the review render and marks the work-render sections
+  "n/a". `review-seat-charter.md` is retired to a thin pointer at the enriched schema, so existing
+  references do not 404 and any consuming project is guided to the one template. Every active source
+  reference (`reference-consult.md`, `reference-persona.md`, `reference-workflow-personas.md`, the
+  upgrade drift hint, the template header) now points at the enriched schema.
+- **Consult resolves its seat through the same declared-`role:` chain as delegation (CR0124).** The
+  consult workflow previously loaded its charter from the template keyed on `{{seat_name}}`/H1
+  prose, so a project's authored seat was honoured when the sprint loop delegated work but shadowed
+  in a consult. `reference-consult.md` now resolves the seat by declared `<!-- role: -->` (a project
+  `personas/seats/` card whose role matches, else the skill default seat, else the generic enriched
+  seat schema as the fallback), via a new `persona_resolve.py resolve-consult` surface that reuses
+  the delegation resolver (`seat_card`, `card_role`, the chain). A consult critiques, so a matched
+  seat missing its review render is a hard error, consistent with the delegation resolver. An
+  authored seat is now honoured in both paths.
 
 ## [3.1.0] - 2026-06-25
 
