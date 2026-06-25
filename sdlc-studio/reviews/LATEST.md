@@ -1,12 +1,22 @@
-# LATEST - current project state (v3.1.0)
+# LATEST - current project state (v3.1.1)
 
 > The current-state anchor. **Re-read this and run `/sdlc-studio status` after any context reset
 > or compaction.** Durable guidance lives in AGENTS.md; per-tranche detail lives in CHANGELOG.md
 > and `sdlc-studio/retros/`; the original v2.0 unified review is `RV0001-unified-review-2026-06-20.md`.
 >
-> **Project version:** 3.1.0 (released 2026-06-25) · **Date:** 2026-06-25 ·
+> **Project version:** 3.1.1 (released 2026-06-25) · **Date:** 2026-06-25 ·
 > **Gates:** lint clean, 970 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0,
 > npm audit 0.
+> **v3.1.1 - field-hardening (4 upgrade-run retrospectives, RFC0021):** six bugs + five CRs.
+> RFC0021 (the seats/amigos duality) settled by a dogfooded Three Amigos consult and delivered in
+> two slices: the persona model converges to **one role-based actor model** - `seats/` is the home,
+> an "amigo" is an enriched seat that can also build, and both the delegation resolver
+> (`persona_resolve`) and consult honour a project's authored seats via a declared `<!-- role: -->`
+> field (BG0042, CR0120, CR0124). The reconcile/conformance/validate cluster (BG0039 silent-fail
+> cutoff, BG0040 vacuous persona pass, BG0043 reconcile reporting unmade edits, BG0044 count-block
+> scope) all trace to **LL0008** - a deterministic tool must fail loud, never report success it did
+> not achieve. Built by the amigos (Dani builds TDD, Sam verifies as a separate instance); the
+> independence gate caught a missed call site mid-delivery (WS3).
 > **v3.1.0 - your personal engineering team (RFC0020):** the Three Amigos are now rich, instantiated,
 > editable amigos (Dani/Engineering, Sam/QA, Lena/Product) that both do and review the work; the
 > agentic loop frames each worker as the most-specific amigo (`persona_resolve.py`), and a mechanical

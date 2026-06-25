@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-06-25
+
+A field-hardening release. Six bugs and five change requests, raised from four
+upgrade-run retrospectives, plus RFC0021 - the seats/amigos duality - settled by a
+dogfooded Three Amigos consult and delivered in two slices. The persona model converges
+to one role-based actor model: `seats/` is the home, an "amigo" is an enriched seat that
+can also build, and the delegation resolver and consult both honour a project's authored
+seats via a declared `role:` field. The cluster of reconcile/conformance/validate fixes
+all trace to one law captured as LL0008: a deterministic tool must fail loud, never report
+success it did not achieve. Built by the amigos - the Engineering amigo under TDD, the QA
+amigo verifying as a separate instance - dogfooding the author != reviewer independence
+gate on the skill's own backlog (which caught a missed call site mid-delivery).
+
 ### Added
 
 - **A declared, machine-readable seat-role field; the resolver keys on it (RFC0021 slice 1, D6).**

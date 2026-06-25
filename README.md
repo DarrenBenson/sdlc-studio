@@ -1,6 +1,6 @@
 # SDLC Studio
 
-**Version 3.1.0** | MIT Licence
+**Version 3.1.1** | MIT Licence
 
 **Set a goal and acceptance criteria; the agent drives the proven software
 lifecycle to it - and proves the code against it.** SDLC Studio brings back the
@@ -243,6 +243,15 @@ check is on by default, silent offline, and never nags once dismissed; opt out w
 `version_check.enabled: false`.
 
 ## Roadmap
+
+**Shipped in v3.1.1 - the persona model converges, and the tools fail loud:** RFC0021, settled by a
+dogfooded Three Amigos consult, resolves the seats/amigos duality into **one role-based actor
+model** - `seats/` is the home, an "amigo" is an enriched seat that can also build, and both the
+delegation resolver and the consult workflow honour a project's **authored seats** via a declared
+`role:` field (so a specialist you design is actually used, not shadowed by the defaults). A cluster
+of field fixes all trace to one law - **a deterministic tool must fail loud, never report success it
+did not achieve**: the `adopt_after` cutoff no longer silently disables itself, `reconcile` no longer
+reports an edit it did not persist, and `validate personas` no longer passes by finding nothing.
 
 **Shipped in v3.1.0 - your personal engineering team, persona-shaped delegation, and field
 hardening:** the Three Amigos are now **rich, instantiated, editable amigos** - Engineering (Dani),
