@@ -1,12 +1,19 @@
-# LATEST - current project state (v3.0.1)
+# LATEST - current project state (v3.1.0)
 
 > The current-state anchor. **Re-read this and run `/sdlc-studio status` after any context reset
 > or compaction.** Durable guidance lives in AGENTS.md; per-tranche detail lives in CHANGELOG.md
 > and `sdlc-studio/retros/`; the original v2.0 unified review is `RV0001-unified-review-2026-06-20.md`.
 >
-> **Project version:** 3.0.1 (the consolidated v3 line, released 2026-06-24) · **Date:** 2026-06-24 ·
-> **Gates:** lint clean, 876 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0,
-> npm audit 0, coverage 83%.
+> **Project version:** 3.1.0 (released 2026-06-25) · **Date:** 2026-06-25 ·
+> **Gates:** lint clean, 918 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0,
+> npm audit 0.
+> **v3.1.0 - your personal engineering team (RFC0020):** the Three Amigos are now rich, instantiated,
+> editable amigos (Dani/Engineering, Sam/QA, Lena/Product) that both do and review the work; the
+> agentic loop frames each worker as the most-specific amigo (`persona_resolve.py`), and a mechanical
+> author != reviewer **independence gate** means no seat signs off its own work (74 pre-gate verdicts
+> grandfathered). Field-dogfood fixes: BG0038 (epic-scoped TS passes integrity), CR0113 (ac_scope
+> stops crying wolf), CR0114 (planner flags undeclared deps), CR0115 (TS matrix scaffold), CR0119
+> (`project upgrade` installs the amigos). Built by the amigos, dogfooded on their own backlog.
 > **v3.0.1 folds the whole v3 line into one release** (the per-fix v3.0.x/v3.1/v3.2 tags were
 > consolidated away to keep version numbers low): the `autosprint`→`sprint` rename + sprint
 > lifecycle + greenfield authoring + RV0005 self-review, then the field-dogfood fixes - BG0035

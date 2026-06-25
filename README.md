@@ -1,6 +1,6 @@
 # SDLC Studio
 
-**Version 3.0.1** | MIT Licence
+**Version 3.1.0** | MIT Licence
 
 **Set a goal and acceptance criteria; the agent drives the proven software
 lifecycle to it - and proves the code against it.** SDLC Studio brings back the
@@ -15,6 +15,13 @@ language drives the whole lifecycle. That is the point: **a non-technical founde
 fully trained software-engineering team to work** - say what you want built and the agent runs
 the proven lifecycle (requirements, acceptance criteria, TDD, review, a definition of done that
 means done) on your behalf. Every phrase also has an explicit command if you prefer it:
+
+**Your own personal engineering team.** The work is done by the *Three Amigos* - **Engineering**
+(Dani), **QA** (Sam), and **Product** (Lena) - rich, goal-directed amigos who both *do* the work
+and *review* it, always as separate hands so no one signs off their own code. They ship as
+editable cards (`templates/personas/amigos/`): **tune them to your project, or author your own
+specialised expert** (a staff engineer who knows your stack), and the agent uses the most-specific
+one. The independence is mechanical - the reviewer is always a different seat than the author.
 
 ```text
 "plan the next sprint"                              →  /sdlc-studio sprint --crs Proposed --goal plan
@@ -236,6 +243,15 @@ check is on by default, silent offline, and never nags once dismissed; opt out w
 `version_check.enabled: false`.
 
 ## Roadmap
+
+**Shipped in v3.1.0 - your personal engineering team, persona-shaped delegation, and field
+hardening:** the Three Amigos are now **rich, instantiated, editable amigos** - Engineering (Dani),
+QA (Sam), Product (Lena) - that both do and review the work; the agentic loop **frames each worker
+as the most-specific amigo** (a project-authored specialist overrides the default), and a
+**mechanical author != reviewer gate** means no seat ever signs off its own work. Plus the
+field-dogfood fixes: epic-scoped test-specs pass integrity, the cross-epic AC lint stops crying
+wolf, the planner flags an undeclared dependency graph, the test-spec AC matrix scaffolds from an
+epic, and `project upgrade` installs the amigo team.
 
 **Shipped in v3.0.1 - the sprint lifecycle, greenfield authoring, and a self-review pass:**
 **`autosprint` is renamed `sprint`** (the command is the whole lifecycle; autonomy is the
