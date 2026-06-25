@@ -6,7 +6,9 @@ Related: reference-upgrade.md
 
 # /sdlc-studio upgrade - Schema Upgrade
 
-Upgrade project artifacts from legacy (v1) to modular (v2) schema.
+Upgrade a project's **artifact document shape** from legacy (v1) to modular (v2) schema. This is one
+of three "upgrade" surfaces - see `reference-upgrade.md#three-upgrades` for `skill-update` (the
+installed skill) and `project upgrade` (a project's conventions).
 
 ## You can just ask
 

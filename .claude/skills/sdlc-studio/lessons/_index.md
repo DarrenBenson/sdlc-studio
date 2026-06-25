@@ -20,6 +20,7 @@ and from per-project memory (project-specific facts).
 | [LL0005](LL0005-full-review-set-includes-a-code-leg.md) | The between-releases review set must include a CODE leg | review, release, quality |
 | [LL0006](LL0006-deploy-meta-files-gap-class.md) | Deploy meta-files gap – new boot-read file → every deploy path | deploy, packaging, gap-class |
 | [LL0007](LL0007-plan-from-value-not-bare-priority-a-ready-story-whose-verifiers-pass-is-already-done.md) | Plan from value, not bare priority; a Ready story whose verifiers pass is already done | sprint, planning, wsjf, personas, conformance |
+| [LL0008](LL0008-a-deterministic-tool-must-fail-loud-never-report-success-it-did-not-achieve.md) | A deterministic tool must fail loud, never report success it did not achieve | tooling, determinism, false-green, mis-report, bug-class |
 
 ## Notes
 

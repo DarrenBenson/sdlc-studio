@@ -79,8 +79,8 @@ catalogue and worked workflows below cover every tool.
 | `/sdlc-studio pvd create` / `pvd sync` / `product reconcile` | Product Vision Document: the multi-repo product layer above the PRD |
 | `/sdlc-studio gate` | Portable, ecosystem-neutral CI quality gate over the deterministic checks |
 | `/sdlc-studio deploy` | Orchestrate-only deploy last-mile: gate, verify, record (operator-triggered, never autonomous) |
-| `/sdlc-studio skill-update` | Check for and install a newer SDLC Studio release |
-| `/sdlc-studio project upgrade` | Migrate a consuming project's artefacts to the new skill's conventions (dry-run; `--apply` for the safe set; reports the judgement items) |
+| `/sdlc-studio skill-update` | Upgrade the **installed skill** to a newer SDLC Studio release (one of three "upgrade" surfaces - see `reference-upgrade.md#three-upgrades`) |
+| `/sdlc-studio project upgrade` | Upgrade a **consuming project's artefacts and conventions** to the new skill (dry-run; `--apply` for the safe set; reports the judgement items) |
 
 ### Deterministic Artifact Tooling
 
@@ -132,7 +132,7 @@ The tooling sprint uses to create and close artifacts the same way every time (t
 | Command | Description |
 | --- | --- |
 | `/sdlc-studio init` | Initialise project context and config |
-| `/sdlc-studio upgrade` | Upgrade project to latest schema version |
+| `/sdlc-studio upgrade` | Upgrade a project's **artifact schema** (v1 -> v2 doc shape); distinct from `skill-update` / `project upgrade` - see `reference-upgrade.md#three-upgrades` |
 | `/sdlc-studio upgrade --dry-run` | Preview upgrade changes without applying |
 | `/sdlc-studio review` | Unified PRD, TRD, TSD review |
 | `/sdlc-studio review --quick` | Fast review using cached data |

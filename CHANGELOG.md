@@ -5,6 +5,27 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **`validate personas` no longer reports a vacuous clean pass on a nested persona layout (BG0040).**
+  The flat `personas/*.md` glob matched zero files when a project keeps its personas nested (e.g.
+  `personas/team/`, `personas/stakeholders/`), and the check still printed "personas look
+  well-formed". It now emits a `persona-layout` advisory ("personas present but not in the flat
+  Cooper layout (N nested files found); not validated") when the flat glob inspects nothing but
+  persona-shaped files sit in subdirs. A pass means inspected and well-formed, never found nothing
+  to inspect (LL0008). The `seats/` subtree (review-seat charters) stays excluded.
+
+### Changed
+
+- **Disambiguated the three "upgrade" surfaces in one place (CR0123).** `skill-update` (the
+  installed skill), `project upgrade` (a consuming project's conventions), and `upgrade` (a
+  project's v1 -> v2 artifact schema) were all called "upgrade". `reference-upgrade.md` now carries
+  a single side-by-side table naming what each changes and when to reach for which, cross-linked
+  from each command's help; the command and help wording names its target so "upgrade" is never
+  bare. Documentation only; no behaviour change.
+
 ## [3.1.0] - 2026-06-25
 
 ### Added

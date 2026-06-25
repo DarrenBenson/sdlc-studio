@@ -384,6 +384,55 @@ class PersonaWellFormedTests(unittest.TestCase):
         (pd / "README.md").write_text("# Personas\n\noverview\n", encoding="utf-8")
         self.assertEqual([f["file"] for f in validate.check_personas(_pl.Path(d))], [])
 
+    def test_nested_only_personas_get_advisory_not_clean_pass(self):
+        # BG0040: a project whose personas are nested (no flat design personas) must NOT read as a
+        # clean pass - the flat glob finds nothing, so the check must say so, not pass vacuously.
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            nested = repo / "sdlc-studio" / "personas" / "team"
+            nested.mkdir(parents=True)
+            body = ("# Maya\n\n## Quick Reference\n\n| Attribute | Value |\n| --- | --- |\n"
+                    "| **Cast role** | Primary |\n\n## Who They Are\n\nx\n")
+            (nested / "maya.md").write_text(body, encoding="utf-8")
+            out = validate.check_personas(repo)
+            rules = [v["rule"] for v in out]
+            self.assertIn("persona-layout", rules)
+            self.assertTrue(any("not validated" in v["message"] for v in out))
+
+    def test_nested_count_reported_in_advisory(self):
+        # the advisory names how many nested files were found (so the operator can act)
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            pdir = repo / "sdlc-studio" / "personas" / "stakeholders"
+            pdir.mkdir(parents=True)
+            (pdir / "a.md").write_text("# A\n\n## Who They Are\n\nx\n", encoding="utf-8")
+            (pdir / "b.md").write_text("# B\n\n## Who They Are\n\nx\n", encoding="utf-8")
+            out = validate.check_personas(repo)
+            self.assertEqual(len(out), 1)
+            self.assertEqual(out[0]["rule"], "persona-layout")
+            self.assertIn("2", out[0]["message"])
+
+    def test_flat_personas_present_no_layout_advisory(self):
+        # when flat design personas ARE found, nested files do not trigger the advisory
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            self._persona(repo, "maya", "Primary", sections=self.STD)
+            nested = repo / "sdlc-studio" / "personas" / "team"
+            nested.mkdir(parents=True)
+            (nested / "x.md").write_text("# X\n\n## Who They Are\n\nx\n", encoding="utf-8")
+            rules = [v["rule"] for v in validate.check_personas(repo)]
+            self.assertNotIn("persona-layout", rules)
+
+    def test_seats_only_is_not_a_layout_advisory(self):
+        # seats/ holds review-seat charters (a different schema), not nested design personas;
+        # a personas/ dir with only seats/ is genuinely empty of personas, not a nested layout
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            seats = repo / "sdlc-studio" / "personas" / "seats"
+            seats.mkdir(parents=True)
+            (seats / "engineer.md").write_text("# Engineer seat\n\ncharter\n", encoding="utf-8")
+            self.assertEqual(validate.check_personas(repo), [])
+
 
 if __name__ == "__main__":
     unittest.main()

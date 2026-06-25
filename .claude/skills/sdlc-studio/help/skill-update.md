@@ -21,8 +21,9 @@ SDLC Studio is model-invoked - say it in plain language:
 /sdlc-studio skill-update          # check, show installed -> latest, confirm, install, reload
 ```
 
-Distinct from `/sdlc-studio upgrade` (which migrates a project's artifacts between
-schema versions). `skill-update` updates the skill itself.
+`skill-update` updates the **installed skill itself**. It is distinct from `/sdlc-studio upgrade`
+(a project's artifact schema, v1 -> v2) and `/sdlc-studio project upgrade` (a project's conventions).
+All three are named side by side in `reference-upgrade.md#three-upgrades`.
 
 ## What it does
 
@@ -47,4 +48,5 @@ It is on by default, silent offline, and checks at most once per `version_check.
 ## See also
 
 - `reference-skill-update.md` - the workflow
+- `reference-upgrade.md#three-upgrades` - the three "upgrade" surfaces named side by side
 - `scripts/version_check.py` - `check` / `snooze` / `scope`

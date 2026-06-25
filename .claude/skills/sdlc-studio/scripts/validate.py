@@ -332,12 +332,15 @@ def check_personas(root: Path) -> list[dict]:
     persona (primary/secondary/supplemental) wants Who They Are, End Goals, Experience Goals,
     Behaviours & Context, Frustrations, Scenario; a **Negative** persona swaps Experience Goals
     for a Why-not (and keeps a Scenario/how-to-handle); Customer/Served make Experience + Scenario
-    optional. No-op for a repo with no personas dir.
+    optional. No-op for a repo with no personas dir. When the flat glob inspects nothing but
+    persona-shaped files sit nested in subdirs, emit a `persona-layout` advisory rather than a
+    clean pass on an empty inspection (LL0008).
     """
     out: list[dict] = []
     pdir = Path(root) / "sdlc-studio" / "personas"
     if not pdir.is_dir():
         return out
+    inspected = 0
     for p in sorted(pdir.glob("*.md")):
         # design personas only - skip index / readme / a consult-guide / underscore files, and the
         # seats/ subdir (review-seat charters, a different schema) is already excluded by the flat glob
@@ -347,6 +350,7 @@ def check_personas(root: Path) -> list[dict]:
             text = p.read_text(encoding="utf-8")
         except OSError:
             continue
+        inspected += 1
         role = _persona_cast_role(text)
         hs = _headings(text)
         if role is None:
@@ -369,6 +373,21 @@ def check_personas(root: Path) -> list[dict]:
             if not ok:
                 out.append({"severity": "warning", "rule": "persona-section", "file": str(p),
                             "message": f"missing section: {name}"})
+
+    # LL0008: a pass must mean "inspected and well-formed", never "found nothing to inspect". When
+    # the flat glob found no design personas but persona-shaped files sit in subdirs (e.g.
+    # personas/team/, personas/stakeholders/, personas/amigos/), emit an advisory rather than a
+    # vacuous clean pass. seats/ (review-seat charters, a different schema) is excluded by design.
+    if inspected == 0:
+        nested = [p for p in pdir.rglob("*.md")
+                  if p.parent != pdir
+                  and "seats" not in p.relative_to(pdir).parts
+                  and p.name.lower() not in {"index.md", "readme.md", "consult-guide.md"}
+                  and not p.name.startswith("_")]
+        if nested:
+            out.append({"severity": "warning", "rule": "persona-layout", "file": str(pdir),
+                        "message": f"personas present but not in the flat Cooper layout "
+                                   f"({len(nested)} nested files found); not validated"})
     return out
 
 

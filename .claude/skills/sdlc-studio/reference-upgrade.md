@@ -4,6 +4,7 @@
 
 ## Contents
 
+- [Three things called "upgrade"](#three-upgrades)
 - [Schema Versions](#schema-versions)
 - [Version Check (hint and status only)](#version-check-hint-and-status-only)
 - [Version Detection](#version-detection)
@@ -15,6 +16,22 @@
 - [See Also](#see-also)
 
 Workflows for upgrading projects between schema versions and detecting version mismatches.
+
+## Three things called "upgrade" {#three-upgrades}
+
+Three distinct operations all carry the word "upgrade". This table is the single place that names
+what each one changes and when to reach for it - each command's help links here.
+
+| Command | Upgrades | When |
+| --- | --- | --- |
+| `/sdlc-studio skill-update` | the **installed skill** (the tool itself) to the latest published release | a newer release exists; the startup notice prompts it |
+| `/sdlc-studio project upgrade` | a **consuming project's artefacts and conventions** to what the new skill expects (config, provenance cutoff, personas, AGENTS.md, index drift) | a long-lived project has fallen behind the skill; `skill-update` offers it after a bump |
+| `/sdlc-studio upgrade` | a single project's **artifact document shape** (the v1 -> v2 schema transform) | the project is on schema v1 and you want the modular v2 layout |
+
+Order when a project is far behind: run `skill-update` first (get the new tool), then `upgrade` if
+the project is schema v1 (fix the doc shape), then `project upgrade` for the remaining conventions.
+The schema `upgrade` is one part of what `project upgrade` covers - see
+[project upgrade](#project-upgrade-workflow).
 
 ## Schema Versions
 

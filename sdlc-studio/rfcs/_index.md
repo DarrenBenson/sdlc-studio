@@ -1,6 +1,6 @@
 # RFC Registry Index
 
-**Last Updated:** 2026-06-20
+**Last Updated:** 2026-06-25
 
 ## Summary
 
@@ -8,10 +8,10 @@
 | --- | --- |
 | Draft | 1 |
 | In Review | 0 |
-| Accepted | 16 |
+| Accepted | 17 |
 | Superseded | 0 |
 | Withdrawn | 3 |
-| **Total** | **20** |
+| **Total** | **21** |
 
 ## All RFCs
 
@@ -37,3 +37,4 @@
 | [RFC-0018](RFC0018-self-check-candidates-vocabulary-consistency-verb-taxonomy-and.md) | self-check candidates vocabulary-consistency verb-taxonomy and telemetry surfacing | Medium | Draft | -- | 2026-06-22 | -- |
 | [RFC-0019](RFC0019-authoring-autosprint-a-guardrailed-prd-to-epics-to.md) | authoring autosprint - a guardrailed PRD to epics to stories loop (greenfield first-mile) | Medium | Accepted | sdlc | 2026-06-24 | -- |
 | [RFC-0020](RFC0020-maximise-persona-use-persona-shaped-delegation-across-the.md) | Maximise persona use - persona-shaped delegation across the SDLC lifecycle | High | Accepted | operator vision | 2026-06-25 | -- |
+| [RFC-0021](RFC0021-resolve-the-seats-and-amigos-duality-one-role.md) | resolve the seats and amigos duality - one role-based actor model | Medium | Accepted | field | 2026-06-25 | CR0120 |
