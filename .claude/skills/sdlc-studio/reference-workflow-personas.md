@@ -10,12 +10,20 @@ How personas integrate across all SDLC Studio workflows.
 
 Personas can be consulted at key decision points throughout the SDLC pipeline. This reference describes when persona consultation adds value, when to skip it, and how to control integration behaviour.
 
-> **Review seats are charters, consulted in isolation.** The seats that review artefacts
-> (the Three Amigos: Product / Engineering / QA, plus the document owners below) are structured
-> **charters** (`templates/personas/review-seat-charter.md`), each consulted as an **independent
-> subagent** with a synthesis step (see `reference-consult.md`). These review seats are distinct from
-> the Cooper goal-directed **design personas** (who the product is *for*) - design personas
-> describe users; review seats describe who reviews the work.
+> **The Three Amigos are your own personal engineering team.** Engineering, QA, and Product ship as
+> rich, instantiated **amigo cards** (`templates/personas/amigos/`) - specific, skilled people
+> (Dani, Sam, Lena) with goals, proficiency, a working method, and an honest **Shadow** - built by
+> fusing Cooper goal-directed depth with seat discipline (`templates/personas/amigo-template.md`,
+> RFC0020). They both **do** the work (a build / author / test render) and **review** it (a review
+> render) - always as separate instances, so a seat never signs off its own work. **Edit them to
+> suit your project**, or author a more specialised practitioner amigo that overrides a default; the
+> richer and more project-specific the amigo, the more it is worth.
+>
+> Each is still consulted as an **independent subagent** with a synthesis step (see
+> `reference-consult.md`). The amigos are distinct from the Cooper goal-directed **design personas**
+> (who the product is *for*) - design personas describe users and are the **target/lens** the amigos
+> work toward; the amigos are the team that does and reviews the work. (`review-seat-charter.md`
+> remains the lean charter for pure-review document-owner seats below.)
 
 ### Document-owner seats
 

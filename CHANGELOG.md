@@ -5,6 +5,17 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **the Three Amigos are now a rich, instantiated engineering team (CR0118, RFC0020 D4):** an
+  enriched amigo card (`templates/personas/amigo-template.md`) fuses Cooper goal-directed depth
+  (Who They Are, Craft Goals, Proficiency, Scenario) with seat discipline (Non-Negotiables, Shadow,
+  Tensions) and a dual render (build/author vs review, separate instances). Three default amigos
+  ship instantiated - Engineering (Dani), QA (Sam), Product (Lena) - editable per project; a richer
+  project-authored practitioner amigo overrides a default. Documented in reference-workflow-personas.md.
+
 ## [3.0.1] - 2026-06-24
 
 > The v3 line: the `autosprint`->`sprint` rename + sprint lifecycle, greenfield authoring,
