@@ -151,7 +151,7 @@ shared with `reconcile.parse_index`.
 - [x] [US0044: rolling LESSONS-SUMMARY generator + sprint-start read (CR0129)](../stories/US0044-rolling-lessons-summary-generator-sprint-start-read-cr0129.md)
 - [x] [US0045: agentic-wave worktree doctrine doc enrichment (CR0126)](../stories/US0045-agentic-wave-worktree-doctrine-doc-enrichment-cr0126.md)
 - [x] [US0046: pre-deploy readiness checklist doc (CR0127)](../stories/US0046-pre-deploy-readiness-checklist-doc-cr0127.md)
-- [ ] [US0047: restore the runtime-scripts coverage gate to green on CI (blocks all PR merges)](../stories/US0047-restore-the-runtime-scripts-coverage-gate-to-green.md)
+- [x] [US0047: restore the runtime-scripts coverage gate to green on CI (blocks all PR merges)](../stories/US0047-restore-the-runtime-scripts-coverage-gate-to-green.md)
 - [ ] [US0048: adopt Dependabot CI action bumps: actions/checkout v7, actions/setup-python v6](../stories/US0048-adopt-dependabot-ci-action-bumps-actions-checkout-v7.md)
 - [x] [US0049: blocker-sweep detection: now-unblocked units, in-repo census + cross-repo via PVD manifest (CR0130)](../stories/US0049-blocker-sweep-detection-now-unblocked-units-in-repo.md)
 - [x] [US0050: wire the blocker sweep before sprint planning + advisory reconcile lane (CR0130)](../stories/US0050-wire-the-blocker-sweep-before-sprint-planning-advisory.md)

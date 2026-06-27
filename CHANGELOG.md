@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **CI coverage gate restored to green (US0047).** The gate failed on CI not from a coverage
+  shortfall (coverage is a healthy ~82%) but from test *failures*: the config-driven tests
+  (provenance/validate `adopt_after` cutoff, transition done-gate, conformance) read
+  `.config.yaml` via `config._yaml()` and raise without PyYAML, which the CI step never installed -
+  so `coverage run -m unittest` exited non-zero before the threshold was ever checked. Added
+  `pyyaml` to the coverage step's `pip install`. The story's original "coverage drops from skips"
+  framing was a misdiagnosis, corrected in its Root Cause section.
+
+### Changed
+
+- **CI action bumps adopted (US0048):** `actions/checkout` v6 -> v7 (both jobs) and
+  `actions/setup-python` v5 -> v6 in `.github/workflows/lint.yml`, superseding Dependabot PRs
+  #25/#26.
+
 ### Added
 
 - **Two cross-project lessons promoted from the consuming repos (LL0009, LL0010).** LL0009 - a silent

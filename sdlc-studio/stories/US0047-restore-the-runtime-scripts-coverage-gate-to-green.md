@@ -1,6 +1,6 @@
 # US0047: restore the runtime-scripts coverage gate to green on CI (blocks all PR merges)
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-06-27
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0010
@@ -64,9 +64,9 @@ local-versus-CI gap here so it does not recur.
 - **Given** the runtime-scripts coverage gate currently fails on the CI runner
 - **When** the gate command runs in the CI environment (no `gh`, no git identity, no external tools), not only on a developer machine
 - **Then** runtime-scripts coverage is >= 80% and the gate exits zero
-- **Verify:** bash -lc "cd /home/darren/code/DarrenBenson/sdlc-studio && coverage run --source=.claude/skills/sdlc-studio/scripts -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests && coverage report --omit='*/tests/*' --fail-under=80"
+- **Verify:** shell coverage run --source=.claude/skills/sdlc-studio/scripts -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests && coverage report --omit='*/tests/*' --fail-under=80
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-27)
 
 ### AC2: Local-versus-CI discrepancy identified and removed
 
@@ -75,7 +75,7 @@ local-versus-CI gap here so it does not recur.
 - **Then** the tests that silently skip on CI are made to run (or those code paths are covered another way), and the root cause of the gap is noted in this story so the gate is honest on both local and CI runs
 - **Verify:** manual
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-27) - root cause (PyYAML-absent config tests fail, not skip) identified, reproduced, fixed (pyyaml in the CI step), and documented in Root Cause below
 
 > **Verification target tiers:** `functional` (single round-trip - default) | `conversational` (multi-turn / multi-step session continuity) | `soak` (live traffic over a window) | `live` (operator-confirmed in production). End-to-end ACs default to `conversational`; production-affecting ACs default to `soak`; ACs shipping behind a flag awaiting promotion default to `live`. See `reference-test-best-practices.md#verification-depth-tiers`.
 
@@ -160,6 +160,28 @@ None.
 **Affects production runtime:** false
 
 *Not applicable - story does not change runtime behaviour.*
+
+---
+
+## Root Cause (verified)
+
+The original framing (coverage drops below 80% because tests *skip* on CI) was a
+misdiagnosis. The verified cause is **test failures, not a coverage shortfall**:
+
+- The CI coverage step installs only `coverage` (`pip install --quiet coverage`); it never
+  installs PyYAML.
+- Several tests are config-driven and read `.config.yaml` through `config._yaml()`, which
+  raises `RuntimeError: config loading needs PyYAML` when PyYAML is absent. Without the
+  module these tests **fail/error** (they do not skip): `test_provenance` and
+  `test_validate` `adopt_after`-cutoff cases (the cutoff is config-read, so legacy
+  exemptions stop applying), `test_transition` done-gate cases, and the conformance cutoff.
+  Reproduced locally by shadowing `yaml`: 8 failures + 2 errors.
+- `coverage run -m unittest discover` propagates unittest's non-zero exit on any failure, so
+  the `&&` short-circuits and the step fails **before** `coverage report` runs. Coverage
+  itself is healthy at ~82% (1255/6871 missing without yaml), comfortably over the 80% gate.
+
+**Fix:** add `pyyaml` to the coverage step's `pip install` so the config-driven tests run
+and pass, exactly as they do locally. This makes the gate honest on both local and CI runs.
 
 ---
 
