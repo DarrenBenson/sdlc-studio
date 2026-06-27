@@ -146,9 +146,9 @@ shared with `reconcile.parse_index`.
 
 - [ ] [US0040: index-archive writer + terminal-status vocab flag + dry-run (CR0125)](../stories/US0040-index-archive-writer-terminal-status-vocab-flag-dry.md)
 - [x] [US0041: next_id archive-union guard so archived ids are never reallocated (CR0125)](../stories/US0041-next-id-archive-union-guard-so-archived-ids.md)
-- [ ] [US0042: retro hard close-gate: sprint close fails loud without a batch retro (CR0129)](../stories/US0042-retro-hard-close-gate-sprint-close-fails-loud.md)
-- [ ] [US0043: lessons re-validation verb: close obsolete lessons by validity (CR0129)](../stories/US0043-lessons-re-validation-verb-close-obsolete-lessons-by.md)
-- [ ] [US0044: rolling LESSONS-SUMMARY generator + sprint-start read (CR0129)](../stories/US0044-rolling-lessons-summary-generator-sprint-start-read-cr0129.md)
+- [x] [US0042: retro hard close-gate: sprint close fails loud without a batch retro (CR0129)](../stories/US0042-retro-hard-close-gate-sprint-close-fails-loud.md)
+- [x] [US0043: lessons re-validation verb: close obsolete lessons by validity (CR0129)](../stories/US0043-lessons-re-validation-verb-close-obsolete-lessons-by.md)
+- [x] [US0044: rolling LESSONS-SUMMARY generator + sprint-start read (CR0129)](../stories/US0044-rolling-lessons-summary-generator-sprint-start-read-cr0129.md)
 - [x] [US0045: agentic-wave worktree doctrine doc enrichment (CR0126)](../stories/US0045-agentic-wave-worktree-doctrine-doc-enrichment-cr0126.md)
 - [x] [US0046: pre-deploy readiness checklist doc (CR0127)](../stories/US0046-pre-deploy-readiness-checklist-doc-cr0127.md)
 - [ ] [US0047: restore the runtime-scripts coverage gate to green on CI (blocks all PR merges)](../stories/US0047-restore-the-runtime-scripts-coverage-gate-to-green.md)

@@ -657,3 +657,91 @@ class RoundTripTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+LESSONS_FIXTURE = """# Project Lessons
+
+**Last Updated:** 2026-01-01
+
+## L-0002: Second lesson
+
+- **Epic:** EP0005
+- **Rule:** always do X
+- **Applies to:** anything with X
+
+## L-0001: First lesson
+
+- **Epic:** EP0004
+- **Fix:** did Y
+"""
+
+
+class RevalidateTests(unittest.TestCase):
+    def _write(self, root: Path) -> Path:
+        p = root / "sdlc-studio" / ".local" / "lessons.md"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(LESSONS_FIXTURE, encoding="utf-8")
+        return p
+
+    def test_lessons_revalidate(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            p = self._write(root)
+            # listing is read-only and shows both open
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                lessons.main(["revalidate", "--project-file", str(p), "--format", "json"])
+            data = json.loads(out.getvalue())
+            self.assertEqual(data["count"], 2)
+            # closing L-0001 records the closure and removes it from open
+            lessons.main(["revalidate", "--project-file", str(p),
+                          "--close", "L-0001", "--reason", "obsolete"])
+            entries = lessons.parse_project_lessons(p.read_text(encoding="utf-8"))
+            by_id = {e["id"]: e for e in entries}
+            self.assertTrue(lessons.is_closed(by_id["L-0001"]))
+            self.assertFalse(lessons.is_closed(by_id["L-0002"]))
+            self.assertIn("obsolete", by_id["L-0001"]["body"])
+
+    def test_lessons_revalidate_idempotent(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            p = self._write(root)
+            lessons.main(["revalidate", "--project-file", str(p), "--close", "L-0001"])
+            after_first = p.read_text(encoding="utf-8")
+            lessons.main(["revalidate", "--project-file", str(p), "--close", "L-0001"])
+            self.assertEqual(p.read_text(encoding="utf-8"), after_first)  # no double-close
+
+
+class SummaryTests(unittest.TestCase):
+    def _write(self, root: Path) -> Path:
+        p = root / "sdlc-studio" / ".local" / "lessons.md"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(LESSONS_FIXTURE, encoding="utf-8")
+        return p
+
+    def test_lessons_summary_generator(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            p = self._write(root)
+            out = root / "summary.md"
+            lessons.main(["summary", "--project-file", str(p), "--out", str(out)])
+            text = out.read_text(encoding="utf-8")
+            self.assertIn("L-0001", text)
+            self.assertIn("L-0002", text)
+            self.assertIn("always do X", text)  # gist from the Rule field
+            # closed lessons drop out of the summary
+            lessons.main(["revalidate", "--project-file", str(p), "--close", "L-0001"])
+            lessons.main(["summary", "--project-file", str(p), "--out", str(out)])
+            text2 = out.read_text(encoding="utf-8")
+            self.assertNotIn("L-0001", text2)
+            self.assertIn("L-0002", text2)
+
+    def test_lessons_summary_deterministic(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            p = self._write(root)
+            out = root / "summary.md"
+            lessons.main(["summary", "--project-file", str(p), "--out", str(out)])
+            first = out.read_text(encoding="utf-8")
+            lessons.main(["summary", "--project-file", str(p), "--out", str(out)])
+            self.assertEqual(out.read_text(encoding="utf-8"), first)  # byte-identical

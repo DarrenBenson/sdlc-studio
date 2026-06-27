@@ -104,10 +104,22 @@ Natural language resolves to the same: "do an sprint to deliver all open bugs"
    metrics passed: `--iterations`/`--verdict`/`--wall-time-s`/`--stages`) is appended to
    the gitignored `sdlc-studio/.local/telemetry.jsonl`. Advisory -
    it never affects the close; it feeds the deferred calibrate step.
-7. **Retro.** The closing gate also writes a sprint retro to
-   `sdlc-studio/retros/` (delivered, blocked, lessons) and reads the recent retros
-   plus `lessons recall` at the **start** - the learning loop. The retro is a
-   general capability, reused here, not sprint-only.
+7. **Retro lifecycle (a hard gate, not doctrine).** The close runs a five-step learning loop,
+   each step script-backed so it cannot be silently skipped:
+   1. **Hard close gate.** The close runs `gate --require-retro RETRO{next}` and **fails loud**
+      (non-zero, no success report) until the batch retro exists in `sdlc-studio/retros/`, mirroring
+      the reconcile-drift-0 gate. "Unconditional" is now mechanical, not a habit.
+   2. **Review + write lessons.** Durable lessons from the wave's `.local/lessons.md` are written
+      into the committed retro (delivered, blocked, lessons).
+   3. **Re-validate open lessons.** `lessons revalidate` lists open lessons; the stale ones are
+      closed by validity (`lessons revalidate --close L-NNNN`), generalising `prune --older` so the
+      log does not grow into noise.
+   4. **Refresh the rolling summary.** `lessons summary` regenerates the committed
+      `sdlc-studio/retros/LESSONS-SUMMARY.md` from the still-valid lessons - the cheap, high-signal
+      digest (progressive disclosure: the full log is the archive, the summary is what is loaded).
+   5. **Read the summary at the start.** A new sprint reads `LESSONS-SUMMARY.md` plus `lessons recall`
+      at the **start** - not the full log - and surfaces generalisable lessons for `lessons add --global`.
+   The retro is a general capability, reused here, not sprint-only.
 
 ## Definition of Done
 

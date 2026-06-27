@@ -223,3 +223,28 @@ class GateExitContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RetroCloseGateTests(unittest.TestCase):
+    """US0042 / CR0129: the sprint close must fail loud without the batch retro."""
+
+    def test_close_gate_requires_retro(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            (root / "sdlc-studio" / "retros").mkdir(parents=True)
+            report = gate.run_gate(str(root), checks={}, require_retro="RETRO0005")
+            self.assertFalse(report["ok"])
+            retro = next(c for c in report["checks"] if c["check"] == "retro")
+            self.assertEqual(retro["status"], "fail")
+            self.assertTrue(retro["blocking"])
+
+    def test_close_gate_passes_with_retro(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            rd = root / "sdlc-studio" / "retros"
+            rd.mkdir(parents=True)
+            (rd / "RETRO0005-batch.md").write_text("# RETRO-0005\n", encoding="utf-8")
+            report = gate.run_gate(str(root), checks={}, require_retro="RETRO0005")
+            self.assertTrue(report["ok"])

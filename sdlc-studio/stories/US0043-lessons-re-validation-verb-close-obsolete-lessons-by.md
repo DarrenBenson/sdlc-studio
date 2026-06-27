@@ -1,6 +1,6 @@
 # US0043: lessons re-validation verb: close obsolete lessons by validity (CR0129)
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-06-27
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0010
@@ -45,18 +45,18 @@ Implements part of CR0129. The sprint retro is meant to re-validate accumulated 
 - **Given** a lessons log with open entries
 - **When** the operator runs the re-validation verb and confirms which open lessons are obsolete
 - **Then** `lessons.py` lists the open lessons for confirm/close and records the closure as a status transition, generalising `prune --older` from age-based to validity-based closure
-- **Verify:** pytest -k test_lessons_revalidate
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RevalidateTests::test_lessons_revalidate
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-27)
 
 ### AC2: the verb is idempotent
 
 - **Given** a re-validation pass has already closed the obsolete lessons
 - **When** the verb is run again with no newly obsolete lessons
 - **Then** it closes nothing new and leaves the log unchanged
-- **Verify:** pytest -k test_lessons_revalidate_idempotent
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RevalidateTests::test_lessons_revalidate_idempotent
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-27)
 
 > **Verification target tiers:** `functional` (single round-trip - default) | `conversational` (multi-turn / multi-step session continuity) | `soak` (live traffic over a window) | `live` (operator-confirmed in production). End-to-end ACs default to `conversational`; production-affecting ACs default to `soak`; ACs shipping behind a flag awaiting promotion default to `live`. See `reference-test-best-practices.md#verification-depth-tiers`.
 

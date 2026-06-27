@@ -125,10 +125,23 @@ DEFAULT_CHECKS = {
 }
 
 
+def _retro_present(root: str, retro_id: str) -> dict:
+    """Blocking close-gate check: the batch's retro file must exist before a sprint/review
+    close reports success. Fail-loud per LL0008 - 'unconditional' retro is doctrine until it is
+    a gate. The sprint-close orchestration passes the next retro id via --require-retro."""
+    retros = Path(root) / "sdlc-studio" / "retros"
+    present = bool(list(retros.glob(f"{retro_id}*.md"))) if retros.is_dir() else False
+    return {"count": 0 if present else 1, "blocking": True,
+            "detail": (f"batch retro {retro_id} present" if present
+                       else f"missing batch retro {retro_id} - write it before closing the sprint")}
+
+
 def run_gate(root: str = ".", only: list[str] | None = None,
-             skip: list[str] | None = None, checks: dict | None = None) -> dict:
+             skip: list[str] | None = None, checks: dict | None = None,
+             require_retro: str | None = None) -> dict:
     """Run the selected checks and report. `ok` is False only when a BLOCKING check
-    fails; a non-blocking failure is reported but does not fail the gate."""
+    fails; a non-blocking failure is reported but does not fail the gate. `require_retro`
+    adds a blocking close-gate check that the named batch retro exists (the sprint close)."""
     # Guard against a vacuous PASS on a wrong/missing root (a CI step pointed at the wrong
     # dir, or a failed checkout). "No project found" must FAIL, not look all-green. Only
     # applies to real runs; injected check registries (logic tests) skip it.
@@ -138,7 +151,9 @@ def run_gate(root: str = ".", only: list[str] | None = None,
             return {"ok": False, "checks": [{
                 "check": "scope", "count": 0, "blocking": True, "status": "fail",
                 "detail": f"no SDLC project under {root} (no sdlc-studio/ dir) - wrong --root?"}]}
-    registry = checks if checks is not None else DEFAULT_CHECKS
+    registry = dict(checks) if checks is not None else dict(DEFAULT_CHECKS)
+    if require_retro:  # close-gate: bind the expected retro id into a blocking check
+        registry["retro"] = lambda r, _rid=require_retro: _retro_present(r, _rid)
     selected = [n for n in registry
                 if (not only or n in only) and (not skip or n not in skip)]
     results = []
@@ -160,7 +175,8 @@ def _split(v: str | None) -> list[str] | None:
 
 
 def cmd_gate(args: argparse.Namespace) -> int:
-    report = run_gate(args.root, only=_split(args.only), skip=_split(args.skip))
+    report = run_gate(args.root, only=_split(args.only), skip=_split(args.skip),
+                      require_retro=getattr(args, "require_retro", None))
     if args.format == "json":
         print(json.dumps(report, indent=2))
     else:
@@ -176,6 +192,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--root", default=".", help="Repo root (default: .)")
     p.add_argument("--only", help="Comma-separated checks to run (default: all)")
     p.add_argument("--skip", help="Comma-separated checks to skip")
+    p.add_argument("--require-retro", metavar="RETROxxxx",
+                   help="Close-gate: fail unless this batch retro exists in sdlc-studio/retros/")
     p.add_argument("--format", choices=("text", "json"), default="text")
     p.set_defaults(func=cmd_gate)
     return p

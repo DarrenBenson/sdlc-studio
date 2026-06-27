@@ -1,6 +1,6 @@
 # US0042: retro hard close-gate: sprint close fails loud without a batch retro (CR0129)
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-06-27
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0010
@@ -57,18 +57,18 @@ sprint, autosprint, and review close paths must refuse to report success until
 - **Given** a closing sprint, autosprint, or review batch whose `retros/RETRO{next}.md` does not exist
 - **When** the close path runs
 - **Then** it returns a non-zero exit and writes no success report
-- **Verify:** pytest -k test_close_gate_requires_retro
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RetroCloseGateTests::test_close_gate_requires_retro
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-27)
 
 ### AC2: close passes when the batch retro is present
 
 - **Given** a closing batch whose `retros/RETRO{next}.md` exists
 - **When** the close path runs
 - **Then** the gate passes and the close proceeds, mirroring the reconcile-drift-0 gate
-- **Verify:** pytest -k test_close_gate_passes_with_retro
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RetroCloseGateTests::test_close_gate_passes_with_retro
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-27)
 
 > **Verification target tiers:** `functional` (single round-trip – default) | `conversational` (multi-turn / multi-step session continuity) | `soak` (live traffic over a window) | `live` (operator-confirmed in production). End-to-end ACs default to `conversational`; production-affecting ACs default to `soak`; ACs shipping behind a flag awaiting promotion default to `live`. See `reference-test-best-practices.md#verification-depth-tiers`.
 

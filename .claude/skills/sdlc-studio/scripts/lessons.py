@@ -384,6 +384,113 @@ def cmd_recall(args: argparse.Namespace) -> int:
 
 
 # -----------------------------------------------------------------------------
+# Re-validation + rolling summary
+# -----------------------------------------------------------------------------
+
+
+def is_closed(entry: dict) -> bool:
+    """A lesson is closed (no longer valid) when it carries a Status field starting 'Closed'."""
+    return entry["fields"].get("status", "").strip().lower().startswith("closed")
+
+
+def close_entry(entry: dict, reason: str | None) -> bool:
+    """Mark an entry closed by appending a Status bullet. Idempotent - returns False if it
+    was already closed (so re-running closes nothing new)."""
+    if is_closed(entry):
+        return False
+    label = f"Closed - {reason}" if reason else "Closed"
+    bullet = f"- **Status:** {label}"
+    entry["body"] = (entry["body"].rstrip() + "\n" + bullet).strip() if entry["body"] else bullet
+    entry["fields"]["status"] = label
+    return True
+
+
+def cmd_revalidate(args: argparse.Namespace) -> int:
+    """List open project lessons, or close named ones by validity (generalises prune from
+    age-based to validity-based). Deterministic; the judgement of what is stale stays the
+    operator's, the closure record is mechanical."""
+    path = Path(args.project_file)
+    if not path.is_file():
+        if args.format == "json":
+            print(json.dumps({"open": [], "closed": []}, indent=2))
+        else:
+            print(f"No lessons file at {path}; nothing to re-validate.")
+        return 0
+    text = path.read_text(encoding="utf-8")
+    entries = parse_project_lessons(text)
+    if args.close:
+        wanted = set(args.close)
+        closed = [e["id"] for e in entries if e["id"] in wanted and close_entry(e, args.reason)]
+        if closed:
+            write_project_file(path, project_header_of(text), entries)
+        if args.format == "json":
+            print(json.dumps({"closed": closed}, indent=2))
+        else:
+            for cid in closed:
+                print(f"Closed {cid}")
+            print(f"{len(closed)} closed")
+        return 0
+    open_entries = [{"id": e["id"], "title": e["title"]} for e in entries if not is_closed(e)]
+    if args.format == "json":
+        print(json.dumps({"open": open_entries, "count": len(open_entries)}, indent=2))
+        return 0
+    if not open_entries:
+        print("No open lessons.")
+        return 0
+    for e in open_entries:
+        print(f"{e['id']}  {e['title']}")
+    print(f"{len(open_entries)} open lesson(s) - close the stale ones with "
+          "`lessons revalidate --close L-NNNN`")
+    return 0
+
+
+def build_summary_text(entries: list[dict]) -> str:
+    """The rolling digest of still-valid lessons. Deterministic for a given input (no date),
+    so the generator is reproducible - the byte-identical regeneration AC depends on it."""
+    open_entries = [e for e in entries if not is_closed(e)]
+    out = [
+        "# Lessons Summary", "",
+        "Rolling digest of still-valid project lessons, read at sprint start. The full log "
+        "with closed entries lives in the project tier (`.local/lessons.md`); regenerate this "
+        "with `lessons summary`.", "",
+    ]
+    if not open_entries:
+        out.append("_No open lessons._")
+    for e in open_entries:
+        gist = (e["fields"].get("rule") or e["fields"].get("fix")
+                or e["fields"].get("applies to") or "").strip()
+        line = f"- **{e['id']}: {e['title']}**"
+        if gist:
+            line += f" - {gist}"
+        out.append(line)
+    return "\n".join(out).rstrip() + "\n"
+
+
+def _default_summary_out(project_file: Path) -> Path:
+    """`<repo>/sdlc-studio/retros/LESSONS-SUMMARY.md` derived from the project-file location."""
+    rf = project_file.resolve()
+    root = rf.parents[2] if len(rf.parents) >= 3 else rf.parent
+    return root / "sdlc-studio" / "retros" / "LESSONS-SUMMARY.md"
+
+
+def cmd_summary(args: argparse.Namespace) -> int:
+    """Refresh the committed rolling lessons summary from the still-valid project lessons."""
+    path = Path(args.project_file)
+    entries = parse_project_lessons(path.read_text(encoding="utf-8")) if path.is_file() else []
+    out_path = Path(args.out) if args.out else _default_summary_out(path)
+    text = build_summary_text(entries)
+    if not args.dry_run:
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(text, encoding="utf-8")
+    n = sum(1 for e in entries if not is_closed(e))
+    if args.format == "json":
+        print(json.dumps({"out": str(out_path), "open": n, "written": not args.dry_run}, indent=2))
+        return 0
+    print(f"{'would write' if args.dry_run else 'wrote'} {n} open lesson(s) -> {out_path}")
+    return 0
+
+
+# -----------------------------------------------------------------------------
 # CLI
 # -----------------------------------------------------------------------------
 
@@ -436,6 +543,21 @@ def build_parser() -> argparse.ArgumentParser:
     rc.add_argument("--all", action="store_true", help="Search both tiers")
     _common(rc)
     rc.set_defaults(func=cmd_recall)
+
+    rv = sub.add_parser("revalidate",
+                        help="List open project lessons, or --close stale ones by validity.")
+    rv.add_argument("--close", nargs="+", metavar="L-NNNN",
+                    help="Close these lesson ids (mark no longer valid)")
+    rv.add_argument("--reason", help="Reason recorded on the closed lesson(s)")
+    _common(rv)
+    rv.set_defaults(func=cmd_revalidate)
+
+    sm = sub.add_parser("summary",
+                        help="Refresh the committed rolling lessons summary (read at sprint start).")
+    sm.add_argument("--out", help="Summary output path (default: sdlc-studio/retros/LESSONS-SUMMARY.md)")
+    sm.add_argument("--dry-run", action="store_true", help="Report without writing")
+    _common(sm)
+    sm.set_defaults(func=cmd_summary)
 
     return p
 
