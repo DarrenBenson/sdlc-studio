@@ -250,6 +250,34 @@ STATUS_VOCAB: dict[str, list[str]] = {
     ],
 }
 
+# Absorbing (terminal) statuses per type: a unit at one of these is a closed
+# outcome whose index row carries no live signal and is a candidate for archival
+# (CR0125). Derived from STATUS_VOCAB, not hardcoded at call sites. States that can
+# still re-activate - Blocked, Deferred, Paused, Planned - are deliberately NOT
+# terminal. Every value here must be a member of the type's STATUS_VOCAB.
+TERMINAL_STATUS: dict[str, set[str]] = {
+    "epic": {"Done"},
+    "story": {"Done", "Won't Implement", "Superseded"},
+    "plan": {"Complete", "Superseded"},
+    "bug": {"Fixed", "Verified", "Closed", "Won't Fix", "Superseded"},
+    "cr": {"Complete", "Rejected", "Superseded"},
+    "rfc": {"Accepted", "Superseded", "Withdrawn"},
+    "test-spec": {"Complete", "Superseded"},
+    "workflow": {"Done", "Superseded"},
+}
+
+
+def terminal_statuses(type_: str) -> set[str]:
+    """The absorbing statuses for `type_` - the set whose rows are archive candidates.
+    Empty for an unknown type. Intersected with the vocab so it can never name a
+    status the type does not define."""
+    return set(TERMINAL_STATUS.get(type_, set())) & set(STATUS_VOCAB.get(type_, []))
+
+
+def is_terminal_status(type_: str, status: str) -> bool:
+    """True if `status` is an absorbing state for `type_`."""
+    return status in terminal_statuses(type_)
+
 
 def project_override(repo_root, dotted: str, default=None):
     """Read a dotted key from the project's `sdlc-studio/.config.yaml` (the override

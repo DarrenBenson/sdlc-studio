@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 9 |
+| Ready | 8 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 41 |
+| Done | 42 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
@@ -61,7 +61,7 @@
 | [US0037](US0037-close-cascade-records-telemetry-per-unit.md) | close cascade records telemetry per unit | Done | EP0008 | 2026-06-21 | 2026-06-21 |
 | [US0038](US0038-provenance-stamp-misuse-check-and-remake.md) | provenance stamp misuse check and remake | Done | EP0008 | 2026-06-21 | 2026-06-21 |
 | [US0039](US0039-documented-conformance-stage-and-doc-coverage-gate.md) | documented conformance stage and doc-coverage gate | Done | EP0007 | 2026-06-21 | 2026-06-21 |
-| [US0040](US0040-index-archive-writer-terminal-status-vocab-flag-dry.md) | index-archive writer + terminal-status vocab flag + dry-run (CR0125) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
+| [US0040](US0040-index-archive-writer-terminal-status-vocab-flag-dry.md) | index-archive writer + terminal-status vocab flag + dry-run (CR0125) | Done | EP0010 | 2026-06-27 | 2026-06-27 |
 | [US0041](US0041-next-id-archive-union-guard-so-archived-ids.md) | next_id archive-union guard so archived ids are never reallocated (CR0125) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
 | [US0042](US0042-retro-hard-close-gate-sprint-close-fails-loud.md) | retro hard close-gate: sprint close fails loud without a batch retro (CR0129) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
 | [US0043](US0043-lessons-re-validation-verb-close-obsolete-lessons-by.md) | lessons re-validation verb: close obsolete lessons by validity (CR0129) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |

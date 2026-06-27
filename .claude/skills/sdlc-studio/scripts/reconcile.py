@@ -709,6 +709,130 @@ def cmd_apply(args: argparse.Namespace) -> int:
     return 1 if unapplied else 0
 
 
+_SEP_LINE_RE = re.compile(r"\|[\s:|-]*-[\s:|-]*\|")  # a `| --- | --- |` table separator
+
+
+def _is_sep_line(line: str) -> bool:
+    """A markdown table separator row. `table_cells` returns None for these, so the
+    archive parser must recognise them from the raw line to stay 'in table'."""
+    return bool(_SEP_LINE_RE.fullmatch(line.strip()))
+
+
+def _line_id(line: str) -> str | None:
+    m = sdlc_md.ID_SEARCH_RE.search(line)
+    return m.group(0) if m else None
+
+
+def archive_plan(type_: str, repo_root: Path | str) -> dict | None:
+    """Compute which terminal rows to relocate from `<type>/_index.md` to the archive
+    sub-index. Returns {move, keep_text, archive_text, archive_path, index_path} or None
+    when there is no index or nothing terminal to move (idempotent no-op). Raises
+    ValueError on a data row whose status is not in the vocab - fail loud, never
+    silently drop or misfile a row (LL0008)."""
+    root = Path(repo_root)
+    rel = sdlc_md.ARTIFACT_TYPES[type_][0]
+    index_path = root / rel / "_index.md"
+    if not index_path.exists():
+        return None
+    vocab = sdlc_md.status_vocab(type_, root)
+    terminal = sdlc_md.terminal_statuses(type_)
+    if not terminal:
+        return None
+    original = index_path.read_text(encoding="utf-8")
+    lines = original.splitlines()
+    status_col = id_col = None
+    header = sep = None
+    in_table = False
+    keep: list[str] = []
+    move: list[str] = []
+    for line in lines:
+        cells = _table_cells(line)
+        if cells is None:  # separators (table_cells returns None) and prose/blanks
+            if in_table and _is_sep_line(line):
+                if sep is None:
+                    sep = line
+                keep.append(line)
+                continue
+            in_table = False
+            keep.append(line)
+            continue
+        lowered = [c.strip().lower() for c in cells]
+        if len(cells) > 2 and "status" in lowered and "id" in lowered:  # data-table header
+            status_col, id_col = lowered.index("status"), lowered.index("id")
+            header, in_table = line, True
+            keep.append(line)
+            continue
+        if in_table and id_col is not None and id_col < len(cells) and _line_id(cells[id_col]):
+            raw = cells[status_col].strip() if status_col is not None and status_col < len(cells) else ""
+            status = _canonical_status(raw, vocab)
+            if status is None:
+                raise ValueError(
+                    f"{type_} index row {_line_id(cells[id_col])}: status {raw!r} is not a "
+                    f"{type_} status - refusing to archive (fix the row first)")
+            (move if status in terminal else keep).append(line)
+            continue
+        keep.append(line)  # summary rows, prose, blanks
+    if not move or header is None or sep is None:
+        return None
+    moved_ids = {_line_id(m) for m in move}
+    archive_path = root / rel / "archive" / "_index.md"
+    prior_rows: list[str] = []
+    if archive_path.exists():
+        for line in archive_path.read_text(encoding="utf-8").splitlines():
+            cells = _table_cells(line)
+            if (cells and len(cells) > 2
+                    and "status" not in [c.strip().lower() for c in cells]
+                    and _line_id(line) and _line_id(line) not in moved_ids):
+                prior_rows.append(line)
+    title = type_.replace("-", " ").title()
+    archive_rows = prior_rows + move
+    archive_text = f"# {title} Archive Index\n\n{header}\n{sep}\n" + "\n".join(archive_rows) + "\n"
+    keep_text = "\n".join(keep) + ("\n" if original.endswith("\n") else "")
+    return {"move": move, "keep_text": keep_text, "archive_text": archive_text,
+            "archive_path": archive_path, "index_path": index_path}
+
+
+def archive_type(type_: str, repo_root: Path | str, dry_run: bool = False) -> dict:
+    """Relocate `type_`'s terminal index rows to the archive sub-index. Validates the
+    whole index (fail loud) before any write, so a bad row aborts with no partial state."""
+    plan = archive_plan(type_, repo_root)
+    if plan is None:
+        return {"type": type_, "moved": 0, "archive": None}
+    if not dry_run:
+        plan["archive_path"].parent.mkdir(parents=True, exist_ok=True)
+        plan["archive_path"].write_text(plan["archive_text"], encoding="utf-8")
+        plan["index_path"].write_text(plan["keep_text"], encoding="utf-8")
+    return {"type": type_, "moved": len(plan["move"]),
+            "archive": str(plan["archive_path"].relative_to(Path(repo_root))),
+            "ids": [_line_id(m) for m in plan["move"]]}
+
+
+def cmd_archive(args: argparse.Namespace) -> int:
+    """Relocate terminal index rows to per-type archive sub-indexes; --dry-run reports only."""
+    repo_root = Path(args.root).resolve()
+    types = [args.type] if args.type else (
+        SCOPE_TYPES.get(args.scope, _DEFAULT_TYPES) if args.scope else _DEFAULT_TYPES)
+    results = []
+    try:
+        for type_ in types:
+            results.append(archive_type(type_, repo_root, dry_run=args.dry_run))
+    except ValueError as e:  # fail loud: no partial write across the sweep
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+    if args.format == "json":
+        print(json.dumps(results, indent=2))
+        return 0
+    total = 0
+    for r in results:
+        if r["moved"]:
+            verb = "WOULD archive" if args.dry_run else "archived"
+            print(f"{verb} {r['moved']} {r['type']} row(s) -> {r['archive']}: {', '.join(r['ids'])}")
+            total += r["moved"]
+    print(f"archive: {'would move' if args.dry_run else 'moved'} {total} row(s)"
+          + (" [dry-run]" if args.dry_run else ""))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Construct the argparse parser for the detect subcommand."""
     p = argparse.ArgumentParser(
@@ -735,6 +859,13 @@ def build_parser() -> argparse.ArgumentParser:
     fi.add_argument("--root", default=".", help="Repo root (default: .)")
     fi.add_argument("--format", choices=("text", "json"), default="text")
     fi.set_defaults(func=cmd_fields)
+    ar = sub.add_parser("archive", help="Relocate terminal index rows to archive sub-indexes.")
+    ar.add_argument("--type", help="Single artifact type (default: all index-driven types)")
+    ar.add_argument("--scope", choices=sorted(SCOPE_TYPES), help="Limit to one scope")
+    ar.add_argument("--root", default=".", help="Repo root (default: .)")
+    ar.add_argument("--dry-run", action="store_true", help="Report the relocation without writing")
+    ar.add_argument("--format", choices=("text", "json"), default="text")
+    ar.set_defaults(func=cmd_archive)
     return p
 
 
