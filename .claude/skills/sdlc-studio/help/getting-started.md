@@ -6,6 +6,10 @@ Related: help/init.md, reference-verify.md, reference-sprint.md, reference-scrip
 
 # Greenfield Runbook - From Empty Repo to Shipped
 
+> **Adopting an existing codebase instead?** This runbook is for a brand-new project.
+> For existing code, follow `help/brownfield-runbook.md` (extract a spec with `prd generate`,
+> then validate it against the running code).
+
 ## You can just ask
 
 SDLC Studio is model-invoked - say it in plain language:
@@ -61,6 +65,7 @@ greenfield that does not exist yet, so:
 
 ## See Also
 
+- `help/brownfield-runbook.md` - the same path for an existing codebase (generate mode)
 - `help/init.md` - the bootstrap step in detail
 - `reference-verify.md` - the test-spec AC-to-test bridge + the `Verify:` DSL
 - `reference-sprint.md` - the autonomous delivery loop (and its cold-start precondition)

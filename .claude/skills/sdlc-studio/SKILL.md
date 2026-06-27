@@ -122,6 +122,7 @@ Claude loads files progressively based on task needs:
 | Syncing CR/Story/Epic with GitHub | reference-github-sync.md | help/github-sync.md | reference-cr.md#cr-sync-workflow |
 | Onboarding to a project / operating doctrine | reference-doctrine.md | help/init.md | lessons/_index.md |
 | Starting greenfield / "what order do I run things in?" | help/getting-started.md | help/init.md | reference-sprint.md |
+| Adopting existing code / "get a spec out of this code" | help/brownfield-runbook.md | reference-philosophy.md | help/prd.md |
 | Project constitution / machine-checkable principle gate | templates/constitution.md | scripts/constitution.py | reference-doctrine.md#constitution |
 | Recording and loading project lessons | reference-agentic-lessons.md#lessons-accumulation | help/lessons.md | reference-agent-prompt-template.md#agentic-execution |
 | Recalling cross-project lessons (before a decision) | lessons/_index.md | help/lessons.md | reference-doctrine.md |

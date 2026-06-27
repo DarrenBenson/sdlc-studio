@@ -19,6 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **README + onboarding overhaul for newcomers.** Rewrote `README.md` as a black-box-first,
+  progressively-disclosed landing page: a jargon-free hero and what/who/why, the "you just ask"
+  table, a quick-start *path* with a greenfield/brownfield fork, a mermaid pipeline diagram + an
+  annotated `status` dashboard, a scannable capabilities table, three collapsible worked examples
+  (Product/Engineer/QA), a "start here by role" table, and a collapsible FAQ with a plain-language
+  glossary. The 63-line version-history "Roadmap" moved out to CHANGELOG; the philosophy manifesto
+  moved below the fold. Added `help/brownfield-runbook.md` (the existing-code sibling to the
+  greenfield runbook) and registered it in `SKILL.md`. Reviewed via a four-lens persona consult
+  (Product, Engineering, QA, and a non-technical-newcomer lens); all four approved after fixes.
 - **CI action bumps adopted (US0048):** `actions/checkout` v6 -> v7 (both jobs) and
   `actions/setup-python` v5 -> v6 in `.github/workflows/lint.yml`, superseding Dependabot PRs
   #25/#26.
