@@ -40,19 +40,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     regenerates a deterministic committed `LESSONS-SUMMARY.md` read at sprint start. Dogfooded here.
   - **Agentic-wave worktree doctrine (CR0126 / US0045)** and **pre-deploy readiness checklist
     (CR0127 / US0046)** added to their reference docs.
+- **Test-strategy heuristics (CR0128).** New `best-practices/testing.md` captures five heuristics
+  with a one-line trigger each (production-state-shape integration tests, a named regression test
+  per production bug, rejects-old-shape contract tests, resource-count regression tests,
+  pure-function extraction), referenced from the test-spec workflow. The test-spec template gained a
+  "Strategy Heuristics" AC block. Determinism: `audit` raises `missing-regression-test` for a
+  terminal bug whose recorded tests carry no integration/regression-level case (name-signal; the
+  seam judgement stays with review, per the recorded advisory boundary).
 - **Four cross-project lessons promoted to the skill tier (LL0009-LL0012).** LL0009 - a silent failure
   that misleads the caller outranks a loud failure of the same scope. LL0010 - validate a defence using
   the bug it defends against before shipping it. LL0011 - a gate that fails on CI but passes locally is
   an environment gap until proven otherwise (reproduce the CI env before trusting the symptom). LL0012 -
   a new private helper that shadows a module-level name silently breaks every existing caller.
-
-### Proposed
-
-- **CR0128 - test-strategy heuristics (held).** New `best-practices/testing.md` + test-spec template
-  ACs: production-state-shape integration tests, a named regression test per production bug,
-  rejects-old-shape contract tests, resource-count regression tests, pure-function extraction.
-  Determinism: a checker flags a Fixed/Done item whose tests lack an integration/regression case
-  rather than leaving the rule as prose.
 
 ## [3.1.1] - 2026-06-25
 

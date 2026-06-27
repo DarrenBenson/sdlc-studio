@@ -5,8 +5,12 @@
 > and `sdlc-studio/retros/`; the original v2.0 unified review is `RV0001-unified-review-2026-06-20.md`.
 >
 > **Project version:** 3.1.1 (released 2026-06-25) · **Date:** 2026-06-27 ·
-> **Gates:** lint clean, 990 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0,
+> **Gates:** lint clean, 995 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0,
 > npm audit 0, CI green on main.
+> **CR0128 - test-strategy heuristics (delivered as a follow-on, unblocked after EP0010):**
+> `best-practices/testing.md` (five heuristics), test-spec template AC stubs, and a deterministic
+> `audit` check `missing-regression-test` flagging a terminal bug with no integration/regression
+> test (name-signal; the seam judgement stays with review).
 > **EP0010 - skill self-improvement: token economy + learning loop (unreleased, on main):** 11
 > stories / 5 CRs delivered (CR0128 held). Index archive (`reconcile archive` relocates terminal
 > rows to a derived `<type>/archive/_index.md`; `next_id` unions the archive). Retro lifecycle: the

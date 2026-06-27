@@ -23,6 +23,7 @@ Quality checklists for AI assistants creating artifacts in any project.
 | Claude skill | `claude-skill.md` |
 | Claude command | `command.md` |
 | Settings / config files | `settings.md` |
+| Test spec / closing a bug | `testing.md` |
 
 ## How to Use
 

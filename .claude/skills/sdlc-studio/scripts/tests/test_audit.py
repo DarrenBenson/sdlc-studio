@@ -275,3 +275,52 @@ class CR0109AuditChecks(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RegressionTestHeuristicTests(unittest.TestCase):
+    """CR0128 heuristic 2: a Fixed/Done bug whose recorded tests have no integration/regression
+    case is flagged. The check is a name-signal heuristic; proving the test hits the seams is a
+    review judgement (the advisory boundary)."""
+
+    def _bug_with(self, root, num, status, body_extra):
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        body = (f"# BG{num:04d}: b\n\n> **Status:** {status}\n> **Severity:** Medium\n\n"
+                f"## Summary\n\nx\n\n## Steps to Reproduce\n\n1. do it\n\n"
+                f"## Proposed Fix\n\ndo this\n{body_extra}\n")
+        (d / f"BG{num:04d}-x.md").write_text(body, encoding="utf-8")
+        return _load().audit_unit(root, f"BG{num:04d}")
+
+    def test_fixed_bug_unit_test_only_is_flagged(self):
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            r = self._bug_with(root, 1, "Fixed",
+                               "\n## Tests\n\n- **Verify:** pytest tests/test_widget.py::test_parse\n")
+            self.assertIn("missing-regression-test", r["issues"])
+
+    def test_fixed_bug_with_regression_test_passes(self):
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            r = self._bug_with(root, 2, "Fixed",
+                               "\n## Tests\n\n- **Verify:** pytest tests/test_regression.py::test_dispatch_loop\n")
+            self.assertNotIn("missing-regression-test", r["issues"])
+
+    def test_fixed_bug_with_integration_test_passes(self):
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            r = self._bug_with(root, 3, "Fixed",
+                               "\n## Regression Test\n\nIntegration test at the router -> dispatcher seam.\n")
+            self.assertNotIn("missing-regression-test", r["issues"])
+
+    def test_open_bug_not_flagged(self):
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            r = self._bug_with(root, 4, "Open",
+                               "\n## Tests\n\n- **Verify:** pytest tests/test_widget.py::test_parse\n")
+            self.assertNotIn("missing-regression-test", r["issues"])
+
+    def test_fixed_bug_no_test_info_not_double_flagged(self):
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            r = self._bug_with(root, 5, "Fixed", "")
+            self.assertNotIn("missing-regression-test", r["issues"])

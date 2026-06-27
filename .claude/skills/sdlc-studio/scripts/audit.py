@@ -8,6 +8,9 @@ clean, verifiable batch. Per unit it flags, deterministically:
                       vacuous-pass class the downstream verify/conformance miss),
 - **unmet-deps**    - a `Depends on` referent that is not yet delivered,
 - **already-terminal** - already Complete/Superseded/Done (close, do not re-work),
+- **missing-regression-test** - a Fixed/Done bug whose recorded tests carry no
+                      integration/regression-level case (name-signal only; the seam
+                      judgement stays with review - see best-practices/testing.md),
 - **link-integrity** - reuses `integrity.py`'s error findings for the unit.
 
 Emits a JSON readiness report; exits non-zero when any unit is not ready. The
@@ -124,6 +127,24 @@ def _weak_verify(text: str) -> bool:
     return False
 
 
+_REGRESSION_RE = re.compile(r"regression|integration|\be2e\b|end[- ]to[- ]end", re.I)
+
+
+def _missing_regression_test(text: str) -> bool:
+    """CR0128 heuristic 2: a Fixed/Done bug should carry an integration- or regression-level test
+    (the bug lived in the seams), not only a unit test on the root-cause file. This mechanises the
+    NAME signal - a `Verify` line or a 'regression/integration/e2e' marker - and returns True for a
+    bug that records tests but none at that level. It deliberately does NOT try to prove a test
+    truly exercises the seams: that stays a review judgement (the advisory boundary recorded in
+    CR0128). A bug with no test info at all is left to `underspecified`, not double-flagged here."""
+    lines = text.splitlines()
+    mentions_test = any("**verify:**" in low or "test" in low
+                        for low in (line.lower() for line in lines))
+    if not mentions_test:
+        return False
+    return not any(_REGRESSION_RE.search(line) for line in lines)
+
+
 def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None = None,
                cross_epic_ids: set[str] | None = None) -> dict:
     """Readiness verdict for a single unit."""
@@ -140,6 +161,8 @@ def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None 
     if type_ == "bug":
         if _bug_underspecified(text):
             issues.append("underspecified")
+        if status in integrity.TERMINAL and _missing_regression_test(text):
+            issues.append("missing-regression-test")
     elif _weak_ac(text):
         issues.append("weak-AC")
     if type_ == "story" and _weak_verify(text):  # non-executable Verify line

@@ -1,6 +1,6 @@
 # CR-0128: test-strategy heuristics: production-state integration tests, regression-per-bug, contract rejects-old-shape
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-27
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
@@ -38,21 +38,34 @@ should be, and the test-spec template should carry the ACs so generated test spe
 
 ## Acceptance Criteria
 
-- [ ] a new `best-practices/testing.md` captures the five heuristics with the one-line trigger for
-      each ("when X, write test Y"); referenced from the test-spec workflow
-- [ ] the test-spec template carries AC stubs for the applicable heuristics (production-state
-      integration test, rejects-old-shape contract test) so a generated spec surfaces them rather
-      than relying on recall
-- [ ] **deterministic where possible** ([[LL0008]]): a checker (extending `tools/` or
-      `scripts/verify_ac`) flags a bug marked Fixed/Done whose linked test set has no integration- or
-      regression-level case, rather than leaving "regression-test-per-bug" as unenforced prose; if
-      full mechanisation is infeasible the CR records exactly what stays advisory and why
-- [ ] cross-links: [[LL0005]] (review set includes a code leg) and [[LL0009]] (silent misleading
-      failure - the bug class these integration tests catch)
-- [ ] CHANGELOG `[Unreleased]` entry ([[LL0004]]); `npm test` + link checker green
+- [x] a new `best-practices/testing.md` captures the five heuristics with the one-line trigger for
+      each ("when X, write test Y"); referenced from the test-spec workflow (`reference-test-spec.md`
+      See Also + `best-practices/README.md`)
+- [x] the test-spec template carries AC stubs for the applicable heuristics (production-state
+      integration test, rejects-old-shape contract test, regression-per-bug) in a new "Strategy
+      Heuristics" block so a generated spec surfaces them rather than relying on recall
+- [x] **deterministic where possible** ([[LL0008]]): `audit` raises `missing-regression-test` for a
+      bug at a terminal status (Fixed/Verified/Closed/...) whose recorded tests carry no
+      integration/regression-level case (5 unit tests). See the advisory boundary below
+- [x] cross-links: [[LL0005]] (review set includes a code leg) and [[LL0009]] (silent misleading
+      failure - the bug class these integration tests catch) - in `best-practices/testing.md`
+- [x] CHANGELOG `[Unreleased]` entry ([[LL0004]]); `npm test` + link checker green
+
+## Delivery Notes: the advisory boundary
+
+The checker mechanises a **name-level signal only**: it confirms a test of
+integration/regression level is *named* on a terminal bug (a `Verify` line or a
+`regression`/`integration`/`e2e` marker), and flags the bug when none is. It deliberately does
+**not** attempt to prove a named test truly exercises the seams - whether a test is genuinely an
+integration test rather than a unit test in an integration-named file is a judgement that stays
+with the review code leg ([[LL0005]]). Heuristics 1 (production-state shape) and 3
+(rejects-old-shape) are surfaced as test-spec AC stubs (a prompt, not a gate); heuristics 4
+(resource-count) and 5 (extract-pure) stay advisory in `best-practices/testing.md`. This split is
+the honest reach of mechanisation here: enforce the presence signal, leave the substance to review.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-27 | field | Created via `new` (deterministic) |
+| 2026-06-27 | Dani | Delivered: testing.md, template AC stubs, audit `missing-regression-test` checker + tests |

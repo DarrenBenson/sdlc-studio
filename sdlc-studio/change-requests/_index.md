@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 128 |
+| Complete | 129 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -147,6 +147,6 @@
 | [CR-0125](CR0125-index-archive-relocate-terminal-rows-to-a-derived.md) | index archive: relocate terminal rows to a derived sub-index | Complete | Medium | Improvement | 2026-06-27 | -- |
 | [CR-0126](CR0126-harden-agentic-wave-worktree-doctrine-commit-per-wave.md) | harden agentic-wave worktree doctrine: commit-per-wave, cherry-pick order, forward-scaffold | Complete | Medium | Improvement | 2026-06-27 | -- |
 | [CR-0127](CR0127-pre-deploy-readiness-gate-env-key-diff-persistent.md) | pre-deploy readiness gate: env-key diff, persistent-volume assertion, remote heredoc, crypto round-trip | Complete | Medium | Improvement | 2026-06-27 | -- |
-| [CR-0128](CR0128-test-strategy-heuristics-production-state-integration-tests-regression.md) | test-strategy heuristics: production-state integration tests, regression-per-bug, contract rejects-old-shape | Proposed | Medium | Improvement | 2026-06-27 | -- |
+| [CR-0128](CR0128-test-strategy-heuristics-production-state-integration-tests-regression.md) | test-strategy heuristics: production-state integration tests, regression-per-bug, contract rejects-old-shape | Complete | Medium | Improvement | 2026-06-27 | -- |
 | [CR-0129](CR0129-sprint-retro-lifecycle-hard-close-gate-lessons-re.md) | sprint retro lifecycle: hard close gate, lessons re-validation, rolling summary of learnings | Complete | Medium | Improvement | 2026-06-27 | -- |
 | [CR-0130](CR0130-blocker-sweep-detect-now-unblocked-units-cross-project.md) | blocker sweep: detect now-unblocked units (cross-project via PVD), pre-plan + reconcile lane | Complete | Medium | Improvement | 2026-06-27 | -- |

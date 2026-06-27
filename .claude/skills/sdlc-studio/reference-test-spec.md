@@ -254,6 +254,8 @@ Epic-scoped test specs follow different cascade rules:
 
 ## See Also
 
+- `best-practices/testing.md` - Test-strategy heuristics (what to test): production-state
+  integration tests, regression-per-bug, rejects-old-shape contract tests
 - `reference-tsd.md` - Test strategy and status dashboard workflows
 - `reference-test-automation.md` - Test automation and environment workflows
 - `reference-test-best-practices.md` - Test generation pitfalls and validation

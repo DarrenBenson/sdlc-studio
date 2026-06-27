@@ -33,7 +33,9 @@ CR0125, CR0126, CR0127, CR0129, CR0130.
 
 ## Blocked / deferred
 
-- **CR0128 (test-strategy heuristics)** held by decision - not pulled into this batch.
+- **CR0128 (test-strategy heuristics)** was held by decision at close - then unblocked and
+  delivered as a follow-on (see CHANGELOG `[Unreleased]`): `best-practices/testing.md`, test-spec
+  template AC stubs, and the `audit` `missing-regression-test` checker.
 - Nothing blocked at delivery; the blocker sweep reports zero stale-blocked units.
 
 ## What went well

@@ -43,6 +43,19 @@ Related: help/test-spec.md, reference-test-spec.md
 | Integration | {{integration_required}} | {{integration_rationale}} |
 | E2E | {{e2e_required}} | {{e2e_rationale}} |
 
+### Strategy Heuristics
+
+> Test-strategy ACs the spec must answer (delete a row only with a reason). See
+> `best-practices/testing.md`.
+
+- [ ] **Production-state-shape integration test** - for any path whose behaviour depends on
+      production state shape (multi-turn history, partial records, resolve-then-cancel),
+      a test injects the non-trivial shape, not just trivial state. {{production_state_test}}
+- [ ] **Rejects-old-shape contract test** - if this work changes a contract (wire format, API
+      shape, schema), a `rejects_OLD_shape` test ships beside `parses_NEW_shape`. {{contract_test}}
+- [ ] **Regression test per fixed bug** - each bug this spec covers has a named regression test
+      at the integration level (the seam), not only a unit test on the root-cause file.
+
 ---
 
 ## Environment
