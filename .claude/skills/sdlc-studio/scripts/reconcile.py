@@ -375,6 +375,17 @@ def cmd_detect(args: argparse.Namespace) -> int:
         "summary": {"drift_items": len(all_drift), "by_kind": by_kind},
     }
 
+    if getattr(args, "blocker_sweep", False):
+        # advisory lane: report stale-blocked / now-unblocked units. Never affects drift or the
+        # exit code - reconcile still succeeds/fails on its own census checks (US0050).
+        import blocker_sweep
+        try:
+            sw = blocker_sweep.sweep(repo_root)
+            report["blocker_sweep"] = {"now_unblocked": sw["now_unblocked"],
+                                       "still_blocked": sw["still_blocked"], "errors": sw["errors"]}
+        except Exception as exc:  # noqa: BLE001 - an advisory lane must never break detect
+            report["blocker_sweep"] = {"error": str(exc)}
+
     out_path = repo_root / "sdlc-studio" / ".local" / "reconcile-report.json"
     if args.write_report:
         out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -394,6 +405,14 @@ def cmd_detect(args: argparse.Namespace) -> int:
                 print(f"  - {h}")
         if fix_order:
             print(fix_order)
+        bs = report.get("blocker_sweep")
+        if bs and not bs.get("error"):
+            if bs["now_unblocked"]:
+                print(f"blocker-sweep (advisory): {len(bs['now_unblocked'])} now-unblocked "
+                      f"candidate(s): {', '.join(bs['now_unblocked'])}")
+            if bs["still_blocked"]:
+                print(f"blocker-sweep (advisory): {len(bs['still_blocked'])} still-blocked: "
+                      f"{', '.join(bs['still_blocked'])}")
         if args.write_report:
             print(f"wrote {out_path}")
     return 1 if all_drift else 0
@@ -847,6 +866,8 @@ def build_parser() -> argparse.ArgumentParser:
     d.add_argument("--format", choices=("text", "json"), default="text")
     d.add_argument("--write-report", action="store_true",
                    help="Also write sdlc-studio/.local/reconcile-report.json")
+    d.add_argument("--blocker-sweep", action="store_true",
+                   help="Advisory lane: also report now-unblocked / stale-blocked units")
     d.set_defaults(func=cmd_detect)
     a = sub.add_parser("apply", help="Apply mechanical index fixes (status cells + counts).")
     a.add_argument("--scope", choices=sorted(SCOPE_TYPES), help="Limit to one scope")

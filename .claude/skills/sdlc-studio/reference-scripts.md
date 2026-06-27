@@ -224,6 +224,21 @@ pass/fail and exits non-zero only when a blocking check fails. `--only` / `--ski
 checks; constitution blocks only when `constitution.enforce` is set. No network, no CI
 assumption - runnable in any CI or a pre-commit hook (see `help/gate.md` for wiring). The
 check registry is injectable, so the aggregation logic is unit-tested without a full repo.
+`--require-retro RETROxxxx` adds a blocking close-gate check: the sprint/review close fails
+loud until the named batch retro exists in `sdlc-studio/retros/` (the hard retro gate).
+
+### `blocker_sweep.py`
+
+The inverse of `audit`'s `unmet-deps`: finds units whose blockers have **cleared**. `sweep`
+collects every blocker signal (Status `Blocked`, a `Depends on:` field, an epic `Blocked By`
+row), resolves each referent's current status - in-repo by the file census, cross-repo by
+reading the sibling repos in `product-manifest.yaml` (reuses `pvd.read_manifest`) - and
+classifies each genuinely-blocked unit as now-unblocked (every referent terminal/delivered)
+or still-blocked (outstanding referent named). Fail-loud per LL0008: a missing/unreadable/
+unknown-status referent is reported still-blocked, never silently cleared. Read-only - it
+proposes `Blocked -> Ready` candidates; the gated `transition` stays the actor. Runs before
+`sprint plan` and as the `reconcile detect --blocker-sweep` advisory lane (which never
+affects drift or the exit code). See `reference-sprint.md` and `reference-reconcile.md`.
 
 ### `deploy.py`
 

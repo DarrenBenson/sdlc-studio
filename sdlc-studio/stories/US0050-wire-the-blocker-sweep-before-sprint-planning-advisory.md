@@ -1,6 +1,6 @@
 # US0050: wire the blocker sweep before sprint planning + advisory reconcile lane (CR0130)
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-06-27
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0010
@@ -62,27 +62,27 @@ result.
 - **Given** a backlog where a unit became unblocked after its referent reached a terminal state
 - **When** sprint planning runs, the sweep fires as a pre-`plan` step before the batch is selected
 - **Then** the newly-unblocked unit is surfaced and eligible for the batch, the same way the reconcile-before-plan gate runs ahead of planning
-- **Verify:** pytest -k test_blocker_sweep_runs_before_plan
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_blocker_sweep.py::WiringTests::test_blocker_sweep_runs_before_plan
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-27)
 
 ### AC2: The sweep is available as an advisory reconcile lane
 
 - **Given** a backlog containing units still at `Blocked` after their referent has cleared
 - **When** reconcile runs with the blocker-sweep lane enabled
 - **Then** the lane reports those stale-blocked units as advisory output and never blocks the reconcile result (reconcile still succeeds or fails on its own checks)
-- **Verify:** pytest -k test_blocker_sweep_reconcile_lane
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_blocker_sweep.py::WiringTests::test_blocker_sweep_reconcile_lane
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-27)
 
 ### AC3: The sweep proposes but never auto-transitions
 
 - **Given** a unit whose every blocker is terminal/delivered
 - **When** the sweep reports it as a `Blocked -> Ready` candidate
 - **Then** the unit's status is unchanged on disk; the sweep proposes the candidate only, and the gated `transition` call stays the sole actor that moves state
-- **Verify:** pytest -k test_blocker_sweep_no_auto_transition
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_blocker_sweep.py::WiringTests::test_blocker_sweep_no_auto_transition
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-27)
 
 > **Verification target tiers:** `functional` (single round-trip - default) | `conversational` (multi-turn / multi-step session continuity) | `soak` (live traffic over a window) | `live` (operator-confirmed in production). End-to-end ACs default to `conversational`; production-affecting ACs default to `soak`; ACs shipping behind a flag awaiting promotion default to `live`. See `reference-test-best-practices.md#verification-depth-tiers`.
 

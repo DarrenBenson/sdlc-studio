@@ -1,6 +1,6 @@
 # US0049: blocker-sweep detection: now-unblocked units, in-repo census + cross-repo via PVD manifest (CR0130)
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-06-27
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0010
@@ -71,36 +71,36 @@ and auto-transitioning `Blocked -> Ready` is out of scope - the gated
 - **Given** a repo whose artefacts carry blocker signals (units at Status `Blocked`, `Depends on:` fields, epic `Blocked By` rows)
 - **When** the blocker sweep runs
 - **Then** it collects every unit with a blocker signal and reports, per unit, each referent with its current status
-- **Verify:** pytest -k test_blocker_sweep_collects_signals
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_blocker_sweep.py::BlockerSweepTests::test_blocker_sweep_collects_signals
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-27)
 
 ### AC2: in-repo referents resolve by the file census
 
 - **Given** a Blocked unit whose every referent resolves in-repo to a terminal/delivered status by the file census
 - **When** the sweep resolves the referents
 - **Then** the unit is reported as a now-unblocked candidate
-- **Verify:** pytest -k test_blocker_sweep_in_repo_unblock
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_blocker_sweep.py::BlockerSweepTests::test_blocker_sweep_in_repo_unblock
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-27)
 
 ### AC3: cross-repo referents resolve through the PVD manifest
 
 - **Given** a Blocked unit whose referent lives in a sibling repo named in `product-manifest.yaml` `repos[].path`, where the referent is now Done
 - **When** the sweep resolves referents across repos
 - **Then** the cleared cross-repo blocker is detected and the unit is reported as a now-unblocked candidate
-- **Verify:** pytest -k test_blocker_sweep_cross_repo_unblock
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_blocker_sweep.py::BlockerSweepTests::test_blocker_sweep_cross_repo_unblock
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-27)
 
 ### AC4: fail loud, never false-clear
 
 - **Given** a referent that is missing, unreadable, or in an unknown status, including an unreadable cross-repo path
 - **When** the sweep resolves it
 - **Then** the unit is reported still-blocked or as an error and never silently treated as cleared, and the unreadable cross-repo path is named (LL0008)
-- **Verify:** pytest -k test_blocker_sweep_failloud
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_blocker_sweep.py::BlockerSweepTests::test_blocker_sweep_failloud
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-27)
 
 > **Verification target tiers:** `functional` (single round-trip – default) | `conversational` (multi-turn / multi-step session continuity) | `soak` (live traffic over a window) | `live` (operator-confirmed in production). End-to-end ACs default to `conversational`; production-affecting ACs default to `soak`; ACs shipping behind a flag awaiting promotion default to `live`. See `reference-test-best-practices.md#verification-depth-tiers`.
 
@@ -162,8 +162,8 @@ manifest and emits a report.
 
 ## Test Scenarios
 
-- [ ] Run `pytest -k test_blocker_sweep_in_repo_unblock` against a fixture where a Blocked unit's only referent is Done in-repo, and confirm it is reported as a now-unblocked candidate (AC2).
-- [ ] Run `pytest -k test_blocker_sweep_cross_repo_unblock` against a fixture manifest where the referent is Done in a sibling repo, and confirm the cleared cross-repo blocker is detected (AC3).
+- [ ] Run `pytest .claude/skills/sdlc-studio/scripts/tests/test_blocker_sweep.py::BlockerSweepTests::test_blocker_sweep_in_repo_unblock` against a fixture where a Blocked unit's only referent is Done in-repo, and confirm it is reported as a now-unblocked candidate (AC2).
+- [ ] Run `pytest .claude/skills/sdlc-studio/scripts/tests/test_blocker_sweep.py::BlockerSweepTests::test_blocker_sweep_cross_repo_unblock` against a fixture manifest where the referent is Done in a sibling repo, and confirm the cleared cross-repo blocker is detected (AC3).
 
 > **Minimum test scenarios:** 2 for API stories, 2 for UI
 

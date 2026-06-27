@@ -23,6 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 import complexity  # noqa: E402  (sibling - blast-radius complexity for WSJF)
 import reconcile  # noqa: E402  (sibling - reconcile before plan)
+import blocker_sweep  # noqa: E402  (sibling - blocker sweep before plan)
 
 PRIORITY_FIELD = {"bug": "Severity", "cr": "Priority", "story": "Priority"}
 PRIORITY_WEIGHT = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}
@@ -269,6 +270,16 @@ def build_authoring_plan(repo_root: Path | str, prd_path: str) -> dict:
     }
 
 
+def pre_plan_blocker_sweep(repo_root: Path | str) -> dict:
+    """Pre-plan step: surface units whose blockers have cleared so newly-unblocked work is
+    eligible for the batch, mirroring the reconcile-before-plan gate. Advisory and fail-safe -
+    it proposes Blocked -> Ready candidates and never transitions or blocks planning (US0050)."""
+    try:
+        return blocker_sweep.sweep(repo_root)
+    except Exception:  # noqa: BLE001 - the sweep is advisory; never break planning on its failure
+        return {"now_unblocked": [], "still_blocked": [], "errors": []}
+
+
 def cmd_plan(args: argparse.Namespace) -> int:
     """Print the ordered batch the operator approves before a run."""
     if getattr(args, "prd", None):  # greenfield authoring - the batch is a PRD
@@ -301,6 +312,13 @@ def cmd_plan(args: argparse.Namespace) -> int:
               file=sys.stderr)
         if getattr(args, "strict", False):
             return 2
+    # blocker sweep before plan - newly-unblocked work should be eligible for the batch. Advisory:
+    # it proposes Blocked -> Ready candidates; the gated transition stays the actor (never auto).
+    sweep = pre_plan_blocker_sweep(Path(args.root))
+    if sweep["now_unblocked"]:
+        print(f"blocker sweep: {len(sweep['now_unblocked'])} newly-unblocked unit(s) "
+              f"({', '.join(sweep['now_unblocked'])}) - propose Blocked -> Ready via the gated "
+              f"transition, then re-plan to include them", file=sys.stderr)
     epics = set(getattr(args, "epic", None) or []) or None
     if epics and kind != "story":  # epic-scoping is meaningful for stories only
         print("--epic scopes a story batch; use it with --stories", file=sys.stderr)
