@@ -65,17 +65,27 @@ def local_ids(type_: str, repo_root: Path) -> list[int]:
 
 
 def index_row_ids(type_: str, repo_root: Path) -> list[int]:
-    """Numeric ids present as rows in the type's `_index.md`. Catches an id whose file was
-    deleted but whose index row remains: re-issuing it would collide."""
+    """Numeric ids present as rows in the type's `_index.md` AND its archive sub-indexes.
+
+    Catches an id whose file was deleted but whose index row remains: re-issuing it would
+    collide. The archive union mirrors `reconcile.parse_index` so an id whose terminal row
+    has been relocated to `<type>/archive/` is still seen as taken - re-issuing an archived
+    id would collide just as surely."""
     if type_ in META_TYPES:  # meta-artifacts have no derived _index.md
         return []
     import reconcile  # local import avoids any import cycle
     rel = sdlc_md.ARTIFACT_TYPES[type_][0]
-    index_path = Path(repo_root) / rel / "_index.md"
-    if not index_path.exists():
-        return []
-    ids = [num for norm in reconcile._index_row_ids(index_path.read_text(encoding="utf-8"))
-           if (num := sdlc_md.id_number(norm)) is not None]
+    type_dir = Path(repo_root) / rel
+    sources = [type_dir / "_index.md"]
+    archive_dir = type_dir / "archive"
+    if archive_dir.is_dir():
+        sources.extend(sorted(archive_dir.rglob("*.md")))
+    ids: list[int] = []
+    for src in sources:
+        if not src.exists():
+            continue
+        ids.extend(num for norm in reconcile._index_row_ids(src.read_text(encoding="utf-8"))
+                   if (num := sdlc_md.id_number(norm)) is not None)
     return sorted(set(ids))
 
 

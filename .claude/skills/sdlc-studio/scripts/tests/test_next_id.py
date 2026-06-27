@@ -130,3 +130,35 @@ class AllocateNumberTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ArchiveUnionTests(unittest.TestCase):
+    """US0041 / CR0125: next_id must union the archive sub-indexes so an archived id is
+    never re-issued, even after its artefact file is removed."""
+
+    def _index(self, d: Path, rows: str) -> None:
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "_index.md").write_text(
+            "# Stories\n\n| ID | Title | Status |\n| --- | --- | --- |\n" + rows,
+            encoding="utf-8")
+
+    def test_next_id_unions_archive(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            sd = root / "sdlc-studio" / "stories"
+            self._index(sd, "| [US0001](US0001-a.md) | A | Draft |\n")
+            self._index(sd / "archive", "| [US0007](US0007-g.md) | G | Done |\n")
+            ids = next_id.index_row_ids("story", root)
+            self.assertIn(7, ids)  # archived row is seen
+            self.assertGreater(next_id.allocate_number("story", root, remote=False), 7)
+
+    def test_next_id_archived_id_not_reused(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            sd = root / "sdlc-studio" / "stories"
+            # only the archive row remains; the artefact file is gone
+            self._index(sd, "| [US0001](US0001-a.md) | A | Draft |\n")
+            self._index(sd / "archive", "| [US0009](US0009-i.md) | I | Superseded |\n")
+            (sd / "US0001-a.md").write_text("# A\n\n> **Status:** Draft\n", encoding="utf-8")
+            self.assertNotEqual(next_id.allocate_number("story", root, remote=False), 9)
+            self.assertEqual(next_id.allocate_number("story", root, remote=False), 10)

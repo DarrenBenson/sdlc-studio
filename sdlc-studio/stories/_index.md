@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 8 |
+| Ready | 7 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 42 |
+| Done | 43 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
@@ -62,7 +62,7 @@
 | [US0038](US0038-provenance-stamp-misuse-check-and-remake.md) | provenance stamp misuse check and remake | Done | EP0008 | 2026-06-21 | 2026-06-21 |
 | [US0039](US0039-documented-conformance-stage-and-doc-coverage-gate.md) | documented conformance stage and doc-coverage gate | Done | EP0007 | 2026-06-21 | 2026-06-21 |
 | [US0040](US0040-index-archive-writer-terminal-status-vocab-flag-dry.md) | index-archive writer + terminal-status vocab flag + dry-run (CR0125) | Done | EP0010 | 2026-06-27 | 2026-06-27 |
-| [US0041](US0041-next-id-archive-union-guard-so-archived-ids.md) | next_id archive-union guard so archived ids are never reallocated (CR0125) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
+| [US0041](US0041-next-id-archive-union-guard-so-archived-ids.md) | next_id archive-union guard so archived ids are never reallocated (CR0125) | Done | EP0010 | 2026-06-27 | 2026-06-27 |
 | [US0042](US0042-retro-hard-close-gate-sprint-close-fails-loud.md) | retro hard close-gate: sprint close fails loud without a batch retro (CR0129) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
 | [US0043](US0043-lessons-re-validation-verb-close-obsolete-lessons-by.md) | lessons re-validation verb: close obsolete lessons by validity (CR0129) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
 | [US0044](US0044-rolling-lessons-summary-generator-sprint-start-read-cr0129.md) | rolling LESSONS-SUMMARY generator + sprint-start read (CR0129) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |

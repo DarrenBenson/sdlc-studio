@@ -1,6 +1,6 @@
 # US0041: next_id archive-union guard so archived ids are never reallocated (CR0125)
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-06-27
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0010
@@ -58,18 +58,18 @@ weakened. This story adds that union and nothing else; the relocating writer is 
 - **Given** terminal rows have been relocated into `<type>/archive/**/*.md` sub-indexes
 - **When** `next_id` builds its id-from-index guard for that type
 - **Then** it unions the archive sub-index rows with the live `_index.md` rows, mirroring `parse_index`, so every archived id is counted by the guard
-- **Verify:** pytest -k test_next_id_unions_archive
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_next_id.py::ArchiveUnionTests::test_next_id_unions_archive
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-27)
 
 ### AC2: an archived id is never reallocated even if its artefact file is gone
 
 - **Given** an id whose row sits in an archive sub-index and whose artefact `.md` file has been removed
 - **When** `next_id` allocates the next id for that type
 - **Then** the archived id is excluded from the candidate set and is never re-issued
-- **Verify:** pytest -k test_next_id_archived_id_not_reused
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_next_id.py::ArchiveUnionTests::test_next_id_archived_id_not_reused
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-27)
 
 ---
 
