@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 11 |
+| Ready | 9 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 39 |
+| Done | 41 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
@@ -66,8 +66,8 @@
 | [US0042](US0042-retro-hard-close-gate-sprint-close-fails-loud.md) | retro hard close-gate: sprint close fails loud without a batch retro (CR0129) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
 | [US0043](US0043-lessons-re-validation-verb-close-obsolete-lessons-by.md) | lessons re-validation verb: close obsolete lessons by validity (CR0129) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
 | [US0044](US0044-rolling-lessons-summary-generator-sprint-start-read-cr0129.md) | rolling LESSONS-SUMMARY generator + sprint-start read (CR0129) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
-| [US0045](US0045-agentic-wave-worktree-doctrine-doc-enrichment-cr0126.md) | agentic-wave worktree doctrine doc enrichment (CR0126) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
-| [US0046](US0046-pre-deploy-readiness-checklist-doc-cr0127.md) | pre-deploy readiness checklist doc (CR0127) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
+| [US0045](US0045-agentic-wave-worktree-doctrine-doc-enrichment-cr0126.md) | agentic-wave worktree doctrine doc enrichment (CR0126) | Done | EP0010 | 2026-06-27 | 2026-06-27 |
+| [US0046](US0046-pre-deploy-readiness-checklist-doc-cr0127.md) | pre-deploy readiness checklist doc (CR0127) | Done | EP0010 | 2026-06-27 | 2026-06-27 |
 | [US0047](US0047-restore-the-runtime-scripts-coverage-gate-to-green.md) | restore the runtime-scripts coverage gate to green on CI (blocks all PR merges) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
 | [US0048](US0048-adopt-dependabot-ci-action-bumps-actions-checkout-v7.md) | adopt Dependabot CI action bumps: actions/checkout v7, actions/setup-python v6 | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
 | [US0049](US0049-blocker-sweep-detection-now-unblocked-units-in-repo.md) | blocker-sweep detection: now-unblocked units, in-repo census + cross-repo via PVD manifest (CR0130) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |

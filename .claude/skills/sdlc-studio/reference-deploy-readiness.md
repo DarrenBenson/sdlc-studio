@@ -128,6 +128,21 @@ Before the deploy script even starts the rollout, verify:
 
 ---
 
+## Pre-Deploy Checklist {#pre-deploy-checklist}
+
+Recurring deploy-time failure classes that pass every unit test yet break in production. Each is a mechanical check a release script should run (and abort on), not a manual reminder.
+
+| Check | Failure it prevents | How |
+| --- | --- | --- |
+| **Env-key diff** | A changed default silently breaks the deploy. Replacing a hardcoded value with `${VAR:-default}` ships the default when prod's `.env` lacks `VAR`. | Diff `.env.example` against the target environment's `.env`; **refuse to deploy** if a required key is missing, rather than letting the fallback apply. |
+| **Persistent-volume assertion** | A durability contract is betrayed by a non-persistent path. A feature "tested" against a tmpdir resolves, in the container, to a path that is not bind-mounted, so every restart wipes it. | Assert at startup that each durability target is on a persistent volume, or require an explicit operator-set path. Add to every such feature's AC: *restart the container; verify the data survives.* This is the deploy-side sibling of the deploy-meta-files gap class (LL0006). |
+| **Remote-command heredoc discipline** | A remote command silently does not fail. `set -e` inside `bash -c '...'` over ssh does not propagate, and layered awk/sed quoting mangles. | Use `ssh ... bash -s <<'EOF'` heredoc form with explicit `$?` checks; never `bash -c "..."` for multi-command remote blocks. |
+| **Crypto serialisation round-trip** | An ops helper that mirrors a crypto routine stores a value the canonical decryptor cannot read (e.g. base64 where hex is expected), breaking production at read time. | Any helper that touches encrypted state must round-trip against the **canonical** decryptor before it is trusted - mirror the serialisation format byte-for-byte, not just the algorithm and key. |
+
+The env-key diff and the persistent-volume assertion are mechanical gates a project wires into its release script or container startup (abort on failure). The remote-heredoc and crypto-round-trip items are authoring disciplines a reviewer confirms.
+
+---
+
 ## Soak Window Discipline {#soak-window}
 
 **Pattern:** A feature is not Done until it has soaked under live traffic for the configured window (default 7 days). Smoke green is necessary but not sufficient.

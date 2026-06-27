@@ -45,7 +45,7 @@ This story implements the writer half of CR0125. The read path (`reconcile.parse
 - **Given** a live `<type>/_index.md` carrying both active and terminal rows plus the canonical summary count block
 - **When** the archive writer verb runs
 - **Then** rows whose status is terminal (vocab-derived) move to `<type>/archive/_index-{period}.md`, the live index keeps only active rows plus the canonical summary block, and a re-run moves nothing new (idempotent)
-- **Verify:** `pytest -k test_index_archive_writer`
+- **Verify:** pytest -k test_index_archive_writer
 - **Verification target:** functional
 - **Verified:** no
 
@@ -54,7 +54,7 @@ This story implements the writer half of CR0125. The read path (`reconcile.parse
 - **Given** per-type status vocabs that differ (stories use Done/Won't Implement/Superseded, CRs add Built)
 - **When** the writer classifies a row as terminal
 - **Then** the terminal set is read from `status_vocab(type_, root)` via a vocab-metadata flag, not a literal list, and CR `Built` is classed active, not terminal
-- **Verify:** `pytest -k test_terminal_status_from_vocab`
+- **Verify:** pytest -k test_terminal_status_from_vocab
 - **Verification target:** functional
 - **Verified:** no
 
@@ -63,7 +63,7 @@ This story implements the writer half of CR0125. The read path (`reconcile.parse
 - **Given** a live index that may contain a row whose status is not in the vocab
 - **When** the writer runs in dry-run mode, or encounters an unclassifiable row in a real run
 - **Then** dry-run previews counts per status plus the target sub-index path and writes nothing; an unclassifiable row aborts with a non-zero exit and no partial write (fail loud, LL0008)
-- **Verify:** `pytest -k test_index_archive_dryrun_and_failloud`
+- **Verify:** pytest -k test_index_archive_dryrun_and_failloud
 - **Verification target:** functional
 - **Verified:** no
 
@@ -72,7 +72,7 @@ This story implements the writer half of CR0125. The read path (`reconcile.parse
 - **Given** an index that has just been archived
 - **When** `reconcile detect` runs
 - **Then** it reports drift 0 (census == unioned live + archive rows) and the live summary counts still equal the full census (archived rows still tallied)
-- **Verify:** `pytest -k test_index_archive_reconcile_clean`
+- **Verify:** pytest -k test_index_archive_reconcile_clean
 - **Verification target:** functional
 - **Verified:** no
 

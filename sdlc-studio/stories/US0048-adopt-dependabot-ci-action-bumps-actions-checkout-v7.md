@@ -45,7 +45,7 @@ Dependabot opened PR #25 (actions/checkout v6 -> v7) and PR #26 (actions/setup-p
 - **Given** `.github/workflows/lint.yml` pinning `actions/checkout@v6` (two uses) and `actions/setup-python@v5`
 - **When** the Dependabot bumps are adopted
 - **Then** the workflow references `actions/checkout@v7` (both uses) and `actions/setup-python@v6`, with no `@v6` checkout or `@v5` setup-python references left
-- **Verify:** `bash -lc "cd /home/darren/code/DarrenBenson/sdlc-studio && ! grep -qE 'actions/checkout@v6|actions/setup-python@v5' .github/workflows/lint.yml && grep -q 'actions/checkout@v7' .github/workflows/lint.yml && grep -q 'actions/setup-python@v6' .github/workflows/lint.yml"`
+- **Verify:** bash -lc "cd /home/darren/code/DarrenBenson/sdlc-studio && ! grep -qE 'actions/checkout@v6|actions/setup-python@v5' .github/workflows/lint.yml && grep -q 'actions/checkout@v7' .github/workflows/lint.yml && grep -q 'actions/setup-python@v6' .github/workflows/lint.yml"
 - **Verification target:** functional
 - **Verified:** no
 
@@ -54,7 +54,7 @@ Dependabot opened PR #25 (actions/checkout v6 -> v7) and PR #26 (actions/setup-p
 - **Given** the coverage gate restored to green (US0047) and the bumped workflow
 - **When** the lint workflow runs on the updated `lint.yml`
 - **Then** CI is green and the two Dependabot PRs (#25, #26) are merged or closed as superseded
-- **Verify:** `manual`
+- **Verify:** manual
 - **Verification target:** functional
 - **Verified:** no
 

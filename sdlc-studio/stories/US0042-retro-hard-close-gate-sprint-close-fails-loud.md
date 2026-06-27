@@ -57,7 +57,7 @@ sprint, autosprint, and review close paths must refuse to report success until
 - **Given** a closing sprint, autosprint, or review batch whose `retros/RETRO{next}.md` does not exist
 - **When** the close path runs
 - **Then** it returns a non-zero exit and writes no success report
-- **Verify:** `pytest -k test_close_gate_requires_retro`
+- **Verify:** pytest -k test_close_gate_requires_retro
 - **Verification target:** functional
 - **Verified:** no
 
@@ -66,7 +66,7 @@ sprint, autosprint, and review close paths must refuse to report success until
 - **Given** a closing batch whose `retros/RETRO{next}.md` exists
 - **When** the close path runs
 - **Then** the gate passes and the close proceeds, mirroring the reconcile-drift-0 gate
-- **Verify:** `pytest -k test_close_gate_passes_with_retro`
+- **Verify:** pytest -k test_close_gate_passes_with_retro
 - **Verification target:** functional
 - **Verified:** no
 

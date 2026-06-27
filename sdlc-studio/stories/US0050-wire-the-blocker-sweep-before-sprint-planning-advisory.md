@@ -62,7 +62,7 @@ result.
 - **Given** a backlog where a unit became unblocked after its referent reached a terminal state
 - **When** sprint planning runs, the sweep fires as a pre-`plan` step before the batch is selected
 - **Then** the newly-unblocked unit is surfaced and eligible for the batch, the same way the reconcile-before-plan gate runs ahead of planning
-- **Verify:** `pytest -k test_blocker_sweep_runs_before_plan`
+- **Verify:** pytest -k test_blocker_sweep_runs_before_plan
 - **Verification target:** functional
 - **Verified:** no
 
@@ -71,7 +71,7 @@ result.
 - **Given** a backlog containing units still at `Blocked` after their referent has cleared
 - **When** reconcile runs with the blocker-sweep lane enabled
 - **Then** the lane reports those stale-blocked units as advisory output and never blocks the reconcile result (reconcile still succeeds or fails on its own checks)
-- **Verify:** `pytest -k test_blocker_sweep_reconcile_lane`
+- **Verify:** pytest -k test_blocker_sweep_reconcile_lane
 - **Verification target:** functional
 - **Verified:** no
 
@@ -80,7 +80,7 @@ result.
 - **Given** a unit whose every blocker is terminal/delivered
 - **When** the sweep reports it as a `Blocked -> Ready` candidate
 - **Then** the unit's status is unchanged on disk; the sweep proposes the candidate only, and the gated `transition` call stays the sole actor that moves state
-- **Verify:** `pytest -k test_blocker_sweep_no_auto_transition`
+- **Verify:** pytest -k test_blocker_sweep_no_auto_transition
 - **Verification target:** functional
 - **Verified:** no
 

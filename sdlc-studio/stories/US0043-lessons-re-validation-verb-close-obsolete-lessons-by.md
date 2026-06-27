@@ -45,7 +45,7 @@ Implements part of CR0129. The sprint retro is meant to re-validate accumulated 
 - **Given** a lessons log with open entries
 - **When** the operator runs the re-validation verb and confirms which open lessons are obsolete
 - **Then** `lessons.py` lists the open lessons for confirm/close and records the closure as a status transition, generalising `prune --older` from age-based to validity-based closure
-- **Verify:** `pytest -k test_lessons_revalidate`
+- **Verify:** pytest -k test_lessons_revalidate
 - **Verification target:** functional
 - **Verified:** no
 
@@ -54,7 +54,7 @@ Implements part of CR0129. The sprint retro is meant to re-validate accumulated 
 - **Given** a re-validation pass has already closed the obsolete lessons
 - **When** the verb is run again with no newly obsolete lessons
 - **Then** it closes nothing new and leaves the log unchanged
-- **Verify:** `pytest -k test_lessons_revalidate_idempotent`
+- **Verify:** pytest -k test_lessons_revalidate_idempotent
 - **Verification target:** functional
 - **Verified:** no
 

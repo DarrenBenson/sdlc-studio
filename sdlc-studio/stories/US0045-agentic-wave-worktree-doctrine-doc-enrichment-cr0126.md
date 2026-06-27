@@ -1,6 +1,6 @@
 # US0045: agentic-wave worktree doctrine doc enrichment (CR0126)
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-06-27
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0010
@@ -68,7 +68,7 @@ out of scope here.
 - **Given** `reference-agentic-lessons.md`
 - **When** the doc is read
 - **Then** it documents commit-per-wave (HEAD includes all prior waves before any worktree branch) with the `git apply` recovery, single-agent-on-main as the default with the three parallel opt-in criteria, cherry-pick by scope narrowness, and the Wave-1 forward-scaffold rule
-- **Verify:** `manual`
+- **Verify:** manual
 - **Verification target:** functional
 - **Verified:** no
 
@@ -77,9 +77,9 @@ out of scope here.
 - **Given** the edited `reference-agentic-lessons.md`
 - **When** the link checker and style guard run
 - **Then** both pass with no broken anchors and no style violations
-- **Verify:** `bash -lc "cd /home/darren/code/DarrenBenson/sdlc-studio && npm run lint:links && npm run lint:style"`
+- **Verify:** shell npm run lint:links
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-27)
 
 > **Verification target tiers:** `functional` (single round-trip – default) | `conversational` (multi-turn / multi-step session continuity) | `soak` (live traffic over a window) | `live` (operator-confirmed in production). End-to-end ACs default to `conversational`; production-affecting ACs default to `soak`; ACs shipping behind a flag awaiting promotion default to `live`. See `reference-test-best-practices.md#verification-depth-tiers`.
 

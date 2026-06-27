@@ -71,7 +71,7 @@ and auto-transitioning `Blocked -> Ready` is out of scope - the gated
 - **Given** a repo whose artefacts carry blocker signals (units at Status `Blocked`, `Depends on:` fields, epic `Blocked By` rows)
 - **When** the blocker sweep runs
 - **Then** it collects every unit with a blocker signal and reports, per unit, each referent with its current status
-- **Verify:** `pytest -k test_blocker_sweep_collects_signals`
+- **Verify:** pytest -k test_blocker_sweep_collects_signals
 - **Verification target:** functional
 - **Verified:** no
 
@@ -80,7 +80,7 @@ and auto-transitioning `Blocked -> Ready` is out of scope - the gated
 - **Given** a Blocked unit whose every referent resolves in-repo to a terminal/delivered status by the file census
 - **When** the sweep resolves the referents
 - **Then** the unit is reported as a now-unblocked candidate
-- **Verify:** `pytest -k test_blocker_sweep_in_repo_unblock`
+- **Verify:** pytest -k test_blocker_sweep_in_repo_unblock
 - **Verification target:** functional
 - **Verified:** no
 
@@ -89,7 +89,7 @@ and auto-transitioning `Blocked -> Ready` is out of scope - the gated
 - **Given** a Blocked unit whose referent lives in a sibling repo named in `product-manifest.yaml` `repos[].path`, where the referent is now Done
 - **When** the sweep resolves referents across repos
 - **Then** the cleared cross-repo blocker is detected and the unit is reported as a now-unblocked candidate
-- **Verify:** `pytest -k test_blocker_sweep_cross_repo_unblock`
+- **Verify:** pytest -k test_blocker_sweep_cross_repo_unblock
 - **Verification target:** functional
 - **Verified:** no
 
@@ -98,7 +98,7 @@ and auto-transitioning `Blocked -> Ready` is out of scope - the gated
 - **Given** a referent that is missing, unreadable, or in an unknown status, including an unreadable cross-repo path
 - **When** the sweep resolves it
 - **Then** the unit is reported still-blocked or as an error and never silently treated as cleared, and the unreadable cross-repo path is named (LL0008)
-- **Verify:** `pytest -k test_blocker_sweep_failloud`
+- **Verify:** pytest -k test_blocker_sweep_failloud
 - **Verification target:** functional
 - **Verified:** no
 

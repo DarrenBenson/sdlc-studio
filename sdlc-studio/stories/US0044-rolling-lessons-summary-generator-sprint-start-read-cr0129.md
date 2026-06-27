@@ -50,7 +50,7 @@ and the sprint-start step reads the summary plus `lessons recall` instead of the
 - **Given** a still-valid lesson set
 - **When** the summary generator runs at retro close
 - **Then** `retros/LESSONS-SUMMARY.md` is refreshed from the still-valid lessons and committed (unlike the gitignored `.local/lessons.md`)
-- **Verify:** `pytest -k test_lessons_summary_generator`
+- **Verify:** pytest -k test_lessons_summary_generator
 - **Verification target:** functional
 - **Verified:** no
 
@@ -59,7 +59,7 @@ and the sprint-start step reads the summary plus `lessons recall` instead of the
 - **Given** a fixture lesson set
 - **When** the generator runs twice over the same input
 - **Then** the produced summary is byte-identical, so the refresh is deterministic and idempotent
-- **Verify:** `pytest -k test_lessons_summary_deterministic`
+- **Verify:** pytest -k test_lessons_summary_deterministic
 - **Verification target:** functional
 - **Verified:** no
 
@@ -68,7 +68,7 @@ and the sprint-start step reads the summary plus `lessons recall` instead of the
 - **Given** a new sprint starting
 - **When** it loads prior learning
 - **Then** it reads `LESSONS-SUMMARY.md` plus `lessons recall` instead of the full log, and `reference-sprint.md` step 7 is updated to describe the lifecycle
-- **Verify:** `manual`
+- **Verify:** manual
 - **Verification target:** functional
 - **Verified:** no
 

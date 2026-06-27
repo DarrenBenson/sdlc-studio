@@ -64,6 +64,30 @@ Three or more parallel agents create merge complexity that outweighs the time sa
 
 If one story is 8 points and another is 3, don't parallelise them. The 3-point story finishes while the 8-point story is still running, wasting the parallelism. Pair stories of similar complexity.
 
+### Commit every wave to main before launching the next wave's worktree agents
+
+The per-epic commit rule is not enough. `Agent({ isolation: 'worktree' })` branches from a HEAD cached at an earlier agent-tool invocation, not the current main HEAD, so a Wave 2 agent can branch from a pre-Wave-1 baseline and never see the types or files Wave 1 added. The fix is to **commit each wave to main before launching the next wave's worktree agents** - the HEAD a worktree branches from must already include every prior wave.
+
+When stale-HEAD still happens, recover by extracting the agent's work as a diff against its stale base and replaying it on main (`git diff HEAD -- <files> > /tmp/patch` then `git apply /tmp/patch`), rather than re-running the agent.
+
+### Single-agent-on-main is the default; parallel worktrees are the exception
+
+Most waves should run as a single agent committing straight to main. Opt into parallel worktrees only when all three hold:
+
+- both stories have **hermetic file scopes** (zero shared hub files);
+- the combined story points exceed ~10 SP, so parallelism saves material wall-clock; and
+- the **merge plan is written before launch** (which files are copied, which are merged by hand).
+
+Below that bar the merge overhead exceeds the throughput gain. A 19 SP epic shipped in six sequential waves often matches the wall-clock of a botched three-parallel-wave run.
+
+### Cherry-pick worktree branches by scope narrowness, not story points or id
+
+When merging parallel worktrees, land the **narrowest-scope** change first; surgical changes merge cleanly on top of larger additions, whereas the reverse creates three-way conflicts. Order by blast radius, not by SP or story number.
+
+### Wave 1 forward-declares every shared type, interface, and hub-file addition
+
+The foundation wave must enumerate and create the shared surface later waves consume - types, interfaces, and the test-fixture surface - as a forward scaffold. Waves 2+ then implement against that scaffold and never touch the shared file, so the parallel adapters carry zero conflict. Derive the shared-file set from `scripts/repo_map.py`, not from memory.
+
 ---
 
 ## Agent Prompts

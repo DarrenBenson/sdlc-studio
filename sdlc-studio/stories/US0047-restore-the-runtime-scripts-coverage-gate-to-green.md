@@ -64,7 +64,7 @@ local-versus-CI gap here so it does not recur.
 - **Given** the runtime-scripts coverage gate currently fails on the CI runner
 - **When** the gate command runs in the CI environment (no `gh`, no git identity, no external tools), not only on a developer machine
 - **Then** runtime-scripts coverage is >= 80% and the gate exits zero
-- **Verify:** `bash -lc "cd /home/darren/code/DarrenBenson/sdlc-studio && coverage run --source=.claude/skills/sdlc-studio/scripts -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests && coverage report --omit='*/tests/*' --fail-under=80"`
+- **Verify:** bash -lc "cd /home/darren/code/DarrenBenson/sdlc-studio && coverage run --source=.claude/skills/sdlc-studio/scripts -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests && coverage report --omit='*/tests/*' --fail-under=80"
 - **Verification target:** functional
 - **Verified:** no
 
@@ -73,7 +73,7 @@ local-versus-CI gap here so it does not recur.
 - **Given** coverage passes locally (TOTAL 83%) but fails on CI because some tests skip on the runner
 - **When** the cause is investigated and addressed
 - **Then** the tests that silently skip on CI are made to run (or those code paths are covered another way), and the root cause of the gap is noted in this story so the gate is honest on both local and CI runs
-- **Verify:** `manual`
+- **Verify:** manual
 - **Verification target:** functional
 - **Verified:** no
 

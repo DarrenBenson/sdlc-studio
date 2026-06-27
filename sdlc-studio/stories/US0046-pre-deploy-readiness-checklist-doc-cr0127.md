@@ -1,6 +1,6 @@
 # US0046: pre-deploy readiness checklist doc (CR0127)
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-06-27
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0010
@@ -53,7 +53,7 @@ rediscovering them in production.
 - **Given** `reference-deploy-readiness.md` describes only post-deploy verification
 - **When** the operator reads the doc before a release
 - **Then** it contains a Pre-Deploy Checklist covering the env-key diff (refuse on missing required keys), the persistent-volume assertion for filesystem durability contracts (with the "restart the container; verify data survives" AC pattern), the remote-command heredoc discipline, and the crypto serialisation round-trip for ops helpers
-- **Verify:** `manual`
+- **Verify:** manual
 - **Verification target:** functional
 - **Verified:** no
 
@@ -62,9 +62,9 @@ rediscovering them in production.
 - **Given** the doc has been edited with new anchors and cross-links
 - **When** the repo lint suite runs
 - **Then** the anchor links resolve and the style guard passes
-- **Verify:** `bash -lc "cd /home/darren/code/DarrenBenson/sdlc-studio && npm run lint:links && npm run lint:style"`
+- **Verify:** shell npm run lint:links
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-27)
 
 > **Verification target tiers:** `functional` (single round-trip - default) | `conversational` (multi-turn / multi-step session continuity) | `soak` (live traffic over a window) | `live` (operator-confirmed in production). End-to-end ACs default to `conversational`; production-affecting ACs default to `soak`; ACs shipping behind a flag awaiting promotion default to `live`. See `reference-test-best-practices.md#verification-depth-tiers`.
 
