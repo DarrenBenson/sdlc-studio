@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-06-27
+
+The skill self-improvement release: a token-economy + learning-loop epic (EP0010), the
+test-strategy heuristics (CR0128), and a newcomer-first README and onboarding overhaul.
+New commands - `reconcile archive`, `lessons revalidate`/`summary`, `gate --require-retro`,
+`blocker_sweep`, and the `audit` regression-test check - plus four promoted cross-project
+lessons (LL0009-LL0012). CI restored to green and the Dependabot action bumps adopted.
+
 ### Fixed
 
 - **CI coverage gate restored to green (US0047).** The gate failed on CI not from a coverage

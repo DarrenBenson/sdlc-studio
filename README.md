@@ -4,7 +4,7 @@
 
 **Ask for software in plain language. An AI engineering team plans it, builds it, tests it, and proves it is done.**
 
-**Version 3.1.1**
+**Version 3.2.0**
 
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Lint](https://github.com/DarrenBenson/sdlc-studio/actions/workflows/lint.yml/badge.svg)](https://github.com/DarrenBenson/sdlc-studio/actions/workflows/lint.yml)
@@ -80,12 +80,12 @@ irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 
 Most AI coding jumps from a vague prompt straight to code, then drifts as the project grows. SDLC Studio adds the steps a real team uses, so the agent always has the context to stay on track. Each step writes a plain markdown file under `sdlc-studio/` in your project. You stay in control: review each file, then run the next step. Deterministic scripts do the mechanical checks; the model does the thinking.
 
 ```mermaid
-flowchart LR
+flowchart TB
   A[New idea] -->|prd create| P[PRD]
   B[Existing code] -->|prd generate| P
-  P --> E[Epics] --> S[Stories<br/>+ acceptance criteria]
-  S --> PL[Plan] --> C[Code] --> T[Tests] --> V[Verify<br/>against criteria]
-  V -.->|reconcile + review| S
+  P --> E[Epics] --> S[Stories + acceptance criteria]
+  S --> PL[Plan] --> C[Code] --> T[Tests] --> V[Verify against criteria]
+  V -. reconcile + review .-> S
 ```
 
 Two ways in, one disciplined path through. The dotted line back is reconcile and review, keeping every document true to what was built.
