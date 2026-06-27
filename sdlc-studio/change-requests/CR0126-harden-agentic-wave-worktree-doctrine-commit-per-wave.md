@@ -1,6 +1,6 @@
 # CR-0126: harden agentic-wave worktree doctrine: commit-per-wave, cherry-pick order, forward-scaffold
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-27
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium

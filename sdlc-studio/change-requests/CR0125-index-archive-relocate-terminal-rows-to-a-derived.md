@@ -1,6 +1,6 @@
 # CR-0125: index archive: relocate terminal rows to a derived sub-index
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-27
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium

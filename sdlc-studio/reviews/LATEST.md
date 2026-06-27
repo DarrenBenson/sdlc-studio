@@ -4,9 +4,20 @@
 > or compaction.** Durable guidance lives in AGENTS.md; per-tranche detail lives in CHANGELOG.md
 > and `sdlc-studio/retros/`; the original v2.0 unified review is `RV0001-unified-review-2026-06-20.md`.
 >
-> **Project version:** 3.1.1 (released 2026-06-25) · **Date:** 2026-06-25 ·
-> **Gates:** lint clean, 970 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0,
-> npm audit 0.
+> **Project version:** 3.1.1 (released 2026-06-25) · **Date:** 2026-06-27 ·
+> **Gates:** lint clean, 990 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0,
+> npm audit 0, CI green on main.
+> **EP0010 - skill self-improvement: token economy + learning loop (unreleased, on main):** 11
+> stories / 5 CRs delivered (CR0128 held). Index archive (`reconcile archive` relocates terminal
+> rows to a derived `<type>/archive/_index.md`; `next_id` unions the archive). Retro lifecycle: the
+> sprint close is now a hard fail-loud gate (`gate --require-retro`) plus `lessons revalidate` +
+> `lessons summary` (a deterministic committed `LESSONS-SUMMARY.md` read at sprint start) - first
+> dogfooded by RETRO0005. Blocker sweep (`blocker_sweep.py`) finds now-unblocked units in-repo and
+> cross-repo via the PVD manifest, runs before `plan` and as a `reconcile detect --blocker-sweep`
+> advisory lane; proposes `Blocked -> Ready`, never auto-moves. Agentic-wave + pre-deploy doctrine
+> docs. CI coverage gate restored to green (the cause was PyYAML-absent config tests failing, not a
+> coverage shortfall - LL0011) and the Dependabot action bumps adopted (#25/#26 closed). Four
+> lessons promoted: LL0009-LL0012.
 > **v3.1.1 - field-hardening (4 upgrade-run retrospectives, RFC0021):** six bugs + five CRs.
 > RFC0021 (the seats/amigos duality) settled by a dogfooded Three Amigos consult and delivered in
 > two slices: the persona model converges to **one role-based actor model** - `seats/` is the home,

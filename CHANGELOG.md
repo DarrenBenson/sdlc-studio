@@ -25,53 +25,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Two cross-project lessons promoted from the consuming repos (LL0009, LL0010).** LL0009 - a silent
-  failure that misleads the caller outranks a loud failure of the same scope (default P0/P1; triage
-  question "what does the user believe happened?"); the runtime sibling of LL0008, promoted from
-  a consuming repo BG0026/28/29. LL0010 - validate a defence using the bug it defends against before
-  shipping it (a guard untested against its target failure can pass review yet be broken on first
-  encounter); promoted from a second consuming repo L-RV-L2-007.
+- **EP0010 - skill self-improvement: token economy + learning loop (11 stories, 5 CRs).** Delivered
+  this sprint; see `sdlc-studio/retros/RETRO0005`.
+  - **Index archive (CR0125 / US0040, US0041).** `reconcile archive` relocates terminal index rows to
+    a derived `<type>/archive/_index.md`, leaving active rows + the summary block live; idempotent,
+    `--dry-run`, fail-loud on an unclassifiable status. Terminal-status vocab is `sdlc_md`-derived;
+    `next_id` unions the archive sub-indexes so an archived id is never re-issued.
+  - **Blocker sweep (CR0130 / US0049, US0050).** New `blocker_sweep.py` finds units whose blockers
+    cleared - in-repo by census, cross-repo via the PVD `product-manifest.yaml`. Runs before
+    `sprint plan` and as the advisory `reconcile detect --blocker-sweep` lane; proposes
+    `Blocked -> Ready`, never auto-transitions, never false-clears an unresolved referent (LL0008).
+  - **Retro lifecycle (CR0129 / US0042-US0044).** The sprint close is a hard fail-loud gate
+    (`gate --require-retro`); `lessons revalidate` closes stale lessons by validity; `lessons summary`
+    regenerates a deterministic committed `LESSONS-SUMMARY.md` read at sprint start. Dogfooded here.
+  - **Agentic-wave worktree doctrine (CR0126 / US0045)** and **pre-deploy readiness checklist
+    (CR0127 / US0046)** added to their reference docs.
+- **Four cross-project lessons promoted to the skill tier (LL0009-LL0012).** LL0009 - a silent failure
+  that misleads the caller outranks a loud failure of the same scope. LL0010 - validate a defence using
+  the bug it defends against before shipping it. LL0011 - a gate that fails on CI but passes locally is
+  an environment gap until proven otherwise (reproduce the CI env before trusting the symptom). LL0012 -
+  a new private helper that shadows a module-level name silently breaks every existing caller.
 
 ### Proposed
 
-- **CR0130 - blocker sweep: detect now-unblocked units.** The skill flags `unmet-deps` (the forward
-  direction) but never re-checks whether a blocker has cleared, so a unit stuck at Status `Blocked`
-  stays there after its dependency reached a terminal state and silently misses planning. Adds a
-  sweep that collects every blocker signal (`Blocked` status, `Depends on:`, epic `Blocked By`),
-  resolves referents in-repo by census and **cross-repo via the PVD `product-manifest.yaml`** (so a
-  capability shipped in one repo unblocks a unit in another), and reports now-unblocked candidates.
-  Runs before sprint planning and as an advisory reconcile lane; proposes the `Blocked -> Ready`
-  transition but never auto-moves state, and never false-clears an unresolved/unreadable referent
-  (LL0008). Deterministic detection per the standing directive.
-- **CR0126 - harden the agentic-wave worktree doctrine.** Commit-per-wave HEAD-freshness (worktree
-  agents branch from a cached stale HEAD), cherry-pick by scope narrowness, Wave-1 forward-scaffold
-  of shared types, and single-agent-on-main as default with explicit opt-in-to-parallel criteria.
-  Distilled from a consuming repo EP0037-0041. Determinism: precondition expressed as a mechanical
-  pre-launch check, forward-scaffold derived from repo_map.
-- **CR0127 - pre-deploy readiness gate.** A pre-deploy checklist for `reference-deploy-readiness.md`:
-  `.env.example`-vs-target key diff (refuse on missing), persistent-volume assertion for filesystem
-  durability contracts, remote-command heredoc discipline, crypto serialisation round-trip for ops
-  helpers. Distilled from a second consuming repo v1.2.x-v1.4.0 + a consuming repo's durability incident; env-diff
-  and volume assertion specified as mechanical gates.
-- **CR0128 - test-strategy heuristics.** New `best-practices/testing.md` + test-spec template ACs:
-  production-state-shape integration tests, a named regression test per production bug,
+- **CR0128 - test-strategy heuristics (held).** New `best-practices/testing.md` + test-spec template
+  ACs: production-state-shape integration tests, a named regression test per production bug,
   rejects-old-shape contract tests, resource-count regression tests, pure-function extraction.
   Determinism: a checker flags a Fixed/Done item whose tests lack an integration/regression case
   rather than leaving the rule as prose.
-- **CR0129 - sprint retro lifecycle hardening.** Makes the closing retro a hard, fail-loud gate and
-  adds the full lessons lifecycle: review and write lessons at retro, re-validate open lessons and
-  close the obsolete, generate a rolling committed `LESSONS-SUMMARY.md`, and read that summary (not
-  the full log) at sprint start; surfaces generalisable lessons for `lessons add --global`. Closes
-  the gap that left a consuming repo/a second consuming repo with no `retros/` and a third consuming repo with zero lessons.
-  Each step script-backed (LL0008); only the validity/generalisability judgements stay agent-made.
-- **CR0125 - index archive: relocate terminal rows to a derived sub-index.** `_index.md` tables grow
-  monotonically; on a mature project (a consuming repo: stories index 1740 lines, 99% terminal) the live
-  index is almost all dead weight loaded on every status/pickup. The read path already tolerates
-  tiering - `reconcile.parse_index` unions live rows with `<type>/archive/**/*.md` sub-index rows -
-  so the proposal adds the missing writer: pull terminal rows (vocab-derived, not hardcoded) out of
-  the live index into `archive/_index-{period}.md`, leaving active rows + the canonical summary.
-  next_id unions the archive in its id guard; fail-loud per LL0008. Monolithic PRD/TRD/TSD sharding
-  is explicitly out of scope (separate RFC).
 
 ## [3.1.1] - 2026-06-25
 

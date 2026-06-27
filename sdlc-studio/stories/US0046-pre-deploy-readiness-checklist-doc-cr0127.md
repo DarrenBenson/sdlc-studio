@@ -55,7 +55,7 @@ rediscovering them in production.
 - **Then** it contains a Pre-Deploy Checklist covering the env-key diff (refuse on missing required keys), the persistent-volume assertion for filesystem durability contracts (with the "restart the container; verify data survives" AC pattern), the remote-command heredoc discipline, and the crypto serialisation round-trip for ops helpers
 - **Verify:** manual
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** manual
 
 ### AC2: Links and style pass
 

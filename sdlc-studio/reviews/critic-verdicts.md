@@ -93,3 +93,14 @@
 | BG0042 | APPROVE | sam-eriksson-qa-review | dani-okafor-eng-build | 2026-06-25 | - |
 | CR0120 | APPROVE | sam-eriksson-qa-review | dani-okafor-eng-build | 2026-06-25 | - |
 | CR0124 | APPROVE | sam-eriksson-qa-review | dani-okafor-eng-build | 2026-06-25 | - |
+| US0040 | APPROVE | Sam-QA | Dani-Engineering | 2026-06-27 | - |
+| US0041 | APPROVE | Sam-QA | Dani-Engineering | 2026-06-27 | - |
+| US0042 | APPROVE | Sam-QA | Dani-Engineering | 2026-06-27 | - |
+| US0043 | APPROVE | Sam-QA | Dani-Engineering | 2026-06-27 | - |
+| US0044 | APPROVE | Sam-QA | Dani-Engineering | 2026-06-27 | - |
+| US0045 | APPROVE | Sam-QA | Dani-Engineering | 2026-06-27 | - |
+| US0046 | APPROVE | Sam-QA | Dani-Engineering | 2026-06-27 | - |
+| US0047 | APPROVE | Sam-QA | Dani-Engineering | 2026-06-27 | - |
+| US0048 | APPROVE | Sam-QA | Dani-Engineering | 2026-06-27 | - |
+| US0049 | APPROVE | Sam-QA | Dani-Engineering | 2026-06-27 | - |
+| US0050 | APPROVE | Sam-QA | Dani-Engineering | 2026-06-27 | - |

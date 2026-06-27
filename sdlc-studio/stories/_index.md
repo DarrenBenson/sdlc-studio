@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 1 |
+| Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 49 |
+| Done | 50 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
@@ -69,6 +69,6 @@
 | [US0045](US0045-agentic-wave-worktree-doctrine-doc-enrichment-cr0126.md) | agentic-wave worktree doctrine doc enrichment (CR0126) | Done | EP0010 | 2026-06-27 | 2026-06-27 |
 | [US0046](US0046-pre-deploy-readiness-checklist-doc-cr0127.md) | pre-deploy readiness checklist doc (CR0127) | Done | EP0010 | 2026-06-27 | 2026-06-27 |
 | [US0047](US0047-restore-the-runtime-scripts-coverage-gate-to-green.md) | restore the runtime-scripts coverage gate to green on CI (blocks all PR merges) | Done | EP0010 | 2026-06-27 | 2026-06-27 |
-| [US0048](US0048-adopt-dependabot-ci-action-bumps-actions-checkout-v7.md) | adopt Dependabot CI action bumps: actions/checkout v7, actions/setup-python v6 | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
+| [US0048](US0048-adopt-dependabot-ci-action-bumps-actions-checkout-v7.md) | adopt Dependabot CI action bumps: actions/checkout v7, actions/setup-python v6 | Done | EP0010 | 2026-06-27 | 2026-06-27 |
 | [US0049](US0049-blocker-sweep-detection-now-unblocked-units-in-repo.md) | blocker-sweep detection: now-unblocked units, in-repo census + cross-repo via PVD manifest (CR0130) | Done | EP0010 | 2026-06-27 | 2026-06-27 |
 | [US0050](US0050-wire-the-blocker-sweep-before-sprint-planning-advisory.md) | wire the blocker sweep before sprint planning + advisory reconcile lane (CR0130) | Done | EP0010 | 2026-06-27 | 2026-06-27 |

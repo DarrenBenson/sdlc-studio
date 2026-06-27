@@ -1,6 +1,6 @@
 # CR-0129: sprint retro lifecycle: hard close gate, lessons re-validation, rolling summary of learnings
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-27
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium

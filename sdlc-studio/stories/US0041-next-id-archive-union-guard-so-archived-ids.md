@@ -167,6 +167,3 @@ None
 | Date       | Author | Change                                               |
 | ---------- | ------ | ---------------------------------------------------- |
 | 2026-06-27 | Dani   | Authored to Ready (design rung, breakdown of CR0125) |
-
-</content>
-</invoke>

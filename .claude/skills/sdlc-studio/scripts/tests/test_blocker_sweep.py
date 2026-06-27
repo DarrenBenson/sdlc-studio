@@ -103,6 +103,19 @@ class BlockerSweepTests(unittest.TestCase):
             self.assertIn("US0030", rep["still_blocked"])
             self.assertTrue(any("US9999" in e and "missing" in e for e in rep["errors"]))
 
+    def test_blocker_sweep_cross_repo_unreadable_named(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            # referent absent in-repo; the manifest points at a repo path that does not exist.
+            # AC4: the unreadable cross-repo path is reported (named), never silently cleared.
+            _story(root / "sdlc-studio" / "stories", "US0031", "Blocked", depends="EP0088")
+            (root / "product-manifest.yaml").write_text(
+                "master_pvd: x\nrepos:\n  - id: gone\n    path: ./no-such-repo\n", encoding="utf-8")
+            rep = blocker_sweep.sweep(root)
+            self.assertNotIn("US0031", rep["now_unblocked"])      # never false-cleared
+            self.assertIn("US0031", rep["still_blocked"])
+            self.assertTrue(any("gone" in e and "no-such-repo" in e for e in rep["errors"]))
+
 
 class WiringTests(unittest.TestCase):
     """US0050 / CR0130: the sweep runs before plan and as an advisory reconcile lane, and only

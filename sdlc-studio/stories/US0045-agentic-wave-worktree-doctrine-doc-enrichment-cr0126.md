@@ -70,7 +70,7 @@ out of scope here.
 - **Then** it documents commit-per-wave (HEAD includes all prior waves before any worktree branch) with the `git apply` recovery, single-agent-on-main as the default with the three parallel opt-in criteria, cherry-pick by scope narrowness, and the Wave-1 forward-scaffold rule
 - **Verify:** manual
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** manual
 
 ### AC2: anchor links resolve and the style guard passes
 

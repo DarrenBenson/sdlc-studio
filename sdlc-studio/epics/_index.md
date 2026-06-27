@@ -7,10 +7,10 @@
 | Status | Count |
 | --- | --- |
 | Draft | 0 |
-| Ready | 10 |
+| Ready | 9 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 0 |
+| Done | 1 |
 | **Total** | **10** |
 
 > Generate-mode note: all epics are **Ready** (spec extracted from the existing
@@ -30,4 +30,4 @@
 | [EP0007](EP0007-orchestration.md) | Agentic Orchestration | Ready | 4 | EP0002, EP0003, EP0005 | 2026-06-20 | 2026-06-20 |
 | [EP0008](EP0008-tooling-scripts.md) | Tooling & Scripts | Ready | 6 | None | 2026-06-20 | 2026-06-20 |
 | [EP0009](EP0009-onboarding-doctrine.md) | Onboarding & Doctrine | Ready | 5 | None | 2026-06-20 | 2026-06-20 |
-| [EP0010](EP0010-skill-self-improvement-token-economy-learning-loop-consuming.md) | Skill self-improvement: token economy + learning loop (consuming-repo lessons) | Ready | -- | -- | 2026-06-27 | 2026-06-27 |
+| [EP0010](EP0010-skill-self-improvement-token-economy-learning-loop-consuming.md) | Skill self-improvement: token economy + learning loop (consuming-repo lessons) | Done | -- | -- | 2026-06-27 | 2026-06-27 |

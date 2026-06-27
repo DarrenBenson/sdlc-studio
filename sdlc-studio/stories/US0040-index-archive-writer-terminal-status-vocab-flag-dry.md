@@ -44,16 +44,16 @@ This story implements the writer half of CR0125. The read path (`reconcile.parse
 
 - **Given** a live `<type>/_index.md` carrying both active and terminal rows plus the canonical summary count block
 - **When** the archive writer verb runs
-- **Then** rows whose status is terminal (vocab-derived) move to `<type>/archive/_index-{period}.md`, the live index keeps only active rows plus the canonical summary block, and a re-run moves nothing new (idempotent)
+- **Then** rows whose status is terminal (vocab-derived) move to the derived sub-index `<type>/archive/_index.md` (the read path globs `archive/**/*.md`, so a later period-bucketed `_index-{period}.md` stays compatible), the live index keeps only active rows plus the canonical summary block, and a re-run moves nothing new (idempotent)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_index_archive.py::WriterTests::test_index_archive_writer
 - **Verification target:** functional
 - **Verified:** yes (2026-06-27)
 
 ### AC2: terminal statuses come from the vocab, not a hardcoded list
 
-- **Given** per-type status vocabs that differ (stories use Done/Won't Implement/Superseded, CRs add Built)
+- **Given** per-type status vocabs that differ (a story's terminal set is Done/Won't Implement/Superseded; a CR's is Complete/Rejected/Superseded)
 - **When** the writer classifies a row as terminal
-- **Then** the terminal set is read from `status_vocab(type_, root)` via a vocab-metadata flag, not a literal list, and CR `Built` is classed active, not terminal
+- **Then** the terminal set is read from `status_vocab(type_, root)` via a vocab-metadata flag, not a literal list, so an active in-vocab status (a story `In Progress`, a CR `Proposed`) is classed active, not terminal; a status absent from the vocab is unclassifiable and fails loud (AC3), never silently kept or moved
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_index_archive.py::TerminalVocabTests::test_terminal_status_from_vocab
 - **Verification target:** functional
 - **Verified:** yes (2026-06-27)

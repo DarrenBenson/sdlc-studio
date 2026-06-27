@@ -1,6 +1,6 @@
 # CR-0130: blocker sweep: detect now-unblocked units (cross-project via PVD), pre-plan + reconcile lane
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-06-27
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium

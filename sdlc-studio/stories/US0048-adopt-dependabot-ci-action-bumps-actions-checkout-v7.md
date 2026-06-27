@@ -1,6 +1,6 @@
 # US0048: adopt Dependabot CI action bumps: actions/checkout v7, actions/setup-python v6
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-06-27
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0010
@@ -56,7 +56,7 @@ Dependabot opened PR #25 (actions/checkout v6 -> v7) and PR #26 (actions/setup-p
 - **Then** CI is green and the two Dependabot PRs (#25, #26) are merged or closed as superseded
 - **Verify:** manual
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** yes (2026-06-27) - CI run 28283114206 succeeded on the bumped workflow; PRs #25/#26 closed as superseded
 
 > **Verification target tiers:** `functional` (single round-trip – default) | `conversational` (multi-turn / multi-step session continuity) | `soak` (live traffic over a window) | `live` (operator-confirmed in production). End-to-end ACs default to `conversational`; production-affecting ACs default to `soak`; ACs shipping behind a flag awaiting promotion default to `live`. See `reference-test-best-practices.md#verification-depth-tiers`.
 

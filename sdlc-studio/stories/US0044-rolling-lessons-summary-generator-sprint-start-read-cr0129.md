@@ -70,7 +70,7 @@ and the sprint-start step reads the summary plus `lessons recall` instead of the
 - **Then** it reads `LESSONS-SUMMARY.md` plus `lessons recall` instead of the full log, and `reference-sprint.md` step 7 is updated to describe the lifecycle
 - **Verify:** manual
 - **Verification target:** functional
-- **Verified:** no
+- **Verified:** manual
 
 > **Verification target tiers:** `functional` (single round-trip – default) | `conversational` (multi-turn / multi-step session continuity) | `soak` (live traffic over a window) | `live` (operator-confirmed in production). End-to-end ACs default to `conversational`; production-affecting ACs default to `soak`; ACs shipping behind a flag awaiting promotion default to `live`. See `reference-test-best-practices.md#verification-depth-tiers`.
 

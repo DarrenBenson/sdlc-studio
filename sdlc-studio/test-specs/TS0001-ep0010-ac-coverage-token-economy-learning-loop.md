@@ -1,6 +1,7 @@
 # TS0001: EP0010 AC coverage - token economy + learning loop
 
 > **Status:** Ready
+> **Epic:** EP0010
 > **Created:** 2026-06-27
 > **Created-by:** sdlc-studio new
 

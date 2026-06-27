@@ -23,6 +23,8 @@ and from per-project memory (project-specific facts).
 | [LL0008](LL0008-a-deterministic-tool-must-fail-loud-never-report-success-it-did-not-achieve.md) | A deterministic tool must fail loud, never report success it did not achieve | tooling, determinism, false-green, mis-report, bug-class |
 | [LL0009](LL0009-silent-misleading-failure-outranks-loud-failure-of-the-same-scope.md) | Silent misleading failure outranks loud failure of the same scope | severity, triage, silent-failure, review, bug-class |
 | [LL0010](LL0010-validate-a-defence-using-the-bug-it-defends-against-before-shipping-it.md) | Validate a defence using the bug it defends against, before shipping it | quality-gate, defence, testing, process, bug-class |
+| [LL0011](LL0011-a-gate-that-fails-on-ci-but-passes-locally-is-an-environment-gap-until-proven-otherwise.md) | A gate that fails on CI but passes locally is an environment gap until proven otherwise | ci, debugging, environment, fail-loud |
+| [LL0012](LL0012-a-new-private-helper-that-shadows-a-module-level-name-silently-breaks-every-existing-caller.md) | A new private helper that shadows a module-level name silently breaks every existing caller | python, refactoring, naming, testing |
 
 ## Notes
 
