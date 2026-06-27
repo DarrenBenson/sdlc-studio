@@ -21,6 +21,8 @@ and from per-project memory (project-specific facts).
 | [LL0006](LL0006-deploy-meta-files-gap-class.md) | Deploy meta-files gap – new boot-read file → every deploy path | deploy, packaging, gap-class |
 | [LL0007](LL0007-plan-from-value-not-bare-priority-a-ready-story-whose-verifiers-pass-is-already-done.md) | Plan from value, not bare priority; a Ready story whose verifiers pass is already done | sprint, planning, wsjf, personas, conformance |
 | [LL0008](LL0008-a-deterministic-tool-must-fail-loud-never-report-success-it-did-not-achieve.md) | A deterministic tool must fail loud, never report success it did not achieve | tooling, determinism, false-green, mis-report, bug-class |
+| [LL0009](LL0009-silent-misleading-failure-outranks-loud-failure-of-the-same-scope.md) | Silent misleading failure outranks loud failure of the same scope | severity, triage, silent-failure, review, bug-class |
+| [LL0010](LL0010-validate-a-defence-using-the-bug-it-defends-against-before-shipping-it.md) | Validate a defence using the bug it defends against, before shipping it | quality-gate, defence, testing, process, bug-class |
 
 ## Notes
 

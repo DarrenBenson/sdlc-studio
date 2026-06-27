@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 0 |
+| Ready | 11 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -16,7 +16,7 @@
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
-| **Total** | **39** |
+| **Total** | **50** |
 
 ## All Stories
 
@@ -61,3 +61,14 @@
 | [US0037](US0037-close-cascade-records-telemetry-per-unit.md) | close cascade records telemetry per unit | Done | EP0008 | 2026-06-21 | 2026-06-21 |
 | [US0038](US0038-provenance-stamp-misuse-check-and-remake.md) | provenance stamp misuse check and remake | Done | EP0008 | 2026-06-21 | 2026-06-21 |
 | [US0039](US0039-documented-conformance-stage-and-doc-coverage-gate.md) | documented conformance stage and doc-coverage gate | Done | EP0007 | 2026-06-21 | 2026-06-21 |
+| [US0040](US0040-index-archive-writer-terminal-status-vocab-flag-dry.md) | index-archive writer + terminal-status vocab flag + dry-run (CR0125) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
+| [US0041](US0041-next-id-archive-union-guard-so-archived-ids.md) | next_id archive-union guard so archived ids are never reallocated (CR0125) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
+| [US0042](US0042-retro-hard-close-gate-sprint-close-fails-loud.md) | retro hard close-gate: sprint close fails loud without a batch retro (CR0129) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
+| [US0043](US0043-lessons-re-validation-verb-close-obsolete-lessons-by.md) | lessons re-validation verb: close obsolete lessons by validity (CR0129) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
+| [US0044](US0044-rolling-lessons-summary-generator-sprint-start-read-cr0129.md) | rolling LESSONS-SUMMARY generator + sprint-start read (CR0129) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
+| [US0045](US0045-agentic-wave-worktree-doctrine-doc-enrichment-cr0126.md) | agentic-wave worktree doctrine doc enrichment (CR0126) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
+| [US0046](US0046-pre-deploy-readiness-checklist-doc-cr0127.md) | pre-deploy readiness checklist doc (CR0127) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
+| [US0047](US0047-restore-the-runtime-scripts-coverage-gate-to-green.md) | restore the runtime-scripts coverage gate to green on CI (blocks all PR merges) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
+| [US0048](US0048-adopt-dependabot-ci-action-bumps-actions-checkout-v7.md) | adopt Dependabot CI action bumps: actions/checkout v7, actions/setup-python v6 | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
+| [US0049](US0049-blocker-sweep-detection-now-unblocked-units-in-repo.md) | blocker-sweep detection: now-unblocked units, in-repo census + cross-repo via PVD manifest (CR0130) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
+| [US0050](US0050-wire-the-blocker-sweep-before-sprint-planning-advisory.md) | wire the blocker sweep before sprint planning + advisory reconcile lane (CR0130) | Ready | EP0010 | 2026-06-27 | 2026-06-27 |
