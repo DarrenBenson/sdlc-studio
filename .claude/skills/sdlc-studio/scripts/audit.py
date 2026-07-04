@@ -74,9 +74,14 @@ def _bug_underspecified(text: str) -> bool:
 
     Bugs have no Acceptance Criteria section - judging them by `_weak_ac` would
     always flag them. Readiness for a bug is repro + fix presence instead.
+    Both heading vocabularies count: released projects already carry bugs
+    authored from template revisions using "Reproduction Steps" / "Fix
+    Description", and those must not flag forever.
     """
     low = text.lower()
-    return not ("## steps to reproduce" in low and "## proposed fix" in low)
+    has_repro = "## steps to reproduce" in low or "## reproduction steps" in low
+    has_fix = "## proposed fix" in low or "## fix description" in low
+    return not (has_repro and has_fix)
 
 
 def _unmet_deps(root: Path, text: str) -> list[str]:

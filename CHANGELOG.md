@@ -20,6 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Bug-readiness check accepts the shipped template's own headings (BG0045).**
+  `audit.py`'s `_bug_underspecified` demanded the literal `## Steps to Reproduce` +
+  `## Proposed Fix`, while `templates/core/bug.md` shipped `## Reproduction Steps` +
+  `## Fix Description` - so every template-authored bug in every consuming project
+  flagged "underspecified" forever (a field run reported 0/4 ready on four fully
+  specified bugs). The predicate now accepts both vocabularies, the template is
+  aligned to the canonical pair, and a regression test renders the shipped template
+  through the predicate so the gate is validated against its own template's output.
 - **Pre-commit hook now runs markdownlint from the npm-local install.** The hook
   checked only for a *global* `markdownlint`, so after `npm install` (which provides
   `markdownlint-cli` at `node_modules/.bin/`) it silently skipped the check - and an

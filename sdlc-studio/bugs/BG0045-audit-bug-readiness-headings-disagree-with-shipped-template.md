@@ -1,6 +1,6 @@
 # BG0045: audit bug-readiness check disagrees with the shipped bug template, so every template-authored bug flags "underspecified"
 
-> **Status:** Open
+> **Status:** Closed
 > **Created:** 2026-07-04
 > **Created-by:** field report (a consuming project's sprint retro, 2026-07-04)
 > **Severity:** medium
@@ -43,3 +43,4 @@ check-vs-shipped-template disagreement found in the same field run). CHANGELOG.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-04 | field | Reported from a consuming project's sprint close (retro lesson 1) |
+| 2026-07-04 | claude | Fixed: `_bug_underspecified` accepts both vocabularies; `templates/core/bug.md` aligned to the canonical `Steps to Reproduce` / `Proposed Fix`. Mutation-checked: the 3 new tests (template-vocab, mixed-vocab, render-the-shipped-template) were seen RED against the unfixed predicate before the fix. Verification depth: functional (unit + rendered-template regression; not production-affecting). |

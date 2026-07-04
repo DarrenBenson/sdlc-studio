@@ -161,6 +161,44 @@ class BugReadinessTests(unittest.TestCase):
             self.assertIn("underspecified", u["issues"])
             self.assertNotIn("weak-AC", u["issues"])
 
+    def test_template_vocabulary_bug_ready(self) -> None:
+        # The shipped template's heading names are the second accepted vocabulary.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            dd = root / "sdlc-studio" / "bugs"
+            dd.mkdir(parents=True, exist_ok=True)
+            (dd / "BG0004-x.md").write_text(
+                "# BG0004: b\n\n> **Status:** Open\n\n## Reproduction Steps\n\n"
+                "1. x\n\n## Fix Description\n\ny\n", encoding="utf-8")
+            u = _load().audit_unit(root, "BG0004")
+            self.assertTrue(u["ready"], u["issues"])
+
+    def test_mixed_vocabulary_bug_ready(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            dd = root / "sdlc-studio" / "bugs"
+            dd.mkdir(parents=True, exist_ok=True)
+            (dd / "BG0005-x.md").write_text(
+                "# BG0005: b\n\n> **Status:** Open\n\n## Reproduction Steps\n\n"
+                "1. x\n\n## Proposed Fix\n\ny\n", encoding="utf-8")
+            u = _load().audit_unit(root, "BG0005")
+            self.assertTrue(u["ready"], u["issues"])
+
+    def test_shipped_template_renders_ready(self) -> None:
+        # The gate validated against its own template's output: a bug authored from
+        # templates/core/bug.md with every placeholder filled must not flag underspecified.
+        template = Path(__file__).resolve().parents[2] / "templates" / "core" / "bug.md"
+        rendered = template.read_text(encoding="utf-8")
+        import re
+        rendered = re.sub(r"\{\{[^}]*\}\}", "filled", rendered)
+        self.assertFalse(_load()._bug_underspecified(rendered),
+                         "shipped bug template flags underspecified when fully filled")
+
+    def test_bug_missing_both_sections_still_flags(self) -> None:
+        # True positive preserved: neither vocabulary present -> underspecified.
+        self.assertTrue(_load()._bug_underspecified(
+            "# BG0006: b\n\n> **Status:** Open\n\n## Summary\n\nx\n"))
+
     def test_bug_with_suffixed_headings_ready(self) -> None:
         # Heading match is substring-tolerant: "## Steps to Reproduce the crash" counts.
         with tempfile.TemporaryDirectory() as d:

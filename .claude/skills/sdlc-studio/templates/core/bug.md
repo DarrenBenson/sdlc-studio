@@ -31,7 +31,7 @@ Related: help/bug.md, reference-bug.md
 
 ---
 
-## Reproduction Steps
+## Steps to Reproduce
 
 1. {{step_1}}
 2. {{step_2}}
@@ -53,9 +53,9 @@ Related: help/bug.md, reference-bug.md
 
 {{root_cause}}
 
-## Fix Description
+## Proposed Fix
 
-> *Filled when fixing*
+> *Proposed at filing; refined when fixing*
 
 {{fix_description}}
 
