@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-06-20
+**Last Updated:** 2026-07-04
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 5 |
+| Proposed | 7 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 131 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **137** |
+| **Total** | **139** |
 
 ## All Changes
 
@@ -157,3 +157,5 @@
 | [CR-0135](CR0135-house-style-linter-british-english-no-em-dashes.md) | extend the style guard with British-spelling detection (em-dash + jargon already enforced) | Proposed | Low | Improvement | 2026-07-04 | -- |
 | [CR-0136](CR0136-enforce-verification-depth-tiers-on-transition-fixed-needs.md) | enforce verification-depth tiers on transition (Fixed needs functional+, Close needs soak) | Proposed | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0137](CR0137-pre-commit-hook-runs-the-gate-and-explains.md) | pre-commit hook runs the gate and explains every failure in detail (make enforcement un-skippable) | Complete | High | Feature | 2026-07-04 | -- |
+| [CR-0138](CR0138-mixed-batch-sprint-tranches-bugs-plus-crs-first-class.md) | make a mixed bugs + CRs tranche a first-class sprint batch | Proposed | Medium | Improvement | 2026-07-04 | -- |
+| [CR-0139](CR0139-deterministic-check-messages-name-numbers-and-remedy.md) | deterministic-check findings should name the exact mismatch and the sanctioned remedy | Proposed | Low | Improvement | 2026-07-04 | -- |
