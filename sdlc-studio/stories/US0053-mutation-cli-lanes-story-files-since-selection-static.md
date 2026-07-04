@@ -1,6 +1,6 @@
 # US0053: Mutation CLI lanes: story/files/since selection, static assertion pre-filter, cost ceiling
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0011
@@ -33,21 +33,40 @@
 - **Given** a repo with changed and unchanged files
 - **When** run with --files and with --since
 - **Then** only the named/changed files are enumerated as targets
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::LaneTests::test_files_and_since_select_surface
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_mutation.py' -k test_files_and_since_select_surface
+- **Verified:** yes (2026-07-04)
 
 ### AC2: the cost ceiling truncates loudly
 
 - **Given** more enumerable mutations than the ceiling
 - **When** the run completes
 - **Then** exactly N are applied and the report's truncated count carries the remainder
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::LaneTests::test_ceiling_truncates_loudly
+- **Verified:** yes (2026-07-04)
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_mutation.py' -k test_ceiling_truncates_loudly
 
 ### AC3: the pre-filter flags assertion-free tests
 
 - **Given** one test file with assertions and one without
 - **When** prefilter runs
+- **Verified:** yes (2026-07-04)
 - **Then** only the assertion-free file is listed
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::LaneTests::test_prefilter_flags_assertion_free
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_mutation.py' -k test_prefilter_flags_assertion_free
+
+### AC4: the story lane resolves the epic/CR Affects chain
+
+- **Given** a story whose epic names a CR with an `Affects` field
+- **When** run with --story
+- **Then** the existing Affects files are the selected surface
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_mutation.py' -k test_story_surface_resolves_cr_affects
+- **Verified:** yes (2026-07-04)
+
+### AC5: --since includes untracked new files
+
+- **Given** a repo with a committed base and a brand-new untracked module
+- **When** run with --since
+- **Then** the untracked module is in the surface (new-file work is never silently dropped)
+- **Verified:** yes (2026-07-04)
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_mutation.py' -k test_since_includes_untracked_files
 
 ## Revision History
 
@@ -55,3 +74,4 @@
 | --- | --- | --- |
 | 2026-07-04 | sdlc | Created via `new` (deterministic) |
 | 2026-07-04 | claude | Authored at design: D4 + D6 settled per accepted RFC-0022; points + ACs + Verify lines |
+| 2026-07-04 | claude | AC4 (story lane) + AC5 (untracked in --since) added from the independent critic's coverage findings |

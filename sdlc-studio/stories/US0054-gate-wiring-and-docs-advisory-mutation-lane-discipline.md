@@ -1,6 +1,6 @@
 # US0054: Gate wiring and docs: advisory mutation lane, discipline prose links to the executable gate
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0011
@@ -30,21 +30,32 @@
 - **Given** a mutation-report with one survivor
 - **When** gate runs
 - **Then** the mutation lane warns naming the survivor count and the gate result is unchanged (advisory)
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::MutationLaneTests::test_survivors_warn_advisory
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_gate.py' -k test_survivors_warn_advisory
+- **Verified:** yes (2026-07-04)
 
 ### AC2: no report reads as not-run, not as pass
 
 - **Given** no mutation-report on disk
 - **When** gate runs
 - **Then** the lane reports not-run (advisory), never PASS
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::MutationLaneTests::test_absent_report_is_not_run
+- **Verified:** yes (2026-07-04)
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_gate.py' -k test_absent_report_is_not_run
 
 ### AC3: the discipline prose links to the executable gate
 
 - **Given** the assertion-integrity sections
 - **When** read
+- **Verified:** yes (2026-07-04)
 - **Then** reference-test-best-practices.md#mutation-check and reference-verify.md name mutation.py as the enforcement, and a help file documents the lanes
 - **Verify:** shell grep -q 'mutation.py' .claude/skills/sdlc-studio/reference-test-best-practices.md && grep -q 'mutation' .claude/skills/sdlc-studio/reference-verify.md && test -f .claude/skills/sdlc-studio/help/mutation.md
+
+### AC4: a stale report never reads PASS
+
+- **Given** a mutation-report recorded at another git rev
+- **When** gate runs
+- **Then** the lane reports STALE (advisory), never PASS for the current tree
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_gate.py' -k test_stale_report_never_reads_pass
+- **Verified:** yes (2026-07-04)
 
 ## Revision History
 
@@ -52,3 +63,4 @@
 | --- | --- | --- |
 | 2026-07-04 | sdlc | Created via `new` (deterministic) |
 | 2026-07-04 | claude | Authored at design: advisory-in-v1 gate lane per accepted RFC-0022; points + ACs + Verify lines |
+| 2026-07-04 | claude | AC4 added from the critic's staleness finding: the report records git_rev and the lane compares it |

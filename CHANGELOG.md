@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The executable mutation-check gate ships (CR0134 / RFC-0022 / EP0011).** The
+  skill's named biggest blind spot is now enforced, not prose: `scripts/mutation.py`
+  applies a declared, bounded fault set (invert-guard, stub-return-null,
+  unset-delivered-field, no-op-mapper) to a selected surface via per-language
+  textual profiles (.py, .js/.ts, .go invert-guard), re-runs the mapped tests per
+  mutation, and reports **killed vs survived** - a survivor is a finding, exit
+  non-zero. Deterministic (same code + set = same report); honest degrade
+  everywhere: un-mutatable surfaces report un-checked, a red baseline yields error
+  verdicts (never a fake kill), and ceiling truncation (`--max-mutations`,
+  `quality.mutation_max`) is counted, never silent. Surfaces: `--files`,
+  `--since REF`, `--story USxxxx` (epic/CR Affects chain); `prefilter` lists
+  assertion-free test files. The release gate gains an advisory `mutation` lane
+  (absent report reads not-run, never PASS). Dogfooded on this repo's own sprint
+  diff: 12/12 mutations killed by the 1017-test suite, 2653 enumerations honestly
+  truncated. Complements `verify_ac` (checks pass) with the can-it-fail question.
+
 - **The deterministic toolbox is now discoverable from the router (CR0133).** A field
   session used ~2 of the 40+ scripts and hand-did what they automate (hand-allocated
   ids, never ran `validate`). SKILL.md now carries a "Deterministic Entry Points"

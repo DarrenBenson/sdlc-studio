@@ -1,6 +1,6 @@
 # US0052: Runner bridge and mutation report: killed vs survived per mutation, honest un-checked degrade
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0011
@@ -32,28 +32,40 @@
 - **Given** a target with one test that asserts the mutated behaviour and one that asserts nothing
 - **When** the bridge runs the mutation set
 - **Then** the load-bearing test's mutations report killed and the vacuous test's report survived
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::BridgeTests::test_vacuous_survives_loadbearing_kills
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_mutation.py' -k test_vacuous_survives_loadbearing_kills
+- **Verified:** yes (2026-07-04)
 
 ### AC2: the report is written with verdicts and summary
 
 - **Given** a completed run
 - **When** the report is read back
 - **Then** it carries per-mutation verdicts, the un-checked list, and a summary whose counts equal the records
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::BridgeTests::test_report_shape_and_counts
+- **Verified:** yes (2026-07-04)
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_mutation.py' -k test_report_shape_and_counts
 
 ### AC3: survivors exit non-zero
 
 - **Given** a run with at least one survived mutation
 - **When** the CLI returns
+- **Verified:** yes (2026-07-04)
 - **Then** the exit code is non-zero and the survivor is named in the output
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::BridgeTests::test_survivor_exits_nonzero
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_mutation.py' -k test_survivor_exits_nonzero
 
 ### AC4: a runner error is reported, never counted as killed
 
 - **Given** a test command that itself crashes (not a test failure)
+- **Verified:** yes (2026-07-04)
 - **When** the run completes
 - **Then** the mutation records verdict error and the summary separates it from killed
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::BridgeTests::test_runner_error_not_a_kill
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_mutation.py' -k test_runner_error_not_a_kill
+
+### AC5: unviable mutants are never counted killed
+
+- **Given** a mutation that produces non-compiling code
+- **When** the bridge runs
+- **Then** it records verdict unviable (evidence of nothing) - a vacuous suite can never earn a kill from it
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_mutation.py' -k ViabilityTests
+- **Verified:** yes (2026-07-04)
 
 ## Revision History
 
@@ -61,3 +73,4 @@
 | --- | --- | --- |
 | 2026-07-04 | sdlc | Created via `new` (deterministic) |
 | 2026-07-04 | claude | Authored at design: D5 settled per accepted RFC-0022; points + ACs + Verify lines |
+| 2026-07-04 | claude | AC5 added from the critic's high finding: py mutants are compile-checked; unviable is its own verdict |

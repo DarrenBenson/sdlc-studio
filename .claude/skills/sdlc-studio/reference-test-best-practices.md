@@ -117,6 +117,12 @@ A component/unit test that hands the component its data directly proves the comp
 
 Before trusting a new test (especially e2e), **break the feature on purpose and confirm the test goes red.** Delete the field the loader copies, unset the prop, revert the component to a stub - run the test - it must fail. Restore. A test you have never seen fail is a test you cannot trust. Record it in the AC / bug: `Mutation-checked: unsetting <X> turns <test> red.` This one habit is what separates a `live`-tier claim that means something from one that doesn't, and it is a `templates/core/{story,bug}.md` field + a `templates/workflows/release-gate.md` gate.
 
+**This discipline is executable, not only prose:** `scripts/mutation.py run` applies the
+declared fault classes to the changed surface and re-runs the mapped tests per mutation -
+a mutation the tests do not kill is reported as a **survivor** finding, and the gate's
+`mutation` lane surfaces the report (advisory). See `reference-scripts.md` and
+`help/mutation.md`.
+
 Cross-reference: `#test-anti-patterns` (over-mocking is the same disease at the unit boundary), `#verification-depth-tiers`, `reference-test-e2e-guidelines.md`.
 
 ---

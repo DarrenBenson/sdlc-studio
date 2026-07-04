@@ -27,20 +27,25 @@ shell greps (the link/style guards cover mechanics).
 
 | Story | AC | Description | Test Cases | Status |
 | --- | --- | --- | --- | --- |
-| US0051 | AC1 | enumeration is deterministic (same list twice, line-ordered) | test_mutation.py::EngineTests::test_enumeration_is_deterministic | Planned |
-| US0051 | AC2 | each fault class mutates its Python form, one at a time | test_mutation.py::EngineTests::test_each_class_mutates_python | Planned |
-| US0051 | AC3 | apply/restore round-trip byte-identical, incl. on runner exception | test_mutation.py::EngineTests::test_restore_is_byte_identical | Planned |
-| US0051 | AC4 | uncovered language reports un-checked, never passed | test_mutation.py::EngineTests::test_uncovered_language_unchecked | Planned |
-| US0052 | AC1 | vacuous test survives, load-bearing test kills | test_mutation.py::BridgeTests::test_vacuous_survives_loadbearing_kills | Planned |
-| US0052 | AC2 | report shape + summary counts equal records | test_mutation.py::BridgeTests::test_report_shape_and_counts | Planned |
-| US0052 | AC3 | survivors exit non-zero, named | test_mutation.py::BridgeTests::test_survivor_exits_nonzero | Planned |
-| US0052 | AC4 | runner error reported, never a kill | test_mutation.py::BridgeTests::test_runner_error_not_a_kill | Planned |
-| US0053 | AC1 | --files and --since select the declared surface | test_mutation.py::LaneTests::test_files_and_since_select_surface | Planned |
-| US0053 | AC2 | ceiling truncates loudly (truncated count in report) | test_mutation.py::LaneTests::test_ceiling_truncates_loudly | Planned |
-| US0053 | AC3 | prefilter flags assertion-free tests only | test_mutation.py::LaneTests::test_prefilter_flags_assertion_free | Planned |
-| US0054 | AC1 | gate warns on survivors, stays advisory | test_gate.py::MutationLaneTests::test_survivors_warn_advisory | Planned |
-| US0054 | AC2 | absent report reads not-run, never PASS | test_gate.py::MutationLaneTests::test_absent_report_is_not_run | Planned |
-| US0054 | AC3 | discipline prose links to the executable gate | shell grep (see story Verify) | Planned |
+| US0051 | AC1 | enumeration is deterministic (same list twice, line-ordered) | test_mutation.py::EngineTests::test_enumeration_is_deterministic | Pass |
+| US0051 | AC2 | each fault class mutates its Python form, one at a time | test_mutation.py::EngineTests::test_each_class_mutates_python | Pass |
+| US0051 | AC3 | apply/restore round-trip byte-identical, incl. on runner exception | test_mutation.py::EngineTests::test_restore_is_byte_identical | Pass |
+| US0051 | AC4 | uncovered language reports un-checked, never passed | test_mutation.py::EngineTests::test_uncovered_language_unchecked | Pass |
+| US0052 | AC1 | vacuous test survives, load-bearing test kills | test_mutation.py::BridgeTests::test_vacuous_survives_loadbearing_kills | Pass |
+| US0052 | AC2 | report shape + summary counts equal records | test_mutation.py::BridgeTests::test_report_shape_and_counts | Pass |
+| US0052 | AC3 | survivors exit non-zero, named | test_mutation.py::BridgeTests::test_survivor_exits_nonzero | Pass |
+| US0052 | AC4 | runner error reported, never a kill | test_mutation.py::BridgeTests::test_runner_error_not_a_kill | Pass |
+| US0053 | AC1 | --files and --since select the declared surface | test_mutation.py::LaneTests::test_files_and_since_select_surface | Pass |
+| US0053 | AC2 | ceiling truncates loudly (truncated count in report) | test_mutation.py::LaneTests::test_ceiling_truncates_loudly | Pass |
+| US0053 | AC3 | prefilter flags assertion-free tests only | test_mutation.py::LaneTests::test_prefilter_flags_assertion_free | Pass |
+| US0053 | AC4 | story lane resolves the epic/CR Affects chain | test_mutation.py::StoryLaneTests::test_story_surface_resolves_cr_affects | Pass |
+| US0053 | AC5 | --since includes untracked new files | test_mutation.py::StoryLaneTests::test_since_includes_untracked_files | Pass |
+| US0052 | AC5 | unviable mutants are never counted killed | test_mutation.py::ViabilityTests::test_unviable_python_mutant_not_killed | Pass |
+| US0051 | AC5 | JS/Go profiles enumerate only valid-mutant forms | test_mutation.py::ProfileShapeTests::test_js_block_if_mutates_single_statement_if_skipped | Pass |
+| US0054 | AC4 | a stale report never reads PASS | test_gate.py::MutationLaneTests::test_stale_report_never_reads_pass | Pass |
+| US0054 | AC1 | gate warns on survivors, stays advisory | test_gate.py::MutationLaneTests::test_survivors_warn_advisory | Pass |
+| US0054 | AC2 | absent report reads not-run, never PASS | test_gate.py::MutationLaneTests::test_absent_report_is_not_run | Pass |
+| US0054 | AC3 | discipline prose links to the executable gate | shell grep (see story Verify) | Pass |
 
 ## Fixtures
 

@@ -275,6 +275,10 @@ quality:
   # production-affecting Closed needs soak) are always enforced by `transition.py` - --force
   # overrides per call.
   depth_parity_gate: false
+  # mutation_max (default 25): the mutation-check gate's cost ceiling per run
+  # (scripts/mutation.py); enumerations beyond it are counted as truncated -
+  # un-checked coverage, never silently clean.
+  mutation_max: 25
 
 story_quality:
   edge_cases:

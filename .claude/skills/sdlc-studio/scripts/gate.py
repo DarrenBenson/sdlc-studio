@@ -111,6 +111,42 @@ def _doc_coverage(root: str) -> dict:
     return {"count": blocking, "blocking": True, "detail": detail}
 
 
+def _mutation(root: str) -> dict:
+    """Advisory v1 lane: surface the mutation-check report's survivors. An absent
+    report reads NOT-RUN (advisory) - never PASS: silence is not assertion integrity."""
+    report_path = Path(root) / "sdlc-studio" / ".local" / "mutation-report.json"
+    if not report_path.exists():
+        return {"count": 1, "blocking": False,
+                "detail": "mutation gate not run (no mutation-report.json) - advisory; "
+                          "run scripts/mutation.py over the changed surface"}
+    try:
+        data = json.loads(report_path.read_text(encoding="utf-8"))
+        s = data.get("summary", {})
+    except (ValueError, OSError) as exc:
+        return {"count": 1, "blocking": False, "detail": f"mutation-report unreadable: {exc}"}
+    # staleness: a report from another rev is about some other change - it must
+    # not render this diff's lane as PASS
+    report_rev = data.get("git_rev")
+    if report_rev:
+        try:
+            import subprocess
+            head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root,
+                                  capture_output=True, text=True, timeout=10).stdout.strip()
+        except (OSError, Exception):  # noqa: BLE001 - staleness must not break the gate
+            head = None
+        if head and head != report_rev:
+            return {"count": 1, "blocking": False,
+                    "detail": f"mutation-report is STALE (run at {report_rev[:9]}, tree at "
+                              f"{head[:9]}) - re-run scripts/mutation.py (advisory)"}
+    n = int(s.get("survived", 0)) + int(s.get("errors", 0))
+    detail = (f"{s.get('survived', 0)} survived, {s.get('errors', 0)} error(s) of "
+              f"{s.get('applied', 0)} applied ({s.get('truncated', 0)} truncated) - advisory"
+              if n else
+              f"{s.get('killed', 0)}/{s.get('applied', 0)} mutations killed "
+              f"({s.get('truncated', 0)} truncated) (advisory)")
+    return {"count": n, "blocking": False, "detail": detail}
+
+
 DEFAULT_CHECKS = {
     "conformance": _conformance,
     "reconcile": _reconcile,
@@ -122,6 +158,7 @@ DEFAULT_CHECKS = {
     "doc-coverage": _doc_coverage,
     "disclosure": _disclosure,
     "doc-freshness": _doc_freshness,
+    "mutation": _mutation,
 }
 
 

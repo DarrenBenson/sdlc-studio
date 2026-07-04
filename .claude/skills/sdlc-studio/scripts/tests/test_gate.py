@@ -60,14 +60,15 @@ class GateRealWrapperTests(unittest.TestCase):
     def test_default_checks_present(self) -> None:
         self.assertEqual(set(gate.DEFAULT_CHECKS),
                          {"conformance", "reconcile", "validate", "constitution", "integrity",
-                          "duplicate-id", "provenance", "doc-coverage", "disclosure", "doc-freshness"})
+                          "duplicate-id", "provenance", "doc-coverage", "disclosure", "doc-freshness",
+                      "mutation"})
 
     def test_real_wrappers_run_and_shape(self) -> None:
         # Exercises the real checks end-to-end against this repo; asserts structure,
         # not pass/fail (state-independent, so not fragile).
         r = gate.run_gate(str(REPO))
         self.assertIsInstance(r["ok"], bool)
-        self.assertEqual(len(r["checks"]), 10)
+        self.assertEqual(len(r["checks"]), 11)
         for c in r["checks"]:
             self.assertEqual(set(c), {"check", "count", "blocking", "status", "detail"})
 
@@ -248,3 +249,63 @@ class RetroCloseGateTests(unittest.TestCase):
             (rd / "RETRO0005-batch.md").write_text("# RETRO-0005\n", encoding="utf-8")
             report = gate.run_gate(str(root), checks={}, require_retro="RETRO0005")
             self.assertTrue(report["ok"])
+
+
+class MutationLaneTests(unittest.TestCase):
+    """The advisory mutation lane: survivors warn, absence reads not-run, never PASS."""
+
+    def _root(self, t, report=None):
+        import json as _json
+        root = Path(t)
+        (root / "sdlc-studio").mkdir(parents=True)
+        if report is not None:
+            local = root / "sdlc-studio" / ".local"
+            local.mkdir()
+            (local / "mutation-report.json").write_text(_json.dumps(report), encoding="utf-8")
+        return root
+
+    def test_survivors_warn_advisory(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t, {"summary": {"applied": 5, "killed": 4, "survived": 1,
+                                              "errors": 0, "truncated": 0}})
+            report = gate.run_gate(str(root), checks={"mutation": gate._mutation})
+            lane = report["checks"][0]
+            self.assertEqual(lane["status"], "fail")       # renders [warn]
+            self.assertFalse(lane["blocking"])             # advisory: gate unaffected
+            self.assertIn("1 survived", lane["detail"])
+            self.assertTrue(report["ok"])
+
+    def test_absent_report_is_not_run(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t, report=None)
+            report = gate.run_gate(str(root), checks={"mutation": gate._mutation})
+            lane = report["checks"][0]
+            self.assertNotEqual(lane["status"], "pass")    # never PASS when not run
+            self.assertFalse(lane["blocking"])
+            self.assertIn("not run", lane["detail"])
+
+    def test_clean_report_passes(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t, {"summary": {"applied": 5, "killed": 5, "survived": 0,
+                                              "errors": 0, "truncated": 0}})
+            report = gate.run_gate(str(root), checks={"mutation": gate._mutation})
+            self.assertEqual(report["checks"][0]["status"], "pass")
+
+    def test_stale_report_never_reads_pass(self) -> None:
+        import subprocess, tempfile
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t, {"git_rev": "0" * 40,
+                                  "summary": {"applied": 5, "killed": 5, "survived": 0,
+                                              "errors": 0, "unviable": 0, "truncated": 0}})
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            (root / "f.txt").write_text("x", encoding="utf-8")
+            subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+            subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
+                            "commit", "-qm", "c"], cwd=root, check=True)
+            report = gate.run_gate(str(root), checks={"mutation": gate._mutation})
+            lane = report["checks"][0]
+            self.assertNotEqual(lane["status"], "pass")
+            self.assertIn("STALE", lane["detail"])

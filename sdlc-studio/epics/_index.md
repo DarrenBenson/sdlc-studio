@@ -9,8 +9,8 @@
 | Draft | 0 |
 | Ready | 9 |
 | Approved | 0 |
-| In Progress | 1 |
-| Done | 1 |
+| In Progress | 0 |
+| Done | 2 |
 | **Total** | **11** |
 
 > Generate-mode note: all epics are **Ready** (spec extracted from the existing
@@ -31,4 +31,4 @@
 | [EP0008](EP0008-tooling-scripts.md) | Tooling & Scripts | Ready | 6 | None | 2026-06-20 | 2026-06-20 |
 | [EP0009](EP0009-onboarding-doctrine.md) | Onboarding & Doctrine | Ready | 5 | None | 2026-06-20 | 2026-06-20 |
 | [EP0010](EP0010-skill-self-improvement-token-economy-learning-loop-consuming.md) | Skill self-improvement: token economy + learning loop (consuming-repo lessons) | Done | -- | -- | 2026-06-27 | 2026-06-27 |
-| [EP0011](EP0011-executable-mutation-check-gate-assertion-integrity-enforced.md) | Executable mutation-check gate (assertion integrity, enforced) | In Progress | -- | -- | 2026-07-04 | 2026-07-04 |
+| [EP0011](EP0011-executable-mutation-check-gate-assertion-integrity-enforced.md) | Executable mutation-check gate (assertion integrity, enforced) | Done | -- | -- | 2026-07-04 | 2026-07-04 |

@@ -332,6 +332,28 @@ Executes AC verifiers defined in story files and updates each AC's
 Full workflow: `reference-verify.md`. User-facing help:
 `help/verify.md`.
 
+### `mutation.py`
+
+The executable mutation-check gate - the complement of `verify_ac.py`: verify_ac
+confirms an AC's tests PASS; mutation asks whether they would FAIL if the feature
+broke. Applies a declared, bounded set of textual mutations (invert-guard,
+stub-return-null, unset-delivered-field, no-op-mapper) to a selected surface via
+per-language pattern profiles, re-runs the test command per mutation, and reports
+**killed vs survived** - a survivor is a finding. Deterministic (same code plus the
+same set gives the same report); honest degrade (an un-mutatable file/class is
+reported un-checked, a red baseline yields error verdicts, ceiling truncation is
+counted, never silent).
+
+- `run --test CMD` with a surface: `--files a.py ...`, `--since REF` (git diff),
+  or `--story USxxxx` (the story's epic/CR `Affects`); `--max-mutations N`
+  (default `quality.mutation_max`, else 25); writes
+  `sdlc-studio/.local/mutation-report.json`; exits non-zero on survivors/errors
+- `prefilter --tests <paths>`: advisory list of test files with no recognisable
+  assertion - the cheap static signal for which tests to mutate first
+
+The gate's `mutation` lane surfaces the report (advisory in v1; an absent report
+reads not-run, never PASS). User-facing help: `help/mutation.md`.
+
 ### `github_sync.py`
 
 Two-way sync between local CR/Story/Epic files and GitHub Issues via

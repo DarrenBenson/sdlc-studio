@@ -2,6 +2,12 @@
 
 <!-- Load when: authoring/running AC `Verify:` lines, `reconcile --verify`, or test-specs -->
 
+> **The complement - can the test fail?** `verify_ac` proves an AC's tests PASS; the
+> mutation-check gate (`scripts/mutation.py`, `help/mutation.md`) proves they would FAIL
+> if the feature broke, by fault-injecting the changed surface and reporting killed vs
+> survived. A green verify plus a survivor-free mutation report is the full
+> assertion-integrity claim.
+
 
 > **Human-checked ACs:** author the Verify line as `Verify: manual <what to check>`. A line led
 > by `manual` (or `manually`) is counted **manual** - never executed - so a prose check can't be

@@ -1,6 +1,6 @@
 # EP0011: Executable mutation-check gate (assertion integrity, enforced)
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new
 > **CR:** CR-0134
@@ -18,10 +18,10 @@ can-it-fail question; v1 gate lane is advisory.
 
 ## Story Breakdown
 
-- [ ] [US0051: Textual mutation engine: declared fault classes, language profiles, anchored apply/restore](../stories/US0051-textual-mutation-engine-declared-fault-classes-language-profiles.md)
-- [ ] [US0052: Runner bridge and mutation report: killed vs survived per mutation, honest un-checked degrade](../stories/US0052-runner-bridge-and-mutation-report-killed-vs-survived.md)
-- [ ] [US0053: Mutation CLI lanes: story/files/since selection, static assertion pre-filter, cost ceiling](../stories/US0053-mutation-cli-lanes-story-files-since-selection-static.md)
-- [ ] [US0054: Gate wiring and docs: advisory mutation lane, discipline prose links to the executable gate](../stories/US0054-gate-wiring-and-docs-advisory-mutation-lane-discipline.md)
+- [x] [US0051: Textual mutation engine: declared fault classes, language profiles, anchored apply/restore](../stories/US0051-textual-mutation-engine-declared-fault-classes-language-profiles.md)
+- [x] [US0052: Runner bridge and mutation report: killed vs survived per mutation, honest un-checked degrade](../stories/US0052-runner-bridge-and-mutation-report-killed-vs-survived.md)
+- [x] [US0053: Mutation CLI lanes: story/files/since selection, static assertion pre-filter, cost ceiling](../stories/US0053-mutation-cli-lanes-story-files-since-selection-static.md)
+- [x] [US0054: Gate wiring and docs: advisory mutation lane, discipline prose links to the executable gate](../stories/US0054-gate-wiring-and-docs-advisory-mutation-lane-discipline.md)
 
 ## Revision History
 

@@ -104,3 +104,10 @@
 | US0048 | APPROVE | Sam-QA | Dani-Engineering | 2026-06-27 | - |
 | US0049 | APPROVE | Sam-QA | Dani-Engineering | 2026-06-27 | - |
 | US0050 | APPROVE | Sam-QA | Dani-Engineering | 2026-06-27 | - |
+| US0051 | APPROVE | Sam (independent critic instance) | Dani (main-loop author instance) | 2026-07-04 | - |
+| US0052 | APPROVE | Sam (independent critic instance) | Dani (main-loop author instance) | 2026-07-04 | - |
+| US0053 | APPROVE | Sam (independent critic instance) | Dani (main-loop author instance) | 2026-07-04 | - |
+| US0054 | APPROVE | Sam (independent critic instance) | Dani (main-loop author instance) | 2026-07-04 | - |
+| BG0047 | APPROVE | Sam (independent critic instance) | Dani (main-loop author instance) | 2026-07-04 | - |
+| BG0048 | APPROVE | Sam (independent critic instance) | Dani (main-loop author instance) | 2026-07-04 | - |
+| BG0049 | APPROVE | Sam (independent critic instance) | Dani (main-loop author instance) | 2026-07-04 | - |
