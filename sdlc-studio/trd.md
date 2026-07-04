@@ -225,6 +225,17 @@ Scripts that emit machine-readable output use JSON. The verifier writes a report
 status emits the four-pillar census. There is no single canonical error envelope;
 failures surface as a non-zero exit plus a stderr message. [MEDIUM]
 
+**Findings carry an actionable fix (CR0025), and it must name the cause.** Each
+drift item carries a `fix` string; per CR0025 a check emits remediation guidance,
+not a bare finding. The contract is that the `fix` is specific enough to act on
+*and* routes to the sibling tool when the diagnosis lives there - e.g. an
+out-of-vocab status surfaces as a `count-mismatch` whose `fix` should name the
+offending status and point at `validate` / the `status_vocab` config, not the
+generic "recompute the counts" (which sends the agent to `apply`, where it cannot
+be resolved). The `count-mismatch` finding does not yet meet this bar; closing it
+is CR0132. A generic fix hint whose remedy is in another tool is a dead end - the
+finding must be self-diagnosing. [MEDIUM]
+
 ---
 
 ## 6. Data Architecture
