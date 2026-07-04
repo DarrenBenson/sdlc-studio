@@ -1,6 +1,6 @@
 # BG0044: reconcile flattens per-epic Done count blocks corrupting per-section sub-tables
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Created:** 2026-06-25
 > **Created-by:** sdlc-studio new
 > **Severity:** high

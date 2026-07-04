@@ -1,6 +1,6 @@
 # BG0038: integrity requires a Story link on test-specs, breaking epic-scoped test-specs
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** high
 > **Created:** 2026-06-25
 > **Created-by:** sdlc-studio file

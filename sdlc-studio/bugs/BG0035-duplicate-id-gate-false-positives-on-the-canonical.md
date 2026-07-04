@@ -1,6 +1,6 @@
 # BG0035: duplicate-id gate false-positives on the canonical two-table story index (per-epic + All Stories)
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** high
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio file

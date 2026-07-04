@@ -1,6 +1,6 @@
 # BG0029: project upgrade apply bundles reconcile no granular flag can corrupt indexes
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Created:** 2026-06-22
 > **Created-by:** sdlc-studio new
 > **Severity:** High

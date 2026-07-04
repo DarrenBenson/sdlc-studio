@@ -1,6 +1,6 @@
 # BG-0002: reconcile.py and status.py both omit bug and workflow artifact types from their deterministic census
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** High
 > **Reporter:** Adversarial Audit
 > **Date:** 2026-06-20

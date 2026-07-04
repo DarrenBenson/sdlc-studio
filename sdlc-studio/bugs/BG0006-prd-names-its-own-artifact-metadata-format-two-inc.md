@@ -1,6 +1,6 @@
 # BG-0006: PRD names its own artifact metadata format two incompatible ways (YAML frontmatter vs blockquote headers)
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** High
 > **Reporter:** Project Audit
 > **Date:** 2026-06-20

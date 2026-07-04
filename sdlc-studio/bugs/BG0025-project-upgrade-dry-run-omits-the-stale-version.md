@@ -1,6 +1,6 @@
 # BG0025: project_upgrade dry-run omits the stale .version bump that --apply performs
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Created:** 2026-06-21
 > **Created-by:** sdlc-studio new
 > **Severity:** Medium

@@ -1,6 +1,6 @@
 # BG-0014: Story Verify lines do not test what their ACs assert: broken shell expressions, regex-metachar failures, and source-grep smoke tests
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** High
 > **Reporter:** Project Audit
 > **Date:** 2026-06-20

@@ -1,6 +1,6 @@
 # BG0022: artifact new - silent wiring to a non-existent epic and file-only id allocation
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** Medium
 > **Created:** 2026-06-21
 

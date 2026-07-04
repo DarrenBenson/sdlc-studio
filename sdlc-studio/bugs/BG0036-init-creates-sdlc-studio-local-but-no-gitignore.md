@@ -1,6 +1,6 @@
 # BG0036: init creates sdlc-studio/.local but no .gitignore, so consuming projects commit runtime caches/reports
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** medium
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio file

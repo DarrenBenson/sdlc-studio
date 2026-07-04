@@ -1,6 +1,6 @@
 # BG0037: verify_ac run --story overwrites the whole verify-report.json instead of merging, breaking the Done-gate for batch sprints
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** high
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio file

@@ -1,6 +1,6 @@
 # BG-0001: Workflow/CR status vocabulary diverges across reference table, status-flow diagram, and sdlc_md.py code
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** High
 > **Reporter:** Adversarial Audit
 > **Date:** 2026-06-20

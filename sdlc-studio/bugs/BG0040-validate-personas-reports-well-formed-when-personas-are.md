@@ -1,6 +1,6 @@
 # BG0040: validate personas reports well-formed when personas are nested
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Created:** 2026-06-25
 > **Created-by:** sdlc-studio new
 > **Severity:** medium

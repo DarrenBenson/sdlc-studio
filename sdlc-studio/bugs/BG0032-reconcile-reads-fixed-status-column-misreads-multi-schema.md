@@ -1,6 +1,6 @@
 # BG0032: reconcile reads fixed status column misreads multi-schema index tables
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Created:** 2026-06-22
 > **Created-by:** sdlc-studio new
 > **Severity:** High

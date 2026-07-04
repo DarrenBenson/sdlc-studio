@@ -1,6 +1,6 @@
 # BG-0010: TSD instruction-hygiene release gate (validate.py instructions) is wired into no CI or npm script
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** High
 > **Reporter:** Project Audit
 > **Date:** 2026-06-20

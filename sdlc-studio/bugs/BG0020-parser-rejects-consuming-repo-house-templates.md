@@ -1,6 +1,6 @@
 # BG-0020: shared parser rejects consuming repos' house templates
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** High
 > **Reporter:** consuming repo A (live-board feedback)
 > **Date:** 2026-06-20

@@ -1,6 +1,6 @@
 # BG-0018: reconcile index-status parser matches a status word in the title column
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** Medium
 > **Reporter:** Autosprint (determinism-sprint)
 > **Date:** 2026-06-20

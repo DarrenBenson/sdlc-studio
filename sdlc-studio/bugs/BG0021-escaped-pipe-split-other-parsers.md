@@ -1,6 +1,6 @@
 # BG-0021: escaped-pipe split bug present in three more table parsers
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** Medium
 > **Reporter:** consuming repo A (relayed) + systemic audit
 > **Date:** 2026-06-20

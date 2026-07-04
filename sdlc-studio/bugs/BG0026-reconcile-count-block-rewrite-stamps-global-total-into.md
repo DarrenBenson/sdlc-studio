@@ -1,6 +1,6 @@
 # BG0026: reconcile count-block rewrite stamps global total into per-epic count sub-tables
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Created:** 2026-06-22
 > **Created-by:** sdlc-studio new
 > **Severity:** High

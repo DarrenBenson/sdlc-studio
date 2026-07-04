@@ -1,6 +1,6 @@
 # BG0031: reconcile apply auto-deletes orphan rows destroying inline-only records
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Created:** 2026-06-22
 > **Created-by:** sdlc-studio new
 > **Severity:** High

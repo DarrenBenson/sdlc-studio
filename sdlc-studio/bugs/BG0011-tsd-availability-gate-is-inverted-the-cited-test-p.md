@@ -1,6 +1,6 @@
 # BG-0011: TSD Availability gate is inverted: the cited test proves a hard abort (exit 127), not graceful degradation
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** Medium
 > **Reporter:** Project Audit
 > **Date:** 2026-06-20

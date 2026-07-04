@@ -1,6 +1,6 @@
 # BG0023: critic verdict text with underscored identifiers trips markdownlint MD037
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Created:** 2026-06-21
 > **Created-by:** sdlc-studio new
 > **Severity:** Low

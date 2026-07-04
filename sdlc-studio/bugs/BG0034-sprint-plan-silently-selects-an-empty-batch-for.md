@@ -1,6 +1,6 @@
 # BG0034: sprint plan silently selects an empty batch for lowercase --crs/--bugs/--stories status args
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** high
 > **Created:** 2026-06-24
 > **Created-by:** sdlc-studio file

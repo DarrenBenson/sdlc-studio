@@ -1,6 +1,6 @@
 # BG-0019: integrity and audit mishandle the bug artifact class
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** High
 > **Reporter:** Autosprint (tooling-honesty-sprint triage)
 > **Date:** 2026-06-20

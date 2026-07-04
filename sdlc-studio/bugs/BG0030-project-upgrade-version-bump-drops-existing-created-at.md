@@ -1,6 +1,6 @@
 # BG0030: project upgrade version bump drops existing created_at field
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Created:** 2026-06-22
 > **Created-by:** sdlc-studio new
 > **Severity:** Medium

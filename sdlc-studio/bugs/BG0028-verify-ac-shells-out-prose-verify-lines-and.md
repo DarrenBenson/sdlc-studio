@@ -1,6 +1,6 @@
 # BG0028: verify_ac shells out prose Verify lines and times out reporting failed not manual
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Created:** 2026-06-22
 > **Created-by:** sdlc-studio new
 > **Severity:** Medium

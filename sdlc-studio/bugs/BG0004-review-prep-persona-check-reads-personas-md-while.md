@@ -1,6 +1,6 @@
 # BG-0004: review_prep persona check reads personas.md while the epic cascade reads personas/ directory, so the persona-usage leg silently no-ops
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** Medium
 > **Reporter:** Adversarial Audit
 > **Date:** 2026-06-20

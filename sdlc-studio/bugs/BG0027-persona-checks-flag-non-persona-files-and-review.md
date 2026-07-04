@@ -1,6 +1,6 @@
 # BG0027: persona checks flag non-persona files and review-seat charters as old/ill-formed
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Created:** 2026-06-22
 > **Created-by:** sdlc-studio new
 > **Severity:** Medium

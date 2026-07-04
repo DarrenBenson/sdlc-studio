@@ -1,6 +1,6 @@
 # BG0024: version_check serves stale cached latest older than installed reports up-to-date wrongly
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Created:** 2026-06-21
 > **Created-by:** sdlc-studio new
 > **Severity:** Medium

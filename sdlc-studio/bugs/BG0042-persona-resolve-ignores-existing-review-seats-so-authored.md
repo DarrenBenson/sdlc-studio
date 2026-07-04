@@ -1,6 +1,6 @@
 # BG0042: persona_resolve ignores existing review seats so authored seats are shadowed by generic defaults
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Created:** 2026-06-25
 > **Created-by:** sdlc-studio new
 > **Severity:** high

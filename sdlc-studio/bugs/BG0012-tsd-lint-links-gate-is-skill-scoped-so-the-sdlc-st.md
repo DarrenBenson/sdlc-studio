@@ -1,6 +1,6 @@
 # BG-0012: TSD lint:links gate is skill-scoped, so the sdlc-studio/ artifact corpus is never link-checked (25 broken anchors slip through)
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** Medium
 > **Reporter:** Project Audit
 > **Date:** 2026-06-20

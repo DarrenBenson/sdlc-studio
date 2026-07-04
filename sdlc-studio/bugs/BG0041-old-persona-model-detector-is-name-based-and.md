@@ -1,6 +1,6 @@
 # BG0041: old-persona-model detector is name-based and its remediation hint misdirects
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Created:** 2026-06-25
 > **Created-by:** sdlc-studio new
 > **Severity:** medium
