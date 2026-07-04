@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 0 |
+| Ready | 4 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -16,7 +16,7 @@
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 0 |
-| **Total** | **50** |
+| **Total** | **54** |
 
 ## All Stories
 
@@ -72,3 +72,7 @@
 | [US0048](US0048-adopt-dependabot-ci-action-bumps-actions-checkout-v7.md) | adopt Dependabot CI action bumps: actions/checkout v7, actions/setup-python v6 | Done | EP0010 | 2026-06-27 | 2026-06-27 |
 | [US0049](US0049-blocker-sweep-detection-now-unblocked-units-in-repo.md) | blocker-sweep detection: now-unblocked units, in-repo census + cross-repo via PVD manifest (CR0130) | Done | EP0010 | 2026-06-27 | 2026-06-27 |
 | [US0050](US0050-wire-the-blocker-sweep-before-sprint-planning-advisory.md) | wire the blocker sweep before sprint planning + advisory reconcile lane (CR0130) | Done | EP0010 | 2026-06-27 | 2026-06-27 |
+| [US0051](US0051-textual-mutation-engine-declared-fault-classes-language-profiles.md) | Textual mutation engine: declared fault classes, language profiles, anchored apply/restore | Ready | EP0011 | 2026-07-04 | 2026-07-04 |
+| [US0052](US0052-runner-bridge-and-mutation-report-killed-vs-survived.md) | Runner bridge and mutation report: killed vs survived per mutation, honest un-checked degrade | Ready | EP0011 | 2026-07-04 | 2026-07-04 |
+| [US0053](US0053-mutation-cli-lanes-story-files-since-selection-static.md) | Mutation CLI lanes: story/files/since selection, static assertion pre-filter, cost ceiling | Ready | EP0011 | 2026-07-04 | 2026-07-04 |
+| [US0054](US0054-gate-wiring-and-docs-advisory-mutation-lane-discipline.md) | Gate wiring and docs: advisory mutation lane, discipline prose links to the executable gate | Ready | EP0011 | 2026-07-04 | 2026-07-04 |

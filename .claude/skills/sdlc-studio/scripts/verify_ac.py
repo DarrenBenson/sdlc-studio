@@ -653,6 +653,10 @@ def ts_check(spec_path: Path | str, verify_report: Path | str | None = None) -> 
     issues: list[dict] = []
     cols: dict = {}
     for line in text.splitlines():
+        if line.lstrip().startswith("#"):  # a heading ends the matrix scope - later
+            # tables (References, Revision History) are never AC rows
+            cols = {}
+            continue
         cells = sdlc_md.table_cells(line)
         if not cells:
             continue

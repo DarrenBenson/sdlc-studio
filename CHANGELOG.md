@@ -77,6 +77,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **ts-check's AC matrix no longer bleeds into later tables (BG0049).** The matrix
+  parser locked onto the coverage-matrix header and then read every subsequent
+  table row in the spec as an AC row - the canonical References and Revision
+  History tables reported as unmapped ACs, so `epic-ts` failed on the shipped
+  convention's own shape (the already-closed EP0010's spec failed it). A markdown
+  heading now ends the matrix scope; a genuinely unmapped AC row still fails.
+  Same defect class as the BG0046 structural-boundary fix - found while authoring
+  EP0011's spec at the design rung.
 - **provenance remake honours the adoption cutoff and never double-stamps (BG0048).**
   `remake` now applies the same `provenance.adopt_after` exemption as `check`
   (previously it mass-stamped all 145 artifacts against the documented intent;

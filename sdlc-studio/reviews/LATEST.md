@@ -5,7 +5,7 @@
 > and `sdlc-studio/retros/`; the original v2.0 unified review is `RV0001-unified-review-2026-06-20.md`.
 >
 > **Project version:** 3.3.0 (released 2026-07-04) · **Date:** 2026-07-04 ·
-> **Gates:** lint clean, 994 script tests pass (+41 repo-only tools tests), `gate` PASS, reconcile drift 0, disclosure 0,
+> **Gates:** lint clean, 1003 script tests pass (+41 repo-only tools tests), `gate` PASS, reconcile drift 0, disclosure 0,
 > npm audit 0, CI green on main.
 > **Sprint 2026-07 - mixed backlog clear (unreleased, on main, RETRO0006):** 7/8 units delivered
 > via the seat-scored WSJF loop (the amigos' first consult on this repo): BG0045/BG0046 (the

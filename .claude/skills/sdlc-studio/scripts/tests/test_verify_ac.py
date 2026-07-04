@@ -514,6 +514,31 @@ class TsCheckTests(unittest.TestCase):
             p = self._spec(Path(d), "| {{story}} | {{ac}} | {{desc}} | {{tc}} | {{status}} |\n")
             self.assertTrue(verify_ac.ts_check(p))
 
+    def test_later_tables_do_not_bleed_into_the_matrix(self) -> None:
+        # BG0049: the canonical spec shape puts References + Revision History AFTER
+        # the matrix; their rows are not AC rows.
+        with tempfile.TemporaryDirectory() as d:
+            p = self._spec(Path(d),
+                           '| US0001 | AC1 | login | jest "login" | pass |\n\n'
+                           "## References\n\n"
+                           "| Doc | Link |\n| --- | --- |\n| TSD | [tsd](../tsd.md) |\n\n"
+                           "## Revision History\n\n"
+                           "| Date | Author | Change |\n| --- | --- | --- |\n"
+                           "| 2026-07-04 | Sam | Initial spec |\n")
+            self.assertEqual(verify_ac.ts_check(p), [])
+
+    def test_unmapped_ac_after_later_tables_still_true_positive(self) -> None:
+        # The boundary must not weaken the check: a second matrix section with a
+        # genuinely unmapped AC row still fails.
+        with tempfile.TemporaryDirectory() as d:
+            p = self._spec(Path(d),
+                           "| US0001 | AC1 | login | -- | pass |\n\n"
+                           "## Revision History\n\n"
+                           "| Date | Author | Change |\n| --- | --- | --- |\n"
+                           "| 2026-07-04 | Sam | Initial spec |\n")
+            issues = {i["ac"]: i["issue"] for i in verify_ac.ts_check(p)}
+            self.assertEqual(list(issues), ["AC1"])   # only the real AC row flags
+
 
 class EpicTestSpecTests(unittest.TestCase):
     """CR0096: an epic must have a test-spec whose AC Coverage Matrix passes ts-check."""
