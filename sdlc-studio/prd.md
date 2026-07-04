@@ -339,8 +339,11 @@ strategy, coverage targets.
 
 ### Tested Functionality
 
-The Python scripts have unit tests (`scripts/tests/`, 181 passing at extraction).
-Markdown is linted via `npm run lint`.
+The Python scripts have unit tests (`scripts/tests/`; ~1000 and growing - run
+`python3 -m unittest discover` for the live count rather than trusting a pinned
+number). Markdown is guarded by seven CI checks (`npm run lint`, or each one
+directly - see AGENTS.md "Testing the Skill", which lists the npm-independent
+commands).
 
 ### Untested Areas
 
@@ -352,6 +355,28 @@ is the main gap a generated test backlog would close.
 
 Known historical ID collisions documented in `reference-outputs.md`. Generate-mode
 validation (tests against behaviour) is not yet wired for the markdown layer.
+
+**Enforcement gaps (a 2026-07-04 field retrospective, tracked as CRs).** The skill
+is strong on *document integrity* (status propagation, index reconcile, structural
+validate) and thinner on *behaviour / test integrity*. Each gap below is a place a
+rule is stated but not executably enforced, so it holds only when the agent
+remembers:
+
+- **Test integrity (CR0131 discipline, CR0134 gate).** Nothing detects a vacuous
+  assertion or an injected-data test that never exercises the real wiring; a green
+  suite can sit over dead code. CR0131 added the discipline (prose + template
+  fields); CR0134 proposes the executable mutation-check gate that would enforce it.
+- **Verification depth (CR0136).** The depth tiers are documented but `transition.py`
+  never reads the depth field, so a `smoke`-only bug can be marked Fixed.
+- **Finding self-diagnosis (CR0132, completing CR0025).** `reconcile`'s
+  `count-mismatch` emits a generic fix hint that does not name the cause or route to
+  the tool that diagnoses it, so a real drift reads as a "quirk" to ignore.
+- **Toolbox discoverability (CR0133).** The dominant finding: 40+ deterministic
+  scripts exist but an agent reaches for a handful and hand-does the rest. A single
+  session broke CI four ways and re-proposed three already-shipped tools, purely by
+  not finding them. This is the highest-impact item.
+- **British-spelling check (CR0135).** `lint-style.sh` enforces em-dash + jargon but
+  not Americanised spelling.
 
 There are also 17 open audit-filed bugs (incl. 1 Critical) raised against this
 workspace and its scripts; several qualify the feature statuses above. See

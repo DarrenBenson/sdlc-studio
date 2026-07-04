@@ -55,9 +55,9 @@ not drift (progressive disclosure).
 | `.claude/skills/sdlc-studio/help/` | Type-specific help (31 files) |
 | `.claude/skills/sdlc-studio/lessons/` | Cross-project lessons registry (v1.7.0) |
 | `.claude/skills/sdlc-studio/templates/` | Document and code templates, incl. `agent-instructions.md` (tool-neutral `AGENTS.md`/`CLAUDE.md` starter for consuming projects) and `personas/persona-template.md` (personas are generated on demand from archetype seeds, not baked - RFC0007) |
-| `.claude/skills/sdlc-studio/scripts/` | Skill-internal Python helpers: `repo_map`, `verify_ac`, `github_sync`, plus read-only JSON helpers `reconcile`, `status`, `validate`, `next_id`, `review_prep`, plus `plan` and `lessons` managers, sharing `lib/sdlc_md.py` |
+| `.claude/skills/sdlc-studio/scripts/` | 40+ skill-internal Python helpers sharing `lib/sdlc_md.py`. **`reference-scripts.md` is the catalogue - read it before hand-doing a mechanical task.** Load-bearing ones an agent reaches for constantly: `artifact.py` (create/close an artefact - collision-free id + index row; never hand-author `_index.md`), `file_finding.py` (file a Bug/CR/RFC from a finding), `next_id.py` (allocate an id), `reconcile.py` (`detect` read-only + `apply` mechanical fixes), `validate.py` (structure + status-vocab), `transition.py` (gated status change), `verify_ac.py` (executable ACs), `status.py`, `audit.py`, `critic.py`, `conformance.py`, `doc_freshness.py` |
 | `.claude/skills/sdlc-studio/best-practices/` | Quality guidelines (19 files) |
-| `tools/` | Repo CI checks: `check_links.py`, `lint-style.sh`, `validate_skill.py` |
+| `tools/` | Repo CI guards (run via `npm run lint`, or directly - see "Testing the Skill"): `lint-style.sh`, `check_links.py`, `validate_skill.py`, `check_versions.py`, `check_budgets.py`, `check_neutrality.py`, plus `style-allowlist.txt` |
 
 ## Soft Dependencies (runtime)
 
@@ -71,13 +71,31 @@ Some features need external tools on PATH:
 
 ## Testing the Skill
 
-Markdown: `npm run lint` runs markdownlint, the style guard, the
-anchor-link checker, and the SKILL.md frontmatter validator.
+**Run the full gate before every commit, not just before a release tag.** CI runs
+these same checks; skipping them locally is how style, neutrality, budget, and
+link breakage reaches `main`. Each guard below has caught a real breakage that the
+unit tests do not.
 
-Scripts: `npm test` (or `python3 -m unittest discover -s
-.claude/skills/sdlc-studio/scripts/tests`) runs the unit tests for
-every script in `scripts/` and every checker in `tools/`. All tests
-must pass before a release is tagged.
+With npm: `npm run lint` (markdown + all guards) and `npm test` (the script suite).
+
+**Without npm (it is not always on PATH):** every check except markdownlint is a
+plain Python/bash command you can run directly. Do not skip the gate because
+`npm` is missing.
+
+| Guard | Command | Catches |
+| --- | --- | --- |
+| Style | `bash tools/lint-style.sh` | em-dash (U+2014), corporate jargon, internal provenance tags in consuming-facing files |
+| Links | `python3 tools/check_links.py` | broken markdown anchor links |
+| Skill spec | `python3 tools/validate_skill.py` | SKILL.md frontmatter |
+| Versions | `python3 tools/check_versions.py` | version-string drift across authoritative files |
+| Budgets | `python3 tools/check_budgets.py` | a reference file over its declared line ceiling |
+| Neutrality | `python3 tools/check_neutrality.py` | a private consuming-project name leaking into a tracked file |
+| Scripts | `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests` | every script and checker unit test |
+| Drift | `python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect` | index / status / count drift in the dogfooded `sdlc-studio/` workspace |
+
+Only `lint:md` (markdownlint) needs Node; the rest are stdlib Python or bash. A
+change that touches a `reference-*.md` line count, an artefact status, prose style,
+or any consuming-project name must pass the relevant guard - none are optional.
 
 Manual verification:
 
@@ -114,9 +132,13 @@ When modifying the skill:
 
 ## Style Requirements
 
-- British English (analyse, colour, behaviour)
-- No em dashes - use en dash with spaces or restructure
-- No corporate jargon (synergy, leverage, robust)
+**Enforced by `tools/lint-style.sh`** (run it, or `npm run lint`, before committing;
+it has no code-span or "I am only quoting the rule" exception):
+
+- British English (analyse, colour, behaviour) - spelling not yet auto-checked (CR0135)
+- No em dashes (U+2014) - use a hyphen with spaces, or restructure
+- No corporate jargon (synergy, leverage, robust, journey), allowlist in `tools/style-allowlist.txt`
+- No internal provenance tags like `(CR1234)` in consuming-facing `reference-*.md` / `help/` / `scripts/`
 - Dense, economical writing
 - `{{placeholder}}` syntax in templates
 

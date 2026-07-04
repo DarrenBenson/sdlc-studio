@@ -101,10 +101,21 @@ flag closing it as the main outstanding test investment.
 
 **Generate-mode validation requirement.** Per `reference-philosophy.md`, a spec
 extracted in Generate mode (this TSD, the TRD, the PRD) is not Done until its tests
-pass against the implementation. For the script tier that bar is met: the 181 tests
-pass. For the markdown tier it is not met, because no behaviour tests exist; the
-generated claims about markdown flow behaviour remain inferred until that suite is
-written. This document records that state rather than overstating coverage.
+pass against the implementation. For the script tier that bar is met: the script
+suite passes (run `python3 -m unittest discover` for the live count; do not pin a
+number here - it drifts). For the markdown tier it is not met, because no behaviour
+tests exist; the generated claims about markdown flow behaviour remain inferred
+until that suite is written. This document records that state rather than
+overstating coverage.
+
+> **Run the static-checker gate before every commit, not only before a tag.** All
+> seven guards except markdownlint are npm-independent Python/bash (AGENTS.md
+> "Testing the Skill" lists the direct commands). A 2026-07-04 retrospective found a
+> session break the gate four ways by not running it locally - the checks catch
+> style, neutrality, line-budget, and version breakage that the unit tests never
+> see. The assertion-integrity discipline (`reference-test-best-practices.md#assertion-integrity`)
+> is the markdown-tier answer to "would this test fail if the feature broke?"; its
+> executable enforcement is tracked as CR0134.
 
 ---
 

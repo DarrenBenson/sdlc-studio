@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Docs: make the local gate and the deterministic toolbox discoverable (dogfood
+  fix for CR0133).** AGENTS.md "Testing the Skill" now lists every CI guard as an
+  npm-independent command with what each catches (a session broke CI four ways by
+  not running them); the Skill Structure scripts row points at `reference-scripts.md`
+  and names the load-bearing scripts (`artifact.py`, `file_finding.py`, `next_id.py`,
+  ...); Style Requirements now states the rules are enforced by `lint-style.sh`. PRD
+  section 10 records the enforcement-gap debt (CR0131/0132/0133/0134/0135/0136); TSD
+  folds in the run-the-gate-pre-commit lesson and the assertion-integrity pointer.
+
 ### Proposed
 
 - **Field-retrospective CRs (dogfooding against a consuming project).** From driving the skill end-to-end:
