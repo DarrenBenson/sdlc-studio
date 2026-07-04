@@ -1,67 +1,59 @@
-# CR-0135: house-style linter: British English, no em-dashes, no jargon (validate checks structure, not prose)
+# CR-0135: extend the style guard with British-spelling detection (em-dash + jargon already enforced)
 
 > **Status:** Proposed
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new
-> **Priority:** Medium
-> **Type:** Feature
-> **Affects:** .claude/skills/sdlc-studio/scripts/validate.py (new lane or sibling), .claude/skills/sdlc-studio/reference-outputs.md, .claude/skills/sdlc-studio/templates/agent-instructions.md, .claude/skills/sdlc-studio/help/
+> **Priority:** Low
+> **Type:** Improvement
+> **Affects:** tools/lint-style.sh, tools/style-allowlist.txt, .claude/skills/sdlc-studio/reference-outputs.md
 > **Depends on:** -
 
 ## Summary
 
-AGENTS.md states house style as hard rules - **British English** (analyse, colour, behaviour),
-**no em-dashes** (en dash with spaces or restructure), **no corporate jargon** (synergy, leverage,
-robust). But nothing enforces them. `validate.py check` validates artefact *structure* (status
-vocab, unfilled placeholders, links, personas) and `.markdownlint.json` covers Markdown mechanics -
-neither reads prose for style. So the rules rely entirely on the author remembering, and an agent
-that has never internalised them will violate them silently.
+> **Root-cause correction (2026-07-04).** First filed as "add a house-style linter" claiming nothing
+> enforces the AGENTS.md style rules. That is **wrong**: `tools/lint-style.sh` (run by `npm run lint`
+> in CI) already hard-fails on em-dash (U+2014, no exceptions), corporate jargon (with an allowlist),
+> and internal provenance tags in consuming-facing files. The em-dash + jargon rules are enforced.
+> Rescoped to the one rule that is stated but **not** checked.
 
-Observed in the field (this session): filing CR-0131 and the sibling CRs, I introduced em-dashes
-throughout, and only caught them because I happened to grep for `—` after the fact - by hand. A
-zero-em-dash convention that every existing file honours (verified: 0 em-dashes across the committed
-reference set) is exactly the kind of bright-line rule a deterministic linter should hold, not an
-honour system.
+The AGENTS.md style requirements list three prose rules: British English, no em-dash, no jargon.
+`lint-style.sh` enforces two of them. The gap is **British English** - the guard does not flag
+Americanised spellings (analyze/analyse, behavior/behaviour, color/colour, -ize/-ise), so a document
+can use American spelling and pass every check.
 
-Proposed: a house-style lane that flags the bright-line violations, advisory by default and
-promotable to a gate.
+This CR is a small addition to the existing guard, not a new tool: add a bounded, high-signal
+American-spelling detector alongside the em-dash and jargon passes, sharing the same allowlist
+mechanism for the rare legitimate exception (a cited product name, an external quotation).
 
-1. **Em-dash** (`—`) anywhere in artefact prose - a hard fail (the rule has no exceptions; the
-   linter suggests the ` - ` / en-dash-with-spaces fix inline).
-2. **Americanised spelling** from a small, high-signal list (analyze/behavior/color/-ize where the
-   project is -ise, etc.) - flagged with the British form suggested.
-3. **Banned jargon** from the AGENTS.md list (synergy, leverage, robust, ...) - flagged.
-4. Runs over `sdlc-studio/**` artefacts + the skill's own docs; scoped to changed files in the
-   pre-commit / release-gate path so it is cheap. Fixes are *suggested*, never auto-applied to
-   prose (an autofix for em-dash-to-` - ` may be offered behind an explicit `--fix`).
-
-The banned-word and spelling lists are project-configurable (a project may permit "robust" in a
-security context); the em-dash rule is universal to the house style. Honest degrade: a file it
-cannot parse is reported un-checked, never passed.
+**Self-evidence for the discoverability problem (see CR-0133).** This CR was first written claiming
+the linter did not exist, and its own draft shipped two literal em-dashes and several jargon words -
+which `bash tools/lint-style.sh` flags in seconds. The author reached for the rule (avoid em-dash)
+but not the tool that enforces it, exactly the failure CR-0133 addresses. The strongest argument for
+surfacing the toolbox is that the tool went unfound by the very session filing style CRs.
 
 ## Acceptance Criteria
 
-- [ ] a style lane flags em-dashes in artefact prose with the ` - ` fix suggested; zero false
-      positives on code fences / literal ` - ` / en dashes already spaced
-- [ ] Americanised spellings and banned-jargon terms are flagged from project-configurable lists,
-      with the British / plain alternative suggested (remediation-with-finding, per CR-0025)
-- [ ] runs scoped to changed artefacts (cheap enough for a pre-commit / release-gate lane); advisory
-      by default, promotable to a gate via config
-- [ ] an optional `--fix` applies only the unambiguous em-dash-to-` - ` rewrite; spelling/jargon stay
-      suggestions (never silently rewrite an author's prose)
-- [ ] unit tests: em-dash caught, code-fence dash not caught, spelling flagged, configured-permit
-      suppresses a term, unparseable file reported un-checked not passed
-- [ ] `reference-outputs.md` + `help/` document the lane; `templates/agent-instructions.md` points
-      consuming projects at it so the house-style rules are enforced, not just stated
-- [ ] `CHANGELOG.md` `[Unreleased]` entry ([[LL0004]])
+- [ ] `lint-style.sh` gains an American-spelling pass over `*.md` (bounded, high-signal list:
+      analyze, behavior, color, and the -ize/-ization family where the house form is -ise/-isation),
+      printing each offender with the British form suggested and exiting non-zero
+- [ ] the pass shares the existing `style-allowlist.txt` mechanism so a legitimate exception (a
+      product name, a quotation) can be permitted by line context
+- [ ] zero false positives on the current tree (run it over the repo; it must pass clean today, or
+      each hit is a genuine spelling to fix)
+- [ ] a unit test / fixture: an Americanised spelling is flagged, an allowlisted line is not, a
+      British spelling passes
+- [ ] `reference-outputs.md` (or the style section it points to) notes British-spelling is now
+      checked, not only stated; `CHANGELOG.md` `[Unreleased]` ([[LL0004]])
 
 ## Out of Scope
 
-- A full grammar / prose-quality linter (this is bright-line house-style rules only).
-- Auto-rewriting spelling or jargon (suggested, not applied - prose is the author's).
+- Em-dash and jargon enforcement (already shipped in `lint-style.sh`).
+- A full grammar / prose-quality linter (bright-line spelling only).
+- Auto-rewriting spellings (suggest, do not silently change an author's prose).
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-04 | claude | Created via `new` (deterministic) |
+| 2026-07-04 | claude | Root-cause corrected: em-dash + jargon already enforced by tools/lint-style.sh; rescoped to the British-spelling gap. Rewritten to pass the linter (no literal em-dash / jargon). |

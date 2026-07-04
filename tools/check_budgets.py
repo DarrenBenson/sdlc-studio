@@ -38,7 +38,7 @@ ALLOWLIST = {
     "reference-code.md": 911,
     "reference-outputs.md": 781,  # +RFC0012 index-archival + slice-read conventions (CR0041)
     "reference-decisions.md": 724,
-    "reference-test-best-practices.md": 652,  # +RFC0009 WS4 complexity/churn test-risk section (CR0043)
+    "reference-test-best-practices.md": 706,  # +assertion-integrity + mutation-check section (CR0131)
 }
 
 

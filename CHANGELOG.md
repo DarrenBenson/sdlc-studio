@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Proposed
 
-- **Field-retrospective CRs (dogfooding agent-crew).** From driving the skill end-to-end:
+- **Field-retrospective CRs (dogfooding against a consuming project).** From driving the skill end-to-end:
   - CR0132 - reconcile findings must self-diagnose. The `count-mismatch` fix hint is generic and
     misleading (points at `apply`, which cannot clear an out-of-vocab status); it should name the
     offending status and route to `validate`. Completes the CR0025 remediation-guidance principle
@@ -20,8 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     session used ~2 of 40+ scripts and hand-did work `file_finding.py` / `next_id.py` automate.
   - CR0134 - an executable mutation-check / test-quality gate (epic-sized, RFC-first) to *enforce*
     the CR0131 assertion-integrity discipline, not just document it - the skill's biggest blind spot.
-  - CR0135 - a house-style linter (British English, no em-dashes, no jargon). `validate` checks
-    structure, `.markdownlint` checks mechanics; neither reads prose for the AGENTS.md style rules.
+  - CR0135 - extend the style guard with British-spelling detection. *(Root-cause corrected:
+    `tools/lint-style.sh` already enforces em-dash + jargon; the only unchecked rule is British
+    spelling. Filing this CR itself broke the style guard by not running it - self-evidence for
+    CR0133.)*
   - CR0136 - enforce the verification-depth tiers on `transition` (Fixed needs `functional`+, Close
     needs `soak`). The tiers are documented but `transition.py` never reads the depth field.
 

@@ -15,7 +15,7 @@ The skill teaches verification *depth* (`reference-test-best-practices.md#verifi
 this test go red if the feature were broken?** A green suite over a dead feature is worse than no
 suite - it manufactures false confidence and lets a non-functional surface ship as Done.
 
-This gap was found in the field (agent-crew, EP-0291): a governance surface shipped marked
+This gap was found in the field (a consuming project): a governance surface shipped marked
 "renders + initiates + audits" while, on the real data path, it did none of the three. Two
 permanently-green test shapes hid it, neither of which any existing anti-pattern names:
 
@@ -28,7 +28,7 @@ permanently-green test shapes hid it, neither of which any existing anti-pattern
    test proves rendering, not delivery; the delivery bug (the field the enrichment forgot to copy)
    ships green.
 
-The fix is a small, high-leverage discipline addition, echoed across the reference, the two artefact
+The fix is a small, high-value discipline addition, echoed across the reference, the two artefact
 templates that carry verification fields, and the release gate:
 
 - **`reference-test-best-practices.md`** gains a top-level `#assertion-integrity` section (the two

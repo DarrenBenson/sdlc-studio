@@ -16,12 +16,12 @@
 > `validate.py check` already flags an out-of-vocab status precisely. Deeper investigation found the
 > real defect, below. The vocabulary mechanism is fine; the **diagnostics are not**.
 
-The friction (agent-crew, this session): `reconcile.py detect` reported a persistent CR
+The friction (a consuming project, this session): `reconcile.py detect` reported a persistent CR
 `count-mismatch` I could not clear. Its `fix` hint said *"recompute the summary counts from the index
 rows"* - so I ran `reconcile apply`, which changed nothing, and I wrongly concluded the drift was a
 "structural quirk" to be ignored. **The signal trained me to distrust the signal.**
 
-The actual cause: agent-crew's CRs use a `Built` (and `Done`) status that its `.config.yaml`
+The actual cause: the consuming project's CRs use a `Built` (and `Done`) status that its `.config.yaml`
 `status_vocab.cr` does not declare, so those rows canonicalise to `Unknown`, are dropped from
 `row_counts`, and the summary total can never match. `validate.py check` says this in one line -
 *"status 'Built ...' is not one of the allowed cr statuses"* - but nothing pointed me at `validate`,
@@ -52,7 +52,7 @@ Proposed - make reconcile's findings self-diagnosing (and set the pattern for ot
       run `validate.py check`, rather than the generic "recompute the summary counts"
 - [ ] the generic recompute hint remains for a true arithmetic-only mismatch (all statuses in-vocab)
 - [ ] `detect` output routes the operator/agent to the sibling diagnostic tool for the drift class
-- [ ] reproduce the agent-crew case as a fixture: a CR index with a `Built` row absent from
+- [ ] reproduce the observed case as a fixture: a CR index with a `Built` row absent from
       `status_vocab.cr` yields the specific finding + fix, and adding the status to config clears it
 - [ ] `reference-reconcile.md` documents the self-diagnosing finding shape; `help/status.md` updated
 - [ ] `CHANGELOG.md` `[Unreleased]` entry ([[LL0004]])

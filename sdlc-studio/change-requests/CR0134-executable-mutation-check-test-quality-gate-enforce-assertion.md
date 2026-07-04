@@ -17,7 +17,7 @@ almost none for **test integrity** (does the test actually fail when the feature
 added the *discipline* - the mutation check, the assertion-integrity anti-patterns - but it is
 **prose that relies on the agent remembering**. Nothing executable enforces it.
 
-The cost is not hypothetical. In the field (agent-crew EP-0291) a governance surface shipped marked
+The cost is not hypothetical. In the field (a consuming project) a governance surface shipped marked
 "renders + initiates + audits" while, on the real data path, it did none of the three - a green,
 vacuous suite over dead code. Every existing gate passed. `verify_ac.py` confirms an AC's test
 *passes*; it does not ask whether the test would *fail* if the feature were broken, nor whether a
