@@ -1,12 +1,12 @@
 # CR-0134: executable mutation-check / test-quality gate (enforce assertion integrity, not just document it)
 
-> **Status:** Approved
+> **Status:** Blocked
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new
 > **Priority:** High
 > **Type:** Feature
 > **Affects:** .claude/skills/sdlc-studio/scripts/ (new), .claude/skills/sdlc-studio/reference-test-best-practices.md, .claude/skills/sdlc-studio/reference-verify.md, .claude/skills/sdlc-studio/templates/workflows/release-gate.md, .claude/skills/sdlc-studio/help/
-> **Depends on:** CR-0131 (the assertion-integrity discipline this CR makes executable)
+> **Depends on:** CR-0131 (the assertion-integrity discipline this CR makes executable), RFC-0022 (settles the fault-injection design; blocks the epic decomposition)
 > **Epic-sized:** yes - on acceptance, decompose into an epic (and likely a preceding RFC for the cross-language fault-injection design)
 
 ## Summary
@@ -70,3 +70,4 @@ problem and the field evidence first.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-04 | claude | Created via `new` (deterministic); flagged epic-sized, RFC-first |
+| 2026-07-04 | claude | RFC-0022 authored (sprint 2026-07): 4 design options, recommendation B-core + C-lane + D-prefilter, open decisions D1-D6. CR Blocked pending the RFC decision; decompose to an epic on acceptance |

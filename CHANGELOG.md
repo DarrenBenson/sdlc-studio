@@ -18,6 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   non-interactive `artifact.py new` as the canonical create path (interactive
   commands are wrappers); `help/bug.md` / `help/cr.md` lead with the one-liner and
   state that ids + index rows are tool-allocated.
+- **RFC-0022 opens the mutation-check gate design (CR0134, RFC-first).** The skill's
+  named biggest blind spot - nothing executable asks whether a test would FAIL if
+  the feature broke - is epic-sized with an unsettled cross-language injection
+  design, so the sprint delivered the RFC, not the implementation: four options
+  (per-language AST, declared textual mutations, framework adapters, static
+  heuristics), a recommendation (textual-mutation core, framework lane opt-in,
+  static pre-filter, AC-to-test mapping over the existing Verify + coverage-matrix
+  bridge), and six open decisions. CR0134 is Blocked pending the RFC decision and
+  decomposes into an epic on acceptance.
 - **The style guard now checks British spelling (CR0135).** AGENTS.md stated three
   prose rules; `lint-style.sh` enforced two. A bounded, high-signal American-spelling
   pass (the analyze/analyse pairs and the -ize/-ization family, word-boundary matched
