@@ -162,8 +162,12 @@ def _within_table_dup_counts(text: str) -> dict[str, int]:
     table views - the story index ships a per-epic "Stories by Epic" view plus an "All Stories"
     table, so every id appears twice across views without being a duplicate. The bug
     `detect_duplicate_rows` guards is an id repeated WITHIN one table, which `parse_index`
-    silently collapses. Resets the per-id tally at each table header (mirroring
-    `_index_row_ids`' header re-pin). Returns {id: count} only for ids whose within-table count > 1.
+    silently collapses. The table boundary is STRUCTURAL - any header row (a `|`-row
+    immediately followed by its `| --- |` separator) flushes and resets the tally -
+    never vocabulary-based: the shipped cr.md Dependencies header carries
+    `Dependency Status`, not a bare `Status` cell, so a vocabulary match tallied its
+    rows into the previous table's scope and a fully-templated project failed its own
+    gate. Returns {id: count} only for ids whose within-table count > 1.
     """
     best: dict[str, int] = {}
     table: dict[str, int] = {}
@@ -174,17 +178,19 @@ def _within_table_dup_counts(text: str) -> dict[str, int]:
             if n > best.get(rid, 0):
                 best[rid] = n
 
-    for line in text.splitlines():
+    sep_re = re.compile(r"^\s*\|(?:\s*:?-{3,}:?\s*\|)+\s*$")  # | --- | --- | rows
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
         cells = _table_cells(line)
-        if not cells:
+        if not cells:  # includes separator rows - table_cells returns None for them
             continue
-        if len(cells) == 2 and cells[1].replace(",", "").isdigit():  # summary row
-            continue
-        lowered = [c.lower() for c in cells]
-        if len(cells) > 2 and "status" in lowered:  # new table header - flush + reset scope
+        if i + 1 < len(lines) and sep_re.match(lines[i + 1]):  # header row (structural) - flush + reset scope
             flush()
             table = {}
+            lowered = [c.lower() for c in cells]
             id_col = lowered.index("id") if "id" in lowered else None
+            continue
+        if len(cells) == 2 and cells[1].replace(",", "").isdigit():  # summary row
             continue
         if id_col is not None and id_col < len(cells):
             m = sdlc_md.ID_SEARCH_RE.search(cells[id_col])

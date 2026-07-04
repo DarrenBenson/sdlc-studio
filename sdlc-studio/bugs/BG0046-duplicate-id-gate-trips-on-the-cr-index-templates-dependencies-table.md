@@ -1,6 +1,6 @@
 # BG0046: duplicate-id gate trips on the CR index template's own Dependencies table (per-table reset misses headers without a bare "Status" cell)
 
-> **Status:** Open
+> **Status:** Closed
 > **Created:** 2026-07-04
 > **Created-by:** field report (a consuming project's sprint retro, 2026-07-04)
 > **Severity:** medium
@@ -46,3 +46,4 @@ must stay caught: the same id twice within ONE table still flags. CHANGELOG.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-04 | field | Reported from a consuming project's sprint close (retro lesson / decisions ledger) |
+| 2026-07-04 | claude | Fixed: table boundary made structural (any header row followed by its separator resets the tally) per the primary proposed fix, not the narrower vocabulary patch. Mutation-checked: the Dependencies-shape regression test was seen RED (2 false duplicates) against the unfixed scan. Verification depth: functional (unit regression; not production-affecting). |

@@ -20,6 +20,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Duplicate-id gate no longer trips on the shipped CR index's Dependencies table
+  (BG0046).** `reconcile`'s within-table duplicate scan reset its per-table tally only
+  on a header containing a bare `Status` cell; the `templates/indexes/cr.md`
+  Dependencies header carries `Dependency Status`, so its rows tallied into the
+  previous table's scope and a fully-templated project failed its own release gate
+  (field run: 12 false duplicates, the operator converted the table to prose to get
+  green). The table boundary is now structural - any header row followed by its
+  `| --- |` separator resets the scope - and regression tests pin the shipped
+  Dependencies shape plus the true-positive (same id twice within one table still
+  flags).
 - **Bug-readiness check accepts the shipped template's own headings (BG0045).**
   `audit.py`'s `_bug_underspecified` demanded the literal `## Steps to Reproduce` +
   `## Proposed Fix`, while `templates/core/bug.md` shipped `## Reproduction Steps` +

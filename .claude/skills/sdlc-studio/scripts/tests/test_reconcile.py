@@ -451,6 +451,41 @@ class DuplicateRowTests(unittest.TestCase):
             self.assertEqual(r["count"], 1)
             self.assertEqual(r["duplicates"][0]["count"], 2)
 
+    def test_dependencies_table_not_flagged(self):  # BG0046
+        """The shipped cr.md index shape: All CRs table + a Dependencies table whose
+        header (`| CR | Depends On | Dependency Status |`) has no bare `Status` cell.
+        Each id once per table is not a duplicate - the reset must be structural."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            dd = repo / "sdlc-studio" / "change-requests"; dd.mkdir(parents=True)
+            (dd / "_index.md").write_text(
+                "# Change Request Registry\n\n## All Change Requests\n\n"
+                "| ID | Title | Priority | Status | Type | Linked Epics | Date |\n"
+                "| --- | --- | --- | --- | --- | --- | --- |\n"
+                "| [CR-0001](CR0001-a.md) | a | P1 | Proposed | f | -- | d |\n"
+                "| [CR-0007](CR0007-b.md) | b | P2 | Proposed | f | -- | d |\n\n"
+                "## Dependencies\n\n"
+                "| CR | Depends On | Dependency Status |\n"
+                "| --- | --- | --- |\n"
+                "| CR-0001 | CR-0003 | Complete |\n"
+                "| CR-0007 | CR-0001 | Proposed |\n", encoding="utf-8")
+            r = reconcile.detect_duplicate_rows(repo)
+            self.assertEqual(r["count"], 0, r["duplicates"])
+
+    def test_dup_within_dependencies_style_table_still_flagged(self):  # BG0046 true-positive guard
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            dd = repo / "sdlc-studio" / "change-requests"; dd.mkdir(parents=True)
+            (dd / "_index.md").write_text(
+                "# Index\n\n## Dependencies\n\n"
+                "| CR | Depends On | Dependency Status |\n"
+                "| --- | --- | --- |\n"
+                "| CR-0001 | CR-0003 | Complete |\n"
+                "| CR-0001 | CR-0004 | Proposed |\n", encoding="utf-8")
+            r = reconcile.detect_duplicate_rows(repo)
+            self.assertEqual(r["count"], 1)
+            self.assertEqual(r["duplicates"][0]["count"], 2)
+
 
 
 class CountBlockScopeTests(unittest.TestCase):

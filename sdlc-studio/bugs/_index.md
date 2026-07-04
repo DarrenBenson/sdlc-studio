@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 2 |
+| Open | 1 |
 | In Progress | 0 |
 | Fixed | 44 |
 | Verified | 0 |
-| Closed | 1 |
+| Closed | 2 |
 | Won't Fix | 0 |
 | Superseded | 0 |
 | **Total** | **47** |
@@ -64,5 +64,5 @@
 | [BG0043](BG0043-reconcile-apply-drops-bold-markup-cr-index-row.md) | reconcile apply drops bold-markup CR-index row statuses and skips the CR-summary recompute | Fixed | medium | 2026-06-25 | 2026-06-25 |
 | [BG0044](BG0044-reconcile-flattens-per-epic-done-count-blocks-corrupting.md) | reconcile flattens per-epic Done count blocks corrupting per-section sub-tables | Fixed | high | 2026-06-25 | 2026-06-25 |
 | [BG0045](BG0045-audit-bug-readiness-headings-disagree-with-shipped-template.md) | audit bug-readiness check disagrees with the shipped bug template, so every template-authored bug flags "underspecified" | Closed | medium | 2026-07-04 | 2026-07-04 |
-| [BG0046](BG0046-duplicate-id-gate-trips-on-the-cr-index-templates-dependencies-table.md) | duplicate-id gate trips on the CR index template's own Dependencies table (per-table reset misses headers without a bare "Status" cell) | Open | medium | 2026-07-04 | 2026-07-04 |
+| [BG0046](BG0046-duplicate-id-gate-trips-on-the-cr-index-templates-dependencies-table.md) | duplicate-id gate trips on the CR index template's own Dependencies table (per-table reset misses headers without a bare "Status" cell) | Closed | medium | 2026-07-04 | 2026-07-04 |
 | [BG0047](BG0047-wsjf-size-signal-ranks-new-file-units-as.md) | WSJF size signal ranks new-file units as trivially small, inverting the sprint order | Open | medium | 2026-07-04 | 2026-07-04 |
