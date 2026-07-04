@@ -71,7 +71,10 @@ next sprint" resolves to `--goal design` (the goals are cumulative stop-points).
    repeated failure signature: it is marked Blocked, logged, skipped; the run
    continues. The completion oracle declares the batch done only when every unit
    is terminal (Done or Blocked).
-6. **Sprint review** - every run ends with a mandatory `reconcile` + `review`.
+6. **Sprint review** - every run ends with a mandatory `reconcile` + `review`; the
+   CODE leg is the adversarial full-diff critic pass (independent instance, refute
+   framing, findings with repros, fixes seen red first, the SAME critic re-runs its
+   own repros before approve - see `reference-sprint.md`).
 
 In `--autonomous` mode steps 4's guardrails are deterministic scripts the model
 cannot skip; without it they are model-instructed (the portable Phase-1 path).

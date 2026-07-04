@@ -326,7 +326,7 @@ REMEDIATION: dict[str, dict[str, str]] = {
         "verifiable": "add a `- **Verify:** <cmd>` line per AC (or, if this project does not use executable AC, scope this stage out)",
         "verified": "run `verify_ac` and back-annotate `- **Verified:** yes` (Done stories)",
         "reconciled": "index drift - run `reconcile` and fix the row/counts",
-        "critiqued": "record an independent-critic verdict: `critic.py record --unit <id> --verdict approve`",
+        "critiqued": "record an independent-critic verdict: `critic.py record --unit <id> --verdict approve` (author != reviewer; at sprint close the adversarial full-diff pass re-runs its own repros before approving - reference-sprint.md)",
     },
     "integrity": {
         "missing-required": "add the required link field (Epic/Story); a standalone bug may leave it (advisory)",

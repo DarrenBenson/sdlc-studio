@@ -113,14 +113,26 @@ independent critic plus the gate - the check's output states this scoping.
    `reconcile` (fix any drift) + `review` (the unified PRD/TRD/TSD/persona plus CODE
    review), **regardless of `--goal`**. This is the sprint review and it produces
    the conformance `reviewed` signal. For `--goal design` it reviews the produced
-   backlog; for `--goal done` the delivered increment. The closing gate also emits the
+   backlog; for `--goal done` the delivered increment.
+   The CODE leg of a `--goal done` close is the **adversarial full-diff critic pass** -
+   a sharpening of the per-unit critic step already in the loop, never a second
+   parallel gate. Its shape is exact: an INDEPENDENT critic instance (author never
+   reviews its own diff) reads the whole sprint diff, framed to REFUTE rather than
+   confirm; every finding carries a reproduction; fixes are made test-first (seen
+   red against the unfixed code); and the SAME critic instance re-runs its own
+   reproductions before recording approve. In the field this pass caught what unit
+   tests, per-unit review, and the gate all missed (a closed bug still reproducible
+   through a sibling parser; a mutation gate counting unviable mutants as kills) -
+   the re-run-your-own-repro step is where those escapes died. Verdicts are
+   recorded per unit (`critic.py record`, author != reviewer), which is what the
+   conformance `critiqued` stage reads. The closing gate also emits the
    **final report** (items actioned / rejected with rationale / blocked with blocker /
    assumptions / decisions-ledger reference / anything needing the operator).
    On each unit **close** (`artifact close`), a telemetry event (id, type, plus any run
    metrics passed: `--iterations`/`--verdict`/`--wall-time-s`/`--stages`) is appended to
    the gitignored `sdlc-studio/.local/telemetry.jsonl`. Advisory -
    it never affects the close; it feeds the deferred calibrate step.
-7. **Retro lifecycle (a hard gate, not doctrine).** The close runs a five-step learning loop,
+7. **Retro lifecycle (a hard gate, not doctrine).** The batch retro carries a 'critic loop, observed' section (findings, refutations, survivors of the adversarial pass) so its value stays visible sprint over sprint. The close runs a five-step learning loop,
    each step script-backed so it cannot be silently skipped:
    1. **Hard close gate.** The close runs `gate --require-retro RETRO{next}` and **fails loud**
       (non-zero, no success report) until the batch retro exists in `sdlc-studio/retros/`, mirroring

@@ -1,6 +1,6 @@
 # CR-0148: name the close-of-sprint adversarial critic pass as a hard sprint step (re-verify against the critic's own repros)
 
-> **Status:** Approved
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-04
@@ -27,3 +27,4 @@ confirm framing, and the SAME critic instance re-running its own repros before a
 | --- | --- | --- |
 | 2026-07-04 | audit | Raised |
 | 2026-07-04 | claude | Operator review applied: framed explicitly as sharpening the existing critic step, guarding against process-for-its-own-sake |
+| 2026-07-04 | claude | Delivered: closing-gate CODE leg specified exactly in reference-sprint; help/sprint, conformance hint, retro guidance updated. Docs-only. Depth: manual (grep-verified) |

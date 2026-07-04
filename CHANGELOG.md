@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The close-of-sprint adversarial critic pass is a named, exact step (CR0148).**
+  reference-sprint.md's closing gate now specifies the CODE leg's shape - an
+  independent critic instance over the FULL sprint diff, refute framing, findings
+  with reproductions, fixes seen red first, and the same critic re-running its own
+  repros before approve - as a sharpening of the existing critic step, never a
+  second parallel gate. help/sprint.md, the conformance critiqued hint, and the
+  retro guidance (a 'critic loop, observed' section) point at it. This is the pass
+  that caught both sprints' worst escapes.
+
 - **doc-freshness names its counting method (CR0147, reduced AC).** The test-count
   finding now says "N test functions counted statically ... claim this number", so
   the LATEST.md claim and the checker agree on what is being counted instead of the
