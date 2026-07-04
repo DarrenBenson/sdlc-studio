@@ -7,6 +7,12 @@
 > **Spans:** sdlc-studio skill (a new top-of-hierarchy artifact + cross-repo tooling), every consuming project in a multi-repo product
 > **Related:** RFC0016 (persona engine - the PM persona that owns the PVD), reference-outputs.md, reference-reconcile.md, the existing contract_tables config (CR0008)
 > **Supersedes / Superseded by:** --
+>
+> **Amendment (2026-07-04, CR-0142): WS3 retired.** `product_reconcile` (the feature-map
+> traceability check) shipped but never produced a true trace against a real PVD, and its green
+> tests hid that; it is removed. WS1/WS2 stand - the PVD, `pvd sync`, and `pvd drift` are the
+> working cross-repo tooling. Feature-map integrity is now a `review`-cadence job, not a machine
+> check. The design text below is preserved as the original record; read it with WS3 struck.
 
 ## Summary
 
@@ -133,7 +139,7 @@ where multi-repo products break, and it is the most differentiated thing here.
 | --- | --- | --- | --- |
 | WS1 | `pvd` template (tiered) + the product manifest schema | CR (TBD) | D1, D5 |
 | WS2 | Read-only projection (symlink/sync) + version/checksum drift check | CR (TBD) | D2 |
-| WS3 | `product reconcile` - feature-map traceability across child repos | CR (TBD) | D3, D7 |
+| WS3 | ~~`product reconcile` - feature-map traceability across child repos~~ **RETIRED (CR-0142)** | CR0049 (shipped, then retired) | D3, D7 |
 | WS4 | Contract layer: declare/version/migration-deadline + checks | CR (TBD) | D4 |
 | WS5 | Cross-repo contract verify (producer ships == consumer expects) | CR (TBD) | WS4 |
 | WS6 | (opt-in) PVD topology tree + G1-G5 governance gates | CR (TBD) | D5, D6 |

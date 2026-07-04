@@ -1,6 +1,12 @@
 # CR-0141: product_reconcile feature-map parser is inert against CR/RFC-cited PVDs
 
-> **Status:** Proposed
+> **Superseded 2026-07-04 by [CR-0142](CR0142-retire-product-reconcile-a-traceability-gate-that-never.md).**
+> This CR proposed *fixing* `product_reconcile` to be artefact-aware. The operator's call was to
+> **retire** the tool instead (it never produced a true trace and its green tests hid that), so the
+> fix is moot. This record stays as the diagnosis of why it was inert - the reasoning that led to the
+> retirement decision.
+>
+> **Status:** Superseded
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium

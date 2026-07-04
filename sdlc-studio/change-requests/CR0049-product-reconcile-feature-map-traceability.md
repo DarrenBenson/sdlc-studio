@@ -1,6 +1,12 @@
 # CR-0049: product reconcile - cross-repo feature-map traceability (RFC0015 WS3)
 
-> **Status:** Complete
+> **Retired 2026-07-04 (CR-0142).** This shipped `product_reconcile.py`, which dogfooding later
+> showed never produced a true trace against a real PVD (parsed 0 of 11 features; its green tests
+> pinned a synthetic token format reality never used). The tool is removed; feature-map integrity
+> is now a `review`-cadence job and the working cross-repo tooling is `pvd sync` / `pvd drift`.
+> The ship fact stands - it was Complete on 2026-06-21; it is now Superseded.
+>
+> **Status:** Superseded
 > **Priority:** High
 > **Type:** Feature
 > **Requester:** Darren Benson (RFC decision session)

@@ -199,15 +199,6 @@ question with a back-link (one record, two views). Append-only and greppable, so
 in one place and feeds the handoff context delegated agents read - distinct from the
 sprint per-tranche ledger (`ledger.py`).
 
-### `product_reconcile.py`
-
-Cross-repo feature-map traceability. Verifies every product feature
-`PF####` in the PVD's §3 table maps to a feature actually DECLARED (a table cell or heading,
-not free-text) in its owning repo's PRD, resolving repos via the manifest. Findings:
-orphan-feature + unknown-repo + missing-path (blocking); repo-absent + empty-feature-map
-(advisory, with an un-verified count so a degraded run is not mistaken for full coverage).
-Never silently reads the wrong PRD; exits non-zero on a blocking inconsistency.
-
 ### `pvd.py`
 
 PVD projection + drift. `sync` projects the one writable master

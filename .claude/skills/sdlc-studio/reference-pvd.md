@@ -1,11 +1,11 @@
 # SDLC Studio Reference - Product Vision Document (PVD)
 
 The PVD is the **product layer above the PRD** - it coordinates the repos that together
-form one product, and traces each product feature to its owning repo's PRD feature. It
+form one product, and maps each product feature to its owning repo. It
 **coordinates and traces, never re-specifies**. One writable master, read-only
-everywhere else, kept honest by cross-repo tooling so it cannot rot.
+everywhere else, kept honest by a read-only projection (`pvd drift`) so it cannot silently rot.
 
-<!-- Load when: the user works with a multi-repo product / runs pvd or product reconcile -->
+<!-- Load when: the user works with a multi-repo product / runs pvd sync or pvd drift -->
 
 ## When you need it
 
@@ -30,9 +30,11 @@ coordination is currently living as stale prose in reviews/handovers.
    `sdlc-studio/product/pvd.md`. Keep it lean: the sections below the opt-in line (topology
    tree, G1-G5 gates, release coordination) are only for large multi-team products.
 2. **Manifest** - list each repo (id / path / url) in `manifest.yaml`.
-3. **Feature map** - in §3, map each product feature `PF####` to `<repo-id>:<PRD-feature>`.
-4. **`pvd sync`** - project the master read-only into each child repo.
-5. **`product reconcile`** - verify the feature map + contracts across the repos.
+3. **Feature map** - in §3, map each product feature `PF####` to its owning repo and the
+   CR/RFC/PRD artefact that lands it. The map is reviewed in the `review` cadence, not by a
+   machine (an automated traceability check was tried and retired - see CR0141).
+4. **`pvd sync`** - project the master read-only into each child repo; `pvd drift` fails loud
+   if a projection goes stale (the standing seam-check).
 
 ## Tiering (proportionality)
 

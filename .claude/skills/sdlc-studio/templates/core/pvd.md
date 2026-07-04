@@ -30,10 +30,10 @@ the sections below the "Opt-in" line are only for genuinely large, multi-team pr
 
 ## 3. Master Feature Inventory
 
-Each product feature maps to its **owning repo** and that repo's **PRD feature** - the
-traceability `product reconcile` checks. Do not restate the feature spec; link to it.
+Each product feature maps to its **owning repo** and the **CR/RFC/PRD artefact** that lands
+it - reviewed in the `review` cadence. Do not restate the feature spec; link to it.
 
-| PF ID | Feature | Owning repo | Child PRD feature | Priority | Status | Target release |
+| PF ID | Feature | Owning repo | Child CR/RFC/PRD artefact | Priority | Status | Target release |
 | --- | --- | --- | --- | --- | --- | --- |
 | {{pf_id}} | {{feature}} | {{repo}} | {{repo}}:{{prd_feature_id}} | {{priority}} | {{status}} | {{release}} |
 

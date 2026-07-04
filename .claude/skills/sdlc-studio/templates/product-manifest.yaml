@@ -1,14 +1,13 @@
 # sdlc-studio/product/manifest.yaml - the repos that form this product.
-# Lives beside the master PVD. Read by `pvd sync` (read-only projection into each repo)
-# and `product reconcile` (cross-repo feature-map traceability). Degrades if a repo is
-# absent - it is a coordination manifest, not a hard dependency.
+# Lives beside the master PVD. Read by `pvd sync` (read-only projection into each repo).
+# Degrades if a repo is absent - it is a coordination manifest, not a hard dependency.
 
 product: {{product_name}}
 master_pvd: sdlc-studio/product/pvd.md     # the one writable master PVD
 
 repos:
   - id: {{repo_id}}          # short id used in PF feature-map refs (e.g. repo-a:F0007)
-    path: ../{{repo_dir}}    # sibling local path (dev / local product reconcile)
+    path: ../{{repo_dir}}    # sibling local path (dev / local pvd drift)
     url: {{git_url}}         # remote (CI / shallow clone)
   # - id: repo-b
   #   path: ../another-repo

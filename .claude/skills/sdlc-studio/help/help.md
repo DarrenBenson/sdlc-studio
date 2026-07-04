@@ -76,7 +76,7 @@ catalogue and worked workflows below cover every tool.
 | --- | --- |
 | `/sdlc-studio sprint <batch> --goal <rung>` | Goal-Driven Development loop: drive a prioritised tranche along the **goal ladder** `triage -> plan -> design -> done` (cumulative stop-points; natural language maps to the furthest rung). The primary delivery workflow |
 | `/sdlc-studio decisions add` / `list` / `promote` | Project decisions log (the project spine + delegated-agent handoff context): append a decision, list them, or promote a resolved open question |
-| `/sdlc-studio pvd create` / `pvd sync` / `product reconcile` | Product Vision Document: the multi-repo product layer above the PRD |
+| `/sdlc-studio pvd create` / `pvd sync` / `pvd drift` | Product Vision Document: the multi-repo product layer above the PRD |
 | `/sdlc-studio gate` | Portable, ecosystem-neutral CI quality gate over the deterministic checks |
 | `/sdlc-studio deploy` | Orchestrate-only deploy last-mile: gate, verify, record (operator-triggered, never autonomous) |
 | `/sdlc-studio skill-update` | Upgrade the **installed skill** to a newer SDLC Studio release (one of three "upgrade" surfaces - see `reference-upgrade.md#three-upgrades`) |

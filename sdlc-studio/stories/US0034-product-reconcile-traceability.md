@@ -1,6 +1,10 @@
 # US0034: product reconcile - cross-repo feature-map traceability
 
-> **Status:** Done
+> **Retired 2026-07-04 (CR-0142).** The tool this story shipped (`product_reconcile.py`) is removed -
+> it never produced a true trace against a real PVD. Feature-map integrity is now a `review`-cadence
+> job; `pvd sync` / `pvd drift` are the working cross-repo tooling. Shipped 2026-06-21, now Superseded.
+>
+> **Status:** Superseded
 > **Epic:** [EP0008: Tooling & Scripts](../epics/EP0008-tooling-scripts.md)
 > **Owner:** Autosprint (CR0049)
 > **Reviewer:** --
