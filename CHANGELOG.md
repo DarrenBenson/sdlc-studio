@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Verified lines land in canonical order (BG0051).** verify_ac applied multiple
+  write-backs top-down from a single parse, so each insertion shifted every later
+  AC's cached line indices - Verified lines drifted one line earlier per prior
+  insert (the Given/Verified/When misordering in US0051-54). Write-backs now
+  apply bottom-up, leaving earlier indices valid; the four affected stories were
+  repaired by strip-and-regenerate through the fixed tool.
+
 - **status/hint surface a concurrent-session advisory (CR0150).** When the
   sdlc-studio/ workspace carries uncommitted or untracked artifact changes, the
   re-anchoring commands print one advisory line naming the artifact ids -

@@ -38,16 +38,16 @@
 - **Given** no mutation-report on disk
 - **When** gate runs
 - **Then** the lane reports not-run (advisory), never PASS
-- **Verified:** yes (2026-07-04)
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_gate.py' -k test_absent_report_is_not_run
+- **Verified:** yes (2026-07-04)
 
 ### AC3: the discipline prose links to the executable gate
 
 - **Given** the assertion-integrity sections
 - **When** read
-- **Verified:** yes (2026-07-04)
 - **Then** reference-test-best-practices.md#mutation-check and reference-verify.md name mutation.py as the enforcement, and a help file documents the lanes
 - **Verify:** shell grep -q 'mutation.py' .claude/skills/sdlc-studio/reference-test-best-practices.md && grep -q 'mutation' .claude/skills/sdlc-studio/reference-verify.md && test -f .claude/skills/sdlc-studio/help/mutation.md
+- **Verified:** yes (2026-07-04)
 
 ### AC4: a stale report never reads PASS
 

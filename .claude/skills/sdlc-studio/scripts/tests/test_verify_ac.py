@@ -470,6 +470,39 @@ class EvalVerbTests(unittest.TestCase):
             shutil.rmtree(tmp, ignore_errors=True)
 
 
+class CanonicalPlacementTests(unittest.TestCase):
+    """BG0051: multiple insertions in one run must not shift later blocks - every
+    new Verified line lands directly after its own AC's Verify line."""
+
+    STORY = (
+        "# US0009: multi\n\n## Acceptance Criteria\n\n"
+        "### AC1: a\n- **Given** g\n- **When** w\n- **Then** t\n"
+        "- **Verify:** shell true\n\n"
+        "### AC2: b\n- **Given** g\n- **When** w\n- **Then** t\n"
+        "- **Verify:** shell true\n\n"
+        "### AC3: c\n- **Given** g\n- **When** w\n- **Then** t\n"
+        "- **Verify:** shell true\n"
+    )
+
+    def test_all_inserted_verified_lines_follow_their_verify_lines(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            story = sd / "US0009-multi.md"
+            story.write_text(self.STORY, encoding="utf-8")
+            rc = verify_ac.main(["run", "--story", str(story), "--repo-root", str(root),
+                                 "--report", str(root / ".local" / "r.json")])
+            self.assertEqual(rc, 0)
+            lines = story.read_text(encoding="utf-8").splitlines()
+            verified_idx = [i for i, l in enumerate(lines) if "**Verified:**" in l]
+            self.assertEqual(len(verified_idx), 3)
+            for i in verified_idx:
+                self.assertIn("**Verify:**", lines[i - 1],
+                              f"Verified at line {i} does not follow its Verify:\n" +
+                              "\n".join(lines))
+
+
 class RunnerAvailabilityTests(unittest.TestCase):
     """CR0145: a Verify runner absent from THIS machine's PATH draws an advisory
     note that owns the author-vs-CI ambiguity - never a block."""

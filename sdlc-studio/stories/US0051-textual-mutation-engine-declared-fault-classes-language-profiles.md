@@ -43,24 +43,24 @@
 - **Given** a Python file containing a guard, a return, an assignment, and a function body
 - **When** each class's mutation is applied
 - **Then** the guard is negated, the return delivers None, the assignment delivers None, and the mapper body short-circuits - one mutation at a time
-- **Verified:** yes (2026-07-04)
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_mutation.py' -k test_each_class_mutates_python
+- **Verified:** yes (2026-07-04)
 
 ### AC3: apply/restore round-trip is loss-free
 
 - **Given** any applied mutation
 - **When** the engine restores
-- **Verified:** yes (2026-07-04)
 - **Then** the file is byte-identical to the original, including after a runner exception
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_mutation.py' -k test_restore_is_byte_identical
+- **Verified:** yes (2026-07-04)
 
 ### AC4: uncovered language reports un-checked, never passed
 
 - **Given** a file whose extension has no profile for a fault class
-- **Verified:** yes (2026-07-04)
 - **When** the engine enumerates
 - **Then** that (file, class) pair appears in the un-checked list with a reason
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_mutation.py' -k test_uncovered_language_unchecked
+- **Verified:** yes (2026-07-04)
 
 ### AC5: JS/Go profiles enumerate only valid-mutant forms
 

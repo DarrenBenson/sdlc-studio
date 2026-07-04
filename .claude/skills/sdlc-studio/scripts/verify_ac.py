@@ -453,6 +453,7 @@ def verify_story(
     lines = text.splitlines()
     blocks = parse_story(text)
     report = StoryReport(path=str(story_path), ac_count=len(blocks))
+    pending: list = []  # (block, new_state) - applied bottom-up after the loop
 
     for block in blocks:
         # No verifier, or a human-checked AC authored as `Verify: manual ...` -> count it MANUAL,
@@ -475,7 +476,7 @@ def verify_story(
                 report.flips.append({"ac": block.ac_id, "old_state": block.verified_state or "none", "new_state": "yes"})
                 report.changed += 1
                 if not dry_run:
-                    lines = update_verified(lines, block, "yes")
+                    pending.append((block, "yes"))
         else:
             report.failed += 1
             report.failures.append(
@@ -494,7 +495,14 @@ def verify_story(
                 report.flips.append({"ac": block.ac_id, "old_state": "yes", "new_state": "no"})
                 report.changed += 1
                 if not dry_run:
-                    lines = update_verified(lines, block, "no")
+                    pending.append((block, "no"))
+
+    # Apply write-backs BOTTOM-UP: an insertion shifts every line below it, so
+    # applying top-down from one parse compounds a one-line drift per prior
+    # insert (the Given/Verified/When misordering in the field). Reverse order
+    # leaves every earlier block's cached indices valid.
+    for block, state in sorted(pending, key=lambda bs: bs[0].heading_line, reverse=True):
+        lines = update_verified(lines, block, state)
 
     if report.changed and not dry_run:
         new_text = "\n".join(lines)

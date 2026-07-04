@@ -1,6 +1,7 @@
 # BG0051: verify_ac back-annotation inserts Verified: lines out of canonical order
 
-> **Status:** Open
+> **Status:** Closed
+> **Verification depth:** functional (regression: 3-AC multi-insert canonical order; live: US0051-54 repaired and re-verified 0 misplaced)
 > **Severity:** low
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio file
@@ -23,3 +24,4 @@ insert_after must always resolve to the Verify line's index when one exists in t
 | --- | --- | --- |
 | 2026-07-04 | audit | Filed |
 | 2026-07-04 | operator | Review: CONFIRMED with live evidence (US0051 AC2/AC3/AC4 show three distinct wrong positions; AC1 with Verify-last is correct - matches the insert_after root cause). Low, well-diagnosed; the one-off reorder pass endorsed |
+| 2026-07-04 | claude | Fixed - root cause REFINED from the filed hypothesis: insert_after resolves correctly at parse; the drift came from applying multiple insertions top-down from ONE parse, shifting every later block's cached indices by one per prior insert (matches the 1/2/3-early pattern exactly). Write-backs now apply bottom-up. US0051-54 repaired by strip + regenerate; 0 misplaced. Regression seen RED first |

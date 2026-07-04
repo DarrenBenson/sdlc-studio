@@ -40,24 +40,24 @@
 - **Given** a completed run
 - **When** the report is read back
 - **Then** it carries per-mutation verdicts, the un-checked list, and a summary whose counts equal the records
-- **Verified:** yes (2026-07-04)
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_mutation.py' -k test_report_shape_and_counts
+- **Verified:** yes (2026-07-04)
 
 ### AC3: survivors exit non-zero
 
 - **Given** a run with at least one survived mutation
 - **When** the CLI returns
-- **Verified:** yes (2026-07-04)
 - **Then** the exit code is non-zero and the survivor is named in the output
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_mutation.py' -k test_survivor_exits_nonzero
+- **Verified:** yes (2026-07-04)
 
 ### AC4: a runner error is reported, never counted as killed
 
 - **Given** a test command that itself crashes (not a test failure)
-- **Verified:** yes (2026-07-04)
 - **When** the run completes
 - **Then** the mutation records verdict error and the summary separates it from killed
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_mutation.py' -k test_runner_error_not_a_kill
+- **Verified:** yes (2026-07-04)
 
 ### AC5: unviable mutants are never counted killed
 

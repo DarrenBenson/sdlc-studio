@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 1 |
+| Open | 0 |
 | In Progress | 0 |
 | Fixed | 0 |
 | Verified | 0 |
-| Closed | 51 |
+| Closed | 52 |
 | Won't Fix | 0 |
 | Superseded | 0 |
 | **Total** | **52** |
@@ -69,5 +69,5 @@
 | [BG0048](BG0048-provenance-remake-mass-backfills-artifacts-the-adopt-after.md) | provenance remake mass-backfills artifacts the adopt_after cutoff exempts, and double-stamps a non-tool Created-by | Closed | low | 2026-07-04 | 2026-07-04 |
 | [BG0049](BG0049-ts-check-ac-matrix-parser-bleeds-into-later.md) | ts-check AC-matrix parser bleeds into later tables (Revision History rows read as AC rows) | Closed | medium | 2026-07-04 | 2026-07-04 |
 | [BG0050](BG0050-file-finding-doubles-the-ac-checkbox-when-the.md) | file_finding doubles the AC checkbox when the caller supplies one | Closed | low | 2026-07-04 | 2026-07-04 |
-| [BG0051](BG0051-verify-ac-back-annotation-inserts-verified-lines-out.md) | verify_ac back-annotation inserts Verified: lines out of canonical order | Open | low | 2026-07-04 | 2026-07-04 |
+| [BG0051](BG0051-verify-ac-back-annotation-inserts-verified-lines-out.md) | verify_ac back-annotation inserts Verified: lines out of canonical order | Closed | low | 2026-07-04 | 2026-07-04 |
 | [BG0052](BG0052-telemetry-is-never-recorded-by-the-delivery-loop.md) | telemetry is never recorded by the delivery loop: transition-to-terminal bypasses artifact close | Closed | medium | 2026-07-04 | 2026-07-04 |

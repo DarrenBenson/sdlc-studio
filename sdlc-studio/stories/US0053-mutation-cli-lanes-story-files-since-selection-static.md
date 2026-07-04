@@ -41,16 +41,16 @@
 - **Given** more enumerable mutations than the ceiling
 - **When** the run completes
 - **Then** exactly N are applied and the report's truncated count carries the remainder
-- **Verified:** yes (2026-07-04)
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_mutation.py' -k test_ceiling_truncates_loudly
+- **Verified:** yes (2026-07-04)
 
 ### AC3: the pre-filter flags assertion-free tests
 
 - **Given** one test file with assertions and one without
 - **When** prefilter runs
-- **Verified:** yes (2026-07-04)
 - **Then** only the assertion-free file is listed
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_mutation.py' -k test_prefilter_flags_assertion_free
+- **Verified:** yes (2026-07-04)
 
 ### AC4: the story lane resolves the epic/CR Affects chain
 
@@ -65,8 +65,8 @@
 - **Given** a repo with a committed base and a brand-new untracked module
 - **When** run with --since
 - **Then** the untracked module is in the surface (new-file work is never silently dropped)
-- **Verified:** yes (2026-07-04)
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_mutation.py' -k test_since_includes_untracked_files
+- **Verified:** yes (2026-07-04)
 
 ## Revision History
 
