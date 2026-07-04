@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Proposed
+
+- **Three CRs from a field retrospective (dogfooding agent-crew).** CR0132 - reconcile status
+  vocabulary must be project-configurable (a `Built` status made `detect` drift-0 structurally
+  unreachable in a consuming project). CR0133 - surface a canonical non-interactive
+  `artifact.py new` create path in consuming projects so agents stop hand-allocating ids when the
+  interactive flow is unavailable. CR0134 - an executable mutation-check / test-quality gate
+  (epic-sized, RFC-first) to *enforce* the CR0131 assertion-integrity discipline rather than only
+  document it - the skill's biggest blind spot (strong on document integrity, near-silent on test
+  integrity).
+
 ### Added
 
 - **Assertion-integrity discipline + mutation-check gate (CR0131).** The skill taught verification
