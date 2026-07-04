@@ -22,6 +22,14 @@ than patched one call site at a time until a fourth instance appears.
 | CR0153 | `reconcile.py` status-column detect | header cell `== "status"` | `Effective Status` | 302 false `status-mismatch` |
 | CR0154 | `sdlc_md.artifact_files` companion skip | stem endswith `-consultations` | `-decisions` companion | false `no-status` + `duplicate-id` |
 | CR0155 | `audit._bug_underspecified` | `## proposed fix` / `## steps to reproduce` | `## Fix (proposed)` / `## Symptom`+`## Root cause` | `0/6 ready`, all "underspecified" |
+| (write-path) | `artifact.py new --type bug` scaffold | emits the skill's `templates/core/bug.md` | project's house template (`## Symptom`/`## Root cause`/`## Fix (proposed)`) | scaffold is mis-shaped, then CR0155's audit *rejects the scaffold it just wrote* |
+
+The last row is the **write-path sibling of CR0155**: `artifact.py new` scaffolds the *skill's* bug
+template regardless of the project's house template, so a consuming project gets a mis-shaped file
+that the audit (read-path) then flags - a closed loop of the same convention gap. The tolerant layer
+must therefore cover **template resolution** too: `new`/`batch` should scaffold the project's declared
+template (a `conventions.templates` entry, Option A) or fall back to the skill default. It is not just
+a read-time matching problem; the write side plants the mismatch.
 
 Related, older: CR0141 (product_reconcile's `repo:featureid` token shape), CR0144 (per-parser
 table-boundary detection). The through-line: **the skill encodes one house convention as a literal,
@@ -75,3 +83,4 @@ variation is a config line, not a fourth CR.
 | --- | --- | --- |
 | 2026-07-04 | Claude (cross-project dogfooding) | Created via `new` (deterministic) |
 | 2026-07-04 | Claude (cross-project dogfooding) | Drafted from three same-session dogfooding gates (CR0153/54/55, +CR0141/44 lineage): propose a shared tolerant convention layer (config + normalised match behind one classifier) to retire the exact-string-gate class. |
+| 2026-07-04 | Claude (cross-project dogfooding) | Added the write-path sibling: `artifact.py new` scaffolds the skill template not the project's, so the scaffold fails CR0155's audit - the tolerant layer must cover template resolution, not just read-time matching. Found executing a sprint (filing BG0143). |

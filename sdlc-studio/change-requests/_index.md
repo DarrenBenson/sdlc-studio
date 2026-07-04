@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 5 |
+| Proposed | 6 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 146 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 4 |
 | Blocked | 0 |
-| **Total** | **155** |
+| **Total** | **156** |
 
 ## All Changes
 
@@ -175,3 +175,4 @@
 | [CR-0153](CR0153-reconcile-diagnoses-a-mis-named-absent-status-column.md) | reconcile diagnoses a mis-named/absent Status column once, not N per-row false mismatches | Proposed | High | Improvement | 2026-07-04 | -- |
 | [CR-0154](CR0154-companion-doc-recognition-is-a-single-hard-coded.md) | companion-doc recognition is a single hard-coded suffix; any other companion trips validate + duplicate-id | Proposed | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0155](CR0155-audit-bug-readiness-matches-exact-headings-house-templates.md) | audit bug-readiness matches exact headings; house templates (Symptom/Root cause/Fix (proposed)) read as underspecified | Proposed | Medium | Improvement | 2026-07-04 | -- |
+| [CR-0156](CR0156-map-the-verification-depth-tiers-onto-a-fixed.md) | map the verification-depth tiers onto a Fixed to Verified bug progression (define the dormant Verified status) | Proposed | Medium | Improvement | 2026-07-04 | -- |
