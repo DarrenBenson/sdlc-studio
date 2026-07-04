@@ -1,6 +1,6 @@
 # CR-0150: status/hint surface an advisory when the workspace carries artifact changes this session did not make
 
-> **Status:** Approved
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-04
@@ -22,3 +22,4 @@ Two sessions worked this repo's workspace concurrently on 2026-07-04: one filed 
 | --- | --- | --- |
 | 2026-07-04 | audit | Raised |
 | 2026-07-04 | operator | Review: SOLID - provenance accurate (the reviewer is the session that tripped over the gate failure); advisory-in-status/hint is the right cheap place; Medium fair since agents re-anchor via status/hint, not raw git |
+| 2026-07-04 | claude | Delivered: workspace_advisory in status.py, wired into pillars + hint text output (json untouched); ids named, no authorship guessed, silent without git or on a clean workspace. 4 tests seen RED first. Depth: functional |

@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **status/hint surface a concurrent-session advisory (CR0150).** When the
+  sdlc-studio/ workspace carries uncommitted or untracked artifact changes, the
+  re-anchoring commands print one advisory line naming the artifact ids -
+  "another session may be mid-flight" - instead of the next session discovering
+  the collision by gate failure. Informational only; no authorship guesses;
+  degrades silently without git.
+
 - **Terminal transitions record telemetry (BG0052).** The delivery loop closes
   units via `transition.py`, but telemetry only fired in `artifact close` - which
   the loop never calls - so three full sprints recorded zero events and the

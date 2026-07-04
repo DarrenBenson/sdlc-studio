@@ -41,6 +41,34 @@ def _print_update_notice(root: str) -> None:
         pass
 
 
+def workspace_advisory(repo_root: Path | str) -> str | None:
+    """One-line advisory when the sdlc-studio/ workspace carries uncommitted or
+    untracked artifact changes - another session may be mid-flight. Informational
+    only: names the artifact ids (or files), guesses no authorship, never blocks,
+    and degrades silently when git (or a repo) is absent."""
+    import subprocess
+    root = Path(repo_root)
+    try:
+        proc = subprocess.run(["git", "status", "--porcelain", "--", "sdlc-studio/"],
+                              cwd=root, capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if proc.returncode != 0:
+        return None  # not a git repo - nothing to say
+    names: list[str] = []
+    for line in proc.stdout.splitlines():
+        path = line[3:].strip().strip('"')
+        rec = sdlc_md.extract_record_id(Path(path).stem)
+        label = sdlc_md.norm_id(rec) if rec else Path(path).name
+        if label not in names:
+            names.append(label)
+    if not names:
+        return None
+    shown = ", ".join(names[:6]) + (f" (+{len(names) - 6} more)" if len(names) > 6 else "")
+    return (f"workspace has uncommitted artifact changes: {shown} - "
+            f"another session may be mid-flight; check before filing or planning")
+
+
 def _config_summary(repo_root: Path) -> dict | None:
     """Representative defaults read from config-defaults.yaml.
 
@@ -144,7 +172,10 @@ def cmd_pillars(args: argparse.Namespace) -> int:
     data = gather(Path(args.root).resolve())
     if args.format == "json":
         print(json.dumps(data, indent=2))
-        return 0
+        adv = workspace_advisory(Path(args.root))
+    if adv and args.format != "json":
+        print(f"advisory: {adv}")
+    return 0
     req = data["requirements"]
     print(f"Requirements: PRD={'yes' if req['prd'] else 'no'} "
           f"personas={'yes' if req['personas'] else 'no'} "
@@ -198,6 +229,9 @@ def cmd_hint(args: argparse.Namespace) -> int:
     else:
         print(f"/sdlc-studio {hint['next_command']}  ({hint['reason']})")
         _print_update_notice(args.root)
+    adv = workspace_advisory(Path(args.root))
+    if adv and args.format != "json":
+        print(f"advisory: {adv}")
     return 0
 
 

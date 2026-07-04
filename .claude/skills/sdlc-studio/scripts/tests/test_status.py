@@ -124,5 +124,55 @@ class VerifyLaneTests(unittest.TestCase):
             self.assertFalse(lane["has_report"])
 
 
+class WorkspaceAdvisoryTests(unittest.TestCase):
+    """CR0150: status/hint surface uncommitted workspace artifact changes as a
+    one-line advisory naming ids - informational, never blocking, no authorship
+    guesses, silent without git."""
+
+    def _repo(self, d: Path) -> Path:
+        import subprocess
+        root = Path(d)
+        cd = root / "sdlc-studio" / "change-requests"
+        cd.mkdir(parents=True)
+        (cd / "CR0001-a.md").write_text("# CR-0001: a\n\n> **Status:** Proposed\n",
+                                        encoding="utf-8")
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+        subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
+                        "commit", "-qm", "base"], cwd=root, check=True)
+        return root
+
+    def test_uncommitted_artifact_changes_are_named(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            cd = root / "sdlc-studio" / "change-requests"
+            (cd / "CR0001-a.md").write_text("# CR-0001: a\n\n> **Status:** Approved\n",
+                                            encoding="utf-8")          # modified
+            (cd / "CR0002-b.md").write_text("# CR-0002: b\n\n> **Status:** Proposed\n",
+                                            encoding="utf-8")          # untracked
+            adv = status.workspace_advisory(root)
+            self.assertIsNotNone(adv)
+            self.assertIn("CR0001", adv)
+            self.assertIn("CR0002", adv)
+            self.assertIn("another session", adv)   # awareness wording, no authorship claim
+
+    def test_clean_workspace_no_advisory(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            self.assertIsNone(status.workspace_advisory(root))
+
+    def test_no_git_degrades_silently(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            self.assertIsNone(status.workspace_advisory(root))
+
+    def test_changes_outside_workspace_ignored(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            (root / "README.md").write_text("x\n", encoding="utf-8")   # outside sdlc-studio/
+            self.assertIsNone(status.workspace_advisory(root))
+
+
 if __name__ == "__main__":
     unittest.main()
