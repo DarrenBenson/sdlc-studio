@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 3 |
+| Proposed | 4 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 146 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 4 |
 | Blocked | 0 |
-| **Total** | **153** |
+| **Total** | **154** |
 
 ## All Changes
 
@@ -173,3 +173,4 @@
 | [CR-0151](CR0151-sprint-plan-names-the-provenance-of-its-seat.md) | sprint plan names the provenance of its seat scores (which units were scored, and when) | Proposed | Low | Improvement | 2026-07-04 | -- |
 | [CR-0152](CR0152-mutation-summary-states-its-sampling-coverage-explicitly.md) | mutation summary states its sampling coverage explicitly | Proposed | Low | Improvement | 2026-07-04 | -- |
 | [CR-0153](CR0153-reconcile-diagnoses-a-mis-named-absent-status-column.md) | reconcile diagnoses a mis-named/absent Status column once, not N per-row false mismatches | Proposed | High | Improvement | 2026-07-04 | -- |
+| [CR-0154](CR0154-companion-doc-recognition-is-a-single-hard-coded.md) | companion-doc recognition is a single hard-coded suffix; any other companion trips validate + duplicate-id | Proposed | Medium | Improvement | 2026-07-04 | -- |
