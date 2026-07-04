@@ -77,8 +77,47 @@ def cmd_record(args: argparse.Namespace) -> int:
     return 0
 
 
+def summarise(records: list[dict]) -> dict:
+    """Per-type aggregates over the raw records: count, mean iterations, mean wall
+    time, reopen rate, verdict mix. A field absent from every record of a type is
+    None, never a fabricated 0 - the summary reports what was measured."""
+    out: dict = {}
+    for rec in records:
+        t = rec.get("type") or "unknown"
+        b = out.setdefault(t, {"count": 0, "_iters": [], "_wall": [],
+                               "_reopened": [], "verdicts": {}})
+        b["count"] += 1
+        if isinstance(rec.get("iterations"), (int, float)):
+            b["_iters"].append(rec["iterations"])
+        if isinstance(rec.get("wall_time_s"), (int, float)):
+            b["_wall"].append(rec["wall_time_s"])
+        if rec.get("reopened") is not None:
+            b["_reopened"].append(str(rec["reopened"]).strip().lower() in ("yes", "true", "1"))
+        v = rec.get("critic_verdict")
+        if v:
+            b["verdicts"][v] = b["verdicts"].get(v, 0) + 1
+    for b in out.values():
+        iters, wall, reop = b.pop("_iters"), b.pop("_wall"), b.pop("_reopened")
+        b["mean_iterations"] = round(sum(iters) / len(iters), 2) if iters else None
+        b["mean_wall_time_s"] = round(sum(wall) / len(wall), 2) if wall else None
+        b["reopen_rate"] = round(sum(reop) / len(reop), 3) if reop else None
+    return out
+
+
 def cmd_show(args: argparse.Namespace) -> int:
     recs = read_all(args.root)
+    if getattr(args, "summary", False):
+        s = summarise(recs)
+        if args.format == "json":
+            print(json.dumps(s, indent=2))
+        else:
+            print(f"{len(recs)} record(s), {len(s)} type(s)")
+            for t, b in sorted(s.items()):
+                verdicts = ", ".join(f"{k}:{n}" for k, n in sorted(b["verdicts"].items())) or "-"
+                print(f"  {t:8} count={b['count']} mean_iterations={b['mean_iterations']} "
+                      f"mean_wall_time_s={b['mean_wall_time_s']} "
+                      f"reopen_rate={b['reopen_rate']} verdicts[{verdicts}]")
+        return 0
     print(json.dumps(recs, indent=2) if args.format == "json" else f"{len(recs)} record(s)")
     return 0
 
@@ -94,6 +133,8 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--root", default="."); r.add_argument("--format", choices=("text", "json"), default="text")
     r.set_defaults(func=cmd_record)
     s = sub.add_parser("show", help="Print recorded records.")
+    s.add_argument("--summary", action="store_true",
+                   help="aggregate per type: count, mean iterations/wall-time, reopen rate, verdict mix")
     s.add_argument("--root", default="."); s.add_argument("--format", choices=("text", "json"), default="text")
     s.set_defaults(func=cmd_show)
     return p

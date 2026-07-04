@@ -58,12 +58,12 @@ Make the trace resolver **artifact-aware**, not prd.md-only, and make an unparse
       raises `orphan-feature`.
 - [ ] PF rows present but none parsed -> a **blocking** finding + non-zero exit (was silent warn + exit 0);
       regression test seen to fail before the fix (mutation-checked).
-- [ ] `product_reconcile` on the the consuming product PVD+manifest exits 0 only when every PF traces; injecting
+- [ ] `product_reconcile` on the consuming product PVD+manifest exits 0 only when every PF traces; injecting
       a dangling `crew:CR-9999` makes it exit non-zero.
 
 ## Notes / provenance
 
-Found while wiring the the consuming product Phase-3 standing coordination (five-repo PVD projection + drift).
+Found while wiring the consuming product Phase-3 standing coordination (five-repo PVD projection + drift).
 `pvd drift` is already a working loud gate (exit 1 on a stale projection; read-only projections);
 `product_reconcile` was the intended *feature-map* half of the cadence and is the piece that does not
 yet bite. Until this lands, treat `product_reconcile` as advisory and rely on `pvd drift` for the

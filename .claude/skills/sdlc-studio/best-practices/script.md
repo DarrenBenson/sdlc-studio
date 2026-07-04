@@ -185,6 +185,27 @@ Brief description.
 ./scripts/script-name.sh [options]
 ```
 
+## Subcommand verb taxonomy
+
+New CLIs pick verbs from this table (guidance for NEW commands only - no renames of
+shipped verbs). One verb per meaning keeps 40+ script surfaces guessable:
+
+| Verb | Meaning | Existing examples |
+| --- | --- | --- |
+| `check` | read-only validation; non-zero exit on findings | validate, conformance, audit, provenance |
+| `detect` | read-only drift/finding enumeration (richer report than check) | reconcile |
+| `apply` | perform the fixes `detect` found; idempotent | reconcile |
+| `run` | execute the tool's main effectful job | verify_ac, mutation |
+| `record` | append one event/verdict to a log | telemetry, critic |
+| `show` | print recorded state (add `--summary` for aggregates) | telemetry |
+| `list` | enumerate artifacts/entries | lessons, plan |
+| `new` / `batch` | create one artifact / many atomically | artifact |
+| `set` | one gated state change | transition |
+| `sweep` | scan for state that can now advance | blocker_sweep |
+
+Prefer an existing verb over a synonym (`scan`, `exec`, `emit`, `report` as a verb);
+if none fits, add the new verb here in the same change.
+
 **Options:**
 - `--dry-run` - Preview only
 - `--verbose` - More output

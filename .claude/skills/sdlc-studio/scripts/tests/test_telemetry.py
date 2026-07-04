@@ -73,5 +73,46 @@ class RecordTests(unittest.TestCase):
             self.assertEqual(rec["tokens"], 1234)
 
 
+class SummaryTests(unittest.TestCase):
+    """show --summary aggregates the jsonl into readable per-type stats."""
+
+    def _seed(self, d):
+        for rec in ({"id": "US0001", "type": "story", "iterations": 2, "wall_time_s": 100,
+                     "critic_verdict": "approve", "reopened": "no"},
+                    {"id": "US0002", "type": "story", "iterations": 4, "wall_time_s": 300,
+                     "critic_verdict": "reject", "reopened": "yes"},
+                    {"id": "CR0001", "type": "cr", "iterations": 1,
+                     "critic_verdict": "approve"}):
+            tel.record(d, rec)
+
+    def test_summarise_per_type(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self._seed(d)
+            s = tel.summarise(tel.read_all(d))
+            self.assertEqual(s["story"]["count"], 2)
+            self.assertEqual(s["story"]["mean_iterations"], 3.0)
+            self.assertEqual(s["story"]["mean_wall_time_s"], 200.0)
+            self.assertEqual(s["story"]["reopen_rate"], 0.5)
+            self.assertEqual(s["story"]["verdicts"], {"approve": 1, "reject": 1})
+            self.assertEqual(s["cr"]["count"], 1)
+            self.assertIsNone(s["cr"]["mean_wall_time_s"])  # absent field -> None, not 0
+
+    def test_summary_empty_is_empty(self) -> None:
+        self.assertEqual(tel.summarise([]), {})
+
+    def test_cli_summary_flag(self) -> None:
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            self._seed(d)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = tel.main(["show", "--summary", "--root", d])
+            self.assertEqual(rc, 0)
+            out = buf.getvalue()
+            self.assertIn("story", out)
+            self.assertIn("mean_iterations", out.replace(" ", "").replace("=", "_")
+                          if "mean_iterations" not in out else out)
+
+
 if __name__ == "__main__":
     unittest.main()

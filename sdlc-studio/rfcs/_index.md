@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 1 |
+| Draft | 0 |
 | In Review | 0 |
-| Accepted | 18 |
+| Accepted | 19 |
 | Superseded | 0 |
 | Withdrawn | 3 |
 | **Total** | **22** |
@@ -34,7 +34,7 @@
 | [RFC-0015](RFC0015-product-vision-document-multi-repo.md) | Product Vision Document - the multi-repo product layer | High | Accepted | -- | 2026-06-21 | CR0047-CR0049 |
 | [RFC-0016](RFC0016-persona-engine-v2-charters-subagents.md) | Persona engine v2 - substrate-tiered review seats (charter / authored identity) | High | Accepted | -- | 2026-06-21 | -- |
 | [RFC-0017](RFC0017-cooper-goal-directed-persona-model-the-canonical-persona.md) | Cooper goal-directed persona model the canonical persona model | High | Accepted | Darren Benson | 2026-06-21 | -- |
-| [RFC-0018](RFC0018-self-check-candidates-vocabulary-consistency-verb-taxonomy-and.md) | self-check candidates vocabulary-consistency verb-taxonomy and telemetry surfacing | Medium | Draft | -- | 2026-06-22 | -- |
+| [RFC-0018](RFC0018-self-check-candidates-vocabulary-consistency-verb-taxonomy-and.md) | self-check candidates vocabulary-consistency verb-taxonomy and telemetry surfacing | Medium | Accepted | -- | 2026-06-22 | -- |
 | [RFC-0019](RFC0019-authoring-autosprint-a-guardrailed-prd-to-epics-to.md) | authoring autosprint - a guardrailed PRD to epics to stories loop (greenfield first-mile) | Medium | Accepted | sdlc | 2026-06-24 | -- |
 | [RFC-0020](RFC0020-maximise-persona-use-persona-shaped-delegation-across-the.md) | Maximise persona use - persona-shaped delegation across the SDLC lifecycle | High | Accepted | operator vision | 2026-06-25 | -- |
 | [RFC-0021](RFC0021-resolve-the-seats-and-amigos-duality-one-role.md) | resolve the seats and amigos duality - one role-based actor model | Medium | Accepted | field | 2026-06-25 | CR0120 |

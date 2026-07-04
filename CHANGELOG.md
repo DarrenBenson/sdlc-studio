@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **RFC-0018 closed as accept-reduced (operator decision D0004).** `telemetry show
+  --summary` aggregates the run log per type (count, mean iterations, mean wall
+  time, reopen rate, verdict mix - a field never measured reports None, not a
+  fabricated 0), replacing the raw-dump-only view; `best-practices/script.md`
+  gains the subcommand verb taxonomy (guidance for new commands, no renames).
+  The cross-file vocabulary-consistency checker is declined: zero repeat
+  incidents in two releases, and a recurrence's right home is a declared
+  `constitution.md` rule, which now exists.
+
 - **The executable mutation-check gate ships (CR0134 / RFC-0022 / EP0011).** The
   skill's named biggest blind spot is now enforced, not prose: `scripts/mutation.py`
   applies a declared, bounded fault set (invert-guard, stub-return-null,
