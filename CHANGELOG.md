@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   template - and an index row where a meta index exists), retiring the last
   hand-authored artifact class; `transition` refuses meta ids with a message
   naming why they sit outside the status machinery.
+  Close-of-sprint critic fixes: batch json stdout stays pure (summary to stderr),
+  the meta-index insertion is bounded to the data table, and the gate's hash paths
+  resolve against --root.
 
 - **WSJF's no-seat fallback divides by the neutral default (CR0149).** The
   complexity signal - the cognitive complexity of the existing files a unit

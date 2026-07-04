@@ -275,7 +275,8 @@ def cmd_set(args: argparse.Namespace) -> int:
     if args.format == "json":
         print(json.dumps(results if args.ids else results[0], indent=2))
     if len(ids) > 1:
-        print(f"batch: {len(ids) - refused}/{len(ids)} transitioned, {refused} blocked")
+        out = sys.stderr if args.format == "json" else sys.stdout
+        print(f"batch: {len(ids) - refused}/{len(ids)} transitioned, {refused} blocked", file=out)
     return 1 if refused else 0
 
 

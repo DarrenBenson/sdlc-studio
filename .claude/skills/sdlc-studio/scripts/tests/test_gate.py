@@ -329,3 +329,26 @@ class MutationLaneTests(unittest.TestCase):
             lane = report["checks"][0]
             self.assertNotEqual(lane["status"], "pass")
             self.assertIn("STALE", lane["detail"])
+
+    def test_hash_staleness_resolves_against_root_not_cwd(self) -> None:
+        # critic finding: relative target paths must resolve against --root
+        import os, tempfile, hashlib, json as _json
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t) / "proj"
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            target = root / "code.py"
+            target.write_text("x = 2\n", encoding="utf-8")
+            h = hashlib.sha256(target.read_bytes()).hexdigest()
+            (root / "sdlc-studio" / ".local" / "mutation-report.json").write_text(_json.dumps(
+                {"target_hashes": {"code.py": h},
+                 "summary": {"applied": 1, "killed": 1, "survived": 0,
+                             "errors": 0, "unviable": 0, "truncated": 0}}), encoding="utf-8")
+            old_cwd = os.getcwd()
+            os.chdir(t)   # a sibling dir, NOT the project root
+            try:
+                report = gate.run_gate(str(root), checks={"mutation": gate._mutation})
+            finally:
+                os.chdir(old_cwd)
+            self.assertEqual(report["checks"][0]["status"], "pass",
+                             report["checks"][0]["detail"])
+

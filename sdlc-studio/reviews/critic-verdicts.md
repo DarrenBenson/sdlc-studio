@@ -111,3 +111,10 @@
 | BG0047 | APPROVE | Sam (independent critic instance) | Dani (main-loop author instance) | 2026-07-04 | - |
 | BG0048 | APPROVE | Sam (independent critic instance) | Dani (main-loop author instance) | 2026-07-04 | - |
 | BG0049 | APPROVE | Sam (independent critic instance) | Dani (main-loop author instance) | 2026-07-04 | - |
+| CR0143 | APPROVE | Sam (independent critic instance) | Dani (main-loop author instance) | 2026-07-04 | - |
+| CR0144 | APPROVE | Sam (independent critic instance) | Dani (main-loop author instance) | 2026-07-04 | - |
+| CR0145 | APPROVE | Sam (independent critic instance) | Dani (main-loop author instance) | 2026-07-04 | - |
+| CR0146 | APPROVE | Sam (independent critic instance) | Dani (main-loop author instance) | 2026-07-04 | - |
+| CR0147 | APPROVE | Sam (independent critic instance) | Dani (main-loop author instance) | 2026-07-04 | - |
+| CR0148 | APPROVE | Sam (independent critic instance) | Dani (main-loop author instance) | 2026-07-04 | - |
+| CR0149 | APPROVE | Sam (independent critic instance) | Dani (main-loop author instance) | 2026-07-04 | - |

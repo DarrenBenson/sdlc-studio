@@ -144,8 +144,9 @@ def _mutation(root: str) -> dict:
     if hashes:
         import hashlib
         for fp, recorded in hashes.items():
+            fpath = Path(fp) if Path(fp).is_absolute() else Path(root) / fp
             try:
-                current = hashlib.sha256(Path(fp).read_bytes()).hexdigest()
+                current = hashlib.sha256(fpath.read_bytes()).hexdigest()
             except OSError:
                 current = None
             if current != recorded:

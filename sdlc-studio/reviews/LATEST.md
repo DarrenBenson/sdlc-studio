@@ -5,8 +5,16 @@
 > and `sdlc-studio/retros/`; the original v2.0 unified review is `RV0001-unified-review-2026-06-20.md`.
 >
 > **Project version:** 3.3.0 (released 2026-07-04) · **Date:** 2026-07-04 ·
-> **Gates:** lint clean, 1026 script tests pass (+41 repo-only tools tests), `gate` PASS, reconcile drift 0, disclosure 0,
+> **Gates:** lint clean, 1042 script tests pass (+41 repo-only tools tests), `gate` PASS, reconcile drift 0, disclosure 0,
 > npm audit 0, CI green on main.
+> **Sprint 2026-07-C - the re-scoped seven (unreleased, on main, RETRO0008):** all 7 operator-
+> approved dogfood CRs delivered through their own new machinery: CR0144 (`iter_tables` - the
+> BG0046/BG0049 parser class retired, 4 ports with tests unmodified), CR0146 (mutation v2:
+> hash staleness, spread budget, docstring exclusion), CR0143 (`transition --ids`; retro/review
+> tool-created - RETRO0008 itself born that way), CR0145 (runner-on-PATH advisory), CR0147/48/49
+> (freshness wording, the named critic close pass, WSJF fallback). Critic: approve first pass,
+> 5 lows, 4 fixed at close (lesson L-0003: anchor on slugs, not display ids). Open backlog:
+> CR0150/CR0151 (Proposed, operator review).
 > **Sprint 2026-07-B - the mutation gate (unreleased, on main, RETRO0007):** RFC0022 Accepted
 > (D0002) and built to Done the same sprint: EP0011/US0051-54 ship `mutation.py` (killed /
 > survived / error / unviable verdicts, honest truncation + un-checked, py compile-gated

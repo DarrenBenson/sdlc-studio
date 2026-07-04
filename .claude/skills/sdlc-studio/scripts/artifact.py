@@ -219,9 +219,13 @@ def meta_new(repo_root: Path | str, type_: str, title: str, fields: dict | None 
         if hdr is not None:
             row = sdlc_md.row_from_header(hdr[1], f"[{disp}]({file_id}-{slug}.md)", title,
                                           "--", {"date": today, **f})
-            rows_after = [j for j in range(hdr[0] + 1, len(lines))
-                          if lines[j].strip().startswith("| [")]
-            pos = (max(rows_after) + 1) if rows_after else hdr[0] + 2
+            # bound the scan to the DATA table itself: stop at the first
+            # non-table line so a later link-first table never attracts the row
+            pos = hdr[0] + 2  # past header + separator
+            j = pos
+            while j < len(lines) and lines[j].strip().startswith("|"):
+                j += 1
+            pos = j
             lines.insert(pos, row)
             index_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
             indexed = True

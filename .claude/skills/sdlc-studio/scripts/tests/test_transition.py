@@ -351,6 +351,26 @@ class BatchIdsTests(unittest.TestCase):
             self.assertIn("meta", str(cm.exception).lower())
 
 
+class BatchJsonCleanTests(unittest.TestCase):
+    def test_batch_json_stdout_is_parseable(self) -> None:
+        # critic finding: the human batch summary must not pollute json stdout
+        import io, json as _json
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bd = root / "sdlc-studio" / "bugs"; bd.mkdir(parents=True)
+            (bd / "BG0001-x.md").write_text(
+                "# BG0001: a\n\n> **Status:** Open\n", encoding="utf-8")
+            (bd / "_index.md").write_text(
+                "# B\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [BG0001](BG0001-x.md) | a | Open |\n", encoding="utf-8")
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                tr.main(["set", "--ids", "BG0001,BG9999", "--status", "In Progress",
+                         "--root", str(root), "--format", "json"])
+            _json.loads(buf.getvalue())   # must be pure JSON
+
+
 class HonestSyncTests(unittest.TestCase):
     """index_synced reflects the real post-transition state (critic CR0042)."""
 

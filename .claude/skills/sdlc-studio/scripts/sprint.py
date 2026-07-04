@@ -266,9 +266,9 @@ def _order_batch(root: Path, out: list[dict], deps: dict[str, set], order: str,
             it["token_budget"] = BASE_TOKEN_BUDGET + TOKENS_PER_COGNITIVE * seed
             inp = seat_inputs.get(sdlc_md.norm_id(it["id"]))
             if inp:  # the review seats scored this unit (value / time-criticality / risk)
-                # Size preference: the Engineering seat's estimate (wsjf-inputs
-                # `size`) > the complexity seed > the declared neutral default.
-                # Unknown effort (new files, no Affects) is never size-minimal.
+                # Size = the Engineering seat's estimate (wsjf-inputs `size`),
+                # else the declared neutral default. The complexity seed is
+                # blast-radius risk (tiebreak + token budget), never the size.
                 seat_size = inp.get("size")
                 if isinstance(seat_size, (int, float)) and seat_size > 0:
                     size = seat_size

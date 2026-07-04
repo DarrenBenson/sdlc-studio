@@ -419,6 +419,24 @@ class MetaTypeTests(unittest.TestCase):
             self.assertFalse(res["indexed"])                 # no index -> honest False
             self.assertTrue(Path(res["path"]).exists())
 
+    def test_meta_row_lands_in_the_data_table_not_a_later_one(self) -> None:
+        # critic finding: a later link-first table must not attract the new row
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rd = root / "sdlc-studio" / "retros"; rd.mkdir(parents=True)
+            (rd / "_index.md").write_text(
+                "# Retro Index\n\n| ID | Sprint | Date | Delivered | Blocked |\n"
+                "| --- | --- | --- | --- | --- |\n"
+                "| [RETRO-0001](RETRO0001-a.md) | A | d | 1/1 | 0 |\n\n"
+                "## Related\n\n| Doc | Note |\n| --- | --- |\n"
+                "| [LESSONS](x.md) | summary |\n", encoding="utf-8")
+            res = artifact.meta_new(root, "retro", "New retro")
+            idx = (rd / "_index.md").read_text(encoding="utf-8").splitlines()
+            stem = Path(res["path"]).name          # unique slug, never the bare id
+            row_i = next(i for i, l in enumerate(idx) if stem in l)
+            related_i = next(i for i, l in enumerate(idx) if l.startswith("## Related"))
+            self.assertLess(row_i, related_i)   # inside the data table, not below Related
+
     def test_cli_new_accepts_retro_type(self) -> None:
         import io
         from contextlib import redirect_stdout
