@@ -312,5 +312,92 @@ class StoryLaneTests(unittest.TestCase):
             self.assertIn("brand_new.py", [p.name for p in since])
 
 
+
+
+class StalenessHashTests(unittest.TestCase):
+    """CR0146 (leads): the report records per-target content hashes so the gate
+    can tell evidence about THIS code from evidence about code that no longer
+    exists - rev-granularity alone passes on dirty trees."""
+
+    def test_report_records_target_hashes(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            r = mut.run_gate(root, [root / "target.py"],
+                             f"{sys.executable} -m unittest test_good")
+            hashes = r.get("target_hashes")
+            self.assertIsInstance(hashes, dict)
+            key = str(root / "target.py")
+            self.assertIn(key, hashes)
+            import hashlib
+            self.assertEqual(hashes[key],
+                             hashlib.sha256((root / "target.py").read_bytes()).hexdigest())
+
+
+class BudgetDistributionTests(unittest.TestCase):
+    """CR0146: the ceiling distributes round-robin over (file, class), never
+    first-N in file order."""
+
+    def test_ceiling_spreads_across_files(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            (root / "a.py").write_text(TARGET, encoding="utf-8")
+            (root / "b.py").write_text(TARGET.replace("classify", "grade"), encoding="utf-8")
+            budget = 4
+            muts, _ = mut.enumerate_mutations([root / "a.py", root / "b.py"])
+            chosen, truncated = mut.apply_budget(muts, budget)
+            files = {m["file"] for m in chosen}
+            self.assertEqual(len(chosen), budget)
+            self.assertEqual(len(files), 2)          # both files got budget
+            self.assertGreater(truncated, 0)
+
+    def test_distribution_is_deterministic(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "a.py").write_text(TARGET, encoding="utf-8")
+            (root / "b.py").write_text(TARGET.replace("classify", "grade"), encoding="utf-8")
+            muts, _ = mut.enumerate_mutations([root / "a.py", root / "b.py"])
+            one, _ = mut.apply_budget(muts, 5)
+            two, _ = mut.apply_budget(muts, 5)
+            self.assertEqual(one, two)
+
+
+class DocstringExclusionTests(unittest.TestCase):
+    """CR0146: code-shaped lines inside docstrings/multi-line strings are not
+    enumerated - they mutate nothing and false-survive."""
+
+    def test_docstring_lines_not_enumerated(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "doc.py").write_text(
+                'def compute(x):\n'
+                '    """Example:\n'
+                '        result = compute(2)\n'
+                '        if you pass a negative:\n'
+                '            return is still fine\n'
+                '    """\n'
+                '    y = x * 2\n'
+                '    return y\n', encoding="utf-8")
+            muts, _ = mut.enumerate_mutations([root / "doc.py"])
+            lines = {m["line"] for m in muts}
+            self.assertTrue(lines & {7, 8}, lines)     # real code enumerated
+            self.assertFalse(lines & {3, 4, 5}, lines) # docstring lines excluded
+
+    def test_tokenize_failure_degrades_loudly_not_silently(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "broken.py").write_text("def f(:\n    'unterminated\n", encoding="utf-8")
+            # must not raise; the skipped exclusion is NOTED, never silent
+            muts, unchecked = mut.enumerate_mutations([root / "broken.py"])
+            self.assertIsInstance(muts, list)
+            self.assertTrue(any(u.get("class") == "docstring-exclusion" for u in unchecked),
+                            unchecked)
+
+
 if __name__ == "__main__":
     unittest.main()

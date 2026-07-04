@@ -84,6 +84,24 @@ PROFILES: dict[str, dict] = {
 }
 
 
+def _multiline_string_spans(text: str) -> tuple[set, bool]:
+    """(line numbers inside multi-line string literals, tokenise_ok). Docstring
+    interiors are code-shaped but mutate nothing - enumerating them yields false
+    survivors. Single-line strings never exclude their line (real assignments
+    live there). A tokenise failure returns (empty, False): exclusion skipped,
+    enumeration proceeds, and the caller NOTES the skip - never silent."""
+    import io
+    import tokenize
+    spans: set = set()
+    try:
+        for tok in tokenize.generate_tokens(io.StringIO(text).readline):
+            if tok.type == tokenize.STRING and tok.end[0] > tok.start[0]:
+                spans.update(range(tok.start[0], tok.end[0] + 1))
+    except (tokenize.TokenError, SyntaxError, IndentationError, ValueError):
+        return set(), False
+    return spans, True
+
+
 def enumerate_mutations(paths, classes: tuple = FAULT_CLASSES) -> tuple[list[dict], list[dict]]:
     """(mutations, unchecked) over the target files, deterministically ordered by
     (file, class order, line). Each mutation is anchored by (file, class, occurrence)."""
@@ -102,6 +120,13 @@ def enumerate_mutations(paths, classes: tuple = FAULT_CLASSES) -> tuple[list[dic
             unchecked.extend({"file": str(path), "class": c, "reason": f"unreadable: {exc}"}
                              for c in classes)
             continue
+        excluded: set = set()
+        if path.suffix == ".py":
+            excluded, tok_ok = _multiline_string_spans("\n".join(lines) + "\n")
+            if not tok_ok:
+                unchecked.append({"file": str(path), "class": "docstring-exclusion",
+                                  "reason": "tokenise failed - string-interior "
+                                            "exclusion skipped for this file"})
         for cls in classes:
             if cls not in profile:
                 unchecked.append({"file": str(path), "class": cls,
@@ -110,6 +135,8 @@ def enumerate_mutations(paths, classes: tuple = FAULT_CLASSES) -> tuple[list[dic
             pattern, _ = profile[cls]
             occ = 0
             for ln, line in enumerate(lines, 1):
+                if ln in excluded:
+                    continue
                 if pattern.match(line):
                     mutations.append({"file": str(path), "class": cls,
                                       "occurrence": occ, "line": ln})
@@ -131,6 +158,32 @@ def mutated_text(mutation: dict) -> str:
                 break
             occ += 1
     return "\n".join(lines) + "\n"
+
+
+def apply_budget(mutations: list[dict], max_mutations: int) -> tuple[list[dict], int]:
+    """Distribute the cost ceiling round-robin over (file, fault class) groups -
+    never first-N in file order, which clusters all coverage at the top of the
+    alphabetically-first file. Deterministic: groups in sorted order, one mutation
+    per group per rotation, each group's own line order preserved. Returns
+    (chosen in original enumeration order, truncated count)."""
+    if len(mutations) <= max_mutations:
+        return list(mutations), 0
+    groups: dict = {}
+    for m in mutations:
+        groups.setdefault((m["file"], m["class"]), []).append(m)
+    # files are the FAST axis of the rotation (sort by class, then file): with a
+    # small budget every file still gets coverage before any class repeats
+    queues = [groups[k] for k in sorted(groups, key=lambda k: (k[1], k[0]))]
+    chosen: list[dict] = []
+    i = 0
+    while len(chosen) < max_mutations and any(queues):
+        q = queues[i % len(queues)]
+        if q:
+            chosen.append(q.pop(0))
+        i += 1
+    order = {id(m): n for n, m in enumerate(mutations)}
+    chosen.sort(key=lambda m: order[id(m)])
+    return chosen, len(mutations) - len(chosen)
 
 
 @contextlib.contextmanager
@@ -195,7 +248,7 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
     root = Path(repo_root)
     ceiling = max_mutations if max_mutations is not None else DEFAULT_MAX_MUTATIONS
     all_mutations, unchecked = enumerate_mutations(files, classes)
-    to_apply, truncated = all_mutations[:ceiling], len(all_mutations[ceiling:])
+    to_apply, truncated = apply_budget(all_mutations, ceiling)
     baseline = _run_tests(test_cmd, root)
     records: list[dict] = []
     if baseline != "pass":
@@ -223,9 +276,17 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
         "unviable": sum(1 for r in records if r["verdict"] == "unviable"),
         "truncated": truncated,
     }
+    import hashlib
+    target_hashes = {}
+    for fp in files:
+        try:
+            target_hashes[str(Path(fp))] = hashlib.sha256(Path(fp).read_bytes()).hexdigest()
+        except OSError:
+            target_hashes[str(Path(fp))] = None
     report = {
         "generated_at": sdlc_md.now_iso8601(),
         "git_rev": _git_rev(root),
+        "target_hashes": target_hashes,
         "test_cmd": test_cmd,
         "targets": [str(Path(f)) for f in files],
         "baseline": baseline,

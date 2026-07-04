@@ -48,17 +48,23 @@ python3 <skill>/scripts/mutation.py prefilter --tests tests/test_*.py
   records **unviable** (evidence of nothing - any suite, however vacuous, fails on it).
 - **survived** - the test stayed green over broken code: a finding. Triage note: a
   code-shaped line inside a docstring can mutate without changing behaviour and
-  false-survive; check the reported line before acting.
+  false-survive on non-Python files; Python string interiors are excluded automatically.
 - **error** - the runner itself broke (missing command, timeout, red baseline); never
   counted as a kill.
-- The report records the **git rev** it ran at; the gate's mutation lane reports a
-  report from another rev as STALE rather than PASS.
+- The report records the **git rev** and a **content hash per target**; the gate's
+  mutation lane reports STALE on a rev change OR any target edited since the run -
+  a dirty tree cannot ride an old green report.
 
 ## Honest degrade
 
 - A file/class the profiles cannot mutate is listed **un-checked**, never passed.
-- `--max-mutations N` (default `quality.mutation_max`, else 25) bounds cost; enumerations
-  beyond the ceiling are counted as **truncated** - un-checked coverage, not clean.
+- `--max-mutations N` (default `quality.mutation_max`, else 25) bounds cost; the budget
+  distributes round-robin with files as the fast axis (every file gets coverage before
+  any class repeats), and enumerations beyond the ceiling are counted as **truncated** -
+  un-checked coverage, not clean.
+- Lines inside docstrings/multi-line strings are not enumerated (they mutate nothing
+  and would false-survive); a file the tokeniser cannot parse has that exclusion
+  skipped and NOTED in the un-checked list.
 - Exit is non-zero on any survivor or error.
 
 ## See Also

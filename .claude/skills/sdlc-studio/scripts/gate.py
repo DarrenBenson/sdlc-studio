@@ -138,6 +138,20 @@ def _mutation(root: str) -> dict:
             return {"count": 1, "blocking": False,
                     "detail": f"mutation-report is STALE (run at {report_rev[:9]}, tree at "
                               f"{head[:9]}) - re-run scripts/mutation.py (advisory)"}
+    # content-hash staleness: same rev but an edited/missing target is still
+    # evidence about code that no longer exists (the dirty-tree pre-commit flow)
+    hashes = data.get("target_hashes") or {}
+    if hashes:
+        import hashlib
+        for fp, recorded in hashes.items():
+            try:
+                current = hashlib.sha256(Path(fp).read_bytes()).hexdigest()
+            except OSError:
+                current = None
+            if current != recorded:
+                return {"count": 1, "blocking": False,
+                        "detail": f"mutation-report is STALE ({Path(fp).name} changed since "
+                                  f"the run) - re-run scripts/mutation.py (advisory)"}
     n = int(s.get("survived", 0)) + int(s.get("errors", 0))
     detail = (f"{s.get('survived', 0)} survived, {s.get('errors', 0)} error(s) of "
               f"{s.get('applied', 0)} applied ({s.get('truncated', 0)} truncated) - advisory"

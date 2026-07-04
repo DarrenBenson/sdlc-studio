@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Mutation gate v2 (CR0146).** Correctness first: the report records a content
+  hash per target and the gate lane reports STALE when any target changed since
+  the run - same rev included - so a dirty tree can no longer ride an old green
+  report (the hole the critic demonstrated live). The cost ceiling now distributes
+  round-robin with files as the fast axis instead of first-N in file order, and
+  Python string/docstring interiors are excluded from enumeration (tokeniser-based;
+  a parse failure skips the exclusion and NOTES it, never silently).
+
 - **verify_ac lint flags Verify runners missing from PATH (CR0145).** A Verify
   line whose runner (pytest/jest/vitest/go/rg; http checks curl+jq) is absent
   from this machine's PATH draws an advisory naming the install-or-rewrite-or-

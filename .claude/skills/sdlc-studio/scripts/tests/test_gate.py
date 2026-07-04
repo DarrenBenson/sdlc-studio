@@ -309,3 +309,23 @@ class MutationLaneTests(unittest.TestCase):
             lane = report["checks"][0]
             self.assertNotEqual(lane["status"], "pass")
             self.assertIn("STALE", lane["detail"])
+
+    def test_hash_stale_report_never_reads_pass(self) -> None:
+        # CR0146: same rev, edited target - content hashes catch what rev cannot.
+        import tempfile
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            (root / "sdlc-studio").mkdir(parents=True)
+            target = root / "code.py"
+            target.write_text("x = 2\n", encoding="utf-8")
+            import json as _json
+            local = root / "sdlc-studio" / ".local"
+            local.mkdir()
+            (local / "mutation-report.json").write_text(_json.dumps(
+                {"target_hashes": {str(target): "0" * 64},
+                 "summary": {"applied": 5, "killed": 5, "survived": 0,
+                             "errors": 0, "unviable": 0, "truncated": 0}}), encoding="utf-8")
+            report = gate.run_gate(str(root), checks={"mutation": gate._mutation})
+            lane = report["checks"][0]
+            self.assertNotEqual(lane["status"], "pass")
+            self.assertIn("STALE", lane["detail"])

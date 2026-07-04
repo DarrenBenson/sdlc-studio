@@ -1,6 +1,6 @@
 # CR-0146: mutation gate v2: budget-aware sampling, dirty-tree staleness, docstring suppression
 
-> **Status:** Approved
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-04
@@ -44,3 +44,4 @@ selection is naive: the dogfood run applied 12 of 2900 enumerated mutations as f
 | 2026-07-04 | audit | Raised |
 | 2026-07-04 | claude | Operator review applied: dirty-tree staleness promoted to the leading item and named a correctness hole, not polish |
 | 2026-07-04 | claude | Design settled: target_hashes staleness (rev check retained), round-robin budget, tokenize-based exclusion |
+| 2026-07-04 | claude | Delivered: target_hashes + gate hash-staleness (leads), round-robin budget (files fast axis), tokenize docstring exclusion with noted degrade. 6 tests seen RED first. Depth: functional + live dogfood |
