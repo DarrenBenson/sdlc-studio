@@ -1,12 +1,13 @@
 # CR-0138: make a mixed bugs + CRs tranche a first-class sprint batch
 
-> **Status:** Proposed
+> **Status:** Approved
 > **Created:** 2026-07-04
 > **Created-by:** field report (a consuming project's backlog-clear sprint, 2026-07-04)
 > **Priority:** Medium
 > **Type:** Improvement
 > **Affects:** scripts/sprint.py, scripts/audit.py, scripts/conformance.py, help/sprint.md, reference-sprint.md
 > **Depends on:** -
+> **Created-by:** sdlc-studio remake (backfilled)
 
 ## Summary
 

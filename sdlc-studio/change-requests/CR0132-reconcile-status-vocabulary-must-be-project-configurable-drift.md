@@ -1,11 +1,11 @@
 # CR-0132: reconcile findings must self-diagnose (name the out-of-vocab status + suggest the actionable fix)
 
-> **Status:** Proposed
+> **Status:** Approved
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new
 > **Priority:** High
 > **Type:** Improvement
-> **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/reference-reconcile.md, .claude/skills/sdlc-studio/help/status.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/reference-reconcile.md, .claude/skills/sdlc-studio/help/status.md, .claude/skills/sdlc-studio/help/reconcile.md
 > **Depends on:** -
 
 ## Summary
@@ -44,10 +44,22 @@ Proposed - make reconcile's findings self-diagnosing (and set the pattern for ot
 3. The generic *"recompute the summary counts"* hint is kept only for a genuine arithmetic drift
    (all statuses in-vocab, counts simply stale) - the one case where `apply` actually resolves it.
 
+> **Merged in: CR-0139 (2026-07-04, operator-approved at sprint planning).** A second field report
+> hit the same opaque count-mismatch (one token off by one, found only by hand-diffing
+> `--format json`) plus a sibling gap: `validate`'s status-vocab error never mentions the
+> `.config.yaml` `status_vocab.<type>` extension mechanism, so the natural (wrong) reading is
+> "rewrite the historical artifacts". Its two ACs are folded in below; CR-0139 is Superseded.
+
 ## Acceptance Criteria
 
 - [ ] a `count-mismatch` caused by out-of-vocab statuses names the offending status(es) and the
       artefacts carrying them in the finding, not a bare `id: null`
+- [ ] every `count-mismatch` finding names the artifact type, each mismatched status token and both
+      numbers (for example `cr: Proposed rows=5 summary=4`), in text and JSON output; unit tests pin
+      the message shape (from CR-0139)
+- [ ] `validate` status-vocab errors append the extension hint (for example: `or declare a project
+      status via .config.yaml status_vocab.cr - see reference-config.md`); unit tests pin the
+      message shape (from CR-0139)
 - [ ] its `fix` string is actionable and specific: add-to-`status_vocab` (with the config path) or
       run `validate.py check`, rather than the generic "recompute the summary counts"
 - [ ] the generic recompute hint remains for a true arithmetic-only mismatch (all statuses in-vocab)
@@ -70,3 +82,4 @@ Proposed - make reconcile's findings self-diagnosing (and set the pattern for ot
 | --- | --- | --- |
 | 2026-07-04 | claude | Created via `new` (deterministic) |
 | 2026-07-04 | claude | Root-cause corrected after deeper tooling investigation: the vocab is already configurable + validate already flags it; the real defect is undiagnosable findings. Retitled + rescoped. |
+| 2026-07-04 | claude | Merged CR-0139 in (operator-approved at sprint planning): mismatch numbers in the finding + validate's status_vocab extension hint. Affects extended to validate.py and help/reconcile.md. |

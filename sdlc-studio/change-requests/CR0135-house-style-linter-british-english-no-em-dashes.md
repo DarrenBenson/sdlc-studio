@@ -1,6 +1,6 @@
 # CR-0135: extend the style guard with British-spelling detection (em-dash + jargon already enforced)
 
-> **Status:** Proposed
+> **Status:** Approved
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new
 > **Priority:** Low

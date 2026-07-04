@@ -1,14 +1,18 @@
 # CR-0139: deterministic-check findings should name the exact mismatch and the sanctioned remedy
 
-> **Status:** Proposed
+> **Status:** Superseded
 > **Created:** 2026-07-04
-> **Created-by:** field report (a consuming project's backlog-clear sprint, 2026-07-04)
+> **Created-by:** sdlc-studio remake (backfilled; filed from a consuming project's field report, 2026-07-04)
 > **Priority:** Low
 > **Type:** Improvement
 > **Affects:** scripts/reconcile.py, scripts/validate.py, help/reconcile.md
 > **Depends on:** -
+> **Superseded by:** CR-0132
 
 ## Summary
+
+> **Superseded (2026-07-04, operator-approved at sprint planning).** Same defect class as
+> CR-0132 (self-diagnosing check findings); both ACs folded into CR-0132's criteria list.
 
 Two deterministic checks report that something is wrong without saying what, so the operator loop
 spends a diagnosis cycle the check has already paid for internally:
@@ -46,3 +50,4 @@ diagnosis and the shortest sanctioned path to green.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-04 | field | Filed from a consuming project's closing gate (one diagnosis cycle per opaque finding) |
+| 2026-07-04 | claude | Superseded by CR-0132 (operator-approved merge at sprint planning); both ACs carried over verbatim |
