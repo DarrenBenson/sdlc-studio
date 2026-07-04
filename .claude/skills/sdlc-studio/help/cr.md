@@ -21,6 +21,18 @@ SDLC Studio is model-invoked - say it in plain language:
 
 > **Source of truth:** `reference-cr.md` - Detailed workflow steps
 
+## File a CR non-interactively (the canonical path)
+
+```bash
+python3 <skill>/scripts/artifact.py new --type cr --title "Add search to the catalogue"
+python3 <skill>/scripts/file_finding.py file --type cr --title "..." --summary "..." \
+  --priority High --ac "- [ ] ..."   # when you already have criteria
+```
+
+Ids and index rows are **tool-allocated** - hand-authoring either is an error
+(collision safety under concurrency and rebase). The interactive `/sdlc-studio cr create`
+below is a wrapper that delegates to this same allocation.
+
 ## Quick Reference
 
 ```text

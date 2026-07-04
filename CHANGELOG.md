@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **The deterministic toolbox is now discoverable from the router (CR0133).** A field
+  session used ~2 of the 40+ scripts and hand-did what they automate (hand-allocated
+  ids, never ran `validate`). SKILL.md now carries a "Deterministic Entry Points"
+  task-to-script card; the Progressive Loading Guide names the script to run for
+  creating and filing (not only the prose to read); doctrine rule 15 makes
+  script-first the stated discipline; `templates/agent-instructions.md` presents
+  non-interactive `artifact.py new` as the canonical create path (interactive
+  commands are wrappers); `help/bug.md` / `help/cr.md` lead with the one-liner and
+  state that ids + index rows are tool-allocated.
+
 ### Changed
 
 - **Payload hygiene: repo-only `tools/` checker tests moved out of the shipped skill

@@ -92,10 +92,15 @@ expression or failing test first, then make it pass.
    - **Bootstrap with `init`** (it creates the directory tree, the per-type `_index.md`
      files, config, and the agent-instructions). After `init` the first `new` of any type is
      indexed - a bare `indexed=false` means "no index yet", not "the tool does not index".
-   - **Create every artifact with `artifact.py new` / `/sdlc-studio` create.** It allocates a
-     collision-free id, writes the file, appends the index row, and wires a story into its
-     parent epic. **Never hand-allocate ids or hand-author `_index.md`** - the file is truth,
-     the index is derived. For many at once use `artifact.py batch` (one atomic pass).
+   - **Create every artifact with the non-interactive script - it is the canonical path:**
+     `python3 <skill>/scripts/artifact.py new --type bug --title "..."` (same for cr / story /
+     epic / rfc; a finding with repro + fix travels better through
+     `scripts/file_finding.py file`). It allocates a collision-free id, writes the file,
+     appends the index row, and wires a story into its parent epic. The interactive
+     `/sdlc-studio bug create` is a convenience wrapper that delegates to the same
+     allocation - headless agents call the script. **Never hand-allocate ids or hand-author
+     `_index.md`** - the file is truth, the index is derived. For many at once use
+     `artifact.py batch` (one atomic pass).
    - **Fan out only over pre-wired scaffolds.** Delegated sub-agents fill **content**; the
      tool owns structure (ids, slugs, filenames, links, index).
    - **The index is derived:** run `reconcile` / `reconcile fields` / `validate` to sync;

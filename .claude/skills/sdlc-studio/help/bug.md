@@ -21,6 +21,18 @@ SDLC Studio is model-invoked - say it in plain language:
 | "Check that fix worked and close it" | `/sdlc-studio bug verify --bug BG0003` |
 | "That bug is back - reopen it" | `/sdlc-studio bug reopen --bug BG0003` |
 
+## File a bug non-interactively (the canonical path)
+
+```bash
+python3 <skill>/scripts/artifact.py new --type bug --title "Player falls through floor"
+python3 <skill>/scripts/file_finding.py file --type bug --title "..." --summary "..." \
+  --steps "1. ..." --fix "..."   # when you already have repro + proposed fix
+```
+
+Ids and index rows are **tool-allocated** - hand-authoring either is an error
+(collision safety under concurrency and rebase). The interactive `/sdlc-studio bug`
+below is a wrapper that delegates to this same allocation.
+
 ## Quick Reference
 
 ```

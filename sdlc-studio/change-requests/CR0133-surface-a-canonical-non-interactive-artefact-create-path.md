@@ -1,6 +1,6 @@
 # CR-0133: surface the deterministic toolbox so an agent reaches for the right script (map tasks to scripts, not just prose)
 
-> **Status:** Approved
+> **Status:** Complete
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new
 > **Priority:** High

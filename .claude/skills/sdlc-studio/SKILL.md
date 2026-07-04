@@ -55,6 +55,25 @@ argument reference, workflow diagrams, and reference index are loaded on demand 
 For the full catalogue (bug, cr, rfc, persona, consult, chat, trd, test-*, repo map,
 sync, and every flag), run `/sdlc-studio help` or read `help/help.md`.
 
+## Deterministic Entry Points (run the script, do not hand-do it)
+
+Ids, index rows, status cascades, and AC verdicts are **tool-allocated** - hand-authoring
+any of them is an error. For a mechanical task, reach for the script first
+(full catalogue: `reference-scripts.md`):
+
+| Doing... | Run |
+| --- | --- |
+| Create an artifact (bug/CR/story/epic/RFC) | `scripts/artifact.py new --type bug --title "..."` |
+| File a finding as a Bug/CR/RFC | `scripts/file_finding.py file --type bug --title "..." --summary "..."` |
+| Detect, then fix, index/status drift | `scripts/reconcile.py detect` then `apply` |
+| Diagnose structure or status-vocab errors | `scripts/validate.py check` |
+| Change a status (+ index/epic cascade) | `scripts/transition.py set --id CR0001 --status Approved` |
+| Verify a story's executable ACs | `scripts/verify_ac.py` |
+| Run the portable CI gate | `scripts/gate.py` |
+
+The interactive commands (`/sdlc-studio bug create` and friends) are wrappers over the
+same allocation - a headless or consuming-project agent calls the scripts directly.
+
 ## Get Help for Any Type
 
 ```bash
@@ -98,7 +117,8 @@ Claude loads files progressively based on task needs:
 | Reference & template catalogue | help/references.md | - | - |
 | Create mode workflow | help/{type}.md | reference-{domain}.md | reference-philosophy.md#create-mode |
 | Generate mode workflow | reference-philosophy.md#generate-mode | help/{type}.md | reference-{domain}.md |
-| Creating artifacts | templates/core/{type}.md | reference-outputs.md | - |
+| Creating artifacts | scripts/artifact.py (`new`/`batch` allocates id + index row) | templates/core/{type}.md | reference-outputs.md |
+| Filing a finding as Bug/CR/RFC | scripts/file_finding.py | templates/core/{type}.md | reference-audit.md |
 | Loading modules | templates/modules/{domain}/*.md | - | - |
 | Planning code | reference-code.md#code-plan-workflow | reference-decisions.md#story-ready | best-practices/{language}.md |
 | Choosing TDD/Test-After | reference-decisions.md#tdd-decision-tree | reference-test-best-practices.md | - |

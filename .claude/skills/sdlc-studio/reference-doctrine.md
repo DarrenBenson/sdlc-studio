@@ -95,6 +95,14 @@ rules, the agents/services) live in that project's agent-instructions file
     project}-state.json` track resumable state – don't delete them; reconcile updates
     them.
 
+15. **Reach for the script before hand-doing a mechanical task.** The toolbox is
+    deterministic and collision-safe: `artifact.py new`/`batch` creates (id + index
+    row allocated), `file_finding.py` files a finding, `transition.py` moves status,
+    `reconcile.py` syncs, `validate.py check` diagnoses, `verify_ac.py` verdicts,
+    `gate.py` gates. The router's "Deterministic Entry Points" card is the quick
+    map; `reference-scripts.md` is the full catalogue. Hand-allocating an id or
+    hand-authoring an index a script owns is an error, not a shortcut.
+
 ## Project constitution {#constitution}
 
 A project may declare its inviolable principles in an optional
