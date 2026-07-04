@@ -4,15 +4,22 @@
 #   1. No em-dash (U+2014). Use an en-dash with spaces ( - ) instead.
 #   2. No corporate jargon (synergy, leverage, robust, journey), unless the
 #      offending line contains a substring listed in tools/style-allowlist.txt.
+#   3. No internal provenance tags in consuming-facing files.
+#   4. British English: a bounded list of American spellings is flagged (same
+#      allowlist mechanism for cited names, quotations, and API identifiers).
 #
 # Prints every offender and exits non-zero on any violation. Run via
 # `npm run lint` (which CI runs), or directly: bash tools/lint-style.sh
+# An optional first argument scans a different tree (used by the unit test);
+# the allowlist is taken from that tree when it carries one, else this repo's.
 set -uo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-allowlist="$repo_root/tools/style-allowlist.txt"
+scan_root="${1:-$repo_root}"
+allowlist="$scan_root/tools/style-allowlist.txt"
+[ -f "$allowlist" ] || allowlist="$repo_root/tools/style-allowlist.txt"
 status=0
-cd "$repo_root"
+cd "$scan_root"
 
 # 1. Em-dash: never allowed, no exceptions.
 if em_hits="$(grep -rInP '\x{2014}' --include='*.md' --exclude-dir=node_modules . 2>/dev/null)"; then
@@ -43,11 +50,31 @@ fi
 #    its OWN project, whose id namespace collides. The skill's artifacts keep their ids; this guards
 #    only reference-*.md, help/*.md, and scripts/*.py. Bare example ids (BG0001 in `--bug BG0001`,
 #    the ID-format tables) are not flagged - only the parenthetical provenance form.
-skill="$repo_root/.claude/skills/sdlc-studio"
+skill="$scan_root/.claude/skills/sdlc-studio"
 prov_hits="$(grep -InE '\((CR|BG|RFC)[0-9]{4}' "$skill"/reference-*.md "$skill"/help/*.md "$skill"/scripts/*.py 2>/dev/null || true)"
 if [ -n "$prov_hits" ]; then
   echo "Style error: internal provenance tag in a consuming-facing file. Strip it - traceability lives in change-requests/CHANGELOG/git, not in docs a consuming project reads."
   printf '%s\n' "$prov_hits"
+  status=1
+fi
+
+# 4. American spellings - the house style is British English (AGENTS.md). A bounded,
+#    high-signal word list, filtered through the same allowlist so a cited product
+#    name, an external quotation, or an API identifier can be permitted by line
+#    context. CODE_OF_CONDUCT.md is excluded: it quotes the Contributor Covenant
+#    verbatim, and third-party text is not ours to respell.
+am_re='analyz(e|es|ed|ing|er|ers)|behaviors?|behavioral|colors?|colored|coloring|favorite|favorites|flavors?|honors?|honored|optimiz(e|es|ed|ing|ation)|prioritiz(e|es|ed|ing|ation)|customiz(e|es|ed|ing|ation|able)|initializ(e|es|ed|ing)|normaliz(e|es|ed|ing|ation)|standardiz(e|es|ed|ing|ation)|summariz(e|es|ed|ing)|canonicaliz(e|es|ed|ing|ation)|organiz(e|es|ed|ing|ation|ations)|minimiz(e|es|ed|ing)|maximiz(e|es|ed|ing)|serializ(e|es|ed|ing|ation)|synchroniz(e|es|ed|ing|ation)|categoriz(e|es|ed|ing|ation)|finaliz(e|es|ed|ing)'
+am_hits="$(grep -rInwiE "$am_re" --include='*.md' --exclude-dir=node_modules --exclude=CODE_OF_CONDUCT.md . 2>/dev/null || true)"
+if [ -n "$am_hits" ] && [ -f "$allowlist" ]; then
+  allow="$(grep -vE '^[[:space:]]*(#|$)' "$allowlist" || true)"
+  if [ -n "$allow" ]; then
+    am_hits="$(printf '%s\n' "$am_hits" | grep -ivF -- "$allow" || true)"
+  fi
+fi
+if [ -n "$am_hits" ]; then
+  echo "Style error: American spelling found - the house style is British English."
+  echo "Use the British form (-ize -> -ise, -ization -> -isation, behavior -> behaviour, color -> colour, analyze -> analyse), or add the line's context to tools/style-allowlist.txt."
+  printf '%s\n' "$am_hits"
   status=1
 fi
 

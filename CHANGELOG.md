@@ -18,6 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   non-interactive `artifact.py new` as the canonical create path (interactive
   commands are wrappers); `help/bug.md` / `help/cr.md` lead with the one-liner and
   state that ids + index rows are tool-allocated.
+- **The style guard now checks British spelling (CR0135).** AGENTS.md stated three
+  prose rules; `lint-style.sh` enforced two. A bounded, high-signal American-spelling
+  pass (the analyze/analyse pairs and the -ize/-ization family, word-boundary matched
+  so size and prize are untouched) now flags offenders with the British form suggested, sharing
+  the existing allowlist for genuine exceptions (API identifiers like `optimize=True`
+  and `EXPLAIN ANALYZE`, quoted command names, `gh --color` flags); the Contributor
+  Covenant text is excluded as third-party. The script accepts an optional scan-root
+  argument so the new fixture tests exercise it in isolation. Zero hits on the
+  current tree after allowlisting the seven literal-identifier lines.
 - **A mixed bugs + CRs tranche is a first-class sprint batch (CR0138).** The most
   common maintenance sprint (backlog clear) was inexpressible: `sprint.py plan`'s
   queries were mutually exclusive, `--write` kept whichever half ran last, and the

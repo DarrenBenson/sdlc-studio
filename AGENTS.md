@@ -91,7 +91,7 @@ plain Python/bash command you can run directly. Do not skip the gate because
 
 | Guard | Command | Catches |
 | --- | --- | --- |
-| Style | `bash tools/lint-style.sh` | em-dash (U+2014), corporate jargon, internal provenance tags in consuming-facing files |
+| Style | `bash tools/lint-style.sh` | em-dash (U+2014), corporate jargon, American spellings, internal provenance tags in consuming-facing files |
 | Links | `python3 tools/check_links.py` | broken markdown anchor links |
 | Skill spec | `python3 tools/validate_skill.py` | SKILL.md frontmatter |
 | Versions | `python3 tools/check_versions.py` | version-string drift across authoritative files |
@@ -149,7 +149,7 @@ When modifying the skill:
 **Enforced by `tools/lint-style.sh`** (run it, or `npm run lint`, before committing;
 it has no code-span or "I am only quoting the rule" exception):
 
-- British English (analyse, colour, behaviour) - spelling not yet auto-checked (CR0135)
+- British English (analyse, colour, behaviour) - a bounded American-spelling list is auto-checked; allowlist genuine exceptions (API identifiers, quotations)
 - No em dashes (U+2014) - use a hyphen with spaces, or restructure
 - No corporate jargon (synergy, leverage, robust, journey), allowlist in `tools/style-allowlist.txt`
 - No internal provenance tags like `(CR1234)` in consuming-facing `reference-*.md` / `help/` / `scripts/`
