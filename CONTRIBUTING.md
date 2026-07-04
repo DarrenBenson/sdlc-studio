@@ -69,11 +69,16 @@ Before submitting changes, review the relevant best practice guide:
 SDLC Studio dogfoods itself - it is built with its own lifecycle. A few non-negotiables:
 
 - **Setup:** Node (for the markdown lint suite) + Python 3.10+ (for the scripts and their tests).
-  Run `npm install` once; the Python scripts are pure stdlib (nothing to pip install).
-- **Gate every commit.** Before each commit, all three must pass:
+  Run `npm install` once; the Python scripts are pure stdlib (nothing to pip install). Then
+  **`bash tools/enable-hooks.sh`** to turn on the pre-commit gate.
+- **Gate every commit - automated by the hook.** `bash tools/enable-hooks.sh` installs a
+  `pre-commit` hook that runs the whole gate and blocks a breaking commit, explaining each failure
+  in detail (what it enforces, the offending line, the fix). To run it by hand, all three must pass:
   `npm run lint && npm test && python3 .claude/skills/sdlc-studio/scripts/gate.py --root .`
   Lint covers markdown, house style, links, SKILL.md, versions, budgets, and the neutrality guard;
-  the gate covers conformance, reconcile drift, validation, integrity, duplicate ids, and docs.
+  the gate covers conformance, reconcile drift, validation, integrity, duplicate ids, and docs. The
+  hook runs every guard except markdownlint without Node; bypass in an emergency with
+  `git commit --no-verify`.
 - **Trunk-based, small green units.** Commit to `main` in small, individually-green increments; CI
   re-runs the same gate on push, plus a coverage floor (>= 80% of the runtime scripts) and a
   `bandit` security scan. Branches are for isolation, not ceremony.

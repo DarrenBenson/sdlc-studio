@@ -7,7 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Pre-commit hook makes the gate un-skippable (CR0137).** `bash tools/enable-hooks.sh`
+  installs a tracked `.githooks/pre-commit` that runs the whole npm-independent gate
+  (style, links, skill-spec, versions, budgets, neutrality, `gate.py`, and the script
+  suite when code changes) on every commit and blocks a breaking one. Every failure is
+  explained in detail: what the guard enforces, the offending file:line, and the fix;
+  drift items print their own remediation. Turns "the agent should run the gate" into
+  "the agent cannot commit past it" - the anti-vibe last mile. Emergency bypass:
+  `git commit --no-verify`.
+
 ### Changed
+
+- **README: a concrete vibe-coding vs spec-driven vs governed framing.** The "Why"
+  section led with an abstract argument hidden in a collapsible; added a visible
+  three-mode contrast that lands the differentiator (spec-driven tools *align* the
+  agent on intent; SDLC Studio also *argues back with facts* - executable ACs,
+  reconcile-from-census, a commit gate), so a newcomer sees why it is worth using.
 
 - **Docs: make the local gate and the deterministic toolbox discoverable (dogfood
   fix for CR0133).** AGENTS.md "Testing the Skill" now lists every CI guard as an

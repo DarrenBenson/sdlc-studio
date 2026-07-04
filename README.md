@@ -289,6 +289,14 @@ Re-run the installer, or `/sdlc-studio skill-update`. It is a drop-in: no projec
 
 ## Why SDLC Studio
 
+Three ways to build software with an AI:
+
+- **Vibe coding.** You prompt, it writes code, you hope. Fast for a demo, but the intent lives only in the chat, nothing checks the result against what you asked, and by release nobody (the model included) can say what "done" meant.
+- **Spec-driven.** You write the intent down first - a spec, a plan, tasks - and the agent builds to it. A real step up: the model has a target. But the spec is prose the agent produced and is then trusted to honour, and nothing recomputes whether the code and the documents still agree a week and ten changes later.
+- **Governed (this).** The same specs and plans, plus a source of truth the tools recompute from the files and hold the agent to. The status you claim is checked against a census of what actually exists. Acceptance criteria are executable and get run. A pre-commit gate refuses a change whose paperwork, style, or counts do not match reality - and tells you the exact line and the fix. The discipline does not depend on the agent remembering it.
+
+The difference is simple: spec-driven tools **align** the agent on intent; SDLC Studio also **argues back with facts**. Ask it to mark something done and the acceptance test decides. Claim a count and `reconcile` recomputes it from the files. Let a document drift from the code and the commit gate stops you. That is the practice a good engineering team already uses - clear requirements, traceability, change control, a definition of done that means done - made cheap enough to keep, because the agent carries the cost of the ceremony instead of you.
+
 <details>
 <summary>The longer argument</summary>
 

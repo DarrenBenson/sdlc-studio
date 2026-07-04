@@ -71,6 +71,13 @@ Some features need external tools on PATH:
 
 ## Testing the Skill
 
+**Enable the pre-commit hook once per clone: `bash tools/enable-hooks.sh`.** It runs
+the whole gate below on every commit and blocks a breaking one, printing for each
+failure what the guard enforces, the offending line, and how to fix it. This makes
+the gate un-skippable rather than something an agent has to remember (emergency
+bypass: `git commit --no-verify`). Everything below is what it runs; run any of it
+by hand too.
+
 **Run the full gate before every commit, not just before a release tag.** CI runs
 these same checks; skipping them locally is how style, neutrality, budget, and
 link breakage reaches `main`. Each guard below has caught a real breakage that the

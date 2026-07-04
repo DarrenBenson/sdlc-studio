@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+# SDLC Studio pre-commit gate.
+#
+# Runs the repo's npm-independent guards so style, neutrality, line-budget,
+# version, link, and index-drift breakage cannot reach a commit. Every failure
+# is explained in detail: what the guard enforces, the full violation output,
+# and how to fix it (self-diagnosing findings, per CR0132).
+#
+# Enable once per clone:  bash tools/enable-hooks.sh   (sets core.hooksPath)
+# Bypass (emergencies only):  git commit --no-verify
+set -uo pipefail
+
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "pre-commit: not a git repo"; exit 1; }
+cd "$repo_root" || exit 1
+skill=".claude/skills/sdlc-studio/scripts"
+fail=0
+
+# Colour only when writing to a terminal.
+if [ -t 1 ]; then R=$'\033[31m'; G=$'\033[32m'; Y=$'\033[33m'; B=$'\033[1m'; N=$'\033[0m'; else R=; G=; Y=; B=; N=; fi
+
+# run KEY  "what it enforces"  "how to fix"  -- command...
+run() {
+  local key="$1" what="$2" fixhint="$3"; shift 3
+  [ "$1" = "--" ] && shift
+  local out
+  if out="$("$@" 2>&1)"; then
+    printf '  %sok%s   %s\n' "$G" "$N" "$key"
+    return 0
+  fi
+  fail=1
+  printf '  %sFAIL%s %s%s%s\n' "$R" "$N" "$B" "$key" "$N"
+  printf '       enforces: %s\n' "$what"
+  if [ -n "$out" ]; then
+    printf '       %s─ details ─%s\n' "$Y" "$N"
+    printf '%s\n' "$out" | sed 's/^/         /'
+  fi
+  printf '       %s→ fix:%s %s\n\n' "$B" "$N" "$fixhint"
+}
+
+echo "${B}sdlc-studio pre-commit gate${N}"
+
+run "style" \
+  "house style: no em-dash (U+2014); no jargon (synergy/leverage/robust/journey); no internal provenance tags (CR1234) in reference/help/scripts" \
+  "reword the flagged line; a legitimate case can be allowlisted in tools/style-allowlist.txt" \
+  -- bash tools/lint-style.sh
+
+run "links" \
+  "every markdown anchor link (#heading) resolves to a real heading" \
+  "correct the #anchor, or add/rename the target heading it points at" \
+  -- python3 tools/check_links.py
+
+run "skill-spec" \
+  "SKILL.md frontmatter conforms to the Agent Skills spec subset" \
+  "align the frontmatter fields flagged above with the spec" \
+  -- python3 tools/validate_skill.py
+
+run "versions" \
+  "the version string is consistent across the authoritative files" \
+  "sync the version in each file named above (or bump them together)" \
+  -- python3 tools/check_versions.py
+
+run "budgets" \
+  "each reference-*.md stays under its declared line ceiling (keeps load cost bounded)" \
+  "shrink the file, or raise its ceiling in tools/check_budgets.py deliberately (with a rationale comment)" \
+  -- python3 tools/check_budgets.py
+
+run "neutrality" \
+  "no private consuming-project name leaks into a tracked file (the skill repo is domain-neutral)" \
+  "generalise the name (e.g. to 'a consuming project'); the checker redacts the term, so grep your diff for it" \
+  -- python3 tools/check_neutrality.py
+
+# Comprehensive artefact gate (fast, ~1s): conformance, reconcile drift, validate,
+# integrity, duplicate-id, doc-coverage, doc-freshness. This is the same gate CI runs.
+if gate_out="$(python3 "$skill/gate.py" --root . 2>&1)"; then
+  printf '  %sok%s   gate (conformance / reconcile / validate / integrity / duplicate-id / docs)\n' "$G" "$N"
+else
+  fail=1
+  printf '  %sFAIL%s %sgate%s (conformance / reconcile / validate / integrity / duplicate-id / docs)\n' "$R" "$N" "$B" "$N"
+  printf '       %s─ checks ─%s\n' "$Y" "$N"
+  printf '%s\n' "$gate_out" | grep -E '\[(FAIL|warn)\]|^gate:' | sed 's/^/         /'
+  # Reconcile drift is the common case: list each item with its own fix (self-diagnosing).
+  DRIFT_JSON="$(python3 "$skill/reconcile.py" detect --format json 2>/dev/null)"
+  drift_report="$(DRIFT_JSON="$DRIFT_JSON" python3 -c '
+import os, json
+try:
+    d = json.loads(os.environ.get("DRIFT_JSON", ""))
+except Exception:
+    d = {}
+for t, info in d.get("types", {}).items():
+    for x in info.get("drift", []):
+        print("%s %s: %s -> %s" % (t, x.get("id") or "(summary)", x.get("kind"), x.get("fix", "no fix hint")))
+')"
+  if [ -n "$drift_report" ]; then
+    printf '       %s─ drift detail ─%s\n' "$Y" "$N"
+    printf '%s\n' "$drift_report" | sed 's/^/         /'
+  fi
+  printf '       %s→ fix:%s address each failing check; run the named script for per-item detail (e.g. `%s/validate.py check`, `%s/conformance.py`); mechanical drift clears with `%s/reconcile.py apply`\n\n' "$B" "$N" "$skill" "$skill" "$skill"
+fi
+
+# Script unit tests: only when the commit touches scripts/ or tools/ (keeps doc commits fast).
+if git diff --cached --name-only | grep -qE "^\.claude/skills/sdlc-studio/scripts/|^tools/"; then
+  run "scripts" \
+    "every script and checker unit test passes" \
+    "fix the code or the test named in the failure above, then re-run: python3 -m unittest discover -s $skill/tests" \
+    -- python3 -m unittest discover -s "$skill/tests"
+fi
+
+# Markdown mechanics: only if markdownlint is installed (needs Node).
+if command -v markdownlint >/dev/null 2>&1; then
+  run "markdown" \
+    "markdown mechanics (headings, lists, fences)" \
+    "auto-fix most with: npm run lint:fix" \
+    -- markdownlint '**/*.md' --ignore node_modules
+fi
+
+if [ "$fail" -ne 0 ]; then
+  printf '\n%sCommit blocked.%s Fix the failures above (each lists how), then commit again.\n' "$R" "$N"
+  printf 'Genuine emergency only: %sgit commit --no-verify%s\n' "$B" "$N"
+  exit 1
+fi
+printf '%sgate green.%s\n' "$G" "$N"
+exit 0
