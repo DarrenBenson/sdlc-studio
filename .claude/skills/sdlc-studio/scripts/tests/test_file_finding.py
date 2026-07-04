@@ -63,6 +63,24 @@ class FileTests(unittest.TestCase):
             self.assertIn("| Proposed | 1 |", index)          # count recomputed
             self.assertIn("| **Total** | **1** |", index)
 
+    def test_ac_with_own_checkbox_not_doubled(self) -> None:
+        # An operator habitually passes '- [ ] text' as the AC; the renderer must
+        # normalise, not stack a second checkbox in front (the CR0143-0149 defect).
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "cr")
+            res = ff.file_finding(root, "cr", "t",
+                                  {"priority": "Low", "ctype": "Improvement",
+                                   "summary": "s",
+                                   "acs": ["- [ ] already boxed", "-[x] ticked variant",
+                                           "bare text"],
+                                   "date": "2026-07-04"})
+            body = Path(res["path"]).read_text(encoding="utf-8")
+            self.assertIn("- [ ] already boxed", body)
+            self.assertNotIn("- [ ] - [ ]", body)
+            self.assertNotIn("- [ ] -[x]", body)
+            self.assertIn("- [ ] bare text", body)
+
     def test_allocates_next_id_no_collision(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

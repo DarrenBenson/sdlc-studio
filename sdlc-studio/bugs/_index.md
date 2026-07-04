@@ -10,10 +10,10 @@
 | In Progress | 0 |
 | Fixed | 0 |
 | Verified | 0 |
-| Closed | 49 |
+| Closed | 50 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **49** |
+| **Total** | **50** |
 
 ## All Bugs
 
@@ -68,3 +68,4 @@
 | [BG0047](BG0047-wsjf-size-signal-ranks-new-file-units-as.md) | WSJF size signal ranks new-file units as trivially small, inverting the sprint order | Closed | medium | 2026-07-04 | 2026-07-04 |
 | [BG0048](BG0048-provenance-remake-mass-backfills-artifacts-the-adopt-after.md) | provenance remake mass-backfills artifacts the adopt_after cutoff exempts, and double-stamps a non-tool Created-by | Closed | low | 2026-07-04 | 2026-07-04 |
 | [BG0049](BG0049-ts-check-ac-matrix-parser-bleeds-into-later.md) | ts-check AC-matrix parser bleeds into later tables (Revision History rows read as AC rows) | Closed | medium | 2026-07-04 | 2026-07-04 |
+| [BG0050](BG0050-file-finding-doubles-the-ac-checkbox-when-the.md) | file_finding doubles the AC checkbox when the caller supplies one | Closed | low | 2026-07-04 | 2026-07-04 |

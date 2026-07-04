@@ -6,15 +6,15 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 7 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 138 |
 | Rejected | 0 |
 | Deferred | 0 |
-| Superseded | 2 |
+| Superseded | 4 |
 | Blocked | 0 |
-| **Total** | **141** |
+| **Total** | **149** |
 
 ## All Changes
 
@@ -68,7 +68,7 @@
 | [CR-0046](CR0046-portable-ci-quality-gate.md) | portable quality-gate entrypoint for CI (ecosystem-neutral) | Complete | High | Feature | 2026-06-21 | -- |
 | [CR-0047](CR0047-pvd-template-and-manifest.md) | PVD template + product manifest (RFC0015 WS1) | Complete | High | Feature | 2026-06-21 | -- |
 | [CR-0048](CR0048-read-only-pvd-projection-drift-check.md) | read-only PVD projection + drift check (RFC0015 WS2) | Complete | High | Feature | 2026-06-21 | -- |
-| [CR-0049](CR0049-product-reconcile-feature-map-traceability.md) | product reconcile - cross-repo feature-map traceability (RFC0015 WS3) | Complete | High | Feature | 2026-06-21 | -- |
+| [CR-0049](CR0049-product-reconcile-feature-map-traceability.md) | product reconcile - cross-repo feature-map traceability (RFC0015 WS3) | Superseded | High | Feature | 2026-06-21 | -- |
 | [CR-0050](CR0050-telemetry-record-and-schema.md) | telemetry record + .local/telemetry.jsonl schema (RFC0014 WS1) | Complete | Medium | Feature | 2026-06-21 | -- |
 | [CR-0051](CR0051-telemetry-loop-capture.md) | loop writes a telemetry record per unit close (RFC0014 WS2) | Complete | Medium | Feature | 2026-06-21 | -- |
 | [CR-0052](CR0052-asset-provenance-stamp-misuse-check-remake.md) | asset provenance stamp + misuse check + remake migration | Complete | Medium | Feature | 2026-06-21 | -- |
@@ -160,4 +160,12 @@
 | [CR-0138](CR0138-mixed-batch-sprint-tranches-bugs-plus-crs-first-class.md) | make a mixed bugs + CRs tranche a first-class sprint batch | Complete | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0139](CR0139-deterministic-check-messages-name-numbers-and-remedy.md) | deterministic-check findings should name the exact mismatch and the sanctioned remedy | Superseded | Low | Improvement | 2026-07-04 | -- |
 | [CR-0140](CR0140-move-repo-only-tools-checker-tests-out-of.md) | move repo-only tools/ checker tests out of the shipped skill payload (payload hygiene) | Complete | Medium | Improvement | 2026-07-04 | -- |
-| [CR-0141](CR0141-product-reconcile-feature-map-parser-is-inert-against.md) | product_reconcile feature-map parser is inert against CR/RFC-cited PVDs | Proposed | Medium | Improvement | 2026-07-04 | -- |
+| [CR-0141](CR0141-product-reconcile-feature-map-parser-is-inert-against.md) | product_reconcile feature-map parser is inert against CR/RFC-cited PVDs | Superseded | Medium | Improvement | 2026-07-04 | -- |
+| [CR-0142](CR0142-retire-product-reconcile-a-traceability-gate-that-never.md) | Retire product_reconcile - a traceability gate that never told the truth | Complete | Medium | Improvement | 2026-07-04 | -- |
+| [CR-0143](CR0143-batch-transitions-and-first-class-retro-review-types.md) | batch transitions and first-class retro/review types (deterministic-toolchain ergonomics) | Proposed | Medium | Improvement | 2026-07-04 | -- |
+| [CR-0144](CR0144-one-shared-structural-table-iterator-in-sdlc-md.md) | one shared structural table iterator in sdlc_md - retire the per-parser boundary bugs as a class | Proposed | High | Improvement | 2026-07-04 | -- |
+| [CR-0145](CR0145-verify-ac-lint-flags-verify-line-runners-that.md) | verify_ac lint flags Verify-line runners that are not on PATH (design-time, not delivery-time) | Proposed | Medium | Improvement | 2026-07-04 | -- |
+| [CR-0146](CR0146-mutation-gate-v2-budget-aware-sampling-dirty-tree.md) | mutation gate v2: budget-aware sampling, dirty-tree staleness, docstring suppression | Proposed | Medium | Improvement | 2026-07-04 | -- |
+| [CR-0147](CR0147-doc-freshness-test-count-must-count-what-the.md) | doc_freshness test-count must count what the runner reports, not test definitions | Proposed | Low | Bug | 2026-07-04 | -- |
+| [CR-0148](CR0148-name-the-close-of-sprint-adversarial-critic-pass.md) | name the close-of-sprint adversarial critic pass as a hard sprint step (re-verify against the critic's own repros) | Proposed | Medium | Improvement | 2026-07-04 | -- |
+| [CR-0149](CR0149-wsjf-no-seat-fallback-demote-the-complexity-seed.md) | WSJF no-seat fallback: demote the complexity seed from size stand-in to tiebreak | Proposed | Low | Improvement | 2026-07-04 | -- |

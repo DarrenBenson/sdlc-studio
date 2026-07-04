@@ -95,7 +95,10 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict) -> str:
                 f"## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
                 f"| {today} | audit | Filed |\n")
     if type_ == "cr":
-        acs = "\n".join(f"- [ ] {a}" for a in f["acs"])
+        # normalise: an AC supplied with its own leading checkbox ('- [ ] x',
+        # '-[x] y') is not doubled into '- [ ] - [ ] x'
+        stripped = (re.sub(r"^\s*-\s*\[[ xX]\]\s*", "", a) for a in f["acs"])
+        acs = "\n".join(f"- [ ] {a}" for a in stripped)
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** Proposed\n> **Priority:** {f['priority']}\n"
                 f"> **Type:** {f['ctype']}\n> **Date:** {today}\n{_STAMP}\n"

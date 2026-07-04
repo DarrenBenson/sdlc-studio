@@ -12,10 +12,10 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 54 |
+| Done | 53 |
 | Won't Implement | 0 |
 | Deferred | 0 |
-| Superseded | 0 |
+| Superseded | 1 |
 | **Total** | **54** |
 
 ## All Stories
@@ -55,7 +55,7 @@
 | [US0031](US0031-portable-ci-gate.md) | portable CI quality gate | Done | EP0008 | 2026-06-21 | 2026-06-21 |
 | [US0032](US0032-pvd-template-and-manifest.md) | PVD template + product manifest | Done | EP0008 | 2026-06-21 | 2026-06-21 |
 | [US0033](US0033-pvd-projection-drift.md) | read-only PVD projection + drift check | Done | EP0008 | 2026-06-21 | 2026-06-21 |
-| [US0034](US0034-product-reconcile-traceability.md) | product reconcile - cross-repo feature-map traceability | Done | EP0008 | 2026-06-21 | 2026-06-21 |
+| [US0034](US0034-product-reconcile-traceability.md) | product reconcile - cross-repo feature-map traceability | Superseded | EP0008 | 2026-06-21 | 2026-06-21 |
 | [US0035](US0035-deterministic-artifact-create-and-close-cascade.md) | deterministic artifact create and close cascade | Done | EP0008 | 2026-06-21 | 2026-06-21 |
 | [US0036](US0036-telemetry-recorder-and-local-jsonl-schema.md) | telemetry recorder and local jsonl schema | Done | EP0008 | 2026-06-21 | 2026-06-21 |
 | [US0037](US0037-close-cascade-records-telemetry-per-unit.md) | close cascade records telemetry per unit | Done | EP0008 | 2026-06-21 | 2026-06-21 |
