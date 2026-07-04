@@ -1,64 +1,69 @@
-# CR-0132: reconcile status vocabulary must be project-configurable (drift-0 unreachable with bespoke statuses)
+# CR-0132: reconcile findings must self-diagnose (name the out-of-vocab status + suggest the actionable fix)
 
 > **Status:** Proposed
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new
 > **Priority:** High
 > **Type:** Improvement
-> **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/reference-reconcile.md, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/reference-outputs.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/reference-reconcile.md, .claude/skills/sdlc-studio/help/status.md
 > **Depends on:** -
 
 ## Summary
 
-`reconcile.py` is the tool that keeps indexes honest, and its headline promise is "drift 0". In a
-real consuming project that promise was **structurally unreachable**, which is worse than a missing
-check - it trains the operator to ignore the one signal reconcile exists to give.
+> **Root-cause correction (2026-07-04).** This CR was first filed claiming reconcile's status
+> vocabulary is hard-coded and should be made project-configurable. That is **wrong** - `reconcile.py`
+> already reads a per-type `status_vocab` from project config (`sdlc_md.status_vocab`), and
+> `validate.py check` already flags an out-of-vocab status precisely. Deeper investigation found the
+> real defect, below. The vocabulary mechanism is fine; the **diagnostics are not**.
 
-Observed in the field (agent-crew, this session): `reconcile.py detect` reported a persistent CR
-`count-mismatch` that could not be cleared. Root cause: the project's CR index carries a `Built`
-status row (a legitimate half-state: code merged, not yet Complete), but the script's row-status
-parser does not recognise `Built`, so it computes a summary total that can never match the
-human-maintained table. Every run reports drift; no `apply` clears it. By contrast, in the
-sdlc-studio repo itself `reconcile apply` reaches 0 cleanly - because that repo uses only the
-canonical status set the script models.
+The friction (agent-crew, this session): `reconcile.py detect` reported a persistent CR
+`count-mismatch` I could not clear. Its `fix` hint said *"recompute the summary counts from the index
+rows"* - so I ran `reconcile apply`, which changed nothing, and I wrongly concluded the drift was a
+"structural quirk" to be ignored. **The signal trained me to distrust the signal.**
 
-So the defect is precise: **the skill's status vocabulary is hard-coded and narrower than what real
-projects grow into, with no config seam to extend it.** Projects legitimately add statuses
-(`Built`, `Gated`, `Superseded`, `Deferred`); the reconcile census + summary recompute must count
-whatever vocabulary the project actually uses, or "drift 0" is a lie for that project.
+The actual cause: agent-crew's CRs use a `Built` (and `Done`) status that its `.config.yaml`
+`status_vocab.cr` does not declare, so those rows canonicalise to `Unknown`, are dropped from
+`row_counts`, and the summary total can never match. `validate.py check` says this in one line -
+*"status 'Built ...' is not one of the allowed cr statuses"* - but nothing pointed me at `validate`,
+and the `count-mismatch` finding named neither the offending status nor the config fix.
 
-Proposed: teach reconcile the project's full status set, sourced from config rather than hard-coded.
+So the defect is **diagnostic quality**, and it generalises: a finding whose `fix` string is generic
+and whose remedy lives in a *different* tool is a dead end. The fix an agent can act on must travel
+**with** the finding.
 
-1. Read the recognised statuses (per artefact type) from the project config (`.sdlc-studio.yaml` /
-   `reference-config.md`), defaulting to the current canonical set when unspecified.
-2. The census, `row_counts`, and summary recompute all range over that configured set, so a
-   `Built`/`Gated`/etc. row is counted, not dropped, and `apply` can reach a true 0.
-3. An **unknown** status (one in a file/row but not in the configured set) is reported as its own
-   drift kind (`unknown-status`) - fail loud ([[LL0008]]), never silently miscounted.
+Proposed - make reconcile's findings self-diagnosing (and set the pattern for other emitters):
+
+1. When a `count-mismatch` is caused by one or more statuses canonicalising to `Unknown`, the finding
+   names them and the artefacts carrying them, and its `fix` becomes actionable: *"status 'Built' on
+   CR-0299, CR-0300 is not in `status_vocab.cr`; add it to `.config.yaml` or run `validate.py check`."*
+2. `detect` cross-references the sibling tool that diagnoses the class of drift (here `validate`), so
+   an agent is routed to the right next command instead of guessing.
+3. The generic *"recompute the summary counts"* hint is kept only for a genuine arithmetic drift
+   (all statuses in-vocab, counts simply stale) - the one case where `apply` actually resolves it.
 
 ## Acceptance Criteria
 
-- [ ] reconcile reads the recognised per-type status vocabulary from project config, defaulting to
-      the current canonical set when the key is absent (back-compatible: existing projects unchanged)
-- [ ] census, `row_counts`, and the summary recompute all range over the configured set, so a
-      project that uses `Built` (or any configured status) reaches a genuine `detect` drift 0 after
-      `apply` - reproduce the agent-crew CR-summary case as a fixture and assert it clears
-- [ ] a status present in a file/row but absent from the configured set is surfaced as an
-      `unknown-status` drift, never silently treated as zero or folded into another bucket
-- [ ] `reference-reconcile.md` + `reference-config.md` document the config key and the default set;
-      `help/` updated where it lists reconcile drift kinds
-- [ ] unit tests: configured-extra-status counted, unknown-status flagged, no-config default path
-      unchanged
+- [ ] a `count-mismatch` caused by out-of-vocab statuses names the offending status(es) and the
+      artefacts carrying them in the finding, not a bare `id: null`
+- [ ] its `fix` string is actionable and specific: add-to-`status_vocab` (with the config path) or
+      run `validate.py check`, rather than the generic "recompute the summary counts"
+- [ ] the generic recompute hint remains for a true arithmetic-only mismatch (all statuses in-vocab)
+- [ ] `detect` output routes the operator/agent to the sibling diagnostic tool for the drift class
+- [ ] reproduce the agent-crew case as a fixture: a CR index with a `Built` row absent from
+      `status_vocab.cr` yields the specific finding + fix, and adding the status to config clears it
+- [ ] `reference-reconcile.md` documents the self-diagnosing finding shape; `help/status.md` updated
 - [ ] `CHANGELOG.md` `[Unreleased]` entry ([[LL0004]])
 
 ## Out of Scope
 
-- Prescribing a canonical status set for all projects (this CR makes the set configurable, it does
-  not standardise it - status sprawl is a separate concern).
-- Auto-transitioning artefacts to resolve drift (transitions stay the gated `transition` call).
+- Making the vocabulary configurable (already done - `status_vocab` in project config).
+- The broader "every emitter suggests a fix on error" sweep across all 40+ scripts - this CR proves
+  the pattern on the finding that actually dead-ended a session; generalising it is a follow-on.
+- Auto-editing a project's `.config.yaml` (the sweep proposes; the operator adds the status).
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-04 | claude | Created via `new` (deterministic) |
+| 2026-07-04 | claude | Root-cause corrected after deeper tooling investigation: the vocab is already configurable + validate already flags it; the real defect is undiagnosable findings. Retitled + rescoped. |
