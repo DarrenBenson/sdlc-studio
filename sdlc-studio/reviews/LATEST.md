@@ -5,8 +5,16 @@
 > and `sdlc-studio/retros/`; the original v2.0 unified review is `RV0001-unified-review-2026-06-20.md`.
 >
 > **Project version:** 3.3.0 (released 2026-07-04) · **Date:** 2026-07-04 ·
-> **Gates:** lint clean, 1042 script tests pass (+41 repo-only tools tests), `gate` PASS, reconcile drift 0, disclosure 0,
+> **Gates:** lint clean, 1060 script tests pass (+41 repo-only tools tests), `gate` PASS, reconcile drift 0, disclosure 0,
 > npm audit 0, CI green on main.
+> **Sprint D0006 - the first instrumented sprint (unreleased, on main, RETRO0009):** the
+> operator-reviewed tranche delivered 3/3 on redirect (D0008): BG0052 (terminal transitions
+> record telemetry - the repo's first calibration rows, entering-terminal-only), CR0150
+> (concurrent-session workspace advisory in status/hint), BG0051 (bottom-up Verified
+> write-backs; US0051-54 repaired). Critic: request-changes (1 high: dead pillars text
+> wiring - lesson L-0004 test-the-command) -> all fixed -> approve on re-run repros. The
+> mutation gate survived-then-killed its first real findings on its own sprint (11/12).
+> Open backlog: CR0151, CR0152 only.
 > **Sprint 2026-07-C - the re-scoped seven (unreleased, on main, RETRO0008):** all 7 operator-
 > approved dogfood CRs delivered through their own new machinery: CR0144 (`iter_tables` - the
 > BG0046/BG0049 parser class retired, 4 ports with tests unmodified), CR0146 (mutation v2:

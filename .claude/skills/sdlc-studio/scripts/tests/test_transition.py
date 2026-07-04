@@ -413,6 +413,33 @@ class TelemetryOnCloseTests(unittest.TestCase):
             tr.transition(root, "BG0001", "Closed", dry_run=True)
             self.assertEqual(self._records(root), [])
 
+    def test_lifecycle_records_exactly_one_event(self) -> None:
+        # Fixed -> Verified -> Closed is ONE unit closing once: one event, not three;
+        # an idempotent re-close records nothing.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bug(Path(d))
+            tr.transition(root, "BG0001", "Fixed")
+            tr.transition(root, "BG0001", "Verified")
+            tr.transition(root, "BG0001", "Closed")
+            tr.transition(root, "BG0001", "Closed")
+            self.assertEqual(len(self._records(root)), 1)
+
+    def test_reopen_and_reclose_records_a_second_event(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bug(Path(d))
+            tr.transition(root, "BG0001", "Closed")
+            tr.transition(root, "BG0001", "In Progress")   # reopened
+            tr.transition(root, "BG0001", "Closed")
+            recs = self._records(root)
+            self.assertEqual(len(recs), 2)
+
+    def test_fractional_wall_time_recorded(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bug(Path(d))
+            tr.main(["set", "--id", "BG0001", "--status", "Closed",
+                     "--root", str(root), "--wall-time-s", "12.5"])
+            self.assertEqual(self._records(root)[0]["wall_time_s"], 12.5)
+
     def test_cli_metrics_pass_through(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = self._bug(Path(d))

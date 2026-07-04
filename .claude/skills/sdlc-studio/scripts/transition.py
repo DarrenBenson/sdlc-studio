@@ -242,10 +242,13 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
     if type_ == "story":
         result["epic"] = _cascade_epic(root, result["id"],
                                        sdlc_md.canonical_status(new_status, vocab) in _STORY_TICKED)
-    if sdlc_md.canonical_status(new_status, vocab) in sdlc_md.terminal_statuses(type_):
-        # the loop closes units HERE, so the calibration event records HERE -
-        # never a second call an agent must remember (the artifact-close-only
-        # wiring left telemetry.jsonl empty across whole sprints)
+    from_canon = sdlc_md.canonical_status(current, vocab)
+    to_canon = sdlc_md.canonical_status(new_status, vocab)
+    if (to_canon in sdlc_md.terminal_statuses(type_)
+            and from_canon not in sdlc_md.terminal_statuses(type_)):
+        # record on ENTERING the terminal set only: Fixed -> Verified -> Closed is
+        # one close (one event), an idempotent re-close is none, and a
+        # reopen-then-reclose is honestly a second cycle
         import telemetry  # sibling; record() is best-effort and never raises
         telemetry.record(root, {"id": result["id"], "type": type_, **(metrics or {})})
         result["telemetry"] = True
@@ -261,11 +264,17 @@ def _print_result(res: dict, dry_run: bool) -> None:
         print(f"  warning: {res['warning']}")
 
 
-def _int(v):
+def _num(v):
+    """int when whole, float otherwise (fractional seconds are a natural unit);
+    None only when absent or unparseable - a typo'd metric is dropped visibly by
+    the telemetry record simply lacking the field."""
+    if v is None:
+        return None
     try:
-        return int(v) if v is not None else None
+        f = float(v)
     except (TypeError, ValueError):
         return None
+    return int(f) if f == int(f) else f
 
 
 def cmd_set(args: argparse.Namespace) -> int:
@@ -277,8 +286,8 @@ def cmd_set(args: argparse.Namespace) -> int:
     refused = 0
     for aid in ids:
         try:
-            metrics = {k: v for k, v in {"iterations": _int(args.iterations),
-                                         "wall_time_s": _int(args.wall_time_s),
+            metrics = {k: v for k, v in {"iterations": _num(args.iterations),
+                                         "wall_time_s": _num(args.wall_time_s),
                                          "critic_verdict": args.verdict}.items() if v is not None}
             res = transition(args.root, aid, args.status, dry_run=args.dry_run,
                              force=args.force, metrics=metrics)

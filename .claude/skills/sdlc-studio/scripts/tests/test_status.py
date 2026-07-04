@@ -156,6 +156,31 @@ class WorkspaceAdvisoryTests(unittest.TestCase):
             self.assertIn("CR0002", adv)
             self.assertIn("another session", adv)   # awareness wording, no authorship claim
 
+    def test_rename_names_both_ids(self) -> None:
+        import subprocess
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            cd = root / "sdlc-studio" / "change-requests"
+            subprocess.run(["git", "mv", "sdlc-studio/change-requests/CR0001-a.md",
+                            "sdlc-studio/change-requests/CR0002-b.md"],
+                           cwd=root, check=True, capture_output=True)
+            adv = status.workspace_advisory(root)
+            self.assertIn("CR0001", adv)
+            self.assertIn("CR0002", adv)
+
+    def test_pillars_and_hint_commands_run_in_text_mode(self) -> None:
+        # the critic's high finding: the COMMANDS must run, not just the helper
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            for cmd in ("pillars", "hint"):
+                buf = io.StringIO()
+                with redirect_stdout(buf):
+                    rc = status.main([cmd, "--root", str(root)])
+                self.assertEqual(rc, 0, f"{cmd} crashed:\n{buf.getvalue()}")
+                self.assertTrue(buf.getvalue().strip(), f"{cmd} printed nothing")
+
     def test_clean_workspace_no_advisory(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = self._repo(Path(d))
@@ -172,6 +197,40 @@ class WorkspaceAdvisoryTests(unittest.TestCase):
             root = self._repo(Path(d))
             (root / "README.md").write_text("x\n", encoding="utf-8")   # outside sdlc-studio/
             self.assertIsNone(status.workspace_advisory(root))
+
+
+class UpdateNoticeTests(unittest.TestCase):
+    """Pins _print_update_notice's one behaviour: when the version check yields a
+    notice line, it prints; when not, it stays silent. Added because the mutation
+    gate SURVIVED both a body short-circuit and a guard inversion here - the
+    function was entirely unpinned."""
+
+    def _with_stub(self, notice_value):
+        import io, types
+        from contextlib import redirect_stdout
+        stub = types.ModuleType("version_check")
+        stub.DEFAULT_TTL_HOURS = 24
+        stub.check = lambda **kw: {"stub": True}
+        stub.notice = lambda _res: notice_value
+        old = sys.modules.get("version_check")
+        sys.modules["version_check"] = stub
+        try:
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                status._print_update_notice(".")
+            return buf.getvalue()
+        finally:
+            if old is not None:
+                sys.modules["version_check"] = old
+            else:
+                sys.modules.pop("version_check", None)
+
+    def test_notice_prints_when_present(self) -> None:
+        out = self._with_stub("update available: v9.9.9")
+        self.assertIn("update available", out)
+
+    def test_silent_when_no_notice(self) -> None:
+        self.assertEqual(self._with_stub(None), "")
 
 
 if __name__ == "__main__":

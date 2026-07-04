@@ -21,7 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   re-anchoring commands print one advisory line naming the artifact ids -
   "another session may be mid-flight" - instead of the next session discovering
   the collision by gate failure. Informational only; no authorship guesses;
-  degrades silently without git.
+  degrades silently without git. Critic hardening: the pillars text-mode wiring
+  was dead behind a misplaced return (caught by a live command run while the
+  helper-only tests stayed green - lesson L-0004: test the command, not only the
+  helper); renames now name both the old and new ids.
 
 - **Terminal transitions record telemetry (BG0052).** The delivery loop closes
   units via `transition.py`, but telemetry only fired in `artifact close` - which
