@@ -166,7 +166,7 @@ def _run_tests(test_cmd: str, cwd: Path) -> str:
     timeout - a compound command's grandchildren must not outlive the gate."""
     import os
     import signal
-    proc = subprocess.Popen(test_cmd, shell=True, cwd=cwd, start_new_session=True,
+    proc = subprocess.Popen(test_cmd, shell=True, cwd=cwd, start_new_session=True,  # nosec B602 - operator-authored test command, same trust boundary as verify_ac's Verify lines
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
         rc = proc.wait(timeout=_RUN_TIMEOUT)
