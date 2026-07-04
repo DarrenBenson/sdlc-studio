@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 0 |
+| Proposed | 2 |
 | Approved | 7 |
 | In Progress | 0 |
 | Complete | 138 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 4 |
 | Blocked | 0 |
-| **Total** | **149** |
+| **Total** | **151** |
 
 ## All Changes
 
@@ -169,3 +169,5 @@
 | [CR-0147](CR0147-doc-freshness-test-count-must-count-what-the.md) | doc_freshness test-count must count what the runner reports, not test definitions | Approved | Low | Bug | 2026-07-04 | -- |
 | [CR-0148](CR0148-name-the-close-of-sprint-adversarial-critic-pass.md) | name the close-of-sprint adversarial critic pass as a hard sprint step (re-verify against the critic's own repros) | Approved | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0149](CR0149-wsjf-no-seat-fallback-demote-the-complexity-seed.md) | WSJF no-seat fallback: demote the complexity seed from size stand-in to tiebreak | Approved | Low | Improvement | 2026-07-04 | -- |
+| [CR-0150](CR0150-status-hint-surface-an-advisory-when-the-workspace.md) | status/hint surface an advisory when the workspace carries artifact changes this session did not make | Proposed | Medium | Improvement | 2026-07-04 | -- |
+| [CR-0151](CR0151-sprint-plan-names-the-provenance-of-its-seat.md) | sprint plan names the provenance of its seat scores (which units were scored, and when) | Proposed | Low | Improvement | 2026-07-04 | -- |
