@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Pre-commit hook now runs markdownlint from the npm-local install.** The hook
+  checked only for a *global* `markdownlint`, so after `npm install` (which provides
+  `markdownlint-cli` at `node_modules/.bin/`) it silently skipped the check - and an
+  MD032 (blank-lines-around-lists) error in a CR doc passed the local gate and failed
+  CI on the v3.3.0 push. The hook now prefers `node_modules/.bin/markdownlint` and,
+  when Node is absent entirely, prints a visible SKIP instead of passing silently.
+  AGENTS.md documents the gap. Fixed the MD032 error itself in CR0131.
+
 ## [3.3.0] - 2026-07-04
 
 The anti-vibe hardening release: enforcement you cannot skip, a test-integrity

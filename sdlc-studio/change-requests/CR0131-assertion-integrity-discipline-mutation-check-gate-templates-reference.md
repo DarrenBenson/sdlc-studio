@@ -10,8 +10,8 @@
 
 ## Summary
 
-The skill teaches verification *depth* (`reference-test-best-practices.md#verification-depth-tiers`
-- how far a claim was exercised) but never the prior question the tiers silently assume: **would
+The skill teaches verification *depth* (`reference-test-best-practices.md#verification-depth-tiers`,
+how far a claim was exercised) but never the prior question the tiers silently assume: **would
 this test go red if the feature were broken?** A green suite over a dead feature is worse than no
 suite - it manufactures false confidence and lets a non-functional surface ship as Done.
 

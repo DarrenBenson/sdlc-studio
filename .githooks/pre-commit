@@ -105,12 +105,23 @@ if git diff --cached --name-only | grep -qE "^\.claude/skills/sdlc-studio/script
     -- python3 -m unittest discover -s "$skill/tests"
 fi
 
-# Markdown mechanics: only if markdownlint is installed (needs Node).
-if command -v markdownlint >/dev/null 2>&1; then
+# Markdown mechanics (markdownlint-cli, a devDependency). Prefer the npm-local
+# binary so `npm install` is enough - no global install needed. If Node is absent
+# entirely, say so loudly: it is the one guard CI enforces that cannot run here.
+md_cmd=""
+if [ -x node_modules/.bin/markdownlint ]; then
+  md_cmd="node_modules/.bin/markdownlint"
+elif command -v markdownlint >/dev/null 2>&1; then
+  md_cmd="markdownlint"
+fi
+if [ -n "$md_cmd" ]; then
   run "markdown" \
-    "markdown mechanics (headings, lists, fences)" \
+    "markdown mechanics: blank lines around lists (MD032), heading levels, fenced blocks" \
     "auto-fix most with: npm run lint:fix" \
-    -- markdownlint '**/*.md' --ignore node_modules
+    -- $md_cmd '**/*.md' --ignore node_modules
+else
+  printf '  %sSKIP%s markdown - markdownlint not found. Run %snpm install%s to enable it locally.\n' "$Y" "$N" "$B" "$N"
+  printf '       CI still enforces it, so a markdown-mechanics error can pass here and fail on push.\n'
 fi
 
 if [ "$fail" -ne 0 ]; then

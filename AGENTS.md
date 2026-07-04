@@ -100,9 +100,15 @@ plain Python/bash command you can run directly. Do not skip the gate because
 | Scripts | `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests` | every script and checker unit test |
 | Drift | `python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect` | index / status / count drift in the dogfooded `sdlc-studio/` workspace |
 
-Only `lint:md` (markdownlint) needs Node; the rest are stdlib Python or bash. A
-change that touches a `reference-*.md` line count, an artefact status, prose style,
-or any consuming-project name must pass the relevant guard - none are optional.
+Only `lint:md` (markdownlint) needs Node; the rest are stdlib Python or bash.
+`markdownlint-cli` is a devDependency, so `npm install` provides it at
+`node_modules/.bin/markdownlint` and the pre-commit hook runs it from there (no
+global install needed). If Node is absent the hook prints a visible SKIP for
+markdown and CI still enforces it, so a markdown-mechanics error (e.g. MD032,
+blank lines around lists) can pass a Node-less machine and fail on push - run
+`npm install` to close that gap. A change that touches a `reference-*.md` line
+count, an artefact status, prose style, or any consuming-project name must pass the
+relevant guard; none are optional.
 
 Manual verification:
 
