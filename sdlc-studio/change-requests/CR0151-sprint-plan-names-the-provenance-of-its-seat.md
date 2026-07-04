@@ -21,3 +21,4 @@ wsjf-inputs.json is a silent cross-sprint side-channel: the amigo consult writes
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-04 | audit | Raised |
+| 2026-07-04 | operator | Review: SOLID, preventive (no actual misfire; latent staleness real). Quibble recorded: the 7-day window is somewhat arbitrary - seat judgement does not rot on a clock like a mutation report; harmless because advisory-only |

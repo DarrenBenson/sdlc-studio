@@ -22,3 +22,4 @@ Either transition.py records the telemetry event when the target status is termi
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-04 | audit | Filed |
+| 2026-07-04 | operator | Review: CONFIRMED (transition.py mentions telemetry 0 times, artifact close 8; telemetry.jsonl never written). Priority of the batch - a dead feature, the product_reconcile disease class. Fix direction endorsed: record on terminal transition, never require a second call |

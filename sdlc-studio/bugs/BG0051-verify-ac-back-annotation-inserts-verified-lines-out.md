@@ -22,3 +22,4 @@ insert_after must always resolve to the Verify line's index when one exists in t
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-04 | audit | Filed |
+| 2026-07-04 | operator | Review: CONFIRMED with live evidence (US0051 AC2/AC3/AC4 show three distinct wrong positions; AC1 with Verify-last is correct - matches the insert_after root cause). Low, well-diagnosed; the one-off reorder pass endorsed |

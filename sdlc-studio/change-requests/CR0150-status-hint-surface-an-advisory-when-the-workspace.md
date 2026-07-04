@@ -21,3 +21,4 @@ Two sessions worked this repo's workspace concurrently on 2026-07-04: one filed 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-04 | audit | Raised |
+| 2026-07-04 | operator | Review: SOLID - provenance accurate (the reviewer is the session that tripped over the gate failure); advisory-in-status/hint is the right cheap place; Medium fair since agents re-anchor via status/hint, not raw git |
