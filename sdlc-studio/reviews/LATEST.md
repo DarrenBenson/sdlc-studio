@@ -7,6 +7,15 @@
 > **Project version:** 3.3.0 (released 2026-07-04) · **Date:** 2026-07-04 ·
 > **Gates:** lint clean, 1026 script tests pass (+41 repo-only tools tests), `gate` PASS, reconcile drift 0, disclosure 0,
 > npm audit 0, CI green on main.
+> **Sprint 2026-07-B - the mutation gate (unreleased, on main, RETRO0007):** RFC0022 Accepted
+> (D0002) and built to Done the same sprint: EP0011/US0051-54 ship `mutation.py` (killed /
+> survived / error / unviable verdicts, honest truncation + un-checked, py compile-gated
+> mutants) + the advisory gate `mutation` lane (absent = not-run, other-rev = STALE). Critic
+> loop ran twice: HIGH unviable-as-killed finding fixed test-first (lesson L-0002). Also:
+> BG0047 (seat-sized WSJF), BG0048 (provenance cutoff), BG0049 (ts-check matrix bleed,
+> emergent at design), the 44-bug Fixed->Closed sweep (D0003), RFC0018 pressure-tested
+> (accept-reduced recommendation, operator decision open). New backlog: CR0141
+> (product_reconcile parser, operator-filed).
 > **Sprint 2026-07 - mixed backlog clear (unreleased, on main, RETRO0006):** 7/8 units delivered
 > via the seat-scored WSJF loop (the amigos' first consult on this repo): BG0045/BG0046 (the
 > gate-vs-shipped-template pair), CR0132+CR0139 merged (self-diagnosing findings), CR0133
