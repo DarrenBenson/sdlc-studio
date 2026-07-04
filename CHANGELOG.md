@@ -32,6 +32,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Reconcile and validate findings now self-diagnose (CR0132, absorbing CR0139).**
+  Two field sessions dead-ended on an opaque `count-mismatch` whose "recompute the
+  summary counts" hint `apply` could not clear - the cause was an out-of-vocab
+  status silently dropped from the row tally. The finding now names each mismatched
+  status with both numbers (`cr: Proposed rows=5 summary=4`, text and JSON), and
+  when out-of-vocab statuses are the cause it names the status, its artifacts, and
+  the `status_vocab.<type>` config remedy, routing to `validate.py check`; the
+  generic recompute hint survives only for true arithmetic drift. `validate`'s
+  status-vocab error now names the config extension mechanism instead of implying
+  historical artifacts must be rewritten. Documented in `reference-reconcile.md`,
+  `help/reconcile.md`, `help/status.md`.
 - **Duplicate-id gate no longer trips on the shipped CR index's Dependencies table
   (BG0046).** `reconcile`'s within-table duplicate scan reset its per-table tally only
   on a header containing a bare `Status` cell; the `templates/indexes/cr.md`

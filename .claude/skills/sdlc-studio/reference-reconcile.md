@@ -17,6 +17,21 @@ Detailed workflow for the reconcile command that detects and fixes status drift 
 > changelog). AC verification still runs via `verify_ac.py` (`--scope verify`).
 > The manual walk below is the fallback when the script is unavailable.
 
+## Self-diagnosing count-mismatch findings {#count-mismatch-diagnosis}
+
+A `count-mismatch` finding carries its own diagnosis - never a bare "recompute":
+
+- **Every finding names the numbers**: each mismatched status token with both sides,
+  e.g. `cr: Proposed rows=5 summary=4` (text output, and a `mismatches` list in JSON).
+- **When out-of-vocab statuses are the cause** (a file status that canonicalises to
+  `Unknown` is dropped from the row tally, so the summary can never match), the
+  finding names the offending status and the artifacts carrying it, and the `fix`
+  is the config remedy: declare the status in `sdlc-studio/.config.yaml` under
+  `status_vocab.<type>`, or diagnose with `scripts/validate.py check` (JSON carries
+  an `out_of_vocab` map). `reconcile apply` cannot clear this class - do not loop on it.
+- **Only a true arithmetic drift** (all statuses in-vocab, counts stale) keeps the
+  "recompute the summary counts" hint - the one case `apply` resolves.
+
 ## /sdlc-studio reconcile - Step by Step {#reconcile-workflow}
 
 ### 1. Parse Arguments

@@ -138,6 +138,16 @@ mechanical discrepancies.
 ══════════════════════════════════════════════════════════
 ```
 
+### Reading a count-mismatch finding
+
+The finding diagnoses itself - each mismatched status with both numbers, e.g.
+`count-mismatch cr: Proposed rows=5 summary=4`. When the cause is an out-of-vocab
+status, it names the status and its artifacts and points at the remedy (declare it
+in `sdlc-studio/.config.yaml` under `status_vocab.<type>`, or run
+`scripts/validate.py check`) - `apply` cannot clear that class, so do not loop on
+it. Only the all-in-vocab arithmetic case says "recompute the summary counts",
+which `apply` resolves. See `reference-reconcile.md#count-mismatch-diagnosis`.
+
 ## Examples
 
 ```bash

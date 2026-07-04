@@ -322,14 +322,37 @@ def detect_type(type_: str, repo_root: Path) -> dict:
         rc = _canonical_status(istatus, vocab)
         if rc is not None:
             row_counts[rc] = row_counts.get(rc, 0) + 1
-    count_mismatch = bool(index["summary"]) and any(
-        index["summary"].get(st, 0) != row_counts.get(st, 0)
-        for st in set(index["summary"]) | set(row_counts)
-    )
-    if count_mismatch:
+    mismatches = [
+        {"status": st, "rows": row_counts.get(st, 0), "summary": index["summary"].get(st, 0)}
+        for st in sorted(set(index["summary"]) | set(row_counts))
+        if index["summary"].get(st, 0) != row_counts.get(st, 0)
+    ]
+    if bool(index["summary"]) and mismatches:
+        # The finding carries its own diagnosis (the mismatched tokens with both
+        # numbers) and, when out-of-vocab statuses are the cause, the offending
+        # status + carriers + the config remedy - a generic "recompute" hint for a
+        # vocab problem is a dead end that apply cannot clear.
+        out_of_vocab: dict[str, list[str]] = {}
+        for disp, fstatus in sorted(census.values()):
+            if fstatus and _canonical_status(fstatus, vocab) is None:
+                out_of_vocab.setdefault(fstatus, []).append(disp)
+        detail = ", ".join(f"{m['status']} rows={m['rows']} summary={m['summary']}"
+                           for m in mismatches)
+        if out_of_vocab:
+            named = "; ".join(
+                f"status '{st}' on {', '.join(ids)} is not in status_vocab.{type_}"
+                for st, ids in sorted(out_of_vocab.items()))
+            fix = (f"{detail}. Likely cause: {named} - declare it in "
+                   f"sdlc-studio/.config.yaml under status_vocab.{type_} "
+                   f"(see reference-config.md), or diagnose with scripts/validate.py check")
+        else:
+            fix = (f"{detail}. All statuses are in-vocab (stale arithmetic) - "
+                   f"recompute the summary counts from the index rows")
         drift.append({"type": type_, "id": None, "kind": "count-mismatch",
                       "file_status": None, "index_status": None,
-                      "fix": "recompute the summary counts from the index rows"})
+                      "mismatches": mismatches,
+                      "out_of_vocab": out_of_vocab or None,
+                      "fix": fix})
 
     # File-census tally kept for information (status distribution on disk).
     census_counts: dict[str, int] = {}

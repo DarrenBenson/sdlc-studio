@@ -97,7 +97,9 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
         # leading token is not in the vocabulary at all is flagged.
         allowed = ", ".join(sdlc_md.status_vocab(type_, repo_root))
         add("error", "status-vocab",
-            f"status '{status}' is not one of the allowed {type_} statuses ({allowed})")
+            f"status '{status}' is not one of the allowed {type_} statuses ({allowed}); "
+            f"an established project status can be declared in sdlc-studio/.config.yaml "
+            f"under status_vocab.{type_} - see reference-config.md")
 
     if type_ == "story":
         ac_ids = [

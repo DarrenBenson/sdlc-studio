@@ -488,6 +488,65 @@ class DuplicateRowTests(unittest.TestCase):
 
 
 
+class SelfDiagnosingCountMismatchTests(unittest.TestCase):
+    """count-mismatch findings carry their own diagnosis: the mismatched status
+    tokens with both numbers, and - when out-of-vocab statuses are the cause -
+    the offending status, its artifacts, and the status_vocab remedy."""
+
+    def _repo(self, d, cr2_status="Built", summary="| Proposed | 2 |\n"):
+        repo = Path(d)
+        dd = repo / "sdlc-studio" / "change-requests"; dd.mkdir(parents=True)
+        (dd / "CR0001-a.md").write_text(
+            "# CR-0001: a\n\n> **Status:** Proposed\n", encoding="utf-8")
+        (dd / "CR0002-b.md").write_text(
+            f"# CR-0002: b\n\n> **Status:** {cr2_status}\n", encoding="utf-8")
+        (dd / "_index.md").write_text(
+            "# Index\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n" + summary +
+            "\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            f"| CR-0001 | a | Proposed |\n| CR-0002 | b | {cr2_status} |\n",
+            encoding="utf-8")
+        return repo
+
+    def test_out_of_vocab_cause_is_named_with_remedy(self):
+        with tempfile.TemporaryDirectory() as d:
+            r = reconcile.detect_type("cr", self._repo(d))
+            finds = [x for x in r["drift"] if x["kind"] == "count-mismatch"]
+            self.assertEqual(len(finds), 1)
+            f = finds[0]
+            self.assertIn("Proposed rows=1 summary=2", f["fix"])       # numbers travel
+            self.assertIn("'Built'", f["fix"])                          # offender named
+            self.assertIn("CR0002", f["fix"])                           # carrier named
+            self.assertIn("status_vocab.cr", f["fix"])                  # the config remedy
+            self.assertIn("validate", f["fix"])                         # sibling tool routed
+            self.assertEqual(f["mismatches"],
+                             [{"status": "Proposed", "rows": 1, "summary": 2}])
+            self.assertEqual(f["out_of_vocab"], {"Built": ["CR0002"]})
+
+    def test_arithmetic_only_keeps_recompute_hint(self):
+        with tempfile.TemporaryDirectory() as d:
+            r = reconcile.detect_type(
+                "cr", self._repo(d, cr2_status="Complete", summary="| Proposed | 2 |\n"))
+            finds = [x for x in r["drift"] if x["kind"] == "count-mismatch"]
+            self.assertEqual(len(finds), 1)
+            f = finds[0]
+            self.assertIn("recompute the summary counts", f["fix"])     # generic hint kept
+            self.assertNotIn("status_vocab", f["fix"])                  # no false vocab blame
+            self.assertIsNone(f["out_of_vocab"])
+            self.assertIn({"status": "Proposed", "rows": 1, "summary": 2}, f["mismatches"])
+
+    def test_declaring_the_status_in_config_clears_it(self):
+        try:
+            import yaml  # noqa: F401 - soft dependency, mirrors project_override
+        except ImportError:
+            self.skipTest("PyYAML absent - project_override degrades to defaults")
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, summary="| Proposed | 1 |\n| Built | 1 |\n")
+            (repo / "sdlc-studio" / ".config.yaml").write_text(
+                "status_vocab:\n  cr:\n    - Built\n", encoding="utf-8")
+            r = reconcile.detect_type("cr", repo)
+            self.assertEqual([x for x in r["drift"] if x["kind"] == "count-mismatch"], [])
+
+
 class CountBlockScopeTests(unittest.TestCase):
     def test_per_epic_count_table_not_corrupted(self):
         # BG0026: per-epic Status|Count tables (no Total) must survive; only the global summary

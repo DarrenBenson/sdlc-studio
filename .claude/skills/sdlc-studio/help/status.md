@@ -369,6 +369,11 @@ The recommendation is advisory – it doesn't block any other workflow. Reconcil
 
 If `reconcile-state.json` does not exist (project hasn't yet adopted the cadence triggers), the recommendation line is suppressed and no error is emitted.
 
+A persistent `count-mismatch` that `reconcile apply` does not clear is usually an
+out-of-vocab status: the finding names the offending status, its artifacts, and the
+`status_vocab.<type>` config remedy directly - see
+`reference-reconcile.md#count-mismatch-diagnosis` and `scripts/validate.py check`.
+
 ## See Also
 
 - `/sdlc-studio hint` - Single actionable next step

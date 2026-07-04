@@ -42,6 +42,19 @@ class ValidateFileTests(unittest.TestCase):
             rules = {v["rule"] for v in validate.validate_file(p, "story")}
             self.assertIn("status-vocab", rules)
 
+    def test_status_vocab_error_names_extension_mechanism(self) -> None:
+        # The error carries the sanctioned remedy: declare an established project
+        # status via config, not rewrite historical artifacts.
+        with tempfile.TemporaryDirectory() as d:
+            p = _write(Path(d), "sdlc-studio/stories/US0002-x.md",
+                       "# X\n\n> **Status:** Frozen\n\n### AC1: y\n- **Verify:** file b\n")
+            msgs = [v["message"] for v in validate.validate_file(p, "story")
+                    if v["rule"] == "status-vocab"]
+            self.assertEqual(len(msgs), 1)
+            self.assertIn("status_vocab.story", msgs[0])
+            self.assertIn(".config.yaml", msgs[0])
+            self.assertIn("reference-config.md", msgs[0])
+
     def test_missing_status_and_title(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             p = _write(Path(d), "sdlc-studio/stories/US0003-x.md", "no heading, no status\n")

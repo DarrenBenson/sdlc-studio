@@ -1,6 +1,6 @@
 # CR-0132: reconcile findings must self-diagnose (name the out-of-vocab status + suggest the actionable fix)
 
-> **Status:** Approved
+> **Status:** Complete
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new
 > **Priority:** High
