@@ -1,6 +1,6 @@
 # CR-0136: enforce verification-depth tiers on transition (Fixed needs functional+, Close needs soak)
 
-> **Status:** Approved
+> **Status:** Complete
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium

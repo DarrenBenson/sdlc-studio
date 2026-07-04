@@ -27,6 +27,58 @@ import reconcile  # noqa: E402  (sibling - reuse the tested index-row + count sy
 _STORY_TICKED = {"Done", "Won't Implement", "Deferred", "Superseded"}
 _REPORT_REL = "sdlc-studio/.local/verify-report.json"
 
+# Verification-depth tiers, weakest first (reference-test-best-practices.md).
+_TIERS = {"smoke": 0, "functional": 1, "conversational": 2, "soak": 3, "live": 4}
+_TARGET_RE = re.compile(r"^\s*-\s*\*\*Verification target:\*\*\s*`?(\w+)`?", re.M)
+
+
+def _depth_token(text: str) -> str | None:
+    """The leading tier token of the `Verification depth` field (decorations like
+    `functional (unit)` are fine), or None when the field is absent/unparseable."""
+    raw = (sdlc_md.extract_field(text, "Verification depth") or "").strip()
+    token = raw.split()[0].lower().strip("`") if raw else ""
+    return token if token in _TIERS else None
+
+
+def _bug_depth_gate(text: str, target_canon: str | None) -> str | None:
+    """Block reason when a bug transition under-shoots its verification-depth tier.
+
+    Fixed requires `functional`+; Closed on a production-affecting bug requires
+    `soak`+. A missing/unparseable depth on a gated transition is refused, never
+    treated as satisfied (fail loud). The non-production Close path is unchanged."""
+    if target_canon not in ("Fixed", "Closed"):
+        return None
+    prod = (sdlc_md.extract_field(text, "Production-affecting") or "").strip().lower() \
+        in ("yes", "true")
+    if target_canon == "Closed" and not prod:
+        return None
+    required = "soak" if target_canon == "Closed" else "functional"
+    token = _depth_token(text)
+    if token is None:
+        return (f"no parseable `Verification depth` field; {target_canon} requires "
+                f"`{required}`+ - record the verified tier "
+                f"(see reference-test-best-practices.md#verification-depth-tiers)")
+    if _TIERS[token] < _TIERS[required]:
+        return (f"depth is `{token}`; {target_canon} requires `{required}`+ - run the "
+                f"verification that tier demands, then set the depth")
+    return None
+
+
+def _story_target_parity(text: str) -> str | None:
+    """Advisory: Done should not out-run a declared AC `Verification target` above
+    `functional` unless a story-level depth at/above it is recorded."""
+    targets = [t.lower() for t in _TARGET_RE.findall(text) if t.lower() in _TIERS]
+    if not targets:
+        return None
+    top = max(targets, key=lambda t: _TIERS[t])
+    if _TIERS[top] <= _TIERS["functional"]:
+        return None
+    token = _depth_token(text)
+    if token and _TIERS[token] >= _TIERS[top]:
+        return None
+    return (f"an AC declares Verification target `{top}` but the recorded depth is "
+            f"`{token or 'unrecorded'}` - Done should not out-run the target")
+
 
 def _story_has_executable_acs(text: str) -> bool:
     """True if the story declares any non-manual `Verify:` line (an executable AC). A story
@@ -130,8 +182,24 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
         raise ValueError(f"{new_status!r} is not a valid {type_} status ({', '.join(vocab)})")
     text = path.read_text(encoding="utf-8")
     gate_warn = None
+    target_canon = sdlc_md.canonical_status(new_status, vocab)
+    if type_ == "bug" and not force and not dry_run:
+        block = _bug_depth_gate(text, target_canon)
+        if block:
+            raise ValueError(
+                f"{artifact_id} -> {new_status} blocked: {block}. Override with --force.")
+    if type_ == "story" and not dry_run and target_canon == "Done":
+        parity = _story_target_parity(text)
+        if parity:
+            # advisory by default (existing projects unaffected); a project opts
+            # into refusal via `quality.depth_parity_gate: true`.
+            import config  # sibling
+            if config.get(root, "quality.depth_parity_gate", False) and not force:
+                raise ValueError(
+                    f"{artifact_id} -> Done blocked: {parity}. Override with --force.")
+            gate_warn = f"depth-parity advisory: {parity}"
     if (type_ == "story" and not force and not dry_run
-            and sdlc_md.canonical_status(new_status, vocab) == "Done"):
+            and target_canon == "Done"):
         block = _done_verify_gate(root, path, text)
         if block:
             # the gate is hard by default; `quality.done_requires_verified: false`
@@ -139,7 +207,8 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
             import config  # sibling
             if config.get(root, "quality.done_requires_verified", True):
                 raise ValueError(f"{artifact_id} -> Done blocked: {block}. Override with --force.")
-            gate_warn = f"AC-verify advisory (quality.done_requires_verified=false): {block}"
+            verify_warn = f"AC-verify advisory (quality.done_requires_verified=false): {block}"
+            gate_warn = f"{gate_warn}; {verify_warn}" if gate_warn else verify_warn
     current = sdlc_md.extract_field(text, "Status")
     new_text, ok = _set_field(text, "Status", new_status)
     if not ok:

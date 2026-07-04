@@ -269,6 +269,12 @@ quality:
   # epic_requires_test_spec (default true): an epic must have a test-spec (linked by its
   # Epic: field) whose AC Coverage Matrix passes `verify_ac epic-ts`. Single-story work is exempt.
   epic_requires_test_spec: true
+  # depth_parity_gate (default false): the story->Done depth-parity check (an AC's declared
+  # `Verification target` above `functional` must not out-run the recorded depth) is advisory
+  # by default; true upgrades it to a refusal. The BUG depth tiers (Fixed needs functional+,
+  # production-affecting Closed needs soak) are always enforced by `transition.py` - --force
+  # overrides per call.
+  depth_parity_gate: false
 
 story_quality:
   edge_cases:

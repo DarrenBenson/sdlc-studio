@@ -18,6 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   non-interactive `artifact.py new` as the canonical create path (interactive
   commands are wrappers); `help/bug.md` / `help/cr.md` lead with the one-liner and
   state that ids + index rows are tool-allocated.
+- **Verification-depth tiers are enforced on transition, not decorative (CR0136).**
+  `transition.py` now refuses `bug -> Fixed` below `functional` and `bug -> Closed`
+  on a production-affecting bug (`> **Production-affecting:** yes`) below `soak`,
+  naming the current and required tier; a missing/unparseable depth field on a
+  gated transition is refused, never assumed satisfied. Story `Done` gains a
+  depth-parity advisory (an AC's declared `Verification target` above `functional`
+  should not out-run the recorded depth), upgradeable to a refusal via
+  `quality.depth_parity_gate: true`. `--force` records an override, as before.
 
 ### Changed
 

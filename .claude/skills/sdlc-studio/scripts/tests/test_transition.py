@@ -186,6 +186,105 @@ class DoneGateTests(unittest.TestCase):
             config.get = orig
 
 
+def _bug_repo(root: Path, depth: str | None, prod: bool = False) -> Path:
+    bd = root / "sdlc-studio" / "bugs"
+    bd.mkdir(parents=True)
+    header = "# BG0001: b\n\n> **Status:** In Progress\n> **Severity:** medium\n"
+    if prod:
+        header += "> **Production-affecting:** yes\n"
+    if depth is not None:
+        header += f"> **Verification depth:** {depth}\n"
+    (bd / "BG0001-x.md").write_text(
+        header + "\n## Summary\n\nx\n\n## Steps to Reproduce\n\n1. x\n\n## Proposed Fix\n\ny\n",
+        encoding="utf-8")
+    (bd / "_index.md").write_text(
+        "# Bugs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n"
+        "| In Progress | 1 |\n| Fixed | 0 |\n| Closed | 0 |\n\n"
+        "## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+        "| [BG0001](BG0001-x.md) | b | In Progress |\n", encoding="utf-8")
+    return root
+
+
+class DepthTierGateTests(unittest.TestCase):
+    """Verification-depth tiers are enforced on bug transitions, not decorative."""
+
+    def test_smoke_to_fixed_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _bug_repo(Path(d), "smoke")
+            with self.assertRaises(ValueError) as cm:
+                tr.transition(root, "BG0001", "Fixed")
+            self.assertIn("smoke", str(cm.exception))
+            self.assertIn("functional", str(cm.exception))  # names required tier
+
+    def test_functional_to_fixed_allowed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _bug_repo(Path(d), "functional (unit + regression)")
+            res = tr.transition(root, "BG0001", "Fixed")
+            self.assertEqual(res["to"], "Fixed")
+
+    def test_missing_depth_refused_not_passed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _bug_repo(Path(d), None)
+            with self.assertRaises(ValueError) as cm:
+                tr.transition(root, "BG0001", "Fixed")
+            self.assertIn("Verification depth", str(cm.exception))
+
+    def test_prod_bug_smoke_to_closed_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _bug_repo(Path(d), "functional", prod=True)
+            with self.assertRaises(ValueError) as cm:
+                tr.transition(root, "BG0001", "Closed")
+            self.assertIn("soak", str(cm.exception))
+
+    def test_prod_bug_soak_to_closed_allowed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _bug_repo(Path(d), "soak (7 days)", prod=True)
+            res = tr.transition(root, "BG0001", "Closed")
+            self.assertEqual(res["to"], "Closed")
+
+    def test_non_prod_close_path_unchanged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _bug_repo(Path(d), None)  # no depth, not production-affecting
+            res = tr.transition(root, "BG0001", "Closed")
+            self.assertEqual(res["to"], "Closed")
+
+    def test_force_overrides_depth_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _bug_repo(Path(d), "smoke")
+            res = tr.transition(root, "BG0001", "Fixed", force=True)
+            self.assertEqual(res["to"], "Fixed")
+
+
+class StoryTargetParityTests(unittest.TestCase):
+    """Story Done should not out-run a declared AC Verification target - advisory
+    by default, gateable via quality.depth_parity_gate."""
+
+    def _story_with_target(self, root: Path, target: str) -> Path:
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True)
+        (sd / "US0001-x.md").write_text(
+            "# US0001: s\n\n> **Status:** Ready\n\n## Acceptance Criteria\n\n"
+            f"### AC1\n- **Verify:** manual check\n- **Verification target:** {target}\n",
+            encoding="utf-8")
+        (sd / "_index.md").write_text(
+            "# Stories\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [US0001](US0001-x.md) | s | Ready |\n", encoding="utf-8")
+        return root
+
+    def test_target_above_functional_warns_but_allows(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._story_with_target(Path(d), "soak")
+            res = tr.transition(root, "US0001", "Done")
+            self.assertEqual(res["to"], "Done")
+            self.assertIn("soak", res["warning"] or "")
+
+    def test_functional_target_no_warning(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._story_with_target(Path(d), "functional")
+            res = tr.transition(root, "US0001", "Done")
+            self.assertIsNone(res["warning"])
+
+
 class HonestSyncTests(unittest.TestCase):
     """index_synced reflects the real post-transition state (critic CR0042)."""
 

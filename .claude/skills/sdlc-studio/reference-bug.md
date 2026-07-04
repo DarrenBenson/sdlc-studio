@@ -208,7 +208,7 @@ Close a bug with reason selection.
 1. **Check Prerequisites**
    - Verify bug status is "Fixed" or "Open"
    - If already closed, report error
-   - **Check verification depth.** A production-affecting bug cannot be Closed until its `Verification depth:` field reaches `soak` (default 7-day window). A non-production bug must be at least `functional`. Smoke-only verification is never sufficient to close. See `reference-test-best-practices.md#verification-depth-tiers` and the *Hypothesis discipline* gate in `reference-operator-heuristics.md#hypothesis-discipline`.
+   - **Check verification depth.** A production-affecting bug (`> **Production-affecting:** yes`) cannot be Closed until its `Verification depth:` field reaches `soak` (default 7-day window). A non-production bug must be at least `functional` to be marked Fixed. Smoke-only verification is never sufficient. **Enforced, not advisory:** `transition.py` refuses Fixed below `functional` and a production-affecting Closed below `soak`; a missing depth field on a gated transition is refused, not assumed (`--force` records an override). See `reference-test-best-practices.md#verification-depth-tiers` and the *Hypothesis discipline* gate in `reference-operator-heuristics.md#hypothesis-discipline`.
 
 2. **Prompt for Close Reason**
    Use AskUserQuestion:
