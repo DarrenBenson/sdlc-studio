@@ -1,6 +1,6 @@
 # CR-0149: WSJF no-seat fallback - demote the complexity seed from size stand-in to tiebreak
 
-> **Status:** Approved
+> **Status:** Complete
 > **Priority:** Low
 > **Type:** Improvement
 > **Date:** 2026-07-04
@@ -48,3 +48,4 @@ job. In the fallback, dividing by it distorts exactly the units nobody scored.
 | 2026-07-04 | audit | Raised |
 | 2026-07-04 | claude | Re-scoped per the operator's adversarial review: headline AC was already implemented; scope narrowed to the no-seat fallback; Medium -> Low |
 | 2026-07-04 | claude | Design settled: fallback divides by the neutral default; seed remains tiebreak + budget input |
+| 2026-07-04 | claude | Delivered: fallback divides by DEFAULT_UNKNOWN_SIZE; seed demoted to tiebreak/budget; pinning test seen RED first; reference-sprint reframed. Depth: functional |

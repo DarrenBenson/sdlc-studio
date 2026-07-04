@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **WSJF's no-seat fallback divides by the neutral default (CR0149).** The
+  complexity signal - the cognitive complexity of the existing files a unit
+  touches - is blast-radius risk, not effort; it no longer stands in as the WSJF
+  size when the Engineering seat has not scored a unit, surviving only as the
+  within-priority tiebreak and token-budget input. A one-line fix in a complex
+  file no longer sinks on the file's complexity.
+
 - **One shared structural table iterator (CR0144).** `sdlc_md.iter_tables()` is now
   the single boundary rule every table parser uses - header+separator (any dash
   count) opens a table, a heading ends it, and a caller predicate covers legacy

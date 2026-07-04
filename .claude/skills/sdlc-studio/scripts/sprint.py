@@ -272,9 +272,10 @@ def _order_batch(root: Path, out: list[dict], deps: dict[str, set], order: str,
                 seat_size = inp.get("size")
                 if isinstance(seat_size, (int, float)) and seat_size > 0:
                     size = seat_size
-                elif seed > 0:
-                    size = seed
                 else:
+                    # no seat size: the complexity seed is blast-radius RISK, not
+                    # effort - it stays the tiebreak + budget input, never the
+                    # denominator (a one-line fix in a complex file must not sink)
                     size = DEFAULT_UNKNOWN_SIZE
                 it["size"] = size
                 it["value"] = inp.get("value", 0)

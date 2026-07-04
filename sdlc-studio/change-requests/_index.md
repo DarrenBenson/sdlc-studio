@@ -7,9 +7,9 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 2 |
-| Approved | 2 |
+| Approved | 1 |
 | In Progress | 0 |
-| Complete | 143 |
+| Complete | 144 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 4 |
@@ -168,6 +168,6 @@
 | [CR-0146](CR0146-mutation-gate-v2-budget-aware-sampling-dirty-tree.md) | mutation gate v2: budget-aware sampling, dirty-tree staleness, docstring suppression | Complete | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0147](CR0147-doc-freshness-test-count-must-count-what-the.md) | doc_freshness test-count must count what the runner reports, not test definitions | Complete | Low | Bug | 2026-07-04 | -- |
 | [CR-0148](CR0148-name-the-close-of-sprint-adversarial-critic-pass.md) | name the close-of-sprint adversarial critic pass as a hard sprint step (re-verify against the critic's own repros) | Complete | Medium | Improvement | 2026-07-04 | -- |
-| [CR-0149](CR0149-wsjf-no-seat-fallback-demote-the-complexity-seed.md) | WSJF no-seat fallback: demote the complexity seed from size stand-in to tiebreak | Approved | Low | Improvement | 2026-07-04 | -- |
+| [CR-0149](CR0149-wsjf-no-seat-fallback-demote-the-complexity-seed.md) | WSJF no-seat fallback: demote the complexity seed from size stand-in to tiebreak | Complete | Low | Improvement | 2026-07-04 | -- |
 | [CR-0150](CR0150-status-hint-surface-an-advisory-when-the-workspace.md) | status/hint surface an advisory when the workspace carries artifact changes this session did not make | Proposed | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0151](CR0151-sprint-plan-names-the-provenance-of-its-seat.md) | sprint plan names the provenance of its seat scores (which units were scored, and when) | Proposed | Low | Improvement | 2026-07-04 | -- |

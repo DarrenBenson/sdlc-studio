@@ -627,6 +627,46 @@ class SeatSizeTests(unittest.TestCase):
             self.assertIn("wsjf", batch[0])   # complexity seed still works when files resolve
 
 
+class FallbackSizeTests(unittest.TestCase):
+    """CR0149: without a seat size, the complexity seed never stands in as the
+    WSJF denominator - a one-line fix in a complex file must not sink."""
+
+    def test_small_fix_in_complex_file_ranks_by_default_not_file_complexity(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            # a complex existing file the "small fix" CR touches
+            (root / "big.py").write_text(
+                "def f(x):\n" + "".join(f"    if x > {i}:\n        x -= {i}\n"
+                                         for i in range(12)) + "    return x\n",
+                encoding="utf-8")
+            dd = root / "sdlc-studio" / "change-requests"
+            dd.mkdir(parents=True, exist_ok=True)
+            (dd / "CR0001-x.md").write_text(
+                "# CR-0001: small fix\n\n> **Status:** Proposed\n> **Priority:** Medium\n"
+                "> **Affects:** big.py\n", encoding="utf-8")
+            (dd / "CR0002-x.md").write_text(
+                "# CR-0002: peer\n\n> **Status:** Proposed\n> **Priority:** Medium\n",
+                encoding="utf-8")
+            local = root / "sdlc-studio" / ".local"
+            local.mkdir(parents=True, exist_ok=True)
+            import json as _json
+            (local / "wsjf-inputs.json").write_text(_json.dumps({
+                "CR0001": {"value": 9, "time_criticality": 9, "risk_reduction": 9},
+                "CR0002": {"value": 3, "time_criticality": 3, "risk_reduction": 3}}),
+                encoding="utf-8")
+            batch = sp.select_batch(root, "cr", "Proposed", order="wsjf")
+            by_id = {b["id"]: b for b in batch}
+            # denominator is the neutral default for BOTH (no seat size anywhere);
+            # the higher-scored small fix ranks first instead of sinking on
+            # big.py's cognitive complexity
+            self.assertEqual(by_id["CR0001"]["size"], sp.DEFAULT_UNKNOWN_SIZE)
+            self.assertEqual(by_id["CR0001"]["wsjf"], round(27 / sp.DEFAULT_UNKNOWN_SIZE, 3))
+            self.assertEqual([b["id"] for b in batch][0], "CR0001")
+            # the seed survives as tiebreak input, not as size
+            self.assertGreater(by_id["CR0001"]["complexity"], 0)
+
+
 class WorklistTests(unittest.TestCase):
     """The documented worklist file (ids one per line) is a real batch source."""
 

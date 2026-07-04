@@ -209,9 +209,11 @@ priority sort. At the plan rung, consult the review seats - **Product Owner** fo
 (+ time-criticality, risk-reduction), **Engineering** for effort (an optional `size` per unit -
 story-point scale - which OVERRIDES the complexity seed), **QA** for risk - and write their
 scores to `sdlc-studio/.local/wsjf-inputs.json`
-(`{<id>: {value, time_criticality, risk_reduction, size?}}`). When neither a seat size nor a
-complexity seed resolves (new-file work: the Affects paths do not exist yet), the score uses a
-declared neutral default size - unknown effort is never treated as minimal. `sprint plan
+(`{<id>: {value, time_criticality, risk_reduction, size?}}`). Without a seat size the score
+divides by the declared neutral default - never by the complexity signal, which measures the
+cognitive complexity of the EXISTING files touched (blast-radius RISK, kept as the
+within-priority tiebreak and the token-budget input, not effort: a one-line fix in a complex
+file is not a big job). Unknown effort is never treated as minimal. `sprint plan
 --order wsjf` then orders by
 **WSJF = (value + time-criticality + risk-reduction) / size**, recording the components in the
 sprint-plan artifact. With no seat inputs (or `--skip-personas`) it degrades gracefully to
