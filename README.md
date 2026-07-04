@@ -4,7 +4,7 @@
 
 **Ask for software in plain language. An AI engineering team plans it, builds it, tests it, and proves it is done.**
 
-**Version 3.3.0**
+**Version 3.4.0**
 
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Lint](https://github.com/DarrenBenson/sdlc-studio/actions/workflows/lint.yml/badge.svg)](https://github.com/DarrenBenson/sdlc-studio/actions/workflows/lint.yml)
@@ -125,6 +125,7 @@ Two more ideas worth knowing:
 | Build and prove | Plan, implement, then verify against the criteria | `code plan` -> `code implement` -> `code verify` |
 | Drive to a goal | An autonomous batch loop that closes with reconcile + review | `sprint --goal done` |
 | Keep status honest | Detect and fix index drift from a file census; run executable `Verify:` lines | `reconcile`, `reconcile --verify` |
+| Prove tests can fail | Mutation-check the changed surface: killed vs survived, never a silent pass | `mutation run --since <ref>` |
 | Review like a team | The Three Amigos consult, with a mechanical author != reviewer gate | `consult team` |
 | Remember across projects | A lessons registry recalled before big decisions | `lessons recall`, `lessons add --global` |
 | Sync to GitHub | CRs, stories, and epics to GitHub Issues; merged PRs close them | `cr sync`, `story sync` |
@@ -308,8 +309,9 @@ It also reframes the lifecycle as a loop-engineering problem already solved. An 
 
 ## Under the hood
 
-- **Determinism in scripts, judgement in the model.** Standard-library-only Python helpers (census, status, validation, ID allocation, repo indexing, AC verification, the portable quality gate, deterministic artifact create/close, GitHub sync) with 990+ unit tests do the mechanical work.
+- **Determinism in scripts, judgement in the model.** Standard-library-only Python helpers (census, status, validation, ID allocation, repo indexing, AC verification, the portable quality gate, deterministic artifact create/close, GitHub sync) with 1,000+ unit tests do the mechanical work.
 - **Status that polices itself.** `reconcile` detects and fixes index drift from a file census; acceptance criteria can carry executable `Verify:` lines that `reconcile --verify` actually runs.
+- **Tests that prove they can fail.** The mutation-check gate injects declared faults into the changed surface and reports **killed vs survived** per mutation - a test that stays green over broken code is a finding, not a pass. Honest by construction: un-mutatable surfaces read un-checked, stale reports read STALE, truncated budgets are counted. Every unit close feeds a local, no-upload telemetry log (`telemetry show --summary`) so estimates calibrate against reality.
 - **Agentic execution.** `epic implement --agentic` runs safe waves of parallel implementation agents (Claude Code), with quality gates at every wave boundary and a lessons file that makes each wave smarter than the last.
 
 ## Troubleshooting

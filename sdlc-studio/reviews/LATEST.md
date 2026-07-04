@@ -1,13 +1,13 @@
-# LATEST - current project state (v3.3.0)
+# LATEST - current project state (v3.4.0)
 
 > The current-state anchor. **Re-read this and run `/sdlc-studio status` after any context reset
 > or compaction.** Durable guidance lives in AGENTS.md; per-tranche detail lives in CHANGELOG.md
 > and `sdlc-studio/retros/`; the original v2.0 unified review is `RV0001-unified-review-2026-06-20.md`.
 >
-> **Project version:** 3.3.0 (released 2026-07-04) · **Date:** 2026-07-04 ·
+> **Project version:** 3.4.0 (released 2026-07-04) · **Date:** 2026-07-04 ·
 > **Gates:** lint clean, 1060 script tests pass (+41 repo-only tools tests), `gate` PASS, reconcile drift 0, disclosure 0,
 > npm audit 0, CI green on main.
-> **Sprint D0006 - the first instrumented sprint (unreleased, on main, RETRO0009):** the
+> **Sprint D0006 - the first instrumented sprint (released in v3.4.0, RETRO0009):** the
 > operator-reviewed tranche delivered 3/3 on redirect (D0008): BG0052 (terminal transitions
 > record telemetry - the repo's first calibration rows, entering-terminal-only), CR0150
 > (concurrent-session workspace advisory in status/hint), BG0051 (bottom-up Verified
@@ -15,7 +15,7 @@
 > wiring - lesson L-0004 test-the-command) -> all fixed -> approve on re-run repros. The
 > mutation gate survived-then-killed its first real findings on its own sprint (11/12).
 > Open backlog: CR0151, CR0152 only.
-> **Sprint 2026-07-C - the re-scoped seven (unreleased, on main, RETRO0008):** all 7 operator-
+> **Sprint 2026-07-C - the re-scoped seven (released in v3.4.0, RETRO0008):** all 7 operator-
 > approved dogfood CRs delivered through their own new machinery: CR0144 (`iter_tables` - the
 > BG0046/BG0049 parser class retired, 4 ports with tests unmodified), CR0146 (mutation v2:
 > hash staleness, spread budget, docstring exclusion), CR0143 (`transition --ids`; retro/review
@@ -23,7 +23,7 @@
 > (freshness wording, the named critic close pass, WSJF fallback). Critic: approve first pass,
 > 5 lows, 4 fixed at close (lesson L-0003: anchor on slugs, not display ids). Open backlog:
 > CR0150/CR0151 (Proposed, operator review).
-> **Sprint 2026-07-B - the mutation gate (unreleased, on main, RETRO0007):** RFC0022 Accepted
+> **Sprint 2026-07-B - the mutation gate (released in v3.4.0, RETRO0007):** RFC0022 Accepted
 > (D0002) and built to Done the same sprint: EP0011/US0051-54 ship `mutation.py` (killed /
 > survived / error / unviable verdicts, honest truncation + un-checked, py compile-gated
 > mutants) + the advisory gate `mutation` lane (absent = not-run, other-rev = STALE). Critic
@@ -32,7 +32,7 @@
 > emergent at design), the 44-bug Fixed->Closed sweep (D0003), RFC0018 pressure-tested
 > (accept-reduced recommendation, operator decision open). New backlog: CR0141
 > (product_reconcile parser, operator-filed).
-> **Sprint 2026-07 - mixed backlog clear (unreleased, on main, RETRO0006):** 7/8 units delivered
+> **Sprint 2026-07 - mixed backlog clear (released in v3.4.0, RETRO0006):** 7/8 units delivered
 > via the seat-scored WSJF loop (the amigos' first consult on this repo): BG0045/BG0046 (the
 > gate-vs-shipped-template pair), CR0132+CR0139 merged (self-diagnosing findings), CR0133
 > (toolbox discoverability, doctrine rule 15), CR0135 (British-spelling guard), CR0136 (depth

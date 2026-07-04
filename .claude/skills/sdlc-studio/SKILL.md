@@ -4,7 +4,7 @@ description: "Full software development lifecycle pipeline: create or reverse-en
 license: MIT
 compatibility: "Requires Python 3.10+ for bundled scripts; gh CLI (authenticated) for GitHub sync commands. Agentic wave execution (--agentic) is Claude-Code-only."
 metadata:
-  version: "3.3.0"
+  version: "3.4.0"
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash, Agent
 ---
 
@@ -139,6 +139,7 @@ Claude loads files progressively based on task needs:
 | Invoking skill internals | reference-scripts.md | scripts/README.md | - |
 | Ranking files for a story | reference-repo-map.md | help/repo-map.md | reference-agent-prompt-template.md#agent-prompt-template |
 | Verifying ACs against codebase | reference-verify.md | help/verify.md | reference-reconcile.md#verify-scope |
+| Mutation-checking the changed surface (can the tests fail?) | help/mutation.md | scripts/mutation.py | reference-test-best-practices.md#mutation-check |
 | Syncing CR/Story/Epic with GitHub | reference-github-sync.md | help/github-sync.md | reference-cr.md#cr-sync-workflow |
 | Onboarding to a project / operating doctrine | reference-doctrine.md | help/init.md | lessons/_index.md |
 | Starting greenfield / "what order do I run things in?" | help/getting-started.md | help/init.md | reference-sprint.md |
@@ -220,6 +221,7 @@ approach decisions. The full index is in `help/references.md`.
 | `reconcile` | Detect and fix status drift across all artifacts |
 | `gate` | Portable, ecosystem-neutral CI quality gate over the deterministic checks |
 | `deploy` | Orchestrate-only deploy last-mile: gate, verify, record (operator-triggered, never autonomous) |
+| `mutation` | Executable mutation-check gate: prove the tests can FAIL (killed vs survived per mutation) |
 | `skill-update` | Check for and install a newer SDLC Studio release (the skill itself) |
 | `status` | Visual dashboard: Requirements, Code, Tests health |
 | `hint` | Single actionable next step |

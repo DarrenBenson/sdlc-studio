@@ -79,6 +79,7 @@ catalogue and worked workflows below cover every tool.
 | `/sdlc-studio pvd create` / `pvd sync` / `pvd drift` | Product Vision Document: the multi-repo product layer above the PRD |
 | `/sdlc-studio gate` | Portable, ecosystem-neutral CI quality gate over the deterministic checks |
 | `/sdlc-studio deploy` | Orchestrate-only deploy last-mile: gate, verify, record (operator-triggered, never autonomous) |
+| `/sdlc-studio mutation` | Executable mutation-check gate: prove the tests can FAIL (killed vs survived per mutation) |
 | `/sdlc-studio skill-update` | Upgrade the **installed skill** to a newer SDLC Studio release (one of three "upgrade" surfaces - see `reference-upgrade.md#three-upgrades`) |
 | `/sdlc-studio project upgrade` | Upgrade a **consuming project's artefacts and conventions** to the new skill (dry-run; `--apply` for the safe set; reports the judgement items) |
 

@@ -5,7 +5,20 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.4.0] - 2026-07-04
+
+### Release verification
+
+Eval scenarios (the two-Claude worker/grader loop, `evals/README.md`) run in full
+for the first time since v2.0.0 - the 02-04 waiver is retired: **01
+trigger-routing PASS** (skill self-invoked from natural language, template-
+conformant PRD), **02 greenfield-create PASS** (canonical paths, sequential ids,
+Draft-only GWT stories; one advisory unclear - the Three Amigos consult was
+skipped rather than offered under a self-answered interview, triaged as
+acceptable, re-check next instructions release), **03 generate-mode-gate PASS**
+(philosophy gate read before generation, code-exact extraction), **04
+drift-reconcile PASS** (deterministic helpers, both seeded drift items, zero
+mutation). Suites 1058 + 41 green; strict version check green; gate PASS.
 
 ### Added
 
