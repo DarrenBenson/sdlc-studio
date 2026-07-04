@@ -1,10 +1,10 @@
-# LATEST - current project state (v3.2.0)
+# LATEST - current project state (v3.3.0)
 
 > The current-state anchor. **Re-read this and run `/sdlc-studio status` after any context reset
 > or compaction.** Durable guidance lives in AGENTS.md; per-tranche detail lives in CHANGELOG.md
 > and `sdlc-studio/retros/`; the original v2.0 unified review is `RV0001-unified-review-2026-06-20.md`.
 >
-> **Project version:** 3.2.0 (released 2026-06-27) · **Date:** 2026-06-27 ·
+> **Project version:** 3.3.0 (released 2026-07-04) · **Date:** 2026-07-04 ·
 > **Gates:** lint clean, 995 script tests pass, `gate` PASS, reconcile drift 0, disclosure 0,
 > npm audit 0, CI green on main.
 > **CR0128 - test-strategy heuristics (delivered as a follow-on, unblocked after EP0010):**

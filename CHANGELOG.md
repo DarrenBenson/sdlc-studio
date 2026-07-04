@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-07-04
+
+The anti-vibe hardening release: enforcement you cannot skip, a test-integrity
+discipline, and a field retrospective that made the toolbox discoverable. A
+pre-commit hook now runs the whole gate on every commit and explains every failure
+in detail (CR0137); the assertion-integrity discipline teaches, and the templates
+now record, whether a test would fail if the feature broke (CR0131); and the AGENTS/
+PRD/TRD/TSD docs plus the README were reworked so an agent finds the 40+ deterministic
+scripts and the local gate instead of hand-doing their work. Five CRs (CR0132-CR0136)
+capture the remaining enforcement gaps found by dogfooding.
+
 ### Added
 
 - **Pre-commit hook makes the gate un-skippable (CR0137).** `bash tools/enable-hooks.sh`
@@ -17,6 +28,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   drift items print their own remediation. Turns "the agent should run the gate" into
   "the agent cannot commit past it" - the anti-vibe last mile. Emergency bypass:
   `git commit --no-verify`.
+
+- **Assertion-integrity discipline + mutation-check gate (CR0131).** The skill taught verification
+  *depth* but not whether a test *can fail*. Added a `reference-test-best-practices.md#assertion-integrity`
+  section (the vacuous/tautological assertion, the injected-data unit test that bypasses the real
+  wiring, and the mutation check - break the feature, confirm the test goes red, restore), a
+  per-AC `Mutation-checked` field in `templates/core/story.md`, a `Mutation-checked` verification
+  item in `templates/core/bug.md` (the regression test must be seen red against the unfixed code),
+  and an e2e-mutation-checked + real-data-path gate in `templates/workflows/release-gate.md`. Found
+  in the field: a governance surface shipped marked "renders + initiates + audits" while doing none
+  of the three on the real data path, behind a green-but-vacuous suite.
 
 ### Changed
 
@@ -54,18 +75,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     CR0133.)*
   - CR0136 - enforce the verification-depth tiers on `transition` (Fixed needs `functional`+, Close
     needs `soak`). The tiers are documented but `transition.py` never reads the depth field.
-
-### Added
-
-- **Assertion-integrity discipline + mutation-check gate (CR0131).** The skill taught verification
-  *depth* but not whether a test *can fail*. Added a `reference-test-best-practices.md#assertion-integrity`
-  section (the vacuous/tautological assertion, the injected-data unit test that bypasses the real
-  wiring, and the mutation check - break the feature, confirm the test goes red, restore), a
-  per-AC `Mutation-checked` field in `templates/core/story.md`, a `Mutation-checked` verification
-  item in `templates/core/bug.md` (the regression test must be seen red against the unfixed code),
-  and an e2e-mutation-checked + real-data-path gate in `templates/workflows/release-gate.md`. Found
-  in the field: a governance surface shipped marked "renders + initiates + audits" while doing none
-  of the three on the real data path, behind a green-but-vacuous suite.
 
 ## [3.2.0] - 2026-06-27
 
