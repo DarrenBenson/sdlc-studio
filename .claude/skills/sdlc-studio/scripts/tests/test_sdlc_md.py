@@ -369,5 +369,62 @@ class ParseCutoffTests(unittest.TestCase):
             self.assertIn(str(bad), str(cm.exception))  # message echoes the offending value
 
 
+class IterTablesTests(unittest.TestCase):
+    """The ONE structural table iterator every parser shares - boundaries are
+    structural (header + separator, any dash count; a heading ends the table),
+    with an optional caller predicate for legacy vocabulary headers."""
+
+    DOC = (
+        "# Title\n\n"
+        "| loose | row |\n\n"                                  # header-less block
+        "## Summary\n\n"
+        "| Status | Count |\n|--|--|\n| Open | 2 |\n\n"      # short-dash separators
+        "## All\n\n"
+        "| ID | Title | Status |\n| --- | --- | --- |\n"
+        "| US0001 | a | Done |\n| US0002 | b | Open |\n\n"
+        "## Dependencies\n\n"
+        "| CR | Depends On | Dependency Status |\n| --- | --- | --- |\n"
+        "| CR-0001 | CR-0002 | Done |\n\n"
+        "## Revision History\n\n"
+        "| Date | Author | Change |\n| --- | --- | --- |\n"
+        "| 2026-07-04 | Sam | Filed |\n"
+    )
+
+    def test_structural_tables_and_boundaries(self) -> None:
+        tables = list(sdlc_md.iter_tables(self.DOC))
+        headers = [t["header"] for t in tables]
+        self.assertIsNone(headers[0])                       # leading header-less block
+        self.assertEqual(headers[1], ["Status", "Count"])   # short-dash separator counts
+        self.assertEqual(headers[2], ["ID", "Title", "Status"])
+        self.assertEqual(headers[3], ["CR", "Depends On", "Dependency Status"])
+        self.assertEqual(headers[4], ["Date", "Author", "Change"])
+        # rows stay in their own table: the Dependencies row never joins All
+        self.assertEqual([c[0] for _, c in tables[2]["rows"]], ["US0001", "US0002"])
+        self.assertEqual([c[0] for _, c in tables[3]["rows"]], ["CR-0001"])
+
+    def test_heading_ends_a_table(self) -> None:
+        doc = ("| ID | Status |\n| --- | --- |\n| US0001 | Done |\n"
+               "## Notes\n| US0002 | stray |\n")
+        tables = list(sdlc_md.iter_tables(doc))
+        self.assertEqual(len(tables), 2)
+        self.assertEqual(len(tables[0]["rows"]), 1)          # US0002 is NOT in table 0
+        self.assertIsNone(tables[1]["header"])               # stray block is header-less
+
+    def test_vocabulary_predicate_opens_a_table(self) -> None:
+        # legacy: a header row without a separator, recognised by the caller's rule
+        doc = "| ID | Title | Status |\n| US0001 | a | Done |\n"
+        no_pred = list(sdlc_md.iter_tables(doc))
+        self.assertIsNone(no_pred[0]["header"])              # structurally header-less
+        pred = lambda cells: len(cells) > 2 and "status" in [c.lower() for c in cells]
+        with_pred = list(sdlc_md.iter_tables(doc, header_predicate=pred))
+        self.assertEqual(with_pred[0]["header"], ["ID", "Title", "Status"])
+        self.assertEqual(len(with_pred[0]["rows"]), 1)
+
+    def test_row_line_numbers_are_one_based(self) -> None:
+        doc = "| ID |\n| --- |\n| US0001 |\n"
+        t = next(iter(sdlc_md.iter_tables(doc)))
+        self.assertEqual(t["rows"][0][0], 3)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -79,9 +79,14 @@ def _table_cells(line: str) -> list[str] | None:
     return sdlc_md.table_cells(line)
 
 
-# A GFM delimiter row (`| --- |`, `|--|`, `| :-: |`) - aligned with table_cells'
-# separator definition, so ANY dash count marks a structural table boundary.
-_SEP_ROW_RE = re.compile(r"^\s*\|(?:\s*:?-+:?\s*\|)+\s*$")
+# Legacy vocabulary header (no separator line under it): >2 cells, one of them
+# a bare `Status`. Passed to sdlc_md.iter_tables as the header_predicate.
+def _VOCAB_HEADER(cells: list) -> bool:
+    return len(cells) > 2 and "status" in [c.lower() for c in cells]
+
+
+# Alias: the canonical separator regex now lives in sdlc_md (shared by every parser).
+_SEP_ROW_RE = sdlc_md.SEP_ROW_RE
 
 
 def _index_rows_and_summary(text: str, vocab: list) -> tuple[dict, dict]:
@@ -99,44 +104,36 @@ def _index_rows_and_summary(text: str, vocab: list) -> tuple[dict, dict]:
     """
     rows: dict = {}
     summary: dict = {}
-    status_col = id_col = None
-    saw_header = False
-    lines = text.splitlines()
-    for i, line in enumerate(lines):
-        cells = _table_cells(line)
-        if not cells:
-            continue
-        if len(cells) == 2 and cells[1].replace(",", "").isdigit():  # `| <Status> | <int> |`
-            label = _canonical_status(cells[0], vocab)
-            if label:
-                summary[label] = int(cells[1].replace(",", ""))
-            continue
-        lowered = [c.lower() for c in cells]
-        structural = i + 1 < len(lines) and _SEP_ROW_RE.match(lines[i + 1])
-        if structural or (len(cells) > 2 and "status" in lowered):  # re-pin per header
-            saw_header = True
-            status_col = lowered.index("status") if "status" in lowered else None
-            id_col = lowered.index("id") if "id" in lowered else None
-            continue
-        if id_col is not None and id_col < len(cells):
-            m = sdlc_md.ID_SEARCH_RE.search(cells[id_col])
-            row_id = m.group(0) if m else None
-        else:
-            row_id = next((sdlc_md.ID_SEARCH_RE.search(c).group(0)
-                           for c in cells if sdlc_md.ID_SEARCH_RE.search(c)), None)
-        if status_col is not None and status_col < len(cells):
-            row_status = _canonical_status(cells[status_col], vocab)
-        else:
-            row_status = None
-        if row_status is None and (not saw_header or status_col is not None):
-            # header-less block, or a status-column table whose pinned cell is
-            # off-schema: find the status by canonical-vocab token. A table that
-            # declares no Status column is never scavenged.
-            row_status = next((cs for c in cells if (cs := _canonical_status(c, vocab))), None)
-        if row_id:
-            key = _norm_id(row_id)
-            if row_status is not None or key not in rows:
-                rows[key] = (row_id, row_status or "Unknown")
+    for tbl in sdlc_md.iter_tables(text, header_predicate=_VOCAB_HEADER):
+        has_header = tbl["header"] is not None
+        lowered = [c.lower() for c in tbl["header"]] if has_header else []
+        status_col = lowered.index("status") if "status" in lowered else None
+        id_col = lowered.index("id") if "id" in lowered else None
+        for _ln, cells in tbl["rows"]:
+            if len(cells) == 2 and cells[1].replace(",", "").isdigit():  # `| <Status> | <int> |`
+                label = _canonical_status(cells[0], vocab)
+                if label:
+                    summary[label] = int(cells[1].replace(",", ""))
+                continue
+            if id_col is not None and id_col < len(cells):
+                m = sdlc_md.ID_SEARCH_RE.search(cells[id_col])
+                row_id = m.group(0) if m else None
+            else:
+                row_id = next((sdlc_md.ID_SEARCH_RE.search(c).group(0)
+                               for c in cells if sdlc_md.ID_SEARCH_RE.search(c)), None)
+            if status_col is not None and status_col < len(cells):
+                row_status = _canonical_status(cells[status_col], vocab)
+            else:
+                row_status = None
+            if row_status is None and (not has_header or status_col is not None):
+                # header-less block, or a status-column table whose pinned cell is
+                # off-schema: find the status by canonical-vocab token. A table
+                # that declares no Status column is never scavenged.
+                row_status = next((cs for c in cells if (cs := _canonical_status(c, vocab))), None)
+            if row_id:
+                key = _norm_id(row_id)
+                if row_status is not None or key not in rows:
+                    rows[key] = (row_id, row_status or "Unknown")
     return rows, summary
 
 
@@ -147,27 +144,20 @@ def _index_row_ids(text: str) -> list[str]:
     sequence (not a {id: ...} dict) so duplicate rows are visible rather than collapsed.
     """
     ids: list[str] = []
-    id_col = None
-    lines = text.splitlines()
-    for i, line in enumerate(lines):
-        cells = _table_cells(line)
-        if not cells:
-            continue
-        if len(cells) == 2 and cells[1].replace(",", "").isdigit():  # summary row
-            continue
-        lowered = [c.lower() for c in cells]
-        structural = i + 1 < len(lines) and _SEP_ROW_RE.match(lines[i + 1])
-        if structural or (len(cells) > 2 and "status" in lowered):  # header row - re-pin the id column
-            id_col = lowered.index("id") if "id" in lowered else None
-            continue
-        if id_col is not None and id_col < len(cells):
-            m = sdlc_md.ID_SEARCH_RE.search(cells[id_col])
-            rid = m.group(0) if m else None
-        else:
-            rid = next((sdlc_md.ID_SEARCH_RE.search(c).group(0)
-                        for c in cells if sdlc_md.ID_SEARCH_RE.search(c)), None)
-        if rid:
-            ids.append(_norm_id(rid))
+    for table in sdlc_md.iter_tables(text, header_predicate=_VOCAB_HEADER):
+        lowered = [c.lower() for c in table["header"]] if table["header"] else []
+        id_col = lowered.index("id") if "id" in lowered else None
+        for _ln, cells in table["rows"]:
+            if len(cells) == 2 and cells[1].replace(",", "").isdigit():  # summary row
+                continue
+            if id_col is not None and id_col < len(cells):
+                m = sdlc_md.ID_SEARCH_RE.search(cells[id_col])
+                rid = m.group(0) if m else None
+            else:
+                rid = next((sdlc_md.ID_SEARCH_RE.search(c).group(0)
+                            for c in cells if sdlc_md.ID_SEARCH_RE.search(c)), None)
+            if rid:
+                ids.append(_norm_id(rid))
     return ids
 
 
@@ -186,37 +176,25 @@ def _within_table_dup_counts(text: str) -> dict[str, int]:
     gate. Returns {id: count} only for ids whose within-table count > 1.
     """
     best: dict[str, int] = {}
-    table: dict[str, int] = {}
-    id_col: int | None = None
-
-    def flush() -> None:
-        for rid, n in table.items():
+    for tbl in sdlc_md.iter_tables(text, header_predicate=_VOCAB_HEADER):
+        lowered = [c.lower() for c in tbl["header"]] if tbl["header"] else []
+        id_col = lowered.index("id") if "id" in lowered else None
+        counts: dict[str, int] = {}
+        for _ln, cells in tbl["rows"]:
+            if len(cells) == 2 and cells[1].replace(",", "").isdigit():  # summary row
+                continue
+            if id_col is not None and id_col < len(cells):
+                m = sdlc_md.ID_SEARCH_RE.search(cells[id_col])
+                rid = m.group(0) if m else None
+            else:
+                rid = next((sdlc_md.ID_SEARCH_RE.search(c).group(0)
+                            for c in cells if sdlc_md.ID_SEARCH_RE.search(c)), None)
+            if rid:
+                k = _norm_id(rid)
+                counts[k] = counts.get(k, 0) + 1
+        for rid, n in counts.items():
             if n > best.get(rid, 0):
                 best[rid] = n
-
-    lines = text.splitlines()
-    for i, line in enumerate(lines):
-        cells = _table_cells(line)
-        if not cells:  # includes separator rows - table_cells returns None for them
-            continue
-        if i + 1 < len(lines) and _SEP_ROW_RE.match(lines[i + 1]):  # header row (structural) - flush + reset scope
-            flush()
-            table = {}
-            lowered = [c.lower() for c in cells]
-            id_col = lowered.index("id") if "id" in lowered else None
-            continue
-        if len(cells) == 2 and cells[1].replace(",", "").isdigit():  # summary row
-            continue
-        if id_col is not None and id_col < len(cells):
-            m = sdlc_md.ID_SEARCH_RE.search(cells[id_col])
-            rid = m.group(0) if m else None
-        else:
-            rid = next((sdlc_md.ID_SEARCH_RE.search(c).group(0)
-                        for c in cells if sdlc_md.ID_SEARCH_RE.search(c)), None)
-        if rid:
-            k = _norm_id(rid)
-            table[k] = table.get(k, 0) + 1
-    flush()
     return {rid: n for rid, n in best.items() if n > 1}
 
 

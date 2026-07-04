@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **One shared structural table iterator (CR0144).** `sdlc_md.iter_tables()` is now
+  the single boundary rule every table parser uses - header+separator (any dash
+  count) opens a table, a heading ends it, and a caller predicate covers legacy
+  vocabulary headers. The four parsers that each hand-rolled boundaries (the
+  duplicate-id scan, `_index_rows_and_summary`, `_index_row_ids`,
+  `verify_ac.ts_check`) are ported one at a time with their existing tests
+  unmodified and green between ports - retiring the defect class behind BG0046
+  and BG0049 instead of fixing it per parser (lesson L-0001 made structural).
+
 - **Mutation gate v2 (CR0146).** Correctness first: the report records a content
   hash per target and the gate lane reports STALE when any target changed since
   the run - same rev included - so a dirty tree can no longer ride an old green

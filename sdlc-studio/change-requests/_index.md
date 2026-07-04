@@ -7,9 +7,9 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 2 |
-| Approved | 3 |
+| Approved | 2 |
 | In Progress | 0 |
-| Complete | 142 |
+| Complete | 143 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 4 |
@@ -163,7 +163,7 @@
 | [CR-0141](CR0141-product-reconcile-feature-map-parser-is-inert-against.md) | product_reconcile feature-map parser is inert against CR/RFC-cited PVDs | Superseded | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0142](CR0142-retire-product-reconcile-a-traceability-gate-that-never.md) | Retire product_reconcile - a traceability gate that never told the truth | Complete | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0143](CR0143-batch-transitions-and-first-class-retro-review-types.md) | batch transitions and first-class retro/review types (deterministic-toolchain ergonomics) | Approved | Medium | Improvement | 2026-07-04 | -- |
-| [CR-0144](CR0144-one-shared-structural-table-iterator-in-sdlc-md.md) | one shared structural table iterator in sdlc_md - retire the per-parser boundary bugs as a class | Approved | High | Improvement | 2026-07-04 | -- |
+| [CR-0144](CR0144-one-shared-structural-table-iterator-in-sdlc-md.md) | one shared structural table iterator in sdlc_md - retire the per-parser boundary bugs as a class | Complete | High | Improvement | 2026-07-04 | -- |
 | [CR-0145](CR0145-verify-ac-lint-flags-verify-line-runners-that.md) | verify_ac lint flags Verify-line runners that are not on PATH (design-time, not delivery-time) | Complete | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0146](CR0146-mutation-gate-v2-budget-aware-sampling-dirty-tree.md) | mutation gate v2: budget-aware sampling, dirty-tree staleness, docstring suppression | Complete | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0147](CR0147-doc-freshness-test-count-must-count-what-the.md) | doc_freshness test-count must count what the runner reports, not test definitions | Complete | Low | Bug | 2026-07-04 | -- |

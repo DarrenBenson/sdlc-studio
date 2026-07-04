@@ -1,6 +1,6 @@
 # CR-0144: one shared structural table iterator in sdlc_md - retire the per-parser boundary bugs as a class
 
-> **Status:** Approved
+> **Status:** Complete
 > **Priority:** High
 > **Type:** Improvement
 > **Date:** 2026-07-04
@@ -41,3 +41,4 @@ The same defect class surfaced three times in one day: BG0046 (duplicate-id scan
 | --- | --- | --- |
 | 2026-07-04 | audit | Raised |
 | 2026-07-04 | claude | Design settled: iterator API, caller-owned pinning, port order (one at a time, tests unmodified) |
+| 2026-07-04 | claude | Delivered: iter_tables + 4 ports (port-by-port, suite green between each, existing tests unmodified); sweep clean (only the iterator and caller column-pins remain). 4 iterator tests seen RED first. Depth: functional + live epic-ts on both specs |

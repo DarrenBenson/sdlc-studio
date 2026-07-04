@@ -108,6 +108,48 @@ def table_cells(line: str) -> list[str] | None:
     return cells
 
 
+# A GFM delimiter row (`| --- |`, `|--|`, `| :-: |`) - the structural marker that
+# the |-row above it is a table header. Any dash count (GFM accepts one).
+SEP_ROW_RE = re.compile(r"^\s*\|(?:\s*:?-+:?\s*\|)+\s*$")
+
+
+def iter_tables(text: str, header_predicate=None):
+    """Yield each markdown table as {"header", "header_line", "rows"} - the ONE
+    structural boundary rule every table parser shares, so no parser hand-rolls
+    its own and re-imports the tallied-into-the-wrong-table defect class.
+
+    - header: the header row's cells, or None for a header-less block
+    - header_line / rows: 1-based line numbers; rows = [(lineno, cells), ...]
+    - a header row is a |-row immediately followed by a GFM separator (any dash
+      count); a markdown heading (#...) ends the current table; `header_predicate`
+      (cells -> bool) additionally opens a table on a legacy vocabulary header
+      that lacks a separator line
+    - separator rows are never yielded (table_cells returns None for them)
+    """
+    current = None  # {"header": ..., "header_line": ..., "rows": [...]}
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
+        if line.lstrip().startswith("#"):  # a heading ends the table scope
+            if current:
+                yield current
+            current = None
+            continue
+        cells = table_cells(line)
+        if cells is None:
+            continue
+        is_header = (i + 1 < len(lines) and SEP_ROW_RE.match(lines[i + 1])) or                     (header_predicate is not None and header_predicate(cells))
+        if is_header:
+            if current:
+                yield current
+            current = {"header": cells, "header_line": i + 1, "rows": []}
+            continue
+        if current is None:
+            current = {"header": None, "header_line": None, "rows": []}
+        current["rows"].append((i + 1, cells))
+    if current:
+        yield current
+
+
 def join_row(cells: list[str]) -> str:
     """Render a table row, re-escaping any literal pipe in a cell so a value that contains
     `|` round-trips through `table_cells` without shifting columns. The single row writer

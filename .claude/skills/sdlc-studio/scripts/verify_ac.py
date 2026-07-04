@@ -674,38 +674,30 @@ def ts_check(spec_path: Path | str, verify_report: Path | str | None = None) -> 
     text = Path(spec_path).read_text(encoding="utf-8")
     failed_in_report = _report_failed_acs(verify_report) if verify_report else set()
     issues: list[dict] = []
-    cols: dict = {}
-    for line in text.splitlines():
-        if line.lstrip().startswith("#"):  # a heading ends the matrix scope - later
-            # tables (References, Revision History) are never AC rows
-            cols = {}
-            continue
-        cells = sdlc_md.table_cells(line)
-        if not cells:
-            continue
+    def _matrix_header(cells: list) -> bool:
         low = [c.strip().lower() for c in cells]
-        if "ac" in low and ("test cases" in low or "test case" in low):  # matrix header
-            cols = {n: low.index(n) for n in ("ac", "test cases", "test case", "status") if n in low}
-            continue
-        if not cols or "ac" not in cols:
-            continue
-        if all(set(c.strip()) <= {"-", ":"} for c in cells):  # separator row
-            continue
-        ac = cells[cols["ac"]].strip() if cols["ac"] < len(cells) else ""
-        if not ac or ac.lower() == "ac":
-            continue
-        if "{{" in line:
-            issues.append({"ac": ac, "issue": "unfilled placeholder in the matrix row"})
-            continue
-        tc_col = cols.get("test cases", cols.get("test case"))
-        tc = cells[tc_col].strip() if tc_col is not None and tc_col < len(cells) else ""
-        st = cells[cols["status"]].strip() if "status" in cols and cols["status"] < len(cells) else ""
-        if not tc or tc in {"--", "-", "tbd", "TBD"}:
-            issues.append({"ac": ac, "issue": "no test case mapped"})
-        elif st.lower() not in _PASS_TOKENS:
-            issues.append({"ac": ac, "issue": f"status {st!r} is not passing"})
-        elif ac.upper() in failed_in_report:
-            issues.append({"ac": ac, "issue": "matrix says passing but the verify-report marks it failing"})
+        return "ac" in low and ("test cases" in low or "test case" in low)
+    for tbl in sdlc_md.iter_tables(text, header_predicate=_matrix_header):
+        if tbl["header"] is None or not _matrix_header(tbl["header"]):
+            continue  # only the AC Coverage Matrix table(s); later tables never bleed in
+        low = [c.strip().lower() for c in tbl["header"]]
+        cols = {n: low.index(n) for n in ("ac", "test cases", "test case", "status") if n in low}
+        for _ln, cells in tbl["rows"]:
+            ac = cells[cols["ac"]].strip() if cols["ac"] < len(cells) else ""
+            if not ac or ac.lower() == "ac":
+                continue
+            if "{{" in "|".join(cells):
+                issues.append({"ac": ac, "issue": "unfilled placeholder in the matrix row"})
+                continue
+            tc_col = cols.get("test cases", cols.get("test case"))
+            tc = cells[tc_col].strip() if tc_col is not None and tc_col < len(cells) else ""
+            st = cells[cols["status"]].strip() if "status" in cols and cols["status"] < len(cells) else ""
+            if not tc or tc in {"--", "-", "tbd", "TBD"}:
+                issues.append({"ac": ac, "issue": "no test case mapped"})
+            elif st.lower() not in _PASS_TOKENS:
+                issues.append({"ac": ac, "issue": f"status {st!r} is not passing"})
+            elif ac.upper() in failed_in_report:
+                issues.append({"ac": ac, "issue": "matrix says passing but the verify-report marks it failing"})
     return issues
 
 
