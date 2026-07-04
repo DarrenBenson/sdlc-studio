@@ -9,12 +9,12 @@
 | Proposed | 7 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 131 |
+| Complete | 132 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **139** |
+| **Total** | **140** |
 
 ## All Changes
 
@@ -159,3 +159,4 @@
 | [CR-0137](CR0137-pre-commit-hook-runs-the-gate-and-explains.md) | pre-commit hook runs the gate and explains every failure in detail (make enforcement un-skippable) | Complete | High | Feature | 2026-07-04 | -- |
 | [CR-0138](CR0138-mixed-batch-sprint-tranches-bugs-plus-crs-first-class.md) | make a mixed bugs + CRs tranche a first-class sprint batch | Proposed | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0139](CR0139-deterministic-check-messages-name-numbers-and-remedy.md) | deterministic-check findings should name the exact mismatch and the sanctioned remedy | Proposed | Low | Improvement | 2026-07-04 | -- |
+| [CR-0140](CR0140-move-repo-only-tools-checker-tests-out-of.md) | move repo-only tools/ checker tests out of the shipped skill payload (payload hygiene) | Complete | Medium | Improvement | 2026-07-04 | -- |

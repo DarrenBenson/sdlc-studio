@@ -97,7 +97,8 @@ plain Python/bash command you can run directly. Do not skip the gate because
 | Versions | `python3 tools/check_versions.py` | version-string drift across authoritative files |
 | Budgets | `python3 tools/check_budgets.py` | a reference file over its declared line ceiling |
 | Neutrality | `python3 tools/check_neutrality.py` | a private consuming-project name leaking into a tracked file |
-| Scripts | `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests` | every script and checker unit test |
+| Skill tests | `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests` | every shipped skill-script unit test |
+| Tool tests | `python3 -m unittest discover -s tools/tests` | every repo-only `tools/` checker unit test (kept out of the shipped payload) |
 | Drift | `python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect` | index / status / count drift in the dogfooded `sdlc-studio/` workspace |
 
 Only `lint:md` (markdownlint) needs Node; the rest are stdlib Python or bash.

@@ -15,7 +15,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-TOOLS = Path(__file__).resolve().parents[5] / "tools" / "check_neutrality.py"
+TOOLS = Path(__file__).resolve().parents[1] / "check_neutrality.py"
 _spec = importlib.util.spec_from_file_location("check_neutrality", TOOLS)
 assert _spec and _spec.loader
 cn = importlib.util.module_from_spec(_spec)

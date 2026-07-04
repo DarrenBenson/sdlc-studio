@@ -12,7 +12,7 @@ import unittest
 from pathlib import Path
 
 # tools/ lives at the repo root, six parents up from this test file.
-TOOLS = Path(__file__).resolve().parents[5] / "tools" / "check_links.py"
+TOOLS = Path(__file__).resolve().parents[1] / "check_links.py"
 _spec = importlib.util.spec_from_file_location("check_links", TOOLS)
 assert _spec and _spec.loader
 check_links = importlib.util.module_from_spec(_spec)

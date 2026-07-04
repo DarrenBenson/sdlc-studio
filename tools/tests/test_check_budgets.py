@@ -12,7 +12,7 @@ import unittest
 from pathlib import Path
 
 # tools/ lives at the repo root, six parents up from this test file.
-TOOLS = Path(__file__).resolve().parents[5] / "tools" / "check_budgets.py"
+TOOLS = Path(__file__).resolve().parents[1] / "check_budgets.py"
 _spec = importlib.util.spec_from_file_location("check_budgets", TOOLS)
 assert _spec and _spec.loader
 check_budgets = importlib.util.module_from_spec(_spec)
@@ -59,7 +59,7 @@ class BudgetTests(unittest.TestCase):
             self.assertEqual(check_budgets.main(["--root", d]), 1)
 
     def test_real_repo_passes(self) -> None:
-        repo = Path(__file__).resolve().parents[5]
+        repo = Path(__file__).resolve().parents[2]
         self.assertEqual(check_budgets.main(["--root", str(repo)]), 0)
 
 

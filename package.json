@@ -14,7 +14,9 @@
     "lint:budgets": "python3 tools/check_budgets.py",
     "lint:neutrality": "python3 tools/check_neutrality.py",
     "lint:fix": "markdownlint '**/*.md' --ignore node_modules --fix",
-    "test": "python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests"
+    "test": "npm run test:skill && npm run test:tools",
+    "test:skill": "python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests",
+    "test:tools": "python3 -m unittest discover -s tools/tests"
   },
   "devDependencies": {
     "markdownlint-cli": "^0.49.0"

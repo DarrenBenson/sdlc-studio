@@ -12,7 +12,7 @@ import unittest
 from pathlib import Path
 
 # tools/ lives at the repo root, six parents up from this test file.
-TOOLS = Path(__file__).resolve().parents[5] / "tools" / "validate_skill.py"
+TOOLS = Path(__file__).resolve().parents[1] / "validate_skill.py"
 _spec = importlib.util.spec_from_file_location("validate_skill", TOOLS)
 assert _spec and _spec.loader
 validate_skill = importlib.util.module_from_spec(_spec)
@@ -110,7 +110,7 @@ class ValidateTests(unittest.TestCase):
             self.assertTrue(any("not X.Y.Z semver" in e for e in errors))
 
     def test_real_skill_passes(self) -> None:
-        repo_skill = Path(__file__).resolve().parents[2]
+        repo_skill = Path(__file__).resolve().parents[2] / ".claude" / "skills" / "sdlc-studio"
         self.assertEqual(validate_skill.validate(repo_skill), [])
 
 

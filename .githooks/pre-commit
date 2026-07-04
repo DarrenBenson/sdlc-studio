@@ -97,12 +97,18 @@ for t, info in d.get("types", {}).items():
   printf '       %s→ fix:%s address each failing check; run the named script for per-item detail (e.g. `%s/validate.py check`, `%s/conformance.py`); mechanical drift clears with `%s/reconcile.py apply`\n\n' "$B" "$N" "$skill" "$skill" "$skill"
 fi
 
-# Script unit tests: only when the commit touches scripts/ or tools/ (keeps doc commits fast).
+# Unit tests: only when the commit touches scripts/ or tools/ (keeps doc commits fast).
+# Two suites: shipped skill scripts, and the repo-only tools/ checkers (kept out of
+# the skill payload so they do not ship to consuming projects).
 if git diff --cached --name-only | grep -qE "^\.claude/skills/sdlc-studio/scripts/|^tools/"; then
-  run "scripts" \
-    "every script and checker unit test passes" \
-    "fix the code or the test named in the failure above, then re-run: python3 -m unittest discover -s $skill/tests" \
+  run "skill-tests" \
+    "every shipped skill script unit test passes" \
+    "fix the code or the test named in the failure above; re-run: python3 -m unittest discover -s $skill/tests" \
     -- python3 -m unittest discover -s "$skill/tests"
+  run "tool-tests" \
+    "every repo-only tools/ checker unit test passes" \
+    "fix the code or the test named in the failure above; re-run: python3 -m unittest discover -s tools/tests" \
+    -- python3 -m unittest discover -s tools/tests
 fi
 
 # Markdown mechanics (markdownlint-cli, a devDependency). Prefer the npm-local

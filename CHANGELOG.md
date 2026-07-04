@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Payload hygiene: repo-only `tools/` checker tests moved out of the shipped skill
+  (CR0140).** Five tests (`test_check_neutrality/budgets/links/versions`, `test_validate_skill`)
+  lived in `.claude/skills/sdlc-studio/scripts/tests/` - so they shipped into every consumer
+  install and reached the repo-root `tools/` they test, which does not ship. Moved to a repo-level
+  `tools/tests/`; runners (`package.json`, the pre-commit hook, CI) now run both suites; total count
+  preserved (995 = 958 skill + 37 tools). The shipped payload now tests only what ships, and the
+  domain-neutrality guard (a public-repo-only concern) no longer has any footprint in consumer
+  installs.
+
 ### Fixed
 
 - **Pre-commit hook now runs markdownlint from the npm-local install.** The hook
