@@ -65,6 +65,18 @@ class DocFreshnessTests(unittest.TestCase):
             kinds = [f["kind"] for f in df.check(d)["findings"]]
             self.assertIn("test-count-drift", kinds)
 
+    def test_count_drift_message_names_the_counting_method(self):
+        # CR0147 (reduced AC): the finding must say WHAT it counts - statically
+        # counted test functions - so the operator writes the claim for the right
+        # number instead of chasing the runner's skip/subclass accounting.
+        with tempfile.TemporaryDirectory() as d:
+            _skill(Path(d), "2.4.4", 3)
+            _latest(Path(d), "**Project version:** 2.4.4\n\n99 script tests\n")
+            f = next(x for x in df.check(d)["findings"]
+                     if x["kind"] == "test-count-drift")
+            self.assertIn("counted statically", f["detail"])
+            self.assertIn("test functions", f["detail"])
+
     def test_disclosure_drift(self):
         with tempfile.TemporaryDirectory() as d:
             _skill(Path(d), "2.4.4", 3)

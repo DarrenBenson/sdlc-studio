@@ -7,9 +7,9 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 2 |
-| Approved | 7 |
+| Approved | 6 |
 | In Progress | 0 |
-| Complete | 138 |
+| Complete | 139 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 4 |
@@ -166,7 +166,7 @@
 | [CR-0144](CR0144-one-shared-structural-table-iterator-in-sdlc-md.md) | one shared structural table iterator in sdlc_md - retire the per-parser boundary bugs as a class | Approved | High | Improvement | 2026-07-04 | -- |
 | [CR-0145](CR0145-verify-ac-lint-flags-verify-line-runners-that.md) | verify_ac lint flags Verify-line runners that are not on PATH (design-time, not delivery-time) | Approved | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0146](CR0146-mutation-gate-v2-budget-aware-sampling-dirty-tree.md) | mutation gate v2: budget-aware sampling, dirty-tree staleness, docstring suppression | Approved | Medium | Improvement | 2026-07-04 | -- |
-| [CR-0147](CR0147-doc-freshness-test-count-must-count-what-the.md) | doc_freshness test-count must count what the runner reports, not test definitions | Approved | Low | Bug | 2026-07-04 | -- |
+| [CR-0147](CR0147-doc-freshness-test-count-must-count-what-the.md) | doc_freshness test-count must count what the runner reports, not test definitions | Complete | Low | Bug | 2026-07-04 | -- |
 | [CR-0148](CR0148-name-the-close-of-sprint-adversarial-critic-pass.md) | name the close-of-sprint adversarial critic pass as a hard sprint step (re-verify against the critic's own repros) | Approved | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0149](CR0149-wsjf-no-seat-fallback-demote-the-complexity-seed.md) | WSJF no-seat fallback: demote the complexity seed from size stand-in to tiebreak | Approved | Low | Improvement | 2026-07-04 | -- |
 | [CR-0150](CR0150-status-hint-surface-an-advisory-when-the-workspace.md) | status/hint surface an advisory when the workspace carries artifact changes this session did not make | Proposed | Medium | Improvement | 2026-07-04 | -- |

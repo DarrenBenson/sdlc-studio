@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **doc-freshness names its counting method (CR0147, reduced AC).** The test-count
+  finding now says "N test functions counted statically ... claim this number", so
+  the LATEST.md claim and the checker agree on what is being counted instead of the
+  operator chasing the runner's skip/subclass accounting. The checker still never
+  runs the suite.
+
 - **RFC-0018 closed as accept-reduced (operator decision D0004).** `telemetry show
   --summary` aggregates the run log per type (count, mean iterations, mean wall
   time, reopen rate, verdict mix - a field never measured reports None, not a

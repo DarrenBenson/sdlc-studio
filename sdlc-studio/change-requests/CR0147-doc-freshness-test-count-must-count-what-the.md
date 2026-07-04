@@ -1,6 +1,6 @@
 # CR-0147: doc_freshness test-count must count what the runner reports, not test definitions
 
-> **Status:** Approved
+> **Status:** Complete
 > **Priority:** Low
 > **Type:** Bug
 > **Date:** 2026-07-04
@@ -24,3 +24,4 @@ doc_freshness's test-count-drift lane counts test definitions statically (1019 t
 | --- | --- | --- |
 | 2026-07-04 | audit | Raised |
 | 2026-07-04 | claude | Operator review applied: the name-the-method half is the preferred AC; running the suite inside the freshness check is explicitly rejected |
+| 2026-07-04 | claude | Delivered: finding wording names the static method; regression test seen RED first. Depth: functional |

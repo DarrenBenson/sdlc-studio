@@ -73,7 +73,9 @@ def check(repo_root: Path | str = ".") -> dict:
         ct_n, tt = int(ct.replace(",", "")), _true_test_count(skill_dir)
         if ct_n != tt:
             findings.append({"kind": "test-count-drift",
-                             "detail": f"LATEST.md says {ct_n} tests; the suite has {tt}"})
+                             "detail": (f"LATEST.md says {ct_n} tests; {tt} test functions "
+                                        f"counted statically in scripts/tests (the runner may "
+                                        f"report fewer for skips/subclasses - claim this number)")})
     # disclosure count
     cd = claim(r"disclosure[^\d]{0,8}(\d+)")
     if cd is not None:
