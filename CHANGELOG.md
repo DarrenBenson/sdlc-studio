@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Terminal transitions record telemetry (BG0052).** The delivery loop closes
+  units via `transition.py`, but telemetry only fired in `artifact close` - which
+  the loop never calls - so three full sprints recorded zero events and the
+  RFC0018 `show --summary` had nothing to summarise (the product_reconcile
+  disease: a feature that exists and silently never runs). A transition whose
+  target status is terminal for the type now appends the event (id, type, plus
+  any `--iterations`/`--wall-time-s`/`--verdict` passed through); never on
+  dry-run or non-terminal moves. The sprint's own discipline is instrumented
+  from the run that fixed it forward.
+
 - **Batch transitions and tool-created retros/reviews (CR0143).** `transition.py set
   --ids A,B,C` runs a same-target batch with each id individually gated - one
   refusal reports, continues, and exits non-zero (no more shell loops around the

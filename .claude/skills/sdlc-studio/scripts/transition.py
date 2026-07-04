@@ -169,7 +169,8 @@ def _cascade_epic(repo_root: Path, story_id: str, ticked: bool) -> str | None:
 
 
 def transition(repo_root: Path | str, artifact_id: str, new_status: str,
-               dry_run: bool = False, force: bool = False) -> dict:
+               dry_run: bool = False, force: bool = False,
+               metrics: dict | None = None) -> dict:
     """Set `artifact_id`'s status to `new_status`, sync its index, and cascade the epic
     breakdown for a story. Returns {id, type, from, to, index_synced, epic}.
 
@@ -241,6 +242,13 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
     if type_ == "story":
         result["epic"] = _cascade_epic(root, result["id"],
                                        sdlc_md.canonical_status(new_status, vocab) in _STORY_TICKED)
+    if sdlc_md.canonical_status(new_status, vocab) in sdlc_md.terminal_statuses(type_):
+        # the loop closes units HERE, so the calibration event records HERE -
+        # never a second call an agent must remember (the artifact-close-only
+        # wiring left telemetry.jsonl empty across whole sprints)
+        import telemetry  # sibling; record() is best-effort and never raises
+        telemetry.record(root, {"id": result["id"], "type": type_, **(metrics or {})})
+        result["telemetry"] = True
     return result
 
 
@@ -253,6 +261,13 @@ def _print_result(res: dict, dry_run: bool) -> None:
         print(f"  warning: {res['warning']}")
 
 
+def _int(v):
+    try:
+        return int(v) if v is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
 def cmd_set(args: argparse.Namespace) -> int:
     if bool(args.id) == bool(args.ids):
         print("specify exactly one of --id or --ids", file=sys.stderr)
@@ -262,7 +277,11 @@ def cmd_set(args: argparse.Namespace) -> int:
     refused = 0
     for aid in ids:
         try:
-            res = transition(args.root, aid, args.status, dry_run=args.dry_run, force=args.force)
+            metrics = {k: v for k, v in {"iterations": _int(args.iterations),
+                                         "wall_time_s": _int(args.wall_time_s),
+                                         "critic_verdict": args.verdict}.items() if v is not None}
+            res = transition(args.root, aid, args.status, dry_run=args.dry_run,
+                             force=args.force, metrics=metrics)
             results.append(res)
             if args.format != "json":
                 _print_result(res, args.dry_run)
@@ -289,6 +308,9 @@ def build_parser() -> argparse.ArgumentParser:
                                  "individually gated and one refusal never aborts the rest")
     s.add_argument("--status", required=True, help="New status (must be in the type vocabulary)")
     s.add_argument("--root", default=".")
+    s.add_argument("--iterations", help="run metric passed to the terminal-close telemetry event")
+    s.add_argument("--wall-time-s", dest="wall_time_s", help="run metric for the telemetry event")
+    s.add_argument("--verdict", help="critic verdict recorded on the telemetry event")
     s.add_argument("--force", action="store_true",
                    help="bypass the story->Done AC-verify gate; recorded as an override")
     s.add_argument("--dry-run", action="store_true")

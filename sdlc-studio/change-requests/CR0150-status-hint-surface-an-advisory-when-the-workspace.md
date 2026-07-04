@@ -1,6 +1,6 @@
 # CR-0150: status/hint surface an advisory when the workspace carries artifact changes this session did not make
 
-> **Status:** Proposed
+> **Status:** Approved
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-04

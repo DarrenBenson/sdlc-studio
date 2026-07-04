@@ -1,6 +1,7 @@
 # BG0052: telemetry is never recorded by the delivery loop: transition-to-terminal bypasses artifact close
 
-> **Status:** Open
+> **Status:** Closed
+> **Verification depth:** functional (4 unit tests + live: this bug's own close writes the first records)
 > **Severity:** medium
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio file
@@ -23,3 +24,4 @@ Either transition.py records the telemetry event when the target status is termi
 | --- | --- | --- |
 | 2026-07-04 | audit | Filed |
 | 2026-07-04 | operator | Review: CONFIRMED (transition.py mentions telemetry 0 times, artifact close 8; telemetry.jsonl never written). Priority of the batch - a dead feature, the product_reconcile disease class. Fix direction endorsed: record on terminal transition, never require a second call |
+| 2026-07-04 | claude | Fixed: transition records the telemetry event on terminal transitions (id/type + passed-through --iterations/--wall-time-s/--verdict); never on dry-run/non-terminal. Tests seen RED first. This close is the repo's first recorded event |

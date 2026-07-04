@@ -371,6 +371,60 @@ class BatchJsonCleanTests(unittest.TestCase):
             _json.loads(buf.getvalue())   # must be pure JSON
 
 
+class TelemetryOnCloseTests(unittest.TestCase):
+    """BG0052: a terminal transition records the telemetry event - the loop's
+    real close path must not bypass the calibration data (never a second call)."""
+
+    def _bug(self, root: Path, status="In Progress"):
+        bd = root / "sdlc-studio" / "bugs"
+        bd.mkdir(parents=True, exist_ok=True)
+        (bd / "BG0001-x.md").write_text(
+            f"# BG0001: a\n\n> **Status:** {status}\n"
+            "> **Verification depth:** functional\n", encoding="utf-8")
+        (bd / "_index.md").write_text(
+            "# B\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            f"| [BG0001](BG0001-x.md) | a | {status} |\n", encoding="utf-8")
+        return root
+
+    def _records(self, root: Path):
+        p = root / "sdlc-studio" / ".local" / "telemetry.jsonl"
+        if not p.exists():
+            return []
+        return [json.loads(l) for l in p.read_text(encoding="utf-8").splitlines() if l.strip()]
+
+    def test_terminal_transition_records_exactly_one_event(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bug(Path(d))
+            tr.transition(root, "BG0001", "Closed")
+            recs = self._records(root)
+            self.assertEqual(len(recs), 1, recs)
+            self.assertEqual(recs[0]["id"], "BG0001")
+            self.assertEqual(recs[0]["type"], "bug")
+
+    def test_non_terminal_transition_records_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bug(Path(d), status="Open")
+            tr.transition(root, "BG0001", "In Progress")
+            self.assertEqual(self._records(root), [])
+
+    def test_dry_run_records_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bug(Path(d))
+            tr.transition(root, "BG0001", "Closed", dry_run=True)
+            self.assertEqual(self._records(root), [])
+
+    def test_cli_metrics_pass_through(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bug(Path(d))
+            rc_ = tr.main(["set", "--id", "BG0001", "--status", "Closed",
+                           "--root", str(root), "--iterations", "2",
+                           "--verdict", "approve"])
+            self.assertEqual(rc_, 0)
+            recs = self._records(root)
+            self.assertEqual(recs[0]["iterations"], 2)
+            self.assertEqual(recs[0]["critic_verdict"], "approve")
+
+
 class HonestSyncTests(unittest.TestCase):
     """index_synced reflects the real post-transition state (critic CR0042)."""
 
