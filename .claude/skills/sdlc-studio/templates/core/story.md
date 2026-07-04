@@ -54,6 +54,7 @@ Related: help/story.md, reference-story.md
 - **Then** {{ac1_then}}
 - **Verify:** {{ac1_verify}}
 - **Verification target:** {{ac1_verification_target}}
+- **Mutation-checked:** {{ac1_mutation_checked}}
 - **Verified:** no
 
 ### AC2: {{ac2_name}}
@@ -63,6 +64,7 @@ Related: help/story.md, reference-story.md
 - **Then** {{ac2_then}}
 - **Verify:** {{ac2_verify}}
 - **Verification target:** {{ac2_verification_target}}
+- **Mutation-checked:** {{ac2_mutation_checked}}
 - **Verified:** no
 
 ### AC3: {{ac3_name}}
@@ -72,9 +74,12 @@ Related: help/story.md, reference-story.md
 - **Then** {{ac3_then}}
 - **Verify:** {{ac3_verify}}
 - **Verification target:** {{ac3_verification_target}}
+- **Mutation-checked:** {{ac3_mutation_checked}}
 - **Verified:** no
 
 > **Verification target tiers:** `functional` (single round-trip – default) | `conversational` (multi-turn / multi-step session continuity) | `soak` (live traffic over a window) | `live` (operator-confirmed in production). End-to-end ACs default to `conversational`; production-affecting ACs default to `soak`; ACs shipping behind a flag awaiting promotion default to `live`. See `reference-test-best-practices.md#verification-depth-tiers`.
+
+> **Mutation-checked** answers a prior question the tiers assume: *would the test go red if the feature were broken?* For any behaviour-bearing AC (`functional` and above), break the feature on purpose (unset the field the loader delivers, revert the component to a stub, invert the guard), confirm the AC's test **fails**, then restore. Record the result, e.g. `unsetting reAttestation turns governance-lifecycle GP1 red`. Leave `n/a` only for pure config/layout ACs with no runtime behaviour. A test never seen to fail cannot gate a release - see `reference-test-best-practices.md#assertion-integrity`.
 
 ---
 

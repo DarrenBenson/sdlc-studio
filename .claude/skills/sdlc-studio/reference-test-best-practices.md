@@ -7,6 +7,7 @@
 - [Related References](#test-bp-related-references)
 - [Anti-pattern: smoke → "fixed"](#smoke-fix-anti-pattern)
 - [How to use the tiers in artefacts](#using-tiers)
+- [Assertion Integrity: a test that cannot fail is not a test](#assertion-integrity)
 - [Anti-patterns](#timeout-anti-patterns)
 - [When the bump is legitimate](#timeout-bump-legitimate)
 - [Why Higher Coverage Matters for AI Code](#why-higher-coverage-for-ai)
@@ -66,6 +67,57 @@ None of these are evidence of a fix. They are evidence the deploy didn't break t
 | `/sdlc-studio code verify` | Reports current verified-depth per AC | based on test types run | n/a |
 
 Cross-reference: `templates/core/bug.md`, `templates/core/story.md`, `reference-bug.md`, `reference-story.md`.
+
+---
+
+# Assertion Integrity: a test that cannot fail is not a test {#assertion-integrity}
+
+Verification depth (above) answers *how far* you exercised the feature. Assertion integrity answers a prior question the depth tiers assume but do not enforce: **would this test go red if the feature were broken?** A green suite over a dead feature is worse than no suite - it manufactures false confidence and lets a non-functional surface ship as "Done". Two failure modes recur, both of which produce a permanently-green test:
+
+## 1. The vacuous / tautological assertion {#vacuous-assertion}
+
+An assertion that is true by construction, or a control-flow shape where the only reachable branch trivially passes and the failure branch silently skips.
+
+**Bad - derived-from-the-same-source (cannot disagree):**
+```ts
+// data-wired and data-pending are both computed from `edge.bridgeWired`.
+// Asserting one against the other can never fail - they are the same boolean.
+const wired = page.locator('[data-bridge-wired]')
+const pending = page.locator('[data-edge-pending]')
+if (await pending.count() === 0) expect(await wired.count()).toBe(edgeCount) // tautology
+```
+
+**Bad - the failure branch skips instead of failing, and the pass branch is trivial:**
+```ts
+const count = await provCells.count()
+if (count > 0) { /* ...assert... */ }
+else expect(count).toBe(0)   // only reached when count===0 → expect(0).toBe(0), always green
+```
+Read immediately after a `goto` with no wait for content, `count` is 0 on any slow render, so the vacuous `else` is the branch that actually runs. **The test passes even if the whole feature is deleted.**
+
+**Good - assert the rendered outcome on a known input, so a broken feature is red:**
+```ts
+// Seed/point at a state where the feature MUST produce specific output, then assert that output.
+await gotoAgentGovernance(page, quarantinedConstructId)
+await expect(page.getByText('Quarantined')).toBeVisible()            // the state the feature exists to show
+await expect(page.getByRole('button', { name: /re-attest/i })).toBeVisible()
+```
+
+**Rule:** an assertion must compare the feature's output against a value derived *independently* of that output (a fixture, a seeded state, a literal expected string) - never against another expression computed from the same source. A `skip` is a legitimate outcome only when it is **visible as a skip** (`test.skip(cond, 'reason')`), never disguised as a pass inside an `if/else`.
+
+## 2. The injected-data unit test that bypasses the real wiring {#injected-data-bypass}
+
+A component/unit test that hands the component its data directly proves the component *renders* given data - it says nothing about whether the **data path that feeds it in production** actually delivers that data. The two most expensive bugs hide in exactly that gap: the field the enrichment/loader forgot to copy, the prop the page never threads.
+
+**The trap:** `render(<Panel agent={{ reAttestation: { verdict: 'fail', quarantined: true } }} />)` passes forever, while in production the loader drops `reAttestation` and the panel receives `undefined` - so the real surface is dead and the suite is green.
+
+**Rule:** for any feature whose value depends on a loader/enrichment/adapter delivering a field to a render site, at least one test must exercise the **real path from the boundary** (the fetch/parse/enrichment → the render), not a hand-built props object. In a deployed system this is the **`live` tier on the real data** (the mandated e2e-vs-live run for navigable surfaces): point the surface at a real backing state and assert the operator-visible outcome. Unit tests with injected props are necessary but **never sufficient** to claim the wiring works.
+
+## The mutation check - the cheap proof your test can fail {#mutation-check}
+
+Before trusting a new test (especially e2e), **break the feature on purpose and confirm the test goes red.** Delete the field the loader copies, unset the prop, revert the component to a stub - run the test - it must fail. Restore. A test you have never seen fail is a test you cannot trust. Record it in the AC / bug: `Mutation-checked: unsetting <X> turns <test> red.` This one habit is what separates a `live`-tier claim that means something from one that doesn't, and it is a `templates/core/{story,bug}.md` field + a `templates/workflows/release-gate.md` gate.
+
+Cross-reference: `#test-anti-patterns` (over-mocking is the same disease at the unit boundary), `#verification-depth-tiers`, `reference-test-e2e-guidelines.md`.
 
 ---
 
@@ -459,6 +511,8 @@ After generating tests, verify coverage:
 ## Test Anti-Patterns to Avoid {#test-anti-patterns}
 
 Common mistakes that cause test failures, false positives, or maintenance burden.
+
+> **The most dangerous anti-pattern is the test that cannot fail** - see `#assertion-integrity` (vacuous/tautological asserts, injected-data tests that bypass the real wiring, and the mutation check that proves a test can go red). Over-mocking below is the unit-boundary form of the same disease.
 
 ### 1. Over-Mocking (Mocking at Wrong Boundary) {#anti-pattern-over-mocking}
 

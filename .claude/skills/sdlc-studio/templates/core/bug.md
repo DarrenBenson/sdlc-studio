@@ -78,12 +78,15 @@ Related: help/bug.md, reference-bug.md
 - [ ] Fix verified in development
 - [ ] Regression tests pass
 - [ ] No side effects observed
+- [ ] **Mutation-checked** - the regression test was seen to **fail** against the unfixed code (re-introduce the bug → test red → restore), proving it actually pins the fix. Record: `{{mutation_check_note}}`
 
 **Verified by:** {{verifier}}
 **Verification date:** {{verification_date}}
 **Verification depth:** {{verification_depth}}
 
 > Verification depth tiers: `smoke` (one-shot ping) | `functional` (single round-trip) | `conversational` (multi-turn / multi-step) | `soak` (live traffic over a window) | `live` (operator-confirmed in production with no rollback). See `reference-test-best-practices.md#verification-depth-tiers`. A bug cannot be marked **Fixed** until depth is at least `functional`. A production-affecting bug cannot be **Closed** until depth is at least `soak` (default 7 days).
+>
+> **The regression test must be mutation-checked** (above): a test added alongside a fix but never seen to fail may be asserting the wrong thing and would not catch the bug's return. Seeing it red against the unfixed code is the proof it pins the fix. See `reference-test-best-practices.md#mutation-check`.
 
 ---
 

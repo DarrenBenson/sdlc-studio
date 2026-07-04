@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Assertion-integrity discipline + mutation-check gate (CR0131).** The skill taught verification
+  *depth* but not whether a test *can fail*. Added a `reference-test-best-practices.md#assertion-integrity`
+  section (the vacuous/tautological assertion, the injected-data unit test that bypasses the real
+  wiring, and the mutation check - break the feature, confirm the test goes red, restore), a
+  per-AC `Mutation-checked` field in `templates/core/story.md`, a `Mutation-checked` verification
+  item in `templates/core/bug.md` (the regression test must be seen red against the unfixed code),
+  and an e2e-mutation-checked + real-data-path gate in `templates/workflows/release-gate.md`. Found
+  in the field: a governance surface shipped marked "renders + initiates + audits" while doing none
+  of the three on the real data path, behind a green-but-vacuous suite.
+
 ## [3.2.0] - 2026-06-27
 
 The skill self-improvement release: a token-economy + learning-loop epic (EP0010), the

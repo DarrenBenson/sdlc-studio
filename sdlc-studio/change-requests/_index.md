@@ -9,12 +9,12 @@
 | Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 129 |
+| Complete | 130 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **130** |
+| **Total** | **131** |
 
 ## All Changes
 
@@ -150,3 +150,4 @@
 | [CR-0128](CR0128-test-strategy-heuristics-production-state-integration-tests-regression.md) | test-strategy heuristics: production-state integration tests, regression-per-bug, contract rejects-old-shape | Complete | Medium | Improvement | 2026-06-27 | -- |
 | [CR-0129](CR0129-sprint-retro-lifecycle-hard-close-gate-lessons-re.md) | sprint retro lifecycle: hard close gate, lessons re-validation, rolling summary of learnings | Complete | Medium | Improvement | 2026-06-27 | -- |
 | [CR-0130](CR0130-blocker-sweep-detect-now-unblocked-units-cross-project.md) | blocker sweep: detect now-unblocked units (cross-project via PVD), pre-plan + reconcile lane | Complete | Medium | Improvement | 2026-06-27 | -- |
+| [CR-0131](CR0131-assertion-integrity-discipline-mutation-check-gate-templates-reference.md) | assertion-integrity discipline: mutation-check gate + templates + reference | Complete | High | Improvement | 2026-07-04 | -- |
