@@ -1,31 +1,41 @@
-# CR-0133: surface a canonical non-interactive artefact-create path in every consuming project (no hand-allocated ids)
+# CR-0133: surface the deterministic toolbox so an agent reaches for the right script (map tasks to scripts, not just prose)
 
 > **Status:** Proposed
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new
 > **Priority:** High
 > **Type:** Improvement
-> **Affects:** .claude/skills/sdlc-studio/templates/agent-instructions.md, .claude/skills/sdlc-studio/help/bug.md, .claude/skills/sdlc-studio/help/cr.md, .claude/skills/sdlc-studio/reference-doctrine.md, .claude/skills/sdlc-studio/SKILL.md
+> **Affects:** .claude/skills/sdlc-studio/SKILL.md, .claude/skills/sdlc-studio/reference-doctrine.md, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/templates/agent-instructions.md, .claude/skills/sdlc-studio/help/bug.md, .claude/skills/sdlc-studio/help/cr.md
 > **Depends on:** -
 
 ## Summary
 
-The skill's own philosophy is emphatic: **never hand-author `_index.md`, never hand-allocate ids**;
-create artefacts with `scripts/artifact.py new`, which allocates a collision-free id, writes the
-index row, and wires the epic. In the skill's home repo this is mandated by AGENTS.md and it works
-cleanly. But a **consuming** project does not inherit that mandate legibly, and the gap has teeth.
+> **Broadened (2026-07-04).** First filed as "surface the canonical create path"; a session
+> retrospective showed the problem is the *whole toolbox*, not just create. Rescoped.
 
-Observed in the field (agent-crew, this session): the project's AGENTS.md points at
-`/sdlc-studio bug create` - an **interactive** flow that cannot run in an autonomous / headless
-session. With no non-interactive path surfaced, the agent fell back to hand-authoring the bug/CR
-files and **hand-allocating BG/CR numbers by eyeballing the latest on disk** - precisely the
-anti-pattern the philosophy forbids, and a real collision risk under concurrent sessions or a
-rebase onto a branch that added ids. The deterministic tool existed the whole time; it simply was
-not the visible path for that project.
+The dominant finding from driving the skill end-to-end this session: **the tools are comprehensive
+but an agent does not reach for them.** The suite has 40+ deterministic scripts
+(`reference-scripts.md` documents 62 references), yet across a multi-task session the agent used
+about two of them - and repeatedly hand-did work a script already automates:
 
-The fix is not new capability - `artifact.py new` already does the right thing. The fix is
-**making the deterministic path the obviously-correct one in every consuming project**, and making
-the interactive skill flow delegate to it rather than be presented as the only door.
+- hand-authored six bug files and **hand-allocated the ids** - `file_finding.py` ("Deterministic
+  Bug/CR/RFC finding filer") and `next_id.py` do exactly this, collision-safe;
+- hit reconcile's `count-mismatch`, ran the suggested `apply` (which did not clear it), and
+  concluded it was a "structural quirk" - `validate.py check` names the cause in one line, but was
+  never run;
+- introduced house-style violations that a linter should hold.
+
+Root cause is **discoverability + orchestration**, not capability. The always-loaded router
+(`SKILL.md`) names only a handful of scripts by filename; the full catalogue (`reference-scripts.md`)
+loads only under the row "Invoking skill internals" - you find it only if you already know you want
+internals. Crucially, the Progressive Loading Guide maps *task -> reference-`*`.md* (prose to read),
+**not** *task -> script to run*. So an agent reads prose and hand-does what a script would do - the
+exact anti-pattern the philosophy forbids ("never hand-author `_index.md` / hand-allocate ids").
+
+The most acute instance is artefact creation in a **consuming** project: the adopted AGENTS.md points
+at the interactive `/sdlc-studio bug create`, which cannot run headless, so the agent falls back to
+hand-authoring - even though `artifact.py new` is right there. Fixing creation is necessary but not
+sufficient; the general fix is to make the mechanical path the visible default for *every* task.
 
 Proposed:
 
@@ -42,24 +52,31 @@ Proposed:
 
 ## Acceptance Criteria
 
-- [ ] `templates/agent-instructions.md` presents the non-interactive `artifact.py new` command as
-      the canonical create path for bug/CR/story/epic, with the interactive flow noted as a wrapper
+- [ ] the always-loaded router (`SKILL.md`) carries a compact **task -> script** map (or a one-hop
+      pointer to it) for the mechanical operations an agent performs - create, reconcile, validate,
+      transition, verify, find/file - so the deterministic path is visible without loading internals
+- [ ] the Progressive Loading Guide rows for mechanical tasks name the **script to run**, not only
+      the reference prose to read (e.g. "filing a finding -> `file_finding.py`", not only
+      `reference-audit.md`)
+- [ ] `templates/agent-instructions.md` presents the non-interactive `artifact.py new` as the
+      canonical create path for bug/CR/story/epic in consuming projects, with the interactive
+      `/sdlc-studio ... create` noted as a wrapper that delegates to the same allocation
 - [ ] `help/bug.md` and `help/cr.md` lead with the non-interactive one-liner and state that ids +
-      index rows are tool-allocated (hand-authoring either is an error, with a one-line rationale:
-      collision safety under concurrency/rebase)
-- [ ] a "deterministic entry points" quick card (the scripts an operator calls, not the concepts)
-      is reachable from the router or `reference-doctrine.md` in one hop
-- [ ] the interactive `/sdlc-studio bug create` / `cr create` flows are documented as delegating to
-      the same `artifact.py new` allocation (single id-allocation code path, no second hand path)
+      index rows are tool-allocated (hand-authoring either is an error - collision safety under
+      concurrency/rebase)
+- [ ] a "deterministic entry points" quick card (the scripts an operator/agent actually calls) is
+      reachable from the router or `reference-doctrine.md` in one hop
 - [ ] `CHANGELOG.md` `[Unreleased]` entry ([[LL0004]])
 
 ## Out of Scope
 
-- Building a new create command (the tool exists; this is discoverability + doctrine, not code).
+- Building new capability - the scripts exist; this is discoverability, routing, and doctrine.
 - Retro-fixing already-hand-allocated ids in consuming projects.
+- Auto-running scripts on the agent's behalf (this makes them discoverable; the agent still chooses).
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-04 | claude | Created via `new` (deterministic) |
+| 2026-07-04 | claude | Broadened from "canonical create path" to "surface the whole toolbox" after a session used ~2 of 40+ scripts; retitled + rescoped |

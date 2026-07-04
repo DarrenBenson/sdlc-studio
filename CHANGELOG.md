@@ -9,14 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Proposed
 
-- **Three CRs from a field retrospective (dogfooding agent-crew).** CR0132 - reconcile status
-  vocabulary must be project-configurable (a `Built` status made `detect` drift-0 structurally
-  unreachable in a consuming project). CR0133 - surface a canonical non-interactive
-  `artifact.py new` create path in consuming projects so agents stop hand-allocating ids when the
-  interactive flow is unavailable. CR0134 - an executable mutation-check / test-quality gate
-  (epic-sized, RFC-first) to *enforce* the CR0131 assertion-integrity discipline rather than only
-  document it - the skill's biggest blind spot (strong on document integrity, near-silent on test
-  integrity).
+- **Field-retrospective CRs (dogfooding agent-crew).** From driving the skill end-to-end:
+  - CR0132 - reconcile findings must self-diagnose. The `count-mismatch` fix hint is generic and
+    misleading (points at `apply`, which cannot clear an out-of-vocab status); it should name the
+    offending status and route to `validate`. Completes the CR0025 remediation-guidance principle
+    for the drift that dead-ended a session. *(Root-cause corrected: the vocab is already
+    config-driven; the defect is diagnostics, not configurability.)*
+  - CR0133 - surface the deterministic toolbox so an agent reaches for the right script (map
+    task -> script in the router, not just task -> prose). Broadened from "the create path" after a
+    session used ~2 of 40+ scripts and hand-did work `file_finding.py` / `next_id.py` automate.
+  - CR0134 - an executable mutation-check / test-quality gate (epic-sized, RFC-first) to *enforce*
+    the CR0131 assertion-integrity discipline, not just document it - the skill's biggest blind spot.
+  - CR0135 - a house-style linter (British English, no em-dashes, no jargon). `validate` checks
+    structure, `.markdownlint` checks mechanics; neither reads prose for the AGENTS.md style rules.
+  - CR0136 - enforce the verification-depth tiers on `transition` (Fixed needs `functional`+, Close
+    needs `soak`). The tiers are documented but `transition.py` never reads the depth field.
 
 ### Added
 

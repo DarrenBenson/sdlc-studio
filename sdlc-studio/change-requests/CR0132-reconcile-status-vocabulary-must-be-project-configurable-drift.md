@@ -29,7 +29,10 @@ and the `count-mismatch` finding named neither the offending status nor the conf
 
 So the defect is **diagnostic quality**, and it generalises: a finding whose `fix` string is generic
 and whose remedy lives in a *different* tool is a dead end. The fix an agent can act on must travel
-**with** the finding.
+**with** the finding. This is not a new principle - **CR-0025** ("deterministic checks emit
+remediation guidance, not just findings") already shipped it; the `count-mismatch` finding is simply
+a spot where that principle was never applied. This CR completes CR-0025 for the drift that actually
+dead-ended a session.
 
 Proposed - make reconcile's findings self-diagnosing (and set the pattern for other emitters):
 

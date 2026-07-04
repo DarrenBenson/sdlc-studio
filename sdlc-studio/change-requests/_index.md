@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 3 |
+| Proposed | 5 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 130 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 1 |
 | Blocked | 0 |
-| **Total** | **134** |
+| **Total** | **136** |
 
 ## All Changes
 
@@ -152,5 +152,7 @@
 | [CR-0130](CR0130-blocker-sweep-detect-now-unblocked-units-cross-project.md) | blocker sweep: detect now-unblocked units (cross-project via PVD), pre-plan + reconcile lane | Complete | Medium | Improvement | 2026-06-27 | -- |
 | [CR-0131](CR0131-assertion-integrity-discipline-mutation-check-gate-templates-reference.md) | assertion-integrity discipline: mutation-check gate + templates + reference | Complete | High | Improvement | 2026-07-04 | -- |
 | [CR-0132](CR0132-reconcile-status-vocabulary-must-be-project-configurable-drift.md) | reconcile findings must self-diagnose (name the out-of-vocab status + suggest the actionable fix) | Proposed | High | Improvement | 2026-07-04 | -- |
-| [CR-0133](CR0133-surface-a-canonical-non-interactive-artefact-create-path.md) | surface a canonical non-interactive artefact-create path in every consuming project (no hand-allocated ids) | Proposed | High | Improvement | 2026-07-04 | -- |
+| [CR-0133](CR0133-surface-a-canonical-non-interactive-artefact-create-path.md) | surface the deterministic toolbox so an agent reaches for the right script (map tasks to scripts, not just prose) | Proposed | High | Improvement | 2026-07-04 | -- |
 | [CR-0134](CR0134-executable-mutation-check-test-quality-gate-enforce-assertion.md) | executable mutation-check / test-quality gate (enforce assertion integrity, not just document it) | Proposed | High | Feature | 2026-07-04 | -- |
+| [CR-0135](CR0135-house-style-linter-british-english-no-em-dashes.md) | house-style linter: British English, no em-dashes, no jargon (validate checks structure, not prose) | Proposed | Medium | Feature | 2026-07-04 | -- |
+| [CR-0136](CR0136-enforce-verification-depth-tiers-on-transition-fixed-needs.md) | enforce verification-depth tiers on transition (Fixed needs functional+, Close needs soak) | Proposed | Medium | Improvement | 2026-07-04 | -- |
