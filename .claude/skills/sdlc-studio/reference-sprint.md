@@ -194,9 +194,13 @@ on the scoped batch. Epic-scoping is story-only (it errors with `--crs`/`--bugs`
 
 **Seat-scored WSJF.** Sprint planning is a value/effort/risk judgement, not a bare
 priority sort. At the plan rung, consult the review seats - **Product Owner** for value
-(+ time-criticality, risk-reduction), **Engineering** for effort (seeded by the complexity
-signal), **QA** for risk - and write their scores to `sdlc-studio/.local/wsjf-inputs.json`
-(`{<id>: {value, time_criticality, risk_reduction}}`). `sprint plan --order wsjf` then orders by
+(+ time-criticality, risk-reduction), **Engineering** for effort (an optional `size` per unit -
+story-point scale - which OVERRIDES the complexity seed), **QA** for risk - and write their
+scores to `sdlc-studio/.local/wsjf-inputs.json`
+(`{<id>: {value, time_criticality, risk_reduction, size?}}`). When neither a seat size nor a
+complexity seed resolves (new-file work: the Affects paths do not exist yet), the score uses a
+declared neutral default size - unknown effort is never treated as minimal. `sprint plan
+--order wsjf` then orders by
 **WSJF = (value + time-criticality + risk-reduction) / size**, recording the components in the
 sprint-plan artifact. With no seat inputs (or `--skip-personas`) it degrades gracefully to
 priority + complexity. The seat consult is the isolated-subagent consult; the planner

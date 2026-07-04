@@ -573,6 +573,60 @@ class WeightRobustnessTests(unittest.TestCase):
         self.assertEqual(sp._weight("p1"), 0)
 
 
+class SeatSizeTests(unittest.TestCase):
+    """The Engineering seat can supply size in wsjf-inputs.json; an unresolvable
+    Affects (new-file work) is UNKNOWN size, never minimal."""
+
+    def _inputs(self, root, data):
+        d = root / "sdlc-studio" / ".local"
+        d.mkdir(parents=True, exist_ok=True)
+        import json as _json
+        (d / "wsjf-inputs.json").write_text(_json.dumps(data), encoding="utf-8")
+
+    def test_seat_size_preferred_over_complexity_seed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1)
+            self._inputs(root, {"CR0001": {"value": 9, "time_criticality": 9,
+                                           "risk_reduction": 9, "size": 9}})
+            batch = _load().select_batch(root, "cr", "Proposed", order="wsjf")
+            self.assertEqual(batch[0]["size"], 9)
+            self.assertEqual(batch[0]["wsjf"], 3.0)  # 27 / seat size 9, not /1
+
+    def test_unresolvable_affects_uses_declared_default_not_minimal(self) -> None:
+        # New-file work with no seat size is UNKNOWN effort: the declared neutral
+        # default divides the score, instead of size 0 -> cheapest job in the batch.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            dd = root / "sdlc-studio" / "change-requests"
+            dd.mkdir(parents=True, exist_ok=True)
+            (dd / "CR0001-x.md").write_text(
+                "# CR-0001: c\n\n> **Status:** Proposed\n> **Priority:** Medium\n"
+                "> **Affects:** scripts/does-not-exist-yet.py\n", encoding="utf-8")
+            self._inputs(root, {"CR0001": {"value": 9, "time_criticality": 9,
+                                           "risk_reduction": 9}})
+            batch = sp.select_batch(root, "cr", "Proposed", order="wsjf")
+            self.assertEqual(batch[0]["size"], sp.DEFAULT_UNKNOWN_SIZE)
+            self.assertEqual(batch[0]["wsjf"],
+                             round(27 / sp.DEFAULT_UNKNOWN_SIZE, 3))  # never /1
+
+    def test_resolvable_affects_still_seeds_from_complexity(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "real.py").write_text("def f(x):\n    if x:\n        return 1\n    return 0\n",
+                                          encoding="utf-8")
+            dd = root / "sdlc-studio" / "change-requests"
+            dd.mkdir(parents=True, exist_ok=True)
+            (dd / "CR0001-x.md").write_text(
+                "# CR-0001: c\n\n> **Status:** Proposed\n> **Priority:** Medium\n"
+                "> **Affects:** real.py\n", encoding="utf-8")
+            self._inputs(root, {"CR0001": {"value": 6, "time_criticality": 0,
+                                           "risk_reduction": 0}})
+            batch = _load().select_batch(root, "cr", "Proposed", order="wsjf")
+            self.assertIn("wsjf", batch[0])   # complexity seed still works when files resolve
+
+
 class WorklistTests(unittest.TestCase):
     """The documented worklist file (ids one per line) is a real batch source."""
 

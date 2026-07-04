@@ -77,6 +77,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The Engineering seat can size WSJF jobs; unknown effort is never minimal (BG0047).**
+  `wsjf-inputs.json` takes an optional per-unit `size` (story-point scale) that
+  overrides the complexity seed - previously the seat that owns effort had no slot,
+  and a unit whose Affects named not-yet-existing files got size 0, ranking
+  greenfield epics as the cheapest jobs in the batch. When neither a seat size nor
+  the complexity seed resolves, a declared neutral default divides the score.
 - **Reconcile and validate findings now self-diagnose (CR0132, absorbing CR0139).**
   Two field sessions dead-ended on an opaque `count-mismatch` whose "recompute the
   summary counts" hint `apply` could not clear - the cause was an out-of-vocab

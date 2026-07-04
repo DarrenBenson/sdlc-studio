@@ -1,6 +1,7 @@
 # BG0047: WSJF size signal ranks new-file units as trivially small, inverting the sprint order
 
-> **Status:** Open
+> **Status:** Closed
+> **Verification depth:** functional (unit tests over select_batch/wsjf pipeline)
 > **Severity:** medium
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio file
@@ -22,3 +23,4 @@ Let wsjf-inputs.json optionally carry a seat-scored size/effort per unit and pre
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-04 | audit | Filed |
+| 2026-07-04 | claude | Fixed: wsjf-inputs.json takes an optional Engineering `size` (preferred over the complexity seed); unknown size (unresolvable Affects, no seed) uses the declared neutral DEFAULT_UNKNOWN_SIZE, never minimal. Mutation-checked: both new tests seen RED against the unfixed planner. reference-sprint.md documents the slot + default. |

@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 2 |
+| Draft | 1 |
 | In Review | 0 |
-| Accepted | 17 |
+| Accepted | 18 |
 | Superseded | 0 |
 | Withdrawn | 3 |
 | **Total** | **22** |
@@ -38,4 +38,4 @@
 | [RFC-0019](RFC0019-authoring-autosprint-a-guardrailed-prd-to-epics-to.md) | authoring autosprint - a guardrailed PRD to epics to stories loop (greenfield first-mile) | Medium | Accepted | sdlc | 2026-06-24 | -- |
 | [RFC-0020](RFC0020-maximise-persona-use-persona-shaped-delegation-across-the.md) | Maximise persona use - persona-shaped delegation across the SDLC lifecycle | High | Accepted | operator vision | 2026-06-25 | -- |
 | [RFC-0021](RFC0021-resolve-the-seats-and-amigos-duality-one-role.md) | resolve the seats and amigos duality - one role-based actor model | Medium | Accepted | field | 2026-06-25 | CR0120 |
-| [RFC-0022](RFC0022-portable-mutation-check-gate-fault-injection-across-languages.md) | Portable mutation-check gate: fault injection across languages without a per-language framework | High | Draft | sprint 2026-07 (CR-0134 RFC-first) | 2026-07-04 | -- |
+| [RFC-0022](RFC0022-portable-mutation-check-gate-fault-injection-across-languages.md) | Portable mutation-check gate: fault injection across languages without a per-language framework | High | Accepted | sprint 2026-07 (CR-0134 RFC-first) | 2026-07-04 | -- |

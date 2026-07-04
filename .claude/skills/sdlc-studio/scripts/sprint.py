@@ -33,6 +33,9 @@ PRIORITY_WEIGHT = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3,
                    "P1": 0, "P2": 1, "P3": 2, "P4": 3}
 BASE_TOKEN_BUDGET = 50_000        # per-unit floor
 TOKENS_PER_COGNITIVE = 5_000      # added per point of blast-radius cognitive complexity
+DEFAULT_UNKNOWN_SIZE = 3          # neutral WSJF denominator when neither the seat size nor
+                                  # the complexity seed resolves - unknown effort is never
+                                  # treated as minimal (new-file work is often the biggest)
 
 
 def _weight(pri: str) -> int:
@@ -258,11 +261,22 @@ def _order_batch(root: Path, out: list[dict], deps: dict[str, set], order: str,
     if order == "wsjf":  # seat-scored WSJF when available, else priority+complexity
         seat_inputs = {} if skip_personas else _wsjf_inputs(root)
         for it in out:
-            size = _complexity_size(root, Path(it["path"]).read_text(encoding="utf-8"))
-            it["complexity"] = size
-            it["token_budget"] = BASE_TOKEN_BUDGET + TOKENS_PER_COGNITIVE * size
+            seed = _complexity_size(root, Path(it["path"]).read_text(encoding="utf-8"))
+            it["complexity"] = seed
+            it["token_budget"] = BASE_TOKEN_BUDGET + TOKENS_PER_COGNITIVE * seed
             inp = seat_inputs.get(sdlc_md.norm_id(it["id"]))
             if inp:  # the review seats scored this unit (value / time-criticality / risk)
+                # Size preference: the Engineering seat's estimate (wsjf-inputs
+                # `size`) > the complexity seed > the declared neutral default.
+                # Unknown effort (new files, no Affects) is never size-minimal.
+                seat_size = inp.get("size")
+                if isinstance(seat_size, (int, float)) and seat_size > 0:
+                    size = seat_size
+                elif seed > 0:
+                    size = seed
+                else:
+                    size = DEFAULT_UNKNOWN_SIZE
+                it["size"] = size
                 it["value"] = inp.get("value", 0)
                 it["time_criticality"] = inp.get("time_criticality", 0)
                 it["risk_reduction"] = inp.get("risk_reduction", 0)
