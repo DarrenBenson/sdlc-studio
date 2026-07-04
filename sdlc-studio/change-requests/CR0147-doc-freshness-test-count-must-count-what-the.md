@@ -1,6 +1,6 @@
 # CR-0147: doc_freshness test-count must count what the runner reports, not test definitions
 
-> **Status:** Proposed
+> **Status:** Approved
 > **Priority:** Low
 > **Type:** Bug
 > **Date:** 2026-07-04

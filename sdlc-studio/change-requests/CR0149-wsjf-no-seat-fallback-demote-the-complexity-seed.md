@@ -1,6 +1,6 @@
 # CR-0149: WSJF no-seat fallback - demote the complexity seed from size stand-in to tiebreak
 
-> **Status:** Proposed
+> **Status:** Approved
 > **Priority:** Low
 > **Type:** Improvement
 > **Date:** 2026-07-04
@@ -18,6 +18,14 @@ scored a unit, the complexity seed still stands in as the WSJF size (`size = see
 `seed > 0`). Blast-radius complexity measures the cognitive complexity of the EXISTING files a
 unit touches - a risk signal, not effort: a one-line fix in reconcile.py reads as a 42-point
 job. In the fallback, dividing by it distorts exactly the units nobody scored.
+
+## Design (settled at the sprint design rung)
+
+- In `_order_batch`, the no-seat-size branch divides by `DEFAULT_UNKNOWN_SIZE`
+  (never the seed); the seed stays in `it["complexity"]` (tiebreak via `_rank_key`)
+  and the token budget. One pinning test: a small CR touching a high-complexity
+  file, seat numerators but no seat size, must not sink below a same-priority
+  unit touching a simple file.
 
 ## Acceptance Criteria
 
@@ -39,3 +47,4 @@ job. In the fallback, dividing by it distorts exactly the units nobody scored.
 | --- | --- | --- |
 | 2026-07-04 | audit | Raised |
 | 2026-07-04 | claude | Re-scoped per the operator's adversarial review: headline AC was already implemented; scope narrowed to the no-seat fallback; Medium -> Low |
+| 2026-07-04 | claude | Design settled: fallback divides by the neutral default; seed remains tiebreak + budget input |

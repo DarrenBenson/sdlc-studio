@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 7 |
-| Approved | 0 |
+| Proposed | 0 |
+| Approved | 7 |
 | In Progress | 0 |
 | Complete | 138 |
 | Rejected | 0 |
@@ -162,10 +162,10 @@
 | [CR-0140](CR0140-move-repo-only-tools-checker-tests-out-of.md) | move repo-only tools/ checker tests out of the shipped skill payload (payload hygiene) | Complete | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0141](CR0141-product-reconcile-feature-map-parser-is-inert-against.md) | product_reconcile feature-map parser is inert against CR/RFC-cited PVDs | Superseded | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0142](CR0142-retire-product-reconcile-a-traceability-gate-that-never.md) | Retire product_reconcile - a traceability gate that never told the truth | Complete | Medium | Improvement | 2026-07-04 | -- |
-| [CR-0143](CR0143-batch-transitions-and-first-class-retro-review-types.md) | batch transitions and first-class retro/review types (deterministic-toolchain ergonomics) | Proposed | Medium | Improvement | 2026-07-04 | -- |
-| [CR-0144](CR0144-one-shared-structural-table-iterator-in-sdlc-md.md) | one shared structural table iterator in sdlc_md - retire the per-parser boundary bugs as a class | Proposed | High | Improvement | 2026-07-04 | -- |
-| [CR-0145](CR0145-verify-ac-lint-flags-verify-line-runners-that.md) | verify_ac lint flags Verify-line runners that are not on PATH (design-time, not delivery-time) | Proposed | Medium | Improvement | 2026-07-04 | -- |
-| [CR-0146](CR0146-mutation-gate-v2-budget-aware-sampling-dirty-tree.md) | mutation gate v2: budget-aware sampling, dirty-tree staleness, docstring suppression | Proposed | Medium | Improvement | 2026-07-04 | -- |
-| [CR-0147](CR0147-doc-freshness-test-count-must-count-what-the.md) | doc_freshness test-count must count what the runner reports, not test definitions | Proposed | Low | Bug | 2026-07-04 | -- |
-| [CR-0148](CR0148-name-the-close-of-sprint-adversarial-critic-pass.md) | name the close-of-sprint adversarial critic pass as a hard sprint step (re-verify against the critic's own repros) | Proposed | Medium | Improvement | 2026-07-04 | -- |
-| [CR-0149](CR0149-wsjf-no-seat-fallback-demote-the-complexity-seed.md) | WSJF no-seat fallback: demote the complexity seed from size stand-in to tiebreak | Proposed | Low | Improvement | 2026-07-04 | -- |
+| [CR-0143](CR0143-batch-transitions-and-first-class-retro-review-types.md) | batch transitions and first-class retro/review types (deterministic-toolchain ergonomics) | Approved | Medium | Improvement | 2026-07-04 | -- |
+| [CR-0144](CR0144-one-shared-structural-table-iterator-in-sdlc-md.md) | one shared structural table iterator in sdlc_md - retire the per-parser boundary bugs as a class | Approved | High | Improvement | 2026-07-04 | -- |
+| [CR-0145](CR0145-verify-ac-lint-flags-verify-line-runners-that.md) | verify_ac lint flags Verify-line runners that are not on PATH (design-time, not delivery-time) | Approved | Medium | Improvement | 2026-07-04 | -- |
+| [CR-0146](CR0146-mutation-gate-v2-budget-aware-sampling-dirty-tree.md) | mutation gate v2: budget-aware sampling, dirty-tree staleness, docstring suppression | Approved | Medium | Improvement | 2026-07-04 | -- |
+| [CR-0147](CR0147-doc-freshness-test-count-must-count-what-the.md) | doc_freshness test-count must count what the runner reports, not test definitions | Approved | Low | Bug | 2026-07-04 | -- |
+| [CR-0148](CR0148-name-the-close-of-sprint-adversarial-critic-pass.md) | name the close-of-sprint adversarial critic pass as a hard sprint step (re-verify against the critic's own repros) | Approved | Medium | Improvement | 2026-07-04 | -- |
+| [CR-0149](CR0149-wsjf-no-seat-fallback-demote-the-complexity-seed.md) | WSJF no-seat fallback: demote the complexity seed from size stand-in to tiebreak | Approved | Low | Improvement | 2026-07-04 | -- |

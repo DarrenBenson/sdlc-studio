@@ -1,6 +1,6 @@
 # CR-0148: name the close-of-sprint adversarial critic pass as a hard sprint step (re-verify against the critic's own repros)
 
-> **Status:** Proposed
+> **Status:** Approved
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-04

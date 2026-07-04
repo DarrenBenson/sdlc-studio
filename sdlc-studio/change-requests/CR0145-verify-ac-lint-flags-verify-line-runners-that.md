@@ -1,6 +1,6 @@
 # CR-0145: verify_ac lint flags Verify-line runners that are not on PATH (design-time, not delivery-time)
 
-> **Status:** Proposed
+> **Status:** Approved
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-04
@@ -9,6 +9,15 @@
 ## Summary
 
 This repo's story convention wrote pytest Verify lines on a machine without pytest; the gap only surfaced at verify time, mid-sprint, and the lines were rewritten to unittest under delivery pressure. The soft-dependency doctrine says only the tools your verifiers reference need installing - but nothing checks that the referenced tools ARE installed at the moment the lines are authored. The audit's weak-verify check already lints Verify lines for DSL shape; runner availability is the missing half.
+
+## Design (settled at the sprint design rung)
+
+- Runner token = first word of the Verify expression (the existing lint lane's
+  parse); check `shutil.which(token)` only for the known runner set
+  (pytest/jest/vitest/go/curl/jq/rg) - anything else already falls to the
+  shell-fallback lint. Finding wording per the AC owns the author-vs-CI PATH
+  ambiguity. Surfaced through `verify_ac lint` and the audit's weak-verify reuse;
+  never affects exit codes on its own.
 
 ## Acceptance Criteria
 
@@ -31,3 +40,4 @@ This repo's story convention wrote pytest Verify lines on a machine without pyte
 | --- | --- | --- |
 | 2026-07-04 | audit | Raised |
 | 2026-07-04 | claude | Operator review applied: strictly advisory, finding wording owns author-vs-CI PATH ambiguity, manifest recorded as the sturdier follow-on |
+| 2026-07-04 | claude | Design settled: shutil.which over the known runner set inside the existing lint lane |

@@ -1,6 +1,6 @@
 # CR-0143: batch transitions and first-class retro/review types (deterministic-toolchain ergonomics)
 
-> **Status:** Proposed
+> **Status:** Approved
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-04
@@ -22,6 +22,18 @@ Two places where the deterministic toolchain makes the operator loop do mechanic
 2. **retro and review are not artifact.py types.** `next_id` allocates RETRO/RV ids, but the
    files and their index rows are hand-authored - the one artifact class outside the
    tool-created path (RETRO0006/0007 were both hand-written this week).
+
+## Design (settled at the sprint design rung)
+
+- **`--ids`:** comma-separated, mutually exclusive with `--id`; loop per id with
+  the existing gates; one refusal prints and continues (exit non-zero if ANY
+  refused); per-id result lines, plus a summary count.
+- **retro/review types:** artifact.py grows a meta-type table beside
+  ARTIFACT_TYPES (they live outside the status-vocab/transition machinery by
+  design); `new` renders from `templates/core/{retro,review}.md` (retro template
+  new, seeded from RETRO0007's shape), allocates via next_id's existing META
+  path, and appends the index row. `close`/transition explicitly refuse
+  meta-types with a message naming why.
 
 ## Acceptance Criteria
 
@@ -46,3 +58,4 @@ Two places where the deterministic toolchain makes the operator loop do mechanic
 | --- | --- | --- |
 | 2026-07-04 | audit | Raised |
 | 2026-07-04 | claude | Re-scoped per the operator's adversarial review: High 4-in-1 -> Medium 2-item ergonomics; refuted claims moved to Out of Scope |
+| 2026-07-04 | claude | Design settled: --ids loop semantics; meta-type path for retro/review outside the transition machinery |
