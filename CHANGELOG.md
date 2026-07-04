@@ -18,6 +18,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   non-interactive `artifact.py new` as the canonical create path (interactive
   commands are wrappers); `help/bug.md` / `help/cr.md` lead with the one-liner and
   state that ids + index rows are tool-allocated.
+- **A mixed bugs + CRs tranche is a first-class sprint batch (CR0138).** The most
+  common maintenance sprint (backlog clear) was inexpressible: `sprint.py plan`'s
+  queries were mutually exclusive, `--write` kept whichever half ran last, and the
+  documented worklist file did not exist. Status queries are now combinable
+  (`--bugs Open --crs Proposed` yields one merged, dependency-waved plan with
+  cross-type edges honoured), `--worklist <file>` (ids one per line) is a real
+  batch source that errors on unknown ids, and cross-type ordering uses one
+  documented weight scale (Critical/P1 .. Low/P4, case-tolerant - lowercase bug
+  severities now rank correctly too). `audit.py check` treats a dependency
+  sitting in the same batch as informational `sequenced-in-batch` instead of
+  `unmet-deps`, and `conformance.py check` states its story-only scoping in its
+  output rather than leaving a bug/CR tranche's coverage gap unstated.
 - **Verification-depth tiers are enforced on transition, not decorative (CR0136).**
   `transition.py` now refuses `bug -> Fixed` below `functional` and `bug -> Closed`
   on a production-affecting bug (`> **Production-affecting:** yes`) below `soak`,

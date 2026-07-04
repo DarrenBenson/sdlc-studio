@@ -151,8 +151,11 @@ def _missing_regression_test(text: str) -> bool:
 
 
 def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None = None,
-               cross_epic_ids: set[str] | None = None) -> dict:
-    """Readiness verdict for a single unit."""
+               cross_epic_ids: set[str] | None = None,
+               batch_ids: set[str] | None = None) -> dict:
+    """Readiness verdict for a single unit. A dependency that sits in the SAME batch
+    (`batch_ids`) is the planner's dependency waves doing their job - reported as
+    informational `sequenced-in-batch`, never `unmet-deps`."""
     root = Path(root)
     found = find_artifact(root, rec_id)
     if found is None:
@@ -174,7 +177,12 @@ def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None 
         issues.append("weak-verify")
     if cross_epic_ids and sdlc_md.norm_id(rid) in cross_epic_ids:  # cross-epic AC leakage
         issues.append("cross-epic-ac")
+    info: list[str] = []
     unmet = _unmet_deps(root, text)
+    if unmet and batch_ids:
+        sequenced = [u for u in unmet if sdlc_md.norm_id(u.split(":")[0]) in batch_ids]
+        unmet = [u for u in unmet if sdlc_md.norm_id(u.split(":")[0]) not in batch_ids]
+        info.extend(f"sequenced-in-batch: {u.split(':')[0]}" for u in sequenced)
     if unmet:
         issues.append("unmet-deps: " + ", ".join(unmet))
     if status in integrity.TERMINAL:
@@ -183,7 +191,8 @@ def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None 
         issues.append("link-integrity")
     if status not in integrity.TERMINAL and _already_satisfied(root, rid):
         issues.append("already-satisfied")  # verifiers pass -> close-candidate, don't build
-    return {"id": rid, "type": type_, "status": status, "issues": issues, "ready": not issues}
+    return {"id": rid, "type": type_, "status": status, "issues": issues,
+            "info": info, "ready": not issues}
 
 
 def audit_batch(repo_root: Path | str, ids: list[str]) -> dict:
@@ -195,7 +204,8 @@ def audit_batch(repo_root: Path | str, ids: list[str]) -> dict:
         cross = {sdlc_md.norm_id(f["story"]) for f in ac_scope.check(root) if f.get("story")}
     except Exception:  # noqa: BLE001 - advisory readiness check, never break the audit
         cross = set()
-    units = [audit_unit(root, i, ierr, cross) for i in ids]
+    batch_ids = {sdlc_md.norm_id(i) for i in ids}
+    units = [audit_unit(root, i, ierr, cross, batch_ids=batch_ids) for i in ids]
     ready = sum(1 for u in units if u["ready"])
     return {
         "generated_at": sdlc_md.now_iso8601(),
@@ -224,6 +234,8 @@ def cmd_check(args: argparse.Namespace) -> int:
             if not u["ready"]:
                 print(f"  NOT READY {u['id']} ({u['status']}): {'; '.join(u['issues'])}")
                 kinds.update(i.split(":")[0].strip() for i in u["issues"])  # issue may carry a suffix
+            for note in u.get("info", []):  # informational, never blocks readiness
+                print(f"  note      {u['id']}: {note}")
         hints = sdlc_md.remediation_lines("audit", kinds)
         if hints:
             print("Guidance:")

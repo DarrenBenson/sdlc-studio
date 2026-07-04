@@ -22,14 +22,28 @@ hand subsequent epics to `sprint --epic EPxx --goal done`. See `help/getting-sta
 ```bash
 /sdlc-studio sprint <batch>  --goal done   [--order priority]
 
-  <batch>   a worklist/tranche file, OR a query: --bugs <status> | --crs <status>
-            | --stories <status> | --epic EP00xx
+  <batch>   --worklist <file> (a tranche file: unit ids one per line, markdown
+            bullets/comments tolerated), OR status queries: --bugs <status> |
+            --crs <status> | --stories <status> | --epic EP00xx. The status
+            queries are COMBINABLE - `--bugs Open --crs Proposed` is one merged,
+            dependency-waved mixed tranche (the common backlog-clear sprint),
+            and --write persists that merged plan.
   --goal    triage | design | done            (default: done)
   --order   priority (default) | wsjf | manual
 ```
 
 Natural language resolves to the same: "do an sprint to deliver all open bugs"
 -> `sprint --bugs open --goal done`.
+
+**One weight scale across types.** In a mixed tranche, bug `Severity` and CR/story
+`Priority` (either the `High/Medium/Low` or the `P1-P4` form) order on one
+documented rank: `Critical`/`P1` = 0, `High`/`P2` = 1, `Medium`/`P3` = 2,
+`Low`/`P4` = 3 (unknown values rank Medium; matching is case-tolerant). Cross-type
+`Depends on` edges (a CR depending on a bug) order and wave like any other edge.
+
+**Conformance is story-scoped.** `conformance.py check` judges stories only; a
+bug/CR tranche carries no per-unit conformance verdict and relies on the
+independent critic plus the gate - the check's output states this scoping.
 
 ## The loop
 
@@ -43,7 +57,9 @@ Natural language resolves to the same: "do an sprint to deliver all open bugs"
    batch for readiness *before* the triage STOP, so work never starts on a unit that
    would pass the downstream gates vacuously. Per unit it flags, deterministically,
    **weak-AC** (no checkable AC or the tautology placeholder), **unmet-deps** (a
-   `Depends on` referent not yet delivered), **already-terminal** (close it, do not
+   `Depends on` referent not yet delivered - a referent that sits in the SAME batch
+   is the planner's waves doing their job and reports as informational
+   `sequenced-in-batch` instead), **already-terminal** (close it, do not
    re-work), and **link-integrity** (reuses `scripts/integrity.py`). Not-ready units
    are sharpened, closed, or flagged-and-deferred; findings go to the decisions
    ledger. The adversarial "is the problem still real, the change still sound" lens

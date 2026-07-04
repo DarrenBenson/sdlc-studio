@@ -1,6 +1,6 @@
 # CR-0138: make a mixed bugs + CRs tranche a first-class sprint batch
 
-> **Status:** Approved
+> **Status:** Complete
 > **Created:** 2026-07-04
 > **Created-by:** field report (a consuming project's backlog-clear sprint, 2026-07-04)
 > **Priority:** Medium

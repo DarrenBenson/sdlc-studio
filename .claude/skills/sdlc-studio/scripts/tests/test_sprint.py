@@ -488,5 +488,104 @@ class ReconcileBeforePlanTests(unittest.TestCase):
             self.assertEqual(rc, 0)            # warns, still plans
 
 
+def _bug_dep(root, num, severity="Medium", depends=None, status="Open"):
+    d = root / "sdlc-studio" / "bugs"
+    d.mkdir(parents=True, exist_ok=True)
+    body = f"# BG{num:04d}: b\n\n> **Status:** {status}\n> **Severity:** {severity}\n"
+    if depends:
+        body += f"> **Depends on:** {depends}\n"
+    (d / f"BG{num:04d}-x.md").write_text(body, encoding="utf-8")
+
+
+class MixedBatchTests(unittest.TestCase):
+    """A bugs + CRs tranche is first-class: combined queries, one merged
+    dependency-waved plan, cross-type edges honoured."""
+
+    def test_combined_queries_merge_into_one_plan(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            _cr(root, 2)
+            plan = _load().build_plan(root, queries=[("bug", "Open"), ("cr", "Proposed")])
+            ids = [b["id"] for b in plan["batch"]]
+            self.assertEqual(sorted(ids), ["BG0001", "CR0002"])
+            self.assertEqual(plan["count"], 2)
+
+    def test_cross_type_dependency_waves(self) -> None:
+        # CR depends on a bug in the same tranche: the CR lands in a later wave.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug_dep(root, 1)
+            dd = root / "sdlc-studio" / "change-requests"
+            dd.mkdir(parents=True, exist_ok=True)
+            (dd / "CR0002-x.md").write_text(
+                "# CR-0002: c\n\n> **Status:** Proposed\n> **Priority:** High\n"
+                "> **Depends on:** BG0001\n", encoding="utf-8")
+            plan = _load().build_plan(root, queries=[("bug", "Open"), ("cr", "Proposed")])
+            self.assertEqual(plan["waves"], [["BG0001"], ["CR0002"]])
+            self.assertTrue(plan["deps_declared"])
+
+    def test_shared_weight_scale_across_types(self) -> None:
+        # Critical bug and P1 CR outrank a Medium bug and P3 CR: one documented scale.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1, severity="Critical")
+            _bug(root, 2, severity="medium")            # lowercase in the field is fine
+            _cr(root, 3, priority="P1")
+            _cr(root, 4, priority="P3")
+            plan = _load().build_plan(root, queries=[("bug", "Open"), ("cr", "Proposed")])
+            ids = [b["id"] for b in plan["batch"]]
+            self.assertEqual(set(ids[:2]), {"BG0001", "CR0003"})  # weight-0/1 first
+            self.assertEqual(set(ids[2:]), {"BG0002", "CR0004"})
+
+    def test_single_kind_wrapper_unchanged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1)
+            batch = _load().select_batch(root, "cr", "Proposed")
+            self.assertEqual([b["id"] for b in batch], ["CR0001"])
+
+    def test_cli_accepts_combined_flags(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            _cr(root, 2)
+            rc = _load().main(["plan", "--bugs", "Open", "--crs", "Proposed",
+                               "--root", str(root)])
+            self.assertEqual(rc, 0)
+
+
+class WorklistTests(unittest.TestCase):
+    """The documented worklist file (ids one per line) is a real batch source."""
+
+    def test_worklist_selects_listed_units(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            _cr(root, 2)
+            _cr(root, 3)  # not listed - stays out
+            wl = root / "tranche.md"
+            wl.write_text("# tranche\n\n- BG0001\nCR-0002\n", encoding="utf-8")
+            plan = _load().build_plan(root, worklist=str(wl))
+            self.assertEqual(sorted(b["id"] for b in plan["batch"]), ["BG0001", "CR0002"])
+
+    def test_worklist_unknown_id_errors(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            wl = root / "tranche.md"
+            wl.write_text("BG0042\n", encoding="utf-8")
+            with self.assertRaises(ValueError):
+                _load().build_plan(root, worklist=str(wl))
+
+    def test_cli_worklist(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            wl = root / "wl.md"
+            wl.write_text("BG0001\n", encoding="utf-8")
+            rc = _load().main(["plan", "--worklist", str(wl), "--root", str(root)])
+            self.assertEqual(rc, 0)
+
+
 if __name__ == "__main__":
     unittest.main()

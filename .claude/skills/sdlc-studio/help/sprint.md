@@ -33,6 +33,7 @@ conformance -> review) to it. Add `--autonomous` to run unattended. See
 ```bash
 /sdlc-studio sprint --crs Proposed --goal done      # deliver the proposed CRs
 /sdlc-studio sprint --bugs Open --goal done         # deliver the open bugs
+/sdlc-studio sprint --bugs Open --crs Proposed      # one mixed backlog-clear tranche
 /sdlc-studio sprint --epic EP0007 --goal done       # deliver an epic
 /sdlc-studio sprint --crs Proposed --goal design    # just the backlog (no code)
 /sdlc-studio sprint --crs Proposed --goal plan       # select+sequence+estimate a sprint, stop
@@ -48,7 +49,7 @@ next sprint" resolves to `--goal design` (the goals are cumulative stop-points).
 
 | Flag | Description | Default |
 | --- | --- | --- |
-| `<batch>` | a worklist file, `--bugs`/`--crs`/`--stories <status>` / `--epic EPxxxx`, or a **PRD path** (greenfield authoring) | required |
+| `<batch>` | status queries (`--bugs`/`--crs`/`--stories <status>` - **combinable** into one mixed tranche), `--worklist <file>` (ids one per line), `--epic EPxxxx`, or a **PRD path** (greenfield authoring) | required |
 | `--goal` | `triage` (plan) / `plan` (sprint plan) / `design` (Ready, estimated backlog) / `done` (delivered) | `done` |
 | `--order` | `priority` / `wsjf` (priority over complexity) / `manual` | `priority` |
 | `--epic EPxxxx` | (with `--stories`, repeatable) scope a story plan to one or more epics, not the whole status class | all epics |

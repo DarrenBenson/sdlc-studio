@@ -26,9 +26,21 @@ import reconcile  # noqa: E402  (sibling - reconcile before plan)
 import blocker_sweep  # noqa: E402  (sibling - blocker sweep before plan)
 
 PRIORITY_FIELD = {"bug": "Severity", "cr": "Priority", "story": "Priority"}
-PRIORITY_WEIGHT = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}
+# One weight scale across types (documented in reference-sprint.md): bug Severity and
+# CR/story Priority - including the P1-P4 form - map onto the same rank, so a merged
+# bugs + CRs tranche orders on a single documented axis instead of two vocabularies.
+PRIORITY_WEIGHT = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3,
+                   "P1": 0, "P2": 1, "P3": 2, "P4": 3}
 BASE_TOKEN_BUDGET = 50_000        # per-unit floor
 TOKENS_PER_COGNITIVE = 5_000      # added per point of blast-radius cognitive complexity
+
+
+def _weight(pri: str) -> int:
+    """Shared cross-type rank of a Severity/Priority value (case-tolerant; decorations
+    like `High (gate)` use the leading token). Unknown values rank Medium."""
+    tok = (pri or "").strip().split()[0].rstrip(":,;")
+    key = tok.upper() if re.fullmatch(r"[Pp]\d", tok) else tok.title()
+    return PRIORITY_WEIGHT.get(key, 2)
 
 
 def _affects_files(text: str) -> list[str]:
@@ -83,7 +95,7 @@ def _dep_ids(value: str) -> set:
 def _rank_key(it: dict):
     """Tiebreak order among ready units: highest WSJF first, else priority then the
     smaller blast-radius job, else priority then id. Shared by topo order + waves."""
-    w = PRIORITY_WEIGHT.get(it["priority"], 2)
+    w = _weight(it["priority"])
     if "wsjf" in it:
         return (-it["wsjf"], w, it["id"])
     if "complexity" in it:
@@ -167,19 +179,10 @@ def _wsjf_inputs(root: Path) -> dict:
     return {sdlc_md.norm_id(k): v for k, v in raw.items()} if isinstance(raw, dict) else {}
 
 
-def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "priority",
-                 skip_personas: bool = False, epics: set[str] | None = None) -> list[dict]:
-    """Files of `kind` whose Status matches, with priority, ordered.
-
-    `epics` (story scope only) restricts the batch to stories whose `Epic:` field is in
-    that set - so a sprint can be planned for one or more epics, not just a whole status class.
-    `priority`/`wsjf` order deps-first (topological). `wsjf` orders by the WSJF score when the
-    review seats have scored value/risk; otherwise it falls back to priority with the
-    smaller blast-radius job as the tiebreak. `manual` preserves discovery order.
-    """
-    root = Path(repo_root)
+def _collect(root: Path, kind: str, status: str,
+             epic_filter: set | None) -> tuple[list[dict], dict[str, set]]:
+    """One kind+status query: (items, in-batch dependency map)."""
     vocab = sdlc_md.status_vocab(kind, root)
-    epic_filter = {sdlc_md.norm_id(e) for e in epics} if epics else None
     # canonicalise the user-supplied status arg so a lowercase '--crs proposed' (the
     # documented form) matches the title-case vocab token, instead of silently selecting nothing.
     target = sdlc_md.canonical_status(status, vocab) or status
@@ -198,11 +201,55 @@ def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "pr
             m = sdlc_md.ID_SEARCH_RE.search(ef)
             if not (m and sdlc_md.norm_id(m.group(0)) in epic_filter):
                 continue
-        pri = sdlc_md.extract_field(text, PRIORITY_FIELD.get(kind, "Priority")) or "Medium"
-        rid = sdlc_md.extract_record_id(path.stem) or path.stem
-        dval = sdlc_md.extract_field(text, "Depends on") or sdlc_md.extract_field(text, "Depends On") or ""
-        deps[sdlc_md.norm_id(rid)] = _dep_ids(dval)
-        out.append({"id": rid, "type": kind, "status": st, "priority": pri, "path": str(path)})
+        out.append(_unit(kind, path, text, st, deps))
+    return out, deps
+
+
+def _unit(kind: str, path: Path, text: str, st: str, deps: dict[str, set]) -> dict:
+    pri = sdlc_md.extract_field(text, PRIORITY_FIELD.get(kind, "Priority")) or "Medium"
+    rid = sdlc_md.extract_record_id(path.stem) or path.stem
+    dval = sdlc_md.extract_field(text, "Depends on") or sdlc_md.extract_field(text, "Depends On") or ""
+    deps[sdlc_md.norm_id(rid)] = _dep_ids(dval)
+    return {"id": rid, "type": kind, "status": st, "priority": pri, "path": str(path)}
+
+
+def _worklist_units(root: Path, worklist: str) -> tuple[list[dict], dict[str, set]]:
+    """The documented tranche-file batch source: one unit id per line (markdown
+    bullets and `#` comment/heading lines are tolerated). Every id must resolve to
+    an artifact on disk - a silent skip would ship a smaller tranche than approved."""
+    lines = Path(worklist).read_text(encoding="utf-8").splitlines()
+    wanted: list[str] = []
+    for ln in lines:
+        ln = ln.strip().lstrip("-*").strip()
+        if not ln or ln.startswith("#"):
+            continue
+        m = sdlc_md.ID_SEARCH_RE.search(ln)
+        if m:
+            wanted.append(sdlc_md.norm_id(m.group(0)))
+    by_id: dict[str, tuple[Path, str]] = {}
+    for kind in sdlc_md.ARTIFACT_TYPES:
+        for path in sdlc_md.artifact_files(kind, root):
+            rec = sdlc_md.extract_record_id(path.stem)
+            if rec and sdlc_md.norm_id(rec) in set(wanted):
+                by_id[sdlc_md.norm_id(rec)] = (path, kind)
+    missing = [w for w in wanted if w not in by_id]
+    if missing:
+        raise ValueError(f"worklist ids not found on disk: {', '.join(missing)}")
+    out: list[dict] = []
+    deps: dict[str, set] = {}
+    for w in wanted:
+        path, kind = by_id[w]
+        text = path.read_text(encoding="utf-8")
+        st = sdlc_md.canonical_status(
+            sdlc_md.extract_field(text, "Status"),
+            sdlc_md.status_vocab(kind, root)) or "Unknown"
+        out.append(_unit(kind, path, text, st, deps))
+    return out, deps
+
+
+def _order_batch(root: Path, out: list[dict], deps: dict[str, set], order: str,
+                 skip_personas: bool) -> list[dict]:
+    """WSJF enrichment + dependency-topological ordering over one (possibly mixed) batch."""
     if order == "wsjf":  # seat-scored WSJF when available, else priority+complexity
         seat_inputs = {} if skip_personas else _wsjf_inputs(root)
         for it in out:
@@ -221,29 +268,66 @@ def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "pr
     return out
 
 
-def build_plan(repo_root: Path | str, kind: str, status: str, order: str = "priority",
-               skip_personas: bool = False, epics: set[str] | None = None) -> dict:
+def select_batches(repo_root: Path | str, queries: list[tuple[str, str]],
+                   order: str = "priority", skip_personas: bool = False,
+                   epics: set[str] | None = None) -> list[dict]:
+    """The union of one or more kind+status queries as ONE merged, ordered batch -
+    a mixed bugs + CRs tranche is first-class, and a cross-type `Depends on` edge
+    (CR depends on BG) orders and waves like any other."""
+    root = Path(repo_root)
+    epic_filter = {sdlc_md.norm_id(e) for e in epics} if epics else None
+    out: list[dict] = []
+    deps: dict[str, set] = {}
+    for kind, status in queries:
+        items, d = _collect(root, kind, status, epic_filter if kind == "story" else None)
+        out.extend(items)
+        deps.update(d)
+    return _order_batch(root, out, deps, order, skip_personas)
+
+
+def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "priority",
+                 skip_personas: bool = False, epics: set[str] | None = None) -> list[dict]:
+    """Files of `kind` whose Status matches, with priority, ordered. Single-query
+    wrapper over `select_batches` - see there for ordering semantics."""
+    return select_batches(repo_root, [(kind, status)], order,
+                          skip_personas=skip_personas, epics=epics)
+
+
+def build_plan(repo_root: Path | str, kind: str | None = None, status: str | None = None,
+               order: str = "priority", skip_personas: bool = False,
+               epics: set[str] | None = None, queries: list[tuple[str, str]] | None = None,
+               worklist: str | None = None) -> dict:
     """The triage plan: the ordered batch, a count, and (for ordered modes) the dependency
-    WAVES - the parallelisable levels operators otherwise hand-derive."""
-    batch = select_batch(repo_root, kind, status, order, skip_personas=skip_personas, epics=epics)
+    WAVES - the parallelisable levels operators otherwise hand-derive. The batch source is
+    a single kind+status, composed `queries`, or a `worklist` file (ids one per line)."""
+    root = Path(repo_root)
+    if worklist is not None:
+        batch, deps = _worklist_units(root, worklist)
+        batch = _order_batch(root, batch, deps, order, skip_personas)
+        queries = [("worklist", worklist)]
+    else:
+        if queries is None:
+            queries = [(kind, status)]
+        batch = select_batches(root, queries, order, skip_personas=skip_personas, epics=epics)
     waves = None
     deps_declared: bool | None = None  # None for manual order (no wave computation)
     if order in ("priority", "wsjf") and batch:
-        deps: dict[str, set] = {}
+        deps = {}
         for it in batch:
             text = Path(it["path"]).read_text(encoding="utf-8")
             dval = (sdlc_md.extract_field(text, "Depends on")
                     or sdlc_md.extract_field(text, "Depends On") or "")
             deps[sdlc_md.norm_id(it["id"])] = _dep_ids(dval)
-        # batch already passed _topo_order in select_batch, so the graph is acyclic here.
+        # batch already passed _topo_order above, so the graph is acyclic here.
         waves = [[it["id"] for it in w] for w in _topo_waves(batch, deps)]
         # whether ANY in-batch dependency edge was declared - a flat single wave with no
         # edges is parallel because no one declared a `Depends on:`, not because none exist.
         deps_declared = any(deps[k] & set(deps) for k in deps)
     return {
         "generated_at": sdlc_md.now_iso8601(),
-        "kind": kind,
-        "status": status,
+        "kind": "+".join(k for k, _ in queries),
+        "status": ", ".join(str(s) for _, s in queries),
+        "queries": [{"kind": k, "status": s} for k, s in queries],
         "order": order,
         "batch": batch,
         "count": len(batch),
@@ -291,23 +375,34 @@ def cmd_plan(args: argparse.Namespace) -> int:
         print(json.dumps(data, indent=2) if args.format == "json"
               else f"authoring plan: bootstrap from {data['prd']} (PRD -> epics -> stories)")
         return 0
+    queries: list[tuple[str, str]] = []
     if args.bugs is not None:
-        kind, status = "bug", args.bugs
-    elif args.crs is not None:
-        kind, status = "cr", args.crs
-    elif args.stories is not None:
-        kind, status = "story", args.stories
-    else:  # pragma: no cover - argparse marks the group required
-        print("specify one of --bugs/--crs/--stories/--prd", file=sys.stderr)
+        queries.append(("bug", args.bugs))
+    if args.crs is not None:
+        queries.append(("cr", args.crs))
+    if args.stories is not None:
+        queries.append(("story", args.stories))
+    worklist = getattr(args, "worklist", None)
+    if worklist and queries:
+        print("--worklist is a complete batch source; do not combine it with "
+              "--bugs/--crs/--stories", file=sys.stderr)
+        return 2
+    if not worklist and not queries:
+        print("specify a batch: --bugs/--crs/--stories (combinable), --worklist, or --prd",
+              file=sys.stderr)
         return 2
     # reconcile before plan - a plan must be built on a drift-free census. Mechanical
     # drift only (index vs file); semantic staleness still needs the audit + human grooming.
-    try:
-        drift = reconcile.detect_type(kind, Path(args.root)).get("drift", [])
-    except Exception:  # noqa: BLE001 - reconcile is advisory here, never block planning on its failure
-        drift = []
+    kinds = [k for k, _ in queries] if queries else list(sdlc_md.ARTIFACT_TYPES)
+    drift = []
+    for k in kinds:
+        try:
+            drift += [(k, d) for d in reconcile.detect_type(k, Path(args.root)).get("drift", [])]
+        except Exception:  # noqa: BLE001 - reconcile is advisory here, never block planning on its failure
+            pass
     if drift:
-        print(f"reconcile: {len(drift)} drift item(s) in the {kind} index - reconcile before "
+        names = ", ".join(sorted({k for k, _ in drift}))
+        print(f"reconcile: {len(drift)} drift item(s) in the {names} index(es) - reconcile before "
               f"planning (the plan reads file Status; a stale index misleads selection)",
               file=sys.stderr)
         if getattr(args, "strict", False):
@@ -320,13 +415,14 @@ def cmd_plan(args: argparse.Namespace) -> int:
               f"({', '.join(sweep['now_unblocked'])}) - propose Blocked -> Ready via the gated "
               f"transition, then re-plan to include them", file=sys.stderr)
     epics = set(getattr(args, "epic", None) or []) or None
-    if epics and kind != "story":  # epic-scoping is meaningful for stories only
+    if epics and "story" not in kinds:  # epic-scoping is meaningful for stories only
         print("--epic scopes a story batch; use it with --stories", file=sys.stderr)
         return 2
     try:
-        data = build_plan(args.root, kind, status, args.order,
-                          skip_personas=getattr(args, "skip_personas", False), epics=epics)
-    except ValueError as exc:  # dependency cycle
+        data = build_plan(args.root, order=args.order,
+                          skip_personas=getattr(args, "skip_personas", False), epics=epics,
+                          queries=queries or None, worklist=worklist)
+    except ValueError as exc:  # dependency cycle / bad status / unknown worklist id
         print(f"cannot order the batch: {exc}", file=sys.stderr)
         return 2
     if getattr(args, "write", False):  # persist the sprint-plan artifact for review
@@ -338,7 +434,11 @@ def cmd_plan(args: argparse.Namespace) -> int:
         print(json.dumps(data, indent=2))
     else:
         scope = f", epics {', '.join(sorted(epics))}" if epics else ""
-        print(f"batch: {data['count']} {kind}(s) with Status {status}{scope}, order={args.order}")
+        if worklist:
+            src = f"worklist {worklist}"
+        else:
+            src = " + ".join(f"{k}s {s}" for k, s in queries)
+        print(f"batch: {data['count']} unit(s) ({src}){scope}, order={args.order}")
         if data.get("waves"):  # show the parallelisable dependency levels
             for i, wave in enumerate(data["waves"], 1):
                 par = " (parallel)" if len(wave) > 1 else ""
@@ -359,11 +459,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="SDLC Studio sprint batch selection.")
     sub = parser.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("plan", help="Select and order a batch of work (the triage plan).")
-    g = p.add_mutually_exclusive_group(required=True)
-    g.add_argument("--bugs", metavar="STATUS", help="Bugs with this Status (e.g. Open)")
-    g.add_argument("--crs", metavar="STATUS", help="CRs with this Status (e.g. Proposed)")
-    g.add_argument("--stories", metavar="STATUS", help="Stories with this Status (e.g. Ready)")
-    g.add_argument("--prd", metavar="PATH", help="Greenfield authoring: bootstrap from a PRD")
+    p.add_argument("--bugs", metavar="STATUS", help="Bugs with this Status (e.g. Open); "
+                   "combinable with --crs/--stories for one merged mixed tranche")
+    p.add_argument("--crs", metavar="STATUS", help="CRs with this Status (e.g. Proposed); combinable")
+    p.add_argument("--stories", metavar="STATUS", help="Stories with this Status (e.g. Ready); combinable")
+    p.add_argument("--worklist", metavar="PATH",
+                   help="tranche file: one unit id per line (bullets/comments tolerated); "
+                        "a complete batch source, not combinable with status queries")
+    p.add_argument("--prd", metavar="PATH", help="Greenfield authoring: bootstrap from a PRD")
     p.add_argument("--epic", action="append", metavar="EPxxxx",
                    help="scope a story batch to one or more epics (repeatable; with --stories)")
     p.add_argument("--order", choices=("priority", "wsjf", "manual"), default="priority")

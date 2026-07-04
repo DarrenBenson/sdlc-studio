@@ -7,9 +7,9 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Approved | 3 |
+| Approved | 2 |
 | In Progress | 0 |
-| Complete | 135 |
+| Complete | 136 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 2 |
@@ -157,6 +157,6 @@
 | [CR-0135](CR0135-house-style-linter-british-english-no-em-dashes.md) | extend the style guard with British-spelling detection (em-dash + jargon already enforced) | Approved | Low | Improvement | 2026-07-04 | -- |
 | [CR-0136](CR0136-enforce-verification-depth-tiers-on-transition-fixed-needs.md) | enforce verification-depth tiers on transition (Fixed needs functional+, Close needs soak) | Complete | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0137](CR0137-pre-commit-hook-runs-the-gate-and-explains.md) | pre-commit hook runs the gate and explains every failure in detail (make enforcement un-skippable) | Complete | High | Feature | 2026-07-04 | -- |
-| [CR-0138](CR0138-mixed-batch-sprint-tranches-bugs-plus-crs-first-class.md) | make a mixed bugs + CRs tranche a first-class sprint batch | Approved | Medium | Improvement | 2026-07-04 | -- |
+| [CR-0138](CR0138-mixed-batch-sprint-tranches-bugs-plus-crs-first-class.md) | make a mixed bugs + CRs tranche a first-class sprint batch | Complete | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0139](CR0139-deterministic-check-messages-name-numbers-and-remedy.md) | deterministic-check findings should name the exact mismatch and the sanctioned remedy | Superseded | Low | Improvement | 2026-07-04 | -- |
 | [CR-0140](CR0140-move-repo-only-tools-checker-tests-out-of.md) | move repo-only tools/ checker tests out of the shipped skill payload (payload hygiene) | Complete | Medium | Improvement | 2026-07-04 | -- |

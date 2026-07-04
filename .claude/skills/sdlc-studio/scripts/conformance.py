@@ -197,7 +197,8 @@ def cmd_check(args: argparse.Namespace) -> int:
     else:
         s = result["summary"]
         extra = f", {s['exempt']} exempt (pre-adoption)" if s.get("exempt") else ""
-        print(f"conformance: {s['conformant']}/{s['total']} conformant, {s['nonconformant']} not{extra}")
+        print(f"conformance: {s['conformant']}/{s['total']} conformant, {s['nonconformant']} not{extra}"
+              " (story-scoped: a bug/CR tranche relies on the critic + gate)")
         tally: dict[str, int] = {}
         for u in result["units"]:
             if not u["conformant"]:

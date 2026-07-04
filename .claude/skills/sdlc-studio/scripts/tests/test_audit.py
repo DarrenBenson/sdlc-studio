@@ -212,6 +212,32 @@ class BugReadinessTests(unittest.TestCase):
             self.assertTrue(u["ready"], u["issues"])
 
 
+class SequencedInBatchTests(unittest.TestCase):
+    """A dependency satisfied by the SAME tranche is the planner doing its job -
+    informational `sequenced-in-batch`, not `unmet-deps`."""
+
+    def test_in_batch_dep_is_informational_not_unmet(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1)
+            _cr(root, 2, depends="CR0001")
+            res = _load().audit_batch(root, ["CR0001", "CR0002"])
+            u2 = next(u for u in res["units"] if u["id"] == "CR0002")
+            self.assertTrue(u2["ready"], u2["issues"])
+            self.assertNotIn("unmet-deps", "; ".join(u2["issues"]))
+            self.assertIn("sequenced-in-batch: CR0001", "; ".join(u2.get("info", [])))
+
+    def test_out_of_batch_dep_still_unmet(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1)
+            _cr(root, 2, depends="CR0009")   # not in batch, not on disk
+            res = _load().audit_batch(root, ["CR0001", "CR0002"])
+            u2 = next(u for u in res["units"] if u["id"] == "CR0002")
+            self.assertFalse(u2["ready"])
+            self.assertIn("unmet-deps", "; ".join(u2["issues"]))
+
+
 class GuidanceTests(unittest.TestCase):
     def test_guidance_printed(self) -> None:
         import io
