@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 1 |
+| Open | 2 |
 | In Progress | 0 |
 | Fixed | 44 |
 | Verified | 0 |
 | Closed | 2 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **47** |
+| **Total** | **48** |
 
 ## All Bugs
 
@@ -66,3 +66,4 @@
 | [BG0045](BG0045-audit-bug-readiness-headings-disagree-with-shipped-template.md) | audit bug-readiness check disagrees with the shipped bug template, so every template-authored bug flags "underspecified" | Closed | medium | 2026-07-04 | 2026-07-04 |
 | [BG0046](BG0046-duplicate-id-gate-trips-on-the-cr-index-templates-dependencies-table.md) | duplicate-id gate trips on the CR index template's own Dependencies table (per-table reset misses headers without a bare "Status" cell) | Closed | medium | 2026-07-04 | 2026-07-04 |
 | [BG0047](BG0047-wsjf-size-signal-ranks-new-file-units-as.md) | WSJF size signal ranks new-file units as trivially small, inverting the sprint order | Open | medium | 2026-07-04 | 2026-07-04 |
+| [BG0048](BG0048-provenance-remake-mass-backfills-artifacts-the-adopt-after.md) | provenance remake mass-backfills artifacts the adopt_after cutoff exempts, and double-stamps a non-tool Created-by | Open | low | 2026-07-04 | 2026-07-04 |

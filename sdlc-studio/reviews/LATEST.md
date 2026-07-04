@@ -5,8 +5,18 @@
 > and `sdlc-studio/retros/`; the original v2.0 unified review is `RV0001-unified-review-2026-06-20.md`.
 >
 > **Project version:** 3.3.0 (released 2026-07-04) · **Date:** 2026-07-04 ·
-> **Gates:** lint clean, 958 script tests pass (+37 repo-only tools tests), `gate` PASS, reconcile drift 0, disclosure 0,
+> **Gates:** lint clean, 994 script tests pass (+41 repo-only tools tests), `gate` PASS, reconcile drift 0, disclosure 0,
 > npm audit 0, CI green on main.
+> **Sprint 2026-07 - mixed backlog clear (unreleased, on main, RETRO0006):** 7/8 units delivered
+> via the seat-scored WSJF loop (the amigos' first consult on this repo): BG0045/BG0046 (the
+> gate-vs-shipped-template pair), CR0132+CR0139 merged (self-diagnosing findings), CR0133
+> (toolbox discoverability, doctrine rule 15), CR0135 (British-spelling guard), CR0136 (depth
+> tiers enforced on transition), CR0138 (mixed tranches first-class - dogfooded by this very
+> sprint). CR0134 is **Blocked pending RFC0022** (mutation-check gate design, D1-D6 open -
+> operator decision). The independent critic returned 6 findings post-delivery (1 high: the
+> BG0046 fix had missed sibling parsers); all fixed, re-verified, approved - lesson L-0001.
+> New backlog: BG0047 (WSJF size seed), BG0048 (provenance remake). Workspace upgraded to
+> skill 3.3.0 conventions (amigo cards installed).
 > **CR0128 - test-strategy heuristics (delivered as a follow-on, unblocked after EP0010):**
 > `best-practices/testing.md` (five heuristics), test-spec template AC stubs, and a deterministic
 > `audit` check `missing-regression-test` flagging a terminal bug with no integration/regression
