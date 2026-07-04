@@ -1,6 +1,6 @@
 # CR-0145: verify_ac lint flags Verify-line runners that are not on PATH (design-time, not delivery-time)
 
-> **Status:** Approved
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-04
@@ -41,3 +41,4 @@ This repo's story convention wrote pytest Verify lines on a machine without pyte
 | 2026-07-04 | audit | Raised |
 | 2026-07-04 | claude | Operator review applied: strictly advisory, finding wording owns author-vs-CI PATH ambiguity, manifest recorded as the sturdier follow-on |
 | 2026-07-04 | claude | Design settled: shutil.which over the known runner set inside the existing lint lane |
+| 2026-07-04 | claude | Delivered: lint_runner_available in the lint lane, strictly advisory; 4 tests seen RED first; live-verified on this machine's missing pytest. Depth: functional |

@@ -239,6 +239,29 @@ def lint_verifier(expr: str) -> str | None:
     return None
 
 
+# The runners a Verify verb shells out to, for the advisory availability check.
+# `shell` and `manual` are exempt (sh is always present / nothing runs).
+_RUNNER_BINARIES = {"pytest": ("pytest",), "jest": ("jest",), "vitest": ("vitest",),
+                    "go": ("go",), "rg": ("rg",), "http": ("curl", "jq")}
+
+
+def lint_runner_available(expr: str, _which=None) -> str | None:
+    """Advisory: the Verify expression's runner is absent from THIS machine's PATH.
+
+    Strictly informational - the author machine's PATH may legitimately differ
+    from the machine that verifies (CI, a teammate), so the wording owns that
+    ambiguity and the check never blocks or fails anything on its own."""
+    import shutil as _shutil
+    which = _which or _shutil.which
+    head = (expr.split(None, 1)[0].lower() if expr.split() else "")
+    missing = [b for b in _RUNNER_BINARIES.get(head, ()) if which(b) is None]
+    if not missing:
+        return None
+    names = ", ".join(missing)
+    return (f"runner '{names}' is not on this machine's PATH - install it here, "
+            f"rewrite the line, or ignore if verification runs elsewhere (advisory)")
+
+
 def _build_command(expr: str) -> tuple[str, list[str] | str]:
     """Translate a verifier expression into a subprocess command.
 
@@ -792,6 +815,10 @@ def cmd_lint(args: argparse.Namespace) -> int:
             if reason:
                 flagged += 1
                 print(f"{p.name}: {expr!r}\n    -> {reason}")
+            availability = lint_runner_available(expr)
+            if availability:
+                flagged += 1
+                print(f"{p.name}: {expr!r}\n    -> {availability}")
     print(f"verify-lint: {flagged} suspicious Verify line(s) (advisory)")
     return 0
 

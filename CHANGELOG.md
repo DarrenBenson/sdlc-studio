@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **verify_ac lint flags Verify runners missing from PATH (CR0145).** A Verify
+  line whose runner (pytest/jest/vitest/go/rg; http checks curl+jq) is absent
+  from this machine's PATH draws an advisory naming the install-or-rewrite-or-
+  runs-elsewhere choice - the wording owns that the author machine's PATH may
+  differ from CI's. shell and manual are exempt; nothing blocks. Live-verified:
+  the historical pytest Verify lines on this pytest-less machine light up
+  exactly as the field pain predicted.
+
 - **The close-of-sprint adversarial critic pass is a named, exact step (CR0148).**
   reference-sprint.md's closing gate now specifies the CODE leg's shape - an
   independent critic instance over the FULL sprint diff, refute framing, findings

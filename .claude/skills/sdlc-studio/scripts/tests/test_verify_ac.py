@@ -470,6 +470,34 @@ class EvalVerbTests(unittest.TestCase):
             shutil.rmtree(tmp, ignore_errors=True)
 
 
+class RunnerAvailabilityTests(unittest.TestCase):
+    """CR0145: a Verify runner absent from THIS machine's PATH draws an advisory
+    note that owns the author-vs-CI ambiguity - never a block."""
+
+    def test_missing_runner_flagged_with_path_ambiguity_wording(self) -> None:
+        msg = verify_ac.lint_runner_available("pytest tests/test_x.py::T::t",
+                                              _which=lambda tok: None)
+        self.assertIsNotNone(msg)
+        self.assertIn("this machine's PATH", msg)
+        self.assertIn("runs elsewhere", msg)
+
+    def test_present_runner_not_flagged(self) -> None:
+        self.assertIsNone(verify_ac.lint_runner_available(
+            "pytest tests/test_x.py", _which=lambda tok: "/usr/bin/pytest"))
+
+    def test_manual_and_shell_exempt(self) -> None:
+        self.assertIsNone(verify_ac.lint_runner_available("manual check the dashboard",
+                                                          _which=lambda tok: None))
+        self.assertIsNone(verify_ac.lint_runner_available("shell echo ok",
+                                                          _which=lambda tok: None))
+
+    def test_http_checks_curl_and_jq(self) -> None:
+        msg = verify_ac.lint_runner_available("http GET /health -- .ok",
+                                              _which=lambda tok: None if tok == "jq" else "/bin/x")
+        self.assertIsNotNone(msg)
+        self.assertIn("jq", msg)
+
+
 class LintVerifierTests(unittest.TestCase):
     """CR0085: flag Verify lines that fall through to shell as mis-written runner calls."""
 
