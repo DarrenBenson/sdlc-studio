@@ -153,6 +153,10 @@ the deferred calibrate step.
 
 ### `artifact.py`
 
+- `new --type retro|review`: the meta-artifacts are tool-created too
+  (allocated id, template scaffold, index row where a meta index exists) - they stay
+  outside the status machinery (`transition` refuses them by design).
+
 Deterministic artifact create + close cascade. `new --type <any of the 8 numbered
 types> --title ...` allocates a collision-free id, renders a valid scaffold (vocab-correct
 status; a story gets a populated AC section), appends the index data-table row (built

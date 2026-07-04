@@ -166,6 +166,69 @@ def _wire_story_to_epic(root: Path, epic_id: str, disp: str, title: str,
     return False
 
 
+META = ("retro", "review")  # meta-artifacts: tool-created, outside the status machinery
+
+
+def _render_meta(type_: str, disp: str, title: str, today: str) -> str:
+    """Retro renders from the shipped retro template (id/title/date filled, the
+    rest left as authoring scaffold); review gets a minimal findings scaffold."""
+    if type_ == "retro":
+        tmpl = Path(__file__).resolve().parent.parent / "templates" / "reviews" / "retro.md"
+        if tmpl.exists():
+            text = tmpl.read_text(encoding="utf-8")
+            text = re.sub(r"^<!--.*?-->\n+", "", text, count=1, flags=re.DOTALL)
+            text = text.replace("RETRO-{{retro_id}}", disp)
+            text = text.replace("{{sprint_title}}", title).replace("{{date}}", today)
+            return text
+    return (f"# {disp}: {title}\n\n> **Date:** {today}\n"
+            f"> **Created-by:** sdlc-studio new\n\n"
+            f"## Scope\n\n{{{{scope}}}}\n\n## Findings\n\n{{{{findings}}}}\n\n"
+            f"## Verdict\n\n{{{{verdict}}}}\n\n"
+            f"## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
+            f"| {today} | {{{{author}}}} | Created via `new` (deterministic) |\n")
+
+
+def meta_new(repo_root: Path | str, type_: str, title: str, fields: dict | None = None,
+             dry_run: bool = False) -> dict:
+    """Create a retro/review: allocated id, rendered file, index row when the
+    meta index exists (reviews has none by convention - reported honestly)."""
+    if type_ not in META:
+        raise ValueError(f"unknown meta type {type_!r} (expected retro|review)")
+    import next_id
+    root = Path(repo_root)
+    f = dict(fields or {})
+    today = f.get("date") or date.today().isoformat()
+    n = next_id.allocate_number(type_, root)
+    rel, prefix = next_id.META_TYPES[type_]
+    file_id = f"{prefix}{n:04d}"
+    disp = f"{prefix}-{n:04d}"
+    slug = file_finding._slug(title)
+    path = root / rel / f"{file_id}-{slug}.md"
+    if path.exists():
+        raise FileExistsError(path)
+    if dry_run:
+        return {"id": disp, "file_id": file_id, "path": str(path), "indexed": False,
+                "epic_linked": None, "dry_run": True}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(_render_meta(type_, disp, title, today), encoding="utf-8")
+    indexed = False
+    index_path = root / rel / "_index.md"
+    if index_path.exists():
+        lines = index_path.read_text(encoding="utf-8").splitlines()
+        hdr = sdlc_md.find_data_header(lines)
+        if hdr is not None:
+            row = sdlc_md.row_from_header(hdr[1], f"[{disp}]({file_id}-{slug}.md)", title,
+                                          "--", {"date": today, **f})
+            rows_after = [j for j in range(hdr[0] + 1, len(lines))
+                          if lines[j].strip().startswith("| [")]
+            pos = (max(rows_after) + 1) if rows_after else hdr[0] + 2
+            lines.insert(pos, row)
+            index_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            indexed = True
+    return {"id": disp, "file_id": file_id, "path": str(path), "indexed": indexed,
+            "epic_linked": None, "dry_run": False}
+
+
 def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = None,
         dry_run: bool = False) -> dict:
     if type_ not in SPEC:
@@ -296,7 +359,10 @@ def cmd_new(args: argparse.Namespace) -> int:
     f = {k: v for k, v in {"epic": args.epic, "priority": args.priority, "ctype": args.ctype,
                            "severity": args.severity, "author": args.author,
                            "template": args.template}.items() if v}
-    r = new(args.root, args.type, args.title, f, dry_run=args.dry_run)
+    if args.type in META:
+        r = meta_new(args.root, args.type, args.title, f, dry_run=args.dry_run)
+    else:
+        r = new(args.root, args.type, args.title, f, dry_run=args.dry_run)
     verb = "would create" if r.get("dry_run") else "created"
     print(json.dumps(r, indent=2) if args.format == "json"
           else f"{verb} {r['id']} -> {r['path']} (indexed={r['indexed']}, epic_linked={r['epic_linked']})")
@@ -340,7 +406,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Deterministic artifact create + close.")
     sub = p.add_subparsers(dest="cmd", required=True)
     n = sub.add_parser("new", help="Create + wire any numbered artifact.")
-    n.add_argument("--type", required=True, choices=tuple(SPEC))
+    n.add_argument("--type", required=True, choices=tuple(SPEC) + META)
     n.add_argument("--title", required=True)
     n.add_argument("--epic", help="parent epic (required for a story)")
     n.add_argument("--priority")

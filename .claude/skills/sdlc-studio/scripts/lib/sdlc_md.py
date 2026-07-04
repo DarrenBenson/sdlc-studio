@@ -180,7 +180,7 @@ def row_from_header(header: list[str], link: str, title: str, status: str, f: di
         hl = h.strip().lower()
         if hl == "id":
             out.append(link)
-        elif hl in ("title", "description", "feature", "name"):
+        elif hl in ("title", "description", "feature", "name", "sprint"):
             out.append(title)
         elif hl == "status":
             out.append(status)

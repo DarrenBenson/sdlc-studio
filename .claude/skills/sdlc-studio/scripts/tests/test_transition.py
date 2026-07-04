@@ -298,6 +298,59 @@ class StoryTargetParityTests(unittest.TestCase):
             self.assertIsNone(res["warning"])
 
 
+class BatchIdsTests(unittest.TestCase):
+    """CR0143: --ids batches same-target transitions; each id individually gated,
+    one refusal never aborts the rest."""
+
+    def _two_bugs(self, root: Path):
+        bd = root / "sdlc-studio" / "bugs"
+        bd.mkdir(parents=True)
+        (bd / "BG0001-x.md").write_text(
+            "# BG0001: a\n\n> **Status:** In Progress\n"
+            "> **Verification depth:** functional\n", encoding="utf-8")
+        (bd / "BG0002-y.md").write_text(
+            "# BG0002: b\n\n> **Status:** In Progress\n"
+            "> **Verification depth:** smoke\n", encoding="utf-8")
+        (bd / "_index.md").write_text(
+            "# Bugs\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [BG0001](BG0001-x.md) | a | In Progress |\n"
+            "| [BG0002](BG0002-y.md) | b | In Progress |\n", encoding="utf-8")
+        return root
+
+    def test_ids_batch_gates_each_and_continues(self) -> None:
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = self._two_bugs(Path(d))
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                rc = tr.main(["set", "--ids", "BG0001,BG0002", "--status", "Fixed",
+                              "--root", str(root)])
+            out = buf.getvalue()
+            self.assertNotEqual(rc, 0)                       # one refusal -> non-zero
+            self.assertIn("BG0001", out)                     # the pass reported
+            self.assertIn("blocked", out.lower())            # the refusal reported
+            text1 = (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
+            text2 = (root / "sdlc-studio" / "bugs" / "BG0002-y.md").read_text(encoding="utf-8")
+            self.assertIn("**Status:** Fixed", text1)        # gated pass applied
+            self.assertIn("**Status:** In Progress", text2)  # gated refusal untouched
+
+    def test_id_and_ids_mutually_exclusive(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._two_bugs(Path(d))
+            rc = tr.main(["set", "--id", "BG0001", "--ids", "BG0001,BG0002",
+                          "--status", "Fixed", "--root", str(root)])
+            self.assertEqual(rc, 2)
+
+    def test_meta_type_refused_with_reason(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "retros").mkdir(parents=True)
+            with self.assertRaises(ValueError) as cm:
+                tr.transition(root, "RETRO0001", "Done")
+            self.assertIn("meta", str(cm.exception).lower())
+
+
 class HonestSyncTests(unittest.TestCase):
     """index_synced reflects the real post-transition state (critic CR0042)."""
 

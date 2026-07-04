@@ -177,6 +177,10 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
     executable ACs block the transition unless `force=True`. Scoped to stories - CR/epic/bug
     closures are unaffected. Manual-only / AC-less stories are never blocked."""
     root = Path(repo_root)
+    if re.match(r"^(RETRO|RV)-?\d+", artifact_id.strip(), re.IGNORECASE):
+        raise ValueError(
+            f"{artifact_id} is a meta-artifact (retro/review) outside the status "
+            f"machinery by design - edit the file directly; there is no status to cascade")
     path, type_ = _find(root, artifact_id)
     if path is None:
         raise ValueError(f"no artifact found for id {artifact_id!r}")
@@ -240,25 +244,48 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
     return result
 
 
+def _print_result(res: dict, dry_run: bool) -> None:
+    verb = "would set" if dry_run else "set"
+    extra = f"; epic {res['epic']} breakdown updated" if res.get("epic") else ""
+    print(f"{verb} {res['id']} {res['from']} -> {res['to']}"
+          + ("" if dry_run else f" (index synced={res['index_synced']}{extra})"))
+    if res.get("warning"):
+        print(f"  warning: {res['warning']}")
+
+
 def cmd_set(args: argparse.Namespace) -> int:
-    res = transition(args.root, args.id, args.status, dry_run=args.dry_run, force=args.force)
+    if bool(args.id) == bool(args.ids):
+        print("specify exactly one of --id or --ids", file=sys.stderr)
+        return 2
+    ids = [args.id] if args.id else [s.strip() for s in args.ids.split(",") if s.strip()]
+    results = []
+    refused = 0
+    for aid in ids:
+        try:
+            res = transition(args.root, aid, args.status, dry_run=args.dry_run, force=args.force)
+            results.append(res)
+            if args.format != "json":
+                _print_result(res, args.dry_run)
+        except (ValueError, FileNotFoundError) as exc:
+            # one refusal never aborts the rest - each id is individually gated
+            refused += 1
+            results.append({"id": aid, "blocked": str(exc)})
+            if args.format != "json":
+                print(f"  blocked  {aid}: {exc}")
     if args.format == "json":
-        print(json.dumps(res, indent=2))
-    else:
-        verb = "would set" if args.dry_run else "set"
-        extra = f"; epic {res['epic']} breakdown updated" if res.get("epic") else ""
-        print(f"{verb} {res['id']} {res['from']} -> {res['to']}"
-              + ("" if args.dry_run else f" (index synced={res['index_synced']}{extra})"))
-        if res.get("warning"):
-            print(f"  warning: {res['warning']}")
-    return 0
+        print(json.dumps(results if args.ids else results[0], indent=2))
+    if len(ids) > 1:
+        print(f"batch: {len(ids) - refused}/{len(ids)} transitioned, {refused} blocked")
+    return 1 if refused else 0
 
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Transition an artifact's status + cascade.")
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("set", help="Set an artifact's status and sync index + epic breakdown.")
-    s.add_argument("--id", required=True, help="Artifact id, e.g. CR0042 / US0023")
+    s.add_argument("--id", help="Artifact id, e.g. CR0042 / US0023")
+    s.add_argument("--ids", help="comma-separated ids for a same-target batch; each is "
+                                 "individually gated and one refusal never aborts the rest")
     s.add_argument("--status", required=True, help="New status (must be in the type vocabulary)")
     s.add_argument("--root", default=".")
     s.add_argument("--force", action="store_true",

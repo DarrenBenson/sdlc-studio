@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Batch transitions and tool-created retros/reviews (CR0143).** `transition.py set
+  --ids A,B,C` runs a same-target batch with each id individually gated - one
+  refusal reports, continues, and exits non-zero (no more shell loops around the
+  tool). `artifact.py new --type retro|review` creates the meta-artifacts
+  (allocated id, template scaffold - retro renders from the shipped retro
+  template - and an index row where a meta index exists), retiring the last
+  hand-authored artifact class; `transition` refuses meta ids with a message
+  naming why they sit outside the status machinery.
+
 - **WSJF's no-seat fallback divides by the neutral default (CR0149).** The
   complexity signal - the cognitive complexity of the existing files a unit
   touches - is blast-radius risk, not effort; it no longer stands in as the WSJF

@@ -389,5 +389,48 @@ class FullTemplateTests(unittest.TestCase):
             self.assertIn("**Created-by:** sdlc-studio new", text)
 
 
+class MetaTypeTests(unittest.TestCase):
+    """CR0143: retro and review are tool-created (id + file + index row), the last
+    hand-authored artifact class retired."""
+
+    def test_new_retro_creates_file_and_index_row(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rd = root / "sdlc-studio" / "retros"
+            rd.mkdir(parents=True)
+            (rd / "_index.md").write_text(
+                "# Retro Index\n\n| ID | Sprint | Date | Delivered | Blocked |\n"
+                "| --- | --- | --- | --- | --- |\n", encoding="utf-8")
+            res = artifact.meta_new(root, "retro", "Sprint close retro")
+            self.assertTrue(res["id"].startswith("RETRO-"))
+            body = Path(res["path"]).read_text(encoding="utf-8")
+            self.assertIn("Sprint close retro", body)
+            self.assertNotIn("{{retro_id}}", body)           # id/title/date filled
+            idx = (rd / "_index.md").read_text(encoding="utf-8")
+            self.assertIn(res["id"], idx)
+            self.assertTrue(res["indexed"])
+
+    def test_new_review_without_index_reports_honestly(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "reviews").mkdir(parents=True)
+            res = artifact.meta_new(root, "review", "Adversarial code review")
+            self.assertTrue(res["id"].startswith("RV-"))
+            self.assertFalse(res["indexed"])                 # no index -> honest False
+            self.assertTrue(Path(res["path"]).exists())
+
+    def test_cli_new_accepts_retro_type(self) -> None:
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "retros").mkdir(parents=True)
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                rc = artifact.main(["new", "--type", "retro", "--title", "t",
+                                    "--root", str(root)])
+            self.assertEqual(rc, 0)
+
+
 if __name__ == "__main__":
     unittest.main()

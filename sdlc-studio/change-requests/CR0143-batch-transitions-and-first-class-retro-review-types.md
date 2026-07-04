@@ -1,6 +1,6 @@
 # CR-0143: batch transitions and first-class retro/review types (deterministic-toolchain ergonomics)
 
-> **Status:** Approved
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-04
@@ -59,3 +59,4 @@ Two places where the deterministic toolchain makes the operator loop do mechanic
 | 2026-07-04 | audit | Raised |
 | 2026-07-04 | claude | Re-scoped per the operator's adversarial review: High 4-in-1 -> Medium 2-item ergonomics; refuted claims moved to Out of Scope |
 | 2026-07-04 | claude | Design settled: --ids loop semantics; meta-type path for retro/review outside the transition machinery |
+| 2026-07-04 | claude | Delivered: --ids batch (per-id gating, continue-past-refusal, non-zero on any block); meta_new for retro/review with template render + index row; transition meta refusal. 6 tests seen RED first. Depth: functional |
