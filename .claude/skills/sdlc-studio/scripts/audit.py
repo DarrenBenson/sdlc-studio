@@ -180,8 +180,13 @@ def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None 
     info: list[str] = []
     unmet = _unmet_deps(root, text)
     if unmet and batch_ids:
-        sequenced = [u for u in unmet if sdlc_md.norm_id(u.split(":")[0]) in batch_ids]
-        unmet = [u for u in unmet if sdlc_md.norm_id(u.split(":")[0]) not in batch_ids]
+        # only a PENDING in-batch dep is the planner's sequencing at work; a dead
+        # (Rejected/Superseded) or missing dep cannot be delivered by wave order.
+        def _sequenceable(u: str) -> bool:
+            return (sdlc_md.norm_id(u.split(":")[0]) in batch_ids
+                    and not u.endswith(":missing") and "(dead)" not in u)
+        sequenced = [u for u in unmet if _sequenceable(u)]
+        unmet = [u for u in unmet if not _sequenceable(u)]
         info.extend(f"sequenced-in-batch: {u.split(':')[0]}" for u in sequenced)
     if unmet:
         issues.append("unmet-deps: " + ", ".join(unmet))

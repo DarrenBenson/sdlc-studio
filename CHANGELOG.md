@@ -46,8 +46,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   documented weight scale (Critical/P1 .. Low/P4, case-tolerant - lowercase bug
   severities now rank correctly too). `audit.py check` treats a dependency
   sitting in the same batch as informational `sequenced-in-batch` instead of
-  `unmet-deps`, and `conformance.py check` states its story-only scoping in its
-  output rather than leaving a bug/CR tranche's coverage gap unstated.
+  `unmet-deps` (pending deps only - a dead or missing referent stays unmet), and
+  `conformance.py check` states its story-only scoping in its output rather than
+  leaving a bug/CR tranche's coverage gap unstated. Critic hardening: a blank
+  Severity/Priority field ranks Medium instead of crashing the planner; worklist
+  ids dedupe in every order mode; `--worklist` + `--epic` refuses loudly instead
+  of silently ignoring the filter.
 - **Verification-depth tiers are enforced on transition, not decorative (CR0136).**
   `transition.py` now refuses `bug -> Fixed` below `functional` and `bug -> Closed`
   on a production-affecting bug (`> **Production-affecting:** yes`) below `soak`,
@@ -56,6 +60,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   depth-parity advisory (an AC's declared `Verification target` above `functional`
   should not out-run the recorded depth), upgradeable to a refusal via
   `quality.depth_parity_gate: true`. `--force` records an override, as before.
+  The Production-affecting flag matches by leading token, so an annotated
+  `yes (checkout path)` still gates rather than silently classifying as
+  non-production (independent-critic finding).
 
 ### Changed
 
@@ -90,7 +97,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   green). The table boundary is now structural - any header row followed by its
   `| --- |` separator resets the scope - and regression tests pin the shipped
   Dependencies shape plus the true-positive (same id twice within one table still
-  flags).
+  flags). The independent-critic pass extended the same structural boundary to the
+  sibling parsers (`_index_rows_and_summary`, `_index_row_ids`): a table whose
+  header declares no Status column is never scavenged for one, so a
+  `| CR-0001 | CR-0003 | Complete |` dependency row can no longer overwrite
+  CR-0001's parsed status (the phantom status-mismatch + unclearable
+  count-mismatch loop), and short-dash GFM separators (`|--|`) count as
+  boundaries everywhere.
 - **Bug-readiness check accepts the shipped template's own headings (BG0045).**
   `audit.py`'s `_bug_underspecified` demanded the literal `## Steps to Reproduce` +
   `## Proposed Fix`, while `templates/core/bug.md` shipped `## Reproduction Steps` +

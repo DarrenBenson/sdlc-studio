@@ -555,6 +555,24 @@ class MixedBatchTests(unittest.TestCase):
             self.assertEqual(rc, 0)
 
 
+class WeightRobustnessTests(unittest.TestCase):
+    def test_blank_but_present_severity_ranks_medium(self) -> None:
+        # A half-filled template ('> **Severity:**   ') must plan, not crash.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            dd = root / "sdlc-studio" / "bugs"; dd.mkdir(parents=True)
+            (dd / "BG0001-x.md").write_text(
+                "# BG0001: b\n\n> **Status:** Open\n> **Severity:**   \n", encoding="utf-8")
+            plan = _load().build_plan(root, "bug", "Open")
+            self.assertEqual(plan["count"], 1)
+
+    def test_weight_blank_and_decorated(self) -> None:
+        sp = _load()
+        self.assertEqual(sp._weight("  "), 2)          # blank -> Medium, no crash
+        self.assertEqual(sp._weight("High (gate)"), 1)
+        self.assertEqual(sp._weight("p1"), 0)
+
+
 class WorklistTests(unittest.TestCase):
     """The documented worklist file (ids one per line) is a real batch source."""
 

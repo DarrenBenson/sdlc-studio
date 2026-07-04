@@ -48,8 +48,11 @@ def _bug_depth_gate(text: str, target_canon: str | None) -> str | None:
     treated as satisfied (fail loud). The non-production Close path is unchanged."""
     if target_canon not in ("Fixed", "Closed"):
         return None
-    prod = (sdlc_md.extract_field(text, "Production-affecting") or "").strip().lower() \
-        in ("yes", "true")
+    prod_raw = (sdlc_md.extract_field(text, "Production-affecting") or "").strip()
+    # leading-token match, mirroring the depth field: `yes (checkout path)` is still
+    # yes - a decorated flag must never silently switch the soak gate OFF.
+    prod_tok = prod_raw.split()[0].rstrip(":,;-").lower() if prod_raw else ""
+    prod = prod_tok in ("yes", "true")
     if target_canon == "Closed" and not prod:
         return None
     required = "soak" if target_canon == "Closed" else "functional"

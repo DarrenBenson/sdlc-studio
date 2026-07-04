@@ -488,6 +488,58 @@ class DuplicateRowTests(unittest.TestCase):
 
 
 
+class DependenciesTableStatusPoisonTests(unittest.TestCase):
+    """The shipped Dependencies table must not poison status parsing either:
+    a `| CR-0001 | CR-0003 | Complete |` row is not a status assertion about
+    CR-0001, and a fully-templated, fully-consistent index has zero drift."""
+
+    def _repo(self, d):
+        repo = Path(d)
+        dd = repo / "sdlc-studio" / "change-requests"; dd.mkdir(parents=True)
+        (dd / "CR0001-a.md").write_text(
+            "# CR-0001: a\n\n> **Status:** Proposed\n", encoding="utf-8")
+        (dd / "CR0002-b.md").write_text(
+            "# CR-0002: b\n\n> **Status:** Proposed\n", encoding="utf-8")
+        (dd / "_index.md").write_text(
+            "# Registry\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n"
+            "| Proposed | 2 |\n\n"
+            "## All Change Requests\n\n"
+            "| ID | Title | Priority | Status | Type | Linked Epics | Date |\n"
+            "| --- | --- | --- | --- | --- | --- | --- |\n"
+            "| [CR-0001](CR0001-a.md) | a | P1 | Proposed | f | -- | d |\n"
+            "| [CR-0002](CR0002-b.md) | b | P2 | Proposed | f | -- | d |\n\n"
+            "## Dependencies\n\n"
+            "| CR | Depends On | Dependency Status |\n"
+            "| --- | --- | --- |\n"
+            "| CR-0001 | CR-0003 | Complete |\n", encoding="utf-8")
+        return repo
+
+    def test_fully_templated_index_has_zero_drift(self):
+        with tempfile.TemporaryDirectory() as d:
+            r = reconcile.detect_type("cr", self._repo(d))
+            self.assertEqual(r["drift"], [])
+
+    def test_dependency_row_does_not_overwrite_row_status(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            idx = (repo / "sdlc-studio" / "change-requests" / "_index.md").read_text(encoding="utf-8")
+            rows, _ = reconcile._index_rows_and_summary(
+                idx, reconcile.sdlc_md.status_vocab("cr", repo))
+            self.assertEqual(rows[reconcile._norm_id("CR0001")][1], "Proposed")
+
+    def test_short_dash_separator_is_a_boundary(self):
+        # GFM accepts |--| separators; the structural reset must too.
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            dd = repo / "sdlc-studio" / "change-requests"; dd.mkdir(parents=True)
+            (dd / "_index.md").write_text(
+                "# I\n\n## All\n\n| ID | Title | Status |\n|--|--|--|\n"
+                "| CR-0001 | a | Proposed |\n\n"
+                "## Dependencies\n\n| CR | Depends On | Dependency Status |\n|--|--|--|\n"
+                "| CR-0001 | CR-0002 | Complete |\n", encoding="utf-8")
+            self.assertEqual(reconcile.detect_duplicate_rows(repo)["count"], 0)
+
+
 class SelfDiagnosingCountMismatchTests(unittest.TestCase):
     """count-mismatch findings carry their own diagnosis: the mismatched status
     tokens with both numbers, and - when out-of-vocab statuses are the cause -

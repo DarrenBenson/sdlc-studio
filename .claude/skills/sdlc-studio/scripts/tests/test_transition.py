@@ -248,6 +248,19 @@ class DepthTierGateTests(unittest.TestCase):
             res = tr.transition(root, "BG0001", "Closed")
             self.assertEqual(res["to"], "Closed")
 
+    def test_decorated_prod_flag_still_gates(self) -> None:
+        # 'yes (checkout path)' must not silently switch the soak gate OFF.
+        with tempfile.TemporaryDirectory() as d:
+            root = _bug_repo(Path(d), "functional")
+            p = root / "sdlc-studio" / "bugs" / "BG0001-x.md"
+            p.write_text(p.read_text(encoding="utf-8").replace(
+                "> **Severity:** medium\n",
+                "> **Severity:** medium\n> **Production-affecting:** yes (checkout path)\n"),
+                encoding="utf-8")
+            with self.assertRaises(ValueError) as cm:
+                tr.transition(root, "BG0001", "Closed")
+            self.assertIn("soak", str(cm.exception))
+
     def test_force_overrides_depth_gate(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = _bug_repo(Path(d), "smoke")

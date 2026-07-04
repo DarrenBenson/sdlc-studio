@@ -79,18 +79,30 @@ def _table_cells(line: str) -> list[str] | None:
     return sdlc_md.table_cells(line)
 
 
+# A GFM delimiter row (`| --- |`, `|--|`, `| :-: |`) - aligned with table_cells'
+# separator definition, so ANY dash count marks a structural table boundary.
+_SEP_ROW_RE = re.compile(r"^\s*\|(?:\s*:?-+:?\s*\|)+\s*$")
+
+
 def _index_rows_and_summary(text: str, vocab: list) -> tuple[dict, dict]:
     """Parse one index file's table rows into ({norm_id: (disp, status)}, {status: count}).
 
-    The Status (and ID) columns are located by the data table's **header row** and
-    read positionally, so a title cell that begins with a status word (e.g.
-    "review_prep..." -> Review) is never mistaken for the status. Falls back
-    to a first-matching-cell scan only when no header is found.
+    The Status (and ID) columns are located by each table's **header row**
+    (structural: a `|`-row followed by its `| --- |` separator; a vocabulary
+    header without a separator still re-pins) and read positionally. A table
+    whose header declares NO Status column - the shipped cr.md Dependencies
+    table - asserts nothing about status: its rows never overwrite a status
+    parsed from a real status table (the `Dependency Status` cell of
+    `| CR-0001 | CR-0003 | Complete |` is about CR-0003, not CR-0001). The
+    first-matching-cell fallback fires only for header-less blocks and for
+    off-schema rows inside a status-column table.
     """
     rows: dict = {}
     summary: dict = {}
     status_col = id_col = None
-    for line in text.splitlines():
+    saw_header = False
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
         cells = _table_cells(line)
         if not cells:
             continue
@@ -100,8 +112,10 @@ def _index_rows_and_summary(text: str, vocab: list) -> tuple[dict, dict]:
                 summary[label] = int(cells[1].replace(",", ""))
             continue
         lowered = [c.lower() for c in cells]
-        if len(cells) > 2 and "status" in lowered:  # re-pin per header (two-layout safe)
-            status_col = lowered.index("status")
+        structural = i + 1 < len(lines) and _SEP_ROW_RE.match(lines[i + 1])
+        if structural or (len(cells) > 2 and "status" in lowered):  # re-pin per header
+            saw_header = True
+            status_col = lowered.index("status") if "status" in lowered else None
             id_col = lowered.index("id") if "id" in lowered else None
             continue
         if id_col is not None and id_col < len(cells):
@@ -114,10 +128,10 @@ def _index_rows_and_summary(text: str, vocab: list) -> tuple[dict, dict]:
             row_status = _canonical_status(cells[status_col], vocab)
         else:
             row_status = None
-        if row_status is None:
-            # the pinned column held no status - a header-less block, or a stacked table whose Status
-            # sits in a different column. Find the status by canonical-vocab token, not position, so an
-            # off-schema row is not misread as "Unknown" -> phantom status-mismatch.
+        if row_status is None and (not saw_header or status_col is not None):
+            # header-less block, or a status-column table whose pinned cell is
+            # off-schema: find the status by canonical-vocab token. A table that
+            # declares no Status column is never scavenged.
             row_status = next((cs for c in cells if (cs := _canonical_status(c, vocab))), None)
         if row_id:
             key = _norm_id(row_id)
@@ -134,14 +148,16 @@ def _index_row_ids(text: str) -> list[str]:
     """
     ids: list[str] = []
     id_col = None
-    for line in text.splitlines():
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
         cells = _table_cells(line)
         if not cells:
             continue
         if len(cells) == 2 and cells[1].replace(",", "").isdigit():  # summary row
             continue
         lowered = [c.lower() for c in cells]
-        if len(cells) > 2 and "status" in lowered:  # header row - re-pin the id column
+        structural = i + 1 < len(lines) and _SEP_ROW_RE.match(lines[i + 1])
+        if structural or (len(cells) > 2 and "status" in lowered):  # header row - re-pin the id column
             id_col = lowered.index("id") if "id" in lowered else None
             continue
         if id_col is not None and id_col < len(cells):
@@ -178,13 +194,12 @@ def _within_table_dup_counts(text: str) -> dict[str, int]:
             if n > best.get(rid, 0):
                 best[rid] = n
 
-    sep_re = re.compile(r"^\s*\|(?:\s*:?-{3,}:?\s*\|)+\s*$")  # | --- | --- | rows
     lines = text.splitlines()
     for i, line in enumerate(lines):
         cells = _table_cells(line)
         if not cells:  # includes separator rows - table_cells returns None for them
             continue
-        if i + 1 < len(lines) and sep_re.match(lines[i + 1]):  # header row (structural) - flush + reset scope
+        if i + 1 < len(lines) and _SEP_ROW_RE.match(lines[i + 1]):  # header row (structural) - flush + reset scope
             flush()
             table = {}
             lowered = [c.lower() for c in cells]

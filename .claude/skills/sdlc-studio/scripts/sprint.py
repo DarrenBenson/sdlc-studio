@@ -37,8 +37,12 @@ TOKENS_PER_COGNITIVE = 5_000      # added per point of blast-radius cognitive co
 
 def _weight(pri: str) -> int:
     """Shared cross-type rank of a Severity/Priority value (case-tolerant; decorations
-    like `High (gate)` use the leading token). Unknown values rank Medium."""
-    tok = (pri or "").strip().split()[0].rstrip(":,;")
+    like `High (gate)` use the leading token). Unknown, blank, or absent values rank
+    Medium - a half-filled template field must plan, never crash the planner."""
+    toks = (pri or "").strip().split()
+    if not toks:
+        return 2
+    tok = toks[0].rstrip(":,;")
     key = tok.upper() if re.fullmatch(r"[Pp]\d", tok) else tok.title()
     return PRIORITY_WEIGHT.get(key, 2)
 
@@ -226,6 +230,7 @@ def _worklist_units(root: Path, worklist: str) -> tuple[list[dict], dict[str, se
         m = sdlc_md.ID_SEARCH_RE.search(ln)
         if m:
             wanted.append(sdlc_md.norm_id(m.group(0)))
+    wanted = list(dict.fromkeys(wanted))  # a repeated id is one unit, in every order mode
     by_id: dict[str, tuple[Path, str]] = {}
     for kind in sdlc_md.ARTIFACT_TYPES:
         for path in sdlc_md.artifact_files(kind, root):
@@ -415,6 +420,10 @@ def cmd_plan(args: argparse.Namespace) -> int:
               f"({', '.join(sweep['now_unblocked'])}) - propose Blocked -> Ready via the gated "
               f"transition, then re-plan to include them", file=sys.stderr)
     epics = set(getattr(args, "epic", None) or []) or None
+    if epics and worklist:  # a worklist names its units; an ignored filter would lie
+        print("--epic does not filter a --worklist batch; list the story ids you want",
+              file=sys.stderr)
+        return 2
     if epics and "story" not in kinds:  # epic-scoping is meaningful for stories only
         print("--epic scopes a story batch; use it with --stories", file=sys.stderr)
         return 2

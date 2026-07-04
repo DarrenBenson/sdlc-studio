@@ -227,6 +227,17 @@ class SequencedInBatchTests(unittest.TestCase):
             self.assertNotIn("unmet-deps", "; ".join(u2["issues"]))
             self.assertIn("sequenced-in-batch: CR0001", "; ".join(u2.get("info", [])))
 
+    def test_dead_in_batch_dep_stays_unmet(self) -> None:
+        # A Rejected dep cannot be delivered by sequencing - keep it unmet-deps.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1, status="Rejected")
+            _cr(root, 2, depends="CR0001")
+            res = _load().audit_batch(root, ["CR0001", "CR0002"])
+            u2 = next(u for u in res["units"] if u["id"] == "CR0002")
+            self.assertFalse(u2["ready"])
+            self.assertIn("unmet-deps", "; ".join(u2["issues"]))
+
     def test_out_of_batch_dep_still_unmet(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
