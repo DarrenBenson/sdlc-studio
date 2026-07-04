@@ -162,6 +162,67 @@ class CheckTests(unittest.TestCase):
             self.assertTrue(prov.check(repo, ["story"])["ok"])
 
 
+FIELD_STAMPED = ("# US0011: z\n\n> **Status:** Done\n"
+                 "> **Created-by:** field report (a consuming project, 2026-07-04)\n\n"
+                 "## User Story\n\nbody\n")
+
+
+class NonToolProvenanceTests(unittest.TestCase):
+    """A non-tool Created-by is provenance, not absence: check accepts it and
+    remake never appends a second Created-by line beside it."""
+
+    def test_check_accepts_field_created_by(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _story(repo, "US0011-z.md", FIELD_STAMPED)
+            r = prov.check(repo)
+            self.assertEqual(r["findings"], [])
+
+    def test_remake_never_double_stamps(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            p = _story(repo, "US0011-z.md", FIELD_STAMPED)
+            r = prov.remake(repo)
+            self.assertEqual(r["changed"], [])
+            text = p.read_text(encoding="utf-8")
+            self.assertEqual(
+                len([l for l in text.splitlines()
+                     if l.lstrip().startswith("> **Created-by:**")]), 1)
+
+
+class RemakeCutoffTests(unittest.TestCase):
+    """remake honours the same adopt_after exemption as check; --all overrides."""
+
+    def _repo(self, d):
+        repo = Path(d)
+        _story(repo, "US0005-x.md", UNSTAMPED)          # pre-cutoff (legacy)
+        _story(repo, "US0009-y.md",
+               "# US0009: y\n\n> **Status:** Done\n\n## User Story\n\nbody\n")  # post-cutoff
+        (repo / "sdlc-studio" / ".config.yaml").write_text(
+            "provenance:\n  adopt_after: 7\n", encoding="utf-8")
+        return repo
+
+    def test_remake_skips_pre_cutoff_artifacts(self) -> None:
+        try:
+            import yaml  # noqa: F401 - config read degrades without PyYAML
+        except ImportError:
+            self.skipTest("PyYAML absent")
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            r = prov.remake(repo)
+            self.assertEqual(r["changed"], ["US0009"])   # legacy US0005 untouched
+
+    def test_remake_all_overrides_cutoff(self) -> None:
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest("PyYAML absent")
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            r = prov.remake(repo, include_exempt=True)
+            self.assertEqual(sorted(r["changed"]), ["US0005", "US0009"])
+
+
 class RemakeTests(unittest.TestCase):
     def test_remake_stamps_idempotent_dry_run(self) -> None:
         with tempfile.TemporaryDirectory() as d:

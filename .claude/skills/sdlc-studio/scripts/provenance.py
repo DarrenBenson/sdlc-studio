@@ -26,11 +26,21 @@ from lib import sdlc_md  # noqa: E402
 # Line-anchored: the stamp must be on a `>` metadata line, so a prose mention of
 # "Created-by: sdlc-studio" (e.g. this CR's own artifact) is not a false match.
 _STAMP_RE = re.compile(r"(?im)^\s*>\s*\*\*Created-by:\*\*\s*sdlc-studio")
+# ANY non-empty Created-by is provenance - a field report or human attribution
+# counts. Tool-stamping is how `new` records itself, not the only valid value;
+# treating a non-tool value as absent made check nag forever and remake append
+# a SECOND Created-by line beside the human one.
+_PROVENANCE_RE = re.compile(r"(?im)^\s*>\s*\*\*Created-by:\*\*\s*\S")
 _STAMP = "> **Created-by:** sdlc-studio remake (backfilled)"
 
 
 def has_stamp(text: str) -> bool:
     return bool(_STAMP_RE.search(text or ""))
+
+
+def has_provenance(text: str) -> bool:
+    """True when the artifact carries ANY non-empty Created-by header field."""
+    return bool(_PROVENANCE_RE.search(text or ""))
 
 
 def _truthy(v) -> bool:
@@ -40,8 +50,9 @@ def _truthy(v) -> bool:
 def _add_stamp(text: str) -> tuple[str, bool]:
     """Insert the stamp into the HEADER metadata blockquote ONLY (the contiguous `>` run
     immediately after the H1, allowing blanks between). Never scans the body, so a prose
-    blockquote / HTML comment / table cannot be corrupted. Content-preserving; idempotent."""
-    if has_stamp(text):
+    blockquote / HTML comment / table cannot be corrupted. Content-preserving; idempotent.
+    An existing Created-by of ANY value is provenance - never add a second line."""
+    if has_provenance(text):
         return text, False
     nl = "\n" if text.endswith("\n") else ""
     lines = text.splitlines()
@@ -80,23 +91,32 @@ def check(repo_root: Path | str, types: list[str] | None = None) -> dict:
             if idn <= cutoff:  # legacy, pre-adoption: exempt
                 continue
             try:
-                if not has_stamp(p.read_text(encoding="utf-8")):
+                if not has_provenance(p.read_text(encoding="utf-8")):
                     findings.append({"id": p.stem.split("-")[0], "type": t, "kind": "no-provenance",
                                      "blocking": enforce,
-                                     "detail": f"{p.stem.split('-')[0]} is not tool-stamped - "
-                                               "recreate with `new` or run `remake`"})
+                                     "detail": f"{p.stem.split('-')[0]} carries no Created-by "
+                                               "provenance - recreate with `new` or run `remake`"})
             except OSError:
                 continue
     return {"findings": findings, "enforced": enforce,
             "ok": not any(f["blocking"] for f in findings)}
 
 
-def remake(repo_root: Path | str, types: list[str] | None = None, dry_run: bool = False) -> dict:
-    """Backfill the stamp into un-stamped artifacts (idempotent, content-preserving)."""
+def remake(repo_root: Path | str, types: list[str] | None = None, dry_run: bool = False,
+           include_exempt: bool = False) -> dict:
+    """Backfill the stamp into artifacts with no Created-by (idempotent,
+    content-preserving). Honours the same `provenance.adopt_after` exemption as
+    `check` - existing pre-adoption artifacts are exempt, not mass-stamped
+    (reference-upgrade.md); `include_exempt` (CLI `--all`) backfills those too."""
     root = Path(repo_root)
+    cutoff = 0 if include_exempt else \
+        (sdlc_md.parse_cutoff(sdlc_md.project_override(root, "provenance.adopt_after")) or 0)
     changed = []
     for t in (types or list(sdlc_md.ARTIFACT_TYPES)):
         for p in sdlc_md.artifact_files(t, root):
+            idn = sdlc_md.id_number(p.stem.split("-")[0]) or 0
+            if idn <= cutoff:  # legacy, pre-adoption: exempt (mirror check)
+                continue
             try:
                 text = p.read_text(encoding="utf-8")
             except OSError:
@@ -130,7 +150,7 @@ def cmd_check(args: argparse.Namespace) -> int:
 
 def cmd_remake(args: argparse.Namespace) -> int:
     types = [args.type] if args.type else None
-    r = remake(args.root, types, args.dry_run)
+    r = remake(args.root, types, args.dry_run, include_exempt=args.all)
     verb = "would stamp" if args.dry_run else "stamped"
     print(json.dumps(r, indent=2) if args.format == "json"
           else f"{verb} {r['count']} artifact(s): {', '.join(r['changed']) or '(none)'}")
@@ -146,6 +166,8 @@ def build_parser() -> argparse.ArgumentParser:
     c.set_defaults(func=cmd_check)
     r = sub.add_parser("remake", help="Backfill the provenance stamp (content-preserving).")
     r.add_argument("--type"); r.add_argument("--dry-run", action="store_true")
+    r.add_argument("--all", action="store_true",
+                   help="also backfill artifacts the provenance.adopt_after cutoff exempts")
     r.add_argument("--root", default="."); r.add_argument("--format", choices=("text", "json"), default="text")
     r.set_defaults(func=cmd_remake)
     return p

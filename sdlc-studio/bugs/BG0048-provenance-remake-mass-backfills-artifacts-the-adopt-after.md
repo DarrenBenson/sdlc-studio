@@ -1,6 +1,7 @@
 # BG0048: provenance remake mass-backfills artifacts the adopt_after cutoff exempts, and double-stamps a non-tool Created-by
 
-> **Status:** Open
+> **Status:** Closed
+> **Verification depth:** functional (unit tests: cutoff exemption, --all override, no-double-stamp, field Created-by accepted)
 > **Severity:** low
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio file
@@ -22,3 +23,4 @@ remake takes the same adopt_after exemption as check (opt out via an explicit --
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-04 | audit | Filed |
+| 2026-07-04 | claude | Fixed: remake honours adopt_after (opt out with --all); ANY non-empty Created-by counts as provenance for both check and remake, so a field-report attribution is never nagged or double-stamped. Mutation-checked: 4 new tests seen RED against the unfixed module. |

@@ -77,6 +77,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **provenance remake honours the adoption cutoff and never double-stamps (BG0048).**
+  `remake` now applies the same `provenance.adopt_after` exemption as `check`
+  (previously it mass-stamped all 145 artifacts against the documented intent;
+  `--all` opts back in), and ANY non-empty `Created-by:` counts as provenance for
+  both commands - a field-report attribution is respected, not nagged forever and
+  given a second `Created-by:` line beside the human one.
 - **The Engineering seat can size WSJF jobs; unknown effort is never minimal (BG0047).**
   `wsjf-inputs.json` takes an optional per-unit `size` (story-point scale) that
   overrides the complexity seed - previously the seat that owns effort had no slot,
