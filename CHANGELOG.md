@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   appends to Revision History tables (dated, author-stamped); a file
   without the section is refused loudly and one refusal never aborts the
   batch - retires the hand-scripted close-out loop.
+- Slice-read rule: SKILL.md instructs section reads for references over
+  ~400 lines (honour the Reading Guide - Grep the anchor, offset-read the
+  section); the epic and story Reading Guides now name greppable anchors.
 - Anchor-window discipline: LATEST.md is a window, not a ledger - past
   sprints become one-line History pointers to their retros, and
   `doc_freshness` flags the anchor when it exceeds `docs.latest_max_lines`

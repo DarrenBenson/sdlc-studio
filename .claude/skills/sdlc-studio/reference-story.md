@@ -6,12 +6,15 @@ Detailed workflows for User Story generation, quality enforcement, and managemen
 
 ## Reading Guide
 
-| Section | When to Read |
+Read ONLY the section your task needs (Grep the anchor, then offset-read) - this
+file is ~1000 lines and a whole-file read is never required for one workflow.
+
+| Section (anchor) | When to Read |
 | --- | --- |
-| Story Workflows | When generating stories from epics |
-| Story Generate Workflow | When extracting specs from existing code |
-| Story Quality Enforcement | When validating story readiness |
-| Workflow Commands | When using `story plan` or `story implement` |
+| Story Workflows (`#story-workflow`) | When generating stories from epics |
+| Story Generate (`#story-generate-workflow`) | When extracting specs from existing code |
+| Story Quality Enforcement (`#ready-validation`) | When validating story readiness |
+| Workflow Commands (`#story-plan-workflow`) | When using `story plan` or `story implement` |
 | Section Reference | See `reference-story-sections.md` for template guidance |
 
 ---

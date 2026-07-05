@@ -6,12 +6,15 @@ Detailed workflows for Epic generation and management.
 
 ## Reading Guide
 
-| Section | When to Read |
+Read ONLY the section your task needs (Grep the anchor, then offset-read) - this
+file is ~1000 lines and a whole-file read is never required for one workflow.
+
+| Section (anchor) | When to Read |
 | --- | --- |
-| Epic Workflows | When generating epics from PRD |
-| Perspective-Based Generation | When using `--perspective` flag |
-| Epic Review Workflow | When reviewing epic status (cascade or quick) |
-| Workflow Commands | When using `epic plan` or `epic implement` |
+| Epic Workflows (`#epic-workflow`) | When generating epics from PRD |
+| Perspective-Based Generation (`#perspective-based-generation`) | When using `--perspective` flag |
+| Epic Review (`#epic-review-workflow`) | When reviewing epic status (cascade or quick) |
+| Workflow Commands (`#epic-plan-workflow`) | When using `epic plan` or `epic implement` |
 | Section Reference | See `reference-epic-sections.md` for template guidance |
 
 ---

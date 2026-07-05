@@ -95,6 +95,10 @@ When invoked with `/sdlc-studio [type] [action]`:
 3. **Check Philosophy:** If generate mode, load `reference-philosophy.md#generate-mode` FIRST
 4. **Follow Progressive Loading:**
    - Load reference files only for multi-step workflows
+   - **Section-read large references:** for a reference over ~400 lines (epic,
+     story, code, outputs, decisions), read its Reading Guide / Contents first,
+     then load ONLY the named section (Grep the anchor, then an offset read) -
+     never whole-file-read a large reference for a single-section task
    - Load templates only when creating artifacts
    - Load decision files when choosing approaches (TDD, Ready status)
 5. **Execute Workflow:** Follow step-by-step procedure in reference file
@@ -107,7 +111,9 @@ See "Progressive Loading Guide" below for detailed file loading patterns.
 
 ## Progressive Loading Guide
 
-Claude loads files progressively based on task needs:
+Claude loads files progressively based on task needs. Where a cell names a
+section anchor, load that section only - and for any reference over ~400
+lines, honour its Reading Guide instead of a whole-file read:
 
 | Task Type | Primary Load | Secondary Load | Decision Load |
 | --- | --- | --- | --- |
