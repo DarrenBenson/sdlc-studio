@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   budget truncates, the CLI note, report `summary.enumerated`, and the gate
   lane detail all carry `sampled N/M enumerated (x%)`, so a green sample can
   never read as whole-surface assurance; an untruncated run reads as before.
+- Reconcile diagnoses a mis-named or absent index Status column once: when
+  every row parses as Unknown and no data table pins an exact `Status`
+  header, `detect` emits a single `index-status-column` finding naming the
+  offending header (e.g. `Effective Status`) instead of a per-row
+  status-mismatch storm plus a misleading count-mismatch, and `apply`
+  refuses loudly (exit 1) rather than recompute counts it cannot reconcile.
 
 ## [3.4.0] - 2026-07-04
 

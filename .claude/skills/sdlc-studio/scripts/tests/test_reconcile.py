@@ -540,6 +540,99 @@ class DependenciesTableStatusPoisonTests(unittest.TestCase):
             self.assertEqual(reconcile.detect_duplicate_rows(repo)["count"], 0)
 
 
+class DegenerateStatusHeaderTests(unittest.TestCase):
+    """An index whose data table mis-names (or lacks) its Status column parses
+    every row as Unknown. That is ONE structural defect, not N status drifts:
+    detect must emit a single diagnostic naming the offending header, and apply
+    must refuse rather than rewrite summary counts it cannot reconcile."""
+
+    def _repo(self, d, status_header="Effective Status"):
+        repo = Path(d)
+        dd = repo / "sdlc-studio" / "change-requests"; dd.mkdir(parents=True)
+        for i, st in ((1, "Proposed"), (2, "Proposed"), (3, "Complete")):
+            (dd / f"CR000{i}-x.md").write_text(
+                f"# CR-000{i}: x\n\n> **Status:** {st}\n", encoding="utf-8")
+        (dd / "_index.md").write_text(
+            "# Index\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n"
+            "| Proposed | 2 |\n| Complete | 1 |\n"
+            f"\n## All\n\n| ID | Title | {status_header} |\n| --- | --- | --- |\n"
+            "| CR-0001 | x | Proposed |\n| CR-0002 | x | Proposed |\n"
+            "| CR-0003 | x | Complete |\n",
+            encoding="utf-8")
+        return repo
+
+    def test_misnamed_header_one_diagnostic_not_a_storm(self):
+        with tempfile.TemporaryDirectory() as d:
+            r = reconcile.detect_type("cr", self._repo(d))
+            kinds = [x["kind"] for x in r["drift"]]
+            self.assertEqual(kinds.count("index-status-column"), 1, r["drift"])
+            self.assertNotIn("status-mismatch", kinds)
+            self.assertNotIn("count-mismatch", kinds)
+            f = next(x for x in r["drift"] if x["kind"] == "index-status-column")
+            self.assertIn("Effective Status", f["fix"])   # offender named
+            self.assertIn("rename", f["fix"].lower())      # remedy named
+
+    def test_absent_status_column_still_one_diagnostic(self):
+        with tempfile.TemporaryDirectory() as d:
+            r = reconcile.detect_type("cr", self._repo(d, status_header="State"))
+            kinds = [x["kind"] for x in r["drift"]]
+            self.assertEqual(kinds.count("index-status-column"), 1, r["drift"])
+            self.assertNotIn("status-mismatch", kinds)
+
+    def test_healthy_index_single_drift_unchanged(self):
+        # the pre-check must not swallow a real one-row drift on a well-formed index
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, status_header="Status")
+            idx = repo / "sdlc-studio" / "change-requests" / "_index.md"
+            idx.write_text(idx.read_text(encoding="utf-8").replace(
+                "| CR-0003 | x | Complete |", "| CR-0003 | x | Proposed |"),
+                encoding="utf-8")
+            r = reconcile.detect_type("cr", repo)
+            kinds = [x["kind"] for x in r["drift"]]
+            self.assertNotIn("index-status-column", kinds)
+            self.assertIn("status-mismatch", kinds)
+
+    def test_all_rows_out_of_vocab_is_not_misdiagnosed_as_header(self):
+        # a proper Status header whose every row carries an out-of-vocab token is
+        # a vocab problem (count-mismatch self-diagnosis), not a header problem
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            dd = repo / "sdlc-studio" / "change-requests"; dd.mkdir(parents=True)
+            (dd / "CR0001-x.md").write_text(
+                "# CR-0001: x\n\n> **Status:** Shipped\n", encoding="utf-8")
+            (dd / "_index.md").write_text(
+                "# Index\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n"
+                "| Proposed | 1 |\n"
+                "\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| CR-0001 | x | Shipped |\n", encoding="utf-8")
+            r = reconcile.detect_type("cr", repo)
+            self.assertNotIn("index-status-column",
+                             [x["kind"] for x in r["drift"]])
+
+    def test_apply_refuses_degenerate_index_untouched(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            idx = repo / "sdlc-studio" / "change-requests" / "_index.md"
+            before = idx.read_text(encoding="utf-8")
+            res = reconcile.apply_type("cr", repo)
+            self.assertEqual(res["changes"], [])
+            self.assertFalse(res["counts_updated"])
+            self.assertEqual(idx.read_text(encoding="utf-8"), before)
+
+    def test_apply_command_reports_refusal_and_exits_nonzero(self):
+        # L-0004: the wiring, not only the helper - the CLI must say REFUSED
+        # and exit 1, never print a clean "changed 0 row(s)" success
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = reconcile.main(["apply", "--root", str(repo)])
+            self.assertEqual(rc, 1)
+            self.assertIn("REFUSED", buf.getvalue())
+            self.assertIn("Effective Status", buf.getvalue())
+
+
 class SelfDiagnosingCountMismatchTests(unittest.TestCase):
     """count-mismatch findings carry their own diagnosis: the mismatched status
     tokens with both numbers, and - when out-of-vocab statuses are the cause -

@@ -137,6 +137,44 @@ def _index_rows_and_summary(text: str, vocab: list) -> tuple[dict, dict]:
     return rows, summary
 
 
+def _status_header_diagnosis(text: str) -> tuple[bool, str | None]:
+    """(does any data table pin an exact Status column?, first status-like
+    mis-named header cell otherwise).
+
+    Only tables with 3+ header cells count - the 2-cell `| Status | Count |`
+    summary table says nothing about the data table's schema."""
+    has_exact = False
+    candidate = None
+    for tbl in sdlc_md.iter_tables(text, header_predicate=_VOCAB_HEADER):
+        header = tbl["header"]
+        if header is None or len(header) < 3 or not tbl["rows"]:
+            continue
+        if "status" in [c.lower() for c in header]:
+            has_exact = True
+        elif candidate is None:
+            candidate = next((c for c in header if "status" in c.lower()), None)
+    return has_exact, candidate
+
+
+def _degenerate_status_parse(index: dict) -> str | None:
+    """When every parsed row is Unknown and no data table pins an exact Status
+    column, the index has ONE structural defect (a mis-named or absent Status
+    header) - not N status drifts. Returns the diagnostic text, else None."""
+    rows = index.get("rows") or {}
+    if not rows or any(st != "Unknown" for _d, st in rows.values()):
+        return None
+    has_exact, cand = index.get("status_header") or (True, None)
+    if has_exact:
+        return None
+    n = len(rows)
+    if cand:
+        return (f"no index table declares an exact 'Status' column, so all {n} "
+                f"row(s) parse as Unknown. Header '{cand}' looks like the status "
+                f"column - rename it to 'Status' to restore per-row reconciliation")
+    return (f"no index table declares an exact 'Status' column, so all {n} "
+            f"row(s) parse as Unknown - add a Status column to the data table")
+
+
 def _index_row_ids(text: str) -> list[str]:
     """Every data-row normalised id in one index file, in order, duplicates kept.
 
@@ -233,9 +271,11 @@ def parse_index(type_: str, repo_root: Path) -> dict:
     if not index_path.exists():
         return result
     vocab = sdlc_md.status_vocab(type_, repo_root)
-    rows, summary = _index_rows_and_summary(index_path.read_text(encoding="utf-8"), vocab)
+    text = index_path.read_text(encoding="utf-8")
+    rows, summary = _index_rows_and_summary(text, vocab)
     result["summary"] = summary
     result["rows"] = rows
+    result["status_header"] = _status_header_diagnosis(text)
     archive_dir = repo_root / rel / "archive"
     if archive_dir.is_dir():  # archived terminal rows still count toward the census
         for af in sorted(archive_dir.rglob("*.md")):
@@ -274,6 +314,14 @@ def detect_type(type_: str, repo_root: Path) -> dict:
         })
 
     rows = index["rows"]
+    # A whole-index degenerate parse (mis-named/absent Status column) is one
+    # structural defect: name it once and suppress the per-row mismatch storm
+    # and the count-mismatch misdiagnosis it would otherwise fabricate.
+    degenerate = _degenerate_status_parse(index)
+    if degenerate:
+        drift.append({"type": type_, "id": None, "kind": "index-status-column",
+                      "file_status": None, "index_status": None,
+                      "fix": degenerate})
     for norm, (disp, fstatus) in sorted(census.items()):
         if norm not in rows:
             fname = filenames.get(norm)
@@ -290,7 +338,7 @@ def detect_type(type_: str, repo_root: Path) -> dict:
             # non-vocabulary status asserts nothing to compare — skip it rather
             # than emit noise every run.
             target = icanon if icanon is not None else istatus
-            if fcanon is not None and fcanon != target:
+            if not degenerate and fcanon is not None and fcanon != target:
                 drift.append({"type": type_, "id": disp, "kind": "status-mismatch",
                               "file_status": fstatus, "index_status": istatus,
                               "fix": f"set index status of {disp} to {fstatus}"})
@@ -320,7 +368,7 @@ def detect_type(type_: str, repo_root: Path) -> dict:
         for st in sorted(set(index["summary"]) | set(row_counts))
         if index["summary"].get(st, 0) != row_counts.get(st, 0)
     ]
-    if bool(index["summary"]) and mismatches:
+    if bool(index["summary"]) and mismatches and not degenerate:
         # The finding carries its own diagnosis (the mismatched tokens with both
         # numbers) and, when out-of-vocab statuses are the cause, the offending
         # status + carriers + the config remedy - a generic "recompute" hint for a
@@ -617,7 +665,15 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
     result: dict = {"changes": [], "unapplied": [], "counts_updated": False}
     if not index_path.exists():
         return result
-    rows = parse_index(type_, root)["rows"]
+    index = parse_index(type_, root)
+    diagnosis = _degenerate_status_parse(index)
+    if diagnosis:
+        # apply cannot rewrite status cells it cannot pin, and recomputing the
+        # summary against all-Unknown rows would report a sync it did not
+        # achieve - refuse loudly and hand back the structural remedy instead
+        result["refused"] = diagnosis
+        return result
+    rows = index["rows"]
     fixes, planned = _plan_status_fixes(rows, file_census(type_, root), vocab)
     # Model the corrected rows so the count recompute matches detect's authority.
     corrected = dict(rows)
@@ -733,6 +789,10 @@ def cmd_apply(args: argparse.Namespace) -> int:
     unapplied = 0
     for type_ in types:
         res = apply_type(type_, repo_root, dry_run=args.dry_run)
+        if res.get("refused"):
+            print(f"REFUSED {type_}: {res['refused']}")
+            unapplied += 1
+            continue
         for c in res["changes"]:
             print(f"{'WOULD set' if args.dry_run else 'set'} {type_} {c['id']}: {c['from']} -> {c['to']}")
             n += 1
