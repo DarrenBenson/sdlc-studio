@@ -674,6 +674,70 @@ def _rewrite_index_lines(lines: list, fixes: dict, counts: dict, vocab: list,
     return counts_updated, applied
 
 
+def _insert_missing_summary_rows(lines: list, counts: dict, vocab: list,
+                                 aliases: tuple = ()) -> tuple[list, list]:
+    """Insert `| <Status> | <n> |` rows for in-vocab statuses with a non-zero
+    count but no row in the reconcile-managed global summary block (the block
+    carrying a Total row, or the sole summary - the same managed-block rule
+    the rewriter uses; a scoped per-epic roll-up is never touched). New rows
+    land before the Total row. Returns (inserted_statuses, unplaceable) -
+    unplaceable is non-empty when a needed row has no managed block to live
+    in, so the caller can fail loud instead of exiting 0 over drift.
+
+    Zero summary blocks = no summary contract: nothing asserts counts, so
+    nothing is missing (detect's count-mismatch fires only when a summary
+    exists, and apply mirrors that authority). Missing is judged against the
+    UNION of all blocks' rows - a status with a row anywhere is not missing."""
+    n_summary = sum(1 for ln in lines
+                    if (c := _table_cells(ln)) and [x.lower() for x in c] == ["status", "count"])
+    if n_summary == 0:
+        return [], []
+    managed_insert_at = None
+    present: set = set()
+    i = 0
+    while i < len(lines):
+        cells = _table_cells(lines[i])
+        if not (cells and [x.lower() for x in cells] == ["status", "count"]):
+            i += 1
+            continue
+        block_present: set = set()
+        total_idx = None
+        last_row_idx = i
+        j = i + 1
+        while j < len(lines):
+            cj = _table_cells(lines[j])
+            if cj is None:
+                if not lines[j].strip().startswith("|"):
+                    break  # blank/prose ends the block
+                last_row_idx = j  # separator row
+                j += 1
+                continue
+            lo = [c.lower() for c in cj]
+            if "status" in lo or any(a in lo for a in aliases):
+                break  # next header - block ended
+            if len(cj) == 2:
+                if cj[0].replace("*", "").strip().lower() == "total":
+                    total_idx = j
+                else:
+                    canon = _canonical_status(cj[0].replace("*", "").strip(), vocab)
+                    if canon:
+                        block_present.add(canon)
+                last_row_idx = j
+            j += 1
+        present |= block_present  # union across ALL blocks, managed or not
+        if managed_insert_at is None and (total_idx is not None or n_summary == 1):
+            managed_insert_at = total_idx if total_idx is not None else last_row_idx + 1
+        i = j
+    missing = [st for st in vocab if counts.get(st, 0) > 0 and st not in present]
+    if not missing:
+        return [], []
+    if managed_insert_at is None:
+        return [], missing
+    for k, st in enumerate(missing):
+        lines.insert(managed_insert_at + k, f"| {st} | {counts[st]} |")
+    return missing, []
+
+
 def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
     """Apply the two mechanical index fixes for one type: rewrite each drifted data
     row's Status cell to the file's canonical status, then recompute the summary
@@ -710,8 +774,13 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
 
     original = index_path.read_text(encoding="utf-8")
     lines = original.splitlines()
+    aliases = tuple(conventions.status_aliases(root))
     result["counts_updated"], applied = _rewrite_index_lines(
-        lines, fixes, counts, vocab, tuple(conventions.status_aliases(root)))
+        lines, fixes, counts, vocab, aliases)
+    inserted, unplaceable = _insert_missing_summary_rows(lines, counts, vocab, aliases)
+    if inserted:
+        result["counts_updated"] = True
+    result["summary_missing"] = unplaceable
     # Partition the planned status fixes by what the writer actually rewrote, so a row it
     # declined to touch is surfaced as unapplied rather than fabricated as a clean flip.
     for ch in planned:
@@ -831,6 +900,11 @@ def cmd_apply(args: argparse.Namespace) -> int:
             # is reported as needing a hand-edit, never as a landed change.
             print(f"WARNING: could not apply {type_} {u['id']}: {u['from']} -> {u['to']} "
                   "- row not in a rewritable layout; edit it by hand", file=sys.stderr)
+            unapplied += 1
+        for st in res.get("summary_missing", []):
+            print(f"WARNING: could not insert a summary row for status '{st}' in the "
+                  f"{type_} index - no reconcile-managed summary block (add a Total "
+                  f"row to the global summary); counts remain drifted", file=sys.stderr)
             unapplied += 1
     print(f"apply: {'would change' if args.dry_run else 'changed'} {n} row(s)"
           + (f", {unapplied} could not be applied" if unapplied else "")

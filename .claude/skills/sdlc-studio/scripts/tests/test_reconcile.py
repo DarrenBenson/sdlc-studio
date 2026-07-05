@@ -703,6 +703,117 @@ class DegenerateStatusHeaderTests(unittest.TestCase):
             self.assertIn("Effective Status", buf.getvalue())
 
 
+class SeparatorLessHeaderTests(unittest.TestCase):
+    def test_vocab_header_repins_case_insensitively(self):
+        # A separator-less table is re-pinned by the vocabulary-header
+        # predicate, which must case-fold: without the header pin the row
+        # would be scavenged and 'Done deal' would win over the Status cell
+        rows, _ = reconcile._index_rows_and_summary(
+            "| ID | Notes | Status |\n| US0001 | Done deal | Draft |\n",
+            ["Draft", "Done"])
+        self.assertEqual(rows["US0001"][1], "Draft")
+
+
+class SummaryRowInsertionTests(unittest.TestCase):
+    """A status flip into a status ABSENT from the summary must not leave apply
+    exiting 0 over a count-mismatch it just created: the writer inserts the
+    missing in-vocab row into the reconcile-managed global summary block
+    (before Total), touches no scoped per-epic table, and exits non-zero
+    naming the residual when no managed block can take the row."""
+
+    def _repo(self, d, index_text):
+        repo = Path(d)
+        dd = repo / "sdlc-studio" / "change-requests"; dd.mkdir(parents=True)
+        (dd / "CR0001-a.md").write_text(
+            "# CR-0001: a\n\n> **Status:** Approved\n", encoding="utf-8")
+        (dd / "_index.md").write_text(index_text, encoding="utf-8")
+        return repo
+
+    GLOBAL = ("# Index\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n"
+              "| Proposed | 1 |\n| **Total** | **1** |\n"
+              "\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+              "| CR-0001 | a | Proposed |\n")
+
+    def test_missing_row_inserted_before_total_and_clean_after(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, self.GLOBAL)
+            res = reconcile.apply_type("cr", repo)
+            self.assertEqual([c["id"] for c in res["changes"]], ["CR-0001"])
+            text = (repo / "sdlc-studio" / "change-requests" / "_index.md").read_text(
+                encoding="utf-8")
+            lines = [ln.strip() for ln in text.splitlines()]
+            self.assertIn("| Approved | 1 |", lines)
+            self.assertLess(lines.index("| Approved | 1 |"),
+                            lines.index("| **Total** | **1** |"))
+            self.assertIn("| Proposed | 0 |", lines)
+            self.assertEqual(reconcile.detect_type("cr", repo)["drift"], [])
+
+    def test_scoped_per_epic_summary_never_gains_rows(self):
+        scoped = (self.GLOBAL +
+                  "\n## EP0001 roll-up\n\n| Status | Count |\n| --- | --- |\n"
+                  "| Proposed | 1 |\n")
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, scoped)
+            reconcile.apply_type("cr", repo)
+            text = (repo / "sdlc-studio" / "change-requests" / "_index.md").read_text(
+                encoding="utf-8")
+            rollup = text.split("## EP0001 roll-up")[1]
+            self.assertNotIn("Approved", rollup)   # author-maintained block untouched
+
+    def test_no_summary_block_at_all_is_not_drift(self):
+        # zero Status|Count blocks = no summary contract: nothing asserts
+        # counts, so apply must exit 0 untouched - detect's count-mismatch
+        # only fires when a summary exists, and apply mirrors that authority
+        bare = ("# Index\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| CR-0001 | a | Approved |\n")
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, bare)
+            before = (repo / "sdlc-studio" / "change-requests" / "_index.md").read_text(
+                encoding="utf-8")
+            buf, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(err):
+                rc = reconcile.main(["apply", "--root", str(repo)])
+            self.assertEqual(rc, 0, err.getvalue())
+            self.assertNotIn("could not insert", err.getvalue())
+            self.assertEqual((repo / "sdlc-studio" / "change-requests" /
+                              "_index.md").read_text(encoding="utf-8"), before)
+
+    def test_unplaceable_names_only_statuses_absent_everywhere(self):
+        # a status that already has a row in an UNMANAGED block is not
+        # "missing" - the warning must name only statuses absent from every
+        # summary block
+        twin = ("# Index\n\n## A\n\n| Status | Count |\n| --- | --- |\n"
+                "| Approved | 1 |\n"
+                "\n## B\n\n| Status | Count |\n| --- | --- |\n"
+                "| Proposed | 0 |\n"
+                "\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| CR-0001 | a | Approved |\n")
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, twin)
+            res = reconcile.apply_type("cr", repo)
+            self.assertEqual(res["summary_missing"], [])  # Approved has a row in A
+
+    def test_unplaceable_missing_row_exits_nonzero_named(self):
+        # two Total-less summaries: neither is the managed block, so the row
+        # cannot be placed - apply must say so and exit 1, never a clean 0
+        twin = ("# Index\n\n## A\n\n| Status | Count |\n| --- | --- |\n"
+                "| Proposed | 1 |\n"
+                "\n## B\n\n| Status | Count |\n| --- | --- |\n"
+                "| Proposed | 1 |\n"
+                "\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| CR-0001 | a | Proposed |\n")
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, twin)
+            buf = io.StringIO()
+            err = io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(err):
+                rc = reconcile.main(["apply", "--root", str(repo)])
+            self.assertEqual(rc, 1)
+            self.assertIn("Approved", buf.getvalue() + err.getvalue())
+
+
 class SelfDiagnosingCountMismatchTests(unittest.TestCase):
     """count-mismatch findings carry their own diagnosis: the mismatched status
     tokens with both numbers, and - when out-of-vocab statuses are the cause -

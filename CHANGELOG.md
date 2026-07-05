@@ -32,6 +32,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `reconcile apply` inserts a missing summary status row instead of
+  exiting 0 over a count-mismatch it created: a status flip into a status
+  absent from the summary now lands `| <Status> | <n> |` in the
+  reconcile-managed global summary block (before the Total row); scoped
+  per-epic roll-ups are never touched, and when no managed block exists
+  the missing statuses are named as warnings and apply exits non-zero.
+  A transition into such a status now reports `index_synced=True`
+  truthfully - the sync actually happens.
 - The dormant `Verified` bug status has defined semantics mapped onto the
   verification-depth tiers: `Fixed` = implemented and proven at the
   functional tier (the honest status when a higher-tier proof is owed);

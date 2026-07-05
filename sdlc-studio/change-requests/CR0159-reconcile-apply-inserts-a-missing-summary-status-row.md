@@ -1,6 +1,6 @@
 # CR-0159: reconcile apply inserts a missing summary status row instead of exiting 0 over a count-mismatch it created
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Low
 > **Type:** Improvement
 > **Date:** 2026-07-05
@@ -22,3 +22,4 @@ A status flip into a status absent from the summary table (e.g. the first CR to 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-05 | audit | Raised |
+| 2026-07-05 | Claude (sprint 2026-07-D addendum) | Delivered pre-release: _insert_missing_summary_rows in the managed global block (before Total), per-epic roll-ups untouched, unplaceable statuses warn + exit 1; transition index_synced honesty test re-pinned to the now-truthful True |

@@ -497,7 +497,11 @@ class HonestSyncTests(unittest.TestCase):
             self.assertFalse(res["index_synced"])      # archive row not synced - honest
             self.assertIsNotNone(res["warning"])
 
-    def test_status_without_summary_row_reports_not_synced(self) -> None:
+    def test_status_without_summary_row_now_syncs_by_insertion(self) -> None:
+        # Formerly pinned index_synced=False: the writer could not ADD a
+        # missing summary row, so the honest report was not-synced. The
+        # summary-row insertion removed the limitation - the row is inserted
+        # into the managed block and the sync report is truthfully True.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             sd = root / "sdlc-studio" / "stories"
@@ -508,7 +512,10 @@ class HonestSyncTests(unittest.TestCase):
                 "## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
                 "| [US0001](US0001-x.md) | s | Ready |\n", encoding="utf-8")  # no Done summary row
             res = tr.transition(root, "US0001", "Done")
-            self.assertFalse(res["index_synced"])
+            self.assertTrue(res["index_synced"])
+            text = (sd / "_index.md").read_text(encoding="utf-8")
+            self.assertIn("| Done | 1 |", text)
+            self.assertIn("| Ready | 0 |", text)
 
     def test_no_status_field_raises(self) -> None:
         with tempfile.TemporaryDirectory() as d:

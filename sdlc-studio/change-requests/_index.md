@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 154 |
+| Complete | 155 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 4 |
@@ -178,4 +178,4 @@
 | [CR-0156](CR0156-map-the-verification-depth-tiers-onto-a-fixed.md) | map the verification-depth tiers onto a Fixed to Verified bug progression (define the dormant Verified status) | Complete | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0157](CR0157-project-upgrade-should-surface-the-capability-delta-not.md) | project upgrade should surface the capability delta, not just file corrections | Complete | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0158](CR0158-tolerant-convention-layer-one-classifier-in-lib-config.md) | Tolerant convention layer: one classifier in lib, config-declared conventions, guarded normalised matching | Complete | Medium | Feature | 2026-07-05 | -- |
-| [CR-0159](CR0159-reconcile-apply-inserts-a-missing-summary-status-row.md) | reconcile apply inserts a missing summary status row instead of exiting 0 over a count-mismatch it created | Proposed | Low | Improvement | 2026-07-05 | -- |
+| [CR-0159](CR0159-reconcile-apply-inserts-a-missing-summary-status-row.md) | reconcile apply inserts a missing summary status row instead of exiting 0 over a count-mismatch it created | Complete | Low | Improvement | 2026-07-05 | -- |
