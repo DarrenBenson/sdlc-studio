@@ -83,6 +83,21 @@ def check(repo_root: Path | str = ".") -> dict:
         if td is not None and int(cd) != td:
             findings.append({"kind": "disclosure-drift",
                              "detail": f"LATEST.md says disclosure {cd}; actual is {td}"})
+    # anchor-window ceiling: the anchor is re-read at every session start, so
+    # it must stay a WINDOW (current state + one-line history), not a ledger
+    # of full past-sprint paragraphs duplicating the retros
+    from lib import sdlc_md
+    try:
+        ceiling = int(sdlc_md.project_override(root, "docs.latest_max_lines", 80))
+    except (TypeError, ValueError):
+        ceiling = 80
+    n_lines = len(text.splitlines())
+    if n_lines > ceiling:
+        findings.append({"kind": "anchor-ledger",
+                         "detail": (f"LATEST.md is {n_lines} lines (> {ceiling}, "
+                                    f"docs.latest_max_lines) and is re-read every session "
+                                    f"start - move past-sprint paragraphs to their retros "
+                                    f"and keep one History line each")})
     return {"findings": findings, "ok": not findings, "applicable": True}
 
 

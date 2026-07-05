@@ -106,6 +106,29 @@ For authentication / send-path / network bugs, check in this order *before* touc
 
 ---
 
+## The anchor is a window, not a ledger {#anchor-window}
+
+**Pattern:** The project's state anchor (LATEST.md or equivalent) is re-read at every session
+start and after every context reset - it pays its length on every read, forever. Keep it a
+window: header, gate facts, the CURRENT tranche in paragraph form, the open backlog, and one
+History line per past tranche pointing at its retro. The full paragraphs belong in the retros,
+which are read on demand.
+
+**Class of incident:** Each sprint close appends its summary paragraph and nobody deletes the
+previous one, because every line still reads true. The anchor grows ~15 dense lines per sprint;
+within months every session silently spends four figures of tokens re-reading history that
+duplicates the retros verbatim.
+
+**How to apply:** At sprint close, demote the previous "current" paragraph to a one-line History
+entry (`<tranche> - <headline> -> <RETROxxxx>`). The `doc_freshness` advisory flags the anchor
+when it exceeds `docs.latest_max_lines` (default 80). Nothing is lost - the retro holds the
+detail, the CHANGELOG holds the shipped list.
+
+**Anti-pattern:** Treating the anchor as the project history. History that is safe to forget at
+session start does not belong in the file that every session starts with.
+
+---
+
 ## Post-release briefing {#post-release-briefing}
 
 **Pattern:** When a release changes an interface that other agents or operators consume, brief them explicitly – don't rely on them to notice.

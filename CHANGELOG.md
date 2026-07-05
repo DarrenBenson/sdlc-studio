@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (token economy)
+
+- Index-bloat advisory: `reconcile detect` and `status hint` recommend the
+  progressive-disclosure archive (`scripts/archive.py`) when live terminal
+  rows exceed `indexes.archive_after` (default 30) - advisory only, counted
+  from the live index so an archived workspace stays silent; the
+  release-gate template carries the archive step. First live run archived
+  265 rows on this repo (live indexes 332 -> 83 lines, census 0-drift).
+- Anchor-window discipline: LATEST.md is a window, not a ledger - past
+  sprints become one-line History pointers to their retros, and
+  `doc_freshness` flags the anchor when it exceeds `docs.latest_max_lines`
+  (default 80). Codified for consuming projects in
+  `reference-operator-heuristics.md#anchor-window`.
+
 ### Added
 
 - Tolerant convention layer (`lib/conventions.py`): one place where a

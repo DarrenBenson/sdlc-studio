@@ -96,3 +96,44 @@ class DocFreshnessTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AnchorWindowCeilingTests(unittest.TestCase):
+    """The anchor is a window, not a ledger: LATEST.md over the configurable
+    line ceiling draws an advisory naming the remedy (move sprint paragraphs
+    to their retros); under-ceiling stays silent."""
+
+    def test_over_ceiling_flagged_with_remedy(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _skill(root, "3.4.0", 5)
+            _latest(root, "# LATEST\n" + ("line\n" * 120))
+            r = df.check(root)
+            kinds = [f["kind"] for f in r["findings"]]
+            self.assertIn("anchor-ledger", kinds)
+            f = next(x for x in r["findings"] if x["kind"] == "anchor-ledger")
+            self.assertIn("80", f["detail"])          # ceiling named
+            self.assertIn("retro", f["detail"].lower())  # remedy named
+
+    def test_under_ceiling_silent(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _skill(root, "3.4.0", 5)
+            _latest(root, "# LATEST\n" + ("line\n" * 40))
+            r = df.check(root)
+            self.assertNotIn("anchor-ledger", [f["kind"] for f in r["findings"]])
+
+    def test_config_ceiling_respected(self):
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest("PyYAML absent")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _skill(root, "3.4.0", 5)
+            (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "docs:\n  latest_max_lines: 200\n", encoding="utf-8")
+            _latest(root, "# LATEST\n" + ("line\n" * 120))
+            r = df.check(root)
+            self.assertNotIn("anchor-ledger", [f["kind"] for f in r["findings"]])
