@@ -123,7 +123,13 @@ independent critic plus the gate - the check's output states this scoping.
    reproductions before recording approve. In the field this pass caught what unit
    tests, per-unit review, and the gate all missed (a closed bug still reproducible
    through a sibling parser; a mutation gate counting unviable mutants as kills) -
-   the re-run-your-own-repro step is where those escapes died. Verdicts are
+   the re-run-your-own-repro step is where those escapes died. **The critic runs
+   AS the QA seat's review render** (resolve the card via `persona_resolve` -
+   the project's QA seat, or the QA amigo default): the seat's Lens and
+   Pushes-Back-When list are its attack angles, and the verdict is recorded
+   under the seat so the audit trail reads as the seat's sign-off. `critic.py
+   record` warns when the reviewer names no declared seat - the persona lens
+   drifting out of the loop must be visible, never silent. Verdicts are
    recorded per unit (`critic.py record`, author != reviewer), which is what the
    conformance `critiqued` stage reads. The closing gate also emits the
    **final report** (items actioned / rejected with rationale / blocked with blocker /

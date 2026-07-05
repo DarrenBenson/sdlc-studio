@@ -26,6 +26,13 @@ Personas can be consulted at key decision points throughout the SDLC pipeline. T
 > `amigo-template.md` (the enriched seat schema) covers both a build-capable amigo and a pure-review
 > document-owner seat below - a review-only seat fills its review render and marks the work-render
 > sections "n/a".
+>
+> **The adversarial critic is a seat, not an anonymous instance.** The sprint-close
+> full-diff critic pass runs AS the QA seat's review render (resolved via
+> `persona_resolve`; the QA amigo is the default): the card's Lens and
+> Pushes-Back-When list are the critic's attack angles, and the verdict is
+> recorded under the seat's name so `critic-verdicts.md` reads as the seat's
+> sign-off. `critic.py record` warns when a reviewer matches no declared seat.
 
 ### Document-owner seats
 

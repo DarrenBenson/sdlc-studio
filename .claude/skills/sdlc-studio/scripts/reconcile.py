@@ -785,11 +785,36 @@ def _display_id(type_: str, norm: str) -> str:
     return norm
 
 
+def _master_data_header(lines: list, census: dict) -> tuple[int, list] | None:
+    """The MASTER data table's (line, header cells): among ID-carrying headers,
+    the one whose contiguous rows hold the most census artifact ids (ties fall
+    to the last, matching the shipped master-last templates). A trailing view
+    or breakdown table must never capture an appended row - the id would parse
+    from the view and certify the incomplete master as clean."""
+    candidates: list[tuple[int, int, list]] = []  # (score, line, cells)
+    for i, ln in enumerate(lines):
+        cells = _table_cells(ln)
+        if not (cells and len(cells) > 2 and "id" in [c.lower() for c in cells]):
+            continue
+        score = 0
+        j = i + 1
+        while j < len(lines) and lines[j].strip().startswith("|"):
+            m = sdlc_md.ID_SEARCH_RE.search(lines[j])
+            if m and _norm_id(m.group(0)) in census:
+                score += 1
+            j += 1
+        candidates.append((score, i, cells))
+    if not candidates:
+        return None
+    best = max(candidates, key=lambda c: (c[0], c[1]))  # score, then LAST wins ties
+    return best[1], best[2]
+
+
 def _plan_missing_appends(lines: list, census: dict, rows: dict) -> tuple:
     """(data header, appendable (norm, disp, status) triples, unappendable
     display ids). Without a pinnable ID-column header nothing is appendable -
     the caller reports those rows loudly instead of guessing a layout."""
-    hdr = sdlc_md.find_data_header(lines)
+    hdr = _master_data_header(lines, census)
     missing = sorted(n for n in census if n not in rows)
     if hdr is None:
         return None, [], [census[n][0] for n in missing]
@@ -808,12 +833,31 @@ def _model_corrected_counts(rows: dict, fixes: dict, to_append: list,
     return _canonical_counts(corrected, vocab)
 
 
+def _table_display_style(lines: list, hdr: tuple, type_: str) -> bool:
+    """Does the pinned table's existing id column use the dashed display form?
+    Mirror the house rows; fall back to the type convention on an empty table."""
+    j = hdr[0] + 1
+    while j < len(lines) and lines[j].strip().startswith("|"):
+        m = sdlc_md.ID_SEARCH_RE.search(lines[j])
+        if m:
+            return "-" in m.group(0)
+        j += 1
+    return type_ in _DASHED_DISPLAY
+
+
 def _insert_missing_data_rows(lines: list, hdr: tuple, to_append: list,
-                              type_: str, root: Path) -> list[str]:
+                              type_: str, root: Path, aliases: tuple = ()) -> list[str]:
     """Insert one header-driven row per missing census file after the pinned
-    data table's last contiguous row. Title comes from the artifact file,
-    the id cell links the real filename. Returns the appended norm ids."""
+    data table's last contiguous row. Title comes from the artifact file, the
+    id cell links the real filename in the table's own display style, and the
+    status lands in the pinned status column even when the project declares an
+    alias for it (a `--` there would be drift apply itself planted and could
+    never repair). Returns the appended norm ids."""
     filenames = _census_filenames(type_, root)
+    low = [c.lower() for c in hdr[1]]
+    status_i = next((i for i, c in enumerate(low)
+                     if c == "status" or c in aliases), None)
+    dashed = _table_display_style(lines, hdr, type_)
     j = hdr[0] + 1
     while j < len(lines) and lines[j].strip().startswith("|"):
         j += 1
@@ -829,9 +873,14 @@ def _insert_missing_data_rows(lines: list, hdr: tuple, to_append: list,
                 title = fv["title"] or disp
             except OSError:
                 pass
-        shown = _display_id(type_, norm)
+        shown = _display_id(type_, norm) if dashed else norm
         link = f"[{shown}]({fname})" if fname else shown
-        lines.insert(j + k, sdlc_md.row_from_header(hdr[1], link, title, fstatus, {}))
+        row = sdlc_md.row_from_header(hdr[1], link, title, fstatus, {})
+        if status_i is not None and "status" not in low:
+            cells = _table_cells(row)  # aliased column: place the status positionally
+            cells[status_i] = fstatus
+            row = _join_row(cells)
+        lines.insert(j + k, row)
         appended.append(norm)
     return appended
 
@@ -887,7 +936,8 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
     result["counts_updated"], applied = _rewrite_index_lines(
         lines, fixes, counts, vocab, aliases)
     if to_append:
-        result["appended"] = _insert_missing_data_rows(lines, hdr, to_append, type_, root)
+        result["appended"] = _insert_missing_data_rows(
+            lines, hdr, to_append, type_, root, aliases)
         result["counts_updated"] = True
     inserted, unplaceable = _insert_missing_summary_rows(lines, counts, vocab, aliases)
     if inserted:

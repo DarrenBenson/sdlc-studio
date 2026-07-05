@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed (reconcile apply)
+
+- `reconcile apply` appends missing index rows mechanically: one
+  header-driven row per census file the index lacks, built in the pinned
+  MASTER table's own column order (the table already holding the census
+  rows - a trailing view never captures the append), with the status
+  landing in a declared alias column and the id mirroring the table's
+  display style. Unplaceable rows (no ID-column header) warn and exit
+  non-zero; orphan rows stay report-only. A consuming project's agent
+  had hand-authored 23 rows because this class was report-only.
+- The critic is a seat, not an anonymous instance: `critic.py record`
+  warns when the reviewer matches no declared seat/amigo, and the sprint
+  and persona references state the close-pass critic runs AS the QA
+  seat's review render.
+
 ### Added (token economy)
 
 - Index-bloat advisory: `reconcile detect` and `status hint` recommend the

@@ -140,11 +140,55 @@ def is_pre_gate(verdict: dict | None) -> bool:
     return bool(verdict) and _id(verdict.get("author", "")) == PRE_GATE
 
 
+def _declared_reviewers(repo_root: Path | str) -> list[tuple[str, str]]:
+    """(role, card person-name) pairs declared under personas/seats and
+    personas/amigos - the reviewers the project actually has."""
+    import re as _re
+    out: list[tuple[str, str]] = []
+    role_re = _re.compile(r"<!--\s*role:\s*([a-z][a-z0-9-]*)\s*-->", _re.I)
+    name_re = _re.compile(r"^#\s+([^-\n]+)", _re.M)
+    for sub in ("seats", "amigos"):
+        d = Path(repo_root) / "sdlc-studio" / "personas" / sub
+        if not d.is_dir():
+            continue
+        for card in sorted(d.glob("*.md")):
+            try:
+                text = card.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            rm = role_re.search(text)
+            nm = name_re.search(text)
+            if rm:
+                out.append((rm.group(1).lower(),
+                            (nm.group(1).strip() if nm else card.stem)))
+    return out
+
+
+def _seat_drift_warning(repo_root: Path | str, reviewer: str) -> str | None:
+    """Advisory when the reviewer names no declared seat - the persona lens
+    drifting out of the critic loop must be visible, never silent. Silent on
+    projects that declare no personas (headless consumers still work)."""
+    declared = _declared_reviewers(repo_root)
+    if not declared:
+        return None
+    low = reviewer.lower()
+    for role, name in declared:
+        if role in low or name.lower() in low:
+            return None
+    opts = ", ".join(f"{name} (role: {role})" for role, name in declared)
+    return (f"reviewer '{reviewer}' matches no declared seat - the critic "
+            f"should run as a review seat's render (declared: {opts}); see "
+            f"reference-workflow-personas.md")
+
+
 def cmd_record(args: argparse.Namespace) -> int:
     path = record_verdict(args.root, args.unit, args.verdict, args.reviewer,
                           args.author, args.issues)
     note = "" if _id(args.author) != _id(args.reviewer) else "  (WARNING: self-review - blocked at the Done gate)"
     print(f"recorded {sdlc_md.norm_id(args.unit)} {args.verdict.upper()} -> {path}{note}")
+    drift = _seat_drift_warning(args.root, args.reviewer)
+    if drift:
+        print(f"WARNING: {drift}", file=sys.stderr)
     return 0
 
 

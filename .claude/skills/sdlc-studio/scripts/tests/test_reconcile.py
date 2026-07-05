@@ -1377,3 +1377,70 @@ class MissingRowAppendTests(unittest.TestCase):
             self.assertIn("CR-0099", text)                   # never removed
             kinds = [x["kind"] for x in reconcile.detect_type("cr", repo)["drift"]]
             self.assertIn("orphan-row", kinds)               # still reported
+
+
+class AppendTargetingTests(unittest.TestCase):
+    """Critic round: the append must honour an aliased status column and pin
+    the MASTER table (where the census rows live), never a trailing view."""
+
+    def test_aliased_status_column_gets_the_status_not_dashes(self):
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest("PyYAML absent")
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            dd = repo / "sdlc-studio" / "change-requests"; dd.mkdir(parents=True)
+            (repo / "sdlc-studio" / ".config.yaml").write_text(
+                "conventions:\n  status_column: [State]\n", encoding="utf-8")
+            for i in (1, 2):
+                (dd / f"CR{i:04d}-t{i}.md").write_text(
+                    f"# CR-{i:04d}: t{i}\n\n> **Status:** Proposed\n", encoding="utf-8")
+            (dd / "_index.md").write_text(
+                "# I\n\n## All\n\n| ID | Title | State |\n| --- | --- | --- |\n"
+                "| [CR-0001](CR0001-t1.md) | t1 | Proposed |\n", encoding="utf-8")
+            res = reconcile.apply_type("cr", repo)
+            self.assertEqual(res["appended"], ["CR0002"])
+            row = next(ln for ln in (dd / "_index.md").read_text(encoding="utf-8")
+                       .splitlines() if "CR0002" in ln)
+            self.assertIn("Proposed", row)      # status lands in the aliased column
+            self.assertNotIn("--", row)
+            self.assertEqual(reconcile.detect_type("cr", repo)["drift"], [])
+            # idempotent: second apply plants nothing new
+            self.assertEqual(reconcile.apply_type("cr", repo)["appended"], [])
+
+    def test_append_pins_the_master_table_not_a_trailing_view(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            dd = repo / "sdlc-studio" / "change-requests"; dd.mkdir(parents=True)
+            for i in (1, 2, 3):
+                (dd / f"CR{i:04d}-t{i}.md").write_text(
+                    f"# CR-{i:04d}: t{i}\n\n> **Status:** Proposed\n", encoding="utf-8")
+            (dd / "_index.md").write_text(
+                "# I\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [CR-0001](CR0001-t1.md) | t1 | Proposed |\n"
+                "| [CR-0002](CR0002-t2.md) | t2 | Proposed |\n"
+                "\n## Blocked view\n\n| ID | Blocker | Status |\n| --- | --- | --- |\n"
+                "| [CR-0001](CR0001-t1.md) | none | Proposed |\n", encoding="utf-8")
+            res = reconcile.apply_type("cr", repo)
+            self.assertEqual(res["appended"], ["CR0003"])
+            text = (dd / "_index.md").read_text(encoding="utf-8")
+            master, view = text.split("## Blocked view")
+            self.assertIn("CR0003", master)      # appended to the master table
+            self.assertNotIn("CR0003", view)     # the view is author-maintained
+
+    def test_display_form_mirrors_existing_rows(self):
+        # a house table using undashed CR ids gets an undashed append
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            dd = repo / "sdlc-studio" / "change-requests"; dd.mkdir(parents=True)
+            for i in (1, 2):
+                (dd / f"CR{i:04d}-t{i}.md").write_text(
+                    f"# CR-{i:04d}: t{i}\n\n> **Status:** Proposed\n", encoding="utf-8")
+            (dd / "_index.md").write_text(
+                "# I\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [CR0001](CR0001-t1.md) | t1 | Proposed |\n", encoding="utf-8")
+            reconcile.apply_type("cr", repo)
+            row = next(ln for ln in (dd / "_index.md").read_text(encoding="utf-8")
+                       .splitlines() if "t2" in ln)
+            self.assertIn("[CR0002]", row)       # undashed, matching the house rows

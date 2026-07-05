@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 5 |
+| Proposed | 6 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 155 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 4 |
 | Blocked | 0 |
-| **Total** | **164** |
+| **Total** | **165** |
 
 ## All Changes
 
@@ -25,6 +25,7 @@
 | [CR-0162](CR0162-artifact-revision-verb-deterministic-batch-appends-to-revision.md) | artifact revision verb: deterministic batch appends to Revision History | Proposed | Low | Improvement | 2026-07-05 | -- |
 | [CR-0163](CR0163-skill-md-instructs-section-reads-for-large-references.md) | SKILL.md instructs section reads for large references (honour the Reading Guides) | Proposed | Low | Improvement | 2026-07-05 | -- |
 | [CR-0164](CR0164-reconcile-apply-adds-missing-index-rows-mechanically-hand.md) | reconcile apply adds missing index rows mechanically - hand-authoring 23 rows is the tool's failure | Proposed | High | Improvement | 2026-07-05 | -- |
+| [CR-0165](CR0165-critic-recorder-flags-a-reviewer-that-is-no.md) | critic recorder flags a reviewer that is no declared seat - the persona lens must not drift out silently | Proposed | Medium | Improvement | 2026-07-05 | -- |
 
 ## Archived Releases
 

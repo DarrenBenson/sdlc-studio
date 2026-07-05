@@ -191,3 +191,48 @@ class IndependenceTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SeatDriftWarningTests(unittest.TestCase):
+    """The persona lens must not drift out silently: recording a verdict under
+    a reviewer that matches no declared seat/amigo draws a warning naming the
+    declared options - advisory only, and silent where no personas exist."""
+
+    def _repo(self, d, with_amigo=True):
+        root = Path(d)
+        (root / "sdlc-studio").mkdir(parents=True)
+        if with_amigo:
+            ad = root / "sdlc-studio" / "personas" / "amigos"
+            ad.mkdir(parents=True)
+            (ad / "qa.md").write_text(
+                "<!-- role: qa -->\n# Sam Eriksson - QA amigo\n", encoding="utf-8")
+        return root
+
+    def _record(self, root, reviewer):
+        import contextlib, io
+        critic = _load()
+        err = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+            rc = critic.main(["record", "--unit", "CR0001", "--verdict", "approve",
+                              "--reviewer", reviewer, "--author", "builder",
+                              "--root", str(root)])
+        return rc, err.getvalue()
+
+    def test_unknown_reviewer_warns_and_names_seats(self):
+        with tempfile.TemporaryDirectory() as d:
+            rc, err = self._record(self._repo(d), "adversarial-critic (instance)")
+            self.assertEqual(rc, 0)                       # advisory: never refuses
+            self.assertIn("no declared seat", err)
+            self.assertIn("qa", err)                       # declared role named
+
+    def test_role_match_is_silent(self):
+        with tempfile.TemporaryDirectory() as d:
+            rc, err = self._record(self._repo(d), "Sam Eriksson (QA seat, review render)")
+            self.assertEqual(rc, 0)
+            self.assertNotIn("no declared seat", err)
+
+    def test_no_personas_dir_is_silent(self):
+        with tempfile.TemporaryDirectory() as d:
+            rc, err = self._record(self._repo(d, with_amigo=False), "anyone")
+            self.assertEqual(rc, 0)
+            self.assertNotIn("no declared seat", err)
