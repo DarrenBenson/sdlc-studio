@@ -5,6 +5,15 @@ All notable changes to SDLC Studio will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- SKILL.md description opens with the masthead tagline ("The antidote to
+  vibe coding: a full software engineering team at your fingertips") ahead
+  of the unchanged trigger catalogue - re-run eval scenario 01
+  (trigger-routing) before the next tag, as for any description change.
+
 ## [3.5.0] - 2026-07-05
 
 ### Release verification
