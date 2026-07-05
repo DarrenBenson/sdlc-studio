@@ -189,9 +189,6 @@ class IndependenceTests(unittest.TestCase):
             self.assertFalse(mod.is_independent(v))
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class SeatDriftWarningTests(unittest.TestCase):
     """The persona lens must not drift out silently: recording a verdict under
@@ -236,3 +233,28 @@ class SeatDriftWarningTests(unittest.TestCase):
             rc, err = self._record(self._repo(d, with_amigo=False), "anyone")
             self.assertEqual(rc, 0)
             self.assertNotIn("no declared seat", err)
+
+    def test_substring_inside_a_word_does_not_count(self):
+        # Sam's attack: 'production' contains 'product'; a role match must be
+        # a whole word, or free-text drift slips back past the warning
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            ad = root / "sdlc-studio" / "personas" / "amigos"
+            (ad / "product.md").write_text(
+                "<!-- role: product -->\n# Lena Fischer - Product amigo\n",
+                encoding="utf-8")
+            rc, err = self._record(root, "final production check")
+            self.assertEqual(rc, 0)
+            self.assertIn("no declared seat", err)
+
+    def test_first_name_token_claims_the_seat(self):
+        # 'sam checked it' names the seat holder - that is a seat claim, not
+        # drift; token-level name matching keeps it silent
+        with tempfile.TemporaryDirectory() as d:
+            rc, err = self._record(self._repo(d), "sam checked it")
+            self.assertEqual(rc, 0)
+            self.assertNotIn("no declared seat", err)
+
+if __name__ == "__main__":
+    unittest.main()
+

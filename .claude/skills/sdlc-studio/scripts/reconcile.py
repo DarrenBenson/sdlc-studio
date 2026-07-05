@@ -787,26 +787,41 @@ def _display_id(type_: str, norm: str) -> str:
 
 def _master_data_header(lines: list, census: dict) -> tuple[int, list] | None:
     """The MASTER data table's (line, header cells): among ID-carrying headers,
-    the one whose contiguous rows hold the most census artifact ids (ties fall
-    to the last, matching the shipped master-last templates). A trailing view
-    or breakdown table must never capture an appended row - the id would parse
-    from the view and certify the incomplete master as clean."""
-    candidates: list[tuple[int, int, list]] = []  # (score, line, cells)
+    the one whose contiguous rows hold the most census artifact ids. A trailing
+    view or breakdown table must never capture an appended row - the id would
+    parse from the view and certify the incomplete master as clean.
+
+    Census-id ties are disambiguated structurally, never positionally alone:
+    a Title column (the canonical index schema) beats a view's bespoke column,
+    a richer header beats a narrower breakdown, more rows beat fewer, and only
+    then does LAST win (the shipped master-last layouts). Tables identical on
+    every axis are indistinguishable - return None so the caller reports the
+    rows unapplied loudly instead of fabricating a choice."""
+    candidates: list[tuple[tuple, int, list]] = []  # (rank-sans-line, line, cells)
     for i, ln in enumerate(lines):
         cells = _table_cells(ln)
-        if not (cells and len(cells) > 2 and "id" in [c.lower() for c in cells]):
+        low = [c.lower() for c in cells] if cells else []
+        if not (cells and len(cells) > 2 and "id" in low):
             continue
-        score = 0
+        score = n_rows = 0
         j = i + 1
         while j < len(lines) and lines[j].strip().startswith("|"):
+            n_rows += 1
             m = sdlc_md.ID_SEARCH_RE.search(lines[j])
             if m and _norm_id(m.group(0)) in census:
                 score += 1
             j += 1
-        candidates.append((score, i, cells))
+        rank = (score, int("title" in low), len(cells), n_rows)
+        candidates.append((rank, i, cells))
     if not candidates:
         return None
-    best = max(candidates, key=lambda c: (c[0], c[1]))  # score, then LAST wins ties
+    top = max(c[0] for c in candidates)
+    winners = [c for c in candidates if c[0] == top]
+    if len(winners) > 1 and winners[0][2] != winners[-1][2]:
+        pass  # distinct headers sharing a rank still resolve by position below
+    elif len(winners) > 1:
+        return None  # indistinguishable mirrors: never guess between them
+    best = max(winners, key=lambda c: c[1])  # LAST wins among equally-ranked
     return best[1], best[2]
 
 

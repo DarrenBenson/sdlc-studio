@@ -1409,25 +1409,91 @@ class AppendTargetingTests(unittest.TestCase):
             # idempotent: second apply plants nothing new
             self.assertEqual(reconcile.apply_type("cr", repo)["appended"], [])
 
+    def _view_repo(self, d, master_rows, view_rows):
+        repo = Path(d)
+        dd = repo / "sdlc-studio" / "change-requests"; dd.mkdir(parents=True)
+        for i in (1, 2, 3):
+            (dd / f"CR{i:04d}-t{i}.md").write_text(
+                f"# CR-{i:04d}: t{i}\n\n> **Status:** Proposed\n", encoding="utf-8")
+        (dd / "_index.md").write_text(
+            "# I\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            + "".join(f"| [CR-000{i}](CR000{i}-t{i}.md) | t{i} | Proposed |\n"
+                      for i in master_rows)
+            + "\n## Blocked view\n\n| ID | Blocker | Status |\n| --- | --- | --- |\n"
+            + "".join(f"| [CR-000{i}](CR000{i}-t{i}.md) | none | Proposed |\n"
+                      for i in view_rows), encoding="utf-8")
+        return repo, dd
+
+    def _assert_master_append(self, dd, res, expect=("CR0003",)):
+        self.assertEqual(res["appended"], list(expect))
+        text = (dd / "_index.md").read_text(encoding="utf-8")
+        master, view = text.split("## Blocked view")
+        for rid in expect:
+            self.assertIn(rid, master)       # appended to the master table
+            self.assertNotIn(rid, view)      # the view is author-maintained
+
     def test_append_pins_the_master_table_not_a_trailing_view(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo, dd = self._view_repo(d, master_rows=(1, 2), view_rows=(1,))
+            self._assert_master_append(dd, reconcile.apply_type("cr", repo))
+
+    def test_append_pins_the_master_even_on_a_census_id_tie(self):
+        # Sam's battery case D: master and view each hold ONE census id - a
+        # tie must not hand the append to the trailing view (the id would
+        # parse from the view and certify the incomplete master as clean)
+        with tempfile.TemporaryDirectory() as d:
+            repo, dd = self._view_repo(d, master_rows=(1,), view_rows=(1,))
+            self._assert_master_append(dd, reconcile.apply_type("cr", repo),
+                                       expect=("CR0002", "CR0003"))
+
+    def test_single_epic_story_tie_still_resolves_to_the_master(self):
+        # the shipped story layout ALSO ties (per-epic view first, All
+        # Stories master LAST) - the disambiguator must keep that green
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            sd = repo / "sdlc-studio" / "stories"; sd.mkdir(parents=True)
+            for i in (1, 2):
+                (sd / f"US000{i}-s{i}.md").write_text(
+                    f"# US000{i}: s{i}\n\n> **Status:** Draft\n", encoding="utf-8")
+            (sd / "_index.md").write_text(
+                "# S\n\n## Stories by Epic\n\n"
+                "| Story | Title | CR | Points | Status |\n"
+                "| --- | --- | --- | --- | --- |\n"
+                "| [US0001](US0001-s1.md) | s1 | CR-1 | 3 | Draft |\n"
+                "\n## All Stories\n\n"
+                "| ID | Title | Epic | Status | Points | Dependencies |\n"
+                "| --- | --- | --- | --- | --- | --- |\n"
+                "| [US0001](US0001-s1.md) | s1 | EP1 | Draft | 3 | None |\n",
+                encoding="utf-8")
+            res = reconcile.apply_type("story", repo)
+            self.assertEqual(res["appended"], ["US0002"])
+            text = (sd / "_index.md").read_text(encoding="utf-8")
+            by_epic, master = text.split("## All Stories")
+            self.assertIn("US0002", master)
+            self.assertNotIn("US0002", by_epic)
+
+    def test_identical_mirror_tables_refuse_loudly(self):
+        # two indistinguishable ID tables: appending to either is a guess -
+        # report unapplied and exit 1, never fabricate a choice
+        import contextlib, io
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             dd = repo / "sdlc-studio" / "change-requests"; dd.mkdir(parents=True)
-            for i in (1, 2, 3):
+            for i in (1, 2):
                 (dd / f"CR{i:04d}-t{i}.md").write_text(
                     f"# CR-{i:04d}: t{i}\n\n> **Status:** Proposed\n", encoding="utf-8")
+            table = ("| ID | Title | Status |\n| --- | --- | --- |\n"
+                     "| [CR-0001](CR0001-t1.md) | t1 | Proposed |\n")
             (dd / "_index.md").write_text(
-                "# I\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
-                "| [CR-0001](CR0001-t1.md) | t1 | Proposed |\n"
-                "| [CR-0002](CR0002-t2.md) | t2 | Proposed |\n"
-                "\n## Blocked view\n\n| ID | Blocker | Status |\n| --- | --- | --- |\n"
-                "| [CR-0001](CR0001-t1.md) | none | Proposed |\n", encoding="utf-8")
-            res = reconcile.apply_type("cr", repo)
-            self.assertEqual(res["appended"], ["CR0003"])
-            text = (dd / "_index.md").read_text(encoding="utf-8")
-            master, view = text.split("## Blocked view")
-            self.assertIn("CR0003", master)      # appended to the master table
-            self.assertNotIn("CR0003", view)     # the view is author-maintained
+                "# I\n\n## A\n\n" + table + "\n## B (mirror)\n\n" + table,
+                encoding="utf-8")
+            buf, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(err):
+                rc = reconcile.main(["apply", "--root", str(repo)])
+            self.assertEqual(rc, 1)
+            self.assertIn("CR0002", buf.getvalue() + err.getvalue())
+            self.assertNotIn("CR0002",
+                             (dd / "_index.md").read_text(encoding="utf-8"))
 
     def test_display_form_mirrors_existing_rows(self):
         # a house table using undashed CR ids gets an undashed append

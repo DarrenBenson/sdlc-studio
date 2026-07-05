@@ -168,12 +168,17 @@ def _seat_drift_warning(repo_root: Path | str, reviewer: str) -> str | None:
     """Advisory when the reviewer names no declared seat - the persona lens
     drifting out of the critic loop must be visible, never silent. Silent on
     projects that declare no personas (headless consumers still work)."""
+    import re as _re
     declared = _declared_reviewers(repo_root)
     if not declared:
         return None
-    low = reviewer.lower()
+    # whole-word matching only: 'production' must not claim the product seat,
+    # while any token of the seat holder's name ('sam') is a seat claim
+    words = set(_re.findall(r"[a-z0-9]+", reviewer.lower()))
     for role, name in declared:
-        if role in low or name.lower() in low:
+        if role in words:
+            return None
+        if any(tok in words for tok in _re.findall(r"[a-z0-9]+", name.lower())):
             return None
     opts = ", ".join(f"{name} (role: {role})" for role, name in declared)
     return (f"reviewer '{reviewer}' matches no declared seat - the critic "

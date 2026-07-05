@@ -7,7 +7,7 @@
 >
 > **Project version:** 3.4.0 (released 2026-07-04) + unreleased tranches - v3.5.0 pending ·
 > **Date:** 2026-07-05 ·
-> **Gates:** lint clean, 1144 script tests pass (+41 repo-only tools tests), `gate` PASS,
+> **Gates:** lint clean, 1162 script tests pass (+41 repo-only tools tests), `gate` PASS,
 > reconcile drift 0, disclosure 0, npm audit 0, CI green on main.
 
 ## Current
