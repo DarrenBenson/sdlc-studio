@@ -130,3 +130,9 @@
 | CR0157 | APPROVE | adversarial-critic (independent instance, full-diff refute pass, repros re-run at a554fb5) | driving session (sprint 2026-07-D) | 2026-07-05 | - |
 | CR0158 | APPROVE | adversarial-critic (independent instance, full-diff refute pass, repros re-run at a554fb5) | driving session (sprint 2026-07-D) | 2026-07-05 | - |
 | CR0159 | APPROVE | adversarial-critic (independent instance; found the unit, then broke and re-verified its fix twice) | driving session (2026-07-D addendum) | 2026-07-05 | - |
+| CR0160 | APPROVE | Sam Eriksson (QA amigo, review render - RFC0020/CR0165) | driving session (token-optimisation tranche) | 2026-07-05 | - |
+| CR0161 | APPROVE | Sam Eriksson (QA amigo, review render - RFC0020/CR0165) | driving session (token-optimisation tranche) | 2026-07-05 | - |
+| CR0162 | APPROVE | Sam Eriksson (QA amigo, review render - RFC0020/CR0165) | driving session (token-optimisation tranche) | 2026-07-05 | - |
+| CR0163 | APPROVE | Sam Eriksson (QA amigo, review render - RFC0020/CR0165) | driving session (token-optimisation tranche) | 2026-07-05 | - |
+| CR0164 | APPROVE | Sam Eriksson (QA amigo, review render - RFC0020/CR0165) | driving session (token-optimisation tranche) | 2026-07-05 | - |
+| CR0165 | APPROVE | Sam Eriksson (QA amigo, review render - RFC0020/CR0165) | driving session (token-optimisation tranche) | 2026-07-05 | - |

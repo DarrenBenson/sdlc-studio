@@ -1071,9 +1071,10 @@ def cmd_apply(args: argparse.Namespace) -> int:
             print(f"{'WOULD add' if args.dry_run else 'added'} missing {type_} row {a}")
             n += 1
         for a in res.get("missing_unapplied", []):
-            print(f"WARNING: could not add missing {type_} row {a} - no data table "
-                  f"with an ID column to pin; add the header, then re-run apply",
-                  file=sys.stderr)
+            print(f"WARNING: could not add missing {type_} row {a} - no UNIQUELY "
+                  f"pinnable data table (either no header carries an ID column, or "
+                  f"two candidate tables are indistinguishable); fix the layout, "
+                  f"then re-run apply", file=sys.stderr)
             unapplied += 1
         for c in res["changes"]:
             print(f"{'WOULD set' if args.dry_run else 'set'} {type_} {c['id']}: {c['from']} -> {c['to']}")

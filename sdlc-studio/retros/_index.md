@@ -20,3 +20,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0008](RETRO0008-sprint-2026-07-c-the-re-scoped-seven.md) | Sprint 2026-07-C: the re-scoped seven, delivered through their own new machinery | 2026-07-04 | -- | -- |
 | [RETRO-0009](RETRO0009-d0006-tranche-the-first-instrumented-sprint.md) | D0006 tranche: the first instrumented sprint | 2026-07-04 | -- | -- |
 | [RETRO-0010](RETRO0010-sprint-2026-07-d-field-hardening-the-convention.md) | Sprint 2026-07-D - field-hardening: the convention layer and adoption onboarding | 2026-07-05 | -- | -- |
+| [RETRO-0011](RETRO0011-token-optimisation-tranche-the-anchor-window-the-self.md) | Token-optimisation tranche - the anchor window, the self-recommending archive, and Sam takes the seat | 2026-07-05 | -- | -- |

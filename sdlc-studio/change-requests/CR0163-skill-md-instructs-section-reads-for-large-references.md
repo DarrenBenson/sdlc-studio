@@ -1,6 +1,6 @@
 # CR-0163: SKILL.md instructs section reads for large references (honour the Reading Guides)
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Low
 > **Type:** Improvement
 > **Date:** 2026-07-05
@@ -20,3 +20,4 @@ The big three references (epic 1069, story 1036, code 939 lines) carry Reading G
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-05 | audit | Raised |
+| 2026-07-05 | Claude (tranche close) | Delivered in the token-optimisation tranche (pre-v3.5.0): Sam Eriksson (QA seat, review render) APPROVE after two adversarial rounds; details in CHANGELOG [Unreleased] |

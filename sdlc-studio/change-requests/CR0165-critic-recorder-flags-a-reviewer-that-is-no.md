@@ -1,6 +1,6 @@
 # CR-0165: critic recorder flags a reviewer that is no declared seat - the persona lens must not drift out silently
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-05
@@ -22,3 +22,4 @@ The adversarial critic discipline held through four sprints but the SEAT framing
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-05 | audit | Raised |
+| 2026-07-05 | Claude (tranche close) | Delivered in the token-optimisation tranche (pre-v3.5.0): Sam Eriksson (QA seat, review render) APPROVE after two adversarial rounds; details in CHANGELOG [Unreleased] |

@@ -1,6 +1,6 @@
 # CR-0160: reconcile recommends the archive process: index-bloat advisory when terminal rows exceed a threshold
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-05
@@ -22,3 +22,4 @@ The progressive-disclosure archive machinery (scripts/archive.py, census-union) 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-05 | audit | Raised |
+| 2026-07-05 | Claude (tranche close) | Delivered in the token-optimisation tranche (pre-v3.5.0): Sam Eriksson (QA seat, review render) APPROVE after two adversarial rounds; details in CHANGELOG [Unreleased] |

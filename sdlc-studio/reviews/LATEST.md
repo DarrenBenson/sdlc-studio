@@ -22,9 +22,11 @@
   capability digest + advisory-lane registry (CR0157). Critic: 9 findings (2 HIGH), all fixed,
   repros re-run -> APPROVE; lesson L-0005 (census-consumer sweep). CR0159 (apply inserts
   missing summary rows, fail-loud residuals) delivered as an addendum.
-- **Token-optimisation tranche (in flight, CR0160-CR0163):** index-bloat advisory + first live
-  archive run (265 rows -> `archive/v3.4.0/`, live indexes 332 -> 83 lines), LATEST.md
-  window discipline (this rewrite), `artifact.py revision` verb, slice-read rule.
+- **Token-optimisation tranche (unreleased, RETRO0011, CR0160-CR0165):** index-bloat advisory +
+  first live archive run (265 rows, live indexes 332 -> 83 lines), the LATEST.md window,
+  `artifact.py revision`, the slice-read rule, apply appends missing index rows (operator field
+  transcript), and the critic runs AS the QA seat (Sam) with a seat-drift warning. Sam-framed
+  critic: 3 rounds, all findings fixed RED-first, APPROVE under the seat.
 - **Open backlog:** none beyond the in-flight tranche.
 - **Next:** release v3.5.0 (evals, tag, deploy); consuming projects then upgrade and get the
   first live CR0157 capability digest.

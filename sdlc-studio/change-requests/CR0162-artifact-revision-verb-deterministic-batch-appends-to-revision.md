@@ -1,6 +1,6 @@
 # CR-0162: artifact revision verb: deterministic batch appends to Revision History
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Low
 > **Type:** Improvement
 > **Date:** 2026-07-05
@@ -21,3 +21,4 @@ Sprint-close revision-history rows were hand-scripted with an ad-hoc python loop
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-05 | audit | Raised |
+| 2026-07-05 | Claude (tranche close) | Delivered in the token-optimisation tranche (pre-v3.5.0): Sam Eriksson (QA seat, review render) APPROVE after two adversarial rounds; details in CHANGELOG [Unreleased] |

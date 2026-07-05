@@ -167,6 +167,10 @@ class WorkspaceAdvisoryTests(unittest.TestCase):
             adv = status.workspace_advisory(root)
             self.assertIn("CR0001", adv)
             self.assertIn("CR0002", adv)
+            # the NORMALISED id, not the filename: another session greps for
+            # the bare id, and the filename fallback is for non-artifact paths
+            self.assertNotIn("CR0001-a.md", adv)
+            self.assertNotIn("CR0002-b.md", adv)
 
     def test_pillars_and_hint_commands_run_in_text_mode(self) -> None:
         # the critic's high finding: the COMMANDS must run, not just the helper

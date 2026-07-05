@@ -1,6 +1,6 @@
 # CR-0164: reconcile apply adds missing index rows mechanically - hand-authoring 23 rows is the tool's failure
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** High
 > **Type:** Improvement
 > **Date:** 2026-07-05
@@ -22,3 +22,4 @@ Field report from a consuming project's bug-index reconcile: detect found 23 mis
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-05 | audit | Raised |
+| 2026-07-05 | Claude (tranche close) | Delivered in the token-optimisation tranche (pre-v3.5.0): Sam Eriksson (QA seat, review render) APPROVE after two adversarial rounds; details in CHANGELOG [Unreleased] |

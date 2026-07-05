@@ -1,6 +1,6 @@
 # CR-0161: LATEST.md is a window, not a ledger: history one-liners plus a freshness ceiling
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-05
@@ -21,3 +21,4 @@ The session-start anchor grows ~15 dense lines per sprint because every past spr
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-05 | audit | Raised |
+| 2026-07-05 | Claude (tranche close) | Delivered in the token-optimisation tranche (pre-v3.5.0): Sam Eriksson (QA seat, review render) APPROVE after two adversarial rounds; details in CHANGELOG [Unreleased] |
