@@ -32,6 +32,10 @@ Related: reference-reconcile.md (drift check), reference-verify.md (AC verificat
 - [ ] Integration / E2E suite green on at least one host – record which: `_____________`
 - [ ] **E2E specs for this release's navigable surfaces are mutation-checked** – each new/changed critical-path spec was seen to **fail** when the feature is broken on purpose (unset the delivering field, stub the component, invert the guard), then restored. A green E2E that cannot fail is not a gate: an assertion derived from the same source it checks (e.g. `data-wired` vs `data-pending` from one boolean), or an `if/else` whose only reachable branch is a trivial `expect(0).toBe(0)`, passes over a dead feature. Any surface fed by a loader/enrichment/adapter needs at least one spec that drives the **real data path** to the render site, not hand-built props. See `reference-test-best-practices.md#assertion-integrity`.
 - [ ] `/sdlc-studio reconcile --dry-run` – zero drift remaining
+- [ ] **Archive terminal index rows for this release** – if reconcile printed an
+  `index-bloat` advisory, run `scripts/archive.py archive --type <t> --release <tag>`
+  for each named type. Live indexes stay bounded (progressive disclosure); rows move
+  to `<type>/archive/`, files stay put, census unaffected. Re-run reconcile: zero drift.
 - [ ] **Grep tests for pinned version literals** before tagging. A test that asserts `body.version === 'X.Y.Z'` (or equivalent hard-coded string) is a release-bump landmine: the test passes locally against the old version, CI breaks on the release-prep commit, and you spend a CI roundtrip chasing it. Fix: assert the *shape* (semver regex, or type-of-string) rather than the literal – or read the expected value from `package.json` / equivalent manifest. Grep pattern to run pre-tag: the current version string across the test tree. Any hit that isn't a deliberate historical fixture should be migrated to a shape assertion.
 
 ## 2. Adversarial review

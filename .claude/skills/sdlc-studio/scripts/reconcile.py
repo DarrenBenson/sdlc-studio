@@ -296,6 +296,11 @@ def parse_index(type_: str, repo_root: Path) -> dict:
     # Status column (the storm and a non-refusing apply would return).
     result["degenerate"] = _degenerate_status_parse(
         {"rows": rows, "status_header": result["status_header"]})
+    # Live terminal-row count, also pre-merge: the index-bloat advisory is
+    # about the table an agent actually loads, so archived rows never count.
+    terminal = sdlc_md.terminal_statuses(type_)
+    result["live_terminal_rows"] = sum(
+        1 for _d, st in rows.values() if st in terminal)
     archive_dir = repo_root / rel / "archive"
     if archive_dir.is_dir():  # archived terminal rows still count toward the census
         for af in sorted(archive_dir.rglob("*.md")):
@@ -316,6 +321,31 @@ def _census_filenames(type_: str, repo_root: Path) -> dict[str, str]:
         if rec:
             names[_norm_id(rec)] = path.relative_to(rel).as_posix()
     return names
+
+
+DEFAULT_ARCHIVE_AFTER = 30  # live terminal rows before the archive advisory fires
+
+
+def index_bloat_advisory(type_: str, repo_root: Path,
+                         index: dict | None = None) -> str | None:
+    """Recommend the progressive-disclosure archive when the LIVE index carries
+    more terminal rows than `indexes.archive_after` (config-overridable).
+    Advisory only: it never blocks and never runs the archive - rows move only
+    when the operator runs archive.py."""
+    index = index if index is not None else parse_index(type_, repo_root)
+    n = index.get("live_terminal_rows", 0)
+    try:
+        threshold = int(sdlc_md.project_override(
+            repo_root, "indexes.archive_after", DEFAULT_ARCHIVE_AFTER))
+    except (TypeError, ValueError):
+        threshold = DEFAULT_ARCHIVE_AFTER
+    if n <= threshold:
+        return None
+    rel = sdlc_md.ARTIFACT_TYPES[type_][0]
+    return (f"{n} terminal row(s) in the live {type_} index (> {threshold}, "
+            f"indexes.archive_after) - keep it bounded: "
+            f"scripts/archive.py archive --type {type_} --release <label> "
+            f"(rows move to {rel}/archive/, files stay put, census unaffected)")
 
 
 def detect_type(type_: str, repo_root: Path) -> dict:
@@ -421,6 +451,7 @@ def detect_type(type_: str, repo_root: Path) -> dict:
         key = _canonical_status(fstatus, vocab) or "Unknown"
         census_counts[key] = census_counts.get(key, 0) + 1
 
+    bloat = index_bloat_advisory(type_, repo_root, index)
     return {
         "census_total": len(census),
         "census_counts": census_counts,
@@ -428,6 +459,7 @@ def detect_type(type_: str, repo_root: Path) -> dict:
         "index_exists": index["exists"],
         "index_summary": index["summary"],
         "drift": drift,
+        "advisories": [bloat] if bloat else [],
     }
 
 
@@ -487,6 +519,9 @@ def cmd_detect(args: argparse.Namespace) -> int:
         for d in all_drift:
             ident = d["id"] or d["type"]
             print(f"{d['kind']:16} {ident}: {d['fix']}")
+        for type_, result in per_type.items():
+            for a in result.get("advisories", []):
+                print(f"advisory ({type_}): {a}")
         print(f"scope={report['scope']} drift_items={len(all_drift)} by_kind={by_kind}")
         hints = sdlc_md.remediation_lines("reconcile", by_kind)
         if hints:

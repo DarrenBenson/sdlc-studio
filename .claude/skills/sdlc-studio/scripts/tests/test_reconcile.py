@@ -1224,3 +1224,78 @@ class BG0044RegressionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class IndexBloatAdvisoryTests(unittest.TestCase):
+    """The archive process must be RECOMMENDED, not just shipped: when live
+    terminal rows exceed indexes.archive_after the detect result carries an
+    advisory naming the count, the threshold, and the archive command - and
+    it never blocks (not a drift item, exit code unaffected)."""
+
+    def _repo(self, d, n_terminal, archived=0):
+        repo = Path(d)
+        dd = repo / "sdlc-studio" / "change-requests"; dd.mkdir(parents=True)
+        rows = []
+        for i in range(1, n_terminal + 1):
+            (dd / f"CR{i:04d}-x.md").write_text(
+                f"# CR-{i:04d}: x\n\n> **Status:** Complete\n", encoding="utf-8")
+            rows.append(f"| CR-{i:04d} | x | Complete |")
+        (dd / "_index.md").write_text(
+            "# Index\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            + "\n".join(rows) + "\n", encoding="utf-8")
+        if archived:
+            ad = dd / "archive" / "r1"; ad.mkdir(parents=True)
+            arows = []
+            for i in range(900, 900 + archived):
+                (dd / f"CR{i:04d}-y.md").write_text(
+                    f"# CR-{i:04d}: y\n\n> **Status:** Complete\n", encoding="utf-8")
+                arows.append(f"| CR-{i:04d} | y | Complete |")
+            (ad / "cr.md").write_text(
+                "# archive\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                + "\n".join(arows) + "\n", encoding="utf-8")
+        return repo
+
+    def test_over_threshold_fires_named_advisory(self):
+        with tempfile.TemporaryDirectory() as d:
+            r = reconcile.detect_type("cr", self._repo(d, 35))
+            advs = r.get("advisories") or []
+            self.assertEqual(len(advs), 1, r)
+            self.assertIn("35", advs[0])
+            self.assertIn("30", advs[0])                       # threshold named
+            self.assertIn("archive.py archive --type cr", advs[0])
+            self.assertNotIn("index-bloat", [x["kind"] for x in r["drift"]])
+
+    def test_under_threshold_silent(self):
+        with tempfile.TemporaryDirectory() as d:
+            r = reconcile.detect_type("cr", self._repo(d, 10))
+            self.assertEqual(r.get("advisories") or [], [])
+
+    def test_archived_rows_do_not_count(self):
+        # 40 archived terminal rows + 5 live: the live index is bounded - silent
+        with tempfile.TemporaryDirectory() as d:
+            r = reconcile.detect_type("cr", self._repo(d, 5, archived=40))
+            self.assertEqual(r.get("advisories") or [], [])
+            self.assertEqual(r["drift"], [])                   # census union intact
+
+    def test_config_threshold_respected(self):
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest("PyYAML absent")
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, 10)
+            (repo / "sdlc-studio" / ".config.yaml").write_text(
+                "indexes:\n  archive_after: 5\n", encoding="utf-8")
+            r = reconcile.detect_type("cr", repo)
+            self.assertEqual(len(r.get("advisories") or []), 1)
+
+    def test_detect_command_exit_zero_on_advisory_only(self):
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, 35)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = reconcile.main(["detect", "--root", str(repo)])
+            self.assertEqual(rc, 0, buf.getvalue())
+            self.assertIn("advisory", buf.getvalue())
+            self.assertIn("drift_items=0", buf.getvalue())

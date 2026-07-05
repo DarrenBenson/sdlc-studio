@@ -235,7 +235,28 @@ def cmd_hint(args: argparse.Namespace) -> int:
     adv = workspace_advisory(Path(args.root))
     if adv and args.format != "json":
         print(f"advisory: {adv}")
+    if args.format != "json":
+        for line in index_bloat_advisories(Path(args.root)):
+            print(f"advisory: {line}")
     return 0
+
+
+def index_bloat_advisories(repo_root: Path) -> list[str]:
+    """The per-type archive recommendations (reconcile's index-bloat rule),
+    surfaced at the hint so a bloating index is seen where operators look."""
+    try:
+        import reconcile
+    except ImportError:  # pragma: no cover - sibling script always ships
+        return []
+    out: list[str] = []
+    for type_ in sdlc_md.ARTIFACT_TYPES:
+        try:
+            a = reconcile.index_bloat_advisory(type_, repo_root)
+        except Exception:  # noqa: BLE001 - an advisory must never break the hint
+            continue
+        if a:
+            out.append(a)
+    return out
 
 
 def build_parser() -> argparse.ArgumentParser:

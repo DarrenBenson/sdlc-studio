@@ -235,3 +235,43 @@ class UpdateNoticeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class IndexBloatHintTests(unittest.TestCase):
+    """The archive recommendation surfaces at the HINT (L-0004: the command,
+    not only the reconcile helper) and stays silent on a bounded workspace."""
+
+    def _bloated(self, d, n=35):
+        root = Path(d)
+        dd = root / "sdlc-studio" / "change-requests"
+        dd.mkdir(parents=True)
+        rows = []
+        for i in range(1, n + 1):
+            (dd / f"CR{i:04d}-x.md").write_text(
+                f"# CR-{i:04d}: x\n\n> **Status:** Complete\n", encoding="utf-8")
+            rows.append(f"| CR-{i:04d} | x | Complete |")
+        (dd / "_index.md").write_text(
+            "# Index\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            + "\n".join(rows) + "\n", encoding="utf-8")
+        return root
+
+    def test_hint_command_prints_archive_advisory(self) -> None:
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bloated(d)
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                rc = status.main(["hint", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            self.assertIn("archive.py archive --type cr", buf.getvalue())
+
+    def test_hint_silent_when_bounded(self) -> None:
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bloated(d, n=5)
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                status.main(["hint", "--root", str(root)])
+            self.assertNotIn("archive.py", buf.getvalue())
