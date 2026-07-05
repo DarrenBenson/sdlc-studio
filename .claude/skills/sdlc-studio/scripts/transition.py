@@ -43,25 +43,33 @@ def _depth_token(text: str) -> str | None:
 def _bug_depth_gate(text: str, target_canon: str | None) -> str | None:
     """Block reason when a bug transition under-shoots its verification-depth tier.
 
-    Fixed requires `functional`+; Closed on a production-affecting bug requires
-    `soak`+. A missing/unparseable depth on a gated transition is refused, never
-    treated as satisfied (fail loud). The non-production Close path is unchanged."""
-    if target_canon not in ("Fixed", "Closed"):
+    Fixed requires `functional`+; Verified claims the higher-tier proof landed,
+    so it requires a tier ABOVE functional (conversational/soak/live); Closed
+    on a production-affecting bug requires `soak`+. A missing/unparseable depth
+    on a gated transition is refused, never treated as satisfied (fail loud).
+    The non-production Close path is unchanged, and a project that never
+    promotes to Verified is unaffected."""
+    if target_canon not in ("Fixed", "Verified", "Closed"):
         return None
-    prod_raw = (sdlc_md.extract_field(text, "Production-affecting") or "").strip()
-    # leading-token match, mirroring the depth field: `yes (checkout path)` is still
-    # yes - a decorated flag must never silently switch the soak gate OFF.
-    prod_tok = prod_raw.split()[0].rstrip(":,;-").lower() if prod_raw else ""
-    prod = prod_tok in ("yes", "true")
-    if target_canon == "Closed" and not prod:
-        return None
-    required = "soak" if target_canon == "Closed" else "functional"
+    if target_canon == "Closed":
+        prod_raw = (sdlc_md.extract_field(text, "Production-affecting") or "").strip()
+        # leading-token match, mirroring the depth field: `yes (checkout path)` is
+        # still yes - a decorated flag must never silently switch the soak gate OFF.
+        prod_tok = prod_raw.split()[0].rstrip(":,;-").lower() if prod_raw else ""
+        if prod_tok not in ("yes", "true"):
+            return None
+    required = {"Fixed": "functional", "Verified": "conversational",
+                "Closed": "soak"}[target_canon]
     token = _depth_token(text)
     if token is None:
         return (f"no parseable `Verification depth` field; {target_canon} requires "
                 f"`{required}`+ - record the verified tier "
                 f"(see reference-test-best-practices.md#verification-depth-tiers)")
     if _TIERS[token] < _TIERS[required]:
+        if target_canon == "Verified":
+            return (f"depth is `{token}`; Verified claims a proof ABOVE the "
+                    f"functional tier (conversational/soak/live) - run that "
+                    f"verification, then set the depth, or stay at Fixed")
         return (f"depth is `{token}`; {target_canon} requires `{required}`+ - run the "
                 f"verification that tier demands, then set the depth")
     return None

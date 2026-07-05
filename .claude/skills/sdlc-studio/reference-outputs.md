@@ -124,12 +124,19 @@ Open → In Progress → Fixed → Verified → Closed
   └───────────── Won't Fix ─────────────┘
 ```
 
-**Transition criteria:**
+**Transition criteria** (the two terminal-side statuses map onto the
+verification-depth tiers - see
+`reference-test-best-practices.md#verification-depth-tiers`):
 
 - **Open → In Progress:** Developer assigned, fix started
-- **In Progress → Fixed:** Fix complete, awaiting verification
-- **Fixed → Verified:** Tests confirm bug resolved
-- **Verified → Closed:** Verification accepted
+- **In Progress → Fixed:** Fix implemented and verified to the **functional**
+  tier (unit/component/contract). Terminal-enough for a routine bug; the
+  honest status when a higher-tier proof (e2e/live) is still owed.
+- **Fixed → Verified:** The fix is additionally proven at the higher tier its
+  risk demands (conversational/soak/live). `transition` gates this promotion
+  on a recorded depth above functional - never promote on unit-green alone.
+- **Verified → Closed:** Verification accepted (production-affecting bugs
+  need `soak`+ to close)
 - **Open → Won't Fix:** Decision not to fix (document reason)
 - **Any → Superseded:** Subsumed by another bug or CR (point to it)
 

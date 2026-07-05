@@ -229,6 +229,28 @@ class DepthTierGateTests(unittest.TestCase):
                 tr.transition(root, "BG0001", "Fixed")
             self.assertIn("Verification depth", str(cm.exception))
 
+    def test_functional_to_verified_refused(self) -> None:
+        # Verified claims the higher-tier proof landed; functional alone is
+        # exactly the false assurance the status exists to prevent
+        with tempfile.TemporaryDirectory() as d:
+            root = _bug_repo(Path(d), "functional (unit + component)")
+            with self.assertRaises(ValueError) as cm:
+                tr.transition(root, "BG0001", "Verified")
+            self.assertIn("functional", str(cm.exception))
+
+    def test_soak_to_verified_allowed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _bug_repo(Path(d), "soak (24h in staging)")
+            res = tr.transition(root, "BG0001", "Verified")
+            self.assertEqual(res["to"], "Verified")
+
+    def test_missing_depth_to_verified_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _bug_repo(Path(d), None)
+            with self.assertRaises(ValueError) as cm:
+                tr.transition(root, "BG0001", "Verified")
+            self.assertIn("Verification depth", str(cm.exception))
+
     def test_prod_bug_smoke_to_closed_refused(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = _bug_repo(Path(d), "functional", prod=True)
@@ -380,7 +402,7 @@ class TelemetryOnCloseTests(unittest.TestCase):
         bd.mkdir(parents=True, exist_ok=True)
         (bd / "BG0001-x.md").write_text(
             f"# BG0001: a\n\n> **Status:** {status}\n"
-            "> **Verification depth:** functional\n", encoding="utf-8")
+            "> **Verification depth:** soak\n", encoding="utf-8")
         (bd / "_index.md").write_text(
             "# B\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
             f"| [BG0001](BG0001-x.md) | a | {status} |\n", encoding="utf-8")

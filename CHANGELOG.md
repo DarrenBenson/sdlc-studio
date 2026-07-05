@@ -21,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The dormant `Verified` bug status has defined semantics mapped onto the
+  verification-depth tiers: `Fixed` = implemented and proven at the
+  functional tier (the honest status when a higher-tier proof is owed);
+  `Verified` = additionally proven at the tier its risk demands
+  (conversational/soak/live). `transition` gates the Fixed → Verified
+  promotion on a recorded depth above functional; projects that never
+  promote to Verified are unaffected.
 - Companion-doc recognition is header-based, not a one-suffix allowlist:
   a file under an artifact directory that carries no artifact header (no
   `> **Status:**` line and no `# <ID>:` title) is a companion/note, so an

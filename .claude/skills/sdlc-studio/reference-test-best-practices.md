@@ -61,7 +61,7 @@ None of these are evidence of a fix. They are evidence the deploy didn't break t
 
 | Artefact | Field | Default | Required to escalate |
 |---|---|---|---|
-| Bug | `Verification depth:` | `smoke` (initial) | Must be `functional` or higher to mark Fixed; `soak` or higher to Close |
+| Bug | `Verification depth:` | `smoke` (initial) | Must be `functional` or higher to mark Fixed; ABOVE functional (conversational/soak/live) to promote Fixed → Verified; `soak` or higher to Close a production-affecting bug. Fixed = functional-tier proof, Verified = the higher tier its risk demands - the honest half-state when code is done but the live proof is owed. |
 | Story AC | `Verification target:` per AC | `functional` | `conversational` for end-to-end AC; `soak` for production-affecting AC; `live` for AC that ship behind a feature flag awaiting promotion |
 | CR / Epic | Inherited from highest-tier child story AC | n/a | n/a |
 | `/sdlc-studio code verify` | Reports current verified-depth per AC | based on test types run | n/a |
