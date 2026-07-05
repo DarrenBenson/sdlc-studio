@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 0 |
+| Proposed | 4 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 155 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 4 |
 | Blocked | 0 |
-| **Total** | **159** |
+| **Total** | **163** |
 
 ## All Changes
 
@@ -179,3 +179,7 @@
 | [CR-0157](CR0157-project-upgrade-should-surface-the-capability-delta-not.md) | project upgrade should surface the capability delta, not just file corrections | Complete | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0158](CR0158-tolerant-convention-layer-one-classifier-in-lib-config.md) | Tolerant convention layer: one classifier in lib, config-declared conventions, guarded normalised matching | Complete | Medium | Feature | 2026-07-05 | -- |
 | [CR-0159](CR0159-reconcile-apply-inserts-a-missing-summary-status-row.md) | reconcile apply inserts a missing summary status row instead of exiting 0 over a count-mismatch it created | Complete | Low | Improvement | 2026-07-05 | -- |
+| [CR-0160](CR0160-reconcile-recommends-the-archive-process-index-bloat-advisory.md) | reconcile recommends the archive process: index-bloat advisory when terminal rows exceed a threshold | Proposed | Medium | Improvement | 2026-07-05 | -- |
+| [CR-0161](CR0161-latest-md-is-a-window-not-a-ledger.md) | LATEST.md is a window, not a ledger: history one-liners plus a freshness ceiling | Proposed | Medium | Improvement | 2026-07-05 | -- |
+| [CR-0162](CR0162-artifact-revision-verb-deterministic-batch-appends-to-revision.md) | artifact revision verb: deterministic batch appends to Revision History | Proposed | Low | Improvement | 2026-07-05 | -- |
+| [CR-0163](CR0163-skill-md-instructs-section-reads-for-large-references.md) | SKILL.md instructs section reads for large references (honour the Reading Guides) | Proposed | Low | Improvement | 2026-07-05 | -- |
