@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 1 |
+| Draft | 0 |
 | In Review | 0 |
-| Accepted | 19 |
+| Accepted | 20 |
 | Superseded | 0 |
 | Withdrawn | 3 |
 | **Total** | **23** |
@@ -39,4 +39,4 @@
 | [RFC-0020](RFC0020-maximise-persona-use-persona-shaped-delegation-across-the.md) | Maximise persona use - persona-shaped delegation across the SDLC lifecycle | High | Accepted | operator vision | 2026-06-25 | -- |
 | [RFC-0021](RFC0021-resolve-the-seats-and-amigos-duality-one-role.md) | resolve the seats and amigos duality - one role-based actor model | Medium | Accepted | field | 2026-06-25 | CR0120 |
 | [RFC-0022](RFC0022-portable-mutation-check-gate-fault-injection-across-languages.md) | Portable mutation-check gate: fault injection across languages without a per-language framework | High | Accepted | sprint 2026-07 (CR-0134 RFC-first) | 2026-07-04 | -- |
-| [RFC-0023](RFC0023-a-tolerant-convention-layer-retire-the-exact-string.md) | a tolerant convention layer - retire the exact-string classification gates as a class | Medium | Draft | Claude (cross-project dogfooding) | 2026-07-04 | -- |
+| [RFC-0023](RFC0023-a-tolerant-convention-layer-retire-the-exact-string.md) | a tolerant convention layer - retire the exact-string classification gates as a class | Medium | Accepted | Claude (cross-project dogfooding) | 2026-07-04 | -- |

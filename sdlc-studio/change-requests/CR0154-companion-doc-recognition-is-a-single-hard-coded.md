@@ -5,6 +5,7 @@
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
 > **Type:** Improvement
+> **Depends on:** CR-0158
 > **Affects:** scripts/lib/sdlc_md.py (`artifact_files`) - consumed by validate, next_id/duplicate-id, reconcile
 > **Found by:** a consuming project adopting the skill
 

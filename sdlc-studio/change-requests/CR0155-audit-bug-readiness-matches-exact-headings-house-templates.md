@@ -5,6 +5,7 @@
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
 > **Type:** Improvement
+> **Depends on:** CR-0158
 > **Affects:** scripts/audit.py (`_bug_underspecified`, lines ~72-83)
 > **Found by:** a consuming project running the sprint design rung
 

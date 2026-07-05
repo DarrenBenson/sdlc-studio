@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 7 |
+| Proposed | 8 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 146 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 4 |
 | Blocked | 0 |
-| **Total** | **157** |
+| **Total** | **158** |
 
 ## All Changes
 
@@ -177,3 +177,4 @@
 | [CR-0155](CR0155-audit-bug-readiness-matches-exact-headings-house-templates.md) | audit bug-readiness matches exact headings; house templates (Symptom/Root cause/Fix (proposed)) read as underspecified | Proposed | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0156](CR0156-map-the-verification-depth-tiers-onto-a-fixed.md) | map the verification-depth tiers onto a Fixed to Verified bug progression (define the dormant Verified status) | Proposed | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0157](CR0157-project-upgrade-should-surface-the-capability-delta-not.md) | project upgrade should surface the capability delta, not just file corrections | Proposed | Medium | Improvement | 2026-07-04 | -- |
+| [CR-0158](CR0158-tolerant-convention-layer-one-classifier-in-lib-config.md) | Tolerant convention layer: one classifier in lib, config-declared conventions, guarded normalised matching | Proposed | Medium | Feature | 2026-07-05 | -- |
