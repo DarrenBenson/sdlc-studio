@@ -1,6 +1,6 @@
 # CR-0158: Tolerant convention layer: one classifier in lib, config-declared conventions, guarded normalised matching
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-05
 > **Created-by:** sdlc-studio new
 > **Priority:** High
@@ -59,3 +59,4 @@ then flags.
 | --- | --- | --- |
 | 2026-07-05 | sdlc | Created via `new` (deterministic) |
 | 2026-07-05 | Claude (sprint planning) | Filled in as the RFC-0023 build vehicle per D0010: layer structure, config policy, guarded normalisation, write-path template resolution in scope |
+| 2026-07-05 | Claude (sprint 2026-07-D) | Delivered in sprint 2026-07-D (24cfcab + a554fb5): lib/conventions.py layer, reconcile alias read AND write parity (critic F3), template write path; ConventionsError blocks the gate (critic F5) |

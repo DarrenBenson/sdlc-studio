@@ -121,3 +121,11 @@
 | BG0052 | APPROVE | Sam (independent critic instance) | Dani (main-loop author instance) | 2026-07-04 | - |
 | CR0150 | APPROVE | Sam (independent critic instance) | Dani (main-loop author instance) | 2026-07-04 | - |
 | BG0051 | APPROVE | Sam (independent critic instance) | Dani (main-loop author instance) | 2026-07-04 | - |
+| CR0151 | APPROVE | adversarial-critic (independent instance, full-diff refute pass, repros re-run at a554fb5) | driving session (sprint 2026-07-D) | 2026-07-05 | - |
+| CR0152 | APPROVE | adversarial-critic (independent instance, full-diff refute pass, repros re-run at a554fb5) | driving session (sprint 2026-07-D) | 2026-07-05 | - |
+| CR0153 | APPROVE | adversarial-critic (independent instance, full-diff refute pass, repros re-run at a554fb5) | driving session (sprint 2026-07-D) | 2026-07-05 | - |
+| CR0154 | APPROVE | adversarial-critic (independent instance, full-diff refute pass, repros re-run at a554fb5) | driving session (sprint 2026-07-D) | 2026-07-05 | - |
+| CR0155 | APPROVE | adversarial-critic (independent instance, full-diff refute pass, repros re-run at a554fb5) | driving session (sprint 2026-07-D) | 2026-07-05 | - |
+| CR0156 | APPROVE | adversarial-critic (independent instance, full-diff refute pass, repros re-run at a554fb5) | driving session (sprint 2026-07-D) | 2026-07-05 | - |
+| CR0157 | APPROVE | adversarial-critic (independent instance, full-diff refute pass, repros re-run at a554fb5) | driving session (sprint 2026-07-D) | 2026-07-05 | - |
+| CR0158 | APPROVE | adversarial-critic (independent instance, full-diff refute pass, repros re-run at a554fb5) | driving session (sprint 2026-07-D) | 2026-07-05 | - |

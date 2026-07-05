@@ -1,6 +1,6 @@
 # CR-0153: reconcile diagnoses a mis-named/absent Status column once, not N per-row false mismatches
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new
 > **Priority:** High
@@ -77,3 +77,4 @@ cause once).
 | --- | --- | --- |
 | 2026-07-04 | Claude (cross-project dogfooding) | Created via `new` (deterministic) |
 | 2026-07-04 | Claude (cross-project dogfooding) | Filled in from the consuming-project adoption: `Effective Status` header defeats reconcile's exact `status` match, yielding 302 false mismatches; propose a whole-index degenerate-parse pre-check that names the cause once. Same class as CR0141. |
+| 2026-07-05 | Claude (sprint 2026-07-D) | Delivered in sprint 2026-07-D (cdf05f4 + a554fb5): one index-status-column diagnostic, per-row storm and count-misdiagnosis suppressed, apply refuses; critic F2 hardened the live-vs-archive boundary; diagnostic names conventions.status_column |

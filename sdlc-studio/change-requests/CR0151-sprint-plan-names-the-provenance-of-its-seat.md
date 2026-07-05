@@ -1,6 +1,6 @@
 # CR-0151: sprint plan names the provenance of its seat scores (which units were scored, and when)
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Low
 > **Type:** Improvement
 > **Date:** 2026-07-04
@@ -22,3 +22,4 @@ wsjf-inputs.json is a silent cross-sprint side-channel: the amigo consult writes
 | --- | --- | --- |
 | 2026-07-04 | audit | Raised |
 | 2026-07-04 | operator | Review: SOLID, preventive (no actual misfire; latent staleness real). Quibble recorded: the 7-day window is somewhat arbitrary - seat judgement does not rot on a clock like a mutation report; harmless because advisory-only |
+| 2026-07-05 | Claude (sprint 2026-07-D) | Delivered in sprint 2026-07-D (8c8350e): seat_provenance in build_plan + plan text; staleness advisory window sprint.wsjf_inputs_stale_days; age clamped at 0 (critic F9) |

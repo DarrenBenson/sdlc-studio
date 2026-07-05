@@ -1,6 +1,6 @@
 # CR-0157: project upgrade should surface the capability delta, not just file corrections
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
@@ -166,3 +166,4 @@ Observed on a consuming project's repo, 2026-07-04, upgrading 2.5.0 -> 3.4.0:
 | --- | --- | --- |
 | 2026-07-04 | operator | CR proposed - field report from a live 2.5.0 -> 3.4.0 upgrade of a consuming project |
 | 2026-07-05 | Claude (triage) | Generalised the consuming-project name (neutrality guard); no scope change |
+| 2026-07-05 | Claude (sprint 2026-07-D) | Delivered in sprint 2026-07-D (9426445 + a554fb5): CHANGELOG capability digest + advisory-lane registry; install.sh ships CHANGELOG.md; critic F6 fixed qualified/custom kind handling |

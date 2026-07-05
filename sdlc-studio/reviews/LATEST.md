@@ -1,12 +1,25 @@
-# LATEST - current project state (v3.4.0)
+# LATEST - current project state (v3.4.0 + sprint 2026-07-D on main)
 
 > The current-state anchor. **Re-read this and run `/sdlc-studio status` after any context reset
 > or compaction.** Durable guidance lives in AGENTS.md; per-tranche detail lives in CHANGELOG.md
 > and `sdlc-studio/retros/`; the original v2.0 unified review is `RV0001-unified-review-2026-06-20.md`.
 >
-> **Project version:** 3.4.0 (released 2026-07-04) · **Date:** 2026-07-04 ·
-> **Gates:** lint clean, 1060 script tests pass (+41 repo-only tools tests), `gate` PASS, reconcile drift 0, disclosure 0,
+> **Project version:** 3.4.0 (released 2026-07-04) + an unreleased sprint on main · **Date:** 2026-07-05 ·
+> **Gates:** lint clean, 1128 script tests pass (+41 repo-only tools tests), `gate` PASS, reconcile drift 0, disclosure 0,
 > npm audit 0, CI green on main.
+> **Sprint 2026-07-D - field-hardening (unreleased, RETRO0010):** all 8 open CRs delivered 8/8 -
+> the first sprint sourced almost entirely from an external consumer's field reports (filed by
+> the operator's reviewing session via the skill's own tooling). RFC0023 Accepted (D0010) and
+> built as CR0158: `lib/conventions.py`, the tolerant convention layer (status-column aliases,
+> companion suffixes, bug-ready section vocabularies, scaffold template overrides - config-
+> declared, fail-loud, byte-identical unconfigured); CR0154/CR0155 adopt it; CR0153 (one
+> degenerate-index diagnostic, apply refuses); CR0152 (sampling fraction on every mutation
+> output); CR0156 (`Verified` = higher-tier proof, gated); CR0151 (seat-score provenance +
+> staleness advisory); CR0157 (`project upgrade` capability digest + advisory-lane registry,
+> CHANGELOG ships with the payload). Critic: 9 findings (2 HIGH - id-collision minting via the
+> census change, an archive row masking the diagnostic; lesson L-0005 census-consumer sweep),
+> all fixed, repros re-run by the same instance -> APPROVE. Open backlog: CR0159 only (Low,
+> apply summary-row insertion). **The Unreleased block is fat - propose a v3.5.0 tag.**
 > **Sprint D0006 - the first instrumented sprint (released in v3.4.0, RETRO0009):** the
 > operator-reviewed tranche delivered 3/3 on redirect (D0008): BG0052 (terminal transitions
 > record telemetry - the repo's first calibration rows, entering-terminal-only), CR0150

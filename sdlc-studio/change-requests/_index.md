@@ -6,15 +6,15 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 8 |
+| Proposed | 1 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 146 |
+| Complete | 154 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 4 |
 | Blocked | 0 |
-| **Total** | **158** |
+| **Total** | **159** |
 
 ## All Changes
 
@@ -170,11 +170,12 @@
 | [CR-0148](CR0148-name-the-close-of-sprint-adversarial-critic-pass.md) | name the close-of-sprint adversarial critic pass as a hard sprint step (re-verify against the critic's own repros) | Complete | Medium | Improvement | 2026-07-04 | -- |
 | [CR-0149](CR0149-wsjf-no-seat-fallback-demote-the-complexity-seed.md) | WSJF no-seat fallback: demote the complexity seed from size stand-in to tiebreak | Complete | Low | Improvement | 2026-07-04 | -- |
 | [CR-0150](CR0150-status-hint-surface-an-advisory-when-the-workspace.md) | status/hint surface an advisory when the workspace carries artifact changes this session did not make | Complete | Medium | Improvement | 2026-07-04 | -- |
-| [CR-0151](CR0151-sprint-plan-names-the-provenance-of-its-seat.md) | sprint plan names the provenance of its seat scores (which units were scored, and when) | Proposed | Low | Improvement | 2026-07-04 | -- |
-| [CR-0152](CR0152-mutation-summary-states-its-sampling-coverage-explicitly.md) | mutation summary states its sampling coverage explicitly | Proposed | Low | Improvement | 2026-07-04 | -- |
-| [CR-0153](CR0153-reconcile-diagnoses-a-mis-named-absent-status-column.md) | reconcile diagnoses a mis-named/absent Status column once, not N per-row false mismatches | Proposed | High | Improvement | 2026-07-04 | -- |
-| [CR-0154](CR0154-companion-doc-recognition-is-a-single-hard-coded.md) | companion-doc recognition is a single hard-coded suffix; any other companion trips validate + duplicate-id | Proposed | Medium | Improvement | 2026-07-04 | -- |
-| [CR-0155](CR0155-audit-bug-readiness-matches-exact-headings-house-templates.md) | audit bug-readiness matches exact headings; house templates (Symptom/Root cause/Fix (proposed)) read as underspecified | Proposed | Medium | Improvement | 2026-07-04 | -- |
-| [CR-0156](CR0156-map-the-verification-depth-tiers-onto-a-fixed.md) | map the verification-depth tiers onto a Fixed to Verified bug progression (define the dormant Verified status) | Proposed | Medium | Improvement | 2026-07-04 | -- |
-| [CR-0157](CR0157-project-upgrade-should-surface-the-capability-delta-not.md) | project upgrade should surface the capability delta, not just file corrections | Proposed | Medium | Improvement | 2026-07-04 | -- |
-| [CR-0158](CR0158-tolerant-convention-layer-one-classifier-in-lib-config.md) | Tolerant convention layer: one classifier in lib, config-declared conventions, guarded normalised matching | Proposed | Medium | Feature | 2026-07-05 | -- |
+| [CR-0151](CR0151-sprint-plan-names-the-provenance-of-its-seat.md) | sprint plan names the provenance of its seat scores (which units were scored, and when) | Complete | Low | Improvement | 2026-07-04 | -- |
+| [CR-0152](CR0152-mutation-summary-states-its-sampling-coverage-explicitly.md) | mutation summary states its sampling coverage explicitly | Complete | Low | Improvement | 2026-07-04 | -- |
+| [CR-0153](CR0153-reconcile-diagnoses-a-mis-named-absent-status-column.md) | reconcile diagnoses a mis-named/absent Status column once, not N per-row false mismatches | Complete | High | Improvement | 2026-07-04 | -- |
+| [CR-0154](CR0154-companion-doc-recognition-is-a-single-hard-coded.md) | companion-doc recognition is a single hard-coded suffix; any other companion trips validate + duplicate-id | Complete | Medium | Improvement | 2026-07-04 | -- |
+| [CR-0155](CR0155-audit-bug-readiness-matches-exact-headings-house-templates.md) | audit bug-readiness matches exact headings; house templates (Symptom/Root cause/Fix (proposed)) read as underspecified | Complete | Medium | Improvement | 2026-07-04 | -- |
+| [CR-0156](CR0156-map-the-verification-depth-tiers-onto-a-fixed.md) | map the verification-depth tiers onto a Fixed to Verified bug progression (define the dormant Verified status) | Complete | Medium | Improvement | 2026-07-04 | -- |
+| [CR-0157](CR0157-project-upgrade-should-surface-the-capability-delta-not.md) | project upgrade should surface the capability delta, not just file corrections | Complete | Medium | Improvement | 2026-07-04 | -- |
+| [CR-0158](CR0158-tolerant-convention-layer-one-classifier-in-lib-config.md) | Tolerant convention layer: one classifier in lib, config-declared conventions, guarded normalised matching | Complete | Medium | Feature | 2026-07-05 | -- |
+| [CR-0159](CR0159-reconcile-apply-inserts-a-missing-summary-status-row.md) | reconcile apply inserts a missing summary status row instead of exiting 0 over a count-mismatch it created | Proposed | Low | Improvement | 2026-07-05 | -- |

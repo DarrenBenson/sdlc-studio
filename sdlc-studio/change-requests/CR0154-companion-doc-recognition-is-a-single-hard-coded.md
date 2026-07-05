@@ -1,6 +1,6 @@
 # CR-0154: companion-doc recognition is a single hard-coded suffix; any other companion trips validate + duplicate-id
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
@@ -72,3 +72,4 @@ the gap is that the support is a one-suffix allowlist in a shared helper rather 
 | --- | --- | --- |
 | 2026-07-04 | Claude (cross-project dogfooding) | Created via `new` (deterministic) |
 | 2026-07-04 | Claude (cross-project dogfooding) | Filled in from consuming-project gate run: `artifact_files` excludes only `-consultations`, so a `-decisions` companion trips validate + duplicate-id; propose header-based (or config-driven) companion detection in the shared helper. Same family as CR0153/CR0144. |
+| 2026-07-05 | Claude (sprint 2026-07-D) | Delivered in sprint 2026-07-D (4d0fe40 + a554fb5): header-based companion detection in artifact_files via the layer; critic F1 restored filename-keyed id allocation and added the validate not-an-artifact visibility warning |

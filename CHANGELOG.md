@@ -47,6 +47,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   lives once in `artifact_files` via the convention layer (extra suffixes
   declarable under `conventions.companion_suffixes`); a real artifact
   that lost its Status line keeps its `# <ID>:` title and stays flagged.
+- Adversarial-close hardening of the above (all nine critic findings
+  fixed with repros re-run): id allocation keys on the filename so an
+  off-template or companion file always holds its number; `validate`
+  emits a `not-an-artifact` warning naming every id-named file the
+  census excludes; the degenerate-index diagnosis is judged on the live
+  index before the archive merge; `apply` rewrites a declared
+  status-column alias (writer parity); heading match is word-set
+  equality or ordered prefix, never blanket containment; and a
+  wrong-shaped `conventions` value fails the gate rather than silently
+  disabling the lane that read it.
 - Bug-readiness reads its heading vocabularies from the convention layer:
   a house template documented as Symptom / Root cause / Fix (proposed) is
   ready (a documented cause is stronger evidence than bare repro steps),

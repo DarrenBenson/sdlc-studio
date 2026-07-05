@@ -1,6 +1,6 @@
 # CR-0156: map the verification-depth tiers onto a Fixed to Verified bug progression (define the dormant Verified status)
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
@@ -69,3 +69,4 @@ legible in the status itself rather than only in a prose `Verification depth` li
 | --- | --- | --- |
 | 2026-07-04 | Claude (cross-project dogfooding) | Created via `new` (deterministic) |
 | 2026-07-04 | Claude (cross-project dogfooding) | Filled in from sprint execution: the depth gate produces a code-done-but-live-owed state bugs can't express; define the dormant `Verified` status as the higher tier so `Fixed`->`Verified` maps onto the verification-depth tiers. |
+| 2026-07-05 | Claude (sprint 2026-07-D) | Delivered in sprint 2026-07-D (ded8d20 + a554fb5): Fixed=functional / Verified=higher tier defined onto the depth tiers, transition gate for -> Verified, docs + bug template updated |

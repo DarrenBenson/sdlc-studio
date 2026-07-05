@@ -1,6 +1,6 @@
 # CR-0155: audit bug-readiness matches exact headings; house templates (Symptom/Root cause/Fix (proposed)) read as underspecified
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
@@ -70,3 +70,4 @@ count). Sibling exact-match gates: CR0153 (reconcile Status column), CR0154 (com
 | --- | --- | --- |
 | 2026-07-04 | Claude (cross-project dogfooding) | Created via `new` (deterministic) |
 | 2026-07-04 | Claude (cross-project dogfooding) | Filled in from the sprint design-rung audit: exact heading match flags a richer house bug template (Symptom/Root cause/Fix (proposed)) as underspecified; propose semantic-equivalent or config-driven section matching. Third instance of the exact-string-gate pattern (CR0153/CR0154). |
+| 2026-07-05 | Claude (sprint 2026-07-D) | Delivered in sprint 2026-07-D (ae82304 + a554fb5): bug-readiness via conventions.section_present; critic F4 tightened matching to word-set equality or ordered prefix (containment removed) |
