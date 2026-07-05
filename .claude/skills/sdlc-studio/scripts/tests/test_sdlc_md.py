@@ -184,9 +184,60 @@ class ArtifactFilesTests(unittest.TestCase):
             root = Path(d)
             ed = root / "sdlc-studio" / "epics"
             ed.mkdir(parents=True)
-            (ed / "EP0001-real.md").write_text("# x\n", encoding="utf-8")
+            (ed / "EP0001-real.md").write_text(
+                "# EP0001: real\n\n> **Status:** Draft\n", encoding="utf-8")
             (ed / "EP0001-consultations.md").write_text("# x\n", encoding="utf-8")
             (ed / "_index.md").write_text("# x\n", encoding="utf-8")
+            names = {p.name for p in sdlc_md.artifact_files("epic", root)}
+            self.assertEqual(names, {"EP0001-real.md"})
+
+    def test_statusless_companion_excluded_by_header_not_suffix(self) -> None:
+        # a -decisions companion under a shared id is a note, not an artifact:
+        # exclusion keys on "carries no artifact header", so no suffix allowlist
+        # entry is needed and validate/next_id/gate all agree via this one helper
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            ed = root / "sdlc-studio" / "epics"
+            ed.mkdir(parents=True)
+            (ed / "EP0244-ladder-policy.md").write_text(
+                "# EP0244: ladder policy\n\n> **Status:** Draft\n", encoding="utf-8")
+            (ed / "EP0244-ladder-consultations.md").write_text("notes\n", encoding="utf-8")
+            (ed / "EP0244-ladder-decisions.md").write_text(
+                "# EP0244 ladder - frozen design decisions\n\n1. three tiers\n",
+                encoding="utf-8")
+            names = {p.name for p in sdlc_md.artifact_files("epic", root)}
+            self.assertEqual(names, {"EP0244-ladder-policy.md"})
+
+    def test_malformed_artifact_with_id_title_still_included(self) -> None:
+        # a real artifact that LOST its Status line must stay in the set so
+        # validate keeps flagging it - exclusion is "not an artifact", never
+        # "any status-less file"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            ed = root / "sdlc-studio" / "epics"
+            ed.mkdir(parents=True)
+            (ed / "EP0245-broken.md").write_text(
+                "# EP0245: broken artifact\n\nprose only\n", encoding="utf-8")
+            names = {p.name for p in sdlc_md.artifact_files("epic", root)}
+            self.assertEqual(names, {"EP0245-broken.md"})
+
+    def test_declared_companion_suffix_respected(self) -> None:
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest("PyYAML absent - conventions degrade to defaults")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            ed = root / "sdlc-studio" / "epics"
+            ed.mkdir(parents=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "conventions:\n  companion_suffixes: [consultations, appendix]\n",
+                encoding="utf-8")
+            # even an appendix that LOOKS like an artifact is excluded once declared
+            (ed / "EP0001-real.md").write_text(
+                "# EP0001: real\n\n> **Status:** Draft\n", encoding="utf-8")
+            (ed / "EP0001-appendix.md").write_text(
+                "# EP0001: appendix\n\n> **Status:** Draft\n", encoding="utf-8")
             names = {p.name for p in sdlc_md.artifact_files("epic", root)}
             self.assertEqual(names, {"EP0001-real.md"})
 

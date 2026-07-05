@@ -21,6 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Companion-doc recognition is header-based, not a one-suffix allowlist:
+  a file under an artifact directory that carries no artifact header (no
+  `> **Status:**` line and no `# <ID>:` title) is a companion/note, so an
+  `EP0244-...-decisions.md` beside its epic no longer trips a false
+  `no-status` validate error plus a `duplicate-id` collision. The rule
+  lives once in `artifact_files` via the convention layer (extra suffixes
+  declarable under `conventions.companion_suffixes`); a real artifact
+  that lost its Status line keeps its `# <ID>:` title and stays flagged.
 - Mutation-check summary states its sampling coverage explicitly: when the
   budget truncates, the CLI note, report `summary.enumerated`, and the gate
   lane detail all carry `sampled N/M enumerated (x%)`, so a green sample can

@@ -431,24 +431,39 @@ def canonical_status(raw: str | None, vocab: list[str]) -> str | None:
 def artifact_files(type_: str, repo_root: Path) -> list[Path]:
     """All artifact files of `type_` under repo_root.
 
-    Excludes `_index.md` and `*-consultations.md` — the latter are supplementary
-    notes filed under an artifact's ID (e.g. `EP0025-consultations.md`), not
-    artifacts of that type, so counting them double-counts the ID and pollutes
-    status tallies with a status-less namesake.
+    Excludes `_index.md`, declared companion suffixes (default
+    `*-consultations.md`), and any file carrying no artifact header at all
+    (no `> **Status:**` line and no `# <ID>:` title) — a companion/note filed
+    under an artifact's ID (e.g. `EP0025-...-decisions.md`) would otherwise
+    double-count the ID and pollute status tallies with a status-less
+    namesake. A file with an `# <ID>:` title but no Status line is still an
+    artifact: it stays in the set so validate can flag it.
     """
     if type_ not in ARTIFACT_TYPES:
         return []
+    try:  # late import: conventions imports this module at load time
+        from lib import conventions
+    except ImportError:
+        import conventions  # type: ignore
     rel, prefix = ARTIFACT_TYPES[type_]
     want = prefix.upper()
+    suffixes = tuple(f"-{s}" for s in conventions.companion_suffixes(repo_root))
     # Glob all markdown and filter by the (case-insensitive) record ID rather
     # than a `{prefix}*.md` glob: `Path.glob` is case-sensitive on Linux, so a
     # `CR*.md` pattern silently misses repos that name files `cr0001.md`.
     out: list[Path] = []
     for p in walk_glob(repo_root / rel, "*.md"):
-        if p.name == "_index.md" or p.stem.endswith("-consultations"):
+        if p.name == "_index.md" or (suffixes and p.stem.endswith(suffixes)):
             continue
         rec = extract_record_id(p.stem)
-        if rec and norm_id(rec).startswith(want):
+        if not (rec and norm_id(rec).startswith(want)):
+            continue
+        try:
+            text = p.read_text(encoding="utf-8")
+        except OSError:
+            out.append(p)  # unreadable: keep it visible so a checker names it
+            continue
+        if conventions.is_artifact(text):
             out.append(p)
     return out
 
