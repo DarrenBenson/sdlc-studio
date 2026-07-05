@@ -26,7 +26,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import sdlc_md  # noqa: E402
+from lib import conventions, sdlc_md  # noqa: E402
 import integrity  # noqa: E402  (sibling script; scripts dir is on sys.path)
 import sprint  # noqa: E402
 import verify_ac  # noqa: E402  (reuse the Verify-line lint)
@@ -69,18 +69,18 @@ def _weak_ac(text: str) -> bool:
     return any(TAUTOLOGY in i.lower() for i in items)
 
 
-def _bug_underspecified(text: str) -> bool:
+def _bug_underspecified(text: str, root: Path | None = None) -> bool:
     """A bug is ready when it documents how to reproduce AND a proposed fix.
 
     Bugs have no Acceptance Criteria section - judging them by `_weak_ac` would
     always flag them. Readiness for a bug is repro + fix presence instead.
-    Both heading vocabularies count: released projects already carry bugs
-    authored from template revisions using "Reproduction Steps" / "Fix
-    Description", and those must not flag forever.
+    The accepted heading vocabularies live in the convention layer
+    (`conventions.bug_ready_sections` declares a house set): the skill and
+    template-revision names plus semantic equivalents - Symptom + Root cause
+    counts as repro evidence, and 'Fix (proposed)' equals 'Proposed Fix'.
     """
-    low = text.lower()
-    has_repro = "## steps to reproduce" in low or "## reproduction steps" in low
-    has_fix = "## proposed fix" in low or "## fix description" in low
+    has_repro = conventions.section_present(text, "repro", root)
+    has_fix = conventions.section_present(text, "fix", root)
     return not (has_repro and has_fix)
 
 
@@ -167,7 +167,7 @@ def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None 
                                       sdlc_md.status_vocab(type_, root)) or "Unknown"
     issues: list[str] = []
     if type_ == "bug":
-        if _bug_underspecified(text):
+        if _bug_underspecified(text, root):
             issues.append("underspecified")
         if status in integrity.TERMINAL and _missing_regression_test(text):
             issues.append("missing-regression-test")

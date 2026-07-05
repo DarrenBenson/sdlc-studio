@@ -199,6 +199,76 @@ class BugReadinessTests(unittest.TestCase):
         self.assertTrue(_load()._bug_underspecified(
             "# BG0006: b\n\n> **Status:** Open\n\n## Summary\n\nx\n"))
 
+    def test_house_template_symptom_rootcause_fix_proposed_ready(self) -> None:
+        # A richer house shape (Symptom + Root cause + Fix (proposed)) is
+        # stronger evidence than bare repro steps - it must read as ready
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            dd = root / "sdlc-studio" / "bugs"
+            dd.mkdir(parents=True, exist_ok=True)
+            (dd / "BG0008-x.md").write_text(
+                "# BG0008: b\n\n> **Status:** Open\n\n## Symptom\n\nwrong\n\n"
+                "## Root cause\n\nbad map\n\n## Fix (proposed)\n\nremap\n\n"
+                "## Verify\n\ntest\n", encoding="utf-8")
+            u = _load().audit_unit(root, "BG0008")
+            self.assertTrue(u["ready"], u["issues"])
+
+    def test_fix_proposed_word_order_equivalent(self) -> None:
+        # 'Fix (proposed)' and 'Proposed Fix' are the same two words
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            dd = root / "sdlc-studio" / "bugs"
+            dd.mkdir(parents=True, exist_ok=True)
+            (dd / "BG0009-x.md").write_text(
+                "# BG0009: b\n\n> **Status:** Open\n\n## Steps to Reproduce\n\n"
+                "1. x\n\n## Fix (proposed)\n\ny\n", encoding="utf-8")
+            u = _load().audit_unit(root, "BG0009")
+            self.assertTrue(u["ready"], u["issues"])
+
+    def test_symptom_without_cause_still_underspecified(self) -> None:
+        # the combo requires both halves - half a diagnosis is not repro evidence
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            dd = root / "sdlc-studio" / "bugs"
+            dd.mkdir(parents=True, exist_ok=True)
+            (dd / "BG0010-x.md").write_text(
+                "# BG0010: b\n\n> **Status:** Open\n\n## Symptom\n\nwrong\n\n"
+                "## Proposed Fix\n\ny\n", encoding="utf-8")
+            u = _load().audit_unit(root, "BG0010")
+            self.assertFalse(u["ready"])
+            self.assertIn("underspecified", u["issues"])
+
+    def test_symptom_alone_no_fix_still_underspecified(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            dd = root / "sdlc-studio" / "bugs"
+            dd.mkdir(parents=True, exist_ok=True)
+            (dd / "BG0012-x.md").write_text(
+                "# BG0012: b\n\n> **Status:** Open\n\n## Symptom\n\nwrong\n",
+                encoding="utf-8")
+            u = _load().audit_unit(root, "BG0012")
+            self.assertFalse(u["ready"])
+            self.assertIn("underspecified", u["issues"])
+
+    def test_config_declared_sections_respected(self) -> None:
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest("PyYAML absent - conventions degrade to defaults")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            dd = root / "sdlc-studio" / "bugs"
+            dd.mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "conventions:\n  bug_ready_sections:\n"
+                "    repro: [Observed Behaviour]\n    fix: [Remedy]\n",
+                encoding="utf-8")
+            (dd / "BG0011-x.md").write_text(
+                "# BG0011: b\n\n> **Status:** Open\n\n## Observed Behaviour\n\n"
+                "x\n\n## Remedy\n\ny\n", encoding="utf-8")
+            u = _load().audit_unit(root, "BG0011")
+            self.assertTrue(u["ready"], u["issues"])
+
     def test_bug_with_suffixed_headings_ready(self) -> None:
         # Heading match is substring-tolerant: "## Steps to Reproduce the crash" counts.
         with tempfile.TemporaryDirectory() as d:

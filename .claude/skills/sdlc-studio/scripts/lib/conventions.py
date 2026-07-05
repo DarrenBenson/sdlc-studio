@@ -111,20 +111,24 @@ _HEADING_RE = re.compile(r"^#{2,6}\s+(.+?)\s*$", re.MULTILINE)
 
 def _word_set(s: str) -> frozenset:
     """Normalised heading identity: case-folded word set, punctuation and
-    parentheticals stripped. Equality only - containment would let
-    'Won't Fix rationale' read as a fix section."""
+    parentheticals stripped."""
     return frozenset(re.sub(r"[^a-z0-9 ]", " ", s.lower()).split())
 
 
 def section_present(text: str, kind: str, repo_root=None) -> bool:
     """Does `text` carry a section satisfying the `kind` vocabulary
-    (default or project-declared)? A string entry matches any heading with
-    the same word set; a list entry requires all its headings present."""
+    (default or project-declared)? A heading matches an entry when its word
+    set CONTAINS the entry's word set - word-order-insensitive
+    ('Fix (proposed)' == 'Proposed Fix') and suffix-tolerant ('Steps to
+    Reproduce the crash' counts) - while every default entry stays multi-word
+    so a stray shared word ('Won't Fix rationale' vs 'Proposed Fix') never
+    matches. A list entry is a combo: all its headings must be present."""
     entries = bug_ready_sections(repo_root).get(kind, [])
     headings = [_word_set(h) for h in _HEADING_RE.findall(text)]
     for entry in entries:
         needles = entry if isinstance(entry, list) else [entry]
-        if needles and all(_word_set(n) in headings for n in needles):
+        if needles and all(
+                any(h >= _word_set(n) for h in headings) for n in needles):
             return True
     return False
 

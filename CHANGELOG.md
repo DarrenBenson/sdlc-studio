@@ -29,6 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   lives once in `artifact_files` via the convention layer (extra suffixes
   declarable under `conventions.companion_suffixes`); a real artifact
   that lost its Status line keeps its `# <ID>:` title and stays flagged.
+- Bug-readiness reads its heading vocabularies from the convention layer:
+  a house template documented as Symptom / Root cause / Fix (proposed) is
+  ready (a documented cause is stronger evidence than bare repro steps),
+  heading match is word-order-insensitive and suffix-tolerant, a
+  genuinely-empty bug still flags, and a project can declare its own set
+  under `conventions.bug_ready_sections`.
 - Mutation-check summary states its sampling coverage explicitly: when the
   budget truncates, the CLI note, report `summary.enumerated`, and the gate
   lane detail all carry `sampled N/M enumerated (x%)`, so a green sample can
