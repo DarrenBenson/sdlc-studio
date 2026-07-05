@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.5.0] - 2026-07-05
 
+### Release verification
+
+Eval scenarios (the two-Claude worker/grader loop, `evals/README.md`) run in
+full: **01 trigger-routing PASS** (natural language model-invoked the skill;
+template-conformant PRD; the new slice-read rule honoured unprompted), **02
+greenfield-create PASS** (canonical paths, tool-allocated sequential ids,
+Draft-only births, GWT + Verify lines - and the v3.4.0 advisory retired: the
+Three Amigos consult ran with attribution rows in every artifact), **03
+generate-mode-gate PASS** (philosophy gate read before generation; every
+extracted contract verified code-accurate by the grader), **04
+drift-reconcile PASS** (all three seeded drift kinds enumerated; the grader
+mechanically re-verified 18/18 checksums unchanged under --dry-run). Three
+cosmetic scaffold-wiring edges triaged to CR0166 (Low). Tranche critic:
+Sam Eriksson (QA seat, review render) APPROVE after three rounds, verdicts
+recorded under the seat.
+
 ### Changed (reconcile apply)
 
 - `reconcile apply` appends missing index rows mechanically: one

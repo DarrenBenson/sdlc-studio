@@ -1,18 +1,18 @@
-# LATEST - current project state (v3.4.0 + two unreleased tranches on main)
+# LATEST - current project state (v3.5.0)
 
 > The current-state anchor - a WINDOW, not a ledger. **Re-read this and run
 > `/sdlc-studio status` after any context reset or compaction.** Durable guidance lives in
 > AGENTS.md; per-sprint detail lives in the retros and CHANGELOG.md; keep this file under
 > `docs.latest_max_lines` (doc-freshness advisory) by moving past sprints to History lines.
 >
-> **Project version:** 3.4.0 (released 2026-07-04) + unreleased tranches - v3.5.0 pending ·
+> **Project version:** 3.5.0 (released 2026-07-05) ·
 > **Date:** 2026-07-05 ·
 > **Gates:** lint clean, 1162 script tests pass (+41 repo-only tools tests), `gate` PASS,
 > reconcile drift 0, disclosure 0, npm audit 0, CI green on main.
 
 ## Current
 
-- **Sprint 2026-07-D - field-hardening (unreleased, RETRO0010):** 8/8 CRs delivered, sourced
+- **Sprint 2026-07-D - field-hardening (released in v3.5.0, RETRO0010):** 8/8 CRs delivered, sourced
   from a consuming project's first-day field reports. RFC0023 accepted (D0010) and built as
   `lib/conventions.py` - the tolerant convention layer (status-column aliases, companion
   suffixes, bug-ready section vocabularies, scaffold template overrides; config-declared,
@@ -22,14 +22,14 @@
   capability digest + advisory-lane registry (CR0157). Critic: 9 findings (2 HIGH), all fixed,
   repros re-run -> APPROVE; lesson L-0005 (census-consumer sweep). CR0159 (apply inserts
   missing summary rows, fail-loud residuals) delivered as an addendum.
-- **Token-optimisation tranche (unreleased, RETRO0011, CR0160-CR0165):** index-bloat advisory +
+- **Token-optimisation tranche (released in v3.5.0, RETRO0011, CR0160-CR0165):** index-bloat advisory +
   first live archive run (265 rows, live indexes 332 -> 83 lines), the LATEST.md window,
   `artifact.py revision`, the slice-read rule, apply appends missing index rows (operator field
   transcript), and the critic runs AS the QA seat (Sam) with a seat-drift warning. Sam-framed
   critic: 3 rounds, all findings fixed RED-first, APPROVE under the seat.
 - **Open backlog:** none beyond the in-flight tranche.
-- **Next:** release v3.5.0 (evals, tag, deploy); consuming projects then upgrade and get the
-  first live CR0157 capability digest.
+- **Next:** consuming projects upgrade to v3.5.0 (their `project upgrade` prints the first live
+  CR0157 capability digest); triage field reports as they arrive. Open backlog: CR0166 (Low).
 
 ## History (detail lives in the named retro / CHANGELOG entry)
 
