@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 0 |
+| Proposed | 1 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 161 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 4 |
 | Blocked | 0 |
-| **Total** | **165** |
+| **Total** | **166** |
 
 ## All Changes
 
@@ -26,6 +26,7 @@
 | [CR-0163](CR0163-skill-md-instructs-section-reads-for-large-references.md) | SKILL.md instructs section reads for large references (honour the Reading Guides) | Complete | Low | Improvement | 2026-07-05 | -- |
 | [CR-0164](CR0164-reconcile-apply-adds-missing-index-rows-mechanically-hand.md) | reconcile apply adds missing index rows mechanically - hand-authoring 23 rows is the tool's failure | Complete | High | Improvement | 2026-07-05 | -- |
 | [CR-0165](CR0165-critic-recorder-flags-a-reviewer-that-is-no.md) | critic recorder flags a reviewer that is no declared seat - the persona lens must not drift out silently | Complete | Medium | Improvement | 2026-07-05 | -- |
+| [CR-0166](CR0166-batch-scaffold-wiring-polish-stray-separator-story-header.md) | batch scaffold wiring polish: stray separator, story header format, empty by-epic table | Proposed | Low | Improvement | 2026-07-05 | -- |
 
 ## Archived Releases
 
