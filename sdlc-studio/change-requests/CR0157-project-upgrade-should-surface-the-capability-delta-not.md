@@ -146,7 +146,7 @@ it, so a malformed entry degrades to "unavailable", never a crash.
 
 ## Field Report (evidence)
 
-Observed on the engram-framework repo, 2026-07-04, upgrading 2.5.0 -> 3.4.0:
+Observed on a consuming project's repo, 2026-07-04, upgrading 2.5.0 -> 3.4.0:
 
 - `project_upgrade.py --apply` ran clean: `.version` bumped, 3 amigo cards installed,
   reconcile 0 drift, gate PASS. Mechanics: no notes.
@@ -164,4 +164,5 @@ Observed on the engram-framework repo, 2026-07-04, upgrading 2.5.0 -> 3.4.0:
 
 | Date | Author | Change |
 | --- | --- | --- |
-| 2026-07-04 | operator | CR proposed - field report from a live 2.5.0 -> 3.4.0 upgrade of a consuming project (engram-framework) |
+| 2026-07-04 | operator | CR proposed - field report from a live 2.5.0 -> 3.4.0 upgrade of a consuming project |
+| 2026-07-05 | Claude (triage) | Generalised the consuming-project name (neutrality guard); no scope change |
