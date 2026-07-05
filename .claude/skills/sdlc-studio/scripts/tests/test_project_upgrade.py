@@ -377,3 +377,90 @@ class CR0120SeatAwareTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+FIXTURE_CHANGELOG = """# Changelog
+
+## [3.4.0] - 2026-07-04
+
+### Added
+
+- Mutation-check gate over the changed surface
+- Batch transitions with per-id gating
+
+### Changed
+
+- Telemetry records terminal closes
+
+## [3.0.0] - 2026-06-20
+
+### Added
+
+- Constitution check
+
+## [2.5.0] - 2026-06-01
+
+### Added
+
+- Old capability the project already has
+"""
+
+
+class ChangelogDigestTests(unittest.TestCase):
+    """The upgrade must say what the skill can now DO, not only which files it
+    corrected - the capability delta between recorded and installed versions."""
+
+    def _changelog(self, d, text=FIXTURE_CHANGELOG):
+        p = Path(d) / "CHANGELOG.md"
+        p.write_text(text, encoding="utf-8")
+        return p
+
+    def test_range_excludes_recorded_includes_installed(self):
+        with tempfile.TemporaryDirectory() as d:
+            dig = pu.changelog_digest("2.5.0", "3.4.0", self._changelog(d))
+            self.assertTrue(dig["available"], dig)
+            self.assertEqual(dig["versions"], ["3.4.0", "3.0.0"])
+            added = "\n".join(dig["groups"]["Added"])
+            self.assertIn("Mutation-check gate", added)
+            self.assertIn("Constitution check", added)
+            self.assertNotIn("Old capability", added)   # recorded version excluded
+            self.assertIn("Telemetry records", "\n".join(dig["groups"]["Changed"]))
+
+    def test_missing_changelog_degrades_honestly(self):
+        dig = pu.changelog_digest("2.5.0", "3.4.0", Path("/nonexistent/CHANGELOG.md"))
+        self.assertFalse(dig["available"])
+        self.assertIn("CHANGELOG", dig["reason"])
+
+    def test_empty_range_degrades(self):
+        with tempfile.TemporaryDirectory() as d:
+            dig = pu.changelog_digest("3.4.0", "3.4.0", self._changelog(d))
+            self.assertFalse(dig["available"])
+            self.assertIn("between", dig["reason"])
+
+    def test_unparseable_changelog_degrades_never_crashes(self):
+        with tempfile.TemporaryDirectory() as d:
+            dig = pu.changelog_digest("2.5.0", "3.4.0",
+                                      self._changelog(d, "just prose, no versions\n"))
+            self.assertFalse(dig["available"])
+
+    def test_unknown_recorded_version_degrades(self):
+        with tempfile.TemporaryDirectory() as d:
+            dig = pu.changelog_digest(None, "3.4.0", self._changelog(d))
+            self.assertFalse(dig["available"])
+
+
+class AdvisoryLaneTests(unittest.TestCase):
+    """A gate lane that reads not-run when absent must be NAMED at upgrade time
+    when it arrived in the version gap - a new integrity check must not land
+    silently as a benign-looking warn."""
+
+    def test_mutation_lane_named_in_gap(self):
+        lanes = pu.new_advisory_lanes("2.5.0", "3.4.0")
+        names = [x["lane"] for x in lanes]
+        self.assertIn("mutation", names)
+        mut = next(x for x in lanes if x["lane"] == "mutation")
+        self.assertIn("mutation.py", mut["baseline"])   # the directed next step
+
+    def test_lane_outside_gap_not_named(self):
+        self.assertEqual([x["lane"] for x in pu.new_advisory_lanes("3.4.0", "3.5.0")
+                          if x["lane"] == "mutation"], [])

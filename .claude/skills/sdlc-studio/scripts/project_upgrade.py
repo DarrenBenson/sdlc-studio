@@ -311,6 +311,82 @@ def apply(root: Path | str, with_reconcile: bool = False, today: str | None = No
     return actions
 
 
+_VER_HEAD_RE = re.compile(r"^##\s*\[(\d+\.\d+\.\d+)\]")
+_KIND_HEAD_RE = re.compile(r"^###\s+([A-Za-z]+)\s*$")
+_KIND_ORDER = ("Added", "Changed", "Fixed", "Deprecated", "Removed", "Security")
+_GROUP_CAP = 6  # keep the digest a digest; the tail names what was dropped
+
+
+def _changelog_path() -> Path:
+    """The CHANGELOG shipped with the installed skill (install.sh copies it)."""
+    return Path(version_check.skill_root()) / "CHANGELOG.md"
+
+
+def changelog_digest(recorded: str | None, installed: str | None,
+                     changelog: Path) -> dict:
+    """The capability delta between the project's recorded skill_version
+    (exclusive) and the installed version (inclusive), grouped by change kind.
+
+    The migrator corrects files; this says what the skill can now DO. Degrades
+    honestly: an absent/unparseable CHANGELOG or an unknown version range
+    yields {available: False, reason} - never silence, never a crash."""
+    if not recorded or not installed:
+        return {"available": False,
+                "reason": f"version range unknown (recorded {recorded or '?'}, "
+                          f"installed {installed or '?'})"}
+    if not changelog.exists():
+        return {"available": False,
+                "reason": f"no CHANGELOG.md shipped with the installed skill "
+                          f"(expected {changelog})"}
+    versions: list[str] = []
+    groups: dict[str, list[str]] = {}
+    extra: dict[str, int] = {}
+    cur_ver: str | None = None
+    cur_kind: str | None = None
+    for line in changelog.read_text(encoding="utf-8").splitlines():
+        vm = _VER_HEAD_RE.match(line)
+        if vm:
+            v = vm.group(1)
+            in_range = version_check._gt(v, recorded) and not version_check._gt(v, installed)
+            cur_ver = v if in_range else None
+            cur_kind = None
+            if in_range:
+                versions.append(v)
+            continue
+        if cur_ver is None:
+            continue
+        km = _KIND_HEAD_RE.match(line)
+        if km:
+            cur_kind = km.group(1).capitalize()
+            continue
+        if cur_kind and line.startswith("- "):
+            bucket = groups.setdefault(cur_kind, [])
+            if len(bucket) < _GROUP_CAP:
+                bucket.append(line[2:].strip())
+            else:
+                extra[cur_kind] = extra.get(cur_kind, 0) + 1
+    if not versions:
+        return {"available": False,
+                "reason": f"no parseable CHANGELOG entries between "
+                          f"{recorded} and {installed}"}
+    return {"available": True, "versions": versions, "groups": groups, "extra": extra}
+
+
+def new_advisory_lanes(recorded: str | None, installed: str | None) -> list[dict]:
+    """Gate lanes that arrived in the version gap and read not-run when their
+    evidence is absent - each named with its one-line baseline pointer, so an
+    accidental discovery becomes a directed next step."""
+    import gate
+    out: list[dict] = []
+    if not recorded or not installed:
+        return out
+    for name, meta in sorted(gate.ADVISORY_WHEN_ABSENT.items()):
+        since = meta.get("since")
+        if since and version_check._gt(since, recorded) and not version_check._gt(since, installed):
+            out.append({"lane": name, "since": since, "baseline": meta["baseline"]})
+    return out
+
+
 def cmd_upgrade(args: argparse.Namespace) -> int:
     root = Path(args.root)
     if not _sdlc(root).is_dir():
@@ -322,8 +398,13 @@ def cmd_upgrade(args: argparse.Namespace) -> int:
     applied: list[str] = []
     if args.apply and (d["behind"] or a["auto"]):  # apply whenever there is safe work, even if "current"
         applied = apply(root, with_reconcile=args.with_reconcile)
+    digest = (changelog_digest(d["project_skill"], d["installed_skill"], _changelog_path())
+              if d["behind"] else None)
+    lanes = (new_advisory_lanes(d["project_skill"], d["installed_skill"])
+             if d["behind"] else [])
     if args.format == "json":
-        print(json.dumps({"detect": d, "audit": a, "applied": applied}, indent=2))
+        print(json.dumps({"detect": d, "audit": a, "applied": applied,
+                          "capability_delta": digest, "new_advisory_lanes": lanes}, indent=2))
         return 0
     sk = d["installed_skill"] or "?"
     if not has_work:
@@ -332,6 +413,24 @@ def cmd_upgrade(args: argparse.Namespace) -> int:
     if d["behind"]:
         print(f"project upgrade: BEHIND - project schema {d['project_schema']} / skill "
               f"{d['project_skill'] or 'unknown'} vs skill {sk} (schema {CURRENT_SCHEMA}).\n")
+        if digest and digest["available"]:
+            print(f"Changed since {d['project_skill']} (recorded) -> {sk} (installed):")
+            for kind in _KIND_ORDER:
+                items = digest["groups"].get(kind, [])
+                if not items:
+                    continue
+                print(f"  {kind}:")
+                for it in items:
+                    print(f"    - {it}")
+                if digest["extra"].get(kind):
+                    print(f"    (+{digest['extra'][kind]} more - see CHANGELOG.md)")
+        elif digest:
+            print(f"capability delta unavailable ({digest['reason']})")
+        for lane in lanes:
+            print(f"  new advisory gate lane '{lane['lane']}' (since {lane['since']}): "
+                  f"reports not-run until you {lane['baseline']}")
+        if digest or lanes:
+            print()
     else:
         print(f"project upgrade: version current (skill {d['project_skill'] or '?'}), but conventions drift:\n")
     print("Auto-correctable (apply with --apply):")

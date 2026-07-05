@@ -168,6 +168,18 @@ def _mutation(root: str) -> dict:
     return {"count": n, "blocking": False, "detail": detail}
 
 
+# Lanes that read NOT-RUN (advisory) when their evidence file is absent. The
+# upgrade capability digest names these when they arrive in a version gap, so
+# a new integrity check cannot land silently as a benign-looking warn - a
+# registry test asserts every advisory-when-absent lane is declared here.
+ADVISORY_WHEN_ABSENT = {
+    "mutation": {
+        "since": "3.4.0",
+        "baseline": ("run scripts/mutation.py over your changed surface to "
+                     "create sdlc-studio/.local/mutation-report.json"),
+    },
+}
+
 DEFAULT_CHECKS = {
     "conformance": _conformance,
     "reconcile": _reconcile,

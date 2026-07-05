@@ -308,6 +308,16 @@ deterministic set; nothing destructive; idempotent.**
      seat); any seat/amigo role overlap heads-up;
      AGENTS.md/CLAUDE.md refresh from `templates/agent-instructions.md` **preserving project
      sections**; missing `Verify:` lines and informal AC; an optional `constitution.md`.
+   - **Changed since your version** (the capability delta): a compact digest
+     of the shipped CHANGELOG entries between the project's recorded
+     `skill_version` (exclusive) and the installed version (inclusive),
+     grouped Added-first and capped per group with a "+N more" tail. New
+     **advisory-when-absent gate lanes** in the gap are named individually
+     with their baseline pointer (e.g. the mutation lane reports not-run
+     until you run `scripts/mutation.py`) - a new integrity check must be a
+     directed next step, not an accidental discovery. Degrades honestly: no
+     shipped CHANGELOG or an unparseable range prints an explicit
+     "capability delta unavailable" line, never silence.
 3. **Confirm, then `--apply`** the auto-correctable set.
 4. **Work the report** by hand for the judgement items (the agent-assisted steps - rewrite
    personas, refresh AGENTS, backfill Verify), guided by this file.

@@ -374,3 +374,28 @@ class MutationLaneTests(unittest.TestCase):
             self.assertEqual(report["checks"][0]["status"], "pass",
                              report["checks"][0]["detail"])
 
+
+
+class AdvisoryRegistryTests(unittest.TestCase):
+    """Every lane that reads not-run (advisory) when its evidence is absent
+    must be registered, so the upgrade capability digest can name it - the
+    registry rots silently otherwise."""
+
+    def test_every_advisory_when_absent_lane_is_registered(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as t:
+            (Path(t) / "sdlc-studio").mkdir()
+            for name, fn in gate.DEFAULT_CHECKS.items():
+                try:
+                    res = fn(str(t))
+                except Exception:  # noqa: BLE001 - a lane needing richer state is not this probe's target
+                    continue
+                if (isinstance(res, dict) and not res.get("blocking", True)
+                        and res.get("count") and "not run" in str(res.get("detail", ""))):
+                    self.assertIn(name, gate.ADVISORY_WHEN_ABSENT,
+                                  f"lane '{name}' reads not-run when absent but is unregistered")
+
+    def test_registry_entries_carry_since_and_baseline(self):
+        for name, meta in gate.ADVISORY_WHEN_ABSENT.items():
+            self.assertRegex(meta["since"], r"^\d+\.\d+\.\d+$", name)
+            self.assertTrue(meta["baseline"], name)

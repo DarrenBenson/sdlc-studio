@@ -19,6 +19,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   house-templated project's checks then reject. Every key defaults to the
   historical behaviour; a wrong-shaped value fails loud naming the key.
 
+### Added (project upgrade)
+
+- `project upgrade` surfaces the capability delta, not just file
+  corrections: a "Changed since <recorded skill_version>" digest of the
+  shipped CHANGELOG entries in the version gap (grouped by kind, capped
+  with a "+N more" tail), plus one line per advisory-when-absent gate
+  lane introduced in the gap naming its baseline command - sourced from
+  a declared registry in `gate.py` that a test keeps honest. Absent or
+  unparseable CHANGELOG degrades to an explicit "unavailable" line.
+  `install.sh` now ships `CHANGELOG.md` with the skill payload.
+
 ### Changed
 
 - The dormant `Verified` bug status has defined semantics mapped onto the

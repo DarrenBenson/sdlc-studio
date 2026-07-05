@@ -227,6 +227,16 @@ prepare_source() {
     SRC="$extracted/.claude/skills/$SKILL_NAME"
 }
 
+ship_changelog() {
+    # `project upgrade` digests the CHANGELOG between the project's recorded
+    # version and the installed one; ship it with the payload so the digest
+    # works offline (absent -> the tool degrades with an explicit message).
+    local src="$1" dest="$2"
+    local repo_root="${src%/.claude/skills/$SKILL_NAME}"
+    [[ -f "$repo_root/CHANGELOG.md" ]] && cp "$repo_root/CHANGELOG.md" "$dest/CHANGELOG.md"
+    return 0
+}
+
 install_to() {
     local parent="$1" src="$2" dest="$1/$SKILL_NAME"
     if [[ "$DRY_RUN" == true ]]; then
@@ -235,6 +245,7 @@ install_to() {
     mkdir -p "$parent"
     [[ -d "$dest" ]] && rm -rf "$dest"
     cp -r "$src" "$parent/"
+    ship_changelog "$src" "$dest"
     success "installed: $dest"
 }
 
@@ -288,6 +299,7 @@ sweep_stale() {
             else
                 rm -rf "$dest"
                 cp -r "$src" "$parent/"
+                ship_changelog "$src" "$dest"
                 success "refreshed: $dest ($old -> $new_ver)"
             fi
         done
