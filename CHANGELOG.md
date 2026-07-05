@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Tolerant convention layer (`lib/conventions.py`): one place where a
+  consuming project's house conventions are interpreted, declared under
+  `conventions:` in `.config.yaml` (status-column aliases, companion-doc
+  suffixes, bug-readiness heading vocabularies, per-type scaffold
+  templates). Reconcile accepts declared status-column aliases, and
+  `artifact new`/`batch` scaffold a project-declared template (grafted onto
+  the deterministic provenance head) instead of planting the skill shape a
+  house-templated project's checks then reject. Every key defaults to the
+  historical behaviour; a wrong-shaped value fails loud naming the key.
+
 ### Changed
 
 - Mutation-check summary states its sampling coverage explicitly: when the

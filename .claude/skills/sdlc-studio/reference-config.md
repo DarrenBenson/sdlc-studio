@@ -292,6 +292,45 @@ tdd:
 
 ---
 
+## Conventions (tolerant convention layer)
+
+Declare your house conventions once under `conventions:` and every adopting
+check (reconcile's status column, artifact scaffolding, and other consumers of
+`lib/conventions.py`) reads them from the one place. Every key defaults to the
+historical behaviour, so an unconfigured project changes nothing. A
+wrong-shaped value fails loud naming the offending key - the layer never
+guesses.
+
+```text
+conventions:
+  # Extra index header names accepted as the status column (exact cell
+  # match, case-insensitive). Without this only 'Status' pins the column,
+  # and reconcile diagnoses a mis-named header instead of parsing it.
+  status_column:
+    - Effective Status
+  # Stem suffixes marking a file as a companion doc filed under an
+  # artifact's id (EP0244-...-decisions.md). Default: [consultations].
+  companion_suffixes:
+    - consultations
+    - decisions
+  # Heading vocabularies the bug-readiness audit accepts. A plain string
+  # is one accepted heading (word-order-insensitive: 'Fix (proposed)'
+  # equals 'Proposed Fix'); a nested list is a combo - all must be present.
+  bug_ready_sections:
+    repro:
+      - Steps to Reproduce
+      - [Symptom, Root cause]
+    fix:
+      - Proposed Fix
+  # Scaffold templates per artifact type (repo-root-relative). `new`/`batch`
+  # graft the declared body onto the deterministic provenance head; a
+  # declared-but-missing path is an error, never a silent fallback.
+  templates:
+    bug: sdlc-studio/templates/bug.md
+```
+
+---
+
 ## Version File
 
 The `.version` file tracks schema version for upgrades:

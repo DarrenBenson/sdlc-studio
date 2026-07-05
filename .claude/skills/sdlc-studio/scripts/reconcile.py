@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import sdlc_md  # noqa: E402
+from lib import conventions, sdlc_md  # noqa: E402
 
 # scope name -> artifact types it covers.
 SCOPE_TYPES = {
@@ -81,15 +81,24 @@ def _table_cells(line: str) -> list[str] | None:
 
 # Legacy vocabulary header (no separator line under it): >2 cells, one of them
 # a bare `Status`. Passed to sdlc_md.iter_tables as the header_predicate.
-def _VOCAB_HEADER(cells: list) -> bool:
-    return len(cells) > 2 and "status" in [c.lower() for c in cells]
+def _vocab_header(aliases: tuple = ()) -> callable:
+    """Header predicate: a 3+-cell row naming the status column - exactly
+    'Status', or a project-declared alias (conventions.status_column)."""
+    def pred(cells: list) -> bool:
+        low = [c.lower() for c in cells]
+        return len(cells) > 2 and ("status" in low or any(a in low for a in aliases))
+    return pred
+
+
+_VOCAB_HEADER = _vocab_header()  # the unconfigured default
 
 
 # Alias: the canonical separator regex now lives in sdlc_md (shared by every parser).
 _SEP_ROW_RE = sdlc_md.SEP_ROW_RE
 
 
-def _index_rows_and_summary(text: str, vocab: list) -> tuple[dict, dict]:
+def _index_rows_and_summary(text: str, vocab: list,
+                            aliases: tuple = ()) -> tuple[dict, dict]:
     """Parse one index file's table rows into ({norm_id: (disp, status)}, {status: count}).
 
     The Status (and ID) columns are located by each table's **header row**
@@ -104,10 +113,11 @@ def _index_rows_and_summary(text: str, vocab: list) -> tuple[dict, dict]:
     """
     rows: dict = {}
     summary: dict = {}
-    for tbl in sdlc_md.iter_tables(text, header_predicate=_VOCAB_HEADER):
+    for tbl in sdlc_md.iter_tables(text, header_predicate=_vocab_header(aliases)):
         has_header = tbl["header"] is not None
         lowered = [c.lower() for c in tbl["header"]] if has_header else []
-        status_col = lowered.index("status") if "status" in lowered else None
+        status_col = next((i for i, c in enumerate(lowered)
+                           if c == "status" or c in aliases), None)
         id_col = lowered.index("id") if "id" in lowered else None
         for _ln, cells in tbl["rows"]:
             if len(cells) == 2 and cells[1].replace(",", "").isdigit():  # `| <Status> | <int> |`
@@ -137,19 +147,20 @@ def _index_rows_and_summary(text: str, vocab: list) -> tuple[dict, dict]:
     return rows, summary
 
 
-def _status_header_diagnosis(text: str) -> tuple[bool, str | None]:
+def _status_header_diagnosis(text: str, aliases: tuple = ()) -> tuple[bool, str | None]:
     """(does any data table pin an exact Status column?, first status-like
-    mis-named header cell otherwise).
+    mis-named header cell otherwise). A project-declared alias counts as exact.
 
     Only tables with 3+ header cells count - the 2-cell `| Status | Count |`
     summary table says nothing about the data table's schema."""
     has_exact = False
     candidate = None
-    for tbl in sdlc_md.iter_tables(text, header_predicate=_VOCAB_HEADER):
+    for tbl in sdlc_md.iter_tables(text, header_predicate=_vocab_header(aliases)):
         header = tbl["header"]
         if header is None or len(header) < 3 or not tbl["rows"]:
             continue
-        if "status" in [c.lower() for c in header]:
+        low = [c.lower() for c in header]
+        if "status" in low or any(a in low for a in aliases):
             has_exact = True
         elif candidate is None:
             candidate = next((c for c in header if "status" in c.lower()), None)
@@ -170,7 +181,8 @@ def _degenerate_status_parse(index: dict) -> str | None:
     if cand:
         return (f"no index table declares an exact 'Status' column, so all {n} "
                 f"row(s) parse as Unknown. Header '{cand}' looks like the status "
-                f"column - rename it to 'Status' to restore per-row reconciliation")
+                f"column - rename it to 'Status', or declare it in "
+                f"sdlc-studio/.config.yaml under conventions.status_column")
     return (f"no index table declares an exact 'Status' column, so all {n} "
             f"row(s) parse as Unknown - add a Status column to the data table")
 
@@ -271,15 +283,16 @@ def parse_index(type_: str, repo_root: Path) -> dict:
     if not index_path.exists():
         return result
     vocab = sdlc_md.status_vocab(type_, repo_root)
+    aliases = tuple(conventions.status_aliases(repo_root))
     text = index_path.read_text(encoding="utf-8")
-    rows, summary = _index_rows_and_summary(text, vocab)
+    rows, summary = _index_rows_and_summary(text, vocab, aliases)
     result["summary"] = summary
     result["rows"] = rows
-    result["status_header"] = _status_header_diagnosis(text)
+    result["status_header"] = _status_header_diagnosis(text, aliases)
     archive_dir = repo_root / rel / "archive"
     if archive_dir.is_dir():  # archived terminal rows still count toward the census
         for af in sorted(archive_dir.rglob("*.md")):
-            arows, _ = _index_rows_and_summary(af.read_text(encoding="utf-8"), vocab)
+            arows, _ = _index_rows_and_summary(af.read_text(encoding="utf-8"), vocab, aliases)
             for k, v in arows.items():
                 if v[1] != "Unknown" or k not in result["rows"]:
                     result["rows"][k] = v

@@ -19,7 +19,7 @@ from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import sdlc_md  # noqa: E402
+from lib import conventions, sdlc_md  # noqa: E402
 import file_finding  # noqa: E402  (reuse _slug, _next_number, append_index_row)
 import reconcile  # noqa: E402
 import transition  # noqa: E402
@@ -81,13 +81,11 @@ def _core_template(type_: str) -> Path:
     return _skill_root() / "templates" / "core" / f"{type_}.md"
 
 
-def _render_full(type_: str, disp: str, title: str, today: str, f: dict) -> str:
-    """`--template full`: the deterministic provenance head (identical to
-    minimal, so validate/provenance behave the same) followed by the rich section body from
-    `templates/core/<type>.md`. Placeholders stay unresolved for the agent, exactly as in
-    minimal. Falls back to minimal when no core template ships for the type."""
-    minimal = _render(type_, disp, title, today, f)
-    core_path = _core_template(type_)
+def _graft(minimal: str, core_path: Path) -> str:
+    """The deterministic provenance head (identical to minimal, so validate/
+    provenance behave the same) followed by the section body of `core_path`.
+    Placeholders stay unresolved for the agent. Falls back to minimal when the
+    template has no `## ` section body to graft."""
     if "\n## " not in minimal or not core_path.exists():
         return minimal
     head = minimal[:minimal.index("\n## ")]  # provenance + metadata block, no trailing newline
@@ -99,6 +97,26 @@ def _render_full(type_: str, disp: str, title: str, today: str, f: dict) -> str:
         return minimal
     body = "\n".join(lines[start:]).rstrip()
     return f"{head}\n\n{body}\n"
+
+
+def _render_full(type_: str, disp: str, title: str, today: str, f: dict) -> str:
+    """`--template full`: minimal head + the rich body from `templates/core/<type>.md`."""
+    return _graft(_render(type_, disp, title, today, f), _core_template(type_))
+
+
+def _select_render(root: Path, type_: str, template: str | None):
+    """The renderer for one scaffold: a project-declared template
+    (conventions.templates.<type>) wins over --template minimal/full so the
+    scaffold matches the house shape the read-side checks expect; declared but
+    missing fails loud rather than silently falling back to the skill shape."""
+    proj = conventions.template_for(type_, root)
+    if proj is not None:
+        if not proj.exists():
+            raise conventions.ConventionsError(
+                f"conventions.templates.{type_} declares {proj}, which does not exist")
+        return lambda t, disp, title, today, f: _graft(
+            _render(t, disp, title, today, f), proj)
+    return _render_full if template == "full" else _render
 
 
 def _skill_root() -> Path:
@@ -263,7 +281,7 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
                 "would_create_index": would_create_index,
                 "epic_linked": (type_ == "story") or None, "dry_run": True}
     path.parent.mkdir(parents=True, exist_ok=True)
-    render = _render_full if f.get("template") == "full" else _render
+    render = _select_render(root, type_, f.get("template"))
     path.write_text(render(type_, disp, title, f["date"], f), encoding="utf-8")
     index_created = _ensure_index(root, type_, f["date"])  # greenfield first run
     header = _header_cells(root, type_)
@@ -320,7 +338,7 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
         return {"type": type_, "count": len(plan), "template": template, "dry_run": True,
                 "ids": [{"id": p["disp"], "path": str(p["path"]),
                          "epic": p["item"].get("epic")} for p in plan]}
-    render = _render_full if template == "full" else _render
+    render = _select_render(root, type_, template)
     _ensure_index(root, type_, today)
     created = []
     for p in plan:
@@ -363,10 +381,14 @@ def cmd_new(args: argparse.Namespace) -> int:
     f = {k: v for k, v in {"epic": args.epic, "priority": args.priority, "ctype": args.ctype,
                            "severity": args.severity, "author": args.author,
                            "template": args.template}.items() if v}
-    if args.type in META:
-        r = meta_new(args.root, args.type, args.title, f, dry_run=args.dry_run)
-    else:
-        r = new(args.root, args.type, args.title, f, dry_run=args.dry_run)
+    try:
+        if args.type in META:
+            r = meta_new(args.root, args.type, args.title, f, dry_run=args.dry_run)
+        else:
+            r = new(args.root, args.type, args.title, f, dry_run=args.dry_run)
+    except conventions.ConventionsError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     verb = "would create" if r.get("dry_run") else "created"
     print(json.dumps(r, indent=2) if args.format == "json"
           else f"{verb} {r['id']} -> {r['path']} (indexed={r['indexed']}, epic_linked={r['epic_linked']})")
@@ -378,7 +400,11 @@ def cmd_batch(args: argparse.Namespace) -> int:
     if not isinstance(items, list):
         print("error: --spec must be a JSON list of items", file=sys.stderr)
         return 1
-    r = new_batch(args.root, args.type, items, template=args.template, dry_run=args.dry_run)
+    try:
+        r = new_batch(args.root, args.type, items, template=args.template, dry_run=args.dry_run)
+    except conventions.ConventionsError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     if args.format == "json":
         print(json.dumps(r, indent=2))
         return 0

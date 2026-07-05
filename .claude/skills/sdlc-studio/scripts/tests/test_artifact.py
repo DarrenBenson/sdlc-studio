@@ -389,6 +389,60 @@ class FullTemplateTests(unittest.TestCase):
             self.assertIn("**Created-by:** sdlc-studio new", text)
 
 
+class ProjectTemplateTests(unittest.TestCase):
+    """RFC-0023 write path: `new` scaffolds the project's declared template
+    (conventions.templates.<type>) so the scaffold matches the house shape the
+    read-side checks expect - the skill default stays the fallback."""
+
+    HOUSE = ("<!-- house bug template -->\n\n# {{id}}: {{title}}\n\n"
+             "## Symptom\n\n{{symptom}}\n\n## Root cause\n\n{{cause}}\n\n"
+             "## Fix (proposed)\n\n{{fix}}\n\n## Verify\n\n{{verify}}\n")
+
+    def _repo(self, d, declare=True, write_template=True):
+        repo = Path(d)
+        (repo / "sdlc-studio" / "templates").mkdir(parents=True)
+        if write_template:
+            (repo / "sdlc-studio" / "templates" / "bug.md").write_text(
+                self.HOUSE, encoding="utf-8")
+        if declare:
+            (repo / "sdlc-studio" / ".config.yaml").write_text(
+                "conventions:\n  templates:\n    bug: sdlc-studio/templates/bug.md\n",
+                encoding="utf-8")
+        return repo
+
+    def _yaml(self):
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest("PyYAML absent - conventions degrade to defaults")
+
+    def test_declared_template_shapes_the_scaffold(self) -> None:
+        self._yaml()
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            r = artifact.new(repo, "bug", "wrong colour", {})
+            text = Path(r["path"]).read_text(encoding="utf-8")
+            self.assertIn("**Created-by:** sdlc-studio new", text)  # provenance head intact
+            self.assertIn("## Symptom", text)                        # house body grafted
+            self.assertIn("## Fix (proposed)", text)
+            self.assertNotIn("## Steps to Reproduce", text)          # skill body replaced
+
+    def test_undeclared_project_uses_skill_default(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, declare=False)
+            r = artifact.new(repo, "bug", "wrong colour", {})
+            text = Path(r["path"]).read_text(encoding="utf-8")
+            self.assertIn("## Steps to Reproduce", text)             # v3.4.0 behaviour
+
+    def test_declared_but_missing_template_fails_loud(self) -> None:
+        self._yaml()
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, write_template=False)
+            from lib import conventions
+            with self.assertRaises(conventions.ConventionsError):
+                artifact.new(repo, "bug", "wrong colour", {})
+
+
 class MetaTypeTests(unittest.TestCase):
     """CR0143: retro and review are tool-created (id + file + index row), the last
     hand-authored artifact class retired."""

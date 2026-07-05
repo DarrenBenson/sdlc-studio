@@ -619,6 +619,27 @@ class DegenerateStatusHeaderTests(unittest.TestCase):
             self.assertFalse(res["counts_updated"])
             self.assertEqual(idx.read_text(encoding="utf-8"), before)
 
+    def test_declared_status_alias_parses_cleanly(self):
+        # RFC-0023: a project that declares its house header under
+        # conventions.status_column gets a clean parse - no diagnostic, no drift
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest("PyYAML absent - conventions degrade to defaults")
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            (repo / "sdlc-studio" / ".config.yaml").write_text(
+                "conventions:\n  status_column:\n    - Effective Status\n",
+                encoding="utf-8")
+            r = reconcile.detect_type("cr", repo)
+            self.assertEqual(r["drift"], [])
+
+    def test_diagnostic_names_the_conventions_knob(self):
+        with tempfile.TemporaryDirectory() as d:
+            r = reconcile.detect_type("cr", self._repo(d))
+            f = next(x for x in r["drift"] if x["kind"] == "index-status-column")
+            self.assertIn("conventions.status_column", f["fix"])
+
     def test_apply_command_reports_refusal_and_exits_nonzero(self):
         # L-0004: the wiring, not only the helper - the CLI must say REFUSED
         # and exit 1, never print a clean "changed 0 row(s)" success
