@@ -4,7 +4,7 @@
 
 **Ask for software in plain language. An AI engineering team plans it, builds it, tests it, and proves it is done.**
 
-**Version 3.4.0**
+**Version 3.5.0**
 
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Lint](https://github.com/DarrenBenson/sdlc-studio/actions/workflows/lint.yml/badge.svg)](https://github.com/DarrenBenson/sdlc-studio/actions/workflows/lint.yml)
@@ -126,6 +126,9 @@ Two more ideas worth knowing:
 | Drive to a goal | An autonomous batch loop that closes with reconcile + review | `sprint --goal done` |
 | Keep status honest | Detect and fix index drift from a file census; run executable `Verify:` lines | `reconcile`, `reconcile --verify` |
 | Prove tests can fail | Mutation-check the changed surface: killed vs survived, never a silent pass | `mutation run --since <ref>` |
+| Keep your house style | Declare status columns, companion suffixes, bug headings, and templates once - every check honours them | `.config.yaml` `conventions:` |
+| Upgrade and onboard | Migrate a project to current conventions AND see the capability delta since your version | `project upgrade` |
+| Stay token-lean | Archive terminal index rows by release when the advisory fires; the state anchor stays a capped window | `archive --type <t> --release <r>` |
 | Review like a team | The Three Amigos consult, with a mechanical author != reviewer gate | `consult team` |
 | Remember across projects | A lessons registry recalled before big decisions | `lessons recall`, `lessons add --global` |
 | Sync to GitHub | CRs, stories, and epics to GitHub Issues; merged PRs close them | `cr sync`, `story sync` |
