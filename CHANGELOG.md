@@ -46,6 +46,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   budget truncates, the CLI note, report `summary.enumerated`, and the gate
   lane detail all carry `sampled N/M enumerated (x%)`, so a green sample can
   never read as whole-surface assurance; an untruncated run reads as before.
+- Sprint plan names the provenance of its seat scores: which units carry
+  wsjf-inputs seat judgements (and the file's write time), which fell back
+  to the neutral default, and an advisory staleness warning when the
+  inputs file is older than `sprint.wsjf_inputs_stale_days` (default 7) -
+  a stale cross-sprint consult is now visible at the operator STOP.
 - Reconcile diagnoses a mis-named or absent index Status column once: when
   every row parses as Unknown and no data table pins an exact `Status`
   header, `detect` emits a single `index-status-column` finding naming the

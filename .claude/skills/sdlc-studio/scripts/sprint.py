@@ -313,6 +313,38 @@ def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "pr
                           skip_personas=skip_personas, epics=epics)
 
 
+DEFAULT_SEAT_STALE_DAYS = 7  # advisory window; seat judgement does not rot on a clock
+
+
+def _seat_provenance(root: Path, batch: list[dict]) -> dict:
+    """Which units the review seats scored, and how fresh wsjf-inputs.json is.
+
+    The inputs file is a cross-sprint side-channel: a later plan silently
+    re-reads what an earlier consult wrote, so the plan must say whose
+    judgement it consumed and from when, at the STOP where the operator
+    signs off. Staleness is advisory only, never a refusal."""
+    path = root / "sdlc-studio" / ".local" / "wsjf-inputs.json"
+    inputs = _wsjf_inputs(root)
+    scored = [it["id"] for it in batch if sdlc_md.norm_id(it["id"]) in inputs]
+    unscored = [it["id"] for it in batch if sdlc_md.norm_id(it["id"]) not in inputs]
+    written_at = None
+    age_days = None
+    if path.exists():
+        import datetime as _dt
+        mtime = path.stat().st_mtime
+        written_at = _dt.datetime.fromtimestamp(mtime).astimezone().isoformat(timespec="seconds")
+        age_days = round((_dt.datetime.now().timestamp() - mtime) / 86400.0, 1)
+    try:
+        window = int(sdlc_md.project_override(
+            root, "sprint.wsjf_inputs_stale_days", DEFAULT_SEAT_STALE_DAYS))
+    except (TypeError, ValueError):
+        window = DEFAULT_SEAT_STALE_DAYS
+    return {"file": str(path), "written_at": written_at, "age_days": age_days,
+            "stale_after_days": window,
+            "stale": bool(age_days is not None and age_days > window),
+            "scored": scored, "unscored": unscored}
+
+
 def build_plan(repo_root: Path | str, kind: str | None = None, status: str | None = None,
                order: str = "priority", skip_personas: bool = False,
                epics: set[str] | None = None, queries: list[tuple[str, str]] | None = None,
@@ -353,6 +385,8 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
         "count": len(batch),
         "waves": waves,
         "deps_declared": deps_declared,
+        "seat_provenance": (_seat_provenance(root, batch)
+                            if order == "wsjf" and not skip_personas else None),
     }
 
 
@@ -463,6 +497,18 @@ def cmd_plan(args: argparse.Namespace) -> int:
         else:
             src = " + ".join(f"{k}s {s}" for k, s in queries)
         print(f"batch: {data['count']} unit(s) ({src}){scope}, order={args.order}")
+        prov = data.get("seat_provenance")
+        if prov:  # name whose judgement the WSJF order consumed, and from when
+            if prov["scored"]:
+                when = f", inputs written {prov['written_at']}" if prov["written_at"] else ""
+                print(f"  seats: {len(prov['scored'])}/{data['count']} unit(s) "
+                      f"seat-scored{when}")
+            if prov["unscored"]:
+                print(f"  no seat inputs (priority fallback): {', '.join(prov['unscored'])}")
+            if prov["stale"]:
+                print(f"  advisory: wsjf-inputs.json is {prov['age_days']} day(s) old "
+                      f"(window {prov['stale_after_days']}) - re-run the amigo consult "
+                      f"if these scores no longer reflect current judgement")
         if data.get("waves"):  # show the parallelisable dependency levels
             for i, wave in enumerate(data["waves"], 1):
                 par = " (parallel)" if len(wave) > 1 else ""

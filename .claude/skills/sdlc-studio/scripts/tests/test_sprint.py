@@ -470,6 +470,68 @@ class SeatWsjfTests(unittest.TestCase):
             self.assertNotIn("wsjf", batch[0])
 
 
+class SeatProvenanceTests(unittest.TestCase):
+    """wsjf-inputs.json is a cross-sprint side-channel: the plan must say which
+    units carry seat inputs, which fell back, and how fresh the file is."""
+
+    def _inputs(self, root, mapping, age_days=0):
+        import json as _json
+        import os
+        import time
+        p = root / "sdlc-studio" / ".local" / "wsjf-inputs.json"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(_json.dumps(mapping), encoding="utf-8")
+        if age_days:
+            t = time.time() - age_days * 86400
+            os.utime(p, (t, t))
+        return p
+
+    def test_plan_records_scored_and_unscored(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1)
+            _cr(root, 2)
+            self._inputs(root, {"CR0001": {"value": 5, "time_criticality": 1,
+                                           "risk_reduction": 1, "size": 2}})
+            data = _load().build_plan(root, "cr", "Proposed", order="wsjf")
+            prov = data["seat_provenance"]
+            self.assertEqual(prov["scored"], ["CR0001"])
+            self.assertEqual(prov["unscored"], ["CR0002"])
+            self.assertIsNotNone(prov["written_at"])
+            self.assertFalse(prov["stale"])
+
+    def test_fresh_inputs_not_stale_old_inputs_advisory(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1)
+            self._inputs(root, {"CR0001": {"value": 5, "time_criticality": 1,
+                                           "risk_reduction": 1, "size": 2}},
+                         age_days=10)
+            data = _load().build_plan(root, "cr", "Proposed", order="wsjf")
+            prov = data["seat_provenance"]
+            self.assertTrue(prov["stale"])            # 10 days > default 7
+            self.assertGreater(prov["age_days"], 9)
+            self.assertEqual(prov["stale_after_days"], 7)
+
+    def test_no_inputs_file_names_everyone_unscored(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1)
+            data = _load().build_plan(root, "cr", "Proposed", order="wsjf")
+            prov = data["seat_provenance"]
+            self.assertEqual(prov["scored"], [])
+            self.assertEqual(prov["unscored"], ["CR0001"])
+            self.assertIsNone(prov["written_at"])
+            self.assertFalse(prov["stale"])           # nothing to be stale about
+
+    def test_priority_order_has_no_seat_provenance(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1)
+            data = _load().build_plan(root, "cr", "Proposed", order="priority")
+            self.assertIsNone(data.get("seat_provenance"))
+
+
 class ReconcileBeforePlanTests(unittest.TestCase):
     """CR0094: the planner surfaces index drift before selecting; --strict refuses."""
 
