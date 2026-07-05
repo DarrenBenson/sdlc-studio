@@ -280,14 +280,17 @@ class ApplyTests(unittest.TestCase):
             self.assertIn("| US0002 |", (sd / "_index.md").read_text(encoding="utf-8"))
             self.assertEqual(res["changes"], [])
 
-    def test_apply_leaves_structural_classes(self) -> None:
+    def test_apply_appends_missing_but_never_removes_orphans(self) -> None:
+        # missing-row is now mechanically applied (header-driven append);
+        # orphan-row stays report-only - removing history is never mechanical
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _fixture(root)
-            reconcile.apply_type("story", root)
+            res = reconcile.apply_type("story", root)
+            self.assertEqual(res["appended"], ["US0002"])
             kinds = {dd["kind"] for dd in reconcile.detect_type("story", root)["drift"]}
-            self.assertIn("missing-row", kinds)   # US0002 not added
-            self.assertIn("orphan-row", kinds)    # US0099 not removed
+            self.assertNotIn("missing-row", kinds)  # US0002 appended
+            self.assertIn("orphan-row", kinds)       # US0099 not removed
 
 
 class NormalisationTests(unittest.TestCase):
@@ -1299,3 +1302,78 @@ class IndexBloatAdvisoryTests(unittest.TestCase):
             self.assertEqual(rc, 0, buf.getvalue())
             self.assertIn("advisory", buf.getvalue())
             self.assertIn("drift_items=0", buf.getvalue())
+
+
+class MissingRowAppendTests(unittest.TestCase):
+    """apply appends missing index rows mechanically (header-driven, matching
+    the table's own column order) - a consuming project hand-authored 23 rows
+    because missing-row was report-only. Orphans stay report-only; a table the
+    writer cannot pin reports the rows unapplied and exits non-zero."""
+
+    def _repo(self, d, index_text, files=(1, 2, 3)):
+        repo = Path(d)
+        dd = repo / "sdlc-studio" / "change-requests"; dd.mkdir(parents=True)
+        for i in files:
+            (dd / f"CR{i:04d}-thing-{i}.md").write_text(
+                f"# CR-{i:04d}: thing {i}\n\n> **Status:** Proposed\n", encoding="utf-8")
+        (dd / "_index.md").write_text(index_text, encoding="utf-8")
+        return repo
+
+    BASE = ("# Index\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n"
+            "| Proposed | 1 |\n| **Total** | **1** |\n"
+            "\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [CR-0001](CR0001-thing-1.md) | thing 1 | Proposed |\n")
+
+    def test_missing_rows_appended_and_clean_after(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, self.BASE)
+            res = reconcile.apply_type("cr", repo)
+            self.assertEqual(sorted(res.get("appended", [])), ["CR0002", "CR0003"])
+            text = (repo / "sdlc-studio" / "change-requests" / "_index.md").read_text(
+                encoding="utf-8")
+            self.assertIn("thing 2", text)
+            self.assertIn("(CR0003-thing-3.md)", text)     # link to the real file
+            self.assertIn("| Proposed | 3 |", text)         # counts include appends
+            self.assertEqual(reconcile.detect_type("cr", repo)["drift"], [])
+
+    def test_custom_column_order_respected(self):
+        custom = ("# Index\n\n## All\n\n| Status | ID | Title |\n| --- | --- | --- |\n"
+                  "| Proposed | [CR-0001](CR0001-thing-1.md) | thing 1 |\n")
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, custom, files=(1, 2))
+            res = reconcile.apply_type("cr", repo)
+            self.assertEqual(res.get("appended", []), ["CR0002"])
+            text = (repo / "sdlc-studio" / "change-requests" / "_index.md").read_text(
+                encoding="utf-8")
+            row = next(ln for ln in text.splitlines() if "CR0002" in ln)
+            cells = [c.strip() for c in row.strip().strip("|").split("|")]
+            self.assertEqual(cells[0], "Proposed")          # status in column 0
+            self.assertIn("CR-0002", cells[1])              # id in column 1
+            self.assertEqual(reconcile.detect_type("cr", repo)["drift"], [])
+
+    def test_unpinnable_table_reports_unapplied_nonzero(self):
+        # no ID-column data header anywhere: the writer must not guess
+        weird = ("# Index\n\n## All\n\n| Ref | Title | Status |\n| --- | --- | --- |\n"
+                 "| CR-0001 | thing 1 | Proposed |\n")
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, weird, files=(1, 2))
+            buf, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(err):
+                rc = reconcile.main(["apply", "--root", str(repo)])
+            self.assertEqual(rc, 1)
+            self.assertIn("CR0002", buf.getvalue() + err.getvalue())
+            text = (repo / "sdlc-studio" / "change-requests" / "_index.md").read_text(
+                encoding="utf-8")
+            self.assertNotIn("CR0002", text)                 # nothing guessed in
+
+    def test_orphan_rows_stay_report_only(self):
+        orphan = self.BASE + "| [CR-0099](CR0099-gone.md) | gone | Complete |\n"
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, orphan)
+            reconcile.apply_type("cr", repo)
+            text = (repo / "sdlc-studio" / "change-requests" / "_index.md").read_text(
+                encoding="utf-8")
+            self.assertIn("CR-0099", text)                   # never removed
+            kinds = [x["kind"] for x in reconcile.detect_type("cr", repo)["drift"]]
+            self.assertIn("orphan-row", kinds)               # still reported

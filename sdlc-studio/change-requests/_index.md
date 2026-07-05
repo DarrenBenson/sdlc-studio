@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 4 |
+| Proposed | 5 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 155 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 4 |
 | Blocked | 0 |
-| **Total** | **163** |
+| **Total** | **164** |
 
 ## All Changes
 
@@ -24,6 +24,7 @@
 | [CR-0161](CR0161-latest-md-is-a-window-not-a-ledger.md) | LATEST.md is a window, not a ledger: history one-liners plus a freshness ceiling | Proposed | Medium | Improvement | 2026-07-05 | -- |
 | [CR-0162](CR0162-artifact-revision-verb-deterministic-batch-appends-to-revision.md) | artifact revision verb: deterministic batch appends to Revision History | Proposed | Low | Improvement | 2026-07-05 | -- |
 | [CR-0163](CR0163-skill-md-instructs-section-reads-for-large-references.md) | SKILL.md instructs section reads for large references (honour the Reading Guides) | Proposed | Low | Improvement | 2026-07-05 | -- |
+| [CR-0164](CR0164-reconcile-apply-adds-missing-index-rows-mechanically-hand.md) | reconcile apply adds missing index rows mechanically - hand-authoring 23 rows is the tool's failure | Proposed | High | Improvement | 2026-07-05 | -- |
 
 ## Archived Releases
 

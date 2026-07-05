@@ -773,22 +773,90 @@ def _insert_missing_summary_rows(lines: list, counts: dict, vocab: list,
     return missing, []
 
 
-def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
-    """Apply the two mechanical index fixes for one type: rewrite each drifted data
-    row's Status cell to the file's canonical status, then recompute the summary
-    counts (from the same parse_index authority `detect` uses). Idempotent; cells
-    are re-escaped on write. Structural classes (missing-row/orphan-row/
-    missing-index) are left report-only.
+_DASHED_DISPLAY = {"cr", "rfc"}  # the types whose display ids carry a dash
 
-    `changes` lists only the fixes that actually landed in the buffer. A planned fix the
-    writer could not persist (an off-schema/header-less row it declines to guess) is reported in
-    `unapplied`, never as a change - the tool must not announce an edit it did not make. Returns
-    {changes: [{id, from, to}], unapplied: [{id, from, to}], counts_updated}.
+
+def _display_id(type_: str, norm: str) -> str:
+    """The conventional display form for an appended row's id cell."""
+    num = sdlc_md.id_number(norm)
+    prefix = sdlc_md.ARTIFACT_TYPES[type_][1].upper()
+    if type_ in _DASHED_DISPLAY and num is not None:
+        return f"{prefix}-{num:04d}"
+    return norm
+
+
+def _plan_missing_appends(lines: list, census: dict, rows: dict) -> tuple:
+    """(data header, appendable (norm, disp, status) triples, unappendable
+    display ids). Without a pinnable ID-column header nothing is appendable -
+    the caller reports those rows loudly instead of guessing a layout."""
+    hdr = sdlc_md.find_data_header(lines)
+    missing = sorted(n for n in census if n not in rows)
+    if hdr is None:
+        return None, [], [census[n][0] for n in missing]
+    return hdr, [(n, *census[n]) for n in missing], []
+
+
+def _model_corrected_counts(rows: dict, fixes: dict, to_append: list,
+                            vocab: list) -> dict:
+    """Summary counts for the buffer AS IT WILL BE: existing rows with their
+    planned status fixes applied, plus the rows about to be appended."""
+    corrected = dict(rows)
+    for norm, new in fixes.items():
+        corrected[norm] = (rows[norm][0], new)
+    for norm, disp, fstatus in to_append:
+        corrected[norm] = (disp, _canonical_status(fstatus, vocab) or fstatus)
+    return _canonical_counts(corrected, vocab)
+
+
+def _insert_missing_data_rows(lines: list, hdr: tuple, to_append: list,
+                              type_: str, root: Path) -> list[str]:
+    """Insert one header-driven row per missing census file after the pinned
+    data table's last contiguous row. Title comes from the artifact file,
+    the id cell links the real filename. Returns the appended norm ids."""
+    filenames = _census_filenames(type_, root)
+    j = hdr[0] + 1
+    while j < len(lines) and lines[j].strip().startswith("|"):
+        j += 1
+    appended: list[str] = []
+    for k, (norm, disp, fstatus) in enumerate(to_append):
+        fname = filenames.get(norm)
+        title = disp
+        if fname:
+            try:
+                fv = _file_field_values(
+                    (root / sdlc_md.ARTIFACT_TYPES[type_][0] / fname)
+                    .read_text(encoding="utf-8"))
+                title = fv["title"] or disp
+            except OSError:
+                pass
+        shown = _display_id(type_, norm)
+        link = f"[{shown}]({fname})" if fname else shown
+        lines.insert(j + k, sdlc_md.row_from_header(hdr[1], link, title, fstatus, {}))
+        appended.append(norm)
+    return appended
+
+
+def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
+    """Apply the mechanical index fixes for one type: rewrite each drifted data
+    row's Status cell to the file's canonical status, APPEND a row for each
+    census file the index is missing (header-driven, matching the table's own
+    column order), then recompute the summary counts (from the same parse_index
+    authority `detect` uses). Idempotent; cells are re-escaped on write.
+    Orphan-row and missing-index stay report-only - removing history is a
+    judgement call, never mechanical.
+
+    `changes`/`appended` list only the edits that actually landed in the buffer. A
+    planned fix the writer could not persist (an off-schema/header-less row or a
+    data table with no pinnable ID header) is reported in `unapplied`/
+    `missing_unapplied`, never as a change - the tool must not announce an edit it
+    did not make. Returns {changes, unapplied, appended, missing_unapplied,
+    summary_missing, counts_updated}.
     """
     root = Path(repo_root)
     vocab = sdlc_md.status_vocab(type_, repo_root)
     index_path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / "_index.md"
-    result: dict = {"changes": [], "unapplied": [], "counts_updated": False}
+    result: dict = {"changes": [], "unapplied": [], "counts_updated": False,
+                    "appended": [], "missing_unapplied": []}
     if not index_path.exists():
         return result
     index = parse_index(type_, root)
@@ -800,18 +868,27 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
         result["refused"] = diagnosis
         return result
     rows = index["rows"]
-    fixes, planned = _plan_status_fixes(rows, file_census(type_, root), vocab)
-    # Model the corrected rows so the count recompute matches detect's authority.
-    corrected = dict(rows)
-    for norm, new in fixes.items():
-        corrected[norm] = (rows[norm][0], new)
-    counts = _canonical_counts(corrected, vocab)
+    census = file_census(type_, root)
+    fixes, planned = _plan_status_fixes(rows, census, vocab)
 
     original = index_path.read_text(encoding="utf-8")
     lines = original.splitlines()
     aliases = tuple(conventions.status_aliases(root))
+
+    # Missing rows: append mechanically when (and only when) the data table can
+    # be pinned by its own ID-column header - the row is built in the table's
+    # column order, so a house layout is honoured, never guessed at.
+    hdr, to_append, result["missing_unapplied"] = _plan_missing_appends(lines, census, rows)
+
+    # Model the corrected rows (status fixes + appends) so the count recompute
+    # matches what the buffer will actually hold.
+    counts = _model_corrected_counts(rows, fixes, to_append, vocab)
+
     result["counts_updated"], applied = _rewrite_index_lines(
         lines, fixes, counts, vocab, aliases)
+    if to_append:
+        result["appended"] = _insert_missing_data_rows(lines, hdr, to_append, type_, root)
+        result["counts_updated"] = True
     inserted, unplaceable = _insert_missing_summary_rows(lines, counts, vocab, aliases)
     if inserted:
         result["counts_updated"] = True
@@ -925,6 +1002,14 @@ def cmd_apply(args: argparse.Namespace) -> int:
             print(f"REFUSED {type_}: {res['refused']}")
             unapplied += 1
             continue
+        for a in res.get("appended", []):
+            print(f"{'WOULD add' if args.dry_run else 'added'} missing {type_} row {a}")
+            n += 1
+        for a in res.get("missing_unapplied", []):
+            print(f"WARNING: could not add missing {type_} row {a} - no data table "
+                  f"with an ID column to pin; add the header, then re-run apply",
+                  file=sys.stderr)
+            unapplied += 1
         for c in res["changes"]:
             print(f"{'WOULD set' if args.dry_run else 'set'} {type_} {c['id']}: {c['from']} -> {c['to']}")
             n += 1
