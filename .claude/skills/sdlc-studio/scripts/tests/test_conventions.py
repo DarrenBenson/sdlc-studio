@@ -100,8 +100,10 @@ class SectionPresentTests(unittest.TestCase):
             "## Won't Fix rationale\n", "fix"))
 
     def test_empty_bug_not_ready(self):
-        self.assertFalse(conventions.section_present(self.EMPTY, "repro"))
-        self.assertFalse(conventions.section_present(self.EMPTY, "fix"))
+        # strict bool contract (not merely falsy) - the value lands in JSON reports
+        self.assertIs(conventions.section_present(self.EMPTY, "repro"), False)
+        self.assertIs(conventions.section_present(self.EMPTY, "fix"), False)
+        self.assertIs(conventions.section_present(self.SKILL, "fix"), True)
 
     def test_combo_requires_all_parts(self):
         self.assertFalse(conventions.section_present(
