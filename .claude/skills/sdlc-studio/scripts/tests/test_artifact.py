@@ -506,3 +506,62 @@ class MetaTypeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RevisionVerbTests(unittest.TestCase):
+    """`artifact.py revision`: deterministic batch appends to Revision History -
+    the sprint-close mechanical task that used to be hand-scripted."""
+
+    def _repo(self, d):
+        repo = Path(d)
+        dd = repo / "sdlc-studio" / "change-requests"; dd.mkdir(parents=True)
+        for i in (1, 2):
+            (dd / f"CR000{i}-thing-{i}.md").write_text(
+                f"# CR-000{i}: thing {i}\n\n> **Status:** Proposed\n\n"
+                "## Revision History\n\n| Date | Author | Change |\n"
+                "| --- | --- | --- |\n| 2026-07-01 | sdlc | Created |\n",
+                encoding="utf-8")
+        (dd / "CR0003-no-table.md").write_text(
+            "# CR-0003: no table\n\n> **Status:** Proposed\n", encoding="utf-8")
+        return repo
+
+    def test_batch_appends_one_dated_row_each(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            rc = artifact.main(["revision", "--ids", "CR0001,CR0002",
+                                "--note", "Delivered in tranche X",
+                                "--author", "close-out", "--root", str(repo)])
+            self.assertEqual(rc, 0)
+            for slug in ("CR0001-thing-1.md", "CR0002-thing-2.md"):
+                text = (repo / "sdlc-studio" / "change-requests" / slug).read_text(
+                    encoding="utf-8")
+                rows = [ln for ln in text.splitlines()
+                        if "Delivered in tranche X" in ln]
+                self.assertEqual(len(rows), 1, slug)
+                self.assertIn("close-out", rows[0])
+                self.assertTrue(rows[0].startswith("| 20"), rows[0])  # dated
+
+    def test_missing_section_refused_loudly(self):
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                rc = artifact.main(["revision", "--ids", "CR0001,CR0003",
+                                    "--note", "n", "--root", str(repo)])
+            self.assertNotEqual(rc, 0)                    # any refusal -> non-zero
+            self.assertIn("CR0003", err.getvalue())       # refused id named
+            text = (repo / "sdlc-studio" / "change-requests" /
+                    "CR0001-thing-1.md").read_text(encoding="utf-8")
+            self.assertIn("| n |", text)                   # the good id still landed
+
+    def test_unknown_id_refused(self):
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                rc = artifact.main(["revision", "--ids", "CR0099",
+                                    "--note", "n", "--root", str(repo)])
+            self.assertNotEqual(rc, 0)
+            self.assertIn("CR0099", err.getvalue())

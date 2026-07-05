@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   from the live index so an archived workspace stays silent; the
   release-gate template carries the archive step. First live run archived
   265 rows on this repo (live indexes 332 -> 83 lines, census 0-drift).
+- `artifact.py revision --ids A,B --note "..."`: deterministic batch
+  appends to Revision History tables (dated, author-stamped); a file
+  without the section is refused loudly and one refusal never aborts the
+  batch - retires the hand-scripted close-out loop.
 - Anchor-window discipline: LATEST.md is a window, not a ledger - past
   sprints become one-line History pointers to their retros, and
   `doc_freshness` flags the anchor when it exceeds `docs.latest_max_lines`

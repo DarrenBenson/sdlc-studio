@@ -471,7 +471,66 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--dry-run", action="store_true", dest="dry_run", help="preview; write nothing")
     c.add_argument("--format", choices=("text", "json"), default="text")
     c.set_defaults(func=cmd_close)
+    r = sub.add_parser("revision", help="Append a dated Revision History row per id (batch).")
+    r.add_argument("--ids", required=True, help="comma-separated artifact ids")
+    r.add_argument("--note", required=True, help="the Change cell text")
+    r.add_argument("--author", help="the Author cell (default: sdlc)")
+    r.add_argument("--date", help="override the Date cell (default: today)")
+    r.add_argument("--root", default=".")
+    r.set_defaults(func=cmd_revision)
     return p
+
+
+_REV_HEAD_RE = re.compile(r"^##\s+Revision History\s*$", re.MULTILINE)
+
+
+def cmd_revision(args: argparse.Namespace) -> int:
+    """Append one dated Revision History row per id - the deterministic
+    close-out verb. A file without a Revision History section is refused
+    loudly (never silently skipped); one refusal does not abort the batch."""
+    import audit
+    root = Path(args.root)
+    today = args.date or date.today().isoformat()
+    author = args.author or "sdlc"
+    ids = [x.strip() for x in args.ids.split(",") if x.strip()]
+    refused = 0
+    for rid in ids:
+        found = audit.find_artifact(root, rid)
+        if found is None:
+            print(f"error: {rid}: no artifact file found", file=sys.stderr)
+            refused += 1
+            continue
+        path, _type = found
+        text = path.read_text(encoding="utf-8")
+        m = _REV_HEAD_RE.search(text)
+        if not m:
+            print(f"error: {rid}: no '## Revision History' section in {path.name} "
+                  f"- add the table before recording revisions", file=sys.stderr)
+            refused += 1
+            continue
+        # append after the LAST table row of the section (contiguous | rows)
+        lines = text.splitlines()
+        head_ln = text[:m.start()].count("\n")
+        j = head_ln + 1
+        last_row = None
+        while j < len(lines):
+            s = lines[j].strip()
+            if s.startswith("|"):
+                last_row = j
+            elif s.startswith("## ") or (last_row is not None and s and not s.startswith("|")):
+                break
+            j += 1
+        if last_row is None:
+            print(f"error: {rid}: Revision History section has no table in {path.name}",
+                  file=sys.stderr)
+            refused += 1
+            continue
+        row = sdlc_md.join_row([today, author, args.note])
+        lines.insert(last_row + 1, row)
+        path.write_text("\n".join(lines) + ("\n" if text.endswith("\n") else ""),
+                        encoding="utf-8")
+        print(f"revision recorded: {rid} ({path.name})")
+    return 1 if refused else 0
 
 
 def main(argv: list[str] | None = None) -> int:
