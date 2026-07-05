@@ -2,7 +2,9 @@
 
 <h1>SDLC Studio</h1>
 
-**Ask for software in plain language. An AI engineering team plans it, builds it, tests it, and proves it is done.**
+**The antidote to vibe coding: a full software engineering team at your fingertips.**
+
+Ask for software in plain language. The team plans it, builds it, tests it, and proves it is done.
 
 **Version 3.5.0**
 
@@ -293,7 +295,7 @@ Re-run the installer, or `/sdlc-studio skill-update`. It is a drop-in: no projec
 
 ## Why SDLC Studio
 
-Three ways to build software with an AI:
+The antidote claim is earned, not asserted. Three ways to build software with an AI:
 
 - **Vibe coding.** You prompt, it writes code, you hope. Fast for a demo, but the intent lives only in the chat, nothing checks the result against what you asked, and by release nobody (the model included) can say what "done" meant.
 - **Spec-driven.** You write the intent down first - a spec, a plan, tasks - and the agent builds to it. A real step up: the model has a target. But the spec is prose the agent produced and is then trusted to honour, and nothing recomputes whether the code and the documents still agree a week and ten changes later.
