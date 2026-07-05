@@ -312,7 +312,10 @@ def apply(root: Path | str, with_reconcile: bool = False, today: str | None = No
 
 
 _VER_HEAD_RE = re.compile(r"^##\s*\[(\d+\.\d+\.\d+)\]")
-_KIND_HEAD_RE = re.compile(r"^###\s+([A-Za-z]+)\s*$")
+# `### Kind`, `### Kind Words`, or `### Kind (qualifier)` - the qualifier is
+# dropped but the heading still RESETS the kind, so a qualified heading never
+# leaks its bullets into the previous group.
+_KIND_HEAD_RE = re.compile(r"^###\s+([A-Za-z][A-Za-z ]*?)\s*(?:\([^)]*\))?\s*$")
 _KIND_ORDER = ("Added", "Changed", "Fixed", "Deprecated", "Removed", "Security")
 _GROUP_CAP = 6  # keep the digest a digest; the tail names what was dropped
 
@@ -372,6 +375,22 @@ def changelog_digest(recorded: str | None, installed: str | None,
     return {"available": True, "versions": versions, "groups": groups, "extra": extra}
 
 
+def _render_digest(digest: dict) -> list[str]:
+    """The digest's text lines: known kinds in canonical order, then any
+    project-specific kinds (Proposed, Migration, ...) - a captured group is
+    never silently unprinted."""
+    lines: list[str] = []
+    known = [k for k in _KIND_ORDER if digest["groups"].get(k)]
+    rest = sorted(k for k in digest["groups"] if k not in _KIND_ORDER)
+    for kind in known + rest:
+        lines.append(f"  {kind}:")
+        for it in digest["groups"][kind]:
+            lines.append(f"    - {it}")
+        if digest["extra"].get(kind):
+            lines.append(f"    (+{digest['extra'][kind]} more - see CHANGELOG.md)")
+    return lines
+
+
 def new_advisory_lanes(recorded: str | None, installed: str | None) -> list[dict]:
     """Gate lanes that arrived in the version gap and read not-run when their
     evidence is absent - each named with its one-line baseline pointer, so an
@@ -415,15 +434,8 @@ def cmd_upgrade(args: argparse.Namespace) -> int:
               f"{d['project_skill'] or 'unknown'} vs skill {sk} (schema {CURRENT_SCHEMA}).\n")
         if digest and digest["available"]:
             print(f"Changed since {d['project_skill']} (recorded) -> {sk} (installed):")
-            for kind in _KIND_ORDER:
-                items = digest["groups"].get(kind, [])
-                if not items:
-                    continue
-                print(f"  {kind}:")
-                for it in items:
-                    print(f"    - {it}")
-                if digest["extra"].get(kind):
-                    print(f"    (+{digest['extra'][kind]} more - see CHANGELOG.md)")
+            for line in _render_digest(digest):
+                print(line)
         elif digest:
             print(f"capability delta unavailable ({digest['reason']})")
         for lane in lanes:

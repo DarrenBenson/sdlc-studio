@@ -195,6 +195,35 @@ def collect_targets(args: argparse.Namespace) -> list[tuple[Path, str]]:
     return targets
 
 
+def excluded_id_files(repo_root: Path, types=None) -> list[dict]:
+    """Warnings for id-named files the census EXCLUDES (no artifact header and
+    no declared companion suffix) - exclusion must be visible, never silent:
+    the operator either restores the artifact header or declares the suffix
+    under conventions.companion_suffixes."""
+    from lib import conventions
+    out: list[dict] = []
+    for type_ in (types or list(sdlc_md.ARTIFACT_TYPES)):
+        rel, prefix = sdlc_md.ARTIFACT_TYPES[type_]
+        want = prefix.upper()
+        counted = set(sdlc_md.artifact_files(type_, repo_root))
+        suffixes = tuple(f"-{s}" for s in conventions.companion_suffixes(repo_root))
+        for p in sdlc_md.walk_glob(Path(repo_root) / rel, "*.md"):
+            if p.name == "_index.md" or p in counted:
+                continue
+            if suffixes and p.stem.endswith(suffixes):
+                continue  # a declared companion is fine by design
+            rec = sdlc_md.extract_record_id(p.stem)
+            if rec and sdlc_md.norm_id(rec).startswith(want):
+                out.append({"file": str(p), "rule": "not-an-artifact",
+                            "severity": "warning",
+                            "message": (f"id-named file carries no artifact header - if it is "
+                                        f"an artifact, add the `# {sdlc_md.norm_id(rec)}: <title>` "
+                                        f"title or a `> **Status:**` line; if it is a companion "
+                                        f"doc, declare its suffix under "
+                                        f"conventions.companion_suffixes")})
+    return out
+
+
 def cmd_check(args: argparse.Namespace) -> int:
     """Validate the selected artifacts and report violations."""
     targets = collect_targets(args)
@@ -202,6 +231,9 @@ def cmd_check(args: argparse.Namespace) -> int:
     violations: list[dict] = []
     for path, type_ in targets:
         violations.extend(validate_file(path, type_, repo_root))
+    if not args.file:  # whole-tree (or per-type) runs also sweep the excluded
+        violations.extend(excluded_id_files(
+            repo_root, [args.type] if args.type else None))
 
     errors = sum(1 for v in violations if v["severity"] == "error")
     warnings = sum(1 for v in violations if v["severity"] == "warning")

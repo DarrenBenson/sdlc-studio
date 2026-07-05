@@ -467,3 +467,40 @@ class PersonaWellFormedTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NotAnArtifactSweepTests(unittest.TestCase):
+    """An id-named file the census excludes (no artifact header) must be NAMED,
+    never silently invisible - the operator either fixes the header or declares
+    the suffix as a companion. Warning severity: a declared companion is fine."""
+
+    def _run(self, root):
+        import argparse
+        ns = argparse.Namespace(root=str(root), type=None, file=None, format="json")
+        import contextlib, io, json as _json
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            validate.cmd_check(ns)
+        return _json.loads(buf.getvalue())
+
+    def test_off_template_artifact_named_as_warning(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "sdlc-studio/stories/US0001-login.md",
+                   "# US0001 - Login\n\nStatus: Draft\n")   # off-template: excluded
+            out = self._run(root)
+            rules = [v["rule"] for v in out["violations"]]
+            self.assertIn("not-an-artifact", rules)
+            v = next(x for x in out["violations"] if x["rule"] == "not-an-artifact")
+            self.assertEqual(v["severity"], "warning")
+            self.assertIn("companion", v["message"])        # both remedies named
+
+    def test_declared_companion_suffix_not_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "sdlc-studio/epics/EP0001-x.md",
+                   "# EP0001: x\n\n> **Status:** Draft\n")
+            _write(root, "sdlc-studio/epics/EP0001-x-consultations.md", "notes\n")
+            out = self._run(root)
+            self.assertEqual([v for v in out["violations"]
+                              if v["rule"] == "not-an-artifact"], [])

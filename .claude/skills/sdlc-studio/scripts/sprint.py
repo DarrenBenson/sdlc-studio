@@ -333,7 +333,9 @@ def _seat_provenance(root: Path, batch: list[dict]) -> dict:
         import datetime as _dt
         mtime = path.stat().st_mtime
         written_at = _dt.datetime.fromtimestamp(mtime).astimezone().isoformat(timespec="seconds")
-        age_days = round((_dt.datetime.now().timestamp() - mtime) / 86400.0, 1)
+        # clamp at 0: a future-dated file (clock skew on a shared checkout)
+        # must not report a negative age
+        age_days = max(0.0, round((_dt.datetime.now().timestamp() - mtime) / 86400.0, 1))
     try:
         window = int(sdlc_md.project_override(
             root, "sprint.wsjf_inputs_stale_days", DEFAULT_SEAT_STALE_DAYS))

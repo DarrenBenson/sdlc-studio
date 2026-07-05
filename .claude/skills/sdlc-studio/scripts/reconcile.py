@@ -184,7 +184,9 @@ def _degenerate_status_parse(index: dict) -> str | None:
                 f"column - rename it to 'Status', or declare it in "
                 f"sdlc-studio/.config.yaml under conventions.status_column")
     return (f"no index table declares an exact 'Status' column, so all {n} "
-            f"row(s) parse as Unknown - add a Status column to the data table")
+            f"row(s) parse as Unknown - rename your status header to 'Status', "
+            f"declare it in sdlc-studio/.config.yaml under "
+            f"conventions.status_column, or add a Status column")
 
 
 def _index_row_ids(text: str) -> list[str]:
@@ -289,6 +291,11 @@ def parse_index(type_: str, repo_root: Path) -> dict:
     result["summary"] = summary
     result["rows"] = rows
     result["status_header"] = _status_header_diagnosis(text, aliases)
+    # Degeneracy is a property of the LIVE index, judged before the archive
+    # census merge - one healthy archived row must not mask a mis-named live
+    # Status column (the storm and a non-refusing apply would return).
+    result["degenerate"] = _degenerate_status_parse(
+        {"rows": rows, "status_header": result["status_header"]})
     archive_dir = repo_root / rel / "archive"
     if archive_dir.is_dir():  # archived terminal rows still count toward the census
         for af in sorted(archive_dir.rglob("*.md")):
@@ -330,7 +337,7 @@ def detect_type(type_: str, repo_root: Path) -> dict:
     # A whole-index degenerate parse (mis-named/absent Status column) is one
     # structural defect: name it once and suppress the per-row mismatch storm
     # and the count-mismatch misdiagnosis it would otherwise fabricate.
-    degenerate = _degenerate_status_parse(index)
+    degenerate = index.get("degenerate")
     if degenerate:
         drift.append({"type": type_, "id": None, "kind": "index-status-column",
                       "file_status": None, "index_status": None,
@@ -561,14 +568,19 @@ def _summary_cell_rewrite(cells: list, counts: dict, vocab: list) -> str | None:
     return _join_row([raw_label, newcell]) if newcell != raw_count else None
 
 
-def _header_kind(cells: list, lowered: list) -> tuple[str | None, int | None, int | None]:
-    """Classify a table header row: ('summary'|'data'|None, status_col, id_col)."""
-    if "status" not in lowered:
+def _header_kind(cells: list, lowered: list,
+                 aliases: tuple = ()) -> tuple[str | None, int | None, int | None]:
+    """Classify a table header row: ('summary'|'data'|None, status_col, id_col).
+    A declared alias (conventions.status_column) pins the status column exactly
+    as 'Status' does - writer parity with the read side."""
+    status_i = next((i for i, c in enumerate(lowered)
+                     if c == "status" or c in aliases), None)
+    if status_i is None:
         return None, None, None
     if lowered == ["status", "count"]:
         return "summary", None, None
     if len(cells) >= 2:
-        return "data", lowered.index("status"), (lowered.index("id") if "id" in lowered else None)
+        return "data", status_i, (lowered.index("id") if "id" in lowered else None)
     return None, None, None
 
 
@@ -606,7 +618,8 @@ def _data_row_rewrite(cells: list, status_col: int | None, id_col: int | None,
     return None
 
 
-def _rewrite_index_lines(lines: list, fixes: dict, counts: dict, vocab: list) -> tuple[bool, set]:
+def _rewrite_index_lines(lines: list, fixes: dict, counts: dict, vocab: list,
+                         aliases: tuple = ()) -> tuple[bool, set]:
     """Rewrite drifted data-row Status cells (per `fixes`) and summary counts in
     `lines`, in place. Returns (whether any summary count changed, the set of norm-ids whose
     Status cell was actually rewritten). A planned fix whose row the writer declines to touch
@@ -628,7 +641,7 @@ def _rewrite_index_lines(lines: list, fixes: dict, counts: dict, vocab: list) ->
             if not line.strip().startswith("|"):
                 in_summary = False  # a blank/non-table line ends a block (a `---` separator does not)
             continue
-        kind, sc, ic = _header_kind(cells, [c.lower() for c in cells])
+        kind, sc, ic = _header_kind(cells, [c.lower() for c in cells], aliases)
         if kind == "summary":
             has_total = False
             for j in range(i + 1, len(lines)):  # scan this block for a Total row
@@ -637,7 +650,8 @@ def _rewrite_index_lines(lines: list, fixes: dict, counts: dict, vocab: list) ->
                     if not lines[j].strip().startswith("|"):
                         break  # blank/prose ends the block
                     continue   # separator row
-                if "status" in [c.lower() for c in cj]:
+                low_cj = [c.lower() for c in cj]
+                if "status" in low_cj or any(a in low_cj for a in aliases):
                     break  # next header - block ended
                 if len(cj) == 2 and cj[0].replace("*", "").strip().lower() == "total":
                     has_total = True
@@ -679,7 +693,7 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
     if not index_path.exists():
         return result
     index = parse_index(type_, root)
-    diagnosis = _degenerate_status_parse(index)
+    diagnosis = index.get("degenerate")
     if diagnosis:
         # apply cannot rewrite status cells it cannot pin, and recomputing the
         # summary against all-Unknown rows would report a sync it did not
@@ -696,7 +710,8 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
 
     original = index_path.read_text(encoding="utf-8")
     lines = original.splitlines()
-    result["counts_updated"], applied = _rewrite_index_lines(lines, fixes, counts, vocab)
+    result["counts_updated"], applied = _rewrite_index_lines(
+        lines, fixes, counts, vocab, tuple(conventions.status_aliases(root)))
     # Partition the planned status fixes by what the writer actually rewrote, so a row it
     # declined to touch is surfaced as unapplied rather than fabricated as a clean flip.
     for ch in planned:

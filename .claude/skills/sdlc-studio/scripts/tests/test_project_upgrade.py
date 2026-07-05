@@ -464,3 +464,38 @@ class AdvisoryLaneTests(unittest.TestCase):
     def test_lane_outside_gap_not_named(self):
         self.assertEqual([x["lane"] for x in pu.new_advisory_lanes("3.4.0", "3.5.0")
                           if x["lane"] == "mutation"], [])
+
+
+class DigestKindHandlingTests(unittest.TestCase):
+    """Non-standard change kinds must be printed, and a qualified kind heading
+    (### Added (project upgrade)) resets the kind rather than leaking bullets
+    into the previous group."""
+
+    CL = """# Changelog
+
+## [3.5.0] - 2026-07-10
+
+### Added
+
+- Standard added item
+
+### Added (project upgrade)
+
+- Qualified-heading item
+
+### Proposed
+
+- Project-specific kind item
+"""
+
+    def test_qualified_heading_resets_kind_and_custom_kind_prints(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "CHANGELOG.md"
+            p.write_text(self.CL, encoding="utf-8")
+            dig = pu.changelog_digest("3.4.0", "3.5.0", p)
+            self.assertTrue(dig["available"], dig)
+            self.assertIn("Qualified-heading item", dig["groups"]["Added"])
+            self.assertIn("Project-specific kind item", dig["groups"]["Proposed"])
+            rendered = "\n".join(pu._render_digest(dig))
+            self.assertIn("Proposed:", rendered)          # custom kind printed
+            self.assertIn("Project-specific kind item", rendered)

@@ -634,11 +634,60 @@ class DegenerateStatusHeaderTests(unittest.TestCase):
             r = reconcile.detect_type("cr", repo)
             self.assertEqual(r["drift"], [])
 
+    def test_declared_alias_apply_rewrites_the_aliased_column(self):
+        # writer parity: an alias the READ side accepts must be rewritable by
+        # apply, else apply recomputes counts against rows it cannot fix and
+        # detect-after shows MORE drift than before
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest("PyYAML absent - conventions degrade to defaults")
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, status_header="Effective Status")
+            (repo / "sdlc-studio" / ".config.yaml").write_text(
+                "conventions:\n  status_column:\n    - Effective Status\n",
+                encoding="utf-8")
+            idx = repo / "sdlc-studio" / "change-requests" / "_index.md"
+            # seed one genuine drift: CR0003's file says Complete, row says Proposed
+            idx.write_text(idx.read_text(encoding="utf-8").replace(
+                "| CR-0003 | x | Complete |", "| CR-0003 | x | Proposed |"),
+                encoding="utf-8")
+            before = reconcile.detect_type("cr", repo)["drift"]
+            self.assertEqual([x["kind"] for x in before if x["id"]],
+                             ["status-mismatch"])
+            res = reconcile.apply_type("cr", repo)
+            self.assertEqual([c["id"] for c in res["changes"]], ["CR-0003"])
+            self.assertEqual(res["unapplied"], [])
+            self.assertEqual(reconcile.detect_type("cr", repo)["drift"], [])
+
     def test_diagnostic_names_the_conventions_knob(self):
         with tempfile.TemporaryDirectory() as d:
             r = reconcile.detect_type("cr", self._repo(d))
             f = next(x for x in r["drift"] if x["kind"] == "index-status-column")
             self.assertIn("conventions.status_column", f["fix"])
+
+    def test_archive_row_does_not_defeat_the_diagnosis(self):
+        # one healthy archived row must not mask a degenerate LIVE index:
+        # degeneracy is a property of the live table, judged before the
+        # archive census merge
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            arch = repo / "sdlc-studio" / "change-requests" / "archive"
+            arch.mkdir()
+            (arch / "2025.md").write_text(
+                "# Archived\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| CR-0099 | old | Superseded |\n", encoding="utf-8")
+            r = reconcile.detect_type("cr", repo)
+            kinds = [x["kind"] for x in r["drift"]]
+            self.assertEqual(kinds.count("index-status-column"), 1, r["drift"])
+            self.assertNotIn("status-mismatch", kinds)
+            self.assertNotIn("count-mismatch", kinds)
+            # and apply still refuses - no half-written summary
+            idx = repo / "sdlc-studio" / "change-requests" / "_index.md"
+            before = idx.read_text(encoding="utf-8")
+            res = reconcile.apply_type("cr", repo)
+            self.assertTrue(res.get("refused"))
+            self.assertEqual(idx.read_text(encoding="utf-8"), before)
 
     def test_apply_command_reports_refusal_and_exits_nonzero(self):
         # L-0004: the wiring, not only the helper - the CLI must say REFUSED

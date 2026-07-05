@@ -99,6 +99,21 @@ class SectionPresentTests(unittest.TestCase):
         self.assertFalse(conventions.section_present(
             "## Won't Fix rationale\n", "fix"))
 
+    def test_negating_supersets_do_not_count(self):
+        # blanket containment would mark both of these READY - a bug that
+        # explicitly documents CANNOT-reproduce and NO-accepted-fix
+        self.assertFalse(conventions.section_present(
+            "## Unable to Reproduce - Steps Tried\n", "repro"))
+        self.assertFalse(conventions.section_present(
+            "## Won't Fix - Description\n", "fix"))
+
+    def test_trailing_decoration_still_counts(self):
+        # suffix tolerance is a PREFIX rule: entry words open the heading
+        self.assertTrue(conventions.section_present(
+            "## Steps to Reproduce the crash\n", "repro"))
+        self.assertTrue(conventions.section_present(
+            "## Proposed Fix for the mapper\n", "fix"))
+
     def test_empty_bug_not_ready(self):
         # strict bool contract (not merely falsy) - the value lands in JSON reports
         self.assertIs(conventions.section_present(self.EMPTY, "repro"), False)

@@ -55,12 +55,21 @@ def local_ids(type_: str, repo_root: Path) -> list[int]:
         d = Path(repo_root) / rel
         stems = [p.stem for p in d.glob("*.md") if p.name != "_index.md"] if d.exists() else []
         return _meta_nums(prefix, stems)
+    # Allocation safety keys on the FILENAME, never the header shape: an
+    # id-named file that artifact_files excludes (off-template import, or a
+    # companion under a shared id) still HOLDS its number - re-issuing it
+    # would mint a collision the rest of the toolchain then certifies clean.
+    rel, prefix = sdlc_md.ARTIFACT_TYPES[type_]
+    want = prefix.upper()
     ids: list[int] = []
-    for path in sdlc_md.artifact_files(type_, repo_root):
+    for path in sdlc_md.walk_glob(Path(repo_root) / rel, "*.md"):
+        if path.name == "_index.md":
+            continue
         rec = sdlc_md.extract_record_id(path.stem)
-        num = sdlc_md.id_number(rec) if rec else None
-        if num is not None:
-            ids.append(num)
+        if rec and sdlc_md.norm_id(rec).startswith(want):
+            num = sdlc_md.id_number(rec)
+            if num is not None:
+                ids.append(num)
     return sorted(set(ids))
 
 

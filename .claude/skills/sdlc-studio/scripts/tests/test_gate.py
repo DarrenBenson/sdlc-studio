@@ -399,3 +399,39 @@ class AdvisoryRegistryTests(unittest.TestCase):
         for name, meta in gate.ADVISORY_WHEN_ABSENT.items():
             self.assertRegex(meta["since"], r"^\d+\.\d+\.\d+$", name)
             self.assertTrue(meta["baseline"], name)
+
+
+class ConventionsErrorBlocksTests(unittest.TestCase):
+    """A mis-shaped conventions block must FAIL the gate, not disable the
+    drift-detecting lane as a benign warn - fail loud has to survive the
+    gate's one-buggy-check-must-not-abort containment."""
+
+    def test_conventions_error_fails_the_gate(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            sd = root / "sdlc-studio" / "change-requests"
+            sd.mkdir(parents=True)
+            (sd / "CR0001-x.md").write_text(
+                "# CR-0001: x\n\n> **Status:** Proposed\n", encoding="utf-8")
+            (sd / "_index.md").write_text(
+                "# Index\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| CR-0001 | x | Proposed |\n", encoding="utf-8")
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "conventions:\n  status_column: State\n",  # scalar: the wrong shape
+                encoding="utf-8")
+            try:
+                import yaml  # noqa: F401
+            except ImportError:
+                self.skipTest("PyYAML absent - conventions degrade to defaults")
+            report = gate.run_gate(str(root), checks=None, only=["reconcile"])
+            lane = report["checks"][0]
+            self.assertEqual(lane["status"], "error")
+            self.assertTrue(lane["blocking"], lane)     # config error blocks
+            self.assertFalse(report["ok"])              # gate FAILs, not green
+
+    def test_ordinary_crash_still_contained_nonblocking(self):
+        def boom(root):
+            raise RuntimeError("kaboom")
+        r = gate.run_gate(".", checks={"boom": boom})
+        self.assertTrue(r["ok"])  # unchanged containment for non-config bugs

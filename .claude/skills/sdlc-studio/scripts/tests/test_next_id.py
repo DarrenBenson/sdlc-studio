@@ -67,6 +67,19 @@ class LocalIdsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             self.assertEqual(next_id.local_ids("story", Path(d)), [])
 
+    def test_off_template_file_still_holds_its_id(self) -> None:
+        # allocation safety keys on the FILENAME, never the header shape: an
+        # id-named file with no artifact header (off-template import, or a
+        # companion) must still hold its number so it is never re-issued
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "US0001-login.md").write_text(
+                "# US0001 - Login\n\nStatus: Draft\n", encoding="utf-8")  # off-template
+            self.assertEqual(next_id.local_ids("story", root), [1])
+            self.assertEqual(next_id.allocate_number("story", root), 2)
+
 
 class AllocateTests(unittest.TestCase):
     def test_allocate_next_is_max_plus_one(self) -> None:

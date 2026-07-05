@@ -9,9 +9,11 @@ functions instead of embedding a literal.
 
 Policy: a `conventions:` block in `sdlc-studio/.config.yaml` is the primary
 mechanism, every key defaulting to the historical literal so an unconfigured
-project behaves exactly as before. Normalised matching applies only where a
-synonym is unambiguous (word-set equality on headings - `Fix (proposed)` ==
-`Proposed Fix`; containment never counts). A wrong-shaped conventions value
+project behaves exactly as before. Normalised heading matching is word-set
+equality or an ordered prefix (`Fix (proposed)` == `Proposed Fix`; `Steps to
+Reproduce the crash` counts); blanket containment never matches, so a heading
+that negates a section it contains ('Unable to Reproduce - Steps Tried',
+'Won't Fix - Description') never reads as that section. A wrong-shaped value
 raises ConventionsError - the layer fails loud, it never guesses. Exact
 guards whose relaxation would scavenge (a `Dependency Status` cell is about
 the dependency, not the row) stay at their call sites.
@@ -109,26 +111,35 @@ def bug_ready_sections(repo_root=None) -> dict:
 _HEADING_RE = re.compile(r"^#{2,6}\s+(.+?)\s*$", re.MULTILINE)
 
 
-def _word_set(s: str) -> frozenset:
-    """Normalised heading identity: case-folded word set, punctuation and
-    parentheticals stripped."""
-    return frozenset(re.sub(r"[^a-z0-9 ]", " ", s.lower()).split())
+def _words(s: str) -> list[str]:
+    """Normalised heading words: case-folded, punctuation stripped, in order."""
+    return re.sub(r"[^a-z0-9 ]", " ", s.lower()).split()
+
+
+def _heading_matches(heading_words: list[str], entry: str) -> bool:
+    """A heading matches an entry by word-SET equality (word-order-insensitive:
+    'Fix (proposed)' == 'Proposed Fix') or by opening with the entry's words in
+    order (suffix tolerance: 'Steps to Reproduce the crash' counts). Blanket
+    containment is deliberately NOT a match - 'Unable to Reproduce - Steps
+    Tried' and 'Won't Fix - Description' are supersets that negate the
+    sections they contain."""
+    needle = _words(entry)
+    if not needle:
+        return False
+    return (set(heading_words) == set(needle)
+            or heading_words[:len(needle)] == needle)
 
 
 def section_present(text: str, kind: str, repo_root=None) -> bool:
-    """Does `text` carry a section satisfying the `kind` vocabulary
-    (default or project-declared)? A heading matches an entry when its word
-    set CONTAINS the entry's word set - word-order-insensitive
-    ('Fix (proposed)' == 'Proposed Fix') and suffix-tolerant ('Steps to
-    Reproduce the crash' counts) - while every default entry stays multi-word
-    so a stray shared word ('Won't Fix rationale' vs 'Proposed Fix') never
-    matches. A list entry is a combo: all its headings must be present."""
+    """Does `text` carry a section satisfying the `kind` vocabulary (default
+    or project-declared)? A string entry matches per `_heading_matches`; a
+    list entry is a combo - all its headings must be present."""
     entries = bug_ready_sections(repo_root).get(kind, [])
-    headings = [_word_set(h) for h in _HEADING_RE.findall(text)]
+    headings = [_words(h) for h in _HEADING_RE.findall(text)]
     for entry in entries:
         needles = entry if isinstance(entry, list) else [entry]
         if needles and all(
-                any(h >= _word_set(n) for h in headings) for n in needles):
+                any(_heading_matches(h, n) for h in headings) for n in needles):
             return True
     return False
 

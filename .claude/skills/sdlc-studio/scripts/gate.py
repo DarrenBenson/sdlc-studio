@@ -234,7 +234,13 @@ def run_gate(root: str = ".", only: list[str] | None = None,
                             "status": "pass" if r["count"] == 0 else "fail",
                             "detail": r.get("detail", "")})
         except Exception as exc:  # noqa: BLE001 - one buggy check must not abort the whole gate
-            results.append({"check": name, "count": 1, "blocking": False, "status": "error",
+            # A conventions shape error is the operator's config, not a buggy
+            # check: it silently disables whichever lane read it (reconcile's
+            # drift detection, most damagingly), so it must BLOCK - a green
+            # gate over a disabled lane is the false assurance class.
+            from lib.conventions import ConventionsError
+            blocking = isinstance(exc, ConventionsError)
+            results.append({"check": name, "count": 1, "blocking": blocking, "status": "error",
                             "detail": f"check raised, skipped: {exc}"})
     ok = all(r["status"] == "pass" for r in results if r["blocking"])
     return {"ok": ok, "checks": results}
