@@ -275,6 +275,7 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
         "errors": sum(1 for r in records if r["verdict"] == "error"),
         "unviable": sum(1 for r in records if r["verdict"] == "unviable"),
         "truncated": truncated,
+        "enumerated": len(all_mutations),
     }
     import hashlib
     target_hashes = {}
@@ -389,6 +390,13 @@ def prefilter(test_paths) -> list[Path]:
     return flagged
 
 
+def _pct(part: int, whole: int) -> str:
+    """Sampled-coverage percentage, one decimal - '0.5%' never rounds to '0%'."""
+    if whole <= 0:
+        return "0.0%"
+    return f"{100.0 * part / whole:.1f}%"
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     root = Path(args.root)
     try:
@@ -417,8 +425,9 @@ def cmd_run(args: argparse.Namespace) -> int:
                 print(f"  {r['verdict'].upper():9} {r['file']}:{r['line']} "
                       f"{r['class']} (occurrence {r['occurrence']})")
         if s["truncated"]:
-            print(f"  note: {s['truncated']} enumerated mutation(s) beyond the ceiling "
-                  f"were NOT run - that coverage is un-checked, not clean")
+            print(f"  note: sampled {s['applied']}/{s['enumerated']} enumerated "
+                  f"({_pct(s['applied'], s['enumerated'])}) - the "
+                  f"{s['truncated']} beyond the ceiling are un-checked, not clean")
     return 1 if s["survived"] or s["errors"] else 0
 
 

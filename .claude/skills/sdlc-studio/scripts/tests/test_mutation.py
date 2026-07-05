@@ -193,6 +193,46 @@ class LaneTests(unittest.TestCase):
             self.assertEqual(r["summary"]["applied"], 2)
             self.assertGreater(r["summary"]["truncated"], 0)
 
+    def test_truncated_run_states_sampled_fraction(self) -> None:
+        # a green sample must never read as whole-surface assurance: when the
+        # budget trims, summary carries `enumerated` and the CLI prints the
+        # sampled/enumerated fraction with a percentage
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            r = mut.run_gate(root, [root / "target.py"],
+                             f"{sys.executable} -m unittest test_good",
+                             max_mutations=2)
+            s = r["summary"]
+            self.assertIn("enumerated", s)
+            self.assertEqual(s["enumerated"], s["applied"] + s["truncated"])
+            self.assertGreater(s["enumerated"], s["applied"])
+            import contextlib, io
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                mut.main(["run", "--files", str(root / "target.py"),
+                          "--test", f"{sys.executable} -m unittest test_good",
+                          "--max-mutations", "2", "--root", str(root)])
+            out = buf.getvalue()
+            self.assertIn(f"sampled 2/{s['enumerated']} enumerated", out)
+            self.assertIn("%", out)
+
+    def test_untruncated_run_reads_as_today(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            s = mut.run_gate(root, [root / "target.py"],
+                             f"{sys.executable} -m unittest test_good")["summary"]
+            self.assertEqual(s["truncated"], 0)
+            self.assertEqual(s["enumerated"], s["applied"])
+            import contextlib, io
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                mut.main(["run", "--files", str(root / "target.py"),
+                          "--test", f"{sys.executable} -m unittest test_good",
+                          "--root", str(root)])
+            self.assertNotIn("sampled", buf.getvalue())
+
     def test_prefilter_flags_assertion_free(self) -> None:
         mut = _load()
         with tempfile.TemporaryDirectory() as d:

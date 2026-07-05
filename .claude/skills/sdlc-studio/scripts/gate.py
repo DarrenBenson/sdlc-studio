@@ -159,6 +159,12 @@ def _mutation(root: str) -> dict:
               if n else
               f"{s.get('killed', 0)}/{s.get('applied', 0)} mutations killed "
               f"({s.get('truncated', 0)} truncated) (advisory)")
+    # a truncated green lane must state its coverage: 12/12 killed reads as
+    # whole-surface assurance when it sampled under 1% of the enumerable sites
+    applied, enumerated = int(s.get("applied", 0)), int(s.get("enumerated", 0))
+    if int(s.get("truncated", 0)) and enumerated:
+        pct = f"{100.0 * applied / enumerated:.1f}%"
+        detail += f" - {applied}/{enumerated} enumerated sampled ({pct})"
     return {"count": n, "blocking": False, "detail": detail}
 
 

@@ -294,6 +294,28 @@ class MutationLaneTests(unittest.TestCase):
             report = gate.run_gate(str(root), checks={"mutation": gate._mutation})
             self.assertEqual(report["checks"][0]["status"], "pass")
 
+    def test_truncated_lane_states_sampled_fraction(self) -> None:
+        # '12/12 killed (2621 truncated)' reads stronger than 0.5% coverage is;
+        # the lane must state the sampled fraction whenever truncation occurred
+        import tempfile
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t, {"summary": {"applied": 12, "killed": 12, "survived": 0,
+                                              "errors": 0, "truncated": 2621,
+                                              "enumerated": 2633}})
+            report = gate.run_gate(str(root), checks={"mutation": gate._mutation})
+            detail = report["checks"][0]["detail"]
+            self.assertIn("12/2633 enumerated sampled", detail)
+            self.assertIn("%", detail)
+
+    def test_untruncated_lane_detail_unchanged(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t, {"summary": {"applied": 5, "killed": 5, "survived": 0,
+                                              "errors": 0, "truncated": 0,
+                                              "enumerated": 5}})
+            report = gate.run_gate(str(root), checks={"mutation": gate._mutation})
+            self.assertNotIn("sampled", report["checks"][0]["detail"])
+
     def test_stale_report_never_reads_pass(self) -> None:
         import subprocess, tempfile
         with tempfile.TemporaryDirectory() as t:
