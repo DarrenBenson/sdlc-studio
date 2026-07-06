@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+import tempfile
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parent.parent / "gate.py"
@@ -68,19 +69,49 @@ class GateLogicTests(unittest.TestCase):
         self.assertFalse(r["ok"])
 
 
+class IndexDerivedCheckTests(unittest.TestCase):
+    """US0058/CR0168: _index.md is derived output; a hand edit is caught by the gate."""
+
+    def _repo(self, root: Path, status_in_index: str) -> None:
+        sd = root / "sdlc-studio" / "bugs"
+        sd.mkdir(parents=True)
+        (sd / "BG0001-x.md").write_text(
+            "# BG0001: x\n\n> **Status:** Closed\n> **Severity:** Low\n", encoding="utf-8")
+        (sd / "_index.md").write_text(
+            "# Bugs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Closed | 1 |\n\n"
+            "## All\n\n| ID | Title | Status | Severity | Created | Updated |\n"
+            "| --- | --- | --- | --- | --- | --- |\n"
+            f"| [BG0001](BG0001-x.md) | x | {status_in_index} | Low | -- | -- |\n",
+            encoding="utf-8")
+
+    def test_clean_index_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, "Closed")  # index matches the file
+            r = gate.run_gate(str(root), only=["index-derived"])
+            self.assertTrue(r["ok"], r["checks"])
+
+    def test_hand_edited_row_caught(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root, "Open")  # index row hand-edited to the wrong status
+            r = gate.run_gate(str(root), only=["index-derived"])
+            self.assertFalse(r["ok"])
+
+
 class GateRealWrapperTests(unittest.TestCase):
     def test_default_checks_present(self) -> None:
         self.assertEqual(set(gate.DEFAULT_CHECKS),
-                         {"conformance", "reconcile", "validate", "constitution", "integrity",
-                          "duplicate-id", "provenance", "doc-coverage", "disclosure", "doc-freshness",
-                      "mutation"})
+                         {"conformance", "reconcile", "index-derived", "validate", "constitution",
+                          "integrity", "duplicate-id", "provenance", "doc-coverage", "disclosure",
+                          "doc-freshness", "mutation"})
 
     def test_real_wrappers_run_and_shape(self) -> None:
         # Exercises the real checks end-to-end against this repo; asserts structure,
         # not pass/fail (state-independent, so not fragile).
         r = gate.run_gate(str(REPO))
         self.assertIsInstance(r["ok"], bool)
-        self.assertEqual(len(r["checks"]), 11)
+        self.assertEqual(len(r["checks"]), 12)
         for c in r["checks"]:
             self.assertEqual(set(c), {"check", "count", "blocking", "status", "detail"})
 

@@ -39,6 +39,13 @@ def _reconcile(root: str) -> dict:
     return {"count": total, "blocking": True, "detail": f"{total} drift item(s)"}
 
 
+def _index_derived(root: str) -> dict:
+    import reconcile
+    issues = reconcile.index_derived_issues(Path(root).resolve())
+    return {"count": len(issues), "blocking": True,
+            "detail": "; ".join(issues) if issues else "indexes are derived output"}
+
+
 def _validate(root: str) -> dict:
     import validate
     rr = Path(root).resolve()
@@ -183,6 +190,7 @@ ADVISORY_WHEN_ABSENT = {
 DEFAULT_CHECKS = {
     "conformance": _conformance,
     "reconcile": _reconcile,
+    "index-derived": _index_derived,
     "validate": _validate,
     "constitution": _constitution,
     "integrity": _integrity,

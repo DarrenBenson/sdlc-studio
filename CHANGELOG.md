@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     Every id reader is now era-tolerant: `ID_RE`/`ID_SEARCH_RE` match both forms, `id_number`
     returns the sequential number for v2 ids and `None` for ULIDs (keeping them out of the
     max+1 path).
+  - **US0058 derived indexes.** A new `index-derived` gate check enforces that every
+    `_index.md` is output of the census, never a hand-edited input: it runs a dry-run
+    `reconcile apply` per type and fails when the index is not a fixed point (a hand-edited
+    status/row/count the tool would rewrite). `reconcile.index_derived_issues` backs it.
 
 ### Fixed
 

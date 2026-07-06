@@ -968,6 +968,24 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
     return result
 
 
+def index_derived_issues(repo_root: Path | str, types=None) -> list[str]:
+    """Types whose `_index.md` is NOT a fixed point of `apply` - a hand edit or drift the
+    derived-index contract forbids (the index is output of the census, never an input).
+    Empty list = every index is reproduced by the tool. Uses a dry-run apply, so it reads
+    only; a caller (the `index-derived` gate check) turns a non-empty result into a failure."""
+    root = Path(repo_root)
+    out: list[str] = []
+    for t in (types or _DEFAULT_TYPES):
+        res = apply_type(t, root, dry_run=True)
+        if res.get("refused"):
+            out.append(f"{t}: index structurally broken - {res['refused']}")
+        elif res.get("changes") or res.get("appended") or res.get("counts_updated"):
+            n = len(res.get("changes", [])) + len(res.get("appended", []))
+            out.append(f"{t}: index not derived-consistent (apply would change "
+                       f"{n} row(s)/counts) - regenerate with `reconcile apply`, do not hand-edit")
+    return out
+
+
 # --- File-owned index-cell projection ----------------------------------------
 # The index displays per-row fields the FILE owns - Title and Points. `detect`/`apply`
 # above sync only Status + counts, so these drift and must be hand-copied (the audited
