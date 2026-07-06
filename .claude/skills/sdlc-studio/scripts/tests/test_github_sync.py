@@ -919,3 +919,19 @@ class FriendlyAliasTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LowercaseDiscoveryTests(unittest.TestCase):
+    """US0077/CR0181: walk_local finds lowercase-named artefacts (was a case-sensitive glob)."""
+
+    def test_lowercase_cr_is_found(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cd = root / "sdlc-studio" / "change-requests"; cd.mkdir(parents=True)
+            (cd / "cr0001-lower.md").write_text(
+                "# CR-0001: lower\n\n> **Status:** Proposed\n> **Priority:** Low\n> **Type:** X\n",
+                encoding="utf-8")
+            recs = list(github_sync.walk_local("cr", repo_root=root))
+            self.assertEqual(len(recs), 1)  # found despite the lowercase filename
+            from lib import sdlc_md
+            self.assertEqual(sdlc_md.norm_id(recs[0].rec_id), "CR0001")

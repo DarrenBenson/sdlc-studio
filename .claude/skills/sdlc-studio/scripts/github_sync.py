@@ -234,15 +234,14 @@ def parse_local_file(path: Path, type_: str) -> LocalRecord | None:
     )
 
 
-def walk_local(type_: str) -> Iterable[LocalRecord]:
-    """Yield parsed records for every CR/Story/Epic file of `type_`."""
-    if type_ not in TYPE_DIRS:
+def walk_local(type_: str, repo_root: str | Path = ".") -> Iterable[LocalRecord]:
+    """Yield parsed records for every CR/Story/Epic file of `type_`. Discovery goes through the
+    shared `sdlc_md.artifact_files`, so a lowercase-named file (`cr0001.md`) is found too - the
+    old `CR*.md` prefix glob was case-sensitive on Linux and silently missed them."""
+    if type_ not in TYPE_DIRS:  # github_sync only mirrors cr/story/epic
         return []
-    dir_path, prefix = TYPE_DIRS[type_]
     result: list[LocalRecord] = []
-    for p in sdlc_md.walk_glob(Path(dir_path), f"{prefix}*.md"):
-        if p.name == "_index.md":
-            continue
+    for p in sdlc_md.artifact_files(type_, Path(repo_root)):
         rec = parse_local_file(p, type_)
         if rec:
             result.append(rec)

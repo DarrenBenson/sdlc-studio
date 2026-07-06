@@ -44,6 +44,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **US0077 shared discovery (CR0181).** `github_sync.walk_local` now discovers artefacts via
+  the shared `sdlc_md.artifact_files` (case-insensitive, root-aware) instead of a
+  case-sensitive `CR*.md` prefix glob that silently missed lowercase-named files (`cr0001.md`)
+  on Linux. Full `--root`/STATE_PATH grammar unification stays scoped in CR0181.
 - **US0080 code-quality debt (CR0187).** Corrected the `reconcile.py` module docstring - it
   claimed "read-only ... Subcommand: detect" while shipping `apply`/`fields`/`archive` write
   subcommands, so a read-only allowlist trusting it under-scoped the mutation surface; it now
