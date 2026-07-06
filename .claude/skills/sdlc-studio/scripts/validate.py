@@ -141,6 +141,16 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
                     f"triaged_by '{triaged['name']}' is the same as raised_by - a different "
                     "seat must triage (hand off to another reviewer)")
 
+        # Evidence-or-it-did-not-happen, per type. Presence only (truth stays with reviewers
+        # and verify_ac); a placeholder counts as absent.
+        if type_ == "bug" and not _bug_has_evidence(text):
+            add("error", "evidence-present",
+                "bug has no evidence - cite a file:line reference, command output, or "
+                "reproduction steps")
+        elif type_ == "cr" and not _cr_has_evidence(text):
+            add("error", "evidence-present",
+                "CR needs both an impact statement and an effort estimate (S/M/L)")
+
     _check_placeholders(text, add)
     return out
 
@@ -168,6 +178,38 @@ def _ac_value(line: str) -> str:
             return m.group(2) or ""
     m = _BULLET_VAL.match(line)  # Given/When/Then or `- [ ]` checkbox bullet
     return m.group(1) if m else line
+
+
+_FILE_LINE = re.compile(r"[\w./-]+\.\w+:\d+")
+
+
+def _section_has_content(text: str, *names: str) -> bool:
+    """True when a `## Name` heading exists with non-placeholder body text under it."""
+    for name in names:
+        m = re.search(rf"^#{{1,4}}\s+{re.escape(name)}\b.*$", text, re.M | re.I)
+        if not m:
+            continue
+        body = text[m.end():]
+        nxt = re.search(r"^#{1,4}\s", body, re.M)
+        body = body[:nxt.start()] if nxt else body
+        if body.strip() and not _unfilled(body):
+            return True
+    return False
+
+
+def _bug_has_evidence(text: str) -> bool:
+    """A bug carries evidence: a file:line reference, a code/output block, or reproduction steps."""
+    if _FILE_LINE.search(text) or "```" in text:
+        return True
+    return _section_has_content(text, "Steps to Reproduce", "Reproduction", "Evidence")
+
+
+def _cr_has_evidence(text: str) -> bool:
+    """A CR carries an impact statement AND an effort estimate."""
+    has_impact = _section_has_content(text, "Impact", "Impact Assessment", "Motivation")
+    has_effort = bool(re.search(r"effort", text, re.I)) and bool(
+        re.search(r"\b[SML]\b|small|medium|large", text, re.I))
+    return has_impact and has_effort
 
 
 def _check_placeholders(text: str, add) -> None:

@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     artefact whose `Triaged-by` equals its `Raised-by` (a different seat must triage); a solo
     human self-triaging only warns, so a lone operator never deadlocks. The transition-time
     refusal wires in with the agentic triage transitions (EP0014).
+  - **US0062 evidence as schema.** An `evidence-present` validate rule (v3 only) requires a
+    bug to carry a file:line reference, command output, or reproduction steps, and a CR to
+    carry an impact statement plus an effort estimate. Presence only (truth stays with
+    reviewers); a `{{placeholder}}` counts as absent; legacy v2 artefacts are exempt.
 
 ## [4.0.0] - 2026-07-06
 

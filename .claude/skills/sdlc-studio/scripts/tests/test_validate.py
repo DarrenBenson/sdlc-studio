@@ -587,3 +587,59 @@ class SeparationOfDutiesTests(unittest.TestCase):
             rows = [v for v in validate.validate_file(p, "bug", root) if v["rule"] == "duties-separated"]
             self.assertTrue(rows)
             self.assertTrue(all(v["severity"] == "warning" for v in rows))
+
+
+class EvidenceSchemaTests(unittest.TestCase):
+    """US0062/CR0171: v3 bugs need evidence; v3 CRs need impact + effort. v2 exempt."""
+
+    def _v3(self, root: Path) -> None:
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
+        pd = root / "sdlc-studio" / "personas"; pd.mkdir(parents=True, exist_ok=True)
+        (pd / "sam.md").write_text("# Sam Eriksson - QA\n", encoding="utf-8")
+
+    _AUTH = "> **Raised-by:** Sam Eriksson; persona; v1\n"
+
+    def test_bug_without_evidence_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); self._v3(root)
+            p = _write(root, "sdlc-studio/bugs/BG0001-x.md",
+                       f"# BG0001: x\n\n> **Status:** Open\n> **Severity:** Low\n{self._AUTH}\n"
+                       "## Summary\n\nsomething is wrong\n")
+            rules = [v["rule"] for v in validate.validate_file(p, "bug", root)]
+            self.assertIn("evidence-present", rules)
+
+    def test_bug_with_file_line_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); self._v3(root)
+            p = _write(root, "sdlc-studio/bugs/BG0001-x.md",
+                       f"# BG0001: x\n\n> **Status:** Open\n> **Severity:** Low\n{self._AUTH}\n"
+                       "## Evidence\n\n`scripts/foo.py:42` returns the wrong value\n")
+            self.assertNotIn("evidence-present",
+                             [v["rule"] for v in validate.validate_file(p, "bug", root)])
+
+    def test_cr_without_effort_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); self._v3(root)
+            p = _write(root, "sdlc-studio/change-requests/CR0001-x.md",
+                       f"# CR-0001: x\n\n> **Status:** Proposed\n> **Priority:** Low\n> **Type:** X\n{self._AUTH}\n"
+                       "## Impact\n\nusers are affected\n")
+            self.assertIn("evidence-present",
+                          [v["rule"] for v in validate.validate_file(p, "cr", root)])
+
+    def test_cr_with_impact_and_effort_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); self._v3(root)
+            p = _write(root, "sdlc-studio/change-requests/CR0001-x.md",
+                       f"# CR-0001: x\n\n> **Status:** Proposed\n> **Priority:** Low\n> **Type:** X\n{self._AUTH}\n"
+                       "## Impact\n\nusers are affected and blocked\n\n## Effort\n\n**M.** moderate\n")
+            self.assertNotIn("evidence-present",
+                             [v["rule"] for v in validate.validate_file(p, "cr", root)])
+
+    def test_v2_bug_exempt(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)  # v2
+            p = _write(root, "sdlc-studio/bugs/BG0001-x.md",
+                       "# BG0001: x\n\n> **Status:** Open\n> **Severity:** Low\n\n## Summary\n\nx\n")
+            self.assertNotIn("evidence-present",
+                             [v["rule"] for v in validate.validate_file(p, "bug", root)])
