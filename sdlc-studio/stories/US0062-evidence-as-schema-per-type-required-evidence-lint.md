@@ -6,6 +6,7 @@
 > **Epic:** EP0013
 > **Persona:** Skill Maintainer
 > **Source:** CR-0171
+> **Depends on:** US0060
 
 ## User Story
 
