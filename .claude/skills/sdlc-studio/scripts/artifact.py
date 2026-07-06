@@ -23,7 +23,6 @@ from lib import conventions, sdlc_md  # noqa: E402
 import file_finding  # noqa: E402  (reuse _slug, _next_number, append_index_row)
 import reconcile  # noqa: E402
 import transition  # noqa: E402
-import telemetry  # noqa: E402  (record a telemetry event on close)
 
 # Per-type create status, terminal (close) status, and disp-id form (cr/rfc carry a dash).
 SPEC = {
@@ -412,9 +411,9 @@ def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
     st = status or SPEC[type_]["terminal"]
     if dry_run:  # preview the transition target, write nothing, record nothing
         return {"id": artifact_id, "type": type_, "to": st, "dry_run": True}
-    result = transition.transition(repo_root, artifact_id, st, force=force)
-    telemetry.record(repo_root, {"id": artifact_id, "type": type_, **(metrics or {})})
-    return result
+    # transition records one telemetry event on entering the terminal set (and none on an
+    # idempotent re-close); pass the metrics through so close does not double-record.
+    return transition.transition(repo_root, artifact_id, st, force=force, metrics=metrics)
 
 
 def cmd_new(args: argparse.Namespace) -> int:

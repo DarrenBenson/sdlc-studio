@@ -31,6 +31,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `id-format`, `index-derived`, ...), exits non-zero on any violation, and gives `--format
     json` for the crew audit linter. The same rules are enforced in the blocking `gate` via
     `validate` and `index-derived`; `tranche-shape` ships dark until EP0014's tranche field.
+  - **US0064 cross-script invariant test tier.** `test_invariants.py` guards the cascade seams
+    the RV0006 review found unprotected: one telemetry record per artefact close, new-then-
+    reconcile zero drift, CLI/library allocation parity, and master-table append on a
+    multi-view index. It immediately earned its place - it caught a regression of BG0053 (the
+    double-telemetry-on-close line had crept back into `artifact.close`), now re-fixed.
 
 ## [4.0.0] - 2026-07-06
 
