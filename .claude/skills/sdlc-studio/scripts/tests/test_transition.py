@@ -168,10 +168,63 @@ class DoneGateTests(unittest.TestCase):
             res = tr.transition(root, "US0001", "Done", force=True)
             self.assertEqual(res["to"], "Done")
 
-    def test_config_toggle_downgrades_to_advisory(self) -> None:  # CR0095
+    def test_pyyaml_absent_still_blocks_not_crashes(self) -> None:  # BG0062
+        # On a machine without PyYAML the Done gate must still emit its block (ValueError),
+        # not surface a config-loading RuntimeError. The gate reads policy via the
+        # gracefully-degrading project_override, never config.get's hard PyYAML path.
         import config
-        orig = config.get
-        config.get = lambda root, dotted, default=None: (
+        orig = config._yaml
+        def _boom():
+            raise RuntimeError("config loading needs PyYAML")
+        config._yaml = _boom
+        try:
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._story(root, "# US0001: s\n\n> **Status:** Ready\n\n### AC1\n- **Verify:** shell true\n")
+                self._report(root, {"stories": {"US0001-x": {"failed": 1, "stale": 0,
+                                                             "failures": [{"ac": "AC1"}]}}})
+                with self.assertRaises(ValueError):
+                    tr.transition(root, "US0001", "Done")
+        finally:
+            config._yaml = orig
+
+    def test_blocks_when_story_edited_after_verify(self) -> None:  # BG0065
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, "# US0001: s\n\n> **Status:** Ready\n\n### AC1\n- **Verify:** shell true\n")
+            # a green entry, but stamped in the past - the story file is newer (edited since).
+            self._report(root, {"stories": {"US0001-x": {
+                "failed": 0, "stale": 0, "failures": [], "ac_count": 1,
+                "verified_at": "2020-01-01T00:00:00Z"}}})
+            with self.assertRaises(ValueError):
+                tr.transition(root, "US0001", "Done")
+
+    def test_blocks_when_ac_added_after_verify(self) -> None:  # BG0065
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, "# US0001: s\n\n> **Status:** Ready\n\n"
+                              "### AC1\n- **Verify:** shell true\n\n### AC2\n- **Verify:** shell true\n")
+            # green + fresh stamp (mtime check passes), but the report only accounted for 1 AC.
+            self._report(root, {"stories": {"US0001-x": {
+                "failed": 0, "stale": 0, "failures": [], "ac_count": 1,
+                "verified_at": "2099-01-01T00:00:00Z"}}})
+            with self.assertRaises(ValueError):
+                tr.transition(root, "US0001", "Done")
+
+    def test_passes_when_fresh_and_ac_count_matches(self) -> None:  # BG0065 no false positive
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._story(root, "# US0001: s\n\n> **Status:** Ready\n\n### AC1\n- **Verify:** shell true\n")
+            self._report(root, {"stories": {"US0001-x": {
+                "failed": 0, "stale": 0, "failures": [], "ac_count": 1,
+                "verified_at": "2099-01-01T00:00:00Z"}}})
+            res = tr.transition(root, "US0001", "Done")
+            self.assertEqual(res["to"], "Done")
+
+    def test_config_toggle_downgrades_to_advisory(self) -> None:  # CR0095
+        from lib import sdlc_md
+        orig = sdlc_md.project_override
+        sdlc_md.project_override = lambda root, dotted, default=None: (
             False if dotted == "quality.done_requires_verified" else orig(root, dotted, default))
         try:
             with tempfile.TemporaryDirectory() as d:
@@ -183,7 +236,7 @@ class DoneGateTests(unittest.TestCase):
                 self.assertEqual(res["to"], "Done")
                 self.assertIn("advisory", (res["warning"] or "").lower())
         finally:
-            config.get = orig
+            sdlc_md.project_override = orig
 
 
 def _bug_repo(root: Path, depth: str | None, prod: bool = False) -> Path:

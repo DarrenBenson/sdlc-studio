@@ -164,6 +164,40 @@ class FileTests(unittest.TestCase):
 
 
 
+class AppendBoundToMasterTableTests(unittest.TestCase):
+    def test_row_lands_in_master_not_a_trailing_view_table(self) -> None:
+        # BG0066: append_index_row scanned to EOF and inserted after the LAST `| [` row
+        # anywhere - so a trailing "by Epic" view table captured the new row. The insert
+        # must stay within the master data table's contiguous rows.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            idx = sd / "_index.md"
+            # The trailing view table has LINK-FIRST rows (`| [US...`), which the unbounded
+            # scan would treat as the last data row and insert after - escaping the master.
+            idx.write_text(
+                "# Stories\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n"
+                "| Done | 1 |\n| **Total** | **1** |\n\n"
+                "## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [US0001](US0001-x.md) | one | Done |\n\n"
+                "## Recently Touched\n\n| Story | Status |\n| --- | --- |\n"
+                "| [US0001](US0001-x.md) | Done |\n",
+                encoding="utf-8")
+            ff.append_index_row(root, "story",
+                                "| [US0002](US0002-y.md) | two | Ready |")
+            text = idx.read_text(encoding="utf-8")
+            lines = text.splitlines()
+            all_i = lines.index("## All")
+            byepic_i = lines.index("## Recently Touched")
+            # The new row sits inside the master (## All) block, before the view section.
+            new_row_lines = [i for i, ln in enumerate(lines) if "US0002" in ln]
+            self.assertTrue(new_row_lines)
+            self.assertTrue(all(all_i < i < byepic_i for i in new_row_lines),
+                            f"US0002 row escaped the master table: {new_row_lines} "
+                            f"(All@{all_i}, byEpic@{byepic_i})")
+
+
 class ProvenanceAndDryRunTests(unittest.TestCase):
     def test_filed_artifact_is_stamped(self) -> None:
         # CR0057: the filer stamps like `artifact new`, so provenance check no longer

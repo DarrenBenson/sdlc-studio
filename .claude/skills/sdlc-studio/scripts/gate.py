@@ -224,8 +224,20 @@ def run_gate(root: str = ".", only: list[str] | None = None,
     registry = dict(checks) if checks is not None else dict(DEFAULT_CHECKS)
     if require_retro:  # close-gate: bind the expected retro id into a blocking check
         registry["retro"] = lambda r, _rid=require_retro: _retro_present(r, _rid)
+    # A wrong/typo'd --only/--skip (or a renamed check) must FAIL, not silently select
+    # nothing and report a vacuous PASS - the false-assurance class LL0008 warns against.
+    unknown = sorted({n for n in (list(only or []) + list(skip or [])) if n not in registry})
+    if unknown:
+        return {"ok": False, "checks": [{
+            "check": "selection", "count": len(unknown), "blocking": True, "status": "fail",
+            "detail": f"unknown check name(s): {', '.join(unknown)} - "
+                      f"valid: {', '.join(sorted(registry))}"}]}
     selected = [n for n in registry
                 if (not only or n in only) and (not skip or n not in skip)]
+    if not selected:
+        return {"ok": False, "checks": [{
+            "check": "selection", "count": 0, "blocking": True, "status": "fail",
+            "detail": "no checks selected - the gate proved nothing (check --only/--skip)"}]}
     results = []
     for name in selected:
         try:

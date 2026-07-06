@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main]
 
+# Least privilege: the jobs only check out and run linters/tests - nothing writes to the
+# repo, so the workflow token needs read only (BG0058). Without this the token defaults to
+# the repository/org setting, which may be the legacy permissive token.
+permissions:
+  contents: read
+
 jobs:
   ci:
     runs-on: ubuntu-latest

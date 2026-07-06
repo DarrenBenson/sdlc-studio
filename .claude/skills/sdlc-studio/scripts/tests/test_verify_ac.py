@@ -165,8 +165,14 @@ class DSLTests(unittest.TestCase):
         self.assertIn("curl", cmd)
         self.assertIn("jq", cmd)
 
-    def test_build_command_shell_fallback(self) -> None:
-        kind, cmd = verify_ac._build_command("ls -la nonexistent")
+    def test_build_command_unknown_head_raises(self) -> None:
+        # BG0057: an unrecognised head is an invalid verifier, not a silent shell run.
+        with self.assertRaises(ValueError):
+            verify_ac._build_command("ls -la nonexistent")
+
+    def test_build_command_shell_fallback_opt_in(self) -> None:
+        # The legacy whole-expression-as-shell stays available behind the explicit opt-in.
+        kind, cmd = verify_ac._build_command("ls -la nonexistent", allow_fallback=True)
         self.assertEqual(kind, "shell")
         self.assertEqual(cmd, "ls -la nonexistent")
 
@@ -599,6 +605,89 @@ class TsCheckTests(unittest.TestCase):
                            "| 2026-07-04 | Sam | Initial spec |\n")
             issues = {i["ac"]: i["issue"] for i in verify_ac.ts_check(p)}
             self.assertEqual(list(issues), ["AC1"])   # only the real AC row flags
+
+
+class TsCheckCrossReportTests(unittest.TestCase):
+    """BG0055: the verify-report cross-check must be story-qualified, not bare-AC."""
+
+    def _spec(self, root: Path, body: str) -> Path:
+        p = root / "ts.md"
+        p.write_text("# TS0001\n\n### AC Coverage Matrix\n\n"
+                     "| Story | AC | Description | Test Cases | Status |\n"
+                     "| --- | --- | --- | --- | --- |\n" + body, encoding="utf-8")
+        return p
+
+    def _report(self, root: Path) -> Path:
+        import json
+        # A MERGED report: story A's AC1 failed; story B's AC1 passed (no failure entry).
+        rep = {"stories": {
+            "US0001-a": {"failed": 1, "failures": [{"ac": "AC1"}]},
+            "US0002-b": {"failed": 0, "failures": []},
+        }}
+        p = root / "verify-report.json"
+        p.write_text(json.dumps(rep), encoding="utf-8")
+        return p
+
+    def test_unrelated_story_same_ac_not_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            # B.AC1 passes in the report; the matrix marks it pass. It must NOT be flagged
+            # just because a *different* story's AC1 failed.
+            spec = self._spec(root, '| US0002 | AC1 | logout | jest "logout" | pass |\n')
+            issues = verify_ac.ts_check(spec, self._report(root))
+            self.assertEqual(issues, [])
+
+    def test_own_story_failing_ac_still_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            spec = self._spec(root, '| US0001 | AC1 | login | jest "login" | pass |\n')
+            issues = verify_ac.ts_check(spec, self._report(root))
+            self.assertEqual([i["ac"] for i in issues], ["AC1"])  # A.AC1 genuinely red
+
+
+class ShellExecutionPolicyTests(unittest.TestCase):
+    """BG0056/BG0057: shell execution is gated by provenance / --no-shell, and an
+    unrecognised verifier does not silently fall through to shell."""
+
+    def test_unknown_head_is_invalid_not_shell(self) -> None:
+        # BG0057: a line whose head is not a DSL verb must be an invalid verifier
+        # (exit 2), not executed as a shell command.
+        res = verify_ac.run_verifier("frobnicate the widget", timeout=5, cwd=Path("."))
+        self.assertEqual(res.kind, "invalid")
+        self.assertEqual(res.exit_code, 2)
+
+    def test_explicit_shell_fallback_opt_in_still_runs(self) -> None:
+        # Back-compat: the old behaviour is available behind an explicit opt-in.
+        res = verify_ac.run_verifier("true", timeout=5, cwd=Path("."), allow_fallback=True)
+        self.assertEqual(res.kind, "shell")
+        self.assertTrue(res.ok)
+
+    def test_no_shell_blocks_shell_verb(self) -> None:
+        # BG0056: with shell disabled, an explicit shell verb is blocked, not run.
+        res = verify_ac.run_verifier("shell true", timeout=5, cwd=Path("."), allow_shell=False)
+        self.assertEqual(res.kind, "blocked")
+        self.assertFalse(res.ok)
+
+    def test_no_shell_still_allows_structured_verbs(self) -> None:
+        # A structured DSL verb (argv, no shell) still runs under --no-shell.
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "f.txt").write_text("x", encoding="utf-8")
+            res = verify_ac.run_verifier("file f.txt", timeout=5, cwd=Path(d), allow_shell=False)
+            self.assertEqual(res.kind, "file")
+            self.assertTrue(res.ok)
+
+    def test_external_provenance_story_blocks_shell(self) -> None:
+        # BG0056: a story stamped `Provenance: external` must not have its shell verbs run.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            story = root / "US0001-ext.md"
+            story.write_text(
+                "# US0001: ext\n\n> **Provenance:** external\n\n## Acceptance Criteria\n\n"
+                "### AC1: x\n\n- **Then** done\n- **Verify:** shell touch /tmp/pwn_bg0056\n",
+                encoding="utf-8")
+            rep = verify_ac.verify_story(story, dry_run=True, timeout=5, repo_root=root)
+            self.assertEqual(rep.failed, 1)
+            self.assertEqual(rep.failures[0]["kind"], "blocked")
 
 
 class EpicTestSpecTests(unittest.TestCase):

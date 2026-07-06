@@ -50,10 +50,22 @@ class GateLogicTests(unittest.TestCase):
         r = gate.run_gate(".", skip=["b"], checks={"a": _fake(0), "b": _fake(9)})
         self.assertNotIn("b", [c["check"] for c in r["checks"]])
 
-    def test_empty_selection_is_ok(self) -> None:
+    def test_unknown_only_fails_loud(self) -> None:
+        # BG0059: an --only naming a check that does not exist must FAIL, not run zero
+        # checks and report a vacuous PASS (LL0008).
         r = gate.run_gate(".", only=["nonexistent"], checks={"a": _fake(9)})
-        self.assertTrue(r["ok"])
-        self.assertEqual(r["checks"], [])
+        self.assertFalse(r["ok"])
+        self.assertIn("nonexistent", r["checks"][0]["detail"])
+
+    def test_unknown_skip_fails_loud(self) -> None:
+        # BG0059: a --skip naming a non-existent check is a typo, not a no-op.
+        r = gate.run_gate(".", skip=["nope"], checks={"a": _fake(0)})
+        self.assertFalse(r["ok"])
+
+    def test_skip_all_fails_loud(self) -> None:
+        # BG0059: skipping every check leaves nothing to prove - not a PASS.
+        r = gate.run_gate(".", skip=["a", "b"], checks={"a": _fake(0), "b": _fake(0)})
+        self.assertFalse(r["ok"])
 
 
 class GateRealWrapperTests(unittest.TestCase):

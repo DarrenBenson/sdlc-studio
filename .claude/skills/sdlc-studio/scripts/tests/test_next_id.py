@@ -82,6 +82,30 @@ class LocalIdsTests(unittest.TestCase):
 
 
 class AllocateTests(unittest.TestCase):
+    def test_cli_allocate_matches_library_and_skips_lingering_index_row(self) -> None:
+        # BG0060: the `allocate` CLI must not re-issue an id whose file was deleted but
+        # whose index row remains - the CLI must agree with allocate_number (one authority).
+        import io
+        import json
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "change-requests"
+            sd.mkdir(parents=True)
+            (sd / "_index.md").write_text(
+                "# Index\n\n## All\n\n| ID | Title | Status | Priority | Type | Date | Linked Epics |\n"
+                "| --- | --- | --- | --- | --- | --- | --- |\n"
+                "| [CR-0005](CR0005-x.md) | gone | Complete | Medium | Feature | 2026-01-01 | - |\n",
+                encoding="utf-8")  # row present, file absent
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                rc = next_id.main(["allocate", "--type", "cr", "--root", str(d), "--format", "json"])
+            self.assertEqual(rc, 0)
+            cli_next = json.loads(buf.getvalue())["next_id"]
+            lib_next = f"CR{next_id.allocate_number('cr', root, remote=False):04d}"
+            self.assertEqual(cli_next, "CR0006")     # above the lingering row, not CR0001
+            self.assertEqual(cli_next, lib_next)      # CLI == library authority
+
     def test_allocate_next_is_max_plus_one(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

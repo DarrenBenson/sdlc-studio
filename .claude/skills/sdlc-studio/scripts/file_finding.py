@@ -132,9 +132,15 @@ def append_index_row(repo_root: Path | str, type_: str, row_line: str) -> bool:
     if hdr is None:
         return False
     data_header = hdr[0]
-    rows_after = [j for j in range(data_header + 1, len(lines))
+    # Bound the scan to THIS table's contiguous rows (header, separator, then rows until the
+    # first non-table line). Scanning to EOF let a later link-first view/breakdown table
+    # capture the appended row, so it escaped the master table.
+    end = data_header + 2  # past header + separator
+    while end < len(lines) and lines[end].lstrip().startswith("|"):
+        end += 1
+    rows_after = [j for j in range(data_header + 2, end)
                   if lines[j].strip().startswith("| [")]
-    pos = (max(rows_after) + 1) if rows_after else data_header + 2  # past header+separator
+    pos = (max(rows_after) + 1) if rows_after else data_header + 2
     lines.insert(pos, row_line)
     index_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     reconcile.apply_type(type_, root)  # recompute summary counts (tested)

@@ -147,19 +147,33 @@ matches a class name is brittle because renames break it. A
 behavioural test that imports the class and exercises it is
 stable.
 
-**Use `shell` sparingly.** The fallback exists for cases the DSL
+**Use `shell` sparingly.** The `shell` verb exists for cases the DSL
 doesn't cover (`docker compose ps`, `kubectl get`, custom probe
 binaries). If you find yourself writing multi-line shell
-expressions, push the logic into a test file and use `pytest`.
+expressions, push the logic into a test file and use `pytest`. An
+unrecognised expression is **not** run as a shell command - it is an
+invalid verifier (exit 2). Prefix an explicit `shell` to run one, or
+pass `--allow-shell-fallback` for the legacy behaviour.
 
-**Trust boundary (important).** `verify_ac.py` runs `shell` verifiers
-through the shell, and any unrecognised expression falls back to
-`shell`. The trust model is that `Verify:` lines are authored by the
-team alongside the story. That assumption breaks the moment a story
-body is ingested from an external source - a GitHub issue pulled via
-`github_sync pull`, for example. **Never run verifiers on a story whose
-AC block came from un-reviewed external content.** Ingest the body into
-the template, review it, then verify.
+**Trust boundary (enforced, not just documented).** `verify_ac.py` runs
+`shell`/`eval`/`http` verifiers through the shell. The trust model is
+that `Verify:` lines are authored by the team alongside the story. That
+assumption breaks the moment a story body is ingested from an external
+source - a GitHub issue pulled via `github_sync pull`, for example. Two
+technical controls back the rule so it is not procedure-only:
+
+- **Provenance stamp.** A story carrying `> **Provenance:** external` in
+  its metadata will not have its shell-backed verifiers executed;
+  they report `blocked`, not run. The ingest path stamps this field, so
+  un-reviewed external content cannot reach a shell just because a
+  workflow copied it into a story. Clear or change the stamp only after
+  review; pass `--allow-external` to override deliberately.
+- **`--no-shell` mode.** Restricts a run to the structured DSL verbs
+  (argv, no shell) for CI over less-trusted content.
+
+**Still: never run verifiers on a story whose AC block came from
+un-reviewed external content.** Ingest the body into the template,
+review it, clear the provenance stamp, then verify.
 
 ## Running {#verify-running}
 

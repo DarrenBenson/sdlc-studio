@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Self-review bug sweep (RV0006, BG0053-BG0066).** 14 defects found by an
+  architecture / code-quality / defensive-security review of the skill's own
+  source, each fixed with a failing-first regression test:
+  - `artifact close` recorded a telemetry event twice per close (transition
+    already records on entering the terminal set); estimation-calibration data
+    was inflated ~2x. Metrics now flow through the single record.
+  - `install.sh` exited 1 after a successful install when the stale-copy sweep
+    refreshed another tool's copy (`set -e` plus a trailing `&&` test); the
+    success banner never printed. `sweep_stale` now returns 0.
+  - `verify_ac ts-check` cross-checked the verify-report by bare AC id, so one
+    story's failing AC1 flagged every story's AC1 in a merged report. The key
+    is now story-qualified.
+  - `verify_ac` executes shell-backed verifiers only when shell is allowed and
+    the story is not stamped `Provenance: external`; an unrecognised expression
+    is now an invalid verifier, not a silent shell run. New `--no-shell`,
+    `--allow-external`, `--allow-shell-fallback` flags turn the documented trust
+    boundary into an enforced one.
+  - `gate.py` reported a vacuous PASS when `--only`/`--skip` named no real
+    check; it now fails loud on an unknown name or an empty selection.
+  - `next_id allocate` (CLI) re-implemented allocation and could re-issue a
+    deleted-but-indexed id; it now delegates to the one `allocate_number`
+    authority.
+  - `archive.py` hardcoded terminal-status sets that treated `Deferred` as
+    closed; it now uses the shared `terminal_statuses`, so re-activatable rows
+    stay live.
+  - The story Done gate raised a PyYAML `RuntimeError` on stdlib-only machines
+    instead of its block message; policy is now read via the degrading
+    `project_override`. The gate also blocks on a stale verify-report entry
+    (story edited or an AC added since it was verified).
+  - `github_sync` gives `gh` a timeout (no indefinite hang) and no longer stamps
+    `last_pull` when a `gh` call failed (a swallowed failure recorded as
+    success).
+  - `append_index_row` bounded its insertion to the master table's contiguous
+    rows, so a trailing link-first view table no longer captures the new row.
+  - CI workflow now declares least-privilege `permissions: contents: read`.
+
 ### Changed
 
 - SKILL.md description opens with the masthead tagline ("The antidote to

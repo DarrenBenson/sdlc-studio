@@ -91,6 +91,18 @@ def _story_target_parity(text: str) -> str | None:
             f"`{token or 'unrecorded'}` - Done should not out-run the target")
 
 
+def _iso_to_epoch(value) -> float | None:
+    """Parse a `YYYY-MM-DDTHH:MM:SSZ` verify-report timestamp to a UTC epoch, or None."""
+    if not value:
+        return None
+    from datetime import datetime, timezone
+    try:
+        return datetime.strptime(str(value), "%Y-%m-%dT%H:%M:%SZ").replace(
+            tzinfo=timezone.utc).timestamp()
+    except (ValueError, TypeError):
+        return None
+
+
 def _story_has_executable_acs(text: str) -> bool:
     """True if the story declares any non-manual `Verify:` line (an executable AC). A story
     with only `manual` ACs (or none) has nothing the deterministic gate can check."""
@@ -121,6 +133,26 @@ def _done_verify_gate(root: Path, path: Path, text: str) -> str | None:
     if entry.get("failed", 0) or entry.get("stale", 0):
         fails = ", ".join(f.get("ac", "?") for f in entry.get("failures", [])) or "stale AC(s)"
         return f"AC verification is red ({fails}) - fix or re-verify before Done"
+    # A green entry can still be STALE: the story may have been edited since it was verified
+    # (a changed Verify line, or a new AC). A merged report carries the old green forever, so
+    # the entry alone is not proof the CURRENT story passes.
+    verified_at = _iso_to_epoch(entry.get("verified_at"))
+    try:
+        story_mtime = path.stat().st_mtime
+    except OSError:
+        story_mtime = None
+    if verified_at is not None and story_mtime is not None and story_mtime > verified_at + 2:
+        return "this story was edited after it was last verified - re-run `verify_ac` before Done"
+    reported_acs = entry.get("ac_count")
+    if reported_acs is not None:
+        try:
+            import verify_ac  # sibling; imports only sdlc_md, no cycle
+            current_acs = len(verify_ac.parse_story(text))
+        except Exception:  # noqa: BLE001 - a parse hiccup must not mask the gate; skip this leg
+            current_acs = None
+        if current_acs is not None and current_acs != reported_acs:
+            return (f"the story now has {current_acs} AC(s) but the verify-report covers "
+                    f"{reported_acs} - re-run `verify_ac` before Done")
     return None
 
 
@@ -208,9 +240,10 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
         parity = _story_target_parity(text)
         if parity:
             # advisory by default (existing projects unaffected); a project opts
-            # into refusal via `quality.depth_parity_gate: true`.
-            import config  # sibling
-            if config.get(root, "quality.depth_parity_gate", False) and not force:
+            # into refusal via `quality.depth_parity_gate: true`. Read via the
+            # gracefully-degrading project_override so a PyYAML-less machine gets the
+            # gate decision, not a config-loading crash.
+            if sdlc_md.project_override(root, "quality.depth_parity_gate", False) and not force:
                 raise ValueError(
                     f"{artifact_id} -> Done blocked: {parity}. Override with --force.")
             gate_warn = f"depth-parity advisory: {parity}"
@@ -220,8 +253,9 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
         if block:
             # the gate is hard by default; `quality.done_requires_verified: false`
             # downgrades it to advisory-warn (the project sets the policy in .config.yaml).
-            import config  # sibling
-            if config.get(root, "quality.done_requires_verified", True):
+            # project_override degrades to the default without PyYAML, so the block message
+            # is produced rather than a config RuntimeError.
+            if sdlc_md.project_override(root, "quality.done_requires_verified", True):
                 raise ValueError(f"{artifact_id} -> Done blocked: {block}. Override with --force.")
             verify_warn = f"AC-verify advisory (quality.done_requires_verified=false): {block}"
             gate_warn = f"{gate_warn}; {verify_warn}" if gate_warn else verify_warn

@@ -65,16 +65,29 @@ STATE_PATH = "sdlc-studio/.local/github-sync-state.json"
 # -----------------------------------------------------------------------------
 
 
+GH_TIMEOUT = 120  # seconds - a hung gh call (proxy, auth prompt) must fail, not block forever
+
+
+class GhError(RuntimeError):
+    """A `gh` CLI call failed (non-zero exit or timeout) - distinct from an empty result."""
+
+
 def gh(*args: str, capture: bool = True) -> subprocess.CompletedProcess:
-    """Run a `gh` subcommand, raising RuntimeError if the CLI is absent."""
+    """Run a `gh` subcommand, raising RuntimeError if the CLI is absent. A timeout is
+    surfaced as a non-zero CompletedProcess (rc 124), never an indefinite hang."""
     if shutil.which("gh") is None:
         raise RuntimeError("gh CLI not on PATH. Install https://cli.github.com/")
-    return subprocess.run(
-        ["gh", *args],
-        capture_output=capture,
-        text=True,
-        check=False,
-    )
+    try:
+        return subprocess.run(
+            ["gh", *args],
+            capture_output=capture,
+            text=True,
+            check=False,
+            timeout=GH_TIMEOUT,
+        )
+    except subprocess.TimeoutExpired:
+        return subprocess.CompletedProcess(
+            ["gh", *args], 124, "", f"gh timed out after {GH_TIMEOUT}s")
 
 
 # Shared JSON-with-default loader (kept under this name for callers/tests).
@@ -82,7 +95,9 @@ _loads = sdlc_md.loads
 
 
 def gh_issue_list(label: str) -> list[dict]:
-    """Return all issues carrying `label` (open and closed), or [] on error."""
+    """All issues carrying `label` (open and closed). Raises GhError on a gh failure so a
+    real error is never conflated with "no issues"; malformed JSON on a clean exit
+    still degrades to [] (a parse tolerance, not a failure)."""
     result = gh(
         "issue", "list",
         "--label", label,
@@ -91,8 +106,7 @@ def gh_issue_list(label: str) -> list[dict]:
         "--limit", "500",
     )
     if result.returncode != 0:
-        print(f"gh issue list failed: {result.stderr}", file=sys.stderr)
-        return []
+        raise GhError(f"gh issue list failed ({label}): {result.stderr.strip()}")
     return _loads(result.stdout, [])
 
 
@@ -420,9 +434,15 @@ def cmd_pull(args: argparse.Namespace) -> int:
             if rec.github_issue is not None:
                 by_issue[rec.github_issue] = rec
 
+    failed = False
     for type_ in types:
         label = TYPE_LABELS[type_]
-        issues = gh_issue_list(label)
+        try:
+            issues = gh_issue_list(label)
+        except GhError as exc:
+            print(f"pull: {exc}", file=sys.stderr)
+            failed = True
+            continue
         for issue in issues:
             number = issue.get("number")
             if number in by_issue:
@@ -443,6 +463,12 @@ def cmd_pull(args: argparse.Namespace) -> int:
                 f"write the mapping."
             )
             pulled += 1
+
+    if failed:
+        # A gh call failed: do NOT advance last_pull or save state - the file would then
+        # assert a pull that never happened, misleading anything keyed on the timestamp.
+        print("pull: aborted - a gh call failed; last_pull left unchanged", file=sys.stderr)
+        return 1
 
     if not args.dry_run:
         state["last_pull"] = now_iso()

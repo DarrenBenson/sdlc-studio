@@ -25,16 +25,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 import reconcile  # noqa: E402  (sibling - cell helpers + the union-aware count recompute)
 
-# Terminal (closed) statuses per type - rows safe to archive by default.
-TERMINAL = {
-    "story": {"Done", "Won't Implement", "Deferred", "Superseded"},
-    "epic": {"Done", "Superseded"},
-    "cr": {"Complete", "Rejected", "Deferred", "Superseded"},
-    "bug": {"Fixed", "Verified", "Closed", "Won't Fix", "Superseded"},
-    "rfc": {"Accepted", "Superseded", "Withdrawn"},
-    "plan": {"Complete", "Superseded"},
-    "test-spec": {"Complete", "Superseded"},
-}
+# Terminal (closed) statuses safe to archive by default come from the single shared
+# source (sdlc_md.terminal_statuses), which deliberately excludes re-activatable states
+# like Deferred/Blocked/Paused. A hardcoded copy here drifted and archived Deferred rows
+# as if closed; the `--statuses` override remains for explicit operator opt-in.
+_ARCHIVABLE_TYPES = sorted(t for t in sdlc_md.ARTIFACT_TYPES if sdlc_md.terminal_statuses(t))
 _ARCHIVED_HEADING = "## Archived Releases"
 
 
@@ -118,7 +113,7 @@ def archive(repo_root: Path | str, type_: str, release: str,
         raise ValueError(f"unknown type {type_!r}")
     root = Path(repo_root)
     vocab = sdlc_md.status_vocab(type_, root)
-    terminal = statuses or TERMINAL.get(type_, set())
+    terminal = statuses or sdlc_md.terminal_statuses(type_)
     rel, prefix = sdlc_md.ARTIFACT_TYPES[type_]
     index_path = root / rel / "_index.md"
     result = {"archived": [], "count": 0, "release": release, "archive_path": None}
@@ -190,7 +185,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Archive terminal index rows by release.")
     sub = p.add_subparsers(dest="cmd", required=True)
     a = sub.add_parser("archive", help="Move a type's terminal rows into an archive sub-index.")
-    a.add_argument("--type", required=True, choices=sorted(TERMINAL))
+    a.add_argument("--type", required=True, choices=_ARCHIVABLE_TYPES)
     a.add_argument("--release", required=True, help="Release label, e.g. r2.5")
     a.add_argument("--statuses", help="Comma-separated statuses to archive (default: terminal set)")
     a.add_argument("--root", default=".")

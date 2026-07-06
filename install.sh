@@ -304,7 +304,12 @@ sweep_stale() {
             fi
         done
     done
-    [[ "$found" == false ]] && info "sweep: no other sdlc-studio copies found"
+    # An explicit `if` (not a trailing `&&` test): when $found is true this function's last
+    # command must still return 0, or `set -e` aborts the installer after a successful sweep
+    # and the success banner never prints (BG0054).
+    if [[ "$found" == false ]]; then
+        info "sweep: no other sdlc-studio copies found"
+    fi
 }
 
 print_list() {
@@ -390,4 +395,8 @@ main() {
     fi
 }
 
-main
+# Run main only when executed, not when sourced (so the functions above are
+# unit-testable in isolation - e.g. tools/tests/test_install_sweep.py).
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main
+fi

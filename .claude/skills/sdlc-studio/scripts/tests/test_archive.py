@@ -47,6 +47,40 @@ def _idx(root: Path) -> str:
     return (root / "sdlc-studio" / "stories" / "_index.md").read_text(encoding="utf-8")
 
 
+def _cr_repo(root: Path) -> Path:
+    sd = root / "sdlc-studio" / "change-requests"
+    sd.mkdir(parents=True)
+    (sd / "_index.md").write_text(
+        "# CRs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n"
+        "| Complete | 1 |\n| Deferred | 1 |\n\n"
+        "## All\n\n| ID | Title | Status | Priority | Type | Date | Linked Epics |\n"
+        "| --- | --- | --- | --- | --- | --- | --- |\n"
+        "| [CR-0001](CR0001-x.md) | done thing | Complete | Medium | Feature | 2026-01-01 | - |\n"
+        "| [CR-0002](CR0002-x.md) | paused thing | Deferred | Medium | Feature | 2026-01-01 | - |\n",
+        encoding="utf-8")
+    return root
+
+
+class DeferredNotTerminalTests(unittest.TestCase):
+    def test_deferred_cr_not_archived_by_default(self) -> None:
+        # BG0061: Deferred is re-activatable, NOT terminal (sdlc_md.terminal_statuses is the
+        # single source). archive.py must not treat it as closed and move it out of the index.
+        with tempfile.TemporaryDirectory() as d:
+            root = _cr_repo(Path(d))
+            res = arc.archive(root, "cr", "r1")
+            self.assertEqual(res["archived"], ["CR-0001"])         # only the Complete row
+            self.assertNotIn("CR-0002", res["archived"])           # Deferred stays live
+            idx = (root / "sdlc-studio" / "change-requests" / "_index.md").read_text("utf-8")
+            self.assertIn("CR-0002", idx)                          # still in the live index
+
+    def test_statuses_override_can_still_include_deferred(self) -> None:
+        # The explicit --statuses override is honoured (operator opt-in).
+        with tempfile.TemporaryDirectory() as d:
+            root = _cr_repo(Path(d))
+            res = arc.archive(root, "cr", "r1", statuses={"Deferred"})
+            self.assertEqual(res["archived"], ["CR-0002"])
+
+
 class ArchiveTests(unittest.TestCase):
     def test_moves_terminal_rows_only(self) -> None:
         with tempfile.TemporaryDirectory() as d:

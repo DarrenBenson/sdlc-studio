@@ -151,8 +151,10 @@ def cmd_allocate(args: argparse.Namespace) -> int:
     if args.remote:
         remote, remote_available = remote_ids(type_, repo_root)
         remote_max = max(remote) if remote else 0
-    base = max(local_max, remote_max)
-    next_num = base + 1
+    # Delegate to the single allocation authority so the CLI never diverges from the
+    # programmatic path: allocate_number also accounts for index rows (incl. archives)
+    # whose file was deleted, which local_max alone misses and would re-issue.
+    next_num = allocate_number(type_, repo_root, remote=args.remote)
     next_id = f"{prefix}{next_num:04d}"
     warning = None
     if args.remote and remote_available and remote_max > local_max:

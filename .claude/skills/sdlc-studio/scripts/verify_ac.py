@@ -17,7 +17,9 @@ Verifier DSL (one expression per AC):
                              curl + jq assertion
     shell <cmd>              Arbitrary shell, pass on exit 0
 
-Anything unrecognised is routed to `shell`.
+An unrecognised expression is an invalid verifier (exit 2), not a silent shell run;
+prefix `shell` to run one, or pass --allow-shell-fallback for the legacy behaviour.
+Shell-backed verbs are gated by story provenance and --no-shell (the trust boundary).
 """
 from __future__ import annotations
 
@@ -178,21 +180,37 @@ def _run_eval(expr: str, timeout: int, cwd: Path, start: float) -> VerifierResul
                           f"score={score} threshold={threshold}", duration, score=score)
 
 
-def run_verifier(expression: str, timeout: int, cwd: Path) -> VerifierResult:
-    """Parse a verifier expression and execute it."""
+_SHELL_DISABLED_MSG = ("shell execution disabled (--no-shell, or the story is stamped "
+                       "Provenance: external) - use a structured DSL verb, or pass "
+                       "--allow-external to run this story's shell verifiers")
+
+
+def run_verifier(expression: str, timeout: int, cwd: Path,
+                 allow_shell: bool = True, allow_fallback: bool = False) -> VerifierResult:
+    """Parse a verifier expression and execute it. `allow_shell=False` blocks the
+    shell-backed verbs (shell/eval/http and the fallback) instead of running them - the
+    technical control behind the documented trust boundary. `allow_fallback`
+    re-enables the legacy unrecognised-head-as-shell behaviour."""
     expr = expression.strip()
     start = time.time()
     if expr.lower() == "eval" or expr.lower().startswith("eval "):
+        if not allow_shell:
+            return VerifierResult(False, "blocked", 2, "", _SHELL_DISABLED_MSG, 0)
         return _run_eval(expr, timeout, cwd, start)
     try:
-        kind, cmd = _build_command(expr)
+        kind, cmd = _build_command(expr, allow_fallback=allow_fallback)
     except ValueError as e:
         return VerifierResult(False, "invalid", 2, "", str(e), 0)
+
+    # A string command runs under shell=True (shell/http/fallback verbs); block those
+    # when shell execution is disabled rather than executing untrusted content.
+    if isinstance(cmd, str) and not allow_shell:
+        return VerifierResult(False, "blocked", 2, "", _SHELL_DISABLED_MSG, 0)
 
     try:
         result = subprocess.run(
             cmd,
-            shell=isinstance(cmd, str),  # nosec B602 - project-authored AC verifier, trusted input
+            shell=isinstance(cmd, str),  # nosec B602 - gated by allow_shell + provenance
             capture_output=True,
             text=True,
             timeout=timeout,
@@ -262,11 +280,14 @@ def lint_runner_available(expr: str, _which=None) -> str | None:
             f"rewrite the line, or ignore if verification runs elsewhere (advisory)")
 
 
-def _build_command(expr: str) -> tuple[str, list[str] | str]:
+def _build_command(expr: str, allow_fallback: bool = False) -> tuple[str, list[str] | str]:
     """Translate a verifier expression into a subprocess command.
 
     Returns (kind, command) where command is a list for argv-style runs or
-    a string for shell=True runs.
+    a string for shell=True runs. An unrecognised head raises ValueError unless
+    `allow_fallback` is set - so a typo or stray prose line is an invalid verifier,
+    not a silent shell execution. The legacy whole-expression-as-shell
+    behaviour stays available behind the opt-in.
     """
     # Split first token
     parts = expr.split(None, 1)
@@ -303,10 +324,12 @@ def _build_command(expr: str) -> tuple[str, list[str] | str]:
     if head == "shell" and tail:
         return "shell", tail  # shell=True
 
-    # Fallback: treat the whole expression as a shell command. AC Verify lines
-    # are authored by the team alongside the story, so this runs trusted input,
-    # not untrusted external content.
-    return "shell", expr
+    if allow_fallback:
+        # Legacy opt-in: treat the whole expression as a shell command.
+        return "shell", expr
+    raise ValueError(
+        f"unrecognised verifier {head!r} - use a DSL verb (pytest/jest/vitest/go/file/"
+        f"grep/http/eval) or prefix an explicit `shell` to run it as a shell command")
 
 
 def _build_http(tail: str) -> str:
@@ -445,14 +468,24 @@ def verify_story(
     timeout: int,
     repo_root: Path,
     jest_cache: list[dict] | None = None,
+    allow_shell: bool = True,
+    allow_external: bool = False,
+    allow_fallback: bool = False,
 ) -> StoryReport:
     """Run every AC verifier in one story and update its Verified state. With `jest_cache`
     (batch mode) a jest verifier resolves against the cached single run; anything not
-    found there falls through to the authoritative per-AC subprocess."""
+    found there falls through to the authoritative per-AC subprocess.
+
+    Shell-backed verifiers are executed only when `allow_shell` is set AND the story is not
+    stamped `Provenance: external` (unless `allow_external` overrides) - the technical control
+    matching the documented trust boundary, so externally ingested content cannot reach a
+    shell just because a workflow copied it into a story."""
     text = story_path.read_text(encoding="utf-8")
     lines = text.splitlines()
     blocks = parse_story(text)
     report = StoryReport(path=str(story_path), ac_count=len(blocks))
+    provenance = (sdlc_md.extract_field(text, "Provenance") or "").strip().lower()
+    story_allow_shell = allow_shell and (allow_external or provenance != "external")
     pending: list = []  # (block, new_state) - applied bottom-up after the loop
 
     for block in blocks:
@@ -467,7 +500,8 @@ def verify_story(
         if jest_cache is not None:
             result = resolve_jest_from_cache(block.verifier, jest_cache)
         if result is None:
-            result = run_verifier(block.verifier, timeout, repo_root)
+            result = run_verifier(block.verifier, timeout, repo_root,
+                                  allow_shell=story_allow_shell, allow_fallback=allow_fallback)
 
         if result.ok:
             report.verified += 1
@@ -530,6 +564,7 @@ def write_report(path: Path, stories: list[StoryReport], dry_run: bool = False,
     run only (the `--fresh` path). In dry-run the snapshot enumerates the pending `flips`
     (ac, old_state, new_state) so the preview's most actionable output is recoverable.
     """
+    stamp = sdlc_md.now_iso8601()
     new_stories = {
         os.path.basename(s.path).replace(".md", ""): {
             "ac_count": s.ac_count,
@@ -540,6 +575,9 @@ def write_report(path: Path, stories: list[StoryReport], dry_run: bool = False,
             "passed": s.passed,
             "failures": s.failures,
             "flips": s.flips,
+            # when THIS story was verified, so the Done gate can tell a fresh green from a
+            # stale one carried forward by the merge.
+            "verified_at": stamp,
         }
         for s in stories
     }
@@ -620,7 +658,12 @@ def cmd_run(args: argparse.Namespace) -> int:
         if not p.exists():
             print(f"skip: {p} not found", file=sys.stderr)
             continue
-        report = verify_story(p, args.dry_run, args.timeout, repo_root, jest_cache=jest_cache)
+        report = verify_story(
+            p, args.dry_run, args.timeout, repo_root, jest_cache=jest_cache,
+            allow_shell=not getattr(args, "no_shell", False),
+            allow_external=getattr(args, "allow_external", False),
+            allow_fallback=getattr(args, "allow_shell_fallback", False),
+        )
         reports.append(report)
         overall_fail += report.failed
         overall_pass += report.verified
@@ -653,9 +696,18 @@ def cmd_run(args: argparse.Namespace) -> int:
 _PASS_TOKENS = {"pass", "passing", "passed", "done", "verified", "covered", "green"}
 
 
+def _row_story_id(cell: str) -> str:
+    """The normalised story id in a matrix Story cell (bare `US0001` or a `[US0001](..)`
+    link), or "" if none - the matching key for the story-qualified cross-check."""
+    m = re.search(r"[A-Za-z]{1,5}-?\d+", cell or "")
+    return sdlc_md.norm_id(m.group(0)) if m else ""
+
+
 def _report_failed_acs(report_path: Path | str) -> set[str]:
-    """ACs the latest verify-report marks failing/unverified (id::ac upper-cased), for the
-    matrix cross-check. Missing/unreadable report -> empty set (cross-check is then skipped)."""
+    """ACs the latest verify-report marks failing, keyed `STORYID::AC` (both upper-cased),
+    for the matrix cross-check. Story-qualifying the key stops one story's failing AC1 from
+    flagging every other story's AC1 in a merged report. Missing/unreadable report
+    -> empty set (cross-check is then skipped)."""
     p = Path(report_path)
     if not p.exists():
         return set()
@@ -665,10 +717,15 @@ def _report_failed_acs(report_path: Path | str) -> set[str]:
         return set()
     failed = set()
     stories = data.get("stories", {})
-    entries = stories.values() if isinstance(stories, dict) else stories
-    for st in entries:
+    # dict: keyed by story stem; list: each entry carries its own `path`.
+    items = (stories.items() if isinstance(stories, dict)
+             else [(st.get("path", ""), st) for st in stories])
+    for key, st in items:
+        stem = Path(str(key)).stem if key else ""
+        sid = sdlc_md.norm_id(sdlc_md.extract_record_id(stem) or stem) if stem else ""
         for f in st.get("failures", []):  # each failure carries the failing AC id
-            failed.add(str(f.get("ac", "")).upper())
+            ac = str(f.get("ac", "")).upper()
+            failed.add(f"{sid}::{ac}" if sid else ac)
     return failed
 
 
@@ -690,6 +747,7 @@ def ts_check(spec_path: Path | str, verify_report: Path | str | None = None) -> 
             continue  # only the AC Coverage Matrix table(s); later tables never bleed in
         low = [c.strip().lower() for c in tbl["header"]]
         cols = {n: low.index(n) for n in ("ac", "test cases", "test case", "status") if n in low}
+        story_col = low.index("story") if "story" in low else None
         for _ln, cells in tbl["rows"]:
             ac = cells[cols["ac"]].strip() if cols["ac"] < len(cells) else ""
             if not ac or ac.lower() == "ac":
@@ -700,11 +758,15 @@ def ts_check(spec_path: Path | str, verify_report: Path | str | None = None) -> 
             tc_col = cols.get("test cases", cols.get("test case"))
             tc = cells[tc_col].strip() if tc_col is not None and tc_col < len(cells) else ""
             st = cells[cols["status"]].strip() if "status" in cols and cols["status"] < len(cells) else ""
+            # Story-qualify the cross-check key so a merged report matches THIS row's story,
+            # not any story that happens to share the AC id.
+            sid = _row_story_id(cells[story_col]) if story_col is not None and story_col < len(cells) else ""
+            key = f"{sid}::{ac.upper()}" if sid else ac.upper()
             if not tc or tc in {"--", "-", "tbd", "TBD"}:
                 issues.append({"ac": ac, "issue": "no test case mapped"})
             elif st.lower() not in _PASS_TOKENS:
                 issues.append({"ac": ac, "issue": f"status {st!r} is not passing"})
-            elif ac.upper() in failed_in_report:
+            elif key in failed_in_report:
                 issues.append({"ac": ac, "issue": "matrix says passing but the verify-report marks it failing"})
     return issues
 
@@ -877,6 +939,15 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--batch", action="store_true",
                    help="run jest once and resolve jest verifiers from the cached result")
     r.add_argument("--timeout", type=int, default=120, help="Per-verifier timeout in seconds")
+    r.add_argument("--no-shell", dest="no_shell", action="store_true",
+                   help="block shell-backed verifiers (shell/eval/http); run only structured "
+                        "DSL verbs - for CI over less-trusted content")
+    r.add_argument("--allow-external", dest="allow_external", action="store_true",
+                   help="run shell verifiers even on stories stamped `Provenance: external` "
+                        "(off by default - the trust boundary)")
+    r.add_argument("--allow-shell-fallback", dest="allow_shell_fallback", action="store_true",
+                   help="legacy: treat an unrecognised Verify line as a shell command "
+                        "(off by default - unrecognised lines are invalid verifiers)")
     r.add_argument(
         "--report",
         default="sdlc-studio/.local/verify-report.json",

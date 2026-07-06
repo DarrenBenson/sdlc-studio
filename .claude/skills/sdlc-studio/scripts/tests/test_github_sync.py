@@ -271,11 +271,14 @@ class GhIssueListTests(unittest.TestCase):
             issues = github_sync.gh_issue_list("sdlc:cr")
         self.assertEqual(issues, [{"number": 7, "title": "x", "labels": []}])
 
-    def test_returns_empty_on_nonzero_returncode(self) -> None:
+    def test_raises_on_nonzero_returncode(self) -> None:
+        # BG0064: a gh failure must be distinguishable from an empty result, not
+        # silently flattened to [] (which then reads as "nothing to do").
         with mock.patch.object(
             github_sync, "gh", return_value=subprocess_result(1, "", "boom")
         ):
-            self.assertEqual(github_sync.gh_issue_list("sdlc:cr"), [])
+            with self.assertRaises(github_sync.GhError):
+                github_sync.gh_issue_list("sdlc:cr")
 
     def test_returns_empty_on_malformed_json(self) -> None:
         # Non-zero would mask the parse path, so use a success exit with garbage.
@@ -709,6 +712,27 @@ class PullTests(unittest.TestCase):
                 github_sync.main(["pull", "--type", "cr"])
         state = github_sync.load_state(self._state_path())
         self.assertIsNotNone(state["last_pull"])
+
+    def test_pull_does_not_stamp_or_succeed_on_gh_failure(self) -> None:
+        # BG0064: a transient gh failure must NOT advance last_pull or exit 0 - the state
+        # would then assert a pull happened at time T that never did.
+        with mock.patch.object(
+            github_sync, "gh", return_value=subprocess_result(1, "", "auth required")
+        ):
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                rc = github_sync.main(["pull", "--type", "cr"])
+        self.assertNotEqual(rc, 0)
+        self.assertFalse(self._state_path().exists())  # no state written on failure
+
+    def test_gh_timeout_surfaces_as_failure(self) -> None:
+        # BG0063: a hung gh call must time out and surface a failure, never block forever.
+        import subprocess
+        def _boom(*a, **k):
+            raise subprocess.TimeoutExpired(cmd="gh", timeout=1)
+        with mock.patch("subprocess.run", side_effect=_boom), \
+             mock.patch("shutil.which", return_value="/usr/bin/gh"):
+            res = github_sync.gh("issue", "list")
+        self.assertNotEqual(res.returncode, 0)
 
 
 # -----------------------------------------------------------------------------
