@@ -128,6 +128,19 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
                 f"raised_by persona '{auth['name']}' does not resolve to a document under "
                 "sdlc-studio/personas/")
 
+        # Separation of duties: the triager must not be the raiser (the adversarial-review
+        # discipline compiled into a check). A solo human self-triaging only WARNS - a lone
+        # operator with no second identity must not deadlock (solo-first stays primary).
+        triaged = sdlc_md.parse_authorship(text, "Triaged-by")
+        if auth and triaged and triaged["name"]:
+            same = (sdlc_md.norm_id(auth["name"]) == sdlc_md.norm_id(triaged["name"])
+                    and auth["type"] == triaged["type"])
+            if same:
+                sev = "warning" if triaged["type"] == "human" else "error"
+                add(sev, "duties-separated",
+                    f"triaged_by '{triaged['name']}' is the same as raised_by - a different "
+                    "seat must triage (hand off to another reviewer)")
+
     _check_placeholders(text, add)
     return out
 

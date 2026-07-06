@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `backfill_authorship.py plan|apply` seeds a raised_by onto pre-adoption artefacts, marking
     inferred attributions, idempotent. The persona resolver is swappable for an agent resolver
     later with no schema change.
+  - **US0061 separation-of-duties lint.** A `duties-separated` validate rule fails a v3
+    artefact whose `Triaged-by` equals its `Raised-by` (a different seat must triage); a solo
+    human self-triaging only warns, so a lone operator never deadlocks. The transition-time
+    refusal wires in with the agentic triage transitions (EP0014).
 
 ## [4.0.0] - 2026-07-06
 

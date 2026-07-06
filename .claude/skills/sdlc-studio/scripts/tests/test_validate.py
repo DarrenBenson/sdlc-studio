@@ -548,3 +548,42 @@ class StructuredAuthorshipTests(unittest.TestCase):
             p = self._bug(root, "")
             rules = [v["rule"] for v in validate.validate_file(p, "bug", root)]
             self.assertNotIn("authorship-structured", rules)
+
+
+class SeparationOfDutiesTests(unittest.TestCase):
+    """US0061/CR0170: a triager may not be the raiser (v3). Solo-human self-triage warns."""
+
+    def _v3_persona(self, root: Path) -> None:
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
+        pd = root / "sdlc-studio" / "personas"; pd.mkdir(parents=True, exist_ok=True)
+        (pd / "sam.md").write_text("# Sam Eriksson - QA amigo\n", encoding="utf-8")
+        (pd / "dani.md").write_text("# Dani Okafor - Engineering amigo\n", encoding="utf-8")
+
+    def _bug(self, root: Path, raised: str, triaged: str) -> Path:
+        return _write(root, "sdlc-studio/bugs/BG0001-x.md",
+                      f"# BG0001: x\n\n> **Status:** Open\n> **Severity:** Low\n"
+                      f"> **Raised-by:** {raised}\n> **Triaged-by:** {triaged}\n")
+
+    def test_same_persona_raiser_and_triager_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); self._v3_persona(root)
+            p = self._bug(root, "Sam Eriksson; persona; v1", "Sam Eriksson; persona; v1")
+            errs = [v for v in validate.validate_file(p, "bug", root)
+                    if v["rule"] == "duties-separated" and v["severity"] == "error"]
+            self.assertTrue(errs)
+
+    def test_distinct_personas_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); self._v3_persona(root)
+            p = self._bug(root, "Sam Eriksson; persona; v1", "Dani Okafor; persona; v1")
+            self.assertEqual([v for v in validate.validate_file(p, "bug", root)
+                              if v["rule"] == "duties-separated"], [])
+
+    def test_solo_human_self_triage_warns_not_errors(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); self._v3_persona(root)
+            p = self._bug(root, "Darren; human; v1", "Darren; human; v1")
+            rows = [v for v in validate.validate_file(p, "bug", root) if v["rule"] == "duties-separated"]
+            self.assertTrue(rows)
+            self.assertTrue(all(v["severity"] == "warning" for v in rows))
