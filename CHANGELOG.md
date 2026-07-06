@@ -37,6 +37,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     second run is a no-op). `sdlc_md.alias_map` resolves a pre-migration id to its current
     ULID, and `transition` looks artefacts up through it, so `--id US0001` still works after a
     migration.
+  - **US0057 friendly GitHub aliases.** A synced artefact's GitHub issue number becomes a
+    resolvable friendly alias (`alias_map` maps `GH42` -> the canonical id) while the ULID
+    stays the identity; recording the issue number is offline-safe (only written after a
+    successful `gh` create).
+  - **US0059 TRD refresh + freshness guard.** The generated TRD is corrected to the shipped
+    script layer: the real (bounded, tested) write contract replaces the false "read-only
+    over the workspace" claim, plus accurate component counts, state-file inventory, and test
+    figures. A `tools/tests` freshness guard fails if those stale claims reappear.
 
 ### Fixed
 

@@ -566,12 +566,18 @@ def alias_map(repo_root) -> dict[str, str]:
             canonical = extract_record_id(p.stem)
             if not canonical:
                 continue
-            raw = extract_field(p.read_text(encoding="utf-8"), "Aliases")
-            if not raw:
-                continue
-            for a in re.split(r"[,\s]+", raw.strip()):
+            text = p.read_text(encoding="utf-8")
+            raw = extract_field(text, "Aliases")
+            for a in re.split(r"[,\s]+", (raw or "").strip()):
                 if a:
                     out[norm_id(a)] = canonical
+            # A synced artefact's GitHub issue number is a friendly alias too, so an operator
+            # can look an artefact up by `GH42`; the ULID stays the canonical identity.
+            issue = extract_field(text, "GitHub Issue")
+            if issue:
+                m = re.search(r"\d+", issue)
+                if m:
+                    out[norm_id(f"GH{m.group(0)}")] = canonical
     return out
 
 

@@ -881,5 +881,41 @@ class StateCommandTests(unittest.TestCase):
         self.assertEqual(parsed["mappings"], {})
 
 
+class FriendlyAliasTests(unittest.TestCase):
+    """US0057/RFC0024: a synced artefact's GitHub issue number is a resolvable friendly
+    alias; the id (ULID) stays canonical; offline is a no-op."""
+
+    def _bug(self, root: Path, name: str, issue: int | None) -> Path:
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        gh = f"> **GitHub Issue:** #{issue}\n" if issue else ""
+        p = d / f"{name}.md"
+        p.write_text(f"# {name}: x\n\n> **Status:** Open\n> **Severity:** Low\n{gh}\n", encoding="utf-8")
+        return p
+
+    def test_friendly_number_resolves_to_canonical(self) -> None:
+        from lib import sdlc_md
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root, "BG-01JQK3F8-fix", issue=42)
+            amap = sdlc_md.alias_map(root)
+            self.assertEqual(amap.get(sdlc_md.norm_id("GH42")), "BG-01JQK3F8")
+
+    def test_no_issue_no_friendly_alias(self) -> None:
+        from lib import sdlc_md
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root, "BG-01JQK3F8-fix", issue=None)  # never synced (offline)
+            self.assertEqual(sdlc_md.alias_map(root), {})
+
+    def test_set_issue_field_keeps_id_canonical(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._bug(root, "BG-01JQK3F8-fix", issue=None)
+            github_sync.set_github_issue_field(p, 42)
+            self.assertTrue(p.exists())  # filename (canonical id) unchanged
+            self.assertIn("#42", p.read_text(encoding="utf-8"))
+
+
 if __name__ == "__main__":
     unittest.main()

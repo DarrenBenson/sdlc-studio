@@ -1,9 +1,9 @@
 # Technical Requirements Document
 
 **Project:** SDLC Studio
-**Version:** 2.0.0
+**Version:** 4.0.0
 **Status:** Draft
-**Last Updated:** 2026-06-20
+**Last Updated:** 2026-07-06
 **PRD Reference:** [PRD](./prd.md)
 
 > Generated in **Generate mode** by reverse-engineering the skill's own source.
@@ -29,7 +29,7 @@ deterministic Python layer that the host agent reads and runs.
 ### Scope
 
 Covered: the progressive-disclosure router architecture, the split between the
-markdown knowledge base and the Python script layer, the 10 scripts and their
+markdown knowledge base and the Python script layer, the 40+ scripts and their
 shared library, the data architecture (markdown artifacts plus JSON state), soft
 runtime dependencies, tool-neutral portability, and the architectural decisions
 (ADRs).
@@ -111,7 +111,7 @@ ADR-002.
 | `templates/` (72 files) | Document and code templates with `{{placeholder}}` syntax; loaded only when creating artifacts. | Markdown / text |
 | `best-practices/` (19 files) | Quality guidelines consulted before producing artifacts. | Markdown |
 | `lessons/` | Cross-project lessons registry (`_index.md`, `LL{NNNN}-*.md`), recalled before substantive decisions. | Markdown |
-| `scripts/` (10 scripts) | Deterministic, read-only-over-workspace Python helpers emitting JSON. | Python 3.10+ stdlib |
+| `scripts/` (40+ scripts) | Deterministic Python helpers emitting JSON. Most are read-only; a bounded set writes artefacts and indexes (see §5 rule 5). | Python 3.10+ stdlib |
 | `scripts/lib/sdlc_md.py` | Shared parsing/utility library; single source of truth for markdown conventions. | Python 3.10+ stdlib |
 | `scripts/tests/` | Unit tests for the script layer (the dev-repo suite also covers repo-root `tools/`, so the exact count varies with checkout layout). | `unittest` |
 | `install.sh` / `install.ps1` | Cross-harness installers for six targets. | Bash / PowerShell |
@@ -198,13 +198,18 @@ Every script in `scripts/` obeys a fixed contract (`reference-scripts.md`):
 2. `argparse` subcommands (e.g. `repo_map.py build`).
 3. `--help` on every subcommand.
 4. Non-zero exit on any failure that should halt the workflow.
-5. Never mutates files outside `sdlc-studio/.local/` or the files passed on the
-   command line, with three bounded write-exceptions: `plan.py archive` moves files
-   under `~/.claude/plans/` (operator-owned; never deletes, never overwrites);
-   `verify_ac.py` rewrites the `Verified:` line in the story files it discovers
-   under `--dir`/`--story`; and `lessons.py add --global` writes a new
-   `LL{NNNN}.md` and updates `_index.md` inside the bundled `lessons/` registry
-   (never deletes, refuses to overwrite).
+5. Bounded, tested write surface. Read-only helpers (`reconcile detect`, `status`,
+   `validate`, `next_id`, `audit`, `critic`) never mutate the workspace. The
+   deterministic-authoring helpers DO write, each within a tested boundary: `artifact.py`
+   creates artefact files and appends index rows; `file_finding.py` files findings;
+   `reconcile apply` rewrites `_index.md` rows and counts; `transition.py` rewrites an
+   artefact's Status and cascades the epic breakdown; `github_sync.py` writes the
+   `GitHub Issue` metadata line; `verify_ac.py` rewrites the `Verified:` line; `migrate_v3.py`
+   renames files and rewrites ids/links; `plan.py archive` moves plan files; `lessons.py add
+   --global` writes a lesson. Shared-file writes go through `sdlc_md.atomic_write`
+   (temp-then-replace) and id allocation is serialised by `sdlc_md.allocation_lock`, so a
+   crash or a concurrent writer never corrupts a shared file. The scripts are NOT read-only
+   over the workspace; the guarantee is that every write is tested and bounded.
 6. No network access except the `gh` CLI wrapper in `github_sync.py` (no token
    handling).
 7. Plain text to stdout by default; `--format json` where machine-parseable output
@@ -311,7 +316,8 @@ place.
 | `project-state.json` | project orchestration | Tracks `project plan` / `project implement` progress and dependency order. [MEDIUM] |
 | `review-state.json` | review workflow | Review cadence and verdict state. [MEDIUM] |
 | `review-queue.json` | review workflow | Pending review inputs. [MEDIUM] |
-| `status-cache.json` | status | Cached pillar census between runs. [MEDIUM] |
+| `telemetry.jsonl` | `telemetry.py` (via `artifact close`) | Append-only run/close events feeding estimate calibration. [HIGH] |
+| `verify-history.jsonl` | `verify_ac.py` | Append-only per-AC verification history. [HIGH] |
 | `verify-report.json` | `verify_ac.py` | Machine-readable AC verification report (per-AC pass/fail/manual). [HIGH] |
 | `repo-map.json` | `repo_map.py` | Per-file symbols, imports, in-degree score; queried for `READ THESE FILES FIRST` lists. [HIGH] |
 
@@ -397,7 +403,7 @@ production fixes: fixes land there first, then back-port to this repo (per
 Scaling is about context tokens, not machines. Progressive disclosure keeps the
 always-loaded footprint near-constant (`SKILL.md` ~195 lines) however large the
 corpus grows. Agentic waves bound concurrency. Read-only scripts run in well under a
-second (181 tests run in ~0.13s).
+second (the script suite runs 1000+ tests in a few seconds).
 
 > **Container Design:** not applicable - the skill ships no containers. The
 > consuming project's `test-env` type handles containerised test environments.
@@ -421,7 +427,7 @@ second (181 tests run in ~0.13s).
 | Control | Implementation |
 | --- | --- |
 | Authentication | None at skill level; GitHub sync inherits `gh auth`. |
-| Authorisation | Filesystem permissions of the host; scripts are read-only over the workspace. |
+| Authorisation | Filesystem permissions of the host; script writes are bounded and tested (see §5 rule 5), not read-only. |
 | Encryption at rest | Not applicable (plain files in the consuming repo). |
 | Encryption in transit | Delegated to `gh` (HTTPS) for the only network path. |
 | Secret handling | The skill handles no secrets; secret management is the consuming project's concern, documented in its `AGENTS.md`. |
@@ -433,7 +439,7 @@ second (181 tests run in ~0.13s).
 | Metric | Target | Measurement |
 | --- | --- | --- |
 | Always-loaded context | ~195 lines (`SKILL.md`) | Line count of the router |
-| Script run time | Sub-second on a typical project | `scripts/tests` suite: 181 tests in ~0.13s |
+| Script run time | Sub-second on a typical project | `scripts/tests` suite: 1000+ tests in a few seconds |
 | Reconcile / status | Sub-second | Read-only census over the artifact tree |
 | Install | Single fetch-and-copy | `install.sh` / `install.ps1`, no build step |
 
@@ -449,8 +455,8 @@ progressive disclosure rather than by a runtime metric.
 **Status:** Accepted
 
 **Context:** A skill's entry file is loaded into the agent's context on every
-invocation. SDLC Studio is large (42 reference files, 31 help files, 72
-templates, 19 best-practice guides - see the §3 component table). A monolithic skill file would spend a
+invocation. SDLC Studio is large (46 reference files, 39 help files, many
+templates and best-practice guides - see the §3 component table). A monolithic skill file would spend a
 large, fixed token cost on every request regardless of the task.
 
 **Decision:** Keep `SKILL.md` as a lean router (~195 lines) carrying only
@@ -579,8 +585,8 @@ installer targets six agents.
 ### Must Have
 
 - `SKILL.md` stays lean (router only); detail loads on demand.
-- Scripts stay pure stdlib, Python 3.10+, read-only over the workspace, with the
-  one bounded `plan.py archive` exception.
+- Scripts stay pure stdlib, Python 3.10+; every workspace write is bounded and tested
+  (§5 rule 5), going through `atomic_write` for shared files.
 - Every script has unit tests; all tests pass before a release is tagged.
 - `lib/sdlc_md.py` remains the single source of truth for markdown conventions.
 - GitHub access only via `gh`; no token handling, no third-party client.
@@ -600,6 +606,7 @@ installer targets six agents.
 | Date | Version | Changes |
 | --- | --- | --- |
 | 2026-06-20 | 2.0.0 | Brownfield extraction of TRD from skill source (Generate mode) |
+| 2026-07-06 | 4.0.0 | Refresh to the shipped script layer: corrected the write contract (§5 rule 5 - the script write surface is bounded and tested, not absent), component counts, state-file inventory, and test figures; a freshness guard now prevents the stale claims recurring |
 
 ---
 
