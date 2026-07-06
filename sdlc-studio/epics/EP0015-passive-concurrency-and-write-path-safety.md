@@ -15,7 +15,7 @@ v4 foundation tranche; explicitly not a scheduler.
 
 ## Story Breakdown
 
-- [ ] [US0069: Atomic index and cascade writes with an advisory allocation lock](../stories/US0069-atomic-index-and-cascade-writes-with-an-advisory.md)
+- [x] [US0069: Atomic index and cascade writes with an advisory allocation lock](../stories/US0069-atomic-index-and-cascade-writes-with-an-advisory.md)
 
 ## Revision History
 

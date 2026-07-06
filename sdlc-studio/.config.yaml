@@ -10,3 +10,10 @@ provenance:
   # below 57 - acceptable, since hand-authoring is the path we are steering away from.
   adopt_after: 57
   enforce: false  # advisory (report, do not block) - flip to true to gate on provenance
+
+conformance:
+  # Story-scoped conformance is grandfathered forward-only: this repo's delivery is gated by
+  # its committed script suite plus the critic + gate, not by per-story verify_ac backfill.
+  # 82 covers every story that exists at the v4 foundation (max is US0082); new stories past
+  # it are held to the full standard.
+  adopt_after: 82

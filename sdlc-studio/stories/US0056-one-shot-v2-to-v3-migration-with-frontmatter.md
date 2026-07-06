@@ -1,6 +1,6 @@
 # US0056: One-shot v2-to-v3 migration with frontmatter aliases and alias-aware readers
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0012

@@ -1,6 +1,6 @@
 # US0055: ULID id generator across artifact.py, next_id.py and file_finding.py
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0012

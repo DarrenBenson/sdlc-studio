@@ -1,35 +1,31 @@
-# LATEST - current project state (v3.5.0)
+# LATEST - current project state (v4.0.0)
 
 > The current-state anchor - a WINDOW, not a ledger. **Re-read this and run
 > `/sdlc-studio status` after any context reset or compaction.** Durable guidance lives in
 > AGENTS.md; per-sprint detail lives in the retros and CHANGELOG.md; keep this file under
 > `docs.latest_max_lines` (doc-freshness advisory) by moving past sprints to History lines.
 >
-> **Project version:** 3.5.0 (released 2026-07-05) ·
-> **Date:** 2026-07-05 ·
-> **Gates:** lint clean, 1162 script tests pass (+41 repo-only tools tests), `gate` PASS,
-> reconcile drift 0, disclosure 0, npm audit 0, CI green on main.
+> **Project version:** 4.0.0 (released 2026-07-06) ·
+> **Date:** 2026-07-06 ·
+> **Gates:** lint clean, 1200 script tests pass (+46 repo-only tools tests), `gate` PASS,
+> reconcile drift 0, disclosure 1 (advisory), npm audit 0, CI green on main.
 
 ## Current
 
-- **Sprint 2026-07-D - field-hardening (released in v3.5.0, RETRO0010):** 8/8 CRs delivered, sourced
-  from a consuming project's first-day field reports. RFC0023 accepted (D0010) and built as
-  `lib/conventions.py` - the tolerant convention layer (status-column aliases, companion
-  suffixes, bug-ready section vocabularies, scaffold template overrides; config-declared,
-  fail-loud, byte-identical unconfigured); CR0154/0155 adopt it. Plus: one degenerate-index
-  diagnostic with refusing apply (CR0153), mutation sampling disclosure (CR0152), `Verified` =
-  gated higher-tier proof (CR0156), seat-score provenance (CR0151), `project upgrade`
-  capability digest + advisory-lane registry (CR0157). Critic: 9 findings (2 HIGH), all fixed,
-  repros re-run -> APPROVE; lesson L-0005 (census-consumer sweep). CR0159 (apply inserts
-  missing summary rows, fail-loud residuals) delivered as an addendum.
-- **Token-optimisation tranche (released in v3.5.0, RETRO0011, CR0160-CR0165):** index-bloat advisory +
-  first live archive run (265 rows, live indexes 332 -> 83 lines), the LATEST.md window,
-  `artifact.py revision`, the slice-read rule, apply appends missing index rows (operator field
-  transcript), and the critic runs AS the QA seat (Sam) with a seat-drift warning. Sam-framed
-  critic: 3 rounds, all findings fixed RED-first, APPROVE under the seat.
-- **Open backlog:** none beyond the in-flight tranche.
-- **Next:** consuming projects upgrade to v3.5.0 (their `project upgrade` prints the first live
-  CR0157 capability digest); triage field reports as they arrive. Open backlog: CR0166 (Low).
+- **v4.0.0 - distributed artefact identity (schema v3), the team-tool foundation.** The 6-story
+  foundation sprint (EP0012 identity + EP0015 concurrency), delivered trunk-based to main:
+  US0055 ULID generator + era-tolerant readers, US0056 v2->v3 migration (`migrate_v3.py`, order-
+  preserving, aliased, idempotent), US0057 friendly GitHub aliases, US0058 `index-derived` gate
+  check, US0069 atomic writes + advisory lock, US0059 TRD refresh + freshness guard. All opt-in
+  via `schema_version: 3`; v2 projects untouched. RFC0024 + RFC0025 accepted. Preceded by the
+  RV0006 self-review bug sweep (14 bugs, BG0053-BG0066) and the v4 breakdown (22 CRs into 7
+  epics and 28 stories).
+- **Open backlog:** the rest of the v4 tranches - EP0013 (authorship/enforcement), EP0014
+  (agentic triage), EP0016 (review/lite on-ramp), EP0017 (positioning/benchmark), EP0018
+  (tooling debt). 21 CRs still Proposed.
+- **Next:** groom EP0013's stories to Ready and run the enforcement tranche; consider the RFC0025
+  N=1 benchmark spike early (validates the v4 premise). The dogfood repo can migrate to schema v3
+  via `migrate_v3.py apply` when chosen (currently still v2, capability shipped).
 
 ## History (detail lives in the named retro / CHANGELOG entry)
 

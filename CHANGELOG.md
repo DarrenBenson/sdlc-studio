@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-07-06
+
+Major release: the v4 foundation - distributed artefact identity (schema v3). The move from a
+single-writer tool toward a team-based one. All new capability is opt-in (`schema_version: 3`);
+existing v2 projects and their sequential ids are untouched until they choose to migrate.
+
 ### Added
 
 - **v4 foundation - distributed artefact identity (schema v3, RFC0024).** Opt-in via

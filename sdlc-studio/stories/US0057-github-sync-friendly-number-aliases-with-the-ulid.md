@@ -1,6 +1,6 @@
 # US0057: GitHub-sync friendly-number aliases with the ULID staying canonical
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0012

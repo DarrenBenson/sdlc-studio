@@ -1,6 +1,6 @@
 # US0069: Atomic index and cascade writes with an advisory allocation lock
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0015

@@ -1,6 +1,6 @@
 # US0059: Refresh the TRD to the shipped script layer and write contract with a freshness guard
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0012
