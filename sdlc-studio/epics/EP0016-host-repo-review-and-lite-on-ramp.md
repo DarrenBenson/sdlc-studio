@@ -1,6 +1,6 @@
 # EP0016: Host-repo review and lite on-ramp
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 

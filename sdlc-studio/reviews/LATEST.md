@@ -18,6 +18,13 @@
 
 ## Current
 
+- **EP0016 - review/lite on-ramp (v3.6 candidate, non-breaking).** Two try-before-you-adopt
+  entry points, trunk-based to main, RED-first. US0070 `review generate`: a zero-setup host-repo
+  review (`review_generate.py` owns bootstrap + the verbatim remediation-only security policy +
+  the secret-absence scan; the review itself runs from `templates/workflows/repo-review.md`).
+  US0071 lite profile: `profile: lite` collapses the pipeline to PRD -> story -> implement (no
+  epic layer, no nag), promotable to full via `lite_profile.py promote`. Both are non-breaking
+  and independent of the schema-v3 work, so they could ship as a v3.6 ahead of v4. **Not tagged.**
 - **v4.1.0 - authorship & enforcement (EP0013) + tooling debt (EP0018) + benchmark protocol.**
   13 stories, trunk-based to main. EP0013: structured typed authorship (US0060, resolver +
   backfill), separation-of-duties lint (US0061), evidence-as-schema (US0062), the consolidated
@@ -35,12 +42,13 @@
   via `schema_version: 3`; v2 projects untouched. RFC0024 + RFC0025 accepted. Preceded by the
   RV0006 self-review bug sweep (14 bugs, BG0053-BG0066) and the v4 breakdown (22 CRs into 7
   epics and 28 stories).
-- **Open backlog:** the rest of the v4 tranches - EP0013 (authorship/enforcement), EP0014
-  (agentic triage), EP0016 (review/lite on-ramp), EP0017 (positioning/benchmark), EP0018
-  (tooling debt). 21 CRs still Proposed.
-- **Next:** groom EP0013's stories to Ready and run the enforcement tranche; consider the RFC0025
-  N=1 benchmark spike early (validates the v4 premise). The dogfood repo can migrate to schema v3
-  via `migrate_v3.py apply` when chosen (currently still v2, capability shipped).
+- **Open backlog:** EP0013, EP0016, and EP0018 are delivered on main (WIP toward release);
+  remaining tranches are EP0014 (agentic triage) and EP0017 (positioning/benchmark), plus the
+  scoped-forward CR remainders (CR0179/0181/0182/0186/0187). CRs still Proposed for those.
+- **Next:** EP0014 agentic triage (US0065-0068) or EP0017 (US0072/0074/0075); consider the
+  RFC0025 N=1 benchmark spike early (validates the v4 premise). EP0016 (US0070 review generate +
+  US0071 lite profile) is a non-breaking v3.6 candidate that could ship ahead of v4 if wanted.
+  The dogfood repo can migrate to schema v3 via `migrate_v3.py apply` when chosen (still v2).
 
 ## History (detail lives in the named retro / CHANGELOG entry)
 
