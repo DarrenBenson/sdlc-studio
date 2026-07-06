@@ -477,5 +477,44 @@ class IterTablesTests(unittest.TestCase):
         self.assertEqual(t["rows"][0][0], 3)
 
 
+class UlidIdentityTests(unittest.TestCase):
+    """US0055/RFC0024: schema-v3 ULID ids coexist with v2 sequential ids; every id reader
+    must parse both eras."""
+
+    def test_new_ulid_is_sortable_and_base32(self) -> None:
+        a = sdlc_md.new_ulid()
+        b = sdlc_md.new_ulid()
+        self.assertEqual(len(a), 26)
+        self.assertTrue(set(a) <= set("0123456789ABCDEFGHJKMNPQRSTVWXYZ"))
+        self.assertLessEqual(a[:10], b[:10])  # timestamp prefix is monotonic
+
+    def test_short_id_form(self) -> None:
+        sid = sdlc_md.short_ulid()
+        self.assertEqual(len(sid), 8)
+        self.assertTrue(set(sid) <= set("0123456789ABCDEFGHJKMNPQRSTVWXYZ"))
+
+    def test_id_re_matches_both_eras(self) -> None:
+        self.assertEqual(sdlc_md.extract_record_id("US0001-login"), "US0001")
+        self.assertEqual(sdlc_md.extract_record_id("BG-01JQK3F8-fix-thing"), "BG-01JQK3F8")
+        self.assertEqual(sdlc_md.extract_record_id("CR-01JQK3F8XY-x"), "CR-01JQK3F8XY")  # extended suffix
+        self.assertIsNone(sdlc_md.extract_record_id("notes-about-things"))
+
+    def test_search_re_finds_both_in_a_cell(self) -> None:
+        cell = "| [BG-01JQK3F8](BG-01JQK3F8-fix.md) | [US0001](US0001-x.md) |"
+        found = sdlc_md.ID_SEARCH_RE.findall(cell)
+        self.assertIn("BG-01JQK3F8", found)
+        self.assertIn("US0001", found)
+
+    def test_id_number_is_v2_only(self) -> None:
+        self.assertEqual(sdlc_md.id_number("US0042"), 42)
+        self.assertEqual(sdlc_md.id_number("CR-0007"), 7)
+        # a ULID has no sequential number - even one ending in digits
+        self.assertIsNone(sdlc_md.id_number("BG-01JQ1234"))
+
+    def test_norm_id_both_eras(self) -> None:
+        self.assertEqual(sdlc_md.norm_id("CR-0007"), "CR0007")
+        self.assertEqual(sdlc_md.norm_id("BG-01JQK3F8"), "BG01JQK3F8")
+
+
 if __name__ == "__main__":
     unittest.main()

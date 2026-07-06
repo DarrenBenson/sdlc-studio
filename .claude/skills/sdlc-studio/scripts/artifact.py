@@ -44,6 +44,33 @@ def _disp(type_: str, n: int) -> str:
     return f"{p}-{n:04d}" if SPEC[type_]["dash"] else f"{p}{n:04d}"
 
 
+def _schema_v3(root: Path) -> bool:
+    """True when the project opted into schema v3 (`schema_version: 3` in `.config.yaml`).
+    Read via the degrading project_override, so a PyYAML-less machine simply reads v2."""
+    v = sdlc_md.project_override(root, "schema_version", None)
+    try:
+        return v is not None and int(v) >= 3
+    except (TypeError, ValueError):
+        return False
+
+
+def _alloc_ids(root: Path, type_: str) -> tuple[str, str]:
+    """(file_id, disp) for a new artifact, era-aware. v2 allocates the next sequential number
+    (file_id `CR0001`, disp `CR-0001`); v3 mints a collision-checked short ULID where the
+    file_id and disp are the single canonical form `BG-01JQK3F8`."""
+    prefix = sdlc_md.ARTIFACT_TYPES[type_][1]
+    if _schema_v3(root):
+        d = root / sdlc_md.ARTIFACT_TYPES[type_][0]
+        for _ in range(16):
+            ident = f"{prefix}-{sdlc_md.short_ulid()}"
+            if not (d.exists() and any(d.glob(f"{ident}-*.md"))):
+                return ident, ident
+        ident = f"{prefix}-{sdlc_md.new_ulid()[:12]}"  # extend the suffix on a persistent clash
+        return ident, ident
+    n = file_finding._next_number(root, type_)
+    return f"{prefix}{n:04d}", _disp(type_, n)
+
+
 def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
     st = SPEC[type_]["status"]
     # Provenance stamp - marks this artifact as tool-created (deterministic path).
@@ -265,10 +292,7 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
         # dangling link only surfaces at the next integrity run.
         if _find_epic(root, f["epic"]) is None:
             raise ValueError(f"epic {f['epic']} not found - create it first, or fix the id")
-    n = file_finding._next_number(root, type_)
-    prefix = sdlc_md.ARTIFACT_TYPES[type_][1]
-    file_id = f"{prefix}{n:04d}"
-    disp = _disp(type_, n)
+    file_id, disp = _alloc_ids(root, type_)
     slug = file_finding._slug(title)
     path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / f"{file_id}-{slug}.md"
     if path.exists():
@@ -320,19 +344,33 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
                 raise ValueError("each story item needs an 'epic'")
             if _find_epic(root, it["epic"]) is None:
                 raise ValueError(f"epic {it['epic']} not found - create it first")
-    n0 = file_finding._next_number(root, type_)
+    v3 = _schema_v3(root)
+    n0 = None if v3 else file_finding._next_number(root, type_)
     prefix = sdlc_md.ARTIFACT_TYPES[type_][1]
+    d = root / sdlc_md.ARTIFACT_TYPES[type_][0]
+    taken: set[str] = set()  # ids minted earlier in THIS batch (before any file is written)
     plan = []
     for i, it in enumerate(items):
         if not it.get("title"):
             raise ValueError("each item needs a 'title'")
-        n = n0 + i
-        file_id = f"{prefix}{n:04d}"
+        if v3:
+            for _ in range(16):
+                file_id = f"{prefix}-{sdlc_md.short_ulid()}"
+                if file_id not in taken and not (d.exists() and any(d.glob(f"{file_id}-*.md"))):
+                    break
+            else:
+                file_id = f"{prefix}-{sdlc_md.new_ulid()[:12]}"
+            taken.add(file_id)
+            n, disp = None, file_id
+        else:
+            n = n0 + i
+            file_id = f"{prefix}{n:04d}"
+            disp = _disp(type_, n)
         slug = file_finding._slug(it["title"])
         path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / f"{file_id}-{slug}.md"
         if path.exists():
             raise FileExistsError(f"{path} (batch aborted, nothing written)")
-        plan.append({"n": n, "file_id": file_id, "disp": _disp(type_, n),
+        plan.append({"n": n, "file_id": file_id, "disp": disp,
                      "slug": slug, "path": path, "item": it})
     if dry_run:
         return {"type": type_, "count": len(plan), "template": template, "dry_run": True,

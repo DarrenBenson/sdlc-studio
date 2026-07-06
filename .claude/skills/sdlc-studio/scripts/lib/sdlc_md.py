@@ -28,10 +28,17 @@ H1_RE = re.compile(r"^#\s+(.+)$", re.M)
 # dash (CR-0001); the others do not (US0001). The optional dash matches both.
 # Case-insensitive: some repos name files lowercase (`cr0001.md`) while indexes
 # use uppercase (`CR-0001`) — both must parse to the same ID.
-ID_RE = re.compile(r"^((?:EP|US|PL|BG|TS|WF|RFC|CR)-?\d{4})", re.IGNORECASE)
+# Two id eras coexist (RFC0024 / schema v3): the v2 sequential form (`US0001`, `CR-0007`)
+# and the v3 form (`BG-01JQK3F8`) - a type prefix, a dash, then a Crockford-base32 short ULID
+# (>= 8 chars, extended on a rare directory clash). The base32 alternative is matched
+# case-SENSITIVELY (`(?-i:...)`) so it stops at the lowercase `-slug`, never swallowing it.
+_V3_SUFFIX = r"(?-i:-[0-9A-HJKMNP-TV-Z]{8,})"
+ID_RE = re.compile(
+    r"^((?:EP|US|PL|BG|TS|WF|RFC|CR)(?:-?\d{4}|" + _V3_SUFFIX + r"))", re.IGNORECASE)
 # Same, unanchored - finds an ID anywhere (e.g. inside an index table cell
 # `[US0001](US0001-login.md)`). RFC before CR so `RFC-0001` is not read as `CR`.
-ID_SEARCH_RE = re.compile(r"(?<![A-Za-z])(?:EP|US|PL|BG|TS|WF|RFC|CR)-?\d{4}", re.IGNORECASE)
+ID_SEARCH_RE = re.compile(
+    r"(?<![A-Za-z])(?:EP|US|PL|BG|TS|WF|RFC|CR)(?:-?\d{4}|" + _V3_SUFFIX + r")", re.IGNORECASE)
 # Acceptance-criterion heading: `### AC1: Title`.
 AC_HEADING_RE = re.compile(r"^###\s+(AC\d+)(?::\s*(.*))?$")
 # Acceptance-criterion bold bullet: `- **AC1:** text` / `* **AC1** text` / a
@@ -469,9 +476,42 @@ def artifact_files(type_: str, repo_root: Path) -> list[Path]:
 
 
 def id_number(record_id: str) -> int | None:
-    """Numeric part of an artifact ID ('US0042' -> 42, 'CR-0007' -> 7)."""
-    m = re.search(r"(\d{4})$", record_id)
+    """Numeric part of a v2 sequential ID ('US0042' -> 42, 'CR-0007' -> 7). A v3 ULID id
+    ('BG-01JQK3F8') has no sequential number - even one whose suffix ends in digits - so this
+    returns None for it, keeping ULID ids out of the max+1 numeric allocation path."""
+    # letters, optional dash, then EXACTLY four trailing digits and nothing else. This admits
+    # any sequential prefix (US, CR, and the meta ids LL/RV/RETRO) but never a v3 ULID, whose
+    # 8+-char base32 suffix cannot fullmatch a bare 4-digit tail.
+    m = re.fullmatch(r"[A-Za-z]+-?(\d{4})", record_id)
     return int(m.group(1)) if m else None
+
+
+_CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"  # Crockford base32 (no I, L, O, U)
+
+
+def _b32(value: int, length: int) -> str:
+    """Encode the low bits of `value` as `length` Crockford-base32 chars, most-significant first."""
+    out = []
+    for _ in range(length):
+        out.append(_CROCKFORD[value & 0x1F])
+        value >>= 5
+    return "".join(reversed(out))
+
+
+def new_ulid() -> str:
+    """A 26-char Crockford-base32 ULID: a 48-bit millisecond timestamp (lexicographically
+    sortable = creation order) followed by 80 bits of randomness. Collision-free across
+    concurrent writers without coordination (RFC0024)."""
+    import os
+    import time
+    ms = int(time.time() * 1000) & ((1 << 48) - 1)
+    return _b32(ms, 10) + _b32(int.from_bytes(os.urandom(10), "big"), 16)
+
+
+def short_ulid() -> str:
+    """The 8-char id suffix - the timestamp-dominant prefix of a ULID, so short ids still
+    sort in creation order. Extended by the allocator on a rare directory clash."""
+    return new_ulid()[:8]
 
 
 def parse_cutoff(value) -> int | None:

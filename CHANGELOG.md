@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **v4 foundation - distributed artefact identity (schema v3, RFC0024).** Opt-in via
+  `schema_version: 3` in a project's `.config.yaml`; existing v2 projects are untouched
+  (sequential ids stay the default).
+  - **US0055 ULID ids.** A stdlib Crockford-base32 ULID generator (`sdlc_md.new_ulid` /
+    `short_ulid`): a 48-bit millisecond timestamp (lexicographically sortable = creation
+    order) plus 80 bits of randomness, so concurrent writers in parallel worktrees never
+    collide without coordination. `artifact.py new`/`batch` mint `BG-01JQK3F8`-form ids in a
+    v3 project (collision-checked, suffix extended on a rare clash) and stay sequential in v2.
+    Every id reader is now era-tolerant: `ID_RE`/`ID_SEARCH_RE` match both forms, `id_number`
+    returns the sequential number for v2 ids and `None` for ULIDs (keeping them out of the
+    max+1 path).
+
 ### Fixed
 
 - **Self-review bug sweep (RV0006, BG0053-BG0066).** 14 defects found by an

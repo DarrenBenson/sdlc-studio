@@ -44,6 +44,45 @@ def _epic(repo: Path, disp: str = "EP0001") -> None:
         "## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n", encoding="utf-8")
 
 
+def _v3(repo: Path) -> None:
+    """Opt the fixture project into schema v3 (ULID ids)."""
+    cfg = repo / "sdlc-studio"
+    cfg.mkdir(parents=True, exist_ok=True)
+    (cfg / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
+
+
+class SchemaV3AllocationTests(unittest.TestCase):
+    """US0055/RFC0024: a schema-v3 project mints ULID ids; v2 stays sequential."""
+
+    def test_v3_mints_ulid_id(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _v3(repo)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+            r = artifact.new(repo, "bug", "a defect")
+            self.assertRegex(r["id"], r"^BG-[0-9A-HJKMNP-TV-Z]{8,}$")
+            self.assertEqual(r["id"], r["file_id"])   # v3: one canonical form
+            self.assertTrue(r["indexed"])
+            self.assertTrue(Path(r["path"]).exists())
+
+    def test_v3_two_allocations_distinct(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _v3(repo)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+            a = artifact.new(repo, "bug", "one")
+            b = artifact.new(repo, "bug", "two")
+            self.assertNotEqual(a["id"], b["id"])
+            self.assertEqual(reconcile.detect_type("bug", repo)["drift"], [])
+
+    def test_v2_default_stays_sequential(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
+            r = artifact.new(repo, "cr", "change")
+            self.assertEqual(r["id"], "CR-0001")   # no .config.yaml -> v2 sequential
+
+
 class NewTests(unittest.TestCase):
     def test_new_story_creates_wires_validates(self) -> None:
         with tempfile.TemporaryDirectory() as d:
