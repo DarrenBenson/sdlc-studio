@@ -470,6 +470,15 @@ persona resolved against `sdlc-studio/personas/`).
 Gathers inputs only; the review verdict stays with Claude. Full workflow:
 `reference-review.md`.
 
+### `review_generate.py`
+
+Deterministic spine of the model-driven `review generate` on-ramp (zero-setup host-repo review).
+
+- `bootstrap`: idempotently create the `reviews/`/`bugs/`/`change-requests/` folders and indexes
+- `policy`/`prompt`: print the verbatim remediation-only security posture / the review prompt
+  template (`templates/workflows/repo-review.md`)
+- `scan --secret <value>`: fail if a secret value leaked into an artefact. Help: `help/review.md`.
+
 ### `plan.py`
 
 Claude Code plan-file manager for `~/.claude/plans/`.

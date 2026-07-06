@@ -16,7 +16,7 @@ frontier-model runnability and must ship verbatim.
 
 ## Story Breakdown
 
-- [ ] [US0070: review generate command with remediation-only security posture](../stories/US0070-review-generate-command-with-remediation-only-security-posture.md)
+- [x] [US0070: review generate command with remediation-only security posture](../stories/US0070-review-generate-command-with-remediation-only-security-posture.md)
 - [ ] [US0071: Lite profile collapsing the pipeline to PRD, story, implement](../stories/US0071-lite-profile-collapsing-the-pipeline-to-prd-story.md)
 
 ## Revision History

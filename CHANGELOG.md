@@ -7,11 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-> **All of the section below is work-in-progress toward a future v4.0** (a breaking schema-v3
+> **Most of the section below is work-in-progress toward a future v4.0** (a breaking schema-v3
 > change - distributed ULID identity). It is NOT released. The current release remains v3.5.0
 > (non-breaking); the schema-v3 capability is opt-in and dormant by default (`schema_version`
 > defaults to 2), so nothing renumbers until a project deliberately migrates. There is still
-> backlog and breaking-change work to land before this is cut as v4.0.
+> backlog and breaking-change work to land before this is cut as v4.0. The **on-ramp tranche
+> (EP0016)** immediately below is non-breaking and could ship as a v3.6 ahead of v4.
+
+## v3.6 candidate - review/lite on-ramp (EP0016, non-breaking, WIP)
+
+Two try-before-you-adopt entry points for an existing repo. Both are non-breaking and
+independent of the schema-v3 work.
+
+### Added
+
+- **US0070 `review generate` on-ramp.** Point sdlc-studio at an existing repo and get a dated
+  review report plus triaged findings with no prior workspace. `review_generate.py bootstrap`
+  creates the `reviews/`, `bugs/`, and `change-requests/` folders and their indexes
+  idempotently; the model-driven review runs three legs (architecture, code quality, defensive
+  security) from `templates/workflows/repo-review.md`, read-only on source. Security findings
+  are remediation-only by policy - location, weakness class, impact, and fix, no exploits or
+  payloads, and a committed secret is reported by location plus rotation with the value never
+  copied into an artefact. The policy is embedded verbatim in the prompt template, and
+  `review_generate.py scan --secret <value>` fails if any produced artefact contains the value.
 
 ## v4 Tranche 2 - authorship & enforcement + tooling debt (WIP, unreleased)
 

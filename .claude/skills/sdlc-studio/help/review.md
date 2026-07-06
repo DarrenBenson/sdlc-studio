@@ -19,10 +19,42 @@ SDLC Studio is model-invoked - say it in plain language:
 | "Go through the login code for security problems" | `/sdlc-studio code review --focus security` |
 | "Check the code for that story" | `/sdlc-studio code review --story US0001` |
 
-SDLC Studio supports three types of reviews:
+SDLC Studio supports these reviews:
 - **Document review:** Unified PRD, TRD, TSD review with cross-document consistency
 - **Epic review:** Cascading review of epic and changed stories (default behaviour)
 - **Code review:** Design pattern and quality review of implementation
+- **Repository review (`review generate`):** Zero-setup audit of an existing repo
+  that files findings as artefacts - the on-ramp for trying sdlc-studio on real code
+
+---
+
+# /sdlc-studio review generate - Repository Review (on-ramp)
+
+Point sdlc-studio at an existing repository, get a dated review report plus triaged
+findings, and decide whether to adopt the full pipeline - **with no prior workspace**.
+This is the try-before-you-adopt entry point for a brownfield repo.
+
+## What Happens
+
+1. **Bootstrap** - `scripts/review_generate.py bootstrap` creates the `reviews/`,
+   `bugs/`, and `change-requests/` folders and their indexes if the repo has never
+   run sdlc-studio. Idempotent; touches nothing else.
+2. **Three legs** - the agent reviews architecture, code quality, and defensive
+   security (prompt template: `templates/workflows/repo-review.md`), read-only on
+   source, evidence-cited per finding.
+3. **File findings** - each finding lands as a Bug or CR via `file_finding.py`; ids
+   and index rows are tool-allocated, never hand-authored.
+4. **Report** - a dated `reviews/RV{nnnn}` report with per-leg assessment, the full
+   findings table, limitations, and the top five priorities.
+
+## Security posture (binding)
+
+Security findings are remediation-only: location, weakness class, realistic impact,
+and fix - no proof-of-concept exploits or payloads. A committed secret is reported
+by location plus rotation instructions; the value is never copied into an artefact.
+Prove it held with `scripts/review_generate.py scan --secret "<value>"`, which fails
+if any produced artefact contains the value. The exact wording is embedded verbatim
+in the prompt template (`review_generate.py policy` prints it).
 
 ---
 
