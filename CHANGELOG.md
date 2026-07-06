@@ -42,6 +42,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     publish-regardless-of-outcome commitment - the RFC0025 device that must exist before any
     measured run. The harness and runs (US0074/US0075) follow.
 
+### Fixed
+
+- **US0076 config failure regimes (CR0180).** `sdlc_md.project_override` now emits a
+  one-line warn-once to stderr when a `sdlc-studio/.config.yaml` exists but cannot be honoured
+  (no PyYAML / malformed), instead of silently reverting to defaults - so a project's declared
+  conventions are never silently ignored. Absent config stays silent. (BG0062 already fixed
+  the related Done-gate crash.)
+
 ## [4.0.0] - 2026-07-06
 
 Major release: the v4 foundation - distributed artefact identity (schema v3). The move from a

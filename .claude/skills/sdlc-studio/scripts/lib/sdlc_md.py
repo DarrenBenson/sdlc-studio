@@ -329,6 +329,25 @@ def is_terminal_status(type_: str, status: str) -> bool:
     return status in terminal_statuses(type_)
 
 
+_OVERRIDE_WARNED: set[str] = set()
+
+
+def _warn_unhonoured(cfg_path: Path, why: str) -> None:
+    """Emit a one-line stderr warning (once per file) that a present `.config.yaml` could not
+    be honoured, so a project's declared conventions are never SILENTLY ignored. Silent-default
+    is the failure class this defends against; the warning never raises."""
+    key = str(cfg_path)
+    if key in _OVERRIDE_WARNED:
+        return
+    _OVERRIDE_WARNED.add(key)
+    try:
+        import sys
+        print(f"warning: {cfg_path} exists but was not applied - {why}; using built-in "
+              "defaults (config-driven behaviour needs PyYAML)", file=sys.stderr)
+    except Exception:  # noqa: BLE001 - a warning must never break a read
+        pass
+
+
 def project_override(repo_root, dotted: str, default=None):
     """Read a dotted key from the project's `sdlc-studio/.config.yaml` (the override
     file only, no defaults merge). Self-contained and fully degrading: a missing
@@ -341,10 +360,12 @@ def project_override(repo_root, dotted: str, default=None):
     try:
         import yaml  # soft dependency, mirrors config.py
     except ImportError:
+        _warn_unhonoured(cfg_path, "PyYAML is not installed")
         return default
     try:
         cur = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
-    except Exception:  # noqa: BLE001 - a broken override must never break parsing
+    except Exception as exc:  # noqa: BLE001 - a broken override must never break parsing
+        _warn_unhonoured(cfg_path, f"it could not be parsed ({exc})")
         return default
     for part in dotted.split("."):
         if not isinstance(cur, dict) or part not in cur:

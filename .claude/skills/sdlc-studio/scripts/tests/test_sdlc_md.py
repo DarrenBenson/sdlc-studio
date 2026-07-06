@@ -477,6 +477,40 @@ class IterTablesTests(unittest.TestCase):
         self.assertEqual(t["rows"][0][0], 3)
 
 
+class ConfigOverrideWarnTests(unittest.TestCase):
+    """US0076/CR0180: a present-but-unhonourable .config.yaml warns once, never silently."""
+
+    def test_malformed_config_warns_once(self) -> None:
+        import contextlib
+        import io
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest("PyYAML absent - the ImportError path warns differently")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cfg = root / "sdlc-studio"
+            cfg.mkdir(parents=True)
+            (cfg / ".config.yaml").write_text("this: [unterminated\n", encoding="utf-8")  # bad YAML
+            sdlc_md._OVERRIDE_WARNED.discard(str(cfg / ".config.yaml"))
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                self.assertEqual(sdlc_md.project_override(root, "x", "dflt"), "dflt")
+                sdlc_md.project_override(root, "y", "dflt")  # second read: no repeat
+            out = err.getvalue()
+            self.assertIn("was not applied", out)
+            self.assertEqual(out.count("was not applied"), 1)  # warn-once
+
+    def test_no_config_is_silent(self) -> None:
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                sdlc_md.project_override(Path(d), "x", "dflt")
+            self.assertEqual(err.getvalue(), "")
+
+
 class UlidIdentityTests(unittest.TestCase):
     """US0055/RFC0024: schema-v3 ULID ids coexist with v2 sequential ids; every id reader
     must parse both eras."""
