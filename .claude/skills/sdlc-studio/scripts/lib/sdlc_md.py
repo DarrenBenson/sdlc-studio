@@ -555,6 +555,26 @@ def allocation_lock(repo_root, timeout: float = 10.0):
         fh.close()
 
 
+def alias_map(repo_root) -> dict[str, str]:
+    """Map every artefact alias (normalised) -> its current canonical id, read from the
+    `> **Aliases:** OLD1, OLD2` metadata line. Lets a reader resolve a pre-migration id to the
+    current ULID after a v2 -> v3 migration (RFC0024). Empty when nothing has been migrated."""
+    out: dict[str, str] = {}
+    root = Path(repo_root)
+    for type_ in ARTIFACT_TYPES:
+        for p in artifact_files(type_, root):
+            canonical = extract_record_id(p.stem)
+            if not canonical:
+                continue
+            raw = extract_field(p.read_text(encoding="utf-8"), "Aliases")
+            if not raw:
+                continue
+            for a in re.split(r"[,\s]+", raw.strip()):
+                if a:
+                    out[norm_id(a)] = canonical
+    return out
+
+
 def new_ulid() -> str:
     """A 26-char Crockford-base32 ULID: a 48-bit millisecond timestamp (lexicographically
     sortable = creation order) followed by 80 bits of randomness. Collision-free across

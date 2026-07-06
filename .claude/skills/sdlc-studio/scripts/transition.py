@@ -157,13 +157,17 @@ def _done_verify_gate(root: Path, path: Path, text: str) -> str | None:
 
 
 def _find(repo_root: Path, artifact_id: str):
-    """(path, type) of the artifact with this id, or (None, None)."""
+    """(path, type) of the artifact with this id, or (None, None). Resolves a pre-migration
+    id through the alias table, so `--id US0001` still works after a v2 -> v3 migration."""
     norm = sdlc_md.norm_id(artifact_id)
     for type_ in sdlc_md.ARTIFACT_TYPES:
         for p in sdlc_md.artifact_files(type_, repo_root):
             rec = sdlc_md.extract_record_id(p.stem)
             if rec and sdlc_md.norm_id(rec) == norm:
                 return p, type_
+    aliased = sdlc_md.alias_map(repo_root).get(norm)
+    if aliased and sdlc_md.norm_id(aliased) != norm:
+        return _find(repo_root, aliased)
     return None, None
 
 

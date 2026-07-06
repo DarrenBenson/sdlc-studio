@@ -30,6 +30,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `sdlc_md.allocation_lock` (POSIX `flock`, best-effort elsewhere, timeout-and-proceed so a
     stale lock never wedges a wave) serialises allocate-and-write in `artifact.new`, so
     concurrent writers never mint the same id or clobber a shared index.
+  - **US0056 v2-to-v3 migration.** `migrate_v3.py plan|apply` rewrites a workspace's
+    sequential ids to ULIDs, preserving creation order (each ULID's timestamp is derived from
+    the file's date), retaining the old id as an alias (`> **Aliases:** BG0001`), rewriting
+    every intra-workspace link, and regenerating index counts. Dry-run-first and idempotent (a
+    second run is a no-op). `sdlc_md.alias_map` resolves a pre-migration id to its current
+    ULID, and `transition` looks artefacts up through it, so `--id US0001` still works after a
+    migration.
 
 ### Fixed
 

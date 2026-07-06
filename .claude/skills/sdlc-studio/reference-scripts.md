@@ -408,6 +408,19 @@ Covers the 8 pipeline types plus the **meta-artifacts** `review` (RV####) and `r
 personas are named, not numbered.) Read-only; runs `git ls-tree` (no fetch - the caller fetches
 first per the contract). Backs ID assignment in `reference-cr.md` and doctrine rule 13.
 
+### `migrate_v3.py`
+
+One-shot schema v2 -> v3 migration (sequential ids -> type-prefixed short ULIDs):
+
+- `plan`: preview the old-id -> new-id map, write nothing
+- `apply`: rewrite ids to ULIDs, retain each old id as an alias (`> **Aliases:**`), rewrite
+  every intra-workspace link, and regenerate index counts
+
+Preserves creation order (each ULID's timestamp is derived from the file's date), is dry-run
+first, and is idempotent (an already-migrated file is skipped). After `apply`, set
+`schema_version: 3` in `.config.yaml` so new artefacts mint ULIDs too. `sdlc_md.alias_map`
+resolves a pre-migration id to its current ULID, so `--id US0001` still works afterwards.
+
 ### `review_prep.py` (read-only)
 
 - `prep`: deterministic inputs for the five-leg review (artifact staleness,
