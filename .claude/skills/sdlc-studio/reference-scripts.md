@@ -421,6 +421,19 @@ first, and is idempotent (an already-migrated file is skipped). After `apply`, s
 `schema_version: 3` in `.config.yaml` so new artefacts mint ULIDs too. `sdlc_md.alias_map`
 resolves a pre-migration id to its current ULID, so `--id US0001` still works afterwards.
 
+### `audit_check.py`
+
+One CI-runnable command over the schema-v3 team-schema rules, emitting STABLE rule ids so the
+output is a reference implementation the wider crew audit linter can consume:
+
+- `check`: run all rules; exit 1 on any error-severity finding, 0 on a clean repo. `--format
+  json` gives `{ok, rules, findings}` with `{rule, file, message}` per finding.
+
+Rules (all era-gated to schema v3, so a v2 project reports nothing): `authorship-structured`,
+`authorship-type`, `authorship-unresolved`, `evidence-present`, `duties-separated`,
+`id-format`, `index-derived`. These same rules are enforced in the blocking `gate` via
+`validate` and the `index-derived` check; `audit_check.py` is the focused, stable-id view.
+
 ### `backfill_authorship.py`
 
 Backfills a structured `> **Raised-by:** Name; type; version` reference onto artefacts that

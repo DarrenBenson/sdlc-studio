@@ -26,6 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     bug to carry a file:line reference, command output, or reproduction steps, and a CR to
     carry an impact statement plus an effort estimate. Presence only (truth stays with
     reviewers); a `{{placeholder}}` counts as absent; legacy v2 artefacts are exempt.
+  - **US0063 consolidated audit-check.** `audit_check.py check` runs the team-schema rules
+    with stable ids (`authorship-structured`, `evidence-present`, `duties-separated`,
+    `id-format`, `index-derived`, ...), exits non-zero on any violation, and gives `--format
+    json` for the crew audit linter. The same rules are enforced in the blocking `gate` via
+    `validate` and `index-derived`; `tranche-shape` ships dark until EP0014's tranche field.
 
 ## [4.0.0] - 2026-07-06
 
