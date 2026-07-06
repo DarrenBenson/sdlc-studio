@@ -3,6 +3,7 @@
 > **Status:** Proposed
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
+> **Epic (v4 breakdown):** [EP0014](../epics/EP0014-agentic-triage-and-noise-control.md)
 > **Priority:** Low
 > **Type:** Enhancement
 > **Raised-by:** Dani Okafor (Engineering amigo)

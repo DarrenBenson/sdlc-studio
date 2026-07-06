@@ -3,6 +3,7 @@
 > **Status:** Proposed
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
+> **Epic (v4 breakdown):** [EP0017](../epics/EP0017-positioning-and-evidence.md)
 > **Priority:** Medium
 > **Type:** Improvement
 > **Raised-by:** Lena Marsh (Product amigo)

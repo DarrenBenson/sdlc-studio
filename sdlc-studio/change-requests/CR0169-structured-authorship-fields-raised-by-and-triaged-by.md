@@ -3,6 +3,7 @@
 > **Status:** Proposed
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
+> **Epic (v4 breakdown):** [EP0013](../epics/EP0013-structured-authorship-and-policy-enforcement.md)
 > **Priority:** High
 > **Type:** Enhancement
 > **Raised-by:** Dani Okafor (Engineering amigo)

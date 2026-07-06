@@ -3,6 +3,7 @@
 > **Status:** Proposed
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
+> **Epic (v4 breakdown):** [EP0016](../epics/EP0016-host-repo-review-and-lite-on-ramp.md)
 > **Priority:** Medium
 > **Type:** Enhancement
 > **Raised-by:** Lena Marsh (Product amigo)

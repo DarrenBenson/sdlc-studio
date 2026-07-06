@@ -1,6 +1,6 @@
 # RFC-0024: Distributed artefact identity: type-prefixed short ULIDs (schema v3)
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Priority:** High
@@ -111,11 +111,11 @@ were actually buying.
 
 ## Open Decisions
 
-| # | Decision | Options | Owner | How it resolves | Status |
+| # | Decision | Options | Owner | Resolution | Status |
 | --- | --- | --- | --- | --- | --- |
-| D1 | ULID prefix length (8 chars shown; enough entropy for repo-scale volumes?) | 8 / 10 / full 26 | Dani | spike: collision maths at 10k artefacts/repo | Open |
-| D2 | Alias resolution surface: frontmatter-only, or also a generated alias map for link checkers | frontmatter / map | Dani | spike alongside CR0168 (derived indexes) | Open |
-| D3 | Do friendly GitHub numbers appear in filenames or frontmatter only | frontmatter only (leaning) | Lena | consult | Open |
+| D1 | ULID prefix length (8 chars shown; enough entropy for repo-scale volumes?) | 8 / 10 / full 26 | Dani | **8-char timestamp-prefixed suffix**, with a create-time directory check that extends the suffix on the rare clash. A collision-maths spike in CR0167 WS1 may raise it to 10 before release; the reader accepts any length, so this is not a lock-in. | Resolved |
+| D2 | Alias resolution surface: frontmatter-only, or also a generated alias map for link checkers | frontmatter / map | Dani | **Both** - `aliases:` in frontmatter is canonical; `check_links.py` and reconcile consume a generated alias map derived from it (a link checker cannot open every file per reference at scale). The map is derived output, never hand-edited (aligns with CR0168). | Resolved |
+| D3 | Do friendly GitHub numbers appear in filenames or frontmatter only | frontmatter only (leaning) | Lena | **Frontmatter only** - the ULID stays canonical in the filename so the tool is local-first and offline-capable; the friendly number is a projection recorded as an alias. | Resolved |
 
 ## Risks
 
@@ -135,11 +135,17 @@ were actually buying.
 
 ## Decision
 
-> *Filled on acceptance.*
-
-**Outcome:** TBD
-**Rationale:** TBD
+**Outcome:** Accepted - Option A (type prefix plus short ULID, schema v3).
+**Rationale:** It removes the allocation coordination point rather than relocating it (the
+fatal flaw of the rejected unnumbered-until-triage option), and the timestamp prefix keeps
+directory listings in creation order - the only property sequential numbers were buying.
+Identity is allocated at creation; triage stays a status transition. All three open decisions
+resolved on their leanings (8-char suffix, dual frontmatter+map aliases, frontmatter-only
+friendly numbers); each is reader-tolerant, so none blocks the build and a spike may refine
+D1/D2 before release.
 **Spawned CRs:** [CR-0167](../change-requests/CR0167-distributed-artefact-identity-implementation-ulid-ids-migration-aliases.md)
+(WS1 id generator, WS2 migration + alias readers, WS3 GitHub-sync friendly numbers). Targeted
+for the v4 release (schema-v3 tranche).
 
 ## Revision History
 
@@ -147,3 +153,4 @@ were actually buying.
 | --- | --- | --- |
 | 2026-07-06 | Dani Okafor (Engineering amigo) | Created via `new` (deterministic) |
 | 2026-07-06 | Dani Okafor (Engineering amigo) | Drafted options, rejected unnumbered-until-triage, recommended ULID |
+| 2026-07-06 | Dani Okafor (Engineering amigo) | Open decisions resolved on leanings; accepted for v4 |

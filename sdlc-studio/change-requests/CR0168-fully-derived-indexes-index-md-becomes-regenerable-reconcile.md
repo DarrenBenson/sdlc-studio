@@ -3,6 +3,7 @@
 > **Status:** Proposed
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
+> **Epic (v4 breakdown):** [EP0012](../epics/EP0012-distributed-artefact-identity-schema-v3.md)
 > **Priority:** High
 > **Type:** Enhancement
 > **Raised-by:** Dani Okafor (Engineering amigo)

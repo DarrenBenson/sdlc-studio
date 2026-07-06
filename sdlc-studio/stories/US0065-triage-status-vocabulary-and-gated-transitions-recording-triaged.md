@@ -1,0 +1,37 @@
+# US0065: Triage status vocabulary and gated transitions recording triaged_by
+
+> **Status:** Draft
+> **Created:** 2026-07-06
+> **Created-by:** sdlc-studio new
+> **Epic:** EP0014
+> **Persona:** Orchestrator / Operator
+> **Source:** CR-0173 (workstream 1)
+
+## User Story
+
+**As an** operator moving from gate to auditor
+**I want** triage as explicit, agent-performable status transitions that record triaged_by
+**So that** the sampling human has a defined surface to audit and separation-of-duties has its trigger
+
+## Acceptance Criteria
+
+### AC1: Inbox then gated triaged transition
+
+- **Given** a newly filed artefact in `inbox`
+- **When** an agent triages it
+- **Then** `transition.py` gates the `triaged` transition, requires structured triaged_by, and
+  enforces the separation-of-duties rule at that moment
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k triage_gate
+
+### AC2: Triage severity recorded alongside the raiser's
+
+- **Given** a triaging persona assigning severity
+- **When** the transition records
+- **Then** both the raiser's and triager's severity are retained for later metrics
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k triage_severity
+
+## Revision History
+
+| Date | Author | Change |
+| --- | --- | --- |
+| 2026-07-06 | sdlc | Created via `new` (deterministic) |

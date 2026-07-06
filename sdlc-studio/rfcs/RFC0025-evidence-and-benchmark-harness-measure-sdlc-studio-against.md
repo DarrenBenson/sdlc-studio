@@ -1,6 +1,6 @@
 # RFC-0025: Evidence and benchmark harness: measure sdlc-studio against plain Claude Code
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
@@ -90,11 +90,11 @@ RFC before the first measured run.
 
 ## Open Decisions
 
-| # | Decision | Options | Owner | How it resolves | Status |
+| # | Decision | Options | Owner | Resolution | Status |
 | --- | --- | --- | --- | --- | --- |
-| D1 | N per arm per task (cost vs error-bar width) | 3 / 5 / 10 | Sam | token-cost estimate spike | Open |
-| D2 | What "a good CLAUDE.md" is for the baseline arm (must be genuinely good, or the comparison is a straw man) | adapt Anthropic best-practice template / commission one blind | Sam | consult | Open |
-| D3 | Publication venue (repo docs/ vs blog) | repo-first (leaning) | Lena | operator call | Open |
+| D1 | N per arm per task (cost vs error-bar width) | 3 / 5 / 10 | Sam | **N=5** as the default, with a de-risking spike first: run N=1 across the fixtures to prove the harness and get a rough effect-size read before committing the full 5x. Report error bars honestly at whatever N the budget allows. | Resolved |
+| D2 | What "a good CLAUDE.md" is for the baseline arm (must be genuinely good, or the comparison is a straw man) | adapt Anthropic best-practice template / commission one blind | Sam | **Adapt the published best-practice template**, then have a review seat that is NOT the harness author sign it off as genuinely good - a straw-man baseline fails the CR's acceptance criteria. | Resolved |
+| D3 | Publication venue (repo docs/ vs blog) | repo-first (leaning) | Lena | **Repo-first** (`docs/benchmarks/`), operator may additionally publish externally. The commitment is to publish regardless of outcome, wherever it lands. | Resolved |
 
 ## Risks
 
@@ -114,11 +114,17 @@ RFC before the first measured run.
 
 ## Decision
 
-> *Filled on acceptance.*
-
-**Outcome:** TBD
-**Rationale:** TBD
+**Outcome:** Accepted - Option A (fixture-repo harness with held-back test suites), with
+Option B anecdotes clearly labelled. Protocol pre-registered before the first measured run.
+**Rationale:** It is the only option whose defect-escape metric is measured by an oracle, not
+judged, and it exercises the lifecycle claims a bug-patch benchmark (Option C) cannot. The
+publish-regardless-of-outcome commitment stands; the honest-error-bars stance makes even a
+small n unique in the category. N=5 with an N=1 de-risking spike first, an independently
+reviewed baseline, repo-first publication.
 **Spawned CRs:** [CR-0178](../change-requests/CR0178-benchmark-harness-implementation-fixed-task-set-tokens-wall.md)
+(WS1 protocol pre-registration, WS2 harness + fixtures + hidden suites, WS3 first run +
+published report). Note: the WS1 de-risking spike should run EARLY - it validates or falsifies
+the premise of the whole v4 investment, so it is worth pulling ahead of the full build.
 
 ## Revision History
 
@@ -126,3 +132,4 @@ RFC before the first measured run.
 | --- | --- | --- |
 | 2026-07-06 | Sam Eriksson (QA amigo) | Created via `new` (deterministic) |
 | 2026-07-06 | Sam Eriksson (QA amigo) | Drafted protocol options; committed to publish-regardless-of-outcome |
+| 2026-07-06 | Sam Eriksson (QA amigo) | Open decisions resolved; accepted for v4; WS1 spike pulled early |

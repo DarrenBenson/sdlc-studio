@@ -5,6 +5,7 @@
 > **Type:** Improvement
 > **Date:** 2026-07-05
 > **Created-by:** sdlc-studio file
+> **Epic (v4 breakdown):** [EP0018](../epics/EP0018-tooling-hardening-and-review-debt.md)
 
 ## Summary
 

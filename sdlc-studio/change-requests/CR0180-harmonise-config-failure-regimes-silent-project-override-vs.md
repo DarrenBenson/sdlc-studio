@@ -3,6 +3,7 @@
 > **Status:** Proposed
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
+> **Epic (v4 breakdown):** [EP0018](../epics/EP0018-tooling-hardening-and-review-debt.md)
 > **Priority:** Medium
 > **Type:** Improvement
 > **Raised-by:** Sam Eriksson (QA amigo), repository review RV0006
