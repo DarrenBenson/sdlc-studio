@@ -1,6 +1,6 @@
 # US0080: Code-quality debt: docstrings, dedup, format json, complexity
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0018

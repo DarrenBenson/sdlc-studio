@@ -1,6 +1,6 @@
 # US0060: Structured raised_by and triaged_by typed references with backfill
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0013

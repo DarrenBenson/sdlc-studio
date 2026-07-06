@@ -1,6 +1,6 @@
 # US0081: Batch scaffold wiring polish
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0018

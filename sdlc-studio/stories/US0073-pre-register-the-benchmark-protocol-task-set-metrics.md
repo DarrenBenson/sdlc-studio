@@ -1,6 +1,6 @@
 # US0073: Pre-register the benchmark protocol: task set, metrics, baseline
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0017

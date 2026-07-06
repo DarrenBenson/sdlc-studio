@@ -1,6 +1,6 @@
 # US0062: Evidence-as-schema: per-type required evidence, lint-enforced
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0013

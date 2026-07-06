@@ -16,11 +16,11 @@ test tier). Depends on EP0012's identity/index guarantees; CR0169 blocks the enf
 
 ## Story Breakdown
 
-- [ ] [US0060: Structured raised_by and triaged_by typed references with backfill](../stories/US0060-structured-raised-by-and-triaged-by-typed-references.md)
-- [ ] [US0061: Separation-of-duties lint: triaged_by must not equal raised_by](../stories/US0061-separation-of-duties-lint-triaged-by-must-not.md)
-- [ ] [US0062: Evidence-as-schema: per-type required evidence, lint-enforced](../stories/US0062-evidence-as-schema-per-type-required-evidence-lint.md)
-- [ ] [US0063: Consolidated audit-check command over the team-schema rules](../stories/US0063-consolidated-audit-check-command-over-the-team-schema.md)
-- [ ] [US0064: Cross-script invariant test tier over the cascade seams](../stories/US0064-cross-script-invariant-test-tier-over-the-cascade.md)
+- [x] [US0060: Structured raised_by and triaged_by typed references with backfill](../stories/US0060-structured-raised-by-and-triaged-by-typed-references.md)
+- [x] [US0061: Separation-of-duties lint: triaged_by must not equal raised_by](../stories/US0061-separation-of-duties-lint-triaged-by-must-not.md)
+- [x] [US0062: Evidence-as-schema: per-type required evidence, lint-enforced](../stories/US0062-evidence-as-schema-per-type-required-evidence-lint.md)
+- [x] [US0063: Consolidated audit-check command over the team-schema rules](../stories/US0063-consolidated-audit-check-command-over-the-team-schema.md)
+- [x] [US0064: Cross-script invariant test tier over the cascade seams](../stories/US0064-cross-script-invariant-test-tier-over-the-cascade.md)
 
 ## Revision History
 

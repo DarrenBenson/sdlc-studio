@@ -1,6 +1,6 @@
 # US0063: Consolidated audit-check command over the team-schema rules
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0013

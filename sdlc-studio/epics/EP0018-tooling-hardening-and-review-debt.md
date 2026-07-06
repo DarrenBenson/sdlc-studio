@@ -17,13 +17,13 @@ independent of the schema work; CR0180/CR0182 are smaller now that BG0062/BG0061
 
 ## Story Breakdown
 
-- [ ] [US0076: Harmonise the config failure regimes with a warn on unhonoured override](../stories/US0076-harmonise-the-config-failure-regimes-with-a-warn.md)
-- [ ] [US0077: Route github_sync and verify_ac through shared discovery and unify root flag](../stories/US0077-route-github-sync-and-verify-ac-through-shared.md)
-- [ ] [US0078: Consolidate the two archive implementations on iter_tables](../stories/US0078-consolidate-the-two-archive-implementations-on-iter-tables.md)
-- [ ] [US0079: Security hardening: action pinning, installer integrity, sync redaction](../stories/US0079-security-hardening-action-pinning-installer-integrity-sync-redaction.md)
-- [ ] [US0080: Code-quality debt: docstrings, dedup, format json, complexity](../stories/US0080-code-quality-debt-docstrings-dedup-format-json-complexity.md)
-- [ ] [US0081: Batch scaffold wiring polish](../stories/US0081-batch-scaffold-wiring-polish.md)
-- [ ] [US0082: Context tiering: digest closed artefacts to bound token cost](../stories/US0082-context-tiering-digest-closed-artefacts-to-bound-token.md)
+- [x] [US0076: Harmonise the config failure regimes with a warn on unhonoured override](../stories/US0076-harmonise-the-config-failure-regimes-with-a-warn.md)
+- [x] [US0077: Route github_sync and verify_ac through shared discovery and unify root flag](../stories/US0077-route-github-sync-and-verify-ac-through-shared.md)
+- [x] [US0078: Consolidate the two archive implementations on iter_tables](../stories/US0078-consolidate-the-two-archive-implementations-on-iter-tables.md)
+- [x] [US0079: Security hardening: action pinning, installer integrity, sync redaction](../stories/US0079-security-hardening-action-pinning-installer-integrity-sync-redaction.md)
+- [x] [US0080: Code-quality debt: docstrings, dedup, format json, complexity](../stories/US0080-code-quality-debt-docstrings-dedup-format-json-complexity.md)
+- [x] [US0081: Batch scaffold wiring polish](../stories/US0081-batch-scaffold-wiring-polish.md)
+- [x] [US0082: Context tiering: digest closed artefacts to bound token cost](../stories/US0082-context-tiering-digest-closed-artefacts-to-bound-token.md)
 
 ## Revision History
 

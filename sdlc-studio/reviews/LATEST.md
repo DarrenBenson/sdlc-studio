@@ -1,17 +1,26 @@
-# LATEST - current project state (v4.0.0)
+# LATEST - current project state (v4.1.0)
 
 > The current-state anchor - a WINDOW, not a ledger. **Re-read this and run
 > `/sdlc-studio status` after any context reset or compaction.** Durable guidance lives in
 > AGENTS.md; per-sprint detail lives in the retros and CHANGELOG.md; keep this file under
 > `docs.latest_max_lines` (doc-freshness advisory) by moving past sprints to History lines.
 >
-> **Project version:** 4.0.0 (released 2026-07-06) ·
+> **Project version:** 4.1.0 (released 2026-07-06) ·
 > **Date:** 2026-07-06 ·
-> **Gates:** lint clean, 1200 script tests pass (+46 repo-only tools tests), `gate` PASS,
-> reconcile drift 0, disclosure 1 (advisory), npm audit 0, CI green on main.
+> **Gates:** lint clean, 1229 script tests pass (+50 repo-only tools tests), `gate` PASS,
+> reconcile drift 0, npm audit 0, CI green on main.
 
 ## Current
 
+- **v4.1.0 - authorship & enforcement (EP0013) + tooling debt (EP0018) + benchmark protocol.**
+  13 stories, trunk-based to main. EP0013: structured typed authorship (US0060, resolver +
+  backfill), separation-of-duties lint (US0061), evidence-as-schema (US0062), the consolidated
+  `audit_check.py` (US0063), and the cross-script invariant tier (US0064 - which caught a
+  BG0053 regression). EP0018: config warn-once (US0076), shared discovery (US0077), archive
+  correctness guard (US0078), state-hygiene (US0079), reconcile docstring + apply JSON (US0080),
+  batch-wiring guard (US0081), `digest.py` context tiering (US0082). Plus US0073 (pre-registered
+  benchmark protocol). All schema-v3 enforcement is era-gated; v2 projects untouched. Several
+  EP0018 CRs delivered a slice with the larger refactor scoped forward (CR0181/0182/0186/0187).
 - **v4.0.0 - distributed artefact identity (schema v3), the team-tool foundation.** The 6-story
   foundation sprint (EP0012 identity + EP0015 concurrency), delivered trunk-based to main:
   US0055 ULID generator + era-tolerant readers, US0056 v2->v3 migration (`migrate_v3.py`, order-

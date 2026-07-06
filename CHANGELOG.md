@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-07-06
+
+The v4 Tranche 2 - authorship & policy enforcement (EP0013), plus the RV0006 tooling-debt
+tranche (EP0018) and the benchmark protocol. 13 stories delivered trunk-based. All schema-v3
+enforcement is era-gated, so existing v2 projects are unaffected.
+
 ### Added
 
 - **v4 Tranche 2 - authorship & enforcement (schema v3, opt-in).** All rules are era-gated,

@@ -1,6 +1,6 @@
 # US0082: Context tiering: digest closed artefacts to bound token cost
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0018

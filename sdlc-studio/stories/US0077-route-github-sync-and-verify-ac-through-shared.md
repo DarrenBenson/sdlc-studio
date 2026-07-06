@@ -1,6 +1,6 @@
 # US0077: Route github_sync and verify_ac through shared discovery and unify root flag
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0018
