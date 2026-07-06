@@ -1,14 +1,20 @@
-# LATEST - current project state (v4.1.0)
+# LATEST - current project state (v3.5.0 released; v4 is WIP)
 
 > The current-state anchor - a WINDOW, not a ledger. **Re-read this and run
 > `/sdlc-studio status` after any context reset or compaction.** Durable guidance lives in
 > AGENTS.md; per-sprint detail lives in the retros and CHANGELOG.md; keep this file under
 > `docs.latest_max_lines` (doc-freshness advisory) by moving past sprints to History lines.
 >
-> **Project version:** 4.1.0 (released 2026-07-06) ·
+> **Released version:** 3.5.0 (2026-07-05, non-breaking) ·
 > **Date:** 2026-07-06 ·
-> **Gates:** lint clean, 1229 script tests pass (+50 repo-only tools tests), `gate` PASS,
+> **Gates:** lint clean, 1232 script tests pass (+49 repo-only tools tests), `gate` PASS,
 > reconcile drift 0, npm audit 0, CI green on main.
+>
+> **v4 is WORK-IN-PROGRESS, not released.** The v4 foundation (schema-v3 ULID identity - a
+> breaking change) and Tranche 2 (authorship/enforcement + tooling debt) are all on `main` as
+> unreleased WIP. v4.0 is cut only once the backlog is complete AND it has been tested in anger
+> on real projects. The schema-v3 capability is opt-in and dormant by default (`schema_version`
+> defaults to 2), so `main` stays non-breaking for anyone on v3.5.0.
 
 ## Current
 

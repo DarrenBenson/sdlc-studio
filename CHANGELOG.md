@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [4.1.0] - 2026-07-06
+> **All of the section below is work-in-progress toward a future v4.0** (a breaking schema-v3
+> change - distributed ULID identity). It is NOT released. The current release remains v3.5.0
+> (non-breaking); the schema-v3 capability is opt-in and dormant by default (`schema_version`
+> defaults to 2), so nothing renumbers until a project deliberately migrates. There is still
+> backlog and breaking-change work to land before this is cut as v4.0.
+
+## v4 Tranche 2 - authorship & enforcement + tooling debt (WIP, unreleased)
 
 The v4 Tranche 2 - authorship & policy enforcement (EP0013), plus the RV0006 tooling-debt
 tranche (EP0018) and the benchmark protocol. 13 stories delivered trunk-based. All schema-v3
@@ -86,9 +92,9 @@ enforcement is era-gated, so existing v2 projects are unaffected.
   conventions are never silently ignored. Absent config stays silent. (BG0062 already fixed
   the related Done-gate crash.)
 
-## [4.0.0] - 2026-07-06
+## v4 foundation - distributed identity, schema v3 (WIP, unreleased)
 
-Major release: the v4 foundation - distributed artefact identity (schema v3). The move from a
+The v4 foundation - distributed artefact identity (schema v3). The move from a
 single-writer tool toward a team-based one. All new capability is opt-in (`schema_version: 3`);
 existing v2 projects and their sequential ids are untouched until they choose to migrate.
 
