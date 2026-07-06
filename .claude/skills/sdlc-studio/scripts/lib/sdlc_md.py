@@ -555,6 +555,59 @@ def allocation_lock(repo_root, timeout: float = 10.0):
         fh.close()
 
 
+def schema_version(repo_root) -> int:
+    """The project's artefact schema version (`schema_version` in `.config.yaml`), defaulting
+    to 2. v3 turns on ULID identity and the structured-authorship / evidence enforcement."""
+    v = project_override(repo_root, "schema_version", None)
+    try:
+        return int(v) if v is not None else 2
+    except (TypeError, ValueError):
+        return 2
+
+
+def is_schema_v3(repo_root) -> bool:
+    """True when the project opted into schema v3 (the team-schema rules apply)."""
+    return schema_version(repo_root) >= 3
+
+
+def parse_authorship(text: str, field: str = "Raised-by") -> dict | None:
+    """Parse a typed authorship reference `Name; type; version` from a `> **Field:**` metadata
+    line into `{name, type, version}` (type lower-cased). None when the field is absent. The
+    resolver treats `type` as one of human | persona | agent - persona today, agent later,
+    with no schema change."""
+    raw = extract_field(text, field)
+    if not raw:
+        return None
+    parts = [p.strip() for p in raw.split(";")]
+    return {"name": parts[0] if parts else "",
+            "type": (parts[1].lower() if len(parts) > 1 else ""),
+            "version": parts[2] if len(parts) > 2 else ""}
+
+
+def resolve_author(name: str, atype: str, repo_root) -> bool:
+    """Whether a typed authorship reference resolves. `human`/`agent` always validate (git
+    identity / reserved for later); `persona` must match a document under `sdlc-studio/personas/`
+    (including `amigos/`) by display name or filename. Unknown type -> False."""
+    if atype in ("human", "agent"):
+        return True
+    if atype != "persona":
+        return False
+    pdir = Path(repo_root) / "sdlc-studio" / "personas"
+    if not pdir.exists():
+        return False
+    key = re.sub(r"[^a-z0-9]", "", (name or "").lower())
+    if not key:
+        return False
+    for p in pdir.rglob("*.md"):
+        if p.name == "index.md" or p.name.startswith("_"):
+            continue
+        title = extract_h1_title(p.read_text(encoding="utf-8")) or p.stem
+        blob = re.sub(r"[^a-z0-9]", "", f"{title} {p.stem}".lower())
+        if key in blob:
+            return True
+    return False
+
+
 def alias_map(repo_root) -> dict[str, str]:
     """Map every artefact alias (normalised) -> its current canonical id, read from the
     `> **Aliases:** OLD1, OLD2` metadata line. Lets a reader resolve a pre-migration id to the

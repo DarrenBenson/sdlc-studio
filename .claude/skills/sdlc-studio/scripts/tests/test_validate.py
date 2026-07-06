@@ -504,3 +504,47 @@ class NotAnArtifactSweepTests(unittest.TestCase):
             out = self._run(root)
             self.assertEqual([v for v in out["violations"]
                               if v["rule"] == "not-an-artifact"], [])
+
+
+class StructuredAuthorshipTests(unittest.TestCase):
+    """US0060/CR0169: schema-v3 artefacts carry a typed, resolvable raised_by; v2 is exempt."""
+
+    def _v3(self, root: Path) -> None:
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
+
+    def _bug(self, root: Path, meta: str) -> Path:
+        return _write(root, "sdlc-studio/bugs/BG0001-x.md",
+                      f"# BG0001: x\n\n> **Status:** Open\n> **Severity:** Low\n{meta}\n")
+
+    def test_v3_missing_authorship_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); self._v3(root)
+            p = self._bug(root, "")
+            rules = [v["rule"] for v in validate.validate_file(p, "bug", root)]
+            self.assertIn("authorship-structured", rules)
+
+    def test_v3_unresolvable_persona_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); self._v3(root)
+            p = self._bug(root, "> **Raised-by:** Nobody Here; persona; v1")
+            rules = [v["rule"] for v in validate.validate_file(p, "bug", root)]
+            self.assertIn("authorship-unresolved", rules)
+
+    def test_v3_resolvable_persona_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); self._v3(root)
+            pd = root / "sdlc-studio" / "personas"
+            pd.mkdir(parents=True, exist_ok=True)
+            (pd / "sam.md").write_text("# Sam Eriksson - QA amigo\n", encoding="utf-8")
+            p = self._bug(root, "> **Raised-by:** Sam Eriksson; persona; v1")
+            rules = [v["rule"] for v in validate.validate_file(p, "bug", root)]
+            self.assertNotIn("authorship-structured", rules)
+            self.assertNotIn("authorship-unresolved", rules)
+
+    def test_v2_exempt(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)  # no .config.yaml -> v2
+            p = self._bug(root, "")
+            rules = [v["rule"] for v in validate.validate_file(p, "bug", root)]
+            self.assertNotIn("authorship-structured", rules)

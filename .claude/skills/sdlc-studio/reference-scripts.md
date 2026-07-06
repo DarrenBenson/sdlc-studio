@@ -421,6 +421,20 @@ first, and is idempotent (an already-migrated file is skipped). After `apply`, s
 `schema_version: 3` in `.config.yaml` so new artefacts mint ULIDs too. `sdlc_md.alias_map`
 resolves a pre-migration id to its current ULID, so `--id US0001` still works afterwards.
 
+### `backfill_authorship.py`
+
+Backfills a structured `> **Raised-by:** Name; type; version` reference onto artefacts that
+predate it, inferring the author from existing `Requester`/`Created-by`/revision-history
+fields and marking an inferred attribution `(inferred)` so it never reads as first-hand:
+
+- `plan`: count what would change, write nothing
+- `apply`: write the raised_by lines (additive; idempotent - skips artefacts that already
+  have one)
+
+Run once when a project adopts schema v3; the `authorship-structured` validate rule then
+holds new artefacts to a typed, resolvable author (`type` is one of human | persona | agent,
+persona resolved against `sdlc-studio/personas/`).
+
 ### `review_prep.py` (read-only)
 
 - `prep`: deterministic inputs for the five-leg review (artifact staleness,

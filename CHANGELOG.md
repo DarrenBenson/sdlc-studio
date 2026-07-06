@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **v4 Tranche 2 - authorship & enforcement (schema v3, opt-in).** All rules are era-gated,
+  so existing v2 projects are unaffected.
+  - **US0060 structured authorship.** A typed `> **Raised-by:** Name; type; version` reference
+    (type one of human | persona | agent). `validate` enforces presence, shape, and
+    resolvability on v3 artefacts (persona names resolve against `sdlc-studio/personas/`);
+    `sdlc_md.schema_version`/`is_schema_v3`/`parse_authorship`/`resolve_author` back it.
+    `backfill_authorship.py plan|apply` seeds a raised_by onto pre-adoption artefacts, marking
+    inferred attributions, idempotent. The persona resolver is swappable for an agent resolver
+    later with no schema change.
+
 ## [4.0.0] - 2026-07-06
 
 Major release: the v4 foundation - distributed artefact identity (schema v3). The move from a

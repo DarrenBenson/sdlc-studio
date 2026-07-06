@@ -112,6 +112,22 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
                 "story has no acceptance criteria (`### ACn`, `- **ACn:**`, or a "
                 "populated `## Acceptance Criteria` section)")
 
+    # Schema-v3 team-schema: a typed, resolvable `raised_by`. v2 artefacts are exempt, so the
+    # rule cannot fail an existing sequential-id project until it opts into v3.
+    if repo_root is not None and sdlc_md.is_schema_v3(repo_root):
+        auth = sdlc_md.parse_authorship(text, "Raised-by")
+        if auth is None:
+            add("error", "authorship-structured",
+                "schema-v3 artefact has no `> **Raised-by:** Name; type; version` line "
+                "(type is one of human | persona | agent)")
+        elif auth["type"] not in ("human", "persona", "agent"):
+            add("error", "authorship-type",
+                f"raised_by type '{auth['type']}' must be one of human | persona | agent")
+        elif not sdlc_md.resolve_author(auth["name"], auth["type"], repo_root):
+            add("error", "authorship-unresolved",
+                f"raised_by persona '{auth['name']}' does not resolve to a document under "
+                "sdlc-studio/personas/")
+
     _check_placeholders(text, add)
     return out
 
