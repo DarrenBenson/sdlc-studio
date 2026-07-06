@@ -81,6 +81,41 @@ class DeferredNotTerminalTests(unittest.TestCase):
             self.assertEqual(res["archived"], ["CR-0002"])
 
 
+class MultiViewNoDoubleArchiveTests(unittest.TestCase):
+    """US0078/CR0182: a multi-view index (master + a trailing view table sharing a row) must
+    archive each terminal row exactly once - the master row moves, the view row is kept."""
+
+    def _multiview(self, root: Path) -> Path:
+        sd = root / "sdlc-studio" / "stories"; sd.mkdir(parents=True)
+        (sd / "US0001-x.md").write_text(
+            "# US0001: x\n\n> **Status:** Done\n> **Epic:** [EP0001](../epics/EP0001-x.md)\n",
+            encoding="utf-8")
+        idx = sd / "_index.md"
+        idx.write_text(
+            "# Stories\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Done | 1 |\n\n"
+            "## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [US0001](US0001-x.md) | x | Done |\n\n"
+            "## Stories by Epic\n\n| Epic | Story | Status |\n| --- | --- | --- |\n"
+            "| EP0001 | [US0001](US0001-x.md) | Done |\n", encoding="utf-8")
+        return idx
+
+    def test_release_archiver_moves_master_row_once(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); idx = self._multiview(root)
+            arc.archive(root, "story", "r1")
+            archived = (root / "sdlc-studio" / "stories" / "archive" / "r1" / "story.md").read_text("utf-8")
+            self.assertEqual(archived.count("US0001-x.md"), 1)   # archived exactly once
+            self.assertEqual(idx.read_text("utf-8").count("US0001-x.md"), 1)  # view row kept
+
+    def test_reconcile_archiver_moves_master_row_once(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); idx = self._multiview(root)
+            rc.archive_type("story", root, dry_run=False)
+            archived = (root / "sdlc-studio" / "stories" / "archive" / "_index.md").read_text("utf-8")
+            self.assertEqual(archived.count("US0001-x.md"), 1)
+            self.assertEqual(idx.read_text("utf-8").count("US0001-x.md"), 1)
+
+
 class ArchiveTests(unittest.TestCase):
     def test_moves_terminal_rows_only(self) -> None:
         with tempfile.TemporaryDirectory() as d:
