@@ -1,30 +1,30 @@
-# LATEST - current project state (v3.5.0 released; v4 is WIP)
+# LATEST - current project state (v3.6.0 released; v4 is WIP)
 
 > The current-state anchor - a WINDOW, not a ledger. **Re-read this and run
 > `/sdlc-studio status` after any context reset or compaction.** Durable guidance lives in
 > AGENTS.md; per-sprint detail lives in the retros and CHANGELOG.md; keep this file under
 > `docs.latest_max_lines` (doc-freshness advisory) by moving past sprints to History lines.
 >
-> **Released version:** 3.5.0 (2026-07-05, non-breaking) ·
+> **Released version:** 3.6.0 (2026-07-06, non-breaking - the EP0016 review/lite on-ramp) ·
 > **Date:** 2026-07-06 ·
-> **Gates:** lint clean, 1232 script tests pass (+49 repo-only tools tests), `gate` PASS,
+> **Gates:** lint clean, 1248 script tests pass (+49 repo-only tools tests), `gate` PASS,
 > reconcile drift 0, npm audit 0, CI green on main.
 >
 > **v4 is WORK-IN-PROGRESS, not released.** The v4 foundation (schema-v3 ULID identity - a
-> breaking change) and Tranche 2 (authorship/enforcement + tooling debt) are all on `main` as
-> unreleased WIP. v4.0 is cut only once the backlog is complete AND it has been tested in anger
-> on real projects. The schema-v3 capability is opt-in and dormant by default (`schema_version`
-> defaults to 2), so `main` stays non-breaking for anyone on v3.5.0.
+> breaking change) and Tranche 2 (authorship/enforcement + tooling debt) are all on `main` and
+> ship **dormant** in v3.6.0: opt-in via `schema_version: 3` (defaults to 2), so v3.6.0 stays
+> non-breaking and nothing renumbers. v4.0 is cut only once the backlog is complete AND it has
+> been tested in anger on real projects.
 
 ## Current
 
-- **EP0016 - review/lite on-ramp (v3.6 candidate, non-breaking).** Two try-before-you-adopt
+- **v3.6.0 RELEASED - review/lite on-ramp (EP0016, non-breaking).** Two try-before-you-adopt
   entry points, trunk-based to main, RED-first. US0070 `review generate`: a zero-setup host-repo
   review (`review_generate.py` owns bootstrap + the verbatim remediation-only security policy +
   the secret-absence scan; the review itself runs from `templates/workflows/repo-review.md`).
   US0071 lite profile: `profile: lite` collapses the pipeline to PRD -> story -> implement (no
-  epic layer, no nag), promotable to full via `lite_profile.py promote`. Both are non-breaking
-  and independent of the schema-v3 work, so they could ship as a v3.6 ahead of v4. **Not tagged.**
+  epic layer, no nag), promotable to full via `lite_profile.py promote`. Both non-breaking and
+  independent of the dormant schema-v3 work. Tagged v3.6.0.
 - **v4.1.0 - authorship & enforcement (EP0013) + tooling debt (EP0018) + benchmark protocol.**
   13 stories, trunk-based to main. EP0013: structured typed authorship (US0060, resolver +
   backfill), separation-of-duties lint (US0061), evidence-as-schema (US0062), the consolidated

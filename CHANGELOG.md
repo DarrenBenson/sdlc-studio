@@ -7,17 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-> **Most of the section below is work-in-progress toward a future v4.0** (a breaking schema-v3
-> change - distributed ULID identity). It is NOT released. The current release remains v3.5.0
-> (non-breaking); the schema-v3 capability is opt-in and dormant by default (`schema_version`
-> defaults to 2), so nothing renumbers until a project deliberately migrates. There is still
-> backlog and breaking-change work to land before this is cut as v4.0. The **on-ramp tranche
-> (EP0016)** immediately below is non-breaking and could ship as a v3.6 ahead of v4.
+> The **schema-v3 line** (distributed ULID identity + authorship/evidence enforcement - the
+> `## v4 ...` sections below) is work-in-progress toward **v4.0** and still has backlog (agentic
+> triage, benchmark evidence). Its code already ships **dormant** in the releases below: opt-in
+> via `schema_version: 3`, which defaults to 2, so nothing renumbers and existing projects are
+> unaffected. v4.0 is cut only once that backlog is complete and it has been tested on real
+> projects.
 
-## v3.6 candidate - review/lite on-ramp (EP0016, non-breaking, WIP)
+## [3.6.0] - 2026-07-06
 
-Two try-before-you-adopt entry points for an existing repo. Both are non-breaking and
-independent of the schema-v3 work.
+The review/lite on-ramp (EP0016): two try-before-you-adopt entry points for an existing repo,
+both non-breaking and independent of the dormant schema-v3 work. A project on v3.5.0 upgrades
+with no migration and nothing renumbered.
+
+### Release verification
+
+Deterministic gate green: 1248 script tests + 49 tool tests pass, `check_versions --strict`
+consistent across the four version homes, budgets/links/style/neutrality clean, `gate` PASS,
+reconcile drift 0. The behavioural eval scenarios (`evals/README.md`) were not re-run this pass:
+v3.6.0 adds two scripts plus help/config docs and does not change SKILL.md routing or
+instructions - the surface those scenarios guard - so run them manually for a full behavioural
+sign-off.
+
+### Present but dormant (experimental, opt-in)
+
+- The schema-v3 identity and enforcement machinery (ULID ids, migration, structured authorship,
+  evidence and separation-of-duties lint) ships in this tag but is **inert** unless a project
+  sets `schema_version: 3` (defaults to 2). It is experimental and unsupported until v4.0; see
+  the `## v4 ...` sections below.
 
 ### Added
 

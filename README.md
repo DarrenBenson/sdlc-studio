@@ -6,7 +6,7 @@
 
 Ask for software in plain language. The team plans it, builds it, tests it, and proves it is done.
 
-**Version 3.5.0**
+**Version 3.6.0**
 
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Lint](https://github.com/DarrenBenson/sdlc-studio/actions/workflows/lint.yml/badge.svg)](https://github.com/DarrenBenson/sdlc-studio/actions/workflows/lint.yml)
@@ -123,6 +123,8 @@ Two more ideas worth knowing:
 | --- | --- | --- |
 | Plan from scratch | Interview to a PRD, then epics and stories | `prd create` -> `epic` -> `story` |
 | Adopt existing code | Extract a testable spec (migration blueprint) | `prd generate` |
+| Try it on an existing repo | Zero-setup review - three legs, findings filed as Bug/CR, remediation-only on secrets | `review generate` |
+| Run lean on a small repo | Collapse the pipeline to PRD -> story -> implement; promote to full later | `.config.yaml` `profile: lite` |
 | Decompose work | Epics and stories with Given/When/Then acceptance criteria | `epic`, `story` |
 | Build and prove | Plan, implement, then verify against the criteria | `code plan` -> `code implement` -> `code verify` |
 | Drive to a goal | An autonomous batch loop that closes with reconcile + review | `sprint --goal done` |
