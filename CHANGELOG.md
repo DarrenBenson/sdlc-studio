@@ -24,6 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `_index.md` is output of the census, never a hand-edited input: it runs a dry-run
     `reconcile apply` per type and fails when the index is not a fixed point (a hand-edited
     status/row/count the tool would rewrite). `reconcile.index_derived_issues` backs it.
+  - **US0069 passive concurrency safety.** `sdlc_md.atomic_write` (same-dir temp then
+    `os.replace`) means a crash mid-write leaves the previous index intact, never truncated;
+    index writes in `artifact`, `file_finding` and `reconcile apply` now use it. An advisory
+    `sdlc_md.allocation_lock` (POSIX `flock`, best-effort elsewhere, timeout-and-proceed so a
+    stale lock never wedges a wave) serialises allocate-and-write in `artifact.new`, so
+    concurrent writers never mint the same id or clobber a shared index.
 
 ### Fixed
 

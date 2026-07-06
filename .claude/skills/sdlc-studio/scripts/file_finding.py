@@ -142,7 +142,7 @@ def append_index_row(repo_root: Path | str, type_: str, row_line: str) -> bool:
                   if lines[j].strip().startswith("| [")]
     pos = (max(rows_after) + 1) if rows_after else data_header + 2
     lines.insert(pos, row_line)
-    index_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    sdlc_md.atomic_write(index_path, "\n".join(lines) + "\n")
     reconcile.apply_type(type_, root)  # recompute summary counts (tested)
     return True
 

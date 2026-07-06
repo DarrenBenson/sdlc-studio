@@ -8,6 +8,7 @@ scripts would otherwise each re-implement. Pure stdlib.
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import re
 from datetime import datetime, timezone
@@ -496,6 +497,62 @@ def _b32(value: int, length: int) -> str:
         out.append(_CROCKFORD[value & 0x1F])
         value >>= 5
     return "".join(reversed(out))
+
+
+def atomic_write(path, text: str, encoding: str = "utf-8") -> None:
+    """Write `text` to `path` atomically: a same-directory temp file then `os.replace`, so a
+    crash mid-write leaves the previous file intact rather than a truncated one, and a reader
+    never sees a half-written index. The temp is cleaned up on any failure (CR0183)."""
+    import os
+    import tempfile
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=str(p.parent), prefix=".tmp-", suffix=p.suffix or ".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding=encoding) as fh:
+            fh.write(text)
+        os.replace(tmp, str(p))
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+
+
+@contextlib.contextmanager
+def allocation_lock(repo_root, timeout: float = 10.0):
+    """Advisory cross-process lock around id allocation + write, so two concurrent writers do
+    not mint the same sequential id or clobber a shared index. Best-effort: a no-op where
+    `flock` is unavailable (Windows), and it proceeds rather than hang if the lock cannot be
+    taken within `timeout` (a stale lock must never wedge an agent wave). v3 ULID allocation
+    is already collision-free, so this most matters for the v2 sequential path (CR0183)."""
+    import time
+    lockdir = Path(repo_root) / "sdlc-studio" / ".local"
+    try:
+        lockdir.mkdir(parents=True, exist_ok=True)
+        import fcntl
+    except (OSError, ImportError):
+        yield  # non-POSIX or unwritable: degrade to no lock
+        return
+    fh = open(lockdir / "allocation.lock", "w")  # noqa: SIM115 - released in finally
+    try:
+        deadline = time.time() + timeout
+        while True:
+            try:
+                fcntl.flock(fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except OSError:
+                if time.time() > deadline:
+                    break  # contended past the timeout: proceed rather than wedge the wave
+                time.sleep(0.02)
+        yield
+    finally:
+        try:
+            fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
+        except OSError:
+            pass
+        fh.close()
 
 
 def new_ulid() -> str:

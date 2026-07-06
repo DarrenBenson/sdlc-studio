@@ -292,30 +292,32 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
         # dangling link only surfaces at the next integrity run.
         if _find_epic(root, f["epic"]) is None:
             raise ValueError(f"epic {f['epic']} not found - create it first, or fix the id")
-    file_id, disp = _alloc_ids(root, type_)
-    slug = file_finding._slug(title)
-    path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / f"{file_id}-{slug}.md"
-    if path.exists():
-        raise FileExistsError(path)
-    if dry_run:  # preview: write nothing, report what would happen
-        idx_exists = _header_cells(root, type_) is not None
-        would_create_index = (not idx_exists) and _index_template(type_).exists()
-        return {"id": disp, "file_id": file_id, "path": str(path),
-                "indexed": idx_exists or would_create_index,
-                "would_create_index": would_create_index,
-                "epic_linked": (type_ == "story") or None, "dry_run": True}
-    path.parent.mkdir(parents=True, exist_ok=True)
-    render = _select_render(root, type_, f.get("template"))
-    path.write_text(render(type_, disp, title, f["date"], f), encoding="utf-8")
-    index_created = _ensure_index(root, type_, f["date"])  # greenfield first run
-    header = _header_cells(root, type_)
-    indexed = False
-    if header:
-        row = sdlc_md.row_from_header(header, f"[{disp}]({file_id}-{slug}.md)", title,
-                                      SPEC[type_]["status"], f)
-        indexed = file_finding.append_index_row(root, type_, row)
-    linked = _wire_story_to_epic(root, f["epic"], disp, title, file_id, slug) \
-        if type_ == "story" else None
+    # Serialise allocate -> collision-check -> write -> index-append against concurrent
+    # writers, so two agents in one wave never mint the same id or clobber the index.
+    with sdlc_md.allocation_lock(root):
+        file_id, disp = _alloc_ids(root, type_)
+        slug = file_finding._slug(title)
+        path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / f"{file_id}-{slug}.md"
+        if path.exists():
+            raise FileExistsError(path)
+        if dry_run:  # preview: write nothing, report what would happen
+            idx_exists = _header_cells(root, type_) is not None
+            would_create_index = (not idx_exists) and _index_template(type_).exists()
+            return {"id": disp, "file_id": file_id, "path": str(path),
+                    "indexed": idx_exists or would_create_index,
+                    "would_create_index": would_create_index,
+                    "epic_linked": (type_ == "story") or None, "dry_run": True}
+        render = _select_render(root, type_, f.get("template"))
+        sdlc_md.atomic_write(path, render(type_, disp, title, f["date"], f))
+        index_created = _ensure_index(root, type_, f["date"])  # greenfield first run
+        header = _header_cells(root, type_)
+        indexed = False
+        if header:
+            row = sdlc_md.row_from_header(header, f"[{disp}]({file_id}-{slug}.md)", title,
+                                          SPEC[type_]["status"], f)
+            indexed = file_finding.append_index_row(root, type_, row)
+        linked = _wire_story_to_epic(root, f["epic"], disp, title, file_id, slug) \
+            if type_ == "story" else None
     return {"id": disp, "file_id": file_id, "path": str(path),
             "indexed": indexed, "index_created": index_created,
             "epic_linked": linked, "dry_run": False}

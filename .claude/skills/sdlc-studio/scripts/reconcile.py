@@ -964,7 +964,7 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
         (result["changes"] if _norm_id(ch["id"]) in applied else result["unapplied"]).append(ch)
     if (result["changes"] or result["counts_updated"]) and not dry_run:
         text = "\n".join(lines) + ("\n" if original.endswith("\n") else "")
-        index_path.write_text(text, encoding="utf-8")
+        sdlc_md.atomic_write(index_path, text)
     return result
 
 
