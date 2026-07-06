@@ -44,6 +44,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **US0080 code-quality debt (CR0187).** Corrected the `reconcile.py` module docstring - it
+  claimed "read-only ... Subcommand: detect" while shipping `apply`/`fields`/`archive` write
+  subcommands, so a read-only allowlist trusting it under-scoped the mutation surface; it now
+  lists all four and scopes read-only to `detect`. Added `--format json` to `reconcile apply`
+  for programmatic callers. (The larger CR0187 items - shared `find_by_id`, complexity
+  decomposition, log rolling - stay scoped in the CR.)
 - **US0079 security hardening - state hygiene (CR0186).** The skill-install `.local/` runtime
   state is now gitignored and `version-check.json` untracked, so machine state stops churning
   in every commit. A `tools/tests` guard keeps any `.local/` file from being tracked again.

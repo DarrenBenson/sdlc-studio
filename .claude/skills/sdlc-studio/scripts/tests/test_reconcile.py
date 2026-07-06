@@ -1510,3 +1510,27 @@ class AppendTargetingTests(unittest.TestCase):
             row = next(ln for ln in (dd / "_index.md").read_text(encoding="utf-8")
                        .splitlines() if "t2" in ln)
             self.assertIn("[CR0002]", row)       # undashed, matching the house rows
+
+
+class ApplyJsonFormatTests(unittest.TestCase):
+    """US0080/CR0187: `reconcile apply --format json` emits the per-type result structures."""
+
+    def test_apply_json(self) -> None:
+        import argparse
+        import io
+        import json
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            sd = repo / "sdlc-studio" / "bugs"; sd.mkdir(parents=True)
+            (sd / "_index.md").write_text(
+                "# B\n\n## All\n\n| ID | Title | Status | Severity | Created | Updated |\n"
+                "| --- | --- | --- | --- | --- | --- |\n", encoding="utf-8")
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                reconcile.cmd_apply(argparse.Namespace(root=str(repo), scope=None,
+                                                       dry_run=True, format="json"))
+            j = json.loads(buf.getvalue())
+            self.assertIn("by_type", j)
+            self.assertIn("applied", j)
+            self.assertTrue(j["dry_run"])

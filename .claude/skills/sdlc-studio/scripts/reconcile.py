@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
-"""SDLC Studio reconcile: deterministic drift detection (read-only).
+"""SDLC Studio reconcile: census-based drift detection and mechanical repair.
 
 Builds the file census doctrine rule 3 prescribes - artifact files are the
 truth, `_index.md` tables are derived - and reports where the indexes have
 drifted. Three drift classes per type: status mismatch (file vs index row),
 missing row (a file with no index row), and orphan row (an index row with no
-file), plus summary-count drift. Read-only: emits a JSON report; Claude (or an
-explicit, separately-reviewed apply step) does the editing and the judgment
-(checkbox/dependency/PRD-feature drift, CR cascades, changelog).
+file), plus summary-count drift.
 
-Subcommand:
-  detect  Census + drift report as JSON/text.
+Subcommands:
+  detect   Census + drift report as JSON/text (READ-ONLY).
+  apply    Rewrite drifted status cells, append missing rows, recompute counts (WRITES the index).
+  fields   Project file-owned index cells (title/points); `--apply` writes.
+  archive  Relocate terminal index rows to an archive sub-index (WRITES the index).
+
+Only `detect` is read-only; the judgement calls (orphan-row removal, checkbox/
+dependency/PRD-feature drift, CR cascades, changelog) stay with the agent.
 """
 from __future__ import annotations
 
@@ -1074,11 +1078,20 @@ def cmd_fields(args: argparse.Namespace) -> int:
 
 
 def cmd_apply(args: argparse.Namespace) -> int:
-    """Apply mechanical index fixes (status cells + summary counts); --dry-run reports only."""
+    """Apply mechanical index fixes (status cells + summary counts); --dry-run reports only.
+    `--format json` emits the per-type result structures for a programmatic caller."""
     repo_root = Path(args.root).resolve()
     types = SCOPE_TYPES.get(args.scope, _DEFAULT_TYPES) if args.scope else _DEFAULT_TYPES
     n = 0
     unapplied = 0
+    if getattr(args, "format", "text") == "json":
+        by_type = {t: apply_type(t, repo_root, dry_run=args.dry_run) for t in types}
+        applied = sum(len(r.get("changes", [])) + len(r.get("appended", [])) for r in by_type.values())
+        blocked = sum(len(r.get("unapplied", [])) + len(r.get("missing_unapplied", []))
+                      + (1 if r.get("refused") else 0) for r in by_type.values())
+        print(json.dumps({"dry_run": args.dry_run, "applied": applied, "unapplied": blocked,
+                          "by_type": by_type}, indent=2))
+        return 0
     for type_ in types:
         res = apply_type(type_, repo_root, dry_run=args.dry_run)
         if res.get("refused"):
@@ -1261,6 +1274,8 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--scope", choices=sorted(SCOPE_TYPES), help="Limit to one scope")
     a.add_argument("--root", default=".", help="Repo root (default: .)")
     a.add_argument("--dry-run", action="store_true", help="Report changes without writing")
+    a.add_argument("--format", choices=("text", "json"), default="text",
+                   help="Output format (json for programmatic callers)")
     a.set_defaults(func=cmd_apply)
     fi = sub.add_parser("fields", help="Project file-owned index cells (title/points).")
     fi.add_argument("--type", default="story", help="Artifact type (default: story)")
