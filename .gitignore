@@ -83,5 +83,6 @@ $RECYCLE.BIN/
 .cache/
 *.orig
 
-# SDLC Studio user-local runtime state
+# SDLC Studio user-local runtime state (workspace and skill-install copies)
 sdlc-studio/.local/
+.claude/skills/sdlc-studio/.local/

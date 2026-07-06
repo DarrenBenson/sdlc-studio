@@ -44,6 +44,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **US0079 security hardening - state hygiene (CR0186).** The skill-install `.local/` runtime
+  state is now gitignored and `version-check.json` untracked, so machine state stops churning
+  in every commit. A `tools/tests` guard keeps any `.local/` file from being tracked again.
+  (The remaining CR0186 supply-chain items - SHA-pinning Actions, installer checksums, sync
+  redaction - need out-of-band inputs and stay scoped in the CR.)
 - **US0081 batch scaffold wiring (CR0166).** A regression guard confirms a multi-epic batch
   wires cleanly - the Story Breakdown placeholder is replaced (no stray `---` separator) and
   each epic gets exactly its stories with no empty table. The structural edges CR0166 flagged
