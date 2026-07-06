@@ -36,6 +36,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     reconcile zero drift, CLI/library allocation parity, and master-table append on a
     multi-view index. It immediately earned its place - it caught a regression of BG0053 (the
     double-telemetry-on-close line had crept back into `artifact.close`), now re-fixed.
+  - **US0073 benchmark protocol (pre-registered).** `docs/benchmarks/protocol.md` freezes the
+    task set, metrics (tokens, wall time, defect escapes via a held-back suite, rework rate),
+    N=5-with-an-N=1-spike, an independently-reviewed baseline `CLAUDE.md`, and a
+    publish-regardless-of-outcome commitment - the RFC0025 device that must exist before any
+    measured run. The harness and runs (US0074/US0075) follow.
 
 ## [4.0.0] - 2026-07-06
 
