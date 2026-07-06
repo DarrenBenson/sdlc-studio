@@ -4,6 +4,8 @@
 
 # Example overrides - uncomment and modify as needed:
 
+# profile: lite      # collapse the pipeline to PRD -> story -> implement (default: full)
+
 # coverage:
 #   unit: 80          # Lower target for legacy code
 #   integration: 75

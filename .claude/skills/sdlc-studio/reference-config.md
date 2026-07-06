@@ -354,6 +354,29 @@ created_at: 2026-01-15T09:00:00Z
 
 ---
 
+## Pipeline Profile {#profile}
+
+`profile` selects how much of the pipeline a project runs.
+
+| Value | Pipeline | Use when |
+| --- | --- | --- |
+| `full` (default) | PRD -> TRD -> TSD -> personas -> epics -> stories -> implement | Any project that benefits from the full layer set |
+| `lite` | PRD -> story -> implement | A small repo where the ceremony would outweigh the source |
+
+```text
+# sdlc-studio/.config.yaml
+profile: lite
+```
+
+Under `lite`, a story is created without an epic, `status`/`hint` never nag about a
+missing TRD/TSD/persona/epic, and executable-AC verification and reconcile behave
+identically. Promote to `full` when the project outgrows it with
+`scripts/lite_profile.py promote`, which inserts one umbrella epic above the existing
+stories, wires them to it, and flips the profile. An unrecognised value degrades to
+`full` - the profile only ever relaxes discipline when explicitly asked.
+
+---
+
 ## Project Implementation
 
 Control behaviour of `/sdlc-studio project implement`.

@@ -1,6 +1,6 @@
 # US0071: Lite profile collapsing the pipeline to PRD, story, implement
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0016

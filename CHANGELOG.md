@@ -30,6 +30,13 @@ independent of the schema-v3 work.
   payloads, and a committed secret is reported by location plus rotation with the value never
   copied into an artefact. The policy is embedded verbatim in the prompt template, and
   `review_generate.py scan --secret <value>` fails if any produced artefact contains the value.
+- **US0071 lite profile.** `profile: lite` in `.config.yaml` collapses the pipeline to
+  PRD -> story -> implement: a story is created without an epic, `status`/`hint` never nag
+  about a missing TRD/TSD/persona/epic, and executable-AC verification and reconcile behave
+  identically. Every other profile keeps the epic layer mandatory. `sdlc_md.profile` is the
+  reader; `lite_profile.py promote` is the one-way door to `full` - it inserts one umbrella epic
+  above the existing epic-less stories, wires each to it, flips the profile, and reconciles the
+  indexes clean. Documented under `reference-config.md#profile`.
 
 ## v4 Tranche 2 - authorship & enforcement + tooling debt (WIP, unreleased)
 

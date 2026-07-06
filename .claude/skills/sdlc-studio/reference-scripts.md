@@ -402,11 +402,10 @@ checks (`reference-decisions.md`) and as a reconcile pre-step.
 - `scan`: list IDs in use
 
 Covers the 8 pipeline types plus the **meta-artifacts** `review` (RV####) and `retro`
-(RETRO####), so review/retro ids are allocated, never hand-picked - run
-`next_id.py allocate --type review` before writing a new review/retro, the same discipline as
-`artifact.py new` for pipeline types. (Lessons `LL####` have their own manager in `lessons.py`;
-personas are named, not numbered.) Read-only; runs `git ls-tree` (no fetch - the caller fetches
-first per the contract). Backs ID assignment in `reference-cr.md` and doctrine rule 13.
+(RETRO####), so review/retro ids are allocated, never hand-picked - run `next_id.py
+allocate --type review` before writing one, the same discipline as `artifact.py new`.
+(Lessons `LL####` have their own manager in `lessons.py`; personas are named.) Read-only;
+runs `git ls-tree` (no fetch). Backs ID assignment in `reference-cr.md` and doctrine rule 13.
 
 ### `migrate_v3.py`
 
@@ -465,19 +464,22 @@ persona resolved against `sdlc-studio/personas/`).
 ### `review_prep.py` (read-only)
 
 - `prep`: deterministic inputs for the five-leg review (artifact staleness,
-  persona definition-vs-PRD usage, count and AC-verification inputs)
-
-Gathers inputs only; the review verdict stays with Claude. Full workflow:
-`reference-review.md`.
+  persona definition-vs-PRD usage, count and AC-verification inputs). Gathers inputs
+  only; the verdict stays with Claude. Full workflow: `reference-review.md`.
 
 ### `review_generate.py`
 
-Deterministic spine of the model-driven `review generate` on-ramp (zero-setup host-repo review).
+Deterministic spine of the model-driven `review generate` on-ramp. `bootstrap`
+idempotently creates the `reviews/`/`bugs/`/`change-requests/` folders and indexes;
+`policy`/`prompt` print the verbatim remediation-only posture and the review prompt
+template (`templates/workflows/repo-review.md`); `scan --secret <value>` fails if a
+secret value leaked into an artefact. Help: `help/review.md`.
 
-- `bootstrap`: idempotently create the `reviews/`/`bugs/`/`change-requests/` folders and indexes
-- `policy`/`prompt`: print the verbatim remediation-only security posture / the review prompt
-  template (`templates/workflows/repo-review.md`)
-- `scan --secret <value>`: fail if a secret value leaked into an artefact. Help: `help/review.md`.
+### `lite_profile.py`
+
+Promotion for the lite profile (`profile: lite` collapses the pipeline to PRD ->
+story -> implement; reader `sdlc_md.profile`). `promote` inserts one umbrella epic
+above the epic-less stories, wires each in, flips to full, and reconciles (`--dry-run`).
 
 ### `plan.py`
 
@@ -488,10 +490,9 @@ Claude Code plan-file manager for `~/.claude/plans/`.
 - `archive`: move `<slug>.md` to `archive/<yyyy-mm>/`; errors on a missing
   slug, an already-archived plan, or an existing archive target
 
-Contract note: this is the one script that writes outside `.local/` - the
-`archive` subcommand moves files under `~/.claude/plans/`, an operator-owned
-directory. It never deletes and never overwrites; `list` is read-only.
-Full workflow: `reference-plan-files.md`. User-facing help: `help/plan.md`.
+Contract note: the one script that writes outside `.local/` - `archive` moves files
+under the operator-owned `~/.claude/plans/` (never deletes or overwrites; `list` is
+read-only). Full workflow: `reference-plan-files.md`. Help: `help/plan.md`.
 
 ### `lessons.py`
 

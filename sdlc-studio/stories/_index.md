@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 8 |
+| Draft | 7 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 73 |
+| Done | 74 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -38,7 +38,7 @@
 | [US0068](US0068-optional-tranche-reference-field-record-only.md) | Optional tranche reference field, record-only | Draft | EP0014 | 2026-07-06 | 2026-07-06 |
 | [US0069](US0069-atomic-index-and-cascade-writes-with-an-advisory.md) | Atomic index and cascade writes with an advisory allocation lock | Done | EP0015 | 2026-07-06 | 2026-07-06 |
 | [US0070](US0070-review-generate-command-with-remediation-only-security-posture.md) | review generate command with remediation-only security posture | Done | EP0016 | 2026-07-06 | 2026-07-06 |
-| [US0071](US0071-lite-profile-collapsing-the-pipeline-to-prd-story.md) | Lite profile collapsing the pipeline to PRD, story, implement | Draft | EP0016 | 2026-07-06 | 2026-07-06 |
+| [US0071](US0071-lite-profile-collapsing-the-pipeline-to-prd-story.md) | Lite profile collapsing the pipeline to PRD, story, implement | Done | EP0016 | 2026-07-06 | 2026-07-06 |
 | [US0072](US0072-readme-and-positioning-refresh-under-the-three-hard.md) | README and positioning refresh under the three hard constraints | Draft | EP0017 | 2026-07-06 | 2026-07-06 |
 | [US0073](US0073-pre-register-the-benchmark-protocol-task-set-metrics.md) | Pre-register the benchmark protocol: task set, metrics, baseline | Done | EP0017 | 2026-07-06 | 2026-07-06 |
 | [US0074](US0074-benchmark-harness-runner-fixtures-and-held-back-suites.md) | Benchmark harness runner, fixtures and held-back suites | Draft | EP0017 | 2026-07-06 | 2026-07-06 |

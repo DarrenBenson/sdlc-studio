@@ -591,6 +591,16 @@ def is_schema_v3(repo_root) -> bool:
     return schema_version(repo_root) >= 3
 
 
+def profile(repo_root) -> str:
+    """The project's pipeline profile (`profile` in `.config.yaml`): `lite` or `full`,
+    defaulting to `full`. Lite collapses the pipeline to PRD -> story -> implement (no
+    TRD/TSD/persona/epic layer), so the ceremony never outweighs a small codebase. Any
+    unrecognised value degrades to `full` - the profile only ever relaxes discipline
+    when explicitly asked."""
+    return "lite" if str(project_override(repo_root, "profile", "full")).strip().lower() \
+        == "lite" else "full"
+
+
 def parse_authorship(text: str, field: str = "Raised-by") -> dict | None:
     """Parse a typed authorship reference `Name; type; version` from a `> **Field:**` metadata
     line into `{name, type, version}` (type lower-cased). None when the field is absent. The

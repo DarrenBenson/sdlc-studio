@@ -204,15 +204,18 @@ def compute_hint(data: dict, repo_root: Path) -> dict:
     if not req["prd"]:
         return {"next_command": "prd generate" if has_code else "prd create",
                 "reason": "no PRD yet"}
-    if not data["code"]["trd"]:
-        return {"next_command": "trd generate" if has_code else "trd create",
-                "reason": "no TRD yet"}
-    if not data["tests"]["tsd"]:
-        return {"next_command": "tsd", "reason": "no TSD yet"}
-    if not req["personas"]:
-        return {"next_command": "persona", "reason": "no personas yet"}
-    if req["epics"]["total"] == 0:
-        return {"next_command": "epic", "reason": "no epics yet"}
+    # Lite profile collapses the pipeline to PRD -> story -> implement: the TRD/TSD/
+    # persona/epic rungs are skipped, and their absence is never nagged.
+    if sdlc_md.profile(repo_root) != "lite":
+        if not data["code"]["trd"]:
+            return {"next_command": "trd generate" if has_code else "trd create",
+                    "reason": "no TRD yet"}
+        if not data["tests"]["tsd"]:
+            return {"next_command": "tsd", "reason": "no TSD yet"}
+        if not req["personas"]:
+            return {"next_command": "persona", "reason": "no personas yet"}
+        if req["epics"]["total"] == 0:
+            return {"next_command": "epic", "reason": "no epics yet"}
     if req["stories"]["total"] == 0:
         return {"next_command": "story", "reason": "no stories yet"}
     if (base / ".local" / "workflow-state.json").exists():

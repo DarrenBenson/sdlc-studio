@@ -78,7 +78,7 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
     rev = (f"\n## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
            f"| {today} | {f.get('author', 'sdlc')} | Created via `new` (deterministic) |\n")
     if type_ == "story":
-        return (head + f"> **Epic:** {f['epic']}\n> **Persona:** {{{{persona}}}}\n\n"
+        return (head + f"> **Epic:** {f.get('epic') or '-'}\n> **Persona:** {{{{persona}}}}\n\n"
                 "## User Story\n\n**As a** {{role}}\n**I want** {{capability}}\n"
                 "**So that** {{benefit}}\n\n## Acceptance Criteria\n\n"
                 "### AC1: {{define}}\n\n- **Given** {{context}}\n- **When** {{action}}\n"
@@ -286,10 +286,13 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
     f["date"] = f.get("date") or date.today().isoformat()
     if type_ == "story":
         if not f.get("epic"):
-            raise ValueError("a story needs --epic <EPxxxx>")
-        # Fail fast before writing - a story wired to a non-existent epic is an orphan whose
-        # dangling link only surfaces at the next integrity run.
-        if _find_epic(root, f["epic"]) is None:
+            # Lite profile has no epic layer: a story sits directly under the PRD. Every
+            # other profile keeps the epic mandatory so no story is silently orphaned.
+            if sdlc_md.profile(root) != "lite":
+                raise ValueError("a story needs --epic <EPxxxx>")
+        elif _find_epic(root, f["epic"]) is None:
+            # Fail fast before writing - a story wired to a non-existent epic is an orphan whose
+            # dangling link only surfaces at the next integrity run.
             raise ValueError(f"epic {f['epic']} not found - create it first, or fix the id")
     # Serialise allocate -> collision-check -> write -> index-append against concurrent
     # writers, so two agents in one wave never mint the same id or clobber the index.
@@ -305,7 +308,8 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
             return {"id": disp, "file_id": file_id, "path": str(path),
                     "indexed": idx_exists or would_create_index,
                     "would_create_index": would_create_index,
-                    "epic_linked": (type_ == "story") or None, "dry_run": True}
+                    "epic_linked": (type_ == "story" and bool(f.get("epic"))) or None,
+                    "dry_run": True}
         render = _select_render(root, type_, f.get("template"))
         sdlc_md.atomic_write(path, render(type_, disp, title, f["date"], f))
         index_created = _ensure_index(root, type_, f["date"])  # greenfield first run
@@ -316,7 +320,7 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
                                           SPEC[type_]["status"], f)
             indexed = file_finding.append_index_row(root, type_, row)
         linked = _wire_story_to_epic(root, f["epic"], disp, title, file_id, slug) \
-            if type_ == "story" else None
+            if (type_ == "story" and f.get("epic")) else None
     return {"id": disp, "file_id": file_id, "path": str(path),
             "indexed": indexed, "index_created": index_created,
             "epic_linked": linked, "dry_run": False}
