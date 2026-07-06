@@ -44,6 +44,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **US0081 batch scaffold wiring (CR0166).** A regression guard confirms a multi-epic batch
+  wires cleanly - the Story Breakdown placeholder is replaced (no stray `---` separator) and
+  each epic gets exactly its stories with no empty table. The structural edges CR0166 flagged
+  no longer reproduce (incidentally fixed by the v4 batch/index work); the guard prevents them
+  returning.
 - **US0076 config failure regimes (CR0180).** `sdlc_md.project_override` now emits a
   one-line warn-once to stderr when a `sdlc-studio/.config.yaml` exists but cannot be honoured
   (no PyYAML / malformed), instead of silently reverting to defaults - so a project's declared

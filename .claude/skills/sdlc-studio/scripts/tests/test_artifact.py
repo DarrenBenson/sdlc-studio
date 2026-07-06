@@ -83,6 +83,29 @@ class SchemaV3AllocationTests(unittest.TestCase):
             self.assertEqual(r["id"], "CR-0001")   # no .config.yaml -> v2 sequential
 
 
+class BatchWiringCleanTests(unittest.TestCase):
+    """US0081/CR0166: batch epic-wiring is structurally clean - no stray separator, the
+    Story Breakdown is populated, and the epic section has no orphaned/empty table."""
+
+    def test_two_epic_batch_wires_cleanly(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+            _epic(repo, "EP0001")
+            _epic(repo, "EP0002")
+            artifact.new_batch(repo, "story", [
+                {"title": "one", "epic": "EP0001"}, {"title": "two", "epic": "EP0001"},
+                {"title": "three", "epic": "EP0002"}, {"title": "four", "epic": "EP0002"}],
+                template="minimal")
+            for ep, n in (("EP0001", 2), ("EP0002", 2)):
+                text = (repo / "sdlc-studio" / "epics" / f"{ep}-x.md").read_text(encoding="utf-8")
+                self.assertNotIn("_No stories yet._", text)      # placeholder replaced
+                self.assertNotIn("\n---\n", text)                 # no stray separator
+                sb = text[text.index("## Story Breakdown"):]
+                sb = sb[:sb.index("## Revision")] if "## Revision" in sb else sb
+                self.assertEqual(sb.count("- [ ] ["), n)          # exactly n linked stories, no empty rows
+
+
 class NewTests(unittest.TestCase):
     def test_new_story_creates_wires_validates(self) -> None:
         with tempfile.TemporaryDirectory() as d:
