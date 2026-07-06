@@ -41,6 +41,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     N=5-with-an-N=1-spike, an independently-reviewed baseline `CLAUDE.md`, and a
     publish-regardless-of-outcome commitment - the RFC0025 device that must exist before any
     measured run. The harness and runs (US0074/US0075) follow.
+  - **US0082 context tiering.** `digest.py build` produces mechanical, drift-checked digests of
+    closed artefacts (id / title / status / outcome / refs) so status and planning reads need
+    not re-read the whole corpus as a repo ages; originals are never summarised away.
+    `digest.is_stale` gives the reconcile-style drift check. The read-path integration and size
+    threshold stay scoped in CR0179.
 
 ### Fixed
 

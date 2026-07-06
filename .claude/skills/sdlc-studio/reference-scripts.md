@@ -421,6 +421,20 @@ first, and is idempotent (an already-migrated file is skipped). After `apply`, s
 `schema_version: 3` in `.config.yaml` so new artefacts mint ULIDs too. `sdlc_md.alias_map`
 resolves a pre-migration id to its current ULID, so `--id US0001` still works afterwards.
 
+### `digest.py`
+
+Context tiering - mechanical, drift-checked digests of closed (terminal) artefacts so
+status/planning reads need not re-read the whole corpus as a repo ages:
+
+- `build`: write `sdlc-studio/.local/digests.json` - one field-extracted entry per closed
+  artefact (id, title, status, close outcome, cross-references). Originals are never
+  summarised away; the digest is an access tier.
+
+`digest.is_stale(root)` compares the on-disk digest to a freshly built one (a closed artefact
+added/changed since -> regenerate), the same derived-and-drift-checked discipline as an index.
+The read-path integration (status/hint reading digests) and the size threshold are the
+remaining CR0179 workstream.
+
 ### `audit_check.py`
 
 One CI-runnable command over the schema-v3 team-schema rules, emitting STABLE rule ids so the
