@@ -1,6 +1,6 @@
 # US0067: Triage noise controls: Medium-plus individual, Low consolidated, session cap
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0014
@@ -22,6 +22,7 @@
 - **When** it is filed
 - **Then** it is redirected to a themed consolidation; Medium+ get individual artefacts
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py -k consolidate
+- **Verified:** yes (2026-07-08)
 
 ### AC2: Session cap fails loud
 
@@ -29,6 +30,7 @@
 - **When** the N+1th artefact is attempted
 - **Then** creation is refused loudly
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py -k session_cap
+- **Verified:** yes (2026-07-08)
 
 ## Design Notes (groomed 2026-07-08, see D0015)
 

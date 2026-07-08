@@ -26,6 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 import next_id  # noqa: E402  (sibling)
 import reconcile  # noqa: E402  (sibling - reuse the tested count recompute)
+import triage_noise  # noqa: E402  (sibling - v3 triage noise controls; dormant on v2)
 
 # Per-type: workspace dir, filename prefix, index display-id form, default status, and
 # the fields a non-hollow artifact must carry (the richness guard).
@@ -176,12 +177,25 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     create_status = (sdlc_md.INBOX_STATUS
                      if type_ in sdlc_md.FINDING_TYPES and sdlc_md.is_schema_v3(root)
                      else spec["status"])
+    # Triage noise controls (v3 only, dormant on v2): a Low-severity finding folds into a
+    # themed consolidation CR instead of minting its own artefact; the session cap refuses a
+    # flood loudly. `severity` (bug) or `priority` (cr) carries the Low signal.
+    sev = fields.get("severity") or fields.get("priority")
+    if triage_noise.should_consolidate(root, sev):
+        if dry_run:
+            return {"id": None, "file_id": None, "path": None,
+                    "consolidated": True, "dry_run": True}
+        res = triage_noise.consolidate_low_finding(root, type_, title, fields, today)
+        res.setdefault("indexed", True)
+        return res
     if dry_run:  # preview: write nothing
         indexed = (root / rel_dir / "_index.md").exists()
         return {"id": disp_id, "file_id": file_id, "path": str(path),
                 "indexed": indexed, "dry_run": True}
+    triage_noise.enforce_session_cap(root)  # refuse the N+1th individual finding loudly (v3)
     path.write_text(_render(type_, disp_id, title, today, fields, create_status),
                     encoding="utf-8")
+    triage_noise.record_creation(root)  # count this minted finding against the session budget
     # One shared header-driven row builder for both create paths: read the index's
     # own columns and fill by name, identical to `artifact new`.
     indexed = False

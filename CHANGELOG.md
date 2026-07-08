@@ -16,6 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Agentic triage - noise controls (EP0014, CR0173; US0067, schema v3, opt-in).** New
+  `scripts/triage_noise.py` and a `triage:` config block add two creation-time controls, both
+  dormant under v2: a **session cap** (`triage.session_cap`, default 20) refuses the N+1th
+  finding of a session loudly (a session keyed by the `SDLC_TRIAGE_SESSION` environment
+  variable, its count in `.local/triage-session.json`) so an agent cannot flood the backlog; and
+  **Low-severity consolidation** (`triage.low_consolidation`, default on) folds a Low-severity
+  finding into a themed consolidation CR - one per theme, carrying a `> **Consolidation:**`
+  marker - instead of minting its own artefact, while Medium and above still get individual ones.
+  Both `file_finding` and `artifact new` route finding creation through the controls, so neither
+  path is a bypass.
 - **Agentic triage - vocabulary and gated transitions (EP0014, CR0173; US0065, schema v3, opt-in).**
   Under `schema_version: 3`, findings (bug/cr/rfc) gain an `inbox` triage lane prepended to their
   status vocabulary, and `artifact.py` files a fresh finding into `inbox` rather than its per-type

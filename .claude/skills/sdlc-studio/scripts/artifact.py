@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import conventions, sdlc_md  # noqa: E402
 import file_finding  # noqa: E402  (reuse _slug, _next_number, append_index_row)
 import reconcile  # noqa: E402
+import triage_noise  # noqa: E402  (v3 triage noise controls; dormant on v2)
 import transition  # noqa: E402
 
 # Per-type create status, terminal (close) status, and disp-id form (cr/rfc carry a dash).
@@ -311,6 +312,17 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
         path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / f"{file_id}-{slug}.md"
         if path.exists():
             raise FileExistsError(path)
+        # Triage noise controls (v3 findings only, dormant on v2): a Low-severity finding folds
+        # into a themed consolidation CR; the session cap refuses a flood loudly. Routed here too
+        # so `artifact new` is not a bypass of the file_finding path.
+        sev = f.get("severity") or f.get("priority")
+        if type_ in sdlc_md.FINDING_TYPES and triage_noise.should_consolidate(root, sev):
+            if dry_run:
+                return {"id": None, "file_id": None, "path": None,
+                        "consolidated": True, "dry_run": True}
+            res = triage_noise.consolidate_low_finding(root, type_, title, f, f["date"])
+            res.setdefault("indexed", True)
+            return res
         if dry_run:  # preview: write nothing, report what would happen
             idx_exists = _header_cells(root, type_) is not None
             would_create_index = (not idx_exists) and _index_template(type_).exists()
@@ -319,9 +331,13 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
                     "would_create_index": would_create_index,
                     "epic_linked": (type_ == "story" and bool(f.get("epic"))) or None,
                     "dry_run": True}
+        if type_ in sdlc_md.FINDING_TYPES:
+            triage_noise.enforce_session_cap(root)  # refuse the N+1th finding loudly (v3)
         f["_status"] = _create_status(type_, root)  # era-aware: findings file into inbox under v3
         render = _select_render(root, type_, f.get("template"))
         sdlc_md.atomic_write(path, render(type_, disp, title, f["date"], f))
+        if type_ in sdlc_md.FINDING_TYPES:
+            triage_noise.record_creation(root)  # count this minted finding (session budget)
         index_created = _ensure_index(root, type_, f["date"])  # greenfield first run
         header = _header_cells(root, type_)
         indexed = False

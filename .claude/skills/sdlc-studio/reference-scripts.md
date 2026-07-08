@@ -259,16 +259,22 @@ Action workflow: `reference-skill-update.md`.
 
 ### `transition.py`
 
-Deterministic status transition + cascade. `set --id <ID> --status <new>`
-sets the artifact's `Status`, syncs its index row + summary counts (reusing
-`reconcile.apply_type`), and ticks/unticks a story's checkbox in the parent epic's Story
-Breakdown. `index_synced` is the true post-state (warns if a row is archived or the new
-status has no summary row). Replaces the hand-edited "mark it Done + update the index"
-cascade. **A story -> Done is gated on its AC-verify result:** if it declares
-executable (non-`manual`) ACs that are red or never run in `verify-report.json`, the
-transition is refused - the Definition-of-Done safety net for the hand-driven path that the
-sprint conformance gate already covers. `--force` overrides; manual-only / AC-less
-stories and non-story types are never gated.
+Deterministic status transition + cascade. `set --id <ID> --status <new>` sets `Status`,
+syncs the index row + summary counts (`reconcile.apply_type`), and ticks/unticks a story's
+checkbox in its epic's Story Breakdown; `index_synced` is the true post-state. **A story ->
+Done is gated on its AC-verify result** (red or never-run executable ACs refuse the
+transition; `--force` overrides; manual-only / AC-less and non-story types are never gated).
+**Schema v3:** a finding leaving `inbox` is gated too - a structured `--triaged-by` (refused
+without one), triager != raiser (separation of duties; solo-human warns), `--triage-severity`
+recorded. Dormant on v2.
+
+### `triage_noise.py`
+
+Creation-time triage noise controls (schema v3 only, dormant on v2). A **session cap**
+(`triage.session_cap`, default 20) refuses the N+1th finding of a session loudly (keyed by
+`SDLC_TRIAGE_SESSION`, count in `.local/triage-session.json`). **Low-severity consolidation**
+(`triage.low_consolidation`) folds a Low finding into a themed consolidation CR instead of its
+own artefact; Medium+ stay individual. `file_finding` and `artifact new` both route here.
 
 ### `archive.py`
 

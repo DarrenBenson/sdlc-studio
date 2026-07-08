@@ -132,6 +132,14 @@ provenance:
   enforce: false
   adopt_after: 0   # per-type id cutoff; ids <= this are exempt (legacy)
 
+# Agentic triage (schema v3 only - dormant under schema_version: 2). Noise controls on
+# artefact creation, so a flood of agent-filed findings never buries the few that matter.
+triage:
+  session_cap: 20          # max findings one session may file; the N+1th is refused loudly
+                           # (start a fresh session with SDLC_TRIAGE_SESSION, or raise the cap)
+  low_consolidation: true  # a Low-severity finding folds into a themed consolidation CR rather
+                           # than minting its own artefact; Medium and above get individual ones
+
 # Difficulty-aware model-tier routing. Advisory and opt-in: with enabled: false
 # the sprint plan still carries each unit's difficulty band (useful information), but no
 # tier/model recommendation. Tiers are abstract sizes; map them to whatever model

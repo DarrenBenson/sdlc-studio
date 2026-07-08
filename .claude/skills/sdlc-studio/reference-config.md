@@ -408,6 +408,16 @@ lone operator never deadlocks). `--triage-severity` records the triager's severi
 raiser's for later triage-quality metrics. All of this is dormant under `schema_version: 2`;
 stories and epics are authored, not triaged, so they are unaffected.
 
+**Noise controls** (`triage:` config block) keep a flood of agent-filed findings from burying
+the few that matter:
+
+| Key | Default | Effect |
+| --- | --- | --- |
+| `triage.session_cap` | `20` | Max findings one session may file; the N+1th is refused loudly. A session is keyed by the `SDLC_TRIAGE_SESSION` environment variable (set a new value to start a fresh budget); the count lives in `.local/triage-session.json`. |
+| `triage.low_consolidation` | `true` | A Low-severity finding folds into a themed consolidation CR (one per theme) rather than minting its own artefact; Medium and above always get individual artefacts. |
+
+Both the finding filer and `artifact new` enforce these, so neither creation path is a bypass.
+
 ---
 
 ## Pipeline Profile {#profile}
