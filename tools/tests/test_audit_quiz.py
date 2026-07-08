@@ -121,6 +121,23 @@ class ClassTTests(unittest.TestCase):
             self.assertEqual(q2["score"], 0)
             self.assertIn("verbatim", q2["reason"])
 
+    def test_class_t_linewrapped_quote_still_verifies(self) -> None:
+        # a logically-verbatim quote must not be rejected because the source file
+        # hard-wraps the sentence or uses markdown emphasis (grader fix, re-spike v2)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _make_fixture(root)
+            ws = _make_workspace(root)
+            (ws / "README.md").write_text(
+                "# calc\n\n- **Rounding.** Amounts round half-even\n  to 2 decimal places.\n",
+                encoding="utf-8")
+            answers = {"answers": [{"question_id": "Q2", "answer": "half-even",
+                                     "cited_path": "README.md",
+                                     "cited_quote": "Rounding. Amounts round half-even to 2 decimal places."}]}
+            r = aq.grade("synth", ws, answers, fixtures_dir=root / "fixtures")
+            q2 = [p for p in r["per_question"] if p["id"] == "Q2"][0]
+            self.assertEqual(q2["score"], 1, q2["reason"])
+
     def test_class_t_nonexistent_path_scores_zero(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

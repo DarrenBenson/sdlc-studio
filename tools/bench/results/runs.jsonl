@@ -4,3 +4,9 @@
 {"fixture": "brownfield-lru-cache", "arm": "B", "run_id": "n1", "tokens": 37728, "wall_time_s": 58.3, "iterations": 3, "defect_escape": false, "rework": false}
 {"fixture": "greenfield-csv-dedupe", "arm": "A", "run_id": "n1", "tokens": 48744, "wall_time_s": 123.4, "iterations": 2, "defect_escape": false, "rework": false}
 {"fixture": "greenfield-csv-dedupe", "arm": "B", "run_id": "n1", "tokens": 43079, "wall_time_s": 109.6, "iterations": 1, "defect_escape": false, "rework": false}
+{"fixture": "multifile-notify-digest", "arm": "A", "run_id": "v2n1", "tokens": 65312, "wall_time_s": 270.6, "metrics_source": "parsed", "iterations": 1, "defect_escape": true, "rework": false, "audit_score": 0.6}
+{"fixture": "multifile-notify-digest", "arm": "B", "run_id": "v2n1", "tokens": 57763, "wall_time_s": 190.7, "metrics_source": "parsed", "iterations": 3, "defect_escape": true, "rework": false, "audit_score": 0.8}
+{"fixture": "multifile-notify-digest", "arm": "R", "run_id": "v2n1", "tokens": 122819, "wall_time_s": 344.9, "metrics_source": "parsed", "iterations": 1, "defect_escape": false, "rework": false, "model_mix": {"medium": 1}, "audit_score": 1.0}
+{"fixture": "change-request-ledger-drift", "arm": "A", "run_id": "v2n1", "tokens": 49173, "wall_time_s": 117.5, "metrics_source": "parsed", "iterations": 3, "defect_escape": false, "rework": false, "audit_score": 1.0}
+{"fixture": "change-request-ledger-drift", "arm": "B", "run_id": "v2n1", "tokens": 46672, "wall_time_s": 93.9, "metrics_source": "parsed", "iterations": 3, "defect_escape": false, "rework": false, "audit_score": 1.0}
+{"fixture": "change-request-ledger-drift", "arm": "R", "run_id": "v2n1", "tokens": 142803, "wall_time_s": 251.1, "metrics_source": "parsed", "iterations": 1, "defect_escape": false, "rework": false, "model_mix": {"tiny": 1}, "audit_score": 1.0}

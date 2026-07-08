@@ -109,6 +109,28 @@ class DegradationTests(unittest.TestCase):
     def test_empty_map_yields_tier_name_with_null_model(self) -> None:
         self.assertEqual(route.resolve_tier("medium", {}), ("medium", None))
 
+    def test_unknown_tier_names_fail_loud_not_indexerror(self) -> None:
+        # a config typo (routing.models: {gigantic: x}) names the bad key, never a
+        # bare IndexError and never a silent ignore (LL0008)
+        with self.assertRaises(ValueError) as ctx:
+            route.resolve_tier("medium", {"gigantic": "x"})
+        self.assertIn("gigantic", str(ctx.exception))
+        with self.assertRaises(ValueError):
+            route.resolve_tier("large", {"small": "a", "gigantic": "x"})
+
+    def test_zero_config_denominators_degrade_not_crash(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            (tmp / "sdlc-studio").mkdir(parents=True)
+            (tmp / "sdlc-studio" / ".config.yaml").write_text(
+                "complexity:\n  cognitive_high: 0\n"
+                "story_quality:\n  sizing:\n    max_ac: 0\n    max_points: 0\n",
+                encoding="utf-8")
+            _code_file(tmp, "src/mod.py", complexity_blocks=2)
+            story = _story(tmp, affects="src/mod.py", points="5", acs=3)
+            est = route.estimate(tmp, story)  # must not raise ZeroDivisionError
+            self.assertIn("difficulty_score", est)
+
 
 class PickTests(unittest.TestCase):
     def _routing_cfg(self, **over):

@@ -7,10 +7,8 @@
 >
 > **Released version:** 3.6.0 (2026-07-06, non-breaking - the EP0016 review/lite on-ramp) ·
 > **Date:** 2026-07-06 ·
-> **Gates:** lint clean, 1272 script tests pass (+49 repo-only tools tests), `gate` PASS,
+> **Gates:** lint clean, 1274 script tests pass (+49 repo-only tools tests), `gate` PASS,
 > reconcile drift 0, npm audit 0, CI green on main.
->
-> **Fixed (BG0067):** `verify_ac.py`'s `pytest -k` DSL glued path+marker into one argv element (false "file not found"); now `shlex.split`, matching the `go` verb.
 >
 > **v4 is WORK-IN-PROGRESS, not released.** The v4 foundation (schema-v3 ULID identity - a
 > breaking change) and Tranche 2 (authorship/enforcement + tooling debt) are all on `main` and
@@ -42,27 +40,29 @@
   aliases, US0058 `index-derived` gate, US0069 atomic writes + lock, US0059 TRD refresh. Opt-in
   via `schema_version: 3`; v2 untouched. RFC0024 + RFC0025 accepted. Preceded by RV0006 (14
   bugs, BG0053-BG0066) and the v4 breakdown (22 CRs into 7 epics, 28 stories).
-- **Backlog swept (2026-07-08):** EP0012/13/15/18 + 13 CRs were story-Done but stuck at
-  Draft/Proposed (never cascaded) - closed mechanically, 0 drift after.
-- **N=1 benchmark spike (2026-07-08, CR0178/US0074/US0075):** `tools/bench/` built, 6 live
-  runs. **Not flattering, important for the v4 go/no-go:** 0/3 defect escapes either arm,
-  no consistent win for the pipeline - arm A judged these small single-file tickets too
-  small to warrant it, so it behaved like plain Claude Code. `docs/benchmarks/
-  2026-07-08-n1-spike.md` (D0012). **N=5 paused** pending a fixture-design decision (bigger/
-  multi-file/ambiguous tasks - the pipeline's actual claimed territory).
-- **Next:** decide the fixture-redesign question above first. Then: US0072 (positioning,
-  depends on the benchmark result), EP0014 agentic triage (US0065-0068), 5 EP0018 debt CRs
-  not yet decomposed (CR0179/0181/0182/0186/0187), CR0188 (fetch-before-sprint).
+- **Benchmark v1 spike found the fixtures couldn't differentiate** (D0012, small tickets;
+  `2026-07-08-n1-spike.md`); **benchmark v2 fixed that** (RFC0026 + CR0189-0193, all Done):
+  model-tier routing shipped (`route.py` + sprint/telemetry integration, `routing:` config,
+  advisory, tool-neutral), two harder Tier-1 fixtures with the held-back **Auditability**
+  metric and protocol-v2 re-registration built and fairness-reviewed, and the **v2 re-spike ran (3
+  arms x 2 fixtures): the pipeline's mandated planning pass was the only arm with zero defect
+  escapes** (A and B both shipped a quiet-hours bug the hidden suite caught); Auditability
+  gradient R 1.0 > B 0.8 > A 0.6; routing delivered a trivial change via the tiny tier at
+  0.25x cost. `2026-07-08-v2-respike.md` (D0013). **N=5: GO** (operator decision on spend).
+- **Next:** N=5 measured run when chosen (Tier 1 N=5, Tier 2 N=2, cut order pre-declared).
+  Then: US0072 (positioning - now has its first supporting numbers), EP0014 agentic triage
+  (US0065-0068), 5 EP0018 debt CRs (CR0179/0181/0182/0186/0187), CR0188 (fetch-before-sprint).
 
 ## History (detail lives in the named retro / CHANGELOG entry)
 
+- **BG0067** verify_ac pytest -k DSL glued path+marker (false file-not-found) - fixed, shlex.split
+- **2026-07-08** backlog sweep: EP0012/13/15/18 + 13 story-Done CRs closed mechanically, 0 drift
 - **2026-07-D** field-hardening: convention layer + adoption onboarding -> RETRO0010
 - **D0006** first instrumented sprint: telemetry-on-close, workspace advisory, BG0051 -> RETRO0009
 - **2026-07-C** the re-scoped seven: iter_tables, mutation v2, batch transitions -> RETRO0008
 - **2026-07-B** the mutation gate (RFC0022 -> EP0011), 44-bug sweep, WSJF sizing -> RETRO0007
 - **2026-07** mixed backlog clear: first seat-scored WSJF sprint, depth tiers -> RETRO0006
 - **EP0010** token economy + learning loop: index archival, retro gate, blocker sweep -> RETRO0005
-- **CR0128** test-strategy heuristics follow-on (missing-regression-test audit lane)
 - **v3.1.1** field-hardening from 4 upgrade-run retrospectives (RFC0021 seats/amigos) -> CHANGELOG
 - **v3.1.0** your personal engineering team (RFC0020 amigos + independence gate) -> CHANGELOG
 - **v3.0.1** consolidated v3 line: sprint lifecycle (RFC0019), greenfield DevEx CR0077-0086,

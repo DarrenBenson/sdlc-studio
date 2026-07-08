@@ -1,6 +1,6 @@
 # CR-0191: Routing feedback loop: per-tier telemetry and escalation recording
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-08
 > **Created-by:** sdlc-studio new
 > **Priority:** P3

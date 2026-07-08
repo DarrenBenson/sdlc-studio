@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 12 |
+| Draft | 5 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 76 |
+| Done | 83 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -50,13 +50,13 @@
 | [US0080](US0080-code-quality-debt-docstrings-dedup-format-json-complexity.md) | Code-quality debt: docstrings, dedup, format json, complexity | Done | EP0018 | 2026-07-06 | 2026-07-06 |
 | [US0081](US0081-batch-scaffold-wiring-polish.md) | Batch scaffold wiring polish | Done | EP0018 | 2026-07-06 | 2026-07-06 |
 | [US0082](US0082-context-tiering-digest-closed-artefacts-to-bound-token.md) | Context tiering: digest closed artefacts to bound token cost | Done | EP0018 | 2026-07-06 | 2026-07-06 |
-| [US0083](US0083-route-py-deterministic-difficulty-estimator-tier-pick-and.md) | route.py: deterministic difficulty estimator, tier pick and escalation stepper | Draft | EP0008 | 2026-07-08 | 2026-07-08 |
-| [US0084](US0084-sprint-plan-carries-difficulty-tier-and-model-per.md) | Sprint plan carries difficulty, tier and model per unit | Draft | EP0008 | 2026-07-08 | 2026-07-08 |
-| [US0085](US0085-per-tier-telemetry-tier-fields-and-per-tier.md) | Per-tier telemetry: tier fields and per-tier summary grouping | Draft | EP0008 | 2026-07-08 | 2026-07-08 |
-| [US0086](US0086-benchmark-v2-harness-subdirs-environmental-isolation-metrics-capture.md) | Benchmark v2 harness: subdirs, environmental isolation, metrics capture, arm R | Draft | EP0017 | 2026-07-08 | 2026-07-08 |
-| [US0087](US0087-tier-1-fixtures-multifile-notify-digest-and-change.md) | Tier-1 fixtures: multifile-notify-digest and change-request-ledger-drift | Draft | EP0017 | 2026-07-08 | 2026-07-08 |
-| [US0088](US0088-auditability-metric-held-back-audit-quizzes-and-audit.md) | Auditability metric: held-back audit quizzes and audit_quiz.py grader | Draft | EP0017 | 2026-07-08 | 2026-07-08 |
-| [US0089](US0089-protocol-v2-re-registration-and-the-n-1.md) | Protocol v2 re-registration and the N=1 re-spike | Draft | EP0017 | 2026-07-08 | 2026-07-08 |
+| [US0083](US0083-route-py-deterministic-difficulty-estimator-tier-pick-and.md) | route.py: deterministic difficulty estimator, tier pick and escalation stepper | Done | EP0008 | 2026-07-08 | 2026-07-08 |
+| [US0084](US0084-sprint-plan-carries-difficulty-tier-and-model-per.md) | Sprint plan carries difficulty, tier and model per unit | Done | EP0008 | 2026-07-08 | 2026-07-08 |
+| [US0085](US0085-per-tier-telemetry-tier-fields-and-per-tier.md) | Per-tier telemetry: tier fields and per-tier summary grouping | Done | EP0008 | 2026-07-08 | 2026-07-08 |
+| [US0086](US0086-benchmark-v2-harness-subdirs-environmental-isolation-metrics-capture.md) | Benchmark v2 harness: subdirs, environmental isolation, metrics capture, arm R | Done | EP0017 | 2026-07-08 | 2026-07-08 |
+| [US0087](US0087-tier-1-fixtures-multifile-notify-digest-and-change.md) | Tier-1 fixtures: multifile-notify-digest and change-request-ledger-drift | Done | EP0017 | 2026-07-08 | 2026-07-08 |
+| [US0088](US0088-auditability-metric-held-back-audit-quizzes-and-audit.md) | Auditability metric: held-back audit quizzes and audit_quiz.py grader | Done | EP0017 | 2026-07-08 | 2026-07-08 |
+| [US0089](US0089-protocol-v2-re-registration-and-the-n-1.md) | Protocol v2 re-registration and the N=1 re-spike | Done | EP0017 | 2026-07-08 | 2026-07-08 |
 
 ## Archived Releases
 

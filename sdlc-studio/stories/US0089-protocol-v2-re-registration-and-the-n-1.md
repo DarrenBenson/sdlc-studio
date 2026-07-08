@@ -1,6 +1,6 @@
 # US0089: Protocol v2 re-registration and the N=1 re-spike
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-08
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0017
@@ -22,6 +22,7 @@
 - **When** committed before the re-spike
 - **Then** it pre-registers arms A/B/R, the tiered task set, five metrics (incl. Auditability), N (Tier 1 N=5 / Tier 2 N=2), the calibration rule and the cut order; v1 gains only a superseded status line
 - **Verify:** pytest tools/tests/test_benchmark_protocol.py -k v2
+- **Verified:** yes (2026-07-08)
 
 ### AC2: Re-spike runs 3 arms x 2 Tier-1 fixtures
 

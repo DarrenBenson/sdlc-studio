@@ -1,6 +1,6 @@
 # CR-0192: Benchmark arm R: routed pipeline variant with cost index
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-08
 > **Created-by:** sdlc-studio new
 > **Priority:** P3

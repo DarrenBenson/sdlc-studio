@@ -71,10 +71,15 @@ def estimate(repo_root: Path | str, unit_path: Path | str) -> dict:
     text = unit_path.read_text(encoding="utf-8")
     cfg = config.load_config(root)
 
-    cognitive_high = (cfg.get("complexity") or {}).get("cognitive_high", 15)
+    # zero/negative config denominators fall back to defaults - a config typo must
+    # degrade the estimate, never crash it with a ZeroDivisionError (LL0008-adjacent)
+    def _pos(value, default):
+        return value if isinstance(value, (int, float)) and value > 0 else default
+
+    cognitive_high = _pos((cfg.get("complexity") or {}).get("cognitive_high"), 15)
     sizing = ((cfg.get("story_quality") or {}).get("sizing") or {})
-    max_ac = sizing.get("max_ac", 10)
-    max_points = sizing.get("max_points", 13)
+    max_ac = _pos(sizing.get("max_ac"), 10)
+    max_points = _pos(sizing.get("max_points"), 13)
 
     declared = sdlc_md.affects_files(text)
     resolved = [str(r) for p in declared if (r := sdlc_md.resolve_affects(root, p))]
@@ -150,7 +155,14 @@ def band_for(score: int, routing: dict) -> tuple[str, str]:
 def resolve_tier(name: str, models: dict) -> tuple[str, str | None]:
     """Resolve an abstract tier against a (possibly sparse) model map, degrading
     UPWARD only. Empty map: the abstract name with model None - the recommendation
-    stays useful as prose."""
+    stays useful as prose. A map whose keys are ALL unrecognised tier names fails
+    loud (a config typo must never crash as a bare IndexError or silently disable
+    routing - lesson LL0008); unknown keys mixed with valid ones are named too."""
+    unknown = sorted(k for k in models if k not in TIERS)
+    if unknown:
+        raise ValueError(
+            f"routing.models contains unknown tier name(s): {', '.join(unknown)} - "
+            f"valid tiers are {', '.join(TIERS)}")
     if not models:
         return name, None
     idx = TIERS.index(name)

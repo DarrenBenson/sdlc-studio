@@ -83,8 +83,17 @@ def grade_class_d(q: dict, key: dict, answer: dict, workspace: Path,
     return {"score": 1, "reason": "check passes on workspace, fails on mutant"}
 
 
+def _normalise_for_quote_match(s: str) -> str:
+    """Collapse whitespace runs (hard-wrapped source lines) and strip markdown emphasis
+    markers, so a logically-verbatim quote is not rejected for a line break or a `**`.
+    The quote must still be the file's own words - only layout differences are forgiven."""
+    s = s.replace("**", "").replace("`", "")
+    return re.sub(r"\s+", " ", s).strip().casefold()
+
+
 def grade_class_t(q: dict, key: dict, answer: dict, workspace: Path) -> dict:
-    """1 iff cited_path exists, cited_quote is verbatim in it, and the fact regex matches."""
+    """1 iff cited_path exists, cited_quote is verbatim in it (up to whitespace/markdown
+    normalisation), and the fact regex matches."""
     a = answer or {}
     cited_path = (a.get("cited_path") or "").strip()
     cited_quote = (a.get("cited_quote") or "").strip()
@@ -98,7 +107,7 @@ def grade_class_t(q: dict, key: dict, answer: dict, workspace: Path) -> dict:
         text = target.read_text(encoding="utf-8", errors="replace")
     except OSError:
         return {"score": 0, "reason": f"cited path {cited_path} unreadable"}
-    if cited_quote not in text:
+    if _normalise_for_quote_match(cited_quote) not in _normalise_for_quote_match(text):
         return {"score": 0, "reason": "cited quote is not verbatim in the cited file"}
     pattern = key.get("fact_regex", "")
     if pattern and not (re.search(pattern, fact, re.I) or re.search(pattern, cited_quote, re.I)):

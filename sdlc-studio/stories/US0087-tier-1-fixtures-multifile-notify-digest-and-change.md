@@ -1,6 +1,6 @@
 # US0087: Tier-1 fixtures: multifile-notify-digest and change-request-ledger-drift
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-08
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0017
@@ -21,6 +21,7 @@
 - **When** the hidden suite runs against a ticket-text-only reference implementation
 - **Then** the spec-interaction tests fail (urgent bypass, mandatory-only for unsubscribed, quiet-hours deferral, throttle counts sends, audit reason codes) while the happy path passes
 - **Verify:** manual validation record - hidden suite red on the naive variant, green on the full reference solution
+- **Verified:** manual (2026-07-08)
 
 ### AC2: change-request-ledger-drift exercises drift control
 
@@ -28,6 +29,7 @@
 - **When** the hidden suite runs against the tempting-but-wrong reference variant (normalisation breaking adjacent rules)
 - **Then** the regression tests on unchanged rules fail; the correct reference passes all, including the deterministic spec-updated check
 - **Verify:** manual validation record - hidden suite red on the seeded variant, green on the reference
+- **Verified:** manual (2026-07-08)
 
 ### AC3: Fairness invariant holds
 
@@ -35,6 +37,7 @@
 - **When** reviewed
 - **Then** everything needed to pass each hidden suite is present in the visible workspace (spec + code); nothing requires sdlc-studio artifacts to discover
 - **Verify:** manual independent review sign-off
+- **Verified:** manual (2026-07-08)
 
 ## Revision History
 

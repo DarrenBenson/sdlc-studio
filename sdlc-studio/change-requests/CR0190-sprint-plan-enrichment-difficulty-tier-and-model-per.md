@@ -1,6 +1,6 @@
 # CR-0190: Sprint plan enrichment: difficulty, tier and model per unit
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-08
 > **Created-by:** sdlc-studio new
 > **Priority:** P2

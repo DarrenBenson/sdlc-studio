@@ -20,10 +20,10 @@ early because it validates or falsifies the whole v4 premise.
 - [x] [US0073: Pre-register the benchmark protocol: task set, metrics, baseline](../stories/US0073-pre-register-the-benchmark-protocol-task-set-metrics.md)
 - [x] [US0074: Benchmark harness runner, fixtures and held-back suites](../stories/US0074-benchmark-harness-runner-fixtures-and-held-back-suites.md)
 - [x] [US0075: First measured benchmark run and published report](../stories/US0075-first-measured-benchmark-run-and-published-report.md)
-- [ ] [US0086: Benchmark v2 harness: subdirs, environmental isolation, metrics capture, arm R](../stories/US0086-benchmark-v2-harness-subdirs-environmental-isolation-metrics-capture.md)
-- [ ] [US0087: Tier-1 fixtures: multifile-notify-digest and change-request-ledger-drift](../stories/US0087-tier-1-fixtures-multifile-notify-digest-and-change.md)
-- [ ] [US0088: Auditability metric: held-back audit quizzes and audit_quiz.py grader](../stories/US0088-auditability-metric-held-back-audit-quizzes-and-audit.md)
-- [ ] [US0089: Protocol v2 re-registration and the N=1 re-spike](../stories/US0089-protocol-v2-re-registration-and-the-n-1.md)
+- [x] [US0086: Benchmark v2 harness: subdirs, environmental isolation, metrics capture, arm R](../stories/US0086-benchmark-v2-harness-subdirs-environmental-isolation-metrics-capture.md)
+- [x] [US0087: Tier-1 fixtures: multifile-notify-digest and change-request-ledger-drift](../stories/US0087-tier-1-fixtures-multifile-notify-digest-and-change.md)
+- [x] [US0088: Auditability metric: held-back audit quizzes and audit_quiz.py grader](../stories/US0088-auditability-metric-held-back-audit-quizzes-and-audit.md)
+- [x] [US0089: Protocol v2 re-registration and the N=1 re-spike](../stories/US0089-protocol-v2-re-registration-and-the-n-1.md)
 
 ## Revision History
 

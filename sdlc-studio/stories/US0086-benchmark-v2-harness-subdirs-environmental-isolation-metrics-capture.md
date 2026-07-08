@@ -1,6 +1,6 @@
 # US0086: Benchmark v2 harness: subdirs, environmental isolation, metrics capture, arm R
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-08
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0017
@@ -21,6 +21,7 @@
 - **When** `runner.py score` runs
 - **Then** the whole hidden tree is copied for scoring (copytree, like prepare) and the suite executes; default timeout is 120s
 - **Verify:** pytest tools/tests/test_bench_runner.py -k subdir
+- **Verified:** yes (2026-07-08)
 
 ### AC2: Environmental arm isolation
 
@@ -28,6 +29,7 @@
 - **When** `prepare --arm A` or `--arm R` runs
 - **Then** the skill is copied INTO the workspace (.claude/skills/sdlc-studio); an arm-B workspace contains no such directory
 - **Verify:** pytest tools/tests/test_bench_runner.py -k isolation
+- **Verified:** yes (2026-07-08)
 
 ### AC3: Automatic metrics capture with disclosed fallback
 
@@ -35,6 +37,7 @@
 - **When** `record --metrics-json <path>` runs
 - **Then** tokens/wall-time come from the file; hand-typed flags still work but stamp `metrics_source: manual`
 - **Verify:** pytest tools/tests/test_bench_runner.py -k metrics
+- **Verified:** yes (2026-07-08)
 
 ### AC4: Arm R and the cost index
 
@@ -42,6 +45,7 @@
 - **When** `summary --price tiny=0.25,small=1,...` runs over records carrying `--model-mix`
 - **Then** a cost index is computed per fixture x arm; without prices no cost column appears (no fabricated zeros); pricing never lives under .claude/skills/
 - **Verify:** pytest tools/tests/test_bench_runner.py -k cost_index
+- **Verified:** yes (2026-07-08)
 
 ## Revision History
 

@@ -28,6 +28,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   critic is never a smaller tier than the author (medium floor for code units). Escalation on
   failure steps one declared tier within loop_guard's unchanged attempt cap. Shared
   `affects_files`/`resolve_affects`/`count_acs` helpers lifted into `lib/sdlc_md.py`.
+- **Benchmark v2 + the calibration re-spike** (CR0192/CR0193; US0086-US0089, repo-only,
+  not in the skill payload): tools/bench hardened (multi-file hidden-suite scoring,
+  environmental arm isolation - the baseline arm's workspace contains no skill at all,
+  automatic token/wall-time capture with disclosed manual fallback, arm R = routed pipeline,
+  operator-priced cost index, min/max in summaries); two harder Tier-1 fixtures
+  (`multifile-notify-digest`, `change-request-ledger-drift`), each validated
+  red-on-naive/green-on-reference and independently fairness-reviewed; the held-back
+  **Auditability** metric (`audit_quiz.py`: mutant-checked evidence citations +
+  citation-validated trace answers; reviewer-independence descriptive at weight 0);
+  `docs/benchmarks/protocol-v2.md` superseding pre-registration. The N=1 re-spike
+  (3 arms x 2 fixtures) is published in `docs/benchmarks/2026-07-08-v2-respike.md`: the
+  pipeline's mandated planning pass was the only arm with zero defect escapes, and the
+  Auditability metric graded a real evidence-quality gradient. N=5: GO (D0013).
 
 ## [3.6.0] - 2026-07-06
 

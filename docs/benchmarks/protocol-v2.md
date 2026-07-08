@@ -91,7 +91,11 @@ Never cut: the calibration spike (the insurance against repeating v1's engagemen
 
 ## Status
 
-- [ ] Harness hardened + fixtures + quizzes built and validated (CR0193 / US0086-US0088)
-- [ ] N=1 calibration re-spike (arms A/B/R x Tier 1) run + published (US0089)
-- [ ] Fixture-engagement verdict: proceed to N=5 / adjust fixtures / stop
+- [x] Harness hardened + fixtures + quizzes built and validated (CR0193 / US0086-US0088)
+- [x] N=1 calibration re-spike (arms A/B/R x Tier 1) run + published (US0089) - see
+      [2026-07-08-v2-respike.md](2026-07-08-v2-respike.md): the fixtures discriminate
+      (arms A and B both escaped on notify-digest's quiet-hours interaction; the routed
+      pipeline arm did not), Auditability graded a real gradient (R 1.0 > B 0.8 > A 0.6).
+- [x] Fixture-engagement verdict: **GO for N=5** (two harness notes: record arm R's critic
+      verdict into the workspace; keep the fixed quote validator).
 - [ ] Measured runs (Tier 1 N=5, Tier 2 N=2) + published report

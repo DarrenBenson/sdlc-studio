@@ -1,6 +1,6 @@
 # CR-0189: Routing foundation: route.py difficulty estimator, tier map, config schema
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-08
 > **Created-by:** sdlc-studio new
 > **Priority:** P2
