@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 11 |
+| Proposed | 12 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 181 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 4 |
 | Blocked | 0 |
-| **Total** | **196** |
+| **Total** | **197** |
 
 ## All Changes
 
@@ -57,6 +57,7 @@
 | [CR-0194](CR0194-plan-stage-adversarial-review-independent-ac-vs-spec.md) | Plan-stage adversarial review: independent AC-vs-spec check with a deterministic trigger | Proposed | Medium | process | 2026-07-08 | -- |
 | [CR-0195](CR0195-critic-charter-unrequested-spec-edits-in-a-delivery.md) | Critic charter: unrequested spec edits in a delivery are a blocking finding | Proposed | Medium | process | 2026-07-08 | -- |
 | [CR-0196](CR0196-bench-runner-summary-must-exclude-calibration-rows-without.md) | Bench runner: summary must exclude calibration rows without hand-filtering | Proposed | Medium | tooling | 2026-07-08 | -- |
+| [CR-0197](CR0197-upgrade-re-baseline-census-in-flight-artifacts-against.md) | Upgrade re-baseline: census in-flight artifacts against the capability delta | Proposed | Medium | process | 2026-07-08 | -- |
 
 ## Archived Releases
 
