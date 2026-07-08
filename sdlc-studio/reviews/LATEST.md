@@ -51,7 +51,9 @@
   README block, SKILL.md NOT-for triggers + openclaw metadata). Claims-calibration critic:
   REJECT->repair->APPROVE.
 - **Next:** EP0014 agentic triage (US0065-0068), 5 EP0018 debt CRs
-  (CR0179/0181/0182/0186/0187), CR0188; candidate CR from D0014 (AC-vs-spec check).
+  (CR0179/0181/0182/0186/0187), CR0188; N=5 follow-ups filed: CR0194 (plan-stage
+  AC-vs-spec adversarial review, deterministic trigger), CR0195 (unrequested spec edits
+  block), CR0196 (bench summary calibration-row guard), BG0068 (supersedes status flip).
 
 ## History (detail lives in the named retro / CHANGELOG entry)
 
