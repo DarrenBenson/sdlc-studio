@@ -607,5 +607,109 @@ class HonestSyncTests(unittest.TestCase):
             self.assertTrue(res["index_synced"])
 
 
+def _v3_bug_repo(root: Path, status: str = "inbox",
+                 raised_by: str = "Scout; agent; 1") -> Path:
+    """A schema-v3 repo with one bug in `status` carrying a structured Raised-by (US0065)."""
+    sd = root / "sdlc-studio"
+    sd.mkdir(parents=True)
+    (sd / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
+    bd = sd / "bugs"
+    bd.mkdir(parents=True)
+    (bd / "BG0001-x.md").write_text(
+        f"# BG0001: b\n\n> **Status:** {status}\n> **Severity:** high\n"
+        f"> **Raised-by:** {raised_by}\n\n## Summary\n\nx\n", encoding="utf-8")
+    (bd / "_index.md").write_text(
+        "# Bugs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n"
+        "| inbox | 1 |\n| Open | 0 |\n\n## All\n\n| ID | Title | Status |\n"
+        "| --- | --- | --- |\n| [BG0001](BG0001-x.md) | b | inbox |\n", encoding="utf-8")
+    return root
+
+
+class TriageGateTests(unittest.TestCase):
+    """US0065: the v3 gated inbox->triaged transition recording triaged_by (AC1/AC2)."""
+
+    def test_triage_gate_requires_triaged_by(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _v3_bug_repo(Path(d))
+            with self.assertRaises(ValueError) as ctx:
+                tr.transition(root, "BG0001", "Open")  # no triaged_by -> fail loud
+            self.assertIn("triaging seat must be recorded", str(ctx.exception).lower())
+
+    def test_triage_gate_enforces_separation_of_duties(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _v3_bug_repo(Path(d), raised_by="Scout; agent; 1")
+            with self.assertRaises(ValueError) as ctx:
+                tr.transition(root, "BG0001", "Open", triaged_by="Scout; agent; 1")
+            self.assertIn("separation of duties", str(ctx.exception).lower())
+
+    def test_triage_gate_records_triaged_by_on_success(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _v3_bug_repo(Path(d), raised_by="Scout; agent; 1")
+            res = tr.transition(root, "BG0001", "Open", triaged_by="Knox; agent; 1")
+            self.assertEqual(res["to"], "Open")
+            text = _read(root, "bugs", "BG0001-x.md")
+            self.assertIn("> **Status:** Open", text)
+            self.assertIn("> **Triaged-by:** Knox; agent; 1", text)
+            self.assertTrue(res["index_synced"])
+
+    def test_triage_gate_dormant_under_v2(self) -> None:
+        # No schema_version:3 -> the triage gate never fires; a normal bug transition
+        # needs no triaged_by (era-gating keeps v2 projects untouched).
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bd = root / "sdlc-studio" / "bugs"
+            bd.mkdir(parents=True)
+            (bd / "BG0001-x.md").write_text(
+                "# BG0001: b\n\n> **Status:** Open\n> **Severity:** high\n\n## Summary\n\nx\n",
+                encoding="utf-8")
+            (bd / "_index.md").write_text(
+                "# Bugs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Open | 1 |\n"
+                "| In Progress | 0 |\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [BG0001](BG0001-x.md) | b | Open |\n", encoding="utf-8")
+            res = tr.transition(root, "BG0001", "In Progress")  # no triaged_by required
+            self.assertEqual(res["to"], "In Progress")
+
+    def test_triage_gate_allows_solo_human_self_triage_with_warning(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _v3_bug_repo(Path(d), raised_by="Darren; human; 1")
+            res = tr.transition(root, "BG0001", "Open", triaged_by="Darren; human; 1")
+            self.assertEqual(res["to"], "Open")               # not deadlocked
+            self.assertIn("solo-human self-triage", res["warning"])
+
+    def test_triage_gate_covers_all_exits_from_inbox(self) -> None:
+        # Leaving inbox by any exit is the triage act - not only the canonical accept
+        # target - so an agent cannot sidestep triage by jumping to another state.
+        for target in ("In Progress", "Superseded"):
+            with tempfile.TemporaryDirectory() as d:
+                root = _v3_bug_repo(Path(d), raised_by="Scout; agent; 1")
+                with self.assertRaises(ValueError) as ctx:
+                    tr.transition(root, "BG0001", target)  # no triaged_by
+                self.assertIn("triaging seat must be recorded", str(ctx.exception).lower())
+
+    def test_triage_gate_records_on_non_canonical_exit(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _v3_bug_repo(Path(d), raised_by="Scout; agent; 1")
+            res = tr.transition(root, "BG0001", "In Progress", triaged_by="Knox; agent; 1")
+            self.assertEqual(res["to"], "In Progress")
+            self.assertIn("> **Triaged-by:** Knox; agent; 1",
+                          _read(root, "bugs", "BG0001-x.md"))
+
+    def test_triage_gate_dry_run_is_honest(self) -> None:
+        # A dry-run preflight of a triage that would block must not report a false green.
+        with tempfile.TemporaryDirectory() as d:
+            root = _v3_bug_repo(Path(d), raised_by="Scout; agent; 1")
+            with self.assertRaises(ValueError):
+                tr.transition(root, "BG0001", "Open", dry_run=True)  # no triaged_by
+
+    def test_triage_severity_recorded_alongside_raiser(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _v3_bug_repo(Path(d), raised_by="Scout; agent; 1")  # raiser Severity: high
+            tr.transition(root, "BG0001", "Open",
+                          triaged_by="Knox; agent; 1", triage_severity="low")
+            text = _read(root, "bugs", "BG0001-x.md")
+            self.assertIn("> **Severity:** high", text)         # raiser's retained
+            self.assertIn("> **Triage-severity:** low", text)   # triager's recorded
+
+
 if __name__ == "__main__":
     unittest.main()

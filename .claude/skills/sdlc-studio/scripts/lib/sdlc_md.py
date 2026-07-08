@@ -324,6 +324,21 @@ def terminal_statuses(type_: str) -> set[str]:
     return set(TERMINAL_STATUS.get(type_, set())) & set(STATUS_VOCAB.get(type_, []))
 
 
+# Findings (bug/cr/rfc) gain an `inbox` triage lane under schema v3 (EP0014): an
+# agent-filed finding lands in `inbox`, and a *different* seat triages it into the
+# workflow proper. The triaged target is the first accepted-into-workflow state per
+# type - `Proposed` (cr) / `Draft` (rfc) are pre-workflow proposal states an agent
+# finding never occupies, so triage promotes straight past them. Dormant under v2.
+FINDING_TYPES: tuple[str, ...] = ("bug", "cr", "rfc")
+INBOX_STATUS = "inbox"
+TRIAGE_TARGET: dict[str, str] = {"bug": "Open", "cr": "Approved", "rfc": "In Review"}
+
+
+def triage_target(type_: str) -> str | None:
+    """The status an `inbox` finding of this type triages into (None for non-findings)."""
+    return TRIAGE_TARGET.get(type_)
+
+
 def is_terminal_status(type_: str, status: str) -> bool:
     """True if `status` is an absorbing state for `type_`."""
     return status in terminal_statuses(type_)
@@ -382,6 +397,10 @@ def status_vocab(type_: str, repo_root=None) -> list[str]:
     base = list(STATUS_VOCAB.get(type_, []))
     if repo_root is None:
         return base
+    # schema v3: findings gain an `inbox` triage lane prepended before the first state
+    # (dormant under v2, where is_schema_v3 is False, so existing vocab is untouched).
+    if type_ in FINDING_TYPES and is_schema_v3(repo_root):
+        base = [INBOX_STATUS] + base
     extra = project_override(repo_root, f"status_vocab.{type_}", [])
     extra = [str(s) for s in extra] if isinstance(extra, list) else []
     return base + [s for s in extra if s not in base]
@@ -601,18 +620,24 @@ def profile(repo_root) -> str:
         == "lite" else "full"
 
 
-def parse_authorship(text: str, field: str = "Raised-by") -> dict | None:
-    """Parse a typed authorship reference `Name; type; version` from a `> **Field:**` metadata
-    line into `{name, type, version}` (type lower-cased). None when the field is absent. The
-    resolver treats `type` as one of human | persona | agent - persona today, agent later,
-    with no schema change."""
-    raw = extract_field(text, field)
+def parse_authorship_value(raw: str | None) -> dict | None:
+    """Parse an already-extracted `Name; type; version` value into `{name, type, version}`
+    (type lower-cased). None when the value is absent/empty. Lets a caller parse a raw
+    authorship value (e.g. a `--triaged-by` argument) without reconstructing a metadata line."""
     if not raw:
         return None
     parts = [p.strip() for p in raw.split(";")]
     return {"name": parts[0] if parts else "",
             "type": (parts[1].lower() if len(parts) > 1 else ""),
             "version": parts[2] if len(parts) > 2 else ""}
+
+
+def parse_authorship(text: str, field: str = "Raised-by") -> dict | None:
+    """Parse a typed authorship reference `Name; type; version` from a `> **Field:**` metadata
+    line into `{name, type, version}` (type lower-cased). None when the field is absent. The
+    resolver treats `type` as one of human | persona | agent - persona today, agent later,
+    with no schema change."""
+    return parse_authorship_value(extract_field(text, field))
 
 
 def resolve_author(name: str, atype: str, repo_root) -> bool:

@@ -45,6 +45,30 @@ def _seed_index(root: Path, type_: str) -> Path:
 
 
 class FileTests(unittest.TestCase):
+    def test_v3_files_finding_into_inbox(self) -> None:
+        # US0065: the finding filer (the primary agent path) lands a v3 finding in `inbox`,
+        # not its per-type create status; dormant under v2 (the other tests file into Open).
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "schema_version: 3\n", encoding="utf-8")
+            idx = _seed_index(root, "bug")
+            res = ff.file_finding(root, "bug", "a defect",
+                                  {"severity": "high", "summary": "s", "steps": "r", "fix": "f"})
+            body = Path(res["path"]).read_text(encoding="utf-8")
+            self.assertIn("> **Status:** inbox", body)
+            self.assertIn("| inbox |", idx.read_text(encoding="utf-8"))
+
+    def test_v2_files_finding_into_create_status(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            res = ff.file_finding(root, "bug", "a defect",
+                                  {"severity": "high", "summary": "s", "steps": "r", "fix": "f"})
+            self.assertIn("> **Status:** Open",
+                          Path(res["path"]).read_text(encoding="utf-8"))
+
     def test_files_cr_with_id_structure_and_index_row(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

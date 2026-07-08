@@ -82,6 +82,27 @@ class SchemaV3AllocationTests(unittest.TestCase):
             r = artifact.new(repo, "cr", "change")
             self.assertEqual(r["id"], "CR-0001")   # no .config.yaml -> v2 sequential
 
+    def test_v3_findings_file_into_inbox(self) -> None:
+        # US0065: under v3 a filed finding lands in `inbox` (file body + index row),
+        # not the per-type create status.
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _v3(repo)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+            r = artifact.new(repo, "bug", "a defect")
+            self.assertIn("> **Status:** inbox", Path(r["path"]).read_text(encoding="utf-8"))
+            idx = (repo / "sdlc-studio" / "bugs" / "_index.md").read_text(encoding="utf-8")
+            self.assertIn("| inbox |", idx)
+            self.assertEqual(reconcile.detect_type("bug", repo)["drift"], [])
+
+    def test_v2_findings_keep_create_status(self) -> None:
+        # No schema_version:3 -> a bug still files Open (era-gating leaves v2 untouched).
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+            r = artifact.new(repo, "bug", "a defect")
+            self.assertIn("> **Status:** Open", Path(r["path"]).read_text(encoding="utf-8"))
+
 
 class BatchWiringCleanTests(unittest.TestCase):
     """US0081/CR0166: batch epic-wiring is structurally clean - no stray separator, the

@@ -16,6 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Agentic triage - vocabulary and gated transitions (EP0014, CR0173; US0065, schema v3, opt-in).**
+  Under `schema_version: 3`, findings (bug/cr/rfc) gain an `inbox` triage lane prepended to their
+  status vocabulary, and `artifact.py` files a fresh finding into `inbox` rather than its per-type
+  create status. A gated `inbox -> triaged` transition (`transition.py`) records the triaging seat:
+  the target is type-specific (bug `Open`, cr `Approved`, rfc `In Review` - agent findings skip the
+  human `Proposed`/`Draft` proposal states), it requires a structured `--triaged-by "Name; type;
+  version"` and refuses loudly without one, enforces separation of duties (the triager must differ
+  from the raiser; a solo human self-triage warns rather than deadlocks), and records the triager's
+  severity via `--triage-severity` alongside the raiser's. All era-gated and dormant under v2, so
+  existing projects are untouched.
 - **Difficulty-aware model-tier routing** (RFC0026, CR0189-CR0191; US0083-US0085): new
   `scripts/route.py` - a deterministic 0-100 difficulty estimate per work unit (blast-radius
   cognitive/risk via `complexity.assess`, file scope, unresolved-path novelty, AC count,

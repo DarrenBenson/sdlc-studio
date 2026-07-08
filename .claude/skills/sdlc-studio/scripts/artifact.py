@@ -70,8 +70,17 @@ def _alloc_ids(root: Path, type_: str) -> tuple[str, str]:
     return f"{prefix}{n:04d}", _disp(type_, n)
 
 
+def _create_status(type_: str, root: Path) -> str:
+    """The status a freshly-filed artefact starts in. Findings (bug/cr/rfc) land in `inbox`
+    under schema v3 (EP0014), so a different seat triages them into the workflow proper;
+    every other type - and all types under v2 - keeps its per-type SPEC create status."""
+    if type_ in sdlc_md.FINDING_TYPES and _schema_v3(root):
+        return sdlc_md.INBOX_STATUS
+    return SPEC[type_]["status"]
+
+
 def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
-    st = SPEC[type_]["status"]
+    st = f.get("_status") or SPEC[type_]["status"]
     # Provenance stamp - marks this artifact as tool-created (deterministic path).
     head = (f"# {disp}: {title}\n\n> **Status:** {st}\n> **Created:** {today}\n"
             f"> **Created-by:** sdlc-studio new\n")
@@ -310,6 +319,7 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
                     "would_create_index": would_create_index,
                     "epic_linked": (type_ == "story" and bool(f.get("epic"))) or None,
                     "dry_run": True}
+        f["_status"] = _create_status(type_, root)  # era-aware: findings file into inbox under v3
         render = _select_render(root, type_, f.get("template"))
         sdlc_md.atomic_write(path, render(type_, disp, title, f["date"], f))
         index_created = _ensure_index(root, type_, f["date"])  # greenfield first run
@@ -317,7 +327,7 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
         indexed = False
         if header:
             row = sdlc_md.row_from_header(header, f"[{disp}]({file_id}-{slug}.md)", title,
-                                          SPEC[type_]["status"], f)
+                                          f["_status"], f)
             indexed = file_finding.append_index_row(root, type_, row)
         linked = _wire_story_to_epic(root, f["epic"], disp, title, file_id, slug) \
             if (type_ == "story" and f.get("epic")) else None
@@ -350,6 +360,7 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
             if _find_epic(root, it["epic"]) is None:
                 raise ValueError(f"epic {it['epic']} not found - create it first")
     v3 = _schema_v3(root)
+    create_status = _create_status(type_, root)  # era-aware: findings file into inbox under v3
     n0 = None if v3 else file_finding._next_number(root, type_)
     prefix = sdlc_md.ARTIFACT_TYPES[type_][1]
     d = root / sdlc_md.ARTIFACT_TYPES[type_][0]
@@ -388,12 +399,13 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
         it = p["item"]
         f = dict(it)
         f["date"] = today
+        f["_status"] = create_status
         p["path"].parent.mkdir(parents=True, exist_ok=True)
         p["path"].write_text(render(type_, p["disp"], it["title"], today, f), encoding="utf-8")
         header = _header_cells(root, type_)
         link = f"[{p['disp']}]({p['file_id']}-{p['slug']}.md)"
         if header:
-            row = sdlc_md.row_from_header(header, link, it["title"], SPEC[type_]["status"], f)
+            row = sdlc_md.row_from_header(header, link, it["title"], create_status, f)
             file_finding.append_index_row(root, type_, row)
         if type_ == "story":
             _wire_story_to_epic(root, it["epic"], p["disp"], it["title"], p["file_id"], p["slug"])

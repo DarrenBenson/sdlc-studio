@@ -181,6 +181,54 @@ def _set_field(text: str, name: str, value: str) -> tuple[str, bool]:
     return new_text, n > 0
 
 
+def _insert_after_status(text: str, line: str) -> str:
+    """Insert `line` immediately after the `> **Status:**` metadata line (used to add a
+    field that does not yet exist, e.g. a first-time `Triaged-by`). No-op if no Status line."""
+    lines = text.splitlines(keepends=True)
+    for i, ln in enumerate(lines):
+        if re.match(r">?\s*\*\*Status:\*\*", ln):
+            lines.insert(i + 1, line if line.endswith("\n") else line + "\n")
+            return "".join(lines)
+    return text
+
+
+def _upsert_field(text: str, name: str, value: str) -> str:
+    """Set `**Name:** value` in place, or insert it after Status when the field is absent."""
+    new_text, changed = _set_field(text, name, value)
+    return new_text if changed else _insert_after_status(text, f"> **{name}:** {value}")
+
+
+def _triage_gate(root: Path, type_: str, text: str, from_canon: str | None,
+                 target_canon: str | None, triaged_by: str | None) -> str | None:
+    """Block reason when a v3 finding is leaving the `inbox` triage lane without a valid,
+    separated `triaged_by`; None when the transition is not a triage or the gate is satisfied.
+    Leaving `inbox` by ANY exit is the triage act (accept into the workflow, or reject the
+    finding), so every such transition is gated - not only the canonical accept target - or an
+    agent could sidestep triage by moving a finding straight to another state. Enforces CR0169
+    (structured triaged_by, recorded at transition time) and CR0170 (separation of duties: the
+    triager must not be the raiser). A solo human self-triage is not blocked (a lone operator
+    must not deadlock) - it is left to the caller to warn, mirroring validate.py."""
+    if not (type_ in sdlc_md.FINDING_TYPES and sdlc_md.is_schema_v3(root)):
+        return None
+    if from_canon != sdlc_md.INBOX_STATUS:  # only transitions leaving the inbox lane are triage
+        return None
+    raw = triaged_by or sdlc_md.extract_field(text, "Triaged-by")
+    tb = sdlc_md.parse_authorship_value(raw)
+    if not tb or not tb["name"]:
+        return ('triage requires a structured `--triaged-by "Name; type; version"` '
+                "(type is human|persona|agent) - the triaging seat must be recorded")
+    if tb["type"] not in ("human", "persona", "agent"):
+        return f"triaged_by type {tb['type']!r} must be one of human|persona|agent"
+    raiser = sdlc_md.parse_authorship(text, "Raised-by")
+    if raiser and raiser["name"]:
+        same = (sdlc_md.norm_id(raiser["name"]) == sdlc_md.norm_id(tb["name"])
+                and raiser["type"] == tb["type"])
+        if same and tb["type"] != "human":
+            return (f"triaged_by {tb['name']!r} is the raiser - a different seat must triage "
+                    "(separation of duties, CR0170)")
+    return None
+
+
 def _cascade_epic(repo_root: Path, story_id: str, ticked: bool) -> str | None:
     """Tick/untick the story's line in its parent epic's Story Breakdown (called only on
     a real write). Returns the epic id touched, or None."""
@@ -214,7 +262,8 @@ def _cascade_epic(repo_root: Path, story_id: str, ticked: bool) -> str | None:
 
 def transition(repo_root: Path | str, artifact_id: str, new_status: str,
                dry_run: bool = False, force: bool = False,
-               metrics: dict | None = None) -> dict:
+               metrics: dict | None = None, triaged_by: str | None = None,
+               triage_severity: str | None = None) -> dict:
     """Set `artifact_id`'s status to `new_status`, sync its index, and cascade the epic
     breakdown for a story. Returns {id, type, from, to, index_synced, epic}.
 
@@ -264,9 +313,33 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
             verify_warn = f"AC-verify advisory (quality.done_requires_verified=false): {block}"
             gate_warn = f"{gate_warn}; {verify_warn}" if gate_warn else verify_warn
     current = sdlc_md.extract_field(text, "Status")
+    from_canon = sdlc_md.canonical_status(current, vocab)
+    triage_fields: dict[str, str] = {}
+    # The triage gate fires on any exit from `inbox` for a v3 finding, dry-run included: an
+    # honest preflight must surface the same refusal a real run would (never a false green).
+    block = _triage_gate(root, type_, text, from_canon, target_canon, triaged_by)
+    if block:
+        raise ValueError(f"{artifact_id} -> {new_status} blocked: {block}.")
+    if (not dry_run and type_ in sdlc_md.FINDING_TYPES and sdlc_md.is_schema_v3(root)
+            and from_canon == sdlc_md.INBOX_STATUS):
+        # A satisfied triage transition records the triaging seat (and, when given, the
+        # triager's severity) at the moment of transition, alongside the raiser's Severity.
+        raw_tb = triaged_by or sdlc_md.extract_field(text, "Triaged-by")
+        if raw_tb:
+            triage_fields["Triaged-by"] = raw_tb
+        tb = sdlc_md.parse_authorship_value(raw_tb)
+        raiser = sdlc_md.parse_authorship(text, "Raised-by")
+        if (tb and raiser and raiser["name"] and tb["type"] == "human"
+                and sdlc_md.norm_id(raiser["name"]) == sdlc_md.norm_id(tb["name"])):
+            gate_warn = (f"{gate_warn}; solo-human self-triage: {tb['name']}"
+                         if gate_warn else f"solo-human self-triage: {tb['name']}")
+        if triage_severity:
+            triage_fields["Triage-severity"] = triage_severity
     new_text, ok = _set_field(text, "Status", new_status)
     if not ok:
         raise ValueError(f"{path.name} has no `Status` field to transition")
+    for fname, fval in triage_fields.items():
+        new_text = _upsert_field(new_text, fname, fval)
     result = {"id": sdlc_md.extract_record_id(path.stem), "type": type_,
               "from": current, "to": new_status, "index_synced": False, "epic": None,
               "warning": gate_warn}
@@ -336,7 +409,8 @@ def cmd_set(args: argparse.Namespace) -> int:
                                          "wall_time_s": _num(args.wall_time_s),
                                          "critic_verdict": args.verdict}.items() if v is not None}
             res = transition(args.root, aid, args.status, dry_run=args.dry_run,
-                             force=args.force, metrics=metrics)
+                             force=args.force, metrics=metrics,
+                             triaged_by=args.triaged_by, triage_severity=args.triage_severity)
             results.append(res)
             if args.format != "json":
                 _print_result(res, args.dry_run)
@@ -368,6 +442,12 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--verdict", help="critic verdict recorded on the telemetry event")
     s.add_argument("--force", action="store_true",
                    help="bypass the story->Done AC-verify gate; recorded as an override")
+    s.add_argument("--triaged-by", dest="triaged_by",
+                   help="v3 triage: the triaging seat as `Name; type; version` (type is "
+                        "human|persona|agent); required and recorded on an inbox->triaged "
+                        "transition, must differ from the raiser (separation of duties)")
+    s.add_argument("--triage-severity", dest="triage_severity",
+                   help="v3 triage: the triager's severity, recorded alongside the raiser's")
     s.add_argument("--dry-run", action="store_true")
     s.add_argument("--format", choices=("text", "json"), default="text")
     s.set_defaults(func=cmd_set)

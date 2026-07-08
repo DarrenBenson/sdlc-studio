@@ -1,11 +1,12 @@
 # US0065: Triage status vocabulary and gated transitions recording triaged_by
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0014
 > **Persona:** Orchestrator / Operator
 > **Source:** CR-0173 (workstream 1)
+> **Depends on:** -
 
 ## User Story
 
@@ -22,6 +23,7 @@
 - **Then** `transition.py` gates the `triaged` transition, requires structured triaged_by, and
   enforces the separation-of-duties rule at that moment
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k triage_gate
+- **Verified:** yes (2026-07-08)
 
 ### AC2: Triage severity recorded alongside the raiser's
 
@@ -29,6 +31,7 @@
 - **When** the transition records
 - **Then** both the raiser's and triager's severity are retained for later metrics
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k triage_severity
+- **Verified:** yes (2026-07-08)
 
 ## Design Notes (groomed 2026-07-08, see D0015)
 

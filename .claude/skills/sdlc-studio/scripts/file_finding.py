@@ -83,11 +83,13 @@ def _next_number(repo_root: Path, type_: str) -> int:
 _STAMP = "> **Created-by:** sdlc-studio file\n"
 
 
-def _render(type_: str, disp_id: str, title: str, today: str, f: dict) -> str:
-    """A structured artifact body (required sections populated)."""
+def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
+            status: str | None = None) -> str:
+    """A structured artifact body (required sections populated). `status` overrides the
+    per-type create status (schema v3 files findings into `inbox`); None keeps the default."""
     if type_ == "bug":
         return (f"# {disp_id}: {title}\n\n"
-                f"> **Status:** Open\n> **Severity:** {f['severity']}\n"
+                f"> **Status:** {status or 'Open'}\n> **Severity:** {f['severity']}\n"
                 f"> **Created:** {today}\n{_STAMP}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
                 f"## Steps to Reproduce\n\n{f['steps']}\n\n"
@@ -100,7 +102,7 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict) -> str:
         stripped = (re.sub(r"^\s*-\s*\[[ xX]\]\s*", "", a) for a in f["acs"])
         acs = "\n".join(f"- [ ] {a}" for a in stripped)
         return (f"# {disp_id}: {title}\n\n"
-                f"> **Status:** Proposed\n> **Priority:** {f['priority']}\n"
+                f"> **Status:** {status or 'Proposed'}\n> **Priority:** {f['priority']}\n"
                 f"> **Type:** {f['ctype']}\n> **Date:** {today}\n{_STAMP}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
                 f"## Acceptance Criteria\n\n{acs}\n\n"
@@ -108,7 +110,7 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict) -> str:
                 f"| {today} | audit | Raised |\n")
     options = "\n".join(f"- **{o}**" for o in f["options"])
     return (f"# {disp_id}: {title}\n\n"
-            f"> **Status:** Draft\n> **Date:** {today}\n{_STAMP}\n"
+            f"> **Status:** {status or 'Draft'}\n> **Date:** {today}\n{_STAMP}\n"
             f"## Summary\n\n{f['summary']}\n\n"
             f"## Design Options\n\n{options}\n\n"
             f"## Recommendation\n\n{f.get('recommendation', 'TBD - pending decision.')}\n\n"
@@ -169,11 +171,17 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     path = root / rel_dir / f"{file_id}-{slug}.md"
     if path.exists():
         raise FileExistsError(path)
+    # schema v3: findings file into `inbox` (a different seat then triages them into the
+    # workflow); dormant under v2, where the per-type create status is kept.
+    create_status = (sdlc_md.INBOX_STATUS
+                     if type_ in sdlc_md.FINDING_TYPES and sdlc_md.is_schema_v3(root)
+                     else spec["status"])
     if dry_run:  # preview: write nothing
         indexed = (root / rel_dir / "_index.md").exists()
         return {"id": disp_id, "file_id": file_id, "path": str(path),
                 "indexed": indexed, "dry_run": True}
-    path.write_text(_render(type_, disp_id, title, today, fields), encoding="utf-8")
+    path.write_text(_render(type_, disp_id, title, today, fields, create_status),
+                    encoding="utf-8")
     # One shared header-driven row builder for both create paths: read the index's
     # own columns and fill by name, identical to `artifact new`.
     indexed = False
@@ -182,7 +190,7 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
         hdr = sdlc_md.find_data_header(idx.read_text(encoding="utf-8").splitlines())
         if hdr:
             link = f"[{disp_id}]({file_id}-{slug}.md)"
-            row = sdlc_md.row_from_header(hdr[1], link, title, spec["status"], fields)
+            row = sdlc_md.row_from_header(hdr[1], link, title, create_status, fields)
             indexed = append_index_row(root, type_, row)
     return {"id": disp_id, "file_id": file_id, "path": str(path), "indexed": indexed}
 

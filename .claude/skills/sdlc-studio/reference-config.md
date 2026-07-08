@@ -381,11 +381,32 @@ created_at: 2026-01-15T09:00:00Z
 
 | Field | Purpose |
 | --- | --- |
-| `schema_version` | Current template schema (1=legacy, 2=modular) |
+| `schema_version` | Current template schema (1=legacy, 2=modular, 3=distributed identity + triage) |
 | `upgraded_from` | Previous version (for migration tracking) |
 | `upgraded_at` | When upgrade was performed |
 | `skill_version` | SDLC Studio version |
 | `created_at` | When project was initialised |
+
+### Schema v3 triage lane {#triage-vocab}
+
+Under `schema_version: 3`, findings (bug/cr/rfc) gain an `inbox` triage lane prepended to
+their status vocabulary. A freshly filed finding lands in `inbox`; a `triaged` transition then
+promotes it into the workflow proper, and a *different* seat must perform it (separation of
+duties). The triaged target is type-specific - a finding skips the human proposal state it never
+occupied:
+
+| Type | Files into | Triages into |
+| --- | --- | --- |
+| bug | `inbox` | `Open` |
+| cr | `inbox` | `Approved` |
+| rfc | `inbox` | `In Review` |
+
+`transition --id <ID> --status <target> --triaged-by "Name; type; version"` gates the transition:
+it requires a structured `triaged_by` (type is `human`/`persona`/`agent`) and refuses loudly
+without one, and rejects a triager who is the raiser (a solo human self-triage warns instead, so a
+lone operator never deadlocks). `--triage-severity` records the triager's severity alongside the
+raiser's for later triage-quality metrics. All of this is dormant under `schema_version: 2`;
+stories and epics are authored, not triaged, so they are unaffected.
 
 ---
 
