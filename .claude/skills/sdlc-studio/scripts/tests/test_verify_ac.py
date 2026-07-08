@@ -152,6 +152,17 @@ class DSLTests(unittest.TestCase):
         self.assertIn("pytest", cmd)
         self.assertIn("tests/test_x.py::test_y", cmd)
 
+    def test_build_command_pytest_with_k_flag_splits_into_separate_args(self) -> None:
+        # BG: `pytest <path> -k <marker>` was passed as one glued argv element, so
+        # pytest saw a single nonexistent "file" (path + " -k " + marker) instead of
+        # a path arg and a -k arg - every such Verify line false-failed.
+        kind, cmd = verify_ac._build_command(
+            "pytest .claude/skills/sdlc-studio/scripts/tests/test_config.py -k override_warn")
+        self.assertEqual(kind, "pytest")
+        self.assertEqual(cmd, ["pytest", "-q",
+                                ".claude/skills/sdlc-studio/scripts/tests/test_config.py",
+                                "-k", "override_warn"])
+
     def test_build_command_file(self) -> None:
         kind, cmd = verify_ac._build_command("file src/auth/email.ts")
         self.assertEqual(kind, "file")

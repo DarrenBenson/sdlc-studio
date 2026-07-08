@@ -295,7 +295,7 @@ def _build_command(expr: str, allow_fallback: bool = False) -> tuple[str, list[s
     tail = parts[1] if len(parts) > 1 else ""
 
     if head == "pytest" and tail:
-        return "pytest", ["pytest", "-q", tail]
+        return "pytest", ["pytest", "-q"] + shlex.split(tail)
     if head == "jest" and tail:
         return "jest", ["jest", "-t", tail.strip('"\'')]
     if head == "vitest" and tail:

@@ -7,8 +7,11 @@
 >
 > **Released version:** 3.6.0 (2026-07-06, non-breaking - the EP0016 review/lite on-ramp) ·
 > **Date:** 2026-07-06 ·
-> **Gates:** lint clean, 1248 script tests pass (+49 repo-only tools tests), `gate` PASS,
+> **Gates:** lint clean, 1249 script tests pass (+49 repo-only tools tests), `gate` PASS,
 > reconcile drift 0, npm audit 0, CI green on main.
+>
+> **Fixed:** `verify_ac.py`'s `pytest <path> -k <marker>` DSL glued the tail into one argv
+> element (false "file not found"); now `shlex.split`, matching the `go` verb.
 >
 > **v4 is WORK-IN-PROGRESS, not released.** The v4 foundation (schema-v3 ULID identity - a
 > breaking change) and Tranche 2 (authorship/enforcement + tooling debt) are all on `main` and

@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 0 |
 | In Progress | 0 |
-| Fixed | 0 |
+| Fixed | 1 |
 | Verified | 0 |
 | Closed | 66 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **66** |
+| **Total** | **67** |
 
 ## All Bugs
 
@@ -33,6 +33,7 @@
 | [BG0064](BG0064-github-sync-pull-records-a-successful-last-pull.md) | github_sync pull records a successful last_pull even when every gh call failed | Closed | Medium | 2026-07-06 | 2026-07-06 |
 | [BG0065](BG0065-story-done-verify-gate-passes-on-a-stale.md) | story Done verify gate passes on a stale merged report entry: edited ACs keep last week's green | Closed | Medium | 2026-07-06 | 2026-07-06 |
 | [BG0066](BG0066-append-index-row-scans-unbounded-and-disagrees-with.md) | append_index_row scans unbounded and disagrees with reconcile on the master data table | Closed | Medium | 2026-07-06 | 2026-07-06 |
+| [BG0067](BG0067-verify-ac-pytest-k-dsl-glues-path-and.md) | verify_ac pytest -k DSL glues path and marker into one argv element | Fixed | Medium | 2026-07-08 | 2026-07-08 |
 
 ## Archived Releases
 
