@@ -40,6 +40,8 @@ Not all incomplete stories need re-reviewing - the bucket assignment is determin
 (status x capability-delta match), so the operator gets a bounded, prioritised list
 rather than either extreme (silently grandfather everything / re-review everything).
 
+**Design constraint:** TRD ADR-006 applies - the fire/skip trigger is deterministic; model judgement acts only inside a fired step.
+
 ## Open decisions (resolve at design)
 
 - Home: a `project_upgrade.py` section, a `reconcile` lens (`reconcile detect --era`), or

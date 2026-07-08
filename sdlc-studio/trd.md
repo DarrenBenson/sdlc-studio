@@ -561,6 +561,35 @@ installer targets six agents.
   `compatibility` frontmatter), so full feature parity across harnesses is not yet
   reached.
 
+### ADR-006: Deterministic triggers for hygiene gates; judgement never decides fire/skip
+
+**Status:** Accepted
+
+**Context:** ADR-002 moved mechanical work into scripts but left open who decides
+*whether* a hygiene step runs. The N=5 benchmark (D0014,
+`docs/benchmarks/2026-07-08-n5-run.md`) measured that judgement-scaled hygiene is
+skipped under effort pressure: the arm free to choose skipped the pipeline and
+shipped the same defect as the no-pipeline baseline in 10/10 runs, while the
+mandated arm caught it in 3/5. The product thesis (gates over goodwill) applies to
+the model as much as to humans.
+
+**Decision:** For any check, review, or gate the pipeline adds, the fire/skip
+decision MUST be computable from artifact fields, config, and deterministic signals
+(status, Affects, difficulty band, declared paths) - never from model judgement. The
+model keeps the judgement *inside* a step that has fired (what the finding is,
+whether the AC matches the spec); it never decides whether the step happens. Skips
+exist only as recorded operator overrides. New stories adding enforcement
+(CR0194-CR0197 onward) inherit this as a design default; a judgement-gated trigger
+in a design is a review finding.
+
+**Consequences:**
+
+- Positive: enforcement cannot decay under pressure; the gate's firing rule is
+  testable; overrides leave an audit trail.
+- Negative: deterministic triggers over-fire on edge cases a human would waive -
+  the recorded-override path is the pressure valve, and threshold tuning becomes
+  real config work.
+
 ---
 
 ## 12. Open Technical Questions

@@ -14,6 +14,8 @@ fail the check.
 - **Indexes match the files on disk (no drift).** `rule: no-index-drift`
 - **British English; no em dashes; no corporate jargon (robust/leverage/synergy).**
 - **Paperwork ships in the same commit as the behaviour or doc change it records.**
+- **Deterministic first: a new check, review or gate fires on a deterministic trigger (artifact fields, config, declared paths); model judgement acts inside a fired step, never in the fire/skip decision; skips are recorded operator overrides.**
+  (TRD ADR-006; evidence D0014 - judgement-scaled hygiene was skipped 10/10 under pressure.)
 
 ## Checkable-rule vocabulary
 

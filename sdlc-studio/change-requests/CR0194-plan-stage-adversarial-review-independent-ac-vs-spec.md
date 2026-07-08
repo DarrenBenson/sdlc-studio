@@ -34,6 +34,8 @@ Scope guard: this adds a pass to plan-heavy units only. The routed pipeline alre
 ~3.1x baseline per single ticket; the deterministic trigger keeps trivial and
 non-spec-linked units at their current cost.
 
+**Design constraint:** TRD ADR-006 applies - the fire/skip trigger is deterministic; model judgement acts only inside a fired step.
+
 ## Open decisions (resolve at design)
 
 - Seat: extend the existing critic's charter with a plan-time invocation, or a distinct

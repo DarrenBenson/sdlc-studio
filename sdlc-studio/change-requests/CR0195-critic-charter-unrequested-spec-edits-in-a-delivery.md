@@ -24,6 +24,8 @@ is a blocking finding, not a style note. Deterministic assist where cheap: a hel
 "diff touches a spec-glob path while no AC cites a spec change" so the check cannot be
 silently skipped; the traceability judgement itself stays with the critic.
 
+**Design constraint:** TRD ADR-006 applies - the fire/skip trigger is deterministic; model judgement acts only inside a fired step.
+
 ## Acceptance Criteria
 
 - [ ] Config gains a declared spec-paths list (sensible default, documented in
