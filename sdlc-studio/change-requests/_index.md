@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 12 |
+| Proposed | 14 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 181 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 4 |
 | Blocked | 0 |
-| **Total** | **197** |
+| **Total** | **199** |
 
 ## All Changes
 
@@ -58,6 +58,8 @@
 | [CR-0195](CR0195-critic-charter-unrequested-spec-edits-in-a-delivery.md) | Critic charter: unrequested spec edits in a delivery are a blocking finding | Proposed | Medium | process | 2026-07-08 | -- |
 | [CR-0196](CR0196-bench-runner-summary-must-exclude-calibration-rows-without.md) | Bench runner: summary must exclude calibration rows without hand-filtering | Proposed | Medium | tooling | 2026-07-08 | -- |
 | [CR-0197](CR0197-upgrade-re-baseline-census-in-flight-artifacts-against.md) | Upgrade re-baseline: census in-flight artifacts against the capability delta | Proposed | Medium | process | 2026-07-08 | -- |
+| [CR-0198](CR0198-v4-0-release-engineering-schema-v3-becomes-the.md) | v4.0 release engineering: schema v3 becomes the default, upgrade walk, major-release checklist | Proposed | Medium | process | 2026-07-08 | -- |
+| [CR-0199](CR0199-status-backlog-deterministic-non-terminal-census-grouped-by.md) | status backlog: deterministic non-terminal census grouped by type and status | Proposed | Medium | tooling | 2026-07-08 | -- |
 
 ## Archived Releases
 
