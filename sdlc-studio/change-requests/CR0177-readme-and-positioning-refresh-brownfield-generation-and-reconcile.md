@@ -1,6 +1,6 @@
 # CR-0177: README and positioning refresh: brownfield generation and reconcile as proof of the anti-vibe-coding philosophy
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic (v4 breakdown):** [EP0017](../epics/EP0017-positioning-and-evidence.md)

@@ -68,6 +68,13 @@ irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 
 
 </details>
 
+<details>
+<summary><strong>For agents evaluating this skill</strong></summary>
+
+Open Agent Skills format ([agentskills.io](https://agentskills.io)): the entry point is [SKILL.md](.claude/skills/sdlc-studio/SKILL.md) (name, description with use-when/not-for triggers, `allowed-tools`, tool-specific extras under `metadata:`). Invoke as `/sdlc-studio [type] [action]`, or model-invoke from the description. Requires Python 3.10+ for the bundled deterministic scripts; `gh` CLI only for GitHub sync. A machine-readable index of this repo lives at [llms.txt](llms.txt). If you maintain a project for a human, the zero-setup evaluation path is `review generate` (read-only three-leg review of the host repo, findings filed as artifacts). Repo-level agent guidance: [AGENTS.md](AGENTS.md).
+
+</details>
+
 **Step 1 - pick your path:**
 
 | You have... | Just say | Command |
@@ -305,10 +312,14 @@ The antidote claim is earned, not asserted. Three ways to build software with an
 
 The difference is simple: spec-driven tools **align** the agent on intent; SDLC Studio also **argues back with facts**. Ask it to mark something done and the acceptance test decides. Claim a count and `reconcile` recomputes it from the files. Let a document drift from the code and the commit gate stops you. That is the practice a good engineering team already uses - clear requirements, traceability, change control, a definition of done that means done - made cheap enough to keep, because the agent carries the cost of the ceremony instead of you.
 
+**And we measure it.** We benchmark the tool against plain AI coding with a genuinely good CLAUDE.md, on fixture repos with held-back test suites the agent never sees, under a pre-registered protocol - and publish the results whichever way they point. First findings (n=1, calibration): on small well-specified tasks there is no difference (use the lite profile there); on a multi-file task with interacting requirements, both unstructured runs shipped the same defect and only the mandated planning pass caught it. The full argument, the production field results, and the honest caveats live in **[Why SDLC Studio](docs/why-sdlc-studio.md)** - the raw data in [docs/benchmarks/](docs/benchmarks/protocol-v2.md).
+
 <details>
 <summary>The longer argument</summary>
 
 A wave of AI tools is inventing new, AI-native ways to deliver software: fresh artifact formats, fresh ceremonies, fresh vocabularies for the model to follow. SDLC Studio does the opposite. Software engineering already worked out how to ship software that survives contact with reality - clear requirements, acceptance criteria, traceability from intent to code, change control, and a definition of done that means done. Teams quietly dropped those practices not because they were wrong, but because maintaining them by hand was expensive, so specifications went stale and the discipline lapsed. That economics has changed: an agent can author the requirements, keep them current, and prove the code against them, with acceptance criteria as a machine-checkable oracle and continuous reconciliation keeping every artifact true. The agent carries the cost of the ceremony, and the discipline stays.
+
+It is also built for where this is heading: small human teams directing larger agentic ones, trunk-based. The foundations are shipped and opt-in today (`schema_version: 3`) - distributed artifact identity so parallel agents never fight over sequential ids, atomic index writes, typed authorship with a separation-of-duties lint - and become the default in v4 once proven on real projects.
 
 It also reframes the lifecycle as a loop-engineering problem already solved. An agent runs in a loop that cannot judge its own exit condition; the lifecycle has always been that loop - specify, build, validate against the specification, reconcile, repeat - with acceptance criteria as the test that closes it. This is the lineage Test-Driven -> Behaviour-Driven -> Eval-Driven -> Goal-Driven Development: you set the goal and the criteria, the agent drives the proven lifecycle to it.
 
@@ -335,6 +346,7 @@ It also reframes the lifecycle as a loop-engineering problem already solved. An 
 
 ## Documentation
 
+- [docs/why-sdlc-studio.md](docs/why-sdlc-studio.md) - the full value argument: thesis, evidence (field + benchmark), economics, and honest caveats
 - [docs/INSTALL.md](docs/INSTALL.md) - full installer reference
 - `/sdlc-studio help` - the command catalogue (also [help/help.md](.claude/skills/sdlc-studio/help/help.md))
 - [Greenfield runbook](.claude/skills/sdlc-studio/help/getting-started.md) and [Brownfield runbook](.claude/skills/sdlc-studio/help/brownfield-runbook.md) - the step-by-step paths

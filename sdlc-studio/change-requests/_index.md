@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 9 |
+| Proposed | 8 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 180 |
+| Complete | 181 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 4 |
@@ -37,7 +37,7 @@
 | [CR-0174](CR0174-lint-command-consolidation-one-ci-runnable-audit-check.md) | Lint command consolidation: one CI-runnable audit-check enforcing the team-schema rules | Complete | Medium | Enhancement | 2026-07-06 | -- |
 | [CR-0175](CR0175-first-class-review-command-architectural-quality-and-defensive.md) | First-class review command: architectural, quality and defensive security review of the host repo | Complete | High | Enhancement | 2026-07-06 | -- |
 | [CR-0176](CR0176-lite-profile-collapse-the-pipeline-to-prd-story.md) | Lite profile: collapse the pipeline to PRD, story, implement for small repos | Complete | Medium | Enhancement | 2026-07-06 | -- |
-| [CR-0177](CR0177-readme-and-positioning-refresh-brownfield-generation-and-reconcile.md) | README and positioning refresh: brownfield generation and reconcile as proof of the anti-vibe-coding philosophy | Proposed | Medium | Improvement | 2026-07-06 | -- |
+| [CR-0177](CR0177-readme-and-positioning-refresh-brownfield-generation-and-reconcile.md) | README and positioning refresh: brownfield generation and reconcile as proof of the anti-vibe-coding philosophy | Complete | Medium | Improvement | 2026-07-06 | -- |
 | [CR-0178](CR0178-benchmark-harness-implementation-fixed-task-set-tokens-wall.md) | Benchmark harness implementation: fixed task set, tokens, wall time, defect escapes, rework rate | Complete | Medium | Enhancement | 2026-07-06 | -- |
 | [CR-0179](CR0179-context-tiering-archive-closed-artefacts-into-summarised-digests.md) | Context tiering: archive closed artefacts into summarised digests to bound token cost | Proposed | Low | Enhancement | 2026-07-06 | -- |
 | [CR-0180](CR0180-harmonise-config-failure-regimes-silent-project-override-vs.md) | Harmonise config failure regimes: silent project_override vs fail-loud cutoff vs PyYAML crash | Complete | Medium | Improvement | 2026-07-06 | -- |

@@ -18,13 +18,6 @@
 
 ## Current
 
-- **v3.6.0 RELEASED - review/lite on-ramp (EP0016, non-breaking).** Two try-before-you-adopt
-  entry points, trunk-based to main, RED-first. US0070 `review generate`: a zero-setup host-repo
-  review (`review_generate.py` owns bootstrap + the verbatim remediation-only security policy +
-  the secret-absence scan; the review itself runs from `templates/workflows/repo-review.md`).
-  US0071 lite profile: `profile: lite` collapses the pipeline to PRD -> story -> implement (no
-  epic layer, no nag), promotable to full via `lite_profile.py promote`. Both non-breaking and
-  independent of the dormant schema-v3 work. Tagged v3.6.0.
 - **v4.1.0 - authorship & enforcement (EP0013) + tooling debt (EP0018) + benchmark protocol.**
   13 stories, trunk-based to main. EP0013: structured typed authorship (US0060, resolver +
   backfill), separation-of-duties lint (US0061), evidence-as-schema (US0062), the consolidated
@@ -49,12 +42,18 @@
   escapes** (A and B both shipped a quiet-hours bug the hidden suite caught); Auditability
   gradient R 1.0 > B 0.8 > A 0.6; routing delivered a trivial change via the tiny tier at
   0.25x cost. `2026-07-08-v2-respike.md` (D0013). **N=5: GO** (operator decision on spend).
-- **Next:** N=5 measured run when chosen (Tier 1 N=5, Tier 2 N=2, cut order pre-declared).
-  Then: US0072 (positioning - now has its first supporting numbers), EP0014 agentic triage
-  (US0065-0068), 5 EP0018 debt CRs (CR0179/0181/0182/0186/0187), CR0188 (fetch-before-sprint).
+- **US0072 delivered (CR0177, EP0017 now Done):** README reframed under the three hard
+  constraints + the full progressively-disclosed value document (`docs/why-sdlc-studio.md`:
+  thesis, labelled field results, benchmark evidence incl. the unflattering findings,
+  economics, calibrated team-shape) + agent-facing discoverability (`llms.txt`, a For-agents
+  README block, SKILL.md NOT-for triggers + openclaw metadata). Claims-calibration critic:
+  REJECT->repair->APPROVE.
+- **Next:** N=5 measured run when chosen (cut order pre-declared). Then: EP0014 agentic
+  triage (US0065-0068), 5 EP0018 debt CRs (CR0179/0181/0182/0186/0187), CR0188.
 
 ## History (detail lives in the named retro / CHANGELOG entry)
 
+- **v3.6.0** review/lite on-ramp (EP0016): `review generate` zero-setup review + `profile: lite` -> CHANGELOG
 - **BG0067** verify_ac pytest -k DSL glued path+marker (false file-not-found) - fixed, shlex.split
 - **2026-07-08** backlog sweep: EP0012/13/15/18 + 13 story-Done CRs closed mechanically, 0 drift
 - **2026-07-D** field-hardening: convention layer + adoption onboarding -> RETRO0010

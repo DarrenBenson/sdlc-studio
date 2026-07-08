@@ -41,6 +41,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (3 arms x 2 fixtures) is published in `docs/benchmarks/2026-07-08-v2-respike.md`: the
   pipeline's mandated planning pass was the only arm with zero defect escapes, and the
   Auditability metric graded a real evidence-quality gradient. N=5: GO (D0013).
+- **Positioning refresh + the full value document** (CR0177/US0072): README reframed under
+  the three hard constraints (anti-vibe-coding umbrella, greenfield equally visible,
+  catalogue below the fold) with the now-unlocked team-shape and evidence paragraphs; new
+  `docs/why-sdlc-studio.md` - a progressively-disclosed value argument (thesis, labelled
+  operator-reported field results, benchmark evidence including the unflattering findings,
+  economics, calibrated team-shape, open questions); agent-facing discoverability: root
+  `llms.txt`, a For-agents README block, and SKILL.md gains NOT-for triggers plus
+  namespaced openclaw metadata. Every claim critic-reviewed for calibration against the
+  published benchmark data.
 
 ## [3.6.0] - 2026-07-06
 

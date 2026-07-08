@@ -1,0 +1,21 @@
+# SDLC Studio
+
+> An open Agent Skill (agentskills.io format) that runs the full software development
+> lifecycle - PRD, epics, stories with executable acceptance criteria, implementation,
+> testing, verification, reconciliation - with deterministic gates that hold the agent to
+> what the files actually say. Installs into Claude Code, Codex, Gemini CLI, opencode and
+> GitHub Copilot; invoked as /sdlc-studio [type] [action] or model-invoked from plain
+> language.
+
+## Docs
+
+- [README](README.md): install, quick start, capability catalogue
+- [Why SDLC Studio](docs/why-sdlc-studio.md): the value argument, evidence and economics
+- [SKILL.md](.claude/skills/sdlc-studio/SKILL.md): the skill entry point and router
+- [AGENTS.md](AGENTS.md): guidance for coding agents working on this repository
+- [Install reference](docs/INSTALL.md): all tools, scopes and flags
+
+## Evidence
+
+- [Benchmark protocol](docs/benchmarks/protocol-v2.md): pre-registered measurement against plain AI coding
+- [Latest results](docs/benchmarks/2026-07-08-v2-respike.md): published regardless of outcome
