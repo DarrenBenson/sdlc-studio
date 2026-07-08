@@ -75,6 +75,9 @@ stdlib, read-only over the workspace, unit-tested.
 - [x] [US0036: telemetry recorder and local jsonl schema](../stories/US0036-telemetry-recorder-and-local-jsonl-schema.md)
 - [x] [US0037: close cascade records telemetry per unit](../stories/US0037-close-cascade-records-telemetry-per-unit.md)
 - [x] [US0038: provenance stamp misuse check and remake](../stories/US0038-provenance-stamp-misuse-check-and-remake.md)
+- [ ] [US0083: route.py: deterministic difficulty estimator, tier pick and escalation stepper](../stories/US0083-route-py-deterministic-difficulty-estimator-tier-pick-and.md)
+- [ ] [US0084: Sprint plan carries difficulty, tier and model per unit](../stories/US0084-sprint-plan-carries-difficulty-tier-and-model-per.md)
+- [ ] [US0085: Per-tier telemetry: tier fields and per-tier summary grouping](../stories/US0085-per-tier-telemetry-tier-fields-and-per-tier.md)
 
 ## Revision History
 

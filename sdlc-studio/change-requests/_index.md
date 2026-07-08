@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 9 |
+| Proposed | 14 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 175 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 4 |
 | Blocked | 0 |
-| **Total** | **188** |
+| **Total** | **193** |
 
 ## All Changes
 
@@ -49,6 +49,11 @@
 | [CR-0186](CR0186-security-hardening-debt-review-2026-07-06-pinning.md) | Security hardening debt (review 2026-07-06): pinning, installer integrity, sync redaction, state hygiene | Proposed | Low | Improvement | 2026-07-06 | -- |
 | [CR-0187](CR0187-code-quality-debt-review-2026-07-06-shared.md) | Code-quality debt (review 2026-07-06): shared-layer bypasses, duplication, complexity, diagnostics | Proposed | Low | Improvement | 2026-07-06 | -- |
 | [CR-0188](CR0188-fetch-and-check-origin-drift-before-a-sprint.md) | Fetch and check origin drift before a sprint batch or artifact-id allocation | Proposed | P2 | retrospective | 2026-07-08 | -- |
+| [CR-0189](CR0189-routing-foundation-route-py-difficulty-estimator-tier-map.md) | Routing foundation: route.py difficulty estimator, tier map, config schema | Proposed | P2 | feature-request | 2026-07-08 | -- |
+| [CR-0190](CR0190-sprint-plan-enrichment-difficulty-tier-and-model-per.md) | Sprint plan enrichment: difficulty, tier and model per unit | Proposed | P2 | feature-request | 2026-07-08 | -- |
+| [CR-0191](CR0191-routing-feedback-loop-per-tier-telemetry-and-escalation.md) | Routing feedback loop: per-tier telemetry and escalation recording | Proposed | P3 | feature-request | 2026-07-08 | -- |
+| [CR-0192](CR0192-benchmark-arm-r-routed-pipeline-variant-with-cost.md) | Benchmark arm R: routed pipeline variant with cost index | Proposed | P3 | feature-request | 2026-07-08 | -- |
+| [CR-0193](CR0193-benchmark-v2-tiered-fixtures-auditability-metric-protocol-re.md) | Benchmark v2: tiered fixtures, auditability metric, protocol re-registration | Proposed | P2 | design-change | 2026-07-08 | -- |
 
 ## Archived Releases
 
