@@ -1,0 +1,9 @@
+[
+  {"id": "D1", "mutant": "audit/mutants/dedupe_name_case_broken.py", "target_file": "dedupe.py"},
+  {"id": "D2", "mutant": "audit/mutants/refunds_over_refund.py", "target_file": "refunds.py"},
+  {"id": "D3", "mutant": "audit/mutants/validation_trust_total.py", "target_file": "validation.py"},
+  {"id": "T1", "fact_regex": "case.?insensitiv"},
+  {"id": "T2", "fact_regex": "false.?negative|case|whitespace"},
+  {"id": "T3", "fact_regex": "half.?even"},
+  {"id": "I1"}
+]

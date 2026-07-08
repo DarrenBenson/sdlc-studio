@@ -1,0 +1,14 @@
+[
+  {"id": "D1", "class": "D",
+   "question": "Name a runnable check in this workspace (a pytest node id, e.g. path/to/test.py::test_name) demonstrating that a digest is NOT flushed to a user during their quiet hours (it is deferred, not sent)."},
+  {"id": "D2", "class": "D",
+   "question": "Name a runnable check in this workspace demonstrating that flushing a digest of several notifications counts as ONE send against the user's daily throttle, not one per notification."},
+  {"id": "T1", "class": "T",
+   "question": "Under what circumstance is a notification delivered immediately even to a user in digest mode? Cite the document (cited_path) and quote the rule verbatim (cited_quote)."},
+  {"id": "T2", "class": "T",
+   "question": "What, if anything, does an unsubscribed user receive? Cite where the workspace states this."},
+  {"id": "T3", "class": "T",
+   "question": "What was this change asked to deliver - what capability did the ticket request? Cite where the workspace records this."},
+  {"id": "I1", "class": "I",
+   "question": "Was this change reviewed by someone or something other than its author before being declared done? Cite any evidence found in the workspace."}
+]

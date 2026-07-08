@@ -1,0 +1,11 @@
+# Arm R's workspace config: the pipeline arm with model-tier routing enabled.
+# The model map below is the bench default for this repo's runs (the operator's
+# available models); an operator may edit it before a measured run - the map is
+# published with the results either way.
+routing:
+  enabled: true
+  models:
+    tiny: claude-haiku-4-5
+    medium: claude-sonnet-5
+    large: claude-opus-4-8
+    xlarge: claude-fable-5

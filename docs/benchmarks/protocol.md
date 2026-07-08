@@ -67,4 +67,6 @@ any, are clearly labelled as anecdotal (not part of the measured N).
       is that these 3 fixtures don't yet exercise the pipeline's differentiating claims (all
       3 arm-A runs judged the tasks too small to warrant the pipeline) - **N=5 on this
       fixture set is paused pending a fixture-design decision**, not proceeding blind.
-- [ ] N=5 measured run + published report (CR0178 WS3 / US0075)
+- [x] **Superseded by [protocol-v2.md](protocol-v2.md)** - a new pre-registration triggered by
+      the spike's fixture-design finding (D0012). This file's body is unchanged; the v1
+      fixtures continue as protocol v2's Tier-2 scale-down control.

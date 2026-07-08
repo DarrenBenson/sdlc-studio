@@ -1,0 +1,8 @@
+[
+  {"id": "D1", "mutant": "audit/mutants/quiet_hours_never.py", "target_file": "quiet_hours.py"},
+  {"id": "D2", "mutant": "audit/mutants/throttle_count_items.py", "target_file": "throttle.py"},
+  {"id": "T1", "fact_regex": "urgent"},
+  {"id": "T2", "fact_regex": "mandatory"},
+  {"id": "T3", "fact_regex": "digest"},
+  {"id": "I1"}
+]

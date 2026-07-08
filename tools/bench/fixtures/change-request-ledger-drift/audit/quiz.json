@@ -1,0 +1,16 @@
+[
+  {"id": "D1", "class": "D",
+   "question": "Name a runnable check in this workspace (a pytest node id, e.g. path/to/test.py::test_name) demonstrating that customer names differing only by letter case are still treated as DISTINCT customers by duplicate detection."},
+  {"id": "D2", "class": "D",
+   "question": "Name a runnable check in this workspace demonstrating that a refund cannot take the total refunded beyond the captured amount for its order."},
+  {"id": "D3", "class": "D",
+   "question": "Name a runnable check in this workspace demonstrating that order totals are recomputed from line items rather than trusted from the submitted total."},
+  {"id": "T1", "class": "T",
+   "question": "According to this workspace's current specification, how are duplicate customers detected? Cite the document (cited_path) and quote the rule verbatim (cited_quote)."},
+  {"id": "T2", "class": "T",
+   "question": "Why was duplicate detection changed - what problem prompted the change? Cite where the workspace records this."},
+  {"id": "T3", "class": "T",
+   "question": "What is the rounding rule for currency amounts? Cite where it is stated."},
+  {"id": "I1", "class": "I",
+   "question": "Was this change reviewed by someone or something other than its author before being declared done? Cite any evidence found in the workspace."}
+]
