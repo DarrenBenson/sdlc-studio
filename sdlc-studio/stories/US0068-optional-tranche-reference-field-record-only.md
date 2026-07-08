@@ -1,6 +1,6 @@
 # US0068: Optional tranche reference field, record-only
 
-> **Status:** Draft
+> **Status:** Ready
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0014
@@ -30,8 +30,18 @@
 - **Then** it lists everything in a given tranche from the ledger alone
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py -k tranche_query
 
+## Design Notes (groomed 2026-07-08, see D0015)
+
+- **Record-only:** `validate.py` accepts a present or absent `tranche:` value, fails only an
+  empty/non-string value; no sdlc-studio code path writes it except orchestrator pass-through
+  (sdlc-studio is a system of record, not a scheduler).
+- **Ledger query:** `status.py`/`reconcile` can list everything carrying a given tranche
+  reference from the ledger alone.
+- **Era-gated** under `schema_version: 3`. Fully independent of US0065-0067.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-06 | sdlc | Created via `new` (deterministic) |
+| 2026-07-08 | sdlc | Groomed to Ready: scope confirmed record-only (D0015) |

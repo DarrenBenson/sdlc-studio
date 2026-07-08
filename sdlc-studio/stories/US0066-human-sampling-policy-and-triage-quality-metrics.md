@@ -1,6 +1,6 @@
 # US0066: Human sampling policy and triage-quality metrics
 
-> **Status:** Draft
+> **Status:** Ready
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0014
@@ -31,8 +31,20 @@
   surface in status/telemetry
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_triage_sampling.py -k metrics
 
+## Design Notes (groomed 2026-07-08, see D0015)
+
+- **Config (new `triage:` block, `config-defaults.yaml` + `reference-config.md`):**
+  `sample_rate: 0.20` (of non-Critical), `always_sample: [Critical, disagreement]`,
+  per-project overridable.
+- **Sampling determinism:** seed the sampler so the test-over-fixture AC is reproducible.
+- **Metrics from the ledger (no hand counting):** false-positive rate (triaged-valid later
+  closed invalid) and severity inflation (raiser vs triage vs closure severity), surfaced in
+  `status.py`/telemetry. Sampled-but-unreviewed shows as standing drift, not a one-time prompt.
+- **Era-gated** under `schema_version: 3` (depends on US0065's `triaged` state).
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-06 | sdlc | Created via `new` (deterministic) |
+| 2026-07-08 | sdlc | Groomed to Ready: config defaults settled (D0015) |
