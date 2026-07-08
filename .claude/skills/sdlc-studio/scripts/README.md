@@ -19,6 +19,7 @@ them on behalf of the reference-file workflows.
 | `review_prep.py` | Deterministic inputs for the five-leg unified review: artifact staleness, persona usage, count/AC inputs. | `reference-review.md` |
 | `plan.py` | Claude Code plan-file manager: list active/stale plans, archive by year-month. The one script that writes outside `.local/` - the explicit `archive` subcommand moves files under `~/.claude/plans/`, an operator-owned directory. Never deletes or overwrites. | `reference-plan-files.md` |
 | `lessons.py` | Lessons manager for both tiers: project `.local/lessons.md` (list/add/prune, L-NNNN allocation, newest-first insertion) and the skill's cross-project `lessons/` registry (recall by tags/query, `add --global` with LL-ID allocation and `_index.md` row upkeep). | `reference-agentic-lessons.md`, `help/lessons.md` |
+| `route.py` | Difficulty-aware model-tier routing (advisory): deterministic 0-100 difficulty estimate per unit from blast-radius complexity/risk, scope, novelty, ACs and points; tier pick with kind floors + the critic rule; escalation stepper; sparse tier-map resolution (upward-only degradation). | `reference-sprint.md#model-tier-routing`, `reference-config.md#routing` |
 
 ## Conventions
 

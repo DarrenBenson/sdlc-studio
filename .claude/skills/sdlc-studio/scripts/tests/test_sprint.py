@@ -761,5 +761,67 @@ class WorklistTests(unittest.TestCase):
             self.assertEqual(rc, 0)
 
 
+class RoutingEnrichmentTests(unittest.TestCase):
+    """RFC0026 / CR0190: the plan carries difficulty (always) and tier/model (only
+    when routing.enabled)."""
+
+    def _routed_config(self, root, enabled=True):
+        d = root / "sdlc-studio"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / ".config.yaml").write_text(
+            "routing:\n"
+            f"  enabled: {'true' if enabled else 'false'}\n"
+            "  models:\n"
+            "    small: model-s\n"
+            "    large: model-l\n", encoding="utf-8")
+
+    def test_difficulty_emitted_under_both_orders(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1)
+            for order in ("priority", "wsjf"):
+                batch = _load().select_batch(root, "cr", "Proposed", order=order)
+                self.assertIn("difficulty", batch[0], f"order={order}")
+                self.assertIn("band", batch[0]["difficulty"])
+
+    def test_tier_and_model_only_when_routing_enabled(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1)
+            self._routed_config(root, enabled=False)
+            batch = _load().select_batch(root, "cr", "Proposed")
+            self.assertNotIn("tier", batch[0])
+            self.assertNotIn("model", batch[0])
+            self._routed_config(root, enabled=True)
+            batch = _load().select_batch(root, "cr", "Proposed")
+            self.assertIn("tier", batch[0])
+            self.assertIn(batch[0]["tier"], ("small", "large"))
+            self.assertIn(batch[0]["model"], ("model-s", "model-l"))
+
+    def test_estimator_failure_degrades_that_unit_only(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1)
+            _cr(root, 2)
+            sprint = _load()
+            import route as route_mod
+            real = route_mod.estimate
+            calls = {"n": 0}
+
+            def flaky(r, p):
+                calls["n"] += 1
+                if "CR0001" in str(p):
+                    raise RuntimeError("boom")
+                return real(r, p)
+            route_mod.estimate = flaky
+            try:
+                batch = sprint.select_batch(root, "cr", "Proposed")
+            finally:
+                route_mod.estimate = real
+            by_id = {b["id"]: b for b in batch}
+            self.assertNotIn("difficulty", by_id["CR0001"])  # degraded, not crashed
+            self.assertIn("difficulty", by_id["CR0002"])
+
+
 if __name__ == "__main__":
     unittest.main()

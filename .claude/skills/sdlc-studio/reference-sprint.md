@@ -109,6 +109,15 @@ independent critic plus the gate - the check's output states this scoping.
 5. **Stall handling (D2).** After 3 failed green attempts a unit is marked
    **Blocked**, logged, and skipped; the run continues. Blocked units surface in
    `status`. Never thrash; never silently drop.
+   **With routing enabled, escalation happens INSIDE that cap**: the first
+   `routing.escalation.max_same_tier` (default 2) failed attempts run at the assigned
+   tier; the next attempt escalates one declared tier up (`route.py escalate`). A
+   repeated identical failure signature at a sub-maximum tier is the "model too small"
+   fingerprint - escalate once *instead of* quarantining on the first repeat; the same
+   signature repeating again at the escalated tier quarantines as usual. loop_guard's
+   arithmetic is untouched - the total attempt budget still bounds thrash
+   deterministically. Each escalation appends a ledger entry, and the close records
+   `tier_recommended` vs `tier_delivered` + `escalated` in telemetry.
 6. **Closing gate - the sprint review.** Every run ends with a mandatory
    `reconcile` (fix any drift) + `review` (the unified PRD/TRD/TSD/persona plus CODE
    review), **regardless of `--goal`**. This is the sprint review and it produces
@@ -305,6 +314,39 @@ drop a unit, or declare itself done early:
 Without `--autonomous` the same guardrails apply as model-instructed policy - the
 portable Phase-1 path for tools without the scripts.
 
+## Model-tier routing {#model-tier-routing}
+
+With `routing.enabled` in `.config.yaml` (**advisory - no gate reads a tier**),
+the plan stamps each unit with a `tier` + `model` recommendation alongside its always-present
+`difficulty` band, and the orchestrator spawns each delivery worker on the recommended model.
+The policy, in order:
+
+1. **Band -> tier** from the deterministic difficulty score (`route.py estimate`):
+   trivial->tiny, low->small, medium->medium, high->large, extreme->xlarge
+   (cutpoints: `routing.thresholds`).
+2. **Kind floors** lift below-floor bands: a bug is never routed tiny; a high
+   churn-weighted risk band floors at the security floor (default medium). The
+   orchestrator may additionally flag a unit security/data-loss by judgement - that
+   flag floors at medium too.
+3. **Low confidence bumps up one tier** - two or more unresolved signals mean the
+   score is a guess, and a too-small model risks quality where a too-large one only
+   costs money.
+4. **The critic is never a smaller tier than the author** (`routing.critic_tier`:
+   `match` floors code units' critics at medium; `above` lifts one step). Independence
+   (reviewer != author, CR0117) stays the enforced floor regardless of tier.
+5. **Scope: code-delivery workers only** (build, test, per-unit critic). The
+   orchestrator itself, the closing-gate adversarial critic, and authoring/design
+   workers always run at the session's own model.
+
+The recommendation is advisory: the orchestrator may override it, and **an override is
+recorded in the decisions ledger** so tier_recommended vs tier_delivered stays auditable.
+The prompt contract is byte-identical across tiers
+(`reference-agent-prompt-template.md#tier-routing`) - if a unit only succeeds on a bigger
+model because the contract was vague, fix the contract. Escalation on failure is defined
+in loop step 5; per-tier escape/escalation rates accumulate in telemetry
+(`telemetry show --summary`, the `by_tier` block) and are the calibration signal for
+`routing.thresholds`.
+
 ## Scripts
 
 | Script | Role |
@@ -314,6 +356,7 @@ portable Phase-1 path for tools without the scripts.
 | `scripts/integrity.py check` | referential integrity (required links + dangling refs) |
 | `scripts/conformance.py check` | the lifecycle-conformance gate (hard-fail; incl. reconciled + critiqued) |
 | `scripts/critic.py record` | the committed independent-critic verdict per unit (D3) |
+| `scripts/route.py` | difficulty estimate + tier pick + escalation stepper (advisory) |
 | `scripts/loop_guard.py` | iteration cap, repetition-breaker, completion oracle |
 | `scripts/ledger.py` | append-only per-tranche decisions ledger (survives compaction) |
 | `reconcile` / `review` / `verify_ac` | the closing gate + per-unit oracle (reused) |

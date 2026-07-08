@@ -706,3 +706,52 @@ def parse_cutoff(value) -> int | None:
     raise ValueError(
         f"adopt_after cutoff is not a number or id: {value!r} - "
         "use a bare integer (103) or a prefixed id (US0103)")
+
+
+def affects_files(text: str) -> list[str]:
+    """File paths a unit declares it will touch (its `Affects` field).
+
+    Shared by the sprint planner (WSJF complexity seed) and the routing estimator
+    (RFC0026) - one parser, one behaviour. Tolerates trailing parentheticals and
+    backtick-wrapped paths; a token counts as a path when it contains a `/` or a
+    known source/doc extension."""
+    val = extract_field(text, "Affects") or ""
+    files = []
+    for tok in val.split(","):
+        tok = re.sub(r"\s*\(.*\)\s*$", "", tok.strip()).strip().strip("`").strip()
+        if tok and ("/" in tok or tok.endswith((".py", ".md", ".yaml", ".yml", ".sh"))):
+            files.append(tok)
+    return files
+
+
+def resolve_affects(root, p: str):
+    """Resolve an Affects path against the repo root or the installed skill dir.
+    Returns the resolved Path, or None for a not-yet-existing (greenfield) path."""
+    root = Path(root)
+    for base in (root, root / ".claude" / "skills" / "sdlc-studio"):
+        cand = base / p
+        if cand.exists():
+            return cand
+    return None
+
+
+_AC_CHECKBOX_RE = re.compile(r"^\s*- \[[ xX]\] ")
+
+
+def count_acs(text: str) -> int:
+    """Checkable AC items inside the Acceptance Criteria section (checkbox lines,
+    `### ACn` headings, or `**ACn**` bullets). The same recognition set audit.py's
+    weak-AC check uses - shared so the routing estimator (RFC0026) and the tranche
+    audit count the same things."""
+    count = 0
+    in_ac = False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            in_ac = "acceptance criteria" in line.lower()
+            continue
+        if not in_ac:
+            continue
+        if (_AC_CHECKBOX_RE.match(line) or AC_HEADING_RE.match(line)
+                or AC_BULLET_RE.match(line)):
+            count += 1
+    return count

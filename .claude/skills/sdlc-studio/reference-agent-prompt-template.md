@@ -157,6 +157,25 @@ Four rules govern the framing, none negotiable:
 4. **Green stays the oracle.** The QA seat authors and runs the tests, but pass/fail is `verify_ac`
    plus the conformance gate, never the seat's judgement.
 
+## Tier Routing {#tier-routing}
+
+With `routing.enabled`, each unit in the sprint plan carries a `tier` and
+`model` recommendation. The orchestrator passes the model id to its own worker-spawn
+mechanism (the id is an opaque string - the skill never calls a model API). Three rules:
+
+1. **The prompt contract is byte-identical across tiers.** The sections above never
+   change based on which model runs them - the exact analogue of seat-framing rule 3.
+   If a unit only succeeds on a bigger model because the contract was vague, the
+   contract was underspecified: fix the contract, not the tier.
+2. **Overrides go to the ledger.** The recommendation is advisory; an orchestrator that
+   overrides it records the override + rationale in the tranche ledger, so
+   `tier_recommended` vs `tier_delivered` (telemetry) stays honest.
+3. **The critic's tier comes from `route.py pick --role critic`** - never smaller than
+   the author's, medium-floored for code units. Independence (a separate instance,
+   reviewer != author) is unchanged by routing.
+
+See `reference-sprint.md#model-tier-routing` for the full policy and escalation rule.
+
 ## What Makes a Good Prompt {#good-prompt}
 
 | Aspect | Bad | Good |

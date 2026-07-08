@@ -14,6 +14,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > unaffected. v4.0 is cut only once that backlog is complete and it has been tested on real
 > projects.
 
+### Added
+
+- **Difficulty-aware model-tier routing** (RFC0026, CR0189-CR0191; US0083-US0085): new
+  `scripts/route.py` - a deterministic 0-100 difficulty estimate per work unit (blast-radius
+  cognitive/risk via `complexity.assess`, file scope, unresolved-path novelty, AC count,
+  story points; an unresolved signal defaults to 0.5 and lowers confidence), banded to five
+  abstract tiers (`tiny/small/medium/large/xlarge`) that a project maps to its own model ids
+  in the new `routing:` config block (sparse maps degrade upward only). `sprint plan` stamps
+  every unit with `difficulty` (always) and `tier`/`model` (when `routing.enabled`);
+  `telemetry` records `tier_recommended/tier_delivered/model/escalated` and summarises per
+  delivered tier. Advisory throughout - no gate reads a tier, no model API is called, and the
+  critic is never a smaller tier than the author (medium floor for code units). Escalation on
+  failure steps one declared tier within loop_guard's unchanged attempt cap. Shared
+  `affects_files`/`resolve_affects`/`count_acs` helpers lifted into `lib/sdlc_md.py`.
+
 ## [3.6.0] - 2026-07-06
 
 The review/lite on-ramp (EP0016): two try-before-you-adopt entry points for an existing repo,

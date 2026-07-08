@@ -18,21 +18,18 @@ not.
 
 ## Locating the Skill Directory {#skill-dir}
 
-Script examples throughout the skill use the form
-`python3 "$CLAUDE_SKILL_DIR/scripts/<name>.py"`. Claude Code sets
-`$CLAUDE_SKILL_DIR` to this skill's directory at every install level
-(personal, project, or plugin). If the variable is not set (another
-agent tool, or a shell outside skill execution), substitute the
-directory containing this skill's `SKILL.md` - for example
-`~/.claude/skills/sdlc-studio`, `~/.agents/skills/sdlc-studio`, or
-`.github/skills/sdlc-studio`. The quoted variable fails loudly when
-unset; never guess between multiple installed copies.
+Script examples use the form `python3 "$CLAUDE_SKILL_DIR/scripts/<name>.py"`.
+Claude Code sets `$CLAUDE_SKILL_DIR` to this skill's directory at every install
+level (personal, project, or plugin). If unset (another agent tool, or a shell
+outside skill execution), substitute the directory containing this skill's
+`SKILL.md` (e.g. `~/.claude/skills/sdlc-studio`, `~/.agents/skills/sdlc-studio`,
+`.github/skills/sdlc-studio`). The quoted variable fails loudly when unset;
+never guess between multiple installed copies.
 
 ## Rationale {#scripts-rationale}
 
-SDLC Studio was Claude-native through v1.5.0: every workflow was a
-markdown instruction that Claude executed using built-in tools (Read,
-Grep, Bash, Edit). Three capabilities need
+SDLC Studio was Claude-native through v1.5.0: every workflow was a markdown
+instruction executed with built-in tools. Three capabilities need
 deterministic computation:
 
 1. **AST repository indexing** (`repo_map.py`) – reinventing a ranked
@@ -45,8 +42,7 @@ deterministic computation:
    logic that a script can unit-test.
 
 A later wave extends the same principle - **determinism in scripts,
-judgement in Claude** - to the highest-frequency mechanical workflows,
-which had been running inside Claude's context:
+judgement in Claude** - to the highest-frequency mechanical workflows:
 
 4. **Drift detection** (`reconcile.py`) – the file census and index-drift
    comparison doctrine rule 3 prescribes is a deterministic algorithm.
@@ -547,11 +543,15 @@ Adversarial audit / tranche pre-flight. `check` grooms a batch for readiness - w
 
 ### `sprint.py`
 
-The Goal-Driven Development loop's planner (renamed from `autosprint.py`). `plan <query> --order priority|wsjf` selects + dependency-orders the batch (the triage plan); priority dominates, complexity breaks ties. `plan --prd <path>` bootstraps greenfield authoring; `plan --write` persists the sprint-plan artifact; `plan` runs `reconcile detect` first and surfaces drift, refusing under `--strict` (reconcile-before-plan). `--order wsjf` orders by seat-scored WSJF = (value+time-criticality+risk-reduction)/size from `.local/wsjf-inputs.json`, degrading to priority+complexity without inputs or under `--skip-personas`. See reference-sprint.md.
+The Goal-Driven Development loop's planner. `plan <query> --order priority|wsjf` selects + dependency-orders the batch (the triage plan); priority dominates, complexity breaks ties. `plan --prd <path>` bootstraps greenfield authoring; `plan --write` persists the sprint-plan artifact; `plan` runs `reconcile detect` first and surfaces drift, refusing under `--strict` (reconcile-before-plan). `--order wsjf` orders by seat-scored WSJF = (value+time-criticality+risk-reduction)/size from `.local/wsjf-inputs.json`, degrading to priority+complexity without inputs or under `--skip-personas`. Every planned unit is stamped with a `difficulty` band (route.py, advisory); with `routing.enabled` it also carries the `tier`/`model` recommendation; an estimator failure degrades that unit's routing fields, never the plan. See reference-sprint.md.
 
 ### `autosprint.py`
 
-Deprecated alias for `sprint.py` - re-exports it so `import autosprint` and the `autosprint.py` CLI keep working, emitting a deprecation pointer to `sprint`. Prefer `sprint`.
+Deprecated re-exporting alias for `sprint.py` (the old name); prefer `sprint`.
+
+### `route.py`
+
+Difficulty-aware model-tier routing, **advisory - no gate reads a tier**, no model API ever called (ids are opaque strings the orchestrator passes to its own spawn mechanism). `estimate --unit` scores 0-100 from blast-radius cognitive/risk (`complexity.assess`), file scope, unresolved-path novelty, ACs and points - an unresolved signal defaults its subscore to 0.5 (never 0) and lowers confidence. `pick --unit --role author|critic` applies band->tier, kind floors, the low-confidence upward bump, and the critic rule (never smaller than the author; code units floor the critic at medium). `escalate --tier` steps to the next declared tier; `tiers` prints the resolved map (upward-only sparse degradation). Config: `reference-config.md#routing`.
 
 ### `config.py`
 

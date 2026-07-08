@@ -22,6 +22,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 import complexity  # noqa: E402  (sibling - blast-radius complexity for WSJF)
+import config  # noqa: E402  (sibling - routing block for tier enrichment)
 import reconcile  # noqa: E402  (sibling - reconcile before plan)
 import blocker_sweep  # noqa: E402  (sibling - blocker sweep before plan)
 
@@ -51,23 +52,14 @@ def _weight(pri: str) -> int:
 
 
 def _affects_files(text: str) -> list[str]:
-    """File paths a unit declares it will touch (its `Affects` field)."""
-    val = sdlc_md.extract_field(text, "Affects") or ""
-    files = []
-    for tok in val.split(","):
-        tok = re.sub(r"\s*\(.*\)\s*$", "", tok.strip()).strip().strip("`").strip()
-        if tok and ("/" in tok or tok.endswith((".py", ".md", ".yaml", ".yml", ".sh"))):
-            files.append(tok)
-    return files
+    """File paths a unit declares it will touch (delegates to the shared parser in
+    lib/sdlc_md so the planner and the routing estimator count the same files)."""
+    return sdlc_md.affects_files(text)
 
 
 def _resolve(root: Path, p: str) -> Path | None:
-    """Resolve an Affects path against the repo root or the installed skill dir."""
-    for base in (root, root / ".claude" / "skills" / "sdlc-studio"):
-        cand = base / p
-        if cand.exists():
-            return cand
-    return None
+    """Resolve an Affects path (delegates to the shared resolver in lib/sdlc_md)."""
+    return sdlc_md.resolve_affects(root, p)
 
 
 def _complexity_size(root: Path, text: str) -> int:
@@ -255,9 +247,36 @@ def _worklist_units(root: Path, worklist: str) -> tuple[list[dict], dict[str, se
     return out, deps
 
 
+def _enrich_routing(root: Path, out: list[dict]) -> None:
+    """Per-unit routing enrichment, for EVERY order mode: `difficulty` is
+    always stamped (advisory info); `tier` + `model` only when `routing.enabled` in
+    the project config. Fail-safe per unit: an estimator exception degrades that unit
+    to no routing fields - routing must never break planning."""
+    try:
+        import route  # sibling - deferred so a broken estimator can't break import
+        routing = config.get(root, "routing", None) or {}
+    except Exception:  # noqa: BLE001
+        return
+    enabled = bool(routing.get("enabled"))
+    for it in out:
+        try:
+            est = route.estimate(root, Path(it["path"]))
+            it["difficulty"] = {"score": est["difficulty_score"],
+                                 "band": est["difficulty_band"],
+                                 "confidence": est["confidence"]}
+            if enabled:
+                picked = route.pick(root, Path(it["path"]), role="author",
+                                    routing=routing)
+                it["tier"] = picked["tier"]
+                it["model"] = picked["model"]
+        except Exception:  # noqa: BLE001 - degrade this unit, keep planning
+            continue
+
+
 def _order_batch(root: Path, out: list[dict], deps: dict[str, set], order: str,
                  skip_personas: bool) -> list[dict]:
     """WSJF enrichment + dependency-topological ordering over one (possibly mixed) batch."""
+    _enrich_routing(root, out)  # difficulty always; tier/model when routing.enabled
     if order == "wsjf":  # seat-scored WSJF when available, else priority+complexity
         seat_inputs = {} if skip_personas else _wsjf_inputs(root)
         for it in out:

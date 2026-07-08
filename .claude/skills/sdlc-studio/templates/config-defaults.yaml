@@ -132,6 +132,31 @@ provenance:
   enforce: false
   adopt_after: 0   # per-type id cutoff; ids <= this are exempt (legacy)
 
+# Difficulty-aware model-tier routing. Advisory and opt-in: with enabled: false
+# the sprint plan still carries each unit's difficulty band (useful information), but no
+# tier/model recommendation. Tiers are abstract sizes; map them to whatever model
+# identifiers your agent CLI accepts - the ids are opaque strings the orchestrator passes
+# to its own worker-spawn mechanism; the skill never calls a model API. Declare only the
+# tiers you have: an undeclared tier degrades UPWARD to the nearest declared larger tier
+# (never downward - a too-small model risks quality, a too-large one only cost); above
+# the largest declared tier, the largest is used. No gate ever reads a tier.
+routing:
+  enabled: false
+  models: {}              # e.g. {tiny: claude-haiku-4-5, medium: claude-sonnet-5, xlarge: claude-fable-5}
+  floor:                  # minimum tier per unit kind (bands below are lifted)
+    bug: small            # a bug fix is never routed tiny (repro judgement)
+    security: medium      # applied when the churn-weighted risk band is high
+  critic_tier: match      # match | above - the independent critic is never a SMALLER
+                          # tier than the author; code units floor the critic at medium
+  thresholds:             # difficulty-score cutpoints (score at which the next band starts)
+    tiny: 20
+    small: 40
+    medium: 60
+    large: 80
+  escalation:
+    max_same_tier: 2      # failed attempts at the assigned tier before escalating one
+                          # tier (within loop_guard's unchanged total attempt cap)
+
 # Deploy contract - the orchestrate-only deploy last-mile. The skill GATES before and
 # VERIFIES after a deploy; it never holds the production trigger, never auto-rolls-back, and never
 # deploys inside the autonomous loop. Secrets are never read - only the command you configure is

@@ -114,5 +114,58 @@ class SummaryTests(unittest.TestCase):
                           if "mean_iterations" not in out else out)
 
 
+class TierFieldsTests(unittest.TestCase):
+    """RFC0026 / CR0191: routing tier fields recorded + summarised per delivered tier."""
+
+    def test_tier_fields_recorded_and_absent_fields_omitted(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            rec = tel.record(d, {"id": "US0001", "type": "story",
+                                  "tier_recommended": "small",
+                                  "tier_delivered": "medium",
+                                  "model": "model-m", "escalated": "true"})
+            self.assertEqual(rec["tier_recommended"], "small")
+            self.assertEqual(rec["tier_delivered"], "medium")
+            self.assertEqual(rec["model"], "model-m")
+            self.assertEqual(rec["escalated"], "true")
+            plain = tel.record(d, {"id": "US0002", "type": "story"})
+            self.assertNotIn("tier_delivered", plain)  # whitelist discipline unchanged
+
+    def test_cli_record_accepts_tier_flags(self) -> None:
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = tel.main(["record", "--id", "US0001", "--type", "story",
+                               "--tier-recommended", "small",
+                               "--tier-delivered", "small",
+                               "--model", "model-s", "--escalated", "false",
+                               "--root", d])
+            self.assertEqual(rc, 0)
+            recs = tel.read_all(d)
+            self.assertEqual(recs[0]["tier_delivered"], "small")
+
+    def test_summary_groups_per_delivered_tier(self) -> None:
+        rows = [
+            {"id": "A", "type": "story", "critic_verdict": "approve",
+             "tier_delivered": "small", "reopened": "no"},
+            {"id": "B", "type": "story", "critic_verdict": "reject",
+             "tier_delivered": "small", "reopened": "yes"},
+            {"id": "C", "type": "cr", "critic_verdict": "approve",
+             "tier_delivered": "large"},
+        ]
+        s = tel.summarise(rows)
+        self.assertIn("by_tier", s)
+        self.assertEqual(s["by_tier"]["small"]["count"], 2)
+        self.assertEqual(s["by_tier"]["small"]["verdicts"], {"approve": 1, "reject": 1})
+        self.assertEqual(s["by_tier"]["small"]["reopen_rate"], 0.5)
+        self.assertEqual(s["by_tier"]["large"]["count"], 1)
+        self.assertIsNone(s["by_tier"]["large"]["reopen_rate"])  # no data -> None, not 0
+
+    def test_no_per_tier_block_when_no_record_carries_a_tier(self) -> None:
+        rows = [{"id": "A", "type": "story", "critic_verdict": "approve"}]
+        s = tel.summarise(rows)
+        self.assertNotIn("by_tier", s)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -70,7 +70,9 @@ next sprint" resolves to `--goal design` (the goals are cumulative stop-points).
 5. **Stall** - `loop_guard` quarantines a unit at the cap (3 attempts) or on a
    repeated failure signature: it is marked Blocked, logged, skipped; the run
    continues. The completion oracle declares the batch done only when every unit
-   is terminal (Done or Blocked).
+   is terminal (Done or Blocked). With `routing.enabled` (see below), a failed
+   attempt escalates one model tier before the cap quarantines
+   (`reference-sprint.md#model-tier-routing`).
 6. **Sprint review** - every run ends with a mandatory `reconcile` + `review`; the
    CODE leg is the adversarial full-diff critic pass (independent instance, refute
    framing, findings with repros, fixes seen red first, the SAME critic re-runs its
@@ -78,6 +80,12 @@ next sprint" resolves to `--goal design` (the goals are cumulative stop-points).
 
 In `--autonomous` mode steps 4's guardrails are deterministic scripts the model
 cannot skip; without it they are model-instructed (the portable Phase-1 path).
+
+**Model-tier routing (opt-in):** with `routing.enabled` in `.config.yaml`, the plan
+stamps each unit with an advisory `tier`/`model` recommendation (difficulty-scored by
+`route.py` from complexity, scope, novelty and spec size), so cheap units run on your
+smaller model and hard ones on your bigger one. Map tiers to your own models in
+`routing.models`; see `reference-config.md#routing`.
 
 ## Prerequisites
 

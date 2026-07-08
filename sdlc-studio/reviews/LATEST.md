@@ -7,7 +7,7 @@
 >
 > **Released version:** 3.6.0 (2026-07-06, non-breaking - the EP0016 review/lite on-ramp) ·
 > **Date:** 2026-07-06 ·
-> **Gates:** lint clean, 1249 script tests pass (+49 repo-only tools tests), `gate` PASS,
+> **Gates:** lint clean, 1272 script tests pass (+49 repo-only tools tests), `gate` PASS,
 > reconcile drift 0, npm audit 0, CI green on main.
 >
 > **Fixed (BG0067):** `verify_ac.py`'s `pytest -k` DSL glued path+marker into one argv element (false "file not found"); now `shlex.split`, matching the `go` verb.

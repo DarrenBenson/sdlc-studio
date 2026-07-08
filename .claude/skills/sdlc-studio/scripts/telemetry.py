@@ -19,9 +19,12 @@ from pathlib import Path
 
 # The project's gitignored state dir (sdlc-studio/.local/), not repo-root .local/.
 LOCAL = Path("sdlc-studio") / ".local" / "telemetry.jsonl"
-# The captured fields. Optional ones are omitted when not supplied.
+# The captured fields. Optional ones are omitted when not supplied. The tier_* fields
+# (routing) record which model tier was recommended vs actually delivered a unit,
+# so per-tier escape/escalation rates become measurable - the routing calibration loop.
 FIELDS = ("id", "type", "iterations", "wall_time_s", "stages", "critic_verdict",
-          "complexity", "churn", "reopened", "tokens")
+          "complexity", "churn", "reopened", "tokens",
+          "tier_recommended", "tier_delivered", "model", "escalated")
 
 
 def _path(repo_root: Path | str) -> Path:
@@ -71,7 +74,10 @@ def cmd_record(args: argparse.Namespace) -> int:
     fields = {"id": args.id, "type": args.type, "iterations": _int(args.iterations),
               "wall_time_s": _int(args.wall_time_s), "stages": args.stages,
               "critic_verdict": args.verdict, "complexity": _int(args.complexity),
-              "churn": _int(args.churn), "reopened": args.reopened, "tokens": _int(args.tokens)}
+              "churn": _int(args.churn), "reopened": args.reopened, "tokens": _int(args.tokens),
+              "tier_recommended": args.tier_recommended,
+              "tier_delivered": args.tier_delivered,
+              "model": args.model, "escalated": args.escalated}
     rec = record(args.root, fields)
     print(json.dumps(rec) if args.format == "json" else f"recorded {rec.get('id', '?')}")
     return 0
@@ -101,6 +107,30 @@ def summarise(records: list[dict]) -> dict:
         b["mean_iterations"] = round(sum(iters) / len(iters), 2) if iters else None
         b["mean_wall_time_s"] = round(sum(wall) / len(wall), 2) if wall else None
         b["reopen_rate"] = round(sum(reop) / len(reop), 3) if reop else None
+    # Per-delivered-tier grouping (verdict mix + reopen rate) - the routing
+    # calibration signal. Emitted only when some record actually carries a tier, so a
+    # non-routed project's summary is byte-identical to before.
+    tiers: dict = {}
+    for rec in records:
+        t = rec.get("tier_delivered")
+        if not t:
+            continue
+        b = tiers.setdefault(t, {"count": 0, "_reopened": [], "_escalated": [],
+                                  "verdicts": {}})
+        b["count"] += 1
+        if rec.get("reopened") is not None:
+            b["_reopened"].append(str(rec["reopened"]).strip().lower() in ("yes", "true", "1"))
+        if rec.get("escalated") is not None:
+            b["_escalated"].append(str(rec["escalated"]).strip().lower() in ("yes", "true", "1"))
+        v = rec.get("critic_verdict")
+        if v:
+            b["verdicts"][v] = b["verdicts"].get(v, 0) + 1
+    if tiers:
+        for b in tiers.values():
+            reop, esc = b.pop("_reopened"), b.pop("_escalated")
+            b["reopen_rate"] = round(sum(reop) / len(reop), 3) if reop else None
+            b["escalation_rate"] = round(sum(esc) / len(esc), 3) if esc else None
+        out["by_tier"] = tiers
     return out
 
 
@@ -111,12 +141,19 @@ def cmd_show(args: argparse.Namespace) -> int:
         if args.format == "json":
             print(json.dumps(s, indent=2))
         else:
+            by_tier = s.pop("by_tier", None)
             print(f"{len(recs)} record(s), {len(s)} type(s)")
             for t, b in sorted(s.items()):
                 verdicts = ", ".join(f"{k}:{n}" for k, n in sorted(b["verdicts"].items())) or "-"
                 print(f"  {t:8} count={b['count']} mean_iterations={b['mean_iterations']} "
                       f"mean_wall_time_s={b['mean_wall_time_s']} "
                       f"reopen_rate={b['reopen_rate']} verdicts[{verdicts}]")
+            if by_tier:
+                print("by tier delivered:")
+                for t, b in sorted(by_tier.items()):
+                    verdicts = ", ".join(f"{k}:{n}" for k, n in sorted(b["verdicts"].items())) or "-"
+                    print(f"  {t:8} count={b['count']} reopen_rate={b['reopen_rate']} "
+                          f"escalation_rate={b['escalation_rate']} verdicts[{verdicts}]")
         return 0
     print(json.dumps(recs, indent=2) if args.format == "json" else f"{len(recs)} record(s)")
     return 0
@@ -130,6 +167,9 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--wall-time-s", dest="wall_time_s"); r.add_argument("--stages")
     r.add_argument("--verdict"); r.add_argument("--complexity"); r.add_argument("--churn")
     r.add_argument("--reopened"); r.add_argument("--tokens")
+    r.add_argument("--tier-recommended", dest="tier_recommended")
+    r.add_argument("--tier-delivered", dest="tier_delivered")
+    r.add_argument("--model"); r.add_argument("--escalated")
     r.add_argument("--root", default="."); r.add_argument("--format", choices=("text", "json"), default="text")
     r.set_defaults(func=cmd_record)
     s = sub.add_parser("show", help="Print recorded records.")

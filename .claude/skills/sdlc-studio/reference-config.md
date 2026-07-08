@@ -238,6 +238,41 @@ patterns (cold-spawn, smoke budget, soak).
 
 ---
 
+## Model-Tier Routing {#routing}
+
+Difficulty-aware model-tier routing. **Advisory and opt-in** - no gate ever reads
+a tier, and the skill never calls a model API: model ids are opaque strings the orchestrating
+agent passes to its own worker-spawn mechanism, so the feature is tool-neutral across agent
+CLIs. With `enabled: false` (the default) the sprint plan still carries each unit's
+difficulty band; `tier` and `model` appear only when enabled.
+
+```text
+routing:
+  enabled: false
+  models: {}              # e.g. {tiny: claude-haiku-4-5, medium: claude-sonnet-5, xlarge: claude-fable-5}
+  floor: {bug: small, security: medium}
+  critic_tier: match      # match | above
+  thresholds: {tiny: 20, small: 40, medium: 60, large: 80}
+  escalation: {max_same_tier: 2}
+```
+
+| Key | Meaning | Default |
+| --- | --- | --- |
+| `routing.enabled` | Emit `tier`/`model` recommendations in the sprint plan. | `false` |
+| `routing.models` | Sparse map of abstract tiers (`tiny/small/medium/large/xlarge`) to the project's own model identifiers. An undeclared tier degrades **upward** to the nearest declared larger tier - never downward; above the largest declared, the largest is used. | `{}` |
+| `routing.floor` | Minimum tier per unit kind: bands below are lifted. `security` applies when the churn-weighted risk band is high. | `{bug: small, security: medium}` |
+| `routing.critic_tier` | The independent critic's tier relative to the author: `match` (same, code units floored at medium) or `above` (one step up). The critic is never a smaller tier than the author; independence (reviewer != author) stays the enforced floor either way. | `match` |
+| `routing.thresholds` | Difficulty-score cutpoints - each value is the score at which the next band starts. | `{tiny: 20, small: 40, medium: 60, large: 80}` |
+| `routing.escalation.max_same_tier` | Failed attempts at the assigned tier before escalating one declared tier (within loop_guard's unchanged total attempt cap). | `2` |
+
+The difficulty score is deterministic (`scripts/route.py estimate`): blast-radius cognitive
+complexity + churn-weighted risk (`complexity.assess`), file scope, unresolved-path novelty,
+AC count and story points. A signal that does not resolve defaults its subscore to 0.5 (never
+0 - unknown difficulty is never minimal) and lowers confidence; low confidence bumps the
+picked tier up one step. See `reference-sprint.md#model-tier-routing` for the policy.
+
+---
+
 ## Using Config in Templates
 
 Templates can reference config values using `{{config.path.to.value}}` syntax:
