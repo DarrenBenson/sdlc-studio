@@ -41,6 +41,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (3 arms x 2 fixtures) is published in `docs/benchmarks/2026-07-08-v2-respike.md`: the
   pipeline's mandated planning pass was the only arm with zero defect escapes, and the
   Auditability metric graded a real evidence-quality gradient. N=5: GO (D0013).
+- **Benchmark v2 measured N=5 run** (D0014, repo-only): Tier 1 at N=5 per cell (30 runs +
+  30 graded audit passes), Tier 2 via pre-declared cut #1. Published in
+  `docs/benchmarks/2026-07-08-n5-run.md`: unstructured arms escaped 10/10 on notify-digest
+  vs the mandated-planning arm's 2/5 (one-sided Fisher p 0.083, below conventional
+  significance); Auditability tracked the escapes exactly; routing cut arm-R delivery cost
+  to a 0.40 index on the easy fixture with zero escapes; the routed pipeline costs ~3.1x
+  baseline tokens per single ticket. New documented failure mode - **a bad plan
+  propagates**: two arm-R planners mis-pinned a spec rule in their ACs and the critic
+  approved against the wrong oracle; in one of the two runs the worker went on to write the
+  error into the workspace spec itself. Points at an independent AC-vs-spec conformance
+  check before implementation.
 - **Positioning refresh + the full value document** (CR0177/US0072): README reframed under
   the three hard constraints (anti-vibe-coding umbrella, greenfield equally visible,
   catalogue below the fold) with the now-unlocked team-shape and evidence paragraphs; new

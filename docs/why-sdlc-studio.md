@@ -80,40 +80,48 @@ We built a measurement harness ([protocol](benchmarks/protocol-v2.md), pre-regis
 the runs so results could not be quietly reshaped) comparing three arms on fixture repos
 with **held-back acceptance suites the agent never sees**: plain AI coding with a genuinely
 good CLAUDE.md (independently reviewed against straw-manning), the pipeline available with
-judgement, and the pipeline with a mandated planning pass. Findings so far, at n=1 per cell
-([v1 report](benchmarks/2026-07-08-n1-spike.md),
-[v2 report](benchmarks/2026-07-08-v2-respike.md)):
+judgement, and the pipeline with a mandated planning pass. Findings from the measured N=5
+run ([N=5 report](benchmarks/2026-07-08-n5-run.md); spikes:
+[v1](benchmarks/2026-07-08-n1-spike.md), [v2](benchmarks/2026-07-08-v2-respike.md)):
 
 - **On small, well-specified tasks the pipeline adds nothing** - the baseline matched it.
   The tool's own scale-to-size doctrine says the same; run `profile: lite` there.
-- **On a multi-file task whose existing spec silently interacted with the ticket, both
-  unstructured arms shipped the same defect** (a quiet-hours rule the ticket never
-  mentioned) and declared done on 16-17 green self-written tests. The held-back suite
-  caught both.
-- **The mandated-planning arm was the only arm with zero defect escapes**: forced to write
-  acceptance criteria from the spec before code, it pinned the interacting requirements and
-  its implementation passed the full hidden suite.
+- **On a multi-file task whose existing spec silently interacted with the ticket, every
+  unstructured run shipped the same defect - ten out of ten.** Both non-mandated arms, all
+  five runs each, missed a quiet-hours rule the ticket never mentioned and declared done on
+  green self-written tests. The held-back suite caught all ten.
+- **The mandated-planning arm escaped in two runs of five.** Forced to write acceptance
+  criteria from the spec before code, it pinned the interacting requirements correctly in
+  three runs and passed the full hidden suite; in two runs the planner misread the rule,
+  the reviewer approved against the plan's wrong oracle, and the error shipped - in one of
+  those two, written into the spec itself. Direction is consistent (10/10 vs 2/5) but
+  below conventional
+  significance at this sample size (one-sided Fisher p 0.083), and it names the honest
+  boundary: mandated planning changes *where* an error must occur, it does not make errors
+  impossible. A bad plan propagates with authority - which is why the next pipeline change
+  this data points at is an independent check of the plan against the spec.
 - **Auditability is measurable - and it graded us honestly.** An independent auditor agent
   answering maintainer questions from the finished workspace alone (with cited evidence
   mechanically validated - a cited test must fail against a seeded mutant to count) scored
-  the harder fixture: mandated-planning arm 1.0, plain-AI baseline 0.8, and the
-  judgement-scaled pipeline arm **last** at 0.6 - the arm that skipped its own process left
-  the worst evidence trail. On the easier fixture all arms scored 1.0. Nothing in the
-  scoring rewards the tool's own artifacts; the baseline could have scored 1.0 with good
-  tests and docs.
-- Honest caveats: n=1 per cell; fixtures were authored in-ecosystem (independently
-  fairness-reviewed, and everything needed to pass is present in each visible workspace);
-  planning-versus-review contributions are not yet disentangled. The pre-registered N=5 run
-  will tighten or kill these findings, and we will publish it either way.
+  the harder fixture at N=5: mandated-planning arm 0.88, judgement-scaled pipeline arm
+  0.68, plain-AI baseline 0.60 - and within the mandated arm the audit score identified
+  precisely the two runs that shipped the defect. On the easier fixture all arms scored
+  0.97-1.0. Nothing in the scoring rewards the tool's own artifacts; the baseline could
+  have scored 1.0 with good tests and docs.
+- Honest caveats: n=5 per cell and one fixture pair carries the escape signal; fixtures
+  were authored in-ecosystem (independently fairness-reviewed, and everything needed to
+  pass is present in each visible workspace); planning-versus-review contributions remain
+  partially entangled. Raw rows and the grading harness are in the repo.
 
 ## The economics
 
 Tokens are the wrong denominator; engineer time and defect cost are the right ones. Three
 facts to price honestly:
 
-1. **Per single ticket, the full pipeline costs more tokens** - 2.1 to 3.1 times the
-   baseline in the n=1 calibration runs. If your unit of work is one small, well-specified change,
-   that overhead buys little (see the lite profile).
+1. **Per single ticket, the full pipeline costs more tokens** - about 3.1 times the
+   baseline, measured at N=5 (the overhead is the planning and review passes, not a slower
+   implementation). If your unit of work is one small, well-specified change, that
+   overhead buys little (see the lite profile).
 2. **The overhead amortises with fan-out.** One planning structure driving many units is
    where the field results live: the pipeline's fixed costs (spec extraction, planning,
    gates) spread across every unit delivered under them, while the per-unit defect
@@ -122,9 +130,9 @@ facts to price honestly:
    difficulty from deterministic signals (blast-radius complexity, churn risk, scope,
    novelty, spec size) and recommends a model tier from a map you declare - trivial work
    runs on your cheapest model, hard work on your strongest, and the independent critic is
-   never a smaller model than the author. In its first measured outing the router sent a
-   trivial change to the smallest tier at a quarter of the reference cost, correctly, while
-   a genuinely medium task stayed on the mid tier.
+   never a smaller model than the author. At N=5 the router sent four of five deliveries on
+   the easy fixture to the smallest tier (a 0.40 mean cost index against an all-mid-tier
+   mix) with zero defect escapes, and correctly refused to down-tier the harder fixture.
 
 Against those costs, the comparison that matters: a defect that reaches production - or an
 audit you cannot pass - is priced in engineer-days and trust, not tokens. The benchmark's
@@ -143,7 +151,10 @@ document follows.
 
 ## What we are still proving
 
-- The pre-registered N=5 benchmark run (error bars instead of direction).
+- Statistical significance: the N=5 escape difference (10/10 vs 2/5) is directionally
+  consistent across runs but needs a larger sample to clear conventional thresholds.
+- The fix for the measured failure mode: an independent check of the plan's acceptance
+  criteria against the source spec, so a mis-read rule cannot propagate with authority.
 - Whether the value is *having* good acceptance criteria or *mechanically enforcing* them -
   a planned arm with ticket-grade ACs but no gates.
 - Fan-out economics as a measurement rather than a field report.

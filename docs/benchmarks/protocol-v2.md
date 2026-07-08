@@ -98,4 +98,12 @@ Never cut: the calibration spike (the insurance against repeating v1's engagemen
       pipeline arm did not), Auditability graded a real gradient (R 1.0 > B 0.8 > A 0.6).
 - [x] Fixture-engagement verdict: **GO for N=5** (two harness notes: record arm R's critic
       verdict into the workspace; keep the fixed quote validator).
-- [ ] Measured runs (Tier 1 N=5, Tier 2 N=2) + published report
+- [x] Measured runs (Tier 1 N=5; Tier 2 via pre-declared cut #1 - the v1 spike rows stand
+      as the labelled control) + published report - see
+      [2026-07-08-n5-run.md](2026-07-08-n5-run.md): unstructured arms escaped 10/10 on
+      notify-digest vs the mandated-planning arm's 2/5 (one-sided Fisher p 0.083, below
+      conventional significance); Auditability tracked the escapes exactly; routing cut
+      delivery cost 60% on the easy fixture with no quality loss; new documented failure
+      mode - a bad plan propagates (planner mis-pins an AC, critic approves against the
+      wrong oracle - twice; in one of the two runs the worker wrote the error into the
+      workspace spec itself).

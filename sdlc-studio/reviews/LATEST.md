@@ -33,23 +33,25 @@
   aliases, US0058 `index-derived` gate, US0069 atomic writes + lock, US0059 TRD refresh. Opt-in
   via `schema_version: 3`; v2 untouched. RFC0024 + RFC0025 accepted. Preceded by RV0006 (14
   bugs, BG0053-BG0066) and the v4 breakdown (22 CRs into 7 epics, 28 stories).
-- **Benchmark v1 spike found the fixtures couldn't differentiate** (D0012, small tickets;
-  `2026-07-08-n1-spike.md`); **benchmark v2 fixed that** (RFC0026 + CR0189-0193, all Done):
-  model-tier routing shipped (`route.py` + sprint/telemetry integration, `routing:` config,
-  advisory, tool-neutral), two harder Tier-1 fixtures with the held-back **Auditability**
-  metric and protocol-v2 re-registration built and fairness-reviewed, and the **v2 re-spike ran (3
-  arms x 2 fixtures): the pipeline's mandated planning pass was the only arm with zero defect
-  escapes** (A and B both shipped a quiet-hours bug the hidden suite caught); Auditability
-  gradient R 1.0 > B 0.8 > A 0.6; routing delivered a trivial change via the tiny tier at
-  0.25x cost. `2026-07-08-v2-respike.md` (D0013). **N=5: GO** (operator decision on spend).
+- **Benchmark v2 complete through the measured N=5 run** (RFC0026 + CR0189-0193 Done;
+  D0012 -> D0013 -> D0014). Model-tier routing shipped (`route.py`, advisory, tool-neutral);
+  two harder Tier-1 fixtures + held-back Auditability metric, protocol-v2 pre-registered.
+  **N=5 result (`2026-07-08-n5-run.md`): unstructured arms escaped 10/10 on notify-digest
+  vs the mandated-planning arm's 2/5** (Fisher p 0.083, below significance); Auditability
+  tracked the escapes exactly (R 0.88 > A 0.68 > B 0.60); routing cut delivery cost to a
+  0.40 index on the easy fixture with zero escapes; routed pipeline ~3.1x baseline tokens
+  per ticket. **New failure mode documented: a bad plan propagates** - 2/5 R planners
+  mis-pinned SPEC R5 and the critic approved against the wrong oracle; in one of the two
+  the worker wrote the error into the workspace spec itself. Points at an independent
+  AC-vs-spec check before implementation.
 - **US0072 delivered (CR0177, EP0017 now Done):** README reframed under the three hard
   constraints + the full progressively-disclosed value document (`docs/why-sdlc-studio.md`:
   thesis, labelled field results, benchmark evidence incl. the unflattering findings,
   economics, calibrated team-shape) + agent-facing discoverability (`llms.txt`, a For-agents
   README block, SKILL.md NOT-for triggers + openclaw metadata). Claims-calibration critic:
   REJECT->repair->APPROVE.
-- **Next:** N=5 measured run when chosen (cut order pre-declared). Then: EP0014 agentic
-  triage (US0065-0068), 5 EP0018 debt CRs (CR0179/0181/0182/0186/0187), CR0188.
+- **Next:** EP0014 agentic triage (US0065-0068), 5 EP0018 debt CRs
+  (CR0179/0181/0182/0186/0187), CR0188; candidate CR from D0014 (AC-vs-spec check).
 
 ## History (detail lives in the named retro / CHANGELOG entry)
 
