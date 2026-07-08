@@ -1,6 +1,6 @@
 # CR-0167: Distributed artefact identity implementation: ULID ids, migration, aliases (schema v3)
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic (v4 breakdown):** [EP0012](../epics/EP0012-distributed-artefact-identity-schema-v3.md)
@@ -86,3 +86,4 @@ before releasing to consuming projects.
 | --- | --- | --- |
 | 2026-07-06 | Dani Okafor (Engineering amigo) | Created via `new` (deterministic) |
 | 2026-07-06 | Dani Okafor (Engineering amigo) | Full scope drafted; blocked on RFC0024 acceptance |
+| 2026-07-08 | sweep-close (backlog reconciliation) | Delivered via US0055, already Done; CR status was never cascaded to Complete -> closed |

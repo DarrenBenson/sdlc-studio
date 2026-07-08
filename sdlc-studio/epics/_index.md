@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 6 |
+| Draft | 2 |
 | Ready | 9 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 3 |
+| Done | 7 |
 | **Total** | **18** |
 
 > Generate-mode note: all epics are **Ready** (spec extracted from the existing
@@ -32,10 +32,10 @@
 | [EP0009](EP0009-onboarding-doctrine.md) | Onboarding & Doctrine | Ready | 5 | None | 2026-06-20 | 2026-06-20 |
 | [EP0010](EP0010-skill-self-improvement-token-economy-learning-loop-consuming.md) | Skill self-improvement: token economy + learning loop (consuming-repo lessons) | Done | -- | -- | 2026-06-27 | 2026-06-27 |
 | [EP0011](EP0011-executable-mutation-check-gate-assertion-integrity-enforced.md) | Executable mutation-check gate (assertion integrity, enforced) | Done | -- | -- | 2026-07-04 | 2026-07-04 |
-| [EP0012](EP0012-distributed-artefact-identity-schema-v3.md) | Distributed artefact identity (schema v3) | Draft | -- | -- | 2026-07-06 | 2026-07-06 |
-| [EP0013](EP0013-structured-authorship-and-policy-enforcement.md) | Structured authorship and policy enforcement | Draft | -- | -- | 2026-07-06 | 2026-07-06 |
+| [EP0012](EP0012-distributed-artefact-identity-schema-v3.md) | Distributed artefact identity (schema v3) | Done | -- | -- | 2026-07-06 | 2026-07-06 |
+| [EP0013](EP0013-structured-authorship-and-policy-enforcement.md) | Structured authorship and policy enforcement | Done | -- | -- | 2026-07-06 | 2026-07-06 |
 | [EP0014](EP0014-agentic-triage-and-noise-control.md) | Agentic triage and noise control | Draft | -- | -- | 2026-07-06 | 2026-07-06 |
-| [EP0015](EP0015-passive-concurrency-and-write-path-safety.md) | Passive concurrency and write-path safety | Draft | -- | -- | 2026-07-06 | 2026-07-06 |
+| [EP0015](EP0015-passive-concurrency-and-write-path-safety.md) | Passive concurrency and write-path safety | Done | -- | -- | 2026-07-06 | 2026-07-06 |
 | [EP0016](EP0016-host-repo-review-and-lite-on-ramp.md) | Host-repo review and lite on-ramp | Done | -- | -- | 2026-07-06 | 2026-07-06 |
 | [EP0017](EP0017-positioning-and-evidence.md) | Positioning and evidence | Draft | -- | -- | 2026-07-06 | 2026-07-06 |
-| [EP0018](EP0018-tooling-hardening-and-review-debt.md) | Tooling hardening and review debt | Draft | -- | -- | 2026-07-06 | 2026-07-06 |
+| [EP0018](EP0018-tooling-hardening-and-review-debt.md) | Tooling hardening and review debt | Done | -- | -- | 2026-07-06 | 2026-07-06 |

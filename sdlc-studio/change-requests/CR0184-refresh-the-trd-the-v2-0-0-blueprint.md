@@ -1,6 +1,6 @@
 # CR-0184: Refresh the TRD: the v2.0.0 blueprint misdescribes the v3.5.0 script layer, write contract and state files
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic (v4 breakdown):** [EP0012](../epics/EP0012-distributed-artefact-identity-schema-v3.md)
@@ -69,3 +69,4 @@ edits; scope it to the enumerated scale/contract claims.
 | --- | --- | --- |
 | 2026-07-06 | Sam Eriksson (QA amigo) | Created via `new` (deterministic) |
 | 2026-07-06 | Sam Eriksson (QA amigo) | Full scope drafted from RV0006 architecture leg |
+| 2026-07-08 | sweep-close (backlog reconciliation) | Delivered via US0059, already Done; CR status was never cascaded to Complete -> closed |

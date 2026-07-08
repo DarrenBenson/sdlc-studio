@@ -45,13 +45,14 @@
   via `schema_version: 3`; v2 projects untouched. RFC0024 + RFC0025 accepted. Preceded by the
   RV0006 self-review bug sweep (14 bugs, BG0053-BG0066) and the v4 breakdown (22 CRs into 7
   epics and 28 stories).
-- **Open backlog:** EP0013, EP0016, and EP0018 are delivered on main (WIP toward release);
-  remaining tranches are EP0014 (agentic triage) and EP0017 (positioning/benchmark), plus the
-  scoped-forward CR remainders (CR0179/0181/0182/0186/0187). CRs still Proposed for those.
-- **Next:** EP0014 agentic triage (US0065-0068) or EP0017 (US0072/0074/0075); consider the
-  RFC0025 N=1 benchmark spike early (validates the v4 premise). EP0016 (US0070 review generate +
-  US0071 lite profile) is a non-breaking v3.6 candidate that could ship ahead of v4 if wanted.
-  The dogfood repo can migrate to schema v3 via `migrate_v3.py apply` when chosen (still v2).
+- **Backlog swept (2026-07-08):** EP0012/13/15/18 + 13 CRs were fully story-Done but stuck at
+  Draft/Proposed (status never cascaded) - closed mechanically, 0 drift after. Real remaining
+  backlog: **EP0014** agentic triage (US0065-0068), **EP0017** positioning/benchmark
+  (US0072/0074/0075), 5 EP0018 debt CRs not yet decomposed (CR0179/0181/0182/0186/0187), plus
+  CR0188 (fetch-before-sprint).
+- **Next:** before a v4 "big bang" cut, run the RFC0025 N=1 benchmark spike early - nothing has
+  validated the v4 premise beyond unit tests. Then EP0014 or EP0017. Migrate via
+  `migrate_v3.py apply` when chosen (still v2).
 
 ## History (detail lives in the named retro / CHANGELOG entry)
 

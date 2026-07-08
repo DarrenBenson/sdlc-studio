@@ -1,6 +1,6 @@
 # CR-0168: Fully derived indexes: _index.md becomes regenerable reconcile output, never an input
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic (v4 breakdown):** [EP0012](../epics/EP0012-distributed-artefact-identity-schema-v3.md)
@@ -85,3 +85,4 @@ hand-edit).
 | --- | --- | --- |
 | 2026-07-06 | Dani Okafor (Engineering amigo) | Created via `new` (deterministic) |
 | 2026-07-06 | Dani Okafor (Engineering amigo) | Full scope drafted; formalises what reconcile half-implies today |
+| 2026-07-08 | sweep-close (backlog reconciliation) | Delivered via US0058, already Done; CR status was never cascaded to Complete -> closed |

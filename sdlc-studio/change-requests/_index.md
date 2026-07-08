@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 23 |
+| Proposed | 10 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 161 |
+| Complete | 174 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 4 |
@@ -26,26 +26,26 @@
 | [CR-0163](CR0163-skill-md-instructs-section-reads-for-large-references.md) | SKILL.md instructs section reads for large references (honour the Reading Guides) | Complete | Low | Improvement | 2026-07-05 | -- |
 | [CR-0164](CR0164-reconcile-apply-adds-missing-index-rows-mechanically-hand.md) | reconcile apply adds missing index rows mechanically - hand-authoring 23 rows is the tool's failure | Complete | High | Improvement | 2026-07-05 | -- |
 | [CR-0165](CR0165-critic-recorder-flags-a-reviewer-that-is-no.md) | critic recorder flags a reviewer that is no declared seat - the persona lens must not drift out silently | Complete | Medium | Improvement | 2026-07-05 | -- |
-| [CR-0166](CR0166-batch-scaffold-wiring-polish-stray-separator-story-header.md) | batch scaffold wiring polish: stray separator, story header format, empty by-epic table | Proposed | Low | Improvement | 2026-07-05 | -- |
-| [CR-0167](CR0167-distributed-artefact-identity-implementation-ulid-ids-migration-aliases.md) | Distributed artefact identity implementation: ULID ids, migration, aliases (schema v3) | Proposed | High | Enhancement | 2026-07-06 | -- |
-| [CR-0168](CR0168-fully-derived-indexes-index-md-becomes-regenerable-reconcile.md) | Fully derived indexes: _index.md becomes regenerable reconcile output, never an input | Proposed | High | Enhancement | 2026-07-06 | -- |
-| [CR-0169](CR0169-structured-authorship-fields-raised-by-and-triaged-by.md) | Structured authorship fields: raised_by and triaged_by as typed references | Proposed | High | Enhancement | 2026-07-06 | -- |
-| [CR-0170](CR0170-separation-of-duties-lint-rule-triaged-by-must.md) | Separation of duties lint rule: triaged_by must not equal raised_by | Proposed | Medium | Enhancement | 2026-07-06 | -- |
-| [CR-0171](CR0171-evidence-as-schema-promote-evidence-or-it-did.md) | Evidence as schema: promote evidence-or-it-did-not-happen to lint-enforced structure | Proposed | Medium | Enhancement | 2026-07-06 | -- |
+| [CR-0166](CR0166-batch-scaffold-wiring-polish-stray-separator-story-header.md) | batch scaffold wiring polish: stray separator, story header format, empty by-epic table | Complete | Low | Improvement | 2026-07-05 | -- |
+| [CR-0167](CR0167-distributed-artefact-identity-implementation-ulid-ids-migration-aliases.md) | Distributed artefact identity implementation: ULID ids, migration, aliases (schema v3) | Complete | High | Enhancement | 2026-07-06 | -- |
+| [CR-0168](CR0168-fully-derived-indexes-index-md-becomes-regenerable-reconcile.md) | Fully derived indexes: _index.md becomes regenerable reconcile output, never an input | Complete | High | Enhancement | 2026-07-06 | -- |
+| [CR-0169](CR0169-structured-authorship-fields-raised-by-and-triaged-by.md) | Structured authorship fields: raised_by and triaged_by as typed references | Complete | High | Enhancement | 2026-07-06 | -- |
+| [CR-0170](CR0170-separation-of-duties-lint-rule-triaged-by-must.md) | Separation of duties lint rule: triaged_by must not equal raised_by | Complete | Medium | Enhancement | 2026-07-06 | -- |
+| [CR-0171](CR0171-evidence-as-schema-promote-evidence-or-it-did.md) | Evidence as schema: promote evidence-or-it-did-not-happen to lint-enforced structure | Complete | Medium | Enhancement | 2026-07-06 | -- |
 | [CR-0172](CR0172-tranche-reference-field-record-orchestrator-allocated-tranche-membership.md) | Tranche reference field: record orchestrator-allocated tranche membership in the ledger | Proposed | Low | Enhancement | 2026-07-06 | -- |
 | [CR-0173](CR0173-agentic-triage-workflow-status-transitions-human-sampling-policy.md) | Agentic triage workflow: status transitions, human sampling policy, triage quality metrics, noise controls | Proposed | High | Enhancement | 2026-07-06 | -- |
-| [CR-0174](CR0174-lint-command-consolidation-one-ci-runnable-audit-check.md) | Lint command consolidation: one CI-runnable audit-check enforcing the team-schema rules | Proposed | Medium | Enhancement | 2026-07-06 | -- |
-| [CR-0175](CR0175-first-class-review-command-architectural-quality-and-defensive.md) | First-class review command: architectural, quality and defensive security review of the host repo | Proposed | High | Enhancement | 2026-07-06 | -- |
-| [CR-0176](CR0176-lite-profile-collapse-the-pipeline-to-prd-story.md) | Lite profile: collapse the pipeline to PRD, story, implement for small repos | Proposed | Medium | Enhancement | 2026-07-06 | -- |
+| [CR-0174](CR0174-lint-command-consolidation-one-ci-runnable-audit-check.md) | Lint command consolidation: one CI-runnable audit-check enforcing the team-schema rules | Complete | Medium | Enhancement | 2026-07-06 | -- |
+| [CR-0175](CR0175-first-class-review-command-architectural-quality-and-defensive.md) | First-class review command: architectural, quality and defensive security review of the host repo | Complete | High | Enhancement | 2026-07-06 | -- |
+| [CR-0176](CR0176-lite-profile-collapse-the-pipeline-to-prd-story.md) | Lite profile: collapse the pipeline to PRD, story, implement for small repos | Complete | Medium | Enhancement | 2026-07-06 | -- |
 | [CR-0177](CR0177-readme-and-positioning-refresh-brownfield-generation-and-reconcile.md) | README and positioning refresh: brownfield generation and reconcile as proof of the anti-vibe-coding philosophy | Proposed | Medium | Improvement | 2026-07-06 | -- |
 | [CR-0178](CR0178-benchmark-harness-implementation-fixed-task-set-tokens-wall.md) | Benchmark harness implementation: fixed task set, tokens, wall time, defect escapes, rework rate | Proposed | Medium | Enhancement | 2026-07-06 | -- |
 | [CR-0179](CR0179-context-tiering-archive-closed-artefacts-into-summarised-digests.md) | Context tiering: archive closed artefacts into summarised digests to bound token cost | Proposed | Low | Enhancement | 2026-07-06 | -- |
-| [CR-0180](CR0180-harmonise-config-failure-regimes-silent-project-override-vs.md) | Harmonise config failure regimes: silent project_override vs fail-loud cutoff vs PyYAML crash | Proposed | Medium | Improvement | 2026-07-06 | -- |
+| [CR-0180](CR0180-harmonise-config-failure-regimes-silent-project-override-vs.md) | Harmonise config failure regimes: silent project_override vs fail-loud cutoff vs PyYAML crash | Complete | Medium | Improvement | 2026-07-06 | -- |
 | [CR-0181](CR0181-route-github-sync-and-verify-ac-through-the.md) | Route github_sync and verify_ac through the shared discovery layer; unify the root-flag grammar | Proposed | Medium | Improvement | 2026-07-06 | -- |
 | [CR-0182](CR0182-consolidate-the-two-archive-implementations-on-sdlc-md.md) | Consolidate the two archive implementations on sdlc_md.iter_tables | Proposed | Medium | Improvement | 2026-07-06 | -- |
-| [CR-0183](CR0183-passive-concurrency-safety-atomic-index-writes-and-an.md) | Passive concurrency safety: atomic index writes and an advisory allocation lock | Proposed | Medium | Improvement | 2026-07-06 | -- |
-| [CR-0184](CR0184-refresh-the-trd-the-v2-0-0-blueprint.md) | Refresh the TRD: the v2.0.0 blueprint misdescribes the v3.5.0 script layer, write contract and state files | Proposed | Medium | Improvement | 2026-07-06 | -- |
-| [CR-0185](CR0185-add-a-cross-script-invariant-test-tier-over.md) | Add a cross-script invariant test tier over the cascade seams | Proposed | Medium | Enhancement | 2026-07-06 | -- |
+| [CR-0183](CR0183-passive-concurrency-safety-atomic-index-writes-and-an.md) | Passive concurrency safety: atomic index writes and an advisory allocation lock | Complete | Medium | Improvement | 2026-07-06 | -- |
+| [CR-0184](CR0184-refresh-the-trd-the-v2-0-0-blueprint.md) | Refresh the TRD: the v2.0.0 blueprint misdescribes the v3.5.0 script layer, write contract and state files | Complete | Medium | Improvement | 2026-07-06 | -- |
+| [CR-0185](CR0185-add-a-cross-script-invariant-test-tier-over.md) | Add a cross-script invariant test tier over the cascade seams | Complete | Medium | Enhancement | 2026-07-06 | -- |
 | [CR-0186](CR0186-security-hardening-debt-review-2026-07-06-pinning.md) | Security hardening debt (review 2026-07-06): pinning, installer integrity, sync redaction, state hygiene | Proposed | Low | Improvement | 2026-07-06 | -- |
 | [CR-0187](CR0187-code-quality-debt-review-2026-07-06-shared.md) | Code-quality debt (review 2026-07-06): shared-layer bypasses, duplication, complexity, diagnostics | Proposed | Low | Improvement | 2026-07-06 | -- |
 | [CR-0188](CR0188-fetch-and-check-origin-drift-before-a-sprint.md) | Fetch and check origin drift before a sprint batch or artifact-id allocation | Proposed | P2 | retrospective | 2026-07-08 | -- |

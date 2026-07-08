@@ -1,6 +1,6 @@
 # CR-0171: Evidence as schema: promote evidence-or-it-did-not-happen to lint-enforced structure
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic (v4 breakdown):** [EP0013](../epics/EP0013-structured-authorship-and-policy-enforcement.md)
@@ -85,3 +85,4 @@ explicitly samples for filler evidence.
 | --- | --- | --- |
 | 2026-07-06 | Sam Eriksson (QA amigo) | Created via `new` (deterministic) |
 | 2026-07-06 | Sam Eriksson (QA amigo) | Full scope drafted; presence-not-truth boundary stated |
+| 2026-07-08 | sweep-close (backlog reconciliation) | Delivered via US0062, already Done; CR status was never cascaded to Complete -> closed |

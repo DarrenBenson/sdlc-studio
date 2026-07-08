@@ -1,6 +1,6 @@
 # CR-0169: Structured authorship fields: raised_by and triaged_by as typed references
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic (v4 breakdown):** [EP0013](../epics/EP0013-structured-authorship-and-policy-enforcement.md)
@@ -91,3 +91,4 @@ and a backfill report (counts per inference rule) are the mitigation.
 | --- | --- | --- |
 | 2026-07-06 | Dani Okafor (Engineering amigo) | Created via `new` (deterministic) |
 | 2026-07-06 | Dani Okafor (Engineering amigo) | Full scope drafted; agent-entity swap must be a resolver change only |
+| 2026-07-08 | sweep-close (backlog reconciliation) | Delivered via US0060, already Done; CR status was never cascaded to Complete -> closed |

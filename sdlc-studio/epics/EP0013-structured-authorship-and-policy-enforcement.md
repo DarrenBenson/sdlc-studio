@@ -1,6 +1,6 @@
 # EP0013: Structured authorship and policy enforcement
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 
@@ -27,3 +27,4 @@ test tier). Depends on EP0012's identity/index guarantees; CR0169 blocks the enf
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-06 | sdlc | Created via `new` (deterministic) |
+| 2026-07-08 | sweep-close (backlog reconciliation) | All 5 stories (US0060-US0064) Done; epic status was never cascaded to Done -> closed |

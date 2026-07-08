@@ -1,6 +1,6 @@
 # EP0018: Tooling hardening and review debt
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 
@@ -30,3 +30,4 @@ independent of the schema work; CR0180/CR0182 are smaller now that BG0062/BG0061
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-06 | sdlc | Created via `new` (deterministic) |
+| 2026-07-08 | sweep-close (backlog reconciliation) | All 7 stories (US0076-US0082) Done; epic status was never cascaded to Done -> closed |

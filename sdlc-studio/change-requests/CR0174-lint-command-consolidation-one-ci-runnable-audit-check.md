@@ -1,6 +1,6 @@
 # CR-0174: Lint command consolidation: one CI-runnable audit-check enforcing the team-schema rules
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic (v4 breakdown):** [EP0013](../epics/EP0013-structured-authorship-and-policy-enforcement.md)
@@ -91,3 +91,4 @@ config individually so one bad rule does not force bypassing the suite.
 | --- | --- | --- |
 | 2026-07-06 | Sam Eriksson (QA amigo) | Created via `new` (deterministic) |
 | 2026-07-06 | Sam Eriksson (QA amigo) | Full scope drafted; six stable rule ids as crew-linter worked examples |
+| 2026-07-08 | sweep-close (backlog reconciliation) | Delivered via US0063, already Done; CR status was never cascaded to Complete -> closed |

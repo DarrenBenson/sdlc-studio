@@ -1,6 +1,6 @@
 # EP0012: Distributed artefact identity (schema v3)
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 
@@ -27,3 +27,4 @@ build on the identity and index guarantees established here.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-06 | sdlc | Created via `new` (deterministic) |
+| 2026-07-08 | sweep-close (backlog reconciliation) | All 5 stories (US0055-US0059) Done; epic status was never cascaded to Done -> closed |

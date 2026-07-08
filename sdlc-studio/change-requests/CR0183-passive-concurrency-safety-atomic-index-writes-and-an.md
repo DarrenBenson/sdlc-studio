@@ -1,6 +1,6 @@
 # CR-0183: Passive concurrency safety: atomic index writes and an advisory allocation lock
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic (v4 breakdown):** [EP0015](../epics/EP0015-passive-concurrency-and-write-path-safety.md)
@@ -72,3 +72,4 @@ Mitigate with a timeout + stale-lock reclaim and keeping the critical section mi
 | --- | --- | --- |
 | 2026-07-06 | Sam Eriksson (QA amigo) | Created via `new` (deterministic) |
 | 2026-07-06 | Sam Eriksson (QA amigo) | Full scope drafted from RV0006 architecture leg; positioned as complement to RFC0024 |
+| 2026-07-08 | sweep-close (backlog reconciliation) | Delivered via US0069, already Done; CR status was never cascaded to Complete -> closed |

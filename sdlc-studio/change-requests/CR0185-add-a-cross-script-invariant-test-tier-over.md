@@ -1,6 +1,6 @@
 # CR-0185: Add a cross-script invariant test tier over the cascade seams
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic (v4 breakdown):** [EP0013](../epics/EP0013-structured-authorship-and-policy-enforcement.md)
@@ -67,3 +67,4 @@ Low. New tests only; the one caution is not baking the current buggy behaviour i
 | --- | --- | --- |
 | 2026-07-06 | Sam Eriksson (QA amigo) | Created via `new` (deterministic) |
 | 2026-07-06 | Sam Eriksson (QA amigo) | Full scope drafted from RV0006 test-architecture finding |
+| 2026-07-08 | sweep-close (backlog reconciliation) | Delivered via US0064, already Done; CR status was never cascaded to Complete -> closed |

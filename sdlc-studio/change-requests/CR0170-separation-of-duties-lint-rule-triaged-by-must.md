@@ -1,6 +1,6 @@
 # CR-0170: Separation of duties lint rule: triaged_by must not equal raised_by
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic (v4 breakdown):** [EP0013](../epics/EP0013-structured-authorship-and-policy-enforcement.md)
@@ -84,3 +84,4 @@ solo-first is still the primary team shape.
 | --- | --- | --- |
 | 2026-07-06 | Sam Eriksson (QA amigo) | Created via `new` (deterministic) |
 | 2026-07-06 | Sam Eriksson (QA amigo) | Full scope drafted; solo-human warning carve-out noted |
+| 2026-07-08 | sweep-close (backlog reconciliation) | Delivered via US0061, already Done; CR status was never cascaded to Complete -> closed |

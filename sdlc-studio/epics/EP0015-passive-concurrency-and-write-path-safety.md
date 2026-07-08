@@ -1,6 +1,6 @@
 # EP0015: Passive concurrency and write-path safety
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 
@@ -22,3 +22,4 @@ v4 foundation tranche; explicitly not a scheduler.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-06 | sdlc | Created via `new` (deterministic) |
+| 2026-07-08 | sweep-close (backlog reconciliation) | Its 1 story (US0069) Done; epic status was never cascaded to Done -> closed |

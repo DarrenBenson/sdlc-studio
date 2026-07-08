@@ -1,6 +1,6 @@
 # CR-0166: batch scaffold wiring polish: stray separator, story header format, empty by-epic table
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Low
 > **Type:** Improvement
 > **Date:** 2026-07-05
@@ -22,3 +22,4 @@ Three cosmetic tool-wiring edges from the v3.5.0 eval run (scenario 02 worker + 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-05 | audit | Raised |
+| 2026-07-08 | sweep-close (backlog reconciliation) | Delivered via US0081, already Done; CR status was never cascaded to Complete -> closed |

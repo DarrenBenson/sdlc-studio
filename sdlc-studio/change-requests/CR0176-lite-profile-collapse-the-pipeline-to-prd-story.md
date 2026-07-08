@@ -1,6 +1,6 @@
 # CR-0176: Lite profile: collapse the pipeline to PRD, story, implement for small repos
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic (v4 breakdown):** [EP0016](../epics/EP0016-host-repo-review-and-lite-on-ramp.md)
@@ -85,3 +85,4 @@ fixture project in the test suite so every guard runs both profiles.
 | --- | --- | --- |
 | 2026-07-06 | Lena Marsh (Product amigo) | Created via `new` (deterministic) |
 | 2026-07-06 | Lena Marsh (Product amigo) | Full scope drafted; lite keeps the discipline, drops the ceremony |
+| 2026-07-08 | sweep-close (backlog reconciliation) | Delivered via US0071, already Done; CR status was never cascaded to Complete -> closed |

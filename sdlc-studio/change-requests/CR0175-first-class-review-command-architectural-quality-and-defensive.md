@@ -1,6 +1,6 @@
 # CR-0175: First-class review command: architectural, quality and defensive security review of the host repo
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic (v4 breakdown):** [EP0016](../epics/EP0016-host-repo-review-and-lite-on-ramp.md)
@@ -101,3 +101,4 @@ the command on frontier models.
 | --- | --- | --- |
 | 2026-07-06 | Sam Eriksson (QA amigo) | Created via `new` (deterministic) |
 | 2026-07-06 | Sam Eriksson (QA amigo) | Full scope drafted; on-ramp framing and verbatim security policy pinned |
+| 2026-07-08 | sweep-close (backlog reconciliation) | Delivered via US0070, already Done; CR status was never cascaded to Complete -> closed |
