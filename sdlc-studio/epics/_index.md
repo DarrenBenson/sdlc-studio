@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 2 |
+| Draft | 1 |
 | Ready | 9 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 7 |
+| Done | 8 |
 | **Total** | **18** |
 
 > Generate-mode note: all epics are **Ready** (spec extracted from the existing
@@ -37,5 +37,5 @@
 | [EP0014](EP0014-agentic-triage-and-noise-control.md) | Agentic triage and noise control | Draft | -- | -- | 2026-07-06 | 2026-07-06 |
 | [EP0015](EP0015-passive-concurrency-and-write-path-safety.md) | Passive concurrency and write-path safety | Done | -- | -- | 2026-07-06 | 2026-07-06 |
 | [EP0016](EP0016-host-repo-review-and-lite-on-ramp.md) | Host-repo review and lite on-ramp | Done | -- | -- | 2026-07-06 | 2026-07-06 |
-| [EP0017](EP0017-positioning-and-evidence.md) | Positioning and evidence | Draft | -- | -- | 2026-07-06 | 2026-07-06 |
+| [EP0017](EP0017-positioning-and-evidence.md) | Positioning and evidence | Done | -- | -- | 2026-07-06 | 2026-07-06 |
 | [EP0018](EP0018-tooling-hardening-and-review-debt.md) | Tooling hardening and review debt | Done | -- | -- | 2026-07-06 | 2026-07-06 |

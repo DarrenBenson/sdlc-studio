@@ -1,6 +1,6 @@
 # EP0017: Positioning and evidence
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 
