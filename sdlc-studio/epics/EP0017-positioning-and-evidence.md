@@ -18,8 +18,8 @@ early because it validates or falsifies the whole v4 premise.
 
 - [ ] [US0072: README and positioning refresh under the three hard constraints](../stories/US0072-readme-and-positioning-refresh-under-the-three-hard.md)
 - [x] [US0073: Pre-register the benchmark protocol: task set, metrics, baseline](../stories/US0073-pre-register-the-benchmark-protocol-task-set-metrics.md)
-- [ ] [US0074: Benchmark harness runner, fixtures and held-back suites](../stories/US0074-benchmark-harness-runner-fixtures-and-held-back-suites.md)
-- [ ] [US0075: First measured benchmark run and published report](../stories/US0075-first-measured-benchmark-run-and-published-report.md)
+- [x] [US0074: Benchmark harness runner, fixtures and held-back suites](../stories/US0074-benchmark-harness-runner-fixtures-and-held-back-suites.md)
+- [x] [US0075: First measured benchmark run and published report](../stories/US0075-first-measured-benchmark-run-and-published-report.md)
 
 ## Revision History
 

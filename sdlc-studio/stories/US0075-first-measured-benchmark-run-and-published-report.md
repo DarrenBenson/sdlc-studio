@@ -1,6 +1,6 @@
 # US0075: First measured benchmark run and published report
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0017
@@ -21,6 +21,7 @@
 - **When** an N=1 spike runs across the fixtures, then N=5
 - **Then** the spike gives an early effect-size read before the full cost is committed
 - **Verify:** manual review of the spike output
+- **Verified:** yes (2026-07-08) - see docs/benchmarks/2026-07-08-n1-spike.md; independently reviewed (critic-verdicts.md)
 
 ### AC2: Published with raw data and error bars, either way
 
@@ -29,6 +30,7 @@
 - **Then** it carries raw per-run data and honest error bars, and an unflattering result does not
   block publication
 - **Verify:** manual review of the published report
+- **Verified:** yes (2026-07-08) - published despite being unflattering (no directional win for arm A); raw data in tools/bench/results/runs.jsonl
 
 ## Revision History
 

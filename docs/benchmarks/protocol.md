@@ -15,9 +15,11 @@ same task, measured by tokens, wall time, defect escapes, and rework rate?
 ## Arms
 
 - **A - sdlc-studio:** the full pipeline (spec -> plan -> implement -> verify -> reconcile).
-- **B - baseline:** plain Claude Code with a genuinely good `CLAUDE.md`, adapted from published
-  best practice and **signed off by a review seat that is not the harness author** (a
-  straw-man baseline invalidates the comparison - CR0178 acceptance criterion).
+  `tools/bench/arms/pipeline_CLAUDE.md`.
+- **B - baseline:** plain Claude Code with a genuinely good `CLAUDE.md`
+  (`tools/bench/arms/baseline_CLAUDE.md`) - **signed off 2026-07-08 by an independent review
+  seat (not the harness author)** as genuinely good, no straw-man phrasing found (a straw-man
+  baseline invalidates the comparison - CR0178 acceptance criterion).
 
 ## Task set (fixed)
 
@@ -59,6 +61,10 @@ any, are clearly labelled as anecdotal (not part of the measured N).
 ## Status
 
 - [x] Protocol pre-registered (this file)
-- [ ] Harness + fixtures + hidden suites built (CR0178 WS2 / US0074)
-- [ ] N=1 spike run
+- [x] Harness + fixtures + hidden suites built (CR0178 WS2 / US0074)
+- [x] N=1 spike run - see [2026-07-08-n1-spike.md](2026-07-08-n1-spike.md): 0 defect escapes
+      either arm, no consistent directional win on tokens/wall-time. The spike's own finding
+      is that these 3 fixtures don't yet exercise the pipeline's differentiating claims (all
+      3 arm-A runs judged the tasks too small to warrant the pipeline) - **N=5 on this
+      fixture set is paused pending a fixture-design decision**, not proceeding blind.
 - [ ] N=5 measured run + published report (CR0178 WS3 / US0075)

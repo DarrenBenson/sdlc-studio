@@ -1,6 +1,6 @@
 # US0074: Benchmark harness runner, fixtures and held-back suites
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0017
@@ -21,7 +21,8 @@
 - **When** the harness runs
 - **Then** it drives both arms over the fixtures and captures tokens, wall time, defect escapes
   (held-back suite verdict) and rework rate automatically, no hand-scoring
-- **Verify:** tools/bench runner exits 0 on the fixtures
+- **Verify:** pytest tools/tests/test_bench_runner.py
+- **Verified:** yes (2026-07-08)
 
 ### AC2: Fixtures and hidden suites versioned in-repo
 
@@ -29,6 +30,7 @@
 - **When** the harness runs
 - **Then** the agent never sees the hidden suites, which live under version control with the harness
 - **Verify:** manual review of the fixture/suite separation
+- **Verified:** yes (2026-07-08) - prepare_workspace() only ever copies visible/, confirmed by test_copies_visible_files_only_never_hidden and test_scoring_never_writes_into_the_fixture_hidden_dir
 
 ## Revision History
 

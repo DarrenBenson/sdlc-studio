@@ -1,0 +1,6 @@
+{"fixture": "brownfield-pagination", "arm": "A", "run_id": "n1", "tokens": 36345, "wall_time_s": 49.4, "iterations": 1, "defect_escape": false, "rework": false}
+{"fixture": "brownfield-pagination", "arm": "B", "run_id": "n1", "tokens": 42070, "wall_time_s": 85.2, "iterations": 2, "defect_escape": false, "rework": false}
+{"fixture": "brownfield-lru-cache", "arm": "A", "run_id": "n1", "tokens": 42242, "wall_time_s": 52.6, "iterations": 1, "defect_escape": false, "rework": false}
+{"fixture": "brownfield-lru-cache", "arm": "B", "run_id": "n1", "tokens": 37728, "wall_time_s": 58.3, "iterations": 3, "defect_escape": false, "rework": false}
+{"fixture": "greenfield-csv-dedupe", "arm": "A", "run_id": "n1", "tokens": 48744, "wall_time_s": 123.4, "iterations": 2, "defect_escape": false, "rework": false}
+{"fixture": "greenfield-csv-dedupe", "arm": "B", "run_id": "n1", "tokens": 43079, "wall_time_s": 109.6, "iterations": 1, "defect_escape": false, "rework": false}

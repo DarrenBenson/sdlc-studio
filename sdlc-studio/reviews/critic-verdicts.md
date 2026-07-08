@@ -136,3 +136,5 @@
 | CR0163 | APPROVE | Sam Eriksson (QA amigo, review render - RFC0020/CR0165) | driving session (token-optimisation tranche) | 2026-07-05 | - |
 | CR0164 | APPROVE | Sam Eriksson (QA amigo, review render - RFC0020/CR0165) | driving session (token-optimisation tranche) | 2026-07-05 | - |
 | CR0165 | APPROVE | Sam Eriksson (QA amigo, review render - RFC0020/CR0165) | driving session (token-optimisation tranche) | 2026-07-05 | - |
+| US0074 | APPROVE | subagent:a2d1aca636991e69a | main-loop:claude-sonnet-5 | 2026-07-08 | full-adversarial review of harness+fixtures+report; found a real iterations-vs-rework disclosure gap and 2 hardening gaps (module-shadow risk, missing CRLF test); all repaired and re-verified same-session |
+| US0075 | APPROVE | subagent:a2d1aca636991e69a | main-loop:claude-sonnet-5 | 2026-07-08 | verified table matches raw runs.jsonl exactly, core finding (arm A judged tasks too small for pipeline) is genuine not post-hoc, report honestly discloses n=1 limitation, instruction-level arm isolation, and both hardening gaps + fixes |

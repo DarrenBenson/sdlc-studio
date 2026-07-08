@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 7 |
+| Draft | 5 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 74 |
+| Done | 76 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -41,8 +41,8 @@
 | [US0071](US0071-lite-profile-collapsing-the-pipeline-to-prd-story.md) | Lite profile collapsing the pipeline to PRD, story, implement | Done | EP0016 | 2026-07-06 | 2026-07-06 |
 | [US0072](US0072-readme-and-positioning-refresh-under-the-three-hard.md) | README and positioning refresh under the three hard constraints | Draft | EP0017 | 2026-07-06 | 2026-07-06 |
 | [US0073](US0073-pre-register-the-benchmark-protocol-task-set-metrics.md) | Pre-register the benchmark protocol: task set, metrics, baseline | Done | EP0017 | 2026-07-06 | 2026-07-06 |
-| [US0074](US0074-benchmark-harness-runner-fixtures-and-held-back-suites.md) | Benchmark harness runner, fixtures and held-back suites | Draft | EP0017 | 2026-07-06 | 2026-07-06 |
-| [US0075](US0075-first-measured-benchmark-run-and-published-report.md) | First measured benchmark run and published report | Draft | EP0017 | 2026-07-06 | 2026-07-06 |
+| [US0074](US0074-benchmark-harness-runner-fixtures-and-held-back-suites.md) | Benchmark harness runner, fixtures and held-back suites | Done | EP0017 | 2026-07-06 | 2026-07-06 |
+| [US0075](US0075-first-measured-benchmark-run-and-published-report.md) | First measured benchmark run and published report | Done | EP0017 | 2026-07-06 | 2026-07-06 |
 | [US0076](US0076-harmonise-the-config-failure-regimes-with-a-warn.md) | Harmonise the config failure regimes with a warn on unhonoured override | Done | EP0018 | 2026-07-06 | 2026-07-06 |
 | [US0077](US0077-route-github-sync-and-verify-ac-through-shared.md) | Route github_sync and verify_ac through shared discovery and unify root flag | Done | EP0018 | 2026-07-06 | 2026-07-06 |
 | [US0078](US0078-consolidate-the-two-archive-implementations-on-iter-tables.md) | Consolidate the two archive implementations on iter_tables | Done | EP0018 | 2026-07-06 | 2026-07-06 |

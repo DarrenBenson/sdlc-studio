@@ -10,8 +10,7 @@
 > **Gates:** lint clean, 1249 script tests pass (+49 repo-only tools tests), `gate` PASS,
 > reconcile drift 0, npm audit 0, CI green on main.
 >
-> **Fixed:** `verify_ac.py`'s `pytest <path> -k <marker>` DSL glued the tail into one argv
-> element (false "file not found"); now `shlex.split`, matching the `go` verb.
+> **Fixed (BG0067):** `verify_ac.py`'s `pytest -k` DSL glued path+marker into one argv element (false "file not found"); now `shlex.split`, matching the `go` verb.
 >
 > **v4 is WORK-IN-PROGRESS, not released.** The v4 foundation (schema-v3 ULID identity - a
 > breaking change) and Tranche 2 (authorship/enforcement + tooling debt) are all on `main` and
@@ -38,21 +37,22 @@
   benchmark protocol). All schema-v3 enforcement is era-gated; v2 projects untouched. Several
   EP0018 CRs delivered a slice with the larger refactor scoped forward (CR0181/0182/0186/0187).
 - **v4.0.0 - distributed artefact identity (schema v3), the team-tool foundation.** The 6-story
-  foundation sprint (EP0012 identity + EP0015 concurrency), delivered trunk-based to main:
-  US0055 ULID generator + era-tolerant readers, US0056 v2->v3 migration (`migrate_v3.py`, order-
-  preserving, aliased, idempotent), US0057 friendly GitHub aliases, US0058 `index-derived` gate
-  check, US0069 atomic writes + advisory lock, US0059 TRD refresh + freshness guard. All opt-in
-  via `schema_version: 3`; v2 projects untouched. RFC0024 + RFC0025 accepted. Preceded by the
-  RV0006 self-review bug sweep (14 bugs, BG0053-BG0066) and the v4 breakdown (22 CRs into 7
-  epics and 28 stories).
-- **Backlog swept (2026-07-08):** EP0012/13/15/18 + 13 CRs were fully story-Done but stuck at
-  Draft/Proposed (status never cascaded) - closed mechanically, 0 drift after. Real remaining
-  backlog: **EP0014** agentic triage (US0065-0068), **EP0017** positioning/benchmark
-  (US0072/0074/0075), 5 EP0018 debt CRs not yet decomposed (CR0179/0181/0182/0186/0187), plus
-  CR0188 (fetch-before-sprint).
-- **Next:** before a v4 "big bang" cut, run the RFC0025 N=1 benchmark spike early - nothing has
-  validated the v4 premise beyond unit tests. Then EP0014 or EP0017. Migrate via
-  `migrate_v3.py apply` when chosen (still v2).
+  foundation sprint (EP0012 identity + EP0015 concurrency): US0055 ULID generator, US0056
+  v2->v3 migration (`migrate_v3.py`, order-preserving, aliased, idempotent), US0057 GitHub
+  aliases, US0058 `index-derived` gate, US0069 atomic writes + lock, US0059 TRD refresh. Opt-in
+  via `schema_version: 3`; v2 untouched. RFC0024 + RFC0025 accepted. Preceded by RV0006 (14
+  bugs, BG0053-BG0066) and the v4 breakdown (22 CRs into 7 epics, 28 stories).
+- **Backlog swept (2026-07-08):** EP0012/13/15/18 + 13 CRs were story-Done but stuck at
+  Draft/Proposed (never cascaded) - closed mechanically, 0 drift after.
+- **N=1 benchmark spike (2026-07-08, CR0178/US0074/US0075):** `tools/bench/` built, 6 live
+  runs. **Not flattering, important for the v4 go/no-go:** 0/3 defect escapes either arm,
+  no consistent win for the pipeline - arm A judged these small single-file tickets too
+  small to warrant it, so it behaved like plain Claude Code. `docs/benchmarks/
+  2026-07-08-n1-spike.md` (D0012). **N=5 paused** pending a fixture-design decision (bigger/
+  multi-file/ambiguous tasks - the pipeline's actual claimed territory).
+- **Next:** decide the fixture-redesign question above first. Then: US0072 (positioning,
+  depends on the benchmark result), EP0014 agentic triage (US0065-0068), 5 EP0018 debt CRs
+  not yet decomposed (CR0179/0181/0182/0186/0187), CR0188 (fetch-before-sprint).
 
 ## History (detail lives in the named retro / CHANGELOG entry)
 
