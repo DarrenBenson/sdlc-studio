@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 22 |
+| Proposed | 23 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 161 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 4 |
 | Blocked | 0 |
-| **Total** | **187** |
+| **Total** | **188** |
 
 ## All Changes
 
@@ -48,6 +48,7 @@
 | [CR-0185](CR0185-add-a-cross-script-invariant-test-tier-over.md) | Add a cross-script invariant test tier over the cascade seams | Proposed | Medium | Enhancement | 2026-07-06 | -- |
 | [CR-0186](CR0186-security-hardening-debt-review-2026-07-06-pinning.md) | Security hardening debt (review 2026-07-06): pinning, installer integrity, sync redaction, state hygiene | Proposed | Low | Improvement | 2026-07-06 | -- |
 | [CR-0187](CR0187-code-quality-debt-review-2026-07-06-shared.md) | Code-quality debt (review 2026-07-06): shared-layer bypasses, duplication, complexity, diagnostics | Proposed | Low | Improvement | 2026-07-06 | -- |
+| [CR-0188](CR0188-fetch-and-check-origin-drift-before-a-sprint.md) | Fetch and check origin drift before a sprint batch or artifact-id allocation | Proposed | P2 | retrospective | 2026-07-08 | -- |
 
 ## Archived Releases
 
