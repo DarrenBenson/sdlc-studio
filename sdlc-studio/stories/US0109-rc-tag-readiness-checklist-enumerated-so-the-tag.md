@@ -1,6 +1,6 @@
 # US0109: rc-tag readiness checklist enumerated so the tag decision is a checklist read
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0024
@@ -24,6 +24,7 @@ Delivers CR0198 item 5. The tag cut, freeze lift, and push remain an explicit op
 - **When** it is read
 - **Then** it lists each requirement with a checkable state: green portable gate, migration rehearsal done (US0106), EP0014 closed, open-bug count 0, version/CHANGELOG at 4.0.0-rc.1 (US0108)
 - **Verify:** file sdlc-studio/reviews/v4-rc-readiness.md
+- **Verified:** yes (2026-07-09)
 
 ### AC2: the checklist names the open-bug and EP0014 gates explicitly
 
@@ -31,6 +32,7 @@ Delivers CR0198 item 5. The tag cut, freeze lift, and push remain an explicit op
 - **When** it is read
 - **Then** it names the open-bug-count-0 gate and the EP0014-closed gate (regenerated from the census at write time, not a stale hand-typed number)
 - **Verify:** grep "open.bug|EP0014" sdlc-studio/reviews/v4-rc-readiness.md
+- **Verified:** yes (2026-07-09)
 
 ## Revision History
 
