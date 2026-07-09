@@ -109,20 +109,54 @@ def score(fixture: str, workspace: Path, fixtures_dir: Path = FIXTURES_DIR,
                 "output": (result.stdout + result.stderr)[-4000:]}
 
 
+# Protocol v2 forbids pooling calibration rows with measured rows. `phase` makes that
+# rule live in the data, not the operator's memory. `v2n1` was the protocol-v2 calibration
+# spike; every other run id is a measured run. Classification is only used to backfill rows
+# recorded before the field existed - new rows carry their own phase.
+_CALIBRATION_RUN_IDS = {"v2n1"}
+
+
+def classify_phase(entry: dict) -> str:
+    """The phase a legacy (pre-field) row should carry, from its run id."""
+    return "calibration" if entry.get("run_id") in _CALIBRATION_RUN_IDS else "measured"
+
+
 def record(entry: dict, results_path: Path | None = None) -> dict:
     """Append one run's metrics. Required keys: fixture, arm, run_id. Optional: tokens,
-    wall_time_s, iterations, defect_escape, rework. Unknown extra keys are kept as-is -
-    this is a benchmark log, not a fixed schema like the skill's own telemetry.py.
+    wall_time_s, iterations, defect_escape, rework, phase. Unknown extra keys are kept
+    as-is - this is a benchmark log, not a fixed schema like the skill's own telemetry.py.
+    A row is stamped `phase: "measured"` unless the caller sets it (the operator passes
+    `--phase calibration` for a calibration run); the default keeps the majority case honest.
     `results_path` resolves at CALL time (module attribute, not a def-time default) so
     tests can redirect it - a def-time default silently wrote test rows into the real log."""
     results_path = results_path if results_path is not None else RESULTS_PATH
     for k in ("fixture", "arm", "run_id"):
         if k not in entry:
             raise ValueError(f"record: missing required key {k!r}")
+    entry = dict(entry)                       # never mutate the caller's dict
+    entry.setdefault("phase", "measured")
     results_path.parent.mkdir(parents=True, exist_ok=True)
     with results_path.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(entry) + "\n")
     return entry
+
+
+def backfill_phases(results_path: Path | None = None) -> int:
+    """One-time migration: stamp a `phase` on every existing row that lacks one
+    (`classify_phase`), leaving already-stamped rows untouched. Returns the number stamped;
+    idempotent (a second run stamps nothing). Rewrites the file in place."""
+    results_path = results_path if results_path is not None else RESULTS_PATH
+    rows = read_all(results_path)
+    stamped = 0
+    for r in rows:
+        if "phase" not in r:
+            r["phase"] = classify_phase(r)
+            stamped += 1
+    if stamped:
+        results_path.parent.mkdir(parents=True, exist_ok=True)
+        results_path.write_text(
+            "".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+    return stamped
 
 
 def read_all(results_path: Path | None = None) -> list[dict]:
@@ -186,12 +220,19 @@ def cost_index(model_mix: dict, prices: dict) -> float | None:
     return round(sum(n * prices[t] for t, n in model_mix.items()), 3)
 
 
-def summarize(entries: list[dict], prices: dict | None = None) -> dict:
+def summarize(entries: list[dict], prices: dict | None = None,
+              include_phases: set | None = None) -> dict:
     """Per (fixture, arm) aggregates: n, defect_escape_rate, rework_rate, mean/min/max
     tokens and wall_time_s, mean audit score, and (when the operator supplies --price and
     runs carry a model mix) a mean cost index. A field absent from every entry in a group
-    is None, not a fabricated 0."""
+    is None, not a fabricated 0.
+
+    Calibration rows are excluded by default (protocol v2's no-pooling rule, enforced by
+    the tool). `include_phases` selects which phases count; None means measured-only. A row
+    with no `phase` counts as measured, so a legacy log not yet backfilled still aggregates."""
     prices = prices or {}
+    include = include_phases or {"measured"}
+    entries = [e for e in entries if e.get("phase", "measured") in include]
     groups: dict[tuple, list[dict]] = {}
     for e in entries:
         groups.setdefault((e.get("fixture"), e.get("arm")), []).append(e)
@@ -262,14 +303,31 @@ def cmd_record(args: argparse.Namespace) -> int:
         entry["audit_score"] = args.audit_score
     if args.model_mix:
         entry["model_mix"] = parse_model_mix(args.model_mix)
+    entry["phase"] = args.phase
     record(entry)
-    print(f"recorded {entry['fixture']}/{entry['arm']}/{entry['run_id']}")
+    print(f"recorded {entry['fixture']}/{entry['arm']}/{entry['run_id']} (phase {args.phase})")
     return 0
 
 
 def cmd_summary(args: argparse.Namespace) -> int:
-    s = summarize(read_all(), prices=parse_price_map(args.price))
+    rows = read_all()
+    include = None
+    if args.include_phase:
+        vals = set(args.include_phase)
+        unknown = vals - {"measured", "calibration", "all"}
+        if unknown:
+            raise ValueError(f"--include-phase: unknown phase(s) {sorted(unknown)} - "
+                             "expected measured, calibration, or all")
+        include = ({r.get("phase", "measured") for r in rows} or {"measured"}) \
+            if "all" in vals else {"measured"} | vals
+    s = summarize(rows, prices=parse_price_map(args.price), include_phases=include)
     print(json.dumps(s, indent=2))
+    return 0
+
+
+def cmd_backfill(args: argparse.Namespace) -> int:
+    n = backfill_phases()
+    print(f"backfilled phase on {n} row(s)")
     return 0
 
 
@@ -307,12 +365,22 @@ def build_parser() -> argparse.ArgumentParser:
                     help="0-1 Auditability score from audit_quiz.py")
     rc.add_argument("--model-mix", dest="model_mix",
                     help="tiers that delivered the run, e.g. tiny:2,medium:1 (arm R)")
+    rc.add_argument("--phase", choices=("measured", "calibration"), default="measured",
+                    help="measured (default) or calibration; calibration rows are excluded "
+                         "from summary aggregates unless --include-phase asks for them")
     rc.set_defaults(func=cmd_record)
 
     sm = sub.add_parser("summary", help="Aggregate results per fixture x arm.")
     sm.add_argument("--price", help="relative tier prices, e.g. tiny=0.25,small=1,large=5 "
                                       "(operator-supplied; enables the cost index)")
+    sm.add_argument("--include-phase", dest="include_phase", action="append",
+                    help="add a phase to the default measured-only aggregate (repeatable); "
+                         "e.g. --include-phase calibration, or --include-phase all. Calibration "
+                         "rows are excluded by default (protocol v2 no-pooling rule).")
     sm.set_defaults(func=cmd_summary)
+
+    bf = sub.add_parser("backfill", help="One-time: stamp phase on legacy rows lacking it.")
+    bf.set_defaults(func=cmd_backfill)
 
     return p
 

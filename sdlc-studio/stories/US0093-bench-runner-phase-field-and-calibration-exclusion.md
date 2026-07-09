@@ -1,6 +1,6 @@
 # US0093: Bench runner: phase field and calibration exclusion
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0019
@@ -23,6 +23,7 @@ Closes CR0196. Repo-only (`tools/bench/`, not in the skill payload). `protocol-v
 - **When** a run is recorded without an explicit phase
 - **Then** the entry carries `phase: "measured"` by default and accepts `phase: "calibration"`; existing `runs.jsonl` rows are backfilled (v2n1 rows = calibration, spike/measured rows = measured)
 - **Verify:** pytest tools/tests/test_bench_runner.py::PhaseFieldTests
+- **Verified:** yes (2026-07-09)
 
 ### AC2: summary excludes calibration rows unless explicitly included
 
@@ -30,6 +31,7 @@ Closes CR0196. Repo-only (`tools/bench/`, not in the skill payload). `protocol-v
 - **When** `summary` runs without `--include-phase`
 - **Then** calibration rows are excluded from every aggregate; `--include-phase calibration` opts them back in
 - **Verify:** pytest tools/tests/test_bench_runner.py::SummaryPhaseTests
+- **Verified:** yes (2026-07-09)
 
 ### AC3: a calibration row cannot move a measured aggregate
 
@@ -37,6 +39,7 @@ Closes CR0196. Repo-only (`tools/bench/`, not in the skill payload). `protocol-v
 - **When** the default summary is computed
 - **Then** no measured mean/min/max/n changes versus the calibration row being absent
 - **Verify:** pytest tools/tests/test_bench_runner.py::CalibrationIsolationTests
+- **Verified:** yes (2026-07-09)
 
 ### AC4: the behaviour is documented and the protocol is unchanged
 
@@ -44,6 +47,7 @@ Closes CR0196. Repo-only (`tools/bench/`, not in the skill payload). `protocol-v
 - **When** the feature ships
 - **Then** the runner help text describes `--include-phase` and the default exclusion; `protocol-v2.md` is byte-unchanged
 - **Verify:** shell python3 tools/bench/runner.py summary -h 2>&1 | grep -q include-phase
+- **Verified:** yes (2026-07-09)
 
 ## Revision History
 

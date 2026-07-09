@@ -87,6 +87,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   approved against the wrong oracle; in one of the two runs the worker went on to write the
   error into the workspace spec itself. Points at an independent AC-vs-spec conformance
   check before implementation.
+- **Benchmark runner - calibration rows excluded by the tool, not by hand** (CR0196/US0093,
+  repo-only, not in the skill payload). Protocol v2 forbids pooling calibration rows with
+  measured ones, but producing the N=5 report needed hand-filtering that will one day be
+  forgotten. `runner record` now stamps a `phase` field (default `measured`; `--phase
+  calibration` for a calibration run), `runner summary` excludes calibration rows by default
+  (`--include-phase calibration|all` opts them back in), and a one-time `runner backfill`
+  stamps legacy rows (`v2n1` = calibration, else measured). `docs/benchmarks/protocol-v2.md`
+  is unchanged (frozen).
 - **Positioning refresh + the full value document** (CR0177/US0072): README reframed under
   the three hard constraints (anti-vibe-coding umbrella, greenfield equally visible,
   catalogue below the fold) with the now-unlocked team-shape and evidence paragraphs; new

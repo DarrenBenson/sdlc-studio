@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 4 |
+| Ready | 3 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 88 |
+| Done | 89 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -60,7 +60,7 @@
 | [US0090](US0090-deterministic-plan-review-trigger-and-gate.md) | Deterministic plan-review trigger and gate | Ready | EP0019 | 2026-07-09 | 2026-07-09 |
 | [US0091](US0091-plan-reviewer-charter-verdict-slot-and-telemetry.md) | Plan-reviewer charter, verdict slot and telemetry | Ready | EP0019 | 2026-07-09 | 2026-07-09 |
 | [US0092](US0092-block-untraced-spec-document-edits-at-review.md) | Block untraced spec-document edits at review | Ready | EP0019 | 2026-07-09 | 2026-07-09 |
-| [US0093](US0093-bench-runner-phase-field-and-calibration-exclusion.md) | Bench runner: phase field and calibration exclusion | Ready | EP0019 | 2026-07-09 | 2026-07-09 |
+| [US0093](US0093-bench-runner-phase-field-and-calibration-exclusion.md) | Bench runner: phase field and calibration exclusion | Done | EP0019 | 2026-07-09 | 2026-07-09 |
 
 ## Archived Releases
 

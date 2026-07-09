@@ -13,7 +13,7 @@
 - [ ] [US0090: Deterministic plan-review trigger and gate](../stories/US0090-deterministic-plan-review-trigger-and-gate.md)
 - [ ] [US0091: Plan-reviewer charter, verdict slot and telemetry](../stories/US0091-plan-reviewer-charter-verdict-slot-and-telemetry.md)
 - [ ] [US0092: Block untraced spec-document edits at review](../stories/US0092-block-untraced-spec-document-edits-at-review.md)
-- [ ] [US0093: Bench runner: phase field and calibration exclusion](../stories/US0093-bench-runner-phase-field-and-calibration-exclusion.md)
+- [x] [US0093: Bench runner: phase field and calibration exclusion](../stories/US0093-bench-runner-phase-field-and-calibration-exclusion.md)
 
 ## Revision History
 

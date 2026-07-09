@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 import tempfile
 import unittest
@@ -300,6 +301,101 @@ class TranscriptMetricsTests(unittest.TestCase):
             p.write_text('{"irrelevant": true}', encoding="utf-8")
             with self.assertRaises(ValueError):
                 tm.parse_file(p)
+
+
+class PhaseFieldTests(unittest.TestCase):
+    """US0093/CR0196 AC1: record stamps a phase (default measured); classify + backfill
+    stamp existing rows (v2n1 = calibration, everything else = measured)."""
+
+    def test_record_defaults_phase_measured(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            rp = Path(d) / "runs.jsonl"
+            runner.record({"fixture": "f", "arm": "A", "run_id": "n2"}, results_path=rp)
+            self.assertEqual(runner.read_all(rp)[0]["phase"], "measured")
+
+    def test_record_keeps_explicit_calibration_phase(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            rp = Path(d) / "runs.jsonl"
+            runner.record({"fixture": "f", "arm": "A", "run_id": "v2n1",
+                           "phase": "calibration"}, results_path=rp)
+            self.assertEqual(runner.read_all(rp)[0]["phase"], "calibration")
+
+    def test_classify_phase_v2n1_is_calibration_else_measured(self) -> None:
+        self.assertEqual(runner.classify_phase({"run_id": "v2n1"}), "calibration")
+        self.assertEqual(runner.classify_phase({"run_id": "n2"}), "measured")
+        self.assertEqual(runner.classify_phase({"run_id": "n1"}), "measured")
+
+    def test_backfill_stamps_only_rows_missing_phase(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            rp = Path(d) / "runs.jsonl"
+            # two legacy rows without phase (one v2n1 calibration, one measured) + one already stamped
+            for e in ({"fixture": "f", "arm": "A", "run_id": "v2n1"},
+                      {"fixture": "f", "arm": "A", "run_id": "n3"}):
+                rp.parent.mkdir(parents=True, exist_ok=True)
+                with rp.open("a", encoding="utf-8") as fh:
+                    fh.write(json.dumps(e) + "\n")
+            runner.record({"fixture": "f", "arm": "A", "run_id": "n4",
+                           "phase": "measured"}, results_path=rp)
+            stamped = runner.backfill_phases(rp)
+            self.assertEqual(stamped, 2)                     # only the two legacy rows
+            by = {r["run_id"]: r["phase"] for r in runner.read_all(rp)}
+            self.assertEqual(by["v2n1"], "calibration")
+            self.assertEqual(by["n3"], "measured")
+            self.assertEqual(runner.backfill_phases(rp), 0)  # idempotent
+
+
+class SummaryPhaseTests(unittest.TestCase):
+    """US0093/CR0196 AC2: summary excludes calibration unless opted back in."""
+
+    ROWS = [
+        {"fixture": "f", "arm": "A", "run_id": "n2", "phase": "measured", "tokens": 100},
+        {"fixture": "f", "arm": "A", "run_id": "n3", "phase": "measured", "tokens": 200},
+        {"fixture": "f", "arm": "A", "run_id": "v2n1", "phase": "calibration", "tokens": 9000},
+    ]
+
+    def test_summary_excludes_calibration_by_default(self) -> None:
+        s = runner.summarize(self.ROWS)
+        self.assertEqual(s["f::A"]["n"], 2)
+        self.assertEqual(s["f::A"]["mean_tokens"], 150.0)
+
+    def test_include_phase_opts_calibration_back_in(self) -> None:
+        s = runner.summarize(self.ROWS, include_phases={"measured", "calibration"})
+        self.assertEqual(s["f::A"]["n"], 3)
+
+    def test_missing_phase_counts_as_measured(self) -> None:
+        s = runner.summarize([{"fixture": "f", "arm": "A", "run_id": "n2", "tokens": 100}])
+        self.assertEqual(s["f::A"]["n"], 1)
+
+
+class IncludePhaseValidationTests(unittest.TestCase):
+    """US0093/CR0196: a mistyped --include-phase errors rather than silently excluding."""
+
+    def test_unknown_include_phase_raises(self) -> None:
+        with self.assertRaises(ValueError):
+            runner.main(["summary", "--include-phase", "calibraton"])  # typo
+
+    def test_record_does_not_mutate_caller_dict(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            e = {"fixture": "f", "arm": "A", "run_id": "n2"}
+            runner.record(e, results_path=Path(d) / "runs.jsonl")
+            self.assertNotIn("phase", e)                     # caller's dict untouched
+
+
+class CalibrationIsolationTests(unittest.TestCase):
+    """US0093/CR0196 AC3: a calibration row cannot move a measured aggregate."""
+
+    def test_calibration_row_leaves_measured_aggregate_identical(self) -> None:
+        measured = [
+            {"fixture": "f", "arm": "A", "run_id": "n2", "phase": "measured",
+             "tokens": 100, "wall_time_s": 10},
+            {"fixture": "f", "arm": "A", "run_id": "n3", "phase": "measured",
+             "tokens": 200, "wall_time_s": 20},
+        ]
+        base = runner.summarize(measured)
+        with_cal = runner.summarize(measured + [
+            {"fixture": "f", "arm": "A", "run_id": "v2n1", "phase": "calibration",
+             "tokens": 9999, "wall_time_s": 999}])
+        self.assertEqual(base["f::A"], with_cal["f::A"])
 
 
 if __name__ == "__main__":
