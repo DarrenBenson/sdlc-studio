@@ -1143,6 +1143,58 @@ def _line_id(line: str) -> str | None:
     return m.group(0) if m else None
 
 
+def _type_id_in(cell: str, prefix: str) -> str | None:
+    """An artifact id of this type in a cell (e.g. US0042, allowing a CR-0042 dash)."""
+    m = re.search(rf"\b{re.escape(prefix)}-?\d+\b", cell)
+    return m.group(0) if m else None
+
+
+def master_terminal_rows(text: str, type_: str, repo_root: Path | str) -> dict | None:
+    """The single shared archive walker: via `sdlc_md.iter_tables` (the one structural boundary,
+    no hand-rolled table parsing), find the MASTER data table for `type_` - the status-bearing
+    table with the most rows carrying this type's id in its ID column, so a secondary/per-epic
+    view can never win selection and cause a double-archive - and classify its id-bearing rows.
+
+    Returns {header_line0, header_cells, rows} where rows = [(line0, id, canonical_status_or_None,
+    is_terminal)] (0-based line indices), or None when no master table / no id rows. Status is
+    canonicalised against the type vocab; `None` means an unrecognised status (the caller decides
+    whether to fail loud). `is_terminal` uses the shared `sdlc_md.terminal_statuses`."""
+    root = Path(repo_root)
+    prefix = sdlc_md.ARTIFACT_TYPES[type_][1]
+    vocab = sdlc_md.status_vocab(type_, root)
+    terminal = sdlc_md.terminal_statuses(type_)
+    best = None
+    best_n = 0
+    best_cols = (0, None)
+    for tbl in sdlc_md.iter_tables(text, header_predicate=_VOCAB_HEADER):
+        hdr = tbl["header"]
+        if not hdr:
+            continue
+        low = [c.strip().lower() for c in hdr]
+        if "status" not in low:
+            continue
+        status_col = low.index("status")
+        id_col = low.index("id") if "id" in low else 0
+        n = sum(1 for _ln, cells in tbl["rows"]
+                if id_col < len(cells) and _type_id_in(cells[id_col], prefix))
+        if n > best_n:
+            best, best_n, best_cols = tbl, n, (id_col, status_col)
+    if best is None:
+        return None
+    id_col, status_col = best_cols
+    rows: list[tuple] = []
+    for lineno, cells in best["rows"]:
+        if id_col >= len(cells):
+            continue
+        rid = _type_id_in(cells[id_col], prefix)
+        if not rid:
+            continue
+        raw = cells[status_col].strip() if status_col is not None and status_col < len(cells) else ""
+        st = _canonical_status(raw, vocab)
+        rows.append((lineno - 1, rid, st, st in terminal))
+    return {"header_line0": best["header_line"] - 1, "header_cells": best["header"], "rows": rows}
+
+
 def archive_plan(type_: str, repo_root: Path | str) -> dict | None:
     """Compute which terminal rows to relocate from `<type>/_index.md` to the archive
     sub-index. Returns {move, keep_text, archive_text, archive_path, index_path} or None
@@ -1154,47 +1206,29 @@ def archive_plan(type_: str, repo_root: Path | str) -> dict | None:
     index_path = root / rel / "_index.md"
     if not index_path.exists():
         return None
-    vocab = sdlc_md.status_vocab(type_, root)
-    terminal = sdlc_md.terminal_statuses(type_)
-    if not terminal:
+    if not sdlc_md.terminal_statuses(type_):
         return None
     original = index_path.read_text(encoding="utf-8")
     lines = original.splitlines()
-    status_col = id_col = None
-    header = sep = None
-    in_table = False
-    keep: list[str] = []
-    move: list[str] = []
-    for line in lines:
-        cells = _table_cells(line)
-        if cells is None:  # separators (table_cells returns None) and prose/blanks
-            if in_table and _is_sep_line(line):
-                if sep is None:
-                    sep = line
-                keep.append(line)
-                continue
-            in_table = False
-            keep.append(line)
-            continue
-        lowered = [c.strip().lower() for c in cells]
-        if len(cells) > 2 and "status" in lowered and "id" in lowered:  # data-table header
-            status_col, id_col = lowered.index("status"), lowered.index("id")
-            header, in_table = line, True
-            keep.append(line)
-            continue
-        if in_table and id_col is not None and id_col < len(cells) and _line_id(cells[id_col]):
-            raw = cells[status_col].strip() if status_col is not None and status_col < len(cells) else ""
-            status = _canonical_status(raw, vocab)
-            if status is None:
-                raise ValueError(
-                    f"{type_} index row {_line_id(cells[id_col])}: status {raw!r} is not a "
-                    f"{type_} status - refusing to archive (fix the row first)")
-            (move if status in terminal else keep).append(line)
-            continue
-        keep.append(line)  # summary rows, prose, blanks
-    if not move or header is None or sep is None:
+    # Shared iter_tables walker (no hand-rolled table parsing): pick the master table and its
+    # terminal rows. Fail loud on an unrecognised status before any write (LL0008).
+    m = master_terminal_rows(original, type_, root)
+    if m is None:
         return None
-    moved_ids = {_line_id(m) for m in move}
+    for line0, rid, status, _term in m["rows"]:
+        if status is None:
+            raw = lines[line0]
+            raise ValueError(
+                f"{type_} index row {rid}: status in {raw!r} is not a {type_} status - "
+                f"refusing to archive (fix the row first)")
+    move_idx = {line0 for line0, _id, _st, term in m["rows"] if term}
+    if not move_idx:
+        return None
+    header = lines[m["header_line0"]]
+    sep = "|" + " --- |" * (header.count("|") - 1)
+    move = [lines[i] for i in sorted(move_idx)]
+    keep = [ln for i, ln in enumerate(lines) if i not in move_idx]
+    moved_ids = {rid for _l, rid, _st, term in m["rows"] if term}
     archive_path = root / rel / "archive" / "_index.md"
     prior_rows: list[str] = []
     if archive_path.exists():

@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 2 |
+| Ready | 1 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 96 |
+| Done | 97 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -65,7 +65,7 @@
 | [US0095](US0095-upgrade-re-baseline-mechanical-backfill-and-next-transition.md) | Upgrade re-baseline mechanical backfill and next-transition policy | Done | EP0020 | 2026-07-09 | 2026-07-09 |
 | [US0096](US0096-split-the-reference-scripts-catalogue-into-a-lean.md) | Split the reference-scripts catalogue into a lean index | Ready | EP0020 | 2026-07-09 | 2026-07-09 |
 | [US0097](US0097-route-github-sync-and-verify-ac-through-the.md) | Route github_sync and verify_ac through the shared discovery layer | Done | EP0021 | 2026-07-09 | 2026-07-09 |
-| [US0098](US0098-consolidate-the-two-archive-implementations-on-iter-tables.md) | Consolidate the two archive implementations on iter_tables | Ready | EP0021 | 2026-07-09 | 2026-07-09 |
+| [US0098](US0098-consolidate-the-two-archive-implementations-on-iter-tables.md) | Consolidate the two archive implementations on iter_tables | Done | EP0021 | 2026-07-09 | 2026-07-09 |
 | [US0099](US0099-origin-drift-pre-flight-for-sprint-plan-and.md) | Origin-drift pre-flight for sprint plan and id allocation | Done | EP0021 | 2026-07-09 | 2026-07-09 |
 
 ## Archived Releases

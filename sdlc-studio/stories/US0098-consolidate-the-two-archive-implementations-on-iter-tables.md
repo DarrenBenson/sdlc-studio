@@ -1,6 +1,6 @@
 # US0098: Consolidate the two archive implementations on iter_tables
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0021
@@ -23,6 +23,7 @@ Delivers CR0182. Behaviour-preserving consolidation onto the declared structural
 - **When** the code is inspected
 - **Then** there is one archive implementation; the other delegates to it (a thin wrapper) or is removed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_archive.py::SingleArchiverTests
+- **Verified:** yes (2026-07-09)
 
 ### AC2: A multi-view index archives each terminal row exactly once
 
@@ -30,13 +31,15 @@ Delivers CR0182. Behaviour-preserving consolidation onto the declared structural
 - **When** archival runs
 - **Then** each terminal row is archived exactly once with aligned columns (the current double-archive path is closed)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_archive.py::MultiViewNoDoubleArchiveTests
+- **Verified:** yes (2026-07-09)
 
 ### AC3: Both paths use the shared terminal-status source
 
 - **Given** the consolidated archiver
 - **When** it decides which rows are terminal
 - **Then** it uses `sdlc_md.terminal_statuses`, so BG0061's Deferred mis-classification cannot recur
-- **Verify:** grep -E "terminal_statuses" .claude/skills/sdlc-studio/scripts/archive.py
+- **Verify:** grep terminal_statuses .claude/skills/sdlc-studio/scripts/archive.py
+- **Verified:** yes (2026-07-09)
 
 ### AC4: No hand-rolled table walkers remain in the archive paths
 
@@ -44,6 +47,7 @@ Delivers CR0182. Behaviour-preserving consolidation onto the declared structural
 - **When** the code is inspected
 - **Then** table parsing flows through `sdlc_md.iter_tables`; no private line-by-line table walker remains in either archive path
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_archive.py::IterTablesOnlyTests
+- **Verified:** yes (2026-07-09)
 
 ## Revision History
 

@@ -155,6 +155,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The two archive implementations consolidated onto one `iter_tables` walker (EP0021,
+  CR0182; US0098).** `archive.py` (release-based) and `reconcile.py`'s `archive_plan`/`archive_type`
+  (flat) each hand-rolled their own index-table parser; both now delegate to a shared
+  `reconcile.master_terminal_rows` built on `sdlc_md.iter_tables` (the single structural boundary).
+  It picks the master data table by id-row count, so a multi-view index cannot double-archive a
+  terminal row, and both paths use `sdlc_md.terminal_statuses` (BG0061's Deferred mis-classification
+  cannot recur). Behaviour-preserving; the fail-loud-on-unrecognised-status and `--statuses` override
+  contracts are intact.
 - **`github_sync` and `verify_ac` discover artefacts through the shared layer (EP0021, CR0181;
   US0097).** Both tools now find lowercase-named files (the old case-sensitive `CR*`/`US*` prefix
   globs silently missed `cr0001.md` on Linux): `github_sync` dropped its private `TYPE_DIRS`
