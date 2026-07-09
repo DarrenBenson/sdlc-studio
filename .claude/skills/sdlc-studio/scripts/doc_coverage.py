@@ -76,7 +76,8 @@ def check(repo_root: Path | str = ".") -> dict:
     for s in _scripts(skill_dir):
         if f"### `{s}.py`" not in refscripts:
             findings.append({"kind": "script-undocumented", "name": s, "blocking": True,
-                             "detail": f"scripts/{s}.py has no reference-scripts.md entry"})
+                             "detail": f"scripts/{s}.py has no reference-scripts*.md entry "
+                                       "(the lean index or a grouped detail page)"})
     if _changelog_unreleased_empty(Path(repo_root)) is True:
         findings.append({"kind": "changelog-empty", "name": "CHANGELOG", "blocking": False,
                          "detail": "CHANGELOG [Unreleased] is empty - add an entry for the release work (LL0004)"})

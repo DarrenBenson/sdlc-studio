@@ -9,8 +9,8 @@
 | Draft | 0 |
 | Ready | 9 |
 | Approved | 0 |
-| In Progress | 2 |
-| Done | 10 |
+| In Progress | 0 |
+| Done | 12 |
 | **Total** | **21** |
 
 > Generate-mode note: all epics are **Ready** (spec extracted from the existing
@@ -40,5 +40,5 @@
 | [EP0017](EP0017-positioning-and-evidence.md) | Positioning and evidence | Done | -- | -- | 2026-07-06 | 2026-07-06 |
 | [EP0018](EP0018-tooling-hardening-and-review-debt.md) | Tooling hardening and review debt | Done | -- | -- | 2026-07-06 | 2026-07-06 |
 | [EP0019](EP0019-plan-integrity-hardening.md) | Plan-integrity hardening | Done | -- | -- | 2026-07-09 | 2026-07-09 |
-| [EP0020](EP0020-upgrade-re-baseline-and-catalogue-hygiene.md) | Upgrade re-baseline and catalogue hygiene | In Progress | -- | -- | 2026-07-09 | 2026-07-09 |
-| [EP0021](EP0021-tooling-and-shared-layer-hardening.md) | Tooling and shared-layer hardening | In Progress | -- | -- | 2026-07-09 | 2026-07-09 |
+| [EP0020](EP0020-upgrade-re-baseline-and-catalogue-hygiene.md) | Upgrade re-baseline and catalogue hygiene | Done | -- | -- | 2026-07-09 | 2026-07-09 |
+| [EP0021](EP0021-tooling-and-shared-layer-hardening.md) | Tooling and shared-layer hardening | Done | -- | -- | 2026-07-09 | 2026-07-09 |

@@ -1,6 +1,6 @@
 # EP0021: Tooling and shared-layer hardening
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 

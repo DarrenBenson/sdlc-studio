@@ -118,11 +118,11 @@ def _origin_default_branch(repo_root: Path) -> str:
     try:
         r = subprocess.run(
             ["git", "symbolic-ref", "--quiet", "refs/remotes/origin/HEAD"],
-            capture_output=True, text=True, cwd=str(repo_root), check=False)
+            capture_output=True, text=True, cwd=str(repo_root), check=False, timeout=10)
         if r.returncode == 0 and r.stdout.strip():
             return r.stdout.strip().rsplit("/", 1)[-1]
-    except FileNotFoundError:
-        pass
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass  # git absent or a hung ref read - fall back to main, never break allocation
     return "main"
 
 

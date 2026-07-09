@@ -1,6 +1,6 @@
 # CR-0188: Fetch and check origin drift before a sprint batch or artifact-id allocation
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-08
 > **Created-by:** sdlc-studio new
 > **Priority:** P2

@@ -1,0 +1,17 @@
+{
+  "generated_at": "2026-07-09T15:23:49Z",
+  "dry_run": true,
+  "stories": {
+    "us0099-lower": {
+      "ac_count": 1,
+      "verified": 0,
+      "failed": 0,
+      "stale": 0,
+      "manual": 1,
+      "passed": [],
+      "failures": [],
+      "flips": [],
+      "verified_at": "2026-07-09T15:23:49Z"
+    }
+  }
+}

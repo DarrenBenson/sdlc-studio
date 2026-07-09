@@ -1,6 +1,6 @@
 # EP0020: Upgrade re-baseline and catalogue hygiene
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 

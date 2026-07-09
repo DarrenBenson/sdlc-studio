@@ -1,6 +1,6 @@
 # CR-0197: Upgrade re-baseline: census in-flight artifacts against the capability delta
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-08
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium

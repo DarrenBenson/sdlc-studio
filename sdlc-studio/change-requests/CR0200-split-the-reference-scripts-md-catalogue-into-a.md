@@ -1,6 +1,6 @@
 # CR-0200: Split the reference-scripts.md catalogue into a lean index plus grouped pages
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 > **Priority:** Low

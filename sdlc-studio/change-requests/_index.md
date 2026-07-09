@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 12 |
+| Proposed | 7 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 184 |
+| Complete | 189 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 4 |
@@ -41,14 +41,14 @@
 | [CR-0178](CR0178-benchmark-harness-implementation-fixed-task-set-tokens-wall.md) | Benchmark harness implementation: fixed task set, tokens, wall time, defect escapes, rework rate | Complete | Medium | Enhancement | 2026-07-06 | -- |
 | [CR-0179](CR0179-context-tiering-archive-closed-artefacts-into-summarised-digests.md) | Context tiering: archive closed artefacts into summarised digests to bound token cost | Proposed | Low | Enhancement | 2026-07-06 | -- |
 | [CR-0180](CR0180-harmonise-config-failure-regimes-silent-project-override-vs.md) | Harmonise config failure regimes: silent project_override vs fail-loud cutoff vs PyYAML crash | Complete | Medium | Improvement | 2026-07-06 | -- |
-| [CR-0181](CR0181-route-github-sync-and-verify-ac-through-the.md) | Route github_sync and verify_ac through the shared discovery layer; unify the root-flag grammar | Proposed | Medium | Improvement | 2026-07-06 | -- |
-| [CR-0182](CR0182-consolidate-the-two-archive-implementations-on-sdlc-md.md) | Consolidate the two archive implementations on sdlc_md.iter_tables | Proposed | Medium | Improvement | 2026-07-06 | -- |
+| [CR-0181](CR0181-route-github-sync-and-verify-ac-through-the.md) | Route github_sync and verify_ac through the shared discovery layer; unify the root-flag grammar | Complete | Medium | Improvement | 2026-07-06 | -- |
+| [CR-0182](CR0182-consolidate-the-two-archive-implementations-on-sdlc-md.md) | Consolidate the two archive implementations on sdlc_md.iter_tables | Complete | Medium | Improvement | 2026-07-06 | -- |
 | [CR-0183](CR0183-passive-concurrency-safety-atomic-index-writes-and-an.md) | Passive concurrency safety: atomic index writes and an advisory allocation lock | Complete | Medium | Improvement | 2026-07-06 | -- |
 | [CR-0184](CR0184-refresh-the-trd-the-v2-0-0-blueprint.md) | Refresh the TRD: the v2.0.0 blueprint misdescribes the v3.5.0 script layer, write contract and state files | Complete | Medium | Improvement | 2026-07-06 | -- |
 | [CR-0185](CR0185-add-a-cross-script-invariant-test-tier-over.md) | Add a cross-script invariant test tier over the cascade seams | Complete | Medium | Enhancement | 2026-07-06 | -- |
 | [CR-0186](CR0186-security-hardening-debt-review-2026-07-06-pinning.md) | Security hardening debt (review 2026-07-06): pinning, installer integrity, sync redaction, state hygiene | Proposed | Low | Improvement | 2026-07-06 | -- |
 | [CR-0187](CR0187-code-quality-debt-review-2026-07-06-shared.md) | Code-quality debt (review 2026-07-06): shared-layer bypasses, duplication, complexity, diagnostics | Proposed | Low | Improvement | 2026-07-06 | -- |
-| [CR-0188](CR0188-fetch-and-check-origin-drift-before-a-sprint.md) | Fetch and check origin drift before a sprint batch or artifact-id allocation | Proposed | P2 | retrospective | 2026-07-08 | -- |
+| [CR-0188](CR0188-fetch-and-check-origin-drift-before-a-sprint.md) | Fetch and check origin drift before a sprint batch or artifact-id allocation | Complete | P2 | retrospective | 2026-07-08 | -- |
 | [CR-0189](CR0189-routing-foundation-route-py-difficulty-estimator-tier-map.md) | Routing foundation: route.py difficulty estimator, tier map, config schema | Complete | P2 | feature-request | 2026-07-08 | -- |
 | [CR-0190](CR0190-sprint-plan-enrichment-difficulty-tier-and-model-per.md) | Sprint plan enrichment: difficulty, tier and model per unit | Complete | P2 | feature-request | 2026-07-08 | -- |
 | [CR-0191](CR0191-routing-feedback-loop-per-tier-telemetry-and-escalation.md) | Routing feedback loop: per-tier telemetry and escalation recording | Complete | P3 | feature-request | 2026-07-08 | -- |
@@ -57,10 +57,10 @@
 | [CR-0194](CR0194-plan-stage-adversarial-review-independent-ac-vs-spec.md) | Plan-stage adversarial review: independent AC-vs-spec check with a deterministic trigger | Complete | Medium | process | 2026-07-08 | -- |
 | [CR-0195](CR0195-critic-charter-unrequested-spec-edits-in-a-delivery.md) | Critic charter: unrequested spec edits in a delivery are a blocking finding | Complete | Medium | process | 2026-07-08 | -- |
 | [CR-0196](CR0196-bench-runner-summary-must-exclude-calibration-rows-without.md) | Bench runner: summary must exclude calibration rows without hand-filtering | Complete | Medium | tooling | 2026-07-08 | -- |
-| [CR-0197](CR0197-upgrade-re-baseline-census-in-flight-artifacts-against.md) | Upgrade re-baseline: census in-flight artifacts against the capability delta | Proposed | Medium | process | 2026-07-08 | -- |
+| [CR-0197](CR0197-upgrade-re-baseline-census-in-flight-artifacts-against.md) | Upgrade re-baseline: census in-flight artifacts against the capability delta | Complete | Medium | process | 2026-07-08 | -- |
 | [CR-0198](CR0198-v4-0-release-engineering-schema-v3-becomes-the.md) | v4.0 release engineering: schema v3 becomes the default, upgrade walk, major-release checklist | Proposed | Medium | process | 2026-07-08 | -- |
 | [CR-0199](CR0199-status-backlog-deterministic-non-terminal-census-grouped-by.md) | status backlog: deterministic non-terminal census grouped by type and status | Proposed | Medium | tooling | 2026-07-08 | -- |
-| [CR-0200](CR0200-split-the-reference-scripts-md-catalogue-into-a.md) | Split the reference-scripts.md catalogue into a lean index plus grouped pages | Proposed | Low | Improvement | 2026-07-09 | -- |
+| [CR-0200](CR0200-split-the-reference-scripts-md-catalogue-into-a.md) | Split the reference-scripts.md catalogue into a lean index plus grouped pages | Complete | Low | Improvement | 2026-07-09 | -- |
 
 ## Archived Releases
 
