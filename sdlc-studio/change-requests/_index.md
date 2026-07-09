@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 7 |
+| Proposed | 5 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 189 |
+| Complete | 191 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 4 |
@@ -32,8 +32,8 @@
 | [CR-0169](CR0169-structured-authorship-fields-raised-by-and-triaged-by.md) | Structured authorship fields: raised_by and triaged_by as typed references | Complete | High | Enhancement | 2026-07-06 | -- |
 | [CR-0170](CR0170-separation-of-duties-lint-rule-triaged-by-must.md) | Separation of duties lint rule: triaged_by must not equal raised_by | Complete | Medium | Enhancement | 2026-07-06 | -- |
 | [CR-0171](CR0171-evidence-as-schema-promote-evidence-or-it-did.md) | Evidence as schema: promote evidence-or-it-did-not-happen to lint-enforced structure | Complete | Medium | Enhancement | 2026-07-06 | -- |
-| [CR-0172](CR0172-tranche-reference-field-record-orchestrator-allocated-tranche-membership.md) | Tranche reference field: record orchestrator-allocated tranche membership in the ledger | Proposed | Low | Enhancement | 2026-07-06 | -- |
-| [CR-0173](CR0173-agentic-triage-workflow-status-transitions-human-sampling-policy.md) | Agentic triage workflow: status transitions, human sampling policy, triage quality metrics, noise controls | Proposed | High | Enhancement | 2026-07-06 | -- |
+| [CR-0172](CR0172-tranche-reference-field-record-orchestrator-allocated-tranche-membership.md) | Tranche reference field: record orchestrator-allocated tranche membership in the ledger | Complete | Low | Enhancement | 2026-07-06 | -- |
+| [CR-0173](CR0173-agentic-triage-workflow-status-transitions-human-sampling-policy.md) | Agentic triage workflow: status transitions, human sampling policy, triage quality metrics, noise controls | Complete | High | Enhancement | 2026-07-06 | -- |
 | [CR-0174](CR0174-lint-command-consolidation-one-ci-runnable-audit-check.md) | Lint command consolidation: one CI-runnable audit-check enforcing the team-schema rules | Complete | Medium | Enhancement | 2026-07-06 | -- |
 | [CR-0175](CR0175-first-class-review-command-architectural-quality-and-defensive.md) | First-class review command: architectural, quality and defensive security review of the host repo | Complete | High | Enhancement | 2026-07-06 | -- |
 | [CR-0176](CR0176-lite-profile-collapse-the-pipeline-to-prd-story.md) | Lite profile: collapse the pipeline to PRD, story, implement for small repos | Complete | Medium | Enhancement | 2026-07-06 | -- |

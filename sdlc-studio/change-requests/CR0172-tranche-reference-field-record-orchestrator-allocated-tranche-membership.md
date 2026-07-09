@@ -1,6 +1,6 @@
 # CR-0172: Tranche reference field: record orchestrator-allocated tranche membership in the ledger
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic (v4 breakdown):** [EP0014](../epics/EP0014-agentic-triage-and-noise-control.md)

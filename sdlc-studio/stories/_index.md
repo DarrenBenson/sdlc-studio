@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 0 |
+| Ready | 5 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -16,7 +16,7 @@
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **99** |
+| **Total** | **104** |
 
 ## All Stories
 
@@ -67,6 +67,11 @@
 | [US0097](US0097-route-github-sync-and-verify-ac-through-the.md) | Route github_sync and verify_ac through the shared discovery layer | Done | EP0021 | 2026-07-09 | 2026-07-09 |
 | [US0098](US0098-consolidate-the-two-archive-implementations-on-iter-tables.md) | Consolidate the two archive implementations on iter_tables | Done | EP0021 | 2026-07-09 | 2026-07-09 |
 | [US0099](US0099-origin-drift-pre-flight-for-sprint-plan-and.md) | Origin-drift pre-flight for sprint plan and id allocation | Done | EP0021 | 2026-07-09 | 2026-07-09 |
+| [US0100](US0100-supply-chain-integrity-pin-actions-to-shas-and.md) | Supply-chain integrity: pin Actions to SHAs and verify installer checksums | Ready | EP0022 | 2026-07-09 | 2026-07-09 |
+| [US0101](US0101-sync-state-and-verifier-sandbox-hardening.md) | Sync, state and verifier-sandbox hardening | Ready | EP0022 | 2026-07-09 | 2026-07-09 |
+| [US0102](US0102-shared-layer-consolidation-and-cli-json-parity.md) | Shared-layer consolidation and CLI JSON parity | Ready | EP0022 | 2026-07-09 | 2026-07-09 |
+| [US0103](US0103-decompose-complexity-hotspots-and-apply-small-cleanups.md) | Decompose complexity hotspots and apply small cleanups | Ready | EP0022 | 2026-07-09 | 2026-07-09 |
+| [US0104](US0104-context-tiering-summarised-digests-of-closed-artefacts.md) | Context tiering: summarised digests of closed artefacts | Ready | EP0023 | 2026-07-09 | 2026-07-09 |
 
 ## Archived Releases
 
