@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 24 |
+| Open | 23 |
 | In Progress | 0 |
-| Fixed | 2 |
+| Fixed | 3 |
 | Verified | 0 |
 | Closed | 70 |
 | Won't Fix | 0 |
@@ -38,7 +38,7 @@
 | [BG0069](BG0069-shipped-test-gate-real-wrapper-tests-assume-the.md) | Shipped test_gate real-wrapper tests assume the dev-repo path and fail from an install | Closed | low | 2026-07-08 | 2026-07-08 |
 | [BG0070](BG0070-migrate-v3-build-id-map-runs-a-git.md) | migrate_v3 build_id_map runs a git log --follow per artefact, so it does not scale to a large project | Closed | High | 2026-07-09 | 2026-07-09 |
 | [BG0071](BG0071-reconcile-apply-missing-row-append-crashes-keyerror-date.md) | reconcile apply missing-row append crashes KeyError 'date' on any index with a date column | Fixed | High | 2026-07-09 | 2026-07-09 |
-| [BG0072](BG0072-artifact-close-cannot-infer-the-type-of-any.md) | artifact close cannot infer the type of any v3 ULID id | Open | High | 2026-07-09 | 2026-07-09 |
+| [BG0072](BG0072-artifact-close-cannot-infer-the-type-of-any.md) | artifact close cannot infer the type of any v3 ULID id | Fixed | High | 2026-07-09 | 2026-07-09 |
 | [BG0073](BG0073-migrate-v3-re-run-after-an-interrupted-apply.md) | migrate_v3 re-run after an interrupted apply re-mints a different id map and silently cross-wires identities | Open | High | 2026-07-09 | 2026-07-09 |
 | [BG0074](BG0074-the-v2-v3-upgrade-walk-never-stamps-schema.md) | the v2->v3 upgrade walk never stamps schema_version: 3, so the next filing mints ids that collide with live aliases | Open | High | 2026-07-09 | 2026-07-09 |
 | [BG0075](BG0075-npm-run-lint-fails-at-head-the-pre.md) | npm run lint fails at HEAD: the pre-commit gate was never enabled in this clone and CI is dark while main is unpushed | Fixed | High | 2026-07-09 | 2026-07-09 |

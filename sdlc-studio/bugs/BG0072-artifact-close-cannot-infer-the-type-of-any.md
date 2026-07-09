@@ -1,9 +1,10 @@
 # BG0072: artifact close cannot infer the type of any v3 ULID id
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file
+> **Verification depth:** functional (red-then-green unit tests for v2/dashed/ULID forms; live CLI dry-run close of a freshly minted ULID resolves type=bug)
 
 ## Summary
 

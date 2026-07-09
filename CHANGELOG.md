@@ -232,6 +232,12 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
 
 ### Fixed
 
+- **`artifact close` types v3 ULID ids (RV0007; BG0072).** Type inference collected every
+  alphabetic character of the id, so a ULID's random tail (`BG-01JQK3F8` -> `BGJQKF`) defeated
+  the prefix lookup and the documented close cascade raised `cannot infer type` for every
+  artefact a schema-v3 project mints. A new `infer_type_from_id` reads only the LEADING alpha
+  prefix (v2, dashed-v2 and v3 forms all resolve); unit tests pin all three forms and a live
+  dry-run close of a freshly minted ULID.
 - **`reconcile apply` no longer crashes appending a missing row into a dated index (RV0007;
   BG0071).** `row_from_header` indexed `f["date"]` directly while every other column used
   `.get()`, so the self-heal path raised `KeyError: 'date'` on the shipped bug/cr/plan index

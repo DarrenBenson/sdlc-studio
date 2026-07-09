@@ -439,14 +439,21 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
             "created": created, "dry_run": False}
 
 
+def infer_type_from_id(artifact_id: str) -> str | None:
+    """Artifact type from an id's LEADING alpha prefix (`BG0007`, `CR-0003`, and the v3
+    `BG-01JQK3F8` all yield `BG`). Collecting every alpha character breaks on ULIDs, whose
+    random tail contains letters."""
+    m = re.match(r"[A-Za-z]+", artifact_id.strip())
+    return _PREFIX_TYPE.get(m.group(0).upper()) if m else None
+
+
 def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
           metrics: dict | None = None, dry_run: bool = False, force: bool = False) -> dict:
     """Terminal-transition an artifact and cascade (reuse transition), then record a
     telemetry event. Telemetry is advisory - it never affects the
     close result (the recorder swallows its own failures). `force` bypasses the story->Done
     AC-verify gate; it is inert for non-story types."""
-    prefix = "".join(c for c in artifact_id if c.isalpha()).upper()
-    type_ = _PREFIX_TYPE.get(prefix)
+    type_ = infer_type_from_id(artifact_id)
     if type_ is None:
         raise ValueError(f"cannot infer type from id {artifact_id!r}")
     st = status or SPEC[type_]["terminal"]

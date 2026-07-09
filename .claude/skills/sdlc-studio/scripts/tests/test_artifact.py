@@ -648,3 +648,21 @@ class RevisionVerbTests(unittest.TestCase):
                                     "--note", "n", "--root", str(repo)])
             self.assertNotEqual(rc, 0)
             self.assertIn("CR0099", err.getvalue())
+
+
+class CloseUlidTests(unittest.TestCase):
+    def test_close_infers_type_from_a_v3_ulid_id(self) -> None:
+        # BG0072: the close cascade must type the ids the v3 era mints.
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+            _v3(repo)
+            r = artifact.new(repo, "bug", "ulid close probe")
+            self.assertTrue(sdlc_md.is_v3_id(r["id"]), r["id"])
+            res = artifact.close(repo, r["id"], dry_run=True)
+            self.assertEqual(res["type"], "bug")
+
+    def test_close_still_infers_v2_and_dashed_v2_ids(self) -> None:
+        for rid, expected in (("BG0007", "bug"), ("CR-0003", "cr"), ("US0001", "story")):
+            got = artifact.infer_type_from_id(rid)
+            self.assertEqual(got, expected, rid)
