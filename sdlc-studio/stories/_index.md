@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 2 |
+| Ready | 1 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 86 |
+| Done | 87 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -35,7 +35,7 @@
 | [US0065](US0065-triage-status-vocabulary-and-gated-transitions-recording-triaged.md) | Triage status vocabulary and gated transitions recording triaged_by | Done | EP0014 | 2026-07-06 | 2026-07-06 |
 | [US0066](US0066-human-sampling-policy-and-triage-quality-metrics.md) | Human sampling policy and triage-quality metrics | Ready | EP0014 | 2026-07-06 | 2026-07-06 |
 | [US0067](US0067-triage-noise-controls-medium-plus-individual-low-consolidated.md) | Triage noise controls: Medium-plus individual, Low consolidated, session cap | Done | EP0014 | 2026-07-06 | 2026-07-06 |
-| [US0068](US0068-optional-tranche-reference-field-record-only.md) | Optional tranche reference field, record-only | Ready | EP0014 | 2026-07-06 | 2026-07-06 |
+| [US0068](US0068-optional-tranche-reference-field-record-only.md) | Optional tranche reference field, record-only | Done | EP0014 | 2026-07-06 | 2026-07-06 |
 | [US0069](US0069-atomic-index-and-cascade-writes-with-an-advisory.md) | Atomic index and cascade writes with an advisory allocation lock | Done | EP0015 | 2026-07-06 | 2026-07-06 |
 | [US0070](US0070-review-generate-command-with-remediation-only-security-posture.md) | review generate command with remediation-only security posture | Done | EP0016 | 2026-07-06 | 2026-07-06 |
 | [US0071](US0071-lite-profile-collapsing-the-pipeline-to-prd-story.md) | Lite profile collapsing the pipeline to PRD, story, implement | Done | EP0016 | 2026-07-06 | 2026-07-06 |

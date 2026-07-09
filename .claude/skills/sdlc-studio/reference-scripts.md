@@ -383,13 +383,16 @@ Full workflow: `reference-reconcile.md`.
 
 - `pillars`: four-pillar census (Requirements/Code/Tests/Reviews) as JSON
 - `hint`: the next mechanical action
+- `tranche --value <ref>`: list every artefact carrying `> **Tranche:** <ref>` (the
+  "what shipped in tranche X" query; the reference is orchestrator-set, never allocated)
 
 Live metrics (lint, type-check, coverage) are left to Claude to run. Help:
 `help/status.md`, `help/hint.md`.
 
 ### `validate.py` (read-only)
 
-- `check`: lint artifact structure (ID, Status vocabulary, title, AC presence)
+- `check`: lint artifact structure (ID, Status vocabulary, title, AC presence, an optional
+  record-only `Tranche` reference whose only shape rule is non-empty-when-present)
 - `instructions`: hygiene-check the project's `AGENTS.md` / `CLAUDE.md` (AGENTS.md
   canonical, CLAUDE.md a `@AGENTS.md` pointer, operating-doctrine + `LATEST.md`
   pointers present, pre-release gate + compaction rule present, no per-ship-narrative

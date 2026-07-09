@@ -262,6 +262,39 @@ def index_bloat_advisories(repo_root: Path) -> list[str]:
     return out
 
 
+def tranche_members(repo_root: Path | str, tranche: str) -> list[dict]:
+    """Every artefact carrying `> **Tranche:** <tranche>`, across all types - the answer to
+    "what shipped in tranche X" read from the records alone (no scheduler). Record-only: the
+    reference is set by an external orchestrator, never allocated by sdlc-studio."""
+    root = Path(repo_root)
+    want = (tranche or "").strip()
+    out: list[dict] = []
+    for type_ in sdlc_md.ARTIFACT_TYPES:
+        for p in sdlc_md.artifact_files(type_, root):
+            text = p.read_text(encoding="utf-8")
+            value = sdlc_md.tranche_ref(text)  # newline-safe: an empty field is not a member
+            if value and value == want:
+                out.append({"id": sdlc_md.extract_record_id(p.stem) or p.stem, "type": type_,
+                            "title": sdlc_md.extract_h1_title(text) or "",
+                            "status": sdlc_md.extract_field(text, "Status") or ""})
+    return sorted(out, key=lambda r: r["id"])
+
+
+def cmd_tranche(args: argparse.Namespace) -> int:
+    """List every artefact carrying a given tranche reference."""
+    members = tranche_members(args.root, args.value)
+    if args.format == "json":
+        print(json.dumps(members, indent=2))
+        return 0
+    if not members:
+        print(f"tranche {args.value!r}: no artefacts")
+        return 0
+    print(f"tranche {args.value!r}: {len(members)} artefact(s)")
+    for m in members:
+        print(f"  {m['id']} ({m['type']}) [{m['status']}] {m['title']}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Construct the argparse parser for pillars and hint."""
     p = argparse.ArgumentParser(
@@ -279,6 +312,12 @@ def build_parser() -> argparse.ArgumentParser:
     hi.add_argument("--root", default=".", help="Repo root (default: .)")
     hi.add_argument("--format", choices=("text", "json"), default="text")
     hi.set_defaults(func=cmd_hint)
+
+    tr = sub.add_parser("tranche", help="List artefacts carrying a given tranche reference.")
+    tr.add_argument("--value", required=True, help="The tranche reference to list members of")
+    tr.add_argument("--root", default=".", help="Repo root (default: .)")
+    tr.add_argument("--format", choices=("text", "json"), default="text")
+    tr.set_defaults(func=cmd_tranche)
 
     return p
 

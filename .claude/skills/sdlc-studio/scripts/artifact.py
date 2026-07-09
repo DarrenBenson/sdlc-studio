@@ -85,6 +85,10 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
     # Provenance stamp - marks this artifact as tool-created (deterministic path).
     head = (f"# {disp}: {title}\n\n> **Status:** {st}\n> **Created:** {today}\n"
             f"> **Created-by:** sdlc-studio new\n")
+    # Record-only tranche reference: written ONLY as orchestrator pass-through (when the caller
+    # supplies it); sdlc-studio never allocates it. Absent otherwise.
+    if str(f.get("tranche") or "").strip():
+        head += f"> **Tranche:** {str(f['tranche']).strip()}\n"
     rev = (f"\n## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
            f"| {today} | {f.get('author', 'sdlc')} | Created via `new` (deterministic) |\n")
     if type_ == "story":

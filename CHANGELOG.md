@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Agentic triage - optional tranche reference (EP0014, CR0172; US0068, schema v3, opt-in).**
+  An external orchestrator may stamp a record-only `> **Tranche:**` reference on an artefact
+  (`artifact new` passes it through when supplied; sdlc-studio never allocates it), so the
+  records answer "what shipped in tranche X" without sdlc-studio becoming a scheduler. `validate`
+  gains a `tranche-shape` check (absent or valued is fine; present-but-empty is a malformed
+  record; era-gated to v3), and `status tranche --value <ref>` lists every artefact carrying a
+  given reference across all types.
 - **Agentic triage - noise controls (EP0014, CR0173; US0067, schema v3, opt-in).** New
   `scripts/triage_noise.py` and a `triage:` config block add two creation-time controls, both
   dormant under v2: a **session cap** (`triage.session_cap`, default 20) refuses the N+1th

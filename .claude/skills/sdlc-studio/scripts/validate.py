@@ -141,6 +141,15 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
                     f"triaged_by '{triaged['name']}' is the same as raised_by - a different "
                     "seat must triage (hand off to another reviewer)")
 
+        # Optional, record-only tranche reference (orchestrator pass-through). Absent is fine;
+        # a present-but-empty value is a malformed record. sdlc-studio never allocates it - it
+        # only reads it (the "what shipped in tranche X" query). `tranche_ref` captures the value
+        # newline-safely, and the query reads through the same helper so the two agree.
+        if re.search(r"\*\*Tranche:\*\*", text) and sdlc_md.tranche_ref(text) is None:
+            add("error", "tranche-shape",
+                "tranche reference present but empty - give it a value or remove the field "
+                "(sdlc-studio reads a tranche reference, never allocates it)")
+
         # Evidence-or-it-did-not-happen, per type. Presence only (truth stays with reviewers
         # and verify_ac); a placeholder counts as absent.
         if type_ == "bug" and not _bug_has_evidence(text):

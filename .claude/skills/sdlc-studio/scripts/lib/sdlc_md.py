@@ -225,6 +225,22 @@ def extract_h1_title(text: str) -> str | None:
     return m.group(1).strip() if m else None
 
 
+_TRANCHE_RE = re.compile(
+    r"\*\*Tranche:\*\*[^\S\n]*([^\n·]*?)\s*(?=·|\s\*\*[^*\n]+:\*\*|$)", re.M)
+
+
+def tranche_ref(text: str) -> str | None:
+    """The record-only tranche reference (EP0014, US0068), or None when absent OR present but
+    empty. Unlike the general `extract_field`, the value is captured with horizontal-only leading
+    whitespace, so an empty `> **Tranche:**` field never swallows the following line - both the
+    `tranche-shape` validation and the `status tranche` query read through here so they agree on
+    what a tranche value is."""
+    m = _TRANCHE_RE.search(text)
+    if not m:
+        return None
+    return m.group(1).strip() or None
+
+
 def extract_record_id(stem: str) -> str | None:
     """Artifact ID at the start of a filename stem.
 

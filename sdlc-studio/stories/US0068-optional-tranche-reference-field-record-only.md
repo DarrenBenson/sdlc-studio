@@ -1,6 +1,6 @@
 # US0068: Optional tranche reference field, record-only
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0014
@@ -23,6 +23,7 @@
 - **Then** validate passes both, fails only an empty/non-string value, and no code path writes it
   except orchestrator pass-through
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py -k tranche_shape
+- **Verified:** yes (2026-07-08)
 
 ### AC2: Ledger answers the delivery question
 
@@ -30,6 +31,7 @@
 - **When** status/reconcile is queried
 - **Then** it lists everything in a given tranche from the ledger alone
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status.py -k tranche_query
+- **Verified:** yes (2026-07-08)
 
 ## Design Notes (groomed 2026-07-08, see D0015)
 

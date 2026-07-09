@@ -643,3 +643,51 @@ class EvidenceSchemaTests(unittest.TestCase):
                        "# BG0001: x\n\n> **Status:** Open\n> **Severity:** Low\n\n## Summary\n\nx\n")
             self.assertNotIn("evidence-present",
                              [v["rule"] for v in validate.validate_file(p, "bug", root)])
+
+
+def _v3_cr(root: Path, tranche_line: str = "") -> Path:
+    """A schema-v3 repo with one CR; `tranche_line` is an optional `> **Tranche:** ...` line."""
+    (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
+    body = f"# CR-0001: c\n\n> **Status:** Proposed\n{tranche_line}\n## Summary\n\ns\n"
+    return _write(root, "sdlc-studio/change-requests/CR0001-c.md", body)
+
+
+class TrancheShapeTests(unittest.TestCase):
+    """US0068 AC1: a record-only tranche reference - absent or valued is fine; present-but-empty
+    is a malformed record. Era-gated to schema v3."""
+
+    def _rules(self, p: Path, root: Path) -> set:
+        return {v["rule"] for v in validate.validate_file(p, "cr", root)}
+
+    def test_tranche_shape_empty_value_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = _v3_cr(root, "> **Tranche:**\n")
+            self.assertIn("tranche-shape", self._rules(p, root))
+
+    def test_tranche_shape_whitespace_value_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = _v3_cr(root, "> **Tranche:**    \n")
+            self.assertIn("tranche-shape", self._rules(p, root))
+
+    def test_tranche_shape_present_value_ok(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = _v3_cr(root, "> **Tranche:** sprint-12\n")
+            self.assertNotIn("tranche-shape", self._rules(p, root))
+
+    def test_tranche_shape_absent_ok(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = _v3_cr(root, "")
+            self.assertNotIn("tranche-shape", self._rules(p, root))
+
+    def test_tranche_shape_dormant_under_v2(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)  # v2: no .config.yaml
+            p = _write(root, "sdlc-studio/change-requests/CR0001-c.md",
+                       "# CR-0001: c\n\n> **Status:** Proposed\n> **Tranche:**\n\n## Summary\n\ns\n")
+            self.assertNotIn("tranche-shape",
+                             {v["rule"] for v in validate.validate_file(p, "cr", root)})

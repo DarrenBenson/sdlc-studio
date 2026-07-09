@@ -237,6 +237,46 @@ class UpdateNoticeTests(unittest.TestCase):
         self.assertEqual(self._with_stub(None), "")
 
 
+class TrancheQueryTests(unittest.TestCase):
+    """US0068 AC2: list every artefact carrying a given tranche reference, from the records."""
+
+    def _artefact(self, root: Path, rel: str, body: str) -> None:
+        p = root / "sdlc-studio" / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(body, encoding="utf-8")
+
+    def test_tranche_query_lists_only_matching_members(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._artefact(root, "bugs/BG0001-a.md",
+                           "# BG0001: a\n\n> **Status:** Open\n> **Tranche:** sprint-12\n")
+            self._artefact(root, "change-requests/CR0001-b.md",
+                           "# CR-0001: b\n\n> **Status:** Proposed\n> **Tranche:** sprint-12\n")
+            self._artefact(root, "bugs/BG0002-c.md",
+                           "# BG0002: c\n\n> **Status:** Open\n> **Tranche:** sprint-13\n")
+            self._artefact(root, "bugs/BG0003-d.md",
+                           "# BG0003: d\n\n> **Status:** Open\n")  # no tranche
+            members = status.tranche_members(root, "sprint-12")
+            self.assertEqual([m["id"] for m in members], ["BG0001", "CR0001"])
+            self.assertEqual({m["type"] for m in members}, {"bug", "cr"})
+
+    def test_tranche_query_empty_when_no_members(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._artefact(root, "bugs/BG0001-a.md", "# BG0001: a\n\n> **Status:** Open\n")
+            self.assertEqual(status.tranche_members(root, "sprint-99"), [])
+
+    def test_tranche_query_empty_field_is_not_a_phantom_member(self) -> None:
+        # An empty `> **Tranche:**` line followed by more content must NOT over-capture the next
+        # line as a value (the general extract_field bug): it belongs to no tranche.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._artefact(root, "bugs/BG0001-a.md",
+                           "# BG0001: a\n\n> **Status:** Open\n> **Tranche:**\n## Summary\n\nbody\n")
+            self.assertEqual(status.tranche_members(root, "## Summary"), [])
+            self.assertEqual(status.tranche_members(root, ""), [])
+
+
 if __name__ == "__main__":
     unittest.main()
 
