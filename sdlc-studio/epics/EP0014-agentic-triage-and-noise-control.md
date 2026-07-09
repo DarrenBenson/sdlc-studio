@@ -1,6 +1,6 @@
 # EP0014: Agentic triage and noise control
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 

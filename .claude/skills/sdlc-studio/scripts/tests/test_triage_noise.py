@@ -98,6 +98,17 @@ class ConsolidationTests(unittest.TestCase):
             self.assertIn("nit one", body)
             self.assertIn("nit two", body)
 
+    def test_consolidate_low_with_tranche_flags_the_drop(self) -> None:
+        # A record-only tranche cannot ride onto a shared consolidation CR; the drop must be
+        # visible (fail loud, not silent) - the EP0014 principle applied to a cross-unit edge.
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d))
+            res = ff.file_finding(root, "bug", "a nit", {**_bug("low"), "tranche": "sprint-14"})
+            self.assertTrue(res.get("consolidated_into"))
+            self.assertEqual(res.get("tranche_dropped"), "sprint-14")
+            cr = Path(res["path"]).read_text(encoding="utf-8")
+            self.assertNotIn("Tranche", cr)   # not silently written onto the shared CR
+
     def test_consolidate_medium_stays_individual(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = _repo(Path(d))

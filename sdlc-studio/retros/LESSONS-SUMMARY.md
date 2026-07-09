@@ -2,8 +2,7 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
-- **L-0005: A census-definition change must sweep every consumer that keyed safety on the old definition**
-- **L-0004: Test the command, not only the helper - wiring is where green suites lie**
-- **L-0003: A display id is not a unique anchor - bind assertions and index edits to the slug**
-- **L-0002: Negative evidence needs a viability check: a failure ANY input causes is not a signal**
-- **L-0001: A parser-boundary fix must sweep every sibling parser sharing the assumption**
+- **L-0004: Add a closing full-diff pass when units share a file**
+- **L-0003: Read every creation path, not the one the design note names**
+- **L-0002: Forward-port via install.sh, not per-file cp** - Sync with `install.sh --local` (whole-tree, deterministic), then `diff -rq` to verify
+- **L-0001: Amend the AC in the same unit when the implementation deviates** - When deviating, reword the AC + add a revision-history note in the same commit; the critic checks AC-vs-delivered-behaviour

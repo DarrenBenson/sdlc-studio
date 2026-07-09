@@ -6,8 +6,8 @@
 > `docs.latest_max_lines` (doc-freshness advisory) by moving past sprints to History lines.
 >
 > **Released version:** 3.6.0 (2026-07-06, non-breaking - the EP0016 review/lite on-ramp) ·
-> **Date:** 2026-07-08 ·
-> **Gates:** lint clean, 1274 script tests pass (+49 repo-only tools tests), `gate` PASS,
+> **Date:** 2026-07-09 ·
+> **Gates:** lint clean, 1314 script tests pass (+88 repo-only tools tests), `gate` PASS,
 > reconcile drift 0, npm audit 0, CI green on main.
 >
 > **v4 is WORK-IN-PROGRESS, not released.** The v4 foundation (schema-v3 ULID identity - a
@@ -23,12 +23,15 @@
 
 ## Current
 
-- **Active sprint - EP0014 agentic triage, groomed to Ready (D0015).** US0065-0068 all Ready,
-  era-gated behind `schema_version: 3`; findings-only prepend-`inbox` vocab (`inbox -> triaged`
-  on CR/bug/RFC, stories/epics unchanged), sampling defaults (0.20 non-Critical + always
-  Critical/disagreement), noise controls (session_cap 20, Low consolidation). Wave 1 US0065
-  (vocab + gated-transition spine) -> Wave 2 US0066/0067/0068 parallel. Run
-  `/sdlc-studio sprint --epic EP0014 --goal done`. Closes CR0173 + CR0172.
+- **EP0014 agentic triage DELIVERED (2026-07-09, schema-v3 dormant).** All four stories Done +
+  conformant, epic Done; committed to `main` (unpushed, freeze holds). US0065 `inbox`->triaged
+  vocab + gated transition (structured `triaged_by` + separation of duties); US0067 noise controls
+  (session cap 20, Low->themed-consolidation CR) in `triage_noise.py`, routed from both filing
+  paths; US0068 record-only `Tranche` field + `status tranche` query; US0066 seeded sampling
+  policy + triage-quality metrics (`triage_sampling.py`, `status triage-metrics`). All era-gated
+  behind `schema_version: 3`, dormant on v2. Closes CR0173 + CR0172. 1314 script tests pass, gate
+  PASS, drift 0. Per-unit adversarial critics caught 3 real escapes (see RETRO0012). Deferred:
+  stamping `Raised-by` on tool-filed findings (so triage SoD is never vacuous) -> EP0013 authorship.
 - **Backlog after EP0014:** 5 EP0018 debt CRs (CR0179/0181/0182/0186/0187), CR0188; N=5
   follow-ups CR0194 (plan-stage AC-vs-spec adversarial review), CR0195 (unrequested spec-edit
   block), CR0196 (bench calibration-row guard), CR0197 (upgrade re-baseline); v4.0 release

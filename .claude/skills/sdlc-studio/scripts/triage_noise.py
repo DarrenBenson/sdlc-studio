@@ -226,8 +226,19 @@ def consolidate_low_finding(root, type_: str, title: str, fields: dict, today: s
     if existing is not None:
         _append_finding(existing, title, detail)
         cr_id = sdlc_md.extract_record_id(existing.stem)
-        return {"id": cr_id, "path": str(existing), "consolidated_into": cr_id, "created": False}
-    enforce_session_cap(root)  # opening a consolidation CR mints an artefact - honour the cap
-    path = _new_consolidation_cr(root, theme, title, detail, today)
-    cr_id = sdlc_md.extract_record_id(path.stem)
-    return {"id": cr_id, "path": str(path), "consolidated_into": cr_id, "created": True}
+        result = {"id": cr_id, "path": str(existing), "consolidated_into": cr_id, "created": False}
+    else:
+        enforce_session_cap(root)  # opening a consolidation CR mints an artefact - honour the cap
+        path = _new_consolidation_cr(root, theme, title, detail, today)
+        cr_id = sdlc_md.extract_record_id(path.stem)
+        result = {"id": cr_id, "path": str(path), "consolidated_into": cr_id, "created": True}
+    # Fail loud, not silent drop (the EP0014 principle): a consolidation CR aggregates many
+    # findings and cannot own one finding's record-only tranche, so a tranche supplied on a
+    # consolidated Low finding is not recorded - say so rather than discard it silently.
+    dropped = str(fields.get("tranche") or "").strip()
+    if dropped:
+        print(f"warning: tranche {dropped!r} not recorded - this Low-severity finding "
+              f"consolidates into {cr_id} (a shared CR carries no per-finding tranche); file it "
+              "as Medium or above to keep an individual, tranche-tagged artefact", file=sys.stderr)
+        result["tranche_dropped"] = dropped
+    return result
