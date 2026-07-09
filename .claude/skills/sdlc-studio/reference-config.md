@@ -415,8 +415,12 @@ the few that matter:
 | --- | --- | --- |
 | `triage.session_cap` | `20` | Max findings one session may file; the N+1th is refused loudly. A session is keyed by the `SDLC_TRIAGE_SESSION` environment variable (set a new value to start a fresh budget); the count lives in `.local/triage-session.json`. |
 | `triage.low_consolidation` | `true` | A Low-severity finding folds into a themed consolidation CR (one per theme) rather than minting its own artefact; Medium and above always get individual artefacts. |
+| `triage.sample_rate` | `0.20` | Fraction of the non-always-sampled triaged findings a human audits. |
+| `triage.always_sample` | `[Critical, disagreement]` | Always audited: every Critical-severity finding, and every raiser/triager severity disagreement. |
 
-Both the finding filer and `artifact new` enforce these, so neither creation path is a bypass.
+Both the finding filer and `artifact new` enforce the noise controls, so neither creation path is
+a bypass. The sampling policy and its triage-quality metrics (false-positive rate, severity
+inflation) live in `triage_sampling.py`, surfaced by `status triage-metrics`.
 
 ---
 

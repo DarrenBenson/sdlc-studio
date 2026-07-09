@@ -1,6 +1,6 @@
 # US0066: Human sampling policy and triage-quality metrics
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0014
@@ -23,6 +23,7 @@
 - **Then** every Critical is sampled, the configured percentage of the rest, and every
   raiser/triager severity disagreement
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_triage_sampling.py
+- **Verified:** yes (2026-07-09)
 
 ### AC2: Metrics computed from the ledger
 
@@ -31,6 +32,7 @@
 - **Then** false-positive rate and severity inflation come from a script (no hand counting) and
   surface in status/telemetry
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_triage_sampling.py -k metrics
+- **Verified:** yes (2026-07-09)
 
 ## Design Notes (groomed 2026-07-08, see D0015)
 

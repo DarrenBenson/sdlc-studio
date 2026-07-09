@@ -39,7 +39,7 @@ ALLOWLIST = {
     "reference-outputs.md": 781,  # +RFC0012 index-archival + slice-read conventions (CR0041)
     "reference-decisions.md": 724,
     "reference-test-best-practices.md": 706,  # +assertion-integrity + mutation-check section (CR0131)
-    "reference-scripts.md": 606,  # +triage_noise.py catalogue entry (EP0014); split when it next grows
+    "reference-scripts.md": 619,  # +triage_noise.py/triage_sampling.py entries (EP0014); split when it next grows
 }
 
 

@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Agentic triage - human sampling policy + triage-quality metrics (EP0014, CR0173; US0066,
+  schema v3, opt-in).** New `scripts/triage_sampling.py`: `sample()` is a deterministic
+  (seeded-hash) audit-sampling policy - every Critical, every raiser/triager severity
+  disagreement, plus `triage.sample_rate` (default 0.20) of the rest; `metrics()` computes
+  triage quality from the records (no hand-counting) - the false-positive rate (a finding
+  triaged as real then closed invalid), severity inflation (triager vs raiser), and
+  sampled-but-unreviewed findings as standing pending audit. Surfaced by
+  `status triage-metrics`. New `triage.sample_rate` / `triage.always_sample` config keys.
 - **Agentic triage - optional tranche reference (EP0014, CR0172; US0068, schema v3, opt-in).**
   An external orchestrator may stamp a record-only `> **Tranche:**` reference on an artefact
   (`artifact new` passes it through when supplied; sdlc-studio never allocates it), so the

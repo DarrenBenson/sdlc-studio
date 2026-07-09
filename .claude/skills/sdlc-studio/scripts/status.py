@@ -295,6 +295,24 @@ def cmd_tranche(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_triage_metrics(args: argparse.Namespace) -> int:
+    """Print triage-quality metrics (schema v3): false-positive rate + severity inflation."""
+    import triage_sampling  # sibling; imported lazily so `status` has no cost when unused
+    m = triage_sampling.metrics(args.root)
+    if args.format == "json":
+        print(json.dumps(m, indent=2))
+        return 0
+    print(f"triage quality: {m['triaged']} triaged ({m['terminal']} terminal)")
+    print(f"  false-positive rate: {m['false_positive_rate']:.0%} "
+          f"({m['invalid_closed']} triaged-then-invalid)")
+    si = m["severity_inflation"]
+    print(f"  severity inflation: {si['inflated']} up, {si['deflated']} down (triager vs raiser)")
+    pending = m["sampled_pending_audit"]
+    if pending:
+        print(f"  sampled, pending audit ({len(pending)}): {', '.join(pending)}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Construct the argparse parser for pillars and hint."""
     p = argparse.ArgumentParser(
@@ -318,6 +336,12 @@ def build_parser() -> argparse.ArgumentParser:
     tr.add_argument("--root", default=".", help="Repo root (default: .)")
     tr.add_argument("--format", choices=("text", "json"), default="text")
     tr.set_defaults(func=cmd_tranche)
+
+    tm = sub.add_parser("triage-metrics",
+                        help="Triage-quality metrics (v3): false-positive rate + inflation.")
+    tm.add_argument("--root", default=".", help="Repo root (default: .)")
+    tm.add_argument("--format", choices=("text", "json"), default="text")
+    tm.set_defaults(func=cmd_triage_metrics)
 
     return p
 

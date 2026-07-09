@@ -276,6 +276,15 @@ Creation-time triage noise controls (schema v3 only, dormant on v2). A **session
 (`triage.low_consolidation`) folds a Low finding into a themed consolidation CR instead of its
 own artefact; Medium+ stay individual. `file_finding` and `artifact new` both route here.
 
+### `triage_sampling.py`
+
+Triage-as-sampled-audit (schema v3). `sample(items, seed)` picks the findings a human audits:
+every Critical, every raiser/triager severity disagreement, plus `triage.sample_rate` of the
+rest, chosen by a stable hash of `(seed, id)` so a fixture is reproducible. `metrics(root)`
+computes triage quality from the records (no hand-counting): the false-positive rate (a finding
+triaged as real, later closed invalid), severity inflation (triager vs raiser), and
+sampled-but-unreviewed findings as standing pending audit. Surfaced by `status triage-metrics`.
+
 ### `archive.py`
 
 Index archival for large boards. `archive --type <t> --release <r>` moves a
@@ -385,6 +394,7 @@ Full workflow: `reference-reconcile.md`.
 - `hint`: the next mechanical action
 - `tranche --value <ref>`: list every artefact carrying `> **Tranche:** <ref>` (the
   "what shipped in tranche X" query; the reference is orchestrator-set, never allocated)
+- `triage-metrics`: schema-v3 triage quality (false-positive rate + severity inflation)
 
 Live metrics (lint, type-check, coverage) are left to Claude to run. Help:
 `help/status.md`, `help/hint.md`.

@@ -139,6 +139,10 @@ triage:
                            # (start a fresh session with SDLC_TRIAGE_SESSION, or raise the cap)
   low_consolidation: true  # a Low-severity finding folds into a themed consolidation CR rather
                            # than minting its own artefact; Medium and above get individual ones
+  sample_rate: 0.20        # fraction of non-always-sampled triaged findings a human audits
+  always_sample:           # always audited regardless of sample_rate
+    - Critical             # every Critical-severity finding
+    - disagreement         # every raiser/triager severity disagreement
 
 # Difficulty-aware model-tier routing. Advisory and opt-in: with enabled: false
 # the sprint plan still carries each unit's difficulty band (useful information), but no
