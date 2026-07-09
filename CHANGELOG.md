@@ -232,6 +232,13 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
 
 ### Fixed
 
+- **`reconcile apply` no longer crashes appending a missing row into a dated index (RV0007;
+  BG0071).** `row_from_header` indexed `f["date"]` directly while every other column used
+  `.get()`, so the self-heal path raised `KeyError: 'date'` on the shipped bug/cr/plan index
+  templates (and every dogfood index) whenever a file lacked an index row - aborting
+  `transition set --ids` batches mid-flight after stamping the artefact. Absent dates now
+  default to `--` like every other column; a cross-script seam test appends into a dated index
+  and a unit test pins the empty-fields contract.
 - **Repo lint restored to green and the commit gate actually enabled (RV0007; BG0075).** Six
   commits had landed markdown-breaking content on `main` while `git config core.hooksPath` was
   unset in the dogfooding clone (the tracked hook never ran) and CI sat dark behind the unpushed

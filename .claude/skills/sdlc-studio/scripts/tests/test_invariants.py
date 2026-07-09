@@ -120,5 +120,26 @@ class CascadeInvariants(unittest.TestCase):
             self.assertTrue(new_i and all(all_i < i < view_i for i in new_i))
 
 
+    def test_apply_appends_missing_row_into_a_dated_index(self) -> None:
+        # BG0071 seam: the self-heal path must not crash on the shipped dated index shapes.
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+            bd = repo / "sdlc-studio" / "bugs"
+            (bd / "BG0001-lost-row.md").write_text(
+                "# BG0001: lost row\n\n> **Status:** Open\n> **Severity:** Low\n",
+                encoding="utf-8")  # file exists, index row missing
+            reconcile.apply_type("bug", repo)  # pre-fix: KeyError 'date'
+            self.assertEqual(reconcile.detect_type("bug", repo)["drift"], [])
+            self.assertIn("BG0001", (bd / "_index.md").read_text(encoding="utf-8"))
+
+    def test_row_from_header_defaults_every_absent_field(self) -> None:
+        # BG0071 unit: an empty fields dict must yield placeholders, never KeyError.
+        row = sdlc_md.row_from_header(
+            ["ID", "Title", "Status", "Severity", "Created", "Updated"],
+            "[BG0001](BG0001-x.md)", "x", "Open", {})
+        self.assertIn("| -- |", row)
+
+
 if __name__ == "__main__":
     unittest.main()

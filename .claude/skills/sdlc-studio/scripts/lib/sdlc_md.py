@@ -229,7 +229,7 @@ def row_from_header(header: list[str], link: str, title: str, status: str, f: di
         elif hl == "status":
             out.append(status)
         elif hl in ("created", "date", "raised", "updated"):
-            out.append(f["date"])
+            out.append(f.get("date", "--"))
         elif hl in field_for:
             key, default = field_for[hl]
             out.append(f.get(key, default))

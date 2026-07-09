@@ -1,9 +1,10 @@
 # BG0071: reconcile apply missing-row append crashes KeyError 'date' on any index with a date column
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file
+> **Verification depth:** functional (seam + unit regression tests red-then-green; original fixture repro re-run: apply now appends the row, drift 0)
 
 ## Summary
 
