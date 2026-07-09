@@ -51,13 +51,18 @@ TYPE_LABELS = {
     "epic": f"{LABEL_PREFIX}:epic",
 }
 
-TYPE_DIRS = {
-    "cr": ("sdlc-studio/change-requests", "CR"),
-    "story": ("sdlc-studio/stories", "US"),
-    "epic": ("sdlc-studio/epics", "EP"),
-}
+# github_sync mirrors only these artefact types; their directories and id prefixes come from
+# the shared `sdlc_md.ARTIFACT_TYPES` map (via `sdlc_md.artifact_files`), so there is no local
+# duplicate of the type table to drift out of step.
+_MIRRORED = ("cr", "story", "epic")
 
 STATE_PATH = "sdlc-studio/.local/github-sync-state.json"
+
+
+def _state_path(root: str | Path = ".") -> Path:
+    """The sync-state file resolved against `root`, so `--root <dir>` from outside the repo
+    reads and writes the state under `<dir>`, not the cwd."""
+    return Path(root) / STATE_PATH
 
 
 # -----------------------------------------------------------------------------
@@ -238,7 +243,7 @@ def walk_local(type_: str, repo_root: str | Path = ".") -> Iterable[LocalRecord]
     """Yield parsed records for every CR/Story/Epic file of `type_`. Discovery goes through the
     shared `sdlc_md.artifact_files`, so a lowercase-named file (`cr0001.md`) is found too - the
     old `CR*.md` prefix glob was case-sensitive on Linux and silently missed them."""
-    if type_ not in TYPE_DIRS:  # github_sync only mirrors cr/story/epic
+    if type_ not in _MIRRORED:  # github_sync only mirrors cr/story/epic
         return []
     result: list[LocalRecord] = []
     for p in sdlc_md.artifact_files(type_, Path(repo_root)):
@@ -331,7 +336,7 @@ def set_github_issue_field(path: Path, number: int) -> None:
 def cmd_push(args: argparse.Namespace) -> int:
     """Create or update GitHub issues from local CR/Story/Epic files."""
     types = _resolve_types(args.type)
-    state = load_state()
+    state = load_state(_state_path(args.root))
     mappings = state.get("mappings", {})
     created = 0
     updated = 0
@@ -340,7 +345,7 @@ def cmd_push(args: argparse.Namespace) -> int:
         # Fetch the type's issues at most once per type (lazily, only if a
         # record needs a label sync) rather than once per record.
         issues_by_number: dict[int, dict] | None = None
-        for rec in walk_local(type_):
+        for rec in walk_local(type_, args.root):
             if rec.github_issue is None:
                 title = f"[{rec.rec_id}] {rec.title}"
                 labels = rec.labels()
@@ -412,7 +417,7 @@ def cmd_push(args: argparse.Namespace) -> int:
     if not args.dry_run:
         state["last_push"] = now_iso()
         state["mappings"] = mappings
-        save_state(state)
+        save_state(state, _state_path(args.root))
 
     print(f"push: created={created} updated={updated}")
     return 0
@@ -421,7 +426,7 @@ def cmd_push(args: argparse.Namespace) -> int:
 def cmd_pull(args: argparse.Namespace) -> int:
     """List labelled issues that have no local file and need ingesting."""
     types = _resolve_types(args.type)
-    state = load_state()
+    state = load_state(_state_path(args.root))
     mappings = state.get("mappings", {})
     pulled = 0
 
@@ -429,7 +434,7 @@ def cmd_pull(args: argparse.Namespace) -> int:
     # fast "already synced?" checks
     by_issue: dict[int, LocalRecord] = {}
     for type_ in types:
-        for rec in walk_local(type_):
+        for rec in walk_local(type_, args.root):
             if rec.github_issue is not None:
                 by_issue[rec.github_issue] = rec
 
@@ -472,7 +477,7 @@ def cmd_pull(args: argparse.Namespace) -> int:
     if not args.dry_run:
         state["last_pull"] = now_iso()
         state["mappings"] = mappings
-        save_state(state)
+        save_state(state, _state_path(args.root))
 
     print(f"pull: issues_needing_ingest={pulled}")
     return 0
@@ -485,7 +490,7 @@ _CR_REF_RE = re.compile(r"sdlc:cr\s+(CR-\d{4})", re.I)
 
 def cmd_cascade(args: argparse.Namespace) -> int:
     """Find merged PRs whose bodies reference stories/CRs to cascade."""
-    state = load_state()
+    state = load_state(_state_path(args.root))
     since = args.since or state.get("last_cascade_ref")
     prs = gh_pr_list_merged(since)
     if not prs:
@@ -511,7 +516,7 @@ def cmd_cascade(args: argparse.Namespace) -> int:
 
     # Map issue numbers back to local stories via github_issue field
     local_stories_by_issue: dict[int, LocalRecord] = {}
-    for rec in walk_local("story"):
+    for rec in walk_local("story", args.root):
         if rec.github_issue is not None:
             local_stories_by_issue[rec.github_issue] = rec
 
@@ -542,14 +547,14 @@ def cmd_cascade(args: argparse.Namespace) -> int:
 
     if not args.dry_run and prs:
         state["last_cascade_ref"] = prs[0].get("mergedAt")
-        save_state(state)
+        save_state(state, _state_path(args.root))
 
     return 0
 
 
 def cmd_state(args: argparse.Namespace) -> int:
     """Print the current sync-state file as JSON."""
-    state = load_state()
+    state = load_state(_state_path(args.root))
     print(json.dumps(state, indent=2))
     return 0
 
@@ -574,19 +579,23 @@ def build_parser() -> argparse.ArgumentParser:
     push = sub.add_parser("push", help="Create or update issues from local files")
     push.add_argument("--type", default="cr", choices=["cr", "story", "epic", "all"])
     push.add_argument("--dry-run", action="store_true")
+    push.add_argument("--root", default=".", help="Repo root (default: .)")
     push.set_defaults(func=cmd_push)
 
     pull = sub.add_parser("pull", help="Fetch labelled issues for local ingest")
     pull.add_argument("--type", default="cr", choices=["cr", "story", "epic", "all"])
     pull.add_argument("--dry-run", action="store_true")
+    pull.add_argument("--root", default=".", help="Repo root (default: .)")
     pull.set_defaults(func=cmd_pull)
 
     cas = sub.add_parser("cascade", help="Find merged PRs that should trigger cascades")
     cas.add_argument("--since", help="Only consider PRs merged after this ISO timestamp")
     cas.add_argument("--dry-run", action="store_true")
+    cas.add_argument("--root", default=".", help="Repo root (default: .)")
     cas.set_defaults(func=cmd_cascade)
 
     st = sub.add_parser("state", help="Print sync state")
+    st.add_argument("--root", default=".", help="Repo root (default: .)")
     st.set_defaults(func=cmd_state)
 
     return p

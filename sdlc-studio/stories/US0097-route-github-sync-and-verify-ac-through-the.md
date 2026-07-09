@@ -1,6 +1,6 @@
 # US0097: Route github_sync and verify_ac through the shared discovery layer
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0021
@@ -22,7 +22,8 @@ Delivers CR0181. No new behaviour beyond correct discovery + a consistent `--roo
 - **Given** a fixture repo whose artefact filenames are lowercase
 - **When** `github_sync` and `verify_ac` run over it
 - **Then** every artefact is discovered (no case-sensitive-glob miss) in both tools
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_github_sync.py::SharedDiscoveryTests
+- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_github_sync.SharedDiscoveryTests tests.test_verify_ac.SharedDiscoveryTests
+- **Verified:** yes (2026-07-09)
 
 ### AC2: github_sync honours --root and STATE_PATH resolves against it
 
@@ -30,20 +31,23 @@ Delivers CR0181. No new behaviour beyond correct discovery + a consistent `--roo
 - **When** it runs
 - **Then** it discovers artefacts under `<dir>` and `STATE_PATH` resolves against `<dir>`, not the cwd
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_github_sync.py::RootFlagTests
+- **Verified:** yes (2026-07-09)
 
 ### AC3: verify_ac accepts --root as an alias of --repo-root
 
 - **Given** `verify_ac.py run --root <dir>`
 - **When** invoked
 - **Then** it is accepted (alias of `--repo-root`), so the flag grammar matches every sibling script
-- **Verify:** grep -E "\"--root\"|'--root'" .claude/skills/sdlc-studio/scripts/verify_ac.py
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::SharedDiscoveryTests::test_root_is_alias_of_repo_root
+- **Verified:** yes (2026-07-09)
 
 ### AC4: No duplicate type table; discovery flows through the shared layer
 
 - **Given** `github_sync.py`
 - **When** the code is inspected
 - **Then** it discovers via `sdlc_md.artifact_files` / `ARTIFACT_TYPES` with no private `TYPE_DIRS` duplicate of the shared type map
-- **Verify:** grep -E "artifact_files|ARTIFACT_TYPES" .claude/skills/sdlc-studio/scripts/github_sync.py
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_github_sync.py::SharedDiscoveryTests
+- **Verified:** yes (2026-07-09)
 
 ## Revision History
 

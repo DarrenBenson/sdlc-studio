@@ -898,6 +898,37 @@ class ScaffoldMatrixTests(unittest.TestCase):
             self.assertEqual(data_rows, [])
             self.assertIn("| Story | AC | Description | Test Cases | Status |", matrix)
 
+class SharedDiscoveryTests(unittest.TestCase):
+    """US0097/CR0181: verify_ac discovers lowercase-named stories too (case-insensitive)."""
+
+    def _story(self, sd, name):
+        (sd).mkdir(parents=True, exist_ok=True)
+        (sd / name).write_text(
+            "# US0099: s\n\n> **Status:** Ready\n\n## Acceptance Criteria\n\n"
+            "### AC1: a\n- **Then** x\n- **Verify:** manual check\n", encoding="utf-8")
+
+    def test_walk_stories_finds_lowercase(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = Path(d) / "sdlc-studio" / "stories"
+            self._story(sd, "us0099-lower.md")                     # lowercase filename
+            found = list(verify_ac.walk_stories(sd))
+            self.assertEqual([p.name for p in found], ["us0099-lower.md"])
+
+    def test_run_by_id_resolves_lowercase(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = Path(d) / "sdlc-studio" / "stories"
+            self._story(sd, "us0099-lower.md")
+            args = verify_ac.build_parser().parse_args(
+                ["run", "--dir", str(sd), "--id", "US0099", "--dry-run"])
+            self.assertEqual(verify_ac.cmd_run(args), 0)           # found, not "no story file"
+
+    def test_root_is_alias_of_repo_root(self):
+        # US0097/CR0181 AC3: --root is accepted as an alias of --repo-root (flag grammar parity)
+        args = verify_ac.build_parser().parse_args(["run", "--root", "/x"])
+        self.assertEqual(args.repo_root, "/x")
+        args2 = verify_ac.build_parser().parse_args(["run", "--repo-root", "/y"])
+        self.assertEqual(args2.repo_root, "/y")
+
 
 if __name__ == "__main__":
     unittest.main()

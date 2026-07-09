@@ -917,8 +917,6 @@ class FriendlyAliasTests(unittest.TestCase):
             self.assertIn("#42", p.read_text(encoding="utf-8"))
 
 
-if __name__ == "__main__":
-    unittest.main()
 
 
 class LowercaseDiscoveryTests(unittest.TestCase):
@@ -935,3 +933,43 @@ class LowercaseDiscoveryTests(unittest.TestCase):
             self.assertEqual(len(recs), 1)  # found despite the lowercase filename
             from lib import sdlc_md
             self.assertEqual(sdlc_md.norm_id(recs[0].rec_id), "CR0001")
+
+
+class SharedDiscoveryTests(unittest.TestCase):
+    """US0097/CR0181: discovery flows through the shared layer (lowercase-safe), no dup table."""
+
+    def test_lowercase_named_cr_is_discovered(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            crd = Path(d) / "sdlc-studio" / "change-requests"
+            crd.mkdir(parents=True)
+            (crd / "cr-0009-lower.md").write_text(SAMPLE_CR, encoding="utf-8")  # lowercase name
+            self.assertEqual(len(list(github_sync.walk_local("cr", Path(d)))), 1)
+
+    def test_no_private_type_dirs_duplicate(self) -> None:
+        self.assertFalse(hasattr(github_sync, "TYPE_DIRS"))          # no local dup of the type map
+        self.assertEqual(github_sync._MIRRORED, ("cr", "story", "epic"))
+
+
+class RootFlagTests(unittest.TestCase):
+    """US0097/CR0181: --root works from outside the repo; STATE_PATH resolves against it."""
+
+    def test_walk_local_honours_root_without_chdir(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            crd = Path(d) / "sdlc-studio" / "change-requests"
+            crd.mkdir(parents=True)
+            (crd / "CR-0001-x.md").write_text(SAMPLE_CR, encoding="utf-8")
+            self.assertEqual(len(list(github_sync.walk_local("cr", Path(d)))), 1)  # cwd elsewhere
+
+    def test_state_path_resolves_against_root(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = github_sync._state_path(root)
+            self.assertEqual(sp, root / "sdlc-studio" / ".local" / "github-sync-state.json")
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            github_sync.save_state(github_sync._empty_state(), sp)
+            self.assertTrue(sp.exists())
+            self.assertEqual(github_sync.load_state(sp)["version"], 1)
+
+
+if __name__ == "__main__":
+    unittest.main()

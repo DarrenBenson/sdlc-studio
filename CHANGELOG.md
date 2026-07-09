@@ -141,6 +141,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`github_sync` and `verify_ac` discover artefacts through the shared layer (EP0021, CR0181;
+  US0097).** Both tools now find lowercase-named files (the old case-sensitive `CR*`/`US*` prefix
+  globs silently missed `cr0001.md` on Linux): `github_sync` dropped its private `TYPE_DIRS`
+  duplicate of the type map and threads `--root` through discovery and the state file;
+  `verify_ac`'s `walk_stories` and `--id` resolution are case-insensitive and it accepts `--root`
+  as an alias of `--repo-root`, so the flag grammar matches every sibling script.
 - **`decisions.py --supersedes` now flips the superseded row's Status to `superseded`
   (EP0020, BG0068).** The log no longer carries two contradictory `accepted` decisions; an
   unknown/typo id fails loud (anchored id parse) instead of silently recording a dangling

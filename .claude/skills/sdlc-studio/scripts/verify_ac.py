@@ -548,10 +548,14 @@ def verify_story(
 
 
 def walk_stories(stories_dir: Path) -> Iterable[Path]:
-    """Yield every US*.md story file in a directory, sorted."""
+    """Yield every US story file in a directory, sorted. Case-insensitive - a lowercase
+    `us0001.md` is found too - matching the shared `sdlc_md` discovery, so verify_ac cannot
+    silently miss an artefact the rest of the toolchain sees (the old `US*.md` prefix glob was
+    case-sensitive on Linux)."""
     if not stories_dir.exists():
         return []
-    return sorted(p for p in stories_dir.glob("US*.md") if p.is_file())
+    return sorted(p for p in stories_dir.glob("*.md")
+                  if p.is_file() and p.name[:2].lower() == "us")
 
 
 def write_report(path: Path, stories: list[StoryReport], dry_run: bool = False,
@@ -632,8 +636,10 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     if args.story:
         paths = [Path(args.story)]
-    elif getattr(args, "id", None):  # resolve --id USNNNN under --dir (grammar parity)
-        matches = sorted(Path(args.dir).glob(f"{args.id}-*.md"))
+    elif getattr(args, "id", None):  # resolve --id USNNNN under --dir (case-insensitive)
+        target = sdlc_md.norm_id(args.id)
+        matches = [p for p in walk_stories(Path(args.dir))
+                   if sdlc_md.norm_id(sdlc_md.extract_record_id(p.stem) or "") == target]
         if not matches:
             print(f"no story file for id {args.id} under {args.dir}", file=sys.stderr)
             return 2
@@ -954,9 +960,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Report output path",
     )
     r.add_argument(
-        "--repo-root",
+        "--repo-root", "--root",
+        dest="repo_root",
         default=".",
-        help="Repository root used as cwd for verifier commands",
+        help="Repository root used as cwd for verifier commands (--root is an alias, "
+             "matching the flag grammar of every sibling script)",
     )
     r.set_defaults(func=cmd_run)
 
