@@ -366,37 +366,16 @@ def digest_drift_advisory(repo_root: Path | str) -> str | None:
             "written) - regenerate it: scripts/digest.py build")
 
 
-def detect_type(type_: str, repo_root: Path) -> dict:
-    """Compute drift for one type."""
-    census = file_census(type_, repo_root)
-    index = parse_index(type_, repo_root)
-    filenames = _census_filenames(type_, repo_root)
-    drift: list[dict] = []
-    vocab = sdlc_md.status_vocab(type_, repo_root)
-
-    if census and not index["exists"]:
-        drift.append({
-            "type": type_, "id": None, "kind": "missing-index",
-            "file_status": None, "index_status": None,
-            "fix": f"create {sdlc_md.ARTIFACT_TYPES[type_][0]}/_index.md from the {len(census)} files",
-        })
-
-    rows = index["rows"]
-    # A whole-index degenerate parse (mis-named/absent Status column) is one
-    # structural defect: name it once and suppress the per-row mismatch storm
-    # and the count-mismatch misdiagnosis it would otherwise fabricate.
-    degenerate = index.get("degenerate")
-    if degenerate:
-        drift.append({"type": type_, "id": None, "kind": "index-status-column",
-                      "file_status": None, "index_status": None,
-                      "fix": degenerate})
+def _census_row_drift(type_, census, rows, filenames, vocab, degenerate) -> list[dict]:
+    """Per-file drift: a census file missing its index row, or a file/index status mismatch."""
+    out: list[dict] = []
     for norm, (disp, fstatus) in sorted(census.items()):
         if norm not in rows:
             fname = filenames.get(norm)
-            drift.append({"type": type_, "id": disp, "kind": "missing-row",
-                          "file_status": fstatus, "index_status": None, "file": fname,
-                          "fix": (f"add {disp} ({fstatus}) to the index, linking {fname}"
-                                  if fname else f"add {disp} ({fstatus}) to the index")})
+            out.append({"type": type_, "id": disp, "kind": "missing-row",
+                        "file_status": fstatus, "index_status": None, "file": fname,
+                        "fix": (f"add {disp} ({fstatus}) to the index, linking {fname}"
+                                if fname else f"add {disp} ({fstatus}) to the index")})
         else:
             istatus = rows[norm][1]
             fcanon = _canonical_status(fstatus, vocab)
@@ -407,9 +386,15 @@ def detect_type(type_: str, repo_root: Path) -> dict:
             # than emit noise every run.
             target = icanon if icanon is not None else istatus
             if not degenerate and fcanon is not None and fcanon != target:
-                drift.append({"type": type_, "id": disp, "kind": "status-mismatch",
-                              "file_status": fstatus, "index_status": istatus,
-                              "fix": f"set index status of {disp} to {fstatus}"})
+                out.append({"type": type_, "id": disp, "kind": "status-mismatch",
+                            "file_status": fstatus, "index_status": istatus,
+                            "fix": f"set index status of {disp} to {fstatus}"})
+    return out
+
+
+def _orphan_row_drift(type_, census, rows, vocab) -> list[dict]:
+    """A live index row whose status implies a backing file, but none exists."""
+    out: list[dict] = []
     for norm, (disp, istatus) in sorted(rows.items()):
         if norm not in census:
             icanon = _canonical_status(istatus, vocab)
@@ -418,61 +403,101 @@ def detect_type(type_: str, repo_root: Path) -> dict:
             # reservation, not an orphan — don't flag it.
             if icanon is None or icanon in _NO_FILE_EXPECTED:
                 continue
-            drift.append({"type": type_, "id": disp, "kind": "orphan-row",
-                          "file_status": None, "index_status": istatus,
-                          "fix": f"remove orphan index row {disp} (no backing file)"})
+            out.append({"type": type_, "id": disp, "kind": "orphan-row",
+                        "file_status": None, "index_status": istatus,
+                        "fix": f"remove orphan index row {disp} (no backing file)"})
+    return out
 
-    # Count drift: the summary table summarises the INDEX ROWS, so check it
-    # against the row tally (canonical), not the file census. This is the right
-    # authority for types whose files routinely carry no status field (e.g. CRs)
-    # — per-row file-vs-index drift is already caught by status-mismatch above.
-    row_counts: dict[str, int] = {}
+
+def _row_counts(rows, vocab) -> dict[str, int]:
+    """Canonical tally of the index ROWS (the authority the summary table summarises)."""
+    counts: dict[str, int] = {}
     for _disp, istatus in rows.values():
         rc = _canonical_status(istatus, vocab)
         if rc is not None:
-            row_counts[rc] = row_counts.get(rc, 0) + 1
+            counts[rc] = counts.get(rc, 0) + 1
+    return counts
+
+
+def _count_mismatch_drift(type_, census, index, row_counts, vocab, degenerate) -> list[dict]:
+    """Summary-vs-rows count drift. The summary table summarises the INDEX ROWS, so it is checked
+    against the row tally (not the file census) - the right authority for types whose files carry
+    no status field (e.g. CRs); per-row file-vs-index drift is caught by status-mismatch."""
     mismatches = [
         {"status": st, "rows": row_counts.get(st, 0), "summary": index["summary"].get(st, 0)}
         for st in sorted(set(index["summary"]) | set(row_counts))
         if index["summary"].get(st, 0) != row_counts.get(st, 0)
     ]
-    if bool(index["summary"]) and mismatches and not degenerate:
-        # The finding carries its own diagnosis (the mismatched tokens with both
-        # numbers) and, when out-of-vocab statuses are the cause, the offending
-        # status + carriers + the config remedy - a generic "recompute" hint for a
-        # vocab problem is a dead end that apply cannot clear.
-        out_of_vocab: dict[str, list[str]] = {}
-        for disp, fstatus in sorted(census.values()):
-            if fstatus and _canonical_status(fstatus, vocab) is None:
-                out_of_vocab.setdefault(fstatus, []).append(disp)
-        detail = ", ".join(f"{m['status']} rows={m['rows']} summary={m['summary']}"
-                           for m in mismatches)
-        if out_of_vocab:
-            named = "; ".join(
-                f"status '{st}' on {', '.join(ids)} is not in status_vocab.{type_}"
-                for st, ids in sorted(out_of_vocab.items()))
-            fix = (f"{detail}. Likely cause: {named} - declare it in "
-                   f"sdlc-studio/.config.yaml under status_vocab.{type_} "
-                   f"(see reference-config.md), or diagnose with scripts/validate.py check")
-        else:
-            fix = (f"{detail}. All statuses are in-vocab (stale arithmetic) - "
-                   f"recompute the summary counts from the index rows")
-        drift.append({"type": type_, "id": None, "kind": "count-mismatch",
-                      "file_status": None, "index_status": None,
-                      "mismatches": mismatches,
-                      "out_of_vocab": out_of_vocab or None,
-                      "fix": fix})
+    if not (bool(index["summary"]) and mismatches and not degenerate):
+        return []
+    # The finding carries its own diagnosis (the mismatched tokens with both
+    # numbers) and, when out-of-vocab statuses are the cause, the offending
+    # status + carriers + the config remedy - a generic "recompute" hint for a
+    # vocab problem is a dead end that apply cannot clear.
+    out_of_vocab: dict[str, list[str]] = {}
+    for disp, fstatus in sorted(census.values()):
+        if fstatus and _canonical_status(fstatus, vocab) is None:
+            out_of_vocab.setdefault(fstatus, []).append(disp)
+    detail = ", ".join(f"{m['status']} rows={m['rows']} summary={m['summary']}"
+                       for m in mismatches)
+    if out_of_vocab:
+        named = "; ".join(
+            f"status '{st}' on {', '.join(ids)} is not in status_vocab.{type_}"
+            for st, ids in sorted(out_of_vocab.items()))
+        fix = (f"{detail}. Likely cause: {named} - declare it in "
+               f"sdlc-studio/.config.yaml under status_vocab.{type_} "
+               f"(see reference-config.md), or diagnose with scripts/validate.py check")
+    else:
+        fix = (f"{detail}. All statuses are in-vocab (stale arithmetic) - "
+               f"recompute the summary counts from the index rows")
+    return [{"type": type_, "id": None, "kind": "count-mismatch",
+             "file_status": None, "index_status": None,
+             "mismatches": mismatches,
+             "out_of_vocab": out_of_vocab or None,
+             "fix": fix}]
 
-    # File-census tally kept for information (status distribution on disk).
-    census_counts: dict[str, int] = {}
+
+def _census_counts(census, vocab) -> dict[str, int]:
+    """File-census tally kept for information (status distribution on disk)."""
+    counts: dict[str, int] = {}
     for _disp, fstatus in census.values():
         key = _canonical_status(fstatus, vocab) or "Unknown"
-        census_counts[key] = census_counts.get(key, 0) + 1
+        counts[key] = counts.get(key, 0) + 1
+    return counts
+
+
+def detect_type(type_: str, repo_root: Path) -> dict:
+    """Compute drift for one type by composing the per-concern drift detectors."""
+    census = file_census(type_, repo_root)
+    index = parse_index(type_, repo_root)
+    filenames = _census_filenames(type_, repo_root)
+    vocab = sdlc_md.status_vocab(type_, repo_root)
+    rows = index["rows"]
+    # A whole-index degenerate parse (mis-named/absent Status column) is one
+    # structural defect: name it once and suppress the per-row mismatch storm
+    # and the count-mismatch misdiagnosis it would otherwise fabricate.
+    degenerate = index.get("degenerate")
+
+    drift: list[dict] = []
+    if census and not index["exists"]:
+        drift.append({
+            "type": type_, "id": None, "kind": "missing-index",
+            "file_status": None, "index_status": None,
+            "fix": f"create {sdlc_md.ARTIFACT_TYPES[type_][0]}/_index.md from the {len(census)} files",
+        })
+    if degenerate:
+        drift.append({"type": type_, "id": None, "kind": "index-status-column",
+                      "file_status": None, "index_status": None, "fix": degenerate})
+
+    drift += _census_row_drift(type_, census, rows, filenames, vocab, degenerate)
+    drift += _orphan_row_drift(type_, census, rows, vocab)
+    row_counts = _row_counts(rows, vocab)
+    drift += _count_mismatch_drift(type_, census, index, row_counts, vocab, degenerate)
 
     bloat = index_bloat_advisory(type_, repo_root, index)
     return {
         "census_total": len(census),
-        "census_counts": census_counts,
+        "census_counts": _census_counts(census, vocab),
         "row_counts": row_counts,
         "index_exists": index["exists"],
         "index_summary": index["summary"],
@@ -528,6 +553,7 @@ def cmd_detect(args: argparse.Namespace) -> int:
             report["blocker_sweep"] = {"now_unblocked": sw["now_unblocked"],
                                        "still_blocked": sw["still_blocked"], "errors": sw["errors"]}
         except Exception as exc:  # noqa: BLE001 - an advisory lane must never break detect
+            sdlc_md.debug("reconcile.blocker_sweep", exc)
             report["blocker_sweep"] = {"error": str(exc)}
 
     out_path = repo_root / "sdlc-studio" / ".local" / "reconcile-report.json"

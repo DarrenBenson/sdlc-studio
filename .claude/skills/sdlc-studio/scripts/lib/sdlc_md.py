@@ -10,7 +10,9 @@ from __future__ import annotations
 
 import contextlib
 import json
+import os
 import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TypeVar
@@ -70,6 +72,40 @@ def now_iso8601() -> str:
 def now_date() -> str:
     """Current UTC date as YYYY-MM-DD."""
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+def debug_enabled() -> bool:
+    """True when SDLC_DEBUG=1 - the opt-in diagnostic channel for swallowed-advisory sites."""
+    return os.environ.get("SDLC_DEBUG") == "1"
+
+
+def debug(where: str, detail: object = "") -> None:
+    """Emit one stderr line from a swallowed-advisory site when SDLC_DEBUG=1, so a lane that
+    degrades silently is still traceable; a no-op otherwise (never on the default path)."""
+    if debug_enabled():
+        line = f"[sdlc-debug] {where}: {detail}" if detail != "" else f"[sdlc-debug] {where}"
+        print(line, file=sys.stderr)
+
+
+DEFAULT_LOG_MAX_LINES = 5000
+
+
+def roll_jsonl(path: Path, max_lines: int = DEFAULT_LOG_MAX_LINES) -> bool:
+    """Bound an append-only `.local` JSONL log: when it exceeds `max_lines`, keep the most
+    recent `max_lines` (the audit trail stays useful without growing without limit). Returns
+    True when it rolled. Silent no-op when the file is absent or within bounds."""
+    try:
+        if not path.exists():
+            return False
+        lines = path.read_text(encoding="utf-8").splitlines()
+        if len(lines) <= max_lines:
+            return False
+        kept = lines[-max_lines:]
+        atomic_write(path, "\n".join(kept) + "\n")
+        return True
+    except OSError as exc:
+        debug("roll_jsonl", exc)
+        return False
 
 
 # -----------------------------------------------------------------------------

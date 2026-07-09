@@ -18,6 +18,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # resolve sibling imports (critic)
+from lib import sdlc_md  # noqa: E402
 
 # The project's gitignored state dir (sdlc-studio/.local/), not repo-root .local/.
 LOCAL = Path("sdlc-studio") / ".local" / "telemetry.jsonl"
@@ -42,8 +43,9 @@ def record(repo_root: Path | str, fields: dict) -> dict:
         p.parent.mkdir(parents=True, exist_ok=True)
         with p.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps(rec) + "\n")
-    except Exception:  # noqa: BLE001 - telemetry is advisory; never raise into the loop
-        pass
+        sdlc_md.roll_jsonl(p)  # bound the append-only telemetry log
+    except Exception as exc:  # noqa: BLE001 - telemetry is advisory; never raise into the loop
+        sdlc_md.debug("telemetry.record", exc)
     return rec
 
 
@@ -73,8 +75,9 @@ def record_plan_review(repo_root: Path | str, unit: str, verdict: str,
         p.parent.mkdir(parents=True, exist_ok=True)
         with p.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps(rec) + "\n")
-    except Exception:  # noqa: BLE001 - telemetry is advisory; never raise into the loop
-        pass
+        sdlc_md.roll_jsonl(p)  # bound the append-only telemetry log
+    except Exception as exc:  # noqa: BLE001 - telemetry is advisory; never raise into the loop
+        sdlc_md.debug("telemetry.record", exc)
     return rec
 
 

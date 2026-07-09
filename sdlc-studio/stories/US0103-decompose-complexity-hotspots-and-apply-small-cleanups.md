@@ -1,6 +1,6 @@
 # US0103: Decompose complexity hotspots and apply small cleanups
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0022
@@ -25,6 +25,7 @@ Delivers CR0187 items 4-6. Depends on US0102 (same shared-layer / reconcile surf
 - **When** they are refactored into smaller helpers
 - **Then** each hotspot's cognitive complexity drops and the existing tests pass unchanged (behaviour-preserving)
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_reconcile.py 2>&1 | grep -qE "^OK"
+- **Verified:** yes (2026-07-09)
 
 ### AC2: The flagged test issues are fixed
 
@@ -32,6 +33,7 @@ Delivers CR0187 items 4-6. Depends on US0102 (same shared-layer / reconcile surf
 - **When** they run
 - **Then** the regex uses a raw string and the verify tests no longer leak stdout
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_table_parsers.py
+- **Verified:** yes (2026-07-09)
 
 ### AC3: The six small cleanups are applied
 
@@ -39,6 +41,7 @@ Delivers CR0187 items 4-6. Depends on US0102 (same shared-layer / reconcile surf
 - **When** applied
 - **Then** `.local` logs roll (bounded size) and `SDLC_DEBUG=1` emits one line from each named swallowed-advisory site
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DebugTraceTests
+- **Verified:** yes (2026-07-09)
 
 ## Revision History
 

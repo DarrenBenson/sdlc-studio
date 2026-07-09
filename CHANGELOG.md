@@ -14,6 +14,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > unaffected. v4.0 is cut only once that backlog is complete and it has been tested on real
 > projects.
 
+### Changed
+
+- **Complexity hotspots decomposed, latent test issues fixed, small cleanups + a debug channel
+  (EP0022, CR0187; US0103).** `reconcile.detect_type` (115 -> 40 lines), `transition.transition`
+  (128 -> 45) and `conformance.detect_conformance` (118 -> 84) are decomposed into named,
+  behaviour-preserving helpers (the full suite is unchanged and green); `lessons.render_global_lesson`
+  was already within bounds. Test fixes: `test_table_parsers.py` uses a raw string for the escaped
+  pipe (no future SyntaxError) and the verify tests route `main()` through a quiet helper so they no
+  longer leak `[APL]`/`wrote` lines into suite output. Cleanups: `gate.py`'s redundant
+  `except (OSError, Exception)` narrowed to `Exception`; `artifact.py`'s `meta_new` dry-run predicts
+  `indexed` honestly instead of always `False`. New opt-in diagnostics: `sdlc_md.debug`/`roll_jsonl` -
+  `SDLC_DEBUG=1` emits one stderr line from each named swallowed-advisory site (telemetry, jest cache,
+  sprint complexity, reconcile blocker-sweep), and the append-only `.local` logs (telemetry/verify
+  history) roll to a bounded size.
+
 ### Added
 
 - **Context tiering - status/hint read closed-artefact digests, not the full corpus (EP0023,

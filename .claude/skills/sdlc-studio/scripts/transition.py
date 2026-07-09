@@ -252,30 +252,15 @@ def _cascade_epic(repo_root: Path, story_id: str, ticked: bool) -> str | None:
     return m.group(0) if changed else None
 
 
-def transition(repo_root: Path | str, artifact_id: str, new_status: str,
-               dry_run: bool = False, force: bool = False,
-               metrics: dict | None = None, triaged_by: str | None = None,
-               triage_severity: str | None = None) -> dict:
-    """Set `artifact_id`'s status to `new_status`, sync its index, and cascade the epic
-    breakdown for a story. Returns {id, type, from, to, index_synced, epic}.
+_IMPL_TARGETS = {"In Progress", "Review", "Done"}
 
-    A story moving to Done is gated on its AC-verify result: red or never-run
-    executable ACs block the transition unless `force=True`. Scoped to stories - CR/epic/bug
-    closures are unaffected. Manual-only / AC-less stories are never blocked."""
-    root = Path(repo_root)
-    if re.match(r"^(RETRO|RV)-?\d+", artifact_id.strip(), re.IGNORECASE):
-        raise ValueError(
-            f"{artifact_id} is a meta-artifact (retro/review) outside the status "
-            f"machinery by design - edit the file directly; there is no status to cascade")
-    path, type_ = _find(root, artifact_id)
-    if path is None:
-        raise ValueError(f"no artifact found for id {artifact_id!r}")
-    vocab = sdlc_md.status_vocab(type_, root)
-    if sdlc_md.canonical_status(new_status, vocab) is None:
-        raise ValueError(f"{new_status!r} is not a valid {type_} status ({', '.join(vocab)})")
-    text = path.read_text(encoding="utf-8")
+
+def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
+                     target_canon, from_canon, force, dry_run, triaged_by) -> str | None:
+    """Run the ordered pre-write gates (bug-depth, depth-parity, done-verify, triage,
+    plan-review). Raise ValueError on a hard block; else return the accumulated advisory
+    warning (or None). Behaviour-preserving extraction of the interleaved gate ladder."""
     gate_warn = None
-    target_canon = sdlc_md.canonical_status(new_status, vocab)
     if type_ == "bug" and not force and not dry_run:
         block = _bug_depth_gate(text, target_canon)
         if block:
@@ -292,8 +277,7 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
                 raise ValueError(
                     f"{artifact_id} -> Done blocked: {parity}. Override with --force.")
             gate_warn = f"depth-parity advisory: {parity}"
-    if (type_ == "story" and not force and not dry_run
-            and target_canon == "Done"):
+    if type_ == "story" and not force and not dry_run and target_canon == "Done":
         block = _done_verify_gate(root, path, text)
         if block:
             # the gate is hard by default; `quality.done_requires_verified: false`
@@ -304,9 +288,6 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
                 raise ValueError(f"{artifact_id} -> Done blocked: {block}. Override with --force.")
             verify_warn = f"AC-verify advisory (quality.done_requires_verified=false): {block}"
             gate_warn = f"{gate_warn}; {verify_warn}" if gate_warn else verify_warn
-    current = sdlc_md.extract_field(text, "Status")
-    from_canon = sdlc_md.canonical_status(current, vocab)
-    triage_fields: dict[str, str] = {}
     # The triage gate fires on any exit from `inbox` for a v3 finding, dry-run included: an
     # honest preflight must surface the same refusal a real run would (never a false green).
     block = _triage_gate(root, type_, text, from_canon, target_canon, triaged_by)
@@ -320,37 +301,42 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
     # Not bypassed by --force - the sanctioned skip is the recorded override field, so a
     # skip is always auditable. Idempotent for a forward walk: once reviewed/overridden,
     # In Progress -> Review -> Done all pass.
-    _IMPL_TARGETS = {"In Progress", "Review", "Done"}
     if type_ == "story" and target_canon in _IMPL_TARGETS and from_canon not in _IMPL_TARGETS:
         import plan_review  # local import: plan_review pulls route/critic; keep them off cold paths
         pr_res = plan_review.gate(root, artifact_id, path)
         if not pr_res["ok"]:
             raise ValueError(f"{artifact_id} -> {new_status} blocked: {pr_res['reason']}.")
-    if (not dry_run and type_ in sdlc_md.FINDING_TYPES and sdlc_md.is_schema_v3(root)
+    return gate_warn
+
+
+def _triage_fields(root, type_, text, from_canon, triaged_by, triage_severity,
+                   gate_warn, dry_run) -> tuple[dict, str | None]:
+    """The Triaged-by / Triage-severity fields to stamp on a satisfied v3 triage exit, plus the
+    (possibly extended) advisory warning. No-op off the (real, non-dry-run) triage path."""
+    triage_fields: dict[str, str] = {}
+    if not (not dry_run and type_ in sdlc_md.FINDING_TYPES and sdlc_md.is_schema_v3(root)
             and from_canon == sdlc_md.INBOX_STATUS):
-        # A satisfied triage transition records the triaging seat (and, when given, the
-        # triager's severity) at the moment of transition, alongside the raiser's Severity.
-        raw_tb = triaged_by or sdlc_md.extract_field(text, "Triaged-by")
-        if raw_tb:
-            triage_fields["Triaged-by"] = raw_tb
-        tb = sdlc_md.parse_authorship_value(raw_tb)
-        raiser = sdlc_md.parse_authorship(text, "Raised-by")
-        if (tb and raiser and raiser["name"] and tb["type"] == "human"
-                and sdlc_md.norm_id(raiser["name"]) == sdlc_md.norm_id(tb["name"])):
-            gate_warn = (f"{gate_warn}; solo-human self-triage: {tb['name']}"
-                         if gate_warn else f"solo-human self-triage: {tb['name']}")
-        if triage_severity:
-            triage_fields["Triage-severity"] = triage_severity
-    new_text, ok = _set_field(text, "Status", new_status)
-    if not ok:
-        raise ValueError(f"{path.name} has no `Status` field to transition")
-    for fname, fval in triage_fields.items():
-        new_text = _upsert_field(new_text, fname, fval)
-    result = {"id": sdlc_md.extract_record_id(path.stem), "type": type_,
-              "from": current, "to": new_status, "index_synced": False, "epic": None,
-              "warning": gate_warn}
-    if dry_run:
-        return result
+        return triage_fields, gate_warn
+    # A satisfied triage transition records the triaging seat (and, when given, the
+    # triager's severity) at the moment of transition, alongside the raiser's Severity.
+    raw_tb = triaged_by or sdlc_md.extract_field(text, "Triaged-by")
+    if raw_tb:
+        triage_fields["Triaged-by"] = raw_tb
+    tb = sdlc_md.parse_authorship_value(raw_tb)
+    raiser = sdlc_md.parse_authorship(text, "Raised-by")
+    if (tb and raiser and raiser["name"] and tb["type"] == "human"
+            and sdlc_md.norm_id(raiser["name"]) == sdlc_md.norm_id(tb["name"])):
+        gate_warn = (f"{gate_warn}; solo-human self-triage: {tb['name']}"
+                     if gate_warn else f"solo-human self-triage: {tb['name']}")
+    if triage_severity:
+        triage_fields["Triage-severity"] = triage_severity
+    return triage_fields, gate_warn
+
+
+def _post_write_sync_and_record(root, type_, path, new_text, result, current, new_status,
+                                vocab, gate_warn, metrics) -> dict:
+    """Write the file, sync the index, cascade the epic (story), and record close telemetry.
+    Reports index_synced honestly against residual drift. Behaviour-preserving extraction."""
     path.write_text(new_text, encoding="utf-8")
     reconcile.apply_type(type_, root)  # sync the index row + counts
     # index_synced is the TRUTH after the sync, not "apply did something": an archived
@@ -378,6 +364,51 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
         telemetry.record(root, {"id": result["id"], "type": type_, **(metrics or {})})
         result["telemetry"] = True
     return result
+
+
+def transition(repo_root: Path | str, artifact_id: str, new_status: str,
+               dry_run: bool = False, force: bool = False,
+               metrics: dict | None = None, triaged_by: str | None = None,
+               triage_severity: str | None = None) -> dict:
+    """Set `artifact_id`'s status to `new_status`, sync its index, and cascade the epic
+    breakdown for a story. Returns {id, type, from, to, index_synced, epic}.
+
+    A story moving to Done is gated on its AC-verify result: red or never-run
+    executable ACs block the transition unless `force=True`. Scoped to stories - CR/epic/bug
+    closures are unaffected. Manual-only / AC-less stories are never blocked."""
+    root = Path(repo_root)
+    if re.match(r"^(RETRO|RV)-?\d+", artifact_id.strip(), re.IGNORECASE):
+        raise ValueError(
+            f"{artifact_id} is a meta-artifact (retro/review) outside the status "
+            f"machinery by design - edit the file directly; there is no status to cascade")
+    path, type_ = _find(root, artifact_id)
+    if path is None:
+        raise ValueError(f"no artifact found for id {artifact_id!r}")
+    vocab = sdlc_md.status_vocab(type_, root)
+    if sdlc_md.canonical_status(new_status, vocab) is None:
+        raise ValueError(f"{new_status!r} is not a valid {type_} status ({', '.join(vocab)})")
+    text = path.read_text(encoding="utf-8")
+    target_canon = sdlc_md.canonical_status(new_status, vocab)
+    current = sdlc_md.extract_field(text, "Status")
+    from_canon = sdlc_md.canonical_status(current, vocab)
+
+    gate_warn = _pre_write_gates(root, artifact_id, new_status, type_, path, text,
+                                 target_canon, from_canon, force, dry_run, triaged_by)
+    triage_fields, gate_warn = _triage_fields(root, type_, text, from_canon, triaged_by,
+                                              triage_severity, gate_warn, dry_run)
+
+    new_text, ok = _set_field(text, "Status", new_status)
+    if not ok:
+        raise ValueError(f"{path.name} has no `Status` field to transition")
+    for fname, fval in triage_fields.items():
+        new_text = _upsert_field(new_text, fname, fval)
+    result = {"id": sdlc_md.extract_record_id(path.stem), "type": type_,
+              "from": current, "to": new_status, "index_synced": False, "epic": None,
+              "warning": gate_warn}
+    if dry_run:
+        return result
+    return _post_write_sync_and_record(root, type_, path, new_text, result, current,
+                                       new_status, vocab, gate_warn, metrics)
 
 
 def _print_result(res: dict, dry_run: bool) -> None:

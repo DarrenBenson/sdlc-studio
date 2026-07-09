@@ -5,7 +5,9 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 import shutil
 import sys
@@ -20,6 +22,18 @@ verify_ac = importlib.util.module_from_spec(_spec)
 sys.modules["verify_ac"] = verify_ac
 _spec.loader.exec_module(verify_ac)
 sdlc_md = verify_ac.sdlc_md  # shared parsing helpers, via the loaded module
+
+
+def _quiet_main(*args, **kwargs):
+    """Run verify_ac.main with its `[APL]`/`[DRY]`/`wrote ...` progress lines suppressed, so the
+    verify tests do not leak them into the suite output."""
+    with contextlib.redirect_stdout(io.StringIO()):
+        return verify_ac.main(*args, **kwargs)
+
+
+def _quiet_cmd_run(args):
+    with contextlib.redirect_stdout(io.StringIO()):
+        return verify_ac.cmd_run(args)
 
 
 PASSING_STORY = """\
@@ -201,7 +215,7 @@ class RunTests(unittest.TestCase):
         self.fixture.cleanup()
 
     def test_dry_run_passes_valid_file(self) -> None:
-        rc = verify_ac.main(
+        rc = _quiet_main(
             [
                 "run",
                 "--story",
@@ -216,7 +230,7 @@ class RunTests(unittest.TestCase):
         self.assertEqual(rc, 0, "expected all ACs to pass in dry run")
 
     def test_dry_run_flags_missing_file(self) -> None:
-        rc = verify_ac.main(
+        rc = _quiet_main(
             [
                 "run",
                 "--story",
@@ -232,7 +246,7 @@ class RunTests(unittest.TestCase):
 
     def test_apply_mode_updates_verified_state(self) -> None:
         story = self.fixture.tmp / "sdlc-studio/stories/US0001-login.md"
-        rc = verify_ac.main(
+        rc = _quiet_main(
             [
                 "run",
                 "--story",
@@ -255,7 +269,7 @@ class RunTests(unittest.TestCase):
 
     def test_apply_mode_downgrades_stale_yes_on_failure(self) -> None:
         story = self.fixture.tmp / "sdlc-studio/stories/US0002-broken.md"
-        rc = verify_ac.main(
+        rc = _quiet_main(
             [
                 "run",
                 "--story",
@@ -278,7 +292,7 @@ class RunTests(unittest.TestCase):
         self.assertEqual(report["stories"]["US0002-broken"]["stale"], 1)
 
     def test_passing_story_reports_zero_stale(self) -> None:
-        rc = verify_ac.main(
+        rc = _quiet_main(
             [
                 "run",
                 "--story",
@@ -508,7 +522,7 @@ class CanonicalPlacementTests(unittest.TestCase):
             sd.mkdir(parents=True)
             story = sd / "US0009-multi.md"
             story.write_text(self.STORY, encoding="utf-8")
-            rc = verify_ac.main(["run", "--story", str(story), "--repo-root", str(root),
+            rc = _quiet_main(["run", "--story", str(story), "--repo-root", str(root),
                                  "--report", str(root / ".local" / "r.json")])
             self.assertEqual(rc, 0)
             lines = story.read_text(encoding="utf-8").splitlines()
@@ -920,7 +934,7 @@ class SharedDiscoveryTests(unittest.TestCase):
             self._story(sd, "us0099-lower.md")
             args = verify_ac.build_parser().parse_args(
                 ["run", "--dir", str(sd), "--id", "US0099", "--dry-run"])
-            self.assertEqual(verify_ac.cmd_run(args), 0)           # found, not "no story file"
+            self.assertEqual(_quiet_cmd_run(args), 0)           # found, not "no story file"
 
     def test_root_is_alias_of_repo_root(self):
         # US0097/CR0181 AC3: --root is accepted as an alias of --repo-root (flag grammar parity)
@@ -988,3 +1002,80 @@ class RestrictedHttpTests(unittest.TestCase):
                                    timeout=5, cwd=Path("."))
         self.assertFalse(r.ok)
         self.assertEqual(r.kind, "invalid")
+
+
+class DebugTraceTests(unittest.TestCase):
+    """CR0187 items 5/7: SDLC_DEBUG=1 emits one stderr line from a swallowed-advisory site;
+    the append-only history log is bounded (rolls)."""
+
+    def setUp(self):
+        import os
+        self._prev = os.environ.get("SDLC_DEBUG")
+
+    def tearDown(self):
+        import os
+        if self._prev is None:
+            os.environ.pop("SDLC_DEBUG", None)
+        else:
+            os.environ["SDLC_DEBUG"] = self._prev
+
+    def _set(self, v):
+        import os
+        if v is None:
+            os.environ.pop("SDLC_DEBUG", None)
+        else:
+            os.environ["SDLC_DEBUG"] = v
+
+    def test_debug_silent_by_default(self):
+        self._set(None)
+        buf = io.StringIO()
+        with contextlib.redirect_stderr(buf):
+            sdlc_md.debug("somewhere", "detail")
+        self.assertEqual(buf.getvalue(), "")
+
+    def test_debug_emits_one_line_when_enabled(self):
+        self._set("1")
+        buf = io.StringIO()
+        with contextlib.redirect_stderr(buf):
+            sdlc_md.debug("somewhere", "boom")
+        out = buf.getvalue()
+        self.assertEqual(out.count("\n"), 1)             # exactly one line
+        self.assertIn("somewhere", out)
+        self.assertIn("boom", out)
+
+    def test_swallowed_site_traces_under_debug(self):
+        # jest_batch_cache swallows a subprocess failure; under SDLC_DEBUG it must leave a trace.
+        import subprocess
+        from unittest import mock
+        self._set("1")
+        buf = io.StringIO()
+        with mock.patch.object(verify_ac.subprocess, "run",
+                               side_effect=FileNotFoundError("no npx")):
+            with contextlib.redirect_stderr(buf):
+                res = verify_ac.jest_batch_cache(Path("."), timeout=1)
+        self.assertEqual(res, [])                         # still degrades to []
+        self.assertIn("jest_batch_cache", buf.getvalue())  # but traced
+
+    def test_swallowed_site_silent_without_debug(self):
+        import subprocess
+        from unittest import mock
+        self._set(None)
+        buf = io.StringIO()
+        with mock.patch.object(verify_ac.subprocess, "run",
+                               side_effect=FileNotFoundError("no npx")):
+            with contextlib.redirect_stderr(buf):
+                verify_ac.jest_batch_cache(Path("."), timeout=1)
+        self.assertEqual(buf.getvalue(), "")
+
+    def test_history_log_rolls_when_over_cap(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "hist.jsonl"
+            p.write_text("\n".join(f'{{"n": {i}}}' for i in range(10)) + "\n", encoding="utf-8")
+            rolled = sdlc_md.roll_jsonl(p, max_lines=4)
+            self.assertTrue(rolled)
+            lines = p.read_text(encoding="utf-8").splitlines()
+            self.assertEqual(len(lines), 4)
+            self.assertEqual(lines[-1], '{"n": 9}')       # keeps the most recent
+            # within-cap is a no-op
+            self.assertFalse(sdlc_md.roll_jsonl(p, max_lines=4))
+

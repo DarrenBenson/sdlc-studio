@@ -82,7 +82,7 @@ class JoinRoundTripTests(unittest.TestCase):
         self.assertEqual(jr(["a | b", "c"]), r"| a \| b | c |")
 
     def test_round_trip_preserves_cells(self):
-        for cells in (["a", "b", "c"], ["a | b", "c"], ["x \| y", "z"],
+        for cells in (["a", "b", "c"], ["a | b", "c"], [r"x \| y", "z"],
                       ["café", ""], ["a | b | c", "d", "e | f"]):
             self.assertEqual(tc(jr(cells)), cells, cells)
 

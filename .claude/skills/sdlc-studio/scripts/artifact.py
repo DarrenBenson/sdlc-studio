@@ -265,7 +265,12 @@ def meta_new(repo_root: Path | str, type_: str, title: str, fields: dict | None 
     if path.exists():
         raise FileExistsError(path)
     if dry_run:
-        return {"id": disp, "file_id": file_id, "path": str(path), "indexed": False,
+        # Predict indexing honestly (like new()'s dry-run): a row is written only when the
+        # meta index exists AND has a data header (reviews has none by convention -> False).
+        idx = root / rel / "_index.md"
+        would_index = idx.exists() and sdlc_md.find_data_header(
+            idx.read_text(encoding="utf-8").splitlines()) is not None
+        return {"id": disp, "file_id": file_id, "path": str(path), "indexed": would_index,
                 "epic_linked": None, "dry_run": True}
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(_render_meta(type_, disp, title, today), encoding="utf-8")

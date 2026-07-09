@@ -69,7 +69,8 @@ def _complexity_size(root: Path, text: str) -> int:
         return 0
     try:
         return complexity.assess(root, paths)["max_cognitive"]
-    except Exception:  # noqa: BLE001 - WSJF must degrade to priority, never break planning
+    except Exception as exc:  # noqa: BLE001 - WSJF must degrade to priority, never break planning
+        sdlc_md.debug("sprint._complexity_size", exc)
         return 0
 
 

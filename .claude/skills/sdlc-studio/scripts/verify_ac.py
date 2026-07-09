@@ -484,7 +484,8 @@ def jest_batch_cache(repo_root: Path, timeout: int) -> list[dict]:
     try:
         result = subprocess.run(["npx", "jest", "--json", "--silent"], cwd=str(repo_root),
                                 capture_output=True, text=True, timeout=timeout)  # nosec B603 B607
-    except (FileNotFoundError, OSError, subprocess.TimeoutExpired):
+    except (FileNotFoundError, OSError, subprocess.TimeoutExpired) as exc:
+        sdlc_md.debug("jest_batch_cache", exc)  # advisory: fall back to the per-AC path
         return []
     return _parse_jest_json(result.stdout)
 
@@ -666,6 +667,7 @@ def append_history(path: Path, stories: list[StoryReport], dry_run: bool) -> Non
                 "failed_acs": [f["ac"] for f in s.failures],
                 "exit": 1 if s.failed else 0,
             }) + "\n")
+    sdlc_md.roll_jsonl(path)  # bound the append-only history so it cannot grow without limit
 
 
 # -----------------------------------------------------------------------------

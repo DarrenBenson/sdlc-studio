@@ -40,6 +40,52 @@ def _real(value: str | None) -> bool:
     return re.sub(r"[\s.,;:!?*_`>~\-]+", "", residue) != ""
 
 
+def _ac_signals(text: str) -> tuple[bool, bool, list[str]]:
+    """Scan a story body once for the (specified, verifiable, verified-states) signals: whether
+    it declares an AC, a Verify line, and the list of `- **Verified:**` states."""
+    has_ac = has_verify = False
+    in_ac = False
+    verified_states: list[str] = []
+    for line in text.splitlines():
+        if line.startswith("## "):
+            in_ac = "acceptance criteria" in line.lower()
+            continue
+        hm = sdlc_md.AC_HEADING_RE.match(line)
+        bm_ac = sdlc_md.AC_BULLET_RE.match(line)
+        if hm and _real(hm.group(2)):
+            has_ac = True
+        elif bm_ac and _real(bm_ac.group(2)):
+            has_ac = True
+        # A populated Acceptance Criteria section counts as "specified" even when the
+        # ACs are prose bullets without an ACn id (house templates) - but a line whose
+        # fillable value is only a {{placeholder}} does not count.
+        elif in_ac and line.strip() and not line.startswith("#"):
+            bm = _BULLET_VAL.match(line)
+            if _real(bm.group(1) if bm else line):
+                has_ac = True
+        vm = sdlc_md.VERIFY_RE.match(line)
+        if vm and _real(vm.group(2)):
+            has_verify = True
+        m = sdlc_md.VERIFIED_RE.match(line)
+        if m:
+            verified_states.append(m.group(2).lower())
+    return has_ac, has_verify, verified_states
+
+
+def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok) -> tuple:
+    """The four Done-only conformance stages (verified, reconciled, critiqued, documented)."""
+    verified = bool(verified_states) and all(v in ("yes", "manual") for v in verified_states)
+    reconciled = (not no_index) and sdlc_md.norm_id(rid) not in drift_ids
+    verdict = critic.verdict_for(root, rid)
+    # The critic stage requires an APPROVE AND proven author != reviewer independence - a
+    # self-review (or a verdict with no recorded author) never clears the Done gate. The floor
+    # holds for generic workers too. Units closed before the gate (the visible PRE_GATE marker,
+    # under the prior risk-scaled policy) are grandfathered; the gate applies to all new work.
+    critiqued = (bool(verdict) and verdict["verdict"] == critic.APPROVE
+                 and (critic.is_independent(verdict) or critic.is_pre_gate(verdict)))
+    return verified, reconciled, critiqued, doc_ok
+
+
 def detect_conformance(repo_root: Path | str) -> dict:
     """Per-story lifecycle conformance.
 
@@ -71,45 +117,11 @@ def detect_conformance(repo_root: Path | str) -> dict:
         rid = sdlc_md.extract_record_id(path.stem) or path.stem
         status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab) or "Unknown"
         decomposed = sdlc_md.extract_field(text, "Epic") is not None
-        has_ac = has_verify = False
-        in_ac = False
-        verified_states: list[str] = []
-        for line in text.splitlines():
-            if line.startswith("## "):
-                in_ac = "acceptance criteria" in line.lower()
-                continue
-            hm = sdlc_md.AC_HEADING_RE.match(line)
-            bm_ac = sdlc_md.AC_BULLET_RE.match(line)
-            if hm and _real(hm.group(2)):
-                has_ac = True
-            elif bm_ac and _real(bm_ac.group(2)):
-                has_ac = True
-            # A populated Acceptance Criteria section counts as "specified" even when the
-            # ACs are prose bullets without an ACn id (house templates) - but a line whose
-            # fillable value is only a {{placeholder}} does not count.
-            elif in_ac and line.strip() and not line.startswith("#"):
-                bm = _BULLET_VAL.match(line)
-                if _real(bm.group(1) if bm else line):
-                    has_ac = True
-            vm = sdlc_md.VERIFY_RE.match(line)
-            if vm and _real(vm.group(2)):
-                has_verify = True
-            m = sdlc_md.VERIFIED_RE.match(line)
-            if m:
-                verified_states.append(m.group(2).lower())
+        has_ac, has_verify, verified_states = _ac_signals(text)
         verified = reconciled = critiqued = documented = None
         if status == "Done":
-            verified = bool(verified_states) and all(v in ("yes", "manual") for v in verified_states)
-            reconciled = (not _no_index) and sdlc_md.norm_id(rid) not in drift_ids
-            verdict = critic.verdict_for(root, rid)
-            # The critic stage requires an APPROVE AND proven author != reviewer
-            # independence - a self-review (or a verdict with no recorded author) never
-            # clears the Done gate. The floor holds for generic workers too. Units
-            # closed before the gate (the visible PRE_GATE marker, under the prior
-            # risk-scaled policy) are grandfathered; the gate applies to all new work.
-            critiqued = (bool(verdict) and verdict["verdict"] == critic.APPROVE
-                         and (critic.is_independent(verdict) or critic.is_pre_gate(verdict)))
-            documented = _doc_ok
+            verified, reconciled, critiqued, documented = _done_stages(
+                root, rid, verified_states, _no_index, drift_ids, _doc_ok)
         stages = {
             "decomposed": decomposed,
             "specified": has_ac,

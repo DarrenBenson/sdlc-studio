@@ -139,7 +139,7 @@ def _mutation(root: str) -> dict:
             import subprocess
             head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root,
                                   capture_output=True, text=True, timeout=10).stdout.strip()
-        except (OSError, Exception):  # noqa: BLE001 - staleness must not break the gate
+        except Exception:  # noqa: BLE001 - staleness must not break the gate (Exception covers OSError)
             head = None
         if head and head != report_rev:
             return {"count": 1, "blocking": False,
