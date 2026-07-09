@@ -169,3 +169,4 @@
 | US0104 | APPROVE | Sam Eriksson | Dani Okafor | 2026-07-09 | none - artifact\_files refactor verified byte-preserving (empty trust\_names); trust bypass collision-safe; read-path + drift + threshold mutation-tested |
 | US0103 | APPROVE | Sam Eriksson | Dani Okafor | 2026-07-09 | none - 3 hotspot decompositions traced behaviour-identical (dry-run triage guard + conformance documented element verified); debug/roll + cleanups mutation-tested |
 | US0105 | APPROVE | Sam Eriksson | Dani Okafor | 2026-07-09 | none - override-only reader confirmed no existing project flips; init writes parseable schema\_version 3; era-gate test bites |
+| US0106 | APPROVE | Sam Eriksson | Dani Okafor | 2026-07-09 | none - walk only presents (never runs) the flip; no schema auto-flip; BG0070 rehearsal finding code-supported; neutral evidence |

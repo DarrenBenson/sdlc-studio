@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 7 |
+| Ready | 6 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 104 |
+| Done | 105 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -73,7 +73,7 @@
 | [US0103](US0103-decompose-complexity-hotspots-and-apply-small-cleanups.md) | Decompose complexity hotspots and apply small cleanups | Done | EP0022 | 2026-07-09 | 2026-07-09 |
 | [US0104](US0104-context-tiering-summarised-digests-of-closed-artefacts.md) | Context tiering: summarised digests of closed artefacts | Done | EP0023 | 2026-07-09 | 2026-07-09 |
 | [US0105](US0105-init-defaults-schema-version-3-for-new-projects.md) | init defaults schema_version 3 for new projects; code default stays 2 (existing projects untouched) | Done | EP0024 | 2026-07-09 | 2026-07-09 |
-| [US0106](US0106-v3-to-v4-upgrade-walk-rehearsed-on-two.md) | v3 to v4 upgrade walk rehearsed on two consuming projects with findings filed | Ready | EP0024 | 2026-07-09 | 2026-07-09 |
+| [US0106](US0106-v3-to-v4-upgrade-walk-rehearsed-on-two.md) | v3 to v4 upgrade walk rehearsed on two consuming projects with findings filed | Done | EP0024 | 2026-07-09 | 2026-07-09 |
 | [US0107](US0107-majors-only-release-gate-checklist-section.md) | Majors-only release-gate checklist section | Ready | EP0024 | 2026-07-09 | 2026-07-09 |
 | [US0108](US0108-version-and-changelog-conversion-to-4-0-0.md) | Version and CHANGELOG conversion to 4.0.0-rc.1 and dormant-schema banner removal | Ready | EP0024 | 2026-07-09 | 2026-07-09 |
 | [US0109](US0109-rc-tag-readiness-checklist-enumerated-so-the-tag.md) | rc-tag readiness checklist enumerated so the tag decision is a checklist read | Ready | EP0024 | 2026-07-09 | 2026-07-09 |

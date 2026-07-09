@@ -375,6 +375,27 @@ class CR0120SeatAwareTests(unittest.TestCase):
             self.assertEqual(pu._seat_amigo_overlap(Path(d)), [])
 
 
+class UpgradeWalkTests(unittest.TestCase):
+    """US0106/CR0198: a v2 project's upgrade is presented as a directed v2->v3 sequence."""
+
+    def test_v2_project_gets_ordered_walk(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            _project(d, version=(2, "3.6.0"))
+            walk = pu.migration_walk(Path(d))
+            steps = [s["step"] for s in walk]
+            # ordered: capability delta -> migrate_v3 dry-run -> migrate_v3 apply -> re-baseline
+            self.assertEqual(len(walk), 4)
+            joined = " | ".join(steps).lower()
+            self.assertLess(joined.index("capability"), joined.index("migrate_v3"))
+            self.assertLess(joined.rindex("migrate_v3"), joined.index("re-baseline"))
+            self.assertTrue(any("dry-run" in s["detail"].lower() for s in walk))
+
+    def test_v3_project_has_no_walk(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            _project(d, version=(3, "4.0.0-rc.1"))
+            self.assertEqual(pu.migration_walk(Path(d)), [])
+
+
 if __name__ == "__main__":
     unittest.main()
 

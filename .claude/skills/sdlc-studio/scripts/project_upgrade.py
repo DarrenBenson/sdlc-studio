@@ -143,6 +143,26 @@ def detect(root: Path | str) -> dict:
             "current_schema": CURRENT_SCHEMA, "installed_skill": installed, "behind": behind}
 
 
+def migration_walk(root: Path | str) -> list[dict]:
+    """The v2 -> v3 schema migration presented as a directed sequence, not a single opaque
+    step. Empty for a project already on schema 3+. Each step is {step, detail}; the schema
+    flip itself is the deliberate `migrate_v3` id migration, never a routine auto-apply."""
+    proj_schema = detect(root)["project_schema"]
+    if proj_schema is not None and proj_schema >= 3:
+        return []
+    return [
+        {"step": "capability delta",
+         "detail": "review what schema v3 turns on (ULID identity, authorship/evidence "
+                   "enforcement): `project upgrade` (this report)"},
+        {"step": "migrate_v3 dry-run",
+         "detail": "dry-run the id migration (preview, no writes): `migrate_v3.py plan`"},
+        {"step": "migrate_v3 apply",
+         "detail": "perform the ULID id migration and link rewrite: `migrate_v3.py apply`"},
+        {"step": "re-baseline",
+         "detail": "backfill/re-review the migrated artefacts: `project upgrade --apply`"},
+    ]
+
+
 _OLD_PERSONA_HEADING = re.compile(r"^##+\s+(Backstory|Psychology|Decision Drivers|Personality|Interaction Guide)",
                                   re.M | re.I)
 
@@ -549,9 +569,11 @@ def cmd_upgrade(args: argparse.Namespace) -> int:
               if d["behind"] else None)
     lanes = (new_advisory_lanes(d["project_skill"], d["installed_skill"])
              if d["behind"] else [])
+    walk = migration_walk(root)
     if args.format == "json":
         print(json.dumps({"detect": d, "audit": a, "applied": applied,
-                          "capability_delta": digest, "new_advisory_lanes": lanes}, indent=2))
+                          "capability_delta": digest, "new_advisory_lanes": lanes,
+                          "migration_walk": walk}, indent=2))
         return 0
     sk = d["installed_skill"] or "?"
     if not has_work:
@@ -573,6 +595,12 @@ def cmd_upgrade(args: argparse.Namespace) -> int:
             print()
     else:
         print(f"project upgrade: version current (skill {d['project_skill'] or '?'}), but conventions drift:\n")
+    if walk:
+        print("Schema v2 -> v3 migration walk (run in order; the schema flip is the deliberate "
+              "migrate_v3 id migration, never an auto-apply):")
+        for i, s in enumerate(walk, 1):
+            print(f"  {i}. {s['step']}: {s['detail']}")
+        print()
     print("Auto-correctable (apply with --apply):")
     for f in a["auto"]:
         print(f"  [auto]   {f['detail']}")
