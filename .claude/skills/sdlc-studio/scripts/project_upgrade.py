@@ -451,7 +451,7 @@ def rebaseline(root: Path | str) -> dict:
                 out[bucket].append({"id": rid, "type": type_, "capability": cap,
                                     "path": str(p)})
 
-            if not (sdlc_md.extract_field(text, "Difficulty") or "").strip():
+            if not _has_field(text, "Difficulty"):
                 _add("backfill", "difficulty")             # route.estimate can stamp it on --apply
             if type_ == "story":
                 if plan_review.triggers(text, root, p)["fired"]:
@@ -464,6 +464,57 @@ def rebaseline(root: Path | str) -> dict:
     for b in out:
         out[b].sort(key=lambda e: e["id"])
     return out
+
+
+def rebaseline_apply(root: Path | str) -> list[str]:
+    """Perform ONLY the mechanical `backfill` bucket (never `re-review`/`residual`): stamp a
+    deterministic, computable-now field on a non-terminal artifact that lacks it. Today that is
+    a `> **Difficulty:**` stamp from `route.estimate`. Idempotent - a stamped unit is no longer
+    in the backfill bucket, so a second run does nothing. No fabricated history: only fields
+    deterministically computable from the artifact NOW are written; no back-dated telemetry or
+    metrics rows are invented. Returns the actions taken. A no-op unless schema v3."""
+    root = Path(root)
+    if not sdlc_md.is_schema_v3(root):
+        return []
+    import route
+    actions: list[str] = []
+    for e in rebaseline(root)["backfill"]:
+        if e["capability"] != "difficulty":
+            continue
+        p = Path(e["path"])
+        try:
+            band = route.estimate(root, p)["difficulty_band"]
+        except Exception:  # noqa: BLE001 - a difficulty read must never break the apply pass
+            continue
+        # newline="" preserves the file's existing terminators (universal-newline mode would
+        # translate CRLF->LF on read, rewriting the whole file); only the inserted line is added.
+        text = p.read_text(encoding="utf-8", newline="")
+        new_text, ok = _stamp_after_status(text, "Difficulty", band)
+        if ok:
+            p.write_text(new_text, encoding="utf-8", newline="")
+            actions.append(f"stamped Difficulty: {band} on {e['id']}")
+    return actions
+
+
+def _has_field(text: str, field: str) -> bool:
+    """True when a `> **field:**` metadata line is present, case-insensitively - so a
+    non-canonical `> **difficulty:**` is recognised and not duplicated."""
+    return bool(re.search(rf"(?im)^>\s*\*\*{re.escape(field)}:\*\*", text))
+
+
+def _stamp_after_status(text: str, field: str, value: str) -> tuple[str, bool]:
+    """Insert `> **field:** value` immediately after the Status metadata line (idempotent - a
+    no-op if the field already exists, any case). Preserves the file's existing line endings
+    (only the inserted line is added; the rest is byte-unchanged). Returns (text, changed)."""
+    if _has_field(text, field):
+        return text, False
+    nl = "\r\n" if "\r\n" in text else "\n"
+    lines = text.splitlines(keepends=True)
+    for i, ln in enumerate(lines):
+        if re.match(r"^>\s*\*\*Status:\*\*", ln):
+            lines.insert(i + 1, f"> **{field}:** {value}{nl}")
+            return "".join(lines), True
+    return text, False
 
 
 def rebaseline_report(root: Path | str) -> list[str]:
@@ -492,6 +543,8 @@ def cmd_upgrade(args: argparse.Namespace) -> int:
     applied: list[str] = []
     if args.apply and (d["behind"] or a["auto"]):  # apply whenever there is safe work, even if "current"
         applied = apply(root, with_reconcile=args.with_reconcile)
+    if args.apply and sdlc_md.is_schema_v3(root):   # mechanical re-baseline backfill (schema v3)
+        applied += rebaseline_apply(root)
     digest = (changelog_digest(d["project_skill"], d["installed_skill"], _changelog_path())
               if d["behind"] else None)
     lanes = (new_advisory_lanes(d["project_skill"], d["installed_skill"])

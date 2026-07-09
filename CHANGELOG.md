@@ -137,7 +137,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Difficulty`), `re-review` (matches a gate's deterministic trigger but lacks the verdict, e.g.
   a spec-derived story with no plan-review verdict), `residual` (judgement gaps). The bucketed
   report (empty buckets printed explicitly) surfaces from `project upgrade`. Read-only,
-  deterministic, dormant under schema v2.
+  deterministic, dormant under schema v2. `project upgrade --apply` (US0095) performs ONLY the
+  mechanical `backfill` bucket - stamping a `route estimate` `Difficulty` band on units lacking
+  it - idempotently, never touching the re-review/residual buckets and never fabricating history;
+  `reference-upgrade.md` states the next-transition enforcement policy (a new gate attaches at an
+  artefact's next transition, never retroactively).
 
 - **Origin-drift pre-flight for `sprint plan` + branch-aware remote id allocation (EP0021,
   CR0188; US0099).** `sprint plan` now runs a `git fetch origin` + drift check: when the local

@@ -295,6 +295,23 @@ first, then `project upgrade` for the conventions.
 Backed by `scripts/project_upgrade.py`. **Dry-run by default; `--apply` performs only the safe
 deterministic set; nothing destructive; idempotent.**
 
+### Re-baseline: in-flight artefacts vs the capability delta {#rebaseline}
+
+Schema v3 only. Upgrading the project does not by itself update the **non-terminal artefacts** an
+upgrade leaves behind - stories and CRs planned under the old doctrine (no routing/difficulty
+stamp, no plan-review verdict for a gate that landed after they were planned, ACs written before
+the Verify-line convention). `project upgrade` censuses every non-terminal artefact and buckets
+each gap: **backfill** (a deterministic stamp computable now, applied on `--apply` - e.g. a
+`Difficulty` band from `route estimate`), **re-review** (matches a gate's deterministic trigger
+but lacks the verdict - reported, never auto-run), and **residual** (judgement gaps the tooling can
+only name). Terminal artefacts are never touched.
+
+**A new gate attaches enforcement at the artefact's next transition, never retroactively** - a
+completed transition is never invalidated (the schema-v3 era-gating precedent). So an in-flight
+story that pre-dates a gate is flagged for re-review and gates only when it next moves; its past
+transitions stand. No fabricated history: telemetry and metrics begin at the upgrade, and no
+back-dated rows are invented for events that happened before it.
+
 1. **Detect** the gap: `project_upgrade.py --root <project>` reads `sdlc-studio/.version` (schema +
    skill) vs the installed skill. "Already current" -> stop.
 2. **Dry-run plan** (default): the migration report, split into

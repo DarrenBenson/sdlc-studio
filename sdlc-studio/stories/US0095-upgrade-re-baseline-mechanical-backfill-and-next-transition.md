@@ -1,6 +1,6 @@
 # US0095: Upgrade re-baseline mechanical backfill and next-transition policy
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0020
@@ -24,6 +24,7 @@ Delivers CR0197's `--apply` half + the never-retroactive policy. Depends on US00
 - **When** `project upgrade --apply` runs
 - **Then** it applies only the `backfill` bucket (deterministic, read-only-to-compute stamps: `route estimate` difficulty on units lacking it, missing schema fields with safe defaults); the `re-review` and `residual` buckets are reported, never auto-actioned
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py::BackfillApplyTests
+- **Verified:** yes (2026-07-09)
 
 ### AC2: --apply is idempotent
 
@@ -31,6 +32,7 @@ Delivers CR0197's `--apply` half + the never-retroactive policy. Depends on US00
 - **When** it runs a second time
 - **Then** it reports nothing to do and changes no files
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py::BackfillIdempotencyTests
+- **Verified:** yes (2026-07-09)
 
 ### AC3: No fabricated history
 
@@ -38,6 +40,7 @@ Delivers CR0197's `--apply` half + the never-retroactive policy. Depends on US00
 - **When** `--apply` runs
 - **Then** those past events stay absent (no back-dated rows are invented); recording begins forward only
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py::NoFabricatedHistoryTests
+- **Verified:** yes (2026-07-09)
 
 ### AC4: New gates attach at the next transition, never retroactively
 
@@ -45,6 +48,7 @@ Delivers CR0197's `--apply` half + the never-retroactive policy. Depends on US00
 - **When** the re-baseline runs
 - **Then** the completed transitions are not retroactively invalidated; enforcement attaches at the artifact's next transition, and that policy is stated in `reference-upgrade.md`
 - **Verify:** grep "next transition" .claude/skills/sdlc-studio/reference-upgrade.md
+- **Verified:** yes (2026-07-09)
 
 ## Revision History
 

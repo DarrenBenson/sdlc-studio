@@ -641,3 +641,67 @@ class RebaselineDeterminismTests(unittest.TestCase):
             _v3_story(sd, 3, difficulty=False)
             _v3_story(sd, 4, affects="docs/prd.md")
             self.assertEqual(pu.rebaseline(d), pu.rebaseline(d))
+
+
+class BackfillApplyTests(unittest.TestCase):
+    """US0095/CR0197: --apply performs ONLY the backfill bucket, deterministically."""
+
+    def test_apply_stamps_difficulty_on_a_unit_lacking_it(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _v3_project(d)
+            _v3_story(sd, 3, difficulty=False)                       # backfill candidate
+            actions = pu.rebaseline_apply(d)
+            self.assertTrue(any("US0003" in a for a in actions))
+            text = (sd / "stories" / "US0003-s.md").read_text(encoding="utf-8")
+            self.assertRegex(text, r"> \*\*Difficulty:\*\* \w+")   # stamped
+
+    def test_apply_does_not_action_re_review_or_residual(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _v3_project(d)
+            _v3_story(sd, 4, affects="docs/prd.md")                  # re-review (has Difficulty)
+            _v3_story(sd, 5, ac_verify=False)                        # residual (has Difficulty)
+            before4 = (sd / "stories" / "US0004-s.md").read_text(encoding="utf-8")
+            before5 = (sd / "stories" / "US0005-s.md").read_text(encoding="utf-8")
+            pu.rebaseline_apply(d)
+            self.assertEqual(before4, (sd / "stories" / "US0004-s.md").read_text(encoding="utf-8"))
+            self.assertEqual(before5, (sd / "stories" / "US0005-s.md").read_text(encoding="utf-8"))
+
+    def test_dormant_under_v2(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _v3_project(d, v3=False)
+            _v3_story(sd, 3, difficulty=False)
+            self.assertEqual(pu.rebaseline_apply(d), [])
+
+
+class BackfillIdempotencyTests(unittest.TestCase):
+    def test_second_apply_is_a_noop(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _v3_project(d)
+            _v3_story(sd, 3, difficulty=False)
+            self.assertTrue(pu.rebaseline_apply(d))                  # first run stamps
+            self.assertEqual(pu.rebaseline_apply(d), [])            # second run: nothing to do
+
+
+class BackfillLineEndingTests(unittest.TestCase):
+    def test_apply_preserves_crlf(self):
+        # --apply adds exactly one line; a CRLF file must not be normalised to LF wholesale.
+        with tempfile.TemporaryDirectory() as d:
+            sd = _v3_project(d)
+            p = sd / "stories"; p.mkdir(exist_ok=True)
+            body = ("# US0013: s\n> **Status:** Ready\n> **Affects:** a.py\n\n"
+                    "## Acceptance Criteria\n### AC1: a\n- **Verify:** m\n").replace("\n", "\r\n")
+            (p / "US0013-s.md").write_text(body, encoding="utf-8", newline="")
+            before = (p / "US0013-s.md").read_bytes().count(b"\r\n")
+            pu.rebaseline_apply(d)
+            after = (p / "US0013-s.md").read_bytes().count(b"\r\n")
+            self.assertEqual(after, before + 1)          # one line added, CRLF preserved
+
+
+class NoFabricatedHistoryTests(unittest.TestCase):
+    def test_apply_invents_no_telemetry_rows(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _v3_project(d)
+            _v3_story(sd, 3, difficulty=False)
+            pu.rebaseline_apply(d)
+            self.assertFalse((sd / ".local" / "telemetry.jsonl").exists())  # no back-dated rows
+
