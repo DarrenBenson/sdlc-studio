@@ -23,6 +23,7 @@ def _load():
 
 
 ff = _load()
+sdlc_md = ff.sdlc_md
 
 
 def _seed_index(root: Path, type_: str) -> Path:
@@ -246,3 +247,28 @@ class ProvenanceAndDryRunTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class EraAwareAllocationTests(unittest.TestCase):
+    def test_v3_project_mints_a_ulid_finding_id(self) -> None:
+        # BG-era gap: the filer minted v2 sequential ids on schema-v3 projects, undermining
+        # collision-free identity exactly on the primary agent filing path.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "schema_version: 3\n", encoding="utf-8")
+            idx = _seed_index(root, "bug")
+            res = ff.file_finding(root, "bug", "era probe",
+                                  {"severity": "high", "summary": "s", "steps": "r", "fix": "f"})
+            self.assertTrue(sdlc_md.is_v3_id(res["id"]), res["id"])
+            self.assertTrue(Path(res["path"]).name.startswith(res["id"] + "-"), res["path"])
+            self.assertIn(res["id"], idx.read_text(encoding="utf-8"))
+
+    def test_v2_project_still_mints_sequential(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            res = ff.file_finding(root, "bug", "era probe",
+                                  {"severity": "high", "summary": "s", "steps": "r", "fix": "f"})
+            self.assertEqual(res["id"], "BG0001")

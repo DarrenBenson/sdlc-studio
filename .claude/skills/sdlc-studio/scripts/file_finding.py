@@ -164,9 +164,14 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     root = Path(repo_root)
     today = fields.get("date") or date.today().isoformat()
     fields = {**fields, "date": today}
-    n = _next_number(root, type_)
-    file_id = f"{spec['prefix']}{n:04d}"
-    disp_id = spec["disp"].format(n=n)
+    if sdlc_md.is_schema_v3(root):
+        # era-aware: a v3 project's findings mint the same collision-checked ULID form as
+        # `artifact new` - sequential numbers here would race and shadow live ULID aliases.
+        file_id = disp_id = sdlc_md.mint_v3_id(root, type_)
+    else:
+        n = _next_number(root, type_)
+        file_id = f"{spec['prefix']}{n:04d}"
+        disp_id = spec["disp"].format(n=n)
     slug = _slug(title)
     rel_dir = sdlc_md.ARTIFACT_TYPES[type_][0]
     path = root / rel_dir / f"{file_id}-{slug}.md"

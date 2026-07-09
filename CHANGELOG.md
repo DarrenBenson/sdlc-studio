@@ -232,6 +232,12 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
 
 ### Fixed
 
+- **The finding filer is era-aware (RV0007; BG0077).** `file_finding` allocated sequential v2
+  numbers unconditionally, so on a schema-v3 project the primary agent filing path minted
+  `BG0002`-style ids alongside ULIDs - reintroducing the id race v3 removes and shadowing live
+  aliases. The v3 ULID mint now lives in one shared allocator (`sdlc_md.mint_v3_id`); both
+  `artifact new` and the filer delegate to it, v2 projects keep sequential ids, and red-first
+  tests pin both eras.
 - **`artifact close` types v3 ULID ids (RV0007; BG0072).** Type inference collected every
   alphabetic character of the id, so a ULID's random tail (`BG-01JQK3F8` -> `BGJQKF`) defeated
   the prefix lookup and the documented close cascade raised `cannot infer type` for every

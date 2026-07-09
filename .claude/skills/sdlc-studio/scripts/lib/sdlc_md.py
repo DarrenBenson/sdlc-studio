@@ -813,6 +813,20 @@ def short_ulid() -> str:
     return new_ulid()[:8]
 
 
+def mint_v3_id(root: Path, type_: str) -> str:
+    """A collision-checked v3 id (`BG-01JQK3F8`) for a new artefact of `type_` - the ONE
+    era-v3 allocator, shared by `artifact new` and the finding filer so both paths mint the
+    same form. Retries against the type directory, then extends the suffix on a persistent
+    clash."""
+    prefix = ARTIFACT_TYPES[type_][1]
+    d = Path(root) / ARTIFACT_TYPES[type_][0]
+    for _ in range(16):
+        ident = f"{prefix}-{short_ulid()}"
+        if not (d.exists() and any(d.glob(f"{ident}-*.md"))):
+            return ident
+    return f"{prefix}-{new_ulid()[:12]}"  # extend the suffix on a persistent clash
+
+
 def parse_cutoff(value) -> int | None:
     """The one adoption-cutoff parser shared by every gate (conformance, provenance).
 

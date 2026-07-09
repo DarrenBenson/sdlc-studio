@@ -1,9 +1,10 @@
 # BG0077: file_finding is not era-aware: it mints v2 sequential ids on schema-v3 projects
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file
+> **Verification depth:** functional (red-then-green era tests: v3 fixture mints a ULID finding id, v2 stays sequential; full suite green)
 
 ## Summary
 

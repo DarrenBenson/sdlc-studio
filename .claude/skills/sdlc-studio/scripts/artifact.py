@@ -60,12 +60,7 @@ def _alloc_ids(root: Path, type_: str) -> tuple[str, str]:
     file_id and disp are the single canonical form `BG-01JQK3F8`."""
     prefix = sdlc_md.ARTIFACT_TYPES[type_][1]
     if _schema_v3(root):
-        d = root / sdlc_md.ARTIFACT_TYPES[type_][0]
-        for _ in range(16):
-            ident = f"{prefix}-{sdlc_md.short_ulid()}"
-            if not (d.exists() and any(d.glob(f"{ident}-*.md"))):
-                return ident, ident
-        ident = f"{prefix}-{sdlc_md.new_ulid()[:12]}"  # extend the suffix on a persistent clash
+        ident = sdlc_md.mint_v3_id(root, type_)  # the one shared era-v3 allocator
         return ident, ident
     n = file_finding._next_number(root, type_)
     return f"{prefix}{n:04d}", _disp(type_, n)
