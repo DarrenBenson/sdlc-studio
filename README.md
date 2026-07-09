@@ -6,7 +6,7 @@
 
 Ask for software in plain language. The team plans it, builds it, tests it, and proves it is done.
 
-**Version 3.6.0**
+**Version 4.0.0-rc.1**
 
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Lint](https://github.com/DarrenBenson/sdlc-studio/actions/workflows/lint.yml/badge.svg)](https://github.com/DarrenBenson/sdlc-studio/actions/workflows/lint.yml)
@@ -319,7 +319,7 @@ The difference is simple: spec-driven tools **align** the agent on intent; SDLC 
 
 A wave of AI tools is inventing new, AI-native ways to deliver software: fresh artifact formats, fresh ceremonies, fresh vocabularies for the model to follow. SDLC Studio does the opposite. Software engineering already worked out how to ship software that survives contact with reality - clear requirements, acceptance criteria, traceability from intent to code, change control, and a definition of done that means done. Teams quietly dropped those practices not because they were wrong, but because maintaining them by hand was expensive, so specifications went stale and the discipline lapsed. That economics has changed: an agent can author the requirements, keep them current, and prove the code against them, with acceptance criteria as a machine-checkable oracle and continuous reconciliation keeping every artifact true. The agent carries the cost of the ceremony, and the discipline stays.
 
-It is also built for where this is heading: small human teams directing larger agentic ones, trunk-based. The foundations are shipped and opt-in today (`schema_version: 3`) - distributed artifact identity so parallel agents never fight over sequential ids, atomic index writes, typed authorship with a separation-of-duties lint - and become the default in v4 once proven on real projects.
+It is also built for where this is heading: small human teams directing larger agentic ones, trunk-based. As of v4 these foundations are the default for new projects (`schema_version: 3`) - distributed artifact identity so parallel agents never fight over sequential ids, atomic index writes, typed authorship with a separation-of-duties lint. An existing project is never auto-flipped; it upgrades explicitly via `project upgrade`.
 
 It also reframes the lifecycle as a loop-engineering problem already solved. An agent runs in a loop that cannot judge its own exit condition; the lifecycle has always been that loop - specify, build, validate against the specification, reconcile, repeat - with acceptance criteria as the test that closes it. This is the lineage Test-Driven -> Behaviour-Driven -> Eval-Driven -> Goal-Driven Development: you set the goal and the criteria, the agent drives the proven lifecycle to it.
 

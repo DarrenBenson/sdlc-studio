@@ -2,8 +2,8 @@
 # Location: sdlc-studio/.version
 # Created by: /sdlc-studio init or /sdlc-studio upgrade
 
-schema_version: 2
+schema_version: 3
 upgraded_from: null       # Previous version (null for new projects)
 upgraded_at: null         # ISO timestamp of upgrade
-skill_version: "3.6.0"  # SDLC Studio version that created/upgraded
+skill_version: "4.0.0-rc.1"  # SDLC Studio version that created/upgraded
 created_at: "{{created_at}}"

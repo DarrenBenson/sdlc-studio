@@ -1,25 +1,20 @@
-# LATEST - current project state (v3.6.0 released; v4 is WIP)
+# LATEST - current project state (v4.0.0-rc.1 prepared; not yet tagged/pushed)
 
 > The current-state anchor - a WINDOW, not a ledger. **Re-read this and run
 > `/sdlc-studio status` after any context reset or compaction.** Durable guidance lives in
 > AGENTS.md; per-sprint detail lives in the retros and CHANGELOG.md; keep this file under
 > `docs.latest_max_lines` (doc-freshness advisory) by moving past sprints to History lines.
 >
-> **Released version:** 3.6.0 (2026-07-06, non-breaking - the EP0016 review/lite on-ramp) ·
-> **Date:** 2026-07-09 ·
-> **Gates:** lint clean, 1444 script tests pass (+repo-only tools tests), `gate` PASS,
-> reconcile drift 0, npm audit 0, CI green on main.
+> **Version:** `4.0.0-rc.1` prepared (the maturity release: schema v3 active + default for new
+> projects) · **Date:** 2026-07-09 ·
+> **Gates:** lint clean, 1449 script tests pass (+repo-only tools tests), `gate` PASS,
+> reconcile drift 0, npm audit 0.
 >
-> **v4 is WORK-IN-PROGRESS, not released.** The v4 foundation (schema-v3 ULID identity - a
-> breaking change) and Tranche 2 (authorship/enforcement + tooling debt) are all on `main` and
-> ship **dormant** in v3.6.0: opt-in via `schema_version: 3` (defaults to 2), so v3.6.0 stays
-> non-breaking and nothing renumbers. v4.0 is cut only once the backlog is complete AND it has
-> been tested in anger on real projects.
->
-> **Release freeze until v4.0 (operator directive 2026-07-08):** nothing releases to consuming
-> projects before the v4.0 tag - all new v4-line work accumulates on `main` era-gated behind
-> `schema_version: 3`. Commits land locally; the push/release waits for v4. `main` runs ahead
-> of `origin` by design during the freeze.
+> **rc-tag / push is operator-gated.** The version strings and CHANGELOG are homed at `4.0.0-rc.1`
+> and the pre-v4 dormant/freeze banners are removed, but the actual `git tag v4.0.0-rc.1`, the
+> freeze lift, and the push to consuming projects remain an explicit operator action once the
+> rc-readiness checklist (`sdlc-studio/reviews/v4-rc-readiness.md`) reads green. `main` runs ahead
+> of `origin` until then.
 
 ## Current
 

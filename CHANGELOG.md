@@ -7,18 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-07-09
+
+The maturity release. Schema v3 (distributed ULID identity + structured authorship/evidence
+enforcement) ships **active**, not dormant, and becomes the default for new projects.
+
+### Breaking
+
+- **Schema v3 becomes the default for new projects.** `init` now scaffolds `schema_version: 3`
+  (ULID identity + authorship/evidence enforcement). Existing and unpinned projects are NOT
+  auto-flipped: the code default stays 2 and they upgrade explicitly via the `project upgrade`
+  v2-to-v3 walk (capability delta -> `migrate_v3` dry-run -> apply -> re-baseline). Migration
+  action for a consuming project: run `project upgrade` and follow the presented walk; the
+  migration was rehearsed on two real projects (see `sdlc-studio/reviews/v4-migration-rehearsal.md`).
+
 - **Majors-only section added to the release-gate checklist (EP0024, CR0198; US0107).** `templates/workflows/release-gate.md` gains a section 8 for breaking releases: breaking-change inventory in the CHANGELOG, migration rehearsed on two real projects with evidence linked, eval scenarios re-run for the new major, docs saying the new major, and rc-first-from-a-green-gate-with-a-soak. The rc-tag decision becomes a checklist read.
 - **v3 to v4 upgrade walk presented as a directed sequence + rehearsed on two real projects (EP0024, CR0198; US0106).** `project upgrade` now presents the v2 to v3 migration as an ordered walk (capability delta -> `migrate_v3` dry-run -> `migrate_v3` apply -> re-baseline) via a new `migration_walk`, in both text and `--format json`; the schema flip stays the deliberate `migrate_v3` id migration, never an auto-apply. The walk was rehearsed dry-run against two real consuming projects (evidence in `sdlc-studio/reviews/v4-migration-rehearsal.md`, names redacted); the rehearsal surfaced BG0070 (a per-artefact `git log --follow` makes migration impractical on a large project) - rc-relevant.
 ### Changed
 
 - **New projects start on `schema_version: 3`; existing projects untouched (EP0024, CR0198; US0105).** `init` now seeds `schema_version: 3` (ULID identity + authorship/evidence enforcement) into a new project's `.config.yaml`. The code default stays 2 and the schema reader is override-only (it does not merge `config-defaults.yaml`), so an existing or unpinned project is never auto-flipped - it upgrades explicitly via `project upgrade`. This dogfood repo is pinned to `schema_version: 2` as a safety belt. Era-gate regression test proves a v2 project's v3-gated paths stay dormant.
-
-> The **schema-v3 line** (distributed ULID identity + authorship/evidence enforcement - the
-> `## v4 ...` sections below) is work-in-progress toward **v4.0** and still has backlog (agentic
-> triage, benchmark evidence). Its code already ships **dormant** in the releases below: opt-in
-> via `schema_version: 3`, which defaults to 2, so nothing renumbers and existing projects are
-> unaffected. v4.0 is cut only once that backlog is complete and it has been tested on real
-> projects.
 
 ### Changed
 

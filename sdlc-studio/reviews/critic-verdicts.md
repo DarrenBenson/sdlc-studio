@@ -172,3 +172,4 @@
 | US0106 | APPROVE | Sam Eriksson | Dani Okafor | 2026-07-09 | none - walk only presents (never runs) the flip; no schema auto-flip; BG0070 rehearsal finding code-supported; neutral evidence |
 | US0107 | APPROVE | Sam Eriksson | Dani Okafor | 2026-07-09 | none - all five majors items present, additive to sections 1-7, coheres with US0106/BG0070, guards green |
 | BG0070 | APPROVE | Sam Eriksson | Dani Okafor | 2026-07-09 | REJECT (provenance tag in shipped docstring) -> stripped; added --relative for nested-git-root; ordering equivalence for un-renamed files verified; regression test bites |
+| US0108 | APPROVE | Sam Eriksson | Dani Okafor | 2026-07-09 | APPROVE; folded non-blocking follow-up (package-lock.json bumped); guards pre-release-aware + still reject bad input; no dropped CHANGELOG entries; banners fully removed; messaging honest about gated push |

@@ -109,6 +109,14 @@ class ValidateTests(unittest.TestCase):
             errors = validate_skill.validate(root)
             self.assertTrue(any("not X.Y.Z semver" in e for e in errors))
 
+    def test_prerelease_version_passes(self) -> None:
+        # A pre-release like 4.0.0-rc.1 is valid semver and must not be flagged.
+        rc = VALID.replace('version: "2.0.0"', 'version: "4.0.0-rc.1"')
+        with tempfile.TemporaryDirectory() as d:
+            root = _skill_dir(Path(d), "my-skill", rc)
+            errors = validate_skill.validate(root)
+            self.assertFalse(any("semver" in e for e in errors), errors)
+
     def test_real_skill_passes(self) -> None:
         repo_skill = Path(__file__).resolve().parents[2] / ".claude" / "skills" / "sdlc-studio"
         self.assertEqual(validate_skill.validate(repo_skill), [])

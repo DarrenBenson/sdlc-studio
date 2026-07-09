@@ -1,6 +1,6 @@
 {
   "name": "sdlc-studio",
-  "version": "3.6.0",
+  "version": "4.0.0-rc.1",
   "description": "Claude Code skill for managing the full software development lifecycle",
   "private": true,
   "scripts": {

@@ -13,7 +13,7 @@ Checks:
 - name: present, 1-64 chars, ^[a-z0-9]+(-[a-z0-9]+)*$, matches directory
 - description: present, 1-1024 chars
 - only known fields (spec fields + Claude Code additive allowlist)
-- metadata.version: semver (X.Y.Z) when present
+- metadata.version: semver (X.Y.Z, with an optional pre-release like -rc.1) when present
 
 Usage:
     python3 tools/validate_skill.py [--root DIR]
@@ -36,7 +36,7 @@ KNOWN_FIELDS = {"name", "description", "license", "compatibility", "metadata",
                 "allowed-tools"}
 
 NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
-SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
+SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$")  # X.Y.Z with an optional pre-release (rc.1)
 
 
 def parse_frontmatter(text: str) -> dict[str, object] | None:

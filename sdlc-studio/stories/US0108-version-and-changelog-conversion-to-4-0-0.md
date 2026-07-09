@@ -1,6 +1,6 @@
 # US0108: Version and CHANGELOG conversion to 4.0.0-rc.1 and dormant-schema banner removal
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0024
@@ -24,6 +24,7 @@ Delivers CR0198 item 4. Lands locally; the tag/push stays operator-gated (US0109
 - **When** `check_versions` runs
 - **Then** every authoritative file reads `4.0.0-rc.1` and the guard passes
 - **Verify:** shell python3 tools/check_versions.py
+- **Verified:** yes (2026-07-09)
 
 ### AC2: the CHANGELOG [Unreleased] block is converted to 4.0.0 sections
 
@@ -31,6 +32,7 @@ Delivers CR0198 item 4. Lands locally; the tag/push stays operator-gated (US0109
 - **When** it is read
 - **Then** the `[Unreleased]` content is under a `## [4.0.0]` heading (breaking-change inventory named)
 - **Verify:** grep "## \[4.0.0\]" CHANGELOG.md
+- **Verified:** yes (2026-07-09)
 
 ### AC3: the dormant-schema-v3 / freeze banners are removed
 
@@ -38,6 +40,7 @@ Delivers CR0198 item 4. Lands locally; the tag/push stays operator-gated (US0109
 - **When** they are read
 - **Then** the pre-v4 "ships dormant behind schema_version: 3" / "release freeze until v4.0" banners are gone (they describe the superseded state)
 - **Verify:** shell test -z "$(grep -rl 'release freeze until v4' CHANGELOG.md README.md sdlc-studio/reviews/LATEST.md)"
+- **Verified:** yes (2026-07-09)
 
 ## Revision History
 

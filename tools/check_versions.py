@@ -36,9 +36,15 @@ SEMVER = r"(\d+\.\d+\.\d+)"
 
 def from_package_json(root: Path) -> str | None:
     try:
-        return json.loads((root / "package.json").read_text(encoding="utf-8")).get("version")
+        v = json.loads((root / "package.json").read_text(encoding="utf-8")).get("version")
     except (OSError, json.JSONDecodeError):
         return None
+    if not v:
+        return None
+    # Normalise a pre-release (`4.0.0-rc.1` -> `4.0.0`) to the SEMVER core, so package.json
+    # compares consistently with the other homes (which already extract the core via SEMVER).
+    m = re.match(SEMVER, v)
+    return m.group(1) if m else v
 
 
 def from_version_yaml(root: Path) -> str | None:

@@ -80,6 +80,15 @@ class VersionTests(unittest.TestCase):
             (Path(d) / "package.json").unlink()
             self.assertEqual(check_versions.main(["--root", d]), 1)
 
+    def test_prerelease_package_json_normalises_to_core(self) -> None:
+        # A pre-release (`4.0.0-rc.1`) in package.json must compare equal to the SEMVER-core
+        # `4.0.0` the other homes yield, so an rc release passes the consistency check.
+        with tempfile.TemporaryDirectory() as d:
+            _fixture(Path(d), pkg="4.0.0-rc.1", yaml="4.0.0", skill="4.0.0",
+                     readme="4.0.0", changelog="4.0.0")
+            self.assertEqual(check_versions.from_package_json(Path(d)), "4.0.0")
+            self.assertEqual(check_versions.main(["--root", d]), 0)
+
     def test_real_repo_passes(self) -> None:
         repo = Path(__file__).resolve().parents[2]
         self.assertEqual(check_versions.main(["--root", str(repo)]), 0)
