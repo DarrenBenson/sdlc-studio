@@ -153,6 +153,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `master`/`develop`-default repos from re-minting an id the remote already holds. An AGENTS.md
   orientation bullet documents the fetch-before-trusting step.
 
+### Changed
+
+- **`reference-scripts.md` split into a lean index + grouped detail pages (EP0020, CR0200;
+  US0096).** The 643-line catalogue (past its 600 budget three sprints running) is now a lean
+  index of one-line summaries linking to five grouped pages (`reference-scripts-{create,verify,
+  review,upgrade,domain}.md`), each under budget; the `643` allowlist is removed. `doc_coverage`
+  unions `reference-scripts*.md`, so the doc-coverage floor still hard-fails a missing entry.
+  Documentation reorganisation only - no script behaviour changed.
+
 ### Fixed
 
 - **The two archive implementations consolidated onto one `iter_tables` walker (EP0021,

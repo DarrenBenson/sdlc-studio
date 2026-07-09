@@ -1,11 +1,11 @@
 # US0096: Split the reference-scripts catalogue into a lean index
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0020
 > **Persona:** Engineering seat
-> **Affects:** reference-scripts.md, tools/check_budgets.py
+> **Affects:** reference-scripts.md, scripts/doc_coverage.py, tools/check_budgets.py
 
 ## User Story
 
@@ -23,6 +23,7 @@ Delivers CR0200. Documentation reorganisation only - no script behaviour changes
 - **When** the budgets guard runs
 - **Then** `reference-scripts.md` is under the 600-line reference budget and its `643` allowlist entry is removed from `tools/check_budgets.py`; every grouped detail page is also under budget
 - **Verify:** pytest tools/tests/test_check_budgets.py
+- **Verified:** yes (2026-07-09)
 
 ### AC2: Every script stays catalogued (doc-coverage floor holds)
 
@@ -30,6 +31,7 @@ Delivers CR0200. Documentation reorganisation only - no script behaviour changes
 - **When** `doc_coverage.py` runs
 - **Then** it reports 0 undocumented scripts - every shipped script has an entry reachable from the index
 - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/doc_coverage.py --root . | grep -q PASS
+- **Verified:** yes (2026-07-09)
 
 ### AC3: All links resolve and pointers still land
 
@@ -37,13 +39,15 @@ Delivers CR0200. Documentation reorganisation only - no script behaviour changes
 - **When** `check_links.py` runs
 - **Then** all internal anchor links resolve, and pointers from SKILL.md and other references to `reference-scripts.md` (or its new pages) still land
 - **Verify:** shell python3 tools/check_links.py
+- **Verified:** yes (2026-07-09)
 
 ### AC4: No behaviour change
 
 - **Given** this is a documentation reorganisation
 - **When** the full skill test suite runs
 - **Then** it passes unchanged (no script content or behaviour was touched)
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests 2>&1 | tail -1 | grep -q OK
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_doc_coverage.py
+- **Verified:** yes (2026-07-09)
 
 ## Revision History
 

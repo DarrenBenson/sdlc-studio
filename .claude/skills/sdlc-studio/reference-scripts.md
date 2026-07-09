@@ -104,540 +104,79 @@ error handling, CLI flags over config files for small tools).
 
 ## Catalogue {#scripts-catalogue}
 
-### `repo_map.py`
-
-Pure-Python repository indexer. Produces
-`sdlc-studio/.local/repo-map.json` with per-file symbol lists, imports,
-and an in-degree score. Queried by the Agent Prompt Template and
-`code plan` workflow to derive `READ THESE FILES FIRST` lists.
-
-- `build`: walk the repo and write the index
-- `query`: rank files against a story or free-text query
-- `stats`: print index size and top-10 hub files
-
-Full workflow: `reference-repo-map.md`. User-facing help:
-`help/repo-map.md`.
-
-### `complexity.py`
-
-Cognitive (SonarSource) + cyclomatic complexity per function from Python's
-`ast` (pure stdlib; `lizard` soft-dep for other languages, unscored without
-it). Advisory signal for estimation and refactor-first; `repo_map`
-emits the same per-function scores into the map.
-
-- `scan`: list functions over the cognitive threshold (`complexity.cognitive_high`, default 15)
-- `assess --files ...`: a change's blast-radius difficulty band + refactor-first hotspots (used by `code plan`)
-
-### `provenance.py`
-
-Artifact provenance. Makes deterministic creation the *checkable* path: `new`
-stamps every artifact (`> **Created-by:** sdlc-studio ...`); `check` flags artifacts past
-the `provenance.adopt_after` id cutoff that lack the stamp (hand-authored), with
-remediation - advisory by default, `provenance.enforce: true` to block; `remake` content-
-preservingly backfills the stamp into un-stamped artifacts (idempotent, dry-run-able,
-stamp-only - never re-lays-out content). Standalone + advisory by design (not wired into
-the gate); adopting it is a project choice.
-
-### `telemetry.py`
-
-Run telemetry recorder. `record` appends a per-unit run outcome
-(id, type, iterations, wall-time, stages, critic verdict, complexity, churn, reopened,
-tokens-when-supplied) to the gitignored `sdlc-studio/.local/telemetry.jsonl`. Local-only,
-no network, no upload; advisory (a write failure is swallowed, never raised into the loop);
-only whitelisted non-None fields are written; `read_all`/`show` skip malformed lines. Feeds
-the deferred calibrate step.
-
-### `artifact.py`
-
-- `new --type retro|review`: the meta-artifacts are tool-created too
-  (allocated id, template scaffold, index row where a meta index exists) - they stay
-  outside the status machinery (`transition` refuses them by design).
-
-Deterministic artifact create + close cascade. `new --type <any of the 8 numbered
-types> --title ...` allocates a collision-free id, renders a valid scaffold (vocab-correct
-status; a story gets a populated AC section), appends the index data-table row (built
-generically from that index's own header, so it works for every type), recomputes counts,
-and wires a story into its parent epic's Story Breakdown. `close --id` terminal-transitions
-by id-prefix with the per-type terminal status (reusing transition). Replaces the ~10-step
-hand cascade. Shares `file_finding.append_index_row`. On the empty-project first run it
-creates a missing `<dir>/_index.md` from `templates/indexes/` (via
-`file_finding.ensure_index`), so the first artifact of a type is indexed like every later
-one; `--template full` grafts the rich `templates/core/` body onto the deterministic head.
-`batch --type <t> --spec <items.json>` creates many artifacts of one type in a single
-atomic pass: a reserved contiguous id block, every index row, and every story-to-
-epic link wired in one go; a missing epic or id collision aborts before any write;
-`--dry-run` previews the id map. Batch defaults to `--template full` (the fan-out case).
-
-### `init.py`
-
-Deterministic greenfield initialiser - `init` is now an executable, not a manual
-checklist. `run` creates the full `sdlc-studio/` directory tree, pre-creates every per-type
-`_index.md` (reusing `file_finding.ensure_index`), seeds
-`sdlc-studio/.config.yaml` and the agent-instructions starters (`AGENTS.md`/`CLAUDE.md`)
-from templates, and with `--scaffold` seeds the singleton docs (prd/trd/tsd/personas).
-`--detect` infers the stack; idempotent (never overwrites without `--force`); `--dry-run`
-previews every write so the workflow can show the config and confirm once before applying.
-It also seeds an empty `sdlc-studio/decisions.md`.
-
-### `ac_scope.py`
-
-Authoring lint (advisory): `check` flags a story whose acceptance criteria mention a
-distinctive capability keyword owned by a **different** epic's title (e.g. an EP0001 story
-asserting an "account token" when accounts are EP0006) - such a story is un-Done-able in its
-own epic and should be split or re-scoped. Heuristic and read-only; false positives are
-expected (the operator decides); never auto-edits. Run by the authoring loop's closing
-consistency pass.
-
-### `decisions.py`
-
-Project decisions log - the canonical home for load-bearing decisions, both
-product (scope cuts, resolved PRD open questions) and implementation conventions (error
-envelope, ID scheme, token strategy, migrations, test harness). `add --decision ...
---rationale ...` appends an auto-numbered, dated row to `sdlc-studio/decisions.md`; `list`
-prints it (filterable by status); `promote --from PRD-OQ3 ...` records a resolved PRD open
-question with a back-link (one record, two views). Append-only and greppable, so the spine lives
-in one place and feeds the handoff context delegated agents read - distinct from the
-sprint per-tranche ledger (`ledger.py`).
-
-### `pvd.py`
-
-PVD projection + drift. `sync` projects the one writable master
-Product Vision Document into a child repo read-only (copy in dev, symlink in prod);
-`drift` compares a projected copy against the master (in-sync / stale / behind / missing /
-error) via sha256 + version. An unreadable/missing master reports `error`, never a vacuous
-in-sync. `read_manifest` parses `product-manifest.yaml` (no PyYAML). See `reference-pvd.md`.
-
-### `gate.py`
-
-Portable, ecosystem-neutral CI quality gate. Aggregates the deterministic checks
-(conformance, reconcile drift, validate, constitution, integrity) into one consolidated
-pass/fail and exits non-zero only when a blocking check fails. `--only` / `--skip` select
-checks; constitution blocks only when `constitution.enforce` is set. No network, no CI
-assumption - runnable in any CI or a pre-commit hook (see `help/gate.md` for wiring). The
-check registry is injectable, so the aggregation logic is unit-tested without a full repo.
-`--require-retro RETROxxxx` adds a blocking close-gate check: the sprint/review close fails
-loud until the named batch retro exists in `sdlc-studio/retros/` (the hard retro gate).
-
-### `blocker_sweep.py`
-
-The inverse of `audit`'s `unmet-deps`: finds units whose blockers have **cleared**. `sweep`
-collects every blocker signal (Status `Blocked`, a `Depends on:` field, an epic `Blocked By`
-row), resolves each referent's current status - in-repo by the file census, cross-repo by
-reading the sibling repos in `product-manifest.yaml` (reuses `pvd.read_manifest`) - and
-classifies each genuinely-blocked unit as now-unblocked (every referent terminal/delivered)
-or still-blocked (outstanding referent named). Fail-loud per LL0008: a missing/unreadable/
-unknown-status referent is reported still-blocked, never silently cleared. Read-only - it
-proposes `Blocked -> Ready` candidates; the gated `transition` stays the actor. Runs before
-`sprint plan` and as the `reconcile detect --blocker-sweep` advisory lane (which never
-affects drift or the exit code). See `reference-sprint.md` and `reference-reconcile.md`.
-
-### `deploy.py`
-
-Orchestrate-only deploy last-mile. Read-only, ecosystem-neutral: it never deploys, never
-rolls back, never reads secrets, and never runs inside `sprint`.
-
-- `preflight`: read `deploy.*` config, run the pre-deploy gate, emit the readiness verdict + the
-  operator hand-off (the deploy command to run, the rollback procedure to keep ready). Exit 0 when
-  the gate is green, 1 otherwise. Never executes the deploy.
-- `record --status <rolled-out|verified|rolled-back|failed> [--detail ...]`: append a timestamped
-  outcome to `sdlc-studio/deploy-log.md` (the WS3 feedback loop).
-
-Workflow: `reference-deploy.md`; schema: `reference-config.md#deploy`.
-
-### `version_check.py`
-
-Skill version check + self-update signal. Compares the installed version
-against the latest GitHub release; `status`/`hint` print a one-line notice when newer.
-On by default, opt-out (`version_check.enabled`), TTL-cached, silent offline, per-version
-snooze. Drives the `skill-update` action via `scope`.
-
-- `check`: report {installed, latest, status, scope}
-- `snooze`: dismiss the current latest until a newer release
-- `scope`: print the install scope (user / project / agents)
-
-Action workflow: `reference-skill-update.md`.
-
-### `transition.py`
-
-Deterministic status transition + cascade. `set --id <ID> --status <new>` sets `Status`,
-syncs the index row + summary counts (`reconcile.apply_type`), and ticks/unticks a story's
-checkbox in its epic's Story Breakdown; `index_synced` is the true post-state. **A story ->
-Done is gated on its AC-verify result** (red or never-run executable ACs refuse the
-transition; `--force` overrides; manual-only / AC-less and non-story types are never gated).
-**Schema v3:** a finding leaving `inbox` is gated too - a structured `--triaged-by` (refused
-without one), triager != raiser (separation of duties; solo-human warns), `--triage-severity`
-recorded. Dormant on v2.
-
-### `triage_noise.py`
-
-Creation-time triage noise controls (schema v3 only, dormant on v2). A **session cap**
-(`triage.session_cap`, default 20) refuses the N+1th finding of a session loudly (keyed by
-`SDLC_TRIAGE_SESSION`, count in `.local/triage-session.json`). **Low-severity consolidation**
-(`triage.low_consolidation`) folds a Low finding into a themed consolidation CR instead of its
-own artefact; Medium+ stay individual. `file_finding` and `artifact new` both route here.
-
-### `triage_sampling.py`
-
-Triage-as-sampled-audit (schema v3). `sample(items, seed)` picks the findings a human audits:
-every Critical, every raiser/triager severity disagreement, plus `triage.sample_rate` of the
-rest, chosen by a stable hash of `(seed, id)` so a fixture is reproducible. `metrics(root)`
-computes triage quality from the records (no hand-counting): the false-positive rate (a finding
-triaged as real, later closed invalid), severity inflation (triager vs raiser), and
-sampled-but-unreviewed findings as standing pending audit. Surfaced by `status triage-metrics`.
-
-### `plan_review.py`
-
-Plan-review gate (schema v3 only, dormant on v2). Before a story with spec-derived ACs is
-implemented, an independent reviewer must challenge its ACs against the source spec. The
-trigger is **deterministic** (TRD ADR-006): `triggers(text, root)` fires on any of three
-signals - the Affects/ACs cite a `plan_review.spec_globs` path, `affects_files` reaches
-`plan_review.affects_files_threshold`, or the routed difficulty band reaches
-`plan_review.min_difficulty`. `gate(root, id)` blocks a triggered story from entering
-In Progress/Review/Done (wired into `transition.py`) unless an independent plan-review APPROVE
-is on record or a `> **Plan-Review-Override:**` field is present. Record with `plan_review
-record --id US.. --verdict approve --reviewer <seat> --author <plan-author>` - it pins the
-reviewed ACs by fingerprint (its own log, so it never satisfies the delivery critique gate),
-so a later AC edit invalidates the approval. `check --id US00xx` reports the verdict.
-
-### `spec_guard.py`
-
-Spec-edit guard (schema v3 only, dormant on v2). A delivery must not silently falsify the
-source of truth. `spec_edits(root, changed_files)` reports which changed files are
-requirements/spec documents (config `review.spec_paths`); `check(root, changed, story_text)`
-adds whether any AC cites a spec change and flags an `untraced` edit (a spec doc edited with no
-citing AC) - the signal the critic charter treats as a blocking finding (US0092/CR0195). The
-traceability judgement stays with the critic; the pre-check only guarantees the edit is
-surfaced. `check --changed a,b,c --story <file>` on the CLI.
-
-### `archive.py`
-
-Index archival for large boards. `archive --type <t> --release <r>` moves a
-type's terminal master-table rows into `<type>/archive/{release}/{type}.md` and leaves a
-bullet pointer in the live index - rows move, artifact files stay. `parse_index` unions
-the archive sub-indexes so the census stays correct. Explicit, idempotent per release.
-
-- `archive`: move terminal rows of one type by release (`--dry-run` to preview)
-
-Convention: `reference-outputs.md#index-archival`.
-
-### `constitution.py`
-
-Project-constitution principle gate. Asserts the machine-checkable
-principles declared in `sdlc-studio/constitution.md` - each `rule:` maps onto an
-existing detector (integrity/conformance/validate/reconcile). Advisory by default;
-`constitution.enforce: true` makes a violation exit non-zero.
-
-- `check`: report (and, when enforced, fail on) principle violations
-
-Full methodology: `reference-doctrine.md#constitution`.
-
-### `file_finding.py`
-
-Deterministic Bug/CR/RFC filer for audit findings. Allocates a
-collision-free ID, renders a STRUCTURED artifact (required sections enforced - it
-refuses a hollow stub), appends the index row, and recomputes the index counts
-(reusing reconcile's pass).
-
-- `file --type bug|cr|rfc --title ... <fields>`: write one artifact
-- `rebuild --type <t>`: recompute a type's index summary counts
-
-Full methodology: `reference-audit.md`.
-
-### `verify_ac.py`
-
-Executes AC verifiers defined in story files and updates each AC's
-`Verified:` line. Drives `/sdlc-studio reconcile --verify`.
-
-- `run`: walk stories, run verifiers, write report (`--id USNNNN` resolves one story)
-- `report`: print the latest verification report
-- `lint`: advisory - flag Verify lines that fall through to `shell` as mis-written runner
-  calls (`npm test -- ... -t`, `curl ... returns N`), nudging to the DSL
-- `ts-check --spec <ts>`: validate a test-spec's AC Coverage Matrix is not decorative -
-  every AC mapped to a passing test case, no placeholders; `--verify-report` cross-checks the
-  matrix's claimed status against the live report
-- `epic-ts --epic EPxxxx`: require an epic to have a test-spec (linked by its `Epic:` field)
-  whose matrix passes `ts-check` - the hard epic-scope TS requirement, gated by
-  `quality.epic_requires_test_spec` (default true; single-story work is exempt)
-
-Full workflow: `reference-verify.md`. User-facing help:
-`help/verify.md`.
-
-### `mutation.py`
-
-The executable mutation-check gate - the complement of `verify_ac.py`: verify_ac
-confirms an AC's tests PASS; mutation asks whether they would FAIL if the feature
-broke. Applies a declared, bounded set of textual mutations (invert-guard,
-stub-return-null, unset-delivered-field, no-op-mapper) to a selected surface via
-per-language pattern profiles, re-runs the test command per mutation, and reports
-**killed vs survived** - a survivor is a finding. Deterministic (same code plus the
-same set gives the same report); honest degrade (an un-mutatable file/class is
-reported un-checked, a red baseline yields error verdicts, ceiling truncation is
-counted, never silent).
-
-- `run --test CMD` with a surface: `--files a.py ...`, `--since REF` (git diff),
-  or `--story USxxxx` (the story's epic/CR `Affects`); `--max-mutations N`
-  (default `quality.mutation_max`, else 25); writes
-  `sdlc-studio/.local/mutation-report.json`; exits non-zero on survivors/errors
-- `prefilter --tests <paths>`: advisory list of test files with no recognisable
-  assertion - the cheap static signal for which tests to mutate first
-
-The gate's `mutation` lane surfaces the report (advisory in v1; an absent report
-reads not-run, never PASS). User-facing help: `help/mutation.md`.
-
-### `github_sync.py`
-
-Two-way sync between local CR/Story/Epic files and GitHub Issues via
-the `gh` CLI.
-
-- `pull`: fetch issues with `sdlc:*` labels and create local files
-- `push`: create or update issues from local files
-- `cascade`: walk merged PRs and trigger Story Completion Cascades
-- `state`: print sync state
-
-Full workflow: `reference-github-sync.md`. User-facing help:
-`help/github-sync.md`.
-
-### `reconcile.py` (read-only)
-
-Builds the artifact-file census and reports `_index.md` drift as JSON.
-
-- `detect`: census + drift report (`--scope`, `--write-report`)
-- `apply`: mechanical fixes - status cells + summary counts, behind `--dry-run`
-- `fields`: project file-owned cells (Title, Points, Persona) from the files into the index, so
-  it is fully derived; `--apply` writes, default reports. A field absent in the
-  file is left untouched. Persona reads the canonical `> **Persona:**` story field
-
-Drift kinds: `status-mismatch`, `missing-row`, `orphan-row`, `count-mismatch`,
-`missing-index`. Claude consumes the report, applies the edits, and handles the
-checkbox/dependency/PRD-feature and CR-cascade drift that needs judgement.
-Full workflow: `reference-reconcile.md`.
-
-### `status.py` (read-only)
-
-- `pillars`: four-pillar census (Requirements/Code/Tests/Reviews) as JSON
-- `hint`: the next mechanical action
-- `tranche --value <ref>`: list every artefact carrying `> **Tranche:** <ref>` (the
-  "what shipped in tranche X" query; the reference is orchestrator-set, never allocated)
-- `triage-metrics`: schema-v3 triage quality (false-positive rate + severity inflation)
-
-Live metrics (lint, type-check, coverage) are left to Claude to run. Help:
-`help/status.md`, `help/hint.md`.
-
-### `validate.py` (read-only)
-
-- `check`: lint artifact structure (ID, Status vocabulary, title, AC presence, an optional
-  record-only `Tranche` reference whose only shape rule is non-empty-when-present)
-- `instructions`: hygiene-check the project's `AGENTS.md` / `CLAUDE.md` (AGENTS.md
-  canonical, CLAUDE.md a `@AGENTS.md` pointer, operating-doctrine + `LATEST.md`
-  pointers present, pre-release gate + compaction rule present, no per-ship-narrative
-  bloat). Used by `/sdlc-studio init` (seed-or-check) and `/sdlc-studio review`.
-
-Exits non-zero when any error-severity violation is found. Used by Ready-status
-checks (`reference-decisions.md`) and as a reconcile pre-step.
-
-### `next_id.py` (read-only)
-
-- `allocate`: next free ID for a type (`--remote` also scans `origin/main`)
-- `scan`: list IDs in use
-
-Covers the 8 pipeline types plus the **meta-artifacts** `review` (RV####) and `retro`
-(RETRO####), so review/retro ids are allocated, never hand-picked - run `next_id.py
-allocate --type review` before writing one, the same discipline as `artifact.py new`.
-(Lessons `LL####` have their own manager in `lessons.py`; personas are named.) Read-only;
-runs `git ls-tree` (no fetch). Backs ID assignment in `reference-cr.md` and doctrine rule 13.
-
-### `migrate_v3.py`
-
-One-shot schema v2 -> v3 migration (sequential ids -> type-prefixed short ULIDs):
-
-- `plan`: preview the old-id -> new-id map, write nothing
-- `apply`: rewrite ids to ULIDs, retain each old id as an alias (`> **Aliases:**`), rewrite
-  every intra-workspace link, and regenerate index counts
-
-Preserves creation order (each ULID's timestamp is derived from the file's date), is dry-run
-first, and is idempotent (an already-migrated file is skipped). After `apply`, set
-`schema_version: 3` in `.config.yaml` so new artefacts mint ULIDs too. `sdlc_md.alias_map`
-resolves a pre-migration id to its current ULID, so `--id US0001` still works afterwards.
-
-### `digest.py`
-
-Context tiering - mechanical, drift-checked digests of closed (terminal) artefacts so
-status/planning reads need not re-read the whole corpus as a repo ages:
-
-- `build`: write `sdlc-studio/.local/digests.json` - one field-extracted entry per closed
-  artefact (id, title, status, close outcome, cross-references). Originals are never
-  summarised away; the digest is an access tier.
-
-`digest.is_stale(root)` compares the on-disk digest to a freshly built one (a closed artefact
-added/changed since -> regenerate), the same derived-and-drift-checked discipline as an index.
-The read-path integration (status/hint reading digests) and the size threshold are the
-remaining CR0179 workstream.
-
-### `audit_check.py`
-
-One CI-runnable command over the schema-v3 team-schema rules, emitting STABLE rule ids so the
-output is a reference implementation the wider crew audit linter can consume:
-
-- `check`: run all rules; exit 1 on any error-severity finding, 0 on a clean repo. `--format
-  json` gives `{ok, rules, findings}` with `{rule, file, message}` per finding.
-
-Rules (all era-gated to schema v3, so a v2 project reports nothing): `authorship-structured`,
-`authorship-type`, `authorship-unresolved`, `evidence-present`, `duties-separated`,
-`id-format`, `index-derived`. These same rules are enforced in the blocking `gate` via
-`validate` and the `index-derived` check; `audit_check.py` is the focused, stable-id view.
-
-### `backfill_authorship.py`
-
-Backfills a structured `> **Raised-by:** Name; type; version` reference onto artefacts that
-predate it, inferring the author from existing `Requester`/`Created-by`/revision-history
-fields and marking an inferred attribution `(inferred)` so it never reads as first-hand:
-
-- `plan`: count what would change, write nothing
-- `apply`: write the raised_by lines (additive; idempotent - skips artefacts that already
-  have one)
-
-Run once when a project adopts schema v3; the `authorship-structured` validate rule then
-holds new artefacts to a typed, resolvable author (`type` is one of human | persona | agent,
-persona resolved against `sdlc-studio/personas/`).
-
-### `review_prep.py` (read-only)
-
-- `prep`: deterministic inputs for the five-leg review (artifact staleness,
-  persona definition-vs-PRD usage, count and AC-verification inputs). Gathers inputs
-  only; the verdict stays with Claude. Full workflow: `reference-review.md`.
-
-### `review_generate.py`
-
-Deterministic spine of the model-driven `review generate` on-ramp. `bootstrap`
-idempotently creates the `reviews/`/`bugs/`/`change-requests/` folders and indexes;
-`policy`/`prompt` print the verbatim remediation-only posture and the review prompt
-template (`templates/workflows/repo-review.md`); `scan --secret <value>` fails if a
-secret value leaked into an artefact. Help: `help/review.md`.
-
-### `lite_profile.py`
-
-Promotion for the lite profile (`profile: lite` collapses the pipeline to PRD ->
-story -> implement; reader `sdlc_md.profile`). `promote` inserts one umbrella epic
-above the epic-less stories, wires each in, flips to full, and reconciles (`--dry-run`).
-
-### `plan.py`
-
-Claude Code plan-file manager for `~/.claude/plans/`.
-
-- `list`: table of active plans (slug, modified date, age, first heading);
-  `--all` includes the archive, `--stale` filters by `--days` (default 30)
-- `archive`: move `<slug>.md` to `archive/<yyyy-mm>/`; errors on a missing
-  slug, an already-archived plan, or an existing archive target
-
-Contract note: the one script that writes outside `.local/` - `archive` moves files
-under the operator-owned `~/.claude/plans/` (never deletes or overwrites; `list` is
-read-only). Full workflow: `reference-plan-files.md`. Help: `help/plan.md`.
-
-### `lessons.py`
-
-Lessons manager for both tiers: the project's `sdlc-studio/.local/lessons.md`
-and the skill's own cross-project `lessons/` registry.
-
-- `list`: project-tier entries newest first (`--global` for the skill tier)
-- `add`: append a project-tier entry (L-NNNN allocation, top insertion,
-  header upkeep); `--global` creates the next `LL{NNNN}-{slug}.md` from
-  `lessons/_template.md` and appends the `_index.md` row
-- `prune`: drop project-tier entries with Epic `<=` `--older` or `==` `--epic`
-- `recall`: skill-tier lessons matching `--tags`/`--query` (case-insensitive
-  substring); `--all` searches both tiers
-
-`add --global` writes within the skill's own `lessons/` folder (the registry
-ships with the skill); project-tier writes stay in `.local/`. Full workflow:
-`reference-agentic-lessons.md#lessons-accumulation`. User-facing help:
-`help/lessons.md`.
+The catalogue is grouped into detail pages (each under the reference budget). This index
+lists every script with a one-line summary; open the linked page for the full entry.
+
+### Creation & mutation - [reference-scripts-create.md](reference-scripts-create.md)
+
+- `artifact.py` - `new --type retro|review`: the meta-artifacts are tool-created too
+- `init.py` - Deterministic greenfield initialiser - `init` is now an executable, not a manual
+- `decisions.py` - Project decisions log - the canonical home for load-bearing decisions, both
+- `transition.py` - Deterministic status transition + cascade. `set --id <ID> --status <new>` sets `Status`,
+- `archive.py` - Index archival for large boards. `archive --type <t> --release <r>` moves a
+- `file_finding.py` - Deterministic Bug/CR/RFC filer for audit findings. Allocates a
+- `next_id.py` - `allocate`: next free ID for a type (`--remote` also scans `origin/main`)
+- `ledger.py` - The append-only per-tranche decisions ledger. `record` appends a decision + rationale to `sdlc-studio/decisi...
+- `rfc.py` - RFC helpers - the `rfc decide` multi-RFC decision digest (per-draft open-decision + workstream counts + read...
+
+### Reconcile, verify & checks - [reference-scripts-verify.md](reference-scripts-verify.md)
+
+- `gate.py` - Portable, ecosystem-neutral CI quality gate. Aggregates the deterministic checks
+- `verify_ac.py` - Executes AC verifiers defined in story files and updates each AC's
+- `mutation.py` - The executable mutation-check gate - the complement of `verify_ac.py`: verify_ac
+- `reconcile.py` - Builds the artifact-file census and reports `_index.md` drift as JSON.
+- `status.py` - `pillars`: four-pillar census (Requirements/Code/Tests/Reviews) as JSON
+- `validate.py` - `check`: lint artifact structure (ID, Status vocabulary, title, AC presence, an optional
+- `conformance.py` - The lifecycle-conformance gate. `detect_conformance` reports per-story stages (decomposed -> AC -> verifiabl...
+- `doc_coverage.py` - The documentation-coverage check - the `documented` DoD floor. Hard-fails when a Type-Reference command lack...
+- `doc_freshness.py` - Advisory freshness check for `sdlc-studio/reviews/LATEST.md` - the state anchor drifts silently. Compares th...
+- `integrity.py` - Referential integrity. `detect_integrity` flags missing required links (e.g. a story with no epic) and dangl...
+
+### Audit, review & critic - [reference-scripts-review.md](reference-scripts-review.md)
+
+- `ac_scope.py` - Authoring lint (advisory): `check` flags a story whose acceptance criteria mention a
+- `plan_review.py` - Plan-review gate (schema v3 only, dormant on v2). Before a story with spec-derived ACs is
+- `spec_guard.py` - Spec-edit guard (schema v3 only, dormant on v2). A delivery must not silently falsify the
+- `constitution.py` - Project-constitution principle gate. Asserts the machine-checkable
+- `audit_check.py` - One CI-runnable command over the schema-v3 team-schema rules, emitting STABLE rule ids so the
+- `review_prep.py` - `prep`: deterministic inputs for the five-leg review (artifact staleness,
+- `review_generate.py` - Deterministic spine of the model-driven `review generate` on-ramp. `bootstrap`
+- `disclosure.py` - Progressive-disclosure + Claude Code best-practice check, **advisory**. Flags reference-/
+- `audit.py` - Adversarial audit / tranche pre-flight. `check` grooms a batch for readiness - weak-AC, unmet-deps, already-...
+- `critic.py` - The independent-critic verdict ledger. `record` writes a committed verdict to `sdlc-studio/reviews/critic-ve...
+- `persona_resolve.py` - Resolves the worker amigo for a delegated sub-agent, most-specific-first: a project-authored practitioner am...
+
+### Upgrade, deploy & version - [reference-scripts-upgrade.md](reference-scripts-upgrade.md)
+
+- `deploy.py` - Orchestrate-only deploy last-mile. Read-only, ecosystem-neutral: it never deploys, never
+- `version_check.py` - Skill version check + self-update signal. Compares the installed version
+- `migrate_v3.py` - One-shot schema v2 -> v3 migration (sequential ids -> type-prefixed short ULIDs):
+- `backfill_authorship.py` - Backfills a structured `> **Raised-by:** Name; type; version` reference onto artefacts that
+- `lite_profile.py` - Promotion for the lite profile (`profile: lite` collapses the pipeline to PRD ->
+- `project_upgrade.py` - Migrate a CONSUMING project to the current skill conventions, the project-side complement
+- `resume.py` - Resume an interrupted sprint from the persisted ledger + loop-state, so a context reset or crash continues t...
+
+### Domain helpers & orchestration - [reference-scripts-domain.md](reference-scripts-domain.md)
+
+- `repo_map.py` - Pure-Python repository indexer. Produces
+- `complexity.py` - Cognitive (SonarSource) + cyclomatic complexity per function from Python's
+- `provenance.py` - Artifact provenance. Makes deterministic creation the *checkable* path: `new`
+- `telemetry.py` - Run telemetry recorder. `record` appends a per-unit run outcome
+- `pvd.py` - PVD projection + drift. `sync` projects the one writable master
+- `blocker_sweep.py` - The inverse of `audit`'s `unmet-deps`: finds units whose blockers have **cleared**. `sweep`
+- `triage_noise.py` - Creation-time triage noise controls (schema v3 only, dormant on v2). A **session cap**
+- `triage_sampling.py` - Triage-as-sampled-audit (schema v3). `sample(items, seed)` picks the findings a human audits:
+- `github_sync.py` - Two-way sync between local CR/Story/Epic files and GitHub Issues via
+- `digest.py` - Context tiering - mechanical, drift-checked digests of closed (terminal) artefacts so
+- `plan.py` - Claude Code plan-file manager for `~/.claude/plans/`.
+- `lessons.py` - Lessons manager for both tiers: the project's `sdlc-studio/.local/lessons.md`
+- `sprint.py` - The Goal-Driven Development loop's planner. `plan <query> --order priority|wsjf` selects + dependency-orders...
+- `autosprint.py` - Deprecated re-exporting alias for `sprint.py` (the old name); prefer `sprint`.
+- `route.py` - Difficulty-aware model-tier routing, **advisory - no gate reads a tier**, no model API ever called (ids are ...
+- `config.py` - Merged per-project configuration reader. Layers `templates/config-defaults.yaml` under the project's `sdlc-s...
+- `loop_guard.py` - The sprint deterministic guardrails. The iteration cap, the repetition-breaker (repeated failure signature),...
 
 ## See Also
 
-- `best-practices/script.md` - Style rules for shell and Python scripts
-- `scripts/README.md` - Directory overview for contributors
-- `reference-repo-map.md`, `reference-verify.md`, `reference-github-sync.md` - Consumer workflows
-
-## Orchestration, checks & helpers
-
-### `disclosure.py`
-
-Progressive-disclosure + Claude Code best-practice check, **advisory**. Flags reference-/
-help- files missing a `Load when:` trigger or orphaned from every index (SKILL.md / help/references.md
-/ help/help.md), plus best-practice items from `best-practices/claude-skill.md` (scripts executable +
-expose `--help`, templates use `{{placeholder}}`, SKILL.md has a When-to-Use section). Skill-dev only
-(no-op for consuming repos). Wired into the gate as NON-BLOCKING; `--strict` opts into a non-zero exit.
-The token lever: a doc with no load-trigger and no index entry gets pulled in without discipline.
-
-### `project_upgrade.py`
-
-Migrate a CONSUMING project to the current skill conventions, the project-side complement
-to `skill-update` (which updates the tool, not the project). `detect` reports the version/convention
-gap (project `sdlc-studio/.version` vs the installed skill); the dry-run (default) prints a migration
-plan split into **auto-correctable** (scaffold `.config.yaml` with a `provenance.adopt_after` cutoff
-so existing artefacts are exempt, scaffold/bump `.version`, `reconcile` index/status drift) and
-**needs-judgement** (old personas -> Cooper model / review-seat charters, AGENTS hygiene, missing
-`Verify:`/AC - reported, never auto-applied, never filed as CRs). `--apply` performs only the safe
-deterministic set; idempotent. Reuses reconcile/validate/next_id/version_check. `skill-update` offers
-it after a version bump.
-
-### `audit.py`
-
-Adversarial audit / tranche pre-flight. `check` grooms a batch for readiness - weak-AC, unmet-deps, already-terminal, link-integrity, **already-satisfied** (a Ready unit whose executable ACs all pass in the verify-report - a close-candidate, not work to build), **weak-verify** (a non-executable Verify line, reusing `verify_ac lint`) and **cross-epic-ac** (an AC owned by another epic, reusing `ac_scope`) - before the triage STOP, so work never starts on a unit that would pass the gates vacuously or be reverse-engineered at implement time.
-
-### `sprint.py`
-
-The Goal-Driven Development loop's planner. `plan <query> --order priority|wsjf` selects + dependency-orders the batch (the triage plan); priority dominates, complexity breaks ties. `plan --prd <path>` bootstraps greenfield authoring; `plan --write` persists the sprint-plan artifact; `plan` runs `reconcile detect` first and surfaces drift, refusing under `--strict` (reconcile-before-plan). `--order wsjf` orders by seat-scored WSJF = (value+time-criticality+risk-reduction)/size from `.local/wsjf-inputs.json`, degrading to priority+complexity without inputs or under `--skip-personas`. Every planned unit is stamped with a `difficulty` band (route.py, advisory); with `routing.enabled` it also carries the `tier`/`model` recommendation; an estimator failure degrades that unit's routing fields, never the plan. See reference-sprint.md.
-
-### `autosprint.py`
-
-Deprecated re-exporting alias for `sprint.py` (the old name); prefer `sprint`.
-
-### `route.py`
-
-Difficulty-aware model-tier routing, **advisory - no gate reads a tier**, no model API ever called (ids are opaque strings the orchestrator passes to its own spawn mechanism). `estimate --unit` scores 0-100 from blast-radius cognitive/risk (`complexity.assess`), file scope, unresolved-path novelty, ACs and points - an unresolved signal defaults its subscore to 0.5 (never 0) and lowers confidence. `pick --unit --role author|critic` applies band->tier, kind floors, the low-confidence upward bump, and the critic rule (never smaller than the author; code units floor the critic at medium). `escalate --tier` steps to the next declared tier; `tiers` prints the resolved map (upward-only sparse degradation). Config: `reference-config.md#routing`.
-
-### `config.py`
-
-Merged per-project configuration reader. Layers `templates/config-defaults.yaml` under the project's `sdlc-studio/.config.yaml` (degrading without PyYAML); the source of `status_vocab`, adoption cutoffs, `complexity`, `constitution`, `version_check`, `provenance`, etc.
-
-### `conformance.py`
-
-The lifecycle-conformance gate. `detect_conformance` reports per-story stages (decomposed -> AC -> verifiable -> verified -> reconciled -> critiqued -> documented) and hard-fails any terminal unit with a stage missing. Repo-global signals (reconciled, documented) apply to every Done unit.
-
-A failure does not just print a count. The gate and `conformance check` name the two whole-batch remedies inline: set `conformance.adopt_after` (forward-only adoption - accepts a bare id `103` or prefixed `US0103`, and ids up to and including the cutoff are exempt), or run `verify_ac` and back-annotate `- **Verified:**` to clear per-unit debt. The output also distinguishes unadopted-discipline debt (most units mass-missing the same stage - pre-existing, forward-only) from scattered per-unit gaps that may be a regression, so a grown-but-accepted count is not mistaken for a fresh breakage. The cutoff is parsed by the shared `sdlc_md.parse_cutoff` (one parser for both gates), which raises a clear error on an unparseable value rather than silently disabling the cutoff.
-
-### `critic.py`
-
-The independent-critic verdict ledger. `record` writes a committed verdict to `sdlc-studio/reviews/critic-verdicts.md` stamping both the **reviewer and the author** (the authoring seat / delegation id); `verdict_for` reads it. `is_independent` proves `reviewer != author`; `is_pre_gate` flags units closed before the gate (the visible `pre-gate` marker, grandfathered). Conformance's `critiqued` stage requires a committed APPROVE that is independent or pre-gate.
-
-### `persona_resolve.py`
-
-Resolves the worker amigo for a delegated sub-agent, most-specific-first: a project-authored practitioner amigo (`sdlc-studio/personas/amigos/<seat>.md`), else the skill default (Dani / Sam / Lena), else generic. `resolve` prints the framing the orchestrator appends *after* the contract; `--skip-personas` emits nothing (byte-equivalent generic). The stance never overrides the concrete contract, and the worker is always a separate instance from its reviewer.
-
-### `doc_coverage.py`
-
-The documentation-coverage check - the `documented` DoD floor. Hard-fails when a Type-Reference command lacks a help/help.md catalogue entry or a script lacks a reference-scripts.md entry; warns on an empty CHANGELOG [Unreleased]. No-op for consuming repos (no SKILL.md). Wired into the gate + conformance.
-
-### `doc_freshness.py`
-
-Advisory freshness check for `sdlc-studio/reviews/LATEST.md` - the state anchor drifts silently. Compares the facts LATEST.md *claims* (version, script-test count, disclosure count) against reality (SKILL.md version, the `def test_` census, `disclosure.check`) and flags mismatches. Only checks a fact LATEST.md actually states; never blocks; no-op off the skill repo. Wired into the gate as advisory.
-
-### `integrity.py`
-
-Referential integrity. `detect_integrity` flags missing required links (e.g. a story with no epic) and dangling references across the artifact graph; errors vs advisories.
-
-### `ledger.py`
-
-The append-only per-tranche decisions ledger. `record` appends a decision + rationale to `sdlc-studio/decisions/<tranche>.md`; survives context compaction so a reset resumes from disk.
-
-### `loop_guard.py`
-
-The sprint deterministic guardrails. The iteration cap, the repetition-breaker (repeated failure signature), and the completion oracle (`is_complete`) - persisted to `.local/loop-state.json` so an unattended run cannot thrash or declare itself done early.
-
-### `resume.py`
-
-Resume an interrupted sprint from the persisted ledger + loop-state, so a context reset or crash continues the tranche from disk rather than a lost transcript.
-
-### `rfc.py`
-
-RFC helpers - the `rfc decide` multi-RFC decision digest (per-draft open-decision + workstream counts + ready flag) and RFC index/table helpers (escaped-pipe-aware via sdlc_md).
+- `scripts/README.md` - directory conventions
+- `reference-*.md` - the workflow references

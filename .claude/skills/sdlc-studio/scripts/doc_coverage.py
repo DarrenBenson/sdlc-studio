@@ -61,7 +61,11 @@ def check(repo_root: Path | str = ".") -> dict:
     if skill_dir is None:  # not the skill repo - nothing to check
         return {"findings": [], "ok": True, "applicable": False}
     help_text = (skill_dir / "help" / "help.md").read_text(encoding="utf-8")
-    refscripts = (skill_dir / "reference-scripts.md").read_text(encoding="utf-8")
+    # The script catalogue is a lean index (reference-scripts.md) plus grouped detail pages
+    # (reference-scripts-*.md); a script's `### ` entry may live in any of them, so union them.
+    refscripts = "\n".join(
+        p.read_text(encoding="utf-8")
+        for p in sorted(skill_dir.glob("reference-scripts*.md")))
     findings = []
     for cmd in _type_ref_commands(skill_dir):
         # Must be an actual catalogue entry (`/sdlc-studio <cmd>`), not a coincidental
