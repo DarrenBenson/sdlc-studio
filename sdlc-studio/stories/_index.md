@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 2 |
+| Ready | 1 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 109 |
+| Done | 110 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -78,7 +78,7 @@
 | [US0108](US0108-version-and-changelog-conversion-to-4-0-0.md) | Version and CHANGELOG conversion to 4.0.0-rc.1 and dormant-schema banner removal | Done | EP0024 | 2026-07-09 | 2026-07-09 |
 | [US0109](US0109-rc-tag-readiness-checklist-enumerated-so-the-tag.md) | rc-tag readiness checklist enumerated so the tag decision is a checklist read | Done | EP0024 | 2026-07-09 | 2026-07-09 |
 | [US0110](US0110-status-py-backlog-non-terminal-census-per-type.md) | status.py backlog: non-terminal census per type and status (CR0199) | Done | EP0025 | 2026-07-09 | 2026-07-09 |
-| [US0111](US0111-widen-the-provenance-tag-lint-guard-to-us.md) | Widen the provenance-tag lint guard to US-form and non-leading ids (CR0201) | Ready | EP0025 | 2026-07-09 | 2026-07-09 |
+| [US0111](US0111-widen-the-provenance-tag-lint-guard-to-us.md) | Widen the provenance-tag lint guard to US-form and non-leading ids (CR0201) | Done | EP0025 | 2026-07-09 | 2026-07-09 |
 | [US0112](US0112-hygiene-close-fixed-bugs-archive-over-threshold-indexes.md) | Hygiene: close fixed bugs, archive over-threshold indexes, apply small deferred fixes | Ready | EP0025 | 2026-07-09 | 2026-07-09 |
 
 ## Archived Releases

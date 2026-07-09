@@ -37,7 +37,7 @@ Spec-edit guard (schema v3 only, dormant on v2). A delivery must not silently fa
 source of truth. `spec_edits(root, changed_files)` reports which changed files are
 requirements/spec documents (config `review.spec_paths`); `check(root, changed, story_text)`
 adds whether any AC cites a spec change and flags an `untraced` edit (a spec doc edited with no
-citing AC) - the signal the critic charter treats as a blocking finding (US0092/CR0195). The
+citing AC) - the signal the critic charter treats as a blocking finding. The
 traceability judgement stays with the critic; the pre-check only guarantees the edit is
 surfaced. `check --changed a,b,c --story <file>` on the CLI.
 

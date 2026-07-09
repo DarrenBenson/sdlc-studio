@@ -300,7 +300,7 @@ ACs (back-compatible, unprotected) - prefer `plan_review.py record`.
 Schema v3 only (dormant under `schema_version: 2`). A delivery must not silently falsify the
 source of truth: in the N=5 benchmark a worker edited the requirements spec to match its wrong
 implementation and the change passed review because nothing distinguished a requested spec edit
-from an unrequested one (US0092/CR0195). `scripts/spec_guard.py check --changed <files> --story
+from an unrequested one. `scripts/spec_guard.py check --changed <files> --story
 <file>` surfaces, deterministically and **per edited file**, which changed files are
 requirements/spec documents and which of them the story never references. An edited spec file
 the story does not name is `untraced` - the critic charter turns that into a **blocking

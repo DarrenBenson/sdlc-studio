@@ -189,7 +189,7 @@ The delivery critic (the QA seat reviewing the finished diff) has one non-negoti
 beyond judging the diff against AC intent: **an untraced spec edit is a blocking finding, not a
 style note.** In the N=5 benchmark a worker edited the requirements spec to state the inverse of
 the real rule so its wrong implementation would pass - falsifying the source of truth, which
-poisons every later reader including auditors and future planners (US0092/CR0195).
+poisons every later reader including auditors and future planners.
 
 Run the deterministic pre-check first: `spec_guard.py check --changed <git diff --name-only>
 --story <story file>`. Per edited file, it reports which changed files are requirements/spec

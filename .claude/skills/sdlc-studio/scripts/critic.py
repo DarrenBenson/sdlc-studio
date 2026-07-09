@@ -31,7 +31,7 @@ PRE_GATE = "pre-gate"
 # Two verdict phases, each in its own log so a plan-review verdict never satisfies the
 # delivery critique gate (and vice versa): `delivery` is the post-implementation critic the
 # conformance `critiqued` stage reads; `plan-review` is the pre-implementation AC-vs-spec
-# check (US0090/CR0194). Same schema, same independence rule, distinct files.
+# check. Same schema, same independence rule, distinct files.
 PHASES = ("delivery", "plan-review")
 _FILE = {"delivery": "critic-verdicts.md", "plan-review": "plan-review-verdicts.md"}
 # Delivery header is byte-identical to the original (a freshly created delivery log must not

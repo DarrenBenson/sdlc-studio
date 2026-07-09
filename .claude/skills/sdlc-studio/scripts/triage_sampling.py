@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """SDLC Studio triage sampling policy + triage-quality metrics (schema v3, EP0014).
 
-Once triage becomes a sampled human audit rather than a gate (US0065/US0066), two questions
+Once triage becomes a sampled human audit rather than a gate, two questions
 follow: *which* triaged findings should a human look at, and *how good* is the triage over time.
 
 - **Sampling policy** (`sample`): deterministic given a seed. Every Critical is sampled, every

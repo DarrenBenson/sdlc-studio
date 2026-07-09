@@ -49,8 +49,8 @@ review:
     - suggestion    # Consider addressing
   # Requirements/spec documents (schema v3 only). A delivery diff that edits one of these
   # without a citing AC is an UNTRACED spec edit - the critic charter treats it as a blocking
-  # finding (US0092/CR0195: falsifying the source of truth is the worst propagation of a bad
-  # plan). `scripts/spec_guard.py` surfaces the edit deterministically; the traceability
+  # finding: falsifying the source of truth is the worst propagation of a bad
+  # plan. `scripts/spec_guard.py` surfaces the edit deterministically; the traceability
   # judgement stays with the critic. A requested spec edit (an AC citing the spec path) is fine.
   spec_paths:
     - "*prd*.md"
@@ -186,7 +186,7 @@ routing:
 
 # Plan-review gate (schema v3 only; dormant under schema_version: 2). Before a story with
 # spec-derived ACs is implemented, an independent reviewer must challenge its ACs against
-# the source spec (US0090/CR0194 - the N=5 "bad plan propagates" failure). The trigger is
+# the source spec (the N=5 "bad plan propagates" failure). The trigger is
 # DETERMINISTIC (no model judgement in the fire/skip decision, TRD ADR-006): it fires when
 # ANY of the three signals below is true, so it cannot be skipped under effort pressure. The
 # only sanctioned skip is a recorded `> **Plan-Review-Override:**` on the story (auditable).
@@ -218,7 +218,7 @@ deploy:
   rollback: ""       # a documented PROCEDURE (steps, or a command an operator runs by hand). The
                      #  agent never fires this; `deploy` only SURFACES it on a failed smoke.
 
-# Context tiering - summarised digests of closed artefacts (CR0179). A long-lived repo pays a
+# Context tiering - summarised digests of closed artefacts. A long-lived repo pays a
 # growing token tax on every status / planning pass that re-reads the whole closed corpus. When
 # the number of closed artefacts reaches `min_closed`, `digest.py build` writes a mechanical
 # digest (id/title/status/outcome/refs) that `status`/`hint` read for closed artefacts instead of

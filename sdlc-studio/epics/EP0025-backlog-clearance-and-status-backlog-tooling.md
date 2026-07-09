@@ -15,7 +15,7 @@ open CR and bug backlog reaches 0, with the archival advisory cleared.
 ## Story Breakdown
 
 - [x] [US0110: status.py backlog: non-terminal census per type and status (CR0199)](../stories/US0110-status-py-backlog-non-terminal-census-per-type.md)
-- [ ] [US0111: Widen the provenance-tag lint guard to US-form and non-leading ids (CR0201)](../stories/US0111-widen-the-provenance-tag-lint-guard-to-us.md)
+- [x] [US0111: Widen the provenance-tag lint guard to US-form and non-leading ids (CR0201)](../stories/US0111-widen-the-provenance-tag-lint-guard-to-us.md)
 - [ ] [US0112: Hygiene: close fixed bugs, archive over-threshold indexes, apply small deferred fixes](../stories/US0112-hygiene-close-fixed-bugs-archive-over-threshold-indexes.md)
 
 ## Revision History
