@@ -86,3 +86,6 @@ $RECYCLE.BIN/
 # SDLC Studio user-local runtime state (workspace and skill-install copies)
 sdlc-studio/.local/
 .claude/skills/sdlc-studio/.local/
+# Safety net: any nested .local/ (e.g. a test fixture's generated output) is runtime
+# state, never committed - keeps a broad `git add -A` from shipping machine state.
+**/.local/

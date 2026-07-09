@@ -69,6 +69,11 @@ run "neutrality" \
   "generalise the name (e.g. to 'a consuming project'); the checker redacts the term, so grep your diff for it" \
   -- python3 tools/check_neutrality.py
 
+run "action-pins" \
+  "every GitHub Action is pinned to a full commit SHA (a moved tag cannot inject code into CI)" \
+  "pin the flagged Action to its tag's commit SHA: uses: owner/repo@<40-hex> # vN" \
+  -- bash tools/check_action_pins.sh
+
 # Comprehensive artefact gate (fast, ~1s): conformance, reconcile drift, validate,
 # integrity, duplicate-id, doc-coverage, doc-freshness. This is the same gate CI runs.
 if gate_out="$(python3 "$skill/gate.py" --root . 2>&1)"; then

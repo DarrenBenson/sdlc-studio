@@ -1,6 +1,6 @@
 # US0100: Supply-chain integrity: pin Actions to SHAs and verify installer checksums
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0022
@@ -23,13 +23,15 @@ Delivers CR0186 items 1-2 (defence-in-depth, remediation-only).
 - **When** they are inspected
 - **Then** every `uses:` third-party Action references a 40-hex commit SHA (with the version in a trailing comment), not a mutable `@vN`/branch tag; CI stays green
 - **Verify:** shell test -z "$(grep -rhoE 'uses: [^@]+@[^ ]+' .github/workflows | grep -vE '@[0-9a-f]{40}')"
+- **Verified:** yes (2026-07-09)
 
 ### AC2: Both installers verify a per-release checksum before extraction
 
 - **Given** `install.sh` (and any second installer path)
 - **When** it fetches a release artefact
 - **Then** it verifies the artefact against a published per-release checksum (sha256) and aborts on mismatch, before any extraction
-- **Verify:** grep -iE "sha256|shasum" install.sh
+- **Verify:** shell grep -qi sha256 install.sh && grep -qi sha256 install.ps1
+- **Verified:** yes (2026-07-09)
 
 ### AC3: A guard keeps the pins from regressing
 
@@ -37,6 +39,7 @@ Delivers CR0186 items 1-2 (defence-in-depth, remediation-only).
 - **When** it runs in the gate
 - **Then** it fails if any Action reverts to a tag/branch ref, so the pin cannot silently rot
 - **Verify:** shell bash tools/check_action_pins.sh
+- **Verified:** yes (2026-07-09)
 
 ## Revision History
 

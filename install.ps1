@@ -199,6 +199,28 @@ Native alternatives (sdlc-studio is a standard skill):
             $ZipPath = Join-Path $TmpDir 'archive.zip'
             try { Invoke-WebRequest -Uri $Url -OutFile $ZipPath -UseBasicParsing }
             catch { throw "Failed to download from $Url`n$($_.Exception.Message)" }
+            # Verify the artefact against a published sha256 BEFORE extraction, so a swapped
+            # zip cannot inject code. Expected digest: SDLC_STUDIO_SHA256 (an explicit pin),
+            # else a best-effort sidecar '<url>.sha256'. With none we warn and proceed unless
+            # SDLC_STUDIO_REQUIRE_CHECKSUM=1 makes a missing digest fatal.
+            $expected = $env:SDLC_STUDIO_SHA256
+            if (-not $expected) {
+                try {
+                    $sc = (Invoke-WebRequest -Uri "$Url.sha256" -UseBasicParsing).Content
+                    $expected = ($sc -split '\s+')[0]
+                } catch { $expected = $null }
+            }
+            if ($expected) {
+                $actual = (Get-FileHash -Path $ZipPath -Algorithm SHA256).Hash
+                if ($actual -ine $expected) {
+                    throw "Checksum mismatch for ${Version}: expected $expected, got $actual - aborting before extraction"
+                }
+                Write-Info "Checksum verified (sha256 $actual)"
+            } elseif ($env:SDLC_STUDIO_REQUIRE_CHECKSUM -eq '1') {
+                throw "No published sha256 for $Version and SDLC_STUDIO_REQUIRE_CHECKSUM=1 - refusing to install"
+            } else {
+                Write-Warn2 "No published sha256 for $Version - installing unverified (set SDLC_STUDIO_SHA256 to pin)"
+            }
             Write-Info 'Extracting...'
             Expand-Archive -Path $ZipPath -DestinationPath $TmpDir -Force
             $Extracted = Get-ChildItem -Path $TmpDir -Directory -Filter 'sdlc-studio-*' | Select-Object -First 1

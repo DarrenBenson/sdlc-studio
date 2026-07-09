@@ -16,6 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Supply-chain integrity: Actions pinned to commit SHAs + installer checksum verification
+  (EP0022, CR0186; US0100).** Every GitHub Action in `.github/workflows/` is now pinned to a
+  full 40-hex commit SHA (version in a trailing comment) so a moved tag cannot inject code into
+  CI, and a new `tools/check_action_pins.sh` guard (wired into `npm run lint` and the pre-commit
+  gate, with a unit test) fails if any Action reverts to a mutable tag/branch. Both installers
+  (`install.sh`, `install.ps1`) verify the downloaded artefact against a published sha256 before
+  extraction - the digest comes from `SDLC_STUDIO_SHA256` (an explicit pin) or a best-effort
+  `<url>.sha256` sidecar; a mismatch aborts before any extraction, and
+  `SDLC_STUDIO_REQUIRE_CHECKSUM=1` makes a missing digest fatal. Also untracks two `.local/`
+  runtime files a broad `git add -A` shipped, and adds a `**/.local/` safety-net ignore.
 - **Plan-review gate - a deterministic AC-vs-spec check before implementation (EP0019, CR0194;
   US0090, schema v3, opt-in).** New `scripts/plan_review.py` closes the N=5 "bad plan
   propagates" failure: a story with spec-derived ACs cannot reach implementation (In

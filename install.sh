@@ -208,6 +208,51 @@ SRC=""
 cleanup() { { [[ -n "$TMP_DIR" ]] && rm -rf "$TMP_DIR"; } || true; }
 trap cleanup EXIT
 
+# Best-effort fetch of a URL to stdout (empty on failure; used for the checksum sidecar).
+fetch_stdout() {
+    if command -v curl >/dev/null 2>&1; then curl -fsSL "$1" 2>/dev/null
+    else wget -qO- "$1" 2>/dev/null; fi
+}
+
+# sha256 of a file, or empty if no hasher is on PATH.
+sha256_of() {
+    if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | awk '{print $1}'
+    elif command -v shasum >/dev/null 2>&1; then shasum -a 256 "$1" | awk '{print $1}'
+    else echo ""; fi
+}
+
+# Verify the downloaded tarball against a published sha256 BEFORE extraction, so a
+# swapped artefact cannot inject code. The expected digest comes from (in order):
+# SDLC_STUDIO_SHA256 (an explicit pin), else a best-effort sidecar `<url>.sha256`.
+# With no published digest we warn and proceed for a rolling install, unless
+# SDLC_STUDIO_REQUIRE_CHECKSUM=1 makes a missing digest fatal.
+verify_download() {
+    local file="$1" url="$2" expected actual
+    expected="${SDLC_STUDIO_SHA256:-}"
+    [[ -z "$expected" ]] && expected=$(fetch_stdout "$url.sha256" | tr -d '\r' | awk 'NR==1{print $1}')
+    if [[ -z "$expected" ]]; then
+        if [[ "${SDLC_STUDIO_REQUIRE_CHECKSUM:-}" == "1" ]]; then
+            error "No published sha256 for $VERSION and SDLC_STUDIO_REQUIRE_CHECKSUM=1 - refusing to install"
+            exit 1
+        fi
+        warn "No published sha256 for $VERSION - installing unverified (set SDLC_STUDIO_SHA256 to pin)"
+        return 0
+    fi
+    actual=$(sha256_of "$file")
+    if [[ -z "$actual" ]]; then
+        error "A sha256 was published for $VERSION but no sha256sum/shasum tool is available to verify it"
+        exit 1
+    fi
+    # Lower-case with tr, not ${var,,}: the latter needs bash 4, but macOS ships bash 3.2.
+    actual=$(printf '%s' "$actual" | tr 'A-Z' 'a-z')
+    expected=$(printf '%s' "$expected" | tr 'A-Z' 'a-z')
+    if [[ "$actual" != "$expected" ]]; then
+        error "Checksum mismatch for $VERSION: expected $expected, got $actual - aborting before extraction"
+        exit 1
+    fi
+    info "Checksum verified (sha256 $actual)"
+}
+
 # Download + extract once; set SRC to the extracted skill directory.
 prepare_source() {
     local url extracted
@@ -220,6 +265,7 @@ prepare_source() {
     else
         wget -q "$url" -O "$TMP_DIR/archive.tar.gz" || { error "Failed to download from $url"; exit 1; }
     fi
+    verify_download "$TMP_DIR/archive.tar.gz" "$url"
     info "Extracting..."
     tar -xzf "$TMP_DIR/archive.tar.gz" -C "$TMP_DIR"
     extracted=$(find "$TMP_DIR" -maxdepth 1 -type d -name "sdlc-studio-*" | head -1)
