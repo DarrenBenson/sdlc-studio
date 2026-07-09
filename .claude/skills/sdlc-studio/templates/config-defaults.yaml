@@ -169,6 +169,25 @@ routing:
     max_same_tier: 2      # failed attempts at the assigned tier before escalating one
                           # tier (within loop_guard's unchanged total attempt cap)
 
+# Plan-review gate (schema v3 only; dormant under schema_version: 2). Before a story with
+# spec-derived ACs is implemented, an independent reviewer must challenge its ACs against
+# the source spec (US0090/CR0194 - the N=5 "bad plan propagates" failure). The trigger is
+# DETERMINISTIC (no model judgement in the fire/skip decision, TRD ADR-006): it fires when
+# ANY of the three signals below is true, so it cannot be skipped under effort pressure. The
+# only sanctioned skip is a recorded `> **Plan-Review-Override:**` on the story (auditable).
+plan_review:
+  affects_files_threshold: 5   # a story touching this many files trips the gate
+  min_difficulty: medium       # routed band at/above this trips the gate (trivial<low<medium<high<extreme)
+  spec_globs:                  # a story whose Affects/ACs cite a path matching one of these
+    - "*prd*.md"               # is treated as spec-derived (a document reference, not the word "spec")
+    - "*trd*.md"
+    - "*tsd*.md"
+    - "*requirements*"
+    - "*.spec.md"
+    - "specs/*"
+    - "spec/*"
+    - "requirements/*"
+
 # Deploy contract - the orchestrate-only deploy last-mile. The skill GATES before and
 # VERIFIES after a deploy; it never holds the production trigger, never auto-rolls-back, and never
 # deploys inside the autonomous loop. Secrets are never read - only the command you configure is

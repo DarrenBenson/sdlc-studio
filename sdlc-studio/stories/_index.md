@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 3 |
+| Ready | 2 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 89 |
+| Done | 90 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -57,7 +57,7 @@
 | [US0087](US0087-tier-1-fixtures-multifile-notify-digest-and-change.md) | Tier-1 fixtures: multifile-notify-digest and change-request-ledger-drift | Done | EP0017 | 2026-07-08 | 2026-07-08 |
 | [US0088](US0088-auditability-metric-held-back-audit-quizzes-and-audit.md) | Auditability metric: held-back audit quizzes and audit_quiz.py grader | Done | EP0017 | 2026-07-08 | 2026-07-08 |
 | [US0089](US0089-protocol-v2-re-registration-and-the-n-1.md) | Protocol v2 re-registration and the N=1 re-spike | Done | EP0017 | 2026-07-08 | 2026-07-08 |
-| [US0090](US0090-deterministic-plan-review-trigger-and-gate.md) | Deterministic plan-review trigger and gate | Ready | EP0019 | 2026-07-09 | 2026-07-09 |
+| [US0090](US0090-deterministic-plan-review-trigger-and-gate.md) | Deterministic plan-review trigger and gate | Done | EP0019 | 2026-07-09 | 2026-07-09 |
 | [US0091](US0091-plan-reviewer-charter-verdict-slot-and-telemetry.md) | Plan-reviewer charter, verdict slot and telemetry | Ready | EP0019 | 2026-07-09 | 2026-07-09 |
 | [US0092](US0092-block-untraced-spec-document-edits-at-review.md) | Block untraced spec-document edits at review | Ready | EP0019 | 2026-07-09 | 2026-07-09 |
 | [US0093](US0093-bench-runner-phase-field-and-calibration-exclusion.md) | Bench runner: phase field and calibration exclusion | Done | EP0019 | 2026-07-09 | 2026-07-09 |

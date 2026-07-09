@@ -711,5 +711,101 @@ class TriageGateTests(unittest.TestCase):
             self.assertIn("> **Triage-severity:** low", text)   # triager's recorded
 
 
+def _v3_story_repo(root: Path, affects: str = "docs/prd.md",
+                   cfg_extra: str = "plan_review:\n  affects_files_threshold: 99\n"
+                                    "  min_difficulty: extreme\n") -> Path:
+    """A schema-v3 repo with one Ready story (spec-citing by default) + its index."""
+    sd = root / "sdlc-studio"
+    (sd / "stories").mkdir(parents=True)
+    (sd / "reviews").mkdir(parents=True)
+    (sd / ".config.yaml").write_text("schema_version: 3\n" + cfg_extra, encoding="utf-8")
+    (sd / "stories" / "US0001-x.md").write_text(
+        "# US0001: s\n\n> **Status:** Ready\n> **Epic:** EP0001\n"
+        f"> **Affects:** {affects}\n\n## Acceptance Criteria\n\n"
+        "### AC1: a\n- **Given** x\n- **When** y\n- **Then** z\n", encoding="utf-8")
+    (sd / "stories" / "_index.md").write_text(
+        "# Stories\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Ready | 1 |\n"
+        "| In Progress | 0 |\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+        "| [US0001](US0001-x.md) | s | Ready |\n", encoding="utf-8")
+    return root
+
+
+class PlanReviewGateTests(unittest.TestCase):
+    """US0090: a spec-derived story is blocked from entering In Progress until reviewed."""
+
+    def test_triggered_story_blocked_entering_in_progress(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _v3_story_repo(Path(d))          # cites docs/prd.md -> trigger fires
+            with self.assertRaises(ValueError) as ctx:
+                tr.transition(root, "US0001", "In Progress")
+            self.assertIn("plan-review", str(ctx.exception).lower())
+
+    def test_independent_plan_approve_unblocks(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _v3_story_repo(Path(d))
+            cr = _load("critic", "critic.py")
+            cr.record_verdict(root, "US0001", "APPROVE", reviewer="qa", author="dev",
+                              phase="plan-review")
+            res = tr.transition(root, "US0001", "In Progress")
+            self.assertEqual(res["to"], "In Progress")
+
+    def test_override_field_unblocks(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _v3_story_repo(Path(d))
+            sp = root / "sdlc-studio" / "stories" / "US0001-x.md"
+            sp.write_text(sp.read_text(encoding="utf-8").replace(
+                "> **Affects:** docs/prd.md",
+                "> **Affects:** docs/prd.md\n> **Plan-Review-Override:** ops: hotfix"),
+                encoding="utf-8")
+            res = tr.transition(root, "US0001", "In Progress")
+            self.assertEqual(res["to"], "In Progress")
+
+    def test_force_does_not_bypass(self) -> None:
+        # The only sanctioned skip is the recorded override, never --force (AC3).
+        with tempfile.TemporaryDirectory() as d:
+            root = _v3_story_repo(Path(d))
+            with self.assertRaises(ValueError):
+                tr.transition(root, "US0001", "In Progress", force=True)
+
+    def test_dry_run_is_honest(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _v3_story_repo(Path(d))
+            with self.assertRaises(ValueError):
+                tr.transition(root, "US0001", "In Progress", dry_run=True)
+
+    def test_untriggered_story_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _v3_story_repo(Path(d), affects="a.py")   # no spec, low volume
+            res = tr.transition(root, "US0001", "In Progress")
+            self.assertEqual(res["to"], "In Progress")
+
+    def test_direct_ready_to_done_is_blocked(self) -> None:
+        # The gate's PURPOSE is defeated if a spec-derived story can be closed straight to
+        # Done unreviewed - guard every entry to an implementation state, not just In Progress.
+        with tempfile.TemporaryDirectory() as d:
+            root = _v3_story_repo(Path(d))
+            with self.assertRaises(ValueError) as ctx:
+                tr.transition(root, "US0001", "Done")
+            self.assertIn("plan-review", str(ctx.exception).lower())
+
+    def test_forward_walk_after_review_reaches_done(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _v3_story_repo(Path(d))
+            cr = _load("critic", "critic.py")
+            cr.record_verdict(root, "US0001", "APPROVE", reviewer="qa", author="dev",
+                              phase="plan-review")
+            self.assertEqual(tr.transition(root, "US0001", "In Progress")["to"], "In Progress")
+            # In Progress -> Done is not re-gated (already past the pre-impl states)
+            self.assertEqual(tr.transition(root, "US0001", "Done", force=True)["to"], "Done")
+
+    def test_dormant_under_v2(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _v3_story_repo(Path(d))
+            sd = root / "sdlc-studio"
+            (sd / ".config.yaml").write_text("schema_version: 2\n", encoding="utf-8")
+            res = tr.transition(root, "US0001", "In Progress")
+            self.assertEqual(res["to"], "In Progress")       # gate no-op on v2
+
+
 if __name__ == "__main__":
     unittest.main()

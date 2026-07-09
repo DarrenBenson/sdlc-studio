@@ -320,6 +320,20 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
     block = _triage_gate(root, type_, text, from_canon, target_canon, triaged_by)
     if block:
         raise ValueError(f"{artifact_id} -> {new_status} blocked: {block}.")
+    # Plan-review gate (US0090): a story with spec-derived ACs cannot REACH implementation
+    # without a recorded independent plan-review verdict. Fires on entry to any state that
+    # implies the plan was built - In Progress, Review, or Done - so a direct Ready->Done
+    # close cannot smuggle an unreviewed plan into the terminal state. Dry-run included
+    # (honest preflight); a no-op on v2 or when the deterministic trigger is not tripped.
+    # Not bypassed by --force - the sanctioned skip is the recorded override field, so a
+    # skip is always auditable. Idempotent for a forward walk: once reviewed/overridden,
+    # In Progress -> Review -> Done all pass.
+    _IMPL_TARGETS = {"In Progress", "Review", "Done"}
+    if type_ == "story" and target_canon in _IMPL_TARGETS and from_canon not in _IMPL_TARGETS:
+        import plan_review  # local import: plan_review pulls route/critic; keep them off cold paths
+        pr_res = plan_review.gate(root, artifact_id, path)
+        if not pr_res["ok"]:
+            raise ValueError(f"{artifact_id} -> {new_status} blocked: {pr_res['reason']}.")
     if (not dry_run and type_ in sdlc_md.FINDING_TYPES and sdlc_md.is_schema_v3(root)
             and from_canon == sdlc_md.INBOX_STATUS):
         # A satisfied triage transition records the triaging seat (and, when given, the

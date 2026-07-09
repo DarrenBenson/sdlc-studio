@@ -1,6 +1,6 @@
 # US0090: Deterministic plan-review trigger and gate
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0019
@@ -23,6 +23,7 @@ Closes part of CR0194 (the gate + trigger). Era-gated behind `schema_version: 3`
 - **When** `plan_review.triggers(text, root)` is evaluated
 - **Then** it returns `fired: True` with the matched signal(s), computed purely from the artefact fields and config with no model call
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::TriggerTests
+- **Verified:** yes (2026-07-09)
 
 ### AC2: A triggered story cannot enter implementation without a plan-review verdict
 
@@ -30,6 +31,7 @@ Closes part of CR0194 (the gate + trigger). Era-gated behind `schema_version: 3`
 - **When** it transitions Ready -> In Progress (or `plan_review.gate` is checked)
 - **Then** the transition is blocked with a message naming the missing plan-review; a recorded plan-review APPROVE (reviewer != author) unblocks it; the gate is a no-op under schema v2
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::GateTests
+- **Verified:** yes (2026-07-09)
 
 ### AC3: A skip is possible only through a recorded operator override
 
@@ -37,6 +39,7 @@ Closes part of CR0194 (the gate + trigger). Era-gated behind `schema_version: 3`
 - **When** an operator override is recorded (ledger-visible marker)
 - **Then** the gate passes and names the override; there is no silent-skip path, and an untriggered story passes without any verdict
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::OverrideTests
+- **Verified:** yes (2026-07-09)
 
 ### AC4: The plan-review verdict phase is recorded and readable
 
@@ -44,6 +47,7 @@ Closes part of CR0194 (the gate + trigger). Era-gated behind `schema_version: 3`
 - **When** a plan-review verdict is recorded
 - **Then** it is written distinctly from a delivery critic verdict and `plan_review.gate` reads only plan-review-phase APPROVEs
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::PhaseRecordTests
+- **Verified:** yes (2026-07-09)
 
 ### AC5: The new script is catalogued
 
@@ -51,6 +55,7 @@ Closes part of CR0194 (the gate + trigger). Era-gated behind `schema_version: 3`
 - **When** the docs floor is checked
 - **Then** `reference-scripts.md` catalogues it and `reference-config.md` documents the `plan_review` config keys
 - **Verify:** grep "plan_review.py" .claude/skills/sdlc-studio/reference-scripts.md
+- **Verified:** yes (2026-07-09)
 
 ## Revision History
 

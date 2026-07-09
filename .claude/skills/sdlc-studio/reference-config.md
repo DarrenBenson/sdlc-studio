@@ -271,6 +271,30 @@ AC count and story points. A signal that does not resolve defaults its subscore 
 0 - unknown difficulty is never minimal) and lowers confidence; low confidence bumps the
 picked tier up one step. See `reference-sprint.md#model-tier-routing` for the policy.
 
+## Plan-Review Gate {#plan-review}
+
+Schema v3 only (dormant under `schema_version: 2`). Before a story with spec-derived ACs is
+implemented, an independent reviewer must challenge its ACs against the source spec
+(`scripts/plan_review.py`, wired into `transition.py` at entry to In Progress, Review, or Done
+so a direct Ready->Done close cannot skip it). The trigger is **deterministic** - no model
+judgement in the fire/skip decision (TRD ADR-006) - so it cannot be skipped under effort
+pressure. A skip is possible only via a recorded `> **Plan-Review-Override:**` field on the
+story (auditable).
+
+| Key | Purpose | Default |
+| --- | --- | --- |
+| `plan_review.affects_files_threshold` | A story touching at least this many files trips the gate. | `5` |
+| `plan_review.min_difficulty` | Routed band at/above this trips the gate (`trivial<low<medium<high<extreme`). | `medium` |
+| `plan_review.spec_globs` | A story whose Affects/ACs cite a path matching one of these globs is spec-derived (a document reference, not the word "spec"). | `[*prd*.md, *trd*.md, *tsd*.md, *requirements*, *.spec.md, specs/*, spec/*, requirements/*]` |
+
+The gate fires when **any** signal is true. Record the verdict with `plan_review.py record
+--id US.. --verdict approve --reviewer <seat> --author <plan-author>`: it writes to the
+plan-review log (so it never satisfies the delivery critique gate), must be independent
+(reviewer != plan author), and **pins the reviewed ACs by fingerprint** - a later edit to the
+ACs invalidates the approval, so a benign plan cannot be approved then quietly inverted. The
+bare `critic.py record --phase plan-review` form also records a verdict but does not pin the
+ACs (back-compatible, unprotected) - prefer `plan_review.py record`.
+
 ---
 
 ## Using Config in Templates

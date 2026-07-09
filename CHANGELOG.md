@@ -16,6 +16,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Plan-review gate - a deterministic AC-vs-spec check before implementation (EP0019, CR0194;
+  US0090, schema v3, opt-in).** New `scripts/plan_review.py` closes the N=5 "bad plan
+  propagates" failure: a story with spec-derived ACs cannot reach implementation (In
+  Progress/Review/Done, wired into `transition.py`) without an independent plan-review verdict.
+  The trigger is **deterministic** (TRD ADR-006, no model judgement in fire/skip): it fires on
+  any of three signals - the Affects/ACs cite a `plan_review.spec_globs` path, `affects_files`
+  reaches `plan_review.affects_files_threshold` (default 5), or the routed difficulty band
+  reaches `plan_review.min_difficulty` (default medium). `critic.py record` gains a `--phase
+  {delivery,plan-review}` field (its own log, so a plan-review verdict never satisfies the
+  delivery critique gate); `plan_review record` pins the verdict to the reviewed ACs by
+  fingerprint, so a post-approval AC edit invalidates it. The only sanctioned skip is a
+  recorded `> **Plan-Review-Override:**` field (auditable; not bypassable by `--force`). Dormant
+  under schema v2.
 - **Agentic triage - human sampling policy + triage-quality metrics (EP0014, CR0173; US0066,
   schema v3, opt-in).** New `scripts/triage_sampling.py`: `sample()` is a deterministic
   (seeded-hash) audit-sampling policy - every Critical, every raiser/triager severity

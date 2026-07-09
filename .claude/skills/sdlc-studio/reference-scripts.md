@@ -285,6 +285,20 @@ computes triage quality from the records (no hand-counting): the false-positive 
 triaged as real, later closed invalid), severity inflation (triager vs raiser), and
 sampled-but-unreviewed findings as standing pending audit. Surfaced by `status triage-metrics`.
 
+### `plan_review.py`
+
+Plan-review gate (schema v3 only, dormant on v2). Before a story with spec-derived ACs is
+implemented, an independent reviewer must challenge its ACs against the source spec. The
+trigger is **deterministic** (TRD ADR-006): `triggers(text, root)` fires on any of three
+signals - the Affects/ACs cite a `plan_review.spec_globs` path, `affects_files` reaches
+`plan_review.affects_files_threshold`, or the routed difficulty band reaches
+`plan_review.min_difficulty`. `gate(root, id)` blocks a triggered story from entering
+In Progress/Review/Done (wired into `transition.py`) unless an independent plan-review APPROVE
+is on record or a `> **Plan-Review-Override:**` field is present. Record with `plan_review
+record --id US.. --verdict approve --reviewer <seat> --author <plan-author>` - it pins the
+reviewed ACs by fingerprint (its own log, so it never satisfies the delivery critique gate),
+so a later AC edit invalidates the approval. `check --id US00xx` reports the verdict.
+
 ### `archive.py`
 
 Index archival for large boards. `archive --type <t> --release <r>` moves a

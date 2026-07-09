@@ -28,19 +28,42 @@ APPROVE, REJECT = "APPROVE", "REJECT"
 # (under the prior risk-scaled policy that permitted light-tier self-review). Stamped
 # once by the migration; never produced by the sprint loop. See is_pre_gate.
 PRE_GATE = "pre-gate"
-HEADER = (
-    "# Critic Verdicts\n\n"
-    "> Append-only. The independent non-author critic's verdict per unit.\n"
-    "> APPROVE = ready; REJECT = repair before Done. Latest row per unit wins.\n"
-    "> Reviewer must differ from Author - a self-review never clears the Done gate.\n\n"
-    "| Unit | Verdict | Reviewer | Author | Date | Issues |\n"
-    "| --- | --- | --- | --- | --- | --- |\n"
-)
+# Two verdict phases, each in its own log so a plan-review verdict never satisfies the
+# delivery critique gate (and vice versa): `delivery` is the post-implementation critic the
+# conformance `critiqued` stage reads; `plan-review` is the pre-implementation AC-vs-spec
+# check (US0090/CR0194). Same schema, same independence rule, distinct files.
+PHASES = ("delivery", "plan-review")
+_FILE = {"delivery": "critic-verdicts.md", "plan-review": "plan-review-verdicts.md"}
+# Delivery header is byte-identical to the original (a freshly created delivery log must not
+# change); plan-review has its own title/prose. Both share the row schema.
+_TABLE = ("| Unit | Verdict | Reviewer | Author | Date | Issues |\n"
+          "| --- | --- | --- | --- | --- | --- |\n")
+_HEADERS = {
+    "delivery": (
+        "# Critic Verdicts\n\n"
+        "> Append-only. The independent non-author critic's verdict per unit.\n"
+        "> APPROVE = ready; REJECT = repair before Done. Latest row per unit wins.\n"
+        "> Reviewer must differ from Author - a self-review never clears the Done gate.\n\n"
+        + _TABLE),
+    "plan-review": (
+        "# Plan-Review Verdicts\n\n"
+        "> Append-only. The independent non-author plan reviewer's verdict per unit -\n"
+        "> the pre-implementation AC-vs-spec check (US0090). Latest row per unit wins.\n"
+        "> Reviewer must differ from the plan author - a self-review never clears the gate.\n\n"
+        + _TABLE),
+}
+
+
+def _header(phase: str) -> str:
+    return _HEADERS[phase]
+
+
+HEADER = _HEADERS["delivery"]
 _COLS = ("unit", "verdict", "reviewer", "author", "date", "issues")
 
 
-def verdicts_path(repo_root: Path | str) -> Path:
-    return Path(repo_root) / "sdlc-studio" / "reviews" / "critic-verdicts.md"
+def verdicts_path(repo_root: Path | str, phase: str = "delivery") -> Path:
+    return Path(repo_root) / "sdlc-studio" / "reviews" / _FILE[phase]
 
 
 def _clean(value: str) -> str:
@@ -51,17 +74,21 @@ def _clean(value: str) -> str:
 
 def record_verdict(repo_root: Path | str, unit: str, verdict: str,
                    reviewer: str = "independent-critic", author: str = "",
-                   issues: str = "") -> Path:
+                   issues: str = "", phase: str = "delivery") -> Path:
     """Append a critic verdict for a unit (creating the table if absent).
 
     `author` is the authoring seat / delegation instance id that produced the diff
     and tests. It is recorded alongside the reviewer so the conformance gate can prove
     reviewer != author - independence you cannot verify is independence you do not have.
+    `phase` routes the verdict to its own log (delivery vs plan-review) so neither
+    satisfies the other's gate.
     """
-    path = verdicts_path(repo_root)
+    if phase not in PHASES:
+        raise ValueError(f"unknown critic phase {phase!r} - expected one of {PHASES}")
+    path = verdicts_path(repo_root, phase)
     path.parent.mkdir(parents=True, exist_ok=True)
     if not path.exists():
-        path.write_text(HEADER, encoding="utf-8")
+        path.write_text(_header(phase), encoding="utf-8")
     row = (f"| {sdlc_md.norm_id(unit)} | {verdict.upper()} | {_clean(reviewer)} | "
            f"{_clean(author) or '-'} | "
            f"{sdlc_md.now_date()} | {_clean(issues) or '-'} |\n")
@@ -70,13 +97,14 @@ def record_verdict(repo_root: Path | str, unit: str, verdict: str,
     return path
 
 
-def read_verdicts(repo_root: Path | str) -> list[dict]:
-    """All recorded verdicts in order, as {unit, verdict, reviewer, author, date, issues}.
+def read_verdicts(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
+    """All recorded verdicts for `phase`, in order, as
+    {unit, verdict, reviewer, author, date, issues}.
 
     Reads both the current 6-column rows and any legacy 5-column rows (no Author) that
     pre-date the independence gate; a legacy row's author is the empty string.
     """
-    path = verdicts_path(repo_root)
+    path = verdicts_path(repo_root, phase)
     if not path.exists():
         return []
     out: list[dict] = []
@@ -93,11 +121,12 @@ def read_verdicts(repo_root: Path | str) -> list[dict]:
     return out
 
 
-def verdict_for(repo_root: Path | str, unit: str):
-    """The latest recorded verdict for a unit, or None."""
+def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery"):
+    """The latest recorded verdict for a unit in `phase`, or None. Defaults to the
+    delivery log, so the conformance `critiqued` gate is unaffected by plan-review rows."""
     target = sdlc_md.norm_id(unit)
     latest = None
-    for v in read_verdicts(repo_root):
+    for v in read_verdicts(repo_root, phase):
         if sdlc_md.norm_id(v["unit"]) == target:
             latest = v
     return latest
@@ -188,9 +217,10 @@ def _seat_drift_warning(repo_root: Path | str, reviewer: str) -> str | None:
 
 def cmd_record(args: argparse.Namespace) -> int:
     path = record_verdict(args.root, args.unit, args.verdict, args.reviewer,
-                          args.author, args.issues)
-    note = "" if _id(args.author) != _id(args.reviewer) else "  (WARNING: self-review - blocked at the Done gate)"
-    print(f"recorded {sdlc_md.norm_id(args.unit)} {args.verdict.upper()} -> {path}{note}")
+                          args.author, args.issues, args.phase)
+    note = "" if _id(args.author) != _id(args.reviewer) else "  (WARNING: self-review - blocked at the gate)"
+    print(f"recorded {sdlc_md.norm_id(args.unit)} {args.verdict.upper()} "
+          f"[{args.phase}] -> {path}{note}")
     drift = _seat_drift_warning(args.root, args.reviewer)
     if drift:
         print(f"WARNING: {drift}", file=sys.stderr)
@@ -199,10 +229,10 @@ def cmd_record(args: argparse.Namespace) -> int:
 
 def cmd_show(args: argparse.Namespace) -> int:
     if args.unit:
-        v = verdict_for(args.root, args.unit)
+        v = verdict_for(args.root, args.unit, args.phase)
         print(v if v else f"no verdict for {args.unit}")
     else:
-        for v in read_verdicts(args.root):
+        for v in read_verdicts(args.root, args.phase):
             print(f"{v['unit']} {v['verdict']} ({v['date']})")
     return 0
 
@@ -217,10 +247,14 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--author", required=True,
                    help="Authoring seat / delegation id that produced the diff (must differ from --reviewer).")
     r.add_argument("--issues", default="")
+    r.add_argument("--phase", choices=PHASES, default="delivery",
+                   help="delivery (default, the conformance critique gate) or plan-review "
+                        "(the pre-implementation AC-vs-spec check); each has its own log")
     r.add_argument("--root", default=".")
     r.set_defaults(func=cmd_record)
     s = sub.add_parser("show", help="Show the latest verdict for a unit (or all).")
     s.add_argument("--unit", default=None)
+    s.add_argument("--phase", choices=PHASES, default="delivery")
     s.add_argument("--root", default=".")
     s.set_defaults(func=cmd_show)
     return parser
