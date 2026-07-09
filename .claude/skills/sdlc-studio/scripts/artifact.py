@@ -472,8 +472,19 @@ def cmd_new(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     verb = "would create" if r.get("dry_run") else "created"
-    print(json.dumps(r, indent=2) if args.format == "json"
-          else f"{verb} {r['id']} -> {r['path']} (indexed={r['indexed']}, epic_linked={r['epic_linked']})")
+    if args.format == "json":
+        print(json.dumps(r, indent=2))
+    elif r.get("consolidated") or r.get("consolidated_into"):
+        # a Low finding folded into a themed consolidation CR - its result has its own shape
+        # (no epic wiring, no per-finding index row), so print it by that shape
+        if r.get("dry_run"):
+            print("would consolidate this Low finding into a themed CR (no artefact minted)")
+        else:
+            print(f"consolidated into {r['consolidated_into']} "
+                  f"({Path(r['path']).name}, created={bool(r.get('created'))})")
+    else:
+        print(f"{verb} {r['id']} -> {r['path']} "
+              f"(indexed={r.get('indexed')}, epic_linked={r.get('epic_linked')})")
     return 0
 
 

@@ -1,9 +1,10 @@
 # BG0078: artifact new Low-severity consolidation exits 1 after creating the CR, and its dry-run crashes
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file
+> **Verification depth:** functional (CLI tests: dry-run, first-create and append paths all exit 0 with shape-correct output; suite 1463 green)
 
 ## Summary
 

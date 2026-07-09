@@ -232,6 +232,12 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
 
 ### Fixed
 
+- **The Low-consolidation lane exits 0 and its dry-run works (RV0007; BG0078).** `artifact new`'s
+  text output indexed `epic_linked`/`indexed` unconditionally, but a consolidation result has its
+  own shape - so a Low finding on a v3 project created/appended its CR and then exited 1
+  (`error: 'epic_linked'`), inviting orchestrator retries and duplicate findings; `--dry-run`
+  crashed outright. The text path now prints consolidation results by their own shape
+  (`consolidated into CR-... created=True|False`); CLI tests cover dry-run, create and append.
 - **The finding filer is era-aware (RV0007; BG0077).** `file_finding` allocated sequential v2
   numbers unconditionally, so on a schema-v3 project the primary agent filing path minted
   `BG0002`-style ids alongside ULIDs - reintroducing the id race v3 removes and shadowing live

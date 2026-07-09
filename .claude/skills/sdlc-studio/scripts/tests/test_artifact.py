@@ -666,3 +666,38 @@ class CloseUlidTests(unittest.TestCase):
         for rid, expected in (("BG0007", "bug"), ("CR-0003", "cr"), ("US0001", "story")):
             got = artifact.infer_type_from_id(rid)
             self.assertEqual(got, expected, rid)
+
+
+import io
+from contextlib import redirect_stdout
+
+
+class ConsolidationCliTests(unittest.TestCase):
+    """The Low-consolidation lane must exit 0 in text mode - a false non-zero after a landed
+    CR invites orchestrator retries and duplicate findings."""
+
+    def _v3_cr_ready(self, repo: Path) -> None:
+        _v3(repo)
+        _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
+
+    def test_low_consolidation_dry_run_exits_zero(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d); self._v3_cr_ready(repo)
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                rc = artifact.main(["new", "--type", "bug", "--title", "low probe",
+                                    "--severity", "Low", "--root", str(repo), "--dry-run"])
+            self.assertEqual(rc, 0, buf.getvalue())
+            self.assertIn("consolidate", buf.getvalue())
+
+    def test_low_consolidation_create_and_append_exit_zero(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d); self._v3_cr_ready(repo)
+            for i, expect_created in ((1, "created=True"), (2, "created=False")):
+                buf = io.StringIO()
+                with redirect_stdout(buf):
+                    rc = artifact.main(["new", "--type", "bug", "--title", f"low probe {i}",
+                                        "--severity", "Low", "--root", str(repo)])
+                self.assertEqual(rc, 0, buf.getvalue())
+                self.assertIn("consolidated into CR", buf.getvalue())
+                self.assertIn(expect_created, buf.getvalue())

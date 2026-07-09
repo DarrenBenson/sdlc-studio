@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 22 |
+| Open | 21 |
 | In Progress | 0 |
-| Fixed | 4 |
+| Fixed | 5 |
 | Verified | 0 |
 | Closed | 70 |
 | Won't Fix | 0 |
@@ -44,7 +44,7 @@
 | [BG0075](BG0075-npm-run-lint-fails-at-head-the-pre.md) | npm run lint fails at HEAD: the pre-commit gate was never enabled in this clone and CI is dark while main is unpushed | Fixed | High | 2026-07-09 | 2026-07-09 |
 | [BG0076](BG0076-cr0183-concurrency-floor-is-incomplete-file-finding-and.md) | CR0183 concurrency floor is incomplete: file_finding and new_batch allocate unlocked and truth-file stamps are non-atomic (4-way id collision reproduced) | Open | High | 2026-07-09 | 2026-07-09 |
 | [BG0077](BG0077-file-finding-is-not-era-aware-it-mints.md) | file_finding is not era-aware: it mints v2 sequential ids on schema-v3 projects | Fixed | Medium | 2026-07-09 | 2026-07-09 |
-| [BG0078](BG0078-artifact-new-low-severity-consolidation-exits-1-after.md) | artifact new Low-severity consolidation exits 1 after creating the CR, and its dry-run crashes | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0078](BG0078-artifact-new-low-severity-consolidation-exits-1-after.md) | artifact new Low-severity consolidation exits 1 after creating the CR, and its dry-run crashes | Fixed | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0079](BG0079-v4-rc-readiness-checklist-omits-the-eval-gate.md) | v4 rc-readiness checklist omits the eval gate its own release-gate template mandates; evals last ran at v3.5.0 | Open | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0080](BG0080-shipped-docs-still-describe-the-superseded-regime-status.md) | shipped docs still describe the superseded regime: status/hint version tables have no schema-3 row and SECURITY.md supports only 1.x | Open | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0081](BG0081-a-reopened-after-archive-artefact-creates-permanent-drift.md) | a reopened-after-archive artefact creates permanent drift: archive rows shadow live index rows | Open | Medium | 2026-07-09 | 2026-07-09 |
