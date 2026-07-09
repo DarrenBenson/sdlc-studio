@@ -36,20 +36,21 @@ Checks pipeline state in priority order and returns the first applicable action.
 
 ## Pre-flight: Version Check
 
-**First tool call:** `Glob: sdlc-studio/.version`
+**First tool call:** `Glob: sdlc-studio/.version` (the schema may also live in
+`sdlc-studio/.config.yaml` - a fresh v3 project has only the config file)
 
 | Result | Action |
 |--------|--------|
 | No sdlc-studio/ directory | Proceed (new project) |
-| .version exists, schema_version: 2 | Proceed |
-| .version missing or schema_version < 2 | Check `sdlc-studio/.local/upgrade-dismissed.json` |
+| `schema_version` 2 or 3 (in .version or .config.yaml) | Proceed (current schemas) |
+| Both absent, or `schema_version` < 2 | Check `sdlc-studio/.local/upgrade-dismissed.json` |
 | └─ dismissed: true | Proceed |
 | └─ not dismissed | Prompt user (see below) |
 
 **Prompt if needed:**
 
 ```
-question: "Project uses v1 format. Upgrade to v2?"
+question: "Project uses a superseded artefact schema. Upgrade to the current one?"
 header: "Upgrade"
 options:
   - "Preview" → run upgrade --dry-run, then continue
@@ -57,7 +58,8 @@ options:
   - "Don't ask again" → write dismissal file, continue
 ```
 
-**Output prefix:** Start response with `**Version:** v2 ✓` or `**Version:** v1 (reason)`
+**Output prefix:** Start response with `**Schema:** v2 ✓` / `**Schema:** v3 ✓` or
+`**Schema:** superseded (reason)`
 
 ## Priority Logic
 

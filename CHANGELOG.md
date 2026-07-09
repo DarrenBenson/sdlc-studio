@@ -232,6 +232,13 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
 
 ### Fixed
 
+- **Superseded-regime docs corrected for the v4 majors gate (RV0007; BG0080).** The
+  `status`/`hint` pre-flight tables covered only `schema_version: 2` (a fresh v4 project, on
+  the new default of 3, had no row and the prompt still said "v1 format... upgrade to v2"); both
+  tables are now era-neutral (2 or 3 proceed; the schema is read from `.version` OR
+  `.config.yaml`, which is all a fresh v3 project has) with a schema-aware output prefix. The
+  public SECURITY.md support table, frozen at 1.x, is restated in terms of the current major
+  (4.x fixes / 3.x security-only) with the tracking rule written down.
 - **`migrate_v3` journals its id map and resumes from it (RV0007; BG0073).** apply rewrote every
   reference (phase 1) then renamed files (phase 2) with no persisted map - a crash between or
   during the phases followed by a re-run re-derived a DIFFERENT assignment (phase-1 writes bump

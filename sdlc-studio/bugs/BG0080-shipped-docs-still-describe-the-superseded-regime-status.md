@@ -1,9 +1,10 @@
 # BG0080: shipped docs still describe the superseded regime: status/hint version tables have no schema-3 row and SECURITY.md supports only 1.x
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file
+> **Verification depth:** functional (grep-verified: schema-3 rows present in both help tables, no superseded copy remains anywhere in the payload; SECURITY.md restated; lint green)
 
 ## Summary
 
