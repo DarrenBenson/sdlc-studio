@@ -115,6 +115,57 @@ def count_by_status(type_: str, repo_root: Path) -> dict:
     return {"total": total, "by_status": counts}
 
 
+BACKLOG_TYPES: tuple[str, ...] = ("cr", "story", "epic", "bug", "rfc")
+
+
+def backlog(repo_root: Path, types: tuple[str, ...] | None = None) -> dict:
+    """Per-type census of the NON-terminal (open) artefacts, grouped by status, from a file
+    census. Terminal detection uses the shared vocab's full terminal set via
+    `sdlc_md.is_terminal_status`, not a hardcoded Done/Closed subset here, so every terminal
+    status is excluded. Returns {type: {count, by_status: {status: [ids]}}}."""
+    root = Path(repo_root)
+    types = types or BACKLOG_TYPES
+    result: dict = {}
+    for t in types:
+        vocab = sdlc_md.status_vocab(t, root)
+        by_status: dict[str, list[str]] = {}
+        count = 0
+        for path in sdlc_md.artifact_files(t, root):
+            raw = sdlc_md.extract_field(path.read_text(encoding="utf-8"), "Status") or "Unknown"
+            st = sdlc_md.canonical_status(raw, vocab) or raw
+            if sdlc_md.is_terminal_status(t, st):
+                continue
+            by_status.setdefault(st, []).append(sdlc_md.extract_record_id(path.stem) or path.stem)
+            count += 1
+        for ids in by_status.values():
+            ids.sort(key=sdlc_md.norm_id)
+        result[t] = {"count": count, "by_status": by_status}
+    return result
+
+
+def cmd_backlog(args: argparse.Namespace) -> int:
+    """List the non-terminal artefacts per type and status (the deterministic backlog answer)."""
+    root = Path(args.root)
+    types = (args.type,) if args.type else BACKLOG_TYPES
+    data = backlog(root, types)
+    if args.format == "json":
+        print(json.dumps(data, indent=2))
+        return 0
+    total = sum(v["count"] for v in data.values())
+    if total == 0:
+        print("backlog: empty - no non-terminal artefacts.")
+        return 0
+    print(f"Backlog: {total} non-terminal artefact(s)")
+    for t in types:
+        v = data.get(t) or {"count": 0, "by_status": {}}
+        if v["count"] == 0:
+            continue
+        print(f"  {t}: {v['count']}")
+        for st, ids in sorted(v["by_status"].items()):
+            print(f"    {st}: {', '.join(ids)}")
+    return 0
+
+
 def _pct_done(census: dict, done_states: tuple[str, ...]) -> int:
     """Percentage of a census in any of the done_states (0 if empty)."""
     total = census["total"]
@@ -339,6 +390,12 @@ def build_parser() -> argparse.ArgumentParser:
     hi.add_argument("--root", default=".", help="Repo root (default: .)")
     hi.add_argument("--format", choices=("text", "json"), default="text")
     hi.set_defaults(func=cmd_hint)
+
+    bl = sub.add_parser("backlog", help="Non-terminal artefacts per type and status (the backlog).")
+    bl.add_argument("--type", choices=sorted(BACKLOG_TYPES), help="Restrict to one type")
+    bl.add_argument("--root", default=".", help="Repo root (default: .)")
+    bl.add_argument("--format", choices=("text", "json"), default="text")
+    bl.set_defaults(func=cmd_backlog)
 
     tr = sub.add_parser("tranche", help="List artefacts carrying a given tranche reference.")
     tr.add_argument("--value", required=True, help="The tranche reference to list members of")

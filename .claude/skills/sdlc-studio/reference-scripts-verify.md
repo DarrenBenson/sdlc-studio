@@ -79,6 +79,11 @@ Full workflow: `reference-reconcile.md`.
 
 - `pillars`: four-pillar census (Requirements/Code/Tests/Reviews) as JSON
 - `hint`: the next mechanical action
+- `backlog [--type <t>]`: the non-terminal (open) artefacts per type and status, from a file
+  census - the deterministic "what is left in the backlog?" answer. Terminal detection uses the
+  shared vocab's full terminal set (`is_terminal_status`), not a hardcoded Done/Closed subset, so
+  every terminal status (e.g. a bug's Fixed/Verified/Superseded) is excluded; an empty backlog
+  says so explicitly. `--format json` for tooling.
 - `tranche --value <ref>`: list every artefact carrying `> **Tranche:** <ref>` (the
   "what shipped in tranche X" query; the reference is orchestrator-set, never allocated)
 - `triage-metrics`: schema-v3 triage quality (false-positive rate + severity inflation)

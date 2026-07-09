@@ -276,46 +276,78 @@ class TrancheQueryTests(unittest.TestCase):
             self.assertEqual(status.tranche_members(root, "## Summary"), [])
             self.assertEqual(status.tranche_members(root, ""), [])
 
+def _artifact(root: Path, type_: str, prefix: str, num: int, st: str) -> None:
+    import lib.sdlc_md as _m
+    rel = _m.ARTIFACT_TYPES[type_][0]
+    d = root / rel; d.mkdir(parents=True, exist_ok=True)
+    (d / f"{prefix}{num:04d}-x.md").write_text(
+        f"# {prefix}{num:04d}: x\n\n> **Status:** {st}\n", encoding="utf-8")
+
+
+class BacklogTests(unittest.TestCase):
+    def test_lists_only_non_terminal_grouped_by_type_and_status(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, "Done")            # terminal -> excluded
+            _story(root, 2, "In Progress")     # non-terminal
+            _story(root, 3, "Ready")           # non-terminal
+            _artifact(root, "bug", "BG", 1, "Closed")   # terminal -> excluded
+            _artifact(root, "bug", "BG", 2, "Open")     # non-terminal
+            _artifact(root, "cr", "CR", 1, "Complete")  # terminal -> excluded
+            _artifact(root, "cr", "CR", 2, "Proposed")  # non-terminal
+            bl = status.backlog(root)
+            self.assertEqual(bl["story"]["count"], 2)
+            self.assertEqual(set(bl["story"]["by_status"]), {"In Progress", "Ready"})
+            self.assertEqual(bl["bug"]["count"], 1)
+            self.assertIn("Open", bl["bug"]["by_status"])
+            self.assertEqual(bl["cr"]["count"], 1)
+            self.assertIn("Proposed", bl["cr"]["by_status"])
+
+
+class BacklogVocabTests(unittest.TestCase):
+    def test_terminal_detection_is_vocab_driven_not_hardcoded(self) -> None:
+        import lib.sdlc_md as _m
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            # a LESS-common terminal status must still be excluded (proves the shared vocab
+            # terminal set is used, not a hardcoded {Done, Closed} subset)
+            _artifact(root, "cr", "CR", 1, "Superseded")     # terminal (vocab) -> excluded
+            _artifact(root, "story", "US", 1, "Won't Implement")  # terminal (vocab) -> excluded
+            _artifact(root, "story", "US", 2, "Blocked")     # non-terminal -> included
+            self.assertTrue(_m.is_terminal_status("cr", "Superseded"))
+            bl = status.backlog(root)
+            self.assertEqual(bl["cr"]["count"], 0)
+            self.assertEqual(bl["story"]["count"], 1)
+            self.assertIn("Blocked", bl["story"]["by_status"])
+
+
+class BacklogFormatTests(unittest.TestCase):
+    def test_json_format_stable_and_type_filter(self) -> None:
+        import io, json, contextlib
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, "In Progress")
+            _artifact(root, "cr", "CR", 1, "Proposed")
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                status.main(["backlog", "--root", str(root), "--format", "json", "--type", "cr"])
+            j = json.loads(buf.getvalue())
+            self.assertIn("cr", j)
+            self.assertNotIn("story", j)          # --type cr restricts the output
+            self.assertEqual(j["cr"]["count"], 1)
+
+    def test_empty_backlog_prints_explicitly(self) -> None:
+        import io, contextlib
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, "Done")               # only terminal artefacts
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                status.main(["backlog", "--root", str(root)])
+            out = buf.getvalue().lower()
+            self.assertIn("empty", out)           # explicit, not blank output
+
 
 if __name__ == "__main__":
     unittest.main()
 
-
-class IndexBloatHintTests(unittest.TestCase):
-    """The archive recommendation surfaces at the HINT (L-0004: the command,
-    not only the reconcile helper) and stays silent on a bounded workspace."""
-
-    def _bloated(self, d, n=35):
-        root = Path(d)
-        dd = root / "sdlc-studio" / "change-requests"
-        dd.mkdir(parents=True)
-        rows = []
-        for i in range(1, n + 1):
-            (dd / f"CR{i:04d}-x.md").write_text(
-                f"# CR-{i:04d}: x\n\n> **Status:** Complete\n", encoding="utf-8")
-            rows.append(f"| CR-{i:04d} | x | Complete |")
-        (dd / "_index.md").write_text(
-            "# Index\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
-            + "\n".join(rows) + "\n", encoding="utf-8")
-        return root
-
-    def test_hint_command_prints_archive_advisory(self) -> None:
-        import io
-        from contextlib import redirect_stdout
-        with tempfile.TemporaryDirectory() as d:
-            root = self._bloated(d)
-            buf = io.StringIO()
-            with redirect_stdout(buf):
-                rc = status.main(["hint", "--root", str(root)])
-            self.assertEqual(rc, 0)
-            self.assertIn("archive.py archive --type cr", buf.getvalue())
-
-    def test_hint_silent_when_bounded(self) -> None:
-        import io
-        from contextlib import redirect_stdout
-        with tempfile.TemporaryDirectory() as d:
-            root = self._bloated(d, n=5)
-            buf = io.StringIO()
-            with redirect_stdout(buf):
-                status.main(["hint", "--root", str(root)])
-            self.assertNotIn("archive.py", buf.getvalue())

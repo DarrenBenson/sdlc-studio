@@ -19,6 +19,7 @@ SDLC Studio is model-invoked - say it in plain language:
 | "Refresh the numbers after that test run" | `/sdlc-studio status --full` |
 | "How is test coverage looking?" | `/sdlc-studio status --testing` |
 | "What's in flight right now?" | `/sdlc-studio status --workflows` |
+| "What's left in the backlog?" | `python3 "$CLAUDE_SKILL_DIR/scripts/status.py" backlog` |
 | "What should I do next?" | `/sdlc-studio hint` |
 
 > **Deterministic helper.** Compute the census with the script rather than reading every artifact:
