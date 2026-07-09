@@ -1,6 +1,6 @@
 # US0112: Hygiene: close fixed bugs, archive over-threshold indexes, accept v3 ULID ids in validate
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0025
@@ -19,10 +19,11 @@ Clears the residual bug backlog + the standing archival advisory + a v4-readines
 
 ### AC1: the three fixed bugs are closed, backed by their regression tests
 
-- **Given** BG0067, BG0068, BG0069 (all `Fixed`, each with a passing regression test)
+- **Given** BG0067, BG0068, BG0069, BG0070 (all `Fixed`, each with a passing regression test)
 - **When** their regression tests are re-run and each is transitioned
 - **Then** each reaches a terminal status and the open-bug count is 0
 - **Verify:** shell test -z "$(grep -rl '> \*\*Status:\*\* Fixed' sdlc-studio/bugs)"
+- **Verified:** yes (2026-07-09)
 
 ### AC2: the over-threshold story and cr indexes are archived, census unaffected
 
@@ -30,6 +31,7 @@ Clears the residual bug backlog + the standing archival advisory + a v4-readines
 - **When** `archive.py` archives their terminal rows to a release sub-index
 - **Then** the live indexes drop under the threshold, the reconcile archival advisory clears, and the census (drift 0) is unaffected
 - **Verify:** shell test -z "$(python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect 2>&1 | grep 'terminal row')" && python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect
+- **Verified:** yes (2026-07-09)
 
 ### AC3: validate accepts a v3 ULID id (no id-format false error)
 
@@ -37,6 +39,7 @@ Clears the residual bug backlog + the standing archival advisory + a v4-readines
 - **When** `validate` checks it
 - **Then** it does not raise an `id-format` error for the ULID form
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::UlidIdFormatTests
+- **Verified:** yes (2026-07-09)
 
 ## Revision History
 

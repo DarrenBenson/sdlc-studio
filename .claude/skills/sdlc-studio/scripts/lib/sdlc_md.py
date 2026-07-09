@@ -603,6 +603,16 @@ def _b32(value: int, length: int) -> str:
     return "".join(reversed(out))
 
 
+_V3_ID_RE = re.compile(r"^[A-Za-z]{1,6}-[" + _CROCKFORD + r"]{8,}$", re.IGNORECASE)
+
+
+def is_v3_id(record_id: str) -> bool:
+    """True when `record_id` is a well-formed v3 short-ULID id (`BG-01JQK3F8`): a type prefix,
+    a dash, then 8+ Crockford-base32 chars. Distinguishes a real ULID id from a v2 sequential
+    (`CR-0007`, whose 4-char numeric tail is too short) and from an arbitrary dashed string."""
+    return bool(_V3_ID_RE.match(record_id or ""))
+
+
 def atomic_write(path, text: str, encoding: str = "utf-8") -> None:
     """Write `text` to `path` atomically: a same-directory temp file then `os.replace`, so a
     crash mid-write leaves the previous file intact rather than a truncated one, and a reader

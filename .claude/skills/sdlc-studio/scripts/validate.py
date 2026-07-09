@@ -76,9 +76,10 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
 
     rec = sdlc_md.extract_record_id(path.stem)
     prefix = sdlc_md.ARTIFACT_TYPES[type_][1]
-    if rec is None or sdlc_md.id_number(rec) is None:
+    # A valid id is either a v2 sequential (id_number resolves) or a v3 short-ULID (BG-01JQK3F8).
+    if rec is None or (sdlc_md.id_number(rec) is None and not sdlc_md.is_v3_id(rec)):
         add("error", "id-format",
-            f"filename '{path.name}' does not start with a valid {prefix}NNNN ID")
+            f"filename '{path.name}' does not start with a valid {prefix} ID (v2 {prefix}NNNN or v3 ULID)")
 
     try:
         text = path.read_text(encoding="utf-8")

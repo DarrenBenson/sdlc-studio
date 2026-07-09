@@ -1,6 +1,6 @@
 # BG0070: migrate_v3 build_id_map runs a git log --follow per artefact, so it does not scale to a large project
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** High
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file

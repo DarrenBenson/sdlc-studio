@@ -1,6 +1,6 @@
 # BG0067: verify_ac pytest -k DSL glues path and marker into one argv element
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Created:** 2026-07-08
 > **Created-by:** sdlc-studio new
 > **Severity:** Medium

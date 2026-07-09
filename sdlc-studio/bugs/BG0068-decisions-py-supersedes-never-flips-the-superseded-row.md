@@ -1,6 +1,6 @@
 # BG0068: decisions.py --supersedes never flips the superseded row's status
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Created:** 2026-07-08
 > **Created-by:** sdlc-studio new
 > **Severity:** medium

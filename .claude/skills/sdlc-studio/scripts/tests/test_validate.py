@@ -691,3 +691,28 @@ class TrancheShapeTests(unittest.TestCase):
                        "# CR-0001: c\n\n> **Status:** Proposed\n> **Tranche:**\n\n## Summary\n\ns\n")
             self.assertNotIn("tranche-shape",
                              {v["rule"] for v in validate.validate_file(p, "cr", root)})
+
+
+class UlidIdFormatTests(unittest.TestCase):
+    """US0112/CR0198: validate must accept a v3 ULID id (BG-01JQK3F8), not flag it id-format."""
+
+    def test_v3_ulid_id_not_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            p = _write(Path(d), "sdlc-studio/bugs/BG-01JQK3F8-x.md",
+                       "# BG-01JQK3F8: x\n\n> **Status:** Open\n> **Severity:** Low\n")
+            rules = {v["rule"] for v in validate.validate_file(p, "bug")}
+            self.assertNotIn("id-format", rules)
+
+    def test_v2_sequential_still_accepted(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            p = _write(Path(d), "sdlc-studio/bugs/BG0001-x.md",
+                       "# BG0001: x\n\n> **Status:** Open\n> **Severity:** Low\n")
+            rules = {v["rule"] for v in validate.validate_file(p, "bug")}
+            self.assertNotIn("id-format", rules)
+
+    def test_garbage_id_still_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            p = _write(Path(d), "sdlc-studio/bugs/notanid-x.md",
+                       "# x\n\n> **Status:** Open\n")
+            rules = {v["rule"] for v in validate.validate_file(p, "bug")}
+            self.assertIn("id-format", rules)
