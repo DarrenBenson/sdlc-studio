@@ -7,8 +7,8 @@
 >
 > **Version:** `4.0.0-rc.1` prepared (the maturity release: schema v3 active + default for new
 > projects) · **Date:** 2026-07-09 ·
-> **Gates:** 1455 + 108 tests pass, `gate` PASS, reconcile drift 0; **`npm run lint` RED at
-> HEAD** (markdownlint, pre-existing - BG0075; hold the tag).
+> **Gates:** 1455 + 108 tests pass, `gate` PASS, reconcile drift 0, `npm run lint` green
+> (BG0075 fixed; commit hook now enabled in this clone).
 >
 > **rc-tag / push is operator-gated.** The version strings and CHANGELOG are homed at `4.0.0-rc.1`
 > and the pre-v4 dormant/freeze banners are removed, but the actual `git tag v4.0.0-rc.1`, the

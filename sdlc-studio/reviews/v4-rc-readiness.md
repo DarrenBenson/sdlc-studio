@@ -15,7 +15,9 @@ read green.
 | EP0014 closed | `scripts/status.py backlog --type epic` (or grep EP0014 status) | GREEN - EP0014 Done |
 | Open-bug count 0 | `scripts/status.py backlog --type bug` | GREEN - 0 non-terminal bugs (`Fixed` is a terminal/resolved status per the shared vocab; BG0067-0070 are Fixed. US0112 further closes them to `Closed` as completeness) |
 | Reconcile drift 0 | `scripts/reconcile.py detect` | GREEN - drift 0 |
-| Full suites green | script + tools unittest discover | GREEN - 1449 + 105 |
+| Full suites green | script + tools unittest discover | GREEN - 1455 + 108 (recomputed 2026-07-09, RV0007) |
+| Full repo lint green (not just the portable gate) | `npm run lint` exits 0 | GREEN - fixed under BG0075 (was RED at rc prep: six commits landed markdown breakage while the hook was disabled) |
+| Commit gate enabled in the tagging clone | `git config core.hooksPath` = `.githooks` | GREEN - enabled under BG0075; run `bash tools/enable-hooks.sh` in any new clone |
 
 ## Verdict
 

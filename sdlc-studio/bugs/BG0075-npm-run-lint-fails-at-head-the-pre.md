@@ -1,6 +1,6 @@
 # BG0075: npm run lint fails at HEAD: the pre-commit gate was never enabled in this clone and CI is dark while main is unpushed
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** High
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file

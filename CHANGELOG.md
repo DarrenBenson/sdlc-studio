@@ -27,11 +27,10 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
 - **rc-tag readiness checklist enumerated (EP0024, CR0198; US0109).** `sdlc-studio/reviews/v4-rc-readiness.md` lists each rc-tag gate (portable gate green, version at rc.1, migration rehearsed, EP0014 closed, open-bug count 0, drift 0, suites green) with a live check command, so cutting `v4.0.0-rc.1` is a checklist read. It honestly reads NOT-YET-GREEN today: the open-bug gate is red until US0112 closes the four Fixed bugs.
 - **Majors-only section added to the release-gate checklist (EP0024, CR0198; US0107).** `templates/workflows/release-gate.md` gains a section 8 for breaking releases: breaking-change inventory in the CHANGELOG, migration rehearsed on two real projects with evidence linked, eval scenarios re-run for the new major, docs saying the new major, and rc-first-from-a-green-gate-with-a-soak. The rc-tag decision becomes a checklist read.
 - **v3 to v4 upgrade walk presented as a directed sequence + rehearsed on two real projects (EP0024, CR0198; US0106).** `project upgrade` now presents the v2 to v3 migration as an ordered walk (capability delta -> `migrate_v3` dry-run -> `migrate_v3` apply -> re-baseline) via a new `migration_walk`, in both text and `--format json`; the schema flip stays the deliberate `migrate_v3` id migration, never an auto-apply. The walk was rehearsed dry-run against two real consuming projects (evidence in `sdlc-studio/reviews/v4-migration-rehearsal.md`, names redacted); the rehearsal surfaced BG0070 (a per-artefact `git log --follow` makes migration impractical on a large project) - rc-relevant.
+
 ### Changed
 
 - **New projects start on `schema_version: 3`; existing projects untouched (EP0024, CR0198; US0105).** `init` now seeds `schema_version: 3` (ULID identity + authorship/evidence enforcement) into a new project's `.config.yaml`. The code default stays 2 and the schema reader is override-only (it does not merge `config-defaults.yaml`), so an existing or unpinned project is never auto-flipped - it upgrades explicitly via `project upgrade`. This dogfood repo is pinned to `schema_version: 2` as a safety belt. Era-gate regression test proves a v2 project's v3-gated paths stay dormant.
-
-### Changed
 
 - **Complexity hotspots decomposed, latent test issues fixed, small cleanups + a debug channel
   (EP0022, CR0187; US0103).** `reconcile.detect_type` (115 -> 40 lines), `transition.transition`
@@ -45,6 +44,19 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
   `SDLC_DEBUG=1` emits one stderr line from each named swallowed-advisory site (telemetry, jest cache,
   sprint complexity, reconcile blocker-sweep), and the append-only `.local` logs (telemetry/verify
   history) roll to a bounded size.
+
+- **"Find an artifact by id" and "a story's epic" consolidated onto the shared layer (EP0022,
+  CR0187; US0102).** `lib/sdlc_md.py` gains canonical `find_by_id` (alias-aware) and
+  `story_epic`; `audit.find_artifact`, `transition._find` and `lite_profile._story_epic` now
+  delegate to them, so a lookup fix lands in one place. `reconcile.py`'s `detect`/`apply`/
+  `fields`/`archive` all speak `--format json`, and the parity is locked by a test so a new
+  subcommand cannot ship text-only. Maintainability only - no behaviour change.
+- **`reference-scripts.md` split into a lean index + grouped detail pages (EP0020, CR0200;
+  US0096).** The 643-line catalogue (past its 600 budget three sprints running) is now a lean
+  index of one-line summaries linking to five grouped pages (`reference-scripts-{create,verify,
+  review,upgrade,domain}.md`), each under budget; the `643` allowlist is removed. `doc_coverage`
+  unions `reference-scripts*.md`, so the doc-coverage floor still hard-fails a missing entry.
+  Documentation reorganisation only - no script behaviour changed.
 
 ### Added
 
@@ -218,23 +230,15 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
   `master`/`develop`-default repos from re-minting an id the remote already holds. An AGENTS.md
   orientation bullet documents the fetch-before-trusting step.
 
-### Changed
-
-- **"Find an artifact by id" and "a story's epic" consolidated onto the shared layer (EP0022,
-  CR0187; US0102).** `lib/sdlc_md.py` gains canonical `find_by_id` (alias-aware) and
-  `story_epic`; `audit.find_artifact`, `transition._find` and `lite_profile._story_epic` now
-  delegate to them, so a lookup fix lands in one place. `reconcile.py`'s `detect`/`apply`/
-  `fields`/`archive` all speak `--format json`, and the parity is locked by a test so a new
-  subcommand cannot ship text-only. Maintainability only - no behaviour change.
-- **`reference-scripts.md` split into a lean index + grouped detail pages (EP0020, CR0200;
-  US0096).** The 643-line catalogue (past its 600 budget three sprints running) is now a lean
-  index of one-line summaries linking to five grouped pages (`reference-scripts-{create,verify,
-  review,upgrade,domain}.md`), each under budget; the `643` allowlist is removed. `doc_coverage`
-  unions `reference-scripts*.md`, so the doc-coverage floor still hard-fails a missing entry.
-  Documentation reorganisation only - no script behaviour changed.
-
 ### Fixed
 
+- **Repo lint restored to green and the commit gate actually enabled (RV0007; BG0075).** Six
+  commits had landed markdown-breaking content on `main` while `git config core.hooksPath` was
+  unset in the dogfooding clone (the tracked hook never ran) and CI sat dark behind the unpushed
+  release freeze. The 26 markdownlint errors across 10 files are fixed (duplicate `### Changed`
+  headings merged, founding-epic blockquotes joined, auto-fixables swept), `tools/enable-hooks.sh`
+  is now run in this clone, and the rc-readiness checklist gains two rows: full `npm run lint`
+  green and hook-enablement verified in the tagging clone.
 - **The two archive implementations consolidated onto one `iter_tables` walker (EP0021,
   CR0182; US0098).** `archive.py` (release-based) and `reconcile.py`'s `archive_plan`/`archive_type`
   (flat) each hand-rolled their own index-table parser; both now delegate to a shared
