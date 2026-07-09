@@ -1,6 +1,6 @@
 # CR-0194: Plan-stage adversarial review: independent AC-vs-spec check with a deterministic trigger
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-08
 > **Created-by:** sdlc-studio new
 > **Priority:** High

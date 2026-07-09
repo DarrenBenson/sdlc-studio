@@ -198,7 +198,7 @@ plan_review:
     - "*trd*.md"
     - "*tsd*.md"
     - "*requirements*"
-    - "*.spec.md"
+    - "*spec*.md"              # kept in step with review.spec_paths (US0092) - one spec boundary
     - "specs/*"
     - "spec/*"
     - "requirements/*"

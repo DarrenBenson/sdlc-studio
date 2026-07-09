@@ -1,6 +1,6 @@
 # CR-0195: Critic charter: unrequested spec edits in a delivery are a blocking finding
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-08
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium

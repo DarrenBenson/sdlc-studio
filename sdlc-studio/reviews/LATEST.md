@@ -7,7 +7,7 @@
 >
 > **Released version:** 3.6.0 (2026-07-06, non-breaking - the EP0016 review/lite on-ramp) ·
 > **Date:** 2026-07-09 ·
-> **Gates:** lint clean, 1314 script tests pass (+88 repo-only tools tests), `gate` PASS,
+> **Gates:** lint clean, 1366 script tests pass (+repo-only tools tests), `gate` PASS,
 > reconcile drift 0, npm audit 0, CI green on main.
 >
 > **v4 is WORK-IN-PROGRESS, not released.** The v4 foundation (schema-v3 ULID identity - a
@@ -23,19 +23,22 @@
 
 ## Current
 
-- **EP0014 agentic triage DELIVERED (2026-07-09, schema-v3 dormant).** All four stories Done +
-  conformant, epic Done; committed to `main` (unpushed, freeze holds). US0065 `inbox`->triaged
-  vocab + gated transition (structured `triaged_by` + separation of duties); US0067 noise controls
-  (session cap 20, Low->themed-consolidation CR) in `triage_noise.py`, routed from both filing
-  paths; US0068 record-only `Tranche` field + `status tranche` query; US0066 seeded sampling
-  policy + triage-quality metrics (`triage_sampling.py`, `status triage-metrics`). All era-gated
-  behind `schema_version: 3`, dormant on v2. Closes CR0173 + CR0172. 1314 script tests pass, gate
-  PASS, drift 0. Per-unit adversarial critics caught 3 real escapes (see RETRO0012). Deferred:
-  stamping `Raised-by` on tool-filed findings (so triage SoD is never vacuous) -> EP0013 authorship.
-- **Backlog after EP0014:** 5 EP0018 debt CRs (CR0179/0181/0182/0186/0187), CR0188; N=5
-  follow-ups CR0194 (plan-stage AC-vs-spec adversarial review), CR0195 (unrequested spec-edit
-  block), CR0196 (bench calibration-row guard), CR0197 (upgrade re-baseline); v4.0 release
-  engineering CR0198/CR0199; BG0068 (supersedes flip), BG0069 (install-path test).
+- **EP0019 plan-integrity hardening DELIVERED (2026-07-09, schema-v3 dormant).** All four stories
+  Done + conformant, epic Done; committed to `main` (unpushed, freeze holds). US0090 deterministic
+  plan-review gate (`plan_review.py`: a spec-derived story cannot reach implementation without an
+  independent AC-vs-spec verdict, pinned to the ACs by fingerprint; `critic.py --phase
+  plan-review`); US0091 plan-reviewer charter + story-template slot + plan-review telemetry;
+  US0092 spec-edit guard (`spec_guard.py`: an untraced edit to a requirements/spec document is the
+  critic charter's blocking signal); US0093 repo-only bench-runner phase field (calibration
+  excluded by the tool). Closes CR0194 + CR0195 + CR0196; CR0197 (upgrade re-baseline) deferred -
+  it depends on this gate existing (natural next sprint). 1366 script tests, gate PASS, drift 0.
+  5 adversarial reviews found 18 real defects (2 MAJOR gate-bypasses), 0 shipped unaddressed - see
+  RETRO0013.
+- **Backlog after EP0019:** CR0197 (upgrade re-baseline - depends on the EP0019 plan-review gate,
+  natural next sprint); 5 EP0018 debt CRs (CR0179/0181/0182/0186/0187), CR0188; v4.0 release
+  engineering CR0198/CR0199; BG0068 (supersedes flip), BG0069 (install-path test). Follow-ups
+  filed this sprint: split `reference-scripts.md` (past its ceiling 3 sprints running); a
+  path-aware tightening of the spec-guard basename match. N=5 follow-ups CR0194/0195/0196 done.
 - **Benchmark evidence base (N=5, `2026-07-08-n5-run.md`):** unstructured arms escaped 10/10 on
   notify-digest vs mandated-planning 2/5 (Fisher p 0.083); Auditability tracked escapes (R 0.88 >
   A 0.68 > B 0.60); routing 0.40 cost index, ~3.1x baseline tokens. Failure mode "a bad plan
@@ -43,6 +46,7 @@
 
 ## History (detail lives in the named retro / CHANGELOG entry)
 
+- **EP0014 agentic triage (2026-07-09, schema-v3 dormant)** inbox->triaged vocab + gated transition, noise controls (session cap, Low consolidation), record-only Tranche, sampled-audit metrics; closes CR0173/CR0172 -> RETRO0012
 - **v4 Tranche 2 (WIP, unreleased)** authorship & enforcement (EP0013) + tooling debt (EP0018, several CRs scoped forward) + benchmark protocol; 13 stories, era-gated -> CHANGELOG
 - **v4 foundation (WIP, unreleased)** distributed artefact identity, schema v3 (EP0012/EP0015): ULIDs, `migrate_v3.py`, GitHub aliases, atomic writes; RFC0024/0025; preceded by RV0006 (14 bugs) -> CHANGELOG
 - **US0072/EP0017** README reframe + `docs/why-sdlc-studio.md` value doc + agent discoverability (`llms.txt`, SKILL.md triggers) -> CHANGELOG

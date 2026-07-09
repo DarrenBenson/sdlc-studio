@@ -37,7 +37,7 @@ import route  # noqa: E402
 import telemetry  # noqa: E402
 
 _DEFAULT_SPEC_GLOBS = ["*prd*.md", "*trd*.md", "*tsd*.md", "*requirements*",
-                       "*.spec.md", "specs/*", "spec/*", "requirements/*"]
+                       "*spec*.md", "specs/*", "spec/*", "requirements/*"]
 # A path token WITH an extension (docs/prd.md) OR an extension-less token under a directory
 # (requirements/r5, specs/design) - the latter matters because spec sections are often
 # referenced without a file extension; missing them would under-fire the gate (the dangerous

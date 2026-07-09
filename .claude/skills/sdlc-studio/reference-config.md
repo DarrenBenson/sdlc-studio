@@ -285,7 +285,7 @@ story (auditable).
 | --- | --- | --- |
 | `plan_review.affects_files_threshold` | A story touching at least this many files trips the gate. | `5` |
 | `plan_review.min_difficulty` | Routed band at/above this trips the gate (`trivial<low<medium<high<extreme`). | `medium` |
-| `plan_review.spec_globs` | A story whose Affects/ACs cite a path matching one of these globs is spec-derived (a document reference, not the word "spec"). | `[*prd*.md, *trd*.md, *tsd*.md, *requirements*, *.spec.md, specs/*, spec/*, requirements/*]` |
+| `plan_review.spec_globs` | A story whose Affects/ACs cite a path matching one of these globs is spec-derived (a document reference, not the word "spec"). Kept in step with `review.spec_paths` so both spec-protection features draw one boundary. | `[*prd*.md, *trd*.md, *tsd*.md, *requirements*, *spec*.md, specs/*, spec/*, requirements/*]` |
 
 The gate fires when **any** signal is true. Record the verdict with `plan_review.py record
 --id US.. --verdict approve --reviewer <seat> --author <plan-author>`: it writes to the

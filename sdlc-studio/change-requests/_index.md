@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 14 |
+| Proposed | 11 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 181 |
+| Complete | 184 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 4 |
@@ -54,9 +54,9 @@
 | [CR-0191](CR0191-routing-feedback-loop-per-tier-telemetry-and-escalation.md) | Routing feedback loop: per-tier telemetry and escalation recording | Complete | P3 | feature-request | 2026-07-08 | -- |
 | [CR-0192](CR0192-benchmark-arm-r-routed-pipeline-variant-with-cost.md) | Benchmark arm R: routed pipeline variant with cost index | Complete | P3 | feature-request | 2026-07-08 | -- |
 | [CR-0193](CR0193-benchmark-v2-tiered-fixtures-auditability-metric-protocol-re.md) | Benchmark v2: tiered fixtures, auditability metric, protocol re-registration | Complete | P2 | design-change | 2026-07-08 | -- |
-| [CR-0194](CR0194-plan-stage-adversarial-review-independent-ac-vs-spec.md) | Plan-stage adversarial review: independent AC-vs-spec check with a deterministic trigger | Proposed | Medium | process | 2026-07-08 | -- |
-| [CR-0195](CR0195-critic-charter-unrequested-spec-edits-in-a-delivery.md) | Critic charter: unrequested spec edits in a delivery are a blocking finding | Proposed | Medium | process | 2026-07-08 | -- |
-| [CR-0196](CR0196-bench-runner-summary-must-exclude-calibration-rows-without.md) | Bench runner: summary must exclude calibration rows without hand-filtering | Proposed | Medium | tooling | 2026-07-08 | -- |
+| [CR-0194](CR0194-plan-stage-adversarial-review-independent-ac-vs-spec.md) | Plan-stage adversarial review: independent AC-vs-spec check with a deterministic trigger | Complete | Medium | process | 2026-07-08 | -- |
+| [CR-0195](CR0195-critic-charter-unrequested-spec-edits-in-a-delivery.md) | Critic charter: unrequested spec edits in a delivery are a blocking finding | Complete | Medium | process | 2026-07-08 | -- |
+| [CR-0196](CR0196-bench-runner-summary-must-exclude-calibration-rows-without.md) | Bench runner: summary must exclude calibration rows without hand-filtering | Complete | Medium | tooling | 2026-07-08 | -- |
 | [CR-0197](CR0197-upgrade-re-baseline-census-in-flight-artifacts-against.md) | Upgrade re-baseline: census in-flight artifacts against the capability delta | Proposed | Medium | process | 2026-07-08 | -- |
 | [CR-0198](CR0198-v4-0-release-engineering-schema-v3-becomes-the.md) | v4.0 release engineering: schema v3 becomes the default, upgrade walk, major-release checklist | Proposed | Medium | process | 2026-07-08 | -- |
 | [CR-0199](CR0199-status-backlog-deterministic-non-terminal-census-grouped-by.md) | status backlog: deterministic non-terminal census grouped by type and status | Proposed | Medium | tooling | 2026-07-08 | -- |

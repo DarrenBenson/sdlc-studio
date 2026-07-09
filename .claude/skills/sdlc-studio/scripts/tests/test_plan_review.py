@@ -102,6 +102,13 @@ class TriggerTests(unittest.TestCase):
             self.assertTrue(pr.cites_spec("see specs/design for the constraint", root))
             self.assertFalse(pr.cites_spec("a normal sentence with no path", root))
 
+    def test_root_spec_file_citation_fires(self) -> None:
+        # The plan-review spec boundary must agree with spec_guard's: a root SPEC.md counts.
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d), cfg_extra=_ISOLATE)
+            self.assertTrue(pr.cites_spec("this reworks the rule in SPEC.md", root))
+            self.assertTrue(pr.cites_spec("see product.spec.md for the constraint", root))
+
     def test_no_signal_does_not_fire(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = _repo(Path(d), cfg_extra=_ISOLATE)   # threshold 99, difficulty extreme

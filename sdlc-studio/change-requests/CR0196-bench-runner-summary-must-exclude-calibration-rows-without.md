@@ -1,6 +1,6 @@
 # CR-0196: Bench runner: summary must exclude calibration rows without hand-filtering
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-08
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium
