@@ -9,9 +9,9 @@
 | Draft | 0 |
 | Ready | 9 |
 | Approved | 0 |
-| In Progress | 0 |
+| In Progress | 1 |
 | Done | 9 |
-| **Total** | **18** |
+| **Total** | **19** |
 
 > Generate-mode note: all epics are **Ready** (spec extracted from the existing
 > implementation, awaiting test validation per `reference-philosophy.md`), not
@@ -39,3 +39,4 @@
 | [EP0016](EP0016-host-repo-review-and-lite-on-ramp.md) | Host-repo review and lite on-ramp | Done | -- | -- | 2026-07-06 | 2026-07-06 |
 | [EP0017](EP0017-positioning-and-evidence.md) | Positioning and evidence | Done | -- | -- | 2026-07-06 | 2026-07-06 |
 | [EP0018](EP0018-tooling-hardening-and-review-debt.md) | Tooling hardening and review debt | Done | -- | -- | 2026-07-06 | 2026-07-06 |
+| [EP0019](EP0019-plan-integrity-hardening.md) | Plan-integrity hardening | In Progress | -- | -- | 2026-07-09 | 2026-07-09 |
