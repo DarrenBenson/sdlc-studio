@@ -395,6 +395,17 @@ class UpgradeWalkTests(unittest.TestCase):
             _project(d, version=(3, "4.0.0-rc.1"))
             self.assertEqual(pu.migration_walk(Path(d)), [])
 
+    def test_fresh_init_v3_project_has_no_walk(self) -> None:
+        # A fresh v4 project: init writes .config.yaml (schema_version: 3) but NO .version.
+        # migration_walk must read the authoritative config, not just .version, and show no walk.
+        import importlib.util as _u
+        spec = _u.spec_from_file_location("init", SCR / "init.py")
+        init = _u.module_from_spec(spec); spec.loader.exec_module(init)
+        with tempfile.TemporaryDirectory() as d:
+            init.init(Path(d))
+            self.assertEqual(pu.migration_walk(Path(d)), [])          # already v3 -> no walk
+            self.assertEqual(pu.detect(Path(d))["project_schema"], 3)  # effective schema from config
+
 
 if __name__ == "__main__":
     unittest.main()

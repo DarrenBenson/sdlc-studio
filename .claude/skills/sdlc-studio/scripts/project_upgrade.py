@@ -132,23 +132,39 @@ def _read_version(root: Path) -> tuple[int | None, str | None]:
     return (int(sm.group(1)) if sm else None), (km.group(1) if km else None)
 
 
+def _effective_schema(root: Path) -> int:
+    """The project's true schema: the `.version` value if it has one, else the authoritative
+    `sdlc_md.schema_version` (`.config.yaml`, default 2). A fresh project (e.g. from `init`, which
+    writes `.config.yaml` but no `.version`) has its schema in `.config.yaml` only, so reading
+    `.version` alone would misreport it as unknown - the source split that made a fresh v3 project
+    look like it still needed the v2 to v3 migration."""
+    sv, _ = _read_version(root)
+    return sv if sv is not None else sdlc_md.schema_version(root)
+
+
 def detect(root: Path | str) -> dict:
-    """The version gap: project `.version` (schema + skill) vs the installed skill + CURRENT_SCHEMA."""
+    """The version gap: project schema (`.version`, else `.config.yaml`) + skill vs the installed
+    skill + CURRENT_SCHEMA."""
     root = Path(root)
-    proj_schema, proj_skill = _read_version(root)
+    _, proj_skill = _read_version(root)
+    proj_schema = _effective_schema(root)
+    has_version = (_sdlc(root) / ".version").exists()
     installed = version_check.installed_version(version_check.skill_root())
-    behind = (proj_schema is None) or (proj_schema < CURRENT_SCHEMA) or version_check._gt(installed, proj_skill)
-    return {"has_version_file": (_sdlc(root) / ".version").exists(),
+    # An unversioned project (no `.version`) is behind (it needs the version file stamped), as is a
+    # schema- or skill-behind one. project_schema now reads the authoritative config, so a fresh
+    # v3 project reports schema 3 (not None) - it is still "behind" only in needing its `.version`.
+    behind = (not has_version) or (proj_schema < CURRENT_SCHEMA) or version_check._gt(installed, proj_skill)
+    return {"has_version_file": has_version,
             "project_schema": proj_schema, "project_skill": proj_skill,
             "current_schema": CURRENT_SCHEMA, "installed_skill": installed, "behind": behind}
 
 
 def migration_walk(root: Path | str) -> list[dict]:
     """The v2 -> v3 schema migration presented as a directed sequence, not a single opaque
-    step. Empty for a project already on schema 3+. Each step is {step, detail}; the schema
-    flip itself is the deliberate `migrate_v3` id migration, never a routine auto-apply."""
-    proj_schema = detect(root)["project_schema"]
-    if proj_schema is not None and proj_schema >= 3:
+    step. Empty for a project already on schema 3+ (read from the authoritative `.config.yaml`,
+    not just `.version` - a fresh v3 project has no `.version` yet). Each step is {step, detail};
+    the schema flip itself is the deliberate `migrate_v3` id migration, never a routine auto-apply."""
+    if _effective_schema(Path(root)) >= 3:
         return []
     return [
         {"step": "capability delta",
@@ -297,9 +313,13 @@ def apply(root: Path | str, with_reconcile: bool = False, today: str | None = No
     prev_schema, prev_skill = _read_version(root)
     installed = version_check.installed_version(version_check.skill_root()) or "unknown"
     if not ver.exists():
-        ver.write_text(_VERSION.format(schema=CURRENT_SCHEMA, prev="null",
+        # Stamp the project's ACTUAL schema (from .config.yaml), not CURRENT_SCHEMA - a fresh v3
+        # project must not have its .version mirror written as 2, which would diverge the metadata
+        # from behaviour and make a spurious migration walk sticky.
+        stamp_schema = _effective_schema(root)
+        ver.write_text(_VERSION.format(schema=stamp_schema, prev="null",
                                        today=today, skill=installed), encoding="utf-8")
-        actions.append(f"created sdlc-studio/.version (schema {CURRENT_SCHEMA}, skill {installed})")
+        actions.append(f"created sdlc-studio/.version (schema {stamp_schema}, skill {installed})")
     elif prev_skill != installed:
         ver.write_text(_bump_version_text(ver.read_text(encoding="utf-8"), installed, prev_skill, today), encoding="utf-8")
         actions.append(f"updated sdlc-studio/.version (skill {prev_skill or '?'} -> {installed})")

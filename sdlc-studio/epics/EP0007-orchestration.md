@@ -1,6 +1,6 @@
 # EP0007: Agentic Orchestration
 
-> **Status:** Ready
+> **Status:** Done
 > **Owner:** Darren Benson
 > **Reviewer:** --
 > **Created:** 2026-06-20

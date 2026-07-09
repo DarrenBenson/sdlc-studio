@@ -1,6 +1,6 @@
 # CR-0199: status backlog: deterministic non-terminal census grouped by type and status
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-08
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium

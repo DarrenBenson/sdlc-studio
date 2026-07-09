@@ -7,10 +7,10 @@
 | Status | Count |
 | --- | --- |
 | Draft | 0 |
-| Ready | 11 |
+| Ready | 6 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 14 |
+| Done | 19 |
 | **Total** | **25** |
 
 > Generate-mode note: all epics are **Ready** (spec extracted from the existing
@@ -25,9 +25,9 @@
 | [EP0002](EP0002-decomposition.md) | Decomposition (Epics & Stories) | Ready | 4 | EP0001 | 2026-06-20 | 2026-06-20 |
 | [EP0003](EP0003-implementation.md) | Implementation & Planning | Ready | 4 | EP0002 | 2026-06-20 | 2026-06-20 |
 | [EP0004](EP0004-testing.md) | Testing Pipeline | Ready | 4 | EP0002, EP0003 | 2026-06-20 | 2026-06-20 |
-| [EP0005](EP0005-quality-drift.md) | Quality & Drift Control | Ready | 5 | None | 2026-06-20 | 2026-06-20 |
-| [EP0006](EP0006-change-management.md) | Change Management (CR/RFC/Bug) | Ready | 4 | EP0001 | 2026-06-20 | 2026-06-20 |
-| [EP0007](EP0007-orchestration.md) | Agentic Orchestration | Ready | 4 | EP0002, EP0003, EP0005 | 2026-06-20 | 2026-06-20 |
+| [EP0005](EP0005-quality-drift.md) | Quality & Drift Control | Done | 5 | None | 2026-06-20 | 2026-06-20 |
+| [EP0006](EP0006-change-management.md) | Change Management (CR/RFC/Bug) | Done | 4 | EP0001 | 2026-06-20 | 2026-06-20 |
+| [EP0007](EP0007-orchestration.md) | Agentic Orchestration | Done | 4 | EP0002, EP0003, EP0005 | 2026-06-20 | 2026-06-20 |
 | [EP0008](EP0008-tooling-scripts.md) | Tooling & Scripts | Ready | 6 | None | 2026-06-20 | 2026-06-20 |
 | [EP0009](EP0009-onboarding-doctrine.md) | Onboarding & Doctrine | Ready | 5 | None | 2026-06-20 | 2026-06-20 |
 | [EP0010](EP0010-skill-self-improvement-token-economy-learning-loop-consuming.md) | Skill self-improvement: token economy + learning loop (consuming-repo lessons) | Done | -- | -- | 2026-06-27 | 2026-06-27 |
@@ -44,5 +44,5 @@
 | [EP0021](EP0021-tooling-and-shared-layer-hardening.md) | Tooling and shared-layer hardening | Done | -- | -- | 2026-07-09 | 2026-07-09 |
 | [EP0022](EP0022-rv0006-debt-clearance-security-and-code-quality.md) | RV0006 debt clearance - security and code-quality | Done | -- | -- | 2026-07-09 | 2026-07-09 |
 | [EP0023](EP0023-context-tiering-summarised-digests-of-closed-artefacts.md) | Context tiering - summarised digests of closed artefacts | Done | -- | -- | 2026-07-09 | 2026-07-09 |
-| [EP0024](EP0024-v4-0-release-engineering-schema-v3-default-upgrade.md) | v4.0 release engineering: schema-v3 default, upgrade walk, majors checklist | Ready | -- | -- | 2026-07-09 | 2026-07-09 |
-| [EP0025](EP0025-backlog-clearance-and-status-backlog-tooling.md) | Backlog clearance and status-backlog tooling | Ready | -- | -- | 2026-07-09 | 2026-07-09 |
+| [EP0024](EP0024-v4-0-release-engineering-schema-v3-default-upgrade.md) | v4.0 release engineering: schema-v3 default, upgrade walk, majors checklist | Done | -- | -- | 2026-07-09 | 2026-07-09 |
+| [EP0025](EP0025-backlog-clearance-and-status-backlog-tooling.md) | Backlog clearance and status-backlog tooling | Done | -- | -- | 2026-07-09 | 2026-07-09 |

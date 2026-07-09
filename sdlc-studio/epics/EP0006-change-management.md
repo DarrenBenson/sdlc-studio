@@ -1,6 +1,6 @@
 # EP0006: Change Management (CR/RFC/Bug)
 
-> **Status:** Ready
+> **Status:** Done
 > **Owner:** Darren Benson
 > **Reviewer:** --
 > **Created:** 2026-06-20

@@ -1,6 +1,6 @@
 # CR-0201: Provenance-tag lint guard misses US-form and non-leading ids
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** P3
 > **Type:** Improvement
 > **Date:** 2026-07-09

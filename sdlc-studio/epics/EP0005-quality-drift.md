@@ -1,6 +1,6 @@
 # EP0005: Quality & Drift Control
 
-> **Status:** Ready
+> **Status:** Done
 > **Owner:** Darren Benson
 > **Reviewer:** --
 > **Created:** 2026-06-20

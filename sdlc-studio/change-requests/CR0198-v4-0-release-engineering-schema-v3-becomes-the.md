@@ -1,6 +1,6 @@
 # CR-0198: v4.0 release engineering: schema v3 becomes the default, upgrade walk, major-release checklist
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-08
 > **Created-by:** sdlc-studio new
 > **Priority:** High

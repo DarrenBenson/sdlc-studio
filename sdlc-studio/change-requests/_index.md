@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 3 |
+| Proposed | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 194 |
+| Complete | 197 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 4 |
@@ -20,9 +20,9 @@
 
 | ID | Title | Status | Priority | Type | Date | Linked Epics |
 | --- | --- | --- | --- | --- | --- | --- |
-| [CR-0198](CR0198-v4-0-release-engineering-schema-v3-becomes-the.md) | v4.0 release engineering: schema v3 becomes the default, upgrade walk, major-release checklist | Proposed | Medium | process | 2026-07-08 | -- |
-| [CR-0199](CR0199-status-backlog-deterministic-non-terminal-census-grouped-by.md) | status backlog: deterministic non-terminal census grouped by type and status | Proposed | Medium | tooling | 2026-07-08 | -- |
-| [CR-0201](CR0201-provenance-tag-lint-guard-misses-us-form-and.md) | Provenance-tag lint guard misses US-form and non-leading ids | Proposed | P3 | Improvement | 2026-07-09 | -- |
+| [CR-0198](CR0198-v4-0-release-engineering-schema-v3-becomes-the.md) | v4.0 release engineering: schema v3 becomes the default, upgrade walk, major-release checklist | Complete | Medium | process | 2026-07-08 | -- |
+| [CR-0199](CR0199-status-backlog-deterministic-non-terminal-census-grouped-by.md) | status backlog: deterministic non-terminal census grouped by type and status | Complete | Medium | tooling | 2026-07-08 | -- |
+| [CR-0201](CR0201-provenance-tag-lint-guard-misses-us-form-and.md) | Provenance-tag lint guard misses US-form and non-leading ids | Complete | P3 | Improvement | 2026-07-09 | -- |
 
 ## Archived Releases
 

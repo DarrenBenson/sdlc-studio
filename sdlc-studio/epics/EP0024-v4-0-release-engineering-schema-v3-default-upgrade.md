@@ -1,6 +1,6 @@
 # EP0024: v4.0 release engineering: schema-v3 default, upgrade walk, majors checklist
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 

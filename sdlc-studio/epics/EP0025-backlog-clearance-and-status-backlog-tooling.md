@@ -1,6 +1,6 @@
 # EP0025: Backlog clearance and status-backlog tooling
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 
