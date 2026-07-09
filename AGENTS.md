@@ -29,6 +29,11 @@ not drift (progressive disclosure).
 - **At session start, and after any context reset or compaction:** re-read
   `sdlc-studio/reviews/LATEST.md` and run `/sdlc-studio status` before acting, to
   re-anchor on where the pipeline is.
+- **Fetch before trusting local state.** A local clone can be behind its remote; planning or
+  allocating ids against a stale checkout risks minting an id the remote already used or planning
+  over an artefact a teammate has changed. `sprint plan` runs a `git fetch origin` + origin-drift
+  pre-flight (skipped gracefully with no remote; warns when behind, refuses under `--strict`), and
+  id allocation is remote-aware. When in doubt, `git fetch` and rebase before a batch.
 
 ## Skill Structure
 

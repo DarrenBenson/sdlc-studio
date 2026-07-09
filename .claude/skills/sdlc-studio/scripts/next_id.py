@@ -111,16 +111,32 @@ def allocate_number(type_: str, repo_root: Path | str, remote: bool = True) -> i
     return base + 1
 
 
-def remote_ids(type_: str, repo_root: Path) -> tuple[list[int], bool]:
-    """Numeric IDs on origin/main for `type_`. Returns (ids, available).
+def _origin_default_branch(repo_root: Path) -> str:
+    """The origin default branch (`origin/HEAD -> origin/<branch>`), or `main` as a fallback.
+    A consuming repo may default to master/develop/trunk; hardcoding `origin/main` would silently
+    skip the remote scan there and re-mint an id the remote already holds."""
+    try:
+        r = subprocess.run(
+            ["git", "symbolic-ref", "--quiet", "refs/remotes/origin/HEAD"],
+            capture_output=True, text=True, cwd=str(repo_root), check=False)
+        if r.returncode == 0 and r.stdout.strip():
+            return r.stdout.strip().rsplit("/", 1)[-1]
+    except FileNotFoundError:
+        pass
+    return "main"
 
-    Uses `git ls-tree` (read-only, no network). `available` is False when the
-    repo has no origin/main or git is unavailable.
+
+def remote_ids(type_: str, repo_root: Path) -> tuple[list[int], bool]:
+    """Numeric IDs on origin's default branch for `type_`. Returns (ids, available).
+
+    Uses `git ls-tree` (read-only, no network) against `origin/<default-branch>` (resolved,
+    not hardcoded). `available` is False when the repo has no origin ref or git is unavailable.
     """
     rel, prefix = _spec(type_)
+    branch = _origin_default_branch(repo_root)
     try:
         result = subprocess.run(
-            ["git", "ls-tree", "-r", "--name-only", "origin/main", "--", rel],
+            ["git", "ls-tree", "-r", "--name-only", f"origin/{branch}", "--", rel],
             capture_output=True, text=True, cwd=str(repo_root), check=False,
         )
     except FileNotFoundError:

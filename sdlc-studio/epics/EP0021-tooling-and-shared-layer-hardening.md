@@ -12,7 +12,7 @@
 
 - [x] [US0097: Route github_sync and verify_ac through the shared discovery layer](../stories/US0097-route-github-sync-and-verify-ac-through-the.md)
 - [ ] [US0098: Consolidate the two archive implementations on iter_tables](../stories/US0098-consolidate-the-two-archive-implementations-on-iter-tables.md)
-- [ ] [US0099: Origin-drift pre-flight for sprint plan and id allocation](../stories/US0099-origin-drift-pre-flight-for-sprint-plan-and.md)
+- [x] [US0099: Origin-drift pre-flight for sprint plan and id allocation](../stories/US0099-origin-drift-pre-flight-for-sprint-plan-and.md)
 
 ## Revision History
 

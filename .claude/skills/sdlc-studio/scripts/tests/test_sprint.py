@@ -823,5 +823,199 @@ class RoutingEnrichmentTests(unittest.TestCase):
             self.assertIn("difficulty", by_id["CR0002"])
 
 
+import subprocess as _sp
+
+sprint = _load()
+
+
+def _run(cwd, *args):
+    return _sp.run(["git", "-C", str(cwd), *args], capture_output=True, text=True)
+
+
+def _behind_repo(d):
+    """A work repo one commit behind its origin (a teammate pushed a CR)."""
+    origin = Path(d) / "origin.git"
+    _sp.run(["git", "init", "-q", "--bare", str(origin)])
+    _sp.run(["git", "-C", str(origin), "symbolic-ref", "HEAD", "refs/heads/main"])
+    work = Path(d) / "work"; work.mkdir()
+    _run(work, "init", "-q"); _run(work, "checkout", "-q", "-b", "main")
+    _run(work, "config", "user.email", "t@t"); _run(work, "config", "user.name", "t")
+    _run(work, "remote", "add", "origin", str(origin))
+    (work / "README.md").write_text("base\n", encoding="utf-8")
+    _run(work, "add", "-A"); _run(work, "commit", "-qm", "base")
+    _run(work, "push", "-q", "origin", "main")
+    other = Path(d) / "other"
+    _sp.run(["git", "clone", "-q", str(origin), str(other)])
+    _run(other, "config", "user.email", "o@o"); _run(other, "config", "user.name", "o")
+    crd = other / "sdlc-studio" / "change-requests"; crd.mkdir(parents=True)
+    (crd / "CR0001-remote.md").write_text("# CR-0001: remote\n", encoding="utf-8")
+    _run(other, "add", "-A"); _run(other, "commit", "-qm", "remote cr")
+    _run(other, "push", "-q", "origin", "main")
+    return work
+
+
+def _up_to_date_repo(d):
+    """A work clone that is level with origin (no divergence)."""
+    origin = Path(d) / "origin.git"
+    _sp.run(["git", "init", "-q", "--bare", str(origin)])
+    _sp.run(["git", "-C", str(origin), "symbolic-ref", "HEAD", "refs/heads/main"])
+    work = Path(d) / "work"; work.mkdir()
+    _run(work, "init", "-q"); _run(work, "checkout", "-q", "-b", "main")
+    _run(work, "config", "user.email", "t@t"); _run(work, "config", "user.name", "t")
+    _run(work, "remote", "add", "origin", str(origin))
+    (work / "README.md").write_text("base\n", encoding="utf-8")
+    _run(work, "add", "-A"); _run(work, "commit", "-qm", "base")
+    _run(work, "push", "-q", "origin", "main")
+    _run(work, "fetch", "-q", "origin")
+    return work
+
+
+def _remote_id_repo(d, branch):
+    """A work repo whose origin default branch (`branch`) holds CR0005 that local deleted."""
+    origin = Path(d) / "origin.git"
+    _sp.run(["git", "init", "-q", "--bare", str(origin)])
+    _sp.run(["git", "-C", str(origin), "symbolic-ref", "HEAD", f"refs/heads/{branch}"])
+    seed = Path(d) / "seed"; seed.mkdir()
+    _run(seed, "init", "-q"); _run(seed, "checkout", "-q", "-b", branch)
+    _run(seed, "config", "user.email", "s@s"); _run(seed, "config", "user.name", "s")
+    _run(seed, "remote", "add", "origin", str(origin))
+    crd = seed / "sdlc-studio" / "change-requests"; crd.mkdir(parents=True)
+    (crd / "CR0005-remote.md").write_text("# CR-0005: r\n", encoding="utf-8")
+    _run(seed, "add", "-A"); _run(seed, "commit", "-qm", "cr5")
+    _run(seed, "push", "-q", "origin", branch)
+    work = Path(d) / "work"
+    _sp.run(["git", "clone", "-q", str(origin), str(work)])
+    _run(work, "config", "user.email", "w@w"); _run(work, "config", "user.name", "w")
+    _run(work, "rm", "-q", "sdlc-studio/change-requests/CR0005-remote.md")
+    _run(work, "commit", "-qm", "remove locally")   # gone from disk, still on origin/<branch>
+    return work
+
+
+class OriginDriftTests(unittest.TestCase):
+    """US0099/CR0188: sprint plan compares local HEAD to origin; warns when behind."""
+
+    def test_origin_drift_detects_behind(self):
+        with tempfile.TemporaryDirectory() as d:
+            work = _behind_repo(d)
+            drift = sprint.origin_drift(work, do_fetch=True)   # fetch from the LOCAL origin (offline)
+            self.assertTrue(drift["remote"])
+            self.assertEqual(drift["behind"], 1)
+            self.assertIn("sdlc-studio/change-requests/CR0001-remote.md", drift["paths"])
+
+
+class OriginDriftNoFalsePositiveTests(unittest.TestCase):
+    """US0099/CR0188 AC2: no remote / non-git / up-to-date-with-origin all stay silent."""
+
+    def test_no_remote_is_silent(self):
+        with tempfile.TemporaryDirectory() as d:
+            work = Path(d) / "w"; work.mkdir()
+            _run(work, "init", "-q")
+            drift = sprint.origin_drift(work, do_fetch=False)
+            self.assertFalse(drift["remote"])
+            self.assertEqual(drift["behind"], 0)
+
+    def test_non_git_dir_is_silent(self):
+        with tempfile.TemporaryDirectory() as d:
+            drift = sprint.origin_drift(Path(d), do_fetch=False)
+            self.assertFalse(drift["remote"])
+            self.assertEqual(drift["behind"], 0)
+
+    def test_up_to_date_with_origin_is_silent(self):
+        with tempfile.TemporaryDirectory() as d:
+            work = _up_to_date_repo(d)
+            drift = sprint.origin_drift(work, do_fetch=True)
+            self.assertTrue(drift["remote"])
+            self.assertEqual(drift["behind"], 0)                 # level with origin
+            self.assertIsNone(sprint._drift_warning(drift, set()))  # no warning
+
+
+class OriginDriftWarningTests(unittest.TestCase):
+    def test_up_to_date_no_warning(self):
+        self.assertIsNone(sprint._drift_warning({"behind": 0}, set()))
+
+    def test_behind_warns_and_names_overlap(self):
+        drift = {"behind": 2, "branch": "main",
+                 "paths": ["sdlc-studio/change-requests/CR0001-x.md", "README.md"]}
+        w = sprint._drift_warning(drift, {"sdlc-studio/change-requests/CR0001-x.md"})
+        self.assertIn("2 commit(s) behind", w)
+        self.assertIn("CR0001-x.md", w)
+
+    def test_behind_without_overlap_still_warns(self):
+        w = sprint._drift_warning({"behind": 1, "branch": "main", "paths": ["README.md"]}, set())
+        self.assertIn("behind", w)
+        self.assertNotIn("touch batch artifacts", w)
+
+
+class RemoteIdAllocationTests(unittest.TestCase):
+    """US0099/CR0188 AC3: id allocation is remote-aware - it will not re-mint an id the remote
+    already holds (the collision the incident hit)."""
+
+    def _next_id(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("next_id", Path(SCRIPT).parent / "next_id.py")
+        m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+        return m
+
+    def test_allocation_skips_a_remote_only_id_on_main(self):
+        next_id = self._next_id()
+        with tempfile.TemporaryDirectory() as d:
+            work = _remote_id_repo(d, "main")
+            self.assertEqual(next_id.allocate_number("cr", work, remote=True), 6)   # remote-aware
+            self.assertEqual(next_id.allocate_number("cr", work, remote=False), 1)  # local-only
+
+    def test_allocation_remote_aware_on_non_main_default(self):
+        # the MAJOR: on a master/develop-default repo, remote_ids must resolve the actual default
+        # branch, not hardcode origin/main - else the anti-collision protection silently no-ops.
+        next_id = self._next_id()
+        with tempfile.TemporaryDirectory() as d:
+            work = _remote_id_repo(d, "master")
+            self.assertEqual(next_id.allocate_number("cr", work, remote=True), 6)   # not 1
+
+
+class OriginDriftCollisionTests(unittest.TestCase):
+    """US0099/CR0188 AC5: sprint plan warns before an id-collision would occur."""
+
+    def _clean_bug_batch(self, work):
+        """A reconcile-clean single-bug batch, so the origin-drift path is not masked by the
+        reconcile-before-plan strict gate."""
+        _bug(work, 1, status="Open")
+        (work / "sdlc-studio" / "bugs" / "_index.md").write_text(
+            "# Bugs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Open | 1 |\n"
+            "| **Total** | **1** |\n\n## All\n\n| ID | Title | Status | Severity | Created | Updated |\n"
+            "| --- | --- | --- | --- | --- | --- |\n"
+            "| [BG0001](BG0001-x.md) | b | Open | Medium | 2026-07-09 | 2026-07-09 |\n",
+            encoding="utf-8")
+
+    def _args(self, work, strict):
+        import argparse
+        return argparse.Namespace(
+            prd=None, bugs="Open", crs=None, stories=None, worklist=None, epic=None,
+            order="priority", write=False, strict=strict, no_fetch=False,
+            skip_personas=False, root=str(work), format="json")
+
+    def test_cmd_plan_warns_when_behind_a_remote_with_same_numbered_file(self):
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            work = _behind_repo(d)
+            self._clean_bug_batch(work)
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+                rc = sprint.cmd_plan(self._args(work, strict=False))
+            self.assertEqual(rc, 0)                  # advisory: warns but does not fail
+            self.assertIn("origin drift", err.getvalue())
+            self.assertIn("behind", err.getvalue())
+
+    def test_cmd_plan_strict_refuses_when_behind(self):
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            work = _behind_repo(d)
+            self._clean_bug_batch(work)
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+                rc = sprint.cmd_plan(self._args(work, strict=True))
+            self.assertEqual(rc, 2)                  # --strict refuses the stale plan
+            self.assertIn("behind", err.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main()

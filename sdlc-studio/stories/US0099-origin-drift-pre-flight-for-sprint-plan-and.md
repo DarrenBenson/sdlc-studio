@@ -1,11 +1,11 @@
 # US0099: Origin-drift pre-flight for sprint plan and id allocation
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0021
 > **Persona:** Engineering seat
-> **Affects:** scripts/sprint.py, scripts/next_id.py, scripts/artifact.py, AGENTS.md, scripts/tests/test_sprint.py
+> **Affects:** scripts/sprint.py, scripts/next_id.py, AGENTS.md, scripts/tests/test_sprint.py
 
 ## User Story
 
@@ -23,6 +23,7 @@ Delivers CR0188. Fails safe: no remote or up-to-date behaves exactly as today.
 - **When** `sprint plan` runs
 - **Then** it performs `git fetch origin` (skipped gracefully with no `origin` remote), compares, and when behind prints the commit-count + touched-path overlap with the batch and warns; `--strict` refuses
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OriginDriftTests
+- **Verified:** yes (2026-07-09)
 
 ### AC2: No remote or up-to-date is identical to today
 
@@ -30,6 +31,7 @@ Delivers CR0188. Fails safe: no remote or up-to-date behaves exactly as today.
 - **When** `sprint plan` runs
 - **Then** its output is identical to today's (no false positives)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OriginDriftNoFalsePositiveTests
+- **Verified:** yes (2026-07-09)
 
 ### AC3: id allocation prefers a remote-aware scan when origin exists
 
@@ -37,6 +39,7 @@ Delivers CR0188. Fails safe: no remote or up-to-date behaves exactly as today.
 - **When** `artifact.py new`/`batch` allocate an id
 - **Then** they allocate via `next_id.py --remote` (remote-aware), falling back to local-only scanning when no origin exists
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::RemoteIdAllocationTests
+- **Verified:** yes (2026-07-09)
 
 ### AC4: The fetch-before-trusting step is documented
 
@@ -44,6 +47,7 @@ Delivers CR0188. Fails safe: no remote or up-to-date behaves exactly as today.
 - **When** a reader consults `AGENTS.md`
 - **Then** an orientation bullet documents the fetch-before-trusting-local-state step
 - **Verify:** grep -i "fetch" AGENTS.md
+- **Verified:** yes (2026-07-09)
 
 ### AC5: A regression test reproduces the incident shape
 
@@ -51,6 +55,7 @@ Delivers CR0188. Fails safe: no remote or up-to-date behaves exactly as today.
 - **When** `sprint plan` runs
 - **Then** it warns before the collision would occur
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OriginDriftCollisionTests
+- **Verified:** yes (2026-07-09)
 
 ## Revision History
 

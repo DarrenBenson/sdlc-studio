@@ -139,6 +139,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   report (empty buckets printed explicitly) surfaces from `project upgrade`. Read-only,
   deterministic, dormant under schema v2.
 
+- **Origin-drift pre-flight for `sprint plan` + branch-aware remote id allocation (EP0021,
+  CR0188; US0099).** `sprint plan` now runs a `git fetch origin` + drift check: when the local
+  clone is behind origin's default branch it warns (naming the commit count and any overlap
+  between the incoming remote changes and the batch's own artefacts) and, under `--strict`,
+  refuses - so a sprint is not planned against a stale checkout. Fail-safe: no remote, no git, or
+  up-to-date behaves exactly as before. `next_id.remote_ids` now resolves origin's actual default
+  branch (was hardcoded `origin/main`), so remote-aware id allocation also protects
+  `master`/`develop`-default repos from re-minting an id the remote already holds. An AGENTS.md
+  orientation bullet documents the fetch-before-trusting step.
+
 ### Fixed
 
 - **`github_sync` and `verify_ac` discover artefacts through the shared layer (EP0021, CR0181;

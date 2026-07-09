@@ -439,6 +439,85 @@ def pre_plan_blocker_sweep(repo_root: Path | str) -> dict:
         return {"now_unblocked": [], "still_blocked": [], "errors": []}
 
 
+def _git(root, *args, timeout: int = 30):
+    import subprocess
+    try:
+        return subprocess.run(["git", "-C", str(root), *args], capture_output=True,
+                              text=True, timeout=timeout)
+    except Exception:  # noqa: BLE001 - git absent/hung must never break planning
+        return None
+
+
+def _has_origin(root) -> bool:
+    r = _git(root, "remote")
+    return bool(r) and r.returncode == 0 and "origin" in r.stdout.split()
+
+
+def _default_branch(root) -> str:
+    r = _git(root, "symbolic-ref", "--quiet", "refs/remotes/origin/HEAD")
+    if r and r.returncode == 0 and r.stdout.strip():
+        return r.stdout.strip().rsplit("/", 1)[-1]
+    return "main"
+
+
+def origin_drift(root, do_fetch: bool = True) -> dict:
+    """Compare local HEAD to origin's default branch so a sprint is not planned against a stale
+    checkout. Fetches first (best-effort) unless `do_fetch=False`. Returns
+    {remote, behind, paths, branch}. Fail-safe: no origin, no git, or any error -> remote False,
+    behind 0 (identical to today's behaviour - no false positives)."""
+    out = {"remote": False, "behind": 0, "paths": [], "branch": None}
+    if not _has_origin(root):
+        return out
+    out["remote"] = True
+    if do_fetch:
+        _git(root, "fetch", "origin", "--quiet")            # best-effort; ignore failure
+    br = _default_branch(root)
+    out["branch"] = br
+    cnt = _git(root, "rev-list", "--count", f"HEAD..origin/{br}")
+    if cnt and cnt.returncode == 0:
+        try:
+            out["behind"] = int(cnt.stdout.strip() or 0)
+        except ValueError:
+            out["behind"] = 0
+    if out["behind"]:
+        names = _git(root, "diff", "--name-only", f"HEAD..origin/{br}")
+        if names and names.returncode == 0:
+            out["paths"] = [p for p in names.stdout.splitlines() if p.strip()]
+    return out
+
+
+def _batch_paths(root, batch_ids) -> set:
+    """Repo-relative file paths of the batch's units, for overlap against incoming remote
+    changes (does the drift touch a file this batch also allocates/edits)."""
+    root = Path(root)
+    want = {sdlc_md.norm_id(i) for i in batch_ids}
+    paths = set()
+    for t in sdlc_md.ARTIFACT_TYPES:
+        for p in sdlc_md.artifact_files(t, root):
+            rid = sdlc_md.extract_record_id(p.stem)
+            if rid and sdlc_md.norm_id(rid) in want:
+                try:
+                    paths.add(str(p.relative_to(root)))
+                except ValueError:
+                    paths.add(str(p))
+    return paths
+
+
+def _drift_warning(drift: dict, batch_paths: set) -> str | None:
+    """A warning line when local is behind origin, naming the commit-count and any overlap
+    between the incoming remote changes and the batch's own artifact files (the collision the
+    incident hit). None when up to date."""
+    if not drift.get("behind"):
+        return None
+    overlap = sorted(p for p in drift["paths"] if p in batch_paths)
+    msg = (f"origin drift: local is {drift['behind']} commit(s) behind origin/{drift['branch']} "
+           f"- fetch and rebase before planning (a stale checkout can mint an id the remote "
+           f"already used)")
+    if overlap:
+        msg += f"; incoming changes touch batch artifacts: {', '.join(overlap)}"
+    return msg
+
+
 def cmd_plan(args: argparse.Namespace) -> int:
     """Print the ordered batch the operator approves before a run."""
     if getattr(args, "prd", None):  # greenfield authoring - the batch is a PRD
@@ -504,6 +583,19 @@ def cmd_plan(args: argparse.Namespace) -> int:
     except ValueError as exc:  # dependency cycle / bad status / unknown worklist id
         print(f"cannot order the batch: {exc}", file=sys.stderr)
         return 2
+    # origin-drift preflight: planning against a stale checkout can mint an id the
+    # remote already used, or plan over an artifact a teammate has already changed. Fetch +
+    # compare; warn (refuse under --strict). Fail-safe: no origin / up to date -> silent.
+    try:
+        drift = origin_drift(args.root, do_fetch=not getattr(args, "no_fetch", False))
+        batch_ids = [u for wave in data.get("waves", []) for u in wave]
+        warn = _drift_warning(drift, _batch_paths(args.root, batch_ids))
+        if warn:
+            print(warn, file=sys.stderr)
+            if getattr(args, "strict", False):
+                return 2
+    except Exception:  # noqa: BLE001 - the drift check is advisory; never break planning
+        pass
     if getattr(args, "write", False):  # persist the sprint-plan artifact for review
         out = Path(args.root) / "sdlc-studio" / ".local" / "sprint-plan.json"
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -564,7 +656,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--write", action="store_true",
                    help="persist the sprint plan to sdlc-studio/.local/sprint-plan.json")
     p.add_argument("--strict", action="store_true",
-                   help="refuse to plan when the index has drift (reconcile before plan)")
+                   help="refuse to plan when the index has drift or local is behind origin")
+    p.add_argument("--no-fetch", action="store_true", dest="no_fetch",
+                   help="skip the git fetch in the origin-drift preflight (compare against the "
+                        "already-fetched origin ref)")
     p.add_argument("--skip-personas", action="store_true", dest="skip_personas",
                    help="ignore review-seat WSJF inputs; order by priority + complexity")
     p.add_argument("--root", default=".", help="Repo root (default: .)")
