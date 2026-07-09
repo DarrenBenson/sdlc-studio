@@ -1,11 +1,11 @@
 # US0091: Plan-reviewer charter, verdict slot and telemetry
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0019
 > **Persona:** QA seat
-> **Affects:** reference-agent-prompt-template.md, reference-sprint.md, templates/core/story.md, scripts/plan_review.py, scripts/critic.py
+> **Affects:** reference-agent-prompt-template.md, reference-sprint.md, templates/core/story.md, scripts/plan_review.py, scripts/telemetry.py
 > **Depends on:** US0090
 
 ## User Story
@@ -24,6 +24,7 @@ Closes the remainder of CR0194 (charter, verdict slot, telemetry, benchmark note
 - **When** a plan-review is invoked
 - **Then** a documented charter (rendered under the QA/tester seat, a separate instance from the plan's author) instructs the reviewer to re-read each cited spec section and flag any AC that contradicts or inverts it, defaulting to challenge-the-written-ACs and escalating to blind re-derivation for high-difficulty units
 - **Verify:** grep "Plan-Review Charter" .claude/skills/sdlc-studio/reference-agent-prompt-template.md
+- **Verified:** yes (2026-07-09)
 
 ### AC2: The story template carries a plan-review verdict slot
 
@@ -31,6 +32,7 @@ Closes the remainder of CR0194 (charter, verdict slot, telemetry, benchmark note
 - **When** a story is authored
 - **Then** it carries an optional Plan-Review slot (verdict, reviewer, date) the gate can populate
 - **Verify:** grep "Plan-Review" .claude/skills/sdlc-studio/templates/core/story.md
+- **Verified:** yes (2026-07-09)
 
 ### AC3: Plan-review outcomes are recorded to telemetry
 
@@ -38,6 +40,7 @@ Closes the remainder of CR0194 (charter, verdict slot, telemetry, benchmark note
 - **When** the record is written
 - **Then** a telemetry event capturing the plan-review outcome (id, phase, verdict, reviewer != author) is appended to `.local/telemetry.jsonl`
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::TelemetryTests
+- **Verified:** yes (2026-07-09)
 
 ### AC4: The gate is described in the reference docs
 
@@ -45,6 +48,7 @@ Closes the remainder of CR0194 (charter, verdict slot, telemetry, benchmark note
 - **When** an operator reads how implementation is gated
 - **Then** the plan-review gate, its deterministic trigger, and the operator-override path are described
 - **Verify:** grep "plan-review" .claude/skills/sdlc-studio/reference-sprint.md
+- **Verified:** yes (2026-07-09)
 
 ### AC5: The benchmark note records the measurable hypothesis
 
@@ -52,6 +56,7 @@ Closes the remainder of CR0194 (charter, verdict slot, telemetry, benchmark note
 - **When** the gate ships
 - **Then** a note records that a future rerun/fixture can measure whether the gate catches the seeded R5-inversion failure mode
 - **Verify:** grep "R5-inversion" .claude/skills/sdlc-studio/reference-sprint.md
+- **Verified:** yes (2026-07-09)
 
 ## Revision History
 

@@ -13,6 +13,13 @@ Related: help/story.md, reference-story.md
 > **Reviewer:** {{reviewer}}
 > **Created:** {{created_date}}
 > **GitHub Issue:** {{github_issue}}
+> **Plan-Review:** {{plan_review}}
+
+<!-- Plan-Review (schema v3, optional): the plan-review gate's verdict for a spec-derived
+     story, as `verdict · reviewer · date` - recorded via `plan_review record` (which pins the
+     ACs by fingerprint). Leave blank when the gate does not apply. A `> **Plan-Review-Override:**`
+     field here is the only sanctioned skip of the gate (auditable). See reference-config.md#plan-review. -->
+
 
 ## User Story
 

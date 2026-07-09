@@ -17,6 +17,8 @@ import json
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # resolve sibling imports (critic)
+
 # The project's gitignored state dir (sdlc-studio/.local/), not repo-root .local/.
 LOCAL = Path("sdlc-studio") / ".local" / "telemetry.jsonl"
 # The captured fields. Optional ones are omitted when not supplied. The tier_* fields
@@ -35,6 +37,37 @@ def record(repo_root: Path | str, fields: dict) -> dict:
     """Append one record (only the recognised, non-None fields). Best-effort: a write
     failure is swallowed (telemetry must never break the loop)."""
     rec = {k: fields[k] for k in FIELDS if fields.get(k) is not None}
+    try:
+        p = _path(repo_root)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with p.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(rec) + "\n")
+    except Exception:  # noqa: BLE001 - telemetry is advisory; never raise into the loop
+        pass
+    return rec
+
+
+def record_plan_review(repo_root: Path | str, unit: str, verdict: str,
+                       reviewer: str, author: str) -> dict:
+    """Append a plan-review outcome event (US0091) so the gate's value is measurable over
+    time: how often plan-review runs, its verdict mix, and that it was independent. Best-effort
+    (a write failure never breaks the recording path). Carries an `event: "plan-review"` marker
+    AND a `phase` field; `summarise` reads it as a distinct block, never as a unit-close type.
+    Independence uses the SAME notion as the gate (`critic.is_independent`), so the `-` sentinel
+    and empty author read as not-independent - the metric cannot over-report independence. The
+    whole thing is best-effort: neither the independence read nor the write raises into the loop."""
+    try:
+        import critic  # lazy: telemetry is a leaf; critic has no telemetry dep
+        independent = critic.is_independent({"author": author, "reviewer": reviewer})
+    except Exception:  # noqa: BLE001 - never raise into the recording path; fall back locally
+        def _norm(x):
+            x = (x or "").strip().casefold()
+            return "" if x == "-" else x
+        a, r = _norm(author), _norm(reviewer)
+        independent = bool(a) and r != a
+    rec = {"event": "plan-review", "phase": "plan-review", "id": str(unit),
+           "verdict": (verdict or "").upper(), "reviewer": reviewer, "author": author,
+           "independent": independent}
     try:
         p = _path(repo_root)
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -86,9 +119,15 @@ def cmd_record(args: argparse.Namespace) -> int:
 def summarise(records: list[dict]) -> dict:
     """Per-type aggregates over the raw records: count, mean iterations, mean wall
     time, reopen rate, verdict mix. A field absent from every record of a type is
-    None, never a fabricated 0 - the summary reports what was measured."""
+    None, never a fabricated 0 - the summary reports what was measured.
+
+    Event records (those carrying an `event` key, e.g. plan-review) are NOT unit-close
+    records and are excluded from the per-type/per-tier aggregates - pooling them would inflate
+    a phantom `unknown` type. Plan-review events are summarised in their own `plan_review` block
+    (US0091): count, verdict mix, and the independent-review rate."""
+    unit_recs = [r for r in records if not r.get("event")]
     out: dict = {}
-    for rec in records:
+    for rec in unit_recs:
         t = rec.get("type") or "unknown"
         b = out.setdefault(t, {"count": 0, "_iters": [], "_wall": [],
                                "_reopened": [], "verdicts": {}})
@@ -111,7 +150,7 @@ def summarise(records: list[dict]) -> dict:
     # calibration signal. Emitted only when some record actually carries a tier, so a
     # non-routed project's summary is byte-identical to before.
     tiers: dict = {}
-    for rec in records:
+    for rec in unit_recs:
         t = rec.get("tier_delivered")
         if not t:
             continue
@@ -131,6 +170,19 @@ def summarise(records: list[dict]) -> dict:
             b["reopen_rate"] = round(sum(reop) / len(reop), 3) if reop else None
             b["escalation_rate"] = round(sum(esc) / len(esc), 3) if esc else None
         out["by_tier"] = tiers
+    # Plan-review events (their own block, US0091): how often the gate ran, its verdict mix,
+    # and the independent-review rate - so the gate's value is measurable.
+    pr_events = [r for r in records if r.get("event") == "plan-review"]
+    if pr_events:
+        verdicts: dict = {}
+        for r in pr_events:
+            v = r.get("verdict")
+            if v:
+                verdicts[v] = verdicts.get(v, 0) + 1
+        indep = [bool(r.get("independent")) for r in pr_events]
+        out["plan_review"] = {
+            "count": len(pr_events), "verdicts": verdicts,
+            "independent_rate": round(sum(indep) / len(indep), 3) if indep else None}
     return out
 
 
@@ -142,12 +194,19 @@ def cmd_show(args: argparse.Namespace) -> int:
             print(json.dumps(s, indent=2))
         else:
             by_tier = s.pop("by_tier", None)
-            print(f"{len(recs)} record(s), {len(s)} type(s)")
+            plan_review = s.pop("plan_review", None)
+            unit_n = sum(b["count"] for b in s.values())
+            print(f"{unit_n} unit record(s), {len(s)} type(s)")
             for t, b in sorted(s.items()):
                 verdicts = ", ".join(f"{k}:{n}" for k, n in sorted(b["verdicts"].items())) or "-"
                 print(f"  {t:8} count={b['count']} mean_iterations={b['mean_iterations']} "
                       f"mean_wall_time_s={b['mean_wall_time_s']} "
                       f"reopen_rate={b['reopen_rate']} verdicts[{verdicts}]")
+            if plan_review:
+                verdicts = ", ".join(f"{k}:{n}" for k, n in
+                                     sorted(plan_review["verdicts"].items())) or "-"
+                print(f"plan-review: count={plan_review['count']} "
+                      f"independent_rate={plan_review['independent_rate']} verdicts[{verdicts}]")
             if by_tier:
                 print("by tier delivered:")
                 for t, b in sorted(by_tier.items()):

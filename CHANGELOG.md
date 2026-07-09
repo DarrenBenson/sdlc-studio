@@ -28,7 +28,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   delivery critique gate); `plan_review record` pins the verdict to the reviewed ACs by
   fingerprint, so a post-approval AC edit invalidates it. The only sanctioned skip is a
   recorded `> **Plan-Review-Override:**` field (auditable; not bypassable by `--force`). Dormant
-  under schema v2.
+  under schema v2. US0091 adds the reviewer's charter
+  (`reference-agent-prompt-template.md#plan-review-charter`: the QA seat re-reads the cited spec
+  section and flags any AC that inverts it as a blocking finding, escalating to blind
+  re-derivation for high-difficulty units), an optional `> **Plan-Review:**` story-template slot,
+  and a plan-review telemetry event (`telemetry.record_plan_review`, summarised as its own block
+  so the gate's run count, verdict mix, and independent-review rate are measurable).
 - **Agentic triage - human sampling policy + triage-quality metrics (EP0014, CR0173; US0066,
   schema v3, opt-in).** New `scripts/triage_sampling.py`: `sample()` is a deterministic
   (seeded-hash) audit-sampling policy - every Critical, every raiser/triager severity

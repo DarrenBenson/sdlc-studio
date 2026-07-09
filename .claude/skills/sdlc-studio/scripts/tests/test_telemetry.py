@@ -167,5 +167,38 @@ class TierFieldsTests(unittest.TestCase):
         self.assertNotIn("by_tier", s)
 
 
+class PlanReviewEventTests(unittest.TestCase):
+    """US0091: plan-review events are their own block and never pollute the unit aggregates."""
+
+    def test_event_excluded_from_type_aggregate(self) -> None:
+        rows = [{"id": "US0001", "type": "story", "iterations": 2},
+                {"event": "plan-review", "phase": "plan-review", "id": "US0001",
+                 "verdict": "APPROVE", "reviewer": "qa", "author": "dev", "independent": True}]
+        s = tel.summarise(rows)
+        self.assertEqual(s["story"]["count"], 1)
+        self.assertNotIn("unknown", s)                 # no phantom bucket
+        self.assertEqual(s["plan_review"]["count"], 1)
+        self.assertEqual(s["plan_review"]["verdicts"], {"APPROVE": 1})
+        self.assertEqual(s["plan_review"]["independent_rate"], 1.0)
+
+    def test_record_plan_review_independence_matches_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            # `-` sentinel and empty author read as NOT independent (same as critic.is_independent)
+            self.assertFalse(tel.record_plan_review(d, "US1", "APPROVE", "qa", "-")["independent"])
+            self.assertFalse(tel.record_plan_review(d, "US1", "APPROVE", "qa", "")["independent"])
+            self.assertFalse(tel.record_plan_review(d, "US1", "APPROVE", "dev", "dev")["independent"])
+            self.assertTrue(tel.record_plan_review(d, "US1", "APPROVE", "qa", "dev")["independent"])
+
+    def test_record_plan_review_never_raises(self) -> None:
+        rec = tel.record_plan_review("/proc/nonexistent-xyz", "US1", "APPROVE", "qa", "dev")
+        self.assertEqual(rec["id"], "US1")             # best-effort, returns the record
+
+    def test_event_record_carries_phase(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            rec = tel.record_plan_review(d, "US1", "reject", "qa", "dev")
+            self.assertEqual(rec["phase"], "plan-review")
+            self.assertEqual(rec["verdict"], "REJECT")
+
+
 if __name__ == "__main__":
     unittest.main()

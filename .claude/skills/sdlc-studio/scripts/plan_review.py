@@ -34,6 +34,7 @@ from lib import sdlc_md  # noqa: E402
 import config  # noqa: E402
 import critic  # noqa: E402
 import route  # noqa: E402
+import telemetry  # noqa: E402
 
 _DEFAULT_SPEC_GLOBS = ["*prd*.md", "*trd*.md", "*tsd*.md", "*requirements*",
                        "*.spec.md", "specs/*", "spec/*", "requirements/*"]
@@ -168,8 +169,10 @@ def record_review(root, story_id: str, verdict: str, reviewer: str, author: str,
     p = _resolve_story(root, story_id)
     fp = ac_fingerprint(p.read_text(encoding="utf-8")) if p and p.exists() else "000000000000"
     issues = f"ac-hash={fp}" + (f"; {notes}" if notes else "")
-    return critic.record_verdict(root, story_id, verdict, reviewer, author, issues,
+    path = critic.record_verdict(root, story_id, verdict, reviewer, author, issues,
                                  phase="plan-review")
+    telemetry.record_plan_review(root, story_id, verdict, reviewer, author)
+    return path
 
 
 def _has_independent_plan_approval(root, story_id: str, text: str) -> bool:

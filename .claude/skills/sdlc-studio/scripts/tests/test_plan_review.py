@@ -26,6 +26,7 @@ def _load(name, rel):
 
 pr = _load("plan_review", "plan_review.py")
 critic = _load("critic", "critic.py")
+telemetry = _load("telemetry", "telemetry.py")
 
 
 def _repo(root: Path, v3: bool = True, cfg_extra: str = "") -> Path:
@@ -266,6 +267,29 @@ class PhaseRecordTests(unittest.TestCase):
             critic.record_verdict(root, "US0002", "APPROVE", reviewer="qa", author="dev",
                                   phase="delivery")          # delivery, not plan-review
             self.assertFalse(pr.gate(root, "US0002")["ok"])
+
+
+class TelemetryTests(unittest.TestCase):
+    """US0091 AC3: a plan-review verdict emits a telemetry event (id, verdict, independence)."""
+
+    def test_record_review_emits_plan_review_event(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d), cfg_extra=_ISOLATE)
+            _story(root, sid="US0002", affects="docs/prd.md")
+            pr.record_review(root, "US0002", "APPROVE", "qa", "dev")
+            events = [e for e in telemetry.read_all(root) if e.get("event") == "plan-review"]
+            self.assertEqual(len(events), 1)
+            self.assertEqual(events[0]["verdict"], "APPROVE")
+            self.assertEqual(events[0]["id"], "US0002")
+            self.assertTrue(events[0]["independent"])
+
+    def test_self_review_event_marked_not_independent(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d), cfg_extra=_ISOLATE)
+            _story(root, sid="US0002", affects="docs/prd.md")
+            pr.record_review(root, "US0002", "APPROVE", "dev", "dev")
+            events = [e for e in telemetry.read_all(root) if e.get("event") == "plan-review"]
+            self.assertFalse(events[0]["independent"])
 
 
 if __name__ == "__main__":

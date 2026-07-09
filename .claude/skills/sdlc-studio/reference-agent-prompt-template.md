@@ -157,6 +157,32 @@ Four rules govern the framing, none negotiable:
 4. **Green stays the oracle.** The QA seat authors and runs the tests, but pass/fail is `verify_ac`
    plus the conformance gate, never the seat's judgement.
 
+## Plan-Review Charter {#plan-review-charter}
+
+Before a story with spec-derived ACs is implemented, an independent reviewer challenges its
+ACs against the source spec (the deterministic `plan_review` gate - see
+`reference-config.md#plan-review`). This closes the N=5 "bad plan propagates" failure: a
+planner mis-pinned a spec rule in the ACs and the delivery critic, whose oracle IS the ACs,
+approved a faithful build of the wrong plan.
+
+The reviewer is the **QA / tester seat's review render** (`persona_resolve.py resolve --seat
+qa --render review`), always a *separate instance from the plan's author* - the same
+independence floor as the delivery critic (`reviewer != author`, proven by the gate). The
+charter, appended after the contract like any seat render:
+
+1. **Re-read the cited source.** For each AC that references a spec/requirements document,
+   open the cited section and read the actual rule - do not trust the AC's paraphrase.
+2. **Challenge each spec-derived AC against its source.** Does the AC faithfully restate the
+   rule, or does it **contradict or invert** it? An AC that inverts the source (the R5-inversion
+   failure mode) is a **blocking finding**, not a style note.
+3. **Default mode is challenge-the-written-ACs** (cheaper, ADR-006-friendly). For a unit whose
+   routed difficulty band is **high or above**, escalate to **blind re-derivation**: derive the
+   constraining requirements from the source *without reading the ACs first*, then diff - it
+   catches an inversion that anchoring on the written AC would miss.
+4. **Record with `plan_review record`** (not the bare `critic record` form): it pins the verdict
+   to the exact ACs reviewed by fingerprint, so a later AC edit invalidates the approval. A
+   REJECT blocks implementation until the ACs are corrected and re-reviewed.
+
 ## Tier Routing {#tier-routing}
 
 With `routing.enabled`, each unit in the sprint plan carries a `tier` and

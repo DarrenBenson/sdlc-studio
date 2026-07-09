@@ -74,6 +74,19 @@ independent critic plus the gate - the check's output states this scoping.
    - `cr action` - decompose a CR into stories under an existing epic (a new one
      only if none fits, D-decomposition). Stories carry implementation-ready AC and
      a `Verify:` line. Plans (PL) are not created in agentic mode (D7).
+   - **Plan-review gate (schema v3, before implementation).** A story with spec-derived
+     ACs cannot enter implementation until an independent reviewer has challenged its ACs
+     against the source spec. The trigger is **deterministic** (`plan_review.py`; fires on a
+     spec-citation, `affects_files` threshold, or difficulty band - no model judgement in
+     fire/skip, TRD ADR-006), so it is not skipped under effort pressure. The reviewer is the
+     **QA seat's review render**, a separate instance from the plan's author, working to the
+     Plan-Review Charter (`reference-agent-prompt-template.md#plan-review-charter`); it records
+     with `plan_review record` (the verdict is pinned to the reviewed ACs by fingerprint, so a
+     later AC edit invalidates it). The gate is wired into `transition.py` at entry to In
+     Progress/Review/Done; the only sanctioned skip is a recorded `> **Plan-Review-Override:**`.
+     This closes the N=5 **R5-inversion** failure - a planner inverted a spec rule in the ACs
+     and the delivery critic (whose oracle IS the ACs) approved the wrong plan; a future fixture
+     rerun can measure whether the gate catches the seeded inversion.
    - `epic implement --agentic` - implement under **TDD** (failing test first), the
      default. Wraps the existing wave engine (`reference-project.md`); does not
      reinvent it. Each worker is **framed as an amigo seat**, not a generic agent:
