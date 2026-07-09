@@ -225,5 +225,28 @@ class JournalResumeTests(unittest.TestCase):
             self.assertTrue(res.get("resume"))
 
 
+class AliasSurvivesResumeTests(unittest.TestCase):
+    def test_resume_never_rewrites_alias_lines(self) -> None:
+        # Critic finding on the journal fix: phase 1 re-ran over renamed files on resume and
+        # rewrote the OLD id inside "> **Aliases:**" lines, making every alias self-referential
+        # and destroying the v2 identity the alias exists to preserve.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)
+            real = migrate_v3.reconcile.apply_type
+            migrate_v3.reconcile.apply_type = lambda *a, **k: (_ for _ in ()).throw(OSError("boom"))
+            try:
+                with self.assertRaises(OSError):
+                    migrate_v3.migrate(root, dry_run=False)  # crash AFTER aliases were written
+            finally:
+                migrate_v3.reconcile.apply_type = real
+            migrate_v3.migrate(root, dry_run=False)  # resume
+            for rel, old in (("stories", "US0001"), ("stories", "US0002"), ("epics", "EP0001")):
+                blobs = [q.read_text(encoding="utf-8")
+                         for q in (root / "sdlc-studio" / rel).glob("*.md")]
+                self.assertTrue(any(f"> **Aliases:** {old}" in b for b in blobs),
+                                f"{old}: original v2 alias must survive the resume")
+
+
 if __name__ == "__main__":
     unittest.main()

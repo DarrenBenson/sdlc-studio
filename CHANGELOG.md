@@ -253,7 +253,10 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
   consuming project. The map is now journalled to `.local/migrate-map.json` before the first
   write; plan and apply both detect the journal and resume from the SAVED map, a file present
   under neither name fails loud, a corrupt journal refuses to re-plan, and the journal comes off
-  only after the index rebuild and era stamp are durable.
+  only after the index rebuild and era stamp are durable. The closing full-diff critic REJECTED
+  the first cut with a reproduction (resume re-rewrote the old id inside `> **Aliases:**` lines,
+  self-referencing every alias); repaired test-first - alias lines are structurally exempt from
+  reference rewriting - and the same critic re-ran its reproductions to APPROVE.
 - **`migrate_v3 apply` stamps `schema_version: 3` itself (RV0007; BG0074).** The docstring said
   the stamp "should be set" manually and the upgrade walk had no flip step - so after a clean
   migration all numeric ids vanished, `allocate_number` restarted at 1, and the very next

@@ -109,13 +109,19 @@ def build_id_map(repo_root: Path | str) -> dict[str, dict]:
 
 def _rewrite_links(text: str, norm_to_new: dict[str, str]) -> str:
     """Replace every artefact-id reference in `text` with its migrated id (both the bare id and
-    inside `(...-file.md)` link targets), keyed by normalised id so `CR-0001`/`CR0001` both hit."""
+    inside `(...-file.md)` link targets), keyed by normalised id so `CR-0001`/`CR0001` both hit.
+    `> **Aliases:**` lines are never rewritten: the alias IS the old id, deliberately preserved -
+    rewriting it on a resumed apply made every alias self-referential and lost the v2 identity."""
     def repl(m: re.Match) -> str:
         new = norm_to_new.get(sdlc_md.norm_id(m.group(0)))
         return new if new else m.group(0)
     # ID_SEARCH_RE matches the id token wherever it appears - a bare reference, a heading, or
     # the id half of a link filename stem - so one substitution fixes them all.
-    return sdlc_md.ID_SEARCH_RE.sub(repl, text)
+    out = []
+    for line in text.splitlines(keepends=True):
+        out.append(line if line.startswith("> **Aliases:**")
+                   else sdlc_md.ID_SEARCH_RE.sub(repl, line))
+    return "".join(out)
 
 
 def _journal_path(root: Path) -> Path:
