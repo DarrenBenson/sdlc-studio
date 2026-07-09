@@ -299,6 +299,16 @@ record --id US.. --verdict approve --reviewer <seat> --author <plan-author>` - i
 reviewed ACs by fingerprint (its own log, so it never satisfies the delivery critique gate),
 so a later AC edit invalidates the approval. `check --id US00xx` reports the verdict.
 
+### `spec_guard.py`
+
+Spec-edit guard (schema v3 only, dormant on v2). A delivery must not silently falsify the
+source of truth. `spec_edits(root, changed_files)` reports which changed files are
+requirements/spec documents (config `review.spec_paths`); `check(root, changed, story_text)`
+adds whether any AC cites a spec change and flags an `untraced` edit (a spec doc edited with no
+citing AC) - the signal the critic charter treats as a blocking finding (US0092/CR0195). The
+traceability judgement stays with the critic; the pre-check only guarantees the edit is
+surfaced. `check --changed a,b,c --story <file>` on the CLI.
+
 ### `archive.py`
 
 Index archival for large boards. `archive --type <t> --release <r>` moves a

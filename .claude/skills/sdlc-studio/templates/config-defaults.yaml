@@ -47,6 +47,21 @@ review:
     - critical      # Must address before merge
     - important     # Should address
     - suggestion    # Consider addressing
+  # Requirements/spec documents (schema v3 only). A delivery diff that edits one of these
+  # without a citing AC is an UNTRACED spec edit - the critic charter treats it as a blocking
+  # finding (US0092/CR0195: falsifying the source of truth is the worst propagation of a bad
+  # plan). `scripts/spec_guard.py` surfaces the edit deterministically; the traceability
+  # judgement stays with the critic. A requested spec edit (an AC citing the spec path) is fine.
+  spec_paths:
+    - "*prd*.md"
+    - "*trd*.md"
+    - "*tsd*.md"
+    - "*spec*.md"      # foo.spec.md, SPEC.md, design-spec.md (root spec files too)
+    - "*requirements*"
+    - "*/specs/*"
+    - "specs/*"
+    - "*/spec/*"
+    - "spec/*"
 
 # Executable acceptance-criteria verification
 # When true, the Story Completion Cascade refuses to mark a story Done

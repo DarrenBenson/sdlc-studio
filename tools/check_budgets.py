@@ -39,7 +39,7 @@ ALLOWLIST = {
     "reference-outputs.md": 781,  # +RFC0012 index-archival + slice-read conventions (CR0041)
     "reference-decisions.md": 724,
     "reference-test-best-practices.md": 706,  # +assertion-integrity + mutation-check section (CR0131)
-    "reference-scripts.md": 633,  # +plan_review.py (EP0019); split is now overdue - see the split-catalogue follow-up
+    "reference-scripts.md": 643,  # +plan_review.py/spec_guard.py (EP0019); split is now overdue - see the split-catalogue follow-up
 }
 
 

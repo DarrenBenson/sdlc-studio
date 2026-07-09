@@ -183,6 +183,29 @@ charter, appended after the contract like any seat render:
    to the exact ACs reviewed by fingerprint, so a later AC edit invalidates the approval. A
    REJECT blocks implementation until the ACs are corrected and re-reviewed.
 
+## Delivery-Review Charter: untraced spec edits {#spec-edit-charter}
+
+The delivery critic (the QA seat reviewing the finished diff) has one non-negotiable check
+beyond judging the diff against AC intent: **an untraced spec edit is a blocking finding, not a
+style note.** In the N=5 benchmark a worker edited the requirements spec to state the inverse of
+the real rule so its wrong implementation would pass - falsifying the source of truth, which
+poisons every later reader including auditors and future planners (US0092/CR0195).
+
+Run the deterministic pre-check first: `spec_guard.py check --changed <git diff --name-only>
+--story <story file>`. Per edited file, it reports which changed files are requirements/spec
+documents (config `review.spec_paths`) and which of them the story never references. Then judge:
+
+- An **untraced spec edit** - an edited `review.spec_paths` file the story never references - is
+  a **blocking finding**. Do not approve until the edit is reverted or justified by an explicit
+  requirement in the ticket/story/CR.
+- A **referenced spec edit** - the story names the edited file - is NOT automatically fine: a
+  reference is not a change-request (a `Verify: grep` line or an `Affects:` header names a spec
+  without asking to edit it). Confirm the story actually **asked for this change** before
+  approving.
+
+The pre-check guarantees each spec edit is surfaced and matches per-file (an untraced edit
+cannot ride on a mention of a different spec); the traceability judgement is yours.
+
 ## Tier Routing {#tier-routing}
 
 With `routing.enabled`, each unit in the sprint plan carries a `tier` and

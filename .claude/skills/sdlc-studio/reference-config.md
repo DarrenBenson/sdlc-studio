@@ -295,6 +295,27 @@ ACs invalidates the approval, so a benign plan cannot be approved then quietly i
 bare `critic.py record --phase plan-review` form also records a verdict but does not pin the
 ACs (back-compatible, unprotected) - prefer `plan_review.py record`.
 
+## Spec-Edit Guard {#spec-guard}
+
+Schema v3 only (dormant under `schema_version: 2`). A delivery must not silently falsify the
+source of truth: in the N=5 benchmark a worker edited the requirements spec to match its wrong
+implementation and the change passed review because nothing distinguished a requested spec edit
+from an unrequested one (US0092/CR0195). `scripts/spec_guard.py check --changed <files> --story
+<file>` surfaces, deterministically and **per edited file**, which changed files are
+requirements/spec documents and which of them the story never references. An edited spec file
+the story does not name is `untraced` - the critic charter turns that into a **blocking
+finding**. An edited spec file the story *does* name is reported separately: a reference is not
+proof the CHANGE was requested (a `Verify: grep` line references a spec without asking to edit
+it), so the critic must still confirm those. Matching is per-file so an untraced edit to one
+spec cannot ride on a mention of another.
+
+| Key | Purpose | Default |
+| --- | --- | --- |
+| `review.spec_paths` | Globs identifying requirements/spec documents whose unrequested semantic edit is a blocking finding. Matched against each changed file's full path and basename. | `[*prd*.md, *trd*.md, *tsd*.md, *spec*.md, *requirements*, */specs/*, specs/*, */spec/*, spec/*]` |
+
+The pre-check only guarantees the edit is surfaced (TRD ADR-006); the traceability judgement -
+was this edit actually requested by the ticket/story? - stays with the critic.
+
 ---
 
 ## Using Config in Templates

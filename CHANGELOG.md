@@ -34,6 +34,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   re-derivation for high-difficulty units), an optional `> **Plan-Review:**` story-template slot,
   and a plan-review telemetry event (`telemetry.record_plan_review`, summarised as its own block
   so the gate's run count, verdict mix, and independent-review rate are measurable).
+- **Spec-edit guard - an untraced edit to a requirements/spec document is a blocking finding
+  (EP0019, CR0195; US0092, schema v3, opt-in).** New `scripts/spec_guard.py` closes the N=5 case
+  where a worker edited the workspace spec to match its wrong implementation and review missed it.
+  `check --changed <files> --story <file>` deterministically surfaces which changed files are
+  requirements/spec documents (config `review.spec_paths`) and whether any AC cites a spec change;
+  an `untraced` edit (a spec doc touched with no citing AC) is the signal the critic charter
+  (`reference-agent-prompt-template.md#spec-edit-charter`) treats as blocking. A requested spec
+  edit (an AC citing the path) stays legitimate; the traceability judgement stays with the critic.
+  Dormant under schema v2.
 - **Agentic triage - human sampling policy + triage-quality metrics (EP0014, CR0173; US0066,
   schema v3, opt-in).** New `scripts/triage_sampling.py`: `sample()` is a deterministic
   (seeded-hash) audit-sampling policy - every Critical, every raiser/triager severity
