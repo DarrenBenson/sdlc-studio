@@ -8,7 +8,10 @@ retained as an alias in the artefact's metadata (`> **Aliases:** BG0001`) and
 every intra-workspace link is rewritten to the new id, so nothing dangles.
 
 Deterministic, dry-run-first, and idempotent: an already-migrated file (its id is
-already a ULID) is skipped, so a second run is a no-op.
+already a ULID) is skipped, so a second run is a no-op. The id map is journalled to
+`sdlc-studio/.local/migrate-map.json` before the first write; an interrupted apply
+resumes from that SAVED map (never a fresh plan, which would cross-wire identities),
+and the journal comes off only when the migration is durable.
 
     migrate_v3.py plan            # preview the id map, write nothing
     migrate_v3.py apply           # perform the migration
@@ -115,6 +118,43 @@ def _rewrite_links(text: str, norm_to_new: dict[str, str]) -> str:
     return sdlc_md.ID_SEARCH_RE.sub(repl, text)
 
 
+def _journal_path(root: Path) -> Path:
+    """The persisted id-map journal for an in-flight apply. It exists from just before the
+    first write until the migration completes; its presence means a prior apply was
+    interrupted and the SAVED map (not a fresh plan) must drive the resume - re-planning
+    from now-changed mtimes/order silently cross-wires identities."""
+    return Path(root) / "sdlc-studio" / ".local" / "migrate-map.json"
+
+
+def _save_journal(root: Path, id_map: dict[str, dict]) -> None:
+    root = Path(root).resolve()
+    data = {old: {"new_id": e["new_id"], "type": e["type"],
+                  "old_rel": e["old_path"].resolve().relative_to(root).as_posix(),
+                  "new_rel": e["new_path"].resolve().relative_to(root).as_posix()}
+            for old, e in id_map.items()}
+    sdlc_md.atomic_write(_journal_path(root), json.dumps(data, indent=2))
+
+
+def _load_journal(root: Path) -> dict[str, dict] | None:
+    """The saved id map of an interrupted apply, rehydrated - or None when no apply is in
+    flight. A journal that exists but cannot be parsed fails LOUD: silently re-planning over
+    a half-renamed workspace is the data-loss path this journal exists to close."""
+    jp = _journal_path(root)
+    if not jp.exists():
+        return None
+    try:
+        data = json.loads(jp.read_text(encoding="utf-8"))
+    except ValueError as exc:
+        raise ValueError(
+            f"{jp} exists (an apply was interrupted) but cannot be parsed: {exc}. "
+            "Repair or remove it only after checking which files were already renamed - "
+            "do not re-run plan over a half-migrated workspace.") from exc
+    root = Path(root)
+    return {old: {"new_id": e["new_id"], "type": e["type"],
+                  "old_path": root / e["old_rel"], "new_path": root / e["new_rel"]}
+            for old, e in data.items()}
+
+
 def _stamp_schema_v3(root: Path) -> None:
     """Set `schema_version: 3` in the workspace config (create the file if absent, replace the
     line if present, preserve everything else). Apply must flip the era itself: left manual,
@@ -132,30 +172,45 @@ def _stamp_schema_v3(root: Path) -> None:
 
 
 def migrate(repo_root: Path | str, dry_run: bool = True) -> dict:
-    """Perform (or preview) the v2 -> v3 migration. Returns a summary dict."""
+    """Perform (or preview) the v2 -> v3 migration. Returns a summary dict. An interrupted
+    apply leaves a journal; the next run (plan or apply) resumes from the SAVED map."""
     root = Path(repo_root)
-    id_map = build_id_map(root)
+    journal = _load_journal(root)
+    resume = journal is not None
+    id_map = journal if resume else build_id_map(root)
     norm_to_new = {sdlc_md.norm_id(old): e["new_id"] for old, e in id_map.items()}
-    summary = {"migrated": len(id_map), "dry_run": dry_run,
+    summary = {"migrated": len(id_map), "dry_run": dry_run, "resume": resume,
                "map": {old: e["new_id"] for old, e in id_map.items()}}
     if dry_run:
         return summary
     if not id_map:
-        # nothing left to rename (fresh resume or already-migrated workspace): still make the
-        # era stamp true before returning, so a completed apply always leaves a v3 project
+        # nothing left to rename (already-migrated workspace): still make the era stamp true
+        # before returning, so a completed apply always leaves a v3 project
         _stamp_schema_v3(root)
         summary["schema_stamped"] = True
         return summary
+    # 0. Persist the id map BEFORE any write - a crash at any later point resumes from this
+    #    journal instead of re-planning over a half-rewritten workspace.
+    if not resume:
+        _save_journal(root, id_map)
     # 1. Rewrite every intra-workspace id reference (bodies, headings, link stems) FIRST, while
     #    files still have their old names - so a file's own heading/links become the new id.
+    #    (No-op on a resume whose rewrite already completed: the old ids are gone.)
     for md in (root / "sdlc-studio").rglob("*.md"):
         original = md.read_text(encoding="utf-8")
         rewritten = _rewrite_links(original, norm_to_new)
         if rewritten != original:
             sdlc_md.atomic_write(md, rewritten)
     # 2. Add the alias line (the OLD id, recorded AFTER the rewrite so it is not itself
-    #    rewritten) and rename each artefact file to its new id.
+    #    rewritten) and rename each artefact file to its new id. On a resume, a file already
+    #    renamed is done; a file missing from BOTH names is corruption - fail loud.
     for old, e in id_map.items():
+        if not e["old_path"].exists():
+            if e["new_path"].exists():
+                continue  # this entry completed before the interruption
+            raise FileNotFoundError(
+                f"partial migration: {old} is at neither {e['old_path'].name} nor "
+                f"{e['new_path'].name} - repair by hand before re-running apply")
         text = e["old_path"].read_text(encoding="utf-8")
         if sdlc_md.extract_field(text, "Aliases") is None:
             new_text = re.sub(r"(^> \*\*Created-by:\*\*.*$)",
@@ -171,6 +226,8 @@ def migrate(repo_root: Path | str, dry_run: bool = True) -> dict:
         reconcile.apply_type(type_, root)
     # 4. Flip the era: new artefacts must mint ULIDs from the very next filing.
     _stamp_schema_v3(root)
+    # 5. The migration is durable - only now does the journal come off.
+    _journal_path(root).unlink(missing_ok=True)
     summary["schema_stamped"] = True
     return summary
 
@@ -186,6 +243,8 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(res, indent=2))
     else:
         verb = "would migrate" if res["dry_run"] else "migrated"
+        if res.get("resume"):
+            verb = f"RESUMING an interrupted apply from the journal - {verb}"
         print(f"{verb} {res['migrated']} artefact(s) to schema v3")
         for old, new in list(res["map"].items())[:20]:
             print(f"  {old} -> {new}")

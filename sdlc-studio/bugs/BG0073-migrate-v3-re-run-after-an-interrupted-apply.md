@@ -1,9 +1,10 @@
 # BG0073: migrate_v3 re-run after an interrupted apply re-mints a different id map and silently cross-wires identities
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file
+> **Verification depth:** functional (red-then-green journal contract tests: crash-at-phase-3 resume completes, saved map beats a fresh plan, corrupt journal fails loud, plan reports pending resume)
 
 ## Summary
 

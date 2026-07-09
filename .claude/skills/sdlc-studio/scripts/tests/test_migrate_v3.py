@@ -159,5 +159,71 @@ class SchemaStampTests(unittest.TestCase):
             self.assertFalse((root / "sdlc-studio" / ".config.yaml").exists())
 
 
+class JournalResumeTests(unittest.TestCase):
+    """An interrupted apply must resume from its persisted id map - re-planning from
+    now-changed mtimes/order silently cross-wires identities."""
+
+    def test_apply_persists_then_clears_the_journal(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)
+            migrate_v3.migrate(root, dry_run=False)
+            self.assertFalse(migrate_v3._journal_path(root).exists())
+
+    def test_journal_survives_a_crash_and_resume_completes(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)
+            real = migrate_v3.reconcile.apply_type
+            migrate_v3.reconcile.apply_type = lambda *a, **k: (_ for _ in ()).throw(OSError("boom"))
+            try:
+                with self.assertRaises(OSError):
+                    migrate_v3.migrate(root, dry_run=False)  # dies at phase 3
+            finally:
+                migrate_v3.reconcile.apply_type = real
+            jp = migrate_v3._journal_path(root)
+            self.assertTrue(jp.exists(), "journal must survive the crash")
+            res = migrate_v3.migrate(root, dry_run=False)  # resume
+            self.assertTrue(res.get("resume"))
+            self.assertFalse(jp.exists())
+            cfg = (root / "sdlc-studio" / ".config.yaml").read_text(encoding="utf-8")
+            self.assertIn("schema_version: 3", cfg)
+
+    def test_resume_uses_the_saved_map_not_a_fresh_plan(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)
+            id_map = migrate_v3.build_id_map(root)
+            # handcraft DIFFERENT ids into the journal - if resume re-planned, these would lose
+            forced = {old: dict(e, new_id=f"{e['new_id'][:3]}TEST{i:04d}",
+                                new_path=e["old_path"].parent / f"{e['new_id'][:3]}TEST{i:04d}-x.md")
+                      for i, (old, e) in enumerate(sorted(id_map.items()))}
+            migrate_v3._save_journal(root, forced)
+            migrate_v3.migrate(root, dry_run=False)
+            stems = {q.stem for t_ in ("story", "epic")
+                     for q in (root / "sdlc-studio" / ("stories" if t_ == "story" else "epics")).glob("*.md")
+                     if q.name != "_index.md"}
+            for e in forced.values():
+                self.assertIn(e["new_path"].stem, stems)
+
+    def test_corrupt_journal_fails_loud(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)
+            jp = migrate_v3._journal_path(root)
+            jp.parent.mkdir(parents=True, exist_ok=True)
+            jp.write_text("{not json", encoding="utf-8")
+            with self.assertRaises(ValueError):
+                migrate_v3.migrate(root, dry_run=False)
+
+    def test_plan_reports_a_pending_resume(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)
+            migrate_v3._save_journal(root, migrate_v3.build_id_map(root))
+            res = migrate_v3.migrate(root, dry_run=True)
+            self.assertTrue(res.get("resume"))
+
+
 if __name__ == "__main__":
     unittest.main()

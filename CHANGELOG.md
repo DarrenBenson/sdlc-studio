@@ -232,6 +232,14 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
 
 ### Fixed
 
+- **`migrate_v3` journals its id map and resumes from it (RV0007; BG0073).** apply rewrote every
+  reference (phase 1) then renamed files (phase 2) with no persisted map - a crash between or
+  during the phases followed by a re-run re-derived a DIFFERENT assignment (phase-1 writes bump
+  mtimes; already-renamed files shift the counter), silently cross-wiring identities across a
+  consuming project. The map is now journalled to `.local/migrate-map.json` before the first
+  write; plan and apply both detect the journal and resume from the SAVED map, a file present
+  under neither name fails loud, a corrupt journal refuses to re-plan, and the journal comes off
+  only after the index rebuild and era stamp are durable.
 - **`migrate_v3 apply` stamps `schema_version: 3` itself (RV0007; BG0074).** The docstring said
   the stamp "should be set" manually and the upgrade walk had no flip step - so after a clean
   migration all numeric ids vanished, `allocate_number` restarted at 1, and the very next
