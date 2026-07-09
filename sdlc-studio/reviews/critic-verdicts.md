@@ -171,3 +171,4 @@
 | US0105 | APPROVE | Sam Eriksson | Dani Okafor | 2026-07-09 | none - override-only reader confirmed no existing project flips; init writes parseable schema\_version 3; era-gate test bites |
 | US0106 | APPROVE | Sam Eriksson | Dani Okafor | 2026-07-09 | none - walk only presents (never runs) the flip; no schema auto-flip; BG0070 rehearsal finding code-supported; neutral evidence |
 | US0107 | APPROVE | Sam Eriksson | Dani Okafor | 2026-07-09 | none - all five majors items present, additive to sections 1-7, coheres with US0106/BG0070, guards green |
+| BG0070 | APPROVE | Sam Eriksson | Dani Okafor | 2026-07-09 | REJECT (provenance tag in shipped docstring) -> stripped; added --relative for nested-git-root; ordering equivalence for un-renamed files verified; regression test bites |

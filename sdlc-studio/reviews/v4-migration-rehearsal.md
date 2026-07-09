@@ -25,18 +25,27 @@ schema-v2 projects with large artefact corpora.
    with deterministic, date-ordered ULID ids (e.g. `EP0001 -> EP-01KNAZ00`). Project B: did not
    complete (see finding below).
 
-## Findings filed
+## Findings filed (and resolved)
 
-- **[BG0070](../bugs/BG0070-migrate-v3-build-id-map-runs-a-git.md) (High).** `migrate_v3.build_id_map`
-  spawns a `git log --diff-filter=A --follow -1` subprocess **per artefact**. On Project A
-  (~1,700 files) the plan is very slow; on Project B (~1,945 files) `build_id_map` +
-  `migrate(dry_run)` did not complete within 150s. The v4 migration path is impractical on a
-  real large project until this is batched into a single git pass. **rc-relevant**: the rc-tag
-  checklist (US0109) should not read green until this is resolved.
+- **[BG0070](../bugs/BG0070-migrate-v3-build-id-map-runs-a-git.md) (High) - FIXED in this sprint.**
+  `migrate_v3.build_id_map` spawned a `git log --diff-filter=A --follow -1` subprocess **per
+  artefact**. First rehearsal: Project A (~1,700 files) very slow; Project B (~1,945 files)
+  `build_id_map` + `migrate(dry_run)` did not complete within 150s. Fixed by batching the
+  add-date lookup into a single `git log --reverse --diff-filter=A --name-only` pass.
+
+## Re-rehearsal (after the BG0070 fix)
+
+| Project | `build_id_map` | `migrate(dry_run)` |
+| --- | --- | --- |
+| Consuming project A | 0.2s (1,471 artefacts) | - |
+| Consuming project B | 0.3s (1,674 artefacts) | 0.3s, migrated=1,674 |
+
+From ">150s / did not complete" to sub-second on the same real projects.
 
 ## Outcome
 
-The directed walk itself is correct and presents identically on both real projects. The
-rehearsal did its job: it surfaced a concrete scale defect (BG0070) that a fixture project
-could not have shown. The migration is not yet "tested in anger green" - BG0070 must be fixed
-and the plan re-rehearsed before `v4.0.0-rc.1`.
+The directed walk is correct and presents identically on both real projects, and the migration
+now completes in well under a second on a ~1,700-artefact project. The rehearsal did its job: it
+surfaced a concrete scale defect (BG0070) a fixture could not have shown, which was fixed and
+re-rehearsed green in the same sprint. This is the "tested in anger" evidence for the rc-tag
+checklist (US0109).

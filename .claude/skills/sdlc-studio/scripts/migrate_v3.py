@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -30,18 +31,34 @@ from lib import sdlc_md  # noqa: E402
 import reconcile  # noqa: E402
 
 
-def _file_epoch_ms(path: Path) -> int:
-    """A stable creation-ordering timestamp (ms). Prefers the file's first git commit date
-    for determinism; falls back to the filesystem mtime when git is unavailable."""
-    import subprocess
+def _git_add_epochs(repo_root: Path) -> dict[str, int]:
+    """Map path (relative to `repo_root`) -> first-add commit epoch (ms) from ONE `git log` pass
+    over the tree - this replaces a `git log --follow` per artefact, which does not scale to a
+    large project. `--reverse` walks oldest-first so the first time a path appears as added wins;
+    `--relative` makes paths relative to `repo_root` even when it is a subdir of the git repo.
+    Empty on any git failure (callers fall back to mtime)."""
     try:
         out = subprocess.run(
-            ["git", "log", "--diff-filter=A", "--follow", "--format=%at", "-1", "--", str(path)],
-            cwd=str(path.parent), capture_output=True, text=True, timeout=10, check=False).stdout.strip()
-        if out:
-            return int(out.splitlines()[-1]) * 1000
-    except (OSError, ValueError, subprocess.SubprocessError):
-        pass
+            ["git", "log", "--diff-filter=A", "--reverse", "--format=@%at", "--name-only",
+             "--relative"],
+            cwd=str(repo_root), capture_output=True, text=True, timeout=120, check=False).stdout
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    epochs: dict[str, int] = {}
+    cur: int | None = None
+    for line in out.splitlines():
+        if line.startswith("@"):
+            try:
+                cur = int(line[1:]) * 1000
+            except ValueError:
+                cur = None
+        elif line and cur is not None:
+            epochs.setdefault(line, cur)  # first add wins (oldest, via --reverse)
+    return epochs
+
+
+def _mtime_ms(path: Path) -> int:
+    """Filesystem-mtime ordering key (ms), the fallback when git has no add-date for a file."""
     try:
         return int(path.stat().st_mtime * 1000)
     except OSError:
@@ -58,13 +75,19 @@ def build_id_map(repo_root: Path | str) -> dict[str, dict]:
     omitted (nothing to do). Order-preserving: ULIDs are minted with a timestamp derived from
     each file's date, in date order, so lexical id order equals creation order."""
     root = Path(repo_root)
+    add_epochs = _git_add_epochs(root)  # one git pass for every file's add-date
     entries = []
     for type_ in sdlc_md.ARTIFACT_TYPES:
         for p in sdlc_md.artifact_files(type_, root):
             rec = sdlc_md.extract_record_id(p.stem)
             if not rec or _is_v3(rec):
                 continue
-            entries.append((_file_epoch_ms(p), rec, type_, p))
+            try:
+                rel = p.resolve().relative_to(root.resolve()).as_posix()
+            except ValueError:
+                rel = None
+            ms = add_epochs.get(rel) if rel is not None else None
+            entries.append((ms if ms is not None else _mtime_ms(p), rec, type_, p))
     entries.sort(key=lambda e: (e[0], sdlc_md.norm_id(e[1])))  # stable creation order
     id_map: dict[str, dict] = {}
     for i, (ms, rec, type_, p) in enumerate(entries):

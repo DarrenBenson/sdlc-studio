@@ -56,6 +56,30 @@ def _fixture(root: Path) -> None:
         "| [US0002](US0002-logout.md) | logout | Draft |\n", encoding="utf-8")
 
 
+class GitBatchScaleTests(unittest.TestCase):
+    """BG0070: build_id_map must batch the creation-date lookup into ONE git pass, not a
+    git-log-per-artefact (which does not scale to a large project)."""
+
+    def test_build_id_map_makes_at_most_one_git_call(self) -> None:
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)  # 3 v2 artefacts (1 epic + 2 stories)
+            calls = []
+            real_run = migrate_v3.subprocess.run
+
+            def spy(cmd, *a, **k):
+                if cmd and cmd[0] == "git":
+                    calls.append(cmd)
+                return real_run(cmd, *a, **k)
+
+            with mock.patch.object(migrate_v3.subprocess, "run", side_effect=spy):
+                id_map = migrate_v3.build_id_map(root)
+            self.assertEqual(len(id_map), 3)                 # still maps every artefact
+            self.assertLessEqual(len(calls), 1,
+                                 f"expected <=1 git call, got {len(calls)} (per-file git = BG0070)")
+
+
 class MigrationTests(unittest.TestCase):
     def test_migration_preserves_order_aliases_and_links(self) -> None:
         with tempfile.TemporaryDirectory() as d:
