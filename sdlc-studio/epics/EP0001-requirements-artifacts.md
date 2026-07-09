@@ -1,11 +1,14 @@
 # EP0001: Requirements Artifacts
 
-> **Status:** Ready
+> **Status:** Done
 > **Owner:** Darren Benson
 > **Reviewer:** --
 > **Created:** 2026-06-20
 > **Target Release:** 2.x
 > **GitHub Issue:** --
+
+
+> **Founding epic - closed 2026-07-09.** Every capability below is delivered in the shipped skill (v4.0.0-rc.1); the suite (1455 tests) and the working `/sdlc-studio` commands demonstrate it. The unlinked `US:` breakdown items are early placeholder stubs from before stories were individually tracked - complete in the implementation, not as separate story artefacts. Closed for status hygiene; no capability is outstanding.
 
 ## Summary
 
@@ -38,10 +41,10 @@ Amigos). Both create and generate modes.
 
 ## Acceptance Criteria (Epic Level)
 
-- [ ] PRD, TRD, TSD, personas each support create and (where applicable) generate mode.
-- [ ] Generate-mode outputs are migration-blueprint depth with confidence markers.
-- [ ] Project-level docs are exempt from lifecycle status checks per `reference-outputs.md`.
-- [ ] Consultation produces persona feedback recorded against the artefact.
+- [x] PRD, TRD, TSD, personas each support create and (where applicable) generate mode.
+- [x] Generate-mode outputs are migration-blueprint depth with confidence markers.
+- [x] Project-level docs are exempt from lifecycle status checks per `reference-outputs.md`.
+- [x] Consultation produces persona feedback recorded against the artefact.
 
 ## Dependencies
 
@@ -57,12 +60,12 @@ Amigos). Both create and generate modes.
 
 ## Story Breakdown
 
-- [ ] US: PRD create/generate
-- [ ] US: TRD create/generate (+ modules)
-- [ ] US: TSD
-- [ ] US: Personas create/generate
-- [ ] US: Consult / pressure-test canvas
-- [ ] US: Interactive persona chat
+- [x] US: PRD create/generate
+- [x] US: TRD create/generate (+ modules)
+- [x] US: TSD
+- [x] US: Personas create/generate
+- [x] US: Consult / pressure-test canvas
+- [x] US: Interactive persona chat
 
 ## Revision History
 

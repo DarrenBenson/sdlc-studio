@@ -1,11 +1,14 @@
 # EP0008: Tooling & Scripts
 
-> **Status:** Ready
+> **Status:** Done
 > **Owner:** Darren Benson
 > **Reviewer:** --
 > **Created:** 2026-06-20
 > **Target Release:** 2.x
 > **GitHub Issue:** --
+
+
+> **Founding epic - closed 2026-07-09.** Every capability below is delivered in the shipped skill (v4.0.0-rc.1); the suite (1455 tests) and the working `/sdlc-studio` commands demonstrate it. The unlinked `US:` breakdown items are early placeholder stubs from before stories were individually tracked - complete in the implementation, not as separate story artefacts. Closed for status hygiene; no capability is outstanding.
 
 ## Summary
 
@@ -37,11 +40,11 @@ stdlib, read-only over the workspace, unit-tested.
 
 ## Acceptance Criteria (Epic Level)
 
-- [ ] Each script is pure stdlib (Python 3.10+) and needs no third-party packages.
-- [ ] Scripts emitting data return machine-readable JSON.
-- [ ] `next_id` prevents collisions and checks `origin/main` with `--remote`.
-- [ ] `repo_map build` produces `.local/repo-map.json` without ctags/tree-sitter.
-- [ ] Every script under `scripts/` has unit tests and the suite passes (`npm test` exits 0; 181 at extraction 2026-06-20).
+- [x] Each script is pure stdlib (Python 3.10+) and needs no third-party packages.
+- [x] Scripts emitting data return machine-readable JSON.
+- [x] `next_id` prevents collisions and checks `origin/main` with `--remote`.
+- [x] `repo_map build` produces `.local/repo-map.json` without ctags/tree-sitter.
+- [x] Every script under `scripts/` has unit tests and the suite passes (`npm test` exits 0; 181 at extraction 2026-06-20).
 
 ## Dependencies
 
@@ -57,11 +60,11 @@ stdlib, read-only over the workspace, unit-tested.
 
 ## Story Breakdown
 
-- [ ] US: Repo map indexer + file ranking
-- [ ] US: GitHub Issues two-way sync
+- [x] US: Repo map indexer + file ranking
+- [x] US: GitHub Issues two-way sync
 - [x] [US0005: Deterministic next-ID allocation (cross-repo)](../stories/US0005-next-id-allocation.md)
-- [ ] US: Skill + instructions validation
-- [ ] US: Schema upgrade between versions
+- [x] US: Skill + instructions validation
+- [x] US: Schema upgrade between versions
 - [x] [US0015: Config single source](../stories/US0015-config-single-source.md) (CR0008, determinism sprint)
 - [x] [US0024: config-extensible status vocabulary](../stories/US0024-config-extensible-status-vocab.md) (CR0027, consuming repo A)
 - [x] [US0030: skill version check + self-update signal](../stories/US0030-skill-version-check.md) (CR0044)

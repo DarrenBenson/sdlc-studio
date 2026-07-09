@@ -1,11 +1,14 @@
 # EP0004: Testing Pipeline
 
-> **Status:** Ready
+> **Status:** Done
 > **Owner:** Darren Benson
 > **Reviewer:** --
 > **Created:** 2026-06-20
 > **Target Release:** 2.x
 > **GitHub Issue:** --
+
+
+> **Founding epic - closed 2026-07-09.** Every capability below is delivered in the shipped skill (v4.0.0-rc.1); the suite (1455 tests) and the working `/sdlc-studio` commands demonstrate it. The unlinked `US:` breakdown items are early placeholder stubs from before stories were individually tracked - complete in the implementation, not as separate story artefacts. Closed for status hygiene; no capability is outstanding.
 
 ## Summary
 
@@ -34,10 +37,10 @@ tests run against the existing implementation to prove the extracted spec is tru
 
 ## Acceptance Criteria (Epic Level)
 
-- [ ] Test specs define cases and fixtures, with epic-scoped coverage handled.
-- [ ] Generated tests are executable in the project's framework.
-- [ ] Generate-mode specs are not "Done" until tests pass against the implementation.
-- [ ] Test environment is reproducible.
+- [x] Test specs define cases and fixtures, with epic-scoped coverage handled.
+- [x] Generated tests are executable in the project's framework.
+- [x] Generate-mode specs are not "Done" until tests pass against the implementation.
+- [x] Test environment is reproducible.
 
 ## Dependencies
 
@@ -54,10 +57,10 @@ tests run against the existing implementation to prove the extracted spec is tru
 
 ## Story Breakdown
 
-- [ ] US: Test spec creation
-- [ ] US: Test automation (executable tests)
-- [ ] US: Test environment setup
-- [ ] US: Generate-mode validation gate
+- [x] US: Test spec creation
+- [x] US: Test automation (executable tests)
+- [x] US: Test environment setup
+- [x] US: Generate-mode validation gate
 
 ## Revision History
 

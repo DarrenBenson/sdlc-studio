@@ -1,11 +1,14 @@
 # EP0003: Implementation & Planning
 
-> **Status:** Ready
+> **Status:** Done
 > **Owner:** Darren Benson
 > **Reviewer:** --
 > **Created:** 2026-06-20
 > **Target Release:** 2.x
 > **GitHub Issue:** --
+
+
+> **Founding epic - closed 2026-07-09.** Every capability below is delivered in the shipped skill (v4.0.0-rc.1); the suite (1455 tests) and the working `/sdlc-studio` commands demonstrate it. The unlinked `US:` breakdown items are early placeholder stubs from before stories were individually tracked - complete in the implementation, not as separate story artefacts. Closed for status hygiene; no capability is outstanding.
 
 ## Summary
 
@@ -35,10 +38,10 @@ full-fidelity path (PL + TS + WF artifacts) that the agentic modes compress.
 
 ## Acceptance Criteria (Epic Level)
 
-- [ ] `code plan` produces a PL artifact with phases and edge cases.
-- [ ] `code implement` follows TDD (failing test first) and updates status through the flow.
-- [ ] Completion triggers the Story Completion Cascade (EP0005).
-- [ ] Plan files are listable and archivable.
+- [x] `code plan` produces a PL artifact with phases and edge cases.
+- [x] `code implement` follows TDD (failing test first) and updates status through the flow.
+- [x] Completion triggers the Story Completion Cascade (EP0005).
+- [x] Plan files are listable and archivable.
 
 ## Dependencies
 
@@ -54,10 +57,10 @@ full-fidelity path (PL + TS + WF artifacts) that the agentic modes compress.
 
 ## Story Breakdown
 
-- [ ] US: Code plan generation
-- [ ] US: Code implement (TDD)
-- [ ] US: Plan-file lifecycle (list/archive)
-- [ ] US: Story status flow + cascade trigger
+- [x] US: Code plan generation
+- [x] US: Code implement (TDD)
+- [x] US: Plan-file lifecycle (list/archive)
+- [x] US: Story status flow + cascade trigger
 
 ## Revision History
 

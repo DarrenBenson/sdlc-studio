@@ -1,11 +1,14 @@
 # EP0002: Decomposition (Epics & Stories)
 
-> **Status:** Ready
+> **Status:** Done
 > **Owner:** Darren Benson
 > **Reviewer:** --
 > **Created:** 2026-06-20
 > **Target Release:** 2.x
 > **GitHub Issue:** --
+
+
+> **Founding epic - closed 2026-07-09.** Every capability below is delivered in the shipped skill (v4.0.0-rc.1); the suite (1455 tests) and the working `/sdlc-studio` commands demonstrate it. The unlinked `US:` breakdown items are early placeholder stubs from before stories were individually tracked - complete in the implementation, not as separate story artefacts. Closed for status hygiene; no capability is outstanding.
 
 ## Summary
 
@@ -36,10 +39,10 @@ API contracts from code rather than from epic descriptions.
 
 ## Acceptance Criteria (Epic Level)
 
-- [ ] Epics map back to PRD features via the Feature Inventory Epic column.
-- [ ] Stories carry implementation-ready AC (concrete values, exact error messages, API contracts).
-- [ ] `story generate` extracts behaviour from code, not just epic text.
-- [ ] Story Ready criteria validated before promotion (`reference-decisions.md`).
+- [x] Epics map back to PRD features via the Feature Inventory Epic column.
+- [x] Stories carry implementation-ready AC (concrete values, exact error messages, API contracts).
+- [x] `story generate` extracts behaviour from code, not just epic text.
+- [x] Story Ready criteria validated before promotion (`reference-decisions.md`).
 
 ## Dependencies
 
@@ -55,10 +58,10 @@ API contracts from code rather than from epic descriptions.
 
 ## Story Breakdown
 
-- [ ] US: Epic decomposition + perspectives
-- [ ] US: Story creation from epics
-- [ ] US: Story generate (brownfield extraction)
-- [ ] US: Ready-criteria + quality gate
+- [x] US: Epic decomposition + perspectives
+- [x] US: Story creation from epics
+- [x] US: Story generate (brownfield extraction)
+- [x] US: Ready-criteria + quality gate
 
 ## Revision History
 

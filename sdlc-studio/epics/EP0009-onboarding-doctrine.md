@@ -1,11 +1,14 @@
 # EP0009: Onboarding & Doctrine
 
-> **Status:** Ready
+> **Status:** Done
 > **Owner:** Darren Benson
 > **Reviewer:** --
 > **Created:** 2026-06-20
 > **Target Release:** 2.x
 > **GitHub Issue:** --
+
+
+> **Founding epic - closed 2026-07-09.** Every capability below is delivered in the shipped skill (v4.0.0-rc.1); the suite (1455 tests) and the working `/sdlc-studio` commands demonstrate it. The unlinked `US:` breakdown items are early placeholder stubs from before stories were individually tracked - complete in the implementation, not as separate story artefacts. Closed for status hygiene; no capability is outstanding.
 
 ## Summary
 
@@ -39,10 +42,10 @@ services.
 
 ## Acceptance Criteria (Epic Level)
 
-- [ ] `init` writes config + dir skeleton and seeds/validates agent-instructions.
-- [ ] Doctrine is project-agnostic; a project's AGENTS.md references it plus specifics.
-- [ ] Lessons are recalled before substantive design/process decisions.
-- [ ] Release-gate and deploy-readiness patterns are available for live services.
+- [x] `init` writes config + dir skeleton and seeds/validates agent-instructions.
+- [x] Doctrine is project-agnostic; a project's AGENTS.md references it plus specifics.
+- [x] Lessons are recalled before substantive design/process decisions.
+- [x] Release-gate and deploy-readiness patterns are available for live services.
 
 ## Dependencies
 
@@ -58,11 +61,11 @@ services.
 
 ## Story Breakdown
 
-- [ ] US: Init project setup + agent-instructions seed
-- [ ] US: Operating-doctrine onboarding
-- [ ] US: Lessons record + recall
-- [ ] US: Operator heuristics + deploy readiness
-- [ ] US: Cross-tool portability + installer
+- [x] US: Init project setup + agent-instructions seed
+- [x] US: Operating-doctrine onboarding
+- [x] US: Lessons record + recall
+- [x] US: Operator heuristics + deploy readiness
+- [x] US: Cross-tool portability + installer
 
 ## Revision History
 

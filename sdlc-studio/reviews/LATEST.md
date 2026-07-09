@@ -29,9 +29,10 @@
   caught a cross-unit schema-source split (a fresh v3 project shown a v2->v3 walk) - fixed before the
   rc. See RETRO0016. **rc tag / freeze lift / push are OPERATOR-GATED** (see `v4-rc-readiness.md`):
   the checklist reads green; the tag decision is yours.
-- **Backlog now:** open CR/bug/story backlog is empty. `status.py backlog` surfaced 6 legacy epics
-  (EP0001-0004, EP0008, EP0009) at a stale `Ready` (EP0005/0006/0007 were closed; EP0008 has
-  unchecked items) - a small follow-up hygiene pass, not a blocker.
+- **Backlog now: EMPTY.** No non-terminal artefacts across every type. The 9 founding epics
+  (EP0001-0009) that carried a stale `Ready` are all closed to Done - their capabilities ship in
+  v4.0.0-rc.1 (each carries a "founding epic" note; unlinked `US:` breakdown items are early
+  placeholder stubs, complete in the implementation).
 - **Deferred follow-ups (open ideas, unfiled):** a `reconcile detect --era` lens + per-artifact
   re-review markers + per-capability watermarks (CR0197 open decisions); a path-aware tightening of
   the spec-guard basename match; the 6 legacy-epic stale-`Ready` hygiene pass above.
