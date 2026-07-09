@@ -1,6 +1,10 @@
 # Project configuration for sdlc-studio (merged over templates/config-defaults.yaml).
 # Dotted keys are read by scripts via sdlc_md.project_override.
 
+# Pinned to schema v2 explicitly: this repo dogfoods the skill on the v2 schema and must
+# not be flipped by any change to the new-project default. v4-line work stays era-gated.
+schema_version: 2
+
 provenance:
   # Provenance landed mid-stream (CR0052/CR0057). Artifacts created before the tool
   # stamped were authored by hand; exempt them so `provenance check` judges only new work.

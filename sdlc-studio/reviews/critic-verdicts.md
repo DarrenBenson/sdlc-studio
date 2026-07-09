@@ -168,3 +168,4 @@
 | US0101 | APPROVE | Sam Eriksson | Dani Okafor | 2026-07-09 | 1 blocking (provenance tag in shipped comment; guard regex blind spot let it pass) - tag removed; security properties + bypass attempts verified |
 | US0104 | APPROVE | Sam Eriksson | Dani Okafor | 2026-07-09 | none - artifact\_files refactor verified byte-preserving (empty trust\_names); trust bypass collision-safe; read-path + drift + threshold mutation-tested |
 | US0103 | APPROVE | Sam Eriksson | Dani Okafor | 2026-07-09 | none - 3 hotspot decompositions traced behaviour-identical (dry-run triage guard + conformance documented element verified); debug/roll + cleanups mutation-tested |
+| US0105 | APPROVE | Sam Eriksson | Dani Okafor | 2026-07-09 | none - override-only reader confirmed no existing project flips; init writes parseable schema\_version 3; era-gate test bites |

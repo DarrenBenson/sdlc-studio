@@ -2,6 +2,12 @@
 # Place this file at: sdlc-studio/.config.yaml
 # Only specify values that differ from defaults (see reference-config.md)
 
+# Artefact schema version. New projects start on 3 (ULID identity + structured
+# authorship / evidence enforcement). An existing project stays on whatever it declares
+# (or 2 when it declares nothing) - it is never auto-flipped; upgrade explicitly via
+# `project upgrade`. See reference-config.md and reference-upgrade.md.
+schema_version: 3
+
 # Example overrides - uncomment and modify as needed:
 
 # profile: lite      # collapse the pipeline to PRD -> story -> implement (default: full)

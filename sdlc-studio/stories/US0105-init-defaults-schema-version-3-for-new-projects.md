@@ -1,6 +1,6 @@
 # US0105: init defaults schema_version 3 for new projects; code default stays 2 (existing projects untouched)
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0024
@@ -23,6 +23,7 @@ Delivers CR0198 item 1 (the default flip), scoped to be non-breaking for existin
 - **When** the generated `sdlc-studio/.config.yaml` is read
 - **Then** it declares `schema_version: 3`
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_init.py::SchemaDefaultTests
+- **Verified:** yes (2026-07-09)
 
 ### AC2: the code default is unchanged - an unpinned project still reads as v2
 
@@ -30,6 +31,7 @@ Delivers CR0198 item 1 (the default flip), scoped to be non-breaking for existin
 - **When** `sdlc_md.schema_version` / `is_schema_v3` are evaluated
 - **Then** they return 2 / False (existing and unpinned projects are never auto-flipped)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_init.py::CodeDefaultUnchangedTests
+- **Verified:** yes (2026-07-09)
 
 ### AC3: this dogfood repo pins schema_version 2 explicitly (safety belt)
 
@@ -37,6 +39,7 @@ Delivers CR0198 item 1 (the default flip), scoped to be non-breaking for existin
 - **When** it is inspected
 - **Then** it declares `schema_version: 2`, so no future default change silently flips it
 - **Verify:** grep schema_version sdlc-studio/.config.yaml
+- **Verified:** yes (2026-07-09)
 
 ### AC4: era-gate regression - a v2 fixture is behaviourally unchanged by the flip
 
@@ -44,6 +47,7 @@ Delivers CR0198 item 1 (the default flip), scoped to be non-breaking for existin
 - **When** the v3-gated paths (finding vocab, triage gate) are exercised
 - **Then** they stay dormant exactly as before this change
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_init.py::EraGateRegressionTests
+- **Verified:** yes (2026-07-09)
 
 ## Revision History
 
