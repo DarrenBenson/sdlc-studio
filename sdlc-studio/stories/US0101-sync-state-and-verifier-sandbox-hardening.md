@@ -1,6 +1,6 @@
 # US0101: Sync, state and verifier-sandbox hardening
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0022
@@ -23,6 +23,7 @@ Delivers CR0186 items 3-5.
 - **When** the target repo is public
 - **Then** the push scans for secrets and refuses (or defaults to dry-run / requires explicit confirmation) rather than publishing it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_github_sync.py::SecretScanTests
+- **Verified:** yes (2026-07-09)
 
 ### AC2: Local state stays out of git
 
@@ -30,6 +31,7 @@ Delivers CR0186 items 3-5.
 - **When** a run writes `version-check.json` or a skill-install `.local/`
 - **Then** both are gitignored / untracked so machine-local state never lands in a commit
 - **Verify:** shell git check-ignore -q sdlc-studio/.local/version-check.json || grep -qE "version-check.json|\.local/" .gitignore
+- **Verified:** yes (2026-07-09)
 
 ### AC3: The restricted http verb enforces scheme/host limits
 
@@ -37,6 +39,7 @@ Delivers CR0186 items 3-5.
 - **When** it targets a scheme/host outside the allow-list
 - **Then** it is refused; the mutation `--test` boundary is documented alongside
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RestrictedHttpTests
+- **Verified:** yes (2026-07-09)
 
 ## Revision History
 

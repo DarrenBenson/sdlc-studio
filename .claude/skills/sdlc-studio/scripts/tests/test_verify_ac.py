@@ -932,3 +932,59 @@ class SharedDiscoveryTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RestrictedHttpTests(unittest.TestCase):
+    """US0101/CR0186: the http verb has a scheme floor in every mode and a host allow-list
+    (restricted mode via SDLC_VERIFY_HTTP_HOSTS)."""
+
+    def setUp(self):
+        import os
+        self._prev = os.environ.get("SDLC_VERIFY_HTTP_HOSTS")
+
+    def tearDown(self):
+        import os
+        if self._prev is None:
+            os.environ.pop("SDLC_VERIFY_HTTP_HOSTS", None)
+        else:
+            os.environ["SDLC_VERIFY_HTTP_HOSTS"] = self._prev
+
+    def _set(self, val):
+        import os
+        if val is None:
+            os.environ.pop("SDLC_VERIFY_HTTP_HOSTS", None)
+        else:
+            os.environ["SDLC_VERIFY_HTTP_HOSTS"] = val
+
+    def test_scheme_floor_blocks_ssrf_scheme_even_unrestricted(self):
+        self._set(None)  # unrestricted
+        for bad in ("file:///etc/passwd", "gopher://x/1", "ftp://h/f"):
+            with self.assertRaises(ValueError):
+                verify_ac._build_http(f'GET {bad} -- .x == 1')
+
+    def test_unrestricted_allows_any_host(self):
+        self._set(None)
+        cmd = verify_ac._build_http('GET https://anything.example/health -- .ok == true')
+        self.assertIn("anything.example", cmd)
+
+    def test_restricted_refuses_offlist_host(self):
+        self._set("localhost,127.0.0.1")
+        with self.assertRaises(ValueError):
+            verify_ac._build_http('GET https://evil.example/x -- .x == 1')
+
+    def test_restricted_allows_onlist_host(self):
+        self._set("localhost,127.0.0.1")
+        cmd = verify_ac._build_http('GET http://localhost:8080/health -- .ok == true')
+        self.assertIn("localhost", cmd)
+
+    def test_restricted_refuses_relative_url(self):
+        self._set("localhost")
+        with self.assertRaises(ValueError):
+            verify_ac._build_http('GET /health -- .ok == true')
+
+    def test_run_verifier_reports_invalid_on_refused_target(self):
+        self._set("localhost")
+        r = verify_ac.run_verifier('http GET https://evil.example/x -- .x == 1',
+                                   timeout=5, cwd=Path("."))
+        self.assertFalse(r.ok)
+        self.assertEqual(r.kind, "invalid")

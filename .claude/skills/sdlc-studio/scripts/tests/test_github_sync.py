@@ -973,3 +973,126 @@ class RootFlagTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# Obviously-fake, pattern-shaped sentinels (never real secrets).
+_FAKE_AWS = "AKIA" + "IOSFODNN7EXAMPLE"                       # AKIA + 16
+_FAKE_GH = "ghp_" + "0123456789abcdefghijklmnopqrstuvwxyz01"  # ghp_ + 38
+
+CR_WITH_SECRET = f"""\
+# CR-0003: leaks a token
+
+> **Status:** Proposed
+> **Priority:** P2
+> **Type:** feature-request
+> **Date:** 2026-07-09
+
+## Summary
+
+Debug note: aws key {_FAKE_AWS} and token {_FAKE_GH} left in the body.
+"""
+
+
+class SecretScanTests(unittest.TestCase):
+    def test_detects_each_token_class(self) -> None:
+        f = github_sync.scan_secrets(f"x {_FAKE_AWS} y {_FAKE_GH} z")
+        kinds = {d["kind"] for d in f}
+        self.assertIn("aws-access-key", kinds)
+        self.assertIn("github-token", kinds)
+
+    def test_clean_text_is_empty(self) -> None:
+        self.assertEqual(github_sync.scan_secrets("just prose about rate limiting /login"), [])
+
+    def test_findings_are_redacted_never_raw(self) -> None:
+        f = github_sync.scan_secrets(_FAKE_AWS)
+        self.assertTrue(f)
+        for d in f:
+            self.assertNotIn(_FAKE_AWS, d["redacted"])   # never the raw token
+            self.assertIn("***", d["redacted"])
+            self.assertIn("len=", d["redacted"])
+
+    def test_repo_is_public_maps_visibility(self) -> None:
+        with mock.patch.object(github_sync, "gh",
+                               return_value=subprocess_result(0, "PUBLIC\n", "")):
+            self.assertTrue(github_sync.repo_is_public())
+        with mock.patch.object(github_sync, "gh",
+                               return_value=subprocess_result(0, "PRIVATE\n", "")):
+            self.assertFalse(github_sync.repo_is_public())
+        with mock.patch.object(github_sync, "gh",
+                               return_value=subprocess_result(1, "", "boom")):
+            self.assertIsNone(github_sync.repo_is_public())   # unknown on error
+
+
+class SecretPushTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.fixture = FixtureRepo()
+        (self.fixture.tmp / "sdlc-studio/change-requests/CR-0003-leak.md").write_text(
+            CR_WITH_SECRET)
+        self._cwd = Path.cwd()
+        import os
+        os.chdir(self.fixture.tmp)
+
+    def tearDown(self) -> None:
+        import os
+        os.chdir(self._cwd)
+        self.fixture.cleanup()
+
+    def _gh(self, visibility: str):
+        created = []
+        def fake_gh(*args, capture=True):
+            if args[:2] == ("repo", "view"):
+                return subprocess_result(0, f"{visibility}\n", "")
+            if args[:2] == ("issue", "create"):
+                created.append(args)
+                return subprocess_result(0, "https://github.com/x/y/issues/77\n", "")
+            if args[:2] == ("issue", "list"):
+                return subprocess_result(0, "[]", "")
+            return subprocess_result(0, "", "")
+        return fake_gh, created
+
+    def test_public_target_refuses_secret_record(self) -> None:
+        fake_gh, created = self._gh("PUBLIC")
+        with mock.patch.object(github_sync, "gh", side_effect=fake_gh):
+            buf = io.StringIO()
+            with contextlib.redirect_stderr(buf):
+                rc = github_sync.main(["push", "--type", "cr"])
+        self.assertEqual(rc, 1)                                   # non-zero: something blocked
+        self.assertIn("REFUSED CR-0003", buf.getvalue())
+        self.assertNotIn(_FAKE_AWS, buf.getvalue())               # redacted in the message
+        # no issue was created for the leaking CR
+        self.assertFalse(any(("issue", "create") == a[:2] for a in created if "CR-0003" in str(a))
+                         or any("CR-0003" in str(a) for a in created))
+
+    def test_unknown_visibility_also_refuses(self) -> None:
+        fake_gh, _ = self._gh("")                                 # gh returns blank -> None
+        with mock.patch.object(github_sync, "gh", side_effect=fake_gh):
+            buf = io.StringIO()
+            with contextlib.redirect_stderr(buf):
+                rc = github_sync.main(["push", "--type", "cr"])
+        self.assertEqual(rc, 1)
+        self.assertIn("unknown-visibility", buf.getvalue())
+
+    def test_private_target_allows_secret_record(self) -> None:
+        fake_gh, created = self._gh("PRIVATE")
+        with mock.patch.object(github_sync, "gh", side_effect=fake_gh):
+            rc = github_sync.main(["push", "--type", "cr"])
+        self.assertEqual(rc, 0)                                   # private is safe
+        self.assertTrue(any(a[:2] == ("issue", "create") for a in created))
+
+    def test_allow_secrets_override_skips_scan(self) -> None:
+        all_calls = []
+
+        def fake_gh(*args, capture=True):
+            all_calls.append(args)
+            if args[:2] == ("issue", "create"):
+                return subprocess_result(0, "https://github.com/x/y/issues/77\n", "")
+            if args[:2] == ("issue", "list"):
+                return subprocess_result(0, "[]", "")
+            return subprocess_result(0, "PUBLIC\n", "")
+
+        with mock.patch.object(github_sync, "gh", side_effect=fake_gh):
+            rc = github_sync.main(["push", "--type", "cr", "--allow-secrets"])
+        self.assertEqual(rc, 0)
+        # --allow-secrets skips the scan, so visibility is never consulted
+        self.assertFalse(any(a[:2] == ("repo", "view") for a in all_calls))
+        self.assertTrue(any(a[:2] == ("issue", "create") for a in all_calls))

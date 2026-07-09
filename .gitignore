@@ -89,3 +89,5 @@ sdlc-studio/.local/
 # Safety net: any nested .local/ (e.g. a test fixture's generated output) is runtime
 # state, never committed - keeps a broad `git add -A` from shipping machine state.
 **/.local/
+# Named for clarity (already under .local/): the version-check cache is per-machine.
+version-check.json

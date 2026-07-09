@@ -329,6 +329,63 @@ def set_github_issue_field(path: Path, number: int) -> None:
 
 
 # -----------------------------------------------------------------------------
+# Secret scanning: a push publishes a record's body to an issue; a secret-shaped
+# token in that body must never be leaked to a public repo.
+# -----------------------------------------------------------------------------
+
+# High-signal secret shapes. Each is a (name, compiled-pattern) pair; a match is
+# reported redacted (prefix + length), never in full.
+_SECRET_PATTERNS = [
+    ("github-token", re.compile(r"\bgh[pousr]_[A-Za-z0-9]{36,}\b")),
+    ("github-pat", re.compile(r"\bgithub_pat_[A-Za-z0-9_]{22,}\b")),
+    ("aws-access-key", re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
+    ("ai-api-key", re.compile(r"\bsk-(?:ant-)?[A-Za-z0-9_-]{20,}\b")),
+    ("slack-token", re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b")),
+    ("private-key-block", re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----")),
+    ("credential-assignment", re.compile(
+        r"(?i)\b(?:password|passwd|secret|token|api[_-]?key)\b\s*[:=]\s*"
+        r"['\"]?[A-Za-z0-9/+=_-]{12,}")),
+]
+
+
+def _redact(match: str) -> str:
+    """A finding shown as prefix + length, never the raw secret."""
+    prefix = match[:4]
+    return f"{prefix}***(len={len(match)})"
+
+
+def scan_secrets(text: str) -> list[dict]:
+    """Return one finding dict {kind, redacted} per secret-shaped token in `text`.
+    Deduplicated by (kind, redacted); empty list when the text looks clean."""
+    findings: list[dict] = []
+    seen: set[tuple[str, str]] = set()
+    for kind, pat in _SECRET_PATTERNS:
+        for m in pat.findall(text):
+            token = m if isinstance(m, str) else m[0]
+            red = _redact(token)
+            key = (kind, red)
+            if key not in seen:
+                seen.add(key)
+                findings.append({"kind": kind, "redacted": red})
+    return findings
+
+
+def repo_is_public() -> bool | None:
+    """True if the current repo's GitHub visibility is PUBLIC, False if PRIVATE/INTERNAL,
+    None when it cannot be determined (gh error / absent). Callers treat None as unsafe
+    (assume public) so an unknown target never gets a secret pushed by default."""
+    result = gh("repo", "view", "--json", "visibility", "-q", ".visibility")
+    if result.returncode != 0:
+        return None
+    vis = (result.stdout or "").strip().upper()
+    if vis == "PUBLIC":
+        return True
+    if vis in ("PRIVATE", "INTERNAL"):
+        return False
+    return None
+
+
+# -----------------------------------------------------------------------------
 # Commands
 # -----------------------------------------------------------------------------
 
@@ -340,6 +397,17 @@ def cmd_push(args: argparse.Namespace) -> int:
     mappings = state.get("mappings", {})
     created = 0
     updated = 0
+    blocked = 0
+    allow_secrets = getattr(args, "allow_secrets", False)
+    # Visibility is resolved lazily and cached: only a record that actually carries a
+    # secret triggers the `gh repo view` call, so a clean push (or a dry run) makes no
+    # extra network call. Unknown (None) is treated as unsafe (assume public).
+    _vis_cache: list = []  # empty = unresolved; [value] = cached
+
+    def _target_public():
+        if not _vis_cache:
+            _vis_cache.append(repo_is_public())
+        return _vis_cache[0]
 
     for type_ in types:
         # Fetch the type's issues at most once per type (lazily, only if a
@@ -349,6 +417,23 @@ def cmd_push(args: argparse.Namespace) -> int:
             if rec.github_issue is None:
                 title = f"[{rec.rec_id}] {rec.title}"
                 labels = rec.labels()
+                # Never publish a secret-shaped token to a public (or unknown-visibility)
+                # target. Only a confirmed-private repo, or an explicit --allow-secrets,
+                # lets a flagged record through.
+                if not allow_secrets:
+                    findings = scan_secrets(f"{title}\n{rec.body}")
+                    public = _target_public() if findings else False
+                    if findings and public is not False:
+                        kinds = ", ".join(f"{f['kind']}={f['redacted']}" for f in findings)
+                        where = "public" if public else "unknown-visibility"
+                        print(
+                            f"REFUSED {rec.rec_id}: {len(findings)} secret-shaped token(s) "
+                            f"would be pushed to a {where} repo [{kinds}] - remove the secret "
+                            f"or pass --allow-secrets for a confirmed-private target",
+                            file=sys.stderr,
+                        )
+                        blocked += 1
+                        continue
                 if args.dry_run:
                     print(f"[DRY] would create issue for {rec.rec_id}: {title}")
                     continue
@@ -419,8 +504,8 @@ def cmd_push(args: argparse.Namespace) -> int:
         state["mappings"] = mappings
         save_state(state, _state_path(args.root))
 
-    print(f"push: created={created} updated={updated}")
-    return 0
+    print(f"push: created={created} updated={updated} blocked={blocked}")
+    return 1 if blocked else 0
 
 
 def cmd_pull(args: argparse.Namespace) -> int:
@@ -579,6 +664,9 @@ def build_parser() -> argparse.ArgumentParser:
     push = sub.add_parser("push", help="Create or update issues from local files")
     push.add_argument("--type", default="cr", choices=["cr", "story", "epic", "all"])
     push.add_argument("--dry-run", action="store_true")
+    push.add_argument("--allow-secrets", action="store_true", dest="allow_secrets",
+                      help="Push even when a record body carries a secret-shaped token "
+                           "(only for a confirmed-private target); default refuses")
     push.add_argument("--root", default=".", help="Repo root (default: .)")
     push.set_defaults(func=cmd_push)
 

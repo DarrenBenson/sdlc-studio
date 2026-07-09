@@ -165,3 +165,4 @@
 | US0096 | APPROVE | qa-seat-critic | claude | 2026-07-09 | APPROVE: documentation-only split, nothing lost. 54 old entries == 54 new union entries (0 missing/added/dup), each script in exactly one page; doc-coverage floor intact (mutation-tested - a removed entry still hard-fails); budgets pass with the 643 allowlist removed (all pages <600); links resolve; content byte-fidelity preserved. markdownlint gate clean on the new files. |
 | US0102 | APPROVE | independent-critic | engineering-seat | 2026-07-09 | none - behaviour-preservation + test-bite mutation-verified |
 | US0100 | APPROVE | Sam Eriksson | Dani Okafor | 2026-07-09 | 1 blocking (bash-4 ${var,,} breaks macOS bash 3.2) - fixed with tr; SHAs verified against live tags |
+| US0101 | APPROVE | Sam Eriksson | Dani Okafor | 2026-07-09 | 1 blocking (provenance tag in shipped comment; guard regex blind spot let it pass) - tag removed; security properties + bypass attempts verified |

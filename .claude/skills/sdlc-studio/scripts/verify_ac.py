@@ -20,6 +20,17 @@ Verifier DSL (one expression per AC):
 An unrecognised expression is an invalid verifier (exit 2), not a silent shell run;
 prefix `shell` to run one, or pass --allow-shell-fallback for the legacy behaviour.
 Shell-backed verbs are gated by story provenance and --no-shell (the trust boundary).
+
+Trust boundary (verifiers run against possibly-untrusted content):
+  - Shell-backed verbs (shell/eval/http/fallback) run only when `allow_shell` is set;
+    story provenance `external` disables them unless `--allow-external` is passed.
+  - The `http` verb has a scheme floor enforced in every mode - only http/https, so a
+    `file://`/`ftp://`/`gopher://` SSRF target is refused. Setting SDLC_VERIFY_HTTP_HOSTS
+    (comma-separated) turns on restricted mode: a target host outside the allow-list is
+    refused (and a relative URL, having no host, is refused).
+  - The complementary mutation gate's `--test` command runs under the SAME boundary: it is
+    an operator-authored shell command, trusted exactly as a `shell` Verify line is (see
+    scripts/mutation.py).
 """
 from __future__ import annotations
 
@@ -35,6 +46,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable
+from urllib.parse import urlparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
@@ -332,6 +344,36 @@ def _build_command(expr: str, allow_fallback: bool = False) -> tuple[str, list[s
         f"grep/http/eval) or prefix an explicit `shell` to run it as a shell command")
 
 
+_HTTP_SCHEMES = ("http", "https")
+
+
+def _restricted_http_hosts() -> tuple[str, ...]:
+    """Host allow-list for the `http` verb. Non-empty turns on restricted mode: a target
+    host outside the list is refused. Sourced from SDLC_VERIFY_HTTP_HOSTS (comma-separated);
+    empty by default (unrestricted, subject only to the scheme floor)."""
+    raw = os.environ.get("SDLC_VERIFY_HTTP_HOSTS", "")
+    return tuple(h.strip().lower() for h in raw.split(",") if h.strip())
+
+
+def _check_http_target(url: str) -> None:
+    """Safety floor for the `http` verb, enforced before a curl command is built:
+    only http/https schemes (blocks file://, ftp://, gopher:// SSRF vectors), and - when a
+    host allow-list is configured (restricted mode) - only allow-listed hosts. Raises
+    ValueError (an invalid verifier, exit 2) when the target is refused."""
+    parsed = urlparse(url)
+    scheme = parsed.scheme.lower()
+    if scheme and scheme not in _HTTP_SCHEMES:
+        raise ValueError(f"http: scheme {scheme!r} is not permitted (only http/https)")
+    allowed = _restricted_http_hosts()
+    if allowed:
+        if scheme == "":
+            raise ValueError("http: restricted mode requires an absolute http(s) URL")
+        host = (parsed.hostname or "").lower()
+        if host not in allowed:
+            raise ValueError(
+                f"http: host {host!r} is not in the allow-list {list(allowed)} (restricted mode)")
+
+
 def _build_http(tail: str) -> str:
     """Translate `http GET /url -- .field == "x"` into a curl+jq shell pipe."""
     # Split on " -- " to separate URL from jq assertion
@@ -343,6 +385,7 @@ def _build_http(tail: str) -> str:
         raise ValueError("http: expected `METHOD URL`")
     method, url = url_parts
     method = method.upper()
+    _check_http_target(url)
     # Escape single quotes in the jq expression
     jq_expr_escaped = jq_expr.replace("'", "'\\''")
     curl = f"curl -sf -X {shlex.quote(method)} {shlex.quote(url)}"

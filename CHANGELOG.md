@@ -16,6 +16,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Sync, state and verifier-sandbox hardening (EP0022, CR0186; US0101).** `github_sync push`
+  now scans each record's title+body for secret-shaped tokens (GitHub tokens/PATs, AWS keys,
+  AI API keys, Slack tokens, private-key blocks, credential assignments) and refuses to publish
+  a flagged record to a public - or unknown-visibility - repo; findings are reported redacted
+  (prefix + length, never the raw token), visibility is resolved lazily via `gh repo view` only
+  when a secret is found, and `--allow-secrets` overrides for a confirmed-private target. The
+  `http` verifier verb gains a scheme floor enforced in every mode (only http/https, blocking
+  `file://`/`ftp://`/`gopher://` SSRF vectors) plus an opt-in host allow-list (restricted mode
+  via `SDLC_VERIFY_HTTP_HOSTS`); the shared trust boundary with the mutation gate's `--test`
+  command is documented in the `verify_ac` module. `version-check.json` and any nested `.local/`
+  are named in `.gitignore` so machine-local state cannot land in a commit.
 - **Supply-chain integrity: Actions pinned to commit SHAs + installer checksum verification
   (EP0022, CR0186; US0100).** Every GitHub Action in `.github/workflows/` is now pinned to a
   full 40-hex commit SHA (version in a trailing comment) so a moved tag cannot inject code into
