@@ -1,6 +1,6 @@
 # CR-0187: Code-quality debt (review 2026-07-06): shared-layer bypasses, duplication, complexity, diagnostics
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic (v4 breakdown):** [EP0018](../epics/EP0018-tooling-hardening-and-review-debt.md)

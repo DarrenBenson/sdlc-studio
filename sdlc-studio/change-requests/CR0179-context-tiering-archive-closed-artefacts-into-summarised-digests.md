@@ -1,6 +1,6 @@
 # CR-0179: Context tiering: archive closed artefacts into summarised digests to bound token cost
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic (v4 breakdown):** [EP0018](../epics/EP0018-tooling-hardening-and-review-debt.md)

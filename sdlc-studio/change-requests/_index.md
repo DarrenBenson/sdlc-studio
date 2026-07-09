@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 6 |
+| Proposed | 3 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 191 |
+| Complete | 194 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 4 |
@@ -39,15 +39,15 @@
 | [CR-0176](CR0176-lite-profile-collapse-the-pipeline-to-prd-story.md) | Lite profile: collapse the pipeline to PRD, story, implement for small repos | Complete | Medium | Enhancement | 2026-07-06 | -- |
 | [CR-0177](CR0177-readme-and-positioning-refresh-brownfield-generation-and-reconcile.md) | README and positioning refresh: brownfield generation and reconcile as proof of the anti-vibe-coding philosophy | Complete | Medium | Improvement | 2026-07-06 | -- |
 | [CR-0178](CR0178-benchmark-harness-implementation-fixed-task-set-tokens-wall.md) | Benchmark harness implementation: fixed task set, tokens, wall time, defect escapes, rework rate | Complete | Medium | Enhancement | 2026-07-06 | -- |
-| [CR-0179](CR0179-context-tiering-archive-closed-artefacts-into-summarised-digests.md) | Context tiering: archive closed artefacts into summarised digests to bound token cost | Proposed | Low | Enhancement | 2026-07-06 | -- |
+| [CR-0179](CR0179-context-tiering-archive-closed-artefacts-into-summarised-digests.md) | Context tiering: archive closed artefacts into summarised digests to bound token cost | Complete | Low | Enhancement | 2026-07-06 | -- |
 | [CR-0180](CR0180-harmonise-config-failure-regimes-silent-project-override-vs.md) | Harmonise config failure regimes: silent project_override vs fail-loud cutoff vs PyYAML crash | Complete | Medium | Improvement | 2026-07-06 | -- |
 | [CR-0181](CR0181-route-github-sync-and-verify-ac-through-the.md) | Route github_sync and verify_ac through the shared discovery layer; unify the root-flag grammar | Complete | Medium | Improvement | 2026-07-06 | -- |
 | [CR-0182](CR0182-consolidate-the-two-archive-implementations-on-sdlc-md.md) | Consolidate the two archive implementations on sdlc_md.iter_tables | Complete | Medium | Improvement | 2026-07-06 | -- |
 | [CR-0183](CR0183-passive-concurrency-safety-atomic-index-writes-and-an.md) | Passive concurrency safety: atomic index writes and an advisory allocation lock | Complete | Medium | Improvement | 2026-07-06 | -- |
 | [CR-0184](CR0184-refresh-the-trd-the-v2-0-0-blueprint.md) | Refresh the TRD: the v2.0.0 blueprint misdescribes the v3.5.0 script layer, write contract and state files | Complete | Medium | Improvement | 2026-07-06 | -- |
 | [CR-0185](CR0185-add-a-cross-script-invariant-test-tier-over.md) | Add a cross-script invariant test tier over the cascade seams | Complete | Medium | Enhancement | 2026-07-06 | -- |
-| [CR-0186](CR0186-security-hardening-debt-review-2026-07-06-pinning.md) | Security hardening debt (review 2026-07-06): pinning, installer integrity, sync redaction, state hygiene | Proposed | Low | Improvement | 2026-07-06 | -- |
-| [CR-0187](CR0187-code-quality-debt-review-2026-07-06-shared.md) | Code-quality debt (review 2026-07-06): shared-layer bypasses, duplication, complexity, diagnostics | Proposed | Low | Improvement | 2026-07-06 | -- |
+| [CR-0186](CR0186-security-hardening-debt-review-2026-07-06-pinning.md) | Security hardening debt (review 2026-07-06): pinning, installer integrity, sync redaction, state hygiene | Complete | Low | Improvement | 2026-07-06 | -- |
+| [CR-0187](CR0187-code-quality-debt-review-2026-07-06-shared.md) | Code-quality debt (review 2026-07-06): shared-layer bypasses, duplication, complexity, diagnostics | Complete | Low | Improvement | 2026-07-06 | -- |
 | [CR-0188](CR0188-fetch-and-check-origin-drift-before-a-sprint.md) | Fetch and check origin drift before a sprint batch or artifact-id allocation | Complete | P2 | retrospective | 2026-07-08 | -- |
 | [CR-0189](CR0189-routing-foundation-route-py-difficulty-estimator-tier-map.md) | Routing foundation: route.py difficulty estimator, tier map, config schema | Complete | P2 | feature-request | 2026-07-08 | -- |
 | [CR-0190](CR0190-sprint-plan-enrichment-difficulty-tier-and-model-per.md) | Sprint plan enrichment: difficulty, tier and model per unit | Complete | P2 | feature-request | 2026-07-08 | -- |

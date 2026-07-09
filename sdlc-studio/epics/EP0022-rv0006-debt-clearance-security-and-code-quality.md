@@ -1,6 +1,6 @@
 # EP0022: RV0006 debt clearance - security and code-quality
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 

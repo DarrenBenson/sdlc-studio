@@ -1,6 +1,6 @@
 # EP0023: Context tiering - summarised digests of closed artefacts
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 

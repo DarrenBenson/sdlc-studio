@@ -571,7 +571,7 @@ def artifact_files(type_: str, repo_root: Path) -> list[Path]:
 
     Excludes `_index.md`, declared companion suffixes (default
     `*-consultations.md`), and any file carrying no artifact header at all
-    (no `> **Status:**` line and no `# <ID>:` title) — a companion/note filed
+    (no `> **Status:**` line and no `# <ID>:` title) - a companion/note filed
     under an artifact's ID (e.g. `EP0025-...-decisions.md`) would otherwise
     double-count the ID and pollute status tallies with a status-less
     namesake. A file with an `# <ID>:` title but no Status line is still an
