@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Majors-only section added to the release-gate checklist (EP0024, CR0198; US0107).** `templates/workflows/release-gate.md` gains a section 8 for breaking releases: breaking-change inventory in the CHANGELOG, migration rehearsed on two real projects with evidence linked, eval scenarios re-run for the new major, docs saying the new major, and rc-first-from-a-green-gate-with-a-soak. The rc-tag decision becomes a checklist read.
 - **v3 to v4 upgrade walk presented as a directed sequence + rehearsed on two real projects (EP0024, CR0198; US0106).** `project upgrade` now presents the v2 to v3 migration as an ordered walk (capability delta -> `migrate_v3` dry-run -> `migrate_v3` apply -> re-baseline) via a new `migration_walk`, in both text and `--format json`; the schema flip stays the deliberate `migrate_v3` id migration, never an auto-apply. The walk was rehearsed dry-run against two real consuming projects (evidence in `sdlc-studio/reviews/v4-migration-rehearsal.md`, names redacted); the rehearsal surfaced BG0070 (a per-artefact `git log --follow` makes migration impractical on a large project) - rc-relevant.
 ### Changed
 

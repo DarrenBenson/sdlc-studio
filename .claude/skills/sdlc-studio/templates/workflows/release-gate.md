@@ -84,6 +84,29 @@ If the tag was cut and the artefact was published but the deploy never reached p
 
 This preserves audit trail cleanly. Anyone looking at the git history later sees exactly what happened; anyone consulting the registry sees that `vX.Y.N` exists but was superseded with a reason.
 
+## 8. Majors only (a breaking release: `vN.0.0`)
+
+Run this section IN ADDITION to sections 1-7 when the leading version number changes. A major
+carries breaking changes and a migration; a patch does not. Skipping these is how a breaking
+release ships with no way for an existing project to move across it.
+
+- [ ] **Breaking-change inventory named in the CHANGELOG.** Every breaking change is listed
+  explicitly under the major's heading (not folded into "various improvements"), each with the
+  before/after and the migration action a consumer must take.
+- [ ] **Migration rehearsed on at least two real projects, evidence linked.** The upgrade path was
+  run dry-run end to end against two real consuming projects (not just a fixture), findings filed
+  as bugs/CRs, and the rehearsal record is linked from the release notes. A migration only a
+  fixture has seen is untested. Any rc-blocking finding must be fixed and re-rehearsed first.
+- [ ] **Eval scenarios re-run for the new major.** The `evals/` scenarios pass against the major's
+  behaviour, not the prior major's; record the run in the release notes.
+- [ ] **README / docs say the new major in the right places.** The version string, the "current
+  major" statements, and any migration guide all name `vN`; no doc still describes the superseded
+  regime as current.
+- [ ] **rc first, from a green gate, with a soak.** Cut `vN.0.0-rc.1` from a fully green gate
+  (sections 1-7 plus the above), soak it for the release's stated window, and only then cut the
+  final `vN.0.0`. The rc-tag decision is a checklist read: green gate, migration rehearsed, backlog
+  complete, open-bug count 0 - not a judgement call.
+
 ---
 
 ## Sign-off
@@ -113,3 +136,4 @@ Each section above addresses a class of incident that has been observed in real 
 | 5. Memory refresh | Operator memory notes that were correct pre-change and misleading post-change |
 | 6. Post-tag smoke | Health endpoints green while the real call path is broken – consumers are the first to notice, not the operator |
 | 7. Hotfix-over-retag | Force-retagging is destructive on immutable registries AND loses audit trail; hotfix-version + annotated changelog is safer and cleaner |
+| 8. Majors only | A breaking release shipping with no rehearsed migration, an unlisted breaking change, or docs still describing the old major - leaving consumers unable to move across the version |
