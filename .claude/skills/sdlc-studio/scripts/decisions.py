@@ -43,16 +43,60 @@ def _next_id(text: str) -> str:
     return f"D{(max(nums) + 1) if nums else 1:04d}"
 
 
+# Status is the 4th field when a row is split on unescaped pipes:
+# ['', ' Dxxxx ', ' decision ', ' rationale ', ' status ', ' supersedes ', ' date ', '']
+_STATUS_CELL = 4
+_UNESCAPED_PIPE = re.compile(r"(?<!\\)\|")
+
+
+def _norm_did(value: str | None) -> str | None:
+    """Normalise `D0012` / `0012` / `12` to the canonical `D0012`, or None if not an id.
+    Anchored (fullmatch): a value that merely CONTAINS a number (`the 5th one`, `D00121`) is
+    not an id, so a fat-fingered --supersedes fails loud rather than silently flipping a
+    plausible-but-wrong row."""
+    s = (value or "").strip()
+    m = re.fullmatch(r"[Dd](\d{4})", s) or re.fullmatch(r"(\d{1,4})", s)
+    return f"D{int(m.group(1)):04d}" if m else None
+
+
+def _flip_to_superseded(lines: list[str], target: str) -> str | None:
+    """Flip the `target` decision's Status cell to `superseded`, in place.
+    Returns 'changed', 'already' (found but already superseded), or None (id not present)."""
+    for i, ln in enumerate(lines):
+        m = _ROW.match(ln)
+        if not m or f"D{int(m.group(1)):04d}" != target:
+            continue
+        parts = _UNESCAPED_PIPE.split(ln)
+        if len(parts) <= _STATUS_CELL:
+            return "already"  # malformed row; leave it, but the id exists
+        if parts[_STATUS_CELL].strip() == "superseded":
+            return "already"
+        parts[_STATUS_CELL] = " superseded "
+        lines[i] = "|".join(parts)
+        return "changed"
+    return None
+
+
 def add(root: Path | str, decision: str, rationale: str, status: str = "accepted",
         supersedes: str = "", today: str | None = None) -> dict:
     root = Path(root)
     ensure_log(root)
     p = _log_path(root)
     lines = p.read_text(encoding="utf-8").splitlines()
+    # Supersession is only real if the named decision's own row is flipped to `superseded`
+    # in the same edit - otherwise the log carries two contradictory `accepted` rows.
+    # Fail loud on an unknown id: without this a typo in --supersedes is silently recorded.
+    sup_did = ""
+    if supersedes:
+        sup_did = _norm_did(supersedes)
+        if sup_did is None or _flip_to_superseded(lines, sup_did) is None:
+            raise ValueError(
+                f"--supersedes: no decision {supersedes!r} in the log - refusing to record a "
+                "dangling supersession (a typo would otherwise be silently accepted)")
     did = _next_id("\n".join(lines))
     when = today or date.today().isoformat()
     cells = [did, decision.replace("|", "\\|"), rationale.replace("|", "\\|"),
-             status, supersedes or "--", when]
+             status, sup_did or "--", when]
     row = "| " + " | ".join(cells) + " |"
     # insert after the data-table header+separator (the row carrying the ID column)
     hdr = next((i for i, ln in enumerate(lines)
@@ -73,6 +117,29 @@ def promote(root: Path | str, source: str, decision: str, rationale: str,
     return add(root, decision, f"{rationale} [from {source}]", today=today)
 
 
+def backfill_superseded(root: Path | str) -> int:
+    """One-time sweep: flip any decision named in a later row's Supersedes column but still
+    marked `accepted` to `superseded`. Returns the number changed; idempotent (a second run
+    changes nothing). Fixes the pre-BG0068 rows (e.g. D0012/D0013 in this repo)."""
+    p = _log_path(Path(root))
+    if not p.exists():
+        return 0
+    lines = p.read_text(encoding="utf-8").splitlines()
+    targets: set[str] = set()
+    for ln in lines:
+        if not _ROW.match(ln):
+            continue
+        parts = _UNESCAPED_PIPE.split(ln)
+        if len(parts) > _STATUS_CELL + 1:
+            nid = _norm_did(parts[_STATUS_CELL + 1].strip())  # the Supersedes cell
+            if nid:
+                targets.add(nid)
+    changed = sum(1 for t in targets if _flip_to_superseded(lines, t) == "changed")
+    if changed:
+        p.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return changed
+
+
 def list_decisions(root: Path | str, status: str | None = None) -> list[dict]:
     p = _log_path(Path(root))
     if not p.exists():
@@ -81,7 +148,10 @@ def list_decisions(root: Path | str, status: str | None = None) -> list[dict]:
     for ln in p.read_text(encoding="utf-8").splitlines():
         if not _ROW.match(ln):
             continue
-        cells = [c.strip() for c in ln.strip().strip("|").split("|")]
+        # split on UNESCAPED pipes and unescape, so a `\|` inside a decision/rationale cell
+        # does not fracture into extra columns and shift the Status/Supersedes fields
+        cells = [c.strip().replace("\\|", "|")
+                 for c in _UNESCAPED_PIPE.split(ln.strip().strip("|"))]
         if len(cells) >= 6:
             rec = {"id": cells[0], "decision": cells[1], "rationale": cells[2],
                    "status": cells[3], "supersedes": cells[4], "date": cells[5]}
@@ -101,6 +171,12 @@ def cmd_promote(args: argparse.Namespace) -> int:
     r = promote(args.root, args.source, args.decision, args.rationale)
     print(json.dumps(r, indent=2) if args.format == "json"
           else f"promoted {args.source} -> {r['id']} ({r['date']})")
+    return 0
+
+
+def cmd_backfill(args: argparse.Namespace) -> int:
+    n = backfill_superseded(args.root)
+    print(f"backfilled {n} stale-accepted row(s) to superseded")
     return 0
 
 
@@ -128,6 +204,10 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--root", default=".")
     a.add_argument("--format", choices=("text", "json"), default="text")
     a.set_defaults(func=cmd_add)
+    bf = sub.add_parser("backfill", help="Flip rows superseded-in-lineage but still marked accepted.")
+    bf.add_argument("--root", default=".")
+    bf.add_argument("--format", choices=("text", "json"), default="text")
+    bf.set_defaults(func=cmd_backfill)
     pr = sub.add_parser("promote", help="Promote a resolved PRD open question into the log (back-linked).")
     pr.add_argument("--from", dest="source", required=True, help="the PRD open-question id, e.g. PRD-OQ3")
     pr.add_argument("--decision", required=True)

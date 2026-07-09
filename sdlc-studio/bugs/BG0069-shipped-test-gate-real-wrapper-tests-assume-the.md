@@ -1,9 +1,10 @@
 # BG0069: Shipped test_gate real-wrapper tests assume the dev-repo path and fail from an install
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-07-08
 > **Created-by:** sdlc-studio new
 > **Severity:** low
+> **Verification depth:** functional (unit tests)
 
 ## Summary
 

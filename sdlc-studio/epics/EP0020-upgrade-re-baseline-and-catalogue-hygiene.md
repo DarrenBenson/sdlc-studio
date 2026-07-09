@@ -10,7 +10,7 @@
 
 ## Story Breakdown
 
-- [ ] [US0094: Upgrade re-baseline census and bucketed report](../stories/US0094-upgrade-re-baseline-census-and-bucketed-report.md)
+- [x] [US0094: Upgrade re-baseline census and bucketed report](../stories/US0094-upgrade-re-baseline-census-and-bucketed-report.md)
 - [ ] [US0095: Upgrade re-baseline mechanical backfill and next-transition policy](../stories/US0095-upgrade-re-baseline-mechanical-backfill-and-next-transition.md)
 - [ ] [US0096: Split the reference-scripts catalogue into a lean index](../stories/US0096-split-the-reference-scripts-catalogue-into-a-lean.md)
 

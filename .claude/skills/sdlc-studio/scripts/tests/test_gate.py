@@ -10,6 +10,16 @@ SCRIPT = Path(__file__).resolve().parent.parent / "gate.py"
 REPO = Path(__file__).resolve().parents[5]  # repo root (holds sdlc-studio/ artifacts)
 
 
+def _in_dev_repo(repo: Path = REPO) -> bool:
+    """True only when `repo` is the artefact-bearing dev repo - it holds a `sdlc-studio/`
+    workspace AND this skill sits under `repo/.claude/skills/`. Run from an installed copy
+    (`~/.claude/skills/sdlc-studio/`), `parents[5]` is the home dir with no workspace, so the
+    two real-wrapper tests below must SKIP (visibly), not fail on environment (BG0069)."""
+    skills = repo / ".claude" / "skills"
+    return (repo / "sdlc-studio").is_dir() and skills.is_dir() \
+        and str(Path(__file__).resolve()).startswith(str(skills.resolve()))
+
+
 def _load():
     spec = importlib.util.spec_from_file_location("gate", SCRIPT)
     mod = importlib.util.module_from_spec(spec)
@@ -100,6 +110,18 @@ class IndexDerivedCheckTests(unittest.TestCase):
 
 
 class GateRealWrapperTests(unittest.TestCase):
+    def test_dev_repo_detector_true_here(self) -> None:
+        # Guarded like the wrappers: from an install this SKIPS (it must, or it would recreate
+        # the misleading FAILED this bug exists to kill). In the dev repo the detector is True.
+        if not _in_dev_repo():
+            self.skipTest("dev-repo-only: the detector is False from an installed copy")
+        self.assertTrue(_in_dev_repo())
+
+    def test_dev_repo_detector_false_for_workspaceless_root(self) -> None:
+        # Always-run: exercises the NEGATIVE branch (an install-like root has no sdlc-studio/
+        # workspace), so it passes from an install too - never a false FAILED.
+        self.assertFalse(_in_dev_repo(Path(tempfile.gettempdir())))
+
     def test_default_checks_present(self) -> None:
         self.assertEqual(set(gate.DEFAULT_CHECKS),
                          {"conformance", "reconcile", "index-derived", "validate", "constitution",
@@ -109,6 +131,9 @@ class GateRealWrapperTests(unittest.TestCase):
     def test_real_wrappers_run_and_shape(self) -> None:
         # Exercises the real checks end-to-end against this repo; asserts structure,
         # not pass/fail (state-independent, so not fragile).
+        if not _in_dev_repo():
+            self.skipTest("dev-repo-only test: no sdlc-studio/ workspace at the expected "
+                          "root (running from an installed copy)")
         r = gate.run_gate(str(REPO))
         self.assertIsInstance(r["ok"], bool)
         self.assertEqual(len(r["checks"]), 12)
@@ -147,6 +172,9 @@ class GateRealWrapperTests(unittest.TestCase):
 
 
     def test_provenance_blocking_follows_enforce(self) -> None:
+        if not _in_dev_repo():
+            self.skipTest("dev-repo-only test: no sdlc-studio/ workspace at the expected "
+                          "root (running from an installed copy)")
         import provenance
         orig = provenance.check
         try:

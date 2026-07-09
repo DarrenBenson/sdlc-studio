@@ -131,6 +131,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `llms.txt`, a For-agents README block, and SKILL.md gains NOT-for triggers plus
   namespaced openclaw metadata. Every claim critic-reviewed for calibration against the
   published benchmark data.
+- **Upgrade re-baseline census (EP0020, CR0197; US0094, schema v3, opt-in).**
+  `project_upgrade.rebaseline()` walks every non-terminal artefact and buckets its gaps against
+  the capability delta - `backfill` (a mechanical stamp computable now, e.g. a missing
+  `Difficulty`), `re-review` (matches a gate's deterministic trigger but lacks the verdict, e.g.
+  a spec-derived story with no plan-review verdict), `residual` (judgement gaps). The bucketed
+  report (empty buckets printed explicitly) surfaces from `project upgrade`. Read-only,
+  deterministic, dormant under schema v2.
+
+### Fixed
+
+- **`decisions.py --supersedes` now flips the superseded row's Status to `superseded`
+  (EP0020, BG0068).** The log no longer carries two contradictory `accepted` decisions; an
+  unknown/typo id fails loud (anchored id parse) instead of silently recording a dangling
+  supersession; a `decisions.py backfill` sweep fixes pre-existing rows (D0012/D0013). Also
+  hardens `list_decisions` to split on unescaped pipes so a `\|` in a cell can't shift columns.
+- **Shipped `test_gate` real-wrapper tests skip cleanly from an installed copy (EP0020,
+  BG0069).** The two repo-coupled tests detect the dev-repo shape and `skipTest` with an
+  explicit message otherwise, so a consuming operator verifying an install sees a visible SKIP,
+  never a misleading FAILED on environment.
 
 ## [3.6.0] - 2026-07-06
 

@@ -406,6 +406,81 @@ def new_advisory_lanes(recorded: str | None, installed: str | None) -> list[dict
     return out
 
 
+_REBASELINE_BUCKETS = ("backfill", "re-review", "residual")
+_VERIFY_LINE = re.compile(r"(?m)^\s*-\s*\*\*Verify:\*\*")
+_AC_SECTION = re.compile(r"(?ms)^##\s+Acceptance Criteria\b(.*?)(?=^##\s|\Z)")
+
+
+def _ac_has_missing_verify(text: str) -> bool:
+    """True when a story declares ACs but at least one lacks a `Verify:` line (residual -
+    the tooling can name the gap but authoring the verifier is judgement). Verify lines are
+    counted WITHIN the Acceptance Criteria section only, so a stray `Verify:` line in a Notes
+    or Test-Plan section cannot mask a genuinely missing AC verifier (the under-report
+    direction)."""
+    acs = sdlc_md.count_acs(text)
+    m = _AC_SECTION.search(text)
+    verifies = len(_VERIFY_LINE.findall(m.group(1))) if m else 0
+    return acs > 0 and verifies < acs
+
+
+def rebaseline(root: Path | str) -> dict:
+    """Census every NON-TERMINAL artifact against the capability delta, per artifact, bucketed.
+    Read-only, deterministic (no model judgement - TRD ADR-006). Era-gated: a no-op (all buckets
+    empty) unless the project is schema v3 (the one adoption watermark).
+
+    Buckets: `backfill` (mechanical stamps computable now, e.g. a missing `Difficulty`),
+    `re-review` (matches a gate's trigger but lacks the verdict, e.g. a spec-derived story with
+    no plan-review verdict), `residual` (judgement gaps the tooling can only name)."""
+    root = Path(root)
+    out: dict = {b: [] for b in _REBASELINE_BUCKETS}
+    if not sdlc_md.is_schema_v3(root):
+        return out
+    import plan_review  # lazy: pulls route/critic; keep them off the cold upgrade path
+    import critic
+    for type_ in ("story", "cr", "bug"):
+        vocab = sdlc_md.status_vocab(type_, root)
+        terminal = sdlc_md.terminal_statuses(type_)
+        for p in sdlc_md.artifact_files(type_, root):
+            text = p.read_text(encoding="utf-8")
+            status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab)
+            if status in terminal:
+                continue                                   # completed transitions untouched
+            rid = sdlc_md.extract_record_id(p.stem) or p.stem
+
+            def _add(bucket, cap):
+                out[bucket].append({"id": rid, "type": type_, "capability": cap,
+                                    "path": str(p)})
+
+            if not (sdlc_md.extract_field(text, "Difficulty") or "").strip():
+                _add("backfill", "difficulty")             # route.estimate can stamp it on --apply
+            if type_ == "story":
+                if plan_review.triggers(text, root, p)["fired"]:
+                    v = critic.verdict_for(root, rid, phase="plan-review")
+                    ok = bool(v) and v["verdict"] == critic.APPROVE and critic.is_independent(v)
+                    if not ok and not plan_review.override(text):
+                        _add("re-review", "plan-review")
+                if _ac_has_missing_verify(text):
+                    _add("residual", "ac-verify")
+    for b in out:
+        out[b].sort(key=lambda e: e["id"])
+    return out
+
+
+def rebaseline_report(root: Path | str) -> list[str]:
+    """Render the re-baseline census as report lines; an empty bucket prints an explicit
+    `none` (never silently omitted, so the operator sees the gate was checked)."""
+    r = rebaseline(root)
+    lines = ["Re-baseline - non-terminal artifacts vs the capability delta:"]
+    for b in _REBASELINE_BUCKETS:
+        lines.append(f"  {b}:")
+        if not r[b]:
+            lines.append("    - none")
+        else:
+            for e in r[b]:
+                lines.append(f"    - {e['id']} ({e['type']}): {e['capability']}")
+    return lines
+
+
 def cmd_upgrade(args: argparse.Namespace) -> int:
     root = Path(args.root)
     if not _sdlc(root).is_dir():
@@ -451,6 +526,10 @@ def cmd_upgrade(args: argparse.Namespace) -> int:
     print("\nNeeds judgement (do by hand - reported, not filed as CRs):")
     for f in a["manual"]:
         print(f"  [manual] {f['detail']}")
+    if sdlc_md.is_schema_v3(root):   # the per-artifact re-baseline census (schema v3 only)
+        print()
+        for line in rebaseline_report(root):
+            print(line)
     if applied:
         print("\nApplied:")
         for x in applied:

@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 2 |
+| Open | 0 |
 | In Progress | 0 |
-| Fixed | 1 |
+| Fixed | 3 |
 | Verified | 0 |
 | Closed | 66 |
 | Won't Fix | 0 |
@@ -34,8 +34,8 @@
 | [BG0065](BG0065-story-done-verify-gate-passes-on-a-stale.md) | story Done verify gate passes on a stale merged report entry: edited ACs keep last week's green | Closed | Medium | 2026-07-06 | 2026-07-06 |
 | [BG0066](BG0066-append-index-row-scans-unbounded-and-disagrees-with.md) | append_index_row scans unbounded and disagrees with reconcile on the master data table | Closed | Medium | 2026-07-06 | 2026-07-06 |
 | [BG0067](BG0067-verify-ac-pytest-k-dsl-glues-path-and.md) | verify_ac pytest -k DSL glues path and marker into one argv element | Fixed | Medium | 2026-07-08 | 2026-07-08 |
-| [BG0068](BG0068-decisions-py-supersedes-never-flips-the-superseded-row.md) | decisions.py --supersedes never flips the superseded row's status | Open | medium | 2026-07-08 | 2026-07-08 |
-| [BG0069](BG0069-shipped-test-gate-real-wrapper-tests-assume-the.md) | Shipped test_gate real-wrapper tests assume the dev-repo path and fail from an install | Open | low | 2026-07-08 | 2026-07-08 |
+| [BG0068](BG0068-decisions-py-supersedes-never-flips-the-superseded-row.md) | decisions.py --supersedes never flips the superseded row's status | Fixed | medium | 2026-07-08 | 2026-07-08 |
+| [BG0069](BG0069-shipped-test-gate-real-wrapper-tests-assume-the.md) | Shipped test_gate real-wrapper tests assume the dev-repo path and fail from an install | Fixed | low | 2026-07-08 | 2026-07-08 |
 
 ## Archived Releases
 

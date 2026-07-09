@@ -499,3 +499,145 @@ class DigestKindHandlingTests(unittest.TestCase):
             rendered = "\n".join(pu._render_digest(dig))
             self.assertIn("Proposed:", rendered)          # custom kind printed
             self.assertIn("Project-specific kind item", rendered)
+
+
+def _v3_story(sd, sid, status="Ready", difficulty=True, affects="a.py",
+              ac_verify=True, override=False):
+    """A schema-v3 story with controllable baseline attributes (US0094 census fixture)."""
+    lines = [f"# US{sid:04d}: s", "", f"> **Status:** {status}", "> **Epic:** EP0001"]
+    if affects:
+        lines.append(f"> **Affects:** {affects}")
+    if difficulty:
+        lines.append("> **Difficulty:** medium")
+    if override:
+        lines.append("> **Plan-Review-Override:** ops")
+    lines += ["", "## Acceptance Criteria", "", "### AC1: a", "- **Given** x",
+              "- **When** y", "- **Then** z"]
+    if ac_verify:
+        lines.append("- **Verify:** pytest tests/test_x.py::t")
+    d = sd / "stories"; d.mkdir(exist_ok=True)
+    (d / f"US{sid:04d}-s.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _v3_project(d, v3=True):
+    sd = Path(d) / "sdlc-studio"
+    (sd / "stories").mkdir(parents=True, exist_ok=True)
+    (sd / "reviews").mkdir(parents=True, exist_ok=True)
+    if v3:
+        (sd / ".config.yaml").write_text(
+            "schema_version: 3\nplan_review:\n  affects_files_threshold: 99\n"
+            "  min_difficulty: extreme\n", encoding="utf-8")
+    return sd
+
+
+class RebaselineCensusTests(unittest.TestCase):
+    """US0094 AC1: per-artifact gaps bucketed backfill / re-review / residual (schema v3)."""
+
+    def _ids(self, bucket):
+        return sorted(e["id"] for e in bucket)
+
+    def test_buckets_isolate_each_capability(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _v3_project(d)
+            _v3_story(sd, 1, status="Done")                                # terminal -> absent
+            _v3_story(sd, 2)                                               # fully baselined -> absent
+            _v3_story(sd, 3, difficulty=False)                            # -> backfill (no Difficulty)
+            _v3_story(sd, 4, affects="docs/prd.md")                       # spec-cite -> re-review
+            _v3_story(sd, 5, ac_verify=False)                            # AC missing Verify -> residual
+            r = pu.rebaseline(d)
+            self.assertNotIn("US0001", self._ids(r["backfill"] + r["re-review"] + r["residual"]))
+            self.assertNotIn("US0002", self._ids(r["backfill"] + r["re-review"] + r["residual"]))
+            self.assertIn("US0003", self._ids(r["backfill"]))
+            self.assertIn("US0004", self._ids(r["re-review"]))
+            self.assertIn("US0005", self._ids(r["residual"]))
+
+    def test_spec_story_with_override_is_not_re_review(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _v3_project(d)
+            _v3_story(sd, 4, affects="docs/prd.md", override=True)        # override satisfies it
+            self.assertNotIn("US0004", [e["id"] for e in pu.rebaseline(d)["re-review"]])
+
+    def test_terminal_story_with_every_gap_is_in_no_bucket(self):
+        # locks terminal-skip for ALL buckets: a Done story with a missing Difficulty, a spec
+        # citation, and an AC missing Verify must still appear nowhere.
+        with tempfile.TemporaryDirectory() as d:
+            sd = _v3_project(d)
+            _v3_story(sd, 1, status="Done", difficulty=False,
+                      affects="docs/prd.md", ac_verify=False)
+            r = pu.rebaseline(d)
+            self.assertEqual([], r["backfill"] + r["re-review"] + r["residual"])
+
+    def test_stray_verify_outside_ac_section_does_not_mask_a_gap(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _v3_project(d)
+            (sd / "stories").mkdir(exist_ok=True)
+            (sd / "stories" / "US0007-s.md").write_text(
+                "# US0007: s\n\n> **Status:** Ready\n> **Difficulty:** low\n> **Affects:** a.py\n\n"
+                "## Acceptance Criteria\n\n### AC1: a\n- **Then** x\n- **Verify:** pytest t\n"
+                "### AC2: b\n- **Then** y\n\n## Notes\n\n- **Verify:** an example only\n",
+                encoding="utf-8")
+            self.assertIn("US0007", [e["id"] for e in pu.rebaseline(d)["residual"]])
+
+    def test_re_review_respects_independence(self):
+        import critic
+        for reviewer, cleared in (("qa", True), ("dev", False)):     # dev==author => self-review
+            with tempfile.TemporaryDirectory() as d:
+                sd = _v3_project(d)
+                _v3_story(sd, 4, affects="docs/prd.md")
+                critic.record_verdict(d, "US0004", "APPROVE", reviewer=reviewer,
+                                      author="dev", phase="plan-review")
+                flagged = "US0004" in [e["id"] for e in pu.rebaseline(d)["re-review"]]
+                self.assertEqual(flagged, not cleared)
+        with tempfile.TemporaryDirectory() as d:                     # independent REJECT: not cleared
+            sd = _v3_project(d)
+            _v3_story(sd, 4, affects="docs/prd.md")
+            critic.record_verdict(d, "US0004", "REJECT", reviewer="qa", author="dev",
+                                  phase="plan-review")
+            self.assertIn("US0004", [e["id"] for e in pu.rebaseline(d)["re-review"]])
+
+
+class RebaselineEraBoundaryTests(unittest.TestCase):
+    """US0094 AC3: Done untouched, Ready flagged; unadopted (v2) -> no gaps."""
+
+    def test_done_untouched_ready_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _v3_project(d)
+            _v3_story(sd, 1, status="Done", difficulty=False)            # terminal, ignored
+            _v3_story(sd, 2, status="Ready", difficulty=False)          # flagged
+            r = pu.rebaseline(d)
+            ids = [e["id"] for e in r["backfill"]]
+            self.assertIn("US0002", ids)
+            self.assertNotIn("US0001", ids)
+
+    def test_dormant_under_v2(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _v3_project(d, v3=False)
+            _v3_story(sd, 2, difficulty=False, affects="docs/prd.md", ac_verify=False)
+            r = pu.rebaseline(d)
+            self.assertEqual(r, {"backfill": [], "re-review": [], "residual": []})
+
+
+class RebaselineReportTests(unittest.TestCase):
+    """US0094 AC2: the report lists artifacts per bucket; empty buckets are explicit."""
+
+    def test_report_names_buckets_and_empty_is_explicit(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _v3_project(d)
+            _v3_story(sd, 3, difficulty=False)                           # backfill only
+            lines = pu.rebaseline_report(d)
+            text = "\n".join(lines)
+            self.assertIn("US0003", text)
+            self.assertIn("backfill", text.lower())
+            self.assertIn("re-review", text.lower())
+            self.assertIn("none", text.lower())                          # empty buckets explicit
+
+
+class RebaselineDeterminismTests(unittest.TestCase):
+    """US0094 AC4: identical result across runs (no model judgement)."""
+
+    def test_deterministic(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _v3_project(d)
+            _v3_story(sd, 3, difficulty=False)
+            _v3_story(sd, 4, affects="docs/prd.md")
+            self.assertEqual(pu.rebaseline(d), pu.rebaseline(d))

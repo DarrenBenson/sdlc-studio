@@ -1,6 +1,6 @@
 # US0094: Upgrade re-baseline census and bucketed report
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0020
@@ -23,6 +23,7 @@ Delivers the read-only reporting core of CR0197. Era-gated: the buckets only pop
 - **When** `project_upgrade.rebaseline(root)` runs (read-only)
 - **Then** it returns, per non-terminal artifact, its per-capability gaps assigned deterministically (status x delta) to one of `backfill` / `re-review` / `residual`; terminal artifacts are absent
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py::RebaselineCensusTests
+- **Verified:** yes (2026-07-09)
 
 ### AC2: The dry-run report lists artifacts by bucket, empty buckets explicit
 
@@ -30,6 +31,7 @@ Delivers the read-only reporting core of CR0197. Era-gated: the buckets only pop
 - **When** `project upgrade` runs its re-baseline report (dry-run)
 - **Then** it prints each non-terminal artifact under its bucket with the specific gap named; an empty bucket prints an explicit "none" line rather than being silently omitted
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py::RebaselineReportTests
+- **Verified:** yes (2026-07-09)
 
 ### AC3: The era-gate boundary is respected
 
@@ -37,6 +39,7 @@ Delivers the read-only reporting core of CR0197. Era-gated: the buckets only pop
 - **When** the census runs
 - **Then** the Done (terminal) story is untouched and the Ready story is flagged in the re-review bucket; a capability the project has not adopted produces no gap
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py::RebaselineEraBoundaryTests
+- **Verified:** yes (2026-07-09)
 
 ### AC4: Bucket assignment is deterministic
 
@@ -44,6 +47,7 @@ Delivers the read-only reporting core of CR0197. Era-gated: the buckets only pop
 - **When** the census runs twice
 - **Then** the bucket assignment is identical (no model judgement in the fire/skip decision - TRD ADR-006)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py::RebaselineDeterminismTests
+- **Verified:** yes (2026-07-09)
 
 ## Revision History
 
