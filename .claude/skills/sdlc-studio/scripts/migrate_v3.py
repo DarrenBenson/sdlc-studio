@@ -14,8 +14,9 @@ already a ULID) is skipped, so a second run is a no-op.
     migrate_v3.py apply           # perform the migration
     migrate_v3.py apply --root .  # explicit root
 
-After `apply`, the config's `schema_version` should be set to 3 so new artefacts
-mint ULIDs too.
+A completed `apply` stamps `schema_version: 3` into the workspace config itself,
+so new artefacts mint ULIDs from the very next filing - the era flip is never a
+manual step a walk can forget.
 """
 from __future__ import annotations
 
@@ -114,6 +115,22 @@ def _rewrite_links(text: str, norm_to_new: dict[str, str]) -> str:
     return sdlc_md.ID_SEARCH_RE.sub(repl, text)
 
 
+def _stamp_schema_v3(root: Path) -> None:
+    """Set `schema_version: 3` in the workspace config (create the file if absent, replace the
+    line if present, preserve everything else). Apply must flip the era itself: left manual,
+    the next filing mints a numeric id that collides with a live `Aliases:` line."""
+    cfg = root / "sdlc-studio" / ".config.yaml"
+    if cfg.exists():
+        text = cfg.read_text(encoding="utf-8")
+        if re.search(r"(?m)^schema_version:", text):
+            text = re.sub(r"(?m)^schema_version:.*$", "schema_version: 3", text, count=1)
+        else:
+            text = text.rstrip("\n") + "\nschema_version: 3\n"
+    else:
+        text = "schema_version: 3\n"
+    sdlc_md.atomic_write(cfg, text)
+
+
 def migrate(repo_root: Path | str, dry_run: bool = True) -> dict:
     """Perform (or preview) the v2 -> v3 migration. Returns a summary dict."""
     root = Path(repo_root)
@@ -121,7 +138,13 @@ def migrate(repo_root: Path | str, dry_run: bool = True) -> dict:
     norm_to_new = {sdlc_md.norm_id(old): e["new_id"] for old, e in id_map.items()}
     summary = {"migrated": len(id_map), "dry_run": dry_run,
                "map": {old: e["new_id"] for old, e in id_map.items()}}
-    if dry_run or not id_map:
+    if dry_run:
+        return summary
+    if not id_map:
+        # nothing left to rename (fresh resume or already-migrated workspace): still make the
+        # era stamp true before returning, so a completed apply always leaves a v3 project
+        _stamp_schema_v3(root)
+        summary["schema_stamped"] = True
         return summary
     # 1. Rewrite every intra-workspace id reference (bodies, headings, link stems) FIRST, while
     #    files still have their old names - so a file's own heading/links become the new id.
@@ -146,6 +169,9 @@ def migrate(repo_root: Path | str, dry_run: bool = True) -> dict:
     # 3. Regenerate index counts from the migrated census.
     for type_ in reconcile._DEFAULT_TYPES:
         reconcile.apply_type(type_, root)
+    # 4. Flip the era: new artefacts must mint ULIDs from the very next filing.
+    _stamp_schema_v3(root)
+    summary["schema_stamped"] = True
     return summary
 
 

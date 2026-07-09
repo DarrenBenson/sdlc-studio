@@ -1,9 +1,10 @@
 # BG0074: the v2->v3 upgrade walk never stamps schema_version: 3, so the next filing mints ids that collide with live aliases
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file
+> **Verification depth:** functional (red-then-green stamp tests: create/update/preserve-keys/plan-never-stamps; end-to-end repro re-run: post-migrate filing now mints a ULID, config reads schema_version: 3)
 
 ## Summary
 
@@ -12,6 +13,10 @@ rc-verdict: BLOCKS v4.0 tag. migrate_v3's docstring says schema_version 'should 
 ## Steps to Reproduce
 
 v2 fixture; migrate_v3.py apply; artifact.py new --type bug --title x -> BG0001 minted; grep 'Aliases: BG0001' -> live alias on a different artefact.
+
+## Resolution note
+
+The belt-and-braces (allocate_number treating alias ids as taken) was deliberately NOT implemented: with the stamp in place the numeric allocator is unreachable on a migrated project, and the belt would add an O(corpus) full-file read to every allocation. Recorded in the tranche ledger.
 
 ## Proposed Fix
 

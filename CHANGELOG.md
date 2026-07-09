@@ -232,6 +232,13 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
 
 ### Fixed
 
+- **`migrate_v3 apply` stamps `schema_version: 3` itself (RV0007; BG0074).** The docstring said
+  the stamp "should be set" manually and the upgrade walk had no flip step - so after a clean
+  migration all numeric ids vanished, `allocate_number` restarted at 1, and the very next
+  `artifact new` minted `BG0001` while a migrated artefact still carried `> **Aliases:** BG0001`
+  (ambiguous identity for every external reference). A completed apply now writes the stamp into
+  `.config.yaml` (created if absent, other keys preserved; `plan` never stamps), so the era flip
+  is mechanical. End-to-end: post-migrate filing mints a ULID.
 - **The Low-consolidation lane exits 0 and its dry-run works (RV0007; BG0078).** `artifact new`'s
   text output indexed `epic_linked`/`indexed` unconditionally, but a consolidation result has its
   own shape - so a Low finding on a v3 project created/appended its CR and then exited 1

@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 21 |
+| Open | 20 |
 | In Progress | 0 |
-| Fixed | 5 |
+| Fixed | 6 |
 | Verified | 0 |
 | Closed | 70 |
 | Won't Fix | 0 |
@@ -40,7 +40,7 @@
 | [BG0071](BG0071-reconcile-apply-missing-row-append-crashes-keyerror-date.md) | reconcile apply missing-row append crashes KeyError 'date' on any index with a date column | Fixed | High | 2026-07-09 | 2026-07-09 |
 | [BG0072](BG0072-artifact-close-cannot-infer-the-type-of-any.md) | artifact close cannot infer the type of any v3 ULID id | Fixed | High | 2026-07-09 | 2026-07-09 |
 | [BG0073](BG0073-migrate-v3-re-run-after-an-interrupted-apply.md) | migrate_v3 re-run after an interrupted apply re-mints a different id map and silently cross-wires identities | Open | High | 2026-07-09 | 2026-07-09 |
-| [BG0074](BG0074-the-v2-v3-upgrade-walk-never-stamps-schema.md) | the v2->v3 upgrade walk never stamps schema_version: 3, so the next filing mints ids that collide with live aliases | Open | High | 2026-07-09 | 2026-07-09 |
+| [BG0074](BG0074-the-v2-v3-upgrade-walk-never-stamps-schema.md) | the v2->v3 upgrade walk never stamps schema_version: 3, so the next filing mints ids that collide with live aliases | Fixed | High | 2026-07-09 | 2026-07-09 |
 | [BG0075](BG0075-npm-run-lint-fails-at-head-the-pre.md) | npm run lint fails at HEAD: the pre-commit gate was never enabled in this clone and CI is dark while main is unpushed | Fixed | High | 2026-07-09 | 2026-07-09 |
 | [BG0076](BG0076-cr0183-concurrency-floor-is-incomplete-file-finding-and.md) | CR0183 concurrency floor is incomplete: file_finding and new_batch allocate unlocked and truth-file stamps are non-atomic (4-way id collision reproduced) | Open | High | 2026-07-09 | 2026-07-09 |
 | [BG0077](BG0077-file-finding-is-not-era-aware-it-mints.md) | file_finding is not era-aware: it mints v2 sequential ids on schema-v3 projects | Fixed | Medium | 2026-07-09 | 2026-07-09 |

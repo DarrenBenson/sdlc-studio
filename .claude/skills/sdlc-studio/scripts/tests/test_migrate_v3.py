@@ -126,5 +126,38 @@ class MigrationTests(unittest.TestCase):
             self.assertTrue((root / "sdlc-studio" / "stories" / "US0001-login.md").exists())  # untouched
 
 
+class SchemaStampTests(unittest.TestCase):
+    """A completed apply must flip the project to v3 itself - leaving the stamp manual means
+    the next filing mints a numeric id that collides with a live `Aliases:` line."""
+
+    def test_apply_stamps_schema_version_3(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)
+            migrate_v3.migrate(root, dry_run=False)
+            cfg = root / "sdlc-studio" / ".config.yaml"
+            self.assertTrue(cfg.exists())
+            self.assertRegex(cfg.read_text(encoding="utf-8"), r"(?m)^schema_version: 3$")
+
+    def test_apply_updates_an_existing_config_preserving_other_keys(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)
+            cfg = root / "sdlc-studio" / ".config.yaml"
+            cfg.write_text("profile: full\nschema_version: 2\n", encoding="utf-8")
+            migrate_v3.migrate(root, dry_run=False)
+            text = cfg.read_text(encoding="utf-8")
+            self.assertIn("profile: full", text)
+            self.assertRegex(text, r"(?m)^schema_version: 3$")
+            self.assertNotIn("schema_version: 2", text)
+
+    def test_plan_never_stamps(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)
+            migrate_v3.migrate(root, dry_run=True)
+            self.assertFalse((root / "sdlc-studio" / ".config.yaml").exists())
+
+
 if __name__ == "__main__":
     unittest.main()
