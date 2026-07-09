@@ -82,9 +82,25 @@ misleading beats loud failure in severity). The reconcile drift check and mechan
 interpretive) v1 extraction are the mitigations; anything the digest cannot represent
 faithfully stays a full read.
 
+## Delivery measurement (US0104)
+
+Instrumented read-path measurement on a 501-closed-artefact fixture, `status` tallying one
+type:
+
+| Read path | Closed originals read | Bytes read |
+| --- | --- | --- |
+| Full corpus (no digest) | 501 | 59,010 |
+| Digest-backed | 0 | 0 |
+
+`status`/`hint` read a closed artefact's status from the filename-keyed digest instead of
+opening the original, so the read cost of the closed corpus drops to zero and is bounded by
+the digest size rather than growing with history. Below `digests.min_closed` (default 500)
+the feature is dormant and behaviour is unchanged. Delivered as US0104 (EP0023).
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-06 | Dani Okafor (Engineering amigo) | Created via `new` (deterministic) |
 | 2026-07-06 | Dani Okafor (Engineering amigo) | Full scope drafted; backlog priority, raised for the ledger |
+| 2026-07-09 | claude | Delivery measurement recorded (US0104) |

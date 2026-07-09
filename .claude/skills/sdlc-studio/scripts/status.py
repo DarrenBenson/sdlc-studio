@@ -20,6 +20,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
+import digest  # noqa: E402
 
 
 def _print_update_notice(root: str) -> None:
@@ -96,11 +97,19 @@ def count_by_status(type_: str, repo_root: Path) -> dict:
     are excluded by `artifact_files`.
     """
     vocab = sdlc_md.status_vocab(type_, repo_root)
+    # Context tiering: when digests are enabled, a closed artefact's status comes from the
+    # digest keyed by filename, so its original is never read - the enumeration skips the
+    # is-artifact read for those trusted names. Dormant (empty map) below the threshold, so a
+    # small repo reads every original exactly as before.
+    dfiles = digest.status_by_file(repo_root)
     counts: dict[str, int] = {}
     total = 0
-    for path in sdlc_md.artifact_files(type_, repo_root):
+    for path, text in sdlc_md.iter_artifact_files(type_, repo_root, trust_names=set(dfiles)):
         total += 1
-        raw = sdlc_md.extract_field(path.read_text(encoding="utf-8"), "Status") or "Unknown"
+        if text is None and path.name in dfiles:
+            raw = dfiles[path.name] or "Unknown"          # from the digest: no read
+        else:
+            raw = sdlc_md.extract_field(text or "", "Status") or "Unknown"
         status = sdlc_md.canonical_status(raw, vocab) or "Unknown"
         counts[status] = counts.get(status, 0) + 1
     return {"total": total, "by_status": counts}

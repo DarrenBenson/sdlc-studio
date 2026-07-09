@@ -217,3 +217,12 @@ deploy:
   soak_minutes: 0    # soak window before a deploy is "verified" (Done). Smoke alone is not enough.
   rollback: ""       # a documented PROCEDURE (steps, or a command an operator runs by hand). The
                      #  agent never fires this; `deploy` only SURFACES it on a failed smoke.
+
+# Context tiering - summarised digests of closed artefacts (CR0179). A long-lived repo pays a
+# growing token tax on every status / planning pass that re-reads the whole closed corpus. When
+# the number of closed artefacts reaches `min_closed`, `digest.py build` writes a mechanical
+# digest (id/title/status/outcome/refs) that `status`/`hint` read for closed artefacts instead of
+# opening every original; originals stay on disk and still resolve by id. Below the threshold the
+# feature is dormant - no digest is produced or read, so small repos see no behaviour change.
+digests:
+  min_closed: 500    # closed-artefact count at/above which digests are produced and read

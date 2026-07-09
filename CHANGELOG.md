@@ -16,6 +16,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Context tiering - status/hint read closed-artefact digests, not the full corpus (EP0023,
+  CR0179; US0104).** A long-lived repo pays a growing token tax on every status/planning pass
+  that re-reads the whole closed corpus. Once the closed-artefact count reaches
+  `digests.min_closed` (default 500), `digest.py build` writes a filename-keyed mechanical
+  digest (id/title/status/outcome/refs) and `status`/`hint` read a closed artefact's status from
+  it instead of opening the original - the enumeration (`sdlc_md.iter_artifact_files`, now the
+  basis of `artifact_files`) skips the is-artifact read for those trusted filenames. Measured on
+  a 501-closed fixture: `status` reads 0 closed originals / 0 bytes vs 501 / 59,010 with no
+  digest (recorded in CR0179). The digest is byte-stable (deterministic) and `reconcile detect`
+  flags it as an advisory when it drifts from the census; a closed artefact still resolves by id
+  (including a CR0167 alias) to its full original. Below the threshold the feature is dormant -
+  no digest is produced or read, so a small repo sees no behaviour change.
 - **Sync, state and verifier-sandbox hardening (EP0022, CR0186; US0101).** `github_sync push`
   now scans each record's title+body for secret-shaped tokens (GitHub tokens/PATs, AWS keys,
   AI API keys, Slack tokens, private-key blocks, credential assignments) and refuses to publish

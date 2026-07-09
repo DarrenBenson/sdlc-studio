@@ -352,6 +352,20 @@ def index_bloat_advisory(type_: str, repo_root: Path,
             f"(rows move to {rel}/archive/, files stay put, census unaffected)")
 
 
+def digest_drift_advisory(repo_root: Path | str) -> str | None:
+    """Advisory (never blocks): when a closed-artefact digest exists but no longer matches the
+    census (a closed artefact added or changed since it was written), recommend regenerating it -
+    the same drift discipline as the progressive-disclosure indexes. Returns None when there is no
+    digest or it is fresh."""
+    import digest as _digest
+    if _digest.load(repo_root) is None:
+        return None
+    if not _digest.is_stale(repo_root):
+        return None
+    return ("the closed-artefact digest is stale (a closed artefact changed since it was "
+            "written) - regenerate it: scripts/digest.py build")
+
+
 def detect_type(type_: str, repo_root: Path) -> dict:
     """Compute drift for one type."""
     census = file_census(type_, repo_root)
@@ -501,6 +515,10 @@ def cmd_detect(args: argparse.Namespace) -> int:
         "summary": {"drift_items": len(all_drift), "by_kind": by_kind},
     }
 
+    digest_note = digest_drift_advisory(repo_root)
+    if digest_note:
+        report["digest_advisory"] = digest_note
+
     if getattr(args, "blocker_sweep", False):
         # advisory lane: report stale-blocked / now-unblocked units. Never affects drift or the
         # exit code - reconcile still succeeds/fails on its own census checks (US0050).
@@ -526,6 +544,8 @@ def cmd_detect(args: argparse.Namespace) -> int:
         for type_, result in per_type.items():
             for a in result.get("advisories", []):
                 print(f"advisory ({type_}): {a}")
+        if digest_note:
+            print(f"advisory (digest): {digest_note}")
         print(f"scope={report['scope']} drift_items={len(all_drift)} by_kind={by_kind}")
         hints = sdlc_md.remediation_lines("reconcile", by_kind)
         if hints:

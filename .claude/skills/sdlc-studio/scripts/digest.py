@@ -11,8 +11,11 @@ like an index (mismatch vs the census -> regenerate).
     digest.py build              # write sdlc-studio/.local/digests.json
     digest.py build --format json
 
-The read-path integration (status/hint reading digests) and the size threshold are the
-remaining CR0179 workstream; this ships the deterministic generator and its drift check.
+Once the closed-artefact count reaches `digests.min_closed` (default 500), `status`/`hint`
+read a closed artefact's fields from the digest via `status_by_id` instead of opening every
+original; below the threshold the feature is dormant (no digest read, no behaviour change).
+The digest is byte-stable (sorted, deterministic) and `reconcile detect` flags it when it
+drifts from the census, the same discipline as the progressive-disclosure indexes.
 """
 from __future__ import annotations
 
@@ -26,6 +29,55 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 
 DIGEST_REL = "sdlc-studio/.local/digests.json"
+DEFAULT_MIN_CLOSED = 500
+
+
+def min_closed(repo_root: Path | str) -> int:
+    """The closed-artefact count at/above which digests are produced and read
+    (`digests.min_closed`, default 500). Below it the feature is dormant."""
+    try:
+        return int(sdlc_md.project_override(repo_root, "digests.min_closed", DEFAULT_MIN_CLOSED))
+    except (TypeError, ValueError):
+        return DEFAULT_MIN_CLOSED
+
+
+def load(repo_root: Path | str) -> dict | None:
+    """The on-disk digest dict, or None when absent / unreadable."""
+    p = Path(repo_root) / DIGEST_REL
+    if not p.exists():
+        return None
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except (ValueError, OSError):
+        return None
+
+
+def enabled(repo_root: Path | str) -> bool:
+    """True when a digest exists on disk and its size reaches the threshold - the gate for the
+    read-path optimisation. Below threshold (or no digest) the feature is dormant, so a small
+    repo reads originals exactly as before (AC5: no behaviour change)."""
+    d = load(repo_root)
+    return bool(d) and d.get("count", 0) >= min_closed(repo_root)
+
+
+def status_by_id(repo_root: Path | str) -> dict:
+    """{normalised-id: status} for every digested closed artefact, or {} when the feature is
+    dormant. Kept for id-oriented callers; the read-path optimisation uses `status_by_file`
+    (filename-keyed, collision-safe against an id-sharing companion note)."""
+    if not enabled(repo_root):
+        return {}
+    d = load(repo_root) or {}
+    return {sdlc_md.norm_id(e["id"]): e.get("status", "") for e in d.get("digests", [])}
+
+
+def status_by_file(repo_root: Path | str) -> dict:
+    """{filename: status} for every digested closed artefact, or {} when the feature is dormant.
+    Keyed by filename (not id) so a same-id companion note is never mistaken for the artefact.
+    The read-path (`status`/`hint`) trusts these names and skips reading the original."""
+    if not enabled(repo_root):
+        return {}
+    d = load(repo_root) or {}
+    return {e["file"]: e.get("status", "") for e in d.get("digests", []) if e.get("file")}
 
 
 def digest_artefact(path: Path, type_: str) -> dict:
@@ -39,6 +91,7 @@ def digest_artefact(path: Path, type_: str) -> dict:
     return {
         "id": rec,
         "type": type_,
+        "file": path.name,
         "title": (sdlc_md.extract_h1_title(text) or "").split(":", 1)[-1].strip(),
         "status": sdlc_md.extract_field(text, "Status") or "",
         "outcome": (outcome or "").strip()[:200] or None,

@@ -492,6 +492,44 @@ def canonical_status(raw: str | None, vocab: list[str]) -> str | None:
     return None
 
 
+def iter_artifact_files(type_: str, repo_root: Path, trust_names=frozenset()):
+    """Yield `(path, text)` for each artifact file of `type_`. `text` is the file's content,
+    read to apply the is-artifact filter - EXCEPT for a filename in `trust_names`, which is
+    yielded as `(path, None)` WITHOUT being read. A caller that already knows a file is a
+    closed artefact (e.g. from a digest keyed by filename) passes its name here to skip the
+    read - the context-tiering optimisation. The filter/exclusion rules match `artifact_files`;
+    only the read is elided for trusted names.
+    """
+    if type_ not in ARTIFACT_TYPES:
+        return
+    try:  # late import: conventions imports this module at load time
+        from lib import conventions
+    except ImportError:
+        import conventions  # type: ignore
+    rel, prefix = ARTIFACT_TYPES[type_]
+    want = prefix.upper()
+    suffixes = tuple(f"-{s}" for s in conventions.companion_suffixes(repo_root))
+    # Glob all markdown and filter by the (case-insensitive) record ID rather
+    # than a `{prefix}*.md` glob: `Path.glob` is case-sensitive on Linux, so a
+    # `CR*.md` pattern silently misses repos that name files `cr0001.md`.
+    for p in walk_glob(repo_root / rel, "*.md"):
+        if p.name == "_index.md" or (suffixes and p.stem.endswith(suffixes)):
+            continue
+        rec = extract_record_id(p.stem)
+        if not (rec and norm_id(rec).startswith(want)):
+            continue
+        if p.name in trust_names:
+            yield p, None  # trusted closed artefact: no read (digest already vetted it)
+            continue
+        try:
+            text = p.read_text(encoding="utf-8")
+        except OSError:
+            yield p, None  # unreadable: keep it visible so a checker names it
+            continue
+        if conventions.is_artifact(text):
+            yield p, text
+
+
 def artifact_files(type_: str, repo_root: Path) -> list[Path]:
     """All artifact files of `type_` under repo_root.
 
@@ -503,33 +541,7 @@ def artifact_files(type_: str, repo_root: Path) -> list[Path]:
     namesake. A file with an `# <ID>:` title but no Status line is still an
     artifact: it stays in the set so validate can flag it.
     """
-    if type_ not in ARTIFACT_TYPES:
-        return []
-    try:  # late import: conventions imports this module at load time
-        from lib import conventions
-    except ImportError:
-        import conventions  # type: ignore
-    rel, prefix = ARTIFACT_TYPES[type_]
-    want = prefix.upper()
-    suffixes = tuple(f"-{s}" for s in conventions.companion_suffixes(repo_root))
-    # Glob all markdown and filter by the (case-insensitive) record ID rather
-    # than a `{prefix}*.md` glob: `Path.glob` is case-sensitive on Linux, so a
-    # `CR*.md` pattern silently misses repos that name files `cr0001.md`.
-    out: list[Path] = []
-    for p in walk_glob(repo_root / rel, "*.md"):
-        if p.name == "_index.md" or (suffixes and p.stem.endswith(suffixes)):
-            continue
-        rec = extract_record_id(p.stem)
-        if not (rec and norm_id(rec).startswith(want)):
-            continue
-        try:
-            text = p.read_text(encoding="utf-8")
-        except OSError:
-            out.append(p)  # unreadable: keep it visible so a checker names it
-            continue
-        if conventions.is_artifact(text):
-            out.append(p)
-    return out
+    return [p for p, _ in iter_artifact_files(type_, repo_root)]
 
 
 def id_number(record_id: str) -> int | None:

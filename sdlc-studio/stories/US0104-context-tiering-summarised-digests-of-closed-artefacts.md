@@ -1,6 +1,6 @@
 # US0104: Context tiering: summarised digests of closed artefacts
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio new
 > **Epic:** EP0023
@@ -23,6 +23,7 @@ Delivers CR0179. Config-gated by a size threshold; no behaviour change below it.
 - **When** `status` / `hint` run
 - **Then** they read the digests, not the original artefact files (instrumented read-path test proves the originals are not re-read)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_digest.py::DigestReadPathTests
+- **Verified:** yes (2026-07-09)
 
 ### AC2: Token cost of status drops measurably
 
@@ -30,6 +31,7 @@ Delivers CR0179. Config-gated by a size threshold; no behaviour change below it.
 - **When** `status` runs against digests vs the full corpus
 - **Then** the read cost (bytes/rows read) is measurably lower; the numbers are recorded in CR0179 on delivery
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_digest.py::DigestCostTests
+- **Verified:** yes (2026-07-09)
 
 ### AC3: Digests are regenerable and drift-checked, byte-stable
 
@@ -37,6 +39,7 @@ Delivers CR0179. Config-gated by a size threshold; no behaviour change below it.
 - **When** it is regenerated and `reconcile` checks it
 - **Then** it is byte-stable (deterministic, like the CR0168 indexes) and reconcile flags any drift between a digest and its source batch
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_digest.py::DigestDriftTests
+- **Verified:** yes (2026-07-09)
 
 ### AC4: A closed artefact still resolves by id to its full original
 
@@ -44,6 +47,7 @@ Delivers CR0179. Config-gated by a size threshold; no behaviour change below it.
 - **When** it is opened by id (including a CR0167 alias)
 - **Then** it resolves to the full original file, unchanged
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_digest.py::DigestIdResolveTests
+- **Verified:** yes (2026-07-09)
 
 ### AC5: No behaviour change below the size threshold
 
@@ -51,6 +55,7 @@ Delivers CR0179. Config-gated by a size threshold; no behaviour change below it.
 - **When** any command runs
 - **Then** behaviour is unchanged (digests are not produced or read); the default threshold is documented
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_digest.py::DigestThresholdTests
+- **Verified:** yes (2026-07-09)
 
 ## Revision History
 

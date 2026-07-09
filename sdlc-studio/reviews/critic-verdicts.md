@@ -166,3 +166,4 @@
 | US0102 | APPROVE | independent-critic | engineering-seat | 2026-07-09 | none - behaviour-preservation + test-bite mutation-verified |
 | US0100 | APPROVE | Sam Eriksson | Dani Okafor | 2026-07-09 | 1 blocking (bash-4 ${var,,} breaks macOS bash 3.2) - fixed with tr; SHAs verified against live tags |
 | US0101 | APPROVE | Sam Eriksson | Dani Okafor | 2026-07-09 | 1 blocking (provenance tag in shipped comment; guard regex blind spot let it pass) - tag removed; security properties + bypass attempts verified |
+| US0104 | APPROVE | Sam Eriksson | Dani Okafor | 2026-07-09 | none - artifact\_files refactor verified byte-preserving (empty trust\_names); trust bypass collision-safe; read-path + drift + threshold mutation-tested |

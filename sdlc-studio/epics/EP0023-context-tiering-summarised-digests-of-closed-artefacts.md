@@ -10,7 +10,7 @@
 
 ## Story Breakdown
 
-- [ ] [US0104: Context tiering: summarised digests of closed artefacts](../stories/US0104-context-tiering-summarised-digests-of-closed-artefacts.md)
+- [x] [US0104: Context tiering: summarised digests of closed artefacts](../stories/US0104-context-tiering-summarised-digests-of-closed-artefacts.md)
 
 ## Revision History
 
