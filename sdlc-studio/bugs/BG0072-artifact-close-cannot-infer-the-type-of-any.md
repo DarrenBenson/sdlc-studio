@@ -1,6 +1,6 @@
 # BG0072: artifact close cannot infer the type of any v3 ULID id
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** High
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file

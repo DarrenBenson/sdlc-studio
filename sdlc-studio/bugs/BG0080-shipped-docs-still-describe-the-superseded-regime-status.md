@@ -1,6 +1,6 @@
 # BG0080: shipped docs still describe the superseded regime: status/hint version tables have no schema-3 row and SECURITY.md supports only 1.x
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file

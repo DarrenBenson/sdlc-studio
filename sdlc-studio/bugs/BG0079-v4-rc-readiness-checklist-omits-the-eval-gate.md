@@ -1,6 +1,6 @@
 # BG0079: v4 rc-readiness checklist omits the eval gate its own release-gate template mandates; evals last ran at v3.5.0
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file

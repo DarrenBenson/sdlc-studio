@@ -1,6 +1,6 @@
 # BG0077: file_finding is not era-aware: it mints v2 sequential ids on schema-v3 projects
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file

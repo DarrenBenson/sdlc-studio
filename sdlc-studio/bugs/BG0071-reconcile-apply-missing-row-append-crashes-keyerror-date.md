@@ -1,6 +1,6 @@
 # BG0071: reconcile apply missing-row append crashes KeyError 'date' on any index with a date column
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** High
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file

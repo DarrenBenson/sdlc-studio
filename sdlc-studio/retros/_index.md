@@ -23,3 +23,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0011](RETRO0011-token-optimisation-tranche-the-anchor-window-the-self.md) | Token-optimisation tranche - the anchor window, the self-recommending archive, and Sam takes the seat | 2026-07-05 | -- | -- |
 | [RETRO-0015](RETRO0015-ep0022-ep0023-supply-chain-sync-hardening-shared-layer.md) | EP0022/EP0023 supply-chain, sync hardening, shared-layer, context tiering | 2026-07-09 | -- | -- |
 | [RETRO-0016](RETRO0016-ep0024-ep0025-v4-0-release-engineering-backlog-clearance.md) | EP0024/EP0025 v4.0 release engineering + backlog clearance | 2026-07-09 | -- | -- |
+| [RETRO-0017](RETRO0017-rv0007-fixpack-the-nine-rc-blockers.md) | RV0007 fix-pack: the nine rc-blockers | 2026-07-10 | 9 / 9 | 0 |

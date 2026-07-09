@@ -1,6 +1,6 @@
 # BG0078: artifact new Low-severity consolidation exits 1 after creating the CR, and its dry-run crashes
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file

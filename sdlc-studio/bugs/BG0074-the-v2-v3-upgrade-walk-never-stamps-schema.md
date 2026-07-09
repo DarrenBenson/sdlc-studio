@@ -1,6 +1,6 @@
 # BG0074: the v2->v3 upgrade walk never stamps schema_version: 3, so the next filing mints ids that collide with live aliases
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** High
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file

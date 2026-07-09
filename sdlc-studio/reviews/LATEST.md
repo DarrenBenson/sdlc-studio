@@ -18,15 +18,17 @@
 
 ## Current
 
-- **RV0007 REPOSITORY REVIEW (2026-07-09): 42 verified findings, 9 rc-BLOCKERS - hold the v4.0
-  tag.** Five-leg deep review (code, architecture, reliability, test/CI, defensive security) at
-  the rc; every finding re-verified, most reproduced. Filed BG0071-BG0096 (6 High, 20 Medium),
-  CR0202-CR0208, and RFC0027 (world-class roadmap; recommendation: blocker fix pack -> tag ->
-  three themed epics). Blockers: BG0071 (reconcile apply KeyError on dated indexes), BG0072
-  (close cannot type ULIDs), BG0073/74 (interrupted migration cross-wires ids; walk never stamps
-  schema 3), BG0075 (lint red at HEAD; commit hook never enabled, CI dark), BG0077/78 (filer not
-  era-aware; consolidation false-failure), BG0079/80 (eval gate missing from the rc checklist;
-  superseded-regime docs). Backlog is deliberately NO LONGER EMPTY. See
+- **RV0007 FIX PACK DELIVERED (2026-07-10): all nine rc-blockers Closed - the rc checklist is
+  honestly GREEN again.** One green commit per unit through the (newly enabled) hook; every fix
+  red-first; eval scenarios re-run 4/4 PASS (`v4-eval-run-2026-07-10.md`); closing full-diff
+  critic issued one REJECT (BG0073 resume clobbered `Aliases:` lines - identity loss) which was
+  repaired test-first and re-reproduced by the same critic -> overall APPROVE. See RETRO0017.
+  **The tag decision is now genuinely yours: checklist green including the three new rows.**
+- **RV0007 REPOSITORY REVIEW (2026-07-09): 42 verified findings, 9 rc-blockers (all now fixed
+  above).** Five-leg deep review; filed BG0071-BG0096 (6 High, 20 Medium), CR0202-CR0208, and
+  RFC0027 (world-class roadmap: blocker fix pack -> tag -> gate-integrity epic -> reliability
+  tier -> era completion). Remaining backlog: 17 post-v4 bugs + 7 CRs + RFC0027 (Draft,
+  awaiting your option call). See
   `RV0007-repository-review-2026-07-09-code-architecture-reliability.md`.
 - **EP0024 + EP0025 DELIVERED - v4.0.0-rc.1 PREPARED (2026-07-09).** v4 release engineering +
   backlog clearance: 8 units + BG0070 fix, both epics Done; committed to `main` (unpushed). US0105

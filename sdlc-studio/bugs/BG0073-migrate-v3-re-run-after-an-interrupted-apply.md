@@ -1,6 +1,6 @@
 # BG0073: migrate_v3 re-run after an interrupted apply re-mints a different id map and silently cross-wires identities
 
-> **Status:** Fixed
+> **Status:** Closed
 > **Severity:** High
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file
