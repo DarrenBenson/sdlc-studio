@@ -18,6 +18,7 @@ read green.
 | Full suites green | script + tools unittest discover | GREEN - 1455 + 108 (recomputed 2026-07-09, RV0007) |
 | Full repo lint green (not just the portable gate) | `npm run lint` exits 0 | GREEN - fixed under BG0075 (was RED at rc prep: six commits landed markdown breakage while the hook was disabled) |
 | Commit gate enabled in the tagging clone | `git config core.hooksPath` = `.githooks` | GREEN - enabled under BG0075; run `bash tools/enable-hooks.sh` in any new clone |
+| Eval scenarios re-run for the major | 4 scenarios per `evals/README.md`; record the run | GREEN - 4/4 PASS 2026-07-10, see `v4-eval-run-2026-07-10.md` (BG0079; gate added - it was missing from this checklist despite release-gate sections 1 and 8 mandating it) |
 
 ## Verdict
 

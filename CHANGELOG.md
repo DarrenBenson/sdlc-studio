@@ -232,6 +232,13 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
 
 ### Fixed
 
+- **The eval gate joined the rc checklist and the four scenarios were re-run: 4/4 PASS
+  (RV0007; BG0079).** The rc-readiness checklist omitted the eval gate its own release-gate
+  template mandates (sections 1 and 8) and the scenarios had not run since v3.5.0 despite a
+  SKILL.md description change. The checklist gains the row, and a full two-Claude run
+  (worker + grader per scenario, method deviations recorded) passed every blocking behaviour
+  across trigger routing, greenfield create, the generate-mode gate, and drift/reconcile
+  dry-run safety - recorded in `sdlc-studio/reviews/v4-eval-run-2026-07-10.md`.
 - **Superseded-regime docs corrected for the v4 majors gate (RV0007; BG0080).** The
   `status`/`hint` pre-flight tables covered only `schema_version: 2` (a fresh v4 project, on
   the new default of 3, had no row and the prompt still said "v1 format... upgrade to v2"); both
