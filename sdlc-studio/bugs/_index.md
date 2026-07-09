@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 1 |
+| Open | 0 |
 | In Progress | 0 |
-| Fixed | 3 |
+| Fixed | 4 |
 | Verified | 0 |
 | Closed | 66 |
 | Won't Fix | 0 |
@@ -36,7 +36,7 @@
 | [BG0067](BG0067-verify-ac-pytest-k-dsl-glues-path-and.md) | verify_ac pytest -k DSL glues path and marker into one argv element | Fixed | Medium | 2026-07-08 | 2026-07-08 |
 | [BG0068](BG0068-decisions-py-supersedes-never-flips-the-superseded-row.md) | decisions.py --supersedes never flips the superseded row's status | Fixed | medium | 2026-07-08 | 2026-07-08 |
 | [BG0069](BG0069-shipped-test-gate-real-wrapper-tests-assume-the.md) | Shipped test_gate real-wrapper tests assume the dev-repo path and fail from an install | Fixed | low | 2026-07-08 | 2026-07-08 |
-| [BG0070](BG0070-migrate-v3-build-id-map-runs-a-git.md) | migrate_v3 build_id_map runs a git log --follow per artefact, so it does not scale to a large project | Open | High | 2026-07-09 | 2026-07-09 |
+| [BG0070](BG0070-migrate-v3-build-id-map-runs-a-git.md) | migrate_v3 build_id_map runs a git log --follow per artefact, so it does not scale to a large project | Fixed | High | 2026-07-09 | 2026-07-09 |
 
 ## Archived Releases
 

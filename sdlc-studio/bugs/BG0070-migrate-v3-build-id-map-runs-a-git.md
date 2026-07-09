@@ -1,9 +1,10 @@
 # BG0070: migrate_v3 build_id_map runs a git log --follow per artefact, so it does not scale to a large project
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file
+> **Verification depth:** functional (unit regression test asserts <=1 git call, plus re-rehearsed dry-run on two real ~1,500-artefact projects: >150s -> 0.2-0.3s)
 
 ## Summary
 
