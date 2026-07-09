@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 11 |
+| Proposed | 12 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 184 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 4 |
 | Blocked | 0 |
-| **Total** | **199** |
+| **Total** | **200** |
 
 ## All Changes
 
@@ -60,6 +60,7 @@
 | [CR-0197](CR0197-upgrade-re-baseline-census-in-flight-artifacts-against.md) | Upgrade re-baseline: census in-flight artifacts against the capability delta | Proposed | Medium | process | 2026-07-08 | -- |
 | [CR-0198](CR0198-v4-0-release-engineering-schema-v3-becomes-the.md) | v4.0 release engineering: schema v3 becomes the default, upgrade walk, major-release checklist | Proposed | Medium | process | 2026-07-08 | -- |
 | [CR-0199](CR0199-status-backlog-deterministic-non-terminal-census-grouped-by.md) | status backlog: deterministic non-terminal census grouped by type and status | Proposed | Medium | tooling | 2026-07-08 | -- |
+| [CR-0200](CR0200-split-the-reference-scripts-md-catalogue-into-a.md) | Split the reference-scripts.md catalogue into a lean index plus grouped pages | Proposed | Low | Improvement | 2026-07-09 | -- |
 
 ## Archived Releases
 

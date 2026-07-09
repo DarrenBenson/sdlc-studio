@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 0 |
+| Ready | 3 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -16,7 +16,7 @@
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **93** |
+| **Total** | **96** |
 
 ## All Stories
 
@@ -61,6 +61,9 @@
 | [US0091](US0091-plan-reviewer-charter-verdict-slot-and-telemetry.md) | Plan-reviewer charter, verdict slot and telemetry | Done | EP0019 | 2026-07-09 | 2026-07-09 |
 | [US0092](US0092-block-untraced-spec-document-edits-at-review.md) | Block untraced spec-document edits at review | Done | EP0019 | 2026-07-09 | 2026-07-09 |
 | [US0093](US0093-bench-runner-phase-field-and-calibration-exclusion.md) | Bench runner: phase field and calibration exclusion | Done | EP0019 | 2026-07-09 | 2026-07-09 |
+| [US0094](US0094-upgrade-re-baseline-census-and-bucketed-report.md) | Upgrade re-baseline census and bucketed report | Ready | EP0020 | 2026-07-09 | 2026-07-09 |
+| [US0095](US0095-upgrade-re-baseline-mechanical-backfill-and-next-transition.md) | Upgrade re-baseline mechanical backfill and next-transition policy | Ready | EP0020 | 2026-07-09 | 2026-07-09 |
+| [US0096](US0096-split-the-reference-scripts-catalogue-into-a-lean.md) | Split the reference-scripts catalogue into a lean index | Ready | EP0020 | 2026-07-09 | 2026-07-09 |
 
 ## Archived Releases
 
