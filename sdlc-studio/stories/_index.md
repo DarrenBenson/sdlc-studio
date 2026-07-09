@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 0 |
+| Ready | 8 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -16,7 +16,7 @@
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **104** |
+| **Total** | **112** |
 
 ## All Stories
 
@@ -72,6 +72,14 @@
 | [US0102](US0102-shared-layer-consolidation-and-cli-json-parity.md) | Shared-layer consolidation and CLI JSON parity | Done | EP0022 | 2026-07-09 | 2026-07-09 |
 | [US0103](US0103-decompose-complexity-hotspots-and-apply-small-cleanups.md) | Decompose complexity hotspots and apply small cleanups | Done | EP0022 | 2026-07-09 | 2026-07-09 |
 | [US0104](US0104-context-tiering-summarised-digests-of-closed-artefacts.md) | Context tiering: summarised digests of closed artefacts | Done | EP0023 | 2026-07-09 | 2026-07-09 |
+| [US0105](US0105-init-defaults-schema-version-3-for-new-projects.md) | init defaults schema_version 3 for new projects; code default stays 2 (existing projects untouched) | Ready | EP0024 | 2026-07-09 | 2026-07-09 |
+| [US0106](US0106-v3-to-v4-upgrade-walk-rehearsed-on-two.md) | v3 to v4 upgrade walk rehearsed on two consuming projects with findings filed | Ready | EP0024 | 2026-07-09 | 2026-07-09 |
+| [US0107](US0107-majors-only-release-gate-checklist-section.md) | Majors-only release-gate checklist section | Ready | EP0024 | 2026-07-09 | 2026-07-09 |
+| [US0108](US0108-version-and-changelog-conversion-to-4-0-0.md) | Version and CHANGELOG conversion to 4.0.0-rc.1 and dormant-schema banner removal | Ready | EP0024 | 2026-07-09 | 2026-07-09 |
+| [US0109](US0109-rc-tag-readiness-checklist-enumerated-so-the-tag.md) | rc-tag readiness checklist enumerated so the tag decision is a checklist read | Ready | EP0024 | 2026-07-09 | 2026-07-09 |
+| [US0110](US0110-status-py-backlog-non-terminal-census-per-type.md) | status.py backlog: non-terminal census per type and status (CR0199) | Ready | EP0025 | 2026-07-09 | 2026-07-09 |
+| [US0111](US0111-widen-the-provenance-tag-lint-guard-to-us.md) | Widen the provenance-tag lint guard to US-form and non-leading ids (CR0201) | Ready | EP0025 | 2026-07-09 | 2026-07-09 |
+| [US0112](US0112-hygiene-close-fixed-bugs-archive-over-threshold-indexes.md) | Hygiene: close fixed bugs, archive over-threshold indexes, apply small deferred fixes | Ready | EP0025 | 2026-07-09 | 2026-07-09 |
 
 ## Archived Releases
 

@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Draft | 0 |
-| Ready | 9 |
+| Ready | 11 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 14 |
-| **Total** | **23** |
+| **Total** | **25** |
 
 > Generate-mode note: all epics are **Ready** (spec extracted from the existing
 > implementation, awaiting test validation per `reference-philosophy.md`), not
@@ -44,3 +44,5 @@
 | [EP0021](EP0021-tooling-and-shared-layer-hardening.md) | Tooling and shared-layer hardening | Done | -- | -- | 2026-07-09 | 2026-07-09 |
 | [EP0022](EP0022-rv0006-debt-clearance-security-and-code-quality.md) | RV0006 debt clearance - security and code-quality | Done | -- | -- | 2026-07-09 | 2026-07-09 |
 | [EP0023](EP0023-context-tiering-summarised-digests-of-closed-artefacts.md) | Context tiering - summarised digests of closed artefacts | Done | -- | -- | 2026-07-09 | 2026-07-09 |
+| [EP0024](EP0024-v4-0-release-engineering-schema-v3-default-upgrade.md) | v4.0 release engineering: schema-v3 default, upgrade walk, majors checklist | Ready | -- | -- | 2026-07-09 | 2026-07-09 |
+| [EP0025](EP0025-backlog-clearance-and-status-backlog-tooling.md) | Backlog clearance and status-backlog tooling | Ready | -- | -- | 2026-07-09 | 2026-07-09 |
