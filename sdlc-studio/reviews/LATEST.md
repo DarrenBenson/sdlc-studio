@@ -7,7 +7,7 @@
 >
 > **Version:** `4.0.0-rc.1` prepared (the maturity release: schema v3 active + default for new
 > projects) · **Date:** 2026-07-09 ·
-> **Gates:** lint clean, 1449 script tests pass (+repo-only tools tests), `gate` PASS,
+> **Gates:** lint clean, 1457 script tests pass (+repo-only tools tests), `gate` PASS,
 > reconcile drift 0, npm audit 0.
 >
 > **rc-tag / push is operator-gated.** The version strings and CHANGELOG are homed at `4.0.0-rc.1`
@@ -18,29 +18,31 @@
 
 ## Current
 
-- **EP0022 + EP0023 DELIVERED (2026-07-09).** RV0006 debt clearance + context tiering: 5 units, all
-  Done + conformant, both epics Done; committed to `main` (unpushed, freeze holds). US0102 shared
-  `find_by_id`/`story_epic` + `reconcile --format json` parity; US0100 SHA-pinned Actions +
-  `check_action_pins.sh` guard + installer sha256 verification; US0101 `github_sync` secret scan +
-  `http` scheme/host floor + `.gitignore` hardening; US0104 context-tiering digests (`status`/`hint`
-  read a filename-keyed digest, dormant below `digests.min_closed` 500; `artifact_files` refactored
-  onto `iter_artifact_files`); US0103 three complexity hotspots decomposed + `SDLC_DEBUG`/`roll_jsonl`
-  diagnostics + small cleanups. Closes CR0186/CR0187/CR0179. 1444 script tests, gate PASS, drift 0.
-  6 adversarial reviews (5 unit + 1 closing full-diff), a real finding in 2 units (US0100 bash-4
-  macOS portability, US0101 shipped provenance tag), 0 shipped unaddressed; follow-up CR0201 filed
-  (lint provenance-guard blind spot) - see RETRO0015.
-- **Backlog after EP0022/EP0023:** v4.0 release engineering CR0198/CR0199; CR0201 (lint
-  provenance-guard blind spot, filed this sprint). Deferred follow-ups: a `reconcile detect --era`
-  lens + per-artifact re-review markers + per-capability watermarks (CR0197 open decisions); a
-  path-aware tightening of the spec-guard basename match; the pre-existing v3 ULID/validate
-  id-format mismatch. The RV0006 debt grab-bags (CR0186/CR0187) and context tiering (CR0179) are
-  now Complete.
+- **EP0024 + EP0025 DELIVERED - v4.0.0-rc.1 PREPARED (2026-07-09).** v4 release engineering +
+  backlog clearance: 8 units + BG0070 fix, both epics Done; committed to `main` (unpushed). US0105
+  `init` defaults new projects to `schema_version: 3` (existing untouched, override-only reader);
+  US0106 rehearsed the v2->v3 upgrade walk on two real projects (found+fixed BG0070, a per-file
+  `git log --follow` scale defect); US0107 majors-only release-gate section; US0108 version ->
+  `4.0.0-rc.1` + banners removed; US0109 rc-readiness checklist; US0110 `status.py backlog` census;
+  US0111 provenance guard widened; US0112 closed BG0067-0070, archived indexes, `validate` accepts
+  v3 ULID. Closes CR0198/CR0199/CR0201. 1457 tests, gate PASS, drift 0. The closing full-diff critic
+  caught a cross-unit schema-source split (a fresh v3 project shown a v2->v3 walk) - fixed before the
+  rc. See RETRO0016. **rc tag / freeze lift / push are OPERATOR-GATED** (see `v4-rc-readiness.md`):
+  the checklist reads green; the tag decision is yours.
+- **Backlog now:** open CR/bug/story backlog is empty. `status.py backlog` surfaced 6 legacy epics
+  (EP0001-0004, EP0008, EP0009) at a stale `Ready` (EP0005/0006/0007 were closed; EP0008 has
+  unchecked items) - a small follow-up hygiene pass, not a blocker.
+- **Deferred follow-ups (open ideas, unfiled):** a `reconcile detect --era` lens + per-artifact
+  re-review markers + per-capability watermarks (CR0197 open decisions); a path-aware tightening of
+  the spec-guard basename match; the 6 legacy-epic stale-`Ready` hygiene pass above.
 - **Benchmark evidence base (N=5, `2026-07-08-n5-run.md`):** unstructured arms escaped 10/10 on
   notify-digest vs mandated-planning 2/5 (Fisher p 0.083); Auditability tracked escapes (R 0.88 >
   A 0.68 > B 0.60); routing 0.40 cost index, ~3.1x baseline tokens. Failure mode "a bad plan
   propagates" -> CR0194. Positioning docs cite these numbers.
 
 ## History (detail lives in the named retro / CHANGELOG entry)
+
+- **EP0022 + EP0023 RV0006 debt + context tiering (2026-07-09)** supply-chain SHA pins + installer checksum, sync/verifier hardening, shared-layer consolidation, complexity-hotspot decomposition, context-tiering digests; closes CR0186/CR0187/CR0179 -> RETRO0015
 
 - **EP0020 + EP0021 clear-the-decks (2026-07-09)** upgrade re-baseline, `reference-scripts` split, shared discovery, archive consolidation, origin-drift pre-flight; BG0068/BG0069; closes CR0197/0200/0181/0182/0188 -> RETRO0014
 - **EP0019 plan-integrity hardening (2026-07-09, schema-v3 dormant)** deterministic plan-review gate (AC-vs-spec, fingerprint-pinned), reviewer charter + telemetry, spec-edit guard, bench phase field; closes CR0194/0195/0196 -> RETRO0013
