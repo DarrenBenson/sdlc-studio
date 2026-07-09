@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 0 |
+| Open | 26 |
 | In Progress | 0 |
 | Fixed | 0 |
 | Verified | 0 |
 | Closed | 70 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **70** |
+| **Total** | **96** |
 
 ## All Bugs
 
@@ -37,6 +37,32 @@
 | [BG0068](BG0068-decisions-py-supersedes-never-flips-the-superseded-row.md) | decisions.py --supersedes never flips the superseded row's status | Closed | medium | 2026-07-08 | 2026-07-08 |
 | [BG0069](BG0069-shipped-test-gate-real-wrapper-tests-assume-the.md) | Shipped test_gate real-wrapper tests assume the dev-repo path and fail from an install | Closed | low | 2026-07-08 | 2026-07-08 |
 | [BG0070](BG0070-migrate-v3-build-id-map-runs-a-git.md) | migrate_v3 build_id_map runs a git log --follow per artefact, so it does not scale to a large project | Closed | High | 2026-07-09 | 2026-07-09 |
+| [BG0071](BG0071-reconcile-apply-missing-row-append-crashes-keyerror-date.md) | reconcile apply missing-row append crashes KeyError 'date' on any index with a date column | Open | High | 2026-07-09 | 2026-07-09 |
+| [BG0072](BG0072-artifact-close-cannot-infer-the-type-of-any.md) | artifact close cannot infer the type of any v3 ULID id | Open | High | 2026-07-09 | 2026-07-09 |
+| [BG0073](BG0073-migrate-v3-re-run-after-an-interrupted-apply.md) | migrate_v3 re-run after an interrupted apply re-mints a different id map and silently cross-wires identities | Open | High | 2026-07-09 | 2026-07-09 |
+| [BG0074](BG0074-the-v2-v3-upgrade-walk-never-stamps-schema.md) | the v2->v3 upgrade walk never stamps schema_version: 3, so the next filing mints ids that collide with live aliases | Open | High | 2026-07-09 | 2026-07-09 |
+| [BG0075](BG0075-npm-run-lint-fails-at-head-the-pre.md) | npm run lint fails at HEAD: the pre-commit gate was never enabled in this clone and CI is dark while main is unpushed | Open | High | 2026-07-09 | 2026-07-09 |
+| [BG0076](BG0076-cr0183-concurrency-floor-is-incomplete-file-finding-and.md) | CR0183 concurrency floor is incomplete: file_finding and new_batch allocate unlocked and truth-file stamps are non-atomic (4-way id collision reproduced) | Open | High | 2026-07-09 | 2026-07-09 |
+| [BG0077](BG0077-file-finding-is-not-era-aware-it-mints.md) | file_finding is not era-aware: it mints v2 sequential ids on schema-v3 projects | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0078](BG0078-artifact-new-low-severity-consolidation-exits-1-after.md) | artifact new Low-severity consolidation exits 1 after creating the CR, and its dry-run crashes | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0079](BG0079-v4-rc-readiness-checklist-omits-the-eval-gate.md) | v4 rc-readiness checklist omits the eval gate its own release-gate template mandates; evals last ran at v3.5.0 | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0080](BG0080-shipped-docs-still-describe-the-superseded-regime-status.md) | shipped docs still describe the superseded regime: status/hint version tables have no schema-3 row and SECURITY.md supports only 1.x | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0081](BG0081-a-reopened-after-archive-artefact-creates-permanent-drift.md) | a reopened-after-archive artefact creates permanent drift: archive rows shadow live index rows | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0082](BG0082-reconcile-index-rewriter-bleeds-a-stale-status-column.md) | reconcile index rewriter bleeds a stale Status column into following status-less tables, corrupting author-maintained cells | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0083](BG0083-verify-ac-story-discovery-executes-companions-and-any.md) | verify_ac story discovery executes companions and any us*.md file, poisoning runs and ts-check | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0084](BG0084-verify-ac-run-story-with-a-missing-path.md) | verify_ac run --story with a missing path exits 0 (false success) | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0085](BG0085-sprint-plan-origin-drift-preflight-silently-dies-for.md) | sprint plan origin-drift preflight silently dies for --order manual and empty batches; --strict cannot refuse | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0086](BG0086-v3-short-ids-carry-zero-randomness-uncoordinated-writers.md) | v3 short ids carry zero randomness: uncoordinated writers in the same ~1s window mint identical ids | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0087](BG0087-migrate-v3-id-minting-wraps-at-1024-files.md) | migrate_v3 id minting wraps at 1024 files (silent rename overwrite) and pollutes slugs of dash-named files | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0088](BG0088-format-json-suppresses-failure-exit-codes-on-reconcile.md) | --format json suppresses failure exit codes on reconcile apply and verify_ac report; reconcile fields is drift-blind in both formats | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0089](BG0089-verify-ac-run-root-mixes-roots-story-discovery.md) | verify_ac run --root mixes roots: story discovery and report are cwd-relative, verifier cwd and history are root-relative | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0090](BG0090-gate-py-fail-open-a-check-that-raises.md) | gate.py fail-open: a check that raises is recorded non-blocking and the gate prints PASS | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0091](BG0091-archive-py-is-not-idempotent-per-release-a.md) | archive.py is not idempotent per release: a crash between its two writes duplicates every archived row invisibly | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0092](BG0092-github-sync-push-exits-0-and-stamps-last.md) | github_sync push exits 0 and stamps last_push even when every gh create/edit failed | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0093](BG0093-config-failure-handling-remains-three-regime-post-cr0180.md) | config failure handling remains three-regime post-CR0180 and the decided PyYAML documentation never landed | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0094](BG0094-plan-review-resolves-stories-with-a-case-sensitive.md) | plan_review resolves stories with a case-sensitive US*.md glob: lowercase stories get a null fingerprint and an unclearable false block | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0095](BG0095-the-provenance-external-stamp-that-gates-shell-verifiers.md) | the Provenance: external stamp that gates shell verifiers has no writer anywhere on the ingest path | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0096](BG0096-ci-never-runs-gate-py-although-the-pre.md) | CI never runs gate.py although the pre-commit hook and CONTRIBUTING claim parity | Open | Medium | 2026-07-09 | 2026-07-09 |
 
 ## Archived Releases
 

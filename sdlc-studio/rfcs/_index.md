@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 0 |
+| Draft | 1 |
 | In Review | 0 |
 | Accepted | 23 |
 | Superseded | 0 |
 | Withdrawn | 3 |
-| **Total** | **26** |
+| **Total** | **27** |
 
 ## All RFCs
 
@@ -43,3 +43,4 @@
 | [RFC-0024](RFC0024-distributed-artefact-identity-type-prefixed-short-ulids-schema.md) | Distributed artefact identity: type-prefixed short ULIDs (schema v3) | High | Accepted | Dani Okafor (Engineering amigo) | 2026-07-06 | -- |
 | [RFC-0025](RFC0025-evidence-and-benchmark-harness-measure-sdlc-studio-against.md) | Evidence and benchmark harness: measure sdlc-studio against plain Claude Code | Medium | Accepted | Sam Eriksson (QA amigo) | 2026-07-06 | -- |
 | [RFC-0026](RFC0026-difficulty-aware-model-tier-routing-for-delegated-workers.md) | Difficulty-aware model-tier routing for delegated workers | High | Accepted | operator vision + benchmark spike D0012 | 2026-07-08 | CR0189-CR0192 |
+| [RFC-0027](RFC0027-roadmap-to-world-class-reliability-tier-gate-integrity.md) | Roadmap to world-class: reliability tier, gate integrity, era completion and evidence-backed maturity | High | Draft | audit | 2026-07-09 | -- |
