@@ -155,6 +155,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **"Find an artifact by id" and "a story's epic" consolidated onto the shared layer (EP0022,
+  CR0187; US0102).** `lib/sdlc_md.py` gains canonical `find_by_id` (alias-aware) and
+  `story_epic`; `audit.find_artifact`, `transition._find` and `lite_profile._story_epic` now
+  delegate to them, so a lookup fix lands in one place. `reconcile.py`'s `detect`/`apply`/
+  `fields`/`archive` all speak `--format json`, and the parity is locked by a test so a new
+  subcommand cannot ship text-only. Maintainability only - no behaviour change.
 - **`reference-scripts.md` split into a lean index + grouped detail pages (EP0020, CR0200;
   US0096).** The 643-line catalogue (past its 600 budget three sprints running) is now a lean
   index of one-line summaries linking to five grouped pages (`reference-scripts-{create,verify,

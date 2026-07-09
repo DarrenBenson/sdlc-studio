@@ -549,6 +549,34 @@ class UlidIdentityTests(unittest.TestCase):
         self.assertEqual(sdlc_md.norm_id("CR-0007"), "CR0007")
         self.assertEqual(sdlc_md.norm_id("BG-01JQK3F8"), "BG01JQK3F8")
 
+class FindByIdTests(unittest.TestCase):
+    """US0102/CR0187: find_by_id + story_epic on the shared layer (alias-aware)."""
+
+    def _story(self, root, sid, epic="EP0001", aliases=None):
+        d = root / "sdlc-studio" / "stories"; d.mkdir(parents=True, exist_ok=True)
+        al = f"> **Aliases:** {aliases}\n" if aliases else ""
+        (d / f"{sid}-x.md").write_text(
+            f"# {sid}: s\n\n> **Status:** Draft\n> **Epic:** {epic}\n{al}", encoding="utf-8")
+
+    def test_find_by_id_locates_and_types(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); self._story(root, "US0001")
+            r = sdlc_md.find_by_id(root, "US0001")
+            self.assertIsNotNone(r); self.assertEqual(r[1], "story")
+            self.assertIsNone(sdlc_md.find_by_id(root, "US9999"))
+
+    def test_find_by_id_resolves_alias(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); self._story(root, "US0001", aliases="US0042")
+            self.assertIsNotNone(sdlc_md.find_by_id(root, "US0042"))   # alias -> canonical
+
+    def test_story_epic_reads_field(self):
+        self.assertEqual(sdlc_md.story_epic("# US1: s\n> **Epic:** EP0007\n"), "EP0007")
+        self.assertIsNone(sdlc_md.story_epic("# US1: s\n> **Epic:** --\n"))
+        self.assertIsNone(sdlc_md.story_epic("# US1: s\n> **Status:** Draft\n"))  # no phantom
+
 
 if __name__ == "__main__":
     unittest.main()

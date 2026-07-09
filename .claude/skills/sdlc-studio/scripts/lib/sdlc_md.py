@@ -706,6 +706,39 @@ def alias_map(repo_root) -> dict[str, str]:
     return out
 
 
+def find_by_id(repo_root, rec_id: str):
+    """(path, type) of the artefact with this id across all types, or None. Resolves a
+    pre-migration id through the `alias_map` (a `--id US0001` still works after a v2 -> v3
+    migration). The single lookup that `transition` and `audit` delegate to, so a fix to
+    id-resolution lands in one place."""
+    root = Path(repo_root)
+    norm = norm_id(rec_id)
+    for type_ in ARTIFACT_TYPES:
+        for p in artifact_files(type_, root):
+            rec = extract_record_id(p.stem)
+            if rec and norm_id(rec) == norm:
+                return p, type_
+    aliased = alias_map(root).get(norm)
+    if aliased and norm_id(aliased) != norm:
+        return find_by_id(root, aliased)
+    return None
+
+
+_EPIC_FIELD = re.compile(r"(?m)^>?[^\S\n]*\*\*Epic:\*\*[^\S\n]*(.*)$")
+
+
+def story_epic(source) -> str | None:
+    """The epic a story names (`> **Epic:** ...`), or None when it has none (`-`/`--`/absent).
+    Accepts the story text or a `Path`. Same-line capture so a blank field is not a phantom
+    match of the next line. The canonical reader the story/epic helpers delegate to."""
+    text = source.read_text(encoding="utf-8") if isinstance(source, Path) else source
+    m = _EPIC_FIELD.search(text)
+    if not m:
+        return None
+    val = m.group(1).strip()
+    return None if val in ("", "-", "--") else val
+
+
 def new_ulid() -> str:
     """A 26-char Crockford-base32 ULID: a 48-bit millisecond timestamp (lexicographically
     sortable = creation order) followed by 80 bits of randomness. Collision-free across

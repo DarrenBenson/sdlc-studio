@@ -27,12 +27,9 @@ _UMBRELLA_TITLE = "Existing stories (migrated from the lite profile)"
 
 
 def _story_epic(path: Path) -> str | None:
-    """The epic a story names, or None when it has none (`-` or absent)."""
-    m = _EPIC_LINE.search(path.read_text(encoding="utf-8"))
-    if not m:
-        return None
-    val = m.group(0).split("**Epic:**", 1)[1].strip()
-    return None if val in ("", "-", "--") else val
+    """The epic a story names, or None when it has none. Delegates to the shared
+    `sdlc_md.story_epic` (one source of truth)."""
+    return sdlc_md.story_epic(path)
 
 
 def _story_title(path: Path) -> str:

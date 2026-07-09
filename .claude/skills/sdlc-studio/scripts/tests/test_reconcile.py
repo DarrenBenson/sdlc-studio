@@ -1534,3 +1534,41 @@ class ApplyJsonFormatTests(unittest.TestCase):
             self.assertIn("by_type", j)
             self.assertIn("applied", j)
             self.assertTrue(j["dry_run"])
+
+
+class FormatJsonParityTests(unittest.TestCase):
+    """US0102/CR0187: every reconcile subcommand speaks --format json (parity locked so a
+    new subcommand cannot ship text-only)."""
+
+    _SUBS = ("detect", "apply", "fields", "archive")
+
+    def test_every_subparser_exposes_format_json(self) -> None:
+        import argparse
+        parser = reconcile.build_parser()
+        sub = next(a for a in parser._actions
+                   if isinstance(a, argparse._SubParsersAction))
+        for name in self._SUBS:
+            self.assertIn(name, sub.choices, f"{name} subcommand missing")
+            fmt = next((ac for ac in sub.choices[name]._actions
+                        if ac.dest == "format"), None)
+            self.assertIsNotNone(fmt, f"{name} has no --format")
+            self.assertIn("json", fmt.choices, f"{name} --format lacks json")
+
+    def test_each_subcommand_emits_valid_json(self) -> None:
+        import io
+        import json
+        import contextlib
+        argv = {
+            "detect": ["detect"],
+            "apply": ["apply", "--dry-run"],
+            "fields": ["fields"],
+            "archive": ["archive", "--dry-run"],
+        }
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)
+            for name in self._SUBS:
+                buf = io.StringIO()
+                with contextlib.redirect_stdout(buf):
+                    reconcile.main(argv[name] + ["--root", str(root), "--format", "json"])
+                json.loads(buf.getvalue())  # raises if not valid JSON

@@ -41,14 +41,9 @@ _AC_CHECKBOX = re.compile(r"^\s*- \[[ xX]\] ")
 
 
 def find_artifact(root: Path, rec_id: str):
-    """Locate an artifact file by id across all types; return (path, type) or None."""
-    target = sdlc_md.norm_id(rec_id)
-    for type_ in sdlc_md.ARTIFACT_TYPES:
-        for path in sdlc_md.artifact_files(type_, root):
-            rec = sdlc_md.extract_record_id(path.stem)
-            if rec and sdlc_md.norm_id(rec) == target:
-                return path, type_
-    return None
+    """Locate an artifact file by id across all types; return (path, type) or None.
+    Delegates to the shared `sdlc_md.find_by_id` (one source of truth, alias-aware)."""
+    return sdlc_md.find_by_id(root, rec_id)
 
 
 def _weak_ac(text: str) -> bool:
