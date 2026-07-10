@@ -1,6 +1,6 @@
 # EP0026: Gate integrity: the meta-layer verifies itself
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-07-10
 > **Created-by:** sdlc-studio new
 

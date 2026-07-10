@@ -232,6 +232,14 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
 
 ### Fixed
 
+- **A crashing blocking check now fails the gate (EP0026; BG0090).** A check that raised a
+  non-config exception was recorded `blocking: False` and excluded from the PASS calculation,
+  so a buggy or crashed blocking lane (validate, reconcile, conformance...) silently converted
+  a red gate to green - the vacuous-PASS class at a new location. A declared
+  `BLOCKING_ON_ERROR` lane set makes a crash in any blocking lane block; custom/injected
+  checks stay contained (advisory-on-error), and a drift-guard test asserts every DEFAULT lane
+  that blocks on failure also blocks on crash (it immediately caught `doc-coverage` missing
+  from the first cut).
 - **The eval gate joined the rc checklist and the four scenarios were re-run: 4/4 PASS
   (RV0007; BG0079).** The rc-readiness checklist omitted the eval gate its own release-gate
   template mandates (sections 1 and 8) and the scenarios had not run since v3.5.0 despite a

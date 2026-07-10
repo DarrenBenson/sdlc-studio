@@ -187,6 +187,16 @@ ADVISORY_WHEN_ABSENT = {
     },
 }
 
+# Lanes whose FAILURES block must also block when they CRASH: a raised exception in
+# (say) validate or reconcile means the gate proved nothing about that lane, and a
+# green gate over an unproven blocking lane is the false-assurance class (LL0008).
+# Custom/injected checks not declared here stay contained (advisory-on-error), so one
+# buggy experimental check cannot brick the gate.
+BLOCKING_ON_ERROR = {
+    "conformance", "reconcile", "index-derived", "validate",
+    "integrity", "duplicate-id", "doc-coverage", "retro",
+}
+
 DEFAULT_CHECKS = {
     "conformance": _conformance,
     "reconcile": _reconcile,
@@ -259,9 +269,9 @@ def run_gate(root: str = ".", only: list[str] | None = None,
             # drift detection, most damagingly), so it must BLOCK - a green
             # gate over a disabled lane is the false assurance class.
             from lib.conventions import ConventionsError
-            blocking = isinstance(exc, ConventionsError)
+            blocking = isinstance(exc, ConventionsError) or name in BLOCKING_ON_ERROR
             results.append({"check": name, "count": 1, "blocking": blocking, "status": "error",
-                            "detail": f"check raised, skipped: {exc}"})
+                            "detail": f"check raised{'' if blocking else ', skipped'}: {exc}"})
     ok = all(r["status"] == "pass" for r in results if r["blocking"])
     return {"ok": ok, "checks": results}
 

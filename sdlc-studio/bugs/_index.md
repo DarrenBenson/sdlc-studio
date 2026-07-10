@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 18 |
+| Open | 17 |
 | In Progress | 0 |
-| Fixed | 0 |
+| Fixed | 1 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 0 |
@@ -56,7 +56,7 @@
 | [BG0087](BG0087-migrate-v3-id-minting-wraps-at-1024-files.md) | migrate_v3 id minting wraps at 1024 files (silent rename overwrite) and pollutes slugs of dash-named files | Open | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0088](BG0088-format-json-suppresses-failure-exit-codes-on-reconcile.md) | --format json suppresses failure exit codes on reconcile apply and verify_ac report; reconcile fields is drift-blind in both formats | Open | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0089](BG0089-verify-ac-run-root-mixes-roots-story-discovery.md) | verify_ac run --root mixes roots: story discovery and report are cwd-relative, verifier cwd and history are root-relative | Open | Medium | 2026-07-09 | 2026-07-09 |
-| [BG0090](BG0090-gate-py-fail-open-a-check-that-raises.md) | gate.py fail-open: a check that raises is recorded non-blocking and the gate prints PASS | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0090](BG0090-gate-py-fail-open-a-check-that-raises.md) | gate.py fail-open: a check that raises is recorded non-blocking and the gate prints PASS | Fixed | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0091](BG0091-archive-py-is-not-idempotent-per-release-a.md) | archive.py is not idempotent per release: a crash between its two writes duplicates every archived row invisibly | Open | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0092](BG0092-github-sync-push-exits-0-and-stamps-last.md) | github_sync push exits 0 and stamps last_push even when every gh create/edit failed | Open | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0093](BG0093-config-failure-handling-remains-three-regime-post-cr0180.md) | config failure handling remains three-regime post-CR0180 and the decided PyYAML documentation never landed | Open | Medium | 2026-07-09 | 2026-07-09 |

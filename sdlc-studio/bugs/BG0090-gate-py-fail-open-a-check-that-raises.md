@@ -1,9 +1,10 @@
 # BG0090: gate.py fail-open: a check that raises is recorded non-blocking and the gate prints PASS
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file
+> **Verification depth:** functional (red-then-green: raising blocking lane fails the gate, raising advisory lane still warns, drift-guard over every DEFAULT lane - which caught doc-coverage missing from the declaration)
 
 ## Summary
 

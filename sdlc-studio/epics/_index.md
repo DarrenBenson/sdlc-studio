@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 3 |
+| Draft | 2 |
 | Ready | 0 |
 | Approved | 0 |
-| In Progress | 0 |
+| In Progress | 1 |
 | Done | 25 |
 | **Total** | **28** |
 
@@ -46,6 +46,6 @@
 | [EP0023](EP0023-context-tiering-summarised-digests-of-closed-artefacts.md) | Context tiering - summarised digests of closed artefacts | Done | -- | -- | 2026-07-09 | 2026-07-09 |
 | [EP0024](EP0024-v4-0-release-engineering-schema-v3-default-upgrade.md) | v4.0 release engineering: schema-v3 default, upgrade walk, majors checklist | Done | -- | -- | 2026-07-09 | 2026-07-09 |
 | [EP0025](EP0025-backlog-clearance-and-status-backlog-tooling.md) | Backlog clearance and status-backlog tooling | Done | -- | -- | 2026-07-09 | 2026-07-09 |
-| [EP0026](EP0026-gate-integrity-the-meta-layer-verifies-itself.md) | Gate integrity: the meta-layer verifies itself | Draft | -- | -- | 2026-07-10 | 2026-07-10 |
+| [EP0026](EP0026-gate-integrity-the-meta-layer-verifies-itself.md) | Gate integrity: the meta-layer verifies itself | In Progress | -- | -- | 2026-07-10 | 2026-07-10 |
 | [EP0027](EP0027-reliability-tier-crash-safe-resumable-honest-under-failure.md) | Reliability tier: crash-safe, resumable, honest under failure | Draft | -- | -- | 2026-07-10 | 2026-07-10 |
 | [EP0028](EP0028-era-completion-and-dx-v3-identity-everywhere-conventions.md) | Era completion and DX: v3 identity everywhere, conventions consistent | Draft | -- | -- | 2026-07-10 | 2026-07-10 |

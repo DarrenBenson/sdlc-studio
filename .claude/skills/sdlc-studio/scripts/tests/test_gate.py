@@ -506,3 +506,41 @@ class ConventionsErrorBlocksTests(unittest.TestCase):
             raise RuntimeError("kaboom")
         r = gate.run_gate(".", checks={"boom": boom})
         self.assertTrue(r["ok"])  # unchanged containment for non-config bugs
+
+
+class RaisingCheckTests(unittest.TestCase):
+    """A crashing check in a blocking lane must FAIL the gate - recording it non-blocking
+    converted a red gate to green (the vacuous-PASS class at a new location)."""
+
+    def _raiser(self, root):
+        raise RuntimeError("boom")
+
+    def test_raising_blocking_lane_fails_the_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            res = gate.run_gate(d, checks={"validate": self._raiser})
+            self.assertFalse(res["ok"])
+            row = next(r for r in res["checks"] if r["check"] == "validate")
+            self.assertEqual(row["status"], "error")
+            self.assertTrue(row["blocking"])
+
+    def test_raising_advisory_lane_still_warns_not_blocks(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            res = gate.run_gate(d, checks={"disclosure": self._raiser})
+            self.assertTrue(res["ok"])
+            row = next(r for r in res["checks"] if r["check"] == "disclosure")
+            self.assertEqual(row["status"], "error")
+            self.assertFalse(row["blocking"])
+
+    def test_every_blocking_default_lane_is_declared_blocking_on_error(self) -> None:
+        # The declaration must not drift from the lanes' own blocking returns: any DEFAULT
+        # check that returns blocking=True on a clean workspace must be in BLOCKING_ON_ERROR.
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "sdlc-studio").mkdir(parents=True)
+            for name, fn in gate.DEFAULT_CHECKS.items():
+                try:
+                    r = fn(str(Path(d)))
+                except Exception:
+                    continue  # lanes needing more fixture than an empty tree
+                if r.get("blocking"):
+                    self.assertIn(name, gate.BLOCKING_ON_ERROR,
+                                  f"{name} blocks on failure but not on crash")
