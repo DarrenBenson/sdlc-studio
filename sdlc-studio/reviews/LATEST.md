@@ -1,19 +1,18 @@
-# LATEST - current project state (v4.0 ready; not yet tagged/pushed)
+# LATEST - current project state (v4.0.0 GA published 2026-07-10)
 
 > The current-state anchor - a WINDOW, not a ledger. **Re-read this and run
 > `/sdlc-studio status` after any context reset or compaction.** Durable guidance lives in
 > AGENTS.md; per-sprint detail lives in the retros and CHANGELOG.md; keep this file under
 > `docs.latest_max_lines` (doc-freshness advisory) by moving past sprints to History lines.
 >
-> **Version:** `4.0.0-rc.1` prepared (the maturity release: schema v3 active + default for new
-> projects) · **Date:** 2026-07-10 ·
-> **Gates:** 1632 skill + 132 tools tests pass, `gate` PASS, reconcile drift 0, `npm run lint` green.
+> **Version:** `4.0.0` PUBLISHED (tags v4.0.0-rc.1 + v4.0.0, 2026-07-10; the maturity
+> release: schema v3 active + default for new projects) · **Date:** 2026-07-10 ·
+> **Gates:** 1632 skill + 132 tools tests pass, `gate` PASS, verify_ac 0 failed, drift 0.
 >
-> **rc-tag / push is operator-gated.** The version strings and CHANGELOG are homed at `4.0.0-rc.1`
-> and the pre-v4 dormant/freeze banners are removed, but the actual `git tag v4.0.0-rc.1`, the
-> freeze lift, and the push to consuming projects remain an explicit operator action once the
-> rc-readiness checklist (`sdlc-studio/reviews/v4-rc-readiness.md`) reads green. `main` runs ahead
-> of `origin` until then.
+> **Published at the operator's explicit direction (2026-07-10):** rc.1 tagged and pushed,
+> then BG0104 (rotted Verify layer, caught by the pre-tag ritual) fixed through the full
+> gate, then `4.0.0` cut and tagged. `main` is level with `origin`. Next cycle is the
+> Deferred v4.1 lane.
 
 ## Current
 

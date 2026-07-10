@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Nothing yet - v4.1 scope is groomed in the Deferred lane (CR0223-0225, CR0229-0231, CR0233).
+
+## [4.0.0] - 2026-07-10
+
 ### Added
 
 - **The white paper ships: "The Mill, Not the Engine" (docs/whitepaper.md + a designed
@@ -287,12 +291,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   crash between the two writes then a re-run duplicated every archived row - now the append
   dedupes against the archived ids and uses atomic writes (BG0091).
 
-## [4.0.0] - 2026-07-09
+### The 2026-07-09 preparation cut (same release)
 
 The maturity release. Schema v3 (distributed ULID identity + structured authorship/evidence
 enforcement) ships **active**, not dormant, and becomes the default for new projects.
 
-### Breaking
+### Breaking (2026-07-09 cut)
 
 - **Schema v3 becomes the default for new projects.** `init` now scaffolds `schema_version: 3`
   (ULID identity + authorship/evidence enforcement). Existing and unpinned projects are NOT
@@ -308,7 +312,7 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
 - **Majors-only section added to the release-gate checklist (EP0024, CR0198; US0107).** `templates/workflows/release-gate.md` gains a section 8 for breaking releases: breaking-change inventory in the CHANGELOG, migration rehearsed on two real projects with evidence linked, eval scenarios re-run for the new major, docs saying the new major, and rc-first-from-a-green-gate-with-a-soak. The rc-tag decision becomes a checklist read.
 - **v3 to v4 upgrade walk presented as a directed sequence + rehearsed on two real projects (EP0024, CR0198; US0106).** `project upgrade` now presents the v2 to v3 migration as an ordered walk (capability delta -> `migrate_v3` dry-run -> `migrate_v3` apply -> re-baseline) via a new `migration_walk`, in both text and `--format json`; the schema flip stays the deliberate `migrate_v3` id migration, never an auto-apply. The walk was rehearsed dry-run against two real consuming projects (evidence in `sdlc-studio/reviews/v4-migration-rehearsal.md`, names redacted); the rehearsal surfaced BG0070 (a per-artefact `git log --follow` makes migration impractical on a large project) - rc-relevant.
 
-### Changed
+### Changed (2026-07-09 cut)
 
 - **New projects start on `schema_version: 3`; existing projects untouched (EP0024, CR0198; US0105).** `init` now seeds `schema_version: 3` (ULID identity + authorship/evidence enforcement) into a new project's `.config.yaml`. The code default stays 2 and the schema reader is override-only (it does not merge `config-defaults.yaml`), so an existing or unpinned project is never auto-flipped - it upgrades explicitly via `project upgrade`. This dogfood repo is pinned to `schema_version: 2` as a safety belt. Era-gate regression test proves a v2 project's v3-gated paths stay dormant.
 
@@ -338,7 +342,7 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
   unions `reference-scripts*.md`, so the doc-coverage floor still hard-fails a missing entry.
   Documentation reorganisation only - no script behaviour changed.
 
-### Added
+### Added (2026-07-09 cut)
 
 - **A disabled commit gate is now detectable (EP0026, CR0202; US0113).** New advisory
   `hook-enabled` gate lane plus a matching `status` dashboard warning: when a git work tree
@@ -517,7 +521,7 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
   `master`/`develop`-default repos from re-minting an id the remote already holds. An AGENTS.md
   orientation bullet documents the fetch-before-trusting step.
 
-### Fixed
+### Fixed (2026-07-09 cut)
 
 - **CI now runs the portable artefact gate, making the claimed hook/CI parity real (EP0026;
   BG0096).** `.githooks/pre-commit` and CONTRIBUTING both said "the same gate CI runs" while the
