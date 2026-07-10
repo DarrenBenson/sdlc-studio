@@ -143,14 +143,16 @@ class SeatResolutionTests(unittest.TestCase):
             card = mod.resolve_card(root, "engineering")
             self.assertEqual(card, seat)  # the authored seat, not Dani the default
 
-    def test_amigo_override_beats_seat(self) -> None:
-        # Explicit personas/amigos/<seat>.md stays the most-specific (legacy override).
+    def test_declared_seat_beats_amigo_override(self) -> None:
+        # CR0218 converged home: the declared-role seat is THE project authority; the
+        # legacy personas/amigos/<seat>.md file no longer shadows it (the old amigos-first
+        # order buried every authored/generated seat on upgraded projects).
         mod = _load()
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _seat(root, "sarah.md", _seat_body("engineering"))
-            amigo = _project_amigo(root, "engineering", "<!-- role: engineering -->\n# Mine\n")
-            self.assertEqual(mod.resolve_card(root, "engineering"), amigo)
+            seat = _seat(root, "sarah.md", _seat_body("engineering"))
+            _project_amigo(root, "engineering", "<!-- role: engineering -->\n# Mine\n")
+            self.assertEqual(mod.resolve_card(root, "engineering"), seat)
 
     def test_zero_claim_role_falls_through_to_default(self) -> None:
         # No seat declares the role -> fall through to the skill default, never crash (D6).
@@ -294,6 +296,36 @@ class ConsultResolutionTests(unittest.TestCase):
                                "--root", str(root), "--path-only"])
             self.assertEqual(rc, 0)
             self.assertEqual(buf.getvalue().strip(), str(seat))
+
+
+class ConvergedHomeTests(unittest.TestCase):
+    """CR0218 (RFC0021 D2, Dani's blocking consult finding): personas/seats/ is THE runtime
+    home. A role-claiming seat card must beat the legacy personas/amigos/<seat>.md file -
+    the old amigos-first order silently shadowed every authored/generated seat on upgraded
+    projects. The legacy path stays as a warned fallback, never the winner."""
+
+    def test_declared_seat_beats_legacy_amigos_file(self) -> None:
+        pr = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project_amigo(root, "qa", _seat_body("qa", "Generic Sam"))
+            authored = _seat(root, "priya.md", _seat_body("qa", "Priya"))
+            card = pr.resolve_card(root, "qa")
+            self.assertEqual(card, authored)  # seats/ wins; amigos/ no longer shadows
+
+    def test_legacy_amigos_fallback_warns(self) -> None:
+        pr = _load()
+        import io
+        from contextlib import redirect_stderr
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            legacy = _project_amigo(root, "qa", _seat_body("qa", "Old Sam"))
+            err = io.StringIO()
+            with redirect_stderr(err):
+                card = pr.resolve_card(root, "qa")
+            self.assertEqual(card, legacy)          # still resolves (back-compat)
+            self.assertIn("legacy", err.getvalue()) # but says migrate to seats/
+            self.assertIn("seats/", err.getvalue())
 
 
 if __name__ == "__main__":

@@ -79,6 +79,14 @@ def _seat_roles(root: Path) -> set[str]:
     return roles
 
 
+def _legacy_amigo_cards(root: Path) -> list[str]:
+    """Markdown cards still living in the retired personas/amigos/ home (any name)."""
+    adir = _sdlc(root) / "personas" / "amigos"
+    if not adir.is_dir():
+        return []
+    return sorted(p.name for p in adir.glob("*.md"))
+
+
 def _missing_amigos(root: Path) -> list[str]:
     """The default amigo cards a project lacks AND no existing review seat covers.
     A card already in personas/amigos/ - default or customised - is left alone; a role already
@@ -261,19 +269,29 @@ def audit(root: Path | str) -> dict:
         # present but stale - apply() bumps it, so the dry-run must report it too
         auto.append({"kind": "stale-version",
                      "detail": f"sdlc-studio/.version records skill {pv_skill or '?'}; bump to {installed or '?'}"})
+    legacy_amigos = _legacy_amigo_cards(root)
+    if legacy_amigos:
+        auto.append({"kind": "legacy-amigo-home", "names": legacy_amigos,
+                     "detail": f"legacy personas/amigos/ card(s) ({', '.join(legacy_amigos)}) - "
+                               "migrate mechanically to personas/seats/ (the converged home; "
+                               "the resolver now prefers seats/)"})
     missing_amigos = _missing_amigos(root)
     if missing_amigos:
-        auto.append({"kind": "missing-amigos", "names": missing_amigos,
-                     "detail": f"missing v3.1 default amigo cards ({', '.join(missing_amigos)}) - "
-                               "install to sdlc-studio/personas/amigos/ (editable, never overwritten)"})
+        # RFC0028: the OFFER precedes the defaults. Ask the operator to meet their team
+        # before installing generic cards - generation is recommended, defaults are opt-in.
+        manual.append({"kind": "team-offer", "names": missing_amigos,
+                       "detail": f"uncovered seat role(s): {', '.join(Path(n).stem for n in missing_amigos)}. "
+                                 "MEET YOUR TEAM (recommended): `persona generate --team` grows "
+                                 "project-native seats from the PRD/repo. Or install the generic "
+                                 "defaults with `--apply --with-default-amigos`. Never auto-applied."})
     overlap = _seat_amigo_overlap(root)
     if overlap:
         # CR0120 AC4: amigos and seats both claim these roles - name the overlap (no silent
         # collision), even in --dry-run. The resolver prefers the amigo override; converge on one.
         manual.append({"kind": "seat-amigo-overlap", "names": overlap,
-                       "detail": f"overlap: review seat(s) and amigo card(s) both cover "
-                                 f"{', '.join(overlap)} - two parallel role systems. Converge on "
-                                 "the seats/ home; the resolver prefers the amigo override"})
+                       "detail": f"overlap: review seat(s) and legacy amigo card(s) both cover "
+                                 f"{', '.join(overlap)} - the resolver now prefers the seats/ "
+                                 "card; `--apply` migrates or retires the legacy amigos/ copy"})
     drift = sum(len(reconcile.detect_type(t, root)["drift"]) for t in sdlc_md.ARTIFACT_TYPES)
     if drift:
         # NOT auto-applied by upgrade: reconcile can be destructive on multi-schema / inline-row
@@ -306,7 +324,8 @@ def audit(root: Path | str) -> dict:
     return {"auto": auto, "manual": manual}
 
 
-def apply(root: Path | str, with_reconcile: bool = False, today: str | None = None) -> list[str]:
+def apply(root: Path | str, with_reconcile: bool = False, today: str | None = None,
+          with_default_amigos: bool = False) -> list[str]:
     """Perform the SAFE deterministic corrections (scaffold .config.yaml, bump .version). Idempotent.
     Reconcile is NOT run unless with_reconcile=True - it can rewrite indexes destructively on
     multi-schema/inline-convention projects, so it is a separate, deliberate step. `today`
@@ -344,17 +363,55 @@ def apply(root: Path | str, with_reconcile: bool = False, today: str | None = No
         ver.write_text(_bump_version_text(ver.read_text(encoding="utf-8"), installed, prev_skill,
                                           today, schema=stamp), encoding="utf-8")
         actions.append(f"repaired sdlc-studio/.version (schema -> {stamp})")
-    # v3.1 amigo defaults: install each missing default card into the project's personas/amigos/.
-    # Idempotent - a card already present (default or customised) is never overwritten.
+    # Converged home: migrate legacy personas/amigos/ cards into
+    # personas/seats/ mechanically - a role comment is ensured (from the filename stem for the
+    # default-named cards), an existing seats/ filename is never overwritten (skip + report),
+    # and the emptied amigos/ dir is removed. Idempotent.
+    adir = sd / "personas" / "amigos"
+    migrated, skipped = [], []
+    if adir.is_dir():
+        sdir = sd / "personas" / "seats"
+        for card in sorted(adir.glob("*.md")):
+            target = sdir / card.name
+            if target.exists():
+                skipped.append(card.name)
+                continue
+            text = card.read_text(encoding="utf-8")
+            if not _ROLE_RE.search(text):
+                text = f"<!-- role: {card.stem} -->\n" + text
+            sdir.mkdir(parents=True, exist_ok=True)
+            target.write_text(text, encoding="utf-8")
+            card.unlink()
+            migrated.append(card.name)
+        if migrated:
+            actions.append(f"migrated {len(migrated)} card(s) from the retired personas/amigos/ "
+                           f"to personas/seats/ ({', '.join(migrated)})")
+        if skipped:
+            actions.append(f"SKIPPED migrating {', '.join(skipped)}: personas/seats/ already has "
+                           f"that filename - reconcile the pair by hand")
+        if not any(adir.iterdir()):
+            adir.rmdir()
+    # The default cards are OPT-IN now - the offer to generate a project-native team
+    # precedes them (see the report's team-offer entry). --with-default-amigos installs the
+    # generic cards into the converged seats/ home for the still-uncovered roles only.
     missing_amigos = _missing_amigos(root)
-    if missing_amigos:
+    if missing_amigos and with_default_amigos:
         src = _amigos_source()
-        dest = sd / "personas" / "amigos"
+        dest = sd / "personas" / "seats"
         dest.mkdir(parents=True, exist_ok=True)
+        installed_cards = []
         for name in missing_amigos:
+            if (dest / name).exists():
+                continue
             (dest / name).write_text((src / name).read_text(encoding="utf-8"), encoding="utf-8")
-        actions.append(f"installed {len(missing_amigos)} v3.1 amigo card(s) to "
-                       f"sdlc-studio/personas/amigos/ ({', '.join(missing_amigos)})")
+            installed_cards.append(name)
+        if installed_cards:
+            actions.append(f"installed {len(installed_cards)} default amigo card(s) to "
+                           f"sdlc-studio/personas/seats/ ({', '.join(installed_cards)})")
+    elif missing_amigos:
+        actions.append(f"team roles uncovered ({', '.join(Path(n).stem for n in missing_amigos)}): "
+                       f"run `persona generate --team` to meet your project's team, or re-run "
+                       f"--apply --with-default-amigos for the generic defaults")
     # Reconcile is OFF by default: it can rewrite indexes, and on multi-schema/inline-convention
     # projects that is destructive - so an "upgrade" must not bundle it. Opt in with with_reconcile, or
     # run `/sdlc-studio reconcile` deliberately after reviewing its report.
@@ -600,7 +657,8 @@ def cmd_upgrade(args: argparse.Namespace) -> int:
     has_work = d["behind"] or bool(a["auto"]) or bool(a["manual"])
     applied: list[str] = []
     if args.apply and (d["behind"] or a["auto"]):  # apply whenever there is safe work, even if "current"
-        applied = apply(root, with_reconcile=args.with_reconcile)
+        applied = apply(root, with_reconcile=args.with_reconcile,
+                        with_default_amigos=args.with_default_amigos)
     if args.apply and sdlc_md.is_schema_v3(root):   # mechanical re-baseline backfill (schema v3)
         applied += rebaseline_apply(root)
     digest = (changelog_digest(d["project_skill"], d["installed_skill"], _changelog_path())
@@ -664,6 +722,9 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Migrate a consuming project to current skill conventions.")
     p.add_argument("--root", default=".")
     p.add_argument("--apply", action="store_true", help="perform the safe deterministic corrections (default: dry-run)")
+    p.add_argument("--with-default-amigos", dest="with_default_amigos", action="store_true",
+                   help="install the generic default seat cards for uncovered roles (opt-in: "
+                        "the recommended path is `persona generate --team`)")
     p.add_argument("--with-reconcile", action="store_true",
                    help="also run reconcile --apply (OFF by default - it can rewrite indexes; review first)")
     p.add_argument("--format", choices=("text", "json"), default="text")

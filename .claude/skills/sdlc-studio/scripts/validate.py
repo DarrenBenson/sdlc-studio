@@ -492,12 +492,14 @@ def check_personas(root: Path) -> list[dict]:
 
     # LL0008: a pass must mean "inspected and well-formed", never "found nothing to inspect". When
     # the flat glob found no design personas but persona-shaped files sit in subdirs (e.g.
-    # personas/team/, personas/stakeholders/, personas/amigos/), emit an advisory rather than a
-    # vacuous clean pass. seats/ (review-seat charters, a different schema) is excluded by design.
+    # personas/team/, personas/amigos/), emit an advisory rather than a vacuous clean pass.
+    # seats/ (review-seat charters) and stakeholders/ (the generated panel) are the generator's
+    # canonical output homes - different schemas, excluded by design.
     if inspected == 0:
         nested = [p for p in pdir.rglob("*.md")
                   if p.parent != pdir
                   and "seats" not in p.relative_to(pdir).parts
+                  and "stakeholders" not in p.relative_to(pdir).parts
                   and p.name.lower() not in {"index.md", "readme.md", "consult-guide.md"}
                   and not p.name.startswith("_")]
         if nested:

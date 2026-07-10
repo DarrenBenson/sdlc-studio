@@ -4,13 +4,13 @@
 The sprint loop frames each delegated worker (build / test) as an amigo seat rather than
 a generic agent. This resolver picks the identity to frame it with, most-specific-first:
 
-  1. an explicit practitioner amigo  - <root>/sdlc-studio/personas/amigos/<seat>.md
-     (the legacy filename override; kept for back-compat)
-  2. a role-matched review seat      - <root>/sdlc-studio/personas/seats/*.md whose DECLARED
-     role matches the seat (the project's authored "Three Amigos"; named after people, so
+  1. a role-matched project seat     - <root>/sdlc-studio/personas/seats/*.md whose DECLARED
+     role matches the seat (the converged home; cards are named after people, so
      matched by the machine-readable `<!-- role: ... -->` field, never the filename or H1 prose)
+  2. the legacy amigos file          - <root>/sdlc-studio/personas/amigos/<seat>.md
+     (retired home; resolves only when no seat claims the role, with a migrate warning)
   3. the skill default amigo         - <skill>/templates/personas/amigos/<seat>.md
-     (Dani / Sam / Lena, editable per project)
+     (Dani / Sam / Lena, the zero-setup fallback)
   4. generic                         - no card; the contract prompt alone
 
 `--skip-personas` forces the generic path. The framing is ALWAYS appended AFTER the concrete
@@ -129,7 +129,18 @@ def resolve_card(root: Path | str, seat: str, skip_personas: bool = False,
     shipped default cards always carry the sections, so the error scopes to a half-authored seat."""
     if skip_personas:
         return None
-    card = project_card(root, seat) or seat_card(root, seat)
+    # Converged home: a declared-role seat card is THE project
+    # authority. The legacy personas/amigos/<seat>.md path resolves only when no seat
+    # claims the role - the old amigos-first order silently shadowed every authored or
+    # generated seat on projects that had been through `project upgrade`.
+    card = seat_card(root, seat)
+    if card is None:
+        card = project_card(root, seat)
+        if card is not None:
+            print(f"warning: resolved legacy card {card} - personas/amigos/ is the retired "
+                  f"home; migrate the card to personas/seats/ with a declared "
+                  f"`<!-- role: {seat} -->` (project upgrade migrates it mechanically)",
+                  file=sys.stderr)
     if card is not None:
         if render == "review" and not _has_review_render(card):
             raise RenderError(

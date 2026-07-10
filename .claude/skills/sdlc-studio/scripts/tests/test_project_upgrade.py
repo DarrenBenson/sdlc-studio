@@ -104,7 +104,13 @@ class ApplyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             _project(d, version=(pu.CURRENT_SCHEMA, INSTALLED))
             pu.apply(d)
-            self.assertEqual(pu.apply(d), [])  # second run is a no-op
+            second = pu.apply(d)
+            # the standing team-offer advisory may repeat while roles stay uncovered, but a
+            # second run performs NO write actions
+            writes = [a for a in second
+                      if any(v in a for v in ("created", "installed", "updated", "migrated",
+                                              "repaired", "reconciled"))]
+            self.assertEqual(writes, [])
 
     def test_apply_updates_stale_version(self):
         with tempfile.TemporaryDirectory() as d:
@@ -232,44 +238,75 @@ class AmigoDefaultsTests(unittest.TestCase):
     # CR0119: project upgrade installs the v3.1 default amigo cards when absent, idempotently.
     AMIGOS = ("engineering.md", "qa.md", "product.md")
 
-    def test_apply_installs_amigos_when_absent(self):
+    def test_apply_does_not_auto_install_defaults(self):
+        # RFC0028: the offer precedes the defaults - a plain --apply reports the uncovered
+        # roles and points at `persona generate --team`; it installs NOTHING unrequested.
         with tempfile.TemporaryDirectory() as d:
             sd = _project(d)
             actions = pu.apply(d)
-            adir = sd / "personas" / "amigos"
-            for name in self.AMIGOS:
-                self.assertTrue((adir / name).exists(), f"{name} not installed")
-            # the cards match the skill's shipped source byte-for-byte
-            src = pu._amigos_source()
-            self.assertEqual((adir / "engineering.md").read_text(encoding="utf-8"),
-                             (src / "engineering.md").read_text(encoding="utf-8"))
-            self.assertTrue(any("amigo" in a.lower() for a in actions))
+            self.assertFalse((sd / "personas" / "amigos").exists())
+            self.assertFalse(any((sd / "personas" / "seats").glob("*.md"))
+                             if (sd / "personas" / "seats").is_dir() else False)
+            self.assertTrue(any("persona generate --team" in a for a in actions))
 
-    def test_apply_skips_customised_amigo(self):
+    def test_apply_with_default_amigos_installs_into_seats(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d)
+            actions = pu.apply(d, with_default_amigos=True)
+            sdir = sd / "personas" / "seats"
+            for name in self.AMIGOS:
+                self.assertTrue((sdir / name).exists(), f"{name} not installed to seats/")
+            src = pu._amigos_source()
+            self.assertEqual((sdir / "engineering.md").read_text(encoding="utf-8"),
+                             (src / "engineering.md").read_text(encoding="utf-8"))
+            self.assertTrue(any("seats/" in a for a in actions))
+            self.assertFalse((sd / "personas" / "amigos").exists())  # retired home untouched
+
+    def test_apply_migrates_legacy_amigos_to_seats(self):
+        # The converged home: existing personas/amigos/ cards move to seats/ mechanically,
+        # gaining a role comment from the filename when absent; amigos/ is removed when empty.
         with tempfile.TemporaryDirectory() as d:
             sd = _project(d)
             adir = sd / "personas" / "amigos"
             adir.mkdir(parents=True, exist_ok=True)
-            custom = "# Our own engineer\n\nproject-specific amigo\n"
+            custom = "# Our own engineer\n\nproject-specific amigo\n"  # no role comment
             (adir / "engineering.md").write_text(custom, encoding="utf-8")
             pu.apply(d)
-            # customised card untouched
-            self.assertEqual((adir / "engineering.md").read_text(encoding="utf-8"), custom)
-            # the missing ones still get installed
-            self.assertTrue((adir / "qa.md").exists())
-            self.assertTrue((adir / "product.md").exists())
+            moved = sd / "personas" / "seats" / "engineering.md"
+            self.assertTrue(moved.exists())
+            text = moved.read_text(encoding="utf-8")
+            self.assertIn("<!-- role: engineering -->", text)   # role ensured
+            self.assertIn("project-specific amigo", text)       # content preserved
+            self.assertFalse(adir.exists())                     # retired home removed
+
+    def test_migration_never_overwrites_an_existing_seat_filename(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d)
+            adir = sd / "personas" / "amigos"; adir.mkdir(parents=True, exist_ok=True)
+            sdir = sd / "personas" / "seats"; sdir.mkdir(parents=True, exist_ok=True)
+            (adir / "qa.md").write_text("# legacy qa\n", encoding="utf-8")
+            authored = "<!-- role: qa -->\n# Priya\n"
+            (sdir / "qa.md").write_text(authored, encoding="utf-8")
+            actions = pu.apply(d)
+            self.assertEqual((sdir / "qa.md").read_text(encoding="utf-8"), authored)  # untouched
+            self.assertTrue((adir / "qa.md").exists())          # legacy left for hand-merge
+            self.assertTrue(any("SKIPPED" in a for a in actions))
 
     def test_apply_idempotent_for_amigos(self):
         with tempfile.TemporaryDirectory() as d:
             _project(d)
-            pu.apply(d)
-            self.assertEqual(pu.apply(d), [])  # second run installs nothing new
+            pu.apply(d, with_default_amigos=True)
+            second = pu.apply(d, with_default_amigos=True)
+            self.assertFalse(any("installed" in a for a in second))  # nothing re-installed
 
-    def test_audit_flags_missing_amigos(self):
+    def test_audit_offers_the_team_for_uncovered_roles(self):
         with tempfile.TemporaryDirectory() as d:
             _project(d)
-            kinds = [f["kind"] for f in pu.audit(d)["auto"]]
-            self.assertIn("missing-amigos", kinds)
+            report = pu.audit(d)
+            kinds = [f["kind"] for f in report["manual"]]
+            self.assertIn("team-offer", kinds)
+            offer = next(f for f in report["manual"] if f["kind"] == "team-offer")
+            self.assertIn("persona generate --team", offer["detail"])
 
     def test_audit_no_flag_when_all_amigos_present(self):
         with tempfile.TemporaryDirectory() as d:
@@ -345,13 +382,16 @@ class CR0120SeatAwareTests(unittest.TestCase):
             pu.apply(d)
             self.assertFalse((sd / "personas" / "amigos").exists())  # no parallel set manufactured
 
-    def test_greenfield_installs_generic(self):
-        # AC3: no seat/persona fills the role -> generic cards are installed (greenfield).
+    def test_greenfield_generic_install_is_opt_in_and_lands_in_seats(self):
+        # RFC0028 supersedes CR0120 AC3: generic cards are OPT-IN (--with-default-amigos,
+        # after the team-generation offer) and install into the converged seats/ home.
         with tempfile.TemporaryDirectory() as d:
             sd = _project(d)
-            pu.apply(d)
+            pu.apply(d)  # plain apply: offer only
+            self.assertFalse((sd / "personas" / "amigos").exists())
+            pu.apply(d, with_default_amigos=True)
             for name in self.AMIGOS:
-                self.assertTrue((sd / "personas" / "amigos" / name).exists())
+                self.assertTrue((sd / "personas" / "seats" / name).exists())
 
     def test_overlap_headsup_in_dry_run(self):
         # AC4: when amigos and seats coexist (overlap), the heads-up fires even in --dry-run.

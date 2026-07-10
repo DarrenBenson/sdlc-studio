@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 5 |
+| Proposed | 4 |
 | Approved | 0 |
-| In Progress | 0 |
+| In Progress | 1 |
 | Complete | 213 |
 | Rejected | 0 |
 | Deferred | 0 |
@@ -39,7 +39,7 @@
 | [CR-0215](CR0215-big-bang-v4-documentation-pass-every-consuming-facing.md) | big-bang v4 documentation pass: every consuming-facing doc tells the v4 story | Complete | High | Improvement | 2026-07-10 | -- |
 | [CR-0216](CR0216-project-upgrade-must-explicitly-ask-the-operator-before.md) | project upgrade must explicitly ask the operator before switching the id numbering scheme | Complete | High | Improvement | 2026-07-10 | -- |
 | [CR-0217](CR0217-living-personas-are-the-explicit-default-for-reviews.md) | living personas are the explicit default for reviews, critics and consults | Complete | Medium | Improvement | 2026-07-10 | -- |
-| [CR-0218](CR0218-the-converged-seat-home-retire-amigos-precedence-one.md) | the converged seat home: retire amigos/ precedence, one layout, upgrade offers generation first | Proposed | High | Improvement | 2026-07-10 | -- |
+| [CR-0218](CR0218-the-converged-seat-home-retire-amigos-precedence-one.md) | the converged seat home: retire amigos/ precedence, one layout, upgrade offers generation first | In Progress | High | Improvement | 2026-07-10 | -- |
 | [CR-0219](CR0219-team-generation-fresh-named-seats-grown-from-the.md) | team generation: fresh named seats grown from the project (persona generate --team) | Proposed | High | Feature | 2026-07-10 | -- |
 | [CR-0220](CR0220-stakeholder-panel-generation-the-other-side-of-the.md) | stakeholder panel generation: the other side of the table (persona generate --stakeholders) | Proposed | High | Feature | 2026-07-10 | -- |
 | [CR-0221](CR0221-cooper-usage-pass-personas-that-arbitrate-not-decorate.md) | Cooper usage pass: personas that arbitrate, not decorate | Proposed | Medium | Improvement | 2026-07-10 | -- |

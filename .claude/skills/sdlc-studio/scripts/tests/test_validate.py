@@ -437,10 +437,12 @@ class PersonaWellFormedTests(unittest.TestCase):
             self.assertTrue(any("not validated" in v["message"] for v in out))
 
     def test_nested_count_reported_in_advisory(self):
-        # the advisory names how many nested files were found (so the operator can act)
+        # the advisory names how many nested files were found (so the operator can act).
+        # team/ is a genuinely-legacy nesting; seats/ and stakeholders/ are the generator's
+        # canonical homes and are excluded from this advisory by design (CR0218).
         with tempfile.TemporaryDirectory() as d:
             repo = pathlib.Path(d)
-            pdir = repo / "sdlc-studio" / "personas" / "stakeholders"
+            pdir = repo / "sdlc-studio" / "personas" / "team"
             pdir.mkdir(parents=True)
             (pdir / "a.md").write_text("# A\n\n## Who They Are\n\nx\n", encoding="utf-8")
             (pdir / "b.md").write_text("# B\n\n## Who They Are\n\nx\n", encoding="utf-8")
@@ -448,6 +450,16 @@ class PersonaWellFormedTests(unittest.TestCase):
             self.assertEqual(len(out), 1)
             self.assertEqual(out[0]["rule"], "persona-layout")
             self.assertIn("2", out[0]["message"])
+
+    def test_seats_and_stakeholders_are_canonical_not_nested(self):
+        # CR0218: the generator's own output homes never trip the layout advisory
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            for sub in ("seats", "stakeholders"):
+                pdir = repo / "sdlc-studio" / "personas" / sub
+                pdir.mkdir(parents=True)
+                (pdir / "x.md").write_text("# X\n", encoding="utf-8")
+            self.assertEqual(validate.check_personas(repo), [])
 
     def test_flat_personas_present_no_layout_advisory(self):
         # when flat design personas ARE found, nested files do not trigger the advisory

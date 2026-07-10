@@ -332,12 +332,12 @@ Before writing personas, validate:
 ```
 sdlc-studio/personas/
 ├── index.md                          # Updated with new personas
-├── team/
-│   └── [amigo]/
-│       └── [name-slug].md           # Individual persona files
+├── [name-slug].md                    # Design personas: flat Cooper layout (validated)
+├── seats/
+│   └── [name-slug].md               # Working team seats (declared `<!-- role: ... -->`;
+│                                    #  the converged home the resolver reads)
 └── stakeholders/
-    └── [type]/
-        └── [name-slug].md
+    └── [name-slug].md               # Stakeholder panel (flat; read by consult)
 ```
 
 ## Persona File Header

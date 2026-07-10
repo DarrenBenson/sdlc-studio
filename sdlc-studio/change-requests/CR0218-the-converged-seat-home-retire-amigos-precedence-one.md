@@ -1,6 +1,7 @@
 # CR-0218: the converged seat home: retire amigos/ precedence, one layout, upgrade offers generation first
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Verification depth:** functional (red-then-green: a declared-role seat now beats the legacy amigos file - the old order was proven inverted by a red test; legacy fallback warns with the migration path; --apply migrates amigos/->seats/ mechanically ensuring role comments, never overwriting an existing seat filename (skip+report), removes the emptied dir, idempotent; defaults are opt-in via --with-default-amigos into seats/; the report carries the team-offer entry naming persona generate --team; seats/ + stakeholders/ excluded from the layout advisory; Output Format matches real write paths; suite 1591)
 > **Priority:** High
 > **Type:** Improvement
 > **Date:** 2026-07-10
