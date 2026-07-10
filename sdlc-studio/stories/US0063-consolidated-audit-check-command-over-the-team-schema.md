@@ -21,7 +21,8 @@
 - **Given** the rule set (authorship, evidence, duties, index-derived, id-format, tranche-shape)
 - **When** the command runs
 - **Then** it exits non-zero on any violation with a stable rule id and fix hint, zero on a clean repo
-- **Verify:** python3 .claude/skills/sdlc-studio/scripts/gate.py --only audit-check
+- **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/audit_check.py check --root .
+- **Verified:** yes (2026-07-10)
 
 ### AC2: Each rule is a tested worked example
 
@@ -29,6 +30,7 @@
 - **When** its fixture runs
 - **Then** the failure message names the rule and the fix (a reference implementation for the crew linter)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit_check.py
+- **Verified:** yes (2026-07-10)
 
 ## Revision History
 

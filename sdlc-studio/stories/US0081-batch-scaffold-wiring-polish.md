@@ -21,7 +21,8 @@
 - **When** it scaffolds
 - **Then** epic wiring replaces the placeholder (no stray separator), the full-template story header
   matches templates/core/story.md, and the empty Stories-by-Epic table is populated or omitted
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py -k batch_wiring
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py -k "batch_wires or batch_creates_wires or batch_defaults_to_full_template"
+- **Verified:** yes (2026-07-10)
 
 ## Revision History
 

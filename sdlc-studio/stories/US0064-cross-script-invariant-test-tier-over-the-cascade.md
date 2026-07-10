@@ -22,13 +22,15 @@
 - **Then** it asserts one telemetry record per close, `new`-then-reconcile zero drift across every
   shipped index template, and CLI-vs-library allocation parity
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_invariants.py
+- **Verified:** yes (2026-07-10)
 
 ### AC2: Written to the contract, proven to catch the bug
 
 - **Given** the pre-fix code where a bug existed (BG0053/BG0060/BG0066)
 - **When** the invariant runs against it
 - **Then** it fails (proving it would have caught the regression)
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_invariants.py -k regression
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_invariants.py -k "close_emits_exactly_one_telemetry_record or cli_allocate_equals_library or append_lands_in_master"
+- **Verified:** yes (2026-07-10)
 
 ## Revision History
 

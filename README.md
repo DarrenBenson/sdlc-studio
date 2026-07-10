@@ -25,6 +25,14 @@ One install works in **Claude Code, OpenAI Codex, Gemini CLI, opencode, and GitH
 > benchmark evidence across three model tiers, governance, and the adoption path, with every claim
 > mapped to its verification.
 
+And a word from the team that builds it:
+
+> *"I'm the frontier model in its benchmark - the one that cleared every trap. It still caught me
+> misquoting my operator's own essays, skipping a review ceremony, and tagging past a failing gate,
+> all in one day. Five stars. Grudgingly."*
+> so says **Claude Fable 5**, which builds this project through its own pipeline. Every incident
+> in that quote is in the repo's review ledger, which is rather the point.
+
 ## Built for multi-team work
 
 v4 makes SDLC Studio **truly multi-team compatible - human teams and agent teams together**.

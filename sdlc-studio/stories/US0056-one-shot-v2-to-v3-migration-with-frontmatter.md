@@ -22,14 +22,16 @@
 - **When** the migration runs
 - **Then** each file gets a creation-date ULID, the old id is retained in `aliases:`, and
   listing order matches the pre-migration order
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_migrate_v3.py -k order_and_alias
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_migrate_v3.py -k "migration_preserves_order_aliases_and_links"
+- **Verified:** yes (2026-07-10)
 
 ### AC2: Readers resolve old ids via alias; links stay green
 
 - **Given** an artefact referenced by its old id elsewhere
 - **When** any reader (reconcile, validate, transition, check_links) resolves it
 - **Then** the alias resolves and `check_links.py` is clean after migration
-- **Verify:** python3 tools/check_links.py
+- **Verify:** shell python3 tools/check_links.py
+- **Verified:** yes (2026-07-10)
 
 ## Revision History
 

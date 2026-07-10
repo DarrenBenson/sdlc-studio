@@ -24,7 +24,7 @@
 
 `scripts/artifact.py` `close` calls `telemetry.record` after the transition (guarded;
 metrics via `--iterations/--verdict/--wall-time-s/--stages`). Documented in
-reference-autosprint.md. WS3 (calibrate) + WS5 remain deferred.
+reference-sprint.md. WS3 (calibrate) + WS5 remain deferred.
 
 ## Revision History
 

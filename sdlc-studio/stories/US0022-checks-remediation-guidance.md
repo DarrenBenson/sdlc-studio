@@ -48,8 +48,8 @@ bulk-pattern note distinguishing an unadopted discipline from per-unit drift.
 - **Given** most units missing the same stage
 - **When** conformance runs
 - **Then** it notes "likely an unadopted discipline ... not per-unit drift"
-- **Verify:** rg -q "unadopted" .claude/skills/sdlc-studio/scripts/conformance.py
-- **Verified:** yes (2026-06-20)
+- **Verify:** grep "unadopted" .claude/skills/sdlc-studio/scripts/conformance.py
+- **Verified:** yes (2026-07-10)
 
 ## Implementation
 

@@ -46,8 +46,8 @@ write-safe - this dropped consuming repo A's stories drift 6 -> 1.
 - **Given** a missing-row and an orphan-row
 - **When** apply runs
 - **Then** they are not changed; `detect` still reports them
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ApplyTests::test_apply_leaves_structural_classes
-- **Verified:** yes (2026-06-20)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py -k "appends_missing_but_never_removes_orphans or orphan_row_never_deleted_by_apply"
+- **Verified:** yes (2026-07-10)
 
 ### AC4: Escaped pipes parsed safely
 

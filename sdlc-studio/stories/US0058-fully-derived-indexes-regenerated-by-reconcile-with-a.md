@@ -20,14 +20,16 @@
 - **Given** a clean artefact census
 - **When** reconcile regenerates every index
 - **Then** running it twice is a no-op and reproduces `artifact.py new` rows byte-identically
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py -k regenerate_idempotent
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py .claude/skills/sdlc-studio/scripts/tests/test_invariants.py -k "byte_idempotent or new_then_reconcile_is_zero_drift"
+- **Verified:** yes (2026-07-10)
 
 ### AC2: A hand edit is caught by CI
 
 - **Given** a manually edited index row
 - **When** the CI guard runs
 - **Then** it fails, naming the offending row and the regeneration command
-- **Verify:** python3 .claude/skills/sdlc-studio/scripts/gate.py --only index-derived
+- **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/gate.py --only index-derived
+- **Verified:** yes (2026-07-10)
 
 ## Revision History
 

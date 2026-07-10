@@ -21,14 +21,16 @@
 - **When** status/hint runs
 - **Then** it reads mechanical digests (not originals), token cost drops measurably, and a stale
   digest is drift that reconcile regenerates
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_context_tiering.py
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_digest.py
+- **Verified:** yes (2026-07-10)
 
 ### AC2: Originals still resolve, small repos unchanged
 
 - **Given** a specific closed artefact id (alias included) and a repo below the threshold
 - **When** opened / operated
 - **Then** the full original resolves and sub-threshold repos see no behaviour change
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_context_tiering.py -k threshold
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_digest.py -k "threshold or find_by_id_returns_original"
+- **Verified:** yes (2026-07-10)
 
 ## Revision History
 

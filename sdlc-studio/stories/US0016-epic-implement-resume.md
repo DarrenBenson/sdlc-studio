@@ -52,8 +52,8 @@ mirroring `project implement --resume`. Wired into `reference-epic.md`.
 - **Given** `reference-epic.md`
 - **When** searched
 - **Then** `epic implement --resume` is documented
-- **Verify:** rg -q "epic implement --resume" .claude/skills/sdlc-studio/reference-epic.md
-- **Verified:** yes (2026-06-20)
+- **Verify:** grep "epic implement --resume" .claude/skills/sdlc-studio/reference-epic.md
+- **Verified:** yes (2026-07-10)
 
 ## Implementation
 

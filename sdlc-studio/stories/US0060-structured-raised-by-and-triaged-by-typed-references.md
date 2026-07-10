@@ -21,6 +21,7 @@
 - **When** validate runs
 - **Then** a bare-string author fails, and a `type: persona` name must resolve to a persona doc
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py -k authorship
+- **Verified:** yes (2026-07-10)
 
 ### AC2: History backfilled, honestly marked
 
@@ -28,13 +29,14 @@
 - **When** the backfill runs
 - **Then** every artefact gains a `raised_by` block, ambiguous ones marked `inferred: true`
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_backfill_authorship.py
+- **Verified:** yes (2026-07-10)
 
 ### AC3: Resolver swap needs no frontmatter change
 
 - **Given** a stub agent resolver replacing the persona resolver
 - **When** it is swapped in
 - **Then** no artefact frontmatter changes (the seam holds)
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_backfill_authorship.py -k resolver_seam
+- **Verify:** manual confirm a stub agent resolver can replace sdlc_md.resolve_author without any artefact frontmatter change (typed refs keep resolution behind that one seam; no executable seam test was ever written)
 
 ## Revision History
 

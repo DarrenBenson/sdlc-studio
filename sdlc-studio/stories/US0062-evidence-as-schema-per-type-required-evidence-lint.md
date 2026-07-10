@@ -22,14 +22,16 @@
   or effort estimate
 - **When** the lint runs
 - **Then** it fails, naming the accepted evidence forms; placeholders count as absent
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py -k evidence_schema
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py -k "bug_without_evidence_fails or bug_with_file_line_passes or cr_without_effort_fails or cr_with_impact_and_effort_passes"
+- **Verified:** yes (2026-07-10)
 
 ### AC2: Legacy artefacts exempt (era-gated)
 
 - **Given** an artefact predating schema v3
 - **When** the lint runs
 - **Then** it passes untouched
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py -k evidence_era_gate
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py -k "v2_bug_exempt"
+- **Verified:** yes (2026-07-10)
 
 ## Revision History
 

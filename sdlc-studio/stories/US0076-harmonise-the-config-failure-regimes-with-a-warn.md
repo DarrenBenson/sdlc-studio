@@ -20,7 +20,8 @@
 - **Given** a `.config.yaml` present but unreadable (no PyYAML or malformed)
 - **When** project_override reads it
 - **Then** it emits a one-line stderr diagnostic instead of silently reverting to defaults
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_config.py -k override_warn
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py -k "ConfigOverrideWarnTests"
+- **Verified:** yes (2026-07-10)
 
 ### AC2: Docs match reality
 

@@ -22,13 +22,15 @@
 - **When** sync allocates the issue number
 - **Then** the number is stored as an alias and the ULID remains the canonical id in the filename
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_github_sync.py -k friendly_alias
+- **Verified:** yes (2026-07-10)
 
 ### AC2: Offline sync round-trip degrades cleanly
 
 - **Given** no network / sync skipped
 - **When** the tool operates
 - **Then** identity is unaffected and nothing degrades
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_github_sync.py -k offline
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_github_sync.py -k "no_issue_no_friendly_alias"
+- **Verified:** yes (2026-07-10)
 
 ## Revision History
 

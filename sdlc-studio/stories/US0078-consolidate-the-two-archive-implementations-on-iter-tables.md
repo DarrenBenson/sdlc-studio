@@ -21,14 +21,16 @@
 - **When** it is archived
 - **Then** each terminal row moves exactly once with aligned columns (no double-archive), via one
   archiver built on iter_tables using sdlc_md.terminal_statuses
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_archive.py -k consolidated
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_archive.py -k "archiver or walker"
+- **Verified:** yes (2026-07-10)
 
 ### AC2: No hand-rolled walkers remain
 
 - **Given** the archive paths
 - **When** the code is inspected
 - **Then** no bespoke table walker remains in archive.py/reconcile.py archive paths
-- **Verify:** grep .claude/skills/sdlc-studio/scripts/archive.py "iter_tables"
+- **Verify:** grep "iter_tables" .claude/skills/sdlc-studio/scripts/archive.py
+- **Verified:** yes (2026-07-10)
 
 ## Revision History
 

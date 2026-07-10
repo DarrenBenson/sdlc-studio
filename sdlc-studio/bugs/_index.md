@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 0 |
 | In Progress | 0 |
-| Fixed | 24 |
+| Fixed | 25 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **103** |
+| **Total** | **104** |
 
 ## All Bugs
 
@@ -70,6 +70,7 @@
 | [BG0101](BG0101-reconcile-is-blind-to-epic-story-breakdown-checkbox.md) | reconcile is blind to epic Story Breakdown checkbox drift for bug/CR units | Fixed | Medium | 2026-07-10 | 2026-07-10 |
 | [BG0102](BG0102-project-upgrade-apply-stamps-schema-version-back-to.md) | project upgrade --apply stamps schema_version back to 2 on a schema-3 project | Fixed | Medium | 2026-07-10 | 2026-07-10 |
 | [BG0103](BG0103-verify-ac-lint-crashes-with-nameerror-when-story.md) | verify_ac lint crashes with NameError when --story is not passed | Fixed | Medium | 2026-07-10 | 2026-07-10 |
+| [BG0104](BG0104-legacy-verify-lines-rotted-through-renames-and-reached.md) | legacy Verify lines rotted through renames and reached the v4.0.0-rc.1 tag | Fixed | Medium | 2026-07-10 | 2026-07-10 |
 
 ## Archived Releases
 

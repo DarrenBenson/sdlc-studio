@@ -53,8 +53,8 @@ existing `rfc accept`). The adversarial judgement stays model-instructed.
 - **Given** the RFC references
 - **When** searched
 - **Then** `reference-rfc.md` documents a `decide` decision-session action
-- **Verify:** rg -q "## decide" .claude/skills/sdlc-studio/reference-rfc.md
-- **Verified:** yes (2026-06-20)
+- **Verify:** grep "## decide" .claude/skills/sdlc-studio/reference-rfc.md
+- **Verified:** yes (2026-07-10)
 
 ## Implementation
 

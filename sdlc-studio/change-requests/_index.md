@@ -11,10 +11,10 @@
 | In Progress | 0 |
 | Complete | 222 |
 | Rejected | 0 |
-| Deferred | 6 |
+| Deferred | 7 |
 | Superseded | 4 |
 | Blocked | 0 |
-| **Total** | **232** |
+| **Total** | **233** |
 
 ## All Changes
 
@@ -54,6 +54,7 @@
 | [CR-0230](CR0230-benchmark-harness-spec-updated-oracle-is-phrasing-brittle.md) | benchmark harness: spec-updated oracle is phrasing-brittle | Deferred | Medium | Improvement | 2026-07-10 | -- |
 | [CR-0231](CR0231-protocol-v3-longitudinal-and-multi-team-fixtures-for.md) | protocol v3: longitudinal and multi-team fixtures for the compounding-value story | Deferred | Medium | Improvement | 2026-07-10 | -- |
 | [CR-0232](CR0232-engagement-floor-prose-half-the-doctrine-states-the.md) | engagement floor, prose half: the doctrine states the mandatory planning rule | Complete | High | Improvement | 2026-07-10 | -- |
+| [CR-0233](CR0233-gate-release-one-command-that-cannot-be-misread.md) | gate --release: one command that cannot be misread before a tag | Deferred | High | Improvement | 2026-07-10 | -- |
 
 ## Archived Releases
 

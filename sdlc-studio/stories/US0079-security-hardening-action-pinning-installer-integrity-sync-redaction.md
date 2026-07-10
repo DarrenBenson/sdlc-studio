@@ -21,7 +21,8 @@
 - **When** hardened
 - **Then** actions are SHA-pinned, both installers verify a per-release checksum before extraction,
   and the skill-install `.local/` is gitignored (version-check.json untracked)
-- **Verify:** python3 tools/tests then discover the action-pinning guard
+- **Verify:** pytest tools/tests/test_check_action_pins.py
+- **Verified:** yes (2026-07-10)
 
 ### AC2: Sync redaction and verifier limits
 
@@ -29,6 +30,7 @@
 - **When** github_sync pushes and verify_ac runs
 - **Then** push scans for secrets and requires confirmation, and the http verb enforces scheme/host limits
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_github_sync.py -k redact
+- **Verified:** yes (2026-07-10)
 
 ## Revision History
 

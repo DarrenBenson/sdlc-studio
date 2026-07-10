@@ -31,11 +31,11 @@
 
 ### AC3: the autosprint DoD documents the requirement
 
-- **Given** reference-autosprint.md
+- **Given** reference-sprint.md
 - **When** read
 - **Then** the DoD requires user/operator docs updated, the `documented` stage is in the conformance list, and the final-report + Phase-1-clarify are present
-- **Verify:** grep -q "documented" .claude/skills/sdlc-studio/reference-autosprint.md
-- **Verified:** yes (2026-06-21)
+- **Verify:** grep -q "documented" .claude/skills/sdlc-studio/reference-sprint.md
+- **Verified:** yes (2026-07-10)
 
 ## Implementation
 

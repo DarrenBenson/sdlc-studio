@@ -22,13 +22,15 @@
 - **When** validate / the consolidated lint / gate runs
 - **Then** it fails, naming the rule; transition.py refuses the triage at write time
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k separation_of_duties
+- **Verified:** yes (2026-07-10)
 
 ### AC2: Solo-human carve-out
 
 - **Given** a solo human operator with no second identity
 - **When** they self-triage a `type: human` artefact
 - **Then** it warns, not errors (solo-first stays the primary shape)
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k sod_solo_warn
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k "solo_human_self_triage"
+- **Verified:** yes (2026-07-10)
 
 ## Revision History
 

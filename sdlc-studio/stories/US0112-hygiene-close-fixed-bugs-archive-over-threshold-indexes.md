@@ -22,16 +22,16 @@ Clears the residual bug backlog + the standing archival advisory + a v4-readines
 - **Given** BG0067, BG0068, BG0069, BG0070 (all `Fixed`, each with a passing regression test)
 - **When** their regression tests are re-run and each is transitioned
 - **Then** each reaches a terminal status and the open-bug count is 0
-- **Verify:** shell test -z "$(grep -rl '> \*\*Status:\*\* Fixed' sdlc-studio/bugs)"
-- **Verified:** yes (2026-07-09)
+- **Verify:** shell test "$(grep -l '> \*\*Status:\*\* Closed' sdlc-studio/bugs/BG0067*.md sdlc-studio/bugs/BG0068*.md sdlc-studio/bugs/BG0069*.md sdlc-studio/bugs/BG0070*.md | wc -l)" -eq 4
+- **Verified:** yes (2026-07-10)
 
 ### AC2: the over-threshold story and cr indexes are archived, census unaffected
 
 - **Given** the live story index (over the `indexes.archive_after` threshold) and cr index
 - **When** `archive.py` archives their terminal rows to a release sub-index
 - **Then** the live indexes drop under the threshold, the reconcile archival advisory clears, and the census (drift 0) is unaffected
-- **Verify:** shell test -z "$(python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect 2>&1 | grep 'terminal row')" && python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect
-- **Verified:** yes (2026-07-09)
+- **Verify:** shell test -z "$(python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect 2>&1 | grep -E 'advisory \((story|cr)\).*terminal row')" && python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect
+- **Verified:** yes (2026-07-10)
 
 ### AC3: validate accepts a v3 ULID id (no id-format false error)
 

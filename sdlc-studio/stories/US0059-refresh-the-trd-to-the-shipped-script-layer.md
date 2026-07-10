@@ -29,7 +29,8 @@
 - **Given** a future TRD scale/contract claim that drifts from code
 - **When** the guard runs
 - **Then** it flags the stale claim (as LATEST.md claims are guarded)
-- **Verify:** python3 tools/tests then discover the new TRD-freshness test
+- **Verify:** pytest tools/tests/test_trd_freshness.py
+- **Verified:** yes (2026-07-10)
 
 ## Revision History
 

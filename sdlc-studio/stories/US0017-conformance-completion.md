@@ -52,7 +52,7 @@ stories were backfilled. The batch-level "reviewed" remains the closing gate.
 
 `scripts/critic.py`: `record_verdict`/`verdict_for`/`read_verdicts` + `record`/`show`
 CLI. `conformance.py`: `reconciled` + `critiqued` required stages for Done; docs
-updated in `reference-autosprint.md`.
+updated in `reference-sprint.md`.
 
 ## Revision History
 

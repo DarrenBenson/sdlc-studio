@@ -22,6 +22,7 @@
 - **Then** the reconcile docstring lists all four subcommands, find_by_id/linked_to_epic live in
   lib and the duplicates delegate, and apply/revision/rebuild accept --format json
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py -k format_json
+- **Verified:** yes (2026-07-10)
 
 ### AC2: Hotspots decomposed, latent issues fixed
 
@@ -29,7 +30,8 @@
 - **When** refactored
 - **Then** they are decomposed with no behaviour change, the raw-string escape is fixed, and
   `.local` logs roll with an opt-in SDLC_DEBUG channel
-- **Verify:** python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests
+- **Verified:** yes (2026-07-10)
 
 ## Revision History
 

@@ -27,39 +27,39 @@ by content checks (`rg`), the skill's supported doc-verifier style.
 
 ### AC1: Autonomous mode documented in the autosprint reference
 
-- **Given** `reference-autosprint.md`
+- **Given** `reference-sprint.md`
 - **When** searched for the autonomous-mode policy
 - **Then** it describes `--autonomous`, the ledger, the cap/repetition/completion guardrails, quarantine-and-continue, and the closing reconcile + review
-- **Verify:** rg -q "autonomous" .claude/skills/sdlc-studio/reference-autosprint.md
-- **Verified:** yes (2026-06-20)
+- **Verify:** grep "autonomous" .claude/skills/sdlc-studio/reference-sprint.md
+- **Verified:** yes (2026-07-10)
 
 ### AC2: Independent critic recorded as a loop step
 
-- **Given** `reference-autosprint.md`
+- **Given** `reference-sprint.md`
 - **When** searched for the critic step
 - **Then** the non-author critic (D3/WS4) is present in the per-unit loop
-- **Verify:** rg -q "critic" .claude/skills/sdlc-studio/reference-autosprint.md
-- **Verified:** yes (2026-06-20)
+- **Verify:** grep "critic" .claude/skills/sdlc-studio/reference-sprint.md
+- **Verified:** yes (2026-07-10)
 
 ### AC3: project implement notes the autonomous mode
 
 - **Given** `reference-project.md`
 - **When** searched
 - **Then** it cross-references `--autonomous` / autosprint as the outer loop over the wave engine
-- **Verify:** rg -q "autonomous" .claude/skills/sdlc-studio/reference-project.md
-- **Verified:** yes (2026-06-20)
+- **Verify:** grep "autonomous" .claude/skills/sdlc-studio/reference-project.md
+- **Verified:** yes (2026-07-10)
 
 ### AC4: help documents the flag
 
 - **Given** `help/autosprint.md`
 - **When** searched
 - **Then** the `--autonomous` flag is documented
-- **Verify:** rg -q "autonomous" .claude/skills/sdlc-studio/help/autosprint.md
-- **Verified:** yes (2026-06-20)
+- **Verify:** grep "autonomous" .claude/skills/sdlc-studio/help/sprint.md
+- **Verified:** yes (2026-07-10)
 
 ## Implementation
 
-Doc edits to `reference-autosprint.md`, `reference-project.md`, `help/autosprint.md`
+Doc edits to `reference-sprint.md`, `reference-project.md`, `help/autosprint.md`
 tying ledger + guardrails + critic + closing gate into the `--autonomous` policy.
 
 ## Revision History

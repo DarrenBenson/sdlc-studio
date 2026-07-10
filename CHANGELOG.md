@@ -108,6 +108,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Done means done again for every pre-v4 story: 43 rotted Verify lines repaired
+  (BG0104).** The pre-GA verify pass exposed executable acceptance criteria pointing at
+  renamed test files, refactored test names, retired scripts and invalid verifier verbs -
+  accumulated silently across months of refactors. Every line now points at current truth
+  (individually re-run, no guarantee weakened, two AC texts aligned to deliberately-changed
+  semantics with dated provenance notes), five checks are honestly manual where their
+  machinery was retired, and the full pass reads 348 verified / 25 manual / 0 failed. The
+  ritual gap that let it reach the rc tag is CR0233 (gate --release, v4.1).
+
 - **The amigos-to-seats migration can no longer create a role collision, and the documented
   default-install decline command is no longer a silent no-op (found by the late critic
   ceremony on CR0218).** A legacy card whose role is already claimed by a seats/ card is now

@@ -24,24 +24,24 @@ Implements RFC0001 WS2. Reuses `lib/sdlc_md` (`artifact_files`, `extract_field`,
 - **Given** bugs with Status `Open` and `Fixed`
 - **When** `select_batch(root, "bug", "Open")` runs
 - **Then** only the Open bugs are returned, each with id, status, priority, path
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_autosprint.py::SelectTests::test_selects_by_status
-- **Verified:** yes (2026-06-20)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SelectTests::test_selects_by_status
+- **Verified:** yes (2026-07-10)
 
 ### AC2: Priority/severity ordering
 
 - **Given** open bugs of Severity Low, Critical, Medium
 - **When** the batch is selected with `order="priority"`
 - **Then** they are ordered Critical, Medium, Low
-- **Verified:** yes (2026-06-20)
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_autosprint.py::OrderTests::test_priority_order
+- **Verified:** yes (2026-07-10)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OrderTests::test_priority_order
 
 ### AC3: plan CLI emits an ordered JSON worklist
 
 - **Given** a workspace with proposed CRs
 - **When** `autosprint plan --crs Proposed --format json` runs
-- **Verified:** yes (2026-06-20)
+- **Verified:** yes (2026-07-10)
 - **Then** it prints `{ "batch": [...], "count" }` ordered by priority and exits 0
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_autosprint.py::CliTests::test_plan_json
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CliTests::test_plan_json
 
 ## Implementation
 

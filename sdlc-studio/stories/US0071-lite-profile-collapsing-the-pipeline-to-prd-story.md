@@ -22,6 +22,7 @@
 - **Then** zero epic/plan artefacts are created and no command nags about their absence, while
   executable-AC verification and reconcile work identically
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lite_profile.py
+- **Verified:** yes (2026-07-10)
 
 ### AC2: Promotable to full
 
@@ -29,6 +30,7 @@
 - **When** it upgrades to the full profile
 - **Then** epics are inserted above existing stories and reconcile is clean
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lite_profile.py -k promote
+- **Verified:** yes (2026-07-10)
 
 ## Revision History
 

@@ -32,13 +32,16 @@ consistent with the conformance gate (CR0027) - without suppressing any other ch
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::ValidateFileTests::test_no_ac_still_flagged_with_malformed_config
 - **Verified:** yes (2026-06-20)
 
-### AC3: Cutoff is exclusive
+### AC3: Cutoff boundary is inclusive
 
 - **Given** `conformance.adopt_after: US0100` and a no-AC US0100
 - **When** validate runs
-- **Then** US0100 itself is still flagged (only ids strictly below the cutoff are exempt)
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::ValidateFileTests::test_no_ac_at_cutoff_still_flagged
-- **Verified:** yes (2026-06-20)
+- **Then** US0100 itself is exempt - ids at or below the cutoff are grandfathered
+  (boundary deliberately made inclusive in dffed14, independently reviewed 2026-06-25;
+  this AC originally asserted the exclusive boundary and was aligned when the Verify
+  layer was repaired, 2026-07-10)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py -k "no_ac_at_cutoff_is_exempt or bare_int_cutoff_exempts_at_boundary"
+- **Verified:** yes (2026-07-10)
 
 ## Implementation
 

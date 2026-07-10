@@ -19,7 +19,7 @@ tautological AC, unmet deps, or already-done items (CR0021).
 Implements CR0021. New `scripts/audit.py` (weak-AC, unmet-deps, already-terminal,
 reusing `integrity.py` for link-integrity) emits a JSON readiness report; non-zero
 exit when any unit is not ready. The workflow step is documented in
-`reference-autosprint.md` between `plan` and the triage STOP. Adversarial "is the
+`reference-sprint.md` between `plan` and the triage STOP. Adversarial "is the
 problem still real" stays model-instructed (delegates to RFC0002 when built).
 
 ## Acceptance Criteria
@@ -50,16 +50,16 @@ problem still real" stays model-instructed (delegates to RFC0002 when built).
 
 ### AC4: Workflow step documented
 
-- **Given** `reference-autosprint.md`
+- **Given** `reference-sprint.md`
 - **When** searched for the tranche-audit step
 - **Then** step 2 "Tranche audit" sits between `plan` and the triage STOP
-- **Verify:** rg -q "Tranche audit" .claude/skills/sdlc-studio/reference-autosprint.md
-- **Verified:** yes (2026-06-20)
+- **Verify:** grep "Tranche audit" .claude/skills/sdlc-studio/reference-sprint.md
+- **Verified:** yes (2026-07-10)
 
 ## Implementation
 
 `scripts/audit.py`: `audit_unit` / `audit_batch` plus a `check` subcommand; reuses
-`integrity.py` and `autosprint.select_batch`. Doc step in `reference-autosprint.md`
+`integrity.py` and `autosprint.select_batch`. Doc step in `reference-sprint.md`
 and `help/autosprint.md`.
 
 ## Revision History

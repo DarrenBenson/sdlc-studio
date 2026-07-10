@@ -24,24 +24,24 @@
 - **Given** a PVD feature map + a manifest + child PRDs
 - **When** `product_reconcile` runs
 - **Then** a feature not declared in its child PRD (orphan), a ref to an unknown repo, and a manifest repo with no path each block; a fully-traced map passes
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_product_reconcile.py::ProductReconcileTests::test_in_sync
-- **Verified:** yes (2026-06-21)
+- **Verify:** manual superseded - product_reconcile.py and its tests were retired (CR-0142, never told the truth); confirm feature-map integrity at review cadence
+- **Verified:** no (2026-07-10)
 
 ### AC2: no false pass - declaration-anchored, never reads the wrong PRD
 
 - **Given** a feature id mentioned only in prose, a substring-id collision, or a manifest repo missing its path
 - **When** reconcile runs
 - **Then** none yields a false in-sync (prose mention -> orphan; F7 != F70; missing-path -> blocking, not a fallback read of the manifest dir)
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_product_reconcile.py::ProductReconcileTests::test_prose_mention_does_not_count
-- **Verified:** yes (2026-06-21)
+- **Verify:** manual superseded - tool retired (CR-0142); no executable check remains for the deleted parser
+- **Verified:** no (2026-07-10)
 
 ### AC3: degrades on absent repos with a visible un-verified count; exit codes
 
 - **Given** an absent child repo or an empty feature map
 - **When** reconcile runs
 - **Then** it degrades (advisory) with an un-verified count, and `main` exits non-zero only on a blocking finding
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_product_reconcile.py::ProductReconcileTests::test_exit_codes
-- **Verified:** yes (2026-06-21)
+- **Verify:** manual superseded - tool retired (CR-0142); pvd sync / pvd drift are the surviving cross-repo checks
+- **Verified:** no (2026-07-10)
 
 ## Implementation
 

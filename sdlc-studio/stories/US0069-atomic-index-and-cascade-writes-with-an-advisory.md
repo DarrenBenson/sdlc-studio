@@ -22,13 +22,14 @@
 - **Then** they never mint the same id, and a crash mid-index-write leaves the prior `_index.md`
   intact (write-temp-then-rename)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_concurrency.py
+- **Verified:** yes (2026-07-10)
 
 ### AC2: Uncontended path unaffected; lock self-heals
 
 - **Given** the single-writer common case
 - **When** it runs
 - **Then** there is no measurable regression and a stale lock is reclaimed
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_concurrency.py -k stale_lock
+- **Verify:** manual confirm allocation_lock cannot wedge on a stale lock (flock releases with its holder; the lock-wait deadline proceeds rather than hang) and the single-writer path shows no regression - no dedicated stale-lock test exists
 
 ## Revision History
 

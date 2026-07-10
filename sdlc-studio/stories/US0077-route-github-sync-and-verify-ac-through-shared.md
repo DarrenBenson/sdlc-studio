@@ -21,13 +21,15 @@
 - **When** sync and verify run
 - **Then** both find every artefact (via sdlc_md.artifact_files), with no bespoke case-sensitive glob
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_github_sync.py -k lowercase
+- **Verified:** yes (2026-07-10)
 
 ### AC2: Unified --root grammar
 
 - **Given** the script CLIs
 - **When** `--root` is passed
 - **Then** github_sync accepts it (resolving STATE_PATH against it) and verify_ac aliases it
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k root_flag
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k "root_is_alias_of_repo_root or dir_and_report_resolve_against_root"
+- **Verified:** yes (2026-07-10)
 
 ## Revision History
 

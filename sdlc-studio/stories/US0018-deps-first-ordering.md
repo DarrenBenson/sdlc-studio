@@ -29,24 +29,24 @@ naming it.
 - **Given** A (Low) and B (High) where B depends on A, both in the batch
 - **When** `select_batch` orders them
 - **Then** A precedes B despite B's higher priority
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_autosprint.py::DepsOrderTests::test_deps_first_overrides_priority
-- **Verified:** yes (2026-06-20)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DepsOrderTests::test_deps_first_overrides_priority
+- **Verified:** yes (2026-07-10)
 
 ### AC2: A dependency cycle aborts, named
 
 - **Given** A depends on B and B depends on A
 - **When** ordering runs
 - **Then** it raises `ValueError` naming the cycle (CLI exits non-zero)
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_autosprint.py::DepsOrderTests::test_cycle_raises
-- **Verified:** yes (2026-06-20)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DepsOrderTests::test_cycle_raises
+- **Verified:** yes (2026-07-10)
 
 ### AC3: Out-of-batch dependency ignored
 
 - **Given** a unit depending on an id not in the batch
 - **When** ordering runs
 - **Then** it orders by priority with no error (the audit flags the unmet dep)
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_autosprint.py::DepsOrderTests::test_out_of_batch_dep_ignored
-- **Verified:** yes (2026-06-20)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DepsOrderTests::test_out_of_batch_dep_ignored
+- **Verified:** yes (2026-07-10)
 
 ## Implementation
 
