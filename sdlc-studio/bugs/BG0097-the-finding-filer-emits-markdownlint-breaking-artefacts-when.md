@@ -11,6 +11,8 @@ Dogfooded during RV0007: file_finding/artifact render summaries, steps and fix t
 
 ## Self-demonstration
 
+Also observed in `ledger.py record` (2026-07-10): a decision row tripped MD060 table-column-style until `lint:fix` - widen the fix to every deterministic prose-rendering writer, not just the filer.
+
 This very artefact reproduced the defect at filing time: its rendered summary/steps failed markdownlint (MD011/MD037/MD050) until hand-edited - the identifiers below are now backticked by hand, which is exactly the fix the tool should apply.
 
 ## Steps to Reproduce
