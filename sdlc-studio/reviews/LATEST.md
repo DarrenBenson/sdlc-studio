@@ -33,6 +33,11 @@
   operator set for the v4.0 tag. RFC0027 accepted (option C); the 9 founding epics (EP0001-0009) that
   carried a stale `Ready` remain closed to Done. **The tag / freeze lift / push to consuming projects
   stay an explicit operator action** (see `v4-rc-readiness.md`); `main` runs ahead of `origin`.
+- **v4.1 lane (filed, Deferred, `Target: v4.1`):** CR0223 handoff guide (remaining-work
+  artefact at run close), CR0224 multi-repo context (PVD-wide repo map + cross-repo deps),
+  CR0225 appetite-bounded unattended runs (Shape-Up-style budget circuit-breaker). From an
+  operator-reviewed vendor white-paper comparison. **Tag precondition reads: backlog clear of
+  non-Deferred work** - Deferred-with-Target is groomed future scope, not un-cleared backlog.
 - **Deferred follow-ups (open ideas, unfiled):** a `reconcile detect --era` lens + per-artifact
   re-review markers + per-capability watermarks (CR0197 open decisions); a path-aware tightening of
   the spec-guard basename match; the 6 legacy-epic stale-`Ready` hygiene pass above.

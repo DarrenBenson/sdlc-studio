@@ -11,10 +11,10 @@
 | In Progress | 1 |
 | Complete | 213 |
 | Rejected | 0 |
-| Deferred | 0 |
+| Deferred | 3 |
 | Superseded | 4 |
 | Blocked | 0 |
-| **Total** | **222** |
+| **Total** | **225** |
 
 ## All Changes
 
@@ -44,6 +44,9 @@
 | [CR-0220](CR0220-stakeholder-panel-generation-the-other-side-of-the.md) | stakeholder panel generation: the other side of the table (persona generate --stakeholders) | Proposed | High | Feature | 2026-07-10 | -- |
 | [CR-0221](CR0221-cooper-usage-pass-personas-that-arbitrate-not-decorate.md) | Cooper usage pass: personas that arbitrate, not decorate | Proposed | Medium | Improvement | 2026-07-10 | -- |
 | [CR-0222](CR0222-positioning-and-lifecycle-wiring-the-honest-differentiator-everywhere.md) | positioning and lifecycle wiring: the honest differentiator, everywhere the team is met | Proposed | High | Improvement | 2026-07-10 | -- |
+| [CR-0223](CR0223-the-handoff-guide-a-first-class-remaining-work.md) | the handoff guide: a first-class remaining-work artefact at run close | Deferred | Medium | Feature | 2026-07-10 | -- |
+| [CR-0224](CR0224-multi-repo-context-the-repo-map-and-census.md) | multi-repo context: the repo map and census grow PVD-wide awareness | Deferred | Medium | Feature | 2026-07-10 | -- |
+| [CR-0225](CR0225-appetite-bounded-unattended-runs-a-budget-circuit-breaker.md) | appetite-bounded unattended runs: a budget circuit-breaker for epic-level execution | Deferred | Medium | Feature | 2026-07-10 | -- |
 
 ## Archived Releases
 
