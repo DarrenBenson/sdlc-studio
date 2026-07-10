@@ -456,10 +456,10 @@ def _has_origin(root) -> bool:
 
 
 def _default_branch(root) -> str:
-    r = _git(root, "symbolic-ref", "--quiet", "refs/remotes/origin/HEAD")
-    if r and r.returncode == 0 and r.stdout.strip():
-        return r.stdout.strip().rsplit("/", 1)[-1]
-    return "main"
+    """The origin default branch, or `main`. Thin alias for the shared
+    `next_id.origin_default_branch` so the resolution logic lives in one place."""
+    import next_id
+    return next_id.origin_default_branch(Path(root))
 
 
 def origin_drift(root, do_fetch: bool = True) -> dict:

@@ -46,12 +46,9 @@ def _disp(type_: str, n: int) -> str:
 
 def _schema_v3(root: Path) -> bool:
     """True when the project opted into schema v3 (`schema_version: 3` in `.config.yaml`).
-    Read via the degrading project_override, so a PyYAML-less machine simply reads v2."""
-    v = sdlc_md.project_override(root, "schema_version", None)
-    try:
-        return v is not None and int(v) >= 3
-    except (TypeError, ValueError):
-        return False
+    Thin alias for the shared `sdlc_md.is_schema_v3` (one authority; both degrade to v2 on a
+    PyYAML-less machine)."""
+    return sdlc_md.is_schema_v3(root)
 
 
 def _alloc_ids(root: Path, type_: str) -> tuple[str, str]:

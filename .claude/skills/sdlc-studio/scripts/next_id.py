@@ -111,7 +111,7 @@ def allocate_number(type_: str, repo_root: Path | str, remote: bool = True) -> i
     return base + 1
 
 
-def _origin_default_branch(repo_root: Path) -> str:
+def origin_default_branch(repo_root: Path) -> str:
     """The origin default branch (`origin/HEAD -> origin/<branch>`), or `main` as a fallback.
     A consuming repo may default to master/develop/trunk; hardcoding `origin/main` would silently
     skip the remote scan there and re-mint an id the remote already holds."""
@@ -133,7 +133,7 @@ def remote_ids(type_: str, repo_root: Path) -> tuple[list[int], bool]:
     not hardcoded). `available` is False when the repo has no origin ref or git is unavailable.
     """
     rel, prefix = _spec(type_)
-    branch = _origin_default_branch(repo_root)
+    branch = origin_default_branch(repo_root)
     try:
         result = subprocess.run(
             ["git", "ls-tree", "-r", "--name-only", f"origin/{branch}", "--", rel],

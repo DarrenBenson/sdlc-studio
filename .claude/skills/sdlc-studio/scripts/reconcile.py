@@ -750,16 +750,6 @@ def _join_row(cells: list[str]) -> str:
     return sdlc_md.join_row(cells)
 
 
-def _canonical_counts(rows: dict[str, tuple[str, str]], vocab: list[str]) -> dict[str, int]:
-    """Tally canonical statuses of parse_index rows - the same authority detect uses."""
-    counts: dict[str, int] = {}
-    for _disp, istatus in rows.values():
-        rc = _canonical_status(istatus, vocab)
-        if rc is not None:
-            counts[rc] = counts.get(rc, 0) + 1
-    return counts
-
-
 def _plan_status_fixes(rows: dict, census: dict, vocab: list) -> tuple[dict, list]:
     """Status fixes to apply (norm id -> new canonical status) and their change
     records, decided against the file census (mirrors detect_type)."""
@@ -1053,7 +1043,7 @@ def _model_corrected_counts(rows: dict, fixes: dict, to_append: list,
         corrected[norm] = (rows[norm][0], new)
     for norm, disp, fstatus in to_append:
         corrected[norm] = (disp, _canonical_status(fstatus, vocab) or fstatus)
-    return _canonical_counts(corrected, vocab)
+    return _row_counts(corrected, vocab)
 
 
 def _table_display_style(lines: list, hdr: tuple, type_: str) -> bool:
@@ -1347,15 +1337,6 @@ def cmd_apply(args: argparse.Namespace) -> int:
           + (f", {unapplied} could not be applied" if unapplied else "")
           + (" [dry-run]" if args.dry_run else ""))
     return 1 if unapplied else 0
-
-
-_SEP_LINE_RE = re.compile(r"\|[\s:|-]*-[\s:|-]*\|")  # a `| --- | --- |` table separator
-
-
-def _is_sep_line(line: str) -> bool:
-    """A markdown table separator row. `table_cells` returns None for these, so the
-    archive parser must recognise them from the raw line to stay 'in table'."""
-    return bool(_SEP_LINE_RE.fullmatch(line.strip()))
 
 
 def _line_id(line: str) -> str | None:

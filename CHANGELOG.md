@@ -23,6 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Quality and docs debt sweep (EP0028, CR0208).** A themed pass over Low/Medium debt surfaced
+  by RV0007. So far: dead code removed (`sdlc_md.METADATA_FIELD_RE`, `reconcile._SEP_LINE_RE` /
+  `_is_sep_line`, all unused) and duplicated helpers folded to one authority (`reconcile.
+  _canonical_counts` collapsed into `_row_counts`; `artifact._schema_v3` delegates to
+  `sdlc_md.is_schema_v3`; `sprint._default_branch` delegates to the now-public
+  `next_id.origin_default_branch`).
 - **One CLI argument grammar across the script family (EP0028, CR0210).** The scripts disagreed
   on how ids and targets were passed - `audit check` took `--ids` comma-separated, `transition
   set` forced exactly one of `--id`/`--ids`, `artifact revision` required `--ids`, `ledger

@@ -23,8 +23,6 @@ T = TypeVar("T")
 # Canonical markdown conventions (the single source of truth for parsing)
 # -----------------------------------------------------------------------------
 
-# A metadata line: `> **FieldName:** value`. group(1)=name, group(2)=value.
-METADATA_FIELD_RE = re.compile(r"^>\s*\*\*([^*]+):\*\*\s*(.+?)\s*$", re.M)
 # First `# Heading` of a document.
 H1_RE = re.compile(r"^#\s+(.+)$", re.M)
 # Artifact ID prefix at the start of a filename stem. CR/RFC display with a
