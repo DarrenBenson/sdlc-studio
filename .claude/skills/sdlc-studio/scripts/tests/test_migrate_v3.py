@@ -347,5 +347,49 @@ class ConfirmGateTests(unittest.TestCase):
                 self.assertEqual(migrate_v3.main(["plan", "--root", str(root)]), 0)
 
 
+class AdoptForwardOnlyTests(unittest.TestCase):
+    """Operator option (b): forward-only era switch - existing sequential ids stay (valid
+    wherever referenced out-of-system), only NEW artefacts mint ULIDs. adopt stamps the
+    schema and touches nothing else; like apply it refuses without --confirm."""
+
+    def test_adopt_without_confirm_refuses(self) -> None:
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); _fixture(root)
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                rc = migrate_v3.main(["adopt", "--root", str(root)])
+            self.assertEqual(rc, 2)
+            self.assertIn("forward-only", err.getvalue().lower())
+            self.assertFalse((root / "sdlc-studio" / ".config.yaml").exists())  # no stamp
+
+    def test_adopt_stamps_schema_and_renames_nothing(self) -> None:
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); _fixture(root)
+            before = sorted(p.name for p in (root / "sdlc-studio" / "stories").iterdir())
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = migrate_v3.main(["adopt", "--confirm", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            cfg = (root / "sdlc-studio" / ".config.yaml").read_text(encoding="utf-8")
+            self.assertRegex(cfg, r"(?m)^schema_version: 3$")
+            after = sorted(p.name for p in (root / "sdlc-studio" / "stories").iterdir())
+            self.assertEqual(before, after)  # ids untouched - forward-only
+
+    def test_new_filing_after_adopt_mints_ulid_and_reconcile_stays_clean(self) -> None:
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); _fixture(root)
+            with contextlib.redirect_stdout(io.StringIO()):
+                migrate_v3.main(["adopt", "--confirm", "--root", str(root)])
+            artifact = _load("artifact")
+            res = artifact.new(root, "bug", "a fresh v3 bug",
+                               {"severity": "Medium", "priority": "Medium"})
+            self.assertRegex(res["id"], r"^BG-[0-9A-Z]{8,}")   # new era id
+            drift = (reconcile.detect_type("story", root)["drift"]
+                     + reconcile.detect_type("epic", root)["drift"])
+            self.assertEqual(drift, [])                        # mixed eras reconcile clean
+
+
 if __name__ == "__main__":
     unittest.main()

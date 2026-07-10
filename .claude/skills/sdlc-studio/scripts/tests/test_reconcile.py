@@ -1720,6 +1720,44 @@ class EpicBreakdownTests(unittest.TestCase):
             self.assertEqual(rc, 1)  # breakdown drift alone must make detect non-zero
 
 
+class EraDivergenceTests(unittest.TestCase):
+    """Multi-user era warning: config says v2 but v3 ULID ids exist in the workspace -
+    another writer is on v3 (or config is stale). Advisory only, one direction only."""
+
+    def test_v2_config_with_v3_ids_warns(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bd = root / "sdlc-studio" / "bugs"; bd.mkdir(parents=True)
+            (bd / "BG-01JQK3F8-x.md").write_text("# BG-01JQK3F8: x\n\n> **Status:** Open\n",
+                                                 encoding="utf-8")
+            note = reconcile.era_divergence_advisory(root)  # no config -> schema 2
+            self.assertIsNotNone(note)
+            self.assertIn("era divergence", note)
+            self.assertIn("BG-01JQK3F8", note)
+
+    def test_v3_config_with_mixed_ids_is_silent(self) -> None:
+        # forward-only adopt keeps sequential ids beside ULIDs - NOT divergence
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n",
+                                                               encoding="utf-8")
+            bd = root / "sdlc-studio" / "bugs"; bd.mkdir()
+            (bd / "BG0001-old.md").write_text("# BG0001: old\n\n> **Status:** Open\n",
+                                              encoding="utf-8")
+            (bd / "BG-01JQK3F8-new.md").write_text("# BG-01JQK3F8: new\n\n> **Status:** Open\n",
+                                                   encoding="utf-8")
+            self.assertIsNone(reconcile.era_divergence_advisory(root))
+
+    def test_pure_v2_is_silent(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bd = root / "sdlc-studio" / "bugs"; bd.mkdir(parents=True)
+            (bd / "BG0001-x.md").write_text("# BG0001: x\n\n> **Status:** Open\n",
+                                            encoding="utf-8")
+            self.assertIsNone(reconcile.era_divergence_advisory(root))
+
+
 class MetaIndexTests(unittest.TestCase):
     """retros/ and reviews/ coverage: row presence only, house columns tolerated, the meta id
     namespace (RETRO/RV) that the pipeline id regexes exclude."""

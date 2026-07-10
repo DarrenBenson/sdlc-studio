@@ -734,6 +734,28 @@ def apply_breakdown(repo_root: Path | str, dry_run: bool = False) -> dict:
     return {"synced": synced}
 
 
+def era_divergence_advisory(repo_root: Path | str) -> str | None:
+    """Warn when this clone's config and the workspace's ids tell different era stories: config
+    says schema v2 (sequential ids) but v3 ULID-form ids exist - another user or machine is
+    filing on v3, or the local .config.yaml is stale/uncommitted. On a multi-user project two
+    writers in different modes WILL diverge (one minting sequential ids the other's era already
+    abandoned), so surface it before it happens. The inverse (schema 3 with sequential ids
+    present) is normal - a forward-only adopt keeps the old ids - so only this direction warns.
+    Advisory only: never drift, never the exit code."""
+    root = Path(repo_root)
+    if sdlc_md.schema_version(root) >= 3:
+        return None
+    v3 = [rec for t in sdlc_md.ARTIFACT_TYPES for p in sdlc_md.artifact_files(t, root)
+          if (rec := sdlc_md.extract_record_id(p.stem)) and sdlc_md.id_number(rec) is None]
+    if not v3:
+        return None
+    sample = ", ".join(sorted(v3)[:3])
+    return (f"era divergence: {len(v3)} v3 ULID-form id(s) exist (e.g. {sample}) but this "
+            f"clone's config is schema v2 - another user/machine is filing on v3, or "
+            f".config.yaml is stale. Align the era across clones (pull, or "
+            f"`migrate_v3.py adopt --confirm` / `apply --confirm`) before writers diverge.")
+
+
 def cmd_detect(args: argparse.Namespace) -> int:
     """Run drift detection across the selected scope and report."""
     repo_root = Path(args.root).resolve()
@@ -779,6 +801,9 @@ def cmd_detect(args: argparse.Namespace) -> int:
     digest_note = digest_drift_advisory(repo_root)
     if digest_note:
         report["digest_advisory"] = digest_note
+    era_note = era_divergence_advisory(repo_root)
+    if era_note:
+        report["era_advisory"] = era_note
 
     if getattr(args, "blocker_sweep", False):
         # advisory lane: report stale-blocked / now-unblocked units. Never affects drift or the
@@ -808,6 +833,8 @@ def cmd_detect(args: argparse.Namespace) -> int:
                 print(f"advisory ({type_}): {a}")
         if digest_note:
             print(f"advisory (digest): {digest_note}")
+        if era_note:
+            print(f"advisory (era): {era_note}")
         print(f"scope={report['scope']} drift_items={len(all_drift)} by_kind={by_kind}")
         hints = sdlc_md.remediation_lines("reconcile", by_kind)
         if hints:

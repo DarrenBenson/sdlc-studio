@@ -341,12 +341,17 @@ back-dated rows are invented for events that happened before it.
 4. **Ask the operator the numbering question (v2 projects only).** Schema v3 replaces
    sequential ids (`US0001`) with collision-free ULID ids (`US-01JQK3F8`) so several
    people - and agents - on different machines with different git states can file work
-   concurrently without minting clashing ids: the multi-team feature of v4. The switch
-   renumbers every artefact (links rewritten, old ids kept as aliases), so it is the
-   operator's decision, asked explicitly and never auto-applied. If they say yes:
-   `migrate_v3.py plan` (preview), then `migrate_v3.py apply --confirm` - `apply`
-   refuses without the explicit confirmation. If they decline, stop there: staying on
-   v2 sequential numbering is fully supported and every other upgrade step still lands.
+   concurrently without minting clashing ids: the multi-team feature of v4. It is the
+   operator's decision, asked explicitly and never auto-applied, with **three answers,
+   all fully supported**:
+   - **Full migration** - every artefact renumbered, links rewritten, old ids kept as
+     aliases: `migrate_v3.py plan` (preview), then `migrate_v3.py apply --confirm`.
+   - **Forward-only** - existing artefacts keep their sequential ids (they may be
+     referenced outside the system - tickets, chat, docs - and stay valid there); only
+     new artefacts mint ULIDs: `migrate_v3.py adopt --confirm`. The two id eras coexist
+     by design.
+   - **Decline** - stay on v2 sequential numbering; every other upgrade step still lands.
+   Both `apply` and `adopt` refuse without `--confirm` - the switch is never headless.
 5. **Work the report** by hand for the judgement items (the agent-assisted steps - rewrite
    personas, refresh AGENTS, backfill Verify), guided by this file.
 6. **Run the gate** (`scripts/gate.py`) - the residual is the judgement work still to do.

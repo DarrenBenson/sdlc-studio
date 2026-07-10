@@ -257,20 +257,32 @@ def migrate(repo_root: Path | str, dry_run: bool = True) -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="migrate_v3.py", description="Migrate a workspace v2 -> v3 (ULID ids).")
-    p.add_argument("cmd", choices=["plan", "apply"])
+    p.add_argument("cmd", choices=["plan", "apply", "adopt"])
     p.add_argument("--root", default=".")
     p.add_argument("--confirm", action="store_true",
-                   help="required for apply: the id renumbering is an operator decision "
-                        "(every artefact id changes; old ids kept as aliases), never headless")
+                   help="required for apply/adopt: switching the numbering scheme is an "
+                        "operator decision, never headless")
     p.add_argument("--format", choices=["text", "json"], default="text")
     args = p.parse_args(argv)
-    if args.cmd == "apply" and not args.confirm:
-        print("apply refused: switching the numbering scheme renumbers EVERY artefact id "
-              "(sequential -> collision-free ULID; links rewritten, old ids kept as aliases). "
-              "That is the operator's decision, not a default - preview with `plan`, then, "
-              "with their explicit go-ahead, re-run `apply --confirm`. Staying on v2 "
-              "numbering is fully supported.", file=sys.stderr)
+    if args.cmd in ("apply", "adopt") and not args.confirm:
+        print(f"{args.cmd} refused: switching the numbering scheme is the operator's decision, "
+              "not a default. Two consented forms: `apply --confirm` renumbers EVERY artefact "
+              "(sequential -> collision-free ULID; links rewritten, old ids kept as aliases); "
+              "`adopt --confirm` is FORWARD-ONLY (existing artefacts keep their sequential ids - "
+              "valid wherever they are referenced outside the system - and only new artefacts "
+              "mint ULIDs). Preview a full migration with `plan`. Staying on v2 numbering is "
+              "fully supported.", file=sys.stderr)
         return 2
+    if args.cmd == "adopt":
+        # Forward-only era switch: stamp schema_version: 3 and touch NOTHING else. The two id
+        # eras coexist by design (parsers, allocator, reconcile), so existing sequential ids
+        # stay live - including wherever they are referenced out-of-system - while every new
+        # filing mints a collision-free ULID.
+        _stamp_schema_v3(Path(args.root))
+        res = {"adopted": True, "migrated": 0, "dry_run": False}
+        print(json.dumps(res, indent=2) if args.format == "json" else
+              "adopted schema v3 forward-only: existing ids kept, new artefacts mint ULIDs")
+        return 0
     res = migrate(args.root, dry_run=(args.cmd == "plan"))
     if args.format == "json":
         print(json.dumps(res, indent=2))

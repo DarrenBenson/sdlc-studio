@@ -400,9 +400,11 @@ class UpgradeWalkTests(unittest.TestCase):
             decision = walk[0]
             self.assertIn("operator decision", decision["step"].lower())
             detail = decision["detail"].lower()
-            for needle in ("collision-free", "staying on v2", "ask the operator"):
+            # the three explicit answers: full migration, forward-only, stay on v2
+            for needle in ("collision-free", "forward-only", "stay on v2", "asked explicitly"):
                 self.assertIn(needle, detail)
             self.assertTrue(any("--confirm" in s["detail"] for s in walk))
+            self.assertTrue(any("adopt --confirm" in s["detail"] for s in walk))
 
     def test_v3_project_has_no_walk(self) -> None:
         with tempfile.TemporaryDirectory() as d:

@@ -171,18 +171,22 @@ def migration_walk(root: Path | str) -> list[dict]:
     return [
         {"step": "OPERATOR DECISION: switch the id numbering scheme?",
          "detail": "schema v3 replaces sequential ids (US0001) with collision-free ULID ids "
-                   "(US-01JQK3F8) so multiple users on different machines - with different git "
-                   "states - can file work concurrently without minting clashing ids. The switch "
-                   "renumbers every artefact (links are rewritten; old ids are kept as aliases). "
-                   "Staying on v2 sequential numbering is fully supported: decline by simply not "
-                   "running the migration, and every other upgrade step still applies. This is "
-                   "your call, never an auto-applied default - ASK the operator explicitly."},
+                   "(US-01JQK3F8) so multiple users and agents on different machines - with "
+                   "different git states - can file work concurrently without minting clashing "
+                   "ids. THREE choices, all fully supported, ASKED explicitly and never "
+                   "auto-applied: (a) full migration - every artefact renumbered, links "
+                   "rewritten, old ids kept as aliases (`migrate_v3.py apply --confirm`); "
+                   "(b) FORWARD-ONLY - existing artefacts keep their sequential ids (still valid "
+                   "wherever they are referenced outside the system) and only new artefacts mint "
+                   "ULIDs (`migrate_v3.py adopt --confirm`); (c) stay on v2 sequential numbering "
+                   "- decline, and every other upgrade step still applies."},
         {"step": "migrate_v3 dry-run",
-         "detail": "if switching: dry-run the id migration (preview, no writes): `migrate_v3.py plan`"},
-        {"step": "migrate_v3 apply",
-         "detail": "if switching: perform the ULID id migration and link rewrite: "
-                   "`migrate_v3.py apply --confirm` (apply refuses without the explicit "
-                   "confirmation - the renumbering is operator-consented, never headless)"},
+         "detail": "if migrating fully: dry-run the id migration (preview, no writes): "
+                   "`migrate_v3.py plan`"},
+        {"step": "migrate_v3 apply or adopt",
+         "detail": "with the operator's explicit go-ahead: `migrate_v3.py apply --confirm` "
+                   "(full renumber) or `migrate_v3.py adopt --confirm` (forward-only) - both "
+                   "refuse without the confirmation; the switch is never headless"},
         {"step": "re-baseline",
          "detail": "backfill/re-review the migrated artefacts: `project upgrade --apply` "
                    "(runs the same whether or not you switched numbering)"},
