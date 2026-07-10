@@ -56,8 +56,8 @@ not drift (progressive disclosure).
 | `.claude/skills/sdlc-studio/reference-verify.md` | Executable AC verifier DSL (v1.6.0) |
 | `.claude/skills/sdlc-studio/reference-github-sync.md` | GitHub Issues two-way sync (v1.6.0) |
 | `.claude/skills/sdlc-studio/reference-scripts.md` | Scripts directory convention (v1.6.0) |
-| `.claude/skills/sdlc-studio/reference-*.md` | Domain-specific workflows (42 files total) |
-| `.claude/skills/sdlc-studio/help/` | Type-specific help (31 files) |
+| `.claude/skills/sdlc-studio/reference-*.md` | Domain-specific workflows (50+ files) |
+| `.claude/skills/sdlc-studio/help/` | Type-specific help (nearly 40 files) |
 | `.claude/skills/sdlc-studio/lessons/` | Cross-project lessons registry (v1.7.0) |
 | `.claude/skills/sdlc-studio/templates/` | Document and code templates, incl. `agent-instructions.md` (tool-neutral `AGENTS.md`/`CLAUDE.md` starter for consuming projects) and `personas/persona-template.md` (personas are generated on demand from archetype seeds, not baked - RFC0007) |
 | `.claude/skills/sdlc-studio/scripts/` | 40+ skill-internal Python helpers sharing `lib/sdlc_md.py`. **`reference-scripts.md` is the catalogue - read it before hand-doing a mechanical task.** Load-bearing ones an agent reaches for constantly: `artifact.py` (create/close an artefact - collision-free id + index row; never hand-author `_index.md`), `file_finding.py` (file a Bug/CR/RFC from a finding), `next_id.py` (allocate an id), `reconcile.py` (`detect` read-only + `apply` mechanical fixes), `validate.py` (structure + status-vocab), `transition.py` (gated status change), `verify_ac.py` (executable ACs), `status.py`, `audit.py`, `critic.py`, `conformance.py`, `doc_freshness.py` |

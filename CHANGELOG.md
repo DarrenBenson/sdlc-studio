@@ -56,7 +56,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   index templates ship too); the live leaks it had missed (a dozen `(CRxxxx)`/`(RFCxxxx)` tags in
   `lib/sdlc_md.py`, four in the amigo cards) are stripped. Private names used across modules are
   now public: `reconcile.DEFAULT_TYPES`, `reconcile.index_row_ids`, and `sdlc_md.b32` (callers no
-  longer reach into a `_`-prefixed name).
+  longer reach into a `_`-prefixed name). Anchor-doc drift corrected: `AGENTS.md`'s file counts are
+  now ranged (`50+` reference / `nearly 40` help files, was a stale `42`/`31`); `help/arguments.md`
+  documents the full `triage -> plan -> design -> done` goal ladder (was just `done`/`design`); and
+  `help/references.md` lists `reference-outputs.md` (it was the one reference file the catalogue
+  omitted).
 - **One CLI argument grammar across the script family (EP0028, CR0210).** The scripts disagreed
   on how ids and targets were passed - `audit check` took `--ids` comma-separated, `transition
   set` forced exactly one of `--id`/`--ids`, `artifact revision` required `--ids`, `ledger

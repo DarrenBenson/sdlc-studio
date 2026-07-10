@@ -72,7 +72,7 @@ re-runnable, so a refusal at a later gate never loses the earlier steps.
 
 | Argument | Description | Default |
 | --- | --- | --- |
-| `--goal` | Sprint stop condition: `done` (deliver) or `design` (groom a backlog) | done |
+| `--goal` | Sprint stop condition on the goal ladder `triage -> plan -> design -> done`: `triage` (sort a batch), `plan` (select + estimate), `design` (groom a backlog, no code), or `done` (deliver) | done |
 | `--order` | Sprint batch order: `priority` then WSJF, or `manual` | priority |
 | `--bugs` | Sprint batch: bugs by state (e.g. `--bugs open`) | - |
 | `--crs` | Sprint batch: CRs by state (e.g. `--crs proposed`) | - |
