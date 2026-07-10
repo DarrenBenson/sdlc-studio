@@ -21,6 +21,7 @@ delivered behaviour, not the plan.
 - [ ] [CR0214](../change-requests/CR0214-install-sh-local-source-mode-install-the-working.md) - install.sh local-source mode (install the working tree)
 - [ ] [CR0213](../change-requests/CR0213-one-call-gated-terminal-transition-for-bugs-depth.md) - one-call gated terminal transition for bugs
 - [ ] [BG0102](../bugs/BG0102-project-upgrade-apply-stamps-schema-version-back-to.md) - upgrade --apply stamps schema_version back to 2 on a v3 project (found mid-sprint)
+- [ ] [CR0217](../change-requests/CR0217-living-personas-are-the-explicit-default-for-reviews.md) - living personas the explicit default for reviews/critics/consults (operator, mid-sprint)
 - [ ] [CR0215](../change-requests/CR0215-big-bang-v4-documentation-pass-every-consuming-facing.md) - big-bang v4 documentation pass (wave 2: after every behaviour above)
 
 ## Revision History

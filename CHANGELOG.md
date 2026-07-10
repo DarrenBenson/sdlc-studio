@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **EP0029 - v4 GA readiness (the final pre-GA dogfood sprint).** The numbering switch is an
+  explicit operator question end to end: `migrate_v3 apply`/`adopt` refuse without `--confirm`,
+  `adopt` is the new FORWARD-ONLY answer (existing sequential ids stay valid - in tickets, chat,
+  docs - and only new artefacts mint ULIDs; the eras coexist by design), and the upgrade walk
+  presents all three answers with the multi-team rationale. A reconcile era-divergence advisory
+  warns when a clone's v2 config meets v3 ids (two writers in different modes). `reconcile`
+  now covers epic breakdown checkboxes for EVERY unit type (bug/CR/story) in detect and apply -
+  the lane immediately surfaced and synced 21 real unticked boxes the old census certified clean.
+  `transition set --depth/--verdict/--reviewer/--author` is the one-call gated bug close (every
+  predictable refusal before any write). `install.sh --from DIR` installs a local working tree
+  (the dev-testing path) under the same identity + downgrade guards. `tools/eval_run.py` is the
+  deterministic spine of the eval gate (fixture from a machine-readable spec, per-behaviour
+  verdict recording, gate-fail on blocking failures and ungraded blocking behaviours), with
+  executable fixture specs on the two v4 scenarios. The README leads with the v4 story:
+  collision-free identity makes sdlc-studio truly multi-team compatible - human and agent teams
+  filing concurrently across machines and git states.
+
+### Fixed
+
+- **project upgrade --apply no longer stamps a migrated v3 project's `.version` back to
+  schema 2 (BG0102, found mid-sprint).** The stamp is now `max(project effective schema,
+  CURRENT_SCHEMA)` - an upgrade can only ever raise it.
+
+### Added (EP0026-EP0028, the backlog-clear sprint)
+
 - **Retros and reviews are reconciled like every other type (EP0028, CR0211).** RETRO and RV
   were the last recurring numbered artefacts whose index rows were hand-edited. `reviews/` now
   has an `_index.md` (backfilled from the existing RV history), so `artifact new --type review`
@@ -84,7 +109,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   object for exactly one id and a list for several (previously the list depended on which flag was
   used); the documented scalar `--id` path is unchanged and no consumer parsed the old list-of-one.
 
-### Fixed
+### Fixed (EP0026-EP0028, the backlog-clear sprint)
 
 - **install.sh refuses to silently downgrade (BG0100, found dogfooding).** Running `install.sh`
   from inside the dev repo downloads the published release and its sweep refreshes every copy on

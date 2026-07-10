@@ -20,6 +20,32 @@ SDLC Studio is an open [Agent Skill](https://agentskills.io) - a plug-in for AI 
 
 One install works in **Claude Code, OpenAI Codex, Gemini CLI, opencode, and GitHub Copilot**.
 
+## New in v4: built for multi-team work
+
+v4 makes SDLC Studio **truly multi-team compatible - human teams and agent teams together**.
+Every new project mints **collision-free artifact ids** (ULIDs like `US-01JQK3F8` instead of
+sequential `US0001`), so several people and agents on different machines - with different git
+states - can file bugs, stories, and change requests concurrently and never mint a clashing id.
+No coordination, no renumber-on-merge.
+
+Around that identity sits the v4 quality floor: a mechanical **independence gate** (the author
+of a change can never be its reviewer), **verification-depth tiers** (a bug cannot reach Fixed
+without recorded evidence of how it was verified), a **portable CI gate** (`gate.py`, runs the
+same checks anywhere), and reconciliation that keeps every index and epic checkbox provably in
+step with the files.
+
+And the reviews are not faceless: SDLC Studio brings **Alan Cooper's goal-directed personas to
+life**. Your personas are not static documents that decorate a PRD - they are working seats
+(Dani in Engineering, Sam in QA, Lena in Product, plus any you author) that consult on designs,
+score the backlog, review diffs, and hold the independence gate. No other SDLC tooling we know
+of does this: the persona that argued for the requirement is the same one who refuses to sign
+off work that does not meet it.
+
+**Existing projects are never auto-switched.** `project upgrade` asks you the numbering
+question explicitly, with three supported answers: migrate everything (old ids kept as
+aliases), adopt **forward-only** (existing ids stay put - still valid in tickets and chat -
+and only new artifacts get ULIDs), or stay on sequential numbering entirely.
+
 ## You just ask
 
 You drive the whole lifecycle in plain language - the AI works out what you mean, so you do not memorise commands. Every phrase also has an explicit command if you prefer it.

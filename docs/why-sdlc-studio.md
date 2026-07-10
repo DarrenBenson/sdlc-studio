@@ -145,9 +145,10 @@ agentic ones, and the foundations for that are shipped: distributed artifact ide
 (ULIDs, so concurrent agents in parallel worktrees never fight over sequential numbers, with
 friendly aliases for humans), atomic index writes with advisory locking, typed authorship
 (`raised_by`/`triaged_by`) with a separation-of-duties lint, and evidence-as-schema so
-"proof" has a checkable shape. All of it is opt-in today (`schema_version: 3`) and becomes
-the default in v4 once it has been proven in anger - the same publish-when-earned rule this
-document follows.
+"proof" has a checkable shape. As of v4 this is the default for every new project
+(`schema_version: 3`); an existing project is never auto-switched - `project upgrade` asks
+the numbering question explicitly, and forward-only adoption (old ids stay valid, new
+artifacts mint ULIDs) is fully supported.
 
 ## What we are still proving
 
