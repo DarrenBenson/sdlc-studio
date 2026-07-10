@@ -370,9 +370,10 @@ would be written, asked, and skipped.
 
 1. Stamp every written card: `persona_gen.py stamp --file <card>` (provisional-unverified
    with the content hash).
-2. Run the mechanical floor: `validate.py seats` - any error (missing role, missing
-   review render, demographic token, duplicate role, cast > 5) is fixed before the flow
-   may complete.
+2. Run the mechanical floor: `validate.py seats --require-stamp <every card written in
+   Step 3>` - any error (missing role, missing review render, demographic token,
+   duplicate role, cast > 5, a generated card with no valid provenance stamp) is fixed
+   before the flow may complete.
 3. **Batch-accept close** (interactive runs): present the team, one confirm; on yes run
    `persona_gen.py accept --root .` for the TEAM cards - the flow ends with the squad
    standing, not with an asterisk. Headless/`--quick` runs skip acceptance; the stamp

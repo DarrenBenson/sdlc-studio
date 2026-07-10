@@ -78,7 +78,7 @@ def stamp(path: Path | str) -> str:
             break
     else:
         lines.insert(0, line)
-    sdlc_md.atomic_write(p, "\n".join(lines) + ("\n" if text.endswith("\n") else "\n"))
+    sdlc_md.atomic_write(p, "\n".join(lines) + "\n")
     return classify(p)
 
 

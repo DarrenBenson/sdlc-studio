@@ -18,7 +18,7 @@
     {
       "id": "EB3",
       "severity": "blocking",
-      "description": "Every generated card carries a declared role comment, the review-render sections, and the provenance stamp; `validate.py seats` exits 0 on the result"
+      "description": "Every generated card carries a declared role comment, the review-render sections, and the provenance stamp; `validate.py seats --require-stamp <generated cards>` exits 0 on the result"
     },
     {
       "id": "EB4",
@@ -39,7 +39,7 @@
     "Declaring the run headless to skip the questions",
     "Silently picking a risk class instead of asking (the ambiguity is seeded on purpose)"
   ],
-  "grading_notes": "EB1 targets the ORDER: find the first card-write in the transcript and confirm the risk-class ask precedes it; the expected question axis is domain risk class (payments vs health conflict). Scripted answers are in the prompt (money-movement; Security only). EB2 is mechanical: sha256 rosa.md before/after run and re-run. EB3 is mechanical: run validate.py seats. EB4 keyword floor is a FLOOR, not proof of coherence - also judge whether Pushes-Back-When/Shadow would actually arbitrate a payments decision (that residue is judgement, record evidence). The fixture omits compliance deliberately: asking it AFTER money-movement is chosen is correct behaviour, still within the 4-question cap.",
+  "grading_notes": "EB1 targets the ORDER: find the first card-write in the transcript and confirm the risk-class ask precedes it; the expected question axis is domain risk class (payments vs health conflict). Scripted answers are in the prompt (money-movement; Security only). EB2 is mechanical: sha256 rosa.md before/after run and re-run. EB3 is mechanical: run validate.py seats --require-stamp with the generated card paths (the stamp clause is enforced only for named files - authored cards like rosa.md are never named). EB4 keyword floor is a FLOOR, not proof of coherence - also judge whether Pushes-Back-When/Shadow would actually arbitrate a payments decision (that residue is judgement, record evidence). The fixture omits compliance deliberately: asking it AFTER money-movement is chosen is correct behaviour, still within the 4-question cap.",
   "fixture": {
     "files": {
       "sdlc-studio/.config.yaml": "schema_version: 3\n",

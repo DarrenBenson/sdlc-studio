@@ -22,6 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
+import persona_gen  # noqa: E402  (the provenance stamp/reviewed grammar - one source)
 
 _AC_SECTION_RE = re.compile(r"^#{2,}\s+.*acceptance criteria", re.I | re.M)
 
@@ -519,18 +520,26 @@ _DEMOGRAPHIC_RE = re.compile(
     r"\b(\d+\s+years\s+old|married|husband|wife|hobbies|her gender|his gender)\b", re.I)
 
 
-def check_seats(root: Path) -> list[dict]:
+_PROVENANCE_LINE_RE = re.compile(r"<!--\s*provenance\s*:", re.I)
+
+
+def check_seats(root: Path, require_stamp: list[Path] | None = None) -> list[dict]:
     """Error-level well-formedness for the working-team seat cards (personas/seats/) - the
     mechanical floor of team generation (the review-render hard error given an owner).
 
     Per card: a declared role comment in the allowed set; the review-render section
-    headings; a clean demographic denylist; and one card per role (a duplicate claim is an
-    error - the resolver would tiebreak lexically, which is deterministic but arbitrary).
-    Cast size: >5 seats is an error (persona proliferation); missing core roles is a
-    warning (a project mid-authoring is legal). Runs standalone (`validate seats`) and is
-    REQUIRED at the end of a team-generation flow; it is not in the default hard gate, so
-    existing projects are never bricked by adoption."""
+    headings; a clean demographic denylist; one card per role (a duplicate claim is an
+    error - the resolver would tiebreak lexically, which is deterministic but arbitrary);
+    and any provenance comment must parse as the generation stamp or the reviewed marker
+    (a malformed one silently classifies as authored, dropping out of the provisional
+    advisory). `require_stamp` names files the flow just generated: each MUST carry a
+    valid stamp or reviewed marker - authored cards are never in that list, so the check
+    stays non-circular. Cast size: >5 seats is an error (persona proliferation); missing
+    core roles is a warning (a project mid-authoring is legal). Runs standalone
+    (`validate seats`) and is REQUIRED at the end of a team-generation flow; it is not in
+    the default hard gate, so existing projects are never bricked by adoption."""
     out: list[dict] = []
+    required = {p.resolve() for p in (require_stamp or [])}
     sdir = root / "sdlc-studio" / "personas" / "seats"
     if not sdir.is_dir():
         return out
@@ -572,6 +581,23 @@ def check_seats(root: Path) -> list[dict]:
                         "message": f"demographic token '{dm.group(0)}' - a characteristic that "
                                    "influences no engineering decision is omitted (goals, not "
                                    "demographics)"})
+        stamped = bool(persona_gen.STAMP_RE.search(text)
+                       or persona_gen.REVIEWED_RE.search(text))
+        for ln in text.splitlines():
+            if (_PROVENANCE_LINE_RE.search(ln)
+                    and not persona_gen.STAMP_RE.search(ln)
+                    and not persona_gen.REVIEWED_RE.search(ln)):
+                out.append({"severity": "error", "rule": "seat-malformed-stamp",
+                            "file": str(p),
+                            "message": f"provenance comment does not parse ({ln.strip()!r}) - "
+                                       "it would silently classify as authored and drop out "
+                                       "of the provisional advisory"})
+                break
+        if p.resolve() in required and not stamped:
+            out.append({"severity": "error", "rule": "seat-no-stamp", "file": str(p),
+                        "message": "generated card carries no provenance stamp or reviewed "
+                                   "marker - run persona_gen.py stamp before completing "
+                                   "the flow"})
     if len(cards) > 5:
         out.append({"severity": "error", "rule": "seat-cast-size", "file": str(sdir),
                     "message": f"{len(cards)} seat cards (> 5) - persona proliferation; the "
@@ -585,7 +611,8 @@ def check_seats(root: Path) -> list[dict]:
 
 def cmd_seats(args: argparse.Namespace) -> int:
     """Error-level seat-card check; exits 1 on any error (the generation flow's floor)."""
-    violations = check_seats(Path(args.root).resolve())
+    required = [Path(f) for f in (getattr(args, "require_stamp", None) or [])]
+    violations = check_seats(Path(args.root).resolve(), require_stamp=required)
     errors = sum(1 for v in violations if v["severity"] == "error")
     if getattr(args, "format", "text") == "json":
         print(json.dumps({"violations": violations,
@@ -641,6 +668,9 @@ def build_parser() -> argparse.ArgumentParser:
     st = sub.add_parser("seats",
                         help="Error-level check for working-team seat cards (the generation floor).")
     st.add_argument("--root", default=".", help="Repo root (default: .)")
+    st.add_argument("--require-stamp", nargs="+", metavar="FILE", dest="require_stamp",
+                    help="Files the flow just generated - each must carry a valid "
+                         "provenance stamp or reviewed marker (missing = error).")
     st.add_argument("--format", choices=("text", "json"), default="text")
     st.set_defaults(func=cmd_seats)
     return p

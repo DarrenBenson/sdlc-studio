@@ -778,6 +778,51 @@ class SeatCheckTests(unittest.TestCase):
                 self._seat(Path(d), f"s{i}.md", self.GOOD.replace("role: qa", f"role: {r}"))
             self.assertIn("seat-cast-size", self._rules(Path(d)))
 
+    def test_require_stamp_flags_an_unstamped_named_card(self) -> None:
+        # The critic's defect: AC3 promises "provenance stamp present on generated cards"
+        # but nothing enforced it. The flow names the files it just wrote; each must carry
+        # a valid generation stamp or reviewed marker.
+        with tempfile.TemporaryDirectory() as d:
+            self._seat(Path(d), "priya.md", self.GOOD)
+            card = Path(d) / "sdlc-studio" / "personas" / "seats" / "priya.md"
+            rules = {v["rule"] for v in validate.check_seats(Path(d), require_stamp=[card])}
+            self.assertIn("seat-no-stamp", rules)
+
+    def test_require_stamp_accepts_stamped_and_reviewed_cards(self) -> None:
+        stamp = ("<!-- provenance: generated provisional-unverified "
+                 "hash=sha256:0123456789abcdef -->\n")
+        reviewed = "<!-- provenance: reviewed 2026-07-10 -->\n"
+        for marker in (stamp, reviewed):
+            with tempfile.TemporaryDirectory() as d:
+                self._seat(Path(d), "priya.md",
+                           self.GOOD.replace("<!-- role: qa -->\n",
+                                             "<!-- role: qa -->\n" + marker))
+                card = Path(d) / "sdlc-studio" / "personas" / "seats" / "priya.md"
+                errs = [v for v in validate.check_seats(Path(d), require_stamp=[card])
+                        if v["severity"] == "error"]
+                self.assertEqual(errs, [])
+
+    def test_malformed_stamp_is_always_an_error(self) -> None:
+        # A line that claims to be a provenance comment but parses as neither the
+        # generation stamp nor the reviewed marker would silently classify as authored -
+        # dropping out of the provisional advisory with no signal.
+        with tempfile.TemporaryDirectory() as d:
+            self._seat(Path(d), "priya.md",
+                       self.GOOD.replace(
+                           "<!-- role: qa -->\n",
+                           "<!-- role: qa -->\n<!-- provenance: generated "
+                           "provisional-unverified hash=sha256:ABCDEF -->\n"))
+            self.assertIn("seat-malformed-stamp", self._rules(Path(d)))
+
+    def test_cli_require_stamp(self) -> None:
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            self._seat(Path(d), "priya.md", self.GOOD)
+            card = str(Path(d) / "sdlc-studio" / "personas" / "seats" / "priya.md")
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(
+                    validate.main(["seats", "--root", d, "--require-stamp", card]), 1)
+
     def test_cli_exits_1_on_errors_0_clean(self) -> None:
         import contextlib, io
         with tempfile.TemporaryDirectory() as d:

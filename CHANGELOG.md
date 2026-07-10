@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **EP0030 - team generation: fresh named seats grown from the project.** `persona generate
+  --team` analyses the PRD/TRD/config/repo-map onto behavioural variables and risk axes (never
+  demographics), asks hard-capped multi-choice questions only where signals are ambiguous, and
+  generates fresh named individuals into `personas/seats/` - 3 core roles plus up to 2
+  signal-earned extras, cast capped at 5. `persona_gen.py` is the deterministic floor:
+  provenance stamp + content hash discriminate authored from generated cards, so an operator's
+  edit promotes a generated card to authored and a re-run can never clobber it; batch-accept
+  clears the provisional labels, headless runs keep them and `status` surfaces the count.
+  `validate.py seats` (with `--require-stamp` for just-written cards) is the error-level floor:
+  declared role, review render, clean demographic denylist, one card per role, valid provenance
+  stamps. Repository review closes with a team offer. Eval scenario 07 exercises the flow on an
+  ambiguous-by-design fixture.
+
 - **EP0029 - v4 GA readiness (the final pre-GA dogfood sprint).** The numbering switch is an
   explicit operator question end to end: `migrate_v3 apply`/`adopt` refuse without `--confirm`,
   `adopt` is the new FORWARD-ONLY answer (existing sequential ids stay valid - in tickets, chat,

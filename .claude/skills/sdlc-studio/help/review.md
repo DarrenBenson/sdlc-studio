@@ -47,6 +47,9 @@ This is the try-before-you-adopt entry point for a brownfield repo.
    and index rows are tool-allocated, never hand-authored.
 4. **Report** - a dated `reviews/RV{nnnn}` report with per-leg assessment, the full
    findings table, limitations, and the top five priorities.
+5. **Team offer (hint)** - close by offering `persona generate --team`: the same
+   analysis just performed can grow a project-native working team from the repo map
+   alone (see `reference-persona-generate.md#team-standalone`). Offer, never auto-run.
 
 ## Security posture (binding)
 

@@ -76,4 +76,6 @@ overview, per-leg assessment, the full findings table (id, title, type, severity
 artefact ref), dedup matches, limitations, and the top five priorities in order.
 Finish with a console summary:
 counts by type and severity, the artefact ids raised, and one recommended next
-action.
+action. Close with the team offer: `persona generate --team` can grow a
+project-native working team from the repo just analysed
+(`reference-persona-generate.md#team-standalone`) - offer it, never auto-run it.

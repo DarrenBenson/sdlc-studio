@@ -103,8 +103,9 @@ never be improvised:
 - `accept [--file | --root]` - clear provisional labels (the flow's batch-accept close
   and the `persona review` path); a `reviewed` card refuses re-stamping
 
-`status` surfaces the count of still-provisional cards; `validate.py seats` is the
-error-level schema floor the generation flow must pass before completing.
+`status` surfaces the count of still-provisional cards; `validate.py seats
+--require-stamp <written cards>` is the error-level schema floor the generation flow
+must pass before completing (named files must carry a valid stamp or reviewed marker).
 
 ### `next_id.py` (read-only)
 

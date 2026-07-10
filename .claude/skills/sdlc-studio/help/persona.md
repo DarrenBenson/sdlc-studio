@@ -16,7 +16,7 @@ Related: reference-persona.md, reference-persona-generate.md
 Grow the working team and the stakeholder panel from the project itself - fresh named
 individuals per project (the shipped Dani/Sam/Lena cards remain the zero-setup fallback).
 Analyse -> present discoveries -> ask at most 4 multi-choice questions (1 with `--quick`)
--> generate into `personas/seats/` and `personas/stakeholders/` -> stamp, `validate seats`,
+-> generate into `personas/seats/` and `personas/stakeholders/` -> stamp, `validate seats --require-stamp <written cards>`,
 batch-accept. Never clobbers an authored or operator-edited card (content-hash guard);
 detects legacy `personas/amigos/` shadowing and routes through the upgrade migration.
 Standalone-runnable from a bare repo (repo-map analysis only) - no PRD required, though the
