@@ -2,7 +2,6 @@
 
 General SQL patterns applicable across database systems.
 
-
 ## Quick conventions {#quick-conventions}
 
 - Explicit column lists, never `SELECT *`; alias tables consistently.
@@ -53,7 +52,7 @@ FROM users a, orders b, products c;
 ## CTEs vs Subqueries
 
 | Use CTE When | Use Subquery When |
-|--------------|-------------------|
+| -------------- | ------------------- |
 | Query reused multiple times | One-time use |
 | Complex logic needs naming | Simple, inline logic |
 | Need to break down steps | Performance critical |
@@ -364,7 +363,7 @@ GRANT INSERT, UPDATE ON users, orders TO app_writer;
 ## Common Anti-Patterns
 
 | Anti-Pattern | Problem | Solution |
-|--------------|---------|----------|
+| -------------- | --------- | ---------- |
 | `SELECT *` | Returns unnecessary data | List required columns |
 | Implicit joins | Hard to read, error-prone | Use explicit JOIN |
 | String concatenation | SQL injection | Use parameters |

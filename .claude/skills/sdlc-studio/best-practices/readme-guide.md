@@ -25,7 +25,7 @@ Before considering a README complete:
 ## Types of README
 
 | Type | Location | Purpose |
-|------|----------|---------|
+| ------ | ---------- | --------- |
 | Project | `/README.md` | First impression, installation, quick start |
 | Folder | `[folder]/README.md` | Explain folder contents and purpose |
 | Skill | `.claude/skills/[name]/SKILL.md` | AI-facing documentation |
@@ -68,6 +68,7 @@ How to contribute.
 ## Licence
 
 Licence type.
+
 ```
 
 ## Structure: Folder README
@@ -124,7 +125,7 @@ See the documentation for more information.
 ## Anti-patterns
 
 | Pattern | Problem | Fix |
-|---------|---------|-----|
+| --------- | --------- | ----- |
 | Generic title | Doesn't describe content | Use descriptive name |
 | Wall of text | Hard to scan | Break into sections, use bullets |
 | Outdated info | Causes confusion | Review and update regularly |
@@ -137,7 +138,7 @@ See the documentation for more information.
 - **Headers**: Use `##` for main sections, `###` for subsections
 - **Lists**: Bullets for unordered, numbers for sequences
 - **Tables**: For structured data (arguments, options, mappings)
-- **Code blocks**: With language hints (```bash, ```python)
+- **Code blocks**: With language hints (```bash,```python)
 - **Links**: Relative paths for internal docs
 
 ## Project README Extras
@@ -152,7 +153,7 @@ For the main project README, consider:
 ## Length Guidelines
 
 | Type | Target Length |
-|------|---------------|
+| ------ | --------------- |
 | Project README | 100-300 lines |
 | Folder README | 30-100 lines |
 | Minimal README | 10-30 lines |

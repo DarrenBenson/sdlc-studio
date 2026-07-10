@@ -17,6 +17,7 @@ Based on [Docker Hub CI/CD](https://www.docker.com/blog/best-practices-for-using
 ```
 
 **Never deploy by copying source code to servers.** Instead:
+
 1. Build image in CI/CD
 2. Push to container registry (GHCR, Docker Hub)
 3. Server pulls image and runs
@@ -32,7 +33,7 @@ git push → CI builds image → Push to registry → Server pulls → docker co
 ### Base Image Selection
 
 | Image | Size | Use When |
-|-------|------|----------|
+| ------- | ------ | ---------- |
 | `python:3.13-slim` | ~130MB | Default choice |
 | `python:3.13-alpine` | ~52MB | Size critical, no C extensions |
 | `python:3.13` | ~1GB | Need build tools at runtime |
@@ -86,6 +87,7 @@ USER app
 ```
 
 **Never embed secrets in images.** Use:
+
 - Environment variables via docker-compose
 - Build-time arguments for non-sensitive config
 - Secrets management (Docker secrets, Vault)
@@ -103,6 +105,7 @@ echo "$GHCR_PAT" | docker login ghcr.io -u USERNAME --password-stdin
 ```
 
 This keeps the PAT:
+
 - Out of version control
 - In one place (not scattered in Docker config)
 - Easy to rotate across servers via setup scripts
@@ -198,7 +201,7 @@ jobs:
 ### Image Tagging
 
 | Tag | Purpose |
-|-----|---------|
+| ----- | --------- |
 | `latest` | Current stable (mutable) |
 | `v1.2.3` | Semantic version (immutable) |
 | `sha-abc123` | Git commit (immutable, for rollback) |

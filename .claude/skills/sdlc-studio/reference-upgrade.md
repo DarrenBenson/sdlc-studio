@@ -89,7 +89,7 @@ Create the `.local/` directory if it doesn't exist.
 ### 1. Parse Arguments
 
 | Flag | Effect |
-|------|--------|
+| ------ | -------- |
 | (none) | Interactive upgrade with confirmation |
 | `--dry-run` | Preview changes without applying |
 | `--force` | Upgrade without confirmation |
@@ -131,7 +131,7 @@ For each artifact type, apply version-specific transformations:
 #### PRD (v1 → v2)
 
 | Section | Action |
-|---------|--------|
+| --------- | -------- |
 | Appendix A (File Tree) | Remove (generate on demand) |
 | Appendix B (Dependencies) | Remove (generate on demand) |
 | Appendix C (Env Reference) | Merge into §9 Configuration |
@@ -142,7 +142,7 @@ For each artifact type, apply version-specific transformations:
 #### TRD (v1 → v2)
 
 | Section | Action |
-|---------|--------|
+| --------- | -------- |
 | §2.5 C4 Diagrams | Keep if populated, else reference module |
 | §9.5 Architecture Checklist | Remove (→ reference-trd.md) |
 | §9.6 Container Design | Keep if populated, else reference module |
@@ -150,7 +150,7 @@ For each artifact type, apply version-specific transformations:
 #### TSD (v1 → v2)
 
 | Section | Action |
-|---------|--------|
+| --------- | -------- |
 | Multi-language code examples | Remove inline, add reference link |
 | Test Anti-Patterns details | Remove inline (→ reference-test-best-practices.md) |
 | Coverage rationale paragraph | Shorten, add reference link |
@@ -158,7 +158,7 @@ For each artifact type, apply version-specific transformations:
 #### Epic (v1 → v2)
 
 | Section | Action |
-|---------|--------|
+| --------- | -------- |
 | Inherited Constraints table | Simplify to key items only |
 | Perspective Views | Keep only if populated |
 | Test Plan table | Simplify to single Test Spec reference |
@@ -166,7 +166,7 @@ For each artifact type, apply version-specific transformations:
 #### Story (v1 → v2)
 
 | Section | Action |
-|---------|--------|
+| --------- | -------- |
 | Quality Checklist | Remove (→ reference-story.md) |
 | Ready Status Gate | Remove (→ reference-decisions.md) |
 | Inherited Constraints | Simplify to key items |
@@ -176,7 +176,7 @@ For each artifact type, apply version-specific transformations:
 #### Index Files (v1 → v2)
 
 | Section | Action |
-|---------|--------|
+| --------- | -------- |
 | "By Status" sections | Remove (redundant with main table) |
 | Dependency Graph | Remove (complex to maintain) |
 | Estimation Summary | Remove from story index |
@@ -184,6 +184,7 @@ For each artifact type, apply version-specific transformations:
 ### 5. Preserve During Transform
 
 **Always preserved:**
+
 - Artifact ID (EP0001, US0001, etc.)
 - Title
 - Status
@@ -192,6 +193,7 @@ For each artifact type, apply version-specific transformations:
 - Revision History
 
 **Never lose data:**
+
 - Content from removed sections goes to archive if valuable
 - Links are updated to new locations
 - No orphaned references

@@ -20,6 +20,7 @@ SDLC Studio is model-invoked - say it in plain language:
 | "Check the code for that story" | `/sdlc-studio code review --story US0001` |
 
 SDLC Studio supports these reviews:
+
 - **Document review:** Unified PRD, TRD, TSD review with cross-document consistency
 - **Epic review:** Cascading review of epic and changed stories (default behaviour)
 - **Code review:** Design pattern and quality review of implementation
@@ -77,7 +78,7 @@ Review all specification documents together and check cross-document consistency
 ## Flags
 
 | Flag | Description | Default |
-|------|-------------|---------|
+| ------ | ------------- | --------- |
 | `--quick` | Use cached data, skip codebase analysis | false |
 | `--focus` | Review specific document only (`prd`, `trd`, `tsd`, `persona`) | all |
 | `--skip-personas` | Drop Persona Review from the default chain | false |
@@ -96,7 +97,7 @@ If `sdlc-studio/personas/` does not exist or contains no persona files, step 4 i
 ## Cross-Document Checks
 
 | Check | What It Verifies |
-|-------|------------------|
+| ------- | ------------------ |
 | PRD → TRD | Every feature has architecture documentation |
 | TRD → TSD | Every component has test strategy |
 | PRD → TSD | Every NFR has a quality gate |
@@ -159,7 +160,7 @@ Epic review now **cascades by default** - it reviews the epic and all changed st
 ## Flags
 
 | Flag | Description | Default |
-|------|-------------|---------|
+| ------ | ------------- | --------- |
 | `--quick` | Skip cascade, review only the epic | false |
 | `--resume` | Resume from where review paused | false |
 | `--epic` | Target specific epic | next epic |
@@ -178,7 +179,7 @@ Epic review now **cascades by default** - it reviews the epic and all changed st
 Only artifacts changed since their last review are included in cascade:
 
 | Artifact Type | Detection Method |
-|---------------|------------------|
+| --------------- | ------------------ |
 | Epic spec | File mtime or git log |
 | Story spec | File mtime or git log |
 | Story code | Code file mtime or git log |
@@ -188,7 +189,7 @@ Only artifacts changed since their last review are included in cascade:
 Findings are stored in `sdlc-studio/reviews/RV{NNNN}-{artifact-id}-review.md` with severity levels:
 
 | Severity | Meaning | Action |
-|----------|---------|--------|
+| ---------- | --------- | -------- |
 | Critical | Blocks progress | Must address |
 | Important | Quality concern | Should address |
 | Suggestion | Improvement opportunity | Consider |
@@ -266,7 +267,7 @@ Reviews only epic-level status, no story deep-dive.
 ## Review Focus Areas
 
 | Focus | Description | Checks |
-|-------|-------------|--------|
+| ------- | ------------- | -------- |
 | `patterns` | Design pattern adherence | SOLID, DRY, separation of concerns |
 | `security` | Security vulnerabilities | Injection, auth, data exposure |
 | `performance` | Performance issues | N+1 queries, memory leaks, blocking |
@@ -276,7 +277,7 @@ Reviews only epic-level status, no story deep-dive.
 ## Options
 
 | Option | Description | Default |
-|--------|-------------|---------|
+| -------- | ------------- | --------- |
 | `--story` | Review specific story's code | next In Progress |
 | `--file` | Review specific file | all story files |
 | `--focus` | Review focus area | all |
@@ -331,7 +332,7 @@ Reviews only epic-level status, no story deep-dive.
 ## Severity Levels
 
 | Level | Description | Action |
-|-------|-------------|--------|
+| ------- | ------------- | -------- |
 | Critical | Security or correctness issue | Must fix before merge |
 | Important | Maintainability or reliability | Should fix |
 | Suggestion | Improvement opportunity | Consider fixing |

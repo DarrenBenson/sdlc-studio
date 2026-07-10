@@ -30,7 +30,9 @@ Before considering a command complete:
 ## Usage
 
 ```
+
 /command-name [required] [optional]
+
 ```
 
 Brief explanation of what happens.
@@ -53,8 +55,10 @@ When this command is invoked:
 ## Examples
 
 ```
+
 /command-name foo           # Basic usage
 /command-name bar --verbose # With flag
+
 ```
 
 ## See Also
@@ -73,9 +77,11 @@ When this command is invoked:
 ## Usage
 
 ```
+
 /project-cleanup           # Asks which action
 /project-cleanup archive   # Zip to project/archive/ then delete
 /project-cleanup delete    # Delete without archiving
+
 ```
 ```
 
@@ -92,7 +98,7 @@ This command cleans things up.
 ## Anti-patterns
 
 | Pattern | Problem | Fix |
-|---------|---------|-----|
+| --------- | --------- | ----- |
 | No `/command` first line | Hard to scan | Start with `/name [args] - description` |
 | Missing usage syntax | Unclear how to invoke | Add `## Usage` with exact syntax |
 | Instructions as prose | Hard to follow | Numbered steps with clear actions |
@@ -103,7 +109,7 @@ This command cleans things up.
 ## Commands vs Skills
 
 | Aspect | Command | Skill |
-|--------|---------|-------|
+| -------- | --------- | ------- |
 | Location | `.claude/commands/` | `.claude/skills/[area]/` |
 | Invoked by | User typing `/name` | AI deciding to use it |
 | Complexity | Thin wrapper | Full implementation |

@@ -13,7 +13,7 @@ Related: help/review.md, reference-epic.md, reference-story.md
 ## Summary
 
 | Severity | Count |
-|----------|-------|
+| ---------- | ------- |
 | Critical | {{critical_count}} |
 | Important | {{important_count}} |
 | Suggestion | {{suggestion_count}} |
@@ -22,6 +22,7 @@ Related: help/review.md, reference-epic.md, reference-story.md
 
 {{#if critical_issues}}
 {{#each critical_issues}}
+
 ### {{issue_number}}. {{issue_title}}
 
 **Location:** {{location}}
@@ -37,6 +38,7 @@ No critical issues found.
 
 {{#if important_issues}}
 {{#each important_issues}}
+
 ### {{issue_number}}. {{issue_title}}
 
 **Location:** {{location}}
@@ -51,6 +53,7 @@ No important issues found.
 
 {{#if suggestions}}
 {{#each suggestions}}
+
 - **{{location}}:** {{description}}
 {{/each}}
 {{else}}
@@ -60,6 +63,7 @@ No suggestions.
 ## Changed Files Since Last Review
 
 {{#if changed_files}}
+
 | File | Last Modified |
 |------|---------------|
 {{#each changed_files}}
@@ -72,6 +76,7 @@ No file changes tracked for this artifact.
 ## Cohesion Analysis (Story Generation Only)
 
 {{#if cohesion_analysis}}
+
 ### AC Coverage
 
 {{ac_coverage_summary}}
@@ -89,6 +94,7 @@ No file changes tracked for this artifact.
 {{#if unhandled_edge_cases}}
 **Unhandled Edge Cases:**
 {{#each unhandled_edge_cases}}
+
 - {{edge_case}} → Added to {{assigned_story}}
 {{/each}}
 {{/if}}
@@ -100,6 +106,7 @@ No file changes tracked for this artifact.
 {{#if dependency_issues}}
 **Issues:**
 {{#each dependency_issues}}
+
 - {{issue}}
 {{/each}}
 {{/if}}
@@ -110,6 +117,7 @@ No file changes tracked for this artifact.
 
 {{#if oversized_stories}}
 **Oversized Stories:**
+
 | Story | Points | AC Count | Recommendation |
 |-------|--------|----------|----------------|
 {{#each oversized_stories}}
@@ -123,6 +131,7 @@ No file changes tracked for this artifact.
 
 {{#if overlapping_ac}}
 **Potential Overlaps:**
+
 | Story A | Story B | Similar AC | Similarity |
 |---------|---------|------------|------------|
 {{#each overlapping_ac}}
@@ -135,6 +144,7 @@ No file changes tracked for this artifact.
 
 {{#if actions_taken}}
 {{#each actions_taken}}
+
 - {{action}}
 {{/each}}
 {{else}}
@@ -145,6 +155,7 @@ No automatic actions taken.
 
 {{#if next_steps}}
 {{#each next_steps}}
+
 - [ ] {{step}}
 {{/each}}
 {{else}}

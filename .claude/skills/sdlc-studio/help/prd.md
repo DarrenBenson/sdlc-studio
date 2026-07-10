@@ -30,9 +30,11 @@ SDLC Studio is model-invoked - say it in plain language:
 ## Actions
 
 ### create
+
 Interactive conversation to build a PRD from scratch.
 
 **What happens:**
+
 1. Claude asks about project name, purpose, target users
 2. You describe features one by one with acceptance criteria
 3. Claude asks about non-functional requirements (performance, security)
@@ -41,9 +43,11 @@ Interactive conversation to build a PRD from scratch.
 **Best for:** New projects, greenfield development
 
 ### generate
+
 Analyse existing codebase and reverse-engineer requirements.
 
 **What happens:**
+
 1. Claude explores your codebase (routes, components, tests, config)
 2. Extracts features and infers acceptance criteria
 3. Documents technical architecture found
@@ -54,9 +58,11 @@ Analyse existing codebase and reverse-engineer requirements.
 **Best for:** Existing projects needing documentation
 
 ### review
+
 Review PRD against current codebase, update feature status.
 
 **What happens:**
+
 1. Reads existing PRD from `sdlc-studio/prd.md`
 2. Searches codebase for each feature's implementation
 3. Updates status: Complete | Partial | Stubbed | Broken | Not Started
@@ -69,6 +75,7 @@ Review PRD against current codebase, update feature status.
 **File:** `sdlc-studio/prd.md`
 
 **Sections:**
+
 1. Project Overview
 2. Problem Statement
 3. Feature Inventory
@@ -103,6 +110,7 @@ Review PRD against current codebase, update feature status.
 ## Next Steps
 
 After creating PRD:
+
 ```
 /sdlc-studio persona              # Define user personas
 /sdlc-studio epic                 # Generate Epics from PRD
@@ -111,12 +119,15 @@ After creating PRD:
 ## See Also
 
 **REQUIRED for this workflow:**
+
 - `reference-philosophy.md#generate-mode` - Understand specification extraction (generate mode only)
 - `reference-prd.md` - PRD workflow details
 
 **Recommended:**
+
 - `/sdlc-studio epic help` - Generate Epics from PRD (downstream)
 - `/sdlc-studio trd help` - Technical requirements (parallel)
 
 **Optional (deep dives):**
+
 - `reference-outputs.md` - Output formats reference

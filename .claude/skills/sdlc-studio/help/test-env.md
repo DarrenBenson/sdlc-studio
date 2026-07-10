@@ -59,7 +59,7 @@ Generate docker-compose.test.yml from TRD.
 **Generated services:**
 
 | Service | Purpose | Health Check |
-|---------|---------|--------------|
+| --------- | --------- | -------------- |
 | db | Integration test database | pg_isready / mysqladmin ping |
 | redis | Cache for integration tests | redis-cli ping |
 | app | Application under test | HTTP health endpoint |
@@ -228,7 +228,7 @@ jobs:
 Services are detected from TRD Technology Stack:
 
 | TRD Entry | Generated Service |
-|-----------|-------------------|
+| ----------- | ------------------- |
 | PostgreSQL | postgres:16-alpine |
 | MySQL | mysql:8 |
 | Redis | redis:7-alpine |

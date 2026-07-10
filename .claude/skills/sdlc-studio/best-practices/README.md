@@ -5,7 +5,7 @@ Quality checklists for AI assistants creating artifacts in any project.
 ## When to Check
 
 | Creating... | Check |
-|-------------|-------|
+| ------------- | ------- |
 | Python script | `python.md` then `script.md` |
 | Bash script | `script.md` |
 | TypeScript code | `typescript.md` |
@@ -43,7 +43,7 @@ Quality checklists for AI assistants creating artifacts in any project.
 ## Files
 
 | File | Purpose |
-|------|---------|
+| ------ | --------- |
 | `python.md` | Python libraries, error handling, security |
 | `typescript.md` | TypeScript strictness, type design, tooling |
 | `javascript.md` | Browser JavaScript and DOM patterns |

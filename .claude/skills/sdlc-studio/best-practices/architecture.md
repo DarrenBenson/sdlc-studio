@@ -7,7 +7,7 @@ Quick-reference guide for architecture decisions.
 ## Project Type Quick Reference
 
 | Type | Default Pattern | Default Language | Default Database |
-|------|-----------------|------------------|------------------|
+| ------ | ----------------- | ------------------ | ------------------ |
 | Web Application | Monolith | Python/TypeScript | PostgreSQL |
 | API Backend | Modular Monolith | Python/TypeScript/Go | PostgreSQL |
 | Mobile Backend | Monolith | Python/Go | PostgreSQL |
@@ -48,7 +48,7 @@ Quick-reference guide for architecture decisions.
 ### Language Quick Guide
 
 | Need | Choose |
-|------|--------|
+| ------ | -------- |
 | Rapid prototyping | Python |
 | Type safety | TypeScript, Go |
 | High performance | Go, Rust |
@@ -59,7 +59,7 @@ Quick-reference guide for architecture decisions.
 ### Database Quick Guide
 
 | Need | Choose |
-|------|--------|
+| ------ | -------- |
 | General purpose | PostgreSQL |
 | Embedded/local | SQLite |
 | Document store | MongoDB |
@@ -70,7 +70,7 @@ Quick-reference guide for architecture decisions.
 ### API Style Quick Guide
 
 | Need | Choose |
-|------|--------|
+| ------ | -------- |
 | Public API | REST + OpenAPI |
 | Multiple clients, complex data | GraphQL |
 | Service-to-service | gRPC |
@@ -84,7 +84,7 @@ Quick-reference guide for architecture decisions.
 ### Critical (Fix Immediately)
 
 | Smell | Signs | Fix |
-|-------|-------|-----|
+| ------- | ------- | ----- |
 | Hardcoded secrets | API keys in code | Use environment variables |
 | No error handling | Empty catch blocks, crashes on errors | Add error handling layer |
 | Circular dependencies | A imports B imports A | Refactor module boundaries |
@@ -92,7 +92,7 @@ Quick-reference guide for architecture decisions.
 ### High Priority
 
 | Smell | Signs | Fix |
-|-------|-------|-----|
+| ------- | ------- | ----- |
 | Big Ball of Mud | >50 files in root, no structure | Introduce layers/modules |
 | Distributed Monolith | Services can't deploy independently | Consolidate or properly decouple |
 | God Object | Single file >1000 lines | Split by responsibility |
@@ -100,7 +100,7 @@ Quick-reference guide for architecture decisions.
 ### Medium Priority
 
 | Smell | Signs | Fix |
-|-------|-------|-----|
+| ------- | ------- | ----- |
 | Golden Hammer | One tech for everything | Right tool for each job |
 | Premature Decomposition | <5 devs, 10+ services | Consolidate services |
 | Missing API Gateway | Clients call multiple backends | Add gateway layer |

@@ -33,7 +33,6 @@ Related: reference-test-best-practices.md (validation steps)
 - [Go Test Structure](#go-test-structure)
 - [Coverage Targets](#e2e-coverage-targets)
 
-
 E2E tests have unique requirements that differ from unit/integration tests. This guide covers patterns applicable across languages, then provides language-specific guidance.
 
 ## Related References {#e2e-related-references}
@@ -54,7 +53,7 @@ E2E tests have unique requirements that differ from unit/integration tests. This
 Track E2E coverage by feature area:
 
 | Feature Area | Spec File | Test Count | Status |
-|--------------|-----------|------------|--------|
+| -------------- | ----------- | ------------ | -------- |
 | Dashboard | `dashboard.spec.ts` | - | - |
 | Authentication | `auth.spec.ts` | - | - |
 | Settings | `settings.spec.ts` | - | - |
@@ -73,6 +72,7 @@ Each feature spec should cover:
 ## When to Create New Spec Files {#when-to-create-new-spec-files}
 
 Create a new spec file when:
+
 - Adding a new user-facing page/feature
 - Existing spec exceeds ~50 tests (split by sub-feature)
 - Feature has distinct user journey from existing specs
@@ -112,12 +112,14 @@ This catches schema mismatches between frontend expectations and backend respons
 ### Mock at System Boundaries, Not Internal Libraries {#mock-at-system-boundaries}
 
 **Boundaries to mock:**
+
 - Network (HTTP requests, WebSocket connections)
 - Filesystem (file reads/writes)
 - Time (clocks, timers)
 - External services (databases, message queues)
 
 **Do NOT mock:**
+
 - Internal libraries or utilities
 - HTTP client classes (mock the network instead)
 - Internal service classes (let real code run)
@@ -444,6 +446,7 @@ frontend/
 ```
 
 **Principles:**
+
 - Unit tests co-located with components (`*.test.tsx`)
 - E2E tests in separate `/e2e/` directory
 - One spec file per user-visible feature area
@@ -465,6 +468,7 @@ backend/
 ```
 
 **Principles:**
+
 - Flat `/tests/` directory with clear naming
 - Group by feature not by test type
 - Contract tests in dedicated file(s)
@@ -487,6 +491,7 @@ project/
 ```
 
 **Principles:**
+
 - Unit tests co-located with source (`*_test.go`)
 - Integration/E2E in separate directories
 - Use build tags to separate test suites
@@ -498,7 +503,7 @@ project/
 For comprehensive coverage, use this three-layer approach:
 
 | Layer | What It Tests | Mocking Level |
-|-------|---------------|---------------|
+| ------- | --------------- | --------------- |
 | Unit tests | Individual functions/classes | Mock dependencies |
 | Contract tests | API returns expected fields | No mocking - real backend |
 | E2E tests | UI renders correctly | Mock network/API responses |
@@ -508,7 +513,7 @@ For comprehensive coverage, use this three-layer approach:
 ## Coverage Targets {#e2e-coverage-targets}
 
 | Level | Target | Rationale |
-|-------|--------|-----------|
+| ------- | -------- | ----------- |
 | Unit | 90% | Core business logic |
 | Integration | 85% | API and database interactions |
 | E2E | 100% feature coverage | Every user-visible feature has spec file |

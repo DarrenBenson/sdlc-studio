@@ -10,7 +10,7 @@ Load: tsd create --with-security or tsd create --full
 ### OWASP Top 10 Coverage
 
 | Category | Test Approach | Automated |
-|----------|--------------|-----------|
+| ---------- | -------------- | ----------- |
 | Injection | Input validation tests, SQLi/XSS scanners | Yes |
 | Broken Auth | Session tests, credential stuffing | Partial |
 | Sensitive Data | Encryption verification, header checks | Yes |
@@ -36,7 +36,7 @@ security:
 ### Authentication Tests
 
 | Test | Description | Expected |
-|------|-------------|----------|
+| ------ | ------------- | ---------- |
 | Invalid credentials | Wrong password | 401 Unauthorized |
 | Missing token | No auth header | 401 Unauthorized |
 | Expired token | Token past expiry | 401 Unauthorized |
@@ -46,7 +46,7 @@ security:
 ### Authorisation Tests
 
 | Resource | Role | Expected |
-|----------|------|----------|
+| ---------- | ------ | ---------- |
 | /admin/* | admin | 200 OK |
 | /admin/* | user | 403 Forbidden |
 | /users/{id} | owner | 200 OK |

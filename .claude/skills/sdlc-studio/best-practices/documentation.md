@@ -15,7 +15,7 @@ Before considering documentation complete:
 ## Document Types
 
 | Type | Location | Purpose |
-|------|----------|---------|
+| ------ | ---------- | --------- |
 | Guide | `docs/guides/` | How to do something (tutorial) |
 | Reference | `docs/reference/` | Complete specification |
 | Schema | `framework/agent/` | Data structure definitions |
@@ -70,7 +70,9 @@ Brief description.
 ## Syntax
 
 ```
+
 format or schema
+
 ```
 
 ## Fields/Options
@@ -124,7 +126,7 @@ in different ways. See the schema for details.
 ## Anti-patterns
 
 | Pattern | Problem | Fix |
-|---------|---------|-----|
+| --------- | --------- | ----- |
 | Passive voice | Unclear who does what | Use active voice, direct instructions |
 | Undefined jargon | Confuses new readers | Define terms or link to glossary |
 | Orphan pages | Hard to discover | Link from related docs |

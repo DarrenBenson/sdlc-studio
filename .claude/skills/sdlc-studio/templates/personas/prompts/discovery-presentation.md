@@ -13,16 +13,19 @@ I've analysed the {{source_type}} and found these potential personas:
 ## Explicit Personas (named in source)
 
 {{#each explicit_personas}}
+
 ### {{index}}. {{name}}
 
 **Mentioned:** {{mention_count}} times
 
 **Evidence:**
 {{#each evidence}}
+
 - {{location}}: "{{quote}}"
 {{/each}}
 
 **Inferred profile:**
+
 - Likely role: {{inferred_role}}
 - Technical level: {{inferred_tech_level}}
 - Key capabilities: {{capabilities}}
@@ -33,16 +36,19 @@ I've analysed the {{source_type}} and found these potential personas:
 ## Inferred Personas (implied but not named)
 
 {{#each inferred_personas}}
+
 ### {{index}}. {{suggested_name}}
 
 **Inferred from:** {{inference_source}}
 
 **Evidence:**
 {{#each evidence}}
+
 - {{location}}: {{description}}
 {{/each}}
 
 **Suggested profile:**
+
 - Likely role: {{inferred_role}}
 - Reason: {{inference_reason}}
 
@@ -54,7 +60,7 @@ I've analysed the {{source_type}} and found these potential personas:
 Should I proceed with these personas?
 
 | Option | Description |
-|--------|-------------|
+| -------- | ------------- |
 | **Yes** | Continue with enrichment for all listed personas |
 | **Add more** | I'll suggest additional personas to consider |
 | **Remove some** | Tell me which to skip |

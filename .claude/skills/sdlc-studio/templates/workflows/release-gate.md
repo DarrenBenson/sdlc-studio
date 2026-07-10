@@ -126,7 +126,7 @@ release ships with no way for an existing project to move across it.
 Each section above addresses a class of incident that has been observed in real projects. The supporting evidence – project names, bug IDs, dated post-mortems – lives in each project's own `sdlc-studio/.local/lessons.md`. This template stays generic so it transfers cleanly between projects.
 
 | Section | Incident class it closes |
-|---|---|
+| --- | --- |
 | 1. Build/test | CI failures discovered *after* tag, when the operator trusted their IDE / incremental runner |
 | 1. Version-literal landmine | Tests with hardcoded `'X.Y.Z'` version assertions break CI on every release-prep commit; shape assertions are stable across bumps |
 | 2. Adversarial review | Line-level nits (stale counts, hardcoded literals, regex gaps, flag-guard edge cases) that design-focused reviews routinely miss |

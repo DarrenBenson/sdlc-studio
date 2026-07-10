@@ -44,12 +44,12 @@ deterministic computation:
 A later wave extends the same principle - **determinism in scripts,
 judgement in Claude** - to the highest-frequency mechanical workflows:
 
-4. **Drift detection** (`reconcile.py`) – the file census and index-drift
+1. **Drift detection** (`reconcile.py`) – the file census and index-drift
    comparison doctrine rule 3 prescribes is a deterministic algorithm.
-5. **Pipeline status** (`status.py`) – the four-pillar census and hint ladder.
-6. **Artifact validation** (`validate.py`) – ID/Status/structure linting.
-7. **ID allocation** (`next_id.py`) – cross-repo-safe numbering (rule 13).
-8. **Review inputs** (`review_prep.py`) – the mechanical inputs the five-leg
+2. **Pipeline status** (`status.py`) – the four-pillar census and hint ladder.
+3. **Artifact validation** (`validate.py`) – ID/Status/structure linting.
+4. **ID allocation** (`next_id.py`) – cross-repo-safe numbering (rule 13).
+5. **Review inputs** (`review_prep.py`) – the mechanical inputs the five-leg
    review consumes (staleness, persona usage, counts).
 
 These five are **read-only**: each emits JSON (or writes only to

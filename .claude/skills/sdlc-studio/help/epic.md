@@ -38,15 +38,18 @@ SDLC Studio is model-invoked - say it in plain language:
 ## Actions
 
 ### generate (default)
+
 Parse PRD and group features into Epics.
 
 **What happens:**
+
 1. Reads Feature Inventory from PRD
 2. Groups related features (5-8 per Epic)
 3. Creates Epic files with business context, scope, acceptance criteria
 4. Creates `sdlc-studio/epics/_index.md` registry
 
 **Grouping heuristics:**
+
 - Features sharing same user type → same Epic
 - Features with shared dependencies → same Epic
 - Features forming complete user journey → same Epic
@@ -56,12 +59,13 @@ Parse PRD and group features into Epics.
 Use `--perspective` to generate epics with specific focus aligned to document types:
 
 | Perspective | Aligns With | Focus Areas |
-|-------------|-------------|-------------|
+| ------------- | ------------- | ------------- |
 | `engineering` | TRD | Components, APIs, data models, tech dependencies |
 | `product` | PRD | User value, success metrics, priority rationale |
 | `test` | TSD | Test types, coverage targets, risk-based priorities |
 
 ### review
+
 Review Epic status based on Stories and codebase. **Cascades by default** - reviews epic and all changed stories/code.
 
 ```bash
@@ -74,12 +78,13 @@ Review Epic status based on Stories and codebase. **Cascades by default** - revi
 **Flags:**
 
 | Flag | Description | Default |
-|------|-------------|---------|
+| ------ | ------------- | --------- |
 | `--quick` | Skip cascade, review only the epic | false |
 | `--resume` | Resume from where review paused | false |
 | `--epic` | Target specific epic | all epics |
 
 **What happens (cascade mode):**
+
 1. Builds review queue - stories/code changed since last review
 2. Reviews changed story specs against implementation
 3. Reviews changed code for quality issues
@@ -88,6 +93,7 @@ Review Epic status based on Stories and codebase. **Cascades by default** - revi
 6. Updates `.local/review-state.json` with review timestamps
 
 **What happens (quick mode):**
+
 1. Reads all Epics and their linked Stories
 2. Calculates completion from Story status
 3. Updates status and acceptance criteria checkboxes
@@ -96,18 +102,21 @@ Review Epic status based on Stories and codebase. **Cascades by default** - revi
 ## Output
 
 **Files:**
+
 - `sdlc-studio/epics/EP{NNNN}-{slug}.md` per Epic
 - `sdlc-studio/epics/_index.md` registry
 
 **Status values:** Draft | Ready | Approved | In Progress | Done
 
 **Status rules:**
+
 - New epics start as "Draft"
 - `epic review` suggests "Done" when all stories complete, but user confirms
 
 > **Source of truth:** `reference-decisions.md` → Status Transition Rules
 
 **Epic sections:**
+
 - Summary
 - Business Context (problem, value, metrics)
 - Scope (in/out, affected personas)
@@ -144,6 +153,7 @@ Review Epic status based on Stories and codebase. **Cascades by default** - revi
 ## Next Steps
 
 After generating Epics:
+
 ```
 /sdlc-studio story                # Generate Stories from Epics
 /sdlc-studio test-plan            # Generate Test Plans for Epics
@@ -169,6 +179,7 @@ Preview the implementation workflow for all stories in an epic.
 ```
 
 **What happens:**
+
 1. Lists all stories in epic with status
 2. Filters to stories that need implementation (Ready, not Done)
 3. Analyses cross-story dependencies
@@ -177,6 +188,7 @@ Preview the implementation workflow for all stories in an epic.
 6. Shows aggregate work preview
 
 **Output:**
+
 ```
 ## Epic Workflow Plan: EP0004
 
@@ -220,13 +232,14 @@ Execute the full implementation workflow for all stories in an epic.
 **Flags:**
 
 | Flag | Description |
-|------|-------------|
+| ------ | ------------- |
 | `--epic EP000X` | Target epic (required) |
 | `--story US000X` | Start from specific story |
 | `--skip US000X` | Skip specific story |
 | `--agentic` | Autonomous concurrent execution with wave analysis (cross-layer only) |
 
 **What happens:**
+
 1. Loads or creates epic workflow plan
 2. Processes stories in dependency order (or concurrent waves with `--agentic`)
 3. Runs `story implement` for each story (concurrent within a wave if `--agentic`)
@@ -241,12 +254,14 @@ Creates `sdlc-studio/workflows/WF{NNNN}-{epic-slug}.md` to track progress.
 **Story execution:**
 
 For each story in dependency order:
+
 1. Check dependencies are Done
 2. Run `story implement --story US000X`
 3. On success: mark story Done, continue to next
 4. On failure: pause epic workflow, save state
 
 **Resume after pause:**
+
 ```
 /sdlc-studio epic implement --epic EP0004 --story US0024
 ```
@@ -254,12 +269,15 @@ For each story in dependency order:
 ## See Also
 
 **REQUIRED for this workflow:**
+
 - `reference-epic.md` - Epic workflow details including workflow orchestration
 
 **Recommended:**
+
 - `/sdlc-studio prd help` - Product requirements (upstream)
 - `/sdlc-studio story help` - User Stories (downstream)
 
 **Optional (deep dives):**
+
 - `reference-outputs.md` - Output formats reference
 - `/sdlc-studio story plan help` - Plan workflow for single story

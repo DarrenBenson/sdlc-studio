@@ -27,6 +27,7 @@ Detailed workflows for Technical Requirements Document creation and management.
 
 3. **Present Architecture Recommendations**
    Based on project type, present defaults from reference-architecture.md:
+
    ```
    Based on your project type ({{type}}), recommended stack:
 
@@ -105,6 +106,7 @@ Detailed workflows for Technical Requirements Document creation and management.
 
 2. **Launch Exploration**
    Use Task tool with Explore agent:
+
    ```
    Explore this codebase comprehensively for technical architecture:
    1. Directory structure and module organisation
@@ -196,6 +198,7 @@ Detailed workflows for Technical Requirements Document creation and management.
     - Is technology selection appropriate?
 
     **Output format:**
+
     ```markdown
     ## Architecture Assessment
 
@@ -243,6 +246,7 @@ Detailed workflows for Technical Requirements Document creation and management.
 
 2. **Analyse Implementation Changes**
    Use Task tool with Explore agent:
+
    ```
    Compare current codebase against TRD:
    1. New services or components added?
@@ -289,16 +293,18 @@ Detailed workflows for Technical Requirements Document creation and management.
 2. **Extract Diagram Data**
 
    **System Context (L1):**
+
    | Source | Extract |
-   |--------|---------|
+   | -------- | --------- |
    | TRD header | System name |
    | Personas document | Users and roles |
    | Integration Patterns section | External systems |
    | API Contracts section | External APIs |
 
    **Container Diagram (L2):**
+
    | Source | Extract |
-   |--------|---------|
+   | -------- | --------- |
    | Technology Stack - Framework | Frontend container |
    | Technology Stack - Language | Backend container |
    | Technology Stack - Database | Data stores |
@@ -306,8 +312,9 @@ Detailed workflows for Technical Requirements Document creation and management.
    | Integration Patterns | External service connections |
 
    **Component Diagram (L3):**
+
    | Source | Extract |
-   |--------|---------|
+   | -------- | --------- |
    | Architecture Overview - Components | Internal components |
    | Component relationships | Dependencies |
    | API Contracts | API layers |
@@ -341,6 +348,7 @@ Detailed workflows for Technical Requirements Document creation and management.
 ### Element Limits
 
 Keep diagrams focused with 7±2 elements per view:
+
 - If more elements needed, split into multiple diagrams
 - Group related components into subgraphs
 - Use abstraction (e.g., "External Services" instead of listing all)
@@ -348,6 +356,7 @@ Keep diagrams focused with 7±2 elements per view:
 ### Naming Conventions
 
 Match TRD terminology exactly:
+
 - Component names from Architecture Overview
 - Technology names from Technology Stack
 - Protocol names from API Contracts
@@ -355,7 +364,7 @@ Match TRD terminology exactly:
 ### Visual Hierarchy
 
 | Shape | Use For |
-|-------|---------|
+| ------- | --------- |
 | `[Service Name]` | Applications, services |
 | `[(Database)]` | Data stores |
 | `((User))` | Human actors |
@@ -365,6 +374,7 @@ Match TRD terminology exactly:
 ### Connection Labels
 
 Always label connections with:
+
 - Protocol (REST, GraphQL, gRPC, WebSocket)
 - Port if non-standard
 - Direction if not obvious
@@ -372,6 +382,7 @@ Always label connections with:
 ### Subgraphs
 
 Use subgraphs for:
+
 - System boundaries
 - Trust boundaries
 - Deployment zones
@@ -404,16 +415,20 @@ graph TB
 ## Navigation {#navigation}
 
 **Prerequisites (load these first):**
+
 - `reference-philosophy.md#create-mode` OR `reference-philosophy.md#generate-mode` - Understanding modes
 - `reference-prd.md` - Product Requirements (context for technical decisions)
 
 **Related workflows:**
+
 - `reference-architecture.md` - Architecture patterns and guidance (deep dive for TRD creation)
 - `reference-code.md` - Code implementation (downstream consumer)
 
 **Cross-cutting concerns:**
+
 - `reference-decisions.md` - Decision guidance and Ready criteria
 - `reference-outputs.md#output-formats` - File formats and status values
 
 **Deep dives (optional):**
+
 - `reference-epic.md` - Epic generation (next step after TRD)

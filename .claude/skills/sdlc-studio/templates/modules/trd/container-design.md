@@ -12,7 +12,7 @@ Load: trd create --with-containers or trd create --full or trd containerize
 ### Application Container
 
 | Decision | Value | Rationale |
-|----------|-------|-----------|
+| ---------- | ------- | ----------- |
 | Base Image | {{container_base_image}} | {{container_base_rationale}} |
 | Build Stages | {{container_build_stages}} | {{container_stages_rationale}} |
 | Exposed Ports | {{container_ports}} | {{container_ports_usage}} |
@@ -27,7 +27,7 @@ Load: trd create --with-containers or trd create --full or trd containerize
 ### Build Stages
 
 | Stage | Purpose | Output |
-|-------|---------|--------|
+| ------- | --------- | -------- |
 | base | Shared dependencies | Base layer |
 | builder | Compile and bundle | /app/dist |
 | development | Dev with hot reload | Running app |
@@ -37,7 +37,7 @@ Load: trd create --with-containers or trd create --full or trd containerize
 ### Test Environment Containers
 
 | Service | Image | Purpose | Health Check |
-|---------|-------|---------|--------------|
+| --------- | ------- | --------- | -------------- |
 | db | {{test_db_image}} | Integration test database | {{test_db_healthcheck}} |
 | {{test_cache_service}} | {{test_cache_image}} | Cache for integration tests | {{test_cache_healthcheck}} |
 | app | Built from Dockerfile | Application under test | HTTP /health |
@@ -53,7 +53,7 @@ Load: trd create --with-containers or trd create --full or trd containerize
 ### Volume Mounts
 
 | Volume | Purpose | Mount Path |
-|--------|---------|------------|
+| -------- | --------- | ------------ |
 | db_data | Database persistence | /var/lib/postgresql/data |
 | test_results | Test output collection | /app/test-results |
 | {{custom_volume}} | {{volume_purpose}} | {{volume_path}} |

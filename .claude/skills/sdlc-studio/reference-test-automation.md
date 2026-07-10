@@ -79,7 +79,7 @@ def make_field_value(value, confidence=0.8, source="user"):
 ### 3. Detect Language
 
 | Detection File | Language | Framework | Support Level |
-|----------------|----------|-----------|---------------|
+| ---------------- | ---------- | ----------- | --------------- |
 | `pyproject.toml`, `setup.py` | Python | pytest | Full - templates and examples |
 | `package.json` + vitest | TypeScript | Vitest | Full - templates and examples |
 | `package.json` | TypeScript | Jest | Full - templates and examples |
@@ -145,7 +145,7 @@ For each test case:
 All frameworks use the unified `tests/` structure at project root:
 
 | Test Type | Path | Subdirectory |
-|-----------|------|--------------|
+| ----------- | ------ | -------------- |
 | Unit (backend) | `tests/unit/backend/` | `test_*.py`, `*_test.go` |
 | Unit (frontend) | `tests/unit/frontend/` | `*.test.ts` |
 | Integration | `tests/integration/` | Cross-component tests |
@@ -285,7 +285,7 @@ describe('Authentication', () => {
    Extract services requiring containers:
 
    | TRD Entry | Container Image | Default Port |
-   |-----------|-----------------|--------------|
+   | ----------- | ----------------- | -------------- |
    | PostgreSQL | postgres:16-alpine | 5432 |
    | MySQL | mysql:8 | 3306 |
    | Redis | redis:7-alpine | 6379 |

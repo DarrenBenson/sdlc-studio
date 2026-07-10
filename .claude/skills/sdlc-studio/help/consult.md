@@ -38,6 +38,7 @@ Get structured feedback from personas on SDLC artefacts.
 3. Returns structured feedback with verdict, questions, and conditions
 
 **Key Difference from `/sdlc-studio chat`:**
+
 - `consult` = Automated, structured output, no back-and-forth
 - `chat` = Interactive conversation, follow-up questions
 
@@ -54,6 +55,7 @@ Get structured feedback from personas on SDLC artefacts.
 Get feedback from one specific persona.
 
 **Output:**
+
 ```markdown
 ## Sarah Chen (Product Manager)
 **Verdict:** ⚠️ Concerns
@@ -78,11 +80,13 @@ success metrics. How will we measure if this feature is working?"
 Get feedback from Product, Engineering, and QA perspectives.
 
 **Default representatives:**
+
 - Product: First Product persona or Sarah Chen
 - Engineering: First Senior Engineer or Marcus Johnson
 - QA: First QA persona or Priya Sharma
 
 **Override defaults:**
+
 ```bash
 /sdlc-studio consult team prd.md --engineering nadia-okonkwo
 ```
@@ -110,7 +114,7 @@ Get feedback from Team AND Stakeholders. Most comprehensive but highest cost.
 ### Depth Control
 
 | Flag | Feedback Length | Questions |
-|------|-----------------|-----------|
+| ------ | ----------------- | ----------- |
 | `--quick` | 1-2 sentences | 1-2 |
 | (default) | 2-4 sentences | 2-4 |
 | `--thorough` | Full analysis | 4-6 |
@@ -143,7 +147,7 @@ Get feedback from Team AND Stakeholders. Most comprehensive but highest cost.
 ## Verdict Types
 
 | Verdict | Meaning | Action |
-|---------|---------|--------|
+| --------- | --------- | -------- |
 | ✅ Approve | Ready to proceed | Continue to next step |
 | ⚠️ Concerns | Can proceed with conditions | Address conditions, then proceed |
 | ❌ Reject | Cannot proceed | Must address before continuing |
@@ -182,7 +186,7 @@ Get feedback from Team AND Stakeholders. Most comprehensive but highest cost.
 ### By Artefact Type
 
 | Artefact | Recommended Command |
-|----------|---------------------|
+| ---------- | --------------------- |
 | PRD | `consult team` + `consult stakeholders --relevant` |
 | Epic | `consult team` |
 | Story | `consult [story-persona]` + QA |
@@ -192,7 +196,7 @@ Get feedback from Team AND Stakeholders. Most comprehensive but highest cost.
 ### By Project Phase
 
 | Phase | Consultation |
-|-------|--------------|
+| ------- | -------------- |
 | Requirements | Team + Business stakeholders |
 | Design | Team (especially Engineering) |
 | Implementation | Story persona + QA |
@@ -203,13 +207,14 @@ Get feedback from Team AND Stakeholders. Most comprehensive but highest cost.
 ## Cost Considerations
 
 | Command | Relative Cost | When to Use |
-|---------|---------------|-------------|
+| --------- | --------------- | ------------- |
 | Single persona | Low | Targeted feedback |
 | Team | Medium | Most decisions |
 | Stakeholders | Medium-High | User-facing changes |
 | All | High | Major decisions, releases |
 
 **Tips:**
+
 - Use `--quick` for draft reviews
 - Use `--thorough` for final reviews
 - Use `--relevant` to auto-filter stakeholders
@@ -236,6 +241,7 @@ After consultation:
 - Proceed to next pipeline step when approved
 
 For interactive follow-up questions:
+
 ```bash
 /sdlc-studio chat [persona]    # Phase 5
 ```
@@ -245,10 +251,12 @@ For interactive follow-up questions:
 ## See Also
 
 **Workflows:**
+
 - `reference-consult.md` - Detailed consultation workflows
 - `reference-persona.md` - Persona management
 
 **Related commands:**
+
 - `/sdlc-studio persona help` - Persona creation
 - `/sdlc-studio chat help` - Interactive sessions (Phase 5)
 - `/sdlc-studio review help` - Document review workflows

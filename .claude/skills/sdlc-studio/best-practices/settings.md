@@ -31,7 +31,7 @@ Deny > Ask > Allow
 Bash rules use **prefix matching** with colon syntax:
 
 | Pattern | Matches | Does NOT Match |
-|---------|---------|----------------|
+| --------- | --------- | ---------------- |
 | `Bash(git :*)` | `git status`, `git commit -m "msg"` | - |
 | `Bash(npm run test:*)` | `npm run test`, `npm run test:unit` | `npm run build` |
 | `Bash(./scripts/*)` | `./scripts/deploy.sh` | `scripts/deploy.sh` |
@@ -51,6 +51,7 @@ Bash rules use **prefix matching** with colon syntax:
 ### Security Note
 
 Bash patterns can be bypassed via:
+
 - Variable expansion: `CMD=rm && $CMD -rf /`
 - Option reordering: `curl -X GET http://site.com`
 - Piping: `echo password | sudo -S rm -rf /`
@@ -62,7 +63,7 @@ Use as one layer of protection, not sole defence.
 Read and Edit rules use gitignore-style patterns:
 
 | Pattern | Resolves To |
-|---------|-------------|
+| --------- | ------------- |
 | `path` or `./path` | Relative to CWD |
 | `/path` | Relative to settings.json location |
 | `//path` | Absolute filesystem root |
@@ -164,7 +165,7 @@ Minimal safe starting point:
 ## Anti-patterns
 
 | Pattern | Problem | Fix |
-|---------|---------|-----|
+| --------- | --------- | ----- |
 | `Bash(git *)` | Missing colon, won't prefix match | `Bash(git :*)` |
 | `Bash` (bare) | Allows all commands | List specific commands |
 | No deny rules | Secrets accessible | Deny `.env`, `secrets/` |
@@ -184,7 +185,7 @@ Minimal safe starting point:
 ```
 
 | Mode | Behaviour |
-|------|-----------|
+| ------ | ----------- |
 | `default` | Prompt on first use |
 | `acceptEdits` | Auto-accept file edits |
 | `plan` | Read-only, no execution |
@@ -235,7 +236,7 @@ Settings merge with this precedence (highest to lowest):
 ### Require Permission
 
 | Tool | Pattern Example |
-|------|-----------------|
+| ------ | ----------------- |
 | `Edit` | `Edit(src/**)` |
 | `Write` | `Write` or `Write(path)` |
 | `Bash` | `Bash(command :*)` |

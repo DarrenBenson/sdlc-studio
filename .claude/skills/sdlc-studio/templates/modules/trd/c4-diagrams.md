@@ -72,6 +72,7 @@ graph LR
 ```
 
 **Diagram Notes:**
+
 - Diagrams render automatically in GitHub/GitLab markdown preview
 - For VS Code, install Mermaid extension
 - Use `/sdlc-studio trd visualise` to regenerate after TRD changes

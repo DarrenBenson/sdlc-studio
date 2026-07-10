@@ -22,7 +22,7 @@ Before considering a skill complete:
 - [ ] `SKILL.md` exists with frontmatter (`name`, `description`)
 - [ ] `name` is lowercase with hyphens, max 64 chars, matches folder name
 - [ ] `description` explains what it does and includes trigger keywords (max 1024 chars)
-- [ ] `description` is double-quoted if it contains `: `, `[]`, `{}`, or `#`
+- [ ] `description` is double-quoted if it contains `:`, `[]`, `{}`, or `#`
 - [ ] Clear "When to Use" section with trigger phrases
 - [ ] Step-by-step instructions the AI can follow
 - [ ] Examples with expected inputs/outputs
@@ -43,7 +43,7 @@ Before considering a skill complete:
 ### Optional Fields
 
 | Field | Description | Example |
-|-------|-------------|---------|
+| ------- | ------------- | --------- |
 | `allowed-tools` | Restrict available tools | `Read, Grep, Glob` |
 | `model` | Specify Claude model | `sonnet`, `opus`, `haiku`, or full model ID |
 | `argument-hint` | Hint text for arguments | `[issue-number]`, `[filename] [format]` |
@@ -57,8 +57,8 @@ Before considering a skill complete:
 Values containing special YAML characters must be quoted. Unquoted values with colons cause `malformed YAML frontmatter` errors on claude.ai.
 
 | Character | Example problem | Fix |
-|-----------|----------------|-----|
-| `: ` (colon-space) | `SDLC pipeline: requirements` | Wrap value in double quotes |
+| ----------- | ---------------- | ----- |
+| `:` (colon-space) | `SDLC pipeline: requirements` | Wrap value in double quotes |
 | `#` | `Run # of tests` | Wrap value in double quotes |
 | `[` or `]` | `[type] [action]` | Wrap value in double quotes |
 | `{` or `}` | `{name}` | Wrap value in double quotes |
@@ -108,8 +108,10 @@ Step-by-step what the AI should do:
 ## Examples
 
 ```
+
 /example foo        # Does X
 /example bar --flag # Does Y
+
 ```
 
 ## See Also
@@ -143,6 +145,7 @@ my-skill/
 Link from SKILL.md: "For detailed API reference, see `reference.md`."
 
 **Progressive disclosure levels:**
+
 1. **Startup**: Only `name` and `description` loaded into system prompt
 2. **Triggered**: Full `SKILL.md` loads when skill is relevant
 3. **On-demand**: Bundled files load selectively as needed
@@ -181,7 +184,7 @@ my-skill/
 **Template conventions:**
 
 | Convention | Example |
-|------------|---------|
+| ------------ | --------- |
 | Use `{{placeholder}}` syntax | `{{profile_name}}`, `{{test_date}}` |
 | Include comments for complex sections | `<!-- Repeat for each test -->` |
 | Keep templates self-documenting | Add section headers even if brief |
@@ -189,6 +192,7 @@ my-skill/
 ## Description Best Practices
 
 A good description answers:
+
 1. **What does this skill do?** (list specific capabilities)
 2. **When should Claude use it?** (include trigger keywords)
 
@@ -207,11 +211,13 @@ description: "/search [query] - Search profiles by name, slug, nationality, MBTI
 ```
 
 This pattern:
+
 - Shows users which command invokes the skill
 - Still includes trigger keywords for semantic matching
 - Links documentation between commands and skills
 
 **Command file** (`.claude/commands/search.md`):
+
 ```markdown
 /search [query] - Search profiles by name, slug, or filters
 
@@ -220,6 +226,7 @@ Follow the skill instructions in `.claude/skills/library-search/SKILL.md`.
 ```
 
 **Skill file** (`.claude/skills/library-search/SKILL.md`):
+
 ```yaml
 ---
 name: library-search
@@ -270,7 +277,7 @@ allowed-tools: Read, Grep, Glob
 ## Anti-patterns
 
 | Pattern | Problem | Fix |
-|---------|---------|-----|
+| --------- | --------- | ----- |
 | No frontmatter | Won't be discovered | Add `---` block with name/description |
 | Vague description | AI won't know when to invoke | Include specific capabilities and trigger keywords |
 | SKILL.md over 500 lines | Context bloat | Use progressive disclosure with reference files |
@@ -304,5 +311,5 @@ If the skill includes scripts:
 - Scripts need execute permissions: `chmod +x scripts/*.py`
 - YAML frontmatter must start on line 1 (no blank lines before `---`)
 - Use spaces for indentation in YAML (not tabs)
-- Quote `description` values containing `: `, `[]`, `{}`, or `#` to avoid YAML parse errors
+- Quote `description` values containing `:`, `[]`, `{}`, or `#` to avoid YAML parse errors
 - The claude.ai web uploader has stricter YAML parsing than the CLI; always quote descriptions with special characters

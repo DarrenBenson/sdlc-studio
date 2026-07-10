@@ -7,7 +7,7 @@ Optional composable sections that extend core templates. Modules provide progres
 Modules are loaded via command flags or when their content is specifically needed:
 
 | Module Path | Loaded By | Purpose |
-|-------------|-----------|---------|
+| ------------- | ----------- | --------- |
 | `trd/c4-diagrams.md` | `trd create --with-diagrams` | C4 Context/Container/Component diagrams |
 | `trd/container-design.md` | `trd create --with-containers` | Docker/k8s deployment design |
 | `trd/adr.md` | `trd create` (always) | ADR template for architectural decisions |
@@ -65,7 +65,7 @@ Explicitly request modules with command flags:
 The `--full` flag loads all relevant modules for a template type:
 
 | Command | Modules Loaded |
-|---------|---------------|
+| --------- | --------------- |
 | `trd create --full` | c4-diagrams, container-design, adr |
 | `tsd create --full` | contract-tests, performance-tests, security-tests |
 
@@ -85,11 +85,13 @@ The `--full` flag loads all relevant modules for a template type:
 ## Module vs Core Content
 
 **Keep in core template if:**
+
 - Required for all projects
 - Less than 30 lines
 - Tightly coupled to other sections
 
 **Extract to module if:**
+
 - Optional for many projects
 - Self-contained
 - Adds significant complexity

@@ -81,6 +81,7 @@ e) RFCs (if sdlc-studio/rfcs/ exists):
 Compare ground truth against indexes and cross-references. Collect all discrepancies into a change list.
 
 > **Census, not just compare (see [[LL0001]] – applies to EVERY indexed type: stories, epics, plans, test-specs, bugs, CRs, RFCs).** Rebuild each index from the on-disk file census and detect **three** drift classes, not just status mismatches:
+>
 > 1. **Status mismatch** – file `> **Status:**` ≠ the index-table row.
 > 2. **Missing row** – a file exists on disk with **no** index-table row (a silent under-count; e.g. CR/bug files numbered past the last table row). Add the row.
 > 3. **Orphan row** – an index row with no backing file on disk. Flag (and remove if confirmed).
@@ -234,7 +235,7 @@ Print the change list as a structured report:
 > writes nothing) and `--dry-run` reports without writing. Structural classes
 > (missing-row / orphan-row / missing-index) and the judgement calls below
 > (CR-completion, PRD prose, breakdown/AC checkboxes) remain Claude-orchestrated.
-
+>
 > **Apply reports only what it persisted.** A planned status fix the writer cannot place in the row
 > (an off-schema or header-less layout it declines to guess, rather than risk clobbering a title or
 > another field) is **not** reported as a change. It is surfaced as `WARNING: could not apply ...`

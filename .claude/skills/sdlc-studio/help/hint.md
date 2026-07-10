@@ -40,7 +40,7 @@ Checks pipeline state in priority order and returns the first applicable action.
 `sdlc-studio/.config.yaml` - a fresh v3 project has only the config file)
 
 | Result | Action |
-|--------|--------|
+| -------- | -------- |
 | No sdlc-studio/ directory | Proceed (new project) |
 | `schema_version` 2 or 3 (in .version or .config.yaml) | Proceed (current schemas) |
 | Both absent, or `schema_version` < 2 | Check `sdlc-studio/.local/upgrade-dismissed.json` |
@@ -64,7 +64,7 @@ options:
 ## Priority Logic
 
 | # | Condition | Suggested Action | Command |
-|---|-----------|------------------|---------|
+| --- | ----------- | ------------------ | --------- |
 | 1 | No PRD + existing code | Extract PRD from codebase | `prd generate` |
 | 2 | No PRD + no code | Create PRD interactively | `prd create` |
 | 3 | No TRD + existing code | Extract TRD from codebase | `trd generate` |
@@ -145,18 +145,22 @@ Also consider:
 Checked before returning hint:
 
 ### Open Questions
+
 - Unresolved open questions in PRD
 - Unresolved open questions in implementation plans
 
 ### Dependencies
+
 - Stories blocked by incomplete dependencies
 - Test specs blocked by missing stories
 
 ### Quality Gates
+
 - Stories in Review with failing tests
 - Code check issues blocking merge
 
 ### Workflow State
+
 - Paused story workflow (reports phase and error)
 - Paused epic workflow (reports story and phase)
 - Blocked stories in epic workflow
@@ -258,7 +262,7 @@ $ /sdlc-studio hint
 ## Comparison with Status
 
 | Aspect | `hint` | `status` |
-|--------|--------|----------|
+| -------- | -------- | ---------- |
 | Output | Single next action | Full pipeline overview |
 | Suggested command | Yes, with explanation | Yes, based on top priority |
 | Detail | Minimal, actionable | Comprehensive |

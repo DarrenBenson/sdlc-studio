@@ -2,7 +2,6 @@
 
 Guidelines for JavaScript code based on modern standards and common pitfalls.
 
-
 ## Quick conventions {#quick-conventions}
 
 - Declare with `const`/`let`, never `var`; prefer `async`/`await` over raw promise chains.
@@ -370,7 +369,7 @@ Before completing JavaScript code:
 ## Anti-patterns
 
 | Pattern | Problem | Fix |
-|---------|---------|-----|
+| --------- | --------- | ----- |
 | `var x = 1` | Hoisting bugs | Use `const` or `let` |
 | `innerHTML = userInput` | XSS vulnerability | Use `textContent` or escape |
 | `eval(code)` | Code injection | Use safer alternatives |

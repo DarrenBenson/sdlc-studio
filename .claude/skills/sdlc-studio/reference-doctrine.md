@@ -7,6 +7,7 @@ working rules – the discipline that makes a Claude effective in an sdlc-studio
 Project-*specific* facts (architecture, config paths, deploy recipes, code-style
 rules, the agents/services) live in that project's agent-instructions file
 (`AGENTS.md`, which `CLAUDE.md` / `.github/copilot-instructions.md` may point to)
+
 + TRD, not here.
 
 > A project's agent-instructions file should be **doctrine (this file) + project

@@ -10,7 +10,7 @@ Load: tsd create --with-perf or tsd create --full
 ### Load Testing
 
 | Metric | Target | Tool |
-|--------|--------|------|
+| -------- | -------- | ------ |
 | Response time (p50) | {{p50_target}} | {{load_tool}} |
 | Response time (p95) | {{p95_target}} | {{load_tool}} |
 | Throughput | {{throughput_target}} | {{load_tool}} |
@@ -19,7 +19,7 @@ Load: tsd create --with-perf or tsd create --full
 ### Test Scenarios
 
 | Scenario | Users | Duration | Ramp-up |
-|----------|-------|----------|---------|
+| ---------- | ------- | ---------- | --------- |
 | Baseline | {{baseline_users}} | 5 min | 1 min |
 | Normal load | {{normal_users}} | 15 min | 3 min |
 | Peak load | {{peak_users}} | 10 min | 2 min |
@@ -28,6 +28,7 @@ Load: tsd create --with-perf or tsd create --full
 ### Tool Configuration
 
 **k6 example:**
+
 ```javascript
 export const options = {
   stages: [

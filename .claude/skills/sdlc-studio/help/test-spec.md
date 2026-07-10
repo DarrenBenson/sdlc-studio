@@ -25,7 +25,7 @@ SDLC Studio is model-invoked - say it in plain language:
 ## Actions
 
 | Action | Description |
-|--------|-------------|
+| -------- | ------------- |
 | (default) | Generate specs from epics/stories (greenfield) |
 | generate | Reverse-engineer specs from existing tests (brownfield) |
 | review | Review spec status, sync with codebase and test files |
@@ -47,7 +47,7 @@ SDLC Studio is model-invoked - say it in plain language:
 ## Coverage Targets
 
 | Level | Target |
-|-------|--------|
+| ------- | -------- |
 | Unit | 90% line coverage |
 | Integration | 85% line coverage |
 | E2E | 100% feature coverage (one spec file per feature) |
@@ -136,11 +136,13 @@ Every test spec includes an AC Coverage Matrix mapping Story ACs to test cases:
 ```
 
 **Coverage requirements:**
+
 - Every Story AC MUST have at least one test case
 - Uncovered ACs are flagged prominently
 - Test-spec cannot be marked Ready until all ACs are covered
 
 **Coverage summary generated:**
+
 - Total ACs: count from all covered stories
 - Covered: ACs with at least one test case
 - Uncovered: ACs without test cases (blocking)
@@ -152,7 +154,7 @@ Every test spec includes an AC Coverage Matrix mapping Story ACs to test cases:
 A test-spec can be marked **Ready** when:
 
 | Criterion | Check |
-|-----------|-------|
+| ----------- | ------- |
 | AC coverage | All story ACs have at least one test case |
 | Coverage matrix | Shows no UNCOVERED status |
 | Test data | Fixtures defined for all test cases |
@@ -164,7 +166,7 @@ A test-spec can be marked **Ready** when:
 **Target:** One spec file per user-visible feature area.
 
 | Feature Area | Spec File | Minimum Tests |
-|--------------|-----------|---------------|
+| -------------- | ----------- | --------------- |
 | Dashboard | `dashboard.spec.ts` | Happy path, error states, auth |
 | Authentication | `auth.spec.ts` | Login, logout, session expiry |
 | Settings | `settings.spec.ts` | View, edit, validation |
@@ -176,33 +178,42 @@ A test-spec can be marked **Ready** when:
 Test specs are language-agnostic. Here's how they map to different frameworks:
 
 **Python (pytest):**
+
 ```markdown
 ### TC001: Valid login succeeds
 ```
+
 → `def test_valid_login_succeeds(self, client):`
 
 **TypeScript (vitest/jest):**
+
 ```markdown
 ### TC001: Valid login succeeds
 ```
+
 → `it('TC001: valid login succeeds', async () => { ... });`
 
 **Go:**
+
 ```markdown
 ### TC001: Valid login succeeds
 ```
+
 → `func TestValidLoginSucceeds(t *testing.T) { ... }`
 
 ## See Also
 
 **REQUIRED for this workflow:**
+
 - `reference-test-spec.md` - Test specification workflow details
 
 **Recommended:**
+
 - `/sdlc-studio story help` - User Stories (upstream)
 - `/sdlc-studio test-automation help` - Test automation (downstream)
 
 **Optional (deep dives):**
+
 - `reference-test-best-practices.md` - Testing guidelines
 - `reference-test-e2e-guidelines.md` - E2E patterns and guidelines
 - `reference-test-spec.md#tc-numbering` - Test case numbering conventions

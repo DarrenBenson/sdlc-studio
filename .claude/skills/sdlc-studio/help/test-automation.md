@@ -47,7 +47,7 @@ SDLC Studio is model-invoked - say it in plain language:
 ## Coverage Targets
 
 | Level | Target |
-|-------|--------|
+| ------- | -------- |
 | Unit | 90% line coverage |
 | Integration | 85% line coverage |
 | E2E | 100% feature coverage |
@@ -59,7 +59,7 @@ SDLC Studio is model-invoked - say it in plain language:
 The skill automatically detects the project language:
 
 | File Found | Language | Default Framework |
-|------------|----------|-------------------|
+| ------------ | ---------- | ------------------- |
 | `pyproject.toml`, `setup.py` | Python | pytest |
 | `package.json` + vitest | TypeScript | Vitest |
 | `package.json` | TypeScript | Jest |
@@ -71,7 +71,7 @@ The skill automatically detects the project language:
 All frameworks use a unified `tests/` directory at project root with consistent naming:
 
 | Language | Pattern | Example Path |
-|----------|---------|--------------|
+| ---------- | --------- | -------------- |
 | Python | `test_*.py` | `tests/unit/backend/test_auth.py` |
 | TypeScript | `*.test.ts` | `tests/unit/frontend/auth.test.ts` |
 | E2E (any) | `*.spec.ts` | `tests/e2e/dashboard.spec.ts` |
@@ -129,7 +129,7 @@ tests/
 Before generating E2E or integration tests, verify:
 
 | Check | Why | How to Find |
-|-------|-----|-------------|
+| ------- | ----- | ------------- |
 | Enum values | Tests fail with invalid enum values | `grep "class.*Enum" api/services/*.py` |
 | Dataclass fields | Mock attributes must match | `grep "@dataclass" api/services/*.py` |
 | Singleton patterns | Mocking getter vs global | Look for `_var = None` patterns |
@@ -189,7 +189,7 @@ class TestAuthentication:
 ## Options
 
 | Option | Description |
-|--------|-------------|
+| -------- | ------------- |
 | `--spec TS0001` | Generate for specific spec only |
 | `--type unit` | Only generate unit tests |
 | `--type integration` | Only generate integration tests |
@@ -248,7 +248,7 @@ func TestResponseIncludesUptime(t *testing.T) {
 ## Language-Agnostic Runner Commands
 
 | Language | Run Tests | With Coverage |
-|----------|-----------|---------------|
+| ---------- | ----------- | --------------- |
 | Python (pytest-cov) | `pytest` | `pytest --cov --cov-report=term-missing` |
 | Python (coverage.py) | `pytest` | `coverage run -m pytest && coverage report` |
 | TypeScript (vitest) | `npm test` | `npm run test:coverage` |
@@ -260,13 +260,16 @@ func TestResponseIncludesUptime(t *testing.T) {
 ## See Also
 
 **REQUIRED for this workflow:**
+
 - `reference-test-automation.md` - Test automation workflow details
 - `reference-test-best-practices.md` - Test writing guidelines and pitfalls
 - `reference-test-validation.md` - Validation steps and post-generation checklist
 
 **Recommended:**
+
 - `/sdlc-studio test-spec help` - Test specifications (upstream)
 
 **Optional (deep dives):**
+
 - `reference-test-e2e-guidelines.md` - E2E patterns and guidelines
 - `reference-outputs.md` - Output formats reference

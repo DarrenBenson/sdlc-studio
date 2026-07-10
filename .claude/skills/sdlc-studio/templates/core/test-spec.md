@@ -38,7 +38,7 @@ Related: help/test-spec.md, reference-test-spec.md
 ### Test Types Required
 
 | Type | Required | Rationale |
-|------|----------|-----------|
+| ------ | ---------- | ----------- |
 | Unit | {{unit_required}} | {{unit_rationale}} |
 | Integration | {{integration_required}} | {{integration_rationale}} |
 | E2E | {{e2e_required}} | {{e2e_rationale}} |
@@ -61,7 +61,7 @@ Related: help/test-spec.md, reference-test-spec.md
 ## Environment
 
 | Requirement | Details |
-|-------------|---------|
+| ------------- | --------- |
 | Prerequisites | {{prerequisites}} |
 | External Services | {{external_services}} |
 | Test Data | {{test_data_requirements}} |
@@ -71,18 +71,20 @@ Related: help/test-spec.md, reference-test-spec.md
 ## Test Cases
 
 {{#each test_cases}}
+
 ### TC{{id}}: {{title}}
 
 **Type:** {{type}} | **Priority:** {{priority}} | **Story:** {{story_ref}}
 
 | Step | Action | Expected Result |
-|------|--------|-----------------|
+| ------ | -------- | ----------------- |
 | Given | {{given}} | {{given_result}} |
 | When | {{when}} | {{when_result}} |
 | Then | {{then}} | {{then_result}} |
 
 **Assertions:**
 {{#each assertions}}
+
 - [ ] {{this}}
 {{/each}}
 
@@ -110,7 +112,7 @@ Related: help/test-spec.md, reference-test-spec.md
 ## Traceability
 
 | Artefact | Reference |
-|----------|-----------|
+| ---------- | ----------- |
 | PRD | [sdlc-studio/prd.md](../../prd.md) |
 | Epic | [EP{{epic_id}}](../../epics/EP{{epic_id}}-{{epic_slug}}.md) |
 | TSD | [sdlc-studio/tsd.md](../tsd.md) |

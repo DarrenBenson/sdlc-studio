@@ -7,6 +7,7 @@ NOT here. Promote a project lesson here only once it clearly generalises.
 Keep it tight – a lesson the next decision doesn't read is wasted.
 -->
 ---
+
 id: LL{NNNN}
 title: {{short title}}
 tags: [{{e.g. reconcile, schema, deploy, cross-repo, review}}]

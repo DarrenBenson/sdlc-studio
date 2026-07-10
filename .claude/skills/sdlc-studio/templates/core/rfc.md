@@ -29,9 +29,11 @@ itself get actioned into epics.
 ## Goals / Non-Goals
 
 **Goals**
+
 - {{goal}}
 
 **Non-Goals**
+
 - {{explicit_non_goal}}
 
 ---
@@ -39,6 +41,7 @@ itself get actioned into epics.
 ## Design Options
 
 ### Option A – {{option_a_title}}
+
 **Approach:** {{description}}
 **Pros:** {{pros}}
 **Cons:** {{cons}}

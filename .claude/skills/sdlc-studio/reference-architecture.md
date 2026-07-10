@@ -33,7 +33,7 @@ Q4: Multiple independently deployable services?
 ## Project Types {#project-types}
 
 | Type | Description | Examples |
-|------|-------------|----------|
+| ------ | ------------- | ---------- |
 | Web Application | Frontend + backend in one project | Dashboards, admin panels, SaaS apps |
 | API Backend | REST/GraphQL API, no UI | Payment service, data processing |
 | Mobile Backend | APIs designed for iOS/Android | App backends with push, offline sync |
@@ -48,7 +48,7 @@ Q4: Multiple independently deployable services?
 ## Pattern-to-Project-Type Matrix {#pattern-to-project-type-matrix}
 
 | Project Type | Default Pattern | When to Deviate |
-|--------------|-----------------|-----------------|
+| -------------- | ----------------- | ----------------- |
 | Web Application | Monolith | >10 developers, independent scaling needs |
 | API Backend | Modular Monolith | Clear domain boundaries, separate teams |
 | Mobile Backend | API Gateway + Services | Simple app (<5 endpoints) |
@@ -72,6 +72,7 @@ Q4: Multiple independently deployable services?
 **What it is:** Single deployable unit containing all application code.
 
 **When to use:**
+
 - Team size <10 developers
 - Single deployment target
 - Shared data model across features
@@ -79,17 +80,20 @@ Q4: Multiple independently deployable services?
 - No independent scaling requirements
 
 **When NOT to use:**
+
 - Multiple teams need independent deployments
 - Features have vastly different scaling needs
 - Compliance requires isolation
 - Different features need different tech stacks
 
 **Key considerations:**
+
 - Internal modularity still matters (packages, layers)
 - Can evolve to microservices later if needed
 - Simpler ops, debugging, and deployment
 
 **ADRs typically needed:**
+
 - ADR: Monolith over microservices rationale
 - ADR: Internal module boundaries
 - ADR: Database schema approach
@@ -99,22 +103,26 @@ Q4: Multiple independently deployable services?
 **What it is:** Monolith with enforced module boundaries that could be split later.
 
 **When to use:**
+
 - Team growing beyond 5 developers
 - Clear domain boundaries emerging
 - Want microservices benefits without ops complexity
 - Planning eventual decomposition
 
 **When NOT to use:**
+
 - Very small team (overhead not worth it)
 - No clear domain boundaries
 - No future scaling concerns
 
 **Key considerations:**
+
 - Modules communicate through defined interfaces
 - Each module owns its data (schema per module)
 - Can extract to services when needed
 
 **ADRs typically needed:**
+
 - ADR: Module boundary definitions
 - ADR: Inter-module communication patterns
 - ADR: Data ownership per module
@@ -124,6 +132,7 @@ Q4: Multiple independently deployable services?
 **What it is:** Multiple independently deployable services communicating over network.
 
 **When to use:**
+>
 - >10 developers across multiple teams
 - Features require independent scaling
 - Different features need different tech stacks
@@ -131,18 +140,21 @@ Q4: Multiple independently deployable services?
 - Organisational structure matches service boundaries
 
 **When NOT to use:**
+
 - Small team (<5 developers)
 - MVP or early-stage product
 - Shared data model across features
 - Limited ops capability
 
 **Key considerations:**
+
 - Requires service mesh, tracing, log aggregation
 - Data consistency becomes complex
 - Network failures become your problem
 - CI/CD per service
 
 **ADRs typically needed:**
+
 - ADR: Service boundary definitions
 - ADR: Inter-service communication (sync vs async)
 - ADR: Data consistency strategy
@@ -154,6 +166,7 @@ Q4: Multiple independently deployable services?
 **What it is:** Functions as units of deployment, managed infrastructure.
 
 **When to use:**
+
 - Highly variable load
 - Event-driven workloads
 - Cost sensitivity with low baseline traffic
@@ -161,6 +174,7 @@ Q4: Multiple independently deployable services?
 - Background processing, webhooks
 
 **When NOT to use:**
+
 - Consistent high traffic
 - Long-running processes
 - Cold start latency unacceptable
@@ -168,12 +182,14 @@ Q4: Multiple independently deployable services?
 - Cost concerns at scale
 
 **Key considerations:**
+
 - Vendor lock-in
 - Cold start latency
 - Debugging complexity
 - Cost at scale may exceed containers
 
 **ADRs typically needed:**
+
 - ADR: Serverless over containers rationale
 - ADR: Cold start mitigation strategy
 - ADR: State management approach
@@ -186,7 +202,7 @@ Q4: Multiple independently deployable services?
 ## Language Selection Matrix {#language-selection-matrix}
 
 | Factor | Python | TypeScript | Go | Rust |
-|--------|--------|------------|-----|------|
+| -------- | -------- | ------------ | ----- | ------ |
 | Rapid prototyping | 3/3 | 2/3 | 1/3 | - |
 | Type safety | 1/3 (with hints) | 2/3 | 3/3 | 3/3 |
 | Performance | 1/3 | 1/3 | 3/3 | 3/3 |
@@ -198,7 +214,7 @@ Q4: Multiple independently deployable services?
 ### Recommendation by Project Type {#language-recommendation}
 
 | Project Type | Primary Recommendation | Alternative |
-|--------------|----------------------|-------------|
+| -------------- | ---------------------- | ------------- |
 | Web Application | Python (FastAPI) or TypeScript (Next.js) | Go for high-performance |
 | API Backend | Python, TypeScript, or Go | Rust for extreme performance |
 | Mobile Backend | Any (consider team skills) | Go for high concurrency |
@@ -209,6 +225,7 @@ Q4: Multiple independently deployable services?
 ### Weak Justifications to Avoid {#weak-justifications}
 
 These are NOT sufficient rationale for technology choice:
+
 - "Team familiarity" (only valid if learning time is critical constraint)
 - "It's popular" (popularity doesn't mean fit)
 - "We've always used it" (evaluate fit for this project)
@@ -224,7 +241,7 @@ These are NOT sufficient rationale for technology choice:
 ## Database Selection {#database-selection}
 
 | Question | Yes -> Consider | No -> Consider |
-|----------|-----------------|----------------|
+| ---------- | ----------------- | ---------------- |
 | Need ACID transactions? | PostgreSQL, SQLite | MongoDB, DynamoDB |
 | Flexible/evolving schema? | MongoDB | PostgreSQL |
 | Self-contained deployment? | SQLite | PostgreSQL |
@@ -235,6 +252,7 @@ These are NOT sufficient rationale for technology choice:
 ### Default Recommendation {#database-default}
 
 **PostgreSQL** for most production systems - it covers 90% of use cases with:
+
 - ACID compliance
 - JSON support for flexibility
 - Excellent tooling
@@ -242,6 +260,7 @@ These are NOT sufficient rationale for technology choice:
 - Extensions (pgvector, PostGIS)
 
 **SQLite** for:
+
 - Local-first applications
 - Single-user systems
 - Development/testing
@@ -250,7 +269,7 @@ These are NOT sufficient rationale for technology choice:
 ## API Style Selection {#api-style-selection}
 
 | Style | Best For | Avoid When |
-|-------|----------|------------|
+| ------- | ---------- | ------------ |
 | REST + OpenAPI | Public APIs, mobile backends, most web apps | Real-time heavy, complex nested queries |
 | GraphQL | Complex data relationships, multiple clients | Simple CRUD, internal APIs |
 | gRPC | Service-to-service, high performance | Browser clients, public APIs |
@@ -259,6 +278,7 @@ These are NOT sufficient rationale for technology choice:
 ### Default Recommendation {#database-default}
 
 **REST with OpenAPI 3.1** - it covers 90% of use cases with:
+
 - Excellent tooling (code generation, documentation)
 - Universal client support
 - Caching support
@@ -273,7 +293,7 @@ For `trd generate`, assess existing architecture against best practices.
 ## Pattern Detection {#pattern-detection}
 
 | Files Present | Indicates |
-|---------------|-----------|
+| --------------- | ----------- |
 | Dockerfile, docker-compose.yml | Containerised deployment |
 | serverless.yml, terraform/ | Serverless/IaC |
 | /services/ or /apps/ directories | Multi-service architecture |
@@ -286,7 +306,7 @@ For `trd generate`, assess existing architecture against best practices.
 ## Architecture Smell Detection {#architecture-smell-detection}
 
 | Smell | Detection | Severity |
-|-------|-----------|----------|
+| ------- | ----------- | ---------- |
 | Big Ball of Mud | >50 files in root, no clear layers | High |
 | Distributed Monolith | Services must deploy together, sync calls everywhere | High |
 | Golden Hammer | One tech for everything (e.g., NoSQL for relational data) | Medium |
@@ -359,6 +379,7 @@ Would you like to:
 Prompt users to document these decisions:
 
 ### Web Application {#adrs-web-application}
+
 - ADR: Frontend framework choice (React/Vue/Svelte)
 - ADR: Backend framework choice
 - ADR: Database selection
@@ -366,6 +387,7 @@ Prompt users to document these decisions:
 - ADR: State management (if complex)
 
 ### API Backend {#adrs-api-backend}
+
 - ADR: API versioning strategy
 - ADR: Authentication mechanism
 - ADR: Rate limiting approach
@@ -373,6 +395,7 @@ Prompt users to document these decisions:
 - ADR: Error response format
 
 ### Mobile Backend {#adrs-mobile-backend}
+
 - ADR: API versioning for backwards compatibility
 - ADR: Push notification strategy
 - ADR: Offline sync strategy (if needed)
@@ -380,6 +403,7 @@ Prompt users to document these decisions:
 - ADR: API pagination strategy
 
 ### SDK/Library {#adrs-sdk-library}
+
 - ADR: Public API design principles
 - ADR: Versioning strategy (semver)
 - ADR: Dependency policy (minimal deps)

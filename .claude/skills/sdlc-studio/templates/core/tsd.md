@@ -23,9 +23,11 @@ Related: help/tsd.md, reference-tsd.md
 ## Scope
 
 ### In Scope
+
 - {{in_scope_item}}
 
 ### Out of Scope
+
 - {{out_of_scope_item}}
 
 ---
@@ -35,7 +37,7 @@ Related: help/tsd.md, reference-tsd.md
 ### Coverage Targets
 
 | Level | Target | Rationale |
-|-------|--------|-----------|
+| ------- | -------- | ----------- |
 | Unit | {{config.coverage.unit}}% | Core business logic |
 | Integration | {{config.coverage.integration}}% | API and database interactions |
 | E2E | {{config.coverage.e2e}}% feature coverage | Every user-visible feature |
@@ -107,9 +109,11 @@ Related: help/tsd.md, reference-tsd.md
 ## Test Data Strategy
 
 ### Approach
+
 {{test_data_approach}}
 
 ### Sensitive Data
+
 {{sensitive_data_handling}}
 
 ---
@@ -117,12 +121,14 @@ Related: help/tsd.md, reference-tsd.md
 ## Automation Strategy
 
 ### Automation Candidates
+
 - Regression tests for stable features
 - Happy path scenarios for all user stories
 - Critical business flows
 - API contract validation
 
 ### Manual Testing
+
 - Exploratory testing
 - Usability assessment
 - Edge cases requiring human judgement
@@ -130,7 +136,7 @@ Related: help/tsd.md, reference-tsd.md
 ### Automation Framework Stack
 
 | Layer | Tool | Language |
-|-------|------|----------|
+| ------- | ------ | ---------- |
 | E2E/UI | {{e2e_tool}} | {{e2e_language}} |
 | API | {{api_tool}} | {{api_language}} |
 | Unit | {{unit_tool}} | {{unit_language}} |
@@ -150,7 +156,7 @@ Related: help/tsd.md, reference-tsd.md
 ### Quality Gates
 
 | Gate | Criteria | Blocking |
-|------|----------|----------|
+| ------ | ---------- | ---------- |
 | Unit coverage | >= {{config.coverage.unit}}% | Yes |
 | Integration tests | 100% pass | Yes |
 | E2E critical path | 100% pass | Yes |
@@ -163,7 +169,7 @@ Related: help/tsd.md, reference-tsd.md
 ### Severity Definitions
 
 | Severity | Definition | SLA |
-|----------|------------|-----|
+| ---------- | ------------ | ----- |
 | Critical | System unusable, data loss | {{critical_sla}} |
 | High | Major feature broken, no workaround | {{high_sla}} |
 | Medium | Feature impaired, workaround exists | {{medium_sla}} |
@@ -174,7 +180,7 @@ Related: help/tsd.md, reference-tsd.md
 ## Tools & Infrastructure
 
 | Purpose | Tool |
-|---------|------|
+| --------- | ------ |
 | Test Management | {{test_management_tool}} |
 | CI/CD | {{ci_cd_tool}} |
 | Browser Automation | {{browser_automation_tool}} |

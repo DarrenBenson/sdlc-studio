@@ -7,7 +7,7 @@ Cross-stage decision guidance, impact analysis, and validation checkpoints.
 ## Related References
 
 | Document | Content |
-|----------|---------|
+| ---------- | --------- |
 | `reference-prd.md, reference-trd.md, reference-persona.md` | PRD, TRD, Persona workflows |
 | `reference-epic.md, reference-story.md, reference-bug.md` | Epic, Story, Bug workflows |
 | `reference-code.md` | Code plan, implement, review workflows |
@@ -41,7 +41,7 @@ How decisions at each stage constrain downstream choices.
 ## PRD Decisions {#prd-decisions}
 
 | Decision | Impacts | Guidance |
-|----------|---------|----------|
+| ---------- | --------- | ---------- |
 | Project type (web, CLI, API) | TRD architecture, story AC format, test approach | Web apps need frontend AC; APIs need contract tests |
 | NFR: Performance target | Story AC, test fixtures, plan considerations | "Response <200ms" propagates to all API stories |
 | NFR: Security level | TRD auth pattern, story validation AC, test cases | High security = auth tests, input validation AC |
@@ -53,7 +53,7 @@ How decisions at each stage constrain downstream choices.
 ## TRD Decisions {#trd-decisions}
 
 | Decision | Impacts | Guidance |
-|----------|---------|----------|
+| ---------- | --------- | ---------- |
 | Architecture pattern | Epic boundaries, deploy strategy, test types | Monolith = fewer epics; microservices = contract tests |
 | Database choice | Story data AC, test fixtures, migration stories | NoSQL = eventual consistency AC; SQL = transaction AC |
 | Language/framework | Plan best practices, test framework | Python/FastAPI = pytest; TypeScript/React = vitest |
@@ -64,7 +64,7 @@ How decisions at each stage constrain downstream choices.
 ## Epic Decisions {#epic-decisions}
 
 | Decision | Impacts | Guidance |
-|----------|---------|----------|
+| ---------- | --------- | ---------- |
 | Feature boundaries | Story scope, test spec scope | Clear boundaries prevent story overlap |
 | Epic dependencies | Story ordering, plan phasing | Blocked-by must resolve before story starts |
 | Risk identification | Story dependencies, plan mitigations | Risks MUST propagate to affected stories |
@@ -73,7 +73,7 @@ How decisions at each stage constrain downstream choices.
 ## Story Decisions {#story-decisions}
 
 | Decision | Impacts | Guidance |
-|----------|---------|----------|
+| ---------- | --------- | ---------- |
 | AC detail level | Test complexity, plan precision | Vague AC = untestable; precise AC = clear tests |
 | Edge case coverage | Test case count, plan handling | Documented edge cases = required test cases |
 | Persona binding | AC perspective, test scenarios | Wrong persona = wrong validation focus |
@@ -82,7 +82,7 @@ How decisions at each stage constrain downstream choices.
 ## Plan Decisions {#plan-decisions}
 
 | Decision | Impacts | Guidance |
-|----------|---------|----------|
+| ---------- | --------- | ---------- |
 | TDD vs Test-After | Artifact creation order, implementation rhythm | See TDD Decision Tree below |
 | Implementation phasing | Test granularity, review checkpoints | Small phases = easier debugging |
 | Library choices | Test mocking strategy, fixture design | External libs = mock boundaries needed |
@@ -197,7 +197,7 @@ The `release_strategy` config knob (see `reference-config.md#release-strategy`) 
 ## Prefer TDD When {#prefer-tdd}
 
 | Condition | Rationale |
-|-----------|-----------|
+| ----------- | ----------- |
 | Story has >5 edge cases | Tests catch edge cases before implementation |
 | AC involves complex business rules | Tests define expected behaviour precisely |
 | API contracts are well-defined | Contract tests drive implementation |
@@ -208,7 +208,7 @@ The `release_strategy` config knob (see `reference-config.md#release-strategy`) 
 ## Prefer Test-After When {#prefer-test-after}
 
 | Condition | Rationale |
-|-----------|-----------|
+| ----------- | ----------- |
 | Exploratory implementation | Design may evolve during coding |
 | UI-heavy stories | Visual testing harder to specify upfront |
 | Integration-focused work | Need running system to test against |
@@ -232,6 +232,7 @@ The `release_strategy` config knob (see `reference-config.md#release-strategy`) 
 **"Done" is always a user decision, never auto-assigned.**
 
 This applies to all artifact types:
+
 - **Epics:** Even when all stories complete, user confirms Done
 - **Stories:** Even when all AC met, user confirms Done
 
@@ -257,6 +258,7 @@ PRD can proceed to Epic generation when:
 - [ ] Success Metrics defined with measurement methods
 
 **Blocking conditions:**
+
 - TBD in any feature description
 - NFR without measurable target
 - Referenced persona doesn't exist
@@ -274,6 +276,7 @@ TRD can proceed to Epic generation when:
 - [ ] No unresolved technical questions
 
 **Blocking conditions:**
+
 - Architecture pattern not selected
 - PRD NFR not addressed
 - Critical technical question unresolved
@@ -290,6 +293,7 @@ Epic can proceed to Story generation when:
 - [ ] No critical blocking dependencies unresolved
 
 **Blocking conditions:**
+
 - AC uses implementation language ("uses Redis", "calls API")
 - Dependency marked Blocked with no resolution plan
 - Risk without mitigation strategy
@@ -318,6 +322,7 @@ Story can proceed to Planning/Implementation when:
 - [ ] Dependencies identified with status
 
 **Blocking conditions:**
+
 - TBD in acceptance criteria
 - Edge case count below minimum (8 for API, 5 for others)
 - Ambiguous language in AC (see Ambiguous Language Detection)
@@ -335,6 +340,7 @@ Plan can proceed to Implementation when:
 - [ ] Best practices loaded for language
 
 **Blocking conditions:**
+
 - AC not mapped to any phase
 - Edge case without handling strategy
 - Open question unchecked
@@ -351,6 +357,7 @@ Test-Spec can proceed to Automation when:
 - [ ] Test types appropriate for story (unit for logic, API for endpoints)
 
 **Blocking conditions:**
+
 - AC without mapped test case
 - Placeholder assertion text
 - Missing fixture for test case
@@ -362,7 +369,7 @@ Test-Spec can proceed to Automation when:
 These phrases indicate specification gaps. Replace before marking Ready.
 
 | Avoid | Replace With |
-|-------|--------------|
+| ------- | -------------- |
 | "handles errors" | "Returns 400 with `{\"detail\": \"validation failed\"}`" |
 | "returns data" | "Returns 200 with `{\"id\": string, \"name\": string, ...}`" |
 | "validates input" | "Rejects if slug < 2 chars, returns 422" |
@@ -387,7 +394,7 @@ When to validate decisions and what to check.
 **Check:** Do epics capture all PRD features?
 
 | Validation | Method |
-|------------|--------|
+| ------------ | -------- |
 | Feature coverage | Every PRD feature appears in at least one Epic |
 | NFR inheritance | Epic technical considerations reference PRD NFRs |
 | Persona coverage | Epic affected personas match PRD personas |
@@ -400,7 +407,7 @@ When to validate decisions and what to check.
 **Check:** Do stories cover all Epic AC?
 
 | Validation | Method |
-|------------|--------|
+| ------------ | -------- |
 | AC coverage | Every Epic AC maps to at least one Story AC |
 | Risk inheritance | Epic risks appear in Story dependencies or edge cases |
 | Dependency inheritance | Epic dependencies propagate to Story dependencies |
@@ -413,7 +420,7 @@ When to validate decisions and what to check.
 **Check:** Does plan address all story requirements?
 
 | Validation | Method |
-|------------|--------|
+| ------------ | -------- |
 | AC mapping | Every Story AC mapped to implementation phase |
 | Edge case coverage | Every Story edge case has handling strategy |
 | Technical notes | Plan considers Story technical notes |
@@ -426,7 +433,7 @@ When to validate decisions and what to check.
 **Check:** Do tests cover all story AC?
 
 | Validation | Method |
-|------------|--------|
+| ------------ | -------- |
 | AC coverage | AC Coverage Matrix shows all ACs covered |
 | Edge case testing | Story edge cases have corresponding test cases |
 | Error scenario coverage | Story error scenarios have test cases |
@@ -438,7 +445,7 @@ When to validate decisions and what to check.
 **Check:** Do test results reflect in story status?
 
 | Test Result | Story Update |
-|-------------|--------------|
+| ------------- | -------------- |
 | All AC tests pass | Story remains Done |
 | Any AC test fails | Story marked Regression |
 | New test added | Story AC coverage updated |
@@ -450,7 +457,7 @@ When to validate decisions and what to check.
 **Check:** When a story reaches any terminal status (Done, Won't Implement, Deferred, Superseded), verify that the [Story Completion Cascade](reference-outputs.md#story-completion-cascade) was executed correctly.
 
 | Validation | Method | Pass Condition |
-|------------|--------|----------------|
+| ------------ | -------- | ---------------- |
 | Plan cascade | Check plan's `> **Status:**` header | Matches target from cascade table |
 | Test spec cascade | Check spec's `> **Status:**` header | Matches target from cascade table |
 | Workflow cascade | Check workflow's `> **Status:**` header | Matches target from cascade table |
@@ -468,7 +475,7 @@ Identifying dependencies between stories based on code patterns.
 ## Detection Patterns {#detection-patterns}
 
 | Pattern | Indicates | Dependency Type |
-|---------|-----------|-----------------|
+| --------- | ----------- | ----------------- |
 | Config schema defined in Story A, used in Story B | B depends on A | Schema |
 | API endpoint in Story A, called by Story B | B depends on A | API |
 | Data model in Story A, referenced by Story B | B depends on A | Data Model |
@@ -512,7 +519,7 @@ How constraints flow through the pipeline.
 ## From PRD to Epic {#prd-to-epic}
 
 | PRD Section | Epic Section | What Inherits |
-|-------------|--------------|---------------|
+| ------------- | -------------- | --------------- |
 | NFRs - Performance | Technical Considerations | Response time targets |
 | NFRs - Security | Technical Considerations | Auth requirements |
 | NFRs - Scalability | Technical Considerations | Load handling approach |
@@ -522,7 +529,7 @@ How constraints flow through the pipeline.
 ## From TRD to Epic {#trd-to-epic}
 
 | TRD Section | Epic Section | What Inherits |
-|-------------|--------------|---------------|
+| ------------- | -------------- | --------------- |
 | Architecture Pattern | Technical Considerations | Pattern constraints |
 | Technology Stack | Technical Considerations | Framework constraints |
 | Data Model | Technical Considerations | Schema constraints |
@@ -530,7 +537,7 @@ How constraints flow through the pipeline.
 ## From Epic to Story {#epic-to-story}
 
 | Epic Section | Story Section | What Inherits |
-|--------------|---------------|---------------|
+| -------------- | --------------- | --------------- |
 | Risks | Edge Cases | Risk scenarios |
 | Dependencies | Dependencies | Blocking items |
 | Success Metrics | Test Scenarios | Validation targets |
@@ -539,7 +546,7 @@ How constraints flow through the pipeline.
 ## From Story to Plan {#story-to-plan}
 
 | Story Section | Plan Section | What Inherits |
-|---------------|--------------|---------------|
+| --------------- | -------------- | --------------- |
 | Edge Cases | Edge Cases (with handling) | Must all be addressed |
 | Technical Notes | Technical Context | Implementation guidance |
 | Dependencies | Dependencies | Ordering constraints |
@@ -548,7 +555,7 @@ How constraints flow through the pipeline.
 ## From Story to Test-Spec {#story-to-test-spec}
 
 | Story Section | Test-Spec Section | What Inherits |
-|---------------|-------------------|---------------|
+| --------------- | ------------------- | --------------- |
 | AC | Test Cases | One test per AC minimum |
 | Edge Cases | Test Cases | Edge case tests |
 | Error scenarios | Test Cases | Error handling tests |
@@ -567,7 +574,7 @@ Each phase in `story implement` validates before proceeding:
 ### Phase 1: Plan {#phase-1-plan}
 
 | Checkpoint | Validation |
-|------------|------------|
+| ------------ | ------------ |
 | Story Ready | Status = Ready, all criteria met |
 | Dependencies | All dependent stories Done |
 | No blockers | No unresolved critical Open Questions |
@@ -577,7 +584,7 @@ Each phase in `story implement` validates before proceeding:
 ### Phase 2: Test Spec {#phase-2-test-spec}
 
 | Checkpoint | Validation |
-|------------|------------|
+| ------------ | ------------ |
 | Plan exists | Phase 1 completed successfully |
 | AC coverage | All AC mappable to test cases |
 | Fixtures defined | Test data requirements clear |
@@ -588,7 +595,7 @@ Each phase in `story implement` validates before proceeding:
 ### Phase 3: Tests {#phase-3-tests}
 
 | Checkpoint | Validation |
-|------------|------------|
+| ------------ | ------------ |
 | Spec exists | Phase 2 completed successfully |
 | Framework available | Test framework detected and working |
 | Generation success | Tests compile/parse without errors |
@@ -598,7 +605,7 @@ Each phase in `story implement` validates before proceeding:
 ### Phase 4: Implement {#phase-4-implement}
 
 | Checkpoint | Validation |
-|------------|------------|
+| ------------ | ------------ |
 | Plan loaded | Implementation plan available |
 | Context7 queried | Library docs fetched |
 | Best practices loaded | Language-specific guide read |
@@ -608,7 +615,7 @@ Each phase in `story implement` validates before proceeding:
 ### Phase 5: Test {#phase-5-test}
 
 | Checkpoint | Validation |
-|------------|------------|
+| ------------ | ------------ |
 | Tests exist | Test files from Phase 3 |
 | All tests pass | No failures or errors |
 | No warnings | Warnings treated as errors |
@@ -618,7 +625,7 @@ Each phase in `story implement` validates before proceeding:
 ### Phase 6: Verify {#phase-6-verify}
 
 | Checkpoint | Validation |
-|------------|------------|
+| ------------ | ------------ |
 | AC coverage | All AC verified in code |
 | Edge cases | All edge cases handled |
 | Best practices | No violations detected |
@@ -628,7 +635,7 @@ Each phase in `story implement` validates before proceeding:
 ### Phase 7: Check {#phase-7-check}
 
 | Checkpoint | Validation |
-|------------|------------|
+| ------------ | ------------ |
 | Lint passes | No lint errors remaining |
 | Type check | Type checker passes (if applicable) |
 | Manual verification | User confirms (if UI/API changes) |
@@ -651,7 +658,7 @@ Each phase in `story implement` validates before proceeding:
 ### Pre-execution {#epic-pre-execution}
 
 | Checkpoint | Validation |
-|------------|------------|
+| ------------ | ------------ |
 | Stories exist | At least one Ready story |
 | No cycles | Dependency graph is acyclic |
 | Dependencies resolvable | No external blockers |
@@ -660,7 +667,7 @@ Each phase in `story implement` validates before proceeding:
 ### Per-story {#epic-per-story}
 
 | Checkpoint | Validation |
-|------------|------------|
+| ------------ | ------------ |
 | Dependencies Done | All story dependencies complete |
 | Story Ready | Individual story meets Ready criteria |
 | Story workflow | 7 phases complete successfully |
@@ -675,7 +682,7 @@ Each phase in `story implement` validates before proceeding:
 ### Post-execution {#epic-post-execution}
 
 | Checkpoint | Validation |
-|------------|------------|
+| ------------ | ------------ |
 | All stories Done | Every story in epic completed |
 | Epic AC met | Epic acceptance criteria satisfied |
 | User confirms | Epic marked Done by user decision |
@@ -691,6 +698,7 @@ When a checkpoint fails, workflow provides:
 3. **Resume command** - Exact command to continue
 
 Example:
+
 ```
 ## Checkpoint Failed: Phase 5 - Verify
 

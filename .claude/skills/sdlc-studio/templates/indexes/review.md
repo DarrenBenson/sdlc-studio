@@ -11,7 +11,7 @@ Registry of all review findings for traceability and audit.
 ## Summary
 
 | Metric | Value |
-|--------|-------|
+| -------- | ------- |
 | Total Reviews | {{total_reviews}} |
 | Open Critical Issues | {{open_critical}} |
 | Open Important Issues | {{open_important}} |
@@ -28,6 +28,7 @@ Registry of all review findings for traceability and audit.
 ## Reviews Requiring Attention
 
 {{#if attention_required}}
+
 | RV ID | Artifact | Critical | Reason |
 |-------|----------|----------|--------|
 {{#each attention_required}}

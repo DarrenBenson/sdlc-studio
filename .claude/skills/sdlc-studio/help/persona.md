@@ -43,7 +43,7 @@ Personas are organised into two categories:
 ### Three Amigos (Team)
 
 | Amigo | Focus | Archetype Examples |
-|-------|-------|-------------------|
+| ------- | ------- | ------------------- |
 | Product | What & Why | Sarah Chen (PO), Alex Rivera (BA) |
 | Engineering | How | Marcus Johnson (Senior Dev), Nadia Okonkwo (Architect) |
 | QA | What If | Priya Sharma (QA Lead), Jordan Lee (Automation) |
@@ -57,6 +57,7 @@ Personas are organised into two categories:
 Interactive creation of rich, detailed personas.
 
 **What happens:**
+
 1. Choose category (Team or Stakeholder)
 2. For Team: assign to amigo (Product/Engineering/QA)
 3. Guided questions for identity, context, psychology
@@ -64,6 +65,7 @@ Interactive creation of rich, detailed personas.
 5. Writes individual file to `sdlc-studio/personas/`
 
 **Options:**
+
 - `--from-archetype [name]` - Start from an archetype persona
 
 ### generate
@@ -73,12 +75,13 @@ Reverse engineer personas from existing sources.
 **Source options:**
 
 | Flag | Source | Best For |
-|------|--------|----------|
+| ------ | -------- | ---------- |
 | `--from-prd [file]` | PRD document | Projects with requirements docs |
 | `--from-code` | Codebase analysis | Brownfield projects with auth/roles |
 | `--from-docs` | Documentation | Projects with user guides |
 
 **What happens:**
+
 1. **Discovery** - Analyse source for potential personas
 2. **Presentation** - Show findings with evidence
 3. **Enrichment** - Interactive questions to add depth
@@ -87,6 +90,7 @@ Reverse engineer personas from existing sources.
 6. **Write** - Create individual persona files
 
 **Depth options:**
+
 - `--quick` - Minimal questions, fast creation
 - `--thorough` - Full questionnaire, detailed personas
 
@@ -101,6 +105,7 @@ Import an existing persona markdown file.
 ```
 
 **What happens:**
+
 1. Reads and validates the file
 2. Asks for category and type
 3. Copies to project persona directory
@@ -115,6 +120,7 @@ Display all personas for current project.
 ```
 
 **Output:**
+
 ```
 TEAM PERSONAS
 
@@ -153,6 +159,7 @@ Copies the persona file to a specified location or clipboard.
 Review and refine existing personas.
 
 **What happens:**
+
 1. Loads all persona files
 2. For each: asks about updates needed
 3. Asks if new personas needed
@@ -176,6 +183,7 @@ sdlc-studio/personas/
 ```
 
 Each persona file includes:
+
 - Quick reference table
 - Identity and personality
 - Professional context
@@ -225,29 +233,35 @@ skill ships the seeds (role + disposition) + `persona-template.md`, not baked ch
 files:
 
 **Team - Product:**
+
 - `sarah-chen-pm` - Product Manager
 - `alex-rivera-ba` - Business Analyst
 
 **Team - Engineering:**
+
 - `marcus-johnson-senior-dev` - Senior Developer
 - `kai-tanaka-junior-dev` - Junior Developer
 - `nadia-okonkwo-architect` - Software Architect
 - `chris-morgan-devops` - DevOps Engineer
 
 **Team - QA:**
+
 - `priya-sharma-qa-lead` - QA Lead
 - `jordan-lee-automation` - Test Automation Engineer
 
 **Stakeholders - Users:**
+
 - `emma-wilson-power-user` - Power User
 - `tom-bradley-novice` - Novice User
 - `lisa-chen-accessibility` - Accessibility User
 
 **Stakeholders - Business:**
+
 - `james-mitchell-exec` - Executive Sponsor
 - `diana-reyes-ops` - Operations Manager
 
 **Stakeholders - Technical:**
+
 - `david-park-security` - Security Lead
 - `rachel-kim-compliance` - Compliance Officer
 
@@ -269,6 +283,7 @@ Personas are required for `/sdlc-studio story` generation. Each User Story start
 > **As a** {persona name}...
 
 Personas enable:
+
 - `/sdlc-studio consult` - Get feedback from persona perspective
 - `/sdlc-studio chat` - Interactive conversations with personas
 
@@ -277,6 +292,7 @@ Personas enable:
 ## Next Steps
 
 After creating personas:
+
 ```
 /sdlc-studio story          # Generate User Stories (requires personas)
 /sdlc-studio consult        # Get persona feedback on artefacts (Phase 3)
@@ -287,11 +303,13 @@ After creating personas:
 ## See Also
 
 **Workflows:**
+
 - `reference-persona.md` - Main persona reference
 - `reference-persona-generate.md` - Generate workflow details
 - `reference-philosophy.md#generate-mode` - Generate mode philosophy
 
 **Related commands:**
+
 - `/sdlc-studio prd help` - Product requirements (upstream)
 - `/sdlc-studio story help` - User Stories (downstream)
 - `/sdlc-studio consult help` - Persona consultation (Phase 3)

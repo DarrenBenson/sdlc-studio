@@ -127,7 +127,7 @@ sdlc-studio/
 ## Detection Logic
 
 | File | Detection |
-|------|-----------|
+| ------ | ----------- |
 | `package.json` | Node.js/TypeScript project |
 | `pyproject.toml` | Python project |
 | `go.mod` | Go project |
@@ -139,7 +139,7 @@ sdlc-studio/
 ### Framework Detection
 
 | Indicator | Framework |
-|-----------|-----------|
+| ----------- | ----------- |
 | `express` in dependencies | Express.js |
 | `fastapi` in dependencies | FastAPI |
 | `react` in dependencies | React |

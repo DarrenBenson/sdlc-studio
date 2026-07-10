@@ -59,6 +59,7 @@ below is a wrapper that delegates to this same allocation.
 Create a new bug report with full traceability.
 
 **What happens:**
+
 1. Prompts for bug details (title, description, steps)
 2. Determines severity and priority
 3. Auto-detects affected stories/epics from description
@@ -67,6 +68,7 @@ Create a new bug report with full traceability.
 6. Optionally adds "Known Issue" note to affected story
 
 **Interactive prompts:**
+
 - Title (short description)
 - Summary (detailed description)
 - Reproduction steps
@@ -80,8 +82,9 @@ Create a new bug report with full traceability.
 List bugs with optional filtering.
 
 **Filters:**
+
 | Filter | Description |
-|--------|-------------|
+| -------- | ------------- |
 | `--status open` | Open bugs only |
 | `--status fixed` | Fixed, awaiting verification |
 | `--severity critical` | Critical severity only |
@@ -91,6 +94,7 @@ List bugs with optional filtering.
 | `--assignee name` | Assigned to person |
 
 **Output:**
+
 ```
 ## Open Bugs (12)
 
@@ -105,6 +109,7 @@ List bugs with optional filtering.
 Start fixing a bug with proper documentation.
 
 **What happens:**
+
 1. Reads bug details
 2. Updates bug status: Open → In Progress
 3. Identifies linked stories/epics
@@ -114,22 +119,26 @@ Start fixing a bug with proper documentation.
 7. Updates story with fix reference
 
 **Workflow:**
+
 ```
 /sdlc-studio bug fix --bug BG0001
 ```
 
 Outputs:
+
 - Root cause analysis
 - Suggested fix approach
 - Files to modify
 - Test cases to add
 
 After implementing:
+
 ```
 /sdlc-studio bug fix --bug BG0001 --complete
 ```
 
 Updates:
+
 - Bug status → Fixed
 - Fills in "Fix Description" section
 - Adds test case references
@@ -140,6 +149,7 @@ Updates:
 Verify and close a bug fix (quick happy path).
 
 **What happens:**
+
 1. Reads bug and fix details
 2. Runs associated tests
 3. Checks fix addresses root cause
@@ -148,6 +158,7 @@ Verify and close a bug fix (quick happy path).
 6. Removes from "Open Bugs" in story (if linked)
 
 **Requirements:**
+
 - Bug must be in "Fixed" status
 - Tests must pass
 
@@ -156,6 +167,7 @@ Verify and close a bug fix (quick happy path).
 Close a bug with reason selection.
 
 **What happens:**
+
 1. Prompts for close reason:
    - **Verified** - Fix confirmed working
    - **Rejected/Won't Fix** - Not a bug or won't address
@@ -171,6 +183,7 @@ Close a bug with reason selection.
 Reopen a closed bug (regression found).
 
 **What happens:**
+
 1. Updates status: Closed → Open
 2. Adds note about regression
 3. Links to related test failure (if applicable)
@@ -178,7 +191,7 @@ Reopen a closed bug (regression found).
 ## Severity Guide
 
 | Severity | Description | Response Time |
-|----------|-------------|---------------|
+| ---------- | ------------- | --------------- |
 | Critical | System unusable, data loss, security issue | < 24 hours |
 | High | Major feature broken, no workaround | < 3 days |
 | Medium | Feature impaired, workaround exists | < 1 week |
@@ -187,7 +200,7 @@ Reopen a closed bug (regression found).
 ## Priority Guide
 
 | Priority | Description |
-|----------|-------------|
+| ---------- | ------------- |
 | P1 | Fix immediately, blocks release |
 | P2 | Fix this sprint |
 | P3 | Fix this release |
@@ -200,6 +213,7 @@ Reopen a closed bug (regression found).
 **Location:** `sdlc-studio/bugs/BG{NNNN}-{slug}.md`
 
 **Sections:**
+
 - Summary and metadata
 - Affected area (epic, story, component)
 - Environment details
@@ -215,6 +229,7 @@ Reopen a closed bug (regression found).
 **Location:** `sdlc-studio/bugs/_index.md`
 
 **Contents:**
+
 - Summary counts by status
 - Counts by severity
 - All bugs table
@@ -227,6 +242,7 @@ Reopen a closed bug (regression found).
 ### Story Integration
 
 When a bug is linked to a story:
+
 - Story gets "Known Issues" section with bug reference
 - When fixed, story revision history is updated
 - Bug count shown in story metadata
@@ -234,6 +250,7 @@ When a bug is linked to a story:
 ### Test Integration
 
 When fixing a bug:
+
 - Prompt to add regression test
 - Test case added to relevant test spec
 - Test ID recorded in bug report
@@ -242,6 +259,7 @@ When fixing a bug:
 ### Status Integration
 
 `/sdlc-studio status` shows:
+
 ```
 ### Bugs
 - Critical: 1 open
@@ -250,6 +268,7 @@ When fixing a bug:
 ```
 
 `/sdlc-studio hint` suggests:
+
 ```
 ## Next Step
 **Action:** Fix critical bug
@@ -305,17 +324,21 @@ When fixing a bug:
 ```
 
 **Quick paths:**
+
 - `bug verify` = verify fix + close (most common)
 - `bug close` = prompt for reason (verified/rejected/won't fix)
 
 ## See Also
 
 **REQUIRED for this workflow:**
+
 - `reference-bug.md` - Bug workflow details
 
 **Recommended:**
+
 - `/sdlc-studio story help` - User Stories (context)
 - `/sdlc-studio code fix help` - Code fix workflow (related)
 
 **Optional (deep dives):**
+
 - `reference-outputs.md` - Output formats reference

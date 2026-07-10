@@ -27,7 +27,7 @@ Best for: Projects with existing requirements documentation.
 Read the PRD and extract:
 
 | Look For | Examples |
-|----------|----------|
+| ---------- | ---------- |
 | Explicit user types | "Admin users can...", "End users will..." |
 | Stakeholder mentions | "Marketing team requires...", "Finance needs..." |
 | Role-based features | "Managers can approve...", "Analysts can export..." |
@@ -232,7 +232,7 @@ Best for: Projects with existing user documentation or support processes.
 Look for:
 
 | Source | What to Extract |
-|--------|-----------------|
+| -------- | ----------------- |
 | README.md | Installation for different user types, quick start guides |
 | Wiki/Docs | User guides targeting specific audiences |
 | Support docs | Who contacts support? Common issues by user type |
@@ -299,6 +299,7 @@ Balanced depth:
 Full persona development:
 
 All standard questions plus:
+
 - Full background story
 - 3 personality traits with examples
 - Communication style details
@@ -315,7 +316,7 @@ All standard questions plus:
 Before writing personas, validate:
 
 | Check | Rule |
-|-------|------|
+| ------- | ------ |
 | Minimum personas | At least 1 Team, 1 Stakeholder |
 | Coverage | All Three Amigos represented if Team personas exist |
 | Uniqueness | No duplicate names or near-identical roles |
@@ -372,10 +373,13 @@ Add to appropriate section with source annotation:
 ## Navigation {#navigation}
 
 **Parent workflow:**
+
 - `reference-persona.md` - Main persona workflows
 
 **Source analysis:**
+
 - `reference-prd.md` - Understanding PRD structure (for --from-prd)
 
 **Downstream:**
+
 - `reference-story.md` - Stories reference generated personas

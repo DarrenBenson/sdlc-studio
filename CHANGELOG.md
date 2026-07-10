@@ -245,6 +245,14 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
   breakage could reach a green CI. The workflow gains a `gate.py --root .` step (after
   setup-python, PyYAML installed so config-driven lanes fail loud); the two doc claims are now
   true as written.
+- **The shipped payload is now markdownlint-covered (EP0026; BG0098).** `lint:md`'s `'**/*.md'`
+  glob never matched dot-directories, so the 160+ shipped `.md` files under
+  `.claude/skills/sdlc-studio/` were invisible to npm lint, the pre-commit hook AND CI - 2,502
+  accumulated mechanics errors, found while dogfooding. The lane (script + hook) gains an
+  explicit payload invocation with a payload-scoped config: every mechanics rule enforced
+  (~1,850 auto-fixes + blockquote joins landed), seven template/example-noise rules disabled
+  with the rationale ledgered (example H1s, placeholder rows, `{#anchor}` idiom, questionnaire
+  blanks, pipe cosmetics).
 - **The `Provenance: external` trust stamp has a writer (EP0026; BG0095).** verify_ac's shell
   gate read a stamp nothing ever wrote: `reference-verify.md` claimed "the ingest path stamps
   this field" while no workflow, template or tool did. `artifact.py new --provenance external`

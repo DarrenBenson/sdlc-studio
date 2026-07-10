@@ -14,6 +14,7 @@ Load: Always included when adding ADRs
 **Decision:** {{decision_description}}
 
 **Consequences:**
+
 - Positive: {{positive_consequences}}
 - Negative: {{negative_consequences}}
 - Neutral: {{neutral_consequences}}

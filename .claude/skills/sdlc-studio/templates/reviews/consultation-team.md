@@ -21,12 +21,14 @@ Variables: {{product}}, {{engineering}}, {{qa}}, {{summary}}, {{actions}}
 
 **Questions:**
 {{#each product.questions}}
+
 - {{this}}
 {{/each}}
 
 {{#if product.conditions}}
 **Conditions:**
 {{#each product.conditions}}
+
 - {{this}}
 {{/each}}
 {{/if}}
@@ -43,12 +45,14 @@ Variables: {{product}}, {{engineering}}, {{qa}}, {{summary}}, {{actions}}
 
 **Questions:**
 {{#each engineering.questions}}
+
 - {{this}}
 {{/each}}
 
 {{#if engineering.conditions}}
 **Conditions:**
 {{#each engineering.conditions}}
+
 - {{this}}
 {{/each}}
 {{/if}}
@@ -65,12 +69,14 @@ Variables: {{product}}, {{engineering}}, {{qa}}, {{summary}}, {{actions}}
 
 **Questions:**
 {{#each qa.questions}}
+
 - {{this}}
 {{/each}}
 
 {{#if qa.conditions}}
 **Conditions:**
 {{#each qa.conditions}}
+
 - {{this}}
 {{/each}}
 {{/if}}
@@ -80,7 +86,7 @@ Variables: {{product}}, {{engineering}}, {{qa}}, {{summary}}, {{actions}}
 ## Summary
 
 | Amigo | Persona | Verdict | Key Concern |
-|-------|---------|---------|-------------|
+| ------- | --------- | --------- | ------------- |
 | Product | {{product.persona_name}} | {{product.verdict_icon}} | {{product.key_concern}} |
 | Engineering | {{engineering.persona_name}} | {{engineering.verdict_icon}} | {{engineering.key_concern}} |
 | QA | {{qa.persona_name}} | {{qa.verdict_icon}} | {{qa.key_concern}} |
@@ -95,8 +101,9 @@ Variables: {{product}}, {{engineering}}, {{qa}}, {{summary}}, {{actions}}
 
 {{#each actions}}
 {{index}}. **{{category}}:** {{description}}
-   - Raised by: {{raised_by}}
-   - Priority: {{priority}}
+
+- Raised by: {{raised_by}}
+- Priority: {{priority}}
 {{/each}}
 
 ---

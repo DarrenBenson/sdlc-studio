@@ -17,7 +17,6 @@ receives during `epic implement --agentic` and `project implement
 - [Structured Clarifications](#structured-clarifications) - pause format
 - [Inter-Epic Context](#inter-epic-context)
 
-
 The quality of agentic implementation depends almost entirely on the prompt each worktree agent receives. A well-structured prompt replaces the plan file, test spec, and scope boundaries. A vague prompt produces inconsistent, low-quality code.
 
 ## Prompt Structure {#agent-prompt-template}
@@ -292,6 +291,7 @@ justified at all - structure governs *how* to ask, not whether.
 ## Inter-Epic Context {#inter-epic-context}
 
 When implementing later epics that depend on earlier ones (e.g. EP0004 depends on EP0001):
+
 - Earlier epic code is already committed to git HEAD
 - Agent prompts should reference files from earlier epics in "READ THESE FILES FIRST"
 - Example: EP0004 agents should read `src/lib/bridge/client.ts` (from EP0001) to understand BridgeClient patterns

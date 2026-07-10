@@ -28,6 +28,7 @@ SDLC Studio is model-invoked - say it in plain language:
 ## What is a Test Strategy Document?
 
 A project-level document defining:
+
 - **What** to test (scope, levels, types)
 - **How** to test (frameworks, automation approach)
 - **When** to test (CI/CD integration, quality gates)
@@ -42,9 +43,11 @@ One test strategy per project. Test Specs then apply it to specific Stories.
 ## Actions
 
 ### create (default)
+
 Guided conversation to define test strategy.
 
 **What happens:**
+
 1. Claude asks about testing objectives and priorities
 2. Discusses test levels (unit, integration, E2E)
 3. Asks about framework preferences
@@ -53,9 +56,11 @@ Guided conversation to define test strategy.
 6. Writes to `sdlc-studio/tsd.md`
 
 ### generate
+
 Analyse codebase testing patterns and infer strategy.
 
 **What happens:**
+
 1. Searches for test files and configurations
 2. Identifies frameworks in use (Jest, Playwright, pytest, etc.)
 3. Analyses CI/CD pipeline for test stages
@@ -63,9 +68,11 @@ Analyse codebase testing patterns and infer strategy.
 5. Writes strategy with [INFERRED] markers
 
 ### review
+
 Review strategy against codebase and update.
 
 **What happens:**
+
 1. Loads existing strategy
 2. Compares against current codebase
 3. Updates tool versions, quality gates
@@ -76,6 +83,7 @@ Review strategy against codebase and update.
 **File:** `sdlc-studio/tsd.md`
 
 **Key sections:**
+
 - Overview & Objectives
 - Test Scope (in/out)
 - Test Levels (unit, integration, E2E, performance, security)
@@ -103,7 +111,7 @@ Review strategy against codebase and update.
 ## Quality Gates Example
 
 | Gate | Criteria | Blocking |
-|------|----------|----------|
+| ------ | ---------- | ---------- |
 | Unit coverage | >=80% | Yes |
 | Integration tests | 100% pass | Yes |
 | E2E critical path | 100% pass | Yes |
@@ -126,6 +134,7 @@ concurrency = ["greenlet", "thread"]
 ```
 
 **Verification:**
+
 ```bash
 # Before fix - low coverage
 pytest --cov --cov-report=term | grep "routes/agents"
@@ -143,6 +152,7 @@ pytest --cov --cov-report=term | grep "routes/agents"
 **Common causes:**
 
 1. **Conditional assertions hiding failures**
+
    ```python
    # BAD - silently passes if no alerts created
    if service_alerts:
@@ -163,6 +173,7 @@ pytest --cov --cov-report=term | grep "routes/agents"
    - Fix: Read the source to understand triggering conditions
 
 **Debugging steps:**
+
 1. Add `print()` statements in the code being tested
 2. Run test with `-s` flag to see output: `pytest -s test_file.py`
 3. If no output appears, the code path isn't being reached
@@ -173,6 +184,7 @@ pytest --cov --cov-report=term | grep "routes/agents"
 ## Next Steps
 
 After creating Test Strategy:
+
 ```
 /sdlc-studio test-spec            # Generate Test Specs from Stories
 ```
@@ -180,13 +192,16 @@ After creating Test Strategy:
 ## See Also
 
 **REQUIRED for this workflow:**
+
 - `reference-tsd.md` - Test strategy workflow details
 
 **Recommended:**
+
 - `/sdlc-studio prd help` - Product requirements (context)
 - `/sdlc-studio trd help` - Technical requirements (context)
 - `/sdlc-studio test-spec help` - Test specifications (downstream)
 
 **Optional (deep dives):**
+
 - `reference-test-best-practices.md` - Testing guidelines
 - `reference-outputs.md` - Output formats reference

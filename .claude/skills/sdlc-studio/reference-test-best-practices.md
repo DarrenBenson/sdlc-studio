@@ -26,7 +26,7 @@ Guidelines addressing common pitfalls discovered during test automation runs.
 ## Related References {#test-bp-related-references}
 
 | Document | Content |
-|----------|---------|
+| ---------- | --------- |
 | `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` | Test workflows |
 | `reference-test-validation.md` | Validation workflows, contract testing, advanced practices |
 | `reference-test-e2e-guidelines.md` | E2E mocking patterns, singleton/factory mocking, API contract tests |
@@ -38,7 +38,7 @@ Guidelines addressing common pitfalls discovered during test automation runs.
 Pick the lowest tier sufficient for the claim. Inflating the tier wastes time; deflating it ships claims you can't back up.
 
 | Tier | Means | Time to acquire | When sufficient |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | **smoke** | Compiles + handshake (one-shot ping) | seconds | "Service starts and the endpoint exists." Never sufficient for a fix-claim. |
 | **functional** | Single round-trip exercises the feature path | tens of seconds | "Happy-path API behaviour works once." Sufficient for unit/integration claims and most non-runtime story AC. |
 | **conversational** | Multi-turn / multi-step session continuity validated | minutes | "The feature retains state across interactions." Required for any claim involving sessions, transactions, or multi-step flows. |
@@ -60,7 +60,7 @@ None of these are evidence of a fix. They are evidence the deploy didn't break t
 ## How to use the tiers in artefacts {#using-tiers}
 
 | Artefact | Field | Default | Required to escalate |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Bug | `Verification depth:` | `smoke` (initial) | Must be `functional` or higher to mark Fixed; ABOVE functional (conversational/soak/live) to promote Fixed → Verified; `soak` or higher to Close a production-affecting bug. Fixed = functional-tier proof, Verified = the higher tier its risk demands - the honest half-state when code is done but the live proof is owed. |
 | Story AC | `Verification target:` per AC | `functional` | `conversational` for end-to-end AC; `soak` for production-affecting AC; `live` for AC that ship behind a feature flag awaiting promotion |
 | CR / Epic | Inherited from highest-tier child story AC | n/a | n/a |
@@ -79,6 +79,7 @@ Verification depth (above) answers *how far* you exercised the feature. Assertio
 An assertion that is true by construction, or a control-flow shape where the only reachable branch trivially passes and the failure branch silently skips.
 
 **Bad - derived-from-the-same-source (cannot disagree):**
+
 ```ts
 // data-wired and data-pending are both computed from `edge.bridgeWired`.
 // Asserting one against the other can never fail - they are the same boolean.
@@ -88,14 +89,17 @@ if (await pending.count() === 0) expect(await wired.count()).toBe(edgeCount) // 
 ```
 
 **Bad - the failure branch skips instead of failing, and the pass branch is trivial:**
+
 ```ts
 const count = await provCells.count()
 if (count > 0) { /* ...assert... */ }
 else expect(count).toBe(0)   // only reached when count===0 → expect(0).toBe(0), always green
 ```
+
 Read immediately after a `goto` with no wait for content, `count` is 0 on any slow render, so the vacuous `else` is the branch that actually runs. **The test passes even if the whole feature is deleted.**
 
 **Good - assert the rendered outcome on a known input, so a broken feature is red:**
+
 ```ts
 // Seed/point at a state where the feature MUST produce specific output, then assert that output.
 await gotoAgentGovernance(page, quarantinedConstructId)
@@ -135,6 +139,7 @@ When a test fails on a timeout, the temptation is to bump the timeout. Doing so 
 2. **Measure CI timing variance** via the last 10 runs of the same test (e.g. `gh run list --workflow=test --json conclusion,databaseId | head -10`, then drill into the test's runtime). Take the worst.
 3. **Set the timeout** to 2× the larger of (local-worst, CI-worst).
 4. **Leave a comment** at the test definition with the measurements and the date. Example:
+
    ```ts
    // 30s timeout: local-worst 2.7s × 2 + headroom; CI-worst 13.5s × 2 ≈ 27s.
    // Measured 2026-04-30. Test runs 1010 sequential atomic writes; cost is real.
@@ -165,7 +170,7 @@ If measurement shows the test is taking longer than it *should* be – that is a
 AI-assisted development changes the testing equation:
 
 | Factor | Impact | Mitigation |
-|--------|--------|------------|
+| -------- | -------- | ------------ |
 | AI produces code faster | More code = more potential bugs | Higher coverage catches more issues |
 | AI can hallucinate | Incorrect implementations look plausible | Tests verify actual behaviour |
 | AI may miss edge cases | Focus on happy path | Explicit edge case testing |
@@ -210,16 +215,19 @@ When reviewing AI-generated tests:
 Before writing any test code, complete this checklist:
 
 - [ ] **Verify import paths**: Grep for actual class/model names in implementation
+
   ```bash
   grep -r "class.*Model\|@dataclass" api/models.py api/services/
   ```
 
 - [ ] **Check required fields**: Read model definitions for required vs optional fields
+
   ```bash
   grep -A 20 "class Job\|class StageResult" api/models.py
   ```
 
 - [ ] **Verify field types**: Check if status fields are strings or enums
+
   ```python
   # Is it an enum?
   class StageStatus(str, Enum):
@@ -230,11 +238,13 @@ Before writing any test code, complete this checklist:
   ```
 
 - [ ] **Read output templates**: Get exact section/header names from templates
+
   ```bash
   grep "^##\|^###" prompts/template.md
   ```
 
 - [ ] **Create verified import block FIRST**: Write and test imports before test code
+
   ```python
   # Test this imports correctly before proceeding
   from api.models import Job, StageResult, ThumbnailStatus
@@ -257,7 +267,7 @@ Before writing any test code, complete this checklist:
 ### Common Warning Types and Fixes {#common-warning-types}
 
 | Warning | Root Cause | Fix |
-|---------|------------|-----|
+| --------- | ------------ | ----- |
 | `PytestUnhandledThreadExceptionWarning` | Thread/async cleanup failed | Ensure proper disposal in fixtures |
 | `DeprecationWarning` | Using outdated API | Update to current API pattern |
 | `RuntimeWarning: coroutine never awaited` | Missing await | Add await or ensure proper async handling |
@@ -414,7 +424,7 @@ const mockFetch = vi.mocked(fetchProjectStats);
 These libraries use Canvas, SVG rendering, or browser APIs that jsdom doesn't support:
 
 | Library | Issue | Mock Pattern |
-|---------|-------|-------------|
+| --------- | ------- | ------------- |
 | Recharts | Relies on SVG measurement APIs | Mock all chart components as div stubs |
 | D3 | Canvas/SVG rendering | Mock at module level |
 | MapboxGL | WebGL context | Mock entire module |
@@ -482,6 +492,7 @@ For frontend components, the practical TDD cycle is **batch tests** rather than 
 3. **REFACTOR:** Clean up if needed
 
 This is more efficient than AC-by-AC because:
+
 - Frontend components are tightly coupled (header + cards + charts in one component)
 - Creating a partial component just to pass one AC adds unnecessary intermediate states
 - The failing test file as a whole defines the component's contract
@@ -493,6 +504,7 @@ This is more efficient than AC-by-AC because:
 After generating tests, verify coverage:
 
 1. **Count tests vs spec TCs**:
+
    ```bash
    # Count test functions
    grep -c "def test_\|async def test_" tests/unit/test_feature.py
@@ -502,6 +514,7 @@ After generating tests, verify coverage:
    ```
 
 2. **Verify TC IDs in docstrings**:
+
    ```bash
    # Each test should reference its TC
    grep "TC0" tests/unit/test_feature.py
@@ -523,6 +536,7 @@ Common mistakes that cause test failures, false positives, or maintenance burden
 ### 1. Over-Mocking (Mocking at Wrong Boundary) {#anti-pattern-over-mocking}
 
 **Bad:**
+
 ```python
 # Mocks the HTTP client - test passes even if webhook code is broken
 with patch("myapp.routes.httpx.AsyncClient") as mock_client:
@@ -530,6 +544,7 @@ with patch("myapp.routes.httpx.AsyncClient") as mock_client:
 ```
 
 **Good:**
+
 ```python
 # Mock at network boundary using responses library
 import responses
@@ -545,6 +560,7 @@ def test_webhook_sends_correctly():
 ### 2. Framework Testing {#anti-pattern-framework-testing}
 
 **Bad:**
+
 ```python
 def test_cors_headers_present():
     # Tests FastAPI's CORS middleware, not your application
@@ -552,12 +568,14 @@ def test_cors_headers_present():
 ```
 
 **Good:**
+
 - One smoke test to verify CORS is configured correctly
 - Focus tests on your business logic, not framework behaviour
 
 ### 3. Time-Dependent Tests Without Mocking {#anti-pattern-time-dependent}
 
 **Bad:**
+
 ```python
 def test_server_offline_after_180_seconds():
     # Uses real time - flaky if system is slow
@@ -566,6 +584,7 @@ def test_server_offline_after_180_seconds():
 ```
 
 **Good:**
+
 ```python
 from freezegun import freeze_time
 
@@ -576,6 +595,7 @@ def test_server_offline_after_180_seconds():
 ```
 
 **Time mocking libraries:**
+
 - Python: freezegun, time-machine
 - TypeScript: Sinon.useFakeTimers(), jest.useFakeTimers()
 - Go: clockwork
@@ -587,6 +607,7 @@ to this - it generates mocks that mirror the implementation, so the test passes 
 matter how broken the code is.
 
 **Example:**
+
 ```python
 # This test will ALWAYS pass, even if implementation is broken
 def test_calculate_total():
@@ -603,6 +624,7 @@ def test_calculate_total():
 ### 5. Mocking Everything in E2E Tests {#anti-pattern-mock-everything}
 
 **Bad:**
+
 ```typescript
 // Every API call mocked - doesn't test real backend at all
 beforeEach(() => {
@@ -612,6 +634,7 @@ beforeEach(() => {
 ```
 
 **Good:**
+
 - Mock network for UI rendering tests
 - Run separate contract tests against real backend
 - Use real backend for integration E2E tests
@@ -623,12 +646,14 @@ beforeEach(() => {
 **Problem:** Frontend mocks API, backend never tested for those fields.
 
 **Example scenario:**
+
 1. Frontend expects `response.metrics.uptime_seconds`
 2. E2E test mocks `{ metrics: { uptime_seconds: 86400 } }` - passes
 3. Backend schema doesn't include `uptime_seconds` - no test fails
 4. Production shows "--" because field is missing
 
 **Rule:** For every field mocked in E2E tests, write a contract test:
+
 ```python
 def test_server_response_includes_uptime_seconds(client):
     """Contract: Frontend expects uptime_seconds field."""
@@ -706,7 +731,7 @@ When tests pass but coverage stays low, the code path is not being hit:
 ## See Also {#see-also}
 
 | Document | Purpose |
-|----------|---------|
+| ---------- | --------- |
 | `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` | Test workflows |
 | `reference-test-validation.md` | Validation workflows and advanced testing patterns |
 | `reference-test-e2e-guidelines.md` | E2E mocking patterns and strategies |

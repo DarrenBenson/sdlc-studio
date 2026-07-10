@@ -16,15 +16,19 @@ Related: help/prd.md, reference-prd.md
 ## 1. Project Overview
 
 ### Product Name
+
 {{product_name}}
 
 ### Purpose
+
 {{purpose_description}}
 
 ### Tech Stack
+
 {{tech_stack_summary}}
 
 ### Architecture Pattern
+
 {{architecture_pattern}}
 
 ---
@@ -32,12 +36,15 @@ Related: help/prd.md, reference-prd.md
 ## 2. Problem Statement
 
 ### Problem Being Solved
+
 {{problem_description}}
 
 ### Target Users
+
 {{target_users}}
 
 ### Context
+
 {{context_notes}}
 
 ---
@@ -55,6 +62,7 @@ Related: help/prd.md, reference-prd.md
 **User Story:** As a {{user_type}}, I want to {{action}} so that {{benefit}}.
 
 **Acceptance Criteria:**
+
 - [ ] {{criterion_1}}
 - [ ] {{criterion_2}}
 - [ ] {{criterion_3}}
@@ -68,12 +76,15 @@ Related: help/prd.md, reference-prd.md
 ## 4. Functional Requirements
 
 ### Core Behaviours
+
 {{functional_requirements}}
 
 ### Input/Output Specifications
+
 {{io_specifications}}
 
 ### Business Logic Rules
+
 {{business_rules}}
 
 ---
@@ -81,15 +92,19 @@ Related: help/prd.md, reference-prd.md
 ## 5. Non-Functional Requirements
 
 ### Performance
+
 {{performance_requirements}}
 
 ### Security
+
 {{security_requirements}}
 
 ### Scalability
+
 {{scalability_requirements}}
 
 ### Availability
+
 {{availability_requirements}}
 
 ---
@@ -99,12 +114,15 @@ Related: help/prd.md, reference-prd.md
 > Skip if not applicable.
 
 ### Models and Providers
+
 {{models_used}}
 
 ### Prompt Patterns
+
 {{prompt_patterns}}
 
 ### Context Management
+
 {{context_management}}
 
 ---
@@ -112,12 +130,15 @@ Related: help/prd.md, reference-prd.md
 ## 7. Data Architecture
 
 ### Data Models
+
 {{data_models}}
 
 ### Relationships and Constraints
+
 {{data_relationships}}
 
 ### Storage Mechanisms
+
 {{storage_mechanisms}}
 
 ---
@@ -125,12 +146,15 @@ Related: help/prd.md, reference-prd.md
 ## 8. Integration Map
 
 ### External Services
+
 {{external_services}}
 
 ### Authentication Methods
+
 {{auth_methods}}
 
 ### Third-Party Dependencies
+
 {{third_party_deps}}
 
 ---
@@ -144,6 +168,7 @@ Related: help/prd.md, reference-prd.md
 | {{env_var}} | {{env_description}} | {{required}} | {{default}} |
 
 ### Feature Flags
+
 {{feature_flags}}
 
 ---
@@ -151,12 +176,15 @@ Related: help/prd.md, reference-prd.md
 ## 10. Quality Assessment
 
 ### Tested Functionality
+
 {{tested_features}}
 
 ### Untested Areas
+
 {{untested_areas}}
 
 ### Technical Debt
+
 {{todo_items}}
 
 ---

@@ -65,7 +65,7 @@ External stakeholders who use the product or influence requirements.
 Default personas consulted for each artefact type.
 
 | Artefact | Team | Stakeholders |
-|----------|------|--------------|
+| ---------- | ------ | -------------- |
 | PRD | Product (all) | End Users, Business |
 | Epic | Product, Engineering Lead | Affected users |
 | User Story | Product | Primary persona |
@@ -110,7 +110,7 @@ Project-specific personas not from archetypes.
 ## Persona Sources
 
 | Source | Count | Notes |
-|--------|-------|-------|
+| -------- | ------- | ------- |
 | Archetypes | {{n}} | From SDLC Studio templates |
 | Generated | {{n}} | Inferred from PRD/codebase |
 | Imported | {{n}} | From external files |

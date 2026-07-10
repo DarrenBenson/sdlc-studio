@@ -27,11 +27,13 @@ config = yaml.load(f, Loader=yaml.FullLoader)  # Only for trusted sources
 **Key practices:**
 
 1. **Always set timeouts** - Use tuple `(connect, read)` format:
+
    ```python
    timeout=(5.0, 120.0)  # 5s connect, 120s read
    ```
 
 2. **Use sessions for multiple requests** - Connection pooling and consistent headers:
+
    ```python
    with get_session() as session:
        session.post(url1, json=data1)
@@ -39,6 +41,7 @@ config = yaml.load(f, Loader=yaml.FullLoader)  # Only for trusted sources
    ```
 
 3. **Handle errors specifically**:
+
    ```python
    try:
        response = session.post(url, json=data, timeout=(5, 120))
@@ -72,6 +75,7 @@ im.save(output_path)
 **Key practices:**
 
 1. **Use quality resampling filters**:
+
    ```python
    Image.LANCZOS   # Best for downscaling
    Image.BICUBIC   # Good for general resizing
@@ -79,12 +83,14 @@ im.save(output_path)
    ```
 
 2. **Specify output format explicitly**:
+
    ```python
    im.save(path, format="PNG", optimize=True)
    im.save(path, format="JPEG", quality=90)
    ```
 
 3. **Handle errors gracefully**:
+
    ```python
    try:
        with Image.open(path) as im:
@@ -247,7 +253,7 @@ Before completing Python code:
 ## Anti-patterns
 
 | Pattern | Problem | Fix |
-|---------|---------|-----|
+| --------- | --------- | ----- |
 | `yaml.load(f)` | Remote code execution | Use `yaml.safe_load(f)` |
 | `requests.post(url)` | No timeout, hangs forever | Add `timeout=(5, 120)` |
 | `except Exception: pass` | Hides bugs | Catch specific exceptions |

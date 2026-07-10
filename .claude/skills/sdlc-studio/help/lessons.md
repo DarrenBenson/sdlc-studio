@@ -134,12 +134,14 @@ The skill's `lessons/` folder is a curated, durable knowledge base – see
 `lessons/_index.md` and `lessons/_template.md`.
 
 ### recall
+
 Read `lessons/_index.md`, surface the lessons whose tags/titles match the
 decision at hand (optionally `--tags`), and apply them. Cheap, high-impact:
 do this before any non-trivial design or process decision. The Operating
 Doctrine (`reference-doctrine.md`) instructs this as a standing habit.
 
 ### add --global
+
 Promote a generalisable lesson: next free `LL{NNNN}`, copy `lessons/_template.md`
 (Lesson / Why-it-cost / How-to-apply / Generalises-to), add the index row.
 Gate: it must apply *beyond* this project. Project facts go to memory instead.

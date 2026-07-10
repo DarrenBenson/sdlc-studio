@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 13 |
 | In Progress | 0 |
-| Fixed | 5 |
+| Fixed | 6 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **97** |
+| **Total** | **98** |
 
 ## All Bugs
 
@@ -64,6 +64,7 @@
 | [BG0095](BG0095-the-provenance-external-stamp-that-gates-shell-verifiers.md) | the Provenance: external stamp that gates shell verifiers has no writer anywhere on the ingest path | Fixed | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0096](BG0096-ci-never-runs-gate-py-although-the-pre.md) | CI never runs gate.py although the pre-commit hook and CONTRIBUTING claim parity | Fixed | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0097](BG0097-the-finding-filer-emits-markdownlint-breaking-artefacts-when.md) | the finding filer emits markdownlint-breaking artefacts when prose contains underscore identifiers | Open | Low | 2026-07-10 | 2026-07-10 |
+| [BG0098](BG0098-lint-md-s-glob-skips-dot-directories-the.md) | lint:md's glob skips dot-directories: the shipped skill payload is never markdownlint-checked | Fixed | Medium | 2026-07-10 | 2026-07-10 |
 
 ## Archived Releases
 

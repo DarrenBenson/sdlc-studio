@@ -67,29 +67,35 @@ seed and customise.
 > from the seeds below (its own `sdlc-studio/personas/` are unaffected).
 
 **Team - Product:**
+
 - Sarah Chen (PO) - Strategic, data-driven, scope-conscious
 - Alex Rivera (BA) - Detail-oriented, requirements expert
 
 **Team - Engineering:**
+
 - Marcus Johnson (Senior Dev) - Pragmatic, maintainability-focused
 - Kai Tanaka (Junior Dev) - Learning, fresh perspective
 - Nadia Okonkwo (Architect) - Systems thinking, long-term view
 - Chris Morgan (DevOps) - Operations, reliability
 
 **Team - QA:**
+
 - Priya Sharma (QA Lead) - Risk-based testing, quality advocate
 - Jordan Lee (Automation) - Test architecture, CI/CD
 
 **Stakeholders - Users:**
+
 - Emma Wilson (Power User) - Efficiency, keyboard shortcuts
 - Tom Bradley (Novice) - Guidance, safe defaults
 - Lisa Chen (Accessibility) - Screen reader, inclusive design
 
 **Stakeholders - Business:**
+
 - James Mitchell (Executive) - ROI, timelines
 - Diana Reyes (Operations) - Day-to-day workflow, support
 
 **Stakeholders - Technical:**
+
 - David Park (Security) - Threats, data protection
 - Rachel Kim (Compliance) - Regulations, audit readiness
 
@@ -161,6 +167,7 @@ Reverse engineer personas from existing artefacts.
    - Personas implied but not named
 
 2. **Present Discoveries**
+
    ```
    I found these potential personas in the PRD:
    1. Admin User (mentioned 12 times)
@@ -188,6 +195,7 @@ Reverse engineer personas from existing artefacts.
 
 1. **Analyse Codebase**
    Use Task tool with Explore agent:
+
    ```
    Analyse codebase to identify user types:
    1. Role/permission definitions (auth, RBAC)
@@ -261,6 +269,7 @@ Display all personas for current project.
    - Load `sdlc-studio/personas/index.md`
 
 2. **Display Summary** (grouped by cast role)
+
    ```
    PRIMARY (the design target)
      Emma Wilson (Power User) - file a claim in under two minutes
@@ -346,7 +355,7 @@ Customer/Served variants). `persona review` runs it.
 ## When to Use Personas
 
 | Artefact | Value | Default |
-|----------|-------|---------|
+| ---------- | ------- | --------- |
 | PRD Review | HIGH - catches missing requirements early | On |
 | Story Acceptance Criteria | HIGH - validates user needs | On |
 | Trade-off Decisions | HIGH - reveals true priorities | On |
@@ -392,16 +401,20 @@ personas only - review seats live with the consult workflow.)
 ## Navigation {#navigation}
 
 **Prerequisites:**
+
 - `reference-philosophy.md#create-mode` OR `#generate-mode` - Understanding modes
 
 **Related workflows:**
+
 - `reference-prd.md` - Product Requirements (upstream)
 - `reference-story.md` - User Stories (downstream - personas referenced)
 
 **Cross-cutting concerns:**
+
 - `reference-decisions.md` - Decision guidance
 - `reference-outputs.md` - File formats and status values
 
 **Future (Phase 2+):**
+
 - `reference-consult.md` - Consultation commands
 - `reference-chat.md` - Interactive sessions

@@ -11,6 +11,7 @@ Detailed workflows for interactive persona sessions.
 The chat command enables interactive, conversational sessions with personas. Unlike `/sdlc-studio consult` (automated, structured output), chat is conversational with back-and-forth dialogue.
 
 **Key Difference:**
+
 - `consult` = "Review this and give me feedback" (one-shot)
 - `chat` = "Let's discuss this" (conversation)
 
@@ -125,7 +126,7 @@ Multi-persona discussion session simulating a meeting or workshop.
 ### Options
 
 | Flag | Effect |
-|------|--------|
+| ------ | -------- |
 | `--team` | Include team personas only |
 | `--stakeholders` | Include stakeholder personas only |
 | `--amigos` | One from each amigo (Three Amigos meeting) |
@@ -249,6 +250,7 @@ Load artefacts for discussion context.
 ### Context Integration
 
 When context is loaded:
+
 - Persona has read and understood the document
 - Can reference specific sections
 - Questions can be about the content
@@ -277,6 +279,7 @@ When context is loaded:
 ## During a Session
 
 User interactions:
+
 - Ask questions
 - Present scenarios
 - Request opinions
@@ -284,6 +287,7 @@ User interactions:
 - Explore alternatives
 
 Special commands during chat:
+
 - `[end]` or `[exit]` - End the session
 - `[summary]` - Request a summary so far
 - `[save]` - Save transcript
@@ -317,6 +321,7 @@ User: [save transcripts/caching-discussion.md]
 ```
 
 Transcript format:
+
 ```markdown
 # Chat Transcript: Marcus Johnson
 **Date:** 2024-01-15
@@ -392,6 +397,7 @@ Explore user perspectives before building:
 ## Consistency
 
 Personas maintain consistent behaviour:
+
 - Same concerns across sessions
 - Consistent communication style
 - Personality traits remain stable
@@ -400,6 +406,7 @@ Personas maintain consistent behaviour:
 ## Authenticity
 
 Personas respond authentically:
+
 - May say "I don't know" for areas outside expertise
 - Express genuine concerns from their profile
 - Push back when their values are challenged
@@ -408,12 +415,14 @@ Personas respond authentically:
 ## Interaction Between Personas
 
 In workshops:
+
 - Personas can agree with each other
 - Can respectfully disagree
 - Can build on each other's ideas
 - May have predictable alliances or tensions
 
 Example tensions:
+
 - Sarah (PO) vs Marcus (Dev) on timeline feasibility
 - Emma (Power User) vs Tom (Novice) on feature complexity
 - James (Exec) vs Engineering on scope
@@ -425,7 +434,7 @@ Example tensions:
 ## When to Use Chat vs Consult
 
 | Scenario | Use |
-|----------|-----|
+| ---------- | ----- |
 | Need structured feedback | `consult` |
 | Exploring options | `chat` |
 | Quick review | `consult --quick` |
@@ -464,10 +473,12 @@ Example tensions:
 ## Navigation
 
 **Related commands:**
+
 - `/sdlc-studio consult` - Structured feedback (one-shot)
 - `/sdlc-studio persona` - Create and manage personas
 
 **Workflows that lead to chat:**
+
 - After `consult` raises questions needing exploration
 - During requirements discovery
 - When design decisions need discussion

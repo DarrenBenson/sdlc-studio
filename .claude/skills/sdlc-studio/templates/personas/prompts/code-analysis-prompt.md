@@ -12,6 +12,7 @@ Analyse this codebase to identify user types and roles. Search systematically fo
 ## 1. Authentication & Authorisation
 
 **Search for:**
+
 - User model/schema definitions
 - Role enums, constants, or type definitions
 - Permission definitions or capability lists
@@ -20,6 +21,7 @@ Analyse this codebase to identify user types and roles. Search systematically fo
 - JWT claims or session data structures
 
 **Report:**
+
 - Role names found
 - Permissions per role
 - File locations (file:line)
@@ -29,6 +31,7 @@ Analyse this codebase to identify user types and roles. Search systematically fo
 ## 2. User Interface Patterns
 
 **Search for:**
+
 - Route definitions with role guards or access control
 - Conditional rendering based on user type/role
 - Different dashboard or landing page components
@@ -37,6 +40,7 @@ Analyse this codebase to identify user types and roles. Search systematically fo
 - Admin panels or privileged UI sections
 
 **Report:**
+
 - UI routes per role
 - Conditional features found
 - Estimated UI complexity per role (simple/moderate/complex)
@@ -46,6 +50,7 @@ Analyse this codebase to identify user types and roles. Search systematically fo
 ## 3. API Patterns
 
 **Search for:**
+
 - Endpoints with role-based access decorators
 - Different response shapes by role
 - Rate limits or quotas by user type
@@ -53,6 +58,7 @@ Analyse this codebase to identify user types and roles. Search systematically fo
 - Webhook or integration endpoints (often admin-only)
 
 **Report:**
+
 - API capabilities per role
 - Access restrictions found
 
@@ -61,12 +67,14 @@ Analyse this codebase to identify user types and roles. Search systematically fo
 ## 4. Database & Data Model
 
 **Search for:**
+
 - User table/collection schema
 - Role or type fields on user records
 - Audit tables with actor types
 - Multi-tenancy patterns (org, team, individual)
 
 **Report:**
+
 - User data structure
 - Role storage approach
 
@@ -75,6 +83,7 @@ Analyse this codebase to identify user types and roles. Search systematically fo
 ## 5. Documentation & Tests
 
 **Search for:**
+
 - README sections about user types
 - Test fixtures with user personas
 - Comments describing user scenarios
@@ -82,6 +91,7 @@ Analyse this codebase to identify user types and roles. Search systematically fo
 - E2E tests that login as different roles
 
 **Report:**
+
 - User types mentioned in docs
 - Test scenarios per role
 

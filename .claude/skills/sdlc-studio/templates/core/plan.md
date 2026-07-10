@@ -19,7 +19,7 @@ Related: help/code.md, reference-code.md
 ## Acceptance Criteria Summary
 
 | AC | Name | Description |
-|----|------|-------------|
+| ---- | ------ | ------------- |
 | AC1 | {{ac1_name}} | {{ac1_summary}} |
 | AC2 | {{ac2_name}} | {{ac2_summary}} |
 | AC3 | {{ac3_name}} | {{ac3_summary}} |
@@ -29,11 +29,13 @@ Related: help/code.md, reference-code.md
 ## Technical Context
 
 ### Language & Framework
+
 - **Primary Language:** {{language}}
 - **Framework:** {{framework}}
 - **Test Framework:** {{test_framework}}
 
 ### Relevant Best Practices
+
 {{best_practices_summary}}
 
 ### Library Documentation (Context7)
@@ -43,6 +45,7 @@ Related: help/code.md, reference-code.md
 | {{library}} | {{context7_id}} | {{patterns}} |
 
 ### Existing Patterns
+
 {{existing_patterns}}
 
 ---
@@ -53,6 +56,7 @@ Related: help/code.md, reference-code.md
 **Rationale:** {{strategy_rationale}}
 
 ### Test Priority
+
 1. {{priority_test_1}}
 2. {{priority_test_2}}
 3. {{priority_test_3}}
@@ -80,6 +84,7 @@ Related: help/code.md, reference-code.md
 ## Implementation Phases
 
 ### Phase 1: {{phase1_name}}
+
 **Goal:** {{phase1_goal}}
 
 - [ ] {{step1_task}}
@@ -88,16 +93,18 @@ Related: help/code.md, reference-code.md
 **Files:** `{{file_path}}` - {{change_description}}
 
 ### Phase 2: {{phase2_name}}
+
 **Goal:** {{phase2_goal}}
 
 - [ ] {{step1_task}}
 - [ ] {{step2_task}}
 
 ### Phase 3: Testing & Validation
+
 **Goal:** Verify all acceptance criteria
 
 | AC | Verification Method | File Evidence | Status |
-|----|---------------------|---------------|--------|
+| ---- | --------------------- | --------------- | -------- |
 | AC1 | {{ac1_verification}} | `{{ac1_file}}:{{ac1_line}}` | Pending |
 | AC2 | {{ac2_verification}} | `{{ac2_file}}:{{ac2_line}}` | Pending |
 | AC3 | {{ac3_verification}} | `{{ac3_file}}:{{ac3_line}}` | Pending |

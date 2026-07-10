@@ -18,12 +18,15 @@ Related: help/trd.md, reference-trd.md
 ## 1. Executive Summary
 
 ### Purpose
+
 {{brief description of what this technical design achieves}}
 
 ### Scope
+
 {{what is covered and not covered by this TRD}}
 
 ### Key Decisions
+
 - {{decision 1}}
 - {{decision 2}}
 - {{decision 3}}
@@ -37,6 +40,7 @@ Related: help/trd.md, reference-trd.md
 **Classification Rationale:** {{why this type was chosen}}
 
 **Architecture Implications:**
+
 - **Default Pattern:** {{recommended pattern from reference-architecture.md}}
 - **Pattern Used:** {{actual choice}}
 - **Deviation Rationale:** {{if different, explain why}}
@@ -46,9 +50,11 @@ Related: help/trd.md, reference-trd.md
 ## 3. Architecture Overview
 
 ### System Context
+
 {{high-level description of how the system fits into its environment}}
 
 ### Architecture Pattern
+
 {{monolith | microservices | serverless | hybrid}}
 
 **Rationale:** {{why this pattern was chosen}}
@@ -68,7 +74,7 @@ Related: help/trd.md, reference-trd.md
 ### Core Technologies
 
 | Category | Technology | Version | Rationale |
-|----------|-----------|---------|-----------|
+| ---------- | ----------- | --------- | ----------- |
 | Language | {{language}} | {{version}} | {{why chosen}} |
 | Framework | {{framework}} | {{version}} | {{why chosen}} |
 | Database | {{database}} | {{version}} | {{why chosen}} |
@@ -90,9 +96,11 @@ Related: help/trd.md, reference-trd.md
 ## 5. API Contracts
 
 ### API Style
+
 {{REST | GraphQL | gRPC | WebSocket}}
 
 ### Authentication
+
 {{JWT | OAuth2 | API Key | Session}}
 
 ### Endpoints Overview
@@ -102,6 +110,7 @@ Related: help/trd.md, reference-trd.md
 | {{method}} | {{path}} | {{description}} | {{required?}} |
 
 ### Error Response Format
+
 ```json
 {
   "error": {
@@ -131,6 +140,7 @@ Related: help/trd.md, reference-trd.md
 | {{type}} | {{where stored}} | {{why}} |
 
 ### Migrations
+
 {{approach to schema migrations}}
 
 ---
@@ -144,6 +154,7 @@ Related: help/trd.md, reference-trd.md
 | {{service}} | {{purpose}} | {{REST/gRPC/etc}} | {{auth method}} |
 
 ### Event Architecture
+
 {{if applicable - event-driven patterns, message queues}}
 
 ---
@@ -151,17 +162,19 @@ Related: help/trd.md, reference-trd.md
 ## 8. Infrastructure
 
 ### Deployment Topology
+
 {{description of how the system is deployed}}
 
 ### Environment Strategy
 
 | Environment | Purpose | Characteristics |
-|-------------|---------|-----------------|
+| ------------- | --------- | ----------------- |
 | Development | Local development | {{characteristics}} |
 | Staging | Pre-production testing | {{characteristics}} |
 | Production | Live system | {{characteristics}} |
 
 ### Scaling Strategy
+
 {{horizontal/vertical scaling approach}}
 
 > **Container Design:** Use `trd create --with-containers` or see `modules/trd/container-design.md`
@@ -179,7 +192,7 @@ Related: help/trd.md, reference-trd.md
 ### Security Controls
 
 | Control | Implementation |
-|---------|----------------|
+| --------- | ---------------- |
 | Authentication | {{approach}} |
 | Authorisation | {{approach}} |
 | Encryption at rest | {{approach}} |
@@ -192,7 +205,7 @@ Related: help/trd.md, reference-trd.md
 ### Targets
 
 | Metric | Target | Measurement |
-|--------|--------|-------------|
+| -------- | -------- | ------------- |
 | Response time (p50) | {{target}} | {{how measured}} |
 | Response time (p95) | {{target}} | {{how measured}} |
 | Throughput | {{target}} | {{how measured}} |
@@ -213,6 +226,7 @@ Related: help/trd.md, reference-trd.md
 **Decision:** {{what is the change we're proposing}}
 
 **Consequences:**
+
 - Positive: {{benefits}}
 - Negative: {{drawbacks}}
 
@@ -228,9 +242,11 @@ Related: help/trd.md, reference-trd.md
 ## 13. Implementation Constraints
 
 ### Must Have
+
 - {{constraint}}
 
 ### Won't Have (This Version)
+
 - {{constraint}}
 
 ---

@@ -2,7 +2,6 @@
 
 Guidelines for PostgreSQL implementation in SDLC Studio projects.
 
-
 ## Quick conventions {#quick-conventions}
 
 - Pool connections; keep transactions short to limit lock contention.
@@ -30,7 +29,7 @@ EXPLAIN ANALYSE SELECT * FROM users WHERE email = 'test@example.com';
 ### Index Strategies
 
 | Index Type | Use Case | Example |
-|------------|----------|---------|
+| ------------ | ---------- | --------- |
 | B-tree (default) | Equality, range queries | `CREATE INDEX idx_user_email ON users(email)` |
 | GIN | JSONB, arrays, full-text | `CREATE INDEX idx_data_gin ON items USING GIN(data)` |
 | GiST | Geometric, full-text | `CREATE INDEX idx_location ON places USING GIST(location)` |
@@ -78,7 +77,7 @@ CREATE INDEX idx_data_type ON items ((data->>'type'));
 Use connection pooling for all production deployments:
 
 | Pooler | Use Case | Configuration |
-|--------|----------|---------------|
+| -------- | ---------- | --------------- |
 | PgBouncer | Simple pooling | Transaction/session mode |
 | pgpool-II | Load balancing + pooling | Complex setups |
 | Application pool | Framework built-in | Depends on framework |
@@ -127,7 +126,7 @@ COMMIT;
 ### Isolation Levels
 
 | Level | Use Case | Trade-off |
-|-------|----------|-----------|
+| ------- | ---------- | ----------- |
 | Read Committed (default) | Most operations | Phantom reads possible |
 | Repeatable Read | Reports, analytics | Higher lock contention |
 | Serializable | Financial, critical | Highest contention, retries needed |
@@ -188,7 +187,7 @@ ALTER TABLE bookings ADD CONSTRAINT no_overlap
 ## Common Anti-Patterns
 
 | Anti-Pattern | Problem | Solution |
-|--------------|---------|----------|
+| -------------- | --------- | ---------- |
 | `SELECT *` | Fetches unnecessary data | Specify needed columns |
 | N+1 queries | Multiple roundtrips | Use JOIN or batch query |
 | Missing FK indexes | Slow JOINs and CASCADE | Add indexes on FK columns |

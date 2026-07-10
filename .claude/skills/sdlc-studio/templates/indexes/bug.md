@@ -11,7 +11,7 @@ Related: help/bug.md, reference-bug.md
 ## Summary
 
 | Status | Count |
-|--------|-------|
+| -------- | ------- |
 | Open | {{open_count}} |
 | In Progress | {{in_progress_count}} |
 | Fixed | {{fixed_count}} |
@@ -23,7 +23,7 @@ Related: help/bug.md, reference-bug.md
 ## By Severity
 
 | Severity | Open | In Progress | Fixed | Closed |
-|----------|------|-------------|-------|--------|
+| ---------- | ------ | ------------- | ------- | -------- |
 | Critical | {{critical_open}} | {{critical_in_progress}} | {{critical_fixed}} | {{critical_closed}} |
 | High | {{high_open}} | {{high_in_progress}} | {{high_fixed}} | {{high_closed}} |
 | Medium | {{medium_open}} | {{medium_in_progress}} | {{medium_fixed}} | {{medium_closed}} |

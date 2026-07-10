@@ -20,13 +20,16 @@ Variables: {{persona_name}}, {{role}}, {{verdict}}, {{feedback}}, {{questions}},
 ### Questions
 
 {{#each questions}}
+
 - {{this}}
 {{/each}}
 
 {{#if conditions}}
+
 ### Conditions for Approval
 
 {{#each conditions}}
+
 - {{this}}
 {{/each}}
 {{/if}}
@@ -36,7 +39,7 @@ Variables: {{persona_name}}, {{role}}, {{verdict}}, {{feedback}}, {{questions}},
 ## Summary
 
 | Aspect | Value |
-|--------|-------|
+| -------- | ------- |
 | Persona | {{persona_name}} |
 | Role | {{role}} |
 | Category | {{category}} |
@@ -55,6 +58,7 @@ Variables: {{persona_name}}, {{role}}, {{verdict}}, {{feedback}}, {{questions}},
 {{#if verdict_concerns}}
 ⚠️ **Concerns Raised** - Address the following before proceeding:
 {{#each conditions}}
+
 1. {{this}}
 {{/each}}
 {{/if}}
@@ -62,6 +66,7 @@ Variables: {{persona_name}}, {{role}}, {{verdict}}, {{feedback}}, {{questions}},
 {{#if verdict_reject}}
 ❌ **Rejected** - Must address before continuing:
 {{#each conditions}}
+
 1. {{this}}
 {{/each}}
 {{/if}}

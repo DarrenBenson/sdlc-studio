@@ -22,6 +22,7 @@ PHASE 2 - TRIAGE STOP: present the plan and STOP for my approval. This checkpoin
 mandatory.
 
 PHASE 3 - RUN (after approval): proceed autonomously to the goal. Per unit, in order:
+
 - `cr action` to decompose a CR into stories under an existing epic (new only if none
   fits); stories carry implementation-ready AC + a `Verify:` line. No PL files.
 - `epic implement --agentic` under TDD (failing test first), agentic by default.

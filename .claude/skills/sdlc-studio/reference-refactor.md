@@ -71,7 +71,7 @@ Before any refactoring operation:
 3. **Determine signature**
 
    | Analysis | Result |
-   |----------|--------|
+   | ---------- | -------- |
    | Reads `userId`, `config` | `function extract(userId: string, config: Config)` |
    | Writes `result` used later | `return result` |
    | Multiple writes needed | Return object or use out parameters |
@@ -107,7 +107,7 @@ Before any refactoring operation:
 ### Common Pitfalls
 
 | Pitfall | Symptom | Fix |
-|---------|---------|-----|
+| --------- | --------- | ----- |
 | Too many parameters | >4 parameters | Group into object |
 | Non-cohesive extraction | Hard to name | Extract smaller piece |
 | Breaking encapsulation | Exposing private state | Keep method private |
@@ -147,7 +147,7 @@ Before any refactoring operation:
 ### Naming Conventions
 
 | Expression Type | Naming Pattern | Example |
-|-----------------|----------------|---------|
+| ----------------- | ---------------- | --------- |
 | Boolean | `is/has/can/should` prefix | `isValidEmail` |
 | Count | `count/num/total` prefix | `totalItems` |
 | Limit | `max/min` prefix | `maxRetries` |
@@ -172,7 +172,7 @@ Before any refactoring operation:
 2. **Classify references**
 
    | Location | Update Strategy |
-   |----------|-----------------|
+   | ---------- | ----------------- |
    | Same file | Direct rename |
    | Same package | Update imports if needed |
    | External API | Consider deprecation |
@@ -253,7 +253,7 @@ When renaming files:
 1. **Identify target location**
 
    | Smell | Target |
-   |-------|--------|
+   | ------- | -------- |
    | Feature envy | Move to class being envied |
    | Utility function | Move to shared utils |
    | Domain logic in handler | Move to domain service |
@@ -297,7 +297,7 @@ When renaming files:
 2. **Security review**
 
    | Check | Look For |
-   |-------|----------|
+   | ------- | ---------- |
    | Injection | String interpolation in queries |
    | Auth | Missing permission checks |
    | Data | Sensitive data exposure |
@@ -306,7 +306,7 @@ When renaming files:
 3. **Pattern review**
 
    | Principle | Violation Signs |
-   |-----------|-----------------|
+   | ----------- | ----------------- |
    | Single Responsibility | Class/function doing multiple things |
    | Open/Closed | Modifying existing code for extension |
    | Liskov Substitution | Subclass breaking parent contract |
@@ -316,7 +316,7 @@ When renaming files:
 4. **Performance review**
 
    | Issue | Pattern |
-   |-------|---------|
+   | ------- | --------- |
    | N+1 queries | Loop with DB call inside |
    | Memory leak | Event listeners not removed |
    | Blocking | Sync I/O in async context |

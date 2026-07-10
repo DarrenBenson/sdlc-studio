@@ -5,7 +5,6 @@ with plain JavaScript, see `javascript.md`.
 
 ---
 
-
 ## Quick conventions {#quick-conventions}
 
 - Strict mode on; never `any` - use `unknown` and narrow.

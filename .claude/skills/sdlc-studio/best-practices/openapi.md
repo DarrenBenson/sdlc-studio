@@ -42,7 +42,7 @@ Never remove old versions abruptly - deprecate with clear headers first.
 ## HTTP Methods
 
 | Method | Purpose | Idempotent |
-|--------|---------|------------|
+| -------- | --------- | ------------ |
 | GET | Retrieve resource(s) | Yes |
 | POST | Create resource | No |
 | PUT | Replace resource | Yes |
@@ -52,11 +52,13 @@ Never remove old versions abruptly - deprecate with clear headers first.
 ## Status Codes
 
 **Success (2xx):**
+
 - `200` - OK (GET, PUT, PATCH)
 - `201` - Created (POST)
 - `204` - No Content (DELETE)
 
 **Client Error (4xx):**
+
 - `400` - Bad Request (validation failed)
 - `401` - Unauthorised (no/invalid auth)
 - `403` - Forbidden (auth valid, permission denied)
@@ -65,6 +67,7 @@ Never remove old versions abruptly - deprecate with clear headers first.
 - `422` - Unprocessable Entity (semantic error)
 
 **Server Error (5xx):**
+
 - `500` - Internal Server Error
 - `503` - Service Unavailable
 

@@ -47,7 +47,7 @@ What does success look like for this persona?
 Which amigo does this persona belong to?
 
 | Amigo | Focus | Choose if... |
-|-------|-------|--------------|
+| ------- | ------- | -------------- |
 | **Product** | What & Why | Makes product decisions, defines requirements |
 | **Engineering** | How | Builds solutions, technical decisions |
 | **QA** | What If | Tests, validates, finds edge cases |
@@ -55,7 +55,7 @@ Which amigo does this persona belong to?
 What type of stakeholder is this?
 
 | Type | Choose if... |
-|------|--------------|
+| ------ | -------------- |
 | **User** | Uses the product directly |
 | **Business** | Business stakeholder (exec, operations, finance) |
 | **Technical** | Technical stakeholder (security, compliance, infrastructure) |
@@ -64,7 +64,7 @@ What type of stakeholder is this?
 ### 6. Experience Level
 
 | Level | Years | Choose if... |
-|-------|-------|--------------|
+| ------- | ------- | -------------- |
 | Junior/Entry | 1-3 | New to role, learning |
 | Mid-level | 4-7 | Competent, independent |
 | Senior | 8-15 | Experienced, mentors others |
@@ -73,7 +73,7 @@ What type of stakeholder is this?
 ### 7. Technical Proficiency
 
 | Level | Description |
-|-------|-------------|
+| ------- | ------------- |
 | Novice | Needs guidance, follows instructions |
 | Intermediate | Comfortable with standard features |
 | Advanced | Uses advanced features, some customisation |
@@ -92,7 +92,7 @@ What frustrates this persona most? (from the source analysis or your knowledge)
 How does this persona make decisions?
 
 | Style | Description |
-|-------|-------------|
+| ------- | ------------- |
 | Data-driven | Needs metrics, evidence, analysis |
 | Intuition | Trusts experience and gut feel |
 | Consensus | Seeks input from others before deciding |
@@ -117,7 +117,7 @@ In 2-3 sentences, describe this persona's career path and what shaped their curr
 List 3 personality traits and how each manifests in their work:
 
 | Trait | How it shows up |
-|-------|-----------------|
+| ------- | ----------------- |
 | ___ | ___ |
 | ___ | ___ |
 | ___ | ___ |
@@ -125,7 +125,7 @@ List 3 personality traits and how each manifests in their work:
 ### 13. Communication Style
 
 | Aspect | Options |
-|--------|---------|
+| -------- | --------- |
 | Formality | Formal / Casual / Adaptive |
 | Verbosity | Concise / Moderate / Detailed |
 | Directness | Blunt / Diplomatic / Measured |
@@ -145,7 +145,7 @@ What worries this persona that they might not voice openly?
 ### 17. Decision Drivers
 
 | Driver | Description |
-|--------|-------------|
+| -------- | ------------- |
 | Values | What matters most to them |
 | Evidence | What type of evidence convinces them |
 | Red Flags | What makes them nervous or sceptical |
@@ -182,6 +182,7 @@ Describe a specific past experience that shaped this persona's viewpoint. (This 
 This persona seems similar to an existing archetype:
 
 **{{archetype_name}}**
+
 - Role: {{archetype_role}}
 - Focus: {{archetype_focus}}
 - Match confidence: {{match_confidence}}%
@@ -189,7 +190,7 @@ This persona seems similar to an existing archetype:
 Would you like to:
 
 | Option | Description |
-|--------|-------------|
+| -------- | ------------- |
 | **Use archetype** | Start from {{archetype_name}}, customise for this project |
 | **Create new** | Build a distinct persona (you've provided enough unique detail) |
 | **Compare** | Show me the archetype details to decide |

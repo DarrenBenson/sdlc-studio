@@ -39,6 +39,7 @@ Have conversations with personas for requirements discovery, design validation, 
 4. Session continues until you end it
 
 **Key Difference from `/sdlc-studio consult`:**
+
 - `consult` = Automated review, structured output
 - `chat` = Interactive conversation, back-and-forth
 
@@ -53,12 +54,14 @@ Have conversations with personas for requirements discovery, design validation, 
 ```
 
 Talk to one persona. Good for:
+
 - Deep-diving into their perspective
 - Exploring technical approaches (with engineers)
 - Understanding user needs (with user personas)
 - Getting mentorship on best practices
 
 **Example:**
+
 ```
 User: /sdlc-studio chat marcus-johnson
 
@@ -80,6 +83,7 @@ and your team probably knows it better..."
 ```
 
 Multi-persona discussion. Good for:
+
 - Getting diverse perspectives on decisions
 - Simulating stakeholder meetings
 - Surfacing conflicts early
@@ -88,13 +92,14 @@ Multi-persona discussion. Good for:
 **Participant flags:**
 
 | Flag | Who Participates |
-|------|------------------|
+| ------ | ------------------ |
 | `--amigos` | One from each: Product, Engineering, QA |
 | `--team` | All team personas |
 | `--stakeholders` | All stakeholder personas |
 | `--personas [list]` | Specific personas (comma-separated) |
 
 **Example:**
+
 ```bash
 /sdlc-studio chat --workshop "MVP scope" --amigos
 
@@ -135,7 +140,7 @@ User: [save transcripts/my-session.md]
 During a chat session, special commands:
 
 | Command | Effect |
-|---------|--------|
+| --------- | -------- |
 | `[end]` or `[exit]` | End the session |
 | `[summary]` | Get summary of discussion so far |
 | `[save filename]` | Save transcript to file |
@@ -191,7 +196,7 @@ During a chat session, special commands:
 ## When to Use Chat vs Consult
 
 | Need | Use |
-|------|-----|
+| ------ | ----- |
 | Structured feedback on artefact | `consult` |
 | Exploring options or ideas | `chat` |
 | Quick approval/rejection | `consult --quick` |
@@ -232,9 +237,11 @@ Personas must exist in `sdlc-studio/personas/`. If not:
 ## See Also
 
 **Workflows:**
+
 - `reference-chat.md` - Detailed chat workflows
 - `reference-consult.md` - Automated consultation
 
 **Related commands:**
+
 - `/sdlc-studio consult help` - Structured feedback
 - `/sdlc-studio persona help` - Persona management

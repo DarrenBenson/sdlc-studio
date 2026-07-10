@@ -60,6 +60,7 @@ SDLC Studio is model-invoked - say it in plain language:
 Create detailed implementation plan for a User Story.
 
 **What happens:**
+
 1. Selects next incomplete story (or specified story)
 2. Parses acceptance criteria, technical notes, edge cases
 3. Detects project language and framework
@@ -70,6 +71,7 @@ Create detailed implementation plan for a User Story.
 8. Updates story status to Planned
 
 **Selection logic:**
+
 - `--story US0001`: Use specified story
 - `--epic EP0001`: Find next Draft/Ready story in epic
 - (none): Find next Draft/Ready story globally
@@ -81,6 +83,7 @@ Create detailed implementation plan for a User Story.
 Execute implementation plan with TDD support and documentation updates.
 
 **What happens:**
+
 1. Selects plan (by ID, story, or next available)
 2. Validates plan and story status
 3. Checks for unresolved open questions (blocks if critical)
@@ -93,18 +96,21 @@ Execute implementation plan with TDD support and documentation updates.
 10. Completes plan: Plan → Complete
 
 **Completion criteria:**
+
 - Every implementation phase in the plan is executed
 - All acceptance criteria have implementing code
 - Tests pass (or are created for Test-After)
 - Quality checks pass
 
 **Selection logic:**
+
 - `--plan PL0001`: Use specified plan
 - `--story US0001`: Find plan linked to story
 - (none): Find next plan for Planned story
 
 **TDD Mode (--tdd):**
 For each acceptance criterion:
+
 1. Write failing test
 2. Run test to verify failure
 3. Implement code to pass
@@ -112,8 +118,9 @@ For each acceptance criterion:
 5. Refactor if needed
 
 **Flags:**
+
 | Flag | Effect |
-|------|--------|
+| ------ | -------- |
 | `--tdd` | Force TDD approach |
 | `--no-tdd` | Force Test-After approach |
 | `--docs` | Update documentation (default) |
@@ -172,7 +179,7 @@ Run tests with optional filtering and story traceability.
 ## Output
 
 | Command | Files | Status Update |
-|---------|-------|---------------|
+| --------- | ------- | --------------- |
 | `plan` | `sdlc-studio/plans/PL{NNNN}-{slug}.md` | Story → Planned |
 | `implement` | Source + test files | Story → In Progress |
 | `verify` | Console report only | Story → Review (if AC met) |
@@ -194,6 +201,7 @@ Choose **per story** whether to use TDD (test-first) or Test-After (code-first).
 > **Decision tree:** `reference-decisions.md` → TDD vs Test-After Decision Tree
 
 **Quick guide:**
+
 - **Prefer TDD**: API stories, >5 edge cases, clear AC, complex business rules
 - **Prefer Test-After**: Exploratory, UI-heavy, prototype, evolving AC
 
@@ -212,17 +220,20 @@ After each command: `plan` → `implement` → `test` → `verify` → `check`
 ## See Also
 
 **REQUIRED for this workflow:**
+
 - `reference-code.md` - Code workflow details
 - `reference-decisions.md#story-ready` - Ready status criteria
 - `reference-refactor.md` - Refactoring and review workflows
 
 **Recommended:**
+
 - `/sdlc-studio story help` - User Stories (upstream)
 - `/sdlc-studio test-spec help` - Test specifications (parallel)
 - `/sdlc-studio code refactor help` - Guided refactoring
 - `/sdlc-studio code review help` - Code review
 
 **Optional (deep dives):**
+
 - `reference-test-best-practices.md` - Testing guidelines
 - `reference-outputs.md` - Output formats reference
 - `best-practices/{language}.md` - Language-specific guidelines

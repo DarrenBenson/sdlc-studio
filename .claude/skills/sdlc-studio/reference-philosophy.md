@@ -13,11 +13,13 @@ SDLC Studio operates in two distinct modes. Understanding the difference is crit
 **Purpose:** Plan something new that doesn't exist yet.
 
 **Flow:**
+
 ```
 User requirements → PRD → Epics → Stories → Implementation → Tests
 ```
 
 **Characteristics:**
+
 - Interactive - asks user questions
 - Forward-looking - describes what WILL be built
 - Aspirational - captures intent before reality exists
@@ -30,6 +32,7 @@ User requirements → PRD → Epics → Stories → Implementation → Tests
 **Purpose:** Extract a complete, testable specification from existing code.
 
 **Flow:**
+
 ```
 Existing code → PRD → Epics → Stories → Test Specs → Tests → VALIDATION
 ```
@@ -53,11 +56,13 @@ A properly extracted specification enables:
 **A generated specification is worthless until validated.**
 
 The cycle must be:
+
 ```
 Extract spec → Write tests from spec → Run tests against existing code → PASS
 ```
 
 If tests fail, either:
+
 - The specification is wrong (fix the spec)
 - The code has bugs (document as known issues)
 
@@ -70,6 +75,7 @@ Only when tests pass against the existing implementation do you have a valid spe
 ### Acceptance Criteria Must Be Implementation-Ready {#ac-implementation-ready}
 
 **Bad (documentation-style):**
+
 ```
 ### AC1: Search works
 - Given a user searches
@@ -78,6 +84,7 @@ Only when tests pass against the existing implementation do you have a valid spe
 ```
 
 **Good (specification-style):**
+
 ```
 ### AC1: Search returns ranked results by relevance
 - Given the index contains profiles with slugs "alice-smith", "bob-jones", and "alice-wong"
@@ -95,7 +102,7 @@ The second version can be implemented by someone who has never seen the original
 Don't just note "handles errors". Document every edge case:
 
 | Scenario | Input | Expected Output |
-|----------|-------|-----------------|
+| ---------- | ------- | ----------------- |
 | Query too short | `q=a` | 422, "min length 2" |
 | No matches | `q=zzzznotfound` | 200, empty array |
 | Special characters | `q=o'brien` | 200, matches o'brien |
@@ -144,21 +151,25 @@ Generated test specs aren't complete until:
 ### `/sdlc-studio story` (Default) {#story-default}
 
 Generates stories from Epic acceptance criteria.
+
 - Input: Epics (which came from PRD)
 - Best for: Forward-looking planning
 
 ### `/sdlc-studio story generate` (Extraction) {#story-generate}
 
 Reverse-engineers stories from actual code behaviour.
+
 - Input: The codebase itself
 - Best for: Brownfield specification extraction
 
 **When to use `story generate`:**
+
 - Existing functionality with no documentation
 - Legacy code that needs to be understood
 - Preparing for migration or major refactor
 
 **What it does differently:**
+
 1. Analyses actual code paths, not just Epic descriptions
 2. Extracts real validation rules, error messages, edge cases
 3. Documents actual API contracts from code

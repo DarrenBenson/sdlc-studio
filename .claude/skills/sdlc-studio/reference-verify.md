@@ -7,12 +7,11 @@
 > if the feature broke, by fault-injecting the changed surface and reporting killed vs
 > survived. A green verify plus a survivor-free mutation report is the full
 > assertion-integrity claim.
-
-
+>
 > **Human-checked ACs:** author the Verify line as `Verify: manual <what to check>`. A line led
 > by `manual` (or `manually`) is counted **manual** - never executed - so a prose check can't be
 > shelled out and time out into a false `failed`.
-
+>
 > **The test-spec is the AC-to-test bridge.** When an epic is fanned out, the AC's
 > test name and the implementation's test title are chosen by different processes and drift
 > into two parallel descriptions (the 0/7 class). Authoring the test-spec's **AC Coverage

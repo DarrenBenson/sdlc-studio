@@ -600,7 +600,7 @@ See `reference-deploy-readiness.md#auto-rollback-on-smoke-fail` for the script-l
 Each AC carries a `Verification target:` field declaring the lowest tier of evidence sufficient to mark the AC verified. Tiers are defined in `reference-test-best-practices.md#verification-depth-tiers`.
 
 | Tier | Default for | Why |
-|---|---|---|
+| --- | --- | --- |
 | `functional` | Most AC | Single round-trip is enough for behaviour the AC isolates |
 | `conversational` | End-to-end / multi-step AC | "AC retains state across N interactions" cannot be proved in one call |
 | `soak` | Production-affecting AC | "AC behaves under load over time" needs a window, not a sample |

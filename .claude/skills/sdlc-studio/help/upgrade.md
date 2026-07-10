@@ -64,7 +64,7 @@ Dry-run by default; `--apply` is explicit; nothing destructive; idempotent; neve
 ## Schema Changes (v1 → v2)
 
 | Artifact | Changes |
-|----------|---------|
+| ---------- | --------- |
 | PRD | Appendices A-E removed (generate on demand) |
 | TRD | ~40% smaller, C4/containers become optional modules |
 | TSD | Code examples removed (reference links added) |

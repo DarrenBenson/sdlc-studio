@@ -17,7 +17,7 @@ Related: reference-story.md#story-implement-workflow
 ## Phase Progress
 
 | # | Phase | Status | Started | Completed | Notes |
-|---|-------|--------|---------|-----------|-------|
+| --- | ------- | -------- | --------- | ----------- | ------- |
 | 1 | Plan | {{phase1_status}} | {{phase1_started}} | {{phase1_completed}} | {{phase1_notes}} |
 | 2 | Test Spec | {{phase2_status}} | {{phase2_started}} | {{phase2_completed}} | {{phase2_notes}} |
 | 3 | Tests | {{phase3_status}} | {{phase3_started}} | {{phase3_completed}} | {{phase3_notes}} |
@@ -46,6 +46,7 @@ Checkboxes synced from plan file. Updated as tasks complete.
 ## Session Log
 
 ### Session 1: {{session1_date}}
+
 - **Phases completed:** {{session1_phases}}
 - **Tasks completed:** {{session1_tasks}}
 - **Notes:** {{session1_notes}}
@@ -55,6 +56,7 @@ Checkboxes synced from plan file. Updated as tasks complete.
 ## Errors & Pauses
 
 {{#if has_errors}}
+
 ### Error at Phase {{error_phase}}
 
 **Error:** {{error_message}}
@@ -63,9 +65,11 @@ Checkboxes synced from plan file. Updated as tasks complete.
 {{error_resolution}}
 
 **Resume command:**
+
 ```bash
 /sdlc-studio story implement --story US{{story_id}} --from-phase {{resume_phase}}
 ```
+
 {{else}}
 No errors recorded.
 {{/if}}
@@ -75,7 +79,7 @@ No errors recorded.
 ## Artifacts
 
 | Type | Path | Status |
-|------|------|--------|
+| ------ | ------ | -------- |
 | Plan | `sdlc-studio/plans/PL{{plan_id}}-{{plan_slug}}.md` | {{plan_status}} |
 | Test Spec | `sdlc-studio/test-specs/TS{{spec_id}}-{{spec_slug}}.md` | {{spec_status}} |
 | Tests | `{{test_file_path}}` | {{tests_status}} |
@@ -90,6 +94,7 @@ No errors recorded.
 **Duration:** {{total_duration}}
 
 ### Final Summary
+
 - All {{total_phases}} phases completed
 - {{total_tasks}} plan tasks completed
 - {{total_tests}} tests passing

@@ -16,6 +16,7 @@ Bridge the gap between E2E tests (which mock APIs) and backend reality.
 ### Contract Test Pattern
 
 For every field the frontend consumes:
+
 1. Create real data via the API
 2. Retrieve it via the endpoint being tested (no mocking)
 3. Assert the expected field exists with correct type/value
@@ -23,6 +24,7 @@ For every field the frontend consumes:
 ### Multi-Language Examples
 
 **Python (pytest):**
+
 ```python
 def test_server_response_includes_uptime(client, auth_headers):
     """Contract: Frontend expects uptime_seconds field."""
@@ -35,6 +37,7 @@ def test_server_response_includes_uptime(client, auth_headers):
 ```
 
 **TypeScript (vitest/jest):**
+
 ```typescript
 it('includes uptime_seconds in server response', async () => {
   await createTestServer({ uptime_seconds: 86400 });
@@ -44,6 +47,7 @@ it('includes uptime_seconds in server response', async () => {
 ```
 
 **Go:**
+
 ```go
 func TestServerResponseIncludesUptime(t *testing.T) {
     createTestServer(t, map[string]any{"uptime_seconds": 86400})

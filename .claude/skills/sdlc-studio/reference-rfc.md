@@ -23,9 +23,11 @@ If you find yourself writing "Option A vs Option B" or "open question / TBD" in 
 CR, it should have been an RFC.
 
 ## `/sdlc-studio rfc` (default)
+
 Ask: create, list, review, accept, close, or help.
 
 ## create
+
 1. **Number:** glob `sdlc-studio/rfcs/RFC*.md`, take the next free `RFC{NNNN}`.
    **Cross-repo:** if this design spans repos, confirm the number is free on
    `origin/main` too (see the cross-repo guard in `reference-cr.md`).
@@ -40,11 +42,14 @@ Ask: create, list, review, accept, close, or help.
    agents themselves (memory `live-agent-consult-mandatory`).
 
 ## list
+
 Glob the RFCs, read each `> **Status:**`; print id · title · priority · status ·
 author · date. Filters: `--status`, `--priority`, `--author`.
 
 ## review
+
 For each RFC:
+
 - **Draft / In Review** older than ~14 days with no Revision-History movement →
   flag "stalled".
 - **Open Decisions** with an Open row > 7 days → flag "needs a decision (owner: X)".
@@ -52,6 +57,7 @@ For each RFC:
   back; flag any missing/unlinked.
 
 ## decide
+
 The **multi-RFC decision session** - groom the whole Draft backlog to dispositions
 in one pass (the front-of-pipe analogue of the sprint tranche-audit). Use when
 several RFCs have accumulated and need triaging together.
@@ -75,7 +81,9 @@ Accepting grows the CR backlog (the workstreams), so a decision session is the
 moment to choose how much delivery to take on - not a rubber stamp.
 
 ## accept
+
 Use when the Open Decisions are resolved.
+
 1. Validate status is Draft or In Review and **no Open Decision row is still Open**
    (resolve or explicitly defer-with-reason first).
 2. Fill the **Decision** section: chosen option(s) + rationale.
@@ -92,12 +100,14 @@ Use when the Open Decisions are resolved.
 > reference. Don't delete or archive it.
 
 ## close
+
 - **Superseded** – a later RFC replaces it. Set status, point to the replacement in
   "Supersedes / Superseded by", note in Revision History.
 - **Withdrawn** – not pursued. Set status, record why in the Decision section.
 Update the index either way.
 
 ## Reconcile
+
 `reconcile --scope rfcs` (or a full reconcile) audits the RFC index against the
 files: per-row status match, missing rows (a file on disk with no index row),
 recomputed Summary counts, and Accepted→spawned-CR linkage. See

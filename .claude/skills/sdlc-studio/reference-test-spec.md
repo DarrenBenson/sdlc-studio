@@ -194,7 +194,7 @@ This prevents ID collisions when specs are created in parallel.
 ### ID Naming Conventions
 
 | Artefact | Format | Example |
-|----------|--------|---------|
+| ---------- | -------- | --------- |
 | Epic | EP{NNNN} | EP0001 |
 | Story | US{NNNN} | US0001 |
 | Test Spec | TS{NNNN} | TS0001 |

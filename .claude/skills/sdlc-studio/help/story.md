@@ -57,6 +57,7 @@ See `reference-philosophy.md` for the complete philosophy.
 Break Epic acceptance criteria into atomic User Stories.
 
 **What happens:**
+
 1. Checks for Epics and Personas (creates persona template if missing)
 2. Creates Definition of Done if not exists
 3. For each Epic, identifies distinct user actions
@@ -65,6 +66,7 @@ Break Epic acceptance criteria into atomic User Stories.
 6. Creates `sdlc-studio/stories/_index.md` registry
 
 **Breakdown heuristics:**
+
 - One story per distinct user action
 - Stories completable in one sprint
 - Split by persona when multiple involved
@@ -74,12 +76,14 @@ Break Epic acceptance criteria into atomic User Stories.
 Reverse-engineer detailed specifications from actual code behaviour.
 
 **When to use:**
+
 - Existing functionality with no/poor documentation
 - Legacy code that needs to be understood before migration
 - Preparing for major refactor or technology change
 - Creating a specification that could rebuild the system
 
 **What happens:**
+
 1. Reads the Epic to understand scope
 2. Explores the codebase to find implementing code
 3. Analyses actual:
@@ -96,6 +100,7 @@ Reverse-engineer detailed specifications from actual code behaviour.
 5. Status set to **Ready** (not Done) - awaiting validation
 
 **Quality requirements for generated stories:**
+
 - AC detailed enough to implement without seeing original code
 - All edge cases documented with specific inputs/outputs
 - API contracts include exact request/response shapes
@@ -106,6 +111,7 @@ Reverse-engineer detailed specifications from actual code behaviour.
 Review Story status based on codebase implementation.
 
 **What happens:**
+
 1. Reads all Stories and their acceptance criteria
 2. Searches codebase for implementation evidence
 3. Updates status and checks off completed criteria
@@ -114,6 +120,7 @@ Review Story status based on codebase implementation.
 ## Output
 
 **Files:**
+
 - `sdlc-studio/stories/US{NNNN}-{slug}.md` per Story
 - `sdlc-studio/stories/_index.md` registry
 - `sdlc-studio/personas.md` (created if missing)
@@ -123,6 +130,7 @@ Review Story status based on codebase implementation.
 `Proposed` is an optional pre-Draft intake state for a story that has been raised but not yet written up. See `reference-outputs.md#status-vocabulary` for the full vocabulary and terminal states.
 
 **Status rules for generate mode:**
+
 - Generated stories start as **Ready** (not Done)
 - **Done** requires validation: tests must pass against implementation
 - Never auto-assign Done for brownfield
@@ -139,6 +147,7 @@ After story generation, a cohesion review validates coverage of epic requirement
 > **Full details:** See `reference-story.md#story-cohesion-review` for checks, output format, and auto-fix behaviour.
 
 **Story sections:**
+
 - User Story (As a... I want... So that...)
 - Context (persona reference, background)
 - Acceptance Criteria (Given/When/Then)
@@ -199,6 +208,7 @@ Only mark stories as Done when tests pass against the existing implementation.
 ## Next Steps
 
 After generating Stories:
+
 ```
 /sdlc-studio test-spec --epic EP0002   # Generate test specifications
 /sdlc-studio test-automation           # Generate executable tests
@@ -218,7 +228,7 @@ After generating Stories:
 A story can be marked **Ready** when:
 
 | Criterion | Check |
-|-----------|-------|
+| ----------- | ------- |
 | AC format | All AC in Given/When/Then with concrete values |
 | No placeholders | No TBD or placeholder text in AC |
 | Persona valid | Referenced persona exists in personas.md |
@@ -228,6 +238,7 @@ A story can be marked **Ready** when:
 | Dependencies | Identified with status |
 
 **Blocking conditions:**
+
 - TBD in acceptance criteria
 - Edge case count below minimum
 - Ambiguous language detected (see `reference-decisions.md`)
@@ -252,6 +263,7 @@ Create implementation plan and test spec, then review with user.
 ```
 
 **What happens:**
+
 1. Validates story Ready criteria
 2. Checks dependencies (warns if not Done)
 3. Determines TDD vs Test-After approach
@@ -273,12 +285,13 @@ Execute the full implementation workflow for a story with state tracking.
 ```
 
 | Flag | Description |
-|------|-------------|
+| ------ | ------------- |
 | `--story US000X` | Target story (required) |
 | `--from-phase N` | Resume from specific phase (1-8) |
 | `--tdd` / `--no-tdd` | Force TDD or Test-After mode |
 
 **What happens:**
+
 1. **Checks for existing workflow state** (auto-resume if found)
 2. **Creates workflow file** if new (`sdlc-studio/workflows/WF{NNNN}-{slug}.md`)
 3. Executes 8 phases: Plan → Test Spec → Tests → Implement → Test → Verify → Check → Review
@@ -286,11 +299,13 @@ Execute the full implementation workflow for a story with state tracking.
 5. **Saves state after each phase** for resumability across sessions
 
 **Prerequisites (will STOP if missing):**
+
 - Plan file must exist (`story plan` creates this)
 - Story status must be Planned or In Progress
 - If no plan exists, you'll be prompted to run `story plan` first
 
 **State tracking (MANDATORY):**
+
 - Workflow state file tracks progress across sessions
 - Plan task checkboxes updated as implementation proceeds
 - Automatic resume from last completed phase if session interrupted
@@ -298,21 +313,24 @@ Execute the full implementation workflow for a story with state tracking.
 **CRITICAL:** Run `story plan` before `story implement`. Implementation cannot proceed without a plan.
 
 > **Full workflow details:** See `reference-story.md#story-implement-workflow`
-
+>
 > **Epic-level automation:** `epic implement --agentic` calls this command for each story in concurrent waves. See `/sdlc-studio epic help`.
 
 ## See Also
 
 **REQUIRED for this workflow:**
+
 - `reference-story.md` - Story workflow details including workflow orchestration
 - `reference-decisions.md#story-ready` - Ready status criteria
 
 **Recommended:**
+
 - `/sdlc-studio epic help` - Generate Epics (upstream)
 - `/sdlc-studio epic implement --agentic` - Autonomous concurrent execution across an epic
 - `/sdlc-studio code plan help` - Implementation planning (downstream)
 
 **Optional (deep dives):**
+
 - `reference-philosophy.md` - Create vs Generate philosophy
 - `reference-outputs.md` - Output formats reference
 - `reference-outputs.md#story-completion-cascade` - Terminal status cascade rules

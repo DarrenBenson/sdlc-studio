@@ -351,6 +351,7 @@ project/
 ```
 
 **Rules:**
+
 - `internal/` - private to this module
 - `pkg/` - importable by external projects
 - `cmd/` - main packages only

@@ -121,7 +121,7 @@ python test.py
 ## Anti-patterns
 
 | Pattern | Problem | Fix |
-|---------|---------|-----|
+| --------- | --------- | ----- |
 | Bare `set -e` (or none) | `set -e` alone ignores unset vars and pipeline failures | Use `set -euo pipefail` |
 | Hardcoded paths | Breaks on other machines | Use `$SCRIPT_DIR` or config |
 | No `--help` | Undiscoverable | Add help flag handling |
@@ -145,7 +145,7 @@ Use a shared config module for project-wide settings. For bash, read from config
 ## Output Conventions
 
 | Output Type | Format | Destination |
-|-------------|--------|-------------|
+| ------------- | -------- | ------------- |
 | Progress messages | Plain text | stdout |
 | Errors | Prefixed with "Error:" | stderr |
 | Data for parsing | JSON | stdout |
@@ -154,7 +154,7 @@ Use a shared config module for project-wide settings. For bash, read from config
 ## Exit Codes
 
 | Code | Meaning |
-|------|---------|
+| ------ | --------- |
 | 0 | Success |
 | 1 | General error |
 | 2 | Invalid arguments |
@@ -207,8 +207,10 @@ Prefer an existing verb over a synonym (`scan`, `exec`, `emit`, `report` as a ve
 if none fits, add the new verb here in the same change.
 
 **Options:**
+
 - `--dry-run` - Preview only
 - `--verbose` - More output
+
 ```
 
 ## Testing

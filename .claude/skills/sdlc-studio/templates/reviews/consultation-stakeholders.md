@@ -15,6 +15,7 @@ Variables: {{users}}, {{business}}, {{technical}}, {{analysis}}, {{recommendatio
 ## User Perspectives
 
 {{#each users}}
+
 ### {{persona_name}} ({{role}})
 
 **Verdict:** {{verdict_icon}} {{verdict_text}}
@@ -23,12 +24,14 @@ Variables: {{users}}, {{business}}, {{technical}}, {{analysis}}, {{recommendatio
 
 **Questions:**
 {{#each questions}}
+
 - {{this}}
 {{/each}}
 
 {{#if conditions}}
 **Conditions:**
 {{#each conditions}}
+
 - {{this}}
 {{/each}}
 {{/if}}
@@ -45,6 +48,7 @@ Variables: {{users}}, {{business}}, {{technical}}, {{analysis}}, {{recommendatio
 ## Business Perspectives
 
 {{#each business}}
+
 ### {{persona_name}} ({{role}})
 
 **Verdict:** {{verdict_icon}} {{verdict_text}}
@@ -53,12 +57,14 @@ Variables: {{users}}, {{business}}, {{technical}}, {{analysis}}, {{recommendatio
 
 **Questions:**
 {{#each questions}}
+
 - {{this}}
 {{/each}}
 
 {{#if conditions}}
 **Conditions:**
 {{#each conditions}}
+
 - {{this}}
 {{/each}}
 {{/if}}
@@ -75,6 +81,7 @@ Variables: {{users}}, {{business}}, {{technical}}, {{analysis}}, {{recommendatio
 ## Technical Perspectives
 
 {{#each technical}}
+
 ### {{persona_name}} ({{role}})
 
 **Verdict:** {{verdict_icon}} {{verdict_text}}
@@ -83,12 +90,14 @@ Variables: {{users}}, {{business}}, {{technical}}, {{analysis}}, {{recommendatio
 
 **Questions:**
 {{#each questions}}
+
 - {{this}}
 {{/each}}
 
 {{#if conditions}}
 **Conditions:**
 {{#each conditions}}
+
 - {{this}}
 {{/each}}
 {{/if}}
@@ -105,7 +114,7 @@ Variables: {{users}}, {{business}}, {{technical}}, {{analysis}}, {{recommendatio
 ## Summary by Group
 
 | Group | Consulted | Approve | Concerns | Reject |
-|-------|-----------|---------|----------|--------|
+| ------- | ----------- | --------- | ---------- | -------- |
 | Users | {{users.length}} | {{users.approve}} | {{users.concerns}} | {{users.reject}} |
 | Business | {{business.length}} | {{business.approve}} | {{business.concerns}} | {{business.reject}} |
 | Technical | {{technical.length}} | {{technical.approve}} | {{technical.concerns}} | {{technical.reject}} |
@@ -118,18 +127,21 @@ Variables: {{users}}, {{business}}, {{technical}}, {{analysis}}, {{recommendatio
 ### Consensus Points
 
 {{#each consensus}}
+
 - {{this}}
 {{/each}}
 
 ### Conflicts Identified
 
 {{#each conflicts}}
+
 - **{{groups}}:** {{description}}
 {{/each}}
 
 ### Patterns
 
 {{#each patterns}}
+
 - {{this}}
 {{/each}}
 
@@ -140,8 +152,9 @@ Variables: {{users}}, {{business}}, {{technical}}, {{analysis}}, {{recommendatio
 {{#each recommendations}}
 {{index}}. **{{title}}**
    {{description}}
-   - Priority: {{priority}}
-   - Addresses concerns from: {{stakeholders}}
+
+- Priority: {{priority}}
+- Addresses concerns from: {{stakeholders}}
 {{/each}}
 
 ---

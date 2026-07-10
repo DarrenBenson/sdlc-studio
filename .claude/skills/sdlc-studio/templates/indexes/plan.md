@@ -11,7 +11,7 @@ Related: help/code.md, reference-code.md
 ## Summary
 
 | Status | Count |
-|--------|-------|
+| -------- | ------- |
 | Draft | {{draft_count}} |
 | In Progress | {{in_progress_count}} |
 | Complete | {{complete_count}} |

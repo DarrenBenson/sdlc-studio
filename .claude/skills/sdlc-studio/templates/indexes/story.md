@@ -12,7 +12,7 @@ Related: help/story.md, reference-story.md
 ## Summary
 
 | Status | Count |
-|--------|-------|
+| -------- | ------- |
 | Draft | {{draft_count}} |
 | Ready | {{ready_count}} |
 | Planned | {{planned_count}} |

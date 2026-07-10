@@ -110,7 +110,7 @@ Move code to a more appropriate location.
 ## Options
 
 | Option | Description | Default |
-|--------|-------------|---------|
+| -------- | ------------- | --------- |
 | `--type` | Refactoring type (extract-method, extract-variable, rename, inline, move) | interactive |
 | `--story` | Target story's code | all code |
 | `--file` | Target specific file | auto-detect |

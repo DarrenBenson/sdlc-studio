@@ -20,7 +20,7 @@ Detailed validation workflows, contract testing, and advanced testing patterns.
 ## Related References {#test-validation-related-references}
 
 | Document | Content |
-|----------|---------|
+| ---------- | --------- |
 | `reference-test-best-practices.md` | Core practices, checklists, warnings, coverage targets |
 | `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` | Test workflows |
 | `reference-test-e2e-guidelines.md` | E2E mocking patterns, singleton/factory mocking, API contract tests |
@@ -345,7 +345,7 @@ def isolated_db():
 Unit tests should be fast enough to run on every save:
 
 | Target | Acceptable | Action Needed |
-|--------|------------|---------------|
+| -------- | ------------ | --------------- |
 | < 10ms | Ideal | - |
 | 10-100ms | Acceptable | Consider optimisation |
 | > 100ms | Slow | Mock external calls, review setup |
@@ -353,7 +353,7 @@ Unit tests should be fast enough to run on every save:
 **Common slowdowns:**
 
 | Cause | Fix |
-|-------|-----|
+| ------- | ----- |
 | Database setup | Use in-memory SQLite or mock repository |
 | File I/O | Use `io.StringIO` or temp files |
 | Network calls | Mock at boundary |
@@ -455,7 +455,7 @@ Snapshot testing captures output and compares against stored "golden" files.
 ### When to Use {#snapshot-when-to-use}
 
 | Good For | Avoid For |
-|----------|-----------|
+| ---------- | ----------- |
 | UI component HTML/JSX | Timestamps, UUIDs |
 | CLI output formatting | User-specific data |
 | API response structure | Frequently changing content |
@@ -502,7 +502,7 @@ expect({
 ## Navigation {#navigation}
 
 | Document | Purpose |
-|----------|---------|
+| ---------- | --------- |
 | `reference-test-best-practices.md` | Core testing practices and checklist |
 | `reference-tsd.md`, `reference-test-spec.md`, `reference-test-automation.md` | Test workflows |
 | `reference-test-e2e-guidelines.md` | E2E patterns and mocking strategies |

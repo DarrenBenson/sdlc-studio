@@ -7,7 +7,7 @@ This document tracks all implementation workflows for the project.
 ## Summary
 
 | Status | Count |
-|--------|-------|
+| -------- | ------- |
 | In Progress | {{in_progress_count}} |
 | Paused | {{paused_count}} |
 | Done | {{done_count}} |

@@ -21,7 +21,7 @@ Related: help/test-spec.md, reference-test-spec.md
 ## Coverage Summary
 
 | Metric | Value |
-|--------|-------|
+| -------- | ------- |
 | Epics with specs | {{epics_covered}}/{{total_epics}} |
 | Total test cases | {{total_cases}} |
 | Automated | {{total_automated}} ({{automation_pct}}%) |
@@ -30,7 +30,7 @@ Related: help/test-spec.md, reference-test-spec.md
 ## By Test Type
 
 | Type | Count | Automated |
-|------|-------|-----------|
+| ------ | ------- | ----------- |
 | Unit | {{unit_count}} | {{unit_automated}} |
 | Integration | {{integration_count}} | {{integration_automated}} |
 | API | {{api_count}} | {{api_automated}} |
@@ -41,6 +41,7 @@ Related: help/test-spec.md, reference-test-spec.md
 {{#if missing_epics}}
 **Epics without specs:**
 {{#each missing_epics}}
+
 - [ ] EP{{id}}: {{title}} - Run `/sdlc-studio test-spec --epic EP{{id}}`
 {{/each}}
 {{/if}}
@@ -48,6 +49,7 @@ Related: help/test-spec.md, reference-test-spec.md
 {{#if pending_automation}}
 **Specs with pending automation:**
 {{#each pending_automation}}
+
 - [ ] TS{{id}}: {{pending_count}} cases - Run `/sdlc-studio test-automation --spec TS{{id}}`
 {{/each}}
 {{/if}}

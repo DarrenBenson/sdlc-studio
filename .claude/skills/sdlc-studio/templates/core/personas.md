@@ -17,18 +17,23 @@ Personas for this project. Referenced in user stories to ensure features are des
 **Primary Goal:** {{primary_goal}}
 
 ### Background
+
 {{background}}
 
 ### Needs & Motivations
+
 - {{need}}
 
 ### Pain Points
+
 - {{pain_point}}
 
 ### Typical Tasks
+
 - {{task}}
 
 ### Quote
+>
 > "{{representative_quote}}"
 
 ---
@@ -40,24 +45,29 @@ Personas for this project. Referenced in user stories to ensure features are des
 **Primary Goal:** Ship features quickly with high quality
 
 ### Background
+
 Experienced developer who has been using the product for over a year. Knows the shortcuts and advanced features.
 
 ### Needs & Motivations
+
 - Fast, keyboard-driven workflows
 - Customisation options
 - Detailed error messages for debugging
 
 ### Pain Points
+
 - Slow or repetitive tasks
 - Lack of advanced configuration
 - Features that assume beginner knowledge
 
 ### Typical Tasks
+
 - Complex multi-step operations
 - Batch processing
 - Automation and scripting
 
 ### Quote
+>
 > "Just let me configure it properly once, and then get out of my way."
 
 ---
@@ -69,24 +79,29 @@ Experienced developer who has been using the product for over a year. Knows the 
 **Primary Goal:** Learn the basics without breaking anything
 
 ### Background
+
 Recently joined the team and is learning the product. Needs clear guidance and safe defaults.
 
 ### Needs & Motivations
+
 - Clear, step-by-step guidance
 - Safe defaults
 - Undo/recovery options
 
 ### Pain Points
+
 - Cryptic error messages
 - Too many options without explanation
 - Fear of making irreversible mistakes
 
 ### Typical Tasks
+
 - Following tutorials
 - Simple CRUD operations
 - Learning terminology
 
 ### Quote
+>
 > "I just want to know if I'm doing this right."
 
 ---

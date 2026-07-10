@@ -33,6 +33,7 @@ SDLC Studio is model-invoked - say it in plain language:
 ## Purpose
 
 A TRD bridges the gap between **what** (PRD) and **how** (code). It captures:
+
 - **Project type classification** and architecture implications
 - Architecture decisions with rationale
 - Technology stack with strong justifications
@@ -59,6 +60,7 @@ Interactive conversation to build a TRD from scratch.
 **Prerequisites:** PRD must exist at `sdlc-studio/prd.md`
 
 **Process:**
+
 1. **Project type classification** (Web App, API Backend, Mobile Backend, etc.)
 2. **Architecture recommendations** based on project type
 3. Architecture pattern discussion (accept defaults or customise)
@@ -69,6 +71,7 @@ Interactive conversation to build a TRD from scratch.
 8. Security considerations
 
 **Architecture Guidance:**
+
 - Presents recommended stack based on project type
 - Requires strong rationale for technology choices (not just "familiarity")
 - Captures deviations from defaults as ADRs
@@ -84,6 +87,7 @@ Reverse-engineer a TRD from an existing codebase.
 > **Source of truth:** `reference-philosophy.md#generate-mode` - explains the specification extraction philosophy.
 
 **Process:**
+
 1. **Detect project type** from codebase patterns
 2. **Detect architecture pattern** (monolith, microservices, etc.)
 3. Explore codebase structure and patterns
@@ -96,6 +100,7 @@ Reverse-engineer a TRD from an existing codebase.
 
 **Architecture Assessment:**
 Evaluates existing architecture for:
+
 - Pattern alignment with project type
 - Architecture smells (Big Ball of Mud, Distributed Monolith, etc.)
 - Technology selection appropriateness
@@ -112,6 +117,7 @@ Review TRD against implementation and sync changes.
 **Prerequisites:** TRD must exist at `sdlc-studio/trd.md`
 
 **Process:**
+
 1. Compare codebase against current TRD
 2. Identify new components or changes
 3. Update relevant sections
@@ -127,6 +133,7 @@ Regenerate architecture diagrams from TRD content.
 **Prerequisites:** TRD must exist with Technology Stack and Architecture sections
 
 **Process:**
+
 1. Parses TRD sections (Technology Stack, Architecture Decisions, Integrations)
 2. Extracts system boundaries, containers, components
 3. Generates C4 model diagrams as Mermaid code blocks
@@ -135,12 +142,13 @@ Regenerate architecture diagrams from TRD content.
 **Diagram types:**
 
 | Diagram | C4 Level | Shows |
-|---------|----------|-------|
+| --------- | ---------- | ------- |
 | System Context | L1 | System + external actors + systems |
 | Container | L2 | Applications + data stores + communication |
 | Component | L3 | Internal structure of a container |
 
 **Diagram rendering:**
+
 - GitHub/GitLab: Renders automatically in markdown preview
 - VS Code: Install Mermaid extension
 - Documentation systems: Most modern systems support Mermaid
@@ -154,6 +162,7 @@ Add container design decisions to TRD.
 **Prerequisites:** TRD must exist with Technology Stack section
 
 **Process:**
+
 1. Parses TRD Technology Stack section
 2. Asks about containerisation requirements
 3. Generates Container Design section with:
@@ -166,7 +175,7 @@ Add container design decisions to TRD.
 **Container decisions captured:**
 
 | Decision | What it documents |
-|----------|-------------------|
+| ---------- | ------------------- |
 | Base image | Alpine, slim, distroless, etc. |
 | Build stages | Multi-stage build strategy |
 | Exposed ports | Application ports and usage |
@@ -184,7 +193,7 @@ Add container design decisions to TRD.
 ## TRD Structure
 
 | Section | Content |
-|---------|---------|
+| --------- | --------- |
 | Executive Summary | Purpose, scope, key decisions |
 | **Project Classification** | Project type, default pattern, deviation rationale |
 | Architecture Overview | Pattern, components, diagram |
@@ -205,7 +214,7 @@ Add container design decisions to TRD.
 Classification determines architecture recommendations:
 
 | Type | Description | Default Pattern |
-|------|-------------|-----------------|
+| ------ | ------------- | ----------------- |
 | Web Application | Frontend + backend | Monolith |
 | API Backend | REST/GraphQL API, no UI | Modular Monolith |
 | Mobile Backend | APIs for iOS/Android | Monolith with API layer |
@@ -261,7 +270,7 @@ The TRD includes ADRs for significant decisions:
 When generating, use confidence markers:
 
 | Marker | Meaning |
-|--------|---------|
+| -------- | --------- |
 | [HIGH] | Clear evidence in codebase |
 | [MEDIUM] | Inferred from patterns |
 | [LOW] | Best guess, needs validation |
@@ -270,6 +279,7 @@ When generating, use confidence markers:
 ## Next Steps
 
 After TRD:
+
 - Run `/sdlc-studio persona` to define user types
 - Run `/sdlc-studio epic` to generate feature groupings
 - Use TRD as reference during implementation planning
@@ -277,13 +287,16 @@ After TRD:
 ## See Also
 
 **REQUIRED for this workflow:**
+
 - `reference-philosophy.md#generate-mode` - Understand specification extraction (generate mode only)
 - `reference-trd.md` - TRD workflow details
 
 **Recommended:**
+
 - `/sdlc-studio prd help` - Product requirements (context)
 - `/sdlc-studio code help` - Implementation workflow (downstream)
 
 **Optional (deep dives):**
+
 - `reference-architecture.md` - Full architecture guidance
 - `reference-outputs.md` - Output formats reference

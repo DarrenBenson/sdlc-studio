@@ -12,7 +12,7 @@ Related: help/epic.md, reference-epic.md
 ## Summary
 
 | Status | Count |
-|--------|-------|
+| -------- | ------- |
 | Draft | {{draft_count}} |
 | Ready | {{ready_count}} |
 | Approved | {{approved_count}} |

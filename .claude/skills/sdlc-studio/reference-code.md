@@ -140,11 +140,11 @@ Detailed workflows for code planning, review, and quality checks.
 
    Fold the result into the plan:
 
-   - **Estimate.** The `difficulty` band (low / medium / high, by max cognitive
+- **Estimate.** The `difficulty` band (low / medium / high, by max cognitive
      complexity vs the configurable `complexity.cognitive_high` threshold, default
      15) weights the effort/points - a `high` change in a 40-branch function costs
      more tokens, iterations and error rate than a new file of the same story shape.
-   - **Refactor-first (recommended, never a gate - D3).** For each `refactor_first`
+- **Refactor-first (recommended, never a gate - D3).** For each `refactor_first`
      hotspot, add a plan step to reduce that function's complexity *before* the
      feature change, **scoped to the change only** (Beck's "make the change easy",
      not a wholesale rewrite - D6). LLMs measurably do better on
@@ -152,7 +152,7 @@ Detailed workflows for code planning, review, and quality checks.
 
    The signal is advisory: record it in the plan, do not block on it.
 
-7. **Generate Implementation Plan**
+1. **Generate Implementation Plan**
    Use sequential thinking to plan implementation:
 
    ```text
@@ -166,7 +166,7 @@ Detailed workflows for code planning, review, and quality checks.
    7. Determine TDD vs Test-After recommendation
    ```
 
-8. **Write Plan File**
+2. **Write Plan File**
    - Use template from `templates/core/plan.md`
    - Output to `sdlc-studio/plans/PL{NNNN}-{slug}.md`
    - Assign next available plan ID using **ID Collision Check**:
@@ -174,7 +174,7 @@ Detailed workflows for code planning, review, and quality checks.
      2. If file(s) exist with that ID prefix, increment to next available
      3. Log a warning if a collision was avoided
 
-9. **Update Plan Index**
+3. **Update Plan Index**
    - Create or update `sdlc-studio/plans/_index.md`
    - Use template from `templates/indexes/plan.md`
    - **CRITICAL:** Always add the new entry to the index in the same step as creating the file. Do not defer index updates.

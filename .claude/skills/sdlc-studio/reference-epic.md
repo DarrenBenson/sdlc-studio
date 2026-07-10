@@ -1013,6 +1013,7 @@ that file when building wave prompts.
 ### Recovery Strategies {#recovery-strategies}
 
 **Option 1: Fix and Resume**
+
 ```bash
 # Fix the issue in the failed story
 # Then resume from that story
