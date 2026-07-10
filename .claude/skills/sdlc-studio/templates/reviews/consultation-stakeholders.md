@@ -1,7 +1,13 @@
 <!--
 Template: Stakeholder Consultation Output
 Usage: Output format for stakeholder consultation
-Variables: {{users}}, {{business}}, {{technical}}, {{analysis}}, {{recommendations}}
+Variables: {{groups}} (one entry per stakeholder group present), {{analysis}},
+  {{recommendations}}, {{provisional_names_or_none}}
+Grouping: one section per DECLARED stakeholder type present on the panel - Buyer,
+  Compliance, Ops, Served (from each card's `<!-- stakeholder: ... -->` comment).
+  Legacy cards without a declared type group as Users, Business, Technical. Only
+  groups with at least one consulted card render a section and a summary row -
+  never emit an empty section for an absent type.
 -->
 
 # Stakeholder Review: {{artefact_name}}
@@ -13,15 +19,19 @@ Variables: {{users}}, {{business}}, {{technical}}, {{analysis}}, {{recommendatio
 
 ---
 
-## User Perspectives
+{{#each groups}}
 
-{{#each users}}
+## {{group_name}} Perspectives
+
+{{#each members}}
 
 ### {{persona_name}} ({{role}})
 
 **Verdict:** {{verdict_icon}} {{verdict_text}}
 
 {{feedback}}
+
+**Objection (or why none):** {{objection_or_rationale}}
 
 **Questions:**
 {{#each questions}}
@@ -39,86 +49,15 @@ Variables: {{users}}, {{business}}, {{technical}}, {{analysis}}, {{recommendatio
 
 ---
 {{/each}}
-
-{{#if users.length === 0}}
-*No user personas consulted.*
-
----
-{{/if}}
-
-## Business Perspectives
-
-{{#each business}}
-
-### {{persona_name}} ({{role}})
-
-**Verdict:** {{verdict_icon}} {{verdict_text}}
-
-{{feedback}}
-
-**Questions:**
-{{#each questions}}
-
-- {{this}}
 {{/each}}
-
-{{#if conditions}}
-**Conditions:**
-{{#each conditions}}
-
-- {{this}}
-{{/each}}
-{{/if}}
-
----
-{{/each}}
-
-{{#if business.length === 0}}
-*No business personas consulted.*
-
----
-{{/if}}
-
-## Technical Perspectives
-
-{{#each technical}}
-
-### {{persona_name}} ({{role}})
-
-**Verdict:** {{verdict_icon}} {{verdict_text}}
-
-{{feedback}}
-
-**Questions:**
-{{#each questions}}
-
-- {{this}}
-{{/each}}
-
-{{#if conditions}}
-**Conditions:**
-{{#each conditions}}
-
-- {{this}}
-{{/each}}
-{{/if}}
-
----
-{{/each}}
-
-{{#if technical.length === 0}}
-*No technical personas consulted.*
-
----
-{{/if}}
 
 ## Summary by Group
 
 | Group | Consulted | Approve | Concerns | Reject |
 | ------- | ----------- | --------- | ---------- | -------- |
-| Users | {{users.length}} | {{users.approve}} | {{users.concerns}} | {{users.reject}} |
-| Business | {{business.length}} | {{business.approve}} | {{business.concerns}} | {{business.reject}} |
-| Technical | {{technical.length}} | {{technical.approve}} | {{technical.concerns}} | {{technical.reject}} |
+{{#each groups}}
+| {{group_name}} | {{members.length}} | {{approve}} | {{concerns}} | {{reject}} |
+{{/each}}
 | **Total** | **{{total_count}}** | **{{total_approve}}** | **{{total_concerns}}** | **{{total_reject}}** |
 
 ---
@@ -138,6 +77,10 @@ Variables: {{users}}, {{business}}, {{technical}}, {{analysis}}, {{recommendatio
 
 - **{{groups}}:** {{description}}
 {{/each}}
+
+*Arbitration:* a Buyer/Customer conflict with the Primary persona's interface is
+recorded here and routed elsewhere (reporting, admin surfaces, policy) - buyer goals
+never override the Primary's interface.
 
 ### Patterns
 

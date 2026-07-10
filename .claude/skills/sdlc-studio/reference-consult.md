@@ -32,6 +32,17 @@ Use `persona_resolve.py resolve-consult --role <role> --root <root>` to pick the
 role and surface the render-less error - it reuses the delegation resolver, so consult and
 delegation honour the same authored seat.
 
+**Two disciplines apply to every consult, whatever the mode:**
+
+- **The Primary test (arbitration).** For any feature-shaped question, each seat asks:
+  does this serve the Primary persona's End Goals? If not, cut or demote it - a
+  stakeholder's want is met elsewhere, never by bending the Primary's interface.
+- **The objection quota (anti-sycophancy).** Every consulted seat raises at least one
+  concrete objection or states why none exists. A panel of favourable-and-vague verdicts
+  is a failed consult, not a passed one - the output templates carry an
+  `Objection (or why none)` field per seat so the quota is visible, and the eval suite
+  grades it.
+
 ---
 
 ## Consultation Modes
@@ -229,34 +240,39 @@ Get feedback from all stakeholder personas (not team).
 
 ### Example Output
 
+One section per declared type present on the panel (Buyer, Compliance, Ops, Served);
+legacy cards without a type group as Users, Business, Technical. Never render an
+empty section.
+
 ```markdown
 ## Stakeholder Review: Feature X PRD
 
-### User Perspectives
+**Provisional (unverified) cards:** priya-nair.md
 
-#### Emma Wilson (Power User)
-**Verdict:** ✅ Approve
-"Finally, keyboard shortcuts for bulk operations..."
+### Buyer Perspectives
 
-#### Tom Bradley (Novice User)
-**Verdict:** ⚠️ Concerns
-"The interface looks complex. Is there a guided mode?"
-
----
-
-### Business Perspectives
-
-#### James Mitchell (Executive)
+#### James Mitchell (VP Operations, economic buyer)
 **Verdict:** ✅ Approve
 "ROI projections are solid. Timeline is aggressive but achievable."
+**Objection (or why none):** none - the phased rollout answers my budget-cycle risk.
 
 ---
 
-### Technical Perspectives
+### Compliance Perspectives
 
-#### David Park (Security Lead)
+#### Priya Nair (DPO)
 **Verdict:** ⚠️ Concerns
 "Data export feature needs access controls..."
+**Objection (or why none):** export lacks an audit trail - veto line until logged.
+
+---
+
+### Served Perspectives
+
+#### Emma Wilson (Warehouse picker - affected, never a user)
+**Verdict:** ⚠️ Concerns
+"Re-slotting driven by this system changes my pick routes mid-shift."
+**Objection (or why none):** no notice period for route changes.
 
 ---
 

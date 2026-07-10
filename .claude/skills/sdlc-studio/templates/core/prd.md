@@ -61,6 +61,8 @@ Related: help/prd.md, reference-prd.md
 
 **User Story:** As a {{user_type}}, I want to {{action}} so that {{benefit}}.
 
+**Serves:** {{persona names this feature serves - optional; when used, each name must match a persona file (checked by `validate serves`, dormant until first use)}}
+
 **Acceptance Criteria:**
 
 - [ ] {{criterion_1}}

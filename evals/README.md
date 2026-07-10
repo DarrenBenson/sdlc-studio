@@ -60,6 +60,7 @@ One JSON file per scenario in `scenarios/`:
 | `05-schema-v3-identity` | The v4 default: ULID id allocation, ULID-epic wiring, reconcile coverage |
 | `06-independence-gate` | Author != reviewer and the verified-depth gate on terminal status |
 | `07-team-generation` | Ask-before-write on ambiguous signals; never-clobber; the seats floor |
+| `08-consult-objection-quota` | Anti-sycophancy: >=1 objection per seat; the Primary test arbitrates a buyer-serving feature |
 
 Add a scenario whenever a release breaks behaviour these did not catch -
 the gap is the spec for the next scenario.

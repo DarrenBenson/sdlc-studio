@@ -341,6 +341,45 @@ class PersonaWellFormedTests(unittest.TestCase):
                           sections=["Who They Are", "End Goals", "Behaviours & Context", "Frustrations"])
             self.assertEqual(validate.check_personas(repo), [])
 
+    def _persona_iface(self, repo, name, role, interface=None):
+        d = repo / "sdlc-studio" / "personas"; d.mkdir(parents=True, exist_ok=True)
+        iface = f"| **Interface** | {interface} |\n" if interface else ""
+        body = (f"# {name}\n\n## Quick Reference\n\n| Attribute | Value |\n| --- | --- |\n"
+                f"| **Cast role** | {role} |\n{iface}\n")
+        body += "".join(f"## {s}\n\nx\n\n" for s in self.STD)
+        (d / f"{name}.md").write_text(body, encoding="utf-8")
+
+    def test_two_primaries_is_a_warning(self):
+        # Cooper: exactly one Primary per interface; two Primaries = two interfaces.
+        # A warning by default - the cast MAY legitimately target two interfaces.
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            self._persona_iface(repo, "maya", "Primary")
+            self._persona_iface(repo, "omar", "Primary")
+            found = [v for v in validate.check_personas(repo)
+                     if v["rule"] == "persona-one-primary"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0]["severity"], "warning")
+
+    def test_two_primaries_same_interface_is_an_error(self):
+        # ...but two Primaries DECLARING the same Interface: is the elastic user reborn
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            self._persona_iface(repo, "maya", "Primary", interface="operator console")
+            self._persona_iface(repo, "omar", "Primary", interface="Operator Console")
+            found = [v for v in validate.check_personas(repo)
+                     if v["rule"] == "persona-one-primary"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0]["severity"], "error")
+
+    def test_two_primaries_distinct_interfaces_no_finding(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            self._persona_iface(repo, "maya", "Primary", interface="operator console")
+            self._persona_iface(repo, "omar", "Primary", interface="mobile app")
+            rules = {v["rule"] for v in validate.check_personas(repo)}
+            self.assertNotIn("persona-one-primary", rules)
+
     STAKE = ("<!-- stakeholder: compliance -->\n# Ines Ferreira - DPO\n\n"
              "> **Cast:** Customer\n\n## Who They Are\n\nx\n\n## What They Want\n\n1. x\n\n"
              "## Veto Lines\n\n- x\n\n## Evidence They Read\n\n- x\n")
@@ -776,6 +815,66 @@ class UlidIdFormatTests(unittest.TestCase):
             rules = {v["rule"] for v in validate.validate_file(p, "bug")}
             self.assertIn("id-format", rules)
 
+class ServesCoverageTests(unittest.TestCase):
+    """Persona-tagged requirements coverage - DORMANT until the project carries >=1
+    Serves: tag or opts in via config; advisory, never gated."""
+
+    def _repo(self, d, *, stories=(), personas=(), config=""):
+        repo = pathlib.Path(d)
+        sdir = repo / "sdlc-studio" / "stories"; sdir.mkdir(parents=True)
+        for i, (name, body) in enumerate(stories):
+            (sdir / name).write_text(body, encoding="utf-8")
+        pdir = repo / "sdlc-studio" / "personas"; pdir.mkdir(parents=True, exist_ok=True)
+        for name, h1 in personas:
+            (pdir / name).write_text(f"# {h1}\n\n## Who They Are\n\nx\n", encoding="utf-8")
+        if config:
+            (repo / "sdlc-studio" / ".config.yaml").write_text(config, encoding="utf-8")
+        return repo
+
+    STORY = "# US0001: x\n\n> **Status:** Draft\n> **Serves:** Maya Chen\n\n## Acceptance Criteria\n\n- **AC1:** x\n"
+
+    def test_dormant_with_no_tags_and_no_opt_in(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, stories=[("US0001-x.md", self.STORY.replace(
+                "> **Serves:** Maya Chen\n", ""))])
+            res = validate.check_serves(repo)
+            self.assertFalse(res["active"])
+            self.assertEqual(res["findings"], [])
+
+    def test_one_tag_activates_and_resolves(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, stories=[("US0001-x.md", self.STORY)],
+                              personas=[("maya-chen.md", "Maya Chen - Dispatcher")])
+            res = validate.check_serves(repo)
+            self.assertTrue(res["active"])
+            self.assertEqual(res["findings"], [])
+            self.assertEqual(res["coverage"].get("Maya Chen"), 1)
+
+    def test_unresolved_persona_name_is_flagged(self):
+        # Sam's blocking condition: a named persona MUST resolve to a persona file -
+        # a tag pointing nowhere is worse than no tag (it reads as covered)
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, stories=[("US0001-x.md", self.STORY)])
+            rules = {v["rule"] for v in validate.check_serves(repo)["findings"]}
+            self.assertIn("serves-unresolved", rules)
+
+    def test_config_opt_in_activates_without_tags(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, stories=[("US0001-x.md", self.STORY.replace(
+                "> **Serves:** Maya Chen\n", ""))],
+                config="serves_coverage: true\n")
+            res = validate.check_serves(repo)
+            self.assertTrue(res["active"])
+            rules = {v["rule"] for v in res["findings"]}
+            self.assertIn("serves-nobody", rules)
+
+    def test_advisory_only_never_errors(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, stories=[("US0001-x.md", self.STORY)])
+            sev = {v["severity"] for v in validate.check_serves(repo)["findings"]}
+            self.assertLessEqual(sev, {"warning"})
+
+
 class SeatCheckTests(unittest.TestCase):
     """The error-level generation floor: role declared+allowed, review render present,
     demographic denylist clean, one card per role, cast capped at 5."""
@@ -879,6 +978,19 @@ class SeatCheckTests(unittest.TestCase):
                                                     require_stamp=[sdir / "omar.md"])
                     if v["severity"] == "error"]
             self.assertEqual(errs, [])
+
+    def test_malformed_stamp_on_a_stakeholder_card_is_an_error(self) -> None:
+        # Same failure mode as seats: a mangled provenance line silently classifies as
+        # authored and drops from the provisional advisory - caught here even with no
+        # --require-stamp (post-gate mangling has an owner).
+        with tempfile.TemporaryDirectory() as d:
+            self._seat(Path(d), "priya.md", self.GOOD)
+            sdir = Path(d) / "sdlc-studio" / "personas" / "stakeholders"
+            sdir.mkdir(parents=True)
+            (sdir / "omar.md").write_text(
+                "<!-- provenance: generated provisional-unverified hash=sha256:ABCDEF -->\n"
+                "# Omar - buyer\n", encoding="utf-8")
+            self.assertIn("seat-malformed-stamp", self._rules(Path(d)))
 
     def test_require_stamp_fails_loudly_on_an_unmatched_path(self) -> None:
         # The critic's round-2 defect: a guard must fail loudly on input it cannot

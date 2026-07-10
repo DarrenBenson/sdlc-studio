@@ -444,8 +444,9 @@ def _starts(headings: list[str], *prefixes: str) -> bool:
 def check_personas(root: Path) -> list[dict]:
     """Cast-role-aware well-formedness check for goal-directed personas.
 
-    Advisory only - a persona is a design aid, and a draft is legitimate; this never errors and
-    is not in the hard gate. Scans `sdlc-studio/personas/*.md` (skips index.md). A standard
+    Advisory - a persona is a design aid, and a draft is legitimate; not in the hard
+    gate. One finding errors: two Primary personas declaring the same `Interface:` (the
+    elastic user reborn - Cooper's one-Primary-per-interface rule); everything else warns. Scans `sdlc-studio/personas/*.md` (skips index.md). A standard
     persona (primary/secondary/supplemental) wants Who They Are, End Goals, Experience Goals,
     Behaviours & Context, Frustrations, Scenario; a **Negative** persona swaps Experience Goals
     for a Why-not (and keeps a Scenario/how-to-handle); Customer/Served make Experience + Scenario
@@ -458,6 +459,7 @@ def check_personas(root: Path) -> list[dict]:
     if not pdir.is_dir():
         return out
     inspected = 0
+    primaries: list[tuple[Path, str | None]] = []
     for p in sorted(pdir.glob("*.md")):
         # design personas only - skip index / readme / a consult-guide / underscore files, and the
         # seats/ subdir (review-seat charters, a different schema) is already excluded by the flat glob
@@ -490,6 +492,30 @@ def check_personas(root: Path) -> list[dict]:
             if not ok:
                 out.append({"severity": "warning", "rule": "persona-section", "file": str(p),
                             "message": f"missing section: {name}"})
+        if role == "primary":
+            im = re.search(r"\|\s*\*\*Interface\*\*\s*\|\s*([^|]+?)\s*\|", text, re.I)
+            primaries.append((p, im.group(1).strip().casefold() if im else None))
+
+    # Cooper: exactly one Primary per interface - two Primaries means two interfaces.
+    # A multi-Primary cast is a warning (the project may genuinely have two interfaces);
+    # two Primaries DECLARING the same optional Interface: is the elastic user reborn
+    # and the one place this check errors.
+    if len(primaries) > 1:
+        declared = [(p, i) for p, i in primaries if i]
+        shared = {i for _, i in declared if sum(1 for _, j in declared if j == i) > 1}
+        if shared:
+            names = ", ".join(p.name for p, i in declared if i in shared)
+            out.append({"severity": "error", "rule": "persona-one-primary", "file": str(pdir),
+                        "message": f"two Primary personas declare the same Interface "
+                                   f"({', '.join(sorted(shared))}): {names} - one Primary "
+                                   "per interface; merge them or split the interface"})
+        elif any(i is None for _, i in primaries):
+            names = ", ".join(p.name for p, _ in primaries)
+            out.append({"severity": "warning", "rule": "persona-one-primary", "file": str(pdir),
+                        "message": f"{len(primaries)} Primary personas ({names}) - Cooper's "
+                                   "rule is one Primary per interface; declare an "
+                                   "`| **Interface** | ... |` row in each Quick Reference "
+                                   "or demote all but one"})
 
     # The stakeholder panel (personas/stakeholders/) has its own schema - the other side
     # of the table: type declared, goals, veto lines, evidence read, Cooper Cast
@@ -537,6 +563,99 @@ def check_personas(root: Path) -> list[dict]:
                         "message": f"personas present but not in the flat Cooper layout "
                                    f"({len(nested)} nested files found); not validated"})
     return out
+
+
+_SERVES_RE = re.compile(r"^>?\s*\*\*Serves:\*\*\s*(.+?)\s*$", re.M)
+
+
+def _persona_name_index(root: Path) -> dict[str, str]:
+    """casefolded resolvable persona names -> filename: each H1's leading name (before
+    any ` - role` suffix) and each file stem (hyphens as spaces)."""
+    idx: dict[str, str] = {}
+    pdir = root / "sdlc-studio" / "personas"
+    if not pdir.is_dir():
+        return idx
+    for p in sorted(pdir.glob("*.md")):
+        if p.name.lower() in {"index.md", "readme.md", "consult-guide.md"} or p.name.startswith("_"):
+            continue
+        try:
+            first = next((ln for ln in p.read_text(encoding="utf-8").splitlines()
+                          if ln.startswith("# ")), "")
+        except OSError:
+            continue
+        h1 = first.lstrip("# ").split(" - ")[0].strip()
+        if h1:
+            idx[h1.casefold()] = p.name
+        idx[p.stem.replace("-", " ").casefold()] = p.name
+    return idx
+
+
+def check_serves(root: Path) -> dict:
+    """Persona-tagged requirements coverage (the Serves: convention) - DORMANT until the
+    project carries at least one `**Serves:**` tag or opts in with `serves_coverage: true`
+    in .config.yaml, so untagged projects never see a new warning. When active: every
+    named persona must resolve to a persona file (a tag pointing nowhere reads as covered
+    and is worse than no tag), a story serving nobody is flagged, and a coverage table
+    (persona -> tagged-unit count) is emitted. Advisory - warnings only, never gated."""
+    findings: list[dict] = []
+    coverage: dict[str, int] = {}
+    tagged = 0
+    units: list[tuple[Path, list[str]]] = []
+    for sub in ("stories", "prd.md"):
+        base = root / "sdlc-studio" / sub
+        files = sorted(base.glob("*.md")) if base.is_dir() else ([base] if base.is_file() else [])
+        for p in files:
+            if p.name.startswith("_"):
+                continue
+            try:
+                text = p.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            names = [n.strip() for m in _SERVES_RE.finditer(text)
+                     for n in m.group(1).split(",") if n.strip()]
+            if names:
+                tagged += 1
+            units.append((p, names))
+    active = tagged > 0 or bool(sdlc_md.project_override(root, "serves_coverage"))
+    if not active:
+        return {"active": False, "findings": [], "coverage": {}}
+    idx = _persona_name_index(root)
+    for p, names in units:
+        if not names:
+            findings.append({"severity": "warning", "rule": "serves-nobody", "file": str(p),
+                             "message": "no **Serves:** tag - which persona's End Goals "
+                                        "does this serve? (a unit serving nobody is a "
+                                        "feature-creep candidate)"})
+            continue
+        for n in names:
+            resolved = idx.get(n.casefold())
+            if resolved is None:
+                findings.append({"severity": "warning", "rule": "serves-unresolved",
+                                 "file": str(p),
+                                 "message": f"Serves: '{n}' resolves to no persona file - "
+                                            "fix the name or create the persona"})
+            else:
+                coverage[n] = coverage.get(n, 0) + 1
+    return {"active": True, "findings": findings, "coverage": coverage}
+
+
+def cmd_serves(args: argparse.Namespace) -> int:
+    """Report Serves: coverage (advisory; exits 0)."""
+    res = check_serves(Path(args.root).resolve())
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps(res, indent=2))
+        return 0
+    if not res["active"]:
+        print("serves: dormant (no **Serves:** tags and no serves_coverage opt-in)")
+        return 0
+    for v in res["findings"]:
+        print(f"{v['severity'].upper():7} [{v['rule']}] {v['file']}: {v['message']}")
+    if res["coverage"]:
+        print("\n| Persona | Units served |\n| --- | --- |")
+        for name, n in sorted(res["coverage"].items(), key=lambda kv: (-kv[1], kv[0])):
+            print(f"| {name} | {n} |")
+    print(f"serves: warnings={len(res['findings'])} personas-covered={len(res['coverage'])}")
+    return 0
 
 
 STAKEHOLDER_TYPES_ALLOWED = {"buyer", "compliance", "ops", "served"}
@@ -636,10 +755,29 @@ def check_seats(root: Path, require_stamp: list[Path] | None = None) -> list[dic
                             "message": "generated card carries no provenance stamp or "
                                        "reviewed marker - run persona_gen.py stamp before "
                                        "completing the flow"})
+    # Stakeholder cards share the malformed-stamp rule (the silent-declassify failure
+    # mode is identical), though never the seat schema.
+    stakedir = (root / "sdlc-studio" / "personas" / "stakeholders").resolve()
+    if stakedir.is_dir():
+        for p in sorted(stakedir.glob("*.md")):
+            try:
+                text = p.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            for ln in text.splitlines():
+                if (_PROVENANCE_LINE_RE.search(ln)
+                        and not persona_gen.STAMP_RE.search(ln)
+                        and not persona_gen.REVIEWED_RE.search(ln)):
+                    out.append({"severity": "error", "rule": "seat-malformed-stamp",
+                                "file": str(p),
+                                "message": f"provenance comment does not parse "
+                                           f"({ln.strip()!r}) - it would silently classify "
+                                           "as authored and drop out of the provisional "
+                                           "advisory"})
+                    break
     # The stakeholder flow shares this gate: a required path under personas/stakeholders/
     # is stamp-verified (never seat-schema-checked), so --stakeholders gets the same loud
     # floor instead of a parallel one.
-    stakedir = (root / "sdlc-studio" / "personas" / "stakeholders").resolve()
     for res, orig in required.items():
         if res in required_seen or res.parent != stakedir or not res.is_file():
             continue
@@ -693,17 +831,20 @@ def cmd_seats(args: argparse.Namespace) -> int:
 
 
 def cmd_personas(args: argparse.Namespace) -> int:
-    """Report persona well-formedness (advisory; exits 0)."""
+    """Report persona well-formedness (advisory; exits 1 only on the one error-level
+    finding, two Primaries declaring the same Interface)."""
     violations = check_personas(Path(args.root).resolve())
+    errors = sum(1 for v in violations if v["severity"] == "error")
     if args.format == "json":
         print(json.dumps({"generated_at": sdlc_md.now_iso8601(), "violations": violations,
-                          "summary": {"warnings": len(violations)}}, indent=2))
+                          "summary": {"errors": errors,
+                                      "warnings": len(violations) - errors}}, indent=2))
     else:
         for v in violations:
             print(f"{v['severity'].upper():7} {v['file']}: [{v['rule']}] {v['message']}")
         print("personas look well-formed." if not violations
-              else f"warnings={len(violations)}")
-    return 0  # advisory - never blocks
+              else f"errors={errors} warnings={len(violations) - errors}")
+    return 1 if errors else 0  # advisory except the same-Interface duplicate Primary
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -732,6 +873,11 @@ def build_parser() -> argparse.ArgumentParser:
     pp.add_argument("--root", default=".", help="Repo root (default: .)")
     pp.add_argument("--format", choices=("text", "json"), default="text")
     pp.set_defaults(func=cmd_personas)
+    sv = sub.add_parser("serves",
+                        help="Serves: persona-coverage report (dormant until first tag or opt-in).")
+    sv.add_argument("--root", default=".", help="Repo root (default: .)")
+    sv.add_argument("--format", choices=("text", "json"), default="text")
+    sv.set_defaults(func=cmd_serves)
     st = sub.add_parser("seats",
                         help="Error-level check for working-team seat cards (the generation floor).")
     st.add_argument("--root", default=".", help="Repo root (default: .)")

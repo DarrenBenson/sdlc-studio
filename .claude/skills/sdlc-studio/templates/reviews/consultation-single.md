@@ -1,7 +1,7 @@
 <!--
 Template: Single Persona Consultation Output
 Usage: Output format for single persona consultation
-Variables: {{persona_name}}, {{role}}, {{verdict}}, {{feedback}}, {{questions}}, {{conditions}}
+Variables: {{persona_name}}, {{role}}, {{verdict}}, {{feedback}}, {{objection_or_rationale}}, {{questions}}, {{conditions}}
 -->
 
 # Persona Consultation: {{artefact_name}}
@@ -16,6 +16,8 @@ Variables: {{persona_name}}, {{role}}, {{verdict}}, {{feedback}}, {{questions}},
 **Verdict:** {{verdict_icon}} {{verdict_text}}
 
 {{feedback}}
+
+**Objection (or why none):** {{objection_or_rationale}}
 
 ### Questions
 

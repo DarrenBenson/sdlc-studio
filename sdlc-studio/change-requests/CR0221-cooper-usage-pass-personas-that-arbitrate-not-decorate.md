@@ -1,6 +1,6 @@
 # CR-0221: Cooper usage pass: personas that arbitrate, not decorate
 
-> **Status:** Proposed
+> **Status:** In Progress
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-10

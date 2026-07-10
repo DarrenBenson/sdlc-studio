@@ -99,6 +99,16 @@ Live metrics (lint, type-check, coverage) are left to Claude to run. Help:
   canonical, CLAUDE.md a `@AGENTS.md` pointer, operating-doctrine + `LATEST.md`
   pointers present, pre-release gate + compaction rule present, no per-ship-narrative
   bloat). Used by `/sdlc-studio init` (seed-or-check) and `/sdlc-studio review`.
+- `personas`: cast-role-aware well-formedness for design personas plus the stakeholder
+  panel schema (advisory; its one error is two Primary personas declaring the same
+  `Interface:`)
+- `seats`: error-level floor for working-team seat cards (role, review render,
+  demographic denylist, cast cap, provenance-stamp grammar); `--require-stamp FILE...`
+  additionally requires a valid stamp or reviewed marker on each named just-generated
+  card and fails loudly on any path it cannot match
+- `serves`: persona-coverage report over `**Serves:**` tags (dormant until the first
+  tag or `serves_coverage: true`; resolves names to persona files, flags units serving
+  nobody, prints a coverage table; advisory)
 
 Exits non-zero when any error-severity violation is found. Used by Ready-status
 checks (`reference-decisions.md`) and as a reconcile pre-step.

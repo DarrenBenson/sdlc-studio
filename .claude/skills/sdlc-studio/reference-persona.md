@@ -38,9 +38,25 @@ the product is designed *for*.
 
 Only **Primary + Negative** are mandatory; add the rest as the product needs them.
 
+**One Primary per interface.** Two Primaries means two interfaces (Cooper's rule) - a cast
+that keeps both must declare which interface each is Primary FOR in an optional
+`| **Interface** | ... |` Quick Reference row. `validate personas` warns on a multi-Primary
+cast with no declared interfaces and errors when two Primaries declare the same one (the
+elastic user reborn).
+
 **Goals define the persona.** Each carries ordered **End goals** (what they accomplish, most
 important first - the design is judged against these) and **Experience goals** (how they want to
-feel). The full schema is under [Enhanced Persona Structure](#enhanced-structure).
+feel). **Life goals** (who they want to become) are strategy-tier: add them only when a signal
+warrants it (a product whose value proposition is career/identity-shaped), never by default.
+The full schema is under [Enhanced Persona Structure](#enhanced-structure).
+
+**Personas that arbitrate, not decorate.** A persona earns its place by cutting and ordering
+features against the Primary's End Goals - the deliverable anti-pattern is a cast nobody
+consults. Two conventions keep them load-bearing: the **Primary test** in every consult
+("does this serve the Primary's End Goals? if not, cut it"), and the optional **Serves:**
+tag on PRD features and stories naming the personas they serve - `validate serves` (dormant
+until the first tag or a `serves_coverage: true` config opt-in) resolves every named persona
+to a file, flags units serving nobody, and emits a coverage table (advisory).
 
 > **Design personas vs review seats.** This cast is the product's *users* - who you design for.
 > The internal *review seats* that critique artefacts (the Three Amigos: Product / Engineering /
@@ -302,6 +318,9 @@ Review and update existing personas.
    - "Have the End goals changed, or their order?"
    - "New frustrations, or a better scenario?"
    - "Is it still well-formed (every section filled)?"
+   - "Does every characteristic on the card influence a design decision? Strike any
+     that influences none (the anti-fluff judgement - the mechanical denylist only
+     catches the canonical demographics; this is where the rest gets caught)."
    - "Should this persona be retired?"
 
 3. **Check for New**
@@ -349,8 +368,21 @@ a request from them*. For **Customer / Served**, Experience Goals and Scenario a
 the template's "Cast-role variants" note.
 
 **Checking it.** `python3 "$CLAUDE_SKILL_DIR/scripts/validate.py" personas` flags a persona that is
-missing a section for its cast role (advisory - it never blocks, and it allows the Negative and
-Customer/Served variants). `persona review` runs it.
+missing a section for its cast role (advisory; its one error is two Primaries declaring the
+same Interface - it allows the Negative and Customer/Served variants). `persona review` runs it.
+
+## Scenario taxonomy {#scenario-taxonomy}
+
+Three scenario kinds, used at different moments (Cooper/Goodwin):
+
+| Kind | What it is | Drives |
+| --- | --- | --- |
+| **Context scenario** | A day-in-the-life narrative of the persona reaching an End goal, tech-agnostic | Early design framing - what the product must let happen |
+| **Key-path scenario** | The persona's most frequent, most valuable path through the actual interface | Layout and flow - THE scenario a design is judged against |
+| **Validation scenario** | An edge, failure, or rare-but-critical path ("what if the payment bounces mid-shift?") | Robustness testing ONLY - a validation scenario never drives layout |
+
+The template's Scenario section holds the key-path scenario; validation scenarios belong in
+test-specs and consult pressure-tests, not in the persona card.
 
 ## Template Location
 

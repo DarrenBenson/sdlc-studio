@@ -1,7 +1,7 @@
 <!--
 Template: Three Amigos Consultation Output
 Usage: Output format for team (Three Amigos) consultation
-Variables: {{product}}, {{engineering}}, {{qa}}, {{summary}}, {{actions}}
+Variables: {{product}}, {{engineering}}, {{qa}} (each with objection_or_rationale), {{summary}}, {{actions}}
 -->
 
 # Three Amigos Review: {{artefact_name}}
@@ -18,6 +18,8 @@ Variables: {{product}}, {{engineering}}, {{qa}}, {{summary}}, {{actions}}
 **Verdict:** {{product.verdict_icon}} {{product.verdict_text}}
 
 {{product.feedback}}
+
+**Objection (or why none):** {{product.objection_or_rationale}}
 
 **Questions:**
 {{#each product.questions}}
@@ -43,6 +45,8 @@ Variables: {{product}}, {{engineering}}, {{qa}}, {{summary}}, {{actions}}
 
 {{engineering.feedback}}
 
+**Objection (or why none):** {{engineering.objection_or_rationale}}
+
 **Questions:**
 {{#each engineering.questions}}
 
@@ -66,6 +70,8 @@ Variables: {{product}}, {{engineering}}, {{qa}}, {{summary}}, {{actions}}
 **Verdict:** {{qa.verdict_icon}} {{qa.verdict_text}}
 
 {{qa.feedback}}
+
+**Objection (or why none):** {{qa.objection_or_rationale}}
 
 **Questions:**
 {{#each qa.questions}}

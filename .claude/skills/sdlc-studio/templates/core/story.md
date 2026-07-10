@@ -9,6 +9,7 @@ Related: help/story.md, reference-story.md
 > **Status:** {{status}}
 > **Epic:** [EP{{epic_id}}: {{epic_title}}](../epics/EP{{epic_id}}-{{epic_slug}}.md)
 > **Persona:** {{persona_name}}
+> **Serves:** {{optional - design personas whose End Goals this story serves; names must resolve to persona files (validate serves)}}
 > **Owner:** {{owner}}
 > **Reviewer:** {{reviewer}}
 > **Created:** {{created_date}}

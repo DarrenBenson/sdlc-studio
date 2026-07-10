@@ -28,7 +28,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   still-provisional card in its output header. Stakeholder cards keep the provisional label until
   `persona review` clears it - assumption personas stay labelled until validated. Repository
   review closes with a team offer. Eval scenario 07 exercises the flow on an ambiguous-by-design
-  fixture.
+  fixture. The consult output for stakeholders renders one section per declared type actually
+  present (legacy Users/Business/Technical only for untyped cards), and the malformed-stamp rule
+  covers stakeholder cards. The Cooper usage pass makes personas arbitrate rather than decorate:
+  `validate personas` warns on a multi-Primary cast and errors when two Primaries declare the same
+  optional `Interface:`; the `**Serves:**` tag on PRD features and stories feeds `validate serves`
+  (dormant until first tag or config opt-in - resolves names to persona files, flags units serving
+  nobody, prints a coverage table); every consult carries the Primary test and a per-seat objection
+  quota (eval scenario 08 grades it); the scenario taxonomy is documented (validation scenarios
+  test robustness, never drive layout); Life goals generate only on a strategy-tier signal.
 
 - **EP0029 - v4 GA readiness (the final pre-GA dogfood sprint).** The numbering switch is an
   explicit operator question end to end: `migrate_v3 apply`/`adopt` refuse without `--confirm`,
