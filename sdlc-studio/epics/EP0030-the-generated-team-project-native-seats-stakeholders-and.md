@@ -1,6 +1,6 @@
 # EP0030: the generated team: project-native seats, stakeholders and Cooper personas that arbitrate
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-07-10
 > **Created-by:** sdlc-studio new
 

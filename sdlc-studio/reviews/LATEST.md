@@ -7,7 +7,7 @@
 >
 > **Version:** `4.0.0-rc.1` prepared (the maturity release: schema v3 active + default for new
 > projects) · **Date:** 2026-07-10 ·
-> **Gates:** 1586 skill + 132 tools tests pass, `gate` PASS, reconcile drift 0, `npm run lint` green.
+> **Gates:** 1632 skill + 132 tools tests pass, `gate` PASS, reconcile drift 0, `npm run lint` green.
 >
 > **rc-tag / push is operator-gated.** The version strings and CHANGELOG are homed at `4.0.0-rc.1`
 > and the pre-v4 dormant/freeze banners are removed, but the actual `git tag v4.0.0-rc.1`, the
@@ -16,6 +16,23 @@
 > of `origin` until then.
 
 ## Current
+
+- **EP0030 THE GENERATED TEAM DELIVERED - BACKLOG CLEAR, v4 TAG READY (2026-07-10).**
+  The GA-gating epic closed 9/9 through the full independence gate (8 critic REJECTs
+  across 6 units, every repair test-first and re-verified): team/stakeholder
+  generation (persona_gen + validate seats/serves floors, scenarios 07-08), the
+  Cooper usage pass, positioning (mill/cockpit docs/why + newcomer README +
+  docs/existing-users.md), the WHITE PAPER (docs/whitepaper.md + designed PDF via
+  tools/whitepaper_pdf.py; seven-paper consensus check; claims register; three-seat
+  gate + operator-correction round), the BENCHMARK RERUN (82 runs, three model eras,
+  rubric axis, pricing appendix - headline: judgement-gated process = no process on
+  base models, mandated process = near-frontier at base prices; docs/benchmarks/
+  2026-07-10-v4-rerun.md), and the ENGAGEMENT FLOOR shipped as doctrine rule 16 +
+  config default (CR0232). BG0103 found-and-fixed by dogfooding delivery agents.
+  RETRO0020 filed. v4.1 lane: CR0223-0225, CR0229 (mechanical floor), CR0230
+  (harness oracle), CR0231 (protocol v3 longitudinal/multi-team) - all Deferred,
+  Target v4.1, never gating. **The tag, freeze lift, and push remain the operator's
+  explicit action.**
 
 - **EP0029 v4 GA READINESS DELIVERED - BACKLOG CLEAR AGAIN (2026-07-10).** The final pre-GA
   dogfood sprint, run BY the personas: 9/9 units (breakdown-checkbox reconcile lane, the
