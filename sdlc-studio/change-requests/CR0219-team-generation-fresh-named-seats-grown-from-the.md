@@ -1,6 +1,7 @@
 # CR-0219: team generation: fresh named seats grown from the project (persona generate --team)
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Verification depth:** functional (red-then-green: persona_gen stamp/classify/accept with content-hash never-clobber - operator edit promotes to authored, restamp stable, accept refuses regeneration over reviewed cards; validate seats error-level floor (role/render/demographics/duplicate/cast-cap) exits 1 on errors; status surfaces provisional counts; the --team flow shipped with the <=4 question cap, shadowing guard and batch-accept; scenario 07 fixture is ambiguous by design (payments+health conflict) with scripted answers and ask-before-write ordering EBs; suites 1604+132)
 > **Depends on:** CR0218
 > **Priority:** High
 > **Type:** Feature

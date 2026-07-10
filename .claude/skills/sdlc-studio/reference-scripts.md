@@ -120,6 +120,7 @@ lists every script with a one-line summary; open the linked page for the full en
   and the canonical one-call bug close is `set --id BGxxxx --status Fixed --depth "<tier (evidence)>" --verdict approve --reviewer <R> --author <A>` - depth stamp, independent verdict and gated transition in one call, every predictable refusal raised before any write,
 - `archive.py` - Index archival for large boards. `archive --type <t> --release <r>` moves a
 - `file_finding.py` - Deterministic Bug/CR/RFC filer for audit findings. Allocates a
+- `persona_gen.py` - Deterministic floor of team/stakeholder generation: `stamp` marks a generated card provisional with a content hash, `classify` reports authored / generated-pristine / generated-edited (the never-clobber discriminator), `accept` clears provisional labels (batch-accept + persona review)
 - `next_id.py` - `allocate`: next free ID for a type (`--remote` also scans `origin/main`)
 - `ledger.py` - The append-only per-tranche decisions ledger. `record` appends a decision + rationale to `sdlc-studio/decisi...
 - `rfc.py` - RFC helpers - the `rfc decide` multi-RFC decision digest (per-draft open-decision + workstream counts + read...

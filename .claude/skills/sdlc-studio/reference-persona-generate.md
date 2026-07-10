@@ -311,6 +311,91 @@ All standard questions plus:
 
 ---
 
+# Team and Stakeholder Generation {#team-generation}
+
+The working TEAM (`--team`) and the stakeholder panel (`--stakeholders`) are generated
+from the project itself - fresh named individuals per project, never the same cast twice.
+Model-driven judgement inside a deterministic frame: analysis maps onto **behavioural
+variables and risk axes, never demographics**; the mechanical floor is owned by scripts.
+
+## `--team` {#team}
+
+### Step 1: Analyse (every source that exists; degrade honestly when absent)
+
+Read the PRD (domain, user classes, compliance vocabulary), TRD (stack, architecture),
+TSD + `.config.yaml` (quality bar, depth tiers), `repo_map.py build` output (languages,
+frameworks, test runners), and the design-persona cast if present. With only a repo
+available (the brownfield taster), analyse the repo map alone and say so. Present a
+**discoveries table**: domain, stack, risk signals, quality bar - each row marked
+`inferred` or `unknown`.
+
+### Step 2: Ask when unsure - HARD-CAPPED at 4 questions (1 under `--quick`)
+
+Multi-choice, one at a time, ONLY for signals the analysis could not settle:
+
+1. **Domain risk class** (asked unless unambiguous): money-movement / PII-health /
+   uptime-SLA / low-stakes. This one answer flavours every seat's paranoia and drives
+   extra-seat proposals.
+2. **Compliance regime** - asked ONLY when the risk-class answer implies one.
+3. **Extra seats** - one multi-select confirm, proposed ONLY on strong signals
+   (Security for auth/payments/PII; SRE for infra-heavy; Data for pipelines/ML; UX for
+   consumer surface), cap +2. The cast stays 3-5 - proliferation is the documented
+   persona failure mode.
+4. **Anything to adjust?** - one batch prompt showing every remaining inference with its
+   default. Every inference is contestable here; none is individually prompted.
+
+Headless runs take the defaults and keep the provisional stamp (Step 4).
+
+### Step 3: Generate fresh named individuals
+
+One card per role into `sdlc-studio/personas/seats/<name>.md` on the
+`templates/personas/amigo-template.md` schema: declared `<!-- role: ... -->`, dual
+render, and Craft Goals / Non-Negotiables / Pushes-Back-When / Shadow grounded in THIS
+project's stack, domain and risk class (a payments QA is paranoid about idempotency and
+reconciliation; a game QA about frame budgets and input latency). A characteristic that
+influences no engineering decision is omitted.
+
+**Shadowing guard:** if any `personas/amigos/<role>.md` claims a generated role, STOP and
+run the migration first (`project_upgrade.py --apply` migrates it to `seats/`), or report
+the conflict - never generate into a home that a legacy card would out-resolve. Applies
+under `--dry-run` too.
+
+**Never-clobber:** classify every existing seat card first
+(`persona_gen.py classify --root .`): `authored` and `generated-edited` cards are NEVER
+overwritten - offer an enrichment diff instead. `generated-pristine` cards of the same
+role are regenerated in place (a re-run diffs its own prior). `--dry-run` reports what
+would be written, asked, and skipped.
+
+### Step 4: Stamp, gate, accept
+
+1. Stamp every written card: `persona_gen.py stamp --file <card>` (provisional-unverified
+   with the content hash).
+2. Run the mechanical floor: `validate.py seats` - any error (missing role, missing
+   review render, demographic token, duplicate role, cast > 5) is fixed before the flow
+   may complete.
+3. **Batch-accept close** (interactive runs): present the team, one confirm; on yes run
+   `persona_gen.py accept --root .` for the TEAM cards - the flow ends with the squad
+   standing, not with an asterisk. Headless/`--quick` runs skip acceptance; the stamp
+   stays and `status` surfaces the count until `persona review` clears it.
+
+## `--stakeholders` {#stakeholders}
+
+Same four steps; differences: the cast question is one multi-select (economic buyer,
+compliance, ops/support, served-but-not-using groups); cards go to
+`sdlc-studio/personas/stakeholders/<name>.md` on
+`templates/personas/stakeholder-template.md` (goals, veto lines, evidence they read,
+Cooper Customer/Served designation, and the arbitration rule ON the card: buyer goals
+never override the Primary user's interface). Stakeholder cards KEEP the provisional
+stamp until `persona review` - they are assumption personas until validated (Cooper's
+rule). `consult stakeholders` names any provisional card in its output header.
+
+## Standalone invocation {#team-standalone}
+
+`persona generate --team` needs no PRD: with only a repository it analyses the repo map
+and asks the risk-class question. Offered after `prd create`/`generate`, at
+`project upgrade` (before the default-amigo option), and worth running after a
+`review generate` taster.
+
 # Validation Rules {#validation}
 
 Before writing personas, validate:

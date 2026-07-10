@@ -59,6 +59,7 @@ One JSON file per scenario in `scenarios/`:
 | `04-drift-reconcile` | Script-backed status/reconcile flows and dry-run safety |
 | `05-schema-v3-identity` | The v4 default: ULID id allocation, ULID-epic wiring, reconcile coverage |
 | `06-independence-gate` | Author != reviewer and the verified-depth gate on terminal status |
+| `07-team-generation` | Ask-before-write on ambiguous signals; never-clobber; the seats floor |
 
 Add a scenario whenever a release breaks behaviour these did not catch -
 the gap is the spec for the next scenario.

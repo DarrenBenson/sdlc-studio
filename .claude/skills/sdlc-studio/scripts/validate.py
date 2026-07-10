@@ -509,6 +509,95 @@ def check_personas(root: Path) -> list[dict]:
     return out
 
 
+SEAT_ROLES_ALLOWED = {"engineering", "qa", "product", "security", "sre", "data", "ux"}
+_SEAT_ROLE_RE = re.compile(r"<!--\s*role:\s*([a-z][a-z0-9-]*)\s*-->", re.I)
+_SEAT_REVIEW_SECTIONS = ("Lens", "Pushes Back When", "Shadow")
+# Tight, word-boundary demographic denylist (Cooper: a characteristic that influences no
+# design decision is omitted; demographics are the canonical fluff). Deliberately short to
+# avoid false positives - the broader judgement lives in persona review, not this check.
+_DEMOGRAPHIC_RE = re.compile(
+    r"\b(\d+\s+years\s+old|married|husband|wife|hobbies|her gender|his gender)\b", re.I)
+
+
+def check_seats(root: Path) -> list[dict]:
+    """Error-level well-formedness for the working-team seat cards (personas/seats/) - the
+    mechanical floor of team generation (the review-render hard error given an owner).
+
+    Per card: a declared role comment in the allowed set; the review-render section
+    headings; a clean demographic denylist; and one card per role (a duplicate claim is an
+    error - the resolver would tiebreak lexically, which is deterministic but arbitrary).
+    Cast size: >5 seats is an error (persona proliferation); missing core roles is a
+    warning (a project mid-authoring is legal). Runs standalone (`validate seats`) and is
+    REQUIRED at the end of a team-generation flow; it is not in the default hard gate, so
+    existing projects are never bricked by adoption."""
+    out: list[dict] = []
+    sdir = root / "sdlc-studio" / "personas" / "seats"
+    if not sdir.is_dir():
+        return out
+    cards = sorted(sdir.glob("*.md"))
+    roles_seen: dict[str, str] = {}
+    for p in cards:
+        try:
+            text = p.read_text(encoding="utf-8")
+        except OSError as exc:
+            out.append({"severity": "error", "rule": "seat-unreadable", "file": str(p),
+                        "message": f"unreadable seat card: {exc}"})
+            continue
+        m = _SEAT_ROLE_RE.search(text)
+        if not m:
+            out.append({"severity": "error", "rule": "seat-no-role", "file": str(p),
+                        "message": "no machine-readable `<!-- role: ... -->` - the resolver "
+                                   "cannot map this seat"})
+        else:
+            role = m.group(1).lower()
+            if role not in SEAT_ROLES_ALLOWED:
+                out.append({"severity": "error", "rule": "seat-unknown-role", "file": str(p),
+                            "message": f"role '{role}' not in the allowed set "
+                                       f"({', '.join(sorted(SEAT_ROLES_ALLOWED))})"})
+            elif role in roles_seen:
+                out.append({"severity": "error", "rule": "seat-duplicate-role", "file": str(p),
+                            "message": f"role '{role}' already claimed by {roles_seen[role]} - "
+                                       "one card per role (the lexical tiebreak is arbitrary)"})
+            else:
+                roles_seen[role] = p.name
+        missing = [h for h in _SEAT_REVIEW_SECTIONS
+                   if not re.search(rf"^##+\s+{re.escape(h)}\b", text, re.M)]
+        if missing:
+            out.append({"severity": "error", "rule": "seat-no-review-render", "file": str(p),
+                        "message": f"missing review-render section(s): {', '.join(missing)} - "
+                                   "a seat that cannot review is not a seat"})
+        dm = _DEMOGRAPHIC_RE.search(text)
+        if dm:
+            out.append({"severity": "error", "rule": "seat-demographic-fluff", "file": str(p),
+                        "message": f"demographic token '{dm.group(0)}' - a characteristic that "
+                                   "influences no engineering decision is omitted (goals, not "
+                                   "demographics)"})
+    if len(cards) > 5:
+        out.append({"severity": "error", "rule": "seat-cast-size", "file": str(sdir),
+                    "message": f"{len(cards)} seat cards (> 5) - persona proliferation; the "
+                               "cast is 3 core + at most 2 signal-earned extras"})
+    core_missing = {"engineering", "qa", "product"} - set(roles_seen)
+    if cards and core_missing:
+        out.append({"severity": "warning", "rule": "seat-core-missing", "file": str(sdir),
+                    "message": f"core role(s) uncovered: {', '.join(sorted(core_missing))}"})
+    return out
+
+
+def cmd_seats(args: argparse.Namespace) -> int:
+    """Error-level seat-card check; exits 1 on any error (the generation flow's floor)."""
+    violations = check_seats(Path(args.root).resolve())
+    errors = sum(1 for v in violations if v["severity"] == "error")
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps({"violations": violations,
+                          "summary": {"errors": errors,
+                                      "warnings": len(violations) - errors}}, indent=2))
+    else:
+        for v in violations:
+            print(f"{v['severity'].upper():7} [{v['rule']}] {v['file']}: {v['message']}")
+        print(f"seats: errors={errors} warnings={len(violations) - errors}")
+    return 1 if errors else 0
+
+
 def cmd_personas(args: argparse.Namespace) -> int:
     """Report persona well-formedness (advisory; exits 0)."""
     violations = check_personas(Path(args.root).resolve())
@@ -549,6 +638,11 @@ def build_parser() -> argparse.ArgumentParser:
     pp.add_argument("--root", default=".", help="Repo root (default: .)")
     pp.add_argument("--format", choices=("text", "json"), default="text")
     pp.set_defaults(func=cmd_personas)
+    st = sub.add_parser("seats",
+                        help="Error-level check for working-team seat cards (the generation floor).")
+    st.add_argument("--root", default=".", help="Repo root (default: .)")
+    st.add_argument("--format", choices=("text", "json"), default="text")
+    st.set_defaults(func=cmd_seats)
     return p
 
 

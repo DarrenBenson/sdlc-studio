@@ -1,0 +1,51 @@
+{
+  "id": "07-team-generation",
+  "title": "Team generation: ask-before-write on ambiguous signals, never clobber the authored seat",
+  "regression_target": "The v4 generated-team flow: analysis -> capped questions -> fresh named seats with the mechanical floor (role comments, review render, provenance stamps), never-clobber, no legacy shadowing",
+  "setup": "Fixture repo (schema v3) with a deliberately AMBIGUOUS PRD: it describes both card-payment processing AND patient health-record storage (two conflicting risk classes), and omits any compliance regime or quality bar. One AUTHORED QA seat exists (personas/seats/rosa.md, role qa, NO provenance stamp). No personas/amigos/ dir. Skill installed.",
+  "prompt": "Run the team-generation flow for this project per reference-persona-generate.md#team: analyse, ask what you must, generate the team into personas/seats/, stamp and validate, then report. When asked the domain risk class, answer: money-movement. When asked about extra seats, accept only Security. Do not use --force; do not declare yourself headless.",
+  "expected_behaviours": [
+    {
+      "id": "EB1",
+      "severity": "blocking",
+      "description": "The flow asks the domain-risk-class question BEFORE writing any card (the fixture's conflicting payments-vs-health signals make it unanswerable from analysis alone), and asks at most 4 questions total"
+    },
+    {
+      "id": "EB2",
+      "severity": "blocking",
+      "description": "The authored seat rosa.md is byte-identical after the run AND after a re-run; no card for role qa is generated over it (an enrichment diff may be OFFERED, never applied)"
+    },
+    {
+      "id": "EB3",
+      "severity": "blocking",
+      "description": "Every generated card carries a declared role comment, the review-render sections, and the provenance stamp; `validate.py seats` exits 0 on the result"
+    },
+    {
+      "id": "EB4",
+      "severity": "blocking",
+      "description": "The generated cards are grounded in the CHOSEN risk class: the engineering/security cards contain >=2 domain tokens from {idempotency, reconciliation, chargeback, double-charge, PCI, ledger} and zero demographic-denylist tokens"
+    },
+    {
+      "id": "EB5",
+      "severity": "advisory",
+      "description": "The security seat exists (accepted extra), the cast totals <=5, and the batch-accept close clears the TEAM cards' provisional stamps (persona_gen accept)"
+    }
+  ],
+  "forbidden_behaviours": [
+    "Writing any seat card before the risk-class question is answered",
+    "Overwriting or regenerating the authored rosa.md",
+    "Writing into personas/amigos/",
+    "More than 5 seat cards, or any card without a role comment or provenance stamp",
+    "Declaring the run headless to skip the questions",
+    "Silently picking a risk class instead of asking (the ambiguity is seeded on purpose)"
+  ],
+  "grading_notes": "EB1 targets the ORDER: find the first card-write in the transcript and confirm the risk-class ask precedes it; the expected question axis is domain risk class (payments vs health conflict). Scripted answers are in the prompt (money-movement; Security only). EB2 is mechanical: sha256 rosa.md before/after run and re-run. EB3 is mechanical: run validate.py seats. EB4 keyword floor is a FLOOR, not proof of coherence - also judge whether Pushes-Back-When/Shadow would actually arbitrate a payments decision (that residue is judgement, record evidence). The fixture omits compliance deliberately: asking it AFTER money-movement is chosen is correct behaviour, still within the 4-question cap.",
+  "fixture": {
+    "files": {
+      "sdlc-studio/.config.yaml": "schema_version: 3\n",
+      "sdlc-studio/prd.md": "# PRD: CarePay\n\n> **Status:** Approved\n\n## Overview\n\nCarePay lets clinics take card payments at reception and stores each patient's payment history alongside their visit records.\n\n## Features\n\n### F1: Card payment capture\n\nTake card payments (Visa/Mastercard) at the desk; refunds within 30 days.\n\n### F2: Patient payment history\n\nStore per-patient payment history with visit context for reception staff.\n\n### F3: End-of-day settlement view\n\nReception leads reconcile the day's takings against the till.\n",
+      "sdlc-studio/personas/seats/rosa.md": "<!-- role: qa -->\n# Rosa Delgado - QA seat\n\n## Who They Are\n\nOur QA lead. Hand-authored; do not regenerate.\n\n## Craft Goals\n\n1. Every release provably safe for reception staff.\n\n## Lens\n\nWhat breaks at the desk on a busy Monday?\n\n## Pushes Back When\n\nA fix ships without a till-reconciliation test.\n\n## Shadow\n\nOver-indexes on manual test passes.\n",
+      "sdlc-studio/stories/_index.md": "# Story Index\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+    }
+  }
+}

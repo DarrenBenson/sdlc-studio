@@ -731,5 +731,64 @@ class UlidIdFormatTests(unittest.TestCase):
             rules = {v["rule"] for v in validate.validate_file(p, "bug")}
             self.assertIn("id-format", rules)
 
+class SeatCheckTests(unittest.TestCase):
+    """The error-level generation floor: role declared+allowed, review render present,
+    demographic denylist clean, one card per role, cast capped at 5."""
+
+    GOOD = ("<!-- role: qa -->\n# Priya - QA seat\n\n## Lens\n\nx\n"
+            "## Pushes Back When\n\nx\n## Shadow\n\nx\n")
+
+    def _seat(self, root: Path, name: str, body: str) -> None:
+        d = root / "sdlc-studio" / "personas" / "seats"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / name).write_text(body, encoding="utf-8")
+
+    def _rules(self, root: Path) -> set:
+        return {v["rule"] for v in validate.check_seats(root)}
+
+    def test_good_seat_is_clean(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self._seat(Path(d), "priya.md", self.GOOD)
+            errs = [v for v in validate.check_seats(Path(d)) if v["severity"] == "error"]
+            self.assertEqual(errs, [])
+
+    def test_missing_role_and_render_are_errors(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self._seat(Path(d), "bad.md", "# Someone\n\n## Who They Are\n\nx\n")
+            rules = self._rules(Path(d))
+            self.assertIn("seat-no-role", rules)
+            self.assertIn("seat-no-review-render", rules)
+
+    def test_duplicate_role_is_an_error(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self._seat(Path(d), "a.md", self.GOOD)
+            self._seat(Path(d), "b.md", self.GOOD)
+            self.assertIn("seat-duplicate-role", self._rules(Path(d)))
+
+    def test_demographic_fluff_is_an_error(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self._seat(Path(d), "p.md", self.GOOD.replace(
+                "# Priya - QA seat", "# Priya - QA seat\n\n34 years old, married"))
+            self.assertIn("seat-demographic-fluff", self._rules(Path(d)))
+
+    def test_cast_over_five_is_an_error(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            roles = ["engineering", "qa", "product", "security", "sre", "data"]
+            for i, r in enumerate(roles):
+                self._seat(Path(d), f"s{i}.md", self.GOOD.replace("role: qa", f"role: {r}"))
+            self.assertIn("seat-cast-size", self._rules(Path(d)))
+
+    def test_cli_exits_1_on_errors_0_clean(self) -> None:
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            self._seat(Path(d), "bad.md", "# no role\n")
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(validate.main(["seats", "--root", d]), 1)
+        with tempfile.TemporaryDirectory() as d:
+            self._seat(Path(d), "priya.md", self.GOOD)
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(validate.main(["seats", "--root", d]), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -88,6 +88,24 @@ refuses a hollow stub), appends the index row, and recomputes the index counts
 
 Full methodology: `reference-audit.md`.
 
+### `persona_gen.py`
+
+Deterministic floor of team/stakeholder persona generation - the model-driven flow
+(`reference-persona-generate.md#team-generation`) does the judgement; this owns what must
+never be improvised:
+
+- `stamp --file <card>` - mark a just-generated card `provisional-unverified` with a
+  content hash (an HTML comment beside the `role:` comment - deliberately not the
+  artefact `Provenance:` field, which is a verify_ac control with different semantics)
+- `classify [--file | --root]` - `authored` / `generated-pristine` / `generated-edited`;
+  an operator's edit to a generated card changes its hash, so never-clobber treats it as
+  authored from then on
+- `accept [--file | --root]` - clear provisional labels (the flow's batch-accept close
+  and the `persona review` path); a `reviewed` card refuses re-stamping
+
+`status` surfaces the count of still-provisional cards; `validate.py seats` is the
+error-level schema floor the generation flow must pass before completing.
+
 ### `next_id.py` (read-only)
 
 - `allocate`: next free ID for a type (`--remote` also scans `origin/main`)

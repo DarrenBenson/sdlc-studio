@@ -252,6 +252,12 @@ def cmd_pillars(args: argparse.Namespace) -> int:
     adv = workspace_advisory(Path(args.root))
     if adv:
         print(f"advisory: {adv}")
+    import persona_gen  # lazy sibling: a provisional label nobody surfaces is never cleared
+    prov = persona_gen.provisional_seats(Path(args.root))
+    if prov:
+        print(f"advisory: {len(prov)} generated persona card(s) still provisional-unverified "
+              f"({', '.join(prov[:3])}{'...' if len(prov) > 3 else ''}) - review and accept "
+              f"them: persona_gen.py accept (or `persona review`)")
     import gate  # lazy sibling: one shared hook-gap message, so the two surfaces cannot drift
     gap = gate.hook_enablement_gap(args.root)
     if gap:
