@@ -1,6 +1,6 @@
 # BG0101: reconcile is blind to epic Story Breakdown checkbox drift for bug/CR units
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Verification depth:** functional (red-then-green: detect flags both directions and skips placeholder stubs, apply syncs both ways idempotently, default sweep exits 1 on breakdown drift alone; e2e - the new lane surfaced 21 real unticked boxes across EP0026/EP0027 that the old census certified clean, all synced mechanically; suite 1565)
 > **Severity:** Medium
 > **Created:** 2026-07-10

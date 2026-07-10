@@ -28,3 +28,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0013](RETRO0013-ep0019-plan-integrity-hardening.md) | EP0019 - plan-integrity hardening (the gate that catches a wrong plan) | 2026-07-09 | -- | -- |
 | [RETRO-0014](RETRO0014-ep0020-ep0021-upgrade-rebaseline-tooling-hardening.md) | EP0020 + EP0021 - upgrade re-baseline, catalogue hygiene & tooling hardening | 2026-07-09 | -- | -- |
 | [RETRO-0018](RETRO0018-ep0026-ep0028-backlog-clear-sprint-gate-integrity-reliability.md) | EP0026-EP0028 backlog-clear sprint: gate integrity, reliability tier, era completion + DX | 2026-07-10 | -- | -- |
+| [RETRO-0019](RETRO0019-ep0029-v4-ga-readiness-the-sprint-the-personas.md) | EP0029 v4 GA readiness: the sprint the personas ran | 2026-07-10 | -- | -- |
