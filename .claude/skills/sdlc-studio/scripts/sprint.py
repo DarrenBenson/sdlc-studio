@@ -520,36 +520,10 @@ def _drift_warning(drift: dict, batch_paths: set) -> str | None:
     return msg
 
 
-def cmd_plan(args: argparse.Namespace) -> int:
-    """Print the ordered batch the operator approves before a run."""
-    if getattr(args, "prd", None):  # greenfield authoring - the batch is a PRD
-        try:
-            data = build_authoring_plan(args.root, args.prd)
-        except FileNotFoundError as exc:
-            print(f"{exc}", file=sys.stderr)
-            return 2
-        print(json.dumps(data, indent=2) if args.format == "json"
-              else f"authoring plan: bootstrap from {data['prd']} (PRD -> epics -> stories)")
-        return 0
-    queries: list[tuple[str, str]] = []
-    if args.bugs is not None:
-        queries.append(("bug", args.bugs))
-    if args.crs is not None:
-        queries.append(("cr", args.crs))
-    if args.stories is not None:
-        queries.append(("story", args.stories))
-    worklist = getattr(args, "worklist", None)
-    if worklist and queries:
-        print("--worklist is a complete batch source; do not combine it with "
-              "--bugs/--crs/--stories", file=sys.stderr)
-        return 2
-    if not worklist and not queries:
-        print("specify a batch: --bugs/--crs/--stories (combinable), --worklist, or --prd",
-              file=sys.stderr)
-        return 2
-    # reconcile before plan - a plan must be built on a drift-free census. Mechanical
-    # drift only (index vs file); semantic staleness still needs the audit + human grooming.
-    kinds = [k for k, _ in queries] if queries else list(sdlc_md.ARTIFACT_TYPES)
+def _preplan_reconcile(args: argparse.Namespace, kinds: list[str]) -> int | None:
+    """Reconcile-before-plan: a plan must read a drift-free census (file Status vs its index
+    row). Mechanical drift only; semantic staleness still needs the audit. Prints a warning and,
+    under --strict, returns 2 to abort; otherwise None."""
     drift = []
     for k in kinds:
         try:
@@ -563,36 +537,18 @@ def cmd_plan(args: argparse.Namespace) -> int:
               file=sys.stderr)
         if getattr(args, "strict", False):
             return 2
-    # blocker sweep before plan - newly-unblocked work should be eligible for the batch. Advisory:
-    # it proposes Blocked -> Ready candidates; the gated transition stays the actor (never auto).
-    sweep = pre_plan_blocker_sweep(Path(args.root))
-    if sweep["now_unblocked"]:
-        print(f"blocker sweep: {len(sweep['now_unblocked'])} newly-unblocked unit(s) "
-              f"({', '.join(sweep['now_unblocked'])}) - propose Blocked -> Ready via the gated "
-              f"transition, then re-plan to include them", file=sys.stderr)
-    epics = set(getattr(args, "epic", None) or []) or None
-    if epics and worklist:  # a worklist names its units; an ignored filter would lie
-        print("--epic does not filter a --worklist batch; list the story ids you want",
-              file=sys.stderr)
-        return 2
-    if epics and "story" not in kinds:  # epic-scoping is meaningful for stories only
-        print("--epic scopes a story batch; use it with --stories", file=sys.stderr)
-        return 2
-    try:
-        data = build_plan(args.root, order=args.order,
-                          skip_personas=getattr(args, "skip_personas", False), epics=epics,
-                          queries=queries or None, worklist=worklist)
-    except ValueError as exc:  # dependency cycle / bad status / unknown worklist id
-        print(f"cannot order the batch: {exc}", file=sys.stderr)
-        return 2
-    # origin-drift preflight: planning against a stale checkout can mint an id the
-    # remote already used, or plan over an artifact a teammate has already changed. Fetch +
-    # compare; warn (refuse under --strict). Fail-safe: no origin / up to date -> silent.
+    return None
+
+
+def _origin_drift_preflight(args: argparse.Namespace, data: dict) -> int | None:
+    """Planning against a stale checkout can mint an id the remote already used, or plan over an
+    artifact a teammate has changed. Fetch + compare; warn (refuse under --strict). Fail-safe: git
+    absent/slow/odd never breaks planning. Returns 2 to abort under --strict, else None."""
     try:
         drift = origin_drift(args.root, do_fetch=not getattr(args, "no_fetch", False))
-        # `waves` is None for manual order and empty batches (the key is always present) -
-        # `or []` keeps the preflight alive on exactly those paths (a swallowed TypeError
-        # here silently disabled the --strict refusal).
+        # `waves` is None for manual order and empty batches (the key is always present) - `or []`
+        # keeps the preflight alive on exactly those paths (a swallowed TypeError here silently
+        # disabled the --strict refusal).
         batch_ids = [u for wave in (data.get("waves") or []) for u in wave]
         warn = _drift_warning(drift, _batch_paths(args.root, batch_ids))
         if warn:
@@ -600,48 +556,142 @@ def cmd_plan(args: argparse.Namespace) -> int:
             if getattr(args, "strict", False):
                 return 2
     except (OSError, subprocess.SubprocessError, ValueError, KeyError):
-        # Advisory: git being absent/slow/odd must never break planning - but only the
-        # EXPECTED failure modes are contained; a programming error now surfaces loudly.
+        # Advisory: only the EXPECTED failure modes are contained; a programming error surfaces.
         pass
+    return None
+
+
+def _render_seat_provenance(data: dict) -> None:
+    """The WSJF seat-provenance lines: whose judgement the order consumed, and how fresh."""
+    prov = data.get("seat_provenance")
+    if not prov:
+        return
+    if prov["scored"]:
+        when = f", inputs written {prov['written_at']}" if prov["written_at"] else ""
+        print(f"  seats: {len(prov['scored'])}/{data['count']} unit(s) seat-scored{when}")
+    if prov["unscored"]:
+        print(f"  no seat inputs (priority fallback): {', '.join(prov['unscored'])}")
+    if prov["stale"]:
+        print(f"  advisory: wsjf-inputs.json is {prov['age_days']} day(s) old "
+              f"(window {prov['stale_after_days']}) - re-run the amigo consult "
+              f"if these scores no longer reflect current judgement")
+
+
+def _render_waves(data: dict) -> None:
+    """The parallelisable dependency levels, or the flat priority list when there are no waves."""
+    if data.get("waves"):
+        for i, wave in enumerate(data["waves"], 1):
+            par = " (parallel)" if len(wave) > 1 else ""
+            print(f"  wave {i}{par}: {', '.join(wave)}")
+        # a flat single wave of >1 unit with no declared deps is not 'no dependencies exist' - it
+        # is undeclared. Flag it so the operator grooms `Depends on:` (the --goal design rung).
+        if data.get("deps_declared") is False and data["count"] > 1:
+            print("  hint: all units are parallel because no `Depends on:` is declared "
+                  "- groom inter-story dependencies (the --goal design rung) for real waves")
+    else:
+        for b in data["batch"]:
+            print(f"  {b['id']} [{b['priority']}]")
+
+
+def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, epics) -> None:
+    """Render a built plan to stdout: JSON, or the human batch header + provenance + waves."""
+    if args.format == "json":
+        print(json.dumps(data, indent=2))
+        return
+    scope = f", epics {', '.join(sorted(epics))}" if epics else ""
+    src = f"worklist {worklist}" if worklist else " + ".join(f"{k}s {s}" for k, s in queries)
+    print(f"batch: {data['count']} unit(s) ({src}){scope}, order={args.order}")
+    _render_seat_provenance(data)
+    _render_waves(data)
+
+
+def _plan_authoring(args: argparse.Namespace) -> int:
+    """The greenfield PRD path: the batch IS a PRD (PRD -> epics -> stories)."""
+    try:
+        data = build_authoring_plan(args.root, args.prd)
+    except FileNotFoundError as exc:
+        print(f"{exc}", file=sys.stderr)
+        return 2
+    print(json.dumps(data, indent=2) if args.format == "json"
+          else f"authoring plan: bootstrap from {data['prd']} (PRD -> epics -> stories)")
+    return 0
+
+
+def _plan_batch_source(args: argparse.Namespace) -> tuple[list, object, int | None]:
+    """(queries, worklist, error_code). queries from --bugs/--crs/--stories (combinable),
+    worklist from --worklist; the two are mutually exclusive and at least one is required.
+    error_code is 2 on a bad combination (the message is already printed), else None."""
+    queries: list[tuple[str, str]] = []
+    if args.bugs is not None:
+        queries.append(("bug", args.bugs))
+    if args.crs is not None:
+        queries.append(("cr", args.crs))
+    if args.stories is not None:
+        queries.append(("story", args.stories))
+    worklist = getattr(args, "worklist", None)
+    if worklist and queries:
+        print("--worklist is a complete batch source; do not combine it with "
+              "--bugs/--crs/--stories", file=sys.stderr)
+        return queries, worklist, 2
+    if not worklist and not queries:
+        print("specify a batch: --bugs/--crs/--stories (combinable), --worklist, or --prd",
+              file=sys.stderr)
+        return queries, worklist, 2
+    return queries, worklist, None
+
+
+def _validate_epic_scope(args: argparse.Namespace, worklist, kinds: list) -> tuple[object, int | None]:
+    """(epics, error_code). --epic scopes a STORY batch and cannot filter a --worklist (whose
+    units are named). error_code is 2 on misuse (message printed), else None."""
+    epics = set(getattr(args, "epic", None) or []) or None
+    if epics and worklist:
+        print("--epic does not filter a --worklist batch; list the story ids you want",
+              file=sys.stderr)
+        return epics, 2
+    if epics and "story" not in kinds:
+        print("--epic scopes a story batch; use it with --stories", file=sys.stderr)
+        return epics, 2
+    return epics, None
+
+
+def cmd_plan(args: argparse.Namespace) -> int:
+    """Print the ordered batch the operator approves before a run."""
+    if getattr(args, "prd", None):  # greenfield authoring - the batch is a PRD
+        return _plan_authoring(args)
+    queries, worklist, rc = _plan_batch_source(args)
+    if rc is not None:
+        return rc
+    # reconcile before plan - a plan must be built on a drift-free census.
+    kinds = [k for k, _ in queries] if queries else list(sdlc_md.ARTIFACT_TYPES)
+    rc = _preplan_reconcile(args, kinds)
+    if rc is not None:
+        return rc
+    # blocker sweep before plan - newly-unblocked work should be eligible for the batch. Advisory:
+    # it proposes Blocked -> Ready candidates; the gated transition stays the actor (never auto).
+    sweep = pre_plan_blocker_sweep(Path(args.root))
+    if sweep["now_unblocked"]:
+        print(f"blocker sweep: {len(sweep['now_unblocked'])} newly-unblocked unit(s) "
+              f"({', '.join(sweep['now_unblocked'])}) - propose Blocked -> Ready via the gated "
+              f"transition, then re-plan to include them", file=sys.stderr)
+    epics, rc = _validate_epic_scope(args, worklist, kinds)
+    if rc is not None:
+        return rc
+    try:
+        data = build_plan(args.root, order=args.order,
+                          skip_personas=getattr(args, "skip_personas", False), epics=epics,
+                          queries=queries or None, worklist=worklist)
+    except ValueError as exc:  # dependency cycle / bad status / unknown worklist id
+        print(f"cannot order the batch: {exc}", file=sys.stderr)
+        return 2
+    rc = _origin_drift_preflight(args, data)
+    if rc is not None:
+        return rc
     if getattr(args, "write", False):  # persist the sprint-plan artifact for review
         out = Path(args.root) / "sdlc-studio" / ".local" / "sprint-plan.json"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(data, indent=2), encoding="utf-8")
         print(f"wrote sprint plan -> {out}")
-    if args.format == "json":
-        print(json.dumps(data, indent=2))
-    else:
-        scope = f", epics {', '.join(sorted(epics))}" if epics else ""
-        if worklist:
-            src = f"worklist {worklist}"
-        else:
-            src = " + ".join(f"{k}s {s}" for k, s in queries)
-        print(f"batch: {data['count']} unit(s) ({src}){scope}, order={args.order}")
-        prov = data.get("seat_provenance")
-        if prov:  # name whose judgement the WSJF order consumed, and from when
-            if prov["scored"]:
-                when = f", inputs written {prov['written_at']}" if prov["written_at"] else ""
-                print(f"  seats: {len(prov['scored'])}/{data['count']} unit(s) "
-                      f"seat-scored{when}")
-            if prov["unscored"]:
-                print(f"  no seat inputs (priority fallback): {', '.join(prov['unscored'])}")
-            if prov["stale"]:
-                print(f"  advisory: wsjf-inputs.json is {prov['age_days']} day(s) old "
-                      f"(window {prov['stale_after_days']}) - re-run the amigo consult "
-                      f"if these scores no longer reflect current judgement")
-        if data.get("waves"):  # show the parallelisable dependency levels
-            for i, wave in enumerate(data["waves"], 1):
-                par = " (parallel)" if len(wave) > 1 else ""
-                print(f"  wave {i}{par}: {', '.join(wave)}")
-            # a flat single wave of >1 unit with no declared deps is not 'no dependencies
-            # exist' - it is undeclared. Flag it so the operator grooms `Depends on:` (the
-            # --goal design rung) rather than treating the flat list as the real sequence.
-            if data.get("deps_declared") is False and data["count"] > 1:
-                print("  hint: all units are parallel because no `Depends on:` is declared "
-                      "- groom inter-story dependencies (the --goal design rung) for real waves")
-        else:
-            for b in data["batch"]:
-                print(f"  {b['id']} [{b['priority']}]")
+    _render_plan(args, data, queries, worklist, epics)
     return 0
 
 

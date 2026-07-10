@@ -390,158 +390,159 @@ def repo_is_public() -> bool | None:
 # -----------------------------------------------------------------------------
 
 
+class _PushState:
+    """The mutable tallies a push accumulates across records: created/updated/blocked counts, a
+    `failed` flag (any gh create/edit failure - BG0092: do not stamp last_push, exit non-zero),
+    and a lazily-resolved, cached repo-visibility check (only a record that actually carries a
+    secret triggers the `gh repo view` call; unknown visibility is treated as unsafe)."""
+
+    def __init__(self, args: argparse.Namespace) -> None:
+        self.created = 0
+        self.updated = 0
+        self.blocked = 0
+        self.failed = False
+        self.allow_secrets = getattr(args, "allow_secrets", False)
+        self.dry_run = args.dry_run
+        self._vis: list = []  # empty = unresolved; [value] = cached
+
+    def target_public(self):
+        if not self._vis:
+            self._vis.append(repo_is_public())
+        return self._vis[0]
+
+
+def _refuses_secret(st: _PushState, rec, title: str) -> bool:
+    """True (and prints REFUSED, bumps blocked) when a record carries a secret-shaped token bound
+    for a public/unknown-visibility target. Only a confirmed-private repo, or --allow-secrets,
+    lets a flagged record through."""
+    if st.allow_secrets:
+        return False
+    findings = scan_secrets(f"{title}\n{rec.body}")
+    if not findings:
+        return False
+    public = st.target_public()
+    if public is False:
+        return False
+    kinds = ", ".join(f"{f['kind']}={f['redacted']}" for f in findings)
+    where = "public" if public else "unknown-visibility"
+    print(f"REFUSED {rec.rec_id}: {len(findings)} secret-shaped token(s) would be pushed to a "
+          f"{where} repo [{kinds}] - remove the secret or pass --allow-secrets for a "
+          f"confirmed-private target", file=sys.stderr)
+    st.blocked += 1
+    return True
+
+
+def _push_new_record(st: _PushState, mappings: dict, rec, type_: str,
+                     issues_by_number: dict | None) -> dict | None:
+    """Create path for a record with no linked issue: refuse-on-secret, adopt an existing
+    `[rec_id]`-titled issue rather than blind-create - a crash or gh timeout after the server
+    accepted a create but before the local stamp landed would otherwise mint a duplicate on the
+    re-run - else create. Returns the (possibly newly-fetched) issues_by_number cache."""
+    title = f"[{rec.rec_id}] {rec.title}"
+    labels = rec.labels()
+    if _refuses_secret(st, rec, title):
+        return issues_by_number
+    if st.dry_run:
+        print(f"[DRY] would create issue for {rec.rec_id}: {title}")
+        return issues_by_number
+    if issues_by_number is None:
+        issues_by_number = {i.get("number"): i for i in gh_issue_list(TYPE_LABELS[type_])}
+    adopt = next((i for i in issues_by_number.values()
+                  if str(i.get("title", "")).startswith(f"[{rec.rec_id}]")), None)
+    if adopt is not None:
+        set_github_issue_field(rec.path, adopt["number"])
+        print(f"[APL] adopted existing issue #{adopt['number']} for {rec.rec_id} (not re-created)")
+        # re-parse for the post-stamp hash, like the create path - so the next push sees a
+        # matching hash and skips instead of an extra no-op label-sync
+        refreshed = parse_local_file(rec.path, type_)
+        mappings[rec.rec_id] = {
+            "type": type_, "issue": adopt["number"],
+            "hash": refreshed.content_hash if refreshed else rec.content_hash,
+            "updated_at": now_iso()}
+        st.updated += 1
+        return issues_by_number
+    number = gh_issue_create(title, rec.body, labels)
+    if number is None:
+        print(f"failed to create issue for {rec.rec_id}", file=sys.stderr)
+        st.failed = True
+        return issues_by_number
+    set_github_issue_field(rec.path, number)
+    refreshed = parse_local_file(rec.path, type_)  # re-parse to pick up the new hash
+    if refreshed is None:
+        return issues_by_number
+    mappings[refreshed.rec_id] = {
+        "type": type_, "issue": number, "hash": refreshed.content_hash, "updated_at": now_iso()}
+    st.created += 1
+    print(f"[APL] created issue #{number} for {rec.rec_id}")
+    return issues_by_number
+
+
+def _push_existing_record(st: _PushState, mappings: dict, rec, type_: str,
+                          issues_by_number: dict | None) -> dict | None:
+    """Update path for a record already linked to an issue: skip if unchanged since last push,
+    else diff and sync labels. Returns the issues_by_number cache."""
+    mapped = mappings.get(rec.rec_id)
+    if mapped and mapped.get("hash") == rec.content_hash:
+        return issues_by_number  # no local change since last push
+    if st.dry_run:
+        print(f"[DRY] would sync labels on issue #{rec.github_issue} for {rec.rec_id}")
+        return issues_by_number
+    if issues_by_number is None:
+        issues_by_number = {i.get("number"): i for i in gh_issue_list(TYPE_LABELS[type_])}
+    issue = issues_by_number.get(rec.github_issue)
+    if issue is None:
+        print(f"issue #{rec.github_issue} not found via gh for {rec.rec_id}; skipping",
+              file=sys.stderr)
+        return issues_by_number
+    existing_labels = {l["name"] for l in issue.get("labels", [])}
+    desired_labels = set(rec.labels())
+    add = [l for l in desired_labels if l not in existing_labels]
+    remove = [l for l in existing_labels
+              if l.startswith(f"{LABEL_PREFIX}:") and l not in desired_labels]
+    if gh_issue_edit(rec.github_issue, add, remove):
+        mappings[rec.rec_id] = {
+            "type": type_, "issue": rec.github_issue, "hash": rec.content_hash,
+            "updated_at": now_iso()}
+        st.updated += 1
+        print(f"[APL] synced labels on #{rec.github_issue} for {rec.rec_id}: +{add} -{remove}")
+    else:
+        print(f"failed to edit issue #{rec.github_issue} for {rec.rec_id}", file=sys.stderr)
+        st.failed = True
+    return issues_by_number
+
+
+def _finalise_push(st: _PushState, state: dict, mappings: dict, args: argparse.Namespace) -> None:
+    """Persist push results. BG0092: only a fully-successful push advances last_push; a failed gh
+    call leaves the timestamp untouched (mirrors the BG0064 pull fix) so nothing keyed on push
+    success/recency is misled - the mappings that DID land are saved either way. A dry run writes
+    nothing."""
+    if args.dry_run:
+        return
+    state["mappings"] = mappings
+    if not st.failed:
+        state["last_push"] = now_iso()
+    else:
+        print("push: a gh call failed; last_push left unchanged", file=sys.stderr)
+    save_state(state, _state_path(args.root))
+
+
 def cmd_push(args: argparse.Namespace) -> int:
     """Create or update GitHub issues from local CR/Story/Epic files."""
     types = _resolve_types(args.type)
     state = load_state(_state_path(args.root))
     mappings = state.get("mappings", {})
-    created = 0
-    updated = 0
-    blocked = 0
-    failed = False  # any gh create/edit failure - BG0092: do not stamp last_push, exit non-zero
-    allow_secrets = getattr(args, "allow_secrets", False)
-    # Visibility is resolved lazily and cached: only a record that actually carries a
-    # secret triggers the `gh repo view` call, so a clean push (or a dry run) makes no
-    # extra network call. Unknown (None) is treated as unsafe (assume public).
-    _vis_cache: list = []  # empty = unresolved; [value] = cached
-
-    def _target_public():
-        if not _vis_cache:
-            _vis_cache.append(repo_is_public())
-        return _vis_cache[0]
-
+    st = _PushState(args)
     for type_ in types:
-        # Fetch the type's issues at most once per type (lazily, only if a
-        # record needs a label sync) rather than once per record.
+        # Fetch the type's issues at most once per type (lazily, only when a record needs it).
         issues_by_number: dict[int, dict] | None = None
         for rec in walk_local(type_, args.root):
             if rec.github_issue is None:
-                title = f"[{rec.rec_id}] {rec.title}"
-                labels = rec.labels()
-                # Never publish a secret-shaped token to a public (or unknown-visibility)
-                # target. Only a confirmed-private repo, or an explicit --allow-secrets,
-                # lets a flagged record through.
-                if not allow_secrets:
-                    findings = scan_secrets(f"{title}\n{rec.body}")
-                    public = _target_public() if findings else False
-                    if findings and public is not False:
-                        kinds = ", ".join(f"{f['kind']}={f['redacted']}" for f in findings)
-                        where = "public" if public else "unknown-visibility"
-                        print(
-                            f"REFUSED {rec.rec_id}: {len(findings)} secret-shaped token(s) "
-                            f"would be pushed to a {where} repo [{kinds}] - remove the secret "
-                            f"or pass --allow-secrets for a confirmed-private target",
-                            file=sys.stderr,
-                        )
-                        blocked += 1
-                        continue
-                if args.dry_run:
-                    print(f"[DRY] would create issue for {rec.rec_id}: {title}")
-                    continue
-                # CR0206: adopt an existing `[rec_id]`-titled issue instead of blind-creating a
-                # duplicate. A crash or gh timeout AFTER the server accepted a create but BEFORE
-                # the local stamp landed would otherwise mint a second issue on the re-run.
-                if issues_by_number is None:
-                    issues_by_number = {
-                        i.get("number"): i for i in gh_issue_list(TYPE_LABELS[type_])
-                    }
-                adopt = next((i for i in issues_by_number.values()
-                              if str(i.get("title", "")).startswith(f"[{rec.rec_id}]")), None)
-                if adopt is not None:
-                    set_github_issue_field(rec.path, adopt["number"])
-                    print(f"[APL] adopted existing issue #{adopt['number']} for {rec.rec_id} "
-                          "(not re-created)")
-                    # re-parse for the post-stamp hash, like the create path - so the next push
-                    # sees a matching hash and skips instead of an extra no-op label-sync
-                    refreshed = parse_local_file(rec.path, type_)
-                    mappings[rec.rec_id] = {
-                        "type": type_, "issue": adopt["number"],
-                        "hash": refreshed.content_hash if refreshed else rec.content_hash,
-                        "updated_at": now_iso()}
-                    updated += 1
-                    continue
-                number = gh_issue_create(title, rec.body, labels)
-                if number is None:
-                    print(f"failed to create issue for {rec.rec_id}", file=sys.stderr)
-                    failed = True
-                    continue
-                set_github_issue_field(rec.path, number)
-                # Re-parse to pick up the new hash
-                refreshed = parse_local_file(rec.path, type_)
-                if refreshed is None:
-                    continue
-                mappings[refreshed.rec_id] = {
-                    "type": type_,
-                    "issue": number,
-                    "hash": refreshed.content_hash,
-                    "updated_at": now_iso(),
-                }
-                created += 1
-                print(f"[APL] created issue #{number} for {rec.rec_id}")
+                issues_by_number = _push_new_record(st, mappings, rec, type_, issues_by_number)
             else:
-                mapped = mappings.get(rec.rec_id)
-                if mapped and mapped.get("hash") == rec.content_hash:
-                    continue  # No local change since last push
-                # Label sync: compute current desired labels, diff against
-                # the issue's existing labels
-                if args.dry_run:
-                    print(
-                        f"[DRY] would sync labels on issue #{rec.github_issue} "
-                        f"for {rec.rec_id}"
-                    )
-                    continue
-                if issues_by_number is None:
-                    issues_by_number = {
-                        i.get("number"): i for i in gh_issue_list(TYPE_LABELS[type_])
-                    }
-                issue = issues_by_number.get(rec.github_issue)
-                if issue is None:
-                    print(
-                        f"issue #{rec.github_issue} not found via gh for "
-                        f"{rec.rec_id}; skipping",
-                        file=sys.stderr,
-                    )
-                    continue
-                existing_labels = {l["name"] for l in issue.get("labels", [])}
-                desired_labels = set(rec.labels())
-                add = [l for l in desired_labels if l not in existing_labels]
-                remove = [
-                    l
-                    for l in existing_labels
-                    if l.startswith(f"{LABEL_PREFIX}:") and l not in desired_labels
-                ]
-                if gh_issue_edit(rec.github_issue, add, remove):
-                    mappings[rec.rec_id] = {
-                        "type": type_,
-                        "issue": rec.github_issue,
-                        "hash": rec.content_hash,
-                        "updated_at": now_iso(),
-                    }
-                    updated += 1
-                    print(
-                        f"[APL] synced labels on #{rec.github_issue} "
-                        f"for {rec.rec_id}: +{add} -{remove}"
-                    )
-                else:
-                    print(f"failed to edit issue #{rec.github_issue} for {rec.rec_id}",
-                          file=sys.stderr)
-                    failed = True
-
-    if not args.dry_run and not failed:
-        # BG0092: only a fully-successful push advances last_push. A failed gh call leaves the
-        # timestamp untouched (mirrors the BG0064 pull fix) so nothing keyed on push
-        # success/recency is misled; mappings from the calls that DID succeed are still saved.
-        state["last_push"] = now_iso()
-        state["mappings"] = mappings
-        save_state(state, _state_path(args.root))
-    elif not args.dry_run and failed:
-        # persist the mappings we did land, but not the success stamp
-        state["mappings"] = mappings
-        save_state(state, _state_path(args.root))
-        print("push: a gh call failed; last_push left unchanged", file=sys.stderr)
-
-    print(f"push: created={created} updated={updated} blocked={blocked}")
-    return 1 if (blocked or failed) else 0
+                issues_by_number = _push_existing_record(st, mappings, rec, type_, issues_by_number)
+    _finalise_push(st, state, mappings, args)
+    print(f"push: created={st.created} updated={st.updated} blocked={st.blocked}")
+    return 1 if (st.blocked or st.failed) else 0
 
 
 def cmd_pull(args: argparse.Namespace) -> int:

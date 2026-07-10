@@ -67,7 +67,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   verified-depth gate on terminal status). `sdlc_md.iter_tables` and `verify_ac.parse_story` are
   now fenced-block aware: a `|`-row or a `- **Verify:**` line shown as an example inside a fenced
   code block is skipped, so a documentation example table is never tallied and an illustrative
-  verifier never reaches shell execution.
+  verifier never reaches shell execution. The two worst complexity hotspots are decomposed:
+  `sprint.cmd_plan` (cognitive 73 -> 10) and `github_sync.cmd_push` (85 -> 9), each split into
+  named, single-purpose helpers under the cognitive-15 line with behaviour preserved (the
+  existing sprint and github-sync suites stay green).
 - **One CLI argument grammar across the script family (EP0028, CR0210).** The scripts disagreed
   on how ids and targets were passed - `audit check` took `--ids` comma-separated, `transition
   set` forced exactly one of `--id`/`--ids`, `artifact revision` required `--ids`, `ledger
