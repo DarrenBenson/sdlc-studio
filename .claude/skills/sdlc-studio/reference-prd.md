@@ -62,6 +62,14 @@ Detailed workflows for Product Requirements Document creation and management.
    - Append consultation summary to PRD or report separately
    - If personas don't exist, suggest: "Run `/sdlc-studio persona create` for stakeholder feedback"
 
+8. **Offer the team** (both create and generate; OFFER, never auto-run)
+
+   With the PRD written, offer `persona generate --team` - the PRD is the richest input
+   the generator will ever have, and the working seats it grows carry THIS project's
+   risk axes into every later consult and review. If the operator declines, the shipped
+   default seats keep working; `status`/`hint` carry the same offer as an advisory
+   until a seat card exists.
+
 ---
 
 ## /sdlc-studio prd generate - Step by Step {#prd-generate-workflow}

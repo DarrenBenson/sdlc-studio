@@ -114,6 +114,11 @@ independent critic plus the gate - the check's output states this scoping.
      domains) and give the critic that framing - the seat's goals and refusal instincts are the
      review lens, and the recorded reviewer id is the seat's name. A hand-typed identity is the
      fallback when no seat card fits, never the norm.
+     **Cross-model review is the stronger form of independence:** a separate instance of the
+     same model is the floor, but it still shares one model's blind spots - where the
+     operator's setup allows it, run the critic seat on a different model or agent runtime
+     for high-stakes units. Prompt-level independence catches self-favouritism; cross-model
+     independence also catches shared misreadings.
    - `conformance check` - the deterministic gate (`scripts/conformance.py`):
      decomposed -> AC -> tested -> verified -> **reconciled** (no index drift) ->
      **critiqued** (a committed critic APPROVE) -> **documented** (the doc-coverage floor:

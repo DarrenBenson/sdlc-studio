@@ -109,11 +109,14 @@ Review PRD against current codebase, update feature status.
 
 ## Next Steps
 
-After creating PRD:
+After creating PRD, **offer the team** (never auto-run): the PRD is the richest input
+`persona generate --team` will ever have - it grows named working seats and a
+stakeholder panel from this project. Then:
 
 ```
-/sdlc-studio persona              # Define user personas
-/sdlc-studio epic                 # Generate Epics from PRD
+/sdlc-studio persona generate --team    # Meet your team (offer - defaults keep working)
+/sdlc-studio persona                    # Define user personas
+/sdlc-studio epic                       # Generate Epics from PRD
 ```
 
 ## See Also

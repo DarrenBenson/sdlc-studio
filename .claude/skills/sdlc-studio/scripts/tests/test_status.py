@@ -127,6 +127,31 @@ class VerifyLaneTests(unittest.TestCase):
             self.assertFalse(lane["has_report"])
 
 
+class TeamOfferAdvisoryTests(unittest.TestCase):
+    """The meet-your-team offer: PRD present + no seat cards -> one advisory line;
+    an offer on status/hint, never a hint-ladder rung."""
+
+    def test_offer_when_prd_and_no_seats(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            (root / "sdlc-studio" / "prd.md").write_text("# PRD\n", encoding="utf-8")
+            self.assertIn("persona generate --team", status.team_offer_advisory(root))
+
+    def test_silent_without_prd(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self.assertIsNone(status.team_offer_advisory(Path(d)))
+
+    def test_silent_once_a_seat_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            seats = root / "sdlc-studio" / "personas" / "seats"
+            seats.mkdir(parents=True)
+            (root / "sdlc-studio" / "prd.md").write_text("# PRD\n", encoding="utf-8")
+            (seats / "priya.md").write_text("<!-- role: qa -->\n# P\n", encoding="utf-8")
+            self.assertIsNone(status.team_offer_advisory(root))
+
+
 class WorkspaceAdvisoryTests(unittest.TestCase):
     """CR0150: status/hint surface uncommitted workspace artifact changes as a
     one-line advisory naming ids - informational, never blocking, no authorship

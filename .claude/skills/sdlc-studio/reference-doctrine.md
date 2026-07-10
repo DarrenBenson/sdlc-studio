@@ -55,7 +55,10 @@ rules, the agents/services) live in that project's agent-instructions file
    **all legs (PRD · TRD · TSD · Persona · CODE)**, ideally fanned out as parallel
    review subagents, then triage + FIX findings before new feature work. The CODE
    leg is non-negotiable – reconcile/doc-review will never find a crash bug, a
-   deploy gap, or an untested hot path.
+   deploy gap, or an untested hot path. For high-stakes units, prefer **cross-model
+   review**: a separate instance of the same model is the independence floor, but it
+   shares that model's blind spots - a critic seat run on a different model or agent
+   runtime also catches shared misreadings.
 
 7. **Consult before freezing a design.** Three Amigos (`consult team`) on any epic
    or story design; add the live stakeholders when the artefact touches the running

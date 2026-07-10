@@ -35,11 +35,17 @@ same checks anywhere), and reconciliation that keeps every index and epic checkb
 the files - recomputed from them, not asserted.
 
 And the reviews are not faceless: SDLC Studio brings **Alan Cooper's goal-directed personas to
-life**. Your personas are not static documents that decorate a PRD - they are working seats
-(Dani in Engineering, Sam in QA, Lena in Product, plus any you author) that consult on designs,
-score the backlog, review diffs, and hold the independence gate. No other SDLC tooling we know
-of does this: the persona that argued for the requirement is the same one who refuses to sign
-off work that does not meet it.
+life**. Ask for your team and it is **grown from your project** - `persona generate --team`
+reads the PRD, the stack, and the risk signals, asks you the questions it cannot infer, and
+writes fresh named seats whose non-negotiables come from YOUR domain (a payments QA is paranoid
+about idempotency; a games QA about frame budgets). Until then, Dani (Engineering), Sam (QA)
+and Lena (Product) work out of the box. Where other tooling ships a fixed cast of role-prompts identically to
+every project, here the working seats, the design personas, and the stakeholder panel live in
+one system, generated from the project itself - and no seat may mark its own homework. The
+persona that argued for the requirement is the one who refuses to sign off work that does not
+meet it. What that is built to buy you is **coverage**: a project-specific cast is positioned to
+catch the blind spots a generic prompt walks past - it does not make the model smarter,
+and we do not claim it does.
 
 **Existing projects are never auto-switched.** `project upgrade` asks you the numbering
 question explicitly, with three supported answers: migrate everything (old ids kept as
@@ -148,7 +154,7 @@ Run `/sdlc-studio status` any time for the at-a-glance dashboard:
 Two more ideas worth knowing:
 
 - **Two modes.** For a brand-new project (greenfield), `create` interviews you to write the spec. For existing code (brownfield), `generate` reads the code and writes the spec for you, then checks it by running tests against the real implementation. See [reference-philosophy.md](.claude/skills/sdlc-studio/reference-philosophy.md).
-- **Your own engineering team.** The work is done by the *Three Amigos* - Dani (Engineering), Sam (QA), Lena (Product) - editable persona cards that both *do* the work and *review* it. The reviewer is always a different seat than the author, so no one signs off their own code.
+- **Your own engineering team.** The work is done by the *Three Amigos* - Dani (Engineering), Sam (QA), Lena (Product) - editable persona cards that both *do* the work and *review* it, and `persona generate --team` replaces them with fresh named seats grown from your project. The reviewer is always a different seat than the author, so no one signs off their own code.
 
 ## What you can do
 
@@ -310,7 +316,7 @@ Python 3.10+ for the bundled scripts (standard library only; **PyYAML** is the o
 <details>
 <summary>What are the Three Amigos, and can I change them?</summary>
 
-Dani (Engineering), Sam (QA), and Lena (Product) - editable persona cards that build and review the work, and never sign off their own. Tune them to your project, or author your own specialist (for example a staff engineer who knows your stack); the agent uses the most-specific card.
+Dani (Engineering), Sam (QA), and Lena (Product) - editable persona cards that build and review the work, and never sign off their own. Tune them, author your own specialist, or run `persona generate --team` to grow a fresh named team from your project's PRD and stack; the agent uses the most-specific card.
 
 </details>
 

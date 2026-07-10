@@ -34,6 +34,49 @@ and is recorded - never silent). A review verdict whose reviewer id matches its 
 never clears the Done gate, so nobody signs off their own work. The discipline stops
 depending on anyone (carbon or silicon) remembering it under pressure.
 
+## The mill, not the engine
+
+The project's design philosophy is published in its author's Real World Engineering essays
+([The Future of Software Engineering](https://realworldengineering.substack.com/p/the-future-of-software-engineering),
+[A Steam Engine in Every Cottage](https://realworldengineering.substack.com/p/a-steam-engine-in-every-cottage)),
+and SDLC Studio is the executable form of that argument. The claim, in his words: "the
+bottleneck was never typing speed. It was, and remains, knowing what to build and being able to prove it
+worked." Faster code generation attacks the wrong constraint. The essays' industrial
+analogy: "the code is the cloth. The organisation around it is where the money is" - at
+Cromford it was not any single machine that changed the economics of cotton, it was the
+mill: the organisation of machines, flow, and accountability around them. Prompt-and-hope
+AI coding is "a steam engine in every cottage" - the old way of working, a bit faster.
+Building the mill is the actual revolution, and it does not feel like one while you are
+laying it out. SDLC Studio is a mill you can install.
+
+Two more commitments follow from the essays. **The specification becomes the durable
+artifact and code becomes disposable output** - which is why the pipeline's centre of
+gravity is the spec, the acceptance criteria, and the proof, not the diff. And **the human
+stays in the lead, not merely in the loop**: of the three futures (full automation, human
+rubber-stamping the machine, human directing it), only the third survives contact with
+accountability. The unsaid is where damage happens, so the instruments exist to make the
+unsaid visible - and the person "who reads the dashboard, frames the wish and answers for
+the outcome becomes more necessary with each cycle, not less."
+
+## The cockpit: five instruments
+
+The essays describe five capabilities that only work as an integrated system - a cockpit of
+instruments, in this document's framing. Each maps to a shipped subsystem:
+
+| Instrument | What it means | Where it lives here |
+| --- | --- | --- |
+| **Specification** | Intent written down, precise enough to act on and check against | PRD/TRD/epics/stories; executable `Verify:` lines on acceptance criteria |
+| **Governed platform** | AI as a channel, not an exception: "same permissions, same audit trail" for every consumer, human or agent | The same gates bind both - transitions, independence, depth tiers apply to any writer |
+| **Measurement** | Knowing the state of the system without asking anyone | `status`/`reconcile` recompute truth from the files; the published benchmark measures the tool itself |
+| **Evidence** | "Can we prove this works?" as a first-class question | `verify_ac`, verification-depth tiers, and the critic-verdict record - an **attestation log** in the separation-of-duties sense (the reviewer who approved is recorded, distinct from the author, per unit; the shape auditors ask for when they ask who attested to this change) |
+| **Identity / persistence** | Durable values and judgement, not ephemeral chat sessions | The personas ARE this instrument: a generated team whose non-negotiables persist across every session, consult, and review |
+
+One consequence of instrument two worth stating plainly: because review is a seat with an
+identity, not a pass of the same context, the reviewer may run on **a different model or
+instance** than the author. Prompt-level independence on one model still shares that model's
+blind spots; cross-model review is the stronger form, and the critic flow supports it
+(see the doctrine's independence gate).
+
 ## The founding observation, reproduced in agents
 
 The design thesis came from years of building and reforming engineering teams: humans under
@@ -48,6 +91,47 @@ shipped. The only arm that caught that defect class was the one where the planni
 **mandatory**. Agents, it turns out, are lazy under pressure in precisely the way engineers
 are. Which is the whole argument for gates over goodwill, and why SDLC Studio's checks are
 deterministic scripts the model cannot skip, not instructions it is asked to follow.
+
+## Proven practice, operationalised
+
+Most tooling in this space operationalises one methodology, if any. SDLC Studio's thesis is
+that the practices that survived decades of software engineering literature work as a
+system, and it enforces them together: Alan Cooper's goal-directed personas (generated from
+your project, one Primary per interface, validation scenarios never driving layout), the
+Three Amigos (as resolvable seats with an author-never-reviews-own-work gate), WSJF backlog
+scoring, TDD/BDD with executable acceptance criteria, retrospectives that file artifacts,
+RFC-before-CR design exploration, CAB-grade audit trails, and separation of duties. The
+pattern shared by every practice here - and the reason they hold when deadline pressure
+arrives - is **refuse to proceed without compliance**: the check is a script that blocks,
+not a guideline that hopes.
+
+The sprint loop maps the essays' operating maxim verbatim - **"specify together, build
+apart, review independently."** Specification is where the human leads (the interview, the
+consults, the plan gate); the build fans out to agents working alone against the shared
+spec; review runs against that spec, never against the conversation that produced the code.
+And the loop is deliberately **batch-to-goal, not time-boxed**: the essays' "railway time"
+point is that coordination regimes change when the machine does - a fixed-length sprint is
+local sun time kept after the trains arrived. A batch closes when its goal is verified,
+whether that takes an afternoon or a week.
+
+## Others argue for a different shape
+
+Others argue that the way to enterprise-grade agentic delivery is a closed platform: give
+the vendor's models unbounded context over your estate, let requirements flow straight to
+code, and eliminate intermediate artifacts - user stories included - as drag. We think the
+opposite, and the disagreement is precise. **Stories are where the proof lives.** A story
+carries its acceptance criteria, its executable verifications, its depth tier, and its
+per-unit review verdict; delete the story and you have deleted the place evidence attaches.
+Our stance: enforced process with verifiable artifacts, independent review that no author
+can waive, and everything - specs, verdicts, audit trail - as plain files in **your**
+repository, portable to any agent you already run. If the category is autonomous delivery
+platforms, then a disciplined open stack - this skill plus the coding agent you already
+have - is that category on your own terms. One idea from that school is worth adopting
+rather than opposing: requirements written with full technical context beat requirements
+written blind, which is exactly what `prd generate` does for a brownfield repo - it reads
+the code first, so feasibility is in the requirement from the start. On evidence, the
+register differs too: that school quotes multiples; we publish an adversarial benchmark
+with the unflattering findings left in (below).
 
 ## The evidence
 

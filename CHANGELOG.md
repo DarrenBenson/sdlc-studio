@@ -37,6 +37,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   nobody, prints a coverage table); every consult carries the Primary test and a per-seat objection
   quota (eval scenario 08 grades it); the scenario taxonomy is documented (validation scenarios
   test robustness, never drive layout); Life goals generate only on a strategy-tier signal.
+  Positioning made honest and philosophical: the README's falsifiable exclusivity claim is
+  replaced by the defensible conjunction (team GENERATED from your project + both sides of the
+  table in one system + mechanical independence), with the evidence framed as blind-spot coverage
+  rather than a smarter model. docs/why is reframed around the project author's published
+  philosophy (the five-instrument cockpit, human-in-the-lead, the mill-not-the-engine,
+  "specify together, build apart, review independently" mapped to the sprint loop, batch-to-goal
+  as the answer to railway time), gains the operationalised-practice section (the enforced
+  methodologies, and the refuse-to-proceed pattern they share), frames critic-verdicts as an
+  attestation log in the separation-of-duties sense, and answers the closed-platform school
+  anonymously ("Others argue that...") with the stories-are-where-proof-lives stance. Cross-model
+  review documented as the stronger form of independence (doctrine + sprint critic flow). The
+  meet-your-team offer is wired everywhere the team is met: PRD close, project upgrade, after a
+  repository review, and a status/hint advisory - always an offer, never auto-run.
 
 - **EP0029 - v4 GA readiness (the final pre-GA dogfood sprint).** The numbering switch is an
   explicit operator question end to end: `migrate_v3 apply`/`adopt` refuse without `--confirm`,

@@ -258,12 +258,29 @@ def cmd_pillars(args: argparse.Namespace) -> int:
         print(f"advisory: {len(prov)} generated persona card(s) still provisional-unverified "
               f"({', '.join(prov[:3])}{'...' if len(prov) > 3 else ''}) - review and accept "
               f"them: persona_gen.py accept (or `persona review`)")
+    offer = team_offer_advisory(Path(args.root))
+    if offer:
+        print(f"advisory: {offer}")
     import gate  # lazy sibling: one shared hook-gap message, so the two surfaces cannot drift
     gap = gate.hook_enablement_gap(args.root)
     if gap:
         print(f"advisory: {gap}")
     _print_update_notice(args.root)
     return 0
+
+
+def team_offer_advisory(repo_root: Path | str) -> str | None:
+    """One-line meet-your-team offer: a PRD exists but no working-team seat card does.
+    An offer, never a hint-ladder rung - the operator may happily stay on the shipped
+    defaults, so this informs on status/hint and never blocks or nags a step."""
+    root = Path(repo_root)
+    if not (root / "sdlc-studio" / "prd.md").is_file():
+        return None
+    seats = root / "sdlc-studio" / "personas" / "seats"
+    if seats.is_dir() and any(seats.glob("*.md")):
+        return None
+    return ("meet your team - `persona generate --team` grows named working seats from "
+            "this project's PRD and stack (offer; the shipped defaults keep working)")
 
 
 def compute_hint(data: dict, repo_root: Path) -> dict:
@@ -309,6 +326,9 @@ def cmd_hint(args: argparse.Namespace) -> int:
     if adv and args.format != "json":
         print(f"advisory: {adv}")
     if args.format != "json":
+        offer = team_offer_advisory(Path(args.root))
+        if offer:
+            print(f"advisory: {offer}")
         for line in index_bloat_advisories(Path(args.root)):
             print(f"advisory: {line}")
     return 0
