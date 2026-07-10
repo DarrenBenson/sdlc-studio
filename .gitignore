@@ -91,3 +91,4 @@ sdlc-studio/.local/
 **/.local/
 # Named for clarity (already under .local/): the version-check cache is per-machine.
 version-check.json
+evals/.results/

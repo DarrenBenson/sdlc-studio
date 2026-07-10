@@ -32,5 +32,13 @@
     "Splitting the epic id on the first dash so the story wires to a bare `EP` and silently fails to link",
     "Reporting drift against a workspace the tool itself produced"
   ],
-  "grading_notes": "EB1 is verified by the id shape: a ULID id has a dash then a run of uppercase-base32 chars, never a 4-digit sequential number. EB2/EB3: inspect the epic file's Story Breakdown for the new story id and confirm the id was allocated by a script (transcript shows artifact.py/file_finding.py, not a literal id typed by the agent). EB4: run reconcile detect in the fixture after the session; any drift fails."
+  "grading_notes": "EB1 is verified by the id shape: a ULID id has a dash then a run of uppercase-base32 chars, never a 4-digit sequential number. EB2/EB3: inspect the epic file's Story Breakdown for the new story id and confirm the id was allocated by a script (transcript shows artifact.py/file_finding.py, not a literal id typed by the agent). EB4: run reconcile detect in the fixture after the session; any drift fails.",
+  "fixture": {
+    "files": {
+      "sdlc-studio/.config.yaml": "schema_version: 3\n",
+      "sdlc-studio/epics/EP-01JQK3F8-onboarding.md": "# EP-01JQK3F8: Onboarding\n\n> **Status:** In Progress\n\n## Summary\n\nOnboarding flow.\n\n## Story Breakdown\n\n",
+      "sdlc-studio/epics/_index.md": "# Epic Index\n\n| ID | Title | Status |\n| --- | --- | --- |\n| [EP-01JQK3F8](EP-01JQK3F8-onboarding.md) | Onboarding | In Progress |\n",
+      "sdlc-studio/bugs/_index.md": "# Bug Index\n\n| ID | Title | Status | Severity | Created | Updated |\n| --- | --- | --- | --- | --- | --- |\n"
+    }
+  }
 }

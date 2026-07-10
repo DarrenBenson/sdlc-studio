@@ -11,6 +11,13 @@ costs a real model session.
 
 ## The two-Claude loop
 
+The mechanical ceremony is scripted: `python3 tools/eval_run.py setup --scenario <id>
+--dir <scratch>` builds the fixture from the scenario's machine-readable `fixture`
+spec and prints the worker prompt; `record` logs each graded behaviour; `report`
+fails on any blocking failure or ungraded blocking behaviour. A scenario without a
+`fixture` spec degrades honestly (setup prints the prose and exits 1). The worker
+and grader sessions remain irreducibly judgement.
+
 Each scenario runs as **worker** then **grader**:
 
 1. **Worker session.** A fresh agent session (no carried context) with

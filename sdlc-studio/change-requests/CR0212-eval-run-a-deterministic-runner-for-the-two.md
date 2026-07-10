@@ -1,6 +1,7 @@
 # CR-0212: eval run: a deterministic runner for the two-Claude eval gate
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Verification depth:** functional (red-then-green: setup builds a fixture from the machine spec + prints the worker prompt, prose-only scenarios degrade honestly rc 1, record rejects unknown behaviours, report gates on blocking failures AND ungraded blocking behaviours; live smoke against scenario 05 e2e; scenarios 05/06 carry executable fixture specs; release-gate + evals/README point at the runner; tools suite 130)
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-10

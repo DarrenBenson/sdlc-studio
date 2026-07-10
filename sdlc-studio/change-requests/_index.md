@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 2 |
+| Proposed | 1 |
 | Approved | 0 |
-| In Progress | 3 |
+| In Progress | 4 |
 | Complete | 207 |
 | Rejected | 0 |
 | Deferred | 0 |
@@ -33,7 +33,7 @@
 | [CR-0209](CR0209-one-unit-close-verb-batch-gate-reporting-a.md) | one unit-close verb + batch gate reporting + a metadata-stamp verb (agent ergonomics of the unit lifecycle) | Complete | Medium | Improvement | 2026-07-10 | -- |
 | [CR-0210](CR0210-consistent-cli-argument-grammar-across-the-script-family.md) | consistent CLI argument grammar across the script family | Complete | Low | Improvement | 2026-07-10 | -- |
 | [CR-0211](CR0211-retros-and-reviews-become-first-class-artifact-types.md) | retros and reviews become first-class artifact types (tool-allocated ids and index rows) | Complete | Low | Improvement | 2026-07-10 | -- |
-| [CR-0212](CR0212-eval-run-a-deterministic-runner-for-the-two.md) | eval run: a deterministic runner for the two-Claude eval gate | Proposed | Medium | Improvement | 2026-07-10 | -- |
+| [CR-0212](CR0212-eval-run-a-deterministic-runner-for-the-two.md) | eval run: a deterministic runner for the two-Claude eval gate | In Progress | Medium | Improvement | 2026-07-10 | -- |
 | [CR-0213](CR0213-one-call-gated-terminal-transition-for-bugs-depth.md) | one-call gated terminal transition for bugs: depth + verdict + status together | In Progress | Low | Improvement | 2026-07-10 | -- |
 | [CR-0214](CR0214-install-sh-local-source-mode-install-the-working.md) | install.sh local-source mode: install the working tree, not the published release | In Progress | Medium | Improvement | 2026-07-10 | -- |
 | [CR-0215](CR0215-big-bang-v4-documentation-pass-every-consuming-facing.md) | big-bang v4 documentation pass: every consuming-facing doc tells the v4 story | Proposed | High | Improvement | 2026-07-10 | -- |

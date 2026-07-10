@@ -26,8 +26,12 @@ Related: reference-reconcile.md (drift check), reference-verify.md (AC verificat
       release match), `check_budgets.py` (line budgets), `check_links.py`
       (anchors) – all green. `npm run lint` covers the first three without
       `--strict`; run the strict version check explicitly pre-tag.
-- [ ] Eval scenarios (skill repo only): run the `evals/` scenarios per
-      `evals/README.md`; record results in the release notes. Any failed
+- [ ] Eval scenarios (skill repo only): drive each scenario with
+      `tools/eval_run.py` (`setup` builds the fixture + worker prompt, `record`
+      logs each graded behaviour, `report` fails the gate on any blocking
+      failure or ungraded blocking behaviour); grading itself stays a fresh
+      worker + independent grader per `evals/README.md`. Record results in the
+      release notes. Any failed
       expected behaviour blocks the tag.
 - [ ] Integration / E2E suite green on at least one host – record which: `_____________`
 - [ ] **E2E specs for this release's navigable surfaces are mutation-checked** – each new/changed critical-path spec was seen to **fail** when the feature is broken on purpose (unset the delivering field, stub the component, invert the guard), then restored. A green E2E that cannot fail is not a gate: an assertion derived from the same source it checks (e.g. `data-wired` vs `data-pending` from one boolean), or an `if/else` whose only reachable branch is a trivial `expect(0).toBe(0)`, passes over a dead feature. Any surface fed by a loader/enrichment/adapter needs at least one spec that drives the **real data path** to the render site, not hand-built props. See `reference-test-best-practices.md#assertion-integrity`.
