@@ -107,15 +107,17 @@ def _seat_amigo_overlap(root: Path) -> list[str]:
 
 
 def _bump_version_text(text: str, installed: str, prev_skill: str | None,
-                       today: str | None = None) -> str:
+                       today: str | None = None, schema: int | None = None) -> str:
     """Surgically bump an EXISTING .version - update schema/skill, stamp upgraded_from/upgraded_at,
     and PRESERVE every other line (e.g. an author's `created_at`). `today` is injectable
-    for deterministic tests."""
+    for deterministic tests. `schema` is the value to stamp - an upgrade may only ever RAISE
+    the schema stamp, so callers pass max(project effective schema, CURRENT_SCHEMA); the old
+    blind CURRENT_SCHEMA constant rewrote a migrated v3 project's stamp back to 2."""
     def setline(t: str, key: str, value: str) -> str:
         pat = re.compile(rf"^{key}:.*$", re.M)
         line = f"{key}: {value}"
         return pat.sub(line, t, count=1) if pat.search(t) else t.rstrip("\n") + f"\n{line}\n"
-    t = setline(text, "schema_version", str(CURRENT_SCHEMA))
+    t = setline(text, "schema_version", str(schema if schema is not None else CURRENT_SCHEMA))
     t = setline(t, "skill_version", f'"{installed}"')
     t = setline(t, "upgraded_from", prev_skill or "null")
     t = setline(t, "upgraded_at", today or date.today().isoformat())
@@ -167,15 +169,23 @@ def migration_walk(root: Path | str) -> list[dict]:
     if _effective_schema(Path(root)) >= 3:
         return []
     return [
-        {"step": "capability delta",
-         "detail": "review what schema v3 turns on (ULID identity, authorship/evidence "
-                   "enforcement): `project upgrade` (this report)"},
+        {"step": "OPERATOR DECISION: switch the id numbering scheme?",
+         "detail": "schema v3 replaces sequential ids (US0001) with collision-free ULID ids "
+                   "(US-01JQK3F8) so multiple users on different machines - with different git "
+                   "states - can file work concurrently without minting clashing ids. The switch "
+                   "renumbers every artefact (links are rewritten; old ids are kept as aliases). "
+                   "Staying on v2 sequential numbering is fully supported: decline by simply not "
+                   "running the migration, and every other upgrade step still applies. This is "
+                   "your call, never an auto-applied default - ASK the operator explicitly."},
         {"step": "migrate_v3 dry-run",
-         "detail": "dry-run the id migration (preview, no writes): `migrate_v3.py plan`"},
+         "detail": "if switching: dry-run the id migration (preview, no writes): `migrate_v3.py plan`"},
         {"step": "migrate_v3 apply",
-         "detail": "perform the ULID id migration and link rewrite: `migrate_v3.py apply`"},
+         "detail": "if switching: perform the ULID id migration and link rewrite: "
+                   "`migrate_v3.py apply --confirm` (apply refuses without the explicit "
+                   "confirmation - the renumbering is operator-consented, never headless)"},
         {"step": "re-baseline",
-         "detail": "backfill/re-review the migrated artefacts: `project upgrade --apply`"},
+         "detail": "backfill/re-review the migrated artefacts: `project upgrade --apply` "
+                   "(runs the same whether or not you switched numbering)"},
     ]
 
 
@@ -321,11 +331,15 @@ def apply(root: Path | str, with_reconcile: bool = False, today: str | None = No
                                        today=today, skill=installed), encoding="utf-8")
         actions.append(f"created sdlc-studio/.version (schema {stamp_schema}, skill {installed})")
     elif prev_skill != installed:
-        ver.write_text(_bump_version_text(ver.read_text(encoding="utf-8"), installed, prev_skill, today), encoding="utf-8")
+        stamp = max(_effective_schema(root), CURRENT_SCHEMA)  # an upgrade never lowers the stamp
+        ver.write_text(_bump_version_text(ver.read_text(encoding="utf-8"), installed, prev_skill,
+                                          today, schema=stamp), encoding="utf-8")
         actions.append(f"updated sdlc-studio/.version (skill {prev_skill or '?'} -> {installed})")
     elif (prev_schema or 0) < CURRENT_SCHEMA:
-        ver.write_text(_bump_version_text(ver.read_text(encoding="utf-8"), installed, prev_skill, today), encoding="utf-8")
-        actions.append(f"repaired sdlc-studio/.version (schema -> {CURRENT_SCHEMA})")
+        stamp = max(_effective_schema(root), CURRENT_SCHEMA)
+        ver.write_text(_bump_version_text(ver.read_text(encoding="utf-8"), installed, prev_skill,
+                                          today, schema=stamp), encoding="utf-8")
+        actions.append(f"repaired sdlc-studio/.version (schema -> {stamp})")
     # v3.1 amigo defaults: install each missing default card into the project's personas/amigos/.
     # Idempotent - a card already present (default or customised) is never overwritten.
     missing_amigos = _missing_amigos(root)

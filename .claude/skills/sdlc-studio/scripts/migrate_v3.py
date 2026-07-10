@@ -259,8 +259,18 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="migrate_v3.py", description="Migrate a workspace v2 -> v3 (ULID ids).")
     p.add_argument("cmd", choices=["plan", "apply"])
     p.add_argument("--root", default=".")
+    p.add_argument("--confirm", action="store_true",
+                   help="required for apply: the id renumbering is an operator decision "
+                        "(every artefact id changes; old ids kept as aliases), never headless")
     p.add_argument("--format", choices=["text", "json"], default="text")
     args = p.parse_args(argv)
+    if args.cmd == "apply" and not args.confirm:
+        print("apply refused: switching the numbering scheme renumbers EVERY artefact id "
+              "(sequential -> collision-free ULID; links rewritten, old ids kept as aliases). "
+              "That is the operator's decision, not a default - preview with `plan`, then, "
+              "with their explicit go-ahead, re-run `apply --confirm`. Staying on v2 "
+              "numbering is fully supported.", file=sys.stderr)
+        return 2
     res = migrate(args.root, dry_run=(args.cmd == "plan"))
     if args.format == "json":
         print(json.dumps(res, indent=2))

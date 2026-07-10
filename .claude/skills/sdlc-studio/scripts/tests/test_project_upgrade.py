@@ -383,12 +383,26 @@ class UpgradeWalkTests(unittest.TestCase):
             _project(d, version=(2, "3.6.0"))
             walk = pu.migration_walk(Path(d))
             steps = [s["step"] for s in walk]
-            # ordered: capability delta -> migrate_v3 dry-run -> migrate_v3 apply -> re-baseline
+            # ordered: operator decision -> migrate_v3 dry-run -> migrate_v3 apply -> re-baseline
             self.assertEqual(len(walk), 4)
             joined = " | ".join(steps).lower()
-            self.assertLess(joined.index("capability"), joined.index("migrate_v3"))
+            self.assertLess(joined.index("operator decision"), joined.index("migrate_v3"))
             self.assertLess(joined.rindex("migrate_v3"), joined.index("re-baseline"))
             self.assertTrue(any("dry-run" in s["detail"].lower() for s in walk))
+
+    def test_walk_frames_numbering_switch_as_operator_question(self) -> None:
+        # CR0216: the id renumbering is an explicit operator decision, never a default.
+        # The walk must state the choice, the multi-user rationale, that declining is
+        # fully supported, and that apply requires --confirm.
+        with tempfile.TemporaryDirectory() as d:
+            _project(d, version=(2, "3.6.0"))
+            walk = pu.migration_walk(Path(d))
+            decision = walk[0]
+            self.assertIn("operator decision", decision["step"].lower())
+            detail = decision["detail"].lower()
+            for needle in ("collision-free", "staying on v2", "ask the operator"):
+                self.assertIn(needle, detail)
+            self.assertTrue(any("--confirm" in s["detail"] for s in walk))
 
     def test_v3_project_has_no_walk(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -732,6 +746,32 @@ class NoFabricatedHistoryTests(unittest.TestCase):
             _v3_story(sd, 3, difficulty=False)
             pu.rebaseline_apply(d)
             self.assertFalse((sd / ".local" / "telemetry.jsonl").exists())  # no back-dated rows
+
+class SchemaStampTests(unittest.TestCase):
+    """BG0102: an upgrade may only ever RAISE the .version schema stamp - a skill-version
+    bump on a migrated v3 project must not rewrite its stamp back to 2."""
+
+    def test_apply_never_downgrades_a_v3_stamp(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            _project(d, version=(3, "3.9.0"))  # migrated project, older skill stamp
+            (Path(d) / "sdlc-studio" / ".config.yaml").write_text(
+                "schema_version: 3\n", encoding="utf-8")
+            pu.apply(Path(d))
+            text = (Path(d) / "sdlc-studio" / ".version").read_text(encoding="utf-8")
+            self.assertIn("schema_version: 3", text)
+            self.assertNotIn("schema_version: 2", text)
+
+    def test_declining_the_switch_leaves_v2_fully_upgraded(self) -> None:
+        # CR0216 AC2: an operator who declines the renumbering still gets the whole
+        # upgrade - and the project stays functional on v2 numbering.
+        with tempfile.TemporaryDirectory() as d:
+            _project(d, version=(2, "3.9.0"), story_id=1)
+            pu.apply(Path(d))  # the "rest of the upgrade", no migrate_v3 run
+            text = (Path(d) / "sdlc-studio" / ".version").read_text(encoding="utf-8")
+            self.assertIn("schema_version: 2", text)  # not silently flipped to 3
+            story = next((Path(d) / "sdlc-studio" / "stories").glob("US0001-*.md"))
+            self.assertTrue(story.exists())  # ids untouched - still sequential
+
 
 if __name__ == "__main__":
     unittest.main()

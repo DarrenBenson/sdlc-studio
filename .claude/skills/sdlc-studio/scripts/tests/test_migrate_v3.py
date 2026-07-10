@@ -305,5 +305,47 @@ class CounterWrapAndSlugTests(unittest.TestCase):
             self.assertTrue(new_path.stem.endswith("add-auth"))
 
 
+class ConfirmGateTests(unittest.TestCase):
+    """CR0216: apply renumbers every id - an operator decision, never headless. Without
+    --confirm it must refuse with guidance and write NOTHING; plan stays unrestricted."""
+
+    def _v2(self, root: Path) -> Path:
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True)
+        (d / "BG0001-x.md").write_text("# BG0001: x\n\n> **Status:** Open\n", encoding="utf-8")
+        return root
+
+    def test_apply_without_confirm_refuses_and_writes_nothing(self) -> None:
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            root = self._v2(Path(d))
+            before = sorted(p.name for p in (root / "sdlc-studio" / "bugs").iterdir())
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                rc = migrate_v3.main(["apply", "--root", str(root)])
+            self.assertEqual(rc, 2)
+            self.assertIn("operator", err.getvalue().lower())
+            self.assertIn("--confirm", err.getvalue())
+            after = sorted(p.name for p in (root / "sdlc-studio" / "bugs").iterdir())
+            self.assertEqual(before, after)  # nothing renamed
+
+    def test_apply_with_confirm_proceeds(self) -> None:
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            root = self._v2(Path(d))
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = migrate_v3.main(["apply", "--confirm", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            names = [p.name for p in (root / "sdlc-studio" / "bugs").iterdir()]
+            self.assertTrue(any(n.startswith("BG-") for n in names))  # ULID form minted
+
+    def test_plan_needs_no_confirm(self) -> None:
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            root = self._v2(Path(d))
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(migrate_v3.main(["plan", "--root", str(root)]), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

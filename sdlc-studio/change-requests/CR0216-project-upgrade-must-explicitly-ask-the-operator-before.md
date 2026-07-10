@@ -1,6 +1,7 @@
 # CR-0216: project upgrade must explicitly ask the operator before switching the id numbering scheme
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Verification depth:** functional (red-then-green: migrate_v3 apply without --confirm exits 2 with guidance and renames nothing, with --confirm proceeds, plan unrestricted; the walk names the operator decision with the collision-free rationale, staying-on-v2 support and the --confirm flag; declining the switch leaves a v2 project fully upgraded and functional - all asserted; suite 1571)
 > **Priority:** High
 > **Type:** Improvement
 > **Date:** 2026-07-10
