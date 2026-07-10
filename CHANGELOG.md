@@ -245,6 +245,13 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
   breakage could reach a green CI. The workflow gains a `gate.py --root .` step (after
   setup-python, PyYAML installed so config-driven lanes fail loud); the two doc claims are now
   true as written.
+- **The `Provenance: external` trust stamp has a writer (EP0026; BG0095).** verify_ac's shell
+  gate read a stamp nothing ever wrote: `reference-verify.md` claimed "the ingest path stamps
+  this field" while no workflow, template or tool did. `artifact.py new --provenance external`
+  now stamps mechanically on every render path; the CR pull workflow and a new
+  `reference-story.md` from-issue branch mandate the flag (the branch reference-github-sync
+  linked to now exists); the `github_sync pull` TODO names it; and an end-to-end test proves a
+  stamped story's `shell` verifier is refused. The reference-verify claim is finally true.
 - **plan_review resolves stories through the shared lookup and fails loud on a miss (EP0026;
   BG0094).** `_resolve_story` re-implemented artefact lookup with a case-sensitive `US*.md`
   glob, so lowercase-named stories never resolved: `record_review` stamped a null fingerprint

@@ -548,8 +548,9 @@ def cmd_pull(args: argparse.Namespace) -> int:
                 f"[TODO] pull: issue #{number} labelled {label} has no local "
                 f"{type_} file. Run the matching `/sdlc-studio {type_} create` "
                 f"workflow with --from-issue {number} to ingest the body into "
-                f"the correct template, then re-run `github_sync.py push` to "
-                f"write the mapping."
+                f"the correct template - the create MUST pass `--provenance "
+                f"external` (the verify shell gate reads that stamp) - then "
+                f"re-run `github_sync.py push` to write the mapping."
             )
             pulled += 1
 

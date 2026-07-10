@@ -339,7 +339,15 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
             triage_noise.enforce_session_cap(root)  # refuse the N+1th finding loudly (v3)
         f["_status"] = _create_status(type_, root)  # era-aware: findings file into inbox under v3
         render = _select_render(root, type_, f.get("template"))
-        sdlc_md.atomic_write(path, render(type_, disp, title, f["date"], f))
+        body = render(type_, disp, title, f["date"], f)
+        prov = str(f.get("provenance") or "").strip()
+        if prov:
+            # The trust-boundary stamp the verify_ac shell gate reads: an ingested artefact
+            # (e.g. created --from-issue) carries its origin mechanically, on EVERY render
+            # path, so the control has a writer - not just prose. Inserted after Created-by.
+            body = re.sub(r"(^> \*\*Created-by:\*\*.*$)",
+                          rf"\1\n> **Provenance:** {prov}", body, count=1, flags=re.MULTILINE)
+        sdlc_md.atomic_write(path, body)
         if type_ in sdlc_md.FINDING_TYPES:
             triage_noise.record_creation(root)  # count this minted finding (session budget)
         index_created = _ensure_index(root, type_, f["date"])  # greenfield first run
@@ -462,7 +470,8 @@ def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
 def cmd_new(args: argparse.Namespace) -> int:
     f = {k: v for k, v in {"epic": args.epic, "priority": args.priority, "ctype": args.ctype,
                            "severity": args.severity, "author": args.author,
-                           "template": args.template}.items() if v}
+                           "template": args.template,
+                           "provenance": getattr(args, "provenance", None)}.items() if v}
     try:
         if args.type in META:
             r = meta_new(args.root, args.type, args.title, f, dry_run=args.dry_run)
@@ -535,6 +544,10 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--priority")
     n.add_argument("--ctype", help="cr type")
     n.add_argument("--severity", help="bug severity")
+    n.add_argument("--provenance",
+                   help="origin stamp for ingested content (e.g. 'external' for a GitHub "
+                        "issue body) - the verify_ac shell gate refuses shell/eval/http "
+                        "verbs on externally-stamped artifacts")
     n.add_argument("--author")
     n.add_argument("--template", choices=("minimal", "full"), default="minimal",
                    help="scaffold richness: minimal (default) or the full templates/core body")

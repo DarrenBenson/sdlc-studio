@@ -1,9 +1,10 @@
 # BG0095: the Provenance: external stamp that gates shell verifiers has no writer anywhere on the ingest path
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file
+> **Verification depth:** functional (red-then-green: --provenance external stamps the field on every render path; end-to-end verify_ac refuses the shell verb on a stamped story; ingest docs mandate the flag in cr/story branches + the pull TODO)
 
 ## Summary
 

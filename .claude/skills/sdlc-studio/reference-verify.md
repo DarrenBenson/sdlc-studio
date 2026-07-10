@@ -164,7 +164,9 @@ technical controls back the rule so it is not procedure-only:
 
 - **Provenance stamp.** A story carrying `> **Provenance:** external` in
   its metadata will not have its shell-backed verifiers executed;
-  they report `blocked`, not run. The ingest path stamps this field, so
+  they report `blocked`, not run. The ingest path stamps this field
+mechanically (`artifact.py new --provenance external`, mandated by the
+from-issue branches of the CR and story workflows), so
   un-reviewed external content cannot reach a shell just because a
   workflow copied it into a story. Clear or change the stamp only after
   review; pass `--allow-external` to override deliberately.

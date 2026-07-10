@@ -328,6 +328,12 @@ and conflict policy.
      `/sdlc-studio cr create --from-issue <N>` so the user runs the
      correct create workflow with template fields under review
    - The script never invents template field values
+   - **Stamp the origin mechanically:** a from-issue create runs
+     `artifact.py new --type cr ... --provenance external` (never a
+     hand-written field), so the issue body arrives carrying
+     `> **Provenance:** external` and the verify shell gate refuses its
+     `shell`/`eval`/`http` verifiers until the content is reviewed and
+     the stamp deliberately cleared
 
 6. **Run cascade**
    - `github_sync.py cascade` lists merged PRs since

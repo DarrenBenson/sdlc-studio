@@ -701,3 +701,50 @@ class ConsolidationCliTests(unittest.TestCase):
                 self.assertEqual(rc, 0, buf.getvalue())
                 self.assertIn("consolidated into CR", buf.getvalue())
                 self.assertIn(expect_created, buf.getvalue())
+
+
+import json as _json
+
+
+class ProvenanceStampTests(unittest.TestCase):
+    """BG0095: the trust boundary needs a WRITER - artifact new --provenance external stamps
+    the field the verify_ac shell gate reads."""
+
+    def test_new_with_provenance_external_stamps_the_field(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
+            r = artifact.new(repo, "cr", "from an issue", {"provenance": "external"})
+            body = Path(r["path"]).read_text(encoding="utf-8")
+            self.assertIn("> **Provenance:** external", body)
+            self.assertEqual(sdlc_md.extract_field(body, "Provenance"), "external")
+
+    def test_default_new_carries_no_provenance_field(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
+            r = artifact.new(repo, "cr", "home grown")
+            self.assertNotIn("**Provenance:**", Path(r["path"]).read_text(encoding="utf-8"))
+
+    def test_externally_stamped_story_blocks_shell_verifiers(self) -> None:
+        # end-to-end with the enforcement point: verify_ac must refuse shell on the stamp.
+        import io
+        from contextlib import redirect_stderr
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+            _epic(repo)
+            r = artifact.new(repo, "story", "ingested", {"epic": "EP0001",
+                                                         "provenance": "external"})
+            p = Path(r["path"])
+            p.write_text(p.read_text(encoding="utf-8").replace(
+                "- **Verify:** {{executable check}}", "- **Verify:** shell echo pwned"),
+                encoding="utf-8")
+            import verify_ac
+            err = io.StringIO()
+            with redirect_stderr(err):
+                results = verify_ac.verify_story(p, dry_run=False, timeout=10,
+                                                 repo_root=repo, allow_shell=True)
+            blob = _json.dumps(results, default=str) + err.getvalue()
+            self.assertIn("external", blob.lower())
+            self.assertNotIn('"status": "pass"', blob.lower())
