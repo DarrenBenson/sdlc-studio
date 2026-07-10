@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 2 |
+| Proposed | 1 |
 | Approved | 0 |
-| In Progress | 1 |
+| In Progress | 2 |
 | Complete | 218 |
 | Rejected | 0 |
 | Deferred | 3 |
@@ -49,7 +49,7 @@
 | [CR-0225](CR0225-appetite-bounded-unattended-runs-a-budget-circuit-breaker.md) | appetite-bounded unattended runs: a budget circuit-breaker for epic-level execution | Deferred | Medium | Feature | 2026-07-10 | -- |
 | [CR-0226](CR0226-a-brand-new-readme-newcomer-value-first-existing.md) | a brand-new README: newcomer value first, existing users get their own page | Complete | High | Improvement | 2026-07-10 | -- |
 | [CR-0227](CR0227-the-sdlc-studio-white-paper-the-mill-described.md) | the sdlc-studio white paper: the mill, described properly | Proposed | High | Feature | 2026-07-10 | -- |
-| [CR-0228](CR0228-rerun-the-benchmark-suite-on-the-v4-release.md) | rerun the benchmark suite on the v4 release candidate | Proposed | High | Improvement | 2026-07-10 | -- |
+| [CR-0228](CR0228-rerun-the-benchmark-suite-on-the-v4-release.md) | rerun the benchmark suite on the v4 release candidate | In Progress | High | Improvement | 2026-07-10 | -- |
 
 ## Archived Releases
 

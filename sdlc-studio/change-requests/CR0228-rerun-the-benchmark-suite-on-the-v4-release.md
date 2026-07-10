@@ -1,6 +1,6 @@
 # CR-0228: rerun the benchmark suite on the v4 release candidate
 
-> **Status:** Proposed
+> **Status:** In Progress
 > **Priority:** High
 > **Type:** Improvement
 > **Date:** 2026-07-10
