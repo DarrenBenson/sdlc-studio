@@ -168,3 +168,19 @@ def metrics(root) -> dict:
         "severity_inflation": {"inflated": inflated, "deflated": deflated},
         "sampled_pending_audit": pending,
     }
+
+
+def main(argv=None) -> int:
+    """Module-only library: a --help stub so disclosure and humans learn its role."""
+    import argparse
+    ap = argparse.ArgumentParser(
+        prog="triage_sampling.py",
+        description="Internal module (no CLI): imported by file_finding/artifact for the "
+                    "v3 triage noise controls. Drive it through those tools.")
+    ap.parse_args(argv)
+    ap.print_help()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

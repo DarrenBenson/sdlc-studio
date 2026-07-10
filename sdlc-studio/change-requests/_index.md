@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 8 |
+| Proposed | 7 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 199 |
+| Complete | 200 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 4 |
@@ -24,7 +24,7 @@
 | [CR-0199](CR0199-status-backlog-deterministic-non-terminal-census-grouped-by.md) | status backlog: deterministic non-terminal census grouped by type and status | Complete | Medium | tooling | 2026-07-08 | -- |
 | [CR-0201](CR0201-provenance-tag-lint-guard-misses-us-form-and.md) | Provenance-tag lint guard misses US-form and non-leading ids | Complete | P3 | Improvement | 2026-07-09 | -- |
 | [CR-0202](CR0202-detect-a-disabled-commit-gate-nothing-verifies-core.md) | detect a disabled commit gate: nothing verifies core.hooksPath on any surface | Complete | High | tooling | 2026-07-09 | -- |
-| [CR-0203](CR0203-make-the-mutation-gate-earn-its-lane-wire.md) | make the mutation gate earn its lane: wire a bounded run into sprint close or remove it | Proposed | Medium | process | 2026-07-09 | -- |
+| [CR-0203](CR0203-make-the-mutation-gate-earn-its-lane-wire.md) | make the mutation gate earn its lane: wire a bounded run into sprint close or remove it | Complete | Medium | process | 2026-07-09 | -- |
 | [CR-0204](CR0204-normalise-the-eleven-test-files-with-mid-file.md) | normalise the eleven test files with mid-file `__main__` guards (36 classes silently dropped on direct runs) | Complete | Medium | tooling | 2026-07-09 | -- |
 | [CR-0205](CR0205-installers-replace-delete-then-copy-with-copy-then.md) | installers: replace delete-then-copy with copy-then-swap so a failed install cannot destroy the previous one | Proposed | Medium | Improvement | 2026-07-09 | -- |
 | [CR-0206](CR0206-github-sync-push-adopt-an-existing-issue-by.md) | github_sync push: adopt an existing issue by title instead of blind create (dedupe across crash/timeout) | Proposed | Medium | Improvement | 2026-07-09 | -- |

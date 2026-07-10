@@ -248,5 +248,25 @@ class AliasSurvivesResumeTests(unittest.TestCase):
                                 f"{old}: original v2 alias must survive the resume")
 
 
+
+
+class GitAddEpochParseTests(unittest.TestCase):
+    def test_add_epochs_parse_real_git_log(self) -> None:
+        # Kills the surviving invert-guard mutant on the '@'-line parser: a broken parse
+        # silently degrades every file to the mtime fallback.
+        import subprocess
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            (root / "a.md").write_text("x\n", encoding="utf-8")
+            subprocess.run(["git", "-C", str(root), "-c", "user.email=t@t",
+                            "-c", "user.name=t", "add", "-A"], check=True)
+            subprocess.run(["git", "-C", str(root), "-c", "user.email=t@t",
+                            "-c", "user.name=t", "commit", "-qm", "add"], check=True)
+            epochs = migrate_v3._git_add_epochs(root)
+            self.assertIn("a.md", epochs)
+            self.assertGreater(epochs["a.md"], 1_000_000_000_000)  # a real ms epoch
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -104,5 +104,18 @@ class TestLiteProfile(unittest.TestCase):
         self.assertEqual(reconcile.detect_type("epic", d)["drift"], [])
 
 
+
+
+class StoryTitleParseTests(unittest.TestCase):
+    def test_story_title_reads_the_h1(self) -> None:
+        # Kills the surviving invert-guard mutant on the H1 parser.
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "US0001-login.md"
+            p.write_text("# US0001: Login flow\n\nbody\n", encoding="utf-8")
+            self.assertEqual(lite_profile._story_title(p), "Login flow")
+
+
 if __name__ == "__main__":
     unittest.main()

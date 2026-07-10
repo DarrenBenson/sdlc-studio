@@ -133,8 +133,14 @@ independent critic plus the gate - the check's output states this scoping.
    `tier_recommended` vs `tier_delivered` + `escalated` in telemetry.
 6. **Closing gate - the sprint review.** Every run ends with a mandatory
    `reconcile` (fix any drift) + `review` (the unified PRD/TRD/TSD/persona plus CODE
-   review), **regardless of `--goal`**. This is the sprint review and it produces
-   the conformance `reviewed` signal. For `--goal design` it reviews the produced
+   review), **regardless of `--goal`**. The review is the sprint review; it produces the
+   conformance `reviewed` signal.
+   **Mutation evidence first (mechanical, `--goal done` only):** before the retro gate, run
+   a bounded `mutation.py run --since <sprint base ref> --test "<the suite>"` (ceiling from
+   `quality.mutation_max`) so `sdlc-studio/.local/mutation-report.json` exists for THIS
+   diff and the gate's mutation lane reads evidence instead of warning "not run" - a lane
+   that always warns trains agents to skim warns. Survivors are findings for the critic
+   pass below, not an automatic block (the lane stays advisory in v1). For `--goal design` it reviews the produced
    backlog; for `--goal done` the delivered increment.
    The CODE leg of a `--goal done` close is the **adversarial full-diff critic pass** -
    a sharpening of the per-unit critic step already in the loop, never a second

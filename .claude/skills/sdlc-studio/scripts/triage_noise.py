@@ -242,3 +242,19 @@ def consolidate_low_finding(root, type_: str, title: str, fields: dict, today: s
               "as Medium or above to keep an individual, tranche-tagged artefact", file=sys.stderr)
         result["tranche_dropped"] = dropped
     return result
+
+
+def main(argv=None) -> int:
+    """Module-only library: a --help stub so disclosure and humans learn its role."""
+    import argparse
+    ap = argparse.ArgumentParser(
+        prog="triage_noise.py",
+        description="Internal module (no CLI): imported by file_finding/artifact for the "
+                    "v3 triage noise controls. Drive it through those tools.")
+    ap.parse_args(argv)
+    ap.print_help()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,6 +1,6 @@
 # CR-0203: make the mutation gate earn its lane: wire a bounded run into sprint close or remove it
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** process
 > **Date:** 2026-07-09
