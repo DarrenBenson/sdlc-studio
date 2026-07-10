@@ -409,6 +409,7 @@ It also reframes the lifecycle as a loop-engineering problem already solved. An 
 
 ## Documentation
 
+- [The white paper](docs/whitepaper.md) - the mill, described properly: the operating model, the measured evidence, governance, and adoption, for the engineering leader evaluating an agentic SDLC
 - [docs/why-sdlc-studio.md](docs/why-sdlc-studio.md) - the full value argument: thesis, evidence (field + benchmark), economics, and honest caveats
 - [docs/existing-users.md](docs/existing-users.md) - already running SDLC Studio? What v4 changes, the numbering question, upgrade steps
 - [docs/INSTALL.md](docs/INSTALL.md) - full installer reference

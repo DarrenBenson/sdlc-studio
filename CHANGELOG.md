@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The white paper ships: "The Mill, Not the Engine" (docs/whitepaper.md + a designed
+  PDF).** The standalone deep description for the engineering leader evaluating an agentic
+  SDLC: the procedural-problem argument, the layer-nobody-governs positioning built from a
+  seven-paper consensus check of the genre (no competitor named), the five-instrument
+  operating model, the benchmark quadrant and pricing exhibits, the generated team, the
+  operationalised-practice thesis, a worked example from this repo's own audit trail,
+  governance/attestation, adoption, blunt limitations - and a claims register mapping every
+  load-bearing claim to its verification path, a device the genre does not have. Gated by
+  all three seats (reader value, technical accuracy against code, claim-by-claim recompute),
+  each REJECT repaired before approval. `tools/whitepaper_pdf.py` renders the distributable
+  PDF (cover, exhibits, print typography) from the same markdown in one command.
+
 - **The engagement floor ships in v4 as doctrine (the benchmark's direct product
   consequence).** A multi-file change in a spec-bearing repo now REQUIRES the planning pass
   (spec delta naming every interacting requirement, one acceptance criterion per interaction)

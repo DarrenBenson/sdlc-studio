@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 0 |
 | Approved | 0 |
 | In Progress | 1 |
-| Complete | 220 |
+| Complete | 221 |
 | Rejected | 0 |
 | Deferred | 6 |
 | Superseded | 4 |
@@ -48,7 +48,7 @@
 | [CR-0224](CR0224-multi-repo-context-the-repo-map-and-census.md) | multi-repo context: the repo map and census grow PVD-wide awareness | Deferred | Medium | Feature | 2026-07-10 | -- |
 | [CR-0225](CR0225-appetite-bounded-unattended-runs-a-budget-circuit-breaker.md) | appetite-bounded unattended runs: a budget circuit-breaker for epic-level execution | Deferred | Medium | Feature | 2026-07-10 | -- |
 | [CR-0226](CR0226-a-brand-new-readme-newcomer-value-first-existing.md) | a brand-new README: newcomer value first, existing users get their own page | Complete | High | Improvement | 2026-07-10 | -- |
-| [CR-0227](CR0227-the-sdlc-studio-white-paper-the-mill-described.md) | the sdlc-studio white paper: the mill, described properly | Proposed | High | Feature | 2026-07-10 | -- |
+| [CR-0227](CR0227-the-sdlc-studio-white-paper-the-mill-described.md) | the sdlc-studio white paper: the mill, described properly | Complete | High | Feature | 2026-07-10 | -- |
 | [CR-0228](CR0228-rerun-the-benchmark-suite-on-the-v4-release.md) | rerun the benchmark suite on the v4 release candidate | Complete | High | Improvement | 2026-07-10 | -- |
 | [CR-0229](CR0229-engagement-floor-mandatory-planning-when-the-change-is.md) | engagement floor: mandatory planning when the change is multi-file in a spec-bearing repo | Deferred | High | Improvement | 2026-07-10 | -- |
 | [CR-0230](CR0230-benchmark-harness-spec-updated-oracle-is-phrasing-brittle.md) | benchmark harness: spec-updated oracle is phrasing-brittle | Deferred | Medium | Improvement | 2026-07-10 | -- |

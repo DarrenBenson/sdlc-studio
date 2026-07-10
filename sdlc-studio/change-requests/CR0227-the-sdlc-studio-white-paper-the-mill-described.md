@@ -1,6 +1,7 @@
 # CR-0227: the sdlc-studio white paper: the mill, described properly
 
-> **Status:** Proposed
+> **Status:** Complete
+> **Verification depth:** functional (three independent seat reviews, each REJECT->repair->re-APPROVE: reader-value walk as both target readers, every mechanism claim verified against shipped code with file:line evidence, every figure recomputed from raw rows; the designed PDF renders from the same source via tools/whitepaper_pdf.py)
 > **Depends on:** CR0222, CR0219, CR0220
 > **Priority:** High
 > **Type:** Feature
@@ -13,9 +14,9 @@ Operator-directed for the v4 GA. A standalone white paper (docs/whitepaper.md, l
 
 ## Acceptance Criteria
 
-- [ ] docs/whitepaper.md ships: executive summary, the procedural problem, the cockpit operating model, the operationalised-practice thesis, the generated team, architecture with worked example, measurement/evidence (benchmark with stated limits), governance/attestation, adoption path, honest limitations
-- [ ] Every factual claim traces to shipped behaviour or the cited benchmark; evidence-honesty register throughout; no competitor named; the author's essays cited as the philosophical basis
-- [ ] Reviewed by all three seats before merge (Lena reader-value, Dani technical accuracy, Sam claim verification)
+- [x] docs/whitepaper.md ships: executive summary, the procedural problem, the cockpit operating model, the operationalised-practice thesis, the generated team, architecture with worked example, measurement/evidence (benchmark with stated limits), governance/attestation, adoption path, honest limitations
+- [x] Every factual claim traces to shipped behaviour or the cited benchmark; evidence-honesty register throughout; no competitor named; the author's essays cited as the philosophical basis
+- [x] Reviewed by all three seats before merge (Lena reader-value, Dani technical accuracy, Sam claim verification)
 
 ## Operator direction (2026-07-10)
 
@@ -28,9 +29,27 @@ Operator-directed for the v4 GA. A standalone white paper (docs/whitepaper.md, l
   under enforced process with mechanical independence; the operator has seen the value
   first-hand and wants it front and centre.
 
+## Consensus check (operator's source folder, 2026-07-10)
+
+Seven genre papers read (five by fresh reader agents this session, two analysed
+earlier in the sprint). CONSENSUS the paper joins: governance/enforcement is the
+bottleneck, not model capability; deterministic guardrails around probabilistic
+agents; audit trails first-class; validation early and continuous; system design
+beats model choice. DELIBERATE DIFFERENCES the paper states: (1) layer - the genre
+governs pipeline/workspace/organisation/AI-product/decision-platform; nobody governs
+the artefact layer where correctness lives - that is the paper's section 2; (2)
+gates harden rather than dissolve into confidence scores; stories kept because proof
+attaches there; (3) evidence register - all seven use asserted multipliers with zero
+methodology; every number in ours is pre-registered, critic-recomputed, raw rows
+published. CRAFT adopted from the genre: the At-a-glance standalone summary, the
+consensus-then-departure structure, checkable closing artefact (our claims register,
+a novel move in the genre), problem/insight rhythm. No competitor named anywhere;
+the closing note explains why.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-10 | audit | Raised |
 | 2026-07-10 | Claude (sprint driver) | operator direction recorded: Nextcloud consensus check, distributable register, agents-first |
+| 2026-07-10 | Claude (sprint driver) | sources arrived via ~/Downloads/Whitepapers/sdlc-studio (7 papers); consensus matrix built; draft written; three-seat review gate running |
