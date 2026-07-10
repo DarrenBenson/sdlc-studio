@@ -43,14 +43,35 @@ and Lena (Product) work out of the box. Where other tooling ships a fixed cast o
 every project, here the working seats, the design personas, and the stakeholder panel live in
 one system, generated from the project itself - and no seat may mark its own homework. The
 persona that argued for the requirement is the one who refuses to sign off work that does not
-meet it. What that is built to buy you is **coverage**: a project-specific cast is positioned to
+meet it. What that is built to buy you is **coverage**: a project-specific cast is built to
 catch the blind spots a generic prompt walks past - it does not make the model smarter,
 and we do not claim it does.
 
-**Existing projects are never auto-switched.** `project upgrade` asks you the numbering
-question explicitly, with three supported answers: migrate everything (old ids kept as
-aliases), adopt **forward-only** (existing ids stay put - still valid in tickets and chat -
-and only new artifacts get ULIDs), or stay on sequential numbering entirely.
+The meet-your-team moment looks like this:
+
+```text
+/sdlc-studio persona generate --team
+
+Analysing project... card payments PRD, Python + Stripe, no compliance regime declared.
+Q1: Which risk class fits this product?
+    [money-movement / PII-health / uptime-SLA / low-stakes]
+> money-movement
+Q2: Strong payment signals - add a Security seat? [yes / no]
+> yes
+
+Generated into personas/seats/ (provisional until you accept):
+  Priya Sharma  - QA          refuses untested refund paths; paranoid about idempotency
+  Marcus Webb   - Engineering ledger-first; will not ship a mutable money type
+  Ana Silva     - Product     guards the checkout conversion goal
+  Imran Hadid   - Security    PCI scope hawk; vetoes card data outside the vault
+```
+
+Every card is yours to edit - and the moment you edit one, generation treats it as
+authored and will never overwrite it.
+
+**Already running SDLC Studio on a project?** Nothing changes until you say so - the
+upgrade asks explicit questions (including the numbering one, with three supported
+answers). Your page is **[docs/existing-users.md](docs/existing-users.md)**.
 
 ## You just ask
 
@@ -330,11 +351,18 @@ Dani (Engineering), Sam (QA), and Lena (Product) - editable persona cards that b
 <details>
 <summary>How do I upgrade?</summary>
 
-Re-run the installer, or `/sdlc-studio skill-update`. It is a drop-in: no project migration, existing `sdlc-studio/` directories keep working. To adopt v4's collision-free ids in an existing project, run `project upgrade` - it asks the numbering question explicitly, three supported answers, nothing forced (see "New in v4"). (The one rename to know: `autosprint` is now `sprint`, with the old name kept as an alias.)
+Re-run the installer, or `/sdlc-studio skill-update`. It is a drop-in: no project migration, existing `sdlc-studio/` directories keep working. Everything an existing project needs - what v4 changes, the explicit numbering question and its three answers, upgrade steps, breaking-change honesty - lives in **[docs/existing-users.md](docs/existing-users.md)**.
 
 </details>
 
 ## Why SDLC Studio
+
+The philosophy in one breath: faster code generation attacks the wrong constraint - the
+bottleneck is knowing what to build and being able to prove it worked. So SDLC Studio is
+not a faster engine; it is the mill - the organisation of specification, evidence, and
+independent review around the code - with you in the lead and the tooling holding the
+discipline when pressure arrives. The full argument, in the author's own essays and with
+the evidence, is **[Why SDLC Studio](docs/why-sdlc-studio.md)**.
 
 The antidote claim is earned, not asserted. Three ways to build software with an AI:
 
@@ -379,6 +407,7 @@ It also reframes the lifecycle as a loop-engineering problem already solved. An 
 ## Documentation
 
 - [docs/why-sdlc-studio.md](docs/why-sdlc-studio.md) - the full value argument: thesis, evidence (field + benchmark), economics, and honest caveats
+- [docs/existing-users.md](docs/existing-users.md) - already running SDLC Studio? What v4 changes, the numbering question, upgrade steps
 - [docs/INSTALL.md](docs/INSTALL.md) - full installer reference
 - `/sdlc-studio help` - the command catalogue (also [help/help.md](.claude/skills/sdlc-studio/help/help.md))
 - [Greenfield runbook](.claude/skills/sdlc-studio/help/getting-started.md) and [Brownfield runbook](.claude/skills/sdlc-studio/help/brownfield-runbook.md) - the step-by-step paths

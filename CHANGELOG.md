@@ -49,7 +49,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   anonymously ("Others argue that...") with the stories-are-where-proof-lives stance. Cross-model
   review documented as the stronger form of independence (doctrine + sprint critic flow). The
   meet-your-team offer is wired everywhere the team is met: PRD close, project upgrade, after a
-  repository review, and a status/hint advisory - always an offer, never auto-run.
+  repository review, and a status/hint advisory - always an offer, never auto-run. The README is
+  newcomer-first end to end: the meet-your-team moment shown as a console sketch, the philosophy
+  in one breath, and every existing-project concern (what v4 changes, the numbering question's
+  three answers, upgrade steps, breaking-change honesty, the dev/testing flow) moved to its own
+  prominently-linked page, docs/existing-users.md.
 
 - **EP0029 - v4 GA readiness (the final pre-GA dogfood sprint).** The numbering switch is an
   explicit operator question end to end: `migrate_v3 apply`/`adopt` refuse without `--confirm`,
