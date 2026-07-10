@@ -15,6 +15,7 @@ DX debt RV0007 catalogued. Runs third, pre-tag; clearing it empties the backlog 
 
 Unit roster (bugs fixed directly; CRs decompose via `cr action` at execution - stories land under this epic):
 
+- [ ] [BG0099](../bugs/BG0099-artifact-new-batch-cannot-link-a-story-to.md) - v3 ULID epic cannot be linked from a new story (greenfield flow broken on default schema)
 - [ ] [BG0086](../bugs/BG0086-v3-short-ids-carry-zero-randomness-uncoordinated-writers.md) - v3 short ids carry zero randomness: same-second writers collide
 - [ ] [BG0087](../bugs/BG0087-migrate-v3-id-minting-wraps-at-1024-files.md) - migrate_v3 counter wraps at 1024 (silent overwrite) + slug pollution
 - [ ] [BG0088](../bugs/BG0088-format-json-suppresses-failure-exit-codes-on-reconcile.md) - --format json suppresses failure exits (apply/report; fields drift-blind)

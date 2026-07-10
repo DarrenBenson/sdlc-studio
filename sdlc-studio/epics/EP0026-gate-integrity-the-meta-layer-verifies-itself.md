@@ -1,6 +1,7 @@
 # EP0026: Gate integrity: the meta-layer verifies itself
 
-> **Status:** In Progress
+> **Status:** Done
+> **Verification depth:** functional (10/10 units delivered, each critic-approved; closing full-diff critic APPROVE after catching+closing the Provenance bypass; evals 4/4 PASS; suite 1512 green)
 > **Created:** 2026-07-10
 > **Created-by:** sdlc-studio new
 
