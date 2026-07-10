@@ -1,6 +1,6 @@
 # CR-0211: retros and reviews become first-class artifact types (tool-allocated ids and index rows)
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Low
 > **Type:** Improvement
 > **Date:** 2026-07-10

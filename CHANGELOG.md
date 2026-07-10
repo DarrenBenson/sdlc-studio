@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Retros and reviews are reconciled like every other type (EP0028, CR0211).** RETRO and RV
+  were the last recurring numbered artefacts whose index rows were hand-edited. `reviews/` now
+  has an `_index.md` (backfilled from the existing RV history), so `artifact new --type review`
+  self-indexes like `--type retro` already did. `reconcile detect/apply` gained a meta lane that
+  checks row presence for both `retros/` and `reviews/` - a numbered file with no index row, a
+  row with no backing file, or a wholly missing index - keyed on the RETRO/RV id namespace the
+  pipeline regexes exclude, tolerant of the house columns (Sprint/Delivered/Blocked, Title/Date)
+  and the absent status/count block. It runs on the default sweep and on `--scope meta`, never on
+  a single pipeline scope; `apply --scope meta` appends a missing row header-driven (orphan rows
+  and a missing index stay report-only). The sprint-close retro step and the repo-review workflow
+  now point at the deterministic `artifact new` path.
+
 ### Fixed
 
 - **Era completion - v3 identity everywhere (EP0028; BG0086/87/88/93/97/99).** Six fixes so the

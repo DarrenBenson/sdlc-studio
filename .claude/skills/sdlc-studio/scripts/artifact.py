@@ -245,8 +245,9 @@ def _render_meta(type_: str, disp: str, title: str, today: str) -> str:
 
 def meta_new(repo_root: Path | str, type_: str, title: str, fields: dict | None = None,
              dry_run: bool = False) -> dict:
-    """Create a retro/review: allocated id, rendered file, index row when the
-    meta index exists (reviews has none by convention - reported honestly)."""
+    """Create a retro/review: allocated id, rendered file, and an index row when the
+    meta index exists with a data header (both retros/ and reviews/ now carry one; a
+    project without the index still creates the file and reports indexed=False honestly)."""
     if type_ not in META:
         raise ValueError(f"unknown meta type {type_!r} (expected retro|review)")
     import next_id
@@ -263,7 +264,7 @@ def meta_new(repo_root: Path | str, type_: str, title: str, fields: dict | None 
         raise FileExistsError(path)
     if dry_run:
         # Predict indexing honestly (like new()'s dry-run): a row is written only when the
-        # meta index exists AND has a data header (reviews has none by convention -> False).
+        # meta index exists AND has a data header (a project without the index -> False).
         idx = root / rel / "_index.md"
         would_index = idx.exists() and sdlc_md.find_data_header(
             idx.read_text(encoding="utf-8").splitlines()) is not None

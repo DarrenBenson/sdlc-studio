@@ -24,3 +24,6 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0015](RETRO0015-ep0022-ep0023-supply-chain-sync-hardening-shared-layer.md) | EP0022/EP0023 supply-chain, sync hardening, shared-layer, context tiering | 2026-07-09 | -- | -- |
 | [RETRO-0016](RETRO0016-ep0024-ep0025-v4-0-release-engineering-backlog-clearance.md) | EP0024/EP0025 v4.0 release engineering + backlog clearance | 2026-07-09 | -- | -- |
 | [RETRO-0017](RETRO0017-rv0007-fixpack-the-nine-rc-blockers.md) | RV0007 fix-pack: the nine rc-blockers | 2026-07-10 | 9 / 9 | 0 |
+| [RETRO-0012](RETRO0012-ep0014-agentic-triage-and-noise-control.md) | EP0014 - agentic triage and noise control (the four-critic sprint) | 2026-07-09 | -- | -- |
+| [RETRO-0013](RETRO0013-ep0019-plan-integrity-hardening.md) | EP0019 - plan-integrity hardening (the gate that catches a wrong plan) | 2026-07-09 | -- | -- |
+| [RETRO-0014](RETRO0014-ep0020-ep0021-upgrade-rebaseline-tooling-hardening.md) | EP0020 + EP0021 - upgrade re-baseline, catalogue hygiene & tooling hardening | 2026-07-09 | -- | -- |

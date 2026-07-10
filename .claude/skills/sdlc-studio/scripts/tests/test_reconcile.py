@@ -1646,5 +1646,107 @@ class JsonExitCodeTests(unittest.TestCase):
             self.assertEqual(rc_json, rc_text)
 
 
+class MetaIndexTests(unittest.TestCase):
+    """retros/ and reviews/ coverage: row presence only, house columns tolerated, the meta id
+    namespace (RETRO/RV) that the pipeline id regexes exclude."""
+
+    @staticmethod
+    def _reviews(root: Path, files: list[str], rows: list[str]) -> None:
+        d = root / "sdlc-studio" / "reviews"
+        d.mkdir(parents=True, exist_ok=True)
+        for f in files:
+            (d / f).write_text(f"# {f}\n\n> **Date:** 2026-07-01\n", encoding="utf-8")
+        body = "| ID | Title | Date |\n| --- | --- | --- |\n" + "".join(rows)
+        (d / "_index.md").write_text("# Review Index\n\n" + body, encoding="utf-8")
+
+    def test_clean_when_every_file_has_a_row(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._reviews(root, ["RV0001-a.md", "RV0002-b.md"],
+                          ["| [RV-0001](RV0001-a.md) | A | 2026-07-01 |\n",
+                           "| [RV-0002](RV0002-b.md) | B | 2026-07-01 |\n"])
+            self.assertEqual(reconcile.meta_index_drift(root), [])
+
+    def test_missing_row_detected(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._reviews(root, ["RV0001-a.md", "RV0002-b.md"],
+                          ["| [RV-0001](RV0001-a.md) | A | 2026-07-01 |\n"])
+            drift = reconcile.meta_index_drift(root)
+            self.assertEqual([(x["kind"], x["id"]) for x in drift], [("missing-row", "RV-0002")])
+
+    def test_orphan_row_detected(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._reviews(root, ["RV0001-a.md"],
+                          ["| [RV-0001](RV0001-a.md) | A | 2026-07-01 |\n",
+                           "| [RV-0009](RV0009-gone.md) | Gone | 2026-07-01 |\n"])
+            drift = reconcile.meta_index_drift(root)
+            self.assertEqual([(x["kind"], x["id"]) for x in drift], [("orphan-row", "RV-0009")])
+
+    def test_non_numbered_neighbours_are_not_census(self) -> None:
+        # LATEST.md, prompts and rehearsal notes live in reviews/ but are not numbered
+        # artefacts - they must never be flagged as a missing row.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._reviews(root, ["RV0001-a.md"],
+                          ["| [RV-0001](RV0001-a.md) | A | 2026-07-01 |\n"])
+            rv = root / "sdlc-studio" / "reviews"
+            (rv / "LATEST.md").write_text("# latest\n", encoding="utf-8")
+            (rv / "repo-review-prompt.md").write_text("# prompt\n", encoding="utf-8")
+            self.assertEqual(reconcile.meta_index_drift(root), [])
+
+    def test_second_non_id_table_cannot_phantom_a_row(self) -> None:
+        # iter_tables yields every separator table; a summary/second table whose prose
+        # matches RV-?0*\d+ must NOT be read as an index row (it would mask real drift).
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rv = root / "sdlc-studio" / "reviews"
+            rv.mkdir(parents=True, exist_ok=True)
+            (rv / "RV0001-a.md").write_text("# a\n> **Date:** 2026-07-01\n", encoding="utf-8")
+            (rv / "RV0002-b.md").write_text("# b\n> **Date:** 2026-07-01\n", encoding="utf-8")
+            (rv / "_index.md").write_text(
+                "# Review Index\n\n"
+                "| Bucket | Note |\n| --- | --- |\n| misc | see RV0002 for context |\n\n"
+                "| ID | Title | Date |\n| --- | --- | --- |\n"
+                "| [RV-0001](RV0001-a.md) | A | 2026-07-01 |\n",
+                encoding="utf-8")
+            # RV-0002 is genuinely missing its row; the phantom 'RV0002' in the note table
+            # must not suppress that finding.
+            drift = reconcile.meta_index_drift(root)
+            self.assertEqual([(x["kind"], x["id"]) for x in drift], [("missing-row", "RV-0002")])
+
+    def test_missing_index_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rv = root / "sdlc-studio" / "reviews"
+            rv.mkdir(parents=True, exist_ok=True)
+            (rv / "RV0001-a.md").write_text("# a\n", encoding="utf-8")
+            drift = reconcile.meta_index_drift(root)
+            self.assertIn(("missing-index", "review"),
+                          [(x["kind"], x["type"]) for x in drift])
+
+    def test_apply_appends_missing_row_header_driven(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._reviews(root, ["RV0001-a.md", "RV0002-b.md"],
+                          ["| [RV-0001](RV0001-a.md) | A | 2026-07-01 |\n"])
+            res = reconcile.apply_meta(root)
+            self.assertEqual(res["appended"], ["RV-0002"])
+            self.assertEqual(reconcile.meta_index_drift(root), [])  # now clean
+            text = (root / "sdlc-studio" / "reviews" / "_index.md").read_text(encoding="utf-8")
+            self.assertIn("[RV-0002](RV0002-b.md)", text)
+
+    def test_detect_scope_meta_and_all_include_meta(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._reviews(root, ["RV0001-a.md", "RV0002-b.md"],
+                          ["| [RV-0001](RV0001-a.md) | A | 2026-07-01 |\n"])
+            # scope 'meta' runs ONLY the meta lane (exit 1 on drift)
+            self.assertEqual(reconcile.main(["detect", "--scope", "meta", "--root", str(root)]), 1)
+            # a single pipeline scope must NOT drag meta drift in
+            self.assertEqual(reconcile.main(["detect", "--scope", "bugs", "--root", str(root)]), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

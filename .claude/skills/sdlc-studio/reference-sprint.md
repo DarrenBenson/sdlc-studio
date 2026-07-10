@@ -170,7 +170,10 @@ independent critic plus the gate - the check's output states this scoping.
    each step script-backed so it cannot be silently skipped:
    1. **Hard close gate.** The close runs `gate --require-retro RETRO{next}` and **fails loud**
       (non-zero, no success report) until the batch retro exists in `sdlc-studio/retros/`, mirroring
-      the reconcile-drift-0 gate. "Unconditional" is now mechanical, not a habit.
+      the reconcile-drift-0 gate. Create it with `artifact new --type retro --title "..."` so the id
+      is tool-allocated and the index row appended (never hand-author either); `reconcile` then
+      covers the retro index for row-presence drift like every pipeline type. "Unconditional" is now
+      mechanical, not a habit.
    2. **Review + write lessons.** Durable lessons from the wave's `.local/lessons.md` are written
       into the committed retro (delivered, blocked, lessons).
    3. **Re-validate open lessons.** `lessons revalidate` lists open lessons; the stale ones are

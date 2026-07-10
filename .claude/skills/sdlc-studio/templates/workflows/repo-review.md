@@ -66,9 +66,12 @@ suggested remediation, effort S/M/L).
 
 ## Report
 
-Allocate the report id with `scripts/next_id.py allocate --type review` and write
-`sdlc-studio/reviews/RV{{nnnn}}-{{slug}}.md`: system overview, per-leg assessment,
-the full findings table (id, title, type, severity, artefact ref), dedup matches,
-limitations, and the top five priorities in order. Finish with a console summary:
+Create the report with `scripts/artifact.py new --type review --title "..."` - it
+allocates the id, writes the scaffold, and appends the `reviews/_index.md` row in one
+step (never hand-author the file or its index row; `reconcile` covers the review index
+for row-presence drift). Fill `sdlc-studio/reviews/RV{{nnnn}}-{{slug}}.md`: system
+overview, per-leg assessment, the full findings table (id, title, type, severity,
+artefact ref), dedup matches, limitations, and the top five priorities in order.
+Finish with a console summary:
 counts by type and severity, the artefact ids raised, and one recommended next
 action.

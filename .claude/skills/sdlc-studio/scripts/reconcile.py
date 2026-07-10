@@ -38,6 +38,7 @@ SCOPE_TYPES = {
     "bugs": ["bug"],
     "workflows": ["workflow"],
     "indexes": ["story", "epic", "cr", "rfc", "plan", "test-spec", "bug", "workflow"],
+    "meta": [],  # retros/ + reviews/ are checked by meta_index_drift, not the pipeline detectors
 }
 _DEFAULT_TYPES = ["story", "epic", "cr", "rfc", "plan", "test-spec", "bug", "workflow"]
 
@@ -509,6 +510,150 @@ def detect_type(type_: str, repo_root: Path) -> dict:
     }
 
 
+# -----------------------------------------------------------------------------
+# Meta-index coverage (retros/, reviews/)
+#
+# These indexes carry house columns (Sprint/Delivered/Blocked, or Title/Date) and NO
+# Status column or count-summary block, so the pipeline reconcile above - which pins the
+# data table by its Status header and rewrites status cells - cannot own them. This lane
+# checks row PRESENCE only: every numbered RETRO/RV file has an index row and every row a
+# backing file. It keys on the meta id namespace (RETRO/RV), which the pipeline id regexes
+# deliberately exclude, so it needs its own extractor rather than `_index_row_ids`.
+# -----------------------------------------------------------------------------
+_META_INDEX = {  # mirrors next_id.META_TYPES; kept local to avoid a reconcile->next_id import
+    "retro": ("sdlc-studio/retros", "RETRO"),
+    "review": ("sdlc-studio/reviews", "RV"),
+}
+
+
+def meta_census(type_: str, repo_root: Path | str) -> dict[str, str]:
+    """{normalised_id: display_id} for the numbered artefact files of a meta type. Only
+    `PREFIX<digits>-...md` stems count - LATEST.md, review prompts and rehearsal notes living
+    alongside are not numbered artefacts and are skipped."""
+    rel, prefix = _META_INDEX[type_]
+    d = Path(repo_root) / rel
+    pat = re.compile(rf"^{re.escape(prefix)}0*(\d+)-")
+    out: dict[str, str] = {}
+    for p in (sorted(d.glob(f"{prefix}*.md")) if d.is_dir() else []):
+        m = pat.match(p.stem)
+        if m:
+            n = int(m.group(1))
+            out[f"{prefix}{n:04d}"] = f"{prefix}-{n:04d}"
+    return out
+
+
+def _meta_index_row_ids(text: str, prefix: str) -> list[str]:
+    """Normalised meta ids from the index's data table(s), located by an ID-column header
+    (the meta indexes have no Status column, so `_VOCAB_HEADER` never matches them)."""
+    idre = re.compile(rf"{re.escape(prefix)}-?0*(\d+)")
+    ids: list[str] = []
+    for tbl in sdlc_md.iter_tables(
+            text, header_predicate=lambda cells: any(c.strip().lower() == "id" for c in cells)):
+        lowered = [c.strip().lower() for c in tbl["header"]] if tbl["header"] else []
+        if "id" not in lowered:
+            # iter_tables yields EVERY separator table, not only ID tables. Confine the lane
+            # to the ID-bearing table so a future summary/second table whose prose happens to
+            # match RV-?0*\d+ cannot phantom a row (which would mask a real drift item).
+            continue
+        id_col = lowered.index("id")
+        for _ln, cells in tbl["rows"]:
+            if id_col >= len(cells):
+                continue
+            m = idre.search(cells[id_col])
+            if m:
+                ids.append(f"{prefix}{int(m.group(1)):04d}")
+    return ids
+
+
+def meta_index_drift(repo_root: Path | str) -> list[dict]:
+    """Row-presence drift for the meta indexes (retros/, reviews/): a numbered file with no
+    index row, an index row with no backing file, or a wholly missing index. Same drift-dict
+    shape as the pipeline detectors, so items slot straight into the report's `drift` list."""
+    root = Path(repo_root)
+    drift: list[dict] = []
+    for type_ in _META_INDEX:
+        rel, prefix = _META_INDEX[type_]
+        census = meta_census(type_, root)
+        index_path = root / rel / "_index.md"
+        if not index_path.exists():
+            if census:
+                drift.append({"type": type_, "id": None, "kind": "missing-index",
+                              "file_status": None, "index_status": None,
+                              "fix": f"create {rel}/_index.md from the {len(census)} {prefix} files"})
+            continue
+        rows = set(_meta_index_row_ids(index_path.read_text(encoding="utf-8"), prefix))
+        for norm, disp in sorted(census.items()):
+            if norm not in rows:
+                drift.append({"type": type_, "id": disp, "kind": "missing-row",
+                              "file_status": None, "index_status": None,
+                              "fix": f"add {disp} to {rel}/_index.md (artifact new --type {type_})"})
+        for norm in sorted(rows):
+            if norm not in census:
+                disp = f"{prefix}-{norm[len(prefix):]}"
+                drift.append({"type": type_, "id": disp, "kind": "orphan-row",
+                              "file_status": None, "index_status": None,
+                              "fix": f"remove orphan {disp} row from {rel}/_index.md (no backing file)"})
+    return drift
+
+
+def _meta_row_fields(path: Path) -> tuple[str, str]:
+    """(title, date) for a meta index append: title from the file's H1 (leading id/prefix
+    stripped), date from a `> **Date:**` field or the first ISO date in the stem, else '--'."""
+    text = path.read_text(encoding="utf-8") if path.exists() else ""
+    title = path.stem
+    m = re.search(r"^#\s+(.+)$", text, re.M)
+    if m:
+        title = re.sub(r"^(?:RV|RETRO)[-\s:]*\d+\s*[-:]\s*", "", m.group(1).strip())
+    dm = re.search(r"\*\*Date:\*\*\s*(\d{4}-\d{2}-\d{2})", text)
+    if dm:
+        return title, dm.group(1)
+    sm = re.search(r"(\d{4}-\d{2}-\d{2})", path.stem)
+    return title, (sm.group(1) if sm else "--")
+
+
+def apply_meta(repo_root: Path | str, dry_run: bool = False) -> dict:
+    """Append a row for each numbered meta file missing from its index (retros/, reviews/),
+    header-driven so the house column order is honoured. Orphan rows and a wholly missing
+    index stay report-only - deleting history or fabricating a whole index is a judgement
+    call, never mechanical. Returns {appended, missing_unapplied}."""
+    root = Path(repo_root)
+    result: dict = {"appended": [], "missing_unapplied": []}
+    for type_ in _META_INDEX:
+        rel, prefix = _META_INDEX[type_]
+        index_path = root / rel / "_index.md"
+        if not index_path.exists():
+            continue
+        census = meta_census(type_, root)
+        lines = index_path.read_text(encoding="utf-8").splitlines()
+        rows = set(_meta_index_row_ids("\n".join(lines), prefix))
+        missing = [(norm, disp) for norm, disp in sorted(census.items()) if norm not in rows]
+        if not missing:
+            continue
+        hdr = sdlc_md.find_data_header(lines)
+        if hdr is None:
+            result["missing_unapplied"].extend(disp for _n, disp in missing)
+            continue
+        changed = False
+        for norm, disp in missing:
+            n = int(norm[len(prefix):])
+            matches = sorted((root / rel).glob(f"{prefix}{n:04d}-*.md"))
+            if not matches:
+                result["missing_unapplied"].append(disp)
+                continue
+            title, date_s = _meta_row_fields(matches[0])
+            row = sdlc_md.row_from_header(hdr[1], f"[{disp}]({matches[0].name})", title,
+                                          "--", {"date": date_s})
+            pos = hdr[0] + 2  # past header + separator
+            while pos < len(lines) and lines[pos].strip().startswith("|"):
+                pos += 1
+            lines.insert(pos, row)
+            result["appended"].append(disp)
+            changed = True
+        if changed and not dry_run:
+            sdlc_md.atomic_write(index_path, "\n".join(lines) + "\n")
+    return result
+
+
 def cmd_detect(args: argparse.Namespace) -> int:
     """Run drift detection across the selected scope and report."""
     repo_root = Path(args.root).resolve()
@@ -520,6 +665,10 @@ def cmd_detect(args: argparse.Namespace) -> int:
         result = detect_type(type_, repo_root)
         per_type[type_] = result
         all_drift.extend(result["drift"])
+    # The meta indexes (retros/, reviews/) run on the default 'all' sweep and on the explicit
+    # 'meta' scope, never on a single pipeline scope like 'bugs'.
+    if args.scope in (None, "meta"):
+        all_drift.extend(meta_index_drift(repo_root))
 
     by_kind: dict[str, int] = {}
     for d in all_drift:
@@ -1142,14 +1291,17 @@ def cmd_apply(args: argparse.Namespace) -> int:
     types = SCOPE_TYPES.get(args.scope, _DEFAULT_TYPES) if args.scope else _DEFAULT_TYPES
     n = 0
     unapplied = 0
+    do_meta = args.scope in (None, "meta")
     if getattr(args, "format", "text") == "json":
         by_type = {t: apply_type(t, repo_root, dry_run=args.dry_run) for t in types}
+        if do_meta:
+            by_type["meta"] = apply_meta(repo_root, dry_run=args.dry_run)
         applied = sum(len(r.get("changes", [])) + len(r.get("appended", [])) for r in by_type.values())
         blocked = sum(len(r.get("unapplied", [])) + len(r.get("missing_unapplied", []))
                       + (1 if r.get("refused") else 0) for r in by_type.values())
         print(json.dumps({"dry_run": args.dry_run, "applied": applied, "unapplied": blocked,
                           "by_type": by_type}, indent=2))
-        return 1 if blocked else 0  # BG0088: JSON mode must signal failure like the text path
+        return 1 if blocked else 0  # JSON mode must signal failure like the text path
     for type_ in types:
         res = apply_type(type_, repo_root, dry_run=args.dry_run)
         if res.get("refused"):
@@ -1180,6 +1332,16 @@ def cmd_apply(args: argparse.Namespace) -> int:
             print(f"WARNING: could not insert a summary row for status '{st}' in the "
                   f"{type_} index - no reconcile-managed summary block (add a Total "
                   f"row to the global summary); counts remain drifted", file=sys.stderr)
+            unapplied += 1
+    if do_meta:
+        m = apply_meta(repo_root, dry_run=args.dry_run)
+        for a in m["appended"]:
+            print(f"{'WOULD add' if args.dry_run else 'added'} missing meta row {a}")
+            n += 1
+        for a in m["missing_unapplied"]:
+            print(f"WARNING: could not add missing meta row {a} - its index has no "
+                  f"pinnable ID-column data table; fix the layout, then re-run apply",
+                  file=sys.stderr)
             unapplied += 1
     print(f"apply: {'would change' if args.dry_run else 'changed'} {n} row(s)"
           + (f", {unapplied} could not be applied" if unapplied else "")
