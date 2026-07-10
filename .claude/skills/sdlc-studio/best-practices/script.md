@@ -206,6 +206,26 @@ shipped verbs). One verb per meaning keeps 40+ script surfaces guessable:
 Prefer an existing verb over a synonym (`scan`, `exec`, `emit`, `report` as a verb);
 if none fits, add the new verb here in the same change.
 
+## CLI argument grammar
+
+One grammar across the script family so an agent never has to `--help`-probe for how a
+given command spells a list or a target. Deviations cost a round-trip every time.
+
+- **id lists (batch verbs):** accept a **repeatable `--id`** OR a **single comma-separated
+  `--ids`** (the legacy spelling, kept as an alias). Declare both with
+  `sdlc_md.add_ids_argument(subparser)` and read them back with `sdlc_md.resolve_ids(args)`
+  - it merges either form into one de-duplicated, order-preserving list. Never invent a
+  third spelling (a worklist file, space-separated `nargs="+"`, a positional list).
+- **single-target verbs:** a scalar `--id` (no helper needed); `resolve_ids` still reads it.
+- **recorder subject id:** `--unit` is the family-standard field (critic, loop_guard). A verb
+  with a legacy spelling keeps it as an argparse alias: `add_argument("--tranche", "--unit",
+  dest="tranche", ...)`.
+- **target selection** (a status query vs an id list) is a mutually-exclusive choice the
+  command validates, not two half-overlapping flags.
+
+`tests/test_cli_grammar.py` sweeps every id verb's argparse definition and fails if a new
+command accepts ids in a non-conforming form.
+
 **Options:**
 
 - `--dry-run` - Preview only

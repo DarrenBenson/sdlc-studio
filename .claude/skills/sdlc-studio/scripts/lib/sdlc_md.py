@@ -915,3 +915,40 @@ def count_acs(text: str) -> int:
                 or AC_BULLET_RE.match(line)):
             count += 1
     return count
+
+
+# -----------------------------------------------------------------------------
+# CLI argument grammar (shared so every script's id list reads the same way)
+#
+# One convention across the script family: a batch verb takes ids as a repeatable
+# `--id` OR a single comma-separated `--ids` (the legacy spelling, kept as an alias).
+# `add_ids_argument` declares both on a subparser; `resolve_ids` merges whichever the
+# caller supplied into one de-duplicated, order-preserving list. A single-target verb
+# keeps a scalar `--id` and needs neither helper.
+# -----------------------------------------------------------------------------
+def add_ids_argument(parser, *, dest: str = "id", help_: str | None = None) -> None:
+    """Declare the canonical id-list pair on a batch subparser: a repeatable `--id`
+    plus a legacy comma-separated `--ids`. Read them back with `resolve_ids(args)`."""
+    parser.add_argument("--id", action="append", dest=dest, metavar="ID",
+                        help=help_ or ("artifact id; repeat --id for several, or pass "
+                                       "--ids as one comma-separated list"))
+    parser.add_argument("--ids", dest="ids",
+                        help="legacy: comma-separated ids (equivalent to repeating --id)")
+
+
+def resolve_ids(args, *, dest: str = "id") -> list[str]:
+    """The id list from a parser built with `add_ids_argument` - `--id` (scalar or
+    repeated) and `--ids` (comma list) merged, whitespace-trimmed, de-duplicated in
+    first-seen order. Empty list when neither was given (the command decides if that
+    is an error)."""
+    out: list[str] = []
+    v = getattr(args, dest, None)
+    if isinstance(v, str):
+        out.append(v)
+    elif isinstance(v, list):
+        out.extend(v)
+    raw = getattr(args, "ids", None)
+    if raw:
+        out.extend(s.strip() for s in raw.split(",") if s.strip())
+    seen: set[str] = set()
+    return [x for x in (s.strip() for s in out) if x and not (x in seen or seen.add(x))]

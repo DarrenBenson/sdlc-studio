@@ -89,7 +89,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="SDLC Studio decisions ledger.")
     sub = parser.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("record", help="Append a ruling to the tranche ledger.")
-    r.add_argument("--tranche", required=True, help="Tranche id (e.g. CR0020)")
+    r.add_argument("--tranche", "--unit", dest="tranche", required=True,
+                   help="Tranche/unit id (e.g. CR0020); --unit is the family-standard alias")
     r.add_argument("--decision", required=True)
     r.add_argument("--rationale", default="")
     r.add_argument("--root", default=".", help="Repo root (default: .)")

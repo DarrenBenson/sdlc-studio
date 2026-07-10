@@ -621,7 +621,7 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--format", choices=("text", "json"), default="text")
     c.set_defaults(func=cmd_close)
     r = sub.add_parser("revision", help="Append a dated Revision History row per id (batch).")
-    r.add_argument("--ids", required=True, help="comma-separated artifact ids")
+    sdlc_md.add_ids_argument(r, help_="artifact ids; repeat --id or pass --ids as one comma list")
     r.add_argument("--note", required=True, help="the Change cell text")
     r.add_argument("--author", help="the Author cell (default: sdlc)")
     r.add_argument("--date", help="override the Date cell (default: today)")
@@ -641,7 +641,11 @@ def cmd_revision(args: argparse.Namespace) -> int:
     root = Path(args.root)
     today = args.date or date.today().isoformat()
     author = args.author or "sdlc"
-    ids = [x.strip() for x in args.ids.split(",") if x.strip()]
+    ids = sdlc_md.resolve_ids(args)
+    if not ids:
+        print("specify at least one id: --id (repeatable) or --ids as a comma list",
+              file=sys.stderr)
+        return 2
     refused = 0
     for rid in ids:
         found = audit.find_artifact(root, rid)

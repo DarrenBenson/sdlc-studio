@@ -216,9 +216,13 @@ def audit_batch(repo_root: Path | str, ids: list[str]) -> dict:
 
 def cmd_check(args: argparse.Namespace) -> int:
     """Audit a batch (by ids or a status query); exit non-zero if any unit is not ready."""
-    if args.ids:
-        ids = [s.strip() for s in args.ids.split(",") if s.strip()]
-    else:
+    ids = sdlc_md.resolve_ids(args)
+    query = args.crs if args.crs is not None else args.bugs if args.bugs is not None else args.stories
+    if bool(ids) == (query is not None):
+        print("specify exactly one selection mode: id(s) (--id/--ids) OR a status query "
+              "(--crs/--bugs/--stories)", file=sys.stderr)
+        return 2
+    if not ids:
         kind, status = (("cr", args.crs) if args.crs is not None
                         else ("bug", args.bugs) if args.bugs is not None
                         else ("story", args.stories))
@@ -248,8 +252,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="SDLC Studio tranche audit (sprint pre-flight).")
     sub = parser.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("check", help="Audit a batch for readiness before the triage STOP.")
-    g = c.add_mutually_exclusive_group(required=True)
-    g.add_argument("--ids", help="Comma-separated unit ids (e.g. CR0003,CR0004)")
+    sdlc_md.add_ids_argument(c, help_="unit ids to audit; repeat --id or pass --ids as one "
+                                      "comma list (e.g. --id CR0003 --id CR0004)")
+    g = c.add_mutually_exclusive_group()
     g.add_argument("--crs", metavar="STATUS", help="CRs with this Status")
     g.add_argument("--bugs", metavar="STATUS", help="Bugs with this Status")
     g.add_argument("--stories", metavar="STATUS", help="Stories with this Status")

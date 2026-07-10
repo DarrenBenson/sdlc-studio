@@ -1,6 +1,6 @@
 # CR-0210: consistent CLI argument grammar across the script family
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Low
 > **Type:** Improvement
 > **Date:** 2026-07-10

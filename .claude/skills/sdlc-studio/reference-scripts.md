@@ -98,9 +98,13 @@ Every script in `scripts/`:
 7. Prints plain text to stdout by default, with `--format json` where
    machine-parseable output matters
 8. Has unit tests under `scripts/tests/test_<script>.py`
+9. Takes id lists the one documented way - a repeatable `--id` or a single
+   comma-separated `--ids` (`sdlc_md.add_ids_argument` / `resolve_ids`), and the
+   recorder subject id as `--unit` - so no verb needs a per-script `--help` probe
+   (swept by `tests/test_cli_grammar.py`)
 
 See `best-practices/script.md` for the shared style rules (shebang,
-error handling, CLI flags over config files for small tools).
+error handling, CLI flags over config files, and the CLI argument grammar).
 
 ## Catalogue {#scripts-catalogue}
 

@@ -410,11 +410,40 @@ class BatchIdsTests(unittest.TestCase):
             self.assertIn("**Status:** Fixed", text1)        # gated pass applied
             self.assertIn("**Status:** In Progress", text2)  # gated refusal untouched
 
-    def test_id_and_ids_mutually_exclusive(self) -> None:
+    def test_id_and_ids_merge_deduped(self) -> None:
+        # CR0210 grammar: --id (repeatable) and --ids (comma list) are combinable and merged,
+        # de-duplicated in first-seen order - not mutually exclusive. Here BG0001 appears in
+        # both, so exactly BG0001 and BG0002 are attempted (each individually gated).
+        import io
+        from contextlib import redirect_stdout
         with tempfile.TemporaryDirectory() as d:
             root = self._two_bugs(Path(d))
-            rc = tr.main(["set", "--id", "BG0001", "--ids", "BG0001,BG0002",
-                          "--status", "Fixed", "--root", str(root)])
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                tr.main(["set", "--id", "BG0001", "--ids", "BG0001,BG0002",
+                         "--status", "Fixed", "--root", str(root)])
+            out = buf.getvalue()
+            self.assertIn("BG0001", out)
+            self.assertIn("BG0002", out)
+
+    def test_repeatable_id_batches(self) -> None:
+        # CR0210: repeat --id instead of the comma spelling
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = self._two_bugs(Path(d))
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                tr.main(["set", "--id", "BG0001", "--id", "BG0002",
+                         "--status", "Fixed", "--root", str(root)])
+            out = buf.getvalue()
+            self.assertIn("BG0001", out)
+            self.assertIn("BG0002", out)
+
+    def test_no_ids_is_a_usage_error(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._two_bugs(Path(d))
+            rc = tr.main(["set", "--status", "Fixed", "--root", str(root)])
             self.assertEqual(rc, 2)
 
     def test_meta_type_refused_with_reason(self) -> None:

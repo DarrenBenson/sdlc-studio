@@ -481,10 +481,11 @@ def _num(v):
 
 
 def cmd_set(args: argparse.Namespace) -> int:
-    if bool(args.id) == bool(args.ids):
-        print("specify exactly one of --id or --ids", file=sys.stderr)
+    ids = sdlc_md.resolve_ids(args)
+    if not ids:
+        print("specify at least one id: --id (repeatable) or --ids as a comma list",
+              file=sys.stderr)
         return 2
-    ids = [args.id] if args.id else [s.strip() for s in args.ids.split(",") if s.strip()]
     results = []
     refused = 0
     for aid in ids:
@@ -505,7 +506,7 @@ def cmd_set(args: argparse.Namespace) -> int:
             if args.format != "json":
                 print(f"  blocked  {aid}: {exc}")
     if args.format == "json":
-        print(json.dumps(results if args.ids else results[0], indent=2))
+        print(json.dumps(results if len(ids) > 1 else results[0], indent=2))
     if len(ids) > 1:
         out = sys.stderr if args.format == "json" else sys.stdout
         print(f"batch: {len(ids) - refused}/{len(ids)} transitioned, {refused} blocked", file=out)
@@ -528,9 +529,9 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Transition an artifact's status + cascade.")
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("set", help="Set an artifact's status and sync index + epic breakdown.")
-    s.add_argument("--id", help="Artifact id, e.g. CR0042 / US0023")
-    s.add_argument("--ids", help="comma-separated ids for a same-target batch; each is "
-                                 "individually gated and one refusal never aborts the rest")
+    sdlc_md.add_ids_argument(s, help_="artifact id, e.g. CR0042 / US0023; repeat --id or pass "
+                                      "--ids as a comma list for a same-target batch (each id is "
+                                      "individually gated, one refusal never aborts the rest)")
     s.add_argument("--status", required=True, help="New status (must be in the type vocabulary)")
     s.add_argument("--root", default=".")
     s.add_argument("--iterations", help="run metric passed to the terminal-close telemetry event")

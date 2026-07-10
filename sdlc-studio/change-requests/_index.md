@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 2 |
+| Proposed | 1 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 205 |
+| Complete | 206 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 4 |
@@ -31,7 +31,7 @@
 | [CR-0207](CR0207-reliability-debt-low-themed-permissions-pagination-growth-scale.md) | reliability debt (Low, themed): permissions, pagination, growth, scale and crash-window items from RV0007 | Complete | Medium | Improvement | 2026-07-09 | -- |
 | [CR-0208](CR0208-quality-and-docs-debt-low-themed-duplication-conventions.md) | quality and docs debt (Low, themed): duplication, conventions, doc accuracy and DX items from RV0007 | Proposed | Medium | Improvement | 2026-07-09 | -- |
 | [CR-0209](CR0209-one-unit-close-verb-batch-gate-reporting-a.md) | one unit-close verb + batch gate reporting + a metadata-stamp verb (agent ergonomics of the unit lifecycle) | Complete | Medium | Improvement | 2026-07-10 | -- |
-| [CR-0210](CR0210-consistent-cli-argument-grammar-across-the-script-family.md) | consistent CLI argument grammar across the script family | Proposed | Low | Improvement | 2026-07-10 | -- |
+| [CR-0210](CR0210-consistent-cli-argument-grammar-across-the-script-family.md) | consistent CLI argument grammar across the script family | Complete | Low | Improvement | 2026-07-10 | -- |
 | [CR-0211](CR0211-retros-and-reviews-become-first-class-artifact-types.md) | retros and reviews become first-class artifact types (tool-allocated ids and index rows) | Complete | Low | Improvement | 2026-07-10 | -- |
 
 ## Archived Releases

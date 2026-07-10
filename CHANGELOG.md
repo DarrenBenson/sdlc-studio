@@ -21,6 +21,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and a missing index stay report-only). The sprint-close retro step and the repo-review workflow
   now point at the deterministic `artifact new` path.
 
+### Changed
+
+- **One CLI argument grammar across the script family (EP0028, CR0210).** The scripts disagreed
+  on how ids and targets were passed - `audit check` took `--ids` comma-separated, `transition
+  set` forced exactly one of `--id`/`--ids`, `artifact revision` required `--ids`, `ledger
+  record` used `--tranche` where sibling recorders use `--unit` - and each mismatch cost an agent
+  a `--help` probe. Now every id-taking batch verb accepts the same form via the shared
+  `sdlc_md.add_ids_argument` / `resolve_ids`: a repeatable `--id` OR a single comma-separated
+  `--ids` (kept as a legacy alias), merged into one de-duplicated list; `ledger record` gains a
+  `--unit` alias. A new `tests/test_cli_grammar.py` sweeps the argparse definitions so a
+  non-conforming new command fails the suite; `best-practices/script.md` and `reference-scripts.md`
+  document the grammar once. Minor shape change: `transition set --format json` now emits a scalar
+  object for exactly one id and a list for several (previously the list depended on which flag was
+  used); the documented scalar `--id` path is unchanged and no consumer parsed the old list-of-one.
+
 ### Fixed
 
 - **Era completion - v3 identity everywhere (EP0028; BG0086/87/88/93/97/99).** Six fixes so the
