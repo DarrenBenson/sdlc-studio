@@ -1,6 +1,7 @@
 # EP0027: Reliability tier: crash-safe, resumable, honest under failure
 
-> **Status:** In Progress
+> **Status:** Done
+> **Verification depth:** functional (11/11 units delivered, each independently critic-approved; closing full-diff critic APPROVE - no cross-unit failures, BG0081/82/91 interactions reproduced correct; scenario-04 eval regression PASS; suite 1522 + tools 110 green, gate PASS, drift 0)
 > **Created:** 2026-07-10
 > **Created-by:** sdlc-studio new
 
