@@ -16,9 +16,12 @@ Operator-requested. The v2->v3 numbering switch (sequential ids -> ULID) is opt-
 - [ ] `project_upgrade` (and the upgrade workflow docs) present the numbering switch as an explicit operator question - what changes, what the flag is, that v2 ids keep working - and proceed only on explicit confirmation
 - [ ] Declining the switch completes the rest of the upgrade cleanly on v2 numbering (verified by test)
 - [ ] `migrate_v3` invoked headless/non-interactively without an explicit confirmation flag refuses with guidance instead of proceeding
+- [ ] (operator addition) A forward-only answer exists: `migrate_v3 adopt --confirm` stamps schema 3 without renumbering; existing sequential ids stay valid (in and out of system), new artefacts mint ULIDs, mixed eras reconcile clean
+- [ ] (operator addition) A divergent-settings warning: reconcile advises when the clone's config is v2 but v3 ids exist in the workspace (two writers in different modes); greenfield default remains ULID, the question is upgrade-only
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-10 | audit | Raised |
+| 2026-07-10 | Claude (sprint driver) | scope extended per operator (mid-sprint): forward-only adopt verb + era-divergence advisory added as ACs |
