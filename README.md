@@ -20,7 +20,7 @@ SDLC Studio is an open [Agent Skill](https://agentskills.io) - a plug-in for AI 
 
 One install works in **Claude Code, OpenAI Codex, Gemini CLI, opencode, and GitHub Copilot**.
 
-## New in v4: built for multi-team work
+## Built for multi-team work
 
 v4 makes SDLC Studio **truly multi-team compatible - human teams and agent teams together**.
 Every new project mints **collision-free artifact ids** (ULIDs like `US-01JQK3F8` instead of
@@ -43,7 +43,7 @@ and Lena (Product) work out of the box. Where other tooling ships a fixed cast o
 every project, here the working seats, the design personas, and the stakeholder panel live in
 one system, generated from the project itself - and no seat may mark its own homework. The
 persona that argued for the requirement is the one who refuses to sign off work that does not
-meet it. What that is built to buy you is **coverage**: a project-specific cast is built to
+meet it. The point is **coverage**: a project-specific cast is built to
 catch the blind spots a generic prompt walks past - it does not make the model smarter,
 and we do not claim it does.
 
@@ -56,7 +56,10 @@ Analysing project... card payments PRD, Python + Stripe, no compliance regime de
 Q1: Which risk class fits this product?
     [money-movement / PII-health / uptime-SLA / low-stakes]
 > money-movement
-Q2: Strong payment signals - add a Security seat? [yes / no]
+Q2: money-movement implies a compliance regime - which applies?
+    [PCI-DSS / none / other]
+> PCI-DSS
+Q3: Strong payment signals - add a Security seat? [yes / no]
 > yes
 
 Generated into personas/seats/ (provisional until you accept):

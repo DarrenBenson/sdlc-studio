@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 2 |
 | Approved | 0 |
-| In Progress | 2 |
-| Complete | 217 |
+| In Progress | 1 |
+| Complete | 218 |
 | Rejected | 0 |
 | Deferred | 3 |
 | Superseded | 4 |
@@ -47,7 +47,7 @@
 | [CR-0223](CR0223-the-handoff-guide-a-first-class-remaining-work.md) | the handoff guide: a first-class remaining-work artefact at run close | Deferred | Medium | Feature | 2026-07-10 | -- |
 | [CR-0224](CR0224-multi-repo-context-the-repo-map-and-census.md) | multi-repo context: the repo map and census grow PVD-wide awareness | Deferred | Medium | Feature | 2026-07-10 | -- |
 | [CR-0225](CR0225-appetite-bounded-unattended-runs-a-budget-circuit-breaker.md) | appetite-bounded unattended runs: a budget circuit-breaker for epic-level execution | Deferred | Medium | Feature | 2026-07-10 | -- |
-| [CR-0226](CR0226-a-brand-new-readme-newcomer-value-first-existing.md) | a brand-new README: newcomer value first, existing users get their own page | In Progress | High | Improvement | 2026-07-10 | -- |
+| [CR-0226](CR0226-a-brand-new-readme-newcomer-value-first-existing.md) | a brand-new README: newcomer value first, existing users get their own page | Complete | High | Improvement | 2026-07-10 | -- |
 | [CR-0227](CR0227-the-sdlc-studio-white-paper-the-mill-described.md) | the sdlc-studio white paper: the mill, described properly | Proposed | High | Feature | 2026-07-10 | -- |
 | [CR-0228](CR0228-rerun-the-benchmark-suite-on-the-v4-release.md) | rerun the benchmark suite on the v4 release candidate | Proposed | High | Improvement | 2026-07-10 | -- |
 

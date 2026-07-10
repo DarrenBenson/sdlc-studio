@@ -1,6 +1,7 @@
 # CR-0226: a brand-new README: newcomer value first, existing users get their own page
 
-> **Status:** In Progress
+> **Status:** Complete
+> **Verification depth:** functional (Lena adopting-reader review as newcomer AND v3 user: sketch checked against the generation flow, every named command/flag on the existing-users page verified against the shipped code, links/style/markdownlint/neutrality re-run green)
 > **Depends on:** CR0222
 > **Priority:** High
 > **Type:** Improvement
@@ -13,9 +14,9 @@ Operator-directed for the v4 GA. The README is rewritten from scratch for the NE
 
 ## Acceptance Criteria
 
-- [ ] README rewritten newcomer-first: value proposition, the philosophy frame in one breath (cockpit/mill, human-in-the-lead), quick start that works verbatim, the meet-your-team moment shown, evidence-honest claims only, no competitor named
-- [ ] docs/existing-users.md (linked prominently from the README) carries everything an existing project needs: what v4 changes, the explicit numbering question with its three answers, upgrade steps, and the dev/testing flow
-- [ ] Lena (Product seat) reviews the new README claim-by-claim as the adopting reader before it merges; markdownlint + links + doc gates green
+- [x] README rewritten newcomer-first: value proposition, the philosophy frame in one breath (cockpit/mill, human-in-the-lead), quick start that works verbatim, the meet-your-team moment shown, evidence-honest claims only, no competitor named
+- [x] docs/existing-users.md (linked prominently from the README) carries everything an existing project needs: what v4 changes, the explicit numbering question with its three answers, upgrade steps, and the dev/testing flow
+- [x] Lena (Product seat) reviews the new README claim-by-claim as the adopting reader before it merges; markdownlint + links + doc gates green
 
 ## Revision History
 
