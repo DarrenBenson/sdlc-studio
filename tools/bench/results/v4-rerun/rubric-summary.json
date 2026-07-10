@@ -1,0 +1,146 @@
+{
+ "F-crld-A": {
+  "n": 5,
+  "spec_fidelity": 5,
+  "test_quality": 4.8,
+  "design_fit": 5,
+  "doc_maintenance": 4.8,
+  "scope_discipline": 4.8,
+  "overall": 4.88
+ },
+ "F-crld-B": {
+  "n": 5,
+  "spec_fidelity": 5,
+  "test_quality": 4.8,
+  "design_fit": 5,
+  "doc_maintenance": 5,
+  "scope_discipline": 5,
+  "overall": 4.96
+ },
+ "F-crld-R": {
+  "n": 5,
+  "spec_fidelity": 5,
+  "test_quality": 4.2,
+  "design_fit": 5,
+  "doc_maintenance": 5,
+  "scope_discipline": 4.6,
+  "overall": 4.76
+ },
+ "F-mnd-A": {
+  "n": 5,
+  "spec_fidelity": 4.6,
+  "test_quality": 4.6,
+  "design_fit": 4.8,
+  "doc_maintenance": 4.6,
+  "scope_discipline": 4.8,
+  "overall": 4.68
+ },
+ "F-mnd-B": {
+  "n": 5,
+  "spec_fidelity": 5,
+  "test_quality": 4,
+  "design_fit": 4.4,
+  "doc_maintenance": 4.6,
+  "scope_discipline": 5,
+  "overall": 4.6
+ },
+ "F-mnd-R": {
+  "n": 5,
+  "spec_fidelity": 5,
+  "test_quality": 4.6,
+  "design_fit": 4.6,
+  "doc_maintenance": 4,
+  "scope_discipline": 4.8,
+  "overall": 4.6
+ },
+ "O-crld-A": {
+  "n": 3,
+  "spec_fidelity": 5,
+  "test_quality": 4.33,
+  "design_fit": 5,
+  "doc_maintenance": 5,
+  "scope_discipline": 5,
+  "overall": 4.87
+ },
+ "O-crld-B": {
+  "n": 3,
+  "spec_fidelity": 5,
+  "test_quality": 4.33,
+  "design_fit": 5,
+  "doc_maintenance": 4.67,
+  "scope_discipline": 5,
+  "overall": 4.8
+ },
+ "O-mnd-A": {
+  "n": 3,
+  "spec_fidelity": 1.67,
+  "test_quality": 3.67,
+  "design_fit": 4,
+  "doc_maintenance": 3.33,
+  "scope_discipline": 3.33,
+  "overall": 3.2
+ },
+ "O-mnd-B": {
+  "n": 3,
+  "spec_fidelity": 1.33,
+  "test_quality": 3.33,
+  "design_fit": 4.33,
+  "doc_maintenance": 2.67,
+  "scope_discipline": 3.33,
+  "overall": 3.0
+ },
+ "S-crld-A": {
+  "n": 5,
+  "spec_fidelity": 5,
+  "test_quality": 4.6,
+  "design_fit": 5,
+  "doc_maintenance": 4.6,
+  "scope_discipline": 5,
+  "overall": 4.84
+ },
+ "S-crld-B": {
+  "n": 5,
+  "spec_fidelity": 5,
+  "test_quality": 4.8,
+  "design_fit": 5,
+  "doc_maintenance": 5,
+  "scope_discipline": 5,
+  "overall": 4.96
+ },
+ "S-crld-R": {
+  "n": 5,
+  "spec_fidelity": 5,
+  "test_quality": 4.8,
+  "design_fit": 5,
+  "doc_maintenance": 5,
+  "scope_discipline": 5,
+  "overall": 4.96
+ },
+ "S-mnd-A": {
+  "n": 5,
+  "spec_fidelity": 2,
+  "test_quality": 3.6,
+  "design_fit": 4,
+  "doc_maintenance": 3.4,
+  "scope_discipline": 4,
+  "overall": 3.4
+ },
+ "S-mnd-B": {
+  "n": 5,
+  "spec_fidelity": 3.8,
+  "test_quality": 4,
+  "design_fit": 4.2,
+  "doc_maintenance": 3.8,
+  "scope_discipline": 4.6,
+  "overall": 4.08
+ },
+ "S-mnd-R": {
+  "n": 5,
+  "spec_fidelity": 2.4,
+  "test_quality": 3.8,
+  "design_fit": 5,
+  "doc_maintenance": 3.6,
+  "scope_discipline": 3.4,
+  "overall": 3.64
+ }
+}

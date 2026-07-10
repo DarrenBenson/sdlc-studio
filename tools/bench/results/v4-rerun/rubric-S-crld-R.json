@@ -1,0 +1,49 @@
+{
+  "scores": [
+    {
+      "workspace": "S-change-request-ledger-drift-R-n1",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Exact-name + strip/casefold email key, R7/R8 preserved and pinned by tests (case, whitespace, combined, verbatim storage, name-case regression); spec R3 updated with example; minimal cohesive diff."
+    },
+    {
+      "workspace": "S-change-request-ledger-drift-R-n2",
+      "spec_fidelity": 5,
+      "test_quality": 4,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Same correct behaviour and faithful spec update, but no explicit combined case+whitespace duplicate assertion - an or-combination regression would slip past the suite; verbatim test also dropped the len==1 dedupe check."
+    },
+    {
+      "workspace": "S-change-request-ledger-drift-R-n3",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Correct minimal change; tests cover case, whitespace, the CR's combined example with len==1, verbatim storage (R8) and name-case distinctness (R7); spec R3 rewritten accurately."
+    },
+    {
+      "workspace": "S-change-request-ledger-drift-R-n4",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Correct minimal change; combined case+whitespace test with len==1, verbatim resolution check via returned record, R7 regression test; spec R3 updated and keeps the illustrative example."
+    },
+    {
+      "workspace": "S-change-request-ledger-drift-R-n5",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Correct minimal change with full interaction coverage (combined test with len==1, verbatim R8 check, R7 test); spec R3 update adds an accurate cross-reference to R7."
+    }
+  ]
+}

@@ -160,6 +160,17 @@ from agents executing a process that no human team could afford to run at that f
 
 ### Controlled benchmark (small n, adversarially reviewed, raw data published)
 
+Two measured runs exist: the original 2026-07-08 N=5 run (previous model generation) and a
+[2026-07-10 rerun](benchmarks/2026-07-10-v4-rerun.md) of the same frozen protocol against the
+v4 release candidate across three model eras. The rerun's headline is honest and two-sided:
+on the current frontier model the fixtures' traps no longer bite in any arm (30/30 clean, and
+the pipeline's single-ticket overhead is ~1.4x, not the 3.1x below), while on the base models
+most teams actually deploy the hidden-requirement trap still ships in most runs - and
+judgement-gated process gave no protection, because the agents judged the ticket too small
+for ceremony precisely when they needed it. The July findings below stand as findings about
+that generation, and their deepest one - process-when-judged-necessary is not
+process-when-needed - is the one the rerun reproduced most exactly.
+
 We built a measurement harness ([protocol](benchmarks/protocol-v2.md), pre-registered before
 the runs so results could not be quietly reshaped) comparing three arms on fixture repos
 with **held-back acceptance suites the agent never sees**: plain AI coding with a genuinely

@@ -1,0 +1,49 @@
+{
+  "scores": [
+    {
+      "workspace": "multifile-notify-digest-B-n1",
+      "spec_fidelity": 5,
+      "test_quality": 4,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "All rules and interactions honoured (quiet hours requeue at flush, urgent bypass, R7 before batching, one throttle send); send_digests mirrors the existing release_deferred drain/requeue pattern with clean store methods; tests cover order, idempotent flush, quiet hours and throttled-flush audit but never exercise switching digest back to immediate."
+    },
+    {
+      "workspace": "multifile-notify-digest-B-n2",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 4,
+      "doc_maintenance": 3,
+      "scope_discipline": 5,
+      "one_line_justification": "Spec-complete including quiet-hours hold with audit at flush; broadest test set (switch-back, quiet-audit, throttled flush, idempotency); design has drain-then-requeue churn and mixes direct pending_digests iteration with a per-user drain method; Delivery docstring left stale claiming kind is 'currently immediate' after adding the digest kind."
+    },
+    {
+      "workspace": "multifile-notify-digest-B-n3",
+      "spec_fidelity": 5,
+      "test_quality": 4,
+      "design_fit": 4,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Spec-complete with quiet hours kept pending at flush; deviates from the release_deferred precedent by keeping (not dropping) a throttled batch - documented in the docstring and pinned by a next-day test, but internally inconsistent with the deferred path and reaches into pending_digests directly; tests strong (multi-user flush, state-unchanged validation) yet never exercise switching back to immediate."
+    },
+    {
+      "workspace": "multifile-notify-digest-B-n4",
+      "spec_fidelity": 5,
+      "test_quality": 4,
+      "design_fit": 4,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Spec-complete (quiet hours keep batch pending, throttled flush audited and dropped matching release_deferred) with clean new store helpers; unique mandatory-to-unsubscribed-digest interaction test, but no digest-to-immediate switch-back test, and cli.py hardcodes the mode choices instead of reusing DELIVERY_MODES (copy-paste drift)."
+    },
+    {
+      "workspace": "multifile-notify-digest-B-n5",
+      "spec_fidelity": 5,
+      "test_quality": 3,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Spec-complete implementation (quiet-hours hold with audit, throttle honoured at flush) with the cleanest structure (DELIVERY_MODES in models, tidy store helpers, honest docstrings), but the throttled-flush path is entirely untested - removing the flush throttle check would still pass - and drained-after-flush idempotency is also unpinned."
+    }
+  ]
+}

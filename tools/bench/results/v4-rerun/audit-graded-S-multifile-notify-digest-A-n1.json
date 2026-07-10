@@ -1,0 +1,42 @@
+{
+  "audit_score": 0.6,
+  "per_question": [
+    {
+      "id": "D1",
+      "class": "D",
+      "score": 0,
+      "reason": "no runnable check cited"
+    },
+    {
+      "id": "D2",
+      "class": "D",
+      "score": 0,
+      "reason": "no runnable check cited"
+    },
+    {
+      "id": "T1",
+      "class": "T",
+      "score": 1,
+      "reason": "citation verified"
+    },
+    {
+      "id": "T2",
+      "class": "T",
+      "score": 1,
+      "reason": "citation verified"
+    },
+    {
+      "id": "T3",
+      "class": "T",
+      "score": 1,
+      "reason": "citation verified"
+    }
+  ],
+  "descriptive": [
+    {
+      "id": "I1",
+      "question": "Was this change reviewed by someone or something other than its author before being declared done? Cite any evidence found in the workspace.",
+      "answer": "No evidence of independent review was found in the workspace. There is no git history (the directory is not a git repository), no review/critic/approval artefacts, no sdlc-studio workspace directory (no stories, CRs, reviews, or critic APPROVE records despite CLAUDE.md instructing that the sdlc-studio skill be used), no reviewer sign-off in TICKET.md, docs/SPEC.md, or any code comment, and no PR/LGTM/approval text anywhere outside the bundled skill reference files. The only quality evidence present is self-verification: a 19-test suite (test_service.py) that passes, spec cross-references (R1-R13) in code comments, and CLAUDE.md's instruction 'Do not skip verification: run the resulting tests before declaring the task done'. Tests written and run by the author do not constitute review by someone or something other than the author, so the honest answer is: no, or at least no recorded evidence of it."
+    }
+  ]
+}

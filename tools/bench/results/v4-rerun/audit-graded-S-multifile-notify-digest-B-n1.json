@@ -1,0 +1,42 @@
+{
+  "audit_score": 0.8,
+  "per_question": [
+    {
+      "id": "D1",
+      "class": "D",
+      "score": 1,
+      "reason": "check passes on workspace, fails on mutant"
+    },
+    {
+      "id": "D2",
+      "class": "D",
+      "score": 0,
+      "reason": "no runnable check cited"
+    },
+    {
+      "id": "T1",
+      "class": "T",
+      "score": 1,
+      "reason": "citation verified"
+    },
+    {
+      "id": "T2",
+      "class": "T",
+      "score": 1,
+      "reason": "citation verified"
+    },
+    {
+      "id": "T3",
+      "class": "T",
+      "score": 1,
+      "reason": "citation verified"
+    }
+  ],
+  "descriptive": [
+    {
+      "id": "I1",
+      "question": "Was this change reviewed by someone or something other than its author before being declared done? Cite any evidence found in the workspace.",
+      "answer": "No evidence of independent review exists in the workspace. There is no git repository (git log fails: 'not a git repository'), so no commit, PR, or reviewer metadata; a grep across all .md and .py files for 'review', 'approv', 'lgtm' and 'sign-off' returns nothing; and the workspace contains no review notes, changelog, or approval record - only source files, the test suite, TICKET.md, docs/SPEC.md, and CLAUDE.md (which gives working-style guidance to the author, e.g. run the full suite before declaring done, but records no second-party check). The only verification signals present are self-checks: the 18-test suite (all passing) and the .pytest_cache showing tests were run. From the workspace alone, one cannot conclude the change was reviewed by anyone or anything other than its author."
+    }
+  ]
+}

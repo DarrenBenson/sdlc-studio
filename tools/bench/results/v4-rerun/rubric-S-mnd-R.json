@@ -1,0 +1,49 @@
+{
+  "scores": [
+    {
+      "workspace": "S-multifile-notify-digest-R-n1",
+      "spec_fidelity": 2,
+      "test_quality": 4,
+      "design_fit": 5,
+      "doc_maintenance": 4,
+      "scope_discipline": 3,
+      "one_line_justification": "Clean, well-tested delivery (throttle retention, mode-switch stranding, audit reasons all pinned) but send_digests never consults in_quiet_hours, so a flush at 23:00 local delivers non-urgent content in violation of R5, and the interaction is neither tested nor recorded anywhere."
+    },
+    {
+      "workspace": "S-multifile-notify-digest-R-n2",
+      "spec_fidelity": 2,
+      "test_quality": 3,
+      "design_fit": 5,
+      "doc_maintenance": 3,
+      "scope_discipline": 3,
+      "one_line_justification": "send_digests ignores quiet hours at flush time (R5 x R11 miss) and test_digest_mode_ignores_quiet_hours_at_queue_time actively pins the violating flush-at-23:00 behaviour, while models.py's Delivery docstring is left stale ('currently \"immediate\"') despite the new digest kind."
+    },
+    {
+      "workspace": "S-multifile-notify-digest-R-n3",
+      "spec_fidelity": 2,
+      "test_quality": 4,
+      "design_fit": 5,
+      "doc_maintenance": 4,
+      "scope_discipline": 3,
+      "one_line_justification": "Thorough tests (queue-then-flush audit sequence, throttle keeps queue across days, unsubscribed gate before digest) and faithful R9/R11 spec text, but send_digests never checks quiet hours, so a flush during the user's 22:00-07:00 window delivers, and the interaction is untested and unrecorded."
+    },
+    {
+      "workspace": "S-multifile-notify-digest-R-n4",
+      "spec_fidelity": 4,
+      "test_quality": 4,
+      "design_fit": 5,
+      "doc_maintenance": 4,
+      "scope_discipline": 4,
+      "one_line_justification": "Only delivery that honours quiet hours at flush time (checked before draining, tested, and recorded in R11), though digest queuing appends no queued audit entry (R9's one-entry-per-attempt invariant weakened, R9/R6 not extended) and a throttled flush drains and silently drops the whole batch rather than keeping it pending."
+    },
+    {
+      "workspace": "S-multifile-notify-digest-R-n5",
+      "spec_fidelity": 2,
+      "test_quality": 4,
+      "design_fit": 5,
+      "doc_maintenance": 3,
+      "scope_discipline": 4,
+      "one_line_justification": "Strong tests (the only workspace pinning one throttle send for a multi-notification digest; throttled batch survives to next day) and the quiet-hours call is at least recorded in R11, but the flush still delivers during quiet hours while unamended R5 forbids non-urgent delivery then, and queued notifications leave no audit trace."
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "answers": [
+    {
+      "question_id": "D1",
+      "cited_test": "test_ledger.py::TestCustomers::test_name_case_difference_is_still_a_distinct_customer",
+      "answer": "This test registers 'Ada Lovelace' and 'ada lovelace' with the same email and asserts len(ledger.customers) == 2, demonstrating that names differing only by letter case remain distinct customers (SPEC R7, unchanged by the CR). Verified passing."
+    },
+    {
+      "question_id": "D2",
+      "cited_test": "test_ledger.py::TestRefunds::test_aggregate_over_refund_rejected",
+      "answer": "This test captures an order for 9.00, records a 5.00 refund, then asserts that a second 5.00 refund (aggregate 10.00 > captured 9.00) raises RefundError, demonstrating the refund ceiling of SPEC R6. Verified passing."
+    },
+    {
+      "question_id": "D3",
+      "cited_test": "test_ledger.py::TestOrders::test_accepted_order_recorded_with_recomputed_total",
+      "answer": "This test submits an order with claimed_total=999.99 but line items of 2 x 4.50 and asserts the recorded entry total is 9.00, demonstrating that totals are recomputed from line items and the submitted total is ignored (SPEC R2). Verified passing."
+    },
+    {
+      "question_id": "T1",
+      "answer": "Per the current spec (rule R3), a candidate is a duplicate of a stored customer when the name matches exactly AND the email matches once case differences and surrounding whitespace are ignored. Name comparison stays case-sensitive (R7).",
+      "cited_path": "docs/SPEC.md",
+      "cited_quote": "- **R3 - Duplicate-customer detection.** A candidate customer is a\n  duplicate of a stored customer when the name is an exact match and\n  the email matches once case differences and surrounding whitespace\n  are ignored (`ada@example.com` and `\"Ada@Example.com \"` are the same\n  customer)."
+    },
+    {
+      "question_id": "T2",
+      "answer": "The change was prompted by support reports of false negatives: the same person signing up with emails differing only in case or surrounding whitespace (e.g. 'ada@example.com' vs '\"Ada@Example.com \"') was being treated as two customers. The change request in TICKET.md records this and asked for email comparison to become case- and whitespace-insensitive, with name comparison unchanged.",
+      "cited_path": "TICKET.md",
+      "cited_quote": "Support reports false negatives in duplicate-customer detection caused\nby email case and surrounding-whitespace differences: the same person\nsigning up as `ada@example.com` and `\"Ada@Example.com \"` is treated as\ntwo customers."
+    },
+    {
+      "question_id": "T3",
+      "answer": "All currency amounts round to two decimal places using half-even (banker's) rounding (SPEC rule R5). This is exercised by test_ledger.py::TestRounding (2.125 -> 2.12, 2.135 -> 2.14).",
+      "cited_path": "docs/SPEC.md",
+      "cited_quote": "- **R5 - Currency rounding.** All currency amounts round to two\n  decimal places using half-even (banker's) rounding."
+    },
+    {
+      "question_id": "I1",
+      "answer": "No evidence of independent review was found in the workspace. The workspace is not a git repository (no commit or PR history), and the sdlc-studio workspace directory contains only .config.yaml - no change-request artefact, review record, critic output, or approval of any kind. The only artefacts describing the change are TICKET.md (the request) and the updated docs/SPEC.md, source (dedupe.py) and tests (test_ledger.py); test comments note the R3 change but name no reviewer. CLAUDE.md instructs the implementing agent to verify by running tests, but nothing in the workspace records that anyone or anything other than the author reviewed the change before it was declared done."
+    }
+  ]
+}

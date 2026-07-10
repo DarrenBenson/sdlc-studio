@@ -23,7 +23,7 @@ conjunction. Gates the v4 GA tag.
 - [x] [CR0226](../change-requests/CR0226-a-brand-new-readme-newcomer-value-first-existing.md) - brand-new newcomer-first README + existing-users page (depends CR0222)
 - [ ] [CR0227](../change-requests/CR0227-the-sdlc-studio-white-paper-the-mill-described.md) - the white paper: the mill, described properly (depends CR0222, CR0219, CR0220)
 - [x] [CR0222](../change-requests/CR0222-positioning-and-lifecycle-wiring-the-honest-differentiator-everywhere.md) - positioning + lifecycle wiring incl. the urgent README claim fix (depends CR0219, CR0220)
-- [ ] [CR0228](../change-requests/CR0228-rerun-the-benchmark-suite-on-the-v4-release.md) - rerun the benchmark suite on the v4 RC (operator directive; figures for the white paper)
+- [x] [CR0228](../change-requests/CR0228-rerun-the-benchmark-suite-on-the-v4-release.md) - rerun the benchmark suite on the v4 RC (operator directive; figures for the white paper)
 
 ## Revision History
 

@@ -1,0 +1,49 @@
+{
+  "scores": [
+    {
+      "workspace": "S-change-request-ledger-drift-B-n1",
+      "spec_fidelity": 5,
+      "test_quality": 4,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Correct comparison-key normalisation (strip+casefold), name exact (R7), no mutation (R8), SPEC R3 updated; tests pass (12) but only a single combined case+whitespace duplicate test rather than separate case-only and whitespace-only boundary tests; audit-answers.json is harness residue, not delivery scope creep."
+    },
+    {
+      "workspace": "S-change-request-ledger-drift-B-n2",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Exemplary: strip+casefold key only, R7/R8 preserved, SPEC R3 updated faithfully; tests (15, all pass) cover case-only, whitespace-only, combined, non-mutation of stored record, and unchanged name case-sensitivity."
+    },
+    {
+      "workspace": "S-change-request-ledger-drift-B-n3",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Correct strip+lower key, R7/R8 intact, SPEC R3 updated; full boundary tests (15, all pass: case, whitespace, combined, verbatim storage, name case); small in-scope docstring clarification in ledger.register_customer keeps cross-references honest."
+    },
+    {
+      "workspace": "S-change-request-ledger-drift-B-n4",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Correct strip+lower key, R7/R8 intact, SPEC R3 updated with a correct (R7) cross-reference added; thorough tests (15, all pass) with count assertions on every duplicate variant plus verbatim-storage and name-case checks."
+    },
+    {
+      "workspace": "S-change-request-ledger-drift-B-n5",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Correct strip+casefold key, R7/R8 intact, SPEC R3 updated; tests (14, all pass) pin case-only and whitespace-only boundaries separately, exercise a combined variant via the verbatim-storage test, and confirm name comparison unchanged."
+    }
+  ]
+}

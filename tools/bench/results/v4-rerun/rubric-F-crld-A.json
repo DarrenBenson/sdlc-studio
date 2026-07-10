@@ -1,0 +1,49 @@
+{
+  "scores": [
+    {
+      "workspace": "change-request-ledger-drift-A-n1",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Correct strip+casefold comparison-only dedupe; tests isolate case, whitespace, the combined support case, R7 and R8; SPEC R3 rewritten with the R8 cross-reference; decisions recorded in a closed CR."
+    },
+    {
+      "workspace": "change-request-ledger-drift-A-n2",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Identical correct behaviour; clean isolated case and whitespace tests plus an R8 test that checks stored AND candidate stay verbatim; SPEC R3 faithful with the comparison-only note; CR records the casefold+strip scoping call."
+    },
+    {
+      "workspace": "change-request-ledger-drift-A-n3",
+      "spec_fidelity": 5,
+      "test_quality": 4,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Behaviour and spec update correct, but the 'surrounding whitespace' test also varies case so whitespace handling is never isolated, and the R8 test checks only the stored record; CR paperwork complete."
+    },
+    {
+      "workspace": "change-request-ledger-drift-A-n4",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 4,
+      "scope_discipline": 5,
+      "one_line_justification": "Correct behaviour with isolated case/whitespace tests and a combined-input R8 verbatim check, but the rewritten SPEC R3 drops the comparison-only/R8 cross-reference sentence the docstrings and other rules rely on; thorough verified CR."
+    },
+    {
+      "workspace": "change-request-ledger-drift-A-n5",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 4,
+      "one_line_justification": "Correct behaviour, strong tests (stored and candidate verbatim after a combined-input match), faithful SPEC R3 with the comparison-only note, but no CR/decision record anywhere in the workspace unlike the other deliveries."
+    }
+  ]
+}

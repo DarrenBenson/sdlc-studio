@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The benchmark was rerun against the v4 release candidate before GA, across three model
+  eras, and published whichever way it pointed (docs/benchmarks/2026-07-10-v4-rerun.md).**
+  72 oracle-scored runs plus a post-hoc solution-quality rubric and the protocol's
+  auditability quiz. Headlines, honest both ways: on the current frontier model the frozen
+  fixtures' traps no longer bite in any arm (30/30 clean; single-ticket pipeline overhead
+  ~1.4x, not the July 3.1x); on the base models most teams deploy the hidden-requirement
+  trap still ships in most runs, and judgement-gated process gave no protection because the
+  agents judged the ticket too small for ceremony exactly when they needed it - the July
+  founding observation reproduced a generation later. Two v4.1 CRs filed from the findings:
+  a deterministic engagement floor, and a phrasing-brittle harness oracle. Every figure in
+  the report was independently recomputed from the raw rows by the reviewing critic.
+
 - **EP0030 - team generation: fresh named seats grown from the project.** `persona generate
   --team` analyses the PRD/TRD/config/repo-map onto behavioural variables and risk axes (never
   demographics), asks hard-capped multi-choice questions only where signals are ambiguous, and

@@ -1,0 +1,49 @@
+{
+  "scores": [
+    {
+      "workspace": "multifile-notify-digest-A-n1",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Flush honours quiet hours AND throttle with the digest kept pending (never dropped); spec gains R11/R12 (R6 example updated); tests pin every interaction including throttle-retention and mode-switch flush."
+    },
+    {
+      "workspace": "multifile-notify-digest-A-n2",
+      "spec_fidelity": 4,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Quiet hours honoured at flush (batch kept pending), but a throttled flush DROPS the whole batch - documented in its own R11 and story file, self-consistent yet a lossy resolution of the R5 defer-never-drop principle against R8."
+    },
+    {
+      "workspace": "multifile-notify-digest-A-n3",
+      "spec_fidelity": 4,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 4,
+      "scope_discipline": 5,
+      "one_line_justification": "Quiet hours honoured at flush, but throttled flush drops the queue (documented); adds a digest_queued audit reason in R11 without amending R9's closed reason enumeration, leaving a cross-reference inconsistency."
+    },
+    {
+      "workspace": "multifile-notify-digest-A-n4",
+      "spec_fidelity": 5,
+      "test_quality": 4,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 4,
+      "one_line_justification": "Quiet hours and throttle both keep the digest pending; R9 properly amended for the new queued_digest reason and decisions recorded in a CR; but the spec'd mode-switch-back flush is untested and a large tranche of empty sdlc-studio scaffolding exceeds the ticket."
+    },
+    {
+      "workspace": "multifile-notify-digest-A-n5",
+      "spec_fidelity": 5,
+      "test_quality": 4,
+      "design_fit": 4,
+      "doc_maintenance": 4,
+      "scope_discipline": 5,
+      "one_line_justification": "Flush honours quiet hours and throttle with pending retained and held attempts audited; release_deferred now routes deferrals into digests (recorded in the story but not in SPEC R11, and its docstring is stale); pop-then-requeue hold path is slightly clumsy and the documented mode-switch guarantee is untested."
+    }
+  ]
+}

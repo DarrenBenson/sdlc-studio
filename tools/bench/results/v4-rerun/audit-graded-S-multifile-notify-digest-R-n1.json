@@ -1,0 +1,42 @@
+{
+  "audit_score": 0.6,
+  "per_question": [
+    {
+      "id": "D1",
+      "class": "D",
+      "score": 0,
+      "reason": "no runnable check cited"
+    },
+    {
+      "id": "D2",
+      "class": "D",
+      "score": 0,
+      "reason": "no runnable check cited"
+    },
+    {
+      "id": "T1",
+      "class": "T",
+      "score": 1,
+      "reason": "citation verified"
+    },
+    {
+      "id": "T2",
+      "class": "T",
+      "score": 1,
+      "reason": "citation verified"
+    },
+    {
+      "id": "T3",
+      "class": "T",
+      "score": 1,
+      "reason": "citation verified"
+    }
+  ],
+  "descriptive": [
+    {
+      "id": "I1",
+      "question": "Was this change reviewed by someone or something other than its author before being declared done? Cite any evidence found in the workspace.",
+      "answer": "No evidence of independent review exists in the workspace. The directory is not a git repository (no commit history, no PR/review trail). The sdlc-studio/ workspace directory contains only .config.yaml (arm/routing configuration) - no stories, review records, critic output, reconcile report, or reviewer sign-off artefacts. CLAUDE.md instructs the working agent to use the sdlc-studio skill (spec, plan, implement, verify, reconcile) and to report which model tiers delivered delegated work, which could imply a multi-agent process, but nothing in the workspace records that a review by anyone or anything other than the author actually happened. The only verification evidence is the test suite itself (18 tests, all passing), which was authored as part of the same change."
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "scores": [
+    {
+      "workspace": "S-multifile-notify-digest-A-n1",
+      "spec_fidelity": 2,
+      "test_quality": 4,
+      "design_fit": 4,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "send_digests delivers during quiet hours (R5 interaction missed, capped at 2) but the decision is explicitly written into SPEC R13 with rationale, throttle-drop parity documented, and tests pin most behaviour except one-send-per-flush counting (self-admitted mutation survivor)."
+    },
+    {
+      "workspace": "S-multifile-notify-digest-A-n2",
+      "spec_fidelity": 2,
+      "test_quality": 3,
+      "design_fit": 4,
+      "doc_maintenance": 2,
+      "scope_discipline": 3,
+      "one_line_justification": "Flush and queueing both bypass quiet hours while the spec's R5 is left unqualified and R11 is silent on the interaction, so the spec now misdescribes behaviour; tests never exercise a flush during quiet hours, nor drop-vs-retain, nor one-send counting."
+    },
+    {
+      "workspace": "S-multifile-notify-digest-A-n3",
+      "spec_fidelity": 2,
+      "test_quality": 4,
+      "design_fit": 4,
+      "doc_maintenance": 4,
+      "scope_discipline": 4,
+      "one_line_justification": "Flush ignores quiet hours (capped at 2) though the queue-time carve-out is documented and R9's reason list updated; strongest throttle pinning (sends_today==1 across a 3-note flush, throttled batch retained) but the R7 unsubscribed/digest interplay is untested."
+    },
+    {
+      "workspace": "S-multifile-notify-digest-A-n4",
+      "spec_fidelity": 2,
+      "test_quality": 4,
+      "design_fit": 4,
+      "doc_maintenance": 3,
+      "scope_discipline": 4,
+      "one_line_justification": "Flush ignores quiet hours (capped at 2); broadest interaction tests (R3, R5 at queue and flush, R7 with pinned audit sequence, throttled batch retained) but the spec wrongly says the throttle 'applies only to the immediate path' and R9's reason list omits the new queued_digest code."
+    },
+    {
+      "workspace": "S-multifile-notify-digest-A-n5",
+      "spec_fidelity": 2,
+      "test_quality": 3,
+      "design_fit": 4,
+      "doc_maintenance": 3,
+      "scope_discipline": 4,
+      "one_line_justification": "Flush ignores quiet hours (capped at 2) and a code comment falsely claims quiet hours apply at flush time; careful order-preserving requeue and pinned audit sequences, but no flush-during-quiet-hours test, no R7/digest test, and one-send counting unpinned."
+    }
+  ]
+}

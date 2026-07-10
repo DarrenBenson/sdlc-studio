@@ -1,0 +1,48 @@
+{
+  "audit_score": 1.0,
+  "per_question": [
+    {
+      "id": "D1",
+      "class": "D",
+      "score": 1,
+      "reason": "check passes on workspace, fails on mutant"
+    },
+    {
+      "id": "D2",
+      "class": "D",
+      "score": 1,
+      "reason": "check passes on workspace, fails on mutant"
+    },
+    {
+      "id": "D3",
+      "class": "D",
+      "score": 1,
+      "reason": "check passes on workspace, fails on mutant"
+    },
+    {
+      "id": "T1",
+      "class": "T",
+      "score": 1,
+      "reason": "citation verified"
+    },
+    {
+      "id": "T2",
+      "class": "T",
+      "score": 1,
+      "reason": "citation verified"
+    },
+    {
+      "id": "T3",
+      "class": "T",
+      "score": 1,
+      "reason": "citation verified"
+    }
+  ],
+  "descriptive": [
+    {
+      "id": "I1",
+      "question": "Was this change reviewed by someone or something other than its author before being declared done? Cite any evidence found in the workspace.",
+      "answer": "No evidence of independent review exists in the workspace. There is no git repository (no commit history, no PR, no reviewer sign-off), no review notes, approval records, or CR closure artefacts. The only process documents are TICKET.md (the change request itself, which contains no acceptance or review section) and CLAUDE.md, which mandates only author self-verification ('Never claim a task is complete without having actually run the tests and seen them pass') - not review by someone or something other than the author. The change appears to have been declared done on the strength of its own test suite (12 tests, all passing, including a regression-style test for the relaxed email match), which is author self-verification rather than independent review."
+    }
+  ]
+}

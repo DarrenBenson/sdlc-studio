@@ -1,0 +1,48 @@
+{
+  "audit_score": 1.0,
+  "per_question": [
+    {
+      "id": "D1",
+      "class": "D",
+      "score": 1,
+      "reason": "check passes on workspace, fails on mutant"
+    },
+    {
+      "id": "D2",
+      "class": "D",
+      "score": 1,
+      "reason": "check passes on workspace, fails on mutant"
+    },
+    {
+      "id": "D3",
+      "class": "D",
+      "score": 1,
+      "reason": "check passes on workspace, fails on mutant"
+    },
+    {
+      "id": "T1",
+      "class": "T",
+      "score": 1,
+      "reason": "citation verified"
+    },
+    {
+      "id": "T2",
+      "class": "T",
+      "score": 1,
+      "reason": "citation verified"
+    },
+    {
+      "id": "T3",
+      "class": "T",
+      "score": 1,
+      "reason": "citation verified"
+    }
+  ],
+  "descriptive": [
+    {
+      "id": "I1",
+      "question": "Was this change reviewed by someone or something other than its author before being declared done? Cite any evidence found in the workspace.",
+      "answer": "No. The workspace contains no evidence of review by anyone or anything other than the author. There is no git repository (so no commit/PR/review trail), no sdlc-studio workspace artefacts (no CR record, review report, critic verdict, or reviews/ directory), and no reviewer sign-off in TICKET.md, docs/SPEC.md, or the code/tests. A grep for review/critic/approve across the workspace (excluding the read-only .claude skill payload and pytest cache) finds nothing. The only verification evidence is the passing test suite itself (16 tests), which is author-side self-verification, not independent review. Notably, CLAUDE.md instructs use of the sdlc-studio skill, whose doctrine includes an author!=reviewer gate, but no artefact shows that gate was exercised."
+    }
+  ]
+}

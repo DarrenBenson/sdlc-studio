@@ -1,0 +1,49 @@
+{
+  "scores": [
+    {
+      "workspace": "change-request-ledger-drift-B-n1",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Key-only strip+casefold on email, name exact (R7), records never mutated (R8, tested both stored and candidate side), spec R3 and docstrings updated; 14 tests pass with dedicated case-only, whitespace, verbatim-storage and name-case tests."
+    },
+    {
+      "workspace": "change-request-ledger-drift-B-n2",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Identical minimal comparison-key fix; spec R3 rewritten faithfully, R8 note added to module docstring; 14 tests pass including tab-whitespace boundary and first-record-verbatim check; nothing outside the ticket touched."
+    },
+    {
+      "workspace": "change-request-ledger-drift-B-n3",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Same key-only normalisation with spec R3 updated in step; 14 tests pass with separate case and whitespace duplicate tests plus an explicit candidate-not-mutated R8 test and R7 name-case guard."
+    },
+    {
+      "workspace": "change-request-ledger-drift-B-n4",
+      "spec_fidelity": 5,
+      "test_quality": 4,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Correct key-only fix honouring R3/R7/R8 with spec updated, but it merged the case-only and whitespace boundaries into one combined test (13 tests), losing the isolated boundary coverage the sibling deliveries retain."
+    },
+    {
+      "workspace": "change-request-ledger-drift-B-n5",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Same minimal comparison-key change, spec R3 updated; 14 tests pass with distinct case-only and whitespace tests plus verbatim-storage assertions on both matched and newly stored records (R8) and the R7 name-case guard."
+    }
+  ]
+}

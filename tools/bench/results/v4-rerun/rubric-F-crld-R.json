@@ -1,0 +1,49 @@
+{
+  "scores": [
+    {
+      "workspace": "change-request-ledger-drift-R-n1",
+      "spec_fidelity": 5,
+      "test_quality": 4,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 3,
+      "one_line_justification": "Correct comparison-key-only normalisation with R7/R8 intact and faithful R3 spec update, but no CR/plan artefact despite the workspace's sdlc-studio process instruction - judgement calls live only in docstrings."
+    },
+    {
+      "workspace": "change-request-ledger-drift-R-n2",
+      "spec_fidelity": 5,
+      "test_quality": 4,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Correct minimal change, faithful R3 rewording, honest docstrings, and a complete CR with verified ACs; tests cover case, whitespace, R7 and verbatim storage, lacking only an explicit combined-case+whitespace and internal-whitespace boundary."
+    },
+    {
+      "workspace": "change-request-ledger-drift-R-n3",
+      "spec_fidelity": 5,
+      "test_quality": 4,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Same correct behaviour with a small normalise_email helper; R3 spec text usefully cross-references R8, mutation test checks both stored and candidate records, and the CR records scope and verified ACs."
+    },
+    {
+      "workspace": "change-request-ledger-drift-R-n4",
+      "spec_fidelity": 5,
+      "test_quality": 4,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Correct key-only normalisation, minimal faithful R3 update, non-mutation test asserts stored and candidate verbatim, and a complete CR with verified ACs; missing only explicit combined and internal-whitespace boundary tests."
+    },
+    {
+      "workspace": "change-request-ledger-drift-R-n5",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Strongest suite of the five: adds the reported combined case+whitespace case and an internal-whitespace boundary test on top of R7/R8 pins; correct change, R3 updated with an R7 cross-reference, CR records proposed changes and impact."
+    }
+  ]
+}

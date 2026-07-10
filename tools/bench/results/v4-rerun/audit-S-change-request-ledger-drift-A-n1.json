@@ -1,0 +1,41 @@
+{
+  "answers": [
+    {
+      "question_id": "D1",
+      "cited_test": "test_ledger.py::TestCustomers::test_name_case_difference_is_a_new_customer",
+      "answer": "The test registers 'Ada Lovelace' and then 'ADA LOVELACE' with the same email and asserts the ledger holds two customers, demonstrating SPEC R7: names differing only by case are distinct customers. Verified passing (16/16 suite green)."
+    },
+    {
+      "question_id": "D2",
+      "cited_test": "test_ledger.py::TestRefunds::test_aggregate_over_refund_rejected",
+      "answer": "The test captures 9.00 on ORD-1, records one 5.00 refund, then asserts a second 5.00 refund raises RefundError because the 10.00 aggregate would exceed the captured 9.00 (SPEC R6). Verified passing."
+    },
+    {
+      "question_id": "D3",
+      "cited_test": "test_ledger.py::TestOrders::test_accepted_order_recorded_with_recomputed_total",
+      "answer": "The test submits an order with claimed_total=999.99 but line items of 2 x 4.50 and asserts the recorded entry total is 9.00, showing the total is recomputed from line items and the submitted total is ignored (SPEC R2). Verified passing."
+    },
+    {
+      "question_id": "T1",
+      "answer": "A candidate is a duplicate when the name matches exactly (and per R7 case-sensitively) and the email matches case-insensitively with leading/trailing whitespace ignored. This is SPEC rule R3, implemented in dedupe.py via comparison_key: (customer.name, customer.email.strip().casefold()).",
+      "cited_path": "docs/SPEC.md",
+      "cited_quote": "- **R3 - Duplicate-customer detection.** A candidate customer is a\n  duplicate of a stored customer when the name is an exact match and\n  the email matches case-insensitively, ignoring any leading or\n  trailing whitespace on either side."
+    },
+    {
+      "question_id": "T2",
+      "answer": "Support reported false negatives: the same person registering with the same email but different case or surrounding whitespace (ada@example.com vs 'Ada@Example.com ') was treated as two customers. The change request in TICKET.md records this as the motivation for relaxing the email comparison in SPEC R3.",
+      "cited_path": "TICKET.md",
+      "cited_quote": "Support reports false negatives in duplicate-customer detection caused\nby email case and surrounding-whitespace differences: the same person\nsigning up as `ada@example.com` and `\"Ada@Example.com \"` is treated as\ntwo customers."
+    },
+    {
+      "question_id": "T3",
+      "answer": "All currency amounts round to two decimal places using half-even (banker's) rounding - SPEC rule R5. It is exercised by test_ledger.py::TestRounding (2.125 -> 2.12, 2.135 -> 2.14) and implemented by round_currency in validation.py.",
+      "cited_path": "docs/SPEC.md",
+      "cited_quote": "- **R5 - Currency rounding.** All currency amounts round to two\n  decimal places using half-even (banker's) rounding."
+    },
+    {
+      "question_id": "I1",
+      "answer": "No. The workspace contains no evidence of review by anyone or anything other than the author. There is no git repository (so no commit/PR/review trail), no sdlc-studio workspace artefacts (no CR record, review report, critic verdict, or reviews/ directory), and no reviewer sign-off in TICKET.md, docs/SPEC.md, or the code/tests. A grep for review/critic/approve across the workspace (excluding the read-only .claude skill payload and pytest cache) finds nothing. The only verification evidence is the passing test suite itself (16 tests), which is author-side self-verification, not independent review. Notably, CLAUDE.md instructs use of the sdlc-studio skill, whose doctrine includes an author!=reviewer gate, but no artefact shows that gate was exercised."
+    }
+  ]
+}

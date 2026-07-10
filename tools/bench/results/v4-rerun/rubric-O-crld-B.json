@@ -1,0 +1,31 @@
+{
+  "scores": [
+    {
+      "workspace": "O-change-request-ledger-drift-B-n1",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Key-based email normalisation (strip+lower) with name kept exact; richest test set (case-only, whitespace-only, combined, stored-and-candidate non-mutation, name-case and name-whitespace interactions); spec R3 and docstrings updated faithfully."
+    },
+    {
+      "workspace": "O-change-request-ledger-drift-B-n2",
+      "spec_fidelity": 5,
+      "test_quality": 4,
+      "design_fit": 5,
+      "doc_maintenance": 4,
+      "scope_discipline": 5,
+      "one_line_justification": "Correct key-based normalisation via casefold and exact names; solid but leaner tests (no verbatim-on-write or candidate-mutation guard for R8); docstring says 'lower-cased' while code casefolds, a small honesty drift."
+    },
+    {
+      "workspace": "O-change-request-ledger-drift-B-n3",
+      "spec_fidelity": 5,
+      "test_quality": 4,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Correct minimal change with the strongest R8 write-path test (padded email stored verbatim), but collapsed boundary cases and no guard against mutation of existing records during comparison; spec and docstrings accurate."
+    }
+  ]
+}

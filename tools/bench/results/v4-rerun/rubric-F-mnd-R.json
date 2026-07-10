@@ -1,0 +1,49 @@
+{
+  "scores": [
+    {
+      "workspace": "multifile-notify-digest-R-n1",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 3,
+      "scope_discipline": 5,
+      "one_line_justification": "Correct on every rule interaction (quiet-hours flush deferral, throttle hold, R2 order, R3/R7 precedence) with exact-id tests and a clean dict-queue design, but docs/SPEC.md was never extended to document the new digest requirement (CR and docstrings carry it instead)."
+    },
+    {
+      "workspace": "multifile-notify-digest-R-n2",
+      "spec_fidelity": 5,
+      "test_quality": 4,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Full spec fidelity including a faithful new R11 recording the silent quiet-hours hold; flat-list store mirrors the existing deferred pattern; tests are solid but use a weaker sorted-order assertion and never pin what happens to a pending batch after switching back to immediate."
+    },
+    {
+      "workspace": "multifile-notify-digest-R-n3",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 4,
+      "doc_maintenance": 3,
+      "scope_discipline": 5,
+      "one_line_justification": "Strongest interaction handling (audits quiet-hours flush suppression within R9's vocabulary, re-routes deferrals into the digest after an opt-in, defensively sorts for R2) with tests pinning each, but docs/SPEC.md gained no R11 and the mode vocabulary is duplicated across routing.py and cli.py."
+    },
+    {
+      "workspace": "multifile-notify-digest-R-n4",
+      "spec_fidelity": 5,
+      "test_quality": 4,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Clean minimal change with a comprehensive R11 and honest docstrings; all interactions correct at flush time, but the test set is the thinnest of the five and the documented switching-back-keeps-pending-digest decision has no test."
+    },
+    {
+      "workspace": "multifile-notify-digest-R-n5",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 4,
+      "doc_maintenance": 4,
+      "scope_discipline": 4,
+      "one_line_justification": "Behaviour matches its amended spec including quiet-hours and throttle holds, with strong exact-id and switch-back tests, but it invents a queued_digest audit reason the ticket never asked for (recorded, yet it expands R9's closed vocabulary), leaves the Delivery docstring stale, and hardcodes mode choices in the CLI."
+    }
+  ]
+}

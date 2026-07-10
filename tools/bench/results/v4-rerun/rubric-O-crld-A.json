@@ -1,0 +1,23 @@
+{"scores": [
+  {"workspace": "O-change-request-ledger-drift-A-n1",
+   "spec_fidelity": 5,
+   "test_quality": 4,
+   "design_fit": 5,
+   "doc_maintenance": 5,
+   "scope_discipline": 5,
+   "one_line_justification": "Surgical inline normalisation in comparison_key honouring R7/R8, spec R3 updated in-change; tests pin the combined case+whitespace duplicate, R7 name-case interaction, and R8 verbatim storage, but lack separated case-only/whitespace-only variants."},
+  {"workspace": "O-change-request-ledger-drift-A-n2",
+   "spec_fidelity": 5,
+   "test_quality": 4,
+   "design_fit": 5,
+   "doc_maintenance": 5,
+   "scope_discipline": 5,
+   "one_line_justification": "Same correct behaviour via a small named normalise_email helper, spec R3 and docstrings faithful with R7/R8 cross-references; test coverage matches n1 (combined variant, R7, R8) without separated case-only/whitespace-only boundaries."},
+  {"workspace": "O-change-request-ledger-drift-A-n3",
+   "spec_fidelity": 5,
+   "test_quality": 5,
+   "design_fit": 5,
+   "doc_maintenance": 5,
+   "scope_discipline": 5,
+   "one_line_justification": "Identical minimal change with the richest tests: separate case-only, whitespace-only (incl. tab) and combined duplicate cases plus R7 and R8 checks; spec R3 rewrite also records the comparison-only/no-mutation interaction with R8."}
+]}

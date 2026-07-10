@@ -1,0 +1,31 @@
+{
+  "scores": [
+    {
+      "workspace": "O-multifile-notify-digest-A-n1",
+      "spec_fidelity": 1,
+      "test_quality": 3,
+      "design_fit": 4,
+      "doc_maintenance": 3,
+      "scope_discipline": 3,
+      "one_line_justification": "send_digests ignores BOTH quiet hours (R5, delivers non-urgent digest at 23:00) and the daily throttle (R8, never calls allow(), so a user at the limit still gets the digest and sends_today exceeds the cap); everything else clean but two flush-time interaction misses, neither tested nor recorded, and a stale Delivery docstring."
+    },
+    {
+      "workspace": "O-multifile-notify-digest-A-n2",
+      "spec_fidelity": 2,
+      "test_quality": 4,
+      "design_fit": 4,
+      "doc_maintenance": 4,
+      "scope_discipline": 4,
+      "one_line_justification": "Throttle x digest handled well (throttled flush kept pending, audited, spec-recorded, tested incl. next-day flush) but send_digests never checks quiet hours, so a flush at 23:00 delivers non-urgent items in violation of R5 - the interaction miss caps fidelity at 2; minor stale 'currently immediate' Delivery docstring."
+    },
+    {
+      "workspace": "O-multifile-notify-digest-A-n3",
+      "spec_fidelity": 2,
+      "test_quality": 4,
+      "design_fit": 4,
+      "doc_maintenance": 3,
+      "scope_discipline": 3,
+      "one_line_justification": "Throttle x digest handled and tested like n2, but send_digests skips the quiet-hours check while a routing comment falsely claims 'quiet hours and the throttle apply at flush time' (R5 miss caps at 2, dishonest comment); also silently drops the queued-batch audit entry (R9 promises one entry per attempt; n1/n2 audit queued_digest) with the decision recorded nowhere."
+    }
+  ]
+}

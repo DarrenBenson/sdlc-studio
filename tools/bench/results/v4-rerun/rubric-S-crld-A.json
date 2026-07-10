@@ -1,0 +1,49 @@
+{
+  "scores": [
+    {
+      "workspace": "S-change-request-ledger-drift-A-n1",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Minimal comparison-key change with exact-name and verbatim-storage preserved; spec R3 rewritten faithfully; tests pin case, whitespace, combined, internal-whitespace boundary, R7 and R8; 16/16 pass (extra audit-answers.json is harness noise, not delivery scope creep)."
+    },
+    {
+      "workspace": "S-change-request-ledger-drift-A-n2",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 4,
+      "scope_discipline": 5,
+      "one_line_justification": "Same correct minimal change; strong tests including candidate non-mutation (R8) pin; spec R3 updated but the tacked-on sentence 'only the record verbatim is ever kept' is garbled wording."
+    },
+    {
+      "workspace": "S-change-request-ledger-drift-A-n3",
+      "spec_fidelity": 5,
+      "test_quality": 4,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Correct minimal change and clean spec R3 update cross-referencing R7; tests cover case, whitespace, combined, verbatim and R7 but drop boundary pins (no internal-whitespace or non-mutation test); 15/15 pass."
+    },
+    {
+      "workspace": "S-change-request-ledger-drift-A-n4",
+      "spec_fidelity": 5,
+      "test_quality": 4,
+      "design_fit": 5,
+      "doc_maintenance": 4,
+      "scope_discipline": 5,
+      "one_line_justification": "Correct minimal change, spec R3 update cross-references R8; core tests present but no internal-whitespace or mutation boundary pins, and the docstring says 'lower-cased' where the code casefolds; 15/15 pass."
+    },
+    {
+      "workspace": "S-change-request-ledger-drift-A-n5",
+      "spec_fidelity": 5,
+      "test_quality": 5,
+      "design_fit": 5,
+      "doc_maintenance": 5,
+      "scope_discipline": 5,
+      "one_line_justification": "Correct minimal change with clean spec R3 update; tests add the name-surrounding-whitespace-still-distinct interaction pin alongside case, whitespace, combined, verbatim and R7 coverage; 16/16 pass."
+    }
+  ]
+}

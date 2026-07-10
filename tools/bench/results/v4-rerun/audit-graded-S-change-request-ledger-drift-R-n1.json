@@ -1,0 +1,48 @@
+{
+  "audit_score": 0.833,
+  "per_question": [
+    {
+      "id": "D1",
+      "class": "D",
+      "score": 1,
+      "reason": "check passes on workspace, fails on mutant"
+    },
+    {
+      "id": "D2",
+      "class": "D",
+      "score": 1,
+      "reason": "check passes on workspace, fails on mutant"
+    },
+    {
+      "id": "D3",
+      "class": "D",
+      "score": 1,
+      "reason": "check passes on workspace, fails on mutant"
+    },
+    {
+      "id": "T1",
+      "class": "T",
+      "score": 0,
+      "reason": "answer does not match the expected fact"
+    },
+    {
+      "id": "T2",
+      "class": "T",
+      "score": 1,
+      "reason": "citation verified"
+    },
+    {
+      "id": "T3",
+      "class": "T",
+      "score": 1,
+      "reason": "citation verified"
+    }
+  ],
+  "descriptive": [
+    {
+      "id": "I1",
+      "question": "Was this change reviewed by someone or something other than its author before being declared done? Cite any evidence found in the workspace.",
+      "answer": "No evidence of independent review was found in the workspace. The workspace is not a git repository (no commit or PR history), and the sdlc-studio workspace directory contains only .config.yaml - no change-request artefact, review record, critic output, or approval of any kind. The only artefacts describing the change are TICKET.md (the request) and the updated docs/SPEC.md, source (dedupe.py) and tests (test_ledger.py); test comments note the R3 change but name no reviewer. CLAUDE.md instructs the implementing agent to verify by running tests, but nothing in the workspace records that anyone or anything other than the author reviewed the change before it was declared done."
+    }
+  ]
+}

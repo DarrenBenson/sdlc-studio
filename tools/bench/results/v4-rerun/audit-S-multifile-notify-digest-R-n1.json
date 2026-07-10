@@ -1,0 +1,36 @@
+{
+  "answers": [
+    {
+      "question_id": "D1",
+      "cited_test": "",
+      "answer": "No such test exists in the workspace. None of the 18 tests in test_service.py exercises send_digests during quiet hours. Moreover, the property itself does not hold in this implementation: routing.py's send_digests() never consults in_quiet_hours(), so a digest IS flushed during the user's quiet hours (verified by direct execution: flushing at 23:00 local delivered a kind='digest' Delivery). Note the spec (docs/SPEC.md R11) does not require quiet-hour deferral for digest flushes either - quiet-hour deferral (R5) is only applied on the immediate notify/release_deferred path - so this is an untested and arguably unspecified gap rather than a plain bug."
+    },
+    {
+      "question_id": "D2",
+      "cited_test": "",
+      "answer": "No existing test genuinely demonstrates this. The closest, test_service.py::test_send_digests_respects_daily_throttle, shows a digest flush is subject to the daily throttle, but its digest contains only ONE notification, so it cannot distinguish counting one send per flush from one per notification; test_digest_mode_batches_then_flushes_in_order flushes two notifications but makes no throttle assertion (default limit 5 would pass either way). The property does hold in the code - routing.py's _deliver() calls self.throttle.record_send() exactly once per Delivery, and a direct probe after flushing a 3-notification digest shows throttle.sends_today == 1 - and it is required by docs/SPEC.md R8/R11 ('The throttle counts sends - delivery events - not the notifications contained in them'; 'A digest flush is one send event'), but no runnable check in the workspace pins it."
+    },
+    {
+      "question_id": "T1",
+      "answer": "When the notification is urgent. Urgent notifications bypass digest mode (and every other suppression mechanism) and are delivered immediately; R3 takes precedence over R11. This is implemented in routing.py's _route() (the urgent branch runs before the digest-mode branch) and covered by test_service.py::test_digest_mode_urgent_still_immediate.",
+      "cited_path": "docs/SPEC.md",
+      "cited_quote": "urgent notifications still deliver\n  immediately regardless of mode (R3 takes precedence)"
+    },
+    {
+      "question_id": "T2",
+      "answer": "An unsubscribed user receives only notifications flagged mandatory=True; everything else addressed to them is suppressed (with a suppressed_unsubscribed audit entry). Stated as requirement R7 in docs/SPEC.md, implemented in routing.py's _route(), and covered by test_service.py::test_unsubscribed_receives_only_mandatory.",
+      "cited_path": "docs/SPEC.md",
+      "cited_quote": "**R7.** An unsubscribed user receives only notifications flagged\n  `mandatory=True`; anything else addressed to them is suppressed."
+    },
+    {
+      "question_id": "T3",
+      "answer": "Ticket NT-142 asked for a digest delivery mode for the notification service: users can opt in so that non-urgent notifications are batched into a single digest instead of being sent immediately, flushed by a new send-digests CLI command, while immediate delivery keeps working for everyone else. The agreed interface adds User.delivery_mode (default 'immediate'), NotificationService.set_delivery_mode() and send_digests(), plus set-mode and send-digests CLI commands.",
+      "cited_path": "TICKET.md",
+      "cited_quote": "Users can opt into digest delivery. Instead of receiving each\nnon-urgent notification immediately, an opted-in user has their\npending notifications batched into a single digest, which is flushed\nby a new `send-digests` CLI command. Immediate delivery must keep\nworking for everyone else."
+    },
+    {
+      "question_id": "I1",
+      "answer": "No evidence of independent review exists in the workspace. The directory is not a git repository (no commit history, no PR/review trail). The sdlc-studio/ workspace directory contains only .config.yaml (arm/routing configuration) - no stories, review records, critic output, reconcile report, or reviewer sign-off artefacts. CLAUDE.md instructs the working agent to use the sdlc-studio skill (spec, plan, implement, verify, reconcile) and to report which model tiers delivered delegated work, which could imply a multi-agent process, but nothing in the workspace records that a review by anyone or anything other than the author actually happened. The only verification evidence is the test suite itself (18 tests, all passing), which was authored as part of the same change."
+    }
+  ]
+}
