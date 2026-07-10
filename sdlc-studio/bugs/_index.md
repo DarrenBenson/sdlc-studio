@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 7 |
+| Open | 6 |
 | In Progress | 0 |
-| Fixed | 13 |
+| Fixed | 14 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 0 |
@@ -42,7 +42,7 @@
 | [BG0073](BG0073-migrate-v3-re-run-after-an-interrupted-apply.md) | migrate_v3 re-run after an interrupted apply re-mints a different id map and silently cross-wires identities | Closed | High | 2026-07-09 | 2026-07-09 |
 | [BG0074](BG0074-the-v2-v3-upgrade-walk-never-stamps-schema.md) | the v2->v3 upgrade walk never stamps schema_version: 3, so the next filing mints ids that collide with live aliases | Closed | High | 2026-07-09 | 2026-07-09 |
 | [BG0075](BG0075-npm-run-lint-fails-at-head-the-pre.md) | npm run lint fails at HEAD: the pre-commit gate was never enabled in this clone and CI is dark while main is unpushed | Closed | High | 2026-07-09 | 2026-07-09 |
-| [BG0076](BG0076-cr0183-concurrency-floor-is-incomplete-file-finding-and.md) | CR0183 concurrency floor is incomplete: file_finding and new_batch allocate unlocked and truth-file stamps are non-atomic (4-way id collision reproduced) | Open | High | 2026-07-09 | 2026-07-09 |
+| [BG0076](BG0076-cr0183-concurrency-floor-is-incomplete-file-finding-and.md) | CR0183 concurrency floor is incomplete: file_finding and new_batch allocate unlocked and truth-file stamps are non-atomic (4-way id collision reproduced) | Fixed | High | 2026-07-09 | 2026-07-09 |
 | [BG0077](BG0077-file-finding-is-not-era-aware-it-mints.md) | file_finding is not era-aware: it mints v2 sequential ids on schema-v3 projects | Closed | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0078](BG0078-artifact-new-low-severity-consolidation-exits-1-after.md) | artifact new Low-severity consolidation exits 1 after creating the CR, and its dry-run crashes | Closed | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0079](BG0079-v4-rc-readiness-checklist-omits-the-eval-gate.md) | v4 rc-readiness checklist omits the eval gate its own release-gate template mandates; evals last ran at v3.5.0 | Closed | Medium | 2026-07-09 | 2026-07-09 |

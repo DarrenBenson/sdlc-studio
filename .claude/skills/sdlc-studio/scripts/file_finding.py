@@ -164,6 +164,17 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     root = Path(repo_root)
     today = fields.get("date") or date.today().isoformat()
     fields = {**fields, "date": today}
+    if dry_run:
+        return _file_finding_locked(root, type_, spec, title, fields, today, dry_run=True)
+    # CR0183/BG0076: allocate id + write file + append row under the advisory cross-process
+    # lock, so concurrent filers (multi-agent waves) cannot mint the same v2 id or clobber a
+    # shared index row. Best-effort - a no-op on non-POSIX, exactly like `artifact new`.
+    with sdlc_md.allocation_lock(root):
+        return _file_finding_locked(root, type_, spec, title, fields, today, dry_run=False)
+
+
+def _file_finding_locked(root: Path, type_: str, spec: dict, title: str, fields: dict,
+                         today: str, dry_run: bool) -> dict:
     if sdlc_md.is_schema_v3(root):
         # era-aware: a v3 project's findings mint the same collision-checked ULID form as
         # `artifact new` - sequential numbers here would race and shadow live ULID aliases.
@@ -198,8 +209,7 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
         return {"id": disp_id, "file_id": file_id, "path": str(path),
                 "indexed": indexed, "dry_run": True}
     triage_noise.enforce_session_cap(root)  # refuse the N+1th individual finding loudly (v3)
-    path.write_text(_render(type_, disp_id, title, today, fields, create_status),
-                    encoding="utf-8")
+    sdlc_md.atomic_write(path, _render(type_, disp_id, title, today, fields, create_status))
     triage_noise.record_creation(root)  # count this minted finding against the session budget
     # One shared header-driven row builder for both create paths: read the index's
     # own columns and fill by name, identical to `artifact new`.

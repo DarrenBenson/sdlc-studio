@@ -1,6 +1,7 @@
 # BG0076: CR0183 concurrency floor is incomplete: file_finding and new_batch allocate unlocked and truth-file stamps are non-atomic (4-way id collision reproduced)
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (red-then-green concurrency test: 8 concurrent file_finding calls mint 8 distinct ids + 8 index rows, stable over 4 runs; new_batch/meta_new locked; create-path + truth-file stamps atomic; suite 1520)
 > **Severity:** High
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file

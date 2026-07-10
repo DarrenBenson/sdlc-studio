@@ -85,6 +85,40 @@ class ConcurrentAllocationTests(unittest.TestCase):
             self.assertEqual(errors, [], f"concurrent new raised: {errors}")
             self.assertEqual(len(set(ids)), 8, f"duplicate ids minted: {sorted(ids)}")
 
+    def test_concurrent_file_finding_mints_distinct_ids(self) -> None:
+        # BG0076: file_finding allocate+write was not under allocation_lock - concurrent
+        # filers minted the same v2 id and clobbered index rows (RV0007 reproduced a 4-way).
+        file_finding = _load("file_finding")
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+            ids: list[str] = []
+            errors: list[Exception] = []
+            lock = threading.Lock()
+
+            def worker(i: int) -> None:
+                try:
+                    r = file_finding.file_finding(
+                        repo, "bug", f"finding {i}",
+                        {"severity": "Medium", "summary": "s", "steps": "r", "fix": "f"})
+                    with lock:
+                        ids.append(r["id"])
+                except Exception as e:  # noqa: BLE001
+                    with lock:
+                        errors.append(e)
+
+            threads = [threading.Thread(target=worker, args=(i,)) for i in range(8)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+            self.assertEqual(errors, [], f"concurrent file_finding raised: {errors}")
+            self.assertEqual(len(set(ids)), 8, f"duplicate ids minted: {sorted(ids)}")
+            # every minted id also has exactly one index row (no clobber)
+            idx = (repo / "sdlc-studio" / "bugs" / "_index.md").read_text(encoding="utf-8")
+            for i in ids:
+                self.assertEqual(idx.count(f"[{i}]"), 1, f"{i} row missing/duplicated")
+
 
 if __name__ == "__main__":
     unittest.main()

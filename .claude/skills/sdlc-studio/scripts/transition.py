@@ -288,7 +288,7 @@ def _cascade_epic(repo_root: Path, story_id: str, ticked: bool) -> str | None:
                 changed = True
             break
     if changed:
-        epath.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        sdlc_md.atomic_write(epath, "\n".join(lines) + "\n")
     return m.group(0) if changed else None
 
 
@@ -384,7 +384,7 @@ def _post_write_sync_and_record(root, type_, path, new_text, result, current, ne
                                 vocab, gate_warn, metrics) -> dict:
     """Write the file, sync the index, cascade the epic (story), and record close telemetry.
     Reports index_synced honestly against residual drift. Behaviour-preserving extraction."""
-    path.write_text(new_text, encoding="utf-8")
+    sdlc_md.atomic_write(path, new_text)  # truth-file stamp: atomic so a crash never truncates it
     reconcile.apply_type(type_, root)  # sync the index row + counts
     # index_synced is the TRUTH after the sync, not "apply did something": an archived
     # row (apply only edits the live index) or a target status with no summary row both

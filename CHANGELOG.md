@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Reliability tier - concurrency floor completed (EP0027; BG0076).** CR0183's advisory lock
+  covered only `artifact new`; `file_finding` and `new_batch` allocated ids and wrote outside
+  it, so concurrent filers (multi-agent waves) minted the same id and clobbered index rows (a
+  4-way collision was reproduced). `file_finding.file_finding`, `artifact.new_batch` and
+  `meta_new` now allocate-and-write under `sdlc_md.allocation_lock`, and the finding-filer
+  body, batch writes, `meta_new`, and the `transition` truth-file status stamp + epic cascade
+  use `atomic_write` so a crash mid-write can never truncate a truth file. A red-first
+  concurrency test mints 8 distinct ids with one index row each; the closing critic verified
+  the `new_batch` re-indent is purely mechanical and the lock is deadlock-free.
 - **Reliability tier - installers copy-then-swap (EP0027, CR0205; US0117).** `install.sh` staged
   `rm -rf $dest; cp -r ...` - a copy that failed between the two left the user with nothing or a
   half-copy. Both the install and sweep-refresh paths now stage into a same-filesystem sibling

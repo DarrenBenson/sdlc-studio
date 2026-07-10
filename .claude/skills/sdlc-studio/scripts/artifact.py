@@ -268,7 +268,7 @@ def meta_new(repo_root: Path | str, type_: str, title: str, fields: dict | None 
         return {"id": disp, "file_id": file_id, "path": str(path), "indexed": would_index,
                 "epic_linked": None, "dry_run": True}
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(_render_meta(type_, disp, title, today), encoding="utf-8")
+    sdlc_md.atomic_write(path, _render_meta(type_, disp, title, today))
     indexed = False
     index_path = root / rel / "_index.md"
     if index_path.exists():
@@ -387,59 +387,62 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
                 raise ValueError("each story item needs an 'epic'")
             if _find_epic(root, it["epic"]) is None:
                 raise ValueError(f"epic {it['epic']} not found - create it first")
-    v3 = _schema_v3(root)
-    create_status = _create_status(type_, root)  # era-aware: findings file into inbox under v3
-    n0 = None if v3 else file_finding._next_number(root, type_)
-    prefix = sdlc_md.ARTIFACT_TYPES[type_][1]
-    d = root / sdlc_md.ARTIFACT_TYPES[type_][0]
-    taken: set[str] = set()  # ids minted earlier in THIS batch (before any file is written)
-    plan = []
-    for i, it in enumerate(items):
-        if not it.get("title"):
-            raise ValueError("each item needs a 'title'")
-        if v3:
-            for _ in range(16):
-                file_id = f"{prefix}-{sdlc_md.short_ulid()}"
-                if file_id not in taken and not (d.exists() and any(d.glob(f"{file_id}-*.md"))):
-                    break
+    # CR0183/BG0076: allocate the id block + write all files under the advisory lock,
+    # so a concurrent `new`/`new_batch` cannot mint an overlapping id block.
+    with sdlc_md.allocation_lock(root):
+        v3 = _schema_v3(root)
+        create_status = _create_status(type_, root)  # era-aware: findings file into inbox under v3
+        n0 = None if v3 else file_finding._next_number(root, type_)
+        prefix = sdlc_md.ARTIFACT_TYPES[type_][1]
+        d = root / sdlc_md.ARTIFACT_TYPES[type_][0]
+        taken: set[str] = set()  # ids minted earlier in THIS batch (before any file is written)
+        plan = []
+        for i, it in enumerate(items):
+            if not it.get("title"):
+                raise ValueError("each item needs a 'title'")
+            if v3:
+                for _ in range(16):
+                    file_id = f"{prefix}-{sdlc_md.short_ulid()}"
+                    if file_id not in taken and not (d.exists() and any(d.glob(f"{file_id}-*.md"))):
+                        break
+                else:
+                    file_id = f"{prefix}-{sdlc_md.new_ulid()[:12]}"
+                taken.add(file_id)
+                n, disp = None, file_id
             else:
-                file_id = f"{prefix}-{sdlc_md.new_ulid()[:12]}"
-            taken.add(file_id)
-            n, disp = None, file_id
-        else:
-            n = n0 + i
-            file_id = f"{prefix}{n:04d}"
-            disp = _disp(type_, n)
-        slug = file_finding._slug(it["title"])
-        path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / f"{file_id}-{slug}.md"
-        if path.exists():
-            raise FileExistsError(f"{path} (batch aborted, nothing written)")
-        plan.append({"n": n, "file_id": file_id, "disp": disp,
-                     "slug": slug, "path": path, "item": it})
-    if dry_run:
-        return {"type": type_, "count": len(plan), "template": template, "dry_run": True,
-                "ids": [{"id": p["disp"], "path": str(p["path"]),
-                         "epic": p["item"].get("epic")} for p in plan]}
-    render = _select_render(root, type_, template)
-    _ensure_index(root, type_, today)
-    created = []
-    for p in plan:
-        it = p["item"]
-        f = dict(it)
-        f["date"] = today
-        f["_status"] = create_status
-        p["path"].parent.mkdir(parents=True, exist_ok=True)
-        p["path"].write_text(render(type_, p["disp"], it["title"], today, f), encoding="utf-8")
-        header = _header_cells(root, type_)
-        link = f"[{p['disp']}]({p['file_id']}-{p['slug']}.md)"
-        if header:
-            row = sdlc_md.row_from_header(header, link, it["title"], create_status, f)
-            file_finding.append_index_row(root, type_, row)
-        if type_ == "story":
-            _wire_story_to_epic(root, it["epic"], p["disp"], it["title"], p["file_id"], p["slug"])
-        created.append({"id": p["disp"], "file_id": p["file_id"], "path": str(p["path"])})
-    return {"type": type_, "count": len(created), "template": template,
-            "created": created, "dry_run": False}
+                n = n0 + i
+                file_id = f"{prefix}{n:04d}"
+                disp = _disp(type_, n)
+            slug = file_finding._slug(it["title"])
+            path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / f"{file_id}-{slug}.md"
+            if path.exists():
+                raise FileExistsError(f"{path} (batch aborted, nothing written)")
+            plan.append({"n": n, "file_id": file_id, "disp": disp,
+                         "slug": slug, "path": path, "item": it})
+        if dry_run:
+            return {"type": type_, "count": len(plan), "template": template, "dry_run": True,
+                    "ids": [{"id": p["disp"], "path": str(p["path"]),
+                             "epic": p["item"].get("epic")} for p in plan]}
+        render = _select_render(root, type_, template)
+        _ensure_index(root, type_, today)
+        created = []
+        for p in plan:
+            it = p["item"]
+            f = dict(it)
+            f["date"] = today
+            f["_status"] = create_status
+            p["path"].parent.mkdir(parents=True, exist_ok=True)
+            sdlc_md.atomic_write(p["path"], render(type_, p["disp"], it["title"], today, f))
+            header = _header_cells(root, type_)
+            link = f"[{p['disp']}]({p['file_id']}-{p['slug']}.md)"
+            if header:
+                row = sdlc_md.row_from_header(header, link, it["title"], create_status, f)
+                file_finding.append_index_row(root, type_, row)
+            if type_ == "story":
+                _wire_story_to_epic(root, it["epic"], p["disp"], it["title"], p["file_id"], p["slug"])
+            created.append({"id": p["disp"], "file_id": p["file_id"], "path": str(p["path"])})
+        return {"type": type_, "count": len(created), "template": template,
+                "created": created, "dry_run": False}
 
 
 def infer_type_from_id(artifact_id: str) -> str | None:
