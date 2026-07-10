@@ -1,6 +1,7 @@
 # BG0089: verify_ac run --root mixes roots: story discovery and report are cwd-relative, verifier cwd and history are root-relative
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (red-then-green: --dir/--report resolve against repo_root; run from a foreign cwd writes the report the Done gate reads; suite 1519)
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file

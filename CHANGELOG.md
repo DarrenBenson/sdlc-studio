@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Reliability tier - verify_ac discovery/contract and sync failure honesty (EP0027; BG0083,
+  BG0084, BG0089, BG0092).** `verify_ac` now excludes companion docs and non-US files from
+  story discovery (a consultations note's quoted example `Verify:` lines no longer run
+  arbitrary shell - BG0083); an explicitly-named `--story` that does not exist exits 2 instead
+  of a silent 0 read as "all ACs green" (BG0084); relative `--dir`/`--report` resolve against
+  the repo root, so a run from any cwd with `--root` writes the report where the Done gate reads
+  it (BG0089); and `github_sync push` leaves `last_push` unstamped and exits non-zero on any gh
+  create/edit failure, saving only the mappings that succeeded (the BG0064 pull fix, now on the
+  push side - BG0092). All four independently critic-approved.
 - **Reliability tier - index-writer crash/reopen safety (EP0027; BG0081, BG0082, BG0091).**
   Three census-touching defects, each red-first and independently critic-approved: a reopened
   (archived-then-live-again) artefact was permanently shadowed by its stale archive row - now a

@@ -1075,5 +1075,64 @@ class DebugTraceTests(unittest.TestCase):
             # within-cap is a no-op
             self.assertFalse(sdlc_md.roll_jsonl(p, max_lines=4))
 
+
+class MissingStoryExitCodeTests(unittest.TestCase):
+    """BG0084: an explicitly-named --story that does not exist must exit 2, not 0 - a typo'd
+    path was silently read as 'all ACs green'."""
+
+    def test_missing_story_path_exits_2(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "sdlc-studio").mkdir()
+            rc = verify_ac.main(["run", "--story", str(Path(d) / "sdlc-studio" / "US9999-x.md"),
+                                 "--root", d])
+            self.assertEqual(rc, 2)
+
+
+class CompanionExclusionTests(unittest.TestCase):
+    """BG0083: walk_stories must exclude companion docs - a consultations note under a
+    story's id must not be verified (its quoted example Verify lines run arbitrary shell)."""
+
+    def test_companion_and_non_us_files_excluded(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            sd = Path(d)
+            (sd / "US0001-login.md").write_text("# US0001: x\n", encoding="utf-8")
+            (sd / "US0001-login-consultations.md").write_text("# note\n", encoding="utf-8")
+            (sd / "_index.md").write_text("# idx\n", encoding="utf-8")
+            (sd / "usage-guide.md").write_text("# not a story\n", encoding="utf-8")
+            found = [p.name for p in verify_ac.walk_stories(sd)]
+            self.assertEqual(found, ["US0001-login.md"])
+
+
+
+
+class RootRelativePathsTests(unittest.TestCase):
+    """BG0089: run from any cwd with --root, discovery and report resolve against the repo
+    root - not the cwd - so the Done gate reads the report the run actually wrote."""
+
+    def test_dir_and_report_resolve_against_root_not_cwd(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "proj"
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "US0001-x.md").write_text(
+                "# US0001: x\n\n## Acceptance Criteria\n\n### AC1: a\n"
+                "- **Given** a\n- **When** b\n- **Then** c\n- **Verify:** file "
+                + str((root / "marker.txt")) + "\n", encoding="utf-8")
+            (root / "marker.txt").write_text("x\n", encoding="utf-8")
+            other = Path(d) / "elsewhere"
+            other.mkdir()
+            import os
+            cwd = os.getcwd()
+            os.chdir(other)  # run from a DIFFERENT cwd
+            try:
+                rc = _quiet_main(["run", "--root", str(root)])
+            finally:
+                os.chdir(cwd)
+            # the run found the story under root (not "no stories found" from cwd) and wrote
+            # the report where the Done gate reads it: root/sdlc-studio/.local/
+            self.assertEqual(rc, 0)
+            self.assertTrue((root / "sdlc-studio" / ".local" / "verify-report.json").exists())
+
+
 if __name__ == "__main__":
     unittest.main()

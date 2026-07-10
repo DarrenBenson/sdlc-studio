@@ -592,14 +592,28 @@ def verify_story(
 
 
 def walk_stories(stories_dir: Path) -> Iterable[Path]:
-    """Yield every US story file in a directory, sorted. Case-insensitive - a lowercase
-    `us0001.md` is found too - matching the shared `sdlc_md` discovery, so verify_ac cannot
-    silently miss an artefact the rest of the toolchain sees (the old `US*.md` prefix glob was
-    case-sensitive on Linux)."""
+    """Yield every US story file in a directory, sorted, EXCLUDING companion docs. Matches the
+    shared `sdlc_md.iter_artifact_files` discipline: a file counts only when its stem resolves
+    to a `US` record id and it does not carry a declared companion suffix (a
+    `US0001-login-consultations.md` note must not be verified - executing its quoted example
+    `Verify:` lines runs arbitrary shell from a non-story document). Case-insensitive."""
     if not stories_dir.exists():
         return []
-    return sorted(p for p in stories_dir.glob("*.md")
-                  if p.is_file() and p.name[:2].lower() == "us")
+    from lib import conventions
+    # stories_dir is normally <root>/sdlc-studio/stories; the config read falls back to the
+    # default suffix set if the shape differs, so this is safe either way.
+    repo_root = stories_dir.parent.parent if stories_dir.name == "stories" else stories_dir
+    suffixes = tuple(f"-{s}" for s in conventions.companion_suffixes(repo_root))
+    out = []
+    for p in sorted(stories_dir.glob("*.md")):
+        if not p.is_file() or p.name == "_index.md":
+            continue
+        if suffixes and p.stem.endswith(suffixes):
+            continue  # a companion/note under a shared id, not the story itself
+        rec = sdlc_md.extract_record_id(p.stem) or ""
+        if sdlc_md.norm_id(rec).startswith("US"):
+            out.append(p)
+    return out
 
 
 def write_report(path: Path, stories: list[StoryReport], dry_run: bool = False,
@@ -675,22 +689,36 @@ def append_history(path: Path, stories: list[StoryReport], dry_run: bool) -> Non
 # -----------------------------------------------------------------------------
 
 
+def _under_root(repo_root: Path, rel: str) -> Path:
+    """Resolve a --dir/--report value against the repo root when it is relative, so a run
+    from any cwd discovers stories and writes the report where the Done gate reads them
+    (root/sdlc-studio/.local/...). An absolute path the caller passed is honoured as-is."""
+    p = Path(rel)
+    return p if p.is_absolute() else repo_root / p
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     """Run verifiers across stories, update files, and write the report."""
     repo_root = Path(args.repo_root).resolve()
 
     if args.story:
         paths = [Path(args.story)]
+        if not paths[0].exists():
+            # An explicitly-named story that does not exist is an ERROR (exit 2), never a
+            # silent skip that returns 0 - a typo'd --story path read as "all ACs green" to a
+            # gate. Mirrors the --id branch below.
+            print(f"no story file at {args.story}", file=sys.stderr)
+            return 2
     elif getattr(args, "id", None):  # resolve --id USNNNN under --dir (case-insensitive)
         target = sdlc_md.norm_id(args.id)
-        matches = [p for p in walk_stories(Path(args.dir))
+        matches = [p for p in walk_stories(_under_root(repo_root, args.dir))
                    if sdlc_md.norm_id(sdlc_md.extract_record_id(p.stem) or "") == target]
         if not matches:
             print(f"no story file for id {args.id} under {args.dir}", file=sys.stderr)
             return 2
         paths = matches[:1]
     else:
-        paths = list(walk_stories(Path(args.dir)))
+        paths = list(walk_stories(_under_root(repo_root, args.dir)))
 
     if not paths:
         print("no stories found", file=sys.stderr)
@@ -734,7 +762,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     # Write the report in dry-run too (to a distinct path, so the live report is
     # not clobbered) and append the run to the history log.
-    report_path = Path(args.report)
+    report_path = _under_root(repo_root, args.report)
     if args.dry_run:
         report_path = report_path.with_name(report_path.stem + ".dry-run" + report_path.suffix)
     write_report(report_path, reports, dry_run=args.dry_run, merge=not getattr(args, "fresh", False))
@@ -914,7 +942,7 @@ def cmd_lint(args: argparse.Namespace) -> int:
     """Advisory: flag Verify lines that would fall through to `shell` but look like a
     mis-written runner invocation. Catches the AC↔test drift at author time
     instead of discovering it 0/7 at verify time. Never fails the build."""
-    paths = [Path(args.story)] if args.story else list(walk_stories(Path(args.dir)))
+    paths = [Path(args.story)] if args.story else list(walk_stories(_under_root(repo_root, args.dir)))
     flagged = 0
     for p in paths:
         if not p.exists():

@@ -1,6 +1,7 @@
 # BG0083: verify_ac story discovery executes companions and any us*.md file, poisoning runs and ts-check
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (red-then-green: walk_stories excludes companions + non-US files; suite 1519)
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file

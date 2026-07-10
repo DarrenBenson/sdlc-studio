@@ -398,6 +398,7 @@ def cmd_push(args: argparse.Namespace) -> int:
     created = 0
     updated = 0
     blocked = 0
+    failed = False  # any gh create/edit failure - BG0092: do not stamp last_push, exit non-zero
     allow_secrets = getattr(args, "allow_secrets", False)
     # Visibility is resolved lazily and cached: only a record that actually carries a
     # secret triggers the `gh repo view` call, so a clean push (or a dry run) makes no
@@ -440,6 +441,7 @@ def cmd_push(args: argparse.Namespace) -> int:
                 number = gh_issue_create(title, rec.body, labels)
                 if number is None:
                     print(f"failed to create issue for {rec.rec_id}", file=sys.stderr)
+                    failed = True
                     continue
                 set_github_issue_field(rec.path, number)
                 # Re-parse to pick up the new hash
@@ -498,14 +500,26 @@ def cmd_push(args: argparse.Namespace) -> int:
                         f"[APL] synced labels on #{rec.github_issue} "
                         f"for {rec.rec_id}: +{add} -{remove}"
                     )
+                else:
+                    print(f"failed to edit issue #{rec.github_issue} for {rec.rec_id}",
+                          file=sys.stderr)
+                    failed = True
 
-    if not args.dry_run:
+    if not args.dry_run and not failed:
+        # BG0092: only a fully-successful push advances last_push. A failed gh call leaves the
+        # timestamp untouched (mirrors the BG0064 pull fix) so nothing keyed on push
+        # success/recency is misled; mappings from the calls that DID succeed are still saved.
         state["last_push"] = now_iso()
         state["mappings"] = mappings
         save_state(state, _state_path(args.root))
+    elif not args.dry_run and failed:
+        # persist the mappings we did land, but not the success stamp
+        state["mappings"] = mappings
+        save_state(state, _state_path(args.root))
+        print("push: a gh call failed; last_push left unchanged", file=sys.stderr)
 
     print(f"push: created={created} updated={updated} blocked={blocked}")
-    return 1 if blocked else 0
+    return 1 if (blocked or failed) else 0
 
 
 def cmd_pull(args: argparse.Namespace) -> int:

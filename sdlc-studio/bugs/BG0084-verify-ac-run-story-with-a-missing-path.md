@@ -1,6 +1,7 @@
 # BG0084: verify_ac run --story with a missing path exits 0 (false success)
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (red-then-green: missing --story path exits 2 not 0)
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file

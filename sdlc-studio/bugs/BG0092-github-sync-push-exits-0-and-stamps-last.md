@@ -1,6 +1,7 @@
 # BG0092: github_sync push exits 0 and stamps last_push even when every gh create/edit failed
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (red-then-green: stubbed gh failure exits non-zero, last_push unstamped, partial mappings saved; suite 1519)
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file

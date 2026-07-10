@@ -512,6 +512,8 @@ class PushLabelSyncTests(unittest.TestCase):
         captured: dict[str, list[str]] = {}
 
         def fake_gh(*args, capture=True):
+            if args[:2] == ("issue", "create"):
+                return subprocess_result(0, "/issues/99", "")  # unmapped records create cleanly
             if args[:2] == ("issue", "list"):
                 issue = {
                     "number": 42,
@@ -607,8 +609,11 @@ class PushLabelSyncTests(unittest.TestCase):
 
         with mock.patch.object(github_sync, "gh", side_effect=fake_gh):
             rc = github_sync.main(["push", "--type", "cr"])
-        self.assertEqual(rc, 0)
+        # BG0092: a gh failure must be signalled (non-zero) and must NOT stamp last_push -
+        # the BG0064 pull fix, now on the push side.
+        self.assertNotEqual(rc, 0)
         state = github_sync.load_state(self._state_path())
+        self.assertIsNone(state.get("last_push"))
         self.assertNotIn("CR-0001", state.get("mappings", {}))
         # And the file must not have gained a bogus issue number.
         path = self.fixture.tmp / "sdlc-studio/change-requests/CR-0001-rate-limit.md"
