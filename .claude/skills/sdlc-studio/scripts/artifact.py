@@ -451,7 +451,8 @@ def infer_type_from_id(artifact_id: str) -> str | None:
 
 
 def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
-          metrics: dict | None = None, dry_run: bool = False, force: bool = False) -> dict:
+          metrics: dict | None = None, dry_run: bool = False, force: bool = False,
+          triaged_by: str | None = None) -> dict:
     """Terminal-transition an artifact and cascade (reuse transition), then record a
     telemetry event. Telemetry is advisory - it never affects the
     close result (the recorder swallows its own failures). `force` bypasses the story->Done
@@ -464,7 +465,8 @@ def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
         return {"id": artifact_id, "type": type_, "to": st, "dry_run": True}
     # transition records one telemetry event on entering the terminal set (and none on an
     # idempotent re-close); pass the metrics through so close does not double-record.
-    return transition.transition(repo_root, artifact_id, st, force=force, metrics=metrics)
+    return transition.transition(repo_root, artifact_id, st, force=force,
+                                 metrics=metrics, triaged_by=triaged_by)
 
 
 def cmd_new(args: argparse.Namespace) -> int:
@@ -518,6 +520,30 @@ def cmd_batch(args: argparse.Namespace) -> int:
 
 
 def cmd_close(args: argparse.Namespace) -> int:
+    # Orchestrated close (one call = stamp + verdict + transition): every step is durable,
+    # so a refusal at the transition leaves the stamp/verdict recorded and a re-run
+    # completes. NOTE a re-run appends a fresh verdict row (append-only audit log,
+    # latest-wins for gates) - clear the refusal before retrying to keep the log tight.
+    # Self-review refuses BEFORE any write.
+    depth = getattr(args, "depth", None)
+    reviewer = getattr(args, "reviewer", None)
+    author = getattr(args, "author", None)
+    if reviewer or author:
+        if not (reviewer and author and args.verdict):
+            print("error: orchestrated close needs --verdict, --reviewer AND --author "
+                  "(or none of reviewer/author for the plain close)", file=sys.stderr)
+            return 2
+        import critic
+        if critic._id(reviewer) == critic._id(author):
+            print("error: reviewer == author - independence is the floor; a self-review "
+                  "never clears the critiqued gate, so nothing was written", file=sys.stderr)
+            return 2
+    if depth and not args.dry_run:
+        transition.annotate(args.root, args.id, "Verification depth", depth)
+    if reviewer and not args.dry_run:
+        import critic
+        critic.record_verdict(args.root, args.id, args.verdict, reviewer, author,
+                              issues=getattr(args, "issues", "") or "")
     metrics = {}
     if args.iterations is not None:
         metrics["iterations"] = int(args.iterations)
@@ -528,7 +554,8 @@ def cmd_close(args: argparse.Namespace) -> int:
     if args.stages:
         metrics["stages"] = args.stages
     r = close(args.root, args.id, args.status, metrics or None, dry_run=args.dry_run,
-              force=getattr(args, "force", False))
+              force=getattr(args, "force", False),
+              triaged_by=getattr(args, "triaged_by", None))
     verb = "would close" if r.get("dry_run") else "closed"
     print(json.dumps(r, indent=2) if args.format == "json" else f"{verb} {args.id}")
     return 0
@@ -573,6 +600,16 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--verdict", help="run metric: critic verdict (telemetry)")
     c.add_argument("--wall-time-s", dest="wall_time_s", help="run metric: wall time (telemetry)")
     c.add_argument("--stages", help="run metric: stages passed (telemetry)")
+    c.add_argument("--depth", help="orchestrated close: stamp '> **Verification depth:**' "
+                                   "before transitioning (no more hand edits)")
+    c.add_argument("--reviewer", help="orchestrated close: record the critic verdict under "
+                                      "this reviewer (must differ from --author)")
+    c.add_argument("--author", help="orchestrated close: the authoring seat the verdict "
+                                    "judges (reviewer != author enforced up front)")
+    c.add_argument("--issues", help="orchestrated close: critic verdict issues/tier note")
+    c.add_argument("--triaged-by", dest="triaged_by",
+                   help="v3 finding close: the triaging seat as 'Name; type; version' - lets "
+                        "the one-call close clear the inbox triage gate too")
     c.add_argument("--root", default=".")
     c.add_argument("--dry-run", action="store_true", dest="dry_run", help="preview; write nothing")
     c.add_argument("--format", choices=("text", "json"), default="text")

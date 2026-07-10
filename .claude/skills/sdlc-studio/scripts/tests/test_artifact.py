@@ -745,5 +745,42 @@ class ProvenanceStampTests(unittest.TestCase):
             self.assertIn("external", blob.lower())
             self.assertNotIn('"status": "pass"', blob.lower())
 
+
+
+class OrchestratedCloseTests(unittest.TestCase):
+    """CR0209/US0116 AC3: one close call = depth stamp + critic verdict + terminal transition."""
+
+    def test_orchestrated_close_stamps_records_and_closes(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+            r = artifact.new(repo, "bug", "orchestrated close probe", {"severity": "Medium"})
+            rc = artifact.main(["close", "--id", r["id"],
+                                "--depth", "functional (probe suite green)",
+                                "--verdict", "APPROVE",
+                                "--reviewer", "Sam (QA)", "--author", "Author (build)",
+                                "--root", str(repo)])
+            self.assertEqual(rc, 0)
+            body = Path(r["path"]).read_text(encoding="utf-8")
+            self.assertIn("> **Verification depth:** functional (probe suite green)", body)
+            self.assertIn("> **Status:** Fixed", body)
+            verdicts = (repo / "sdlc-studio" / "reviews" / "critic-verdicts.md")
+            self.assertTrue(verdicts.exists())
+            self.assertIn(r["id"], verdicts.read_text(encoding="utf-8"))
+
+    def test_orchestrated_close_refuses_self_review(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+            r = artifact.new(repo, "bug", "self review probe", {"severity": "Medium"})
+            rc = artifact.main(["close", "--id", r["id"],
+                                "--depth", "functional", "--verdict", "APPROVE",
+                                "--reviewer", "Same One", "--author", "Same One",
+                                "--root", str(repo)])
+            self.assertNotEqual(rc, 0)
+            body = Path(r["path"]).read_text(encoding="utf-8")
+            self.assertIn("> **Status:** Open", body)  # nothing transitioned
+
+
 if __name__ == "__main__":
     unittest.main()

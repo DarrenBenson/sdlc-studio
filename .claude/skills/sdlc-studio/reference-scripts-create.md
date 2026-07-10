@@ -60,7 +60,10 @@ Done is gated on its AC-verify result** (red or never-run executable ACs refuse 
 transition; `--force` overrides; manual-only / AC-less and non-story types are never gated).
 **Schema v3:** a finding leaving `inbox` is gated too - a structured `--triaged-by` (refused
 without one), triager != raiser (separation of duties; solo-human warns), `--triage-severity`
-recorded. Dormant on v2.
+recorded. Dormant on v2. **A blocked transition reports EVERY unmet gate in one refusal**
+(depth AND triage AND plan-review together), so clearing them costs one round-trip, not one
+per gate. `annotate --id <ID> --field <Name> --value <v>` deterministically sets/updates one
+metadata field (e.g. `Verification depth`) in place - the stamp verb; no more hand edits.
 
 ### `archive.py`
 

@@ -245,6 +245,16 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
   breakage could reach a green CI. The workflow gains a `gate.py --root .` step (after
   setup-python, PyYAML installed so config-driven lanes fail loud); the two doc claims are now
   true as written.
+- **Unit-lifecycle ergonomics: annotate verb, batched gate refusals, one-call close (EP0026,
+  CR0209; US0116).** `transition annotate --id --field --value` deterministically stamps a
+  metadata field (no more hand-editing artefact bodies for `Verification depth`) - with a
+  gate-protection denylist the critic forced: it refuses Status/Triaged-by/Triage-severity
+  (an ungated Status rewrite would have been an exit-0 bypass of the whole ladder), refuses
+  line-break injection across every separator, and fails loud without a metadata anchor. A
+  blocked transition now reports EVERY unmet gate in one refusal (was one per attempt: three
+  round-trips to close a v3 finding). `artifact close --depth --verdict --reviewer --author
+  [--triaged-by]` orchestrates stamp + critic verdict + terminal transition in one durable,
+  re-runnable call, refusing self-review before any write.
 - **Every test-suite `__main__` guard sits at true end-of-file, enforced (EP0026, CR0204;
   US0114).** Fifteen test files kept classes after a mid-file guard, so a direct
   `python3 test_x.py` run silently dropped them (22 tests once vanished while reporting OK)

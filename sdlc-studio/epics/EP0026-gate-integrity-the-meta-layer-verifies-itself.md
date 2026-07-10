@@ -28,6 +28,7 @@ Unit roster (bugs fixed directly; CRs decompose via `cr action` at execution - s
 - [x] [US0113: Detect a disabled commit gate in gate and status](../stories/US0113-detect-a-disabled-commit-gate-in-gate-and.md)
 - [x] [US0114: Normalise mid-file main guards in the test suite](../stories/US0114-normalise-mid-file-main-guards-in-the-test.md)
 - [x] [US0115: Advisory lanes earn their signal: mutation wired into sprint close, disclosure triaged to zero](../stories/US0115-advisory-lanes-earn-their-signal-mutation-wired-into.md)
+- [x] [US0116: Unit-lifecycle ergonomics: annotate verb, batched gate refusals, close orchestrator](../stories/US0116-unit-lifecycle-ergonomics-annotate-verb-batched-gate-refusals.md)
 
 ## Revision History
 

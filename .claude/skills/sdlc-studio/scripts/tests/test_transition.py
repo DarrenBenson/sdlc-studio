@@ -807,5 +807,135 @@ class PlanReviewGateTests(unittest.TestCase):
             self.assertEqual(res["to"], "In Progress")       # gate no-op on v2
 
 
+
+
+class AnnotateVerbTests(unittest.TestCase):
+    """CR0209/US0116 AC1: a deterministic metadata-stamp verb."""
+
+    def _bug(self, root: Path) -> Path:
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        p = d / "BG0001-x.md"
+        p.write_text("# BG0001: x\n\n> **Status:** Open\n> **Severity:** Low\n"
+                     "> **Created-by:** sdlc-studio new\n\n## Summary\n\ns\n", encoding="utf-8")
+        return p
+
+    def test_annotate_inserts_a_new_field(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._bug(root)
+            rc = tr.main(["annotate", "--id", "BG0001",
+                                  "--field", "Verification depth",
+                                  "--value", "functional (tests red-first)", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            body = p.read_text(encoding="utf-8")
+            self.assertIn("> **Verification depth:** functional (tests red-first)", body)
+            self.assertEqual(tr.sdlc_md.extract_field(body, "Verification depth"),
+                             "functional (tests red-first)")
+
+    def test_annotate_updates_in_place_idempotently(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._bug(root)
+            for value in ("smoke", "functional (upgraded)"):
+                rc = tr.main(["annotate", "--id", "BG0001",
+                                      "--field", "Verification depth",
+                                      "--value", value, "--root", str(root)])
+                self.assertEqual(rc, 0)
+            body = p.read_text(encoding="utf-8")
+            self.assertEqual(body.count("**Verification depth:**"), 1)
+            self.assertIn("functional (upgraded)", body)
+
+    def test_annotate_unknown_id_fails_loud(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "sdlc-studio").mkdir()
+            rc = tr.main(["annotate", "--id", "BG9999", "--field", "F",
+                                  "--value", "v", "--root", d])
+            self.assertNotEqual(rc, 0)
+
+
+class AllGatesInOneRefusalTests(unittest.TestCase):
+    """CR0209/US0116 AC2: a blocked transition names EVERY unmet gate."""
+
+    def test_v3_finding_refusal_names_depth_and_triage_together(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n",
+                                                               encoding="utf-8")
+            bd = root / "sdlc-studio" / "bugs"
+            bd.mkdir()
+            (bd / "BG0001-x.md").write_text(
+                "# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n## Summary\n\ns\n",
+                encoding="utf-8")
+            with self.assertRaises(ValueError) as ctx:
+                tr.transition(root, "BG0001", "Fixed")
+            msg = str(ctx.exception)
+            self.assertIn("Verification depth", msg)
+            self.assertIn("triage", msg.lower())
+
+
+
+
+class AnnotateCannotBypassGatesTests(unittest.TestCase):
+    """Critic F1/F2/F5: annotate must never touch gated/index-backed fields, must fail loud
+    without a Status anchor, and must reject metadata-injection values."""
+
+    def _v3_inbox_bug(self, root: Path) -> Path:
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n",
+                                                           encoding="utf-8")
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(exist_ok=True)
+        p = d / "BG0001-x.md"
+        p.write_text("# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n"
+                     "## Summary\n\ns\n", encoding="utf-8")
+        return p
+
+    def test_annotate_refuses_the_status_field(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._v3_inbox_bug(root)
+            before = p.read_text(encoding="utf-8")
+            for spelling in ("Status", "status", "STATUS"):
+                rc = tr.main(["annotate", "--id", "BG0001", "--field", spelling,
+                              "--value", "Fixed", "--root", str(root)])
+                self.assertNotEqual(rc, 0, spelling)
+            self.assertEqual(p.read_text(encoding="utf-8"), before)
+
+    def test_annotate_refuses_triage_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._v3_inbox_bug(root)
+            before = p.read_text(encoding="utf-8")
+            rc = tr.main(["annotate", "--id", "BG0001", "--field", "Triaged-by",
+                          "--value", "Me; human; 1", "--root", str(root)])
+            self.assertNotEqual(rc, 0)
+            self.assertEqual(p.read_text(encoding="utf-8"), before)
+
+    def test_annotate_fails_loud_without_a_status_anchor(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bd = root / "sdlc-studio" / "bugs"
+            bd.mkdir(parents=True)
+            (bd / "BG0001-x.md").write_text("# BG0001: x\n\nno metadata block\n",
+                                            encoding="utf-8")
+            rc = tr.main(["annotate", "--id", "BG0001", "--field", "Verification depth",
+                          "--value", "functional", "--root", str(root)])
+            self.assertNotEqual(rc, 0)
+
+    def test_annotate_rejects_newlines_in_field_and_value(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._v3_inbox_bug(root)
+            before = p.read_text(encoding="utf-8")
+            for sep in ("\n", "\r", "\u2028"):
+                rc = tr.main(["annotate", "--id", "BG0001", "--field", "Verification depth",
+                              "--value", f"functional{sep}> **Status:** Fixed",
+                              "--root", str(root)])
+                self.assertNotEqual(rc, 0, repr(sep))
+            self.assertEqual(p.read_text(encoding="utf-8"), before)
+
+
 if __name__ == "__main__":
     unittest.main()

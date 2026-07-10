@@ -190,6 +190,43 @@ def _upsert_field(text: str, name: str, value: str) -> str:
     return new_text if changed else _insert_after_status(text, f"> **{name}:** {value}")
 
 
+# Fields annotate must NEVER touch: they are gate-protected or index-backed, and a stamp
+# verb that could rewrite them would be a sanctioned, exit-0 bypass of the entire transition
+# ladder (the critic proved it: `annotate --field Status --value Fixed` cleared what `set`
+# had just refused). Case-insensitive.
+_ANNOTATE_DENYLIST = {"status", "triaged-by", "triage-severity"}
+
+
+def annotate(repo_root: Path | str, artifact_id: str, field: str, value: str) -> dict:
+    """Deterministically set/update one metadata field on an artifact (the stamp verb the
+    unit-close ceremony was missing - depth, evidence and similar fields no longer need a
+    hand edit). Index-untouched: metadata fields are not index columns. Fails loud on an
+    unresolvable id, a gate-protected field, an injection-shaped value, or a file with no
+    metadata block to anchor to."""
+    root = Path(repo_root)
+    if field.strip().lower() in _ANNOTATE_DENYLIST:
+        raise ValueError(f"annotate refuses the gate-protected field {field!r}: status and "
+                         "triage records go through `transition set` so their gates run")
+    if len(field.splitlines()) > 1 or len(value.splitlines()) > 1:
+        # splitlines covers every separator universal-newline reads translate (\n, \r,
+        # \x0b/\x0c, \x85, U+2028/29) - a bare \n check left \r as an injection path
+        raise ValueError("annotate refuses line breaks in field/value - a multi-line value "
+                         "would inject extra metadata lines into the artifact")
+    path, type_ = _find(root, artifact_id)
+    if path is None:
+        raise FileNotFoundError(f"cannot annotate {artifact_id}: artifact not found")
+    text = path.read_text(encoding="utf-8")
+    new_text = _upsert_field(text, field, value)
+    if new_text == text and sdlc_md.extract_field(text, field) != value:
+        # nothing matched AND nothing could be inserted: the file has no Status anchor
+        raise ValueError(f"cannot annotate {artifact_id}: no `> **Status:**` metadata block "
+                         "to anchor the field to - not a structured artifact")
+    if new_text != text:
+        sdlc_md.atomic_write(path, new_text)
+    return {"id": artifact_id, "type": type_, "field": field, "value": value,
+            "changed": new_text != text, "path": str(path)}
+
+
 def _triage_gate(root: Path, type_: str, text: str, from_canon: str | None,
                  target_canon: str | None, triaged_by: str | None) -> str | None:
     """Block reason when a v3 finding is leaving the `inbox` triage lane without a valid,
@@ -261,11 +298,13 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
     plan-review). Raise ValueError on a hard block; else return the accumulated advisory
     warning (or None). Behaviour-preserving extraction of the interleaved gate ladder."""
     gate_warn = None
+    # Every unmet gate is COLLECTED and reported in one refusal - refusing one requirement
+    # per attempt cost an agent a round-trip per gate (three attempts to close a v3 finding).
+    blocks: list[str] = []
     if type_ == "bug" and not force and not dry_run:
         block = _bug_depth_gate(text, target_canon)
         if block:
-            raise ValueError(
-                f"{artifact_id} -> {new_status} blocked: {block}. Override with --force.")
+            blocks.append(f"{block}. Override with --force")
     if type_ == "story" and not dry_run and target_canon == "Done":
         parity = _story_target_parity(text)
         if parity:
@@ -274,9 +313,9 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
             # gracefully-degrading project_override so a PyYAML-less machine gets the
             # gate decision, not a config-loading crash.
             if sdlc_md.project_override(root, "quality.depth_parity_gate", False) and not force:
-                raise ValueError(
-                    f"{artifact_id} -> Done blocked: {parity}. Override with --force.")
-            gate_warn = f"depth-parity advisory: {parity}"
+                blocks.append(f"{parity}. Override with --force")
+            else:
+                gate_warn = f"depth-parity advisory: {parity}"
     if type_ == "story" and not force and not dry_run and target_canon == "Done":
         block = _done_verify_gate(root, path, text)
         if block:
@@ -285,14 +324,15 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
             # project_override degrades to the default without PyYAML, so the block message
             # is produced rather than a config RuntimeError.
             if sdlc_md.project_override(root, "quality.done_requires_verified", True):
-                raise ValueError(f"{artifact_id} -> Done blocked: {block}. Override with --force.")
-            verify_warn = f"AC-verify advisory (quality.done_requires_verified=false): {block}"
-            gate_warn = f"{gate_warn}; {verify_warn}" if gate_warn else verify_warn
+                blocks.append(f"{block}. Override with --force")
+            else:
+                verify_warn = f"AC-verify advisory (quality.done_requires_verified=false): {block}"
+                gate_warn = f"{gate_warn}; {verify_warn}" if gate_warn else verify_warn
     # The triage gate fires on any exit from `inbox` for a v3 finding, dry-run included: an
     # honest preflight must surface the same refusal a real run would (never a false green).
     block = _triage_gate(root, type_, text, from_canon, target_canon, triaged_by)
     if block:
-        raise ValueError(f"{artifact_id} -> {new_status} blocked: {block}.")
+        blocks.append(block)
     # Plan-review gate (US0090): a story with spec-derived ACs cannot REACH implementation
     # without a recorded independent plan-review verdict. Fires on entry to any state that
     # implies the plan was built - In Progress, Review, or Done - so a direct Ready->Done
@@ -305,7 +345,11 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
         import plan_review  # local import: plan_review pulls route/critic; keep them off cold paths
         pr_res = plan_review.gate(root, artifact_id, path)
         if not pr_res["ok"]:
-            raise ValueError(f"{artifact_id} -> {new_status} blocked: {pr_res['reason']}.")
+            blocks.append(pr_res["reason"])
+    if blocks:
+        joined = "; AND ".join(blocks)
+        raise ValueError(f"{artifact_id} -> {new_status} blocked ({len(blocks)} requirement(s), "
+                         f"all listed): {joined}.")
     return gate_warn
 
 
@@ -465,6 +509,18 @@ def cmd_set(args: argparse.Namespace) -> int:
     return 1 if refused else 0
 
 
+def cmd_annotate(args: argparse.Namespace) -> int:
+    try:
+        r = annotate(args.root, args.id, args.field, args.value)
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    print(json.dumps(r, indent=2) if args.format == "json"
+          else f"annotated {args.id}: {args.field} = {args.value}"
+               + ("" if r["changed"] else " (already set)"))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Transition an artifact's status + cascade.")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -488,6 +544,14 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--dry-run", action="store_true")
     s.add_argument("--format", choices=("text", "json"), default="text")
     s.set_defaults(func=cmd_set)
+    a = sub.add_parser("annotate", help="Set/update one metadata field on an artifact "
+                                        "(deterministic stamp; index untouched).")
+    a.add_argument("--id", required=True, help="Artifact id, e.g. BG0042 / US0023")
+    a.add_argument("--field", required=True, help="Field name, e.g. 'Verification depth'")
+    a.add_argument("--value", required=True)
+    a.add_argument("--root", default=".")
+    a.add_argument("--format", choices=("text", "json"), default="text")
+    a.set_defaults(func=cmd_annotate)
     return p
 
 

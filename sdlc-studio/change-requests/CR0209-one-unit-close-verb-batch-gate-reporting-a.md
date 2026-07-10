@@ -1,6 +1,6 @@
 # CR-0209: one unit-close verb + batch gate reporting + a metadata-stamp verb (agent ergonomics of the unit lifecycle)
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-10

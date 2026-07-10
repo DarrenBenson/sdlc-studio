@@ -56,6 +56,18 @@ Full command-line argument reference. For the common subset, see `help/help.md`
 | `--full` | Run fresh status analysis | false |
 | `--resume` | Resume cascading review from pause point | false |
 
+## Unit close and annotation (transition.py / artifact.py)
+
+| Flag | Description |
+| --- | --- |
+| `annotate --id --field --value` | (transition.py) set/update one metadata field deterministically |
+| `close --depth "<text>"` | stamp `Verification depth` before the terminal transition |
+| `close --verdict --reviewer --author` | record the critic verdict in the same call (reviewer != author refused up front) |
+| `close --issues "<note>"` | verdict issues/tier note for the recorded verdict |
+
+One orchestrated `artifact.py close` = stamp + verdict + transition; each step is durable and
+re-runnable, so a refusal at a later gate never loses the earlier steps.
+
 ## Sprint, Gate & Product
 
 | Argument | Description | Default |
