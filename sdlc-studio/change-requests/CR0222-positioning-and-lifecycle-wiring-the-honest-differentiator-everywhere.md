@@ -1,6 +1,7 @@
 # CR-0222: positioning and lifecycle wiring: the honest differentiator, everywhere the team is met
 
-> **Status:** In Progress
+> **Status:** Complete
+> **Verification depth:** functional (claim-by-claim product review by a fresh Lena instance against the FETCHED source essays - two misquotes caught and repaired verbatim; every benchmark number cross-checked against the published report; competitor-name grep clean; trigger wiring probed live incl. status/hint advisory on this repo; 3 new tests)
 > **Depends on:** CR0219, CR0220
 > **Priority:** High
 > **Type:** Improvement
@@ -13,12 +14,12 @@ RFC0028 + both research tracks. URGENT: the README's 'No other SDLC tooling we k
 
 ## Acceptance Criteria
 
-- [ ] README claim replaced by the defensible conjunction; blind-spot-coverage evidence framing; living-personas paragraph consistent with generation
-- [ ] docs/why-sdlc-studio.md gains the operationalised-practice section and the attestation/SoD framing; reference-doctrine + critic flow document the cross-model reviewer option
-- [ ] docs/why is reframed around the project author's published philosophy (Real World Engineering essays, quoted as such): the five-instrument cockpit (Specification, Governed Platform, Measurement, Evidence, Identity/Persistence - the personas ARE instrument five), human-in-the-lead, spec-as-durable-artifact, 'the code is the cloth' / engine-vs-mill, and 'specify together, build apart, review independently' mapped verbatim to the sprint loop; note the batch-to-goal sprint as the deliberate answer to 'railway time'
-- [ ] No competitor is NAMED in any shipped doc - opposing views are attributed anonymously in the operator's chosen register ("Others argue that..."), and the stance is stated positively (open-source project, not a company picking fights); at most, one deliberate factual alternatives list may exist as its own page if wanted
-- [ ] docs/why gains the closed-platform counter-position (stories = where proof lives; category-four-on-an-open-stack line; the feasibility-ping-pong pitch for prd generate) with the evidence-honesty contrast (vendor 5x claims vs our adversarial benchmark)
-- [ ] Triggers wired: PRD-close offer, project upgrade offer step, post-review-generate hint, status/hint next-step - all offers, never auto
+- [x] README claim replaced by the defensible conjunction; blind-spot-coverage evidence framing; living-personas paragraph consistent with generation
+- [x] docs/why-sdlc-studio.md gains the operationalised-practice section and the attestation/SoD framing; reference-doctrine + critic flow document the cross-model reviewer option
+- [x] docs/why is reframed around the project author's published philosophy (Real World Engineering essays, quoted as such): the five-instrument cockpit (Specification, Governed Platform, Measurement, Evidence, Identity/Persistence - the personas ARE instrument five), human-in-the-lead, spec-as-durable-artifact, 'the code is the cloth' / engine-vs-mill, and 'specify together, build apart, review independently' mapped verbatim to the sprint loop; note the batch-to-goal sprint as the deliberate answer to 'railway time'
+- [x] No competitor is NAMED in any shipped doc - opposing views are attributed anonymously in the operator's chosen register ("Others argue that..."), and the stance is stated positively (open-source project, not a company picking fights); at most, one deliberate factual alternatives list may exist as its own page if wanted
+- [x] docs/why gains the closed-platform counter-position (stories = where proof lives; category-four-on-an-open-stack line; the feasibility-ping-pong pitch for prd generate) with the evidence-honesty contrast (vendor 5x claims vs our adversarial benchmark)
+- [x] Triggers wired: PRD-close offer, project upgrade offer step, post-review-generate hint, status/hint next-step - all offers, never auto
 
 ## Revision History
 

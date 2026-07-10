@@ -54,7 +54,7 @@ artifact and code becomes disposable output** - which is why the pipeline's cent
 gravity is the spec, the acceptance criteria, and the proof, not the diff. And **the human
 stays in the lead, not merely in the loop**: of the three futures (full automation, human
 rubber-stamping the machine, human directing it), only the third survives contact with
-accountability. The unsaid is where damage happens, so the instruments exist to make the
+accountability. The unsaid is where damage happens, so the tooling exists to make the
 unsaid visible - and the person "who reads the dashboard, frames the wish and answers for
 the outcome becomes more necessary with each cycle, not less."
 

@@ -1,6 +1,6 @@
 # CR-0226: a brand-new README: newcomer value first, existing users get their own page
 
-> **Status:** Proposed
+> **Status:** In Progress
 > **Depends on:** CR0222
 > **Priority:** High
 > **Type:** Improvement

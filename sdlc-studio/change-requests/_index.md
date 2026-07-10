@@ -9,12 +9,12 @@
 | Proposed | 2 |
 | Approved | 0 |
 | In Progress | 2 |
-| Complete | 216 |
+| Complete | 217 |
 | Rejected | 0 |
 | Deferred | 3 |
 | Superseded | 4 |
 | Blocked | 0 |
-| **Total** | **227** |
+| **Total** | **228** |
 
 ## All Changes
 
@@ -43,12 +43,13 @@
 | [CR-0219](CR0219-team-generation-fresh-named-seats-grown-from-the.md) | team generation: fresh named seats grown from the project (persona generate --team) | Complete | High | Feature | 2026-07-10 | -- |
 | [CR-0220](CR0220-stakeholder-panel-generation-the-other-side-of-the.md) | stakeholder panel generation: the other side of the table (persona generate --stakeholders) | Complete | High | Feature | 2026-07-10 | -- |
 | [CR-0221](CR0221-cooper-usage-pass-personas-that-arbitrate-not-decorate.md) | Cooper usage pass: personas that arbitrate, not decorate | Complete | Medium | Improvement | 2026-07-10 | -- |
-| [CR-0222](CR0222-positioning-and-lifecycle-wiring-the-honest-differentiator-everywhere.md) | positioning and lifecycle wiring: the honest differentiator, everywhere the team is met | In Progress | High | Improvement | 2026-07-10 | -- |
+| [CR-0222](CR0222-positioning-and-lifecycle-wiring-the-honest-differentiator-everywhere.md) | positioning and lifecycle wiring: the honest differentiator, everywhere the team is met | Complete | High | Improvement | 2026-07-10 | -- |
 | [CR-0223](CR0223-the-handoff-guide-a-first-class-remaining-work.md) | the handoff guide: a first-class remaining-work artefact at run close | Deferred | Medium | Feature | 2026-07-10 | -- |
 | [CR-0224](CR0224-multi-repo-context-the-repo-map-and-census.md) | multi-repo context: the repo map and census grow PVD-wide awareness | Deferred | Medium | Feature | 2026-07-10 | -- |
 | [CR-0225](CR0225-appetite-bounded-unattended-runs-a-budget-circuit-breaker.md) | appetite-bounded unattended runs: a budget circuit-breaker for epic-level execution | Deferred | Medium | Feature | 2026-07-10 | -- |
-| [CR-0226](CR0226-a-brand-new-readme-newcomer-value-first-existing.md) | a brand-new README: newcomer value first, existing users get their own page | Proposed | High | Improvement | 2026-07-10 | -- |
+| [CR-0226](CR0226-a-brand-new-readme-newcomer-value-first-existing.md) | a brand-new README: newcomer value first, existing users get their own page | In Progress | High | Improvement | 2026-07-10 | -- |
 | [CR-0227](CR0227-the-sdlc-studio-white-paper-the-mill-described.md) | the sdlc-studio white paper: the mill, described properly | Proposed | High | Feature | 2026-07-10 | -- |
+| [CR-0228](CR0228-rerun-the-benchmark-suite-on-the-v4-release.md) | rerun the benchmark suite on the v4 release candidate | Proposed | High | Improvement | 2026-07-10 | -- |
 
 ## Archived Releases
 
