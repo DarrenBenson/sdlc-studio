@@ -182,7 +182,13 @@ resolve_targets() {
             all)  expanded="$expanded $ALL_TARGETS" ;;
             auto)
                 local d
-                for d in $ALL_TARGETS; do is_detected "$d" && expanded="$expanded $d"; done ;;
+                for d in $ALL_TARGETS; do
+                    # copilot is repo-scoped only (no global skills dir). On a global install,
+                    # auto must NOT select it, or it writes .github/skills into the current
+                    # directory - an unexpected, unrelated side effect of a global install.
+                    [[ "$d" == "copilot" && "$INSTALL_MODE" == "global" ]] && continue
+                    is_detected "$d" && expanded="$expanded $d"
+                done ;;
             claude|codex|gemini|opencode|copilot|agents) expanded="$expanded $t" ;;
             *) error "Unknown target: $t (valid: $ALL_TARGETS all auto)"; exit 2 ;;
         esac

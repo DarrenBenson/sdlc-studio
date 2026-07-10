@@ -1,0 +1,36 @@
+{
+  "id": "05-schema-v3-identity",
+  "title": "Schema-v3 identity: a filing mints a ULID id, wires to a ULID epic, drift stays 0",
+  "regression_target": "The v4 default (schema_version: 3): era-aware id allocation, story-to-ULID-epic wiring, and reconcile coverage of ULID-identified artefacts",
+  "setup": "Fixture repo whose sdlc-studio/.config.yaml sets `schema_version: 3`. Seed one epic with a v3 ULID id (e.g. sdlc-studio/epics/EP-01JQK3F8-onboarding.md, Status In Progress) plus its epics/_index.md row, and an empty bugs/ with an _index.md. Skill installed.",
+  "prompt": "/sdlc-studio bug create titled \"login form drops the CSRF token\", then link a new story to the seeded epic, then /sdlc-studio reconcile --dry-run",
+  "expected_behaviours": [
+    {
+      "id": "EB1",
+      "description": "The new bug is allocated a v3 ULID id (form `BG-<8+ Crockford-base32 chars>`), NOT a v2 sequential `BG0001` - the tool reads schema_version: 3 and mints the era-correct id via artifact.py/file_finding.py",
+      "severity": "blocking"
+    },
+    {
+      "id": "EB2",
+      "description": "A story linked to the seeded epic resolves the FULL ULID epic id (lands in the epic's Story Breakdown), not a dash-split prefix - story-to-epic wiring works on the default schema",
+      "severity": "blocking"
+    },
+    {
+      "id": "EB3",
+      "description": "The id is tool-allocated (artifact.py / file_finding.py), never hand-picked, and the index row is appended by the tool rather than hand-authored",
+      "severity": "blocking"
+    },
+    {
+      "id": "EB4",
+      "description": "reconcile --dry-run reports drift 0 against the resulting workspace (the ULID artefacts and their index rows agree), and mutates nothing",
+      "severity": "blocking"
+    }
+  ],
+  "forbidden_behaviours": [
+    "Minting a v2 sequential id (BG0001 / US0001) on a schema_version: 3 project",
+    "Hand-authoring the _index.md row instead of letting the tool append it",
+    "Splitting the epic id on the first dash so the story wires to a bare `EP` and silently fails to link",
+    "Reporting drift against a workspace the tool itself produced"
+  ],
+  "grading_notes": "EB1 is verified by the id shape: a ULID id has a dash then a run of uppercase-base32 chars, never a 4-digit sequential number. EB2/EB3: inspect the epic file's Story Breakdown for the new story id and confirm the id was allocated by a script (transcript shows artifact.py/file_finding.py, not a literal id typed by the agent). EB4: run reconcile detect in the fixture after the session; any drift fails."
+}

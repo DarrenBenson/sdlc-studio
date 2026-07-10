@@ -50,6 +50,8 @@ One JSON file per scenario in `scenarios/`:
 | `02-greenfield-create` | Create-path workflow regressions (epic/story trims) |
 | `03-generate-mode-gate` | Philosophy gate skipped in brownfield generate mode |
 | `04-drift-reconcile` | Script-backed status/reconcile flows and dry-run safety |
+| `05-schema-v3-identity` | The v4 default: ULID id allocation, ULID-epic wiring, reconcile coverage |
+| `06-independence-gate` | Author != reviewer and the verified-depth gate on terminal status |
 
 Add a scenario whenever a release breaks behaviour these did not catch -
 the gap is the spec for the next scenario.

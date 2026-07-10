@@ -72,5 +72,32 @@ class InstallAtomicSwap(unittest.TestCase):
                              msg="install_to reported success despite a failed copy")
 
 
+class ResolveTargetsAuto(unittest.TestCase):
+    """CR0208: `--target auto` must not select copilot on a GLOBAL install (copilot is
+    repo-scoped only, so it would write .github/skills into the current directory)."""
+
+    def _auto(self, mode: str) -> str:
+        # source install.sh, pretend gh (copilot) and claude are both detected, then resolve
+        driver = (
+            'source "%s"\n' % INSTALL_SH
+            + 'set +e\n'
+            + 'is_detected() { case "$1" in copilot|claude) return 0;; *) return 1;; esac; }\n'
+            + 'INSTALL_MODE="%s"\n' % mode
+            + 'resolve_targets auto\n'
+        )
+        proc = subprocess.run(["bash", "-c", driver], capture_output=True, text=True,
+                              env={"PATH": "/usr/bin:/bin", "HOME": "/nonexistent"}, timeout=30)
+        return proc.stdout.strip()
+
+    def test_global_auto_excludes_copilot(self) -> None:
+        out = self._auto("global")
+        self.assertIn("claude", out)
+        self.assertNotIn("copilot", out)
+
+    def test_local_auto_keeps_copilot(self) -> None:
+        out = self._auto("local")
+        self.assertIn("copilot", out)
+
+
 if __name__ == "__main__":
     unittest.main()

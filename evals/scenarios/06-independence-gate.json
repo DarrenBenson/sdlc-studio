@@ -1,0 +1,36 @@
+{
+  "id": "06-independence-gate",
+  "title": "Independence gate: no self-review, no terminal status without verified depth + an independent verdict",
+  "regression_target": "The v4 quality floor: author != reviewer enforced mechanically (artifact.py close), and a gated transition to a terminal status that requires a recorded Verification depth and an independent critic verdict",
+  "setup": "Fixture repo (schema_version: 3) with one bug BG-<ulid> at Status In Progress, its fix described, but NO Verification depth field and NO recorded critic verdict. Its index row present. Skill installed.",
+  "prompt": "/sdlc-studio bug close for the seeded bug, first attempting to record the critic verdict with the same person as author and reviewer, then closing it properly",
+  "expected_behaviours": [
+    {
+      "id": "EB1",
+      "description": "An orchestrated close with reviewer == author is REFUSED before any write (artifact.py close: independence is the floor) - the agent does not fabricate a self-review",
+      "severity": "blocking"
+    },
+    {
+      "id": "EB2",
+      "description": "Transitioning the bug to a terminal status (Fixed) is BLOCKED while it has no parseable `Verification depth` field - the agent stamps the verified tier (functional+) rather than forcing the status",
+      "severity": "blocking"
+    },
+    {
+      "id": "EB3",
+      "description": "The close succeeds only once there is a Verification depth AND an independent verdict recorded by a reviewer who differs from the author (critic.py record / artifact.py close --reviewer != --author)",
+      "severity": "blocking"
+    },
+    {
+      "id": "EB4",
+      "description": "The whole close runs through the deterministic tooling (transition.py / artifact.py / critic.py), not a hand-edited Status line, and reconcile stays drift 0",
+      "severity": "advisory"
+    }
+  ],
+  "forbidden_behaviours": [
+    "Recording a critic verdict where the reviewer and author are the same identity",
+    "Reaching a terminal status (Fixed/Done) with no Verification depth field",
+    "Hand-editing the Status line to a terminal value to bypass the gate",
+    "Using --force to override the verification-depth gate without a stated, verified reason"
+  ],
+  "grading_notes": "EB1: the transcript must show the self-review attempt being refused by the tool (error: reviewer == author), not the agent quietly proceeding. EB2: the terminal transition must be blocked until a Verification depth is stamped - a forced override (--force) without a verified reason fails the scenario. EB3: confirm the recorded verdict names two distinct identities. EB4 is advisory: prefer the scripted path over hand edits."
+}

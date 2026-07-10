@@ -60,7 +60,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   now ranged (`50+` reference / `nearly 40` help files, was a stale `42`/`31`); `help/arguments.md`
   documents the full `triage -> plan -> design -> done` goal ladder (was just `done`/`design`); and
   `help/references.md` lists `reference-outputs.md` (it was the one reference file the catalogue
-  omitted).
+  omitted). `install.sh --target auto` no longer selects `copilot` on a global install (copilot is
+  repo-scoped only, so auto would write `.github/skills` into the current directory). Two new eval
+  scenarios cover v4 surfaces the frozen four missed: `05-schema-v3-identity` (ULID allocation,
+  ULID-epic wiring, reconcile coverage) and `06-independence-gate` (author != reviewer and the
+  verified-depth gate on terminal status).
 - **One CLI argument grammar across the script family (EP0028, CR0210).** The scripts disagreed
   on how ids and targets were passed - `audit check` took `--ids` comma-separated, `transition
   set` forced exactly one of `--id`/`--ids`, `artifact revision` required `--ids`, `ledger
