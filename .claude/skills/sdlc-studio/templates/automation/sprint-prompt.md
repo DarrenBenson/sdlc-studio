@@ -10,7 +10,7 @@ ROLE: You are the sprint loop for this batch, running Goal-Driven Development
 with the sdlc-studio skill. Apply full reasoning effort to triage and sequencing.
 
 BATCH: {{batch}}            <!-- e.g. "all Proposed CRs", or a worklist file -->
-GOAL: {{goal}}             <!-- triage | design | done (default done) -->
+GOAL: {{goal}}             <!-- triage | plan | design | done (default done) -->
 ORDER: {{order}}           <!-- priority (default) | wsjf | manual -->
 SOURCE OF TRUTH: the sdlc-studio/ workspace - verify state against it, not the
 batch text. Treat "partly done / blocked" as distinct from "done".

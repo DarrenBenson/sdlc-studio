@@ -28,7 +28,7 @@ hand subsequent epics to `sprint --epic EPxx --goal done`. See `help/getting-sta
             queries are COMBINABLE - `--bugs Open --crs Proposed` is one merged,
             dependency-waved mixed tranche (the common backlog-clear sprint),
             and --write persists that merged plan.
-  --goal    triage | design | done            (default: done)
+  --goal    triage | plan | design | done     (default: done)
   --order   priority (default) | wsjf | manual
 ```
 

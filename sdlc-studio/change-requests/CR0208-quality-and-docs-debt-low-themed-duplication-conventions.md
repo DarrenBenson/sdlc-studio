@@ -1,6 +1,6 @@
 # CR-0208: quality and docs debt (Low, themed): duplication, conventions, doc accuracy and DX items from RV0007
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-09
