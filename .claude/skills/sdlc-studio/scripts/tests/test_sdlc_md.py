@@ -552,6 +552,25 @@ class UlidIdentityTests(unittest.TestCase):
         self.assertGreater(len(ids), 1)
         self.assertTrue(all(len(i) == 8 for i in ids))
 
+    def test_iter_tables_skips_fenced_tables(self) -> None:
+        # a `|`-row inside a ``` fence is an illustrative example, never real structure
+        text = (
+            "# Doc\n\n"
+            "| ID | Status |\n| --- | --- |\n| US0001 | Done |\n\n"
+            "```\n| ID | Status |\n| --- | --- |\n| FAKE | Done |\n```\n"
+        )
+        rows = [c for t in sdlc_md.iter_tables(text) for _ln, c in t["rows"]]
+        self.assertEqual(rows, [["US0001", "Done"]])
+        self.assertFalse(any("FAKE" in " ".join(c) for c in rows))
+
+    def test_iter_tables_resumes_after_fence_closes(self) -> None:
+        text = (
+            "```\n| ID | X |\n| --- | --- |\n| FENCED | y |\n```\n\n"
+            "| ID | Status |\n| --- | --- |\n| US0002 | Done |\n"
+        )
+        rows = [c for t in sdlc_md.iter_tables(text) for _ln, c in t["rows"]]
+        self.assertEqual(rows, [["US0002", "Done"]])
+
     def test_id_re_matches_both_eras(self) -> None:
         self.assertEqual(sdlc_md.extract_record_id("US0001-login"), "US0001")
         self.assertEqual(sdlc_md.extract_record_id("BG-01JQK3F8-fix-thing"), "BG-01JQK3F8")

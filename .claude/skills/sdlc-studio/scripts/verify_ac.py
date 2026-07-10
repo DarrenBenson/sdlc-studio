@@ -90,7 +90,21 @@ def parse_story(text: str) -> list[ACBlock]:
         if current is not None:
             blocks.append(current)
 
+    in_fence = False
+    fence = ""
     for i, line in enumerate(lines):
+        stripped = line.lstrip()
+        # A fenced code block inside an AC is an ILLUSTRATION, not a directive: a
+        # `- **Verify:**` line shown as an example inside ``` must never be picked up and
+        # executed. Skip fenced contents (the fence does not end the current AC block).
+        if not in_fence and (stripped.startswith("```") or stripped.startswith("~~~")):
+            in_fence, fence = True, stripped[:3]
+            continue
+        if in_fence:
+            if stripped.startswith(fence):
+                in_fence = False
+            continue
+
         m = AC_HEADING_RE.match(line)
         if m:
             flush()

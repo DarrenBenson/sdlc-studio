@@ -169,8 +169,23 @@ def iter_tables(text: str, header_predicate=None):
     - separator rows are never yielded (table_cells returns None for them)
     """
     current = None  # {"header": ..., "header_line": ..., "rows": [...]}
+    in_fence = False
+    fence = ""
     lines = text.splitlines()
     for i, line in enumerate(lines):
+        stripped = line.lstrip()
+        # A fenced code block is illustrative, not structure: a `|`-row inside ``` (a shipped
+        # example table) must never be tallied. Track fences and skip their contents entirely.
+        if not in_fence and (stripped.startswith("```") or stripped.startswith("~~~")):
+            if current:  # a fence, like a heading, ends the table scope
+                yield current
+            current = None
+            in_fence, fence = True, stripped[:3]
+            continue
+        if in_fence:
+            if stripped.startswith(fence):
+                in_fence = False
+            continue
         if line.lstrip().startswith("#"):  # a heading ends the table scope
             if current:
                 yield current

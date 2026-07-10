@@ -1134,5 +1134,30 @@ class RootRelativePathsTests(unittest.TestCase):
             self.assertTrue((root / "sdlc-studio" / ".local" / "verify-report.json").exists())
 
 
+class FencedVerifyTests(unittest.TestCase):
+    """A `- **Verify:**` line shown as an example inside a ``` fence must NOT be picked up as
+    the AC's real verifier - otherwise a documentation example reaches shell execution."""
+
+    def test_fenced_verify_line_is_ignored(self) -> None:
+        story = (
+            "### AC1: real\n\n"
+            "- **Verify:** shell true\n\n"
+            "Example of a dangerous verifier:\n\n"
+            "```\n- **Verify:** shell rm -rf /\n```\n"
+        )
+        blocks = verify_ac.parse_story(story)
+        self.assertEqual(len(blocks), 1)
+        self.assertEqual(blocks[0].verifier, "shell true")
+
+    def test_real_verify_after_a_fence_still_parses(self) -> None:
+        story = (
+            "### AC1: real\n\n"
+            "```\n- **Verify:** shell echo example\n```\n\n"
+            "- **Verify:** shell true\n"
+        )
+        blocks = verify_ac.parse_story(story)
+        self.assertEqual(blocks[0].verifier, "shell true")
+
+
 if __name__ == "__main__":
     unittest.main()
