@@ -71,7 +71,7 @@ def write_state(repo_root: Path | str, epic_id: str) -> tuple[dict, Path]:
     state = build_state(repo_root, epic_id)
     path = Path(repo_root) / "sdlc-studio" / ".local" / "epic-state.json"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(state, indent=2), encoding="utf-8")
+    sdlc_md.atomic_write(path, json.dumps(state, indent=2))  # atomic: a crash mid-write must not reset guardrail state
     return state, path
 
 

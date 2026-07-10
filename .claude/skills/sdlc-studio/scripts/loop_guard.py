@@ -74,7 +74,7 @@ def cmd_record(args: argparse.Namespace) -> int:
     state = sdlc_md.read_json(path, {"units": {}})
     state = record_attempt(state, args.unit, args.signature)
     v = verdict(state, args.unit, cap=args.cap, repeat=args.repeat)
-    path.write_text(json.dumps(state, indent=2), encoding="utf-8")
+    sdlc_md.atomic_write(path, json.dumps(state, indent=2))  # atomic: a crash mid-write must not reset guardrail state
     if v["quarantine"]:
         print(f"{args.unit}: QUARANTINE after {v['attempts']} attempts (reason={v['reason']}) -> mark Blocked, continue")
         return QUARANTINE_EXIT

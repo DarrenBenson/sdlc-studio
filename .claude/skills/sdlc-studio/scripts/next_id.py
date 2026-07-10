@@ -137,9 +137,9 @@ def remote_ids(type_: str, repo_root: Path) -> tuple[list[int], bool]:
     try:
         result = subprocess.run(
             ["git", "ls-tree", "-r", "--name-only", f"origin/{branch}", "--", rel],
-            capture_output=True, text=True, cwd=str(repo_root), check=False,
+            capture_output=True, text=True, cwd=str(repo_root), check=False, timeout=30,
         )
-    except FileNotFoundError:
+    except (FileNotFoundError, subprocess.TimeoutExpired):
         return [], False
     if result.returncode != 0:
         return [], False

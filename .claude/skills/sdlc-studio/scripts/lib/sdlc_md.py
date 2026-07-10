@@ -625,6 +625,15 @@ def atomic_write(path, text: str, encoding: str = "utf-8") -> None:
     try:
         with os.fdopen(fd, "w", encoding=encoding) as fh:
             fh.write(text)
+        # mkstemp makes the temp 0600; os.replace keeps the temp's mode, so without this every
+        # atomic_write would silently flip an index/artefact to owner-only (breaking shared
+        # checkouts / web-served docs). Preserve the existing file's mode, else apply umask.
+        try:
+            os.chmod(tmp, os.stat(p).st_mode & 0o777)
+        except FileNotFoundError:
+            cur = os.umask(0o022)
+            os.umask(cur)
+            os.chmod(tmp, 0o666 & ~cur)
         os.replace(tmp, str(p))
     except BaseException:
         try:

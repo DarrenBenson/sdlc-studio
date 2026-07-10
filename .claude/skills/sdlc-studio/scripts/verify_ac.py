@@ -362,12 +362,13 @@ def _check_http_target(url: str) -> None:
     ValueError (an invalid verifier, exit 2) when the target is refused."""
     parsed = urlparse(url)
     scheme = parsed.scheme.lower()
-    if scheme and scheme not in _HTTP_SCHEMES:
-        raise ValueError(f"http: scheme {scheme!r} is not permitted (only http/https)")
+    if scheme not in _HTTP_SCHEMES:
+        # refuse an empty scheme in every mode: a scheme-less URL lets curl guess the protocol
+        # from the host (an `ftp.`-prefixed host goes FTP), defeating the http/https-only floor.
+        raise ValueError(f"http: scheme {scheme or '(none)'!r} is not permitted (only http/https)")
     allowed = _restricted_http_hosts()
     if allowed:
-        if scheme == "":
-            raise ValueError("http: restricted mode requires an absolute http(s) URL")
+        # (an empty scheme is already refused above, in every mode)
         host = (parsed.hostname or "").lower()
         if host not in allowed:
             raise ValueError(
@@ -482,7 +483,7 @@ def jest_batch_cache(repo_root: Path, timeout: int) -> list[dict]:
     verifiers resolve against the result set instead of a cold `jest -t` start each. Empty on any
     failure -> callers fall back to the per-AC path."""
     try:
-        result = subprocess.run(["npx", "jest", "--json", "--silent"], cwd=str(repo_root),
+        result = subprocess.run(["npx", "--no-install", "jest", "--json", "--silent"], cwd=str(repo_root),
                                 capture_output=True, text=True, timeout=timeout)  # nosec B603 B607
     except (FileNotFoundError, OSError, subprocess.TimeoutExpired) as exc:
         sdlc_md.debug("jest_batch_cache", exc)  # advisory: fall back to the per-AC path

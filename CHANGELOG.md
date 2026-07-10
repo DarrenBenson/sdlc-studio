@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Reliability tier - Low-severity debt batch (EP0027, CR0207; US0119).** Ten small hardening
+  fixes, critic-approved: `atomic_write` now preserves the existing file's permissions instead
+  of flipping every rewritten index/artefact to owner-only 0600; `loop_guard`/`resume` `.local`
+  state writes are atomic (a crash cannot reset a guardrail); the `http` verifier refuses a
+  scheme-less URL in every mode (not just restricted); `npx jest` runs `--no-install`; the
+  cascade watermark uses `max(mergedAt)`; `next_id`'s `ls-tree` has a timeout;
+  `check_neutrality` fails loud when it cannot list files; the em-dash guard is `grep -P`-free
+  (BSD/macOS portable); `install.ps1` ships the CHANGELOG (parity with `install.sh`); and CI
+  installs PyYAML before the first Python run. Four larger items (batch-op amortisation,
+  `detect_type` triple-read, gh pagination, mutation SIGKILL sidecar) are deferred with a note.
 - **Reliability tier - push adopts an existing issue instead of duplicating (EP0027, CR0206;
   US0118).** A crash or `gh` timeout after a create was accepted but before the local stamp
   landed made the re-run create a second GitHub issue for one record. `push` now lists the

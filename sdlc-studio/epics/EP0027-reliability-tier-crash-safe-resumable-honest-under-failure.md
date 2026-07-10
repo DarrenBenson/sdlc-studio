@@ -1,6 +1,6 @@
 # EP0027: Reliability tier: crash-safe, resumable, honest under failure
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-07-10
 > **Created-by:** sdlc-studio new
 
@@ -26,6 +26,9 @@ Unit roster (bugs fixed directly; CRs decompose via `cr action` at execution - s
 - [ ] [CR0205](../change-requests/CR0205-installers-replace-delete-then-copy-with-copy-then.md) - installers: copy-then-swap, never delete-then-copy
 - [ ] [CR0206](../change-requests/CR0206-github-sync-push-adopt-an-existing-issue-by.md) - push adopts an existing issue by title (crash/timeout dedupe)
 - [ ] [CR0207](../change-requests/CR0207-reliability-debt-low-themed-permissions-pagination-growth-scale.md) - reliability debt themed: perms, pagination, growth, scale, crash windows (14 items)
+- [x] [US0117: Installers copy-then-swap so a failed install cannot destroy the previous one](../stories/US0117-installers-copy-then-swap-so-a-failed-install.md)
+- [x] [US0118: github_sync push adopts an existing issue by title instead of blind create](../stories/US0118-github-sync-push-adopts-an-existing-issue-by.md)
+- [x] [US0119: Reliability debt batch: atomic-write perms, atomic .local state, sync/scale hardening](../stories/US0119-reliability-debt-batch-atomic-write-perms-atomic-local.md)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # CR-0207: reliability debt (Low, themed): permissions, pagination, growth, scale and crash-window items from RV0007
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-09
@@ -28,3 +28,9 @@ Consolidated Low reliability findings from RV0007 (each independently verified; 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-09 | audit | Raised |
+
+## Delivered vs deferred (US0119)
+
+**Delivered:** atomic_write mode preservation; loop_guard/resume .local writes atomic; cascade watermark max(mergedAt); next_id ls-tree timeout; npx jest --no-install; http scheme-less URL refused in every mode; check_neutrality fail-loud; em-dash guard grep-P-free (BSD-portable); install.ps1 ships CHANGELOG (parity); lint.yml installs PyYAML before the first Python run.
+
+**Deferred (larger, follow-up):** batch-operation O(corpus) amortisation; detect_type triple-read; gh issue list pagination past 500; mutation.py SIGKILL .orig sidecar. These are non-trivial and each warrants its own unit; recorded here rather than rushed into the themed batch.

@@ -62,7 +62,9 @@ def _tracked_text_files(root: Path) -> list[Path]:
         out = subprocess.run(["git", "ls-files"], cwd=str(root), capture_output=True,
                              text=True, check=True).stdout
     except (OSError, subprocess.CalledProcessError):
-        return []
+        # LL0008: a guard that cannot list files must fail loud, never silently pass.
+        raise SystemExit("neutrality: could not `git ls-files` - run from inside the repo; "
+                         "refusing to report a clean scan of nothing")
     files = []
     for rel in out.splitlines():
         if rel in _SELF or Path(rel).name in _SKIP_NAMES:

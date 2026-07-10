@@ -58,6 +58,18 @@ class AtomicWriteTests(unittest.TestCase):
             sdlc_md.atomic_write(p, "hello")
             self.assertEqual(p.read_text(encoding="utf-8"), "hello")
 
+    def test_atomic_write_preserves_mode(self) -> None:
+        # CR0207: mkstemp makes 0600 and os.replace keeps it - atomic_write must restore the
+        # existing file's mode, else every rewrite silently flips it to owner-only.
+        import os
+        import stat
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "f.txt"
+            p.write_text("x", encoding="utf-8")
+            os.chmod(p, 0o664)
+            sdlc_md.atomic_write(p, "y")
+            self.assertEqual(stat.S_IMODE(os.stat(p).st_mode), 0o664)
+
 
 class ConcurrentAllocationTests(unittest.TestCase):
     def test_concurrent_new_mints_distinct_ids(self) -> None:

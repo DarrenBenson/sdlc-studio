@@ -22,7 +22,8 @@ status=0
 cd "$scan_root"
 
 # 1. Em-dash: never allowed, no exceptions.
-if em_hits="$(grep -rInP '\x{2014}' --include='*.md' --exclude-dir=node_modules . 2>/dev/null)"; then
+em_dash="$(printf '\342\200\224')"  # U+2014 as literal UTF-8 bytes, so no grep -P (absent on BSD/macOS)
+if em_hits="$(grep -rIn "$em_dash" --include='*.md' --exclude-dir=node_modules . 2>/dev/null)"; then
   echo "Style error: em-dash (U+2014) found. Use an en-dash with spaces ( - ) instead."
   printf '%s\n' "$em_hits"
   status=1

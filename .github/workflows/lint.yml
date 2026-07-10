@@ -27,23 +27,26 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+
+      - name: Install Python deps (before any Python run)
+        # CR0207: `npm test` runs the config-driven tests, which fail (not skip) without PyYAML.
+        # Install it on the pinned interpreter BEFORE the first Python invocation, so the suite
+        # is not validated by accident of the runner image happening to preinstall PyYAML.
+        run: python -m pip install --quiet pyyaml
+
       - name: Lint (markdown, style, links)
         run: npm run lint
 
       - name: Run script unit tests
         run: npm test
 
-      - name: Set up Python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
-        with:
-          python-version: '3.12'
-
       - name: Portable artefact gate (same gate the pre-commit hook runs)
         run: |
           # BG0096: the hook and CONTRIBUTING claimed CI re-runs this gate; now it does.
-          # PyYAML first: the repo pins schema/config in .config.yaml and the gate's
-          # config-driven lanes must fail loud, not degrade, in CI.
-          python -m pip install --quiet pyyaml
           python3 .claude/skills/sdlc-studio/scripts/gate.py --root .
 
       - name: Coverage gate (runtime scripts, >= 80%)

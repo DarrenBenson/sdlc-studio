@@ -82,6 +82,15 @@ Native alternatives (sdlc-studio is a standard skill):
     function Write-Ok($m) { Write-Host '==> ' -ForegroundColor Green -NoNewline; Write-Host $m }
     function Write-Warn2($m) { Write-Host 'Warning: ' -ForegroundColor Yellow -NoNewline; Write-Host $m }
 
+    # Ship CHANGELOG.md alongside the payload so `project upgrade`'s capability digest works
+    # offline (parity with install.sh's ship_changelog; without it the Windows install
+    # permanently degrades to "no CHANGELOG.md shipped").
+    function Ship-Changelog($src, $dest) {
+        $repoRoot = $src -replace [regex]::Escape("\.claude\skills\$SkillName") + '$', ''
+        $cl = Join-Path $repoRoot 'CHANGELOG.md'
+        if (Test-Path $cl) { Copy-Item -Path $cl -Destination (Join-Path $dest 'CHANGELOG.md') -Force }
+    }
+
     function Test-Detected($t) {
         switch ($t) {
             'claude'   { [bool](Get-Command claude   -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $HOME '.claude')) }
@@ -239,6 +248,7 @@ Native alternatives (sdlc-studio is a standard skill):
                 New-Item -ItemType Directory -Path $parent -Force | Out-Null
                 if (Test-Path $dest) { Write-Warn2 "Removing existing installation at $dest"; Remove-Item -Path $dest -Recurse -Force }
                 Copy-Item -Path $SourceDir -Destination $dest -Recurse
+                Ship-Changelog $SourceDir $dest
                 Write-Ok "installed: $dest"
             }
             if (Test-Path $parent) { $installedDests += (Join-Path (Resolve-Path $parent).Path $SkillName) }
@@ -270,6 +280,7 @@ Native alternatives (sdlc-studio is a standard skill):
                     else {
                         Remove-Item -Path $dest -Recurse -Force
                         Copy-Item -Path $SourceDir -Destination $dest -Recurse
+                        Ship-Changelog $SourceDir $dest
                         Write-Ok "refreshed: $dest ($old -> $newVer)"
                     }
                 }
