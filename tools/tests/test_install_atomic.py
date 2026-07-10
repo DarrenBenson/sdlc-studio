@@ -146,5 +146,56 @@ class DowngradeGuard(unittest.TestCase):
             self.assertIn("RC=1", self._would_downgrade(dest, "main"))  # non-semver -> not older
 
 
+class LocalSourceInstall(unittest.TestCase):
+    """CR0214: --from DIR installs the LOCAL tree (the dev-testing path) instead of
+    downloading the published release; a non-skill dir refuses before any write."""
+
+    def _run(self, home: Path, *args: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["bash", str(INSTALL_SH), *args],
+                              env={"PATH": "/usr/bin:/bin", "HOME": str(home)},
+                              capture_output=True, text=True, timeout=60)
+
+    def _src(self, root: Path, version: str = "9.9.9") -> Path:
+        src = root / "src" / "sdlc-studio"
+        (src / "templates").mkdir(parents=True)
+        (src / "SKILL.md").write_text("name: sdlc-studio\n", encoding="utf-8")
+        (src / "templates" / "version.yaml").write_text(
+            'skill_version: "%s"\n' % version, encoding="utf-8")
+        (src / "marker.txt").write_text("LOCAL-TREE\n", encoding="utf-8")
+        return src
+
+    def test_from_installs_the_local_tree_without_downloading(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            home = Path(d) / "home"; home.mkdir()
+            src = self._src(Path(d))
+            proc = self._run(home, "--from", str(src), "--no-sweep")
+            self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+            dest = home / ".claude" / "skills" / "sdlc-studio"
+            self.assertEqual((dest / "marker.txt").read_text(encoding="utf-8"), "LOCAL-TREE\n")
+            self.assertNotIn("Downloading", proc.stdout)  # no network path taken
+
+    def test_from_refuses_a_non_skill_dir(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            home = Path(d) / "home"; home.mkdir()
+            junk = Path(d) / "junk"; junk.mkdir()
+            proc = self._run(home, "--from", str(junk), "--no-sweep")
+            self.assertEqual(proc.returncode, 2, proc.stdout + proc.stderr)
+            self.assertFalse((home / ".claude" / "skills" / "sdlc-studio").exists())
+
+    def test_from_still_respects_the_downgrade_guard(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            home = Path(d) / "home"
+            dest = home / ".claude" / "skills" / "sdlc-studio"
+            (dest / "templates").mkdir(parents=True)
+            (dest / "SKILL.md").write_text("name: sdlc-studio\n", encoding="utf-8")
+            (dest / "templates" / "version.yaml").write_text(
+                'skill_version: "9.9.9"\n', encoding="utf-8")
+            src = self._src(Path(d), version="1.0.0")   # older local tree
+            proc = self._run(home, "--from", str(src), "--no-sweep")
+            self.assertIn("refusing to downgrade", proc.stdout + proc.stderr)
+            self.assertEqual((dest / "templates" / "version.yaml").read_text(encoding="utf-8"),
+                             'skill_version: "9.9.9"\n')  # newer install untouched
+
+
 if __name__ == "__main__":
     unittest.main()

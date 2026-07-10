@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 3 |
+| Proposed | 2 |
 | Approved | 0 |
-| In Progress | 2 |
+| In Progress | 3 |
 | Complete | 207 |
 | Rejected | 0 |
 | Deferred | 0 |
@@ -35,7 +35,7 @@
 | [CR-0211](CR0211-retros-and-reviews-become-first-class-artifact-types.md) | retros and reviews become first-class artifact types (tool-allocated ids and index rows) | Complete | Low | Improvement | 2026-07-10 | -- |
 | [CR-0212](CR0212-eval-run-a-deterministic-runner-for-the-two.md) | eval run: a deterministic runner for the two-Claude eval gate | Proposed | Medium | Improvement | 2026-07-10 | -- |
 | [CR-0213](CR0213-one-call-gated-terminal-transition-for-bugs-depth.md) | one-call gated terminal transition for bugs: depth + verdict + status together | In Progress | Low | Improvement | 2026-07-10 | -- |
-| [CR-0214](CR0214-install-sh-local-source-mode-install-the-working.md) | install.sh local-source mode: install the working tree, not the published release | Proposed | Medium | Improvement | 2026-07-10 | -- |
+| [CR-0214](CR0214-install-sh-local-source-mode-install-the-working.md) | install.sh local-source mode: install the working tree, not the published release | In Progress | Medium | Improvement | 2026-07-10 | -- |
 | [CR-0215](CR0215-big-bang-v4-documentation-pass-every-consuming-facing.md) | big-bang v4 documentation pass: every consuming-facing doc tells the v4 story | Proposed | High | Improvement | 2026-07-10 | -- |
 | [CR-0216](CR0216-project-upgrade-must-explicitly-ask-the-operator-before.md) | project upgrade must explicitly ask the operator before switching the id numbering scheme | In Progress | High | Improvement | 2026-07-10 | -- |
 

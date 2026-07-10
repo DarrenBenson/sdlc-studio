@@ -1,6 +1,7 @@
 # CR-0214: install.sh local-source mode: install the working tree, not the published release
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Verification depth:** functional (live e2e in a scratch HOME: --from installs the working tree - session markers present, no download; a non-skill dir refuses rc 2 before any write; the downgrade guard still applies to a local source - all also unit-asserted; docs/INSTALL gains the dev-testing flow; tools suite 124)
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-10

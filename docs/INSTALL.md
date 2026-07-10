@@ -161,3 +161,20 @@ After installing, start your tool in any project and check the skill loads:
   `--local` from inside the project.
 - **Windows piping**: `iex` cannot take arguments; download the script first (see
   [Windows](#windows)).
+
+## Installing unreleased work (dev testing)
+
+`install.sh` normally downloads the published release, so it cannot install work
+that has not shipped yet. To test the working tree (e.g. before a GA tag),
+install it as the source directly:
+
+```bash
+./install.sh --from .claude/skills/sdlc-studio        # from inside the source repo
+```
+
+The same identity and downgrade guards apply: `--from` refuses a directory that
+is not an sdlc-studio skill, and it will not overwrite an install that is NEWER
+than the tree being installed (force with `--allow-downgrade`). Running the
+plain downloader from inside the source repo is safe too - the installer refuses
+to downgrade the repo's own newer working copy - but `--no-sweep` keeps it from
+touching other copies at all.

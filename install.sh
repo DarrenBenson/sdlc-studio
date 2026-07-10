@@ -57,6 +57,10 @@ Options:
                     being installed (default: refuse, so an install from an
                     older published release cannot silently downgrade newer
                     local work - e.g. an unpushed dev checkout)
+    --from DIR      Install from a LOCAL skill directory instead of downloading
+                    the published release - the dev-testing path (e.g.
+                    --from .claude/skills/sdlc-studio inside the source repo).
+                    The same identity and downgrade guards apply
     --version VER   Install a specific version/tag (default: main)
     --help, -h      Show this help
 
@@ -97,6 +101,7 @@ UNINSTALL=false
 LIST_TARGETS=false
 SWEEP=true
 ALLOW_DOWNGRADE=false
+LOCAL_SRC=""
 VERSION="$BRANCH"
 TARGETS_RAW=""
 
@@ -107,6 +112,7 @@ while [[ $# -gt 0 ]]; do
         --dry-run) DRY_RUN=true; shift ;;
         --no-sweep) SWEEP=false; shift ;;
         --allow-downgrade) ALLOW_DOWNGRADE=true; shift ;;
+        --from) LOCAL_SRC="$2"; shift 2 ;;
         --uninstall) UNINSTALL=true; shift ;;
         --list-targets) LIST_TARGETS=true; shift ;;
         --target)
@@ -265,9 +271,21 @@ verify_download() {
     info "Checksum verified (sha256 $actual)"
 }
 
-# Download + extract once; set SRC to the extracted skill directory.
+# Download + extract once; set SRC to the extracted skill directory. With --from,
+# skip the download entirely and install the given LOCAL tree - the dev-testing
+# path (unreleased work cannot be downloaded; the published release may be older).
 prepare_source() {
     local url extracted
+    if [[ -n "$LOCAL_SRC" ]]; then
+        if [[ ! -d "$LOCAL_SRC" ]] || ! is_skill_copy "$LOCAL_SRC"; then
+            error "--from: $LOCAL_SRC is not an sdlc-studio skill directory (no matching SKILL.md)"
+            exit 2
+        fi
+        SRC=$(canon "$LOCAL_SRC")
+        VERSION="local:$(installed_version "$SRC")"
+        info "Installing from local source: $SRC ($VERSION)"
+        return
+    fi
     url="https://github.com/$REPO/archive/refs/heads/$VERSION.tar.gz"
     [[ "$VERSION" != "main" ]] && url="https://github.com/$REPO/archive/refs/tags/$VERSION.tar.gz"
     TMP_DIR=$(mktemp -d)
@@ -318,6 +336,9 @@ swap_install() {
 
 install_to() {
     local parent="$1" src="$2" dest="$1/$SKILL_NAME"
+    if [[ -d "$dest" && "$(canon "$dest")" == "$(canon "$src")" ]]; then
+        info "skipping $dest: it IS the --from source"; return 0
+    fi
     if would_downgrade "$dest" "$(installed_version "$src")"; then
         return 0   # refused: a downgrade of newer local work is a skip, not a failure
     fi
