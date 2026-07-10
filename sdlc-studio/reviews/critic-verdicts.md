@@ -238,3 +238,5 @@
 | BG0106 | APPROVE | Sam Eriksson (QA) | Claude (sprint driver) | 2026-07-10 | seventeen edge cases driven through the extracted comparator: rc->GA proceeds, GA->rc refused, rc numeric ordering, core-wins, BG0100 refusal preserved, branch tokens never-older, build metadata equal-precedence per semver; three red-first tests; tools 135 OK |
 | BG0105 | APPROVE | Sam Eriksson (QA) | Claude (sprint driver) | 2026-07-10 | - |
 | BG0106 | APPROVE | Sam Eriksson (QA) | Claude (sprint driver) | 2026-07-10 | - |
+| BG0107 | APPROVE | Sam Eriksson (QA) | Claude (sprint driver) | 2026-07-10 | one-line workflow diff verified exact; no unittest fallback in the grader (missing module indistinguishable from failing check); local suite 8/8; the 0.5 average confirmed as the same root (mean of two scored questions with Q1 zeroed) |
+| BG0107 | APPROVE | Sam Eriksson (QA) | Claude (sprint driver) | 2026-07-10 | - |

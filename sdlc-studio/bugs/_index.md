@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 0 |
 | In Progress | 0 |
-| Fixed | 27 |
+| Fixed | 28 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **106** |
+| **Total** | **107** |
 
 ## All Bugs
 
@@ -73,6 +73,7 @@
 | [BG0104](BG0104-legacy-verify-lines-rotted-through-renames-and-reached.md) | legacy Verify lines rotted through renames and reached the v4.0.0-rc.1 tag | Fixed | Medium | 2026-07-10 | 2026-07-10 |
 | [BG0105](BG0105-rebaseline-apply-used-a-python-3-13-only.md) | rebaseline_apply used a Python 3.13-only API; CI (3.12) red on both v4 pushes | Fixed | Medium | 2026-07-10 | 2026-07-10 |
 | [BG0106](BG0106-install-downgrade-guard-ranks-a-pre-release-above.md) | install downgrade guard ranks a pre-release above its own release - rc users refused the GA upgrade | Fixed | High | 2026-07-10 | 2026-07-10 |
+| [BG0107](BG0107-ci-lacks-pytest-the-audit-quiz-class-d.md) | CI lacks pytest; the audit-quiz class-D grader fails its first CI exposure | Fixed | Low | 2026-07-10 | 2026-07-10 |
 
 ## Archived Releases
 

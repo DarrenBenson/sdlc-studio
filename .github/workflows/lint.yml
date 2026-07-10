@@ -36,7 +36,9 @@ jobs:
         # CR0207: `npm test` runs the config-driven tests, which fail (not skip) without PyYAML.
         # Install it on the pinned interpreter BEFORE the first Python invocation, so the suite
         # is not validated by accident of the runner image happening to preinstall PyYAML.
-        run: python -m pip install --quiet pyyaml
+        # BG0107: pytest is a genuine dependency of the bench harness's class-D grader
+        # (tools/bench/audit_quiz.py shells `python -m pytest` inside fixture workspaces).
+        run: python -m pip install --quiet pyyaml pytest
 
       - name: Lint (markdown, style, links)
         run: npm run lint

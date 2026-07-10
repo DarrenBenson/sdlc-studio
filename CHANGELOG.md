@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   upgrade; cores now compare via sort -V with pre-release precedence on equal cores.
   Found live when the GA forward-port was refused; seventeen edge cases critic-driven.
 
+- **CI installs pytest for the bench harness's class-D grader (BG0107).** audit_quiz.py
+  shells `python -m pytest` inside fixture workspaces with no fallback; the runner lacked
+  the module, failing the grader's first CI exposure.
+
 v4.1 feature scope is groomed in the Deferred lane (CR0223-0225, CR0229-0231, CR0233).
 
 ## [4.0.0] - 2026-07-10
