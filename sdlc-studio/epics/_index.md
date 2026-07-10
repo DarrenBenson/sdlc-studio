@@ -9,8 +9,8 @@
 | Draft | 0 |
 | Ready | 0 |
 | Approved | 0 |
-| In Progress | 1 |
-| Done | 27 |
+| In Progress | 0 |
+| Done | 28 |
 | **Total** | **28** |
 
 > Generate-mode note: all epics are **Ready** (spec extracted from the existing
@@ -48,4 +48,4 @@
 | [EP0025](EP0025-backlog-clearance-and-status-backlog-tooling.md) | Backlog clearance and status-backlog tooling | Done | -- | -- | 2026-07-09 | 2026-07-09 |
 | [EP0026](EP0026-gate-integrity-the-meta-layer-verifies-itself.md) | Gate integrity: the meta-layer verifies itself | Done | -- | -- | 2026-07-10 | 2026-07-10 |
 | [EP0027](EP0027-reliability-tier-crash-safe-resumable-honest-under-failure.md) | Reliability tier: crash-safe, resumable, honest under failure | Done | -- | -- | 2026-07-10 | 2026-07-10 |
-| [EP0028](EP0028-era-completion-and-dx-v3-identity-everywhere-conventions.md) | Era completion and DX: v3 identity everywhere, conventions consistent | In Progress | -- | -- | 2026-07-10 | 2026-07-10 |
+| [EP0028](EP0028-era-completion-and-dx-v3-identity-everywhere-conventions.md) | Era completion and DX: v3 identity everywhere, conventions consistent | Done | -- | -- | 2026-07-10 | 2026-07-10 |

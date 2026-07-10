@@ -1,4 +1,4 @@
-# LATEST - current project state (v4.0.0-rc.1 prepared; not yet tagged/pushed)
+# LATEST - current project state (v4.0 ready; not yet tagged/pushed)
 
 > The current-state anchor - a WINDOW, not a ledger. **Re-read this and run
 > `/sdlc-studio status` after any context reset or compaction.** Durable guidance lives in
@@ -6,9 +6,8 @@
 > `docs.latest_max_lines` (doc-freshness advisory) by moving past sprints to History lines.
 >
 > **Version:** `4.0.0-rc.1` prepared (the maturity release: schema v3 active + default for new
-> projects) · **Date:** 2026-07-09 ·
-> **Gates:** 1455 + 108 tests pass, `gate` PASS, reconcile drift 0, `npm run lint` green
-> (BG0075 fixed; commit hook now enabled in this clone).
+> projects) · **Date:** 2026-07-10 ·
+> **Gates:** 1562 skill + 117 tools tests pass, `gate` PASS, reconcile drift 0, `npm run lint` green.
 >
 > **rc-tag / push is operator-gated.** The version strings and CHANGELOG are homed at `4.0.0-rc.1`
 > and the pre-v4 dormant/freeze banners are removed, but the actual `git tag v4.0.0-rc.1`, the
@@ -18,33 +17,21 @@
 
 ## Current
 
-- **RV0007 FIX PACK DELIVERED (2026-07-10): all nine rc-blockers Closed - the rc checklist is
-  honestly GREEN again.** One green commit per unit through the (newly enabled) hook; every fix
-  red-first; eval scenarios re-run 4/4 PASS (`v4-eval-run-2026-07-10.md`); closing full-diff
-  critic issued one REJECT (BG0073 resume clobbered `Aliases:` lines - identity loss) which was
-  repaired test-first and re-reproduced by the same critic -> overall APPROVE. See RETRO0017.
-  **The tag decision is now genuinely yours: checklist green including the three new rows.**
-- **RV0007 REPOSITORY REVIEW (2026-07-09): 42 verified findings, 9 rc-blockers (all now fixed
-  above).** Five-leg deep review; filed BG0071-BG0096 (6 High, 20 Medium), CR0202-CR0208, and
-  RFC0027 (world-class roadmap: blocker fix pack -> tag -> gate-integrity epic -> reliability
-  tier -> era completion). Remaining backlog: 17 post-v4 bugs + 7 CRs + RFC0027 (Draft,
-  awaiting your option call). See
-  `RV0007-repository-review-2026-07-09-code-architecture-reliability.md`.
-- **EP0024 + EP0025 DELIVERED - v4.0.0-rc.1 PREPARED (2026-07-09).** v4 release engineering +
-  backlog clearance: 8 units + BG0070 fix, both epics Done; committed to `main` (unpushed). US0105
-  `init` defaults new projects to `schema_version: 3` (existing untouched, override-only reader);
-  US0106 rehearsed the v2->v3 upgrade walk on two real projects (found+fixed BG0070, a per-file
-  `git log --follow` scale defect); US0107 majors-only release-gate section; US0108 version ->
-  `4.0.0-rc.1` + banners removed; US0109 rc-readiness checklist; US0110 `status.py backlog` census;
-  US0111 provenance guard widened; US0112 closed BG0067-0070, archived indexes, `validate` accepts
-  v3 ULID. Closes CR0198/CR0199/CR0201. 1457 tests, gate PASS, drift 0. The closing full-diff critic
-  caught a cross-unit schema-source split (a fresh v3 project shown a v2->v3 walk) - fixed before the
-  rc. See RETRO0016. **rc tag / freeze lift / push are OPERATOR-GATED** (see `v4-rc-readiness.md`):
-  the checklist reads green; the tag decision is yours.
-- **Backlog now: EMPTY.** No non-terminal artefacts across every type. The 9 founding epics
-  (EP0001-0009) that carried a stale `Ready` are all closed to Done - their capabilities ship in
-  v4.0.0-rc.1 (each carries a "founding epic" note; unlinked `US:` breakdown items are early
-  placeholder stubs, complete in the implementation).
+- **RV0007 ROADMAP DELIVERED - THE WHOLE BACKLOG IS CLEAR (2026-07-10).** RFC0027 option C, all
+  three epics Done: **EP0026** gate integrity (10, the meta-layer verifies itself; evals 4/4;
+  caught BG0099), **EP0027** reliability tier (11, crash-safe/resumable/honest-under-failure),
+  **EP0028** era completion + DX (9: BG0086/87/88/93/97/99 make schema-v3 behave end-to-end, plus
+  CR0211 retros/reviews reconciled, CR0210 one CLI grammar, CR0208 a 10-AC quality/docs sweep -
+  fenced-block-safe parsers, cmd_plan/cmd_push decomposed 73/85 -> 10/9). Every unit critic-approved;
+  the CR0208 closing critic traced the decompositions line-by-line; eval 2/2 on the new v4 scenarios
+  (05 schema-v3 identity, 06 independence gate). See RETRO0018.
+- **Backlog now: EMPTY.** No non-terminal artefacts across every type - this is the precondition the
+  operator set for the v4.0 tag. RFC0027 accepted (option C); the 9 founding epics (EP0001-0009) that
+  carried a stale `Ready` remain closed to Done. **The tag / freeze lift / push to consuming projects
+  stay an explicit operator action** (see `v4-rc-readiness.md`); `main` runs ahead of `origin`.
+- **RV0007 (2026-07-09):** five-leg repository review, 42 verified findings -> BG0071-BG0099,
+  CR0202-CR0211, RFC0027. Preceded by the nine-rc-blocker fix pack (RETRO0017) and EP0024/EP0025
+  v4 release engineering (RETRO0016). All now delivered.
 - **Deferred follow-ups (open ideas, unfiled):** a `reconcile detect --era` lens + per-artifact
   re-review markers + per-capability watermarks (CR0197 open decisions); a path-aware tightening of
   the spec-guard basename match; the 6 legacy-epic stale-`Ready` hygiene pass above.
