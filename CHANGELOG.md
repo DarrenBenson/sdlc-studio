@@ -51,7 +51,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   runs the unit suites when `templates/` is staged too (not only `scripts/`/`tools/`), since
   several tests assert over the shipped templates. Git-invoking tests share a new `gitutil` helper
   that neutralises the host git config (`GIT_CONFIG_GLOBAL`/`SYSTEM` -> /dev/null), so a
-  developer's `commit.gpgsign` no longer makes the suite fail or hang.
+  developer's `commit.gpgsign` no longer makes the suite fail or hang. The provenance-tag style
+  guard now also covers `scripts/lib/*.py` and every `templates/**/*.md` (the seat cards and
+  index templates ship too); the live leaks it had missed (a dozen `(CRxxxx)`/`(RFCxxxx)` tags in
+  `lib/sdlc_md.py`, four in the amigo cards) are stripped. Private names used across modules are
+  now public: `reconcile.DEFAULT_TYPES`, `reconcile.index_row_ids`, and `sdlc_md.b32` (callers no
+  longer reach into a `_`-prefixed name).
 - **One CLI argument grammar across the script family (EP0028, CR0210).** The scripts disagreed
   on how ids and targets were passed - `audit check` took `--ids` comma-separated, `transition
   set` forced exactly one of `--id`/`--ids`, `artifact revision` required `--ids`, `ledger

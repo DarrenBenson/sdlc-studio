@@ -29,7 +29,7 @@ H1_RE = re.compile(r"^#\s+(.+)$", re.M)
 # dash (CR-0001); the others do not (US0001). The optional dash matches both.
 # Case-insensitive: some repos name files lowercase (`cr0001.md`) while indexes
 # use uppercase (`CR-0001`) — both must parse to the same ID.
-# Two id eras coexist (RFC0024 / schema v3): the v2 sequential form (`US0001`, `CR-0007`)
+# Two id eras coexist (schema v3): the v2 sequential form (`US0001`, `CR-0007`)
 # and the v3 form (`BG-01JQK3F8`) - a type prefix, a dash, then a Crockford-base32 short ULID
 # (>= 8 chars, extended on a rare directory clash). The base32 alternative is matched
 # case-SENSITIVELY (`(?-i:...)`) so it stops at the lowercase `-slug`, never swallowing it.
@@ -195,14 +195,14 @@ def iter_tables(text: str, header_predicate=None):
 def join_row(cells: list[str]) -> str:
     """Render a table row, re-escaping any literal pipe in a cell so a value that contains
     `|` round-trips through `table_cells` without shifting columns. The single row writer
-    every index builder shares (CR0057)."""
+    every index builder shares."""
     return "| " + " | ".join(c.replace("|", "\\|") for c in cells) + " |"
 
 
 def find_data_header(lines: list[str]) -> tuple[int, list[str]] | None:
     """The last index DATA-table header (the row carrying an `ID` column) as (line, cells),
     or None. Locates the data table so a new row never lands in the Summary table. Shared by
-    `artifact new` and the finding filer (CR0057)."""
+    `artifact new` and the finding filer."""
     found = None
     for i, ln in enumerate(lines):
         cells = table_cells(ln)
@@ -213,7 +213,7 @@ def find_data_header(lines: list[str]) -> tuple[int, list[str]] | None:
 
 def row_from_header(header: list[str], link: str, title: str, status: str, f: dict) -> str:
     """Build an index data row matching the index's own columns - generic across every type,
-    so both create paths emit identical rows (CR0057). `f` supplies priority/type/severity/
+    so both create paths emit identical rows. `f` supplies priority/type/severity/
     author/epic/date; unknown columns get `--`."""
     field_for = {"priority": ("priority", "Medium"), "type": ("ctype", "Feature"),
                  "epic": ("epic", "--"), "severity": ("severity", "--"), "author": ("author", "--")}
@@ -352,7 +352,7 @@ STATUS_VOCAB: dict[str, list[str]] = {
 
 # Absorbing (terminal) statuses per type: a unit at one of these is a closed
 # outcome whose index row carries no live signal and is a candidate for archival
-# (CR0125). Derived from STATUS_VOCAB, not hardcoded at call sites. States that can
+# Derived from STATUS_VOCAB, not hardcoded at call sites. States that can
 # still re-activate - Blocked, Deferred, Paused, Planned - are deliberately NOT
 # terminal. Every value here must be a member of the type's STATUS_VOCAB.
 TERMINAL_STATUS: dict[str, set[str]] = {
@@ -457,7 +457,7 @@ def status_vocab(type_: str, repo_root=None) -> list[str]:
 
 
 # Remediation hints: per check, a one-line "how to fix" for each finding-kind, so a
-# check tells the operator what to do, not just what is wrong (CR0025). One source
+# check tells the operator what to do, not just what is wrong. One source
 # reused by every check's text output.
 REMEDIATION: dict[str, dict[str, str]] = {
     "conformance": {
@@ -592,7 +592,7 @@ def id_number(record_id: str) -> int | None:
 _CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"  # Crockford base32 (no I, L, O, U)
 
 
-def _b32(value: int, length: int) -> str:
+def b32(value: int, length: int) -> str:
     """Encode the low bits of `value` as `length` Crockford-base32 chars, most-significant first."""
     out = []
     for _ in range(length):
@@ -614,7 +614,7 @@ def is_v3_id(record_id: str) -> bool:
 def atomic_write(path, text: str, encoding: str = "utf-8") -> None:
     """Write `text` to `path` atomically: a same-directory temp file then `os.replace`, so a
     crash mid-write leaves the previous file intact rather than a truncated one, and a reader
-    never sees a half-written index. The temp is cleaned up on any failure (CR0183)."""
+    never sees a half-written index. The temp is cleaned up on any failure."""
     import os
     import tempfile
     p = Path(path)
@@ -647,7 +647,7 @@ def allocation_lock(repo_root, timeout: float = 10.0):
     not mint the same sequential id or clobber a shared index. Best-effort: a no-op where
     `flock` is unavailable (Windows), and it proceeds rather than hang if the lock cannot be
     taken within `timeout` (a stale lock must never wedge an agent wave). v3 ULID allocation
-    is already collision-free, so this most matters for the v2 sequential path (CR0183)."""
+    is already collision-free, so this most matters for the v2 sequential path."""
     import time
     lockdir = Path(repo_root) / "sdlc-studio" / ".local"
     try:
@@ -748,7 +748,7 @@ def resolve_author(name: str, atype: str, repo_root) -> bool:
 def alias_map(repo_root) -> dict[str, str]:
     """Map every artefact alias (normalised) -> its current canonical id, read from the
     `> **Aliases:** OLD1, OLD2` metadata line. Lets a reader resolve a pre-migration id to the
-    current ULID after a v2 -> v3 migration (RFC0024). Empty when nothing has been migrated."""
+    current ULID after a v2 -> v3 migration. Empty when nothing has been migrated."""
     out: dict[str, str] = {}
     root = Path(repo_root)
     for type_ in ARTIFACT_TYPES:
@@ -807,11 +807,11 @@ def story_epic(source) -> str | None:
 def new_ulid() -> str:
     """A 26-char Crockford-base32 ULID: a 48-bit millisecond timestamp (lexicographically
     sortable = creation order) followed by 80 bits of randomness. Collision-free across
-    concurrent writers without coordination (RFC0024)."""
+    concurrent writers without coordination."""
     import os
     import time
     ms = int(time.time() * 1000) & ((1 << 48) - 1)
-    return _b32(ms, 10) + _b32(int.from_bytes(os.urandom(10), "big"), 16)
+    return b32(ms, 10) + b32(int.from_bytes(os.urandom(10), "big"), 16)
 
 
 def short_ulid() -> str:
@@ -870,7 +870,7 @@ def affects_files(text: str) -> list[str]:
     """File paths a unit declares it will touch (its `Affects` field).
 
     Shared by the sprint planner (WSJF complexity seed) and the routing estimator
-    (RFC0026) - one parser, one behaviour. Tolerates trailing parentheticals and
+    One parser, one behaviour. Tolerates trailing parentheticals and
     backtick-wrapped paths; a token counts as a path when it contains a `/` or a
     known source/doc extension."""
     val = extract_field(text, "Affects") or ""
@@ -899,7 +899,7 @@ _AC_CHECKBOX_RE = re.compile(r"^\s*- \[[ xX]\] ")
 def count_acs(text: str) -> int:
     """Checkable AC items inside the Acceptance Criteria section (checkbox lines,
     `### ACn` headings, or `**ACn**` bullets). The same recognition set audit.py's
-    weak-AC check uses - shared so the routing estimator (RFC0026) and the tranche
+    weak-AC check uses - shared so the routing estimator and the tranche
     audit count the same things."""
     count = 0
     in_ac = False

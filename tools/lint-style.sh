@@ -49,7 +49,8 @@ fi
 #    (CRxxxx / BGxxxx / RFCxxxx) in parenthetical form is traceability that belongs in the skill's
 #    own change-requests/, CHANGELOG, and git blame - not in files a consuming agent reads against
 #    its OWN project, whose id namespace collides. The skill's artifacts keep their ids; this guards
-#    only reference-*.md, help/*.md, and scripts/*.py. Two provenance forms are flagged: a
+#    reference-*.md, help/*.md, scripts/*.py, scripts/lib/*.py, and every templates/**/*.md (the
+#    seat cards and index templates ship too). Two provenance forms are flagged: a
 #    CR/BG/RFC id leading a parenthetical (`(CR0186)`), and a US-led provenance PAIR joined by
 #    `/` or `;` (`(US0101/CR0186)`, `(US0090/CR0194)`) - the form the old pattern missed. US-form
 #    is admitted only in the joined-pair shape because a lone `(US0001)` and comma/hyphen lists
@@ -57,7 +58,10 @@ fi
 #    sample output, indistinguishable from a citation. A bare id or one trailing narrative text
 #    (`(e.g. CR0003)`, `(see CR0141)`) is likewise not flagged.
 skill="$scan_root/.claude/skills/sdlc-studio"
-prov_hits="$(grep -InE '\((CR|BG|RFC)[0-9]{4}|\(US[0-9]{4}[/;]' "$skill"/reference-*.md "$skill"/help/*.md "$skill"/scripts/*.py "$skill"/templates/config*.yaml 2>/dev/null || true)"
+# templates/ nests (core/, indexes/, personas/amigos/, ...), so gather its markdown with find
+# rather than a single-level glob; skill filenames carry no spaces, so word-splitting is safe.
+tmpl_md="$(find "$skill/templates" -name '*.md' 2>/dev/null || true)"
+prov_hits="$(grep -InE '\((CR|BG|RFC)[0-9]{4}|\(US[0-9]{4}[/;]' "$skill"/reference-*.md "$skill"/help/*.md "$skill"/scripts/*.py "$skill"/scripts/lib/*.py "$skill"/templates/config*.yaml $tmpl_md 2>/dev/null || true)"
 if [ -n "$prov_hits" ]; then
   echo "Style error: internal provenance tag in a consuming-facing file. Strip it - traceability lives in change-requests/CHANGELOG/git, not in docs a consuming project reads."
   printf '%s\n' "$prov_hits"

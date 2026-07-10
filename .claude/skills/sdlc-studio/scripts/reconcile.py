@@ -40,7 +40,7 @@ SCOPE_TYPES = {
     "indexes": ["story", "epic", "cr", "rfc", "plan", "test-spec", "bug", "workflow"],
     "meta": [],  # retros/ + reviews/ are checked by meta_index_drift, not the pipeline detectors
 }
-_DEFAULT_TYPES = ["story", "epic", "cr", "rfc", "plan", "test-spec", "bug", "workflow"]
+DEFAULT_TYPES = ["story", "epic", "cr", "rfc", "plan", "test-spec", "bug", "workflow"]
 
 # Statuses that do NOT imply a backing file yet. An index row in one of these
 # states (or a non-vocabulary state such as a custom "Retired"/"Reserved") with
@@ -194,7 +194,7 @@ def _degenerate_status_parse(index: dict) -> str | None:
             f"conventions.status_column, or add a Status column")
 
 
-def _index_row_ids(text: str) -> list[str]:
+def index_row_ids(text: str) -> list[str]:
     """Every data-row normalised id in one index file, in order, duplicates kept.
 
     Mirrors `_index_rows_and_summary`'s header-pinned id location, but returns the raw
@@ -518,7 +518,7 @@ def detect_type(type_: str, repo_root: Path) -> dict:
 # data table by its Status header and rewrites status cells - cannot own them. This lane
 # checks row PRESENCE only: every numbered RETRO/RV file has an index row and every row a
 # backing file. It keys on the meta id namespace (RETRO/RV), which the pipeline id regexes
-# deliberately exclude, so it needs its own extractor rather than `_index_row_ids`.
+# deliberately exclude, so it needs its own extractor rather than `index_row_ids`.
 # -----------------------------------------------------------------------------
 _META_INDEX = {  # mirrors next_id.META_TYPES; kept local to avoid a reconcile->next_id import
     "retro": ("sdlc-studio/retros", "RETRO"),
@@ -657,7 +657,7 @@ def apply_meta(repo_root: Path | str, dry_run: bool = False) -> dict:
 def cmd_detect(args: argparse.Namespace) -> int:
     """Run drift detection across the selected scope and report."""
     repo_root = Path(args.root).resolve()
-    types = SCOPE_TYPES.get(args.scope, _DEFAULT_TYPES) if args.scope else _DEFAULT_TYPES
+    types = SCOPE_TYPES.get(args.scope, DEFAULT_TYPES) if args.scope else DEFAULT_TYPES
 
     per_type: dict[str, dict] = {}
     all_drift: list[dict] = []
@@ -1175,7 +1175,7 @@ def index_derived_issues(repo_root: Path | str, types=None) -> list[str]:
     only; a caller (the `index-derived` gate check) turns a non-empty result into a failure."""
     root = Path(repo_root)
     out: list[str] = []
-    for t in (types or _DEFAULT_TYPES):
+    for t in (types or DEFAULT_TYPES):
         res = apply_type(t, root, dry_run=True)
         if res.get("refused"):
             out.append(f"{t}: index structurally broken - {res['refused']}")
@@ -1280,7 +1280,7 @@ def cmd_apply(args: argparse.Namespace) -> int:
     """Apply mechanical index fixes (status cells + summary counts); --dry-run reports only.
     `--format json` emits the per-type result structures for a programmatic caller."""
     repo_root = Path(args.root).resolve()
-    types = SCOPE_TYPES.get(args.scope, _DEFAULT_TYPES) if args.scope else _DEFAULT_TYPES
+    types = SCOPE_TYPES.get(args.scope, DEFAULT_TYPES) if args.scope else DEFAULT_TYPES
     n = 0
     unapplied = 0
     do_meta = args.scope in (None, "meta")
@@ -1468,7 +1468,7 @@ def cmd_archive(args: argparse.Namespace) -> int:
     """Relocate terminal index rows to per-type archive sub-indexes; --dry-run reports only."""
     repo_root = Path(args.root).resolve()
     types = [args.type] if args.type else (
-        SCOPE_TYPES.get(args.scope, _DEFAULT_TYPES) if args.scope else _DEFAULT_TYPES)
+        SCOPE_TYPES.get(args.scope, DEFAULT_TYPES) if args.scope else DEFAULT_TYPES)
     results = []
     try:
         for type_ in types:

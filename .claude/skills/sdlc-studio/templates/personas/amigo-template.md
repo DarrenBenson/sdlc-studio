@@ -1,5 +1,5 @@
 <!--
-Template: Enriched seat card (the "amigo" schema) - the single seat schema (RFC0021 D3)
+Template: Enriched seat card (the "amigo" schema) - the single seat schema
 Usage: Copy and customise for a review seat. This one schema covers both shapes of seat:
   - a BUILD-CAPABLE seat (a "Three Amigos" Engineering / QA / Product seat) that both DOES the
     work and REVIEWS it - fill every section, including the work-render ones; and

@@ -35,7 +35,7 @@ def _reconcile(root: str) -> dict:
     import reconcile
     rr = Path(root).resolve()
     # detect_type returns a dict; the drift items live under "drift" (not len(dict)).
-    total = sum(len(reconcile.detect_type(t, rr)["drift"]) for t in reconcile._DEFAULT_TYPES)
+    total = sum(len(reconcile.detect_type(t, rr)["drift"]) for t in reconcile.DEFAULT_TYPES)
     return {"count": total, "blocking": True, "detail": f"{total} drift item(s)"}
 
 

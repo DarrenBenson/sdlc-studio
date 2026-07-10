@@ -1,5 +1,5 @@
 <!--
-Default Engineering amigo (RFC0020). A specific, skilled seat that both builds and reviews
+Default Engineering amigo. A specific, skilled seat that both builds and reviews
 (separate instances). Customise or replace per project; a richer project-authored practitioner
 persona overrides this default. See amigo-template.md.
 -->

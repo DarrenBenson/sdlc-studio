@@ -93,7 +93,7 @@ def index_row_ids(type_: str, repo_root: Path) -> list[int]:
     for src in sources:
         if not src.exists():
             continue
-        ids.extend(num for norm in reconcile._index_row_ids(src.read_text(encoding="utf-8"))
+        ids.extend(num for norm in reconcile.index_row_ids(src.read_text(encoding="utf-8"))
                    if (num := sdlc_md.id_number(norm)) is not None)
     return sorted(set(ids))
 

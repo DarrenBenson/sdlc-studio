@@ -79,6 +79,28 @@ class ProvenanceGuardTests(unittest.TestCase):
             r = _run(_prov_fixture(Path(d), "# see (CR0186) for context\n"))
             self.assertEqual(r.returncode, 1, r.stdout)
 
+    def test_flags_tag_in_scripts_lib(self) -> None:
+        # CR0208: the guard now covers scripts/lib/*.py, not only scripts/*.py
+        with tempfile.TemporaryDirectory() as d:
+            root = _prov_fixture(Path(d), "# clean\n")
+            lib = root / ".claude" / "skills" / "sdlc-studio" / "scripts" / "lib"
+            lib.mkdir()
+            (lib / "y.py").write_text("# owned by (CR0186)\n", encoding="utf-8")
+            r = _run(root)
+            self.assertEqual(r.returncode, 1, r.stdout)
+            self.assertIn("provenance tag", r.stdout)
+
+    def test_flags_tag_in_nested_template(self) -> None:
+        # CR0208: the guard now covers every templates/**/*.md (seat cards, index templates)
+        with tempfile.TemporaryDirectory() as d:
+            root = _prov_fixture(Path(d), "# clean\n")
+            tmpl = root / ".claude" / "skills" / "sdlc-studio" / "templates" / "personas" / "amigos"
+            tmpl.mkdir(parents=True)
+            (tmpl / "qa.md").write_text("Default QA amigo (RFC0020).\n", encoding="utf-8")
+            r = _run(root)
+            self.assertEqual(r.returncode, 1, r.stdout)
+            self.assertIn("provenance tag", r.stdout)
+
     def test_does_not_flag_example_ids(self) -> None:
         # comma/hyphen lists, a lone id, and ids trailing narrative text are legitimate examples
         clean = (

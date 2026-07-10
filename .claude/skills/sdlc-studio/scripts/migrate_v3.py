@@ -102,8 +102,8 @@ def build_id_map(repo_root: Path | str) -> dict[str, dict]:
         # low bits, so ids are unique AND keep date order without depending on wall-clock now.
         # The counter width scales with the entry count: a fixed 2-char (10-bit) counter wrapped
         # at 1024 files and silently overwrote via rename - a fail-loud uniqueness check backs it.
-        ts = sdlc_md._b32(ms & ((1 << 48) - 1), 10)
-        suffix = ts[:6] + sdlc_md._b32(i, cw)
+        ts = sdlc_md.b32(ms & ((1 << 48) - 1), 10)
+        suffix = ts[:6] + sdlc_md.b32(i, cw)
         new_id = f"{prefix}-{suffix}"
         if new_id in minted:
             raise RuntimeError(f"migrate_v3: id collision minting {new_id} for {rec} - refusing "
@@ -245,7 +245,7 @@ def migrate(repo_root: Path | str, dry_run: bool = True) -> dict:
         e["old_path"].write_text(text, encoding="utf-8")
         e["old_path"].rename(e["new_path"])
     # 3. Regenerate index counts from the migrated census.
-    for type_ in reconcile._DEFAULT_TYPES:
+    for type_ in reconcile.DEFAULT_TYPES:
         reconcile.apply_type(type_, root)
     # 4. Flip the era: new artefacts must mint ULIDs from the very next filing.
     _stamp_schema_v3(root)

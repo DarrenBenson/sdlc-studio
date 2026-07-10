@@ -68,7 +68,7 @@ def _r_status_in_vocab(root: Path) -> list[str]:
 
 def _r_no_index_drift(root: Path) -> list[str]:
     out: list[str] = []
-    for scope in reconcile._DEFAULT_TYPES:
+    for scope in reconcile.DEFAULT_TYPES:
         for d in reconcile.detect_type(scope, root)["drift"]:
             out.append(f"{scope}: {d['kind']} {d.get('id') or ''}".strip())
     return out

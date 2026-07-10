@@ -1,5 +1,5 @@
 <!--
-Default Product amigo (RFC0020). A specific, skilled seat that authors stories (NOT the PRD it is
+Default Product amigo. A specific, skilled seat that authors stories (NOT the PRD it is
 accountable for) and reviews. Customise or replace per project. See amigo-template.md.
 -->
 <!-- role: product -->

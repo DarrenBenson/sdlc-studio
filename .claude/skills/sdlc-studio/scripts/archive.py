@@ -81,7 +81,7 @@ def archive(repo_root: Path | str, type_: str, release: str,
         # Dedupe against ids already archived: a crash between this write and the live-index
         # trim (step 2) leaves the rows in BOTH files, so a re-run would append them twice
         # (permanent, unflagged - detect_duplicate_rows scans only the live index). Idempotent.
-        seen = {sdlc_md.norm_id(rid) for rid in reconcile._index_row_ids(atext)}
+        seen = {sdlc_md.norm_id(rid) for rid in reconcile.index_row_ids(atext)}
         fresh = [ln for ln, rid in zip(moved_lines, ids)
                  if sdlc_md.norm_id(rid) not in seen]
         if fresh:

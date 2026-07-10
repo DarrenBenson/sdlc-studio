@@ -152,7 +152,7 @@ class GateRealWrapperTests(unittest.TestCase):
             count = gate._reconcile(str(REPO))["count"]
         finally:
             reconcile.detect_type = orig
-        self.assertEqual(count, 2 * len(reconcile._DEFAULT_TYPES))  # 2 drift/type, not 6 keys
+        self.assertEqual(count, 2 * len(reconcile.DEFAULT_TYPES))  # 2 drift/type, not 6 keys
 
 
     def test_duplicate_index_row_fails_gate(self) -> None:
