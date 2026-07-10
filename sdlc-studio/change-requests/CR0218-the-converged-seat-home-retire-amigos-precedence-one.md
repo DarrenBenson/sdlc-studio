@@ -1,6 +1,7 @@
 # CR-0218: the converged seat home: retire amigos/ precedence, one layout, upgrade offers generation first
 
-> **Status:** In Progress
+> **Status:** Complete
+> **Verification depth:** functional (red-then-green on both late-found defects: role-collision skip incl. post-apply resolution assertion, CLI decline gate driven through main(); critic re-ran both repros live plus a two-legacy-cards-one-role probe; 1632 suite green)
 > **Verification depth:** functional (red-then-green: a declared-role seat now beats the legacy amigos file - the old order was proven inverted by a red test; legacy fallback warns with the migration path; --apply migrates amigos/->seats/ mechanically ensuring role comments, never overwriting an existing seat filename (skip+report), removes the emptied dir, idempotent; defaults are opt-in via --with-default-amigos into seats/; the report carries the team-offer entry naming persona generate --team; seats/ + stakeholders/ excluded from the layout advisory; Output Format matches real write paths; suite 1591)
 > **Priority:** High
 > **Type:** Improvement
@@ -13,9 +14,9 @@ RFC0028/RFC0021 D2: prerequisite of team generation (Dani, blocking). `persona_r
 
 ## Acceptance Criteria
 
-- [ ] `persona_resolve` resolves seats/ as the primary project home; a role-claiming personas/amigos/ card is detected and migrated/retired with an explicit report (never silently shadowed), including under --dry-run
-- [ ] project upgrade offers team generation before the default-amigo install and suppresses the install when the offer is taken; declining installs defaults as today
-- [ ] `check_personas` validates the seats/ and stakeholders/ layout without emitting the persona-layout warning for the generator's canonical output; reference-persona-generate Output Format matches the real write paths
+- [x] `persona_resolve` resolves seats/ as the primary project home; a role-claiming personas/amigos/ card is detected and migrated/retired with an explicit report (never silently shadowed), including under --dry-run
+- [x] project upgrade offers team generation before the default-amigo install and suppresses the install when the offer is taken; declining installs defaults as today
+- [x] `check_personas` validates the seats/ and stakeholders/ layout without emitting the persona-layout warning for the generator's canonical output; reference-persona-generate Output Format matches the real write paths
 
 ## Revision History
 

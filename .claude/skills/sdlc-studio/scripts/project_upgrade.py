@@ -368,20 +368,38 @@ def apply(root: Path | str, with_reconcile: bool = False, today: str | None = No
     # default-named cards), an existing seats/ filename is never overwritten (skip + report),
     # and the emptied amigos/ dir is removed. Idempotent.
     adir = sd / "personas" / "amigos"
-    migrated, skipped = [], []
+    migrated, skipped, role_skipped = [], [], []
     if adir.is_dir():
         sdir = sd / "personas" / "seats"
+        # roles already claimed by seats/ cards - a legacy card claiming one of these
+        # must never migrate into a duplicate-role collision (the lexical tiebreak
+        # could flip resolution away from the authored seat: the shadowing this
+        # migration exists to kill)
+        claimed = set()
+        if sdir.is_dir():
+            for seat in sdir.glob("*.md"):
+                m = _ROLE_RE.search(seat.read_text(encoding="utf-8"))
+                if m:
+                    claimed.add(m.group(1).lower())
         for card in sorted(adir.glob("*.md")):
             target = sdir / card.name
             if target.exists():
                 skipped.append(card.name)
                 continue
             text = card.read_text(encoding="utf-8")
-            if not _ROLE_RE.search(text):
+            m = _ROLE_RE.search(text)
+            role = (m.group(1).lower() if m else card.stem.lower())
+            if role in claimed:
+                role_skipped.append(f"{card.name} (role {role})")
+                continue
+            if not m:
+                # role synthesised from the filename stem; a non-role name lands
+                # outside the allowed set and validate seats flags it loudly
                 text = f"<!-- role: {card.stem} -->\n" + text
             sdir.mkdir(parents=True, exist_ok=True)
             target.write_text(text, encoding="utf-8")
             card.unlink()
+            claimed.add(role)
             migrated.append(card.name)
         if migrated:
             actions.append(f"migrated {len(migrated)} card(s) from the retired personas/amigos/ "
@@ -389,6 +407,10 @@ def apply(root: Path | str, with_reconcile: bool = False, today: str | None = No
         if skipped:
             actions.append(f"SKIPPED migrating {', '.join(skipped)}: personas/seats/ already has "
                            f"that filename - reconcile the pair by hand")
+        if role_skipped:
+            actions.append(f"SKIPPED migrating {', '.join(role_skipped)}: a personas/seats/ card "
+                           f"already claims that role - retire the legacy card or reconcile the "
+                           f"pair by hand (never migrated into a role collision)")
         if not any(adir.iterdir()):
             adir.rmdir()
     # The default cards are OPT-IN now - the offer to generate a project-native team
@@ -656,7 +678,9 @@ def cmd_upgrade(args: argparse.Namespace) -> int:
     a = audit(root)
     has_work = d["behind"] or bool(a["auto"]) or bool(a["manual"])
     applied: list[str] = []
-    if args.apply and (d["behind"] or a["auto"]):  # apply whenever there is safe work, even if "current"
+    # apply whenever there is safe work, even if "current"; --with-default-amigos is
+    # itself requested work (the documented decline path must never be a silent no-op)
+    if args.apply and (d["behind"] or a["auto"] or args.with_default_amigos):
         applied = apply(root, with_reconcile=args.with_reconcile,
                         with_default_amigos=args.with_default_amigos)
     if args.apply and sdlc_md.is_schema_v3(root):   # mechanical re-baseline backfill (schema v3)

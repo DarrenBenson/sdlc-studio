@@ -292,6 +292,47 @@ class AmigoDefaultsTests(unittest.TestCase):
             self.assertTrue((adir / "qa.md").exists())          # legacy left for hand-merge
             self.assertTrue(any("SKIPPED" in a for a in actions))
 
+    def test_migration_never_creates_a_role_collision(self):
+        # Sam's CR0218 defect: a legacy card whose declared role is already claimed by
+        # a DIFFERENTLY-NAMED seats/ card must be skipped, not migrated into a
+        # duplicate-role collision that can flip resolution away from the authored seat.
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d)
+            adir = sd / "personas" / "amigos"; adir.mkdir(parents=True, exist_ok=True)
+            sdir = sd / "personas" / "seats"; sdir.mkdir(parents=True, exist_ok=True)
+            (adir / "qa.md").write_text("<!-- role: qa -->\n# Legacy QA amigo\n",
+                                        encoding="utf-8")
+            authored = "<!-- role: qa -->\n# Sara - authored QA seat\n"
+            (sdir / "sara.md").write_text(authored, encoding="utf-8")
+            actions = pu.apply(d)
+            self.assertFalse((sdir / "qa.md").exists())          # never migrated into collision
+            self.assertTrue((adir / "qa.md").exists())           # left for the operator
+            self.assertTrue(any("role" in a and ("SKIPPED" in a or "retire" in a.lower())
+                                for a in actions), actions)
+            # resolution still returns the authored seat
+            import importlib.util, sys as _sys
+            spec = importlib.util.spec_from_file_location(
+                "persona_resolve", SCR / "persona_resolve.py")
+            pr = importlib.util.module_from_spec(spec); _sys.modules["persona_resolve"] = pr
+            spec.loader.exec_module(pr)
+            card = pr.resolve_card(Path(d), "qa")
+            self.assertIn("Sara", Path(card).read_text(encoding="utf-8"))
+
+    def test_with_default_amigos_installs_even_when_nothing_else_to_apply(self):
+        # Sam's CR0218 defect 2: the documented decline command must not be a no-op on a
+        # current project. The defect lives in the CLI apply gate, so drive main():
+        # after a first --apply the project is current, and the exact command the
+        # report recommends must still install the uncovered defaults.
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d)
+            with contextlib.redirect_stdout(io.StringIO()):
+                pu.main(["--root", d, "--apply"])                  # project now current
+            with contextlib.redirect_stdout(io.StringIO()):
+                pu.main(["--root", d, "--apply", "--with-default-amigos"])
+            self.assertTrue(any((sd / "personas" / "seats").glob("*.md")),
+                            "the documented decline command installed nothing")
+
     def test_apply_idempotent_for_amigos(self):
         with tempfile.TemporaryDirectory() as d:
             _project(d)

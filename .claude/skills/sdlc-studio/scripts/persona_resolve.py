@@ -120,9 +120,10 @@ def _has_review_render(path: Path) -> bool:
 
 def resolve_card(root: Path | str, seat: str, skip_personas: bool = False,
                  render: str = "build") -> Path | None:
-    """The most-specific amigo card for a seat, most-specific-first: explicit amigo override,
-    else a role-matched review seat, else the skill default, else None (generic).
-    `skip_personas` short-circuits to None.
+    """The most-specific card for a seat, seats-first: a role-matched personas/seats/
+    card is THE project home and always wins; a legacy personas/amigos/ card resolves
+    only as a warned fallback when no seat claims the role; else the skill default,
+    else None (generic). `skip_personas` short-circuits to None.
 
     For `render="review"`, a resolved PROJECT seat card that lacks its review-render sections is a
     HARD ERROR (RenderError) - never a silent fallback to the generic default. The

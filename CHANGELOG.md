@@ -108,6 +108,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The amigos-to-seats migration can no longer create a role collision, and the documented
+  default-install decline command is no longer a silent no-op (found by the late critic
+  ceremony on CR0218).** A legacy card whose role is already claimed by a seats/ card is now
+  skipped with a loud retire-or-reconcile report instead of being migrated into a duplicate
+  whose lexical tiebreak could flip resolution away from the authored seat; and
+  `--apply --with-default-amigos` now counts as requested work in the CLI apply gate, so the
+  command the upgrade report itself recommends actually installs on a current project.
+
 - **verify_ac lint no longer crashes over a stories directory (BG0103, found by a
   benchmark delivery agent dogfooding the v4 RC).** The lint subcommand referenced an
   undefined `repo_root` whenever `--story` was absent; it now takes its own `--root`
