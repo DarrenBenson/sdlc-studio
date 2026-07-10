@@ -38,6 +38,14 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Portable artefact gate (same gate the pre-commit hook runs)
+        run: |
+          # BG0096: the hook and CONTRIBUTING claimed CI re-runs this gate; now it does.
+          # PyYAML first: the repo pins schema/config in .config.yaml and the gate's
+          # config-driven lanes must fail loud, not degrade, in CI.
+          python -m pip install --quiet pyyaml
+          python3 .claude/skills/sdlc-studio/scripts/gate.py --root .
+
       - name: Coverage gate (runtime scripts, >= 80%)
         run: |
           # PyYAML is required: the config-driven tests (provenance/validate adopt_after cutoff,

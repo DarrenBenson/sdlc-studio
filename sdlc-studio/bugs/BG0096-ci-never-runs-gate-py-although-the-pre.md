@@ -1,9 +1,10 @@
 # BG0096: CI never runs gate.py although the pre-commit hook and CONTRIBUTING claim parity
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file
+> **Verification depth:** functional (workflow YAML validated, action pins guard green, the exact gate command exercised locally: PASS; CI execution itself pends the first post-freeze push - noted as residual)
 
 ## Summary
 

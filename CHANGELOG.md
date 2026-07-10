@@ -232,6 +232,12 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
 
 ### Fixed
 
+- **CI now runs the portable artefact gate, making the claimed hook/CI parity real (EP0026;
+  BG0096).** `.githooks/pre-commit` and CONTRIBUTING both said "the same gate CI runs" while the
+  Lint workflow ran only lint/tests/coverage/bandit - artefact drift, conformance or integrity
+  breakage could reach a green CI. The workflow gains a `gate.py --root .` step (after
+  setup-python, PyYAML installed so config-driven lanes fail loud); the two doc claims are now
+  true as written.
 - **A crashing blocking check now fails the gate (EP0026; BG0090).** A check that raised a
   non-config exception was recorded `blocking: False` and excluded from the PASS calculation,
   so a buggy or crashed blocking lane (validate, reconcile, conformance...) silently converted
