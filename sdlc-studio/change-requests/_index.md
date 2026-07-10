@@ -11,10 +11,10 @@
 | In Progress | 1 |
 | Complete | 219 |
 | Rejected | 0 |
-| Deferred | 5 |
+| Deferred | 6 |
 | Superseded | 4 |
 | Blocked | 0 |
-| **Total** | **230** |
+| **Total** | **231** |
 
 ## All Changes
 
@@ -52,6 +52,7 @@
 | [CR-0228](CR0228-rerun-the-benchmark-suite-on-the-v4-release.md) | rerun the benchmark suite on the v4 release candidate | Complete | High | Improvement | 2026-07-10 | -- |
 | [CR-0229](CR0229-engagement-floor-mandatory-planning-when-the-change-is.md) | engagement floor: mandatory planning when the change is multi-file in a spec-bearing repo | Deferred | High | Improvement | 2026-07-10 | -- |
 | [CR-0230](CR0230-benchmark-harness-spec-updated-oracle-is-phrasing-brittle.md) | benchmark harness: spec-updated oracle is phrasing-brittle | Deferred | Medium | Improvement | 2026-07-10 | -- |
+| [CR-0231](CR0231-protocol-v3-longitudinal-and-multi-team-fixtures-for.md) | protocol v3: longitudinal and multi-team fixtures for the compounding-value story | Deferred | Medium | Improvement | 2026-07-10 | -- |
 
 ## Archived Releases
 

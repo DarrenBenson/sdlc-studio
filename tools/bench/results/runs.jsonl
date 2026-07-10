@@ -113,3 +113,8 @@
 {"fixture": "change-request-ledger-drift", "arm": "A", "run_id": "v4o-n3", "tokens": 52126, "metrics_source": "manual", "wall_time_s": 133.3, "iterations": 1, "defect_escape": false, "rework": false, "phase": "measured"}
 {"fixture": "multifile-notify-digest", "arm": "B", "run_id": "v4o-n3", "tokens": 54444, "metrics_source": "manual", "wall_time_s": 227.5, "iterations": 1, "defect_escape": true, "rework": false, "phase": "measured"}
 {"fixture": "multifile-notify-digest", "arm": "A", "run_id": "v4o-n3", "tokens": 65007, "metrics_source": "manual", "wall_time_s": 310.0, "iterations": 1, "defect_escape": true, "rework": false, "phase": "measured"}
+{"fixture": "multifile-notify-digest", "arm": "A", "run_id": "v4sm-n1", "tokens": 69638, "metrics_source": "manual", "wall_time_s": 247.0, "iterations": 1, "defect_escape": true, "rework": false, "phase": "calibration"}
+{"fixture": "multifile-notify-digest", "arm": "A", "run_id": "v4sm-n4", "tokens": 79644, "metrics_source": "manual", "wall_time_s": 239.4, "iterations": 1, "defect_escape": false, "rework": false, "phase": "calibration"}
+{"fixture": "multifile-notify-digest", "arm": "A", "run_id": "v4sm-n2", "tokens": 83430, "metrics_source": "manual", "wall_time_s": 280.2, "iterations": 1, "defect_escape": false, "rework": false, "phase": "calibration"}
+{"fixture": "multifile-notify-digest", "arm": "A", "run_id": "v4sm-n5", "tokens": 79669, "metrics_source": "manual", "wall_time_s": 273.2, "iterations": 1, "defect_escape": false, "rework": false, "phase": "calibration"}
+{"fixture": "multifile-notify-digest", "arm": "A", "run_id": "v4sm-n3", "tokens": 83700, "metrics_source": "manual", "wall_time_s": 345.7, "iterations": 1, "defect_escape": false, "rework": false, "phase": "calibration"}
