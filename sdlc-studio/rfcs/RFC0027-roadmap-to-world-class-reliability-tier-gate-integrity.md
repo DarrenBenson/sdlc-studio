@@ -1,6 +1,6 @@
 # RFC-0027: Roadmap to world-class: reliability tier, gate integrity, era completion and evidence-backed maturity
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Date:** 2026-07-09
 > **Created-by:** sdlc-studio file
 
@@ -13,6 +13,16 @@ Synthesis of RV0007 (42 verified findings over code, architecture, reliability, 
 - **A: Blockers-only then tag. Fix the nine rc-blockers (BG0071-BG0075, BG0077-BG0080), re-run the checklist with the eval row, tag v4.0.0-rc.1; defer all four themes to 4.1+. Fastest tag; ships known post-v4 defect mass.**
 - **B: Reliability-first pre-tag. Fold theme 1 (reliability tier: BG0076/81/82/86/91/92, CR0205/0206/0207) into the rc alongside the blockers; tag a heavier but crash-safe 4.0. Slowest tag; strongest first impression for consuming projects.**
 - **C: Blockers pre-tag, then three themed epics post-v4 - EP(reliability tier), EP(gate integrity: CR0202/0203, BG0090/0096, hook/CI parity), EP(era completion + DX: BG0086/0077 follow-through, CR0208, json/exit conventions) - sequenced by consuming-project exposure, each closing with a reconcile + eval run.**
+
+## Decision
+
+**Accepted 2026-07-10 by the operator: Option C.** The pre-tag half is already delivered
+(the nine blockers shipped as the RV0007 fix pack, RETRO0017; the rc checklist reads green).
+The post-tag sequence stands as recommended: (1) gate-integrity epic (CR0202/CR0203,
+BG0090/BG0096, hook/CI parity - now joined by CR0209's unit-lifecycle ergonomics as natural
+companions), then (2) the reliability tier (BG0076/81/82/86/91/92, CR0205/0206/0207), then
+(3) era completion + DX (CR0208/CR0210/CR0211, json/exit conventions, cascade era lens).
+Each epic closes with a reconcile + eval run per the recommendation.
 
 ## Recommendation
 
