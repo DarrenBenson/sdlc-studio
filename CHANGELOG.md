@@ -74,6 +74,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **verify_ac lint no longer crashes over a stories directory (BG0103, found by a
+  benchmark delivery agent dogfooding the v4 RC).** The lint subcommand referenced an
+  undefined `repo_root` whenever `--story` was absent; it now takes its own `--root`
+  (default `.`) and resolves the stories directory under it. Regression tests cover the
+  directory and single-story paths.
+
 - **project upgrade --apply no longer stamps a migrated v3 project's `.version` back to
   schema 2 (BG0102, found mid-sprint).** The stamp is now `max(project effective schema,
   CURRENT_SCHEMA)` - an upgrade can only ever raise it.

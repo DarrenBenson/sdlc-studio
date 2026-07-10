@@ -577,6 +577,33 @@ class LintVerifierTests(unittest.TestCase):
         self.assertIsNotNone(verify_ac.lint_verifier("psql -c 'select 1'"))
 
 
+class LintCliTests(unittest.TestCase):
+    """The lint CLI over a stories DIRECTORY must work - the no-story path crashed
+    with a NameError (repo_root undefined) until a benchmark delivery agent hit it."""
+
+    def test_lint_over_a_directory_does_not_crash(self) -> None:
+        import contextlib, io, tempfile
+        with tempfile.TemporaryDirectory() as d:
+            sdir = Path(d) / "sdlc-studio" / "stories"
+            sdir.mkdir(parents=True)
+            (sdir / "US0001-x.md").write_text(
+                "# US0001: x\n\n- **AC1:** works\n  - Verify: `pytest tests/test_x.py`\n",
+                encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = verify_ac.main(["lint", "--root", d])
+            self.assertEqual(rc, 0)
+
+    def test_lint_single_story_still_works(self) -> None:
+        import contextlib, io, tempfile
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "US0001-x.md"
+            p.write_text("# US0001: x\n\n- **AC1:** works\n  - Verify: `pytest tests/t.py`\n",
+                         encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = verify_ac.main(["lint", "--story", str(p)])
+            self.assertEqual(rc, 0)
+
+
 class TsCheckTests(unittest.TestCase):
     """CR0085: the AC Coverage Matrix must not be decorative."""
 

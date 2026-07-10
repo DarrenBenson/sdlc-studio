@@ -957,7 +957,7 @@ def cmd_lint(args: argparse.Namespace) -> int:
     """Advisory: flag Verify lines that would fall through to `shell` but look like a
     mis-written runner invocation. Catches the AC↔test drift at author time
     instead of discovering it 0/7 at verify time. Never fails the build."""
-    paths = [Path(args.story)] if args.story else list(walk_stories(_under_root(repo_root, args.dir)))
+    paths = [Path(args.story)] if args.story else list(walk_stories(_under_root(Path(args.root), args.dir)))
     flagged = 0
     for p in paths:
         if not p.exists():
@@ -1058,6 +1058,7 @@ def build_parser() -> argparse.ArgumentParser:
     r.set_defaults(func=cmd_run)
 
     ln = sub.add_parser("lint", help="Advisory: flag non-DSL / mis-written Verify lines")
+    ln.add_argument("--root", default=".", help="Repo root --dir is resolved under")
     ln.add_argument("--dir", default="sdlc-studio/stories", help="Stories directory")
     ln.add_argument("--story", help="Single story file (overrides --dir)")
     ln.set_defaults(func=cmd_lint)
