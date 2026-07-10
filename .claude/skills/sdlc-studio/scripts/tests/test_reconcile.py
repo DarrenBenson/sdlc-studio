@@ -1713,6 +1713,43 @@ class EpicBreakdownTests(unittest.TestCase):
             self.assertEqual(reconcile.epic_breakdown_drift(root), [])  # now clean
             self.assertEqual(reconcile.apply_breakdown(root)["synced"], [])  # idempotent
 
+    def test_checkboxes_outside_the_breakdown_are_never_touched(self) -> None:
+        # Critic repro: a Definition of Done item mentioning a Fixed unit must not be
+        # ticked - a box outside the Story Breakdown does not mean "unit delivered".
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            ed = root / "sdlc-studio" / "epics"; ed.mkdir(parents=True)
+            bd = root / "sdlc-studio" / "bugs"; bd.mkdir(parents=True)
+            (bd / "BG0001-x.md").write_text("# BG0001: x\n\n> **Status:** Fixed\n",
+                                            encoding="utf-8")
+            (ed / "EP0001-a.md").write_text(
+                "# EP0001: A\n\n> **Status:** In Progress\n\n"
+                "## Story Breakdown\n\n- [ ] [BG0001](../bugs/BG0001-x.md) - the unit\n\n"
+                "## Definition of Done\n\n"
+                "- [ ] Verify BG0001 fix is documented in the README\n",
+                encoding="utf-8")
+            drift = reconcile.epic_breakdown_drift(root)
+            self.assertEqual(len(drift), 1)          # ONLY the breakdown box
+            res = reconcile.apply_breakdown(root)
+            self.assertEqual(res["synced"], ["BG0001"])
+            text = (ed / "EP0001-a.md").read_text(encoding="utf-8")
+            self.assertIn("- [x] [BG0001]", text)                       # breakdown synced
+            self.assertIn("- [ ] Verify BG0001 fix is documented", text)  # DoD untouched
+
+    def test_status_less_unit_asserts_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            ed = root / "sdlc-studio" / "epics"; ed.mkdir(parents=True)
+            bd = root / "sdlc-studio" / "bugs"; bd.mkdir(parents=True)
+            (bd / "BG0002-y.md").write_text("# BG0002: y\n\nno status field\n",
+                                            encoding="utf-8")
+            (ed / "EP0001-a.md").write_text(
+                "# EP0001: A\n\n> **Status:** In Progress\n\n"
+                "## Story Breakdown\n\n- [x] [BG0002](../bugs/BG0002-y.md)\n",
+                encoding="utf-8")
+            self.assertEqual(reconcile.epic_breakdown_drift(root), [])
+            self.assertEqual(reconcile.apply_breakdown(root)["synced"], [])
+
     def test_detect_runs_in_the_default_sweep(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = self._fixture(Path(d))

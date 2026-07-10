@@ -6,8 +6,10 @@ fresh WORKER session graded by an independent GRADER - both irreducibly judgemen
 was manual ceremony around them is now deterministic:
 
     setup   build a scenario's fixture repo from its machine-readable `fixture` spec
-            and print the worker prompt (a scenario without a spec degrades honestly:
-            it prints the prose setup and exits 1 so the gap is visible)
+            and print the worker prompt. Writes into --dir as given (a colliding
+            relpath in a non-empty dir is overwritten - use a fresh scratch dir);
+            a scenario without a spec degrades honestly: it prints the prose setup
+            and exits 1 so the gap is visible
     record  append one graded behaviour verdict (pass/fail + evidence) for a run
     report  summarise a run: exit 1 if any BLOCKING behaviour failed, else 0
 

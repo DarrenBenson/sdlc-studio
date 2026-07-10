@@ -391,5 +391,33 @@ class AdoptForwardOnlyTests(unittest.TestCase):
             self.assertEqual(drift, [])                        # mixed eras reconcile clean
 
 
+class AdoptResidualTests(unittest.TestCase):
+    """Critic residuals: adopt raises an existing .version stamp (else the era decision is
+    re-presented forever), and apply/adopt refuse a directory with no workspace."""
+
+    def test_adopt_raises_a_stale_version_stamp(self) -> None:
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); _fixture(root)
+            (root / "sdlc-studio" / ".version").write_text(
+                'schema_version: 2\nskill_version: "3.6.0"\n', encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()):
+                migrate_v3.main(["adopt", "--confirm", "--root", str(root)])
+            vt = (root / "sdlc-studio" / ".version").read_text(encoding="utf-8")
+            self.assertIn("schema_version: 3", vt)
+            self.assertIn('skill_version: "3.6.0"', vt)  # other lines preserved
+
+    def test_apply_and_adopt_refuse_a_non_workspace_dir(self) -> None:
+        import contextlib, io
+        for cmd in ("apply", "adopt"):
+            with tempfile.TemporaryDirectory() as d:
+                err = io.StringIO()
+                with contextlib.redirect_stderr(err):
+                    rc = migrate_v3.main([cmd, "--confirm", "--root", d])
+                self.assertEqual(rc, 2, cmd)
+                self.assertIn("no sdlc-studio/ workspace", err.getvalue())
+                self.assertFalse((Path(d) / "sdlc-studio").exists())  # nothing created
+
+
 if __name__ == "__main__":
     unittest.main()

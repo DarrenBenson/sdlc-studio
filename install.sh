@@ -414,6 +414,10 @@ sweep_stale() {
             dest="$parent/$SKILL_NAME"
             case " $done_list " in *" $dest "*) continue ;; esac
             [[ -d "$dest" ]] || continue
+            if [[ "$(canon "$dest")" == "$(canon "$src")" ]]; then
+                info "sweep: skipping $dest (it IS the install source)"
+                continue
+            fi
             done_list="$done_list $dest"
             if ! is_skill_copy "$dest"; then
                 warn "sweep: skipping $dest (no sdlc-studio SKILL.md - not touching it)"
@@ -494,6 +498,10 @@ main() {
         check_deps
         prepare_source
         [[ ! -d "$SRC" ]] && { error "Skill files not found in archive at $SRC"; exit 1; }
+    elif [[ -n "$LOCAL_SRC" ]]; then
+        # A dry run skips the download, but --from must still be VALIDATED - reporting
+        # "would install" from a directory that would be refused for real is a false preview.
+        prepare_source
     fi
 
     echo ""

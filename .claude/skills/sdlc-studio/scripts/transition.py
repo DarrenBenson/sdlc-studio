@@ -480,6 +480,24 @@ def _num(v):
     return int(f) if f == int(f) else f
 
 
+def _static_depth_refusal(root, aid: str, depth_value: str, status: str) -> str | None:
+    """The depth-gate refusal a one-call close would hit AFTER stamping `depth_value`,
+    computed BEFORE any write. Simulates the post-stamp metadata (the flag value wins;
+    Production-affecting read from the file, since the Closed gate depends on it) and runs
+    the same `_bug_depth_gate` the transition enforces. None when nothing would refuse -
+    an unknown id or non-bug type is left to the transition's own reporting."""
+    hit = sdlc_md.find_by_id(Path(root), aid)
+    if not hit or hit[1] != "bug":
+        return None
+    vocab = sdlc_md.status_vocab("bug", root)
+    canon = sdlc_md.canonical_status(status, vocab)
+    prod = sdlc_md.extract_field(hit[0].read_text(encoding="utf-8"), "Production-affecting") or ""
+    sim = f"> **Verification depth:** {depth_value}\n"
+    if prod:
+        sim += f"> **Production-affecting:** {prod}\n"
+    return _bug_depth_gate(sim, canon)
+
+
 def cmd_set(args: argparse.Namespace) -> int:
     ids = sdlc_md.resolve_ids(args)
     if not ids:
@@ -504,6 +522,14 @@ def cmd_set(args: argparse.Namespace) -> int:
     refused = 0
     for aid in ids:
         try:
+            if getattr(args, "depth", None):
+                # Pre-flight the depth gate against the WOULD-BE stamped text: an
+                # undershoot (e.g. --depth smoke --status Verified) is a pure function
+                # of the flags, so it must refuse BEFORE the stamp or verdict land -
+                # the same gate the transition runs, just simulated pre-write.
+                reason = _static_depth_refusal(args.root, aid, args.depth, args.status)
+                if reason:
+                    raise ValueError(f"pre-write: {reason}")
             if getattr(args, "depth", None) and not args.dry_run:
                 annotate(args.root, aid, "Verification depth", args.depth)
             if reviewer and not args.dry_run:

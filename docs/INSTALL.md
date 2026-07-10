@@ -15,6 +15,7 @@ folder - which the installer scripts do for you.
 - [Manual install](#manual-install)
 - [Updating and uninstalling](#updating-and-uninstalling)
 - [Verifying](#verifying)
+- [Installing unreleased work (dev testing)](#installing-unreleased-work-dev-testing)
 - [Troubleshooting](#troubleshooting)
 
 ## Quick start
@@ -149,23 +150,10 @@ After installing, start your tool in any project and check the skill loads:
 - opencode: it is discovered automatically via the skill tool
 - Copilot: it reads `.github/skills/` in the repo
 
-## Troubleshooting
-
-- **Skill not picked up**: confirm the files landed in the right directory for
-  your tool (see [Where each tool reads skills](#where-each-tool-reads-skills)),
-  then restart the tool (Codex, Gemini and opencode have a skills-reload command,
-  e.g. `/skills reload`).
-- **`--target auto` skipped a tool**: detection keys off the CLI on `PATH` or the
-  config directory. Name the tool explicitly with `--target <tool>` instead.
-- **Copilot**: skills live in the repo at `.github/skills/`; install with
-  `--local` from inside the project.
-- **Windows piping**: `iex` cannot take arguments; download the script first (see
-  [Windows](#windows)).
-
 ## Installing unreleased work (dev testing)
 
-`install.sh` normally downloads the published release, so it cannot install work
-that has not shipped yet. To test the working tree (e.g. before a GA tag),
+`install.sh` normally downloads the copy published on GitHub (the `main` branch),
+so it cannot install local work you have not pushed yet. To test the working tree (e.g. before a GA tag),
 install it as the source directly:
 
 ```bash
@@ -178,3 +166,16 @@ than the tree being installed (force with `--allow-downgrade`). Running the
 plain downloader from inside the source repo is safe too - the installer refuses
 to downgrade the repo's own newer working copy - but `--no-sweep` keeps it from
 touching other copies at all.
+
+## Troubleshooting
+
+- **Skill not picked up**: confirm the files landed in the right directory for
+  your tool (see [Where each tool reads skills](#where-each-tool-reads-skills)),
+  then restart the tool (Codex, Gemini and opencode have a skills-reload command,
+  e.g. `/skills reload`).
+- **`--target auto` skipped a tool**: detection keys off the CLI on `PATH` or the
+  config directory. Name the tool explicitly with `--target <tool>` instead.
+- **Copilot**: skills live in the repo at `.github/skills/`; install with
+  `--local` from inside the project.
+- **Windows piping**: `iex` cannot take arguments; download the script first (see
+  [Windows](#windows)).

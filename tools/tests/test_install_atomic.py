@@ -174,6 +174,41 @@ class LocalSourceInstall(unittest.TestCase):
             self.assertEqual((dest / "marker.txt").read_text(encoding="utf-8"), "LOCAL-TREE\n")
             self.assertNotIn("Downloading", proc.stdout)  # no network path taken
 
+    def test_default_sweep_never_touches_the_from_source(self) -> None:
+        # Critic repro: the DOCUMENTED invocation - --from <source> with the sweep ON,
+        # where a sweep target resolves to the source itself - must skip the source,
+        # never rm-and-replace the git-tracked tree it is installing from.
+        with tempfile.TemporaryDirectory() as d:
+            home = Path(d) / "home"; home.mkdir()
+            # the source sits exactly where the local-scope claude target resolves
+            proj = Path(d) / "proj" / ".claude" / "skills"
+            src = proj / "sdlc-studio"
+            (src / "templates").mkdir(parents=True)
+            (src / "SKILL.md").write_text("name: sdlc-studio\n", encoding="utf-8")
+            (src / "templates" / "version.yaml").write_text(
+                'skill_version: "9.9.9"\n', encoding="utf-8")
+            (src / "marker.txt").write_text("SOURCE-TREE\n", encoding="utf-8")
+            proc = subprocess.run(
+                ["bash", str(INSTALL_SH), "--from", str(src)],  # sweep ON (default)
+                env={"PATH": "/usr/bin:/bin", "HOME": str(home)},
+                cwd=str(Path(d) / "proj"),   # cwd makes .claude/skills resolve to the source
+                capture_output=True, text=True, timeout=60)
+            self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+            # the source tree is byte-identical: marker intact, no injected CHANGELOG
+            self.assertEqual((src / "marker.txt").read_text(encoding="utf-8"), "SOURCE-TREE\n")
+            self.assertFalse((src / "CHANGELOG.md").exists())
+            self.assertIn("it IS the install source", proc.stdout)
+
+    def test_dry_run_still_validates_from(self) -> None:
+        # Critic minor: --dry-run --from /nonexistent must refuse, not report success.
+        with tempfile.TemporaryDirectory() as d:
+            home = Path(d) / "home"; home.mkdir()
+            proc = subprocess.run(
+                ["bash", str(INSTALL_SH), "--dry-run", "--from", str(Path(d) / "junk")],
+                env={"PATH": "/usr/bin:/bin", "HOME": str(home)},
+                capture_output=True, text=True, timeout=60)
+            self.assertEqual(proc.returncode, 2, proc.stdout + proc.stderr)
+
     def test_from_refuses_a_non_skill_dir(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             home = Path(d) / "home"; home.mkdir()

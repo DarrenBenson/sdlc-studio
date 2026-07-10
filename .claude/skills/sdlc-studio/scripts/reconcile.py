@@ -668,10 +668,24 @@ def apply_meta(repo_root: Path | str, dry_run: bool = False) -> dict:
 _BREAKDOWN_BOX_RE = re.compile(r"^\s*- \[( |x|X)\]\s")
 
 
+_BREAKDOWN_HEADING_RE = re.compile(r"^#{2,3}\s+.*breakdown", re.IGNORECASE)
+
+
 def _breakdown_units(root: Path, text: str):
     """Yield (lineno, ticked, unit_id, unit_type, canonical_status) for each resolvable
-    checkbox line of an epic body."""
+    checkbox line INSIDE the epic's Story Breakdown section only. An epic body carries
+    other id-bearing checkboxes (Definition of Done items, acceptance criteria, open
+    questions - all template-endorsed), and syncing those to a unit's status would tick
+    work that was never done; the lane is scoped to the breakdown, where a box means
+    exactly 'this unit is delivered'. A unit file with no Status field asserts nothing
+    and is skipped (mirrors the census rule)."""
+    in_breakdown = False
     for i, ln in enumerate(text.splitlines()):
+        if ln.lstrip().startswith("#"):
+            in_breakdown = bool(_BREAKDOWN_HEADING_RE.match(ln.strip()))
+            continue
+        if not in_breakdown:
+            continue
         m = _BREAKDOWN_BOX_RE.match(ln)
         if not m:
             continue
@@ -682,7 +696,9 @@ def _breakdown_units(root: Path, text: str):
         if not hit:
             continue  # placeholder stub - no backing file, nothing to compare
         upath, utype = hit
-        raw = sdlc_md.extract_field(upath.read_text(encoding="utf-8"), "Status") or ""
+        raw = (sdlc_md.extract_field(upath.read_text(encoding="utf-8"), "Status") or "").strip()
+        if not raw:
+            continue  # no Status field: the unit asserts nothing to compare against
         canon = _canonical_status(raw, sdlc_md.STATUS_VOCAB.get(utype, [])) or raw
         yield i, m.group(1) in ("x", "X"), idm.group(0), utype, canon
 

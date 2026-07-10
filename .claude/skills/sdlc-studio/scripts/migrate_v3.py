@@ -191,6 +191,14 @@ def _stamp_schema_v3(root: Path) -> None:
             text = text.rstrip("\n") + "\nschema_version: 3\n"
     else:
         text = "schema_version: 3\n"
+    ver = root / "sdlc-studio" / ".version"
+    if ver.exists():
+        # raise the .version mirror too: project_upgrade._effective_schema prefers it,
+        # so a stale `schema_version: 2` there would re-present the era decision forever
+        vt = ver.read_text(encoding="utf-8")
+        vt2 = re.sub(r"(?m)^schema_version:\s*[012]$", "schema_version: 3", vt, count=1)
+        if vt2 != vt:
+            ver.write_text(vt2, encoding="utf-8")
     sdlc_md.atomic_write(cfg, text)
 
 
@@ -272,6 +280,11 @@ def main(argv: list[str] | None = None) -> int:
               "valid wherever they are referenced outside the system - and only new artefacts "
               "mint ULIDs). Preview a full migration with `plan`. Staying on v2 numbering is "
               "fully supported.", file=sys.stderr)
+        return 2
+    if args.cmd in ("apply", "adopt") and not (Path(args.root) / "sdlc-studio").is_dir():
+        print(f"{args.cmd} refused: {args.root} has no sdlc-studio/ workspace - run this from "
+              "the project root (or `init` first); refusing to stamp a config into an "
+              "unrelated directory", file=sys.stderr)
         return 2
     if args.cmd == "adopt":
         # Forward-only era switch: stamp schema_version: 3 and touch NOTHING else. The two id

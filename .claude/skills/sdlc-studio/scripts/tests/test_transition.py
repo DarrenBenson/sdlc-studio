@@ -1033,6 +1033,20 @@ class OneCallCloseTests(unittest.TestCase):
                           "--verdict", "approve", "--reviewer", "Blake", "--root", str(root)])
             self.assertEqual(rc, 2)
 
+    def test_statically_undershooting_depth_refuses_before_any_write(self) -> None:
+        # Critic repro: --depth smoke --status Verified is a pure function of the flags -
+        # it must refuse with NO stamp and NO verdict row, not stamp-then-block.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bug(Path(d))
+            before = (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
+            rc = tr.main(["set", "--id", "BG0001", "--status", "Verified",
+                          "--depth", "smoke", "--verdict", "approve",
+                          "--reviewer", "r1", "--author", "a1", "--root", str(root)])
+            self.assertNotEqual(rc, 0)
+            after = (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
+            self.assertEqual(before, after)  # byte-identical: no stamp landed
+            self.assertFalse((root / "sdlc-studio" / "reviews" / "critic-verdicts.md").exists())
+
     def test_depth_alone_still_gates_normally(self) -> None:
         # --depth without reviewer/author: stamp + gated transition, no verdict recording
         import io

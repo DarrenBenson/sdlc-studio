@@ -31,8 +31,8 @@ No coordination, no renumber-on-merge.
 Around that identity sits the v4 quality floor: a mechanical **independence gate** (the author
 of a change can never be its reviewer), **verification-depth tiers** (a bug cannot reach Fixed
 without recorded evidence of how it was verified), a **portable CI gate** (`gate.py`, runs the
-same checks anywhere), and reconciliation that keeps every index and epic checkbox provably in
-step with the files.
+same checks anywhere), and reconciliation that keeps every index and epic checkbox in step with
+the files - recomputed from them, not asserted.
 
 And the reviews are not faceless: SDLC Studio brings **Alan Cooper's goal-directed personas to
 life**. Your personas are not static documents that decorate a PRD - they are working seats
@@ -324,7 +324,7 @@ Dani (Engineering), Sam (QA), and Lena (Product) - editable persona cards that b
 <details>
 <summary>How do I upgrade?</summary>
 
-Re-run the installer, or `/sdlc-studio skill-update`. It is a drop-in: no project migration, existing `sdlc-studio/` directories keep working. (The one rename to know: `autosprint` is now `sprint`, with the old name kept as an alias.)
+Re-run the installer, or `/sdlc-studio skill-update`. It is a drop-in: no project migration, existing `sdlc-studio/` directories keep working. To adopt v4's collision-free ids in an existing project, run `project upgrade` - it asks the numbering question explicitly, three supported answers, nothing forced (see "New in v4"). (The one rename to know: `autosprint` is now `sprint`, with the old name kept as an alias.)
 
 </details>
 
