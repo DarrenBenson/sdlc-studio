@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 5 |
+| Proposed | 3 |
 | Approved | 0 |
-| In Progress | 0 |
-| Complete | 202 |
+| In Progress | 1 |
+| Complete | 203 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 4 |
@@ -27,8 +27,8 @@
 | [CR-0203](CR0203-make-the-mutation-gate-earn-its-lane-wire.md) | make the mutation gate earn its lane: wire a bounded run into sprint close or remove it | Complete | Medium | process | 2026-07-09 | -- |
 | [CR-0204](CR0204-normalise-the-eleven-test-files-with-mid-file.md) | normalise the eleven test files with mid-file `__main__` guards (36 classes silently dropped on direct runs) | Complete | Medium | tooling | 2026-07-09 | -- |
 | [CR-0205](CR0205-installers-replace-delete-then-copy-with-copy-then.md) | installers: replace delete-then-copy with copy-then-swap so a failed install cannot destroy the previous one | Complete | Medium | Improvement | 2026-07-09 | -- |
-| [CR-0206](CR0206-github-sync-push-adopt-an-existing-issue-by.md) | github_sync push: adopt an existing issue by title instead of blind create (dedupe across crash/timeout) | Proposed | Medium | Improvement | 2026-07-09 | -- |
-| [CR-0207](CR0207-reliability-debt-low-themed-permissions-pagination-growth-scale.md) | reliability debt (Low, themed): permissions, pagination, growth, scale and crash-window items from RV0007 | Proposed | Medium | Improvement | 2026-07-09 | -- |
+| [CR-0206](CR0206-github-sync-push-adopt-an-existing-issue-by.md) | github_sync push: adopt an existing issue by title instead of blind create (dedupe across crash/timeout) | Complete | Medium | Improvement | 2026-07-09 | -- |
+| [CR-0207](CR0207-reliability-debt-low-themed-permissions-pagination-growth-scale.md) | reliability debt (Low, themed): permissions, pagination, growth, scale and crash-window items from RV0007 | In Progress | Medium | Improvement | 2026-07-09 | -- |
 | [CR-0208](CR0208-quality-and-docs-debt-low-themed-duplication-conventions.md) | quality and docs debt (Low, themed): duplication, conventions, doc accuracy and DX items from RV0007 | Proposed | Medium | Improvement | 2026-07-09 | -- |
 | [CR-0209](CR0209-one-unit-close-verb-batch-gate-reporting-a.md) | one unit-close verb + batch gate reporting + a metadata-stamp verb (agent ergonomics of the unit lifecycle) | Complete | Medium | Improvement | 2026-07-10 | -- |
 | [CR-0210](CR0210-consistent-cli-argument-grammar-across-the-script-family.md) | consistent CLI argument grammar across the script family | Proposed | Low | Improvement | 2026-07-10 | -- |

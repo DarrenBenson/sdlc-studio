@@ -7,16 +7,16 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 0 |
+| Draft | 1 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 116 |
+| Done | 117 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **117** |
+| **Total** | **119** |
 
 ## All Stories
 
@@ -28,6 +28,8 @@
 | [US0115](US0115-advisory-lanes-earn-their-signal-mutation-wired-into.md) | Advisory lanes earn their signal: mutation wired into sprint close, disclosure triaged to zero | Done | EP0026 | 2026-07-10 | 2026-07-10 |
 | [US0116](US0116-unit-lifecycle-ergonomics-annotate-verb-batched-gate-refusals.md) | Unit-lifecycle ergonomics: annotate verb, batched gate refusals, close orchestrator | Done | EP0026 | 2026-07-10 | 2026-07-10 |
 | [US0117](US0117-installers-copy-then-swap-so-a-failed-install.md) | Installers copy-then-swap so a failed install cannot destroy the previous one | Done | EP0027 | 2026-07-10 | 2026-07-10 |
+| [US0118](US0118-github-sync-push-adopts-an-existing-issue-by.md) | github_sync push adopts an existing issue by title instead of blind create | Done | EP0027 | 2026-07-10 | 2026-07-10 |
+| [US0119](US0119-reliability-debt-batch-atomic-write-perms-atomic-local.md) | Reliability debt batch: atomic-write perms, atomic .local state, sync/scale hardening | Draft | EP0027 | 2026-07-10 | 2026-07-10 |
 
 ## Archived Releases
 

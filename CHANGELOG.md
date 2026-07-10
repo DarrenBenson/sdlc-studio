@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Reliability tier - push adopts an existing issue instead of duplicating (EP0027, CR0206;
+  US0118).** A crash or `gh` timeout after a create was accepted but before the local stamp
+  landed made the re-run create a second GitHub issue for one record. `push` now lists the
+  type's sdlc-labelled issues once and adopts an existing `[rec_id]`-titled issue (stamping the
+  local file with its number) instead of blind-creating; the bracket makes the prefix match
+  collision-safe (`[CR-0001]` never adopts `[CR-0010]`), and the adopt re-parses for the
+  post-stamp hash so the next push skips cleanly.
 - **Reliability tier - concurrency floor completed (EP0027; BG0076).** CR0183's advisory lock
   covered only `artifact new`; `file_finding` and `new_batch` allocated ids and wrote outside
   it, so concurrent filers (multi-agent waves) minted the same id and clobbered index rows (a

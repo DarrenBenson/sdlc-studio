@@ -438,6 +438,28 @@ def cmd_push(args: argparse.Namespace) -> int:
                 if args.dry_run:
                     print(f"[DRY] would create issue for {rec.rec_id}: {title}")
                     continue
+                # CR0206: adopt an existing `[rec_id]`-titled issue instead of blind-creating a
+                # duplicate. A crash or gh timeout AFTER the server accepted a create but BEFORE
+                # the local stamp landed would otherwise mint a second issue on the re-run.
+                if issues_by_number is None:
+                    issues_by_number = {
+                        i.get("number"): i for i in gh_issue_list(TYPE_LABELS[type_])
+                    }
+                adopt = next((i for i in issues_by_number.values()
+                              if str(i.get("title", "")).startswith(f"[{rec.rec_id}]")), None)
+                if adopt is not None:
+                    set_github_issue_field(rec.path, adopt["number"])
+                    print(f"[APL] adopted existing issue #{adopt['number']} for {rec.rec_id} "
+                          "(not re-created)")
+                    # re-parse for the post-stamp hash, like the create path - so the next push
+                    # sees a matching hash and skips instead of an extra no-op label-sync
+                    refreshed = parse_local_file(rec.path, type_)
+                    mappings[rec.rec_id] = {
+                        "type": type_, "issue": adopt["number"],
+                        "hash": refreshed.content_hash if refreshed else rec.content_hash,
+                        "updated_at": now_iso()}
+                    updated += 1
+                    continue
                 number = gh_issue_create(title, rec.body, labels)
                 if number is None:
                     print(f"failed to create issue for {rec.rec_id}", file=sys.stderr)
@@ -646,7 +668,9 @@ def cmd_cascade(args: argparse.Namespace) -> int:
     )
 
     if not args.dry_run and prs:
-        state["last_cascade_ref"] = prs[0].get("mergedAt")
+        # max(mergedAt): gh orders by creation, so prs[0] can be an early-created/
+        # late-merged PR - taking the newest merge instant avoids re-reporting.
+        state["last_cascade_ref"] = max((pr.get("mergedAt") or "") for pr in prs) or None
         save_state(state, _state_path(args.root))
 
     return 0

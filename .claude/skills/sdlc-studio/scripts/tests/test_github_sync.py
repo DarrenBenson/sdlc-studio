@@ -566,22 +566,26 @@ class PushLabelSyncTests(unittest.TestCase):
         }
         github_sync.save_state(state, self._state_path())
 
-        list_called = {"n": 0}
+        edited = {"issues": []}
 
         def fake_gh(*args, capture=True):
             if args[:2] == ("issue", "list"):
-                list_called["n"] += 1
+                # CR0206: an unmapped record (CR-0001) now lists once for the adopt check;
+                # return no adoptable issue so CR-0001 falls through to create.
                 return subprocess_result(0, "[]", "")
             if args[:2] == ("issue", "create"):
-                # CR-0001 (unmapped) still needs creating.
                 return subprocess_result(0, "/issues/60", "")
+            if args[:2] == ("issue", "edit"):
+                edited["issues"].append(args[2])
+                return subprocess_result(0, "", "")
             return subprocess_result(0, "", "")
 
         with mock.patch.object(github_sync, "gh", side_effect=fake_gh):
             rc = github_sync.main(["push", "--type", "cr"])
         self.assertEqual(rc, 0)
-        # Hash matched, so no label-sync occurred -> issue list never fetched.
-        self.assertEqual(list_called["n"], 0)
+        # The real invariant: the mapped, hash-matched CR-0002 (#42) is skipped entirely -
+        # its labels are never edited.
+        self.assertNotIn("42", edited["issues"])
 
     def test_missing_remote_issue_is_skipped_not_fatal(self) -> None:
         """A local CR points at #42 but gh returns no such issue -> skip, rc 0."""
@@ -1095,6 +1099,45 @@ class SecretPushTests(unittest.TestCase):
         # --allow-secrets skips the scan, so visibility is never consulted
         self.assertFalse(any(a[:2] == ("repo", "view") for a in all_calls))
         self.assertTrue(any(a[:2] == ("issue", "create") for a in all_calls))
+
+class AdoptExistingIssueTests(unittest.TestCase):
+    """CR0206: push must adopt an existing [rec_id]-titled issue instead of creating a
+    duplicate - the crash/timeout-after-create dedupe."""
+
+    def setUp(self) -> None:
+        self.fixture = FixtureRepo()
+        self._cwd = Path.cwd()
+        import os
+        os.chdir(self.fixture.tmp)
+
+    def tearDown(self) -> None:
+        import os
+        os.chdir(self._cwd)
+        self.fixture.cleanup()
+
+    def test_push_adopts_titled_issue_and_does_not_create(self) -> None:
+        created_calls = []
+
+        def fake_gh(*args, capture=True):
+            if args[:2] == ("issue", "list"):
+                # a previous run already created the issue for CR-0001
+                return subprocess_result(0, json.dumps([
+                    {"number": 77, "title": "[CR-0001] Rate-limit the login endpoint",
+                     "state": "OPEN", "labels": [], "body": "", "url": "",
+                     "updatedAt": "", "createdAt": ""}]), "")
+            if args[:2] == ("issue", "create"):
+                created_calls.append(args)
+                return subprocess_result(0, "/issues/999", "")
+            return subprocess_result(0, "", "")
+
+        with mock.patch.object(github_sync, "gh", side_effect=fake_gh):
+            rc = github_sync.main(["push", "--type", "cr"])
+        self.assertEqual(rc, 0)
+        self.assertEqual(created_calls, [], "push created a duplicate instead of adopting")
+        # CR-0001 now points at the adopted #77, not a new issue
+        path = self.fixture.tmp / "sdlc-studio/change-requests/CR-0001-rate-limit.md"
+        self.assertIn("**GitHub Issue:** #77", path.read_text())
+
 
 if __name__ == "__main__":
     unittest.main()

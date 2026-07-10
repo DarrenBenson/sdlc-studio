@@ -1,6 +1,6 @@
 # CR-0206: github_sync push: adopt an existing issue by title instead of blind create (dedupe across crash/timeout)
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-09
