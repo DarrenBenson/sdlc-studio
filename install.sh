@@ -283,15 +283,36 @@ ship_changelog() {
     return 0
 }
 
+# Stage a copy into a temp sibling then swap it into place, so a failed copy can never
+# destroy or half-overwrite the existing install (CR0205). Returns non-zero on a copy
+# failure, leaving the previous install byte-for-byte intact.
+swap_install() {
+    # dest on its OWN line: on a single `local` line bash expands every RHS before applying
+    # any assignment, so `$parent` would resolve to the CALLER's dynamic-scoped parent, not
+    # this line's `$1` - an `rm -rf "$dest"` riding on that coincidence is a latent footgun.
+    local parent="$1" src="$2"
+    local dest="$parent/$SKILL_NAME"
+    local staging="$parent/.$SKILL_NAME.new-$$"
+    mkdir -p "$parent"
+    rm -rf "$staging"
+    if ! cp -r "$src" "$staging"; then
+        rm -rf "$staging"
+        return 1
+    fi
+    ship_changelog "$src" "$staging"
+    rm -rf "$dest"
+    mv "$staging" "$dest"
+}
+
 install_to() {
     local parent="$1" src="$2" dest="$1/$SKILL_NAME"
     if [[ "$DRY_RUN" == true ]]; then
         info "[dry run] would install to: $dest"; return
     fi
-    mkdir -p "$parent"
-    [[ -d "$dest" ]] && rm -rf "$dest"
-    cp -r "$src" "$parent/"
-    ship_changelog "$src" "$dest"
+    if ! swap_install "$parent" "$src"; then
+        error "install failed: could not copy to $dest (previous install left untouched)"
+        return 1
+    fi
     success "installed: $dest"
 }
 
@@ -342,10 +363,9 @@ sweep_stale() {
             found=true
             if [[ "$DRY_RUN" == true ]]; then
                 info "[dry run] would refresh: $dest ($old -> $new_ver)"
+            elif ! swap_install "$parent" "$src"; then
+                error "refresh failed: could not copy to $dest ($old kept)"
             else
-                rm -rf "$dest"
-                cp -r "$src" "$parent/"
-                ship_changelog "$src" "$dest"
                 success "refreshed: $dest ($old -> $new_ver)"
             fi
         done

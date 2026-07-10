@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Reliability tier - installers copy-then-swap (EP0027, CR0205; US0117).** `install.sh` staged
+  `rm -rf $dest; cp -r ...` - a copy that failed between the two left the user with nothing or a
+  half-copy. Both the install and sweep-refresh paths now stage into a same-filesystem sibling
+  and atomically rename it into place; a failed copy returns non-zero and leaves the previous
+  install byte-for-byte intact. The closing critic caught a latent `rm -rf` footgun (a same-line
+  `local dest="$parent/..."` resolved via caller scope) - fixed with the declaration split and a
+  caller-scope regression test.
 - **Reliability tier - verify_ac discovery/contract and sync failure honesty (EP0027; BG0083,
   BG0084, BG0089, BG0092).** `verify_ac` now excludes companion docs and non-US files from
   story discovery (a consultations note's quoted example `Verify:` lines no longer run

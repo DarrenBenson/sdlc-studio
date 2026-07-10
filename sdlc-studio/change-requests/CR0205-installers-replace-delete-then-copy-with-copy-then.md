@@ -1,6 +1,6 @@
 # CR-0205: installers: replace delete-then-copy with copy-then-swap so a failed install cannot destroy the previous one
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-09

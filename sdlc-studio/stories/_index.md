@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 115 |
+| Done | 116 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **116** |
+| **Total** | **117** |
 
 ## All Stories
 
@@ -27,6 +27,7 @@
 | [US0114](US0114-normalise-mid-file-main-guards-in-the-test.md) | Normalise mid-file main guards in the test suite | Done | EP0026 | 2026-07-10 | 2026-07-10 |
 | [US0115](US0115-advisory-lanes-earn-their-signal-mutation-wired-into.md) | Advisory lanes earn their signal: mutation wired into sprint close, disclosure triaged to zero | Done | EP0026 | 2026-07-10 | 2026-07-10 |
 | [US0116](US0116-unit-lifecycle-ergonomics-annotate-verb-batched-gate-refusals.md) | Unit-lifecycle ergonomics: annotate verb, batched gate refusals, close orchestrator | Done | EP0026 | 2026-07-10 | 2026-07-10 |
+| [US0117](US0117-installers-copy-then-swap-so-a-failed-install.md) | Installers copy-then-swap so a failed install cannot destroy the previous one | Done | EP0027 | 2026-07-10 | 2026-07-10 |
 
 ## Archived Releases
 
