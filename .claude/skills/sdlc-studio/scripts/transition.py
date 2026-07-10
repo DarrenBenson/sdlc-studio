@@ -190,11 +190,14 @@ def _upsert_field(text: str, name: str, value: str) -> str:
     return new_text if changed else _insert_after_status(text, f"> **{name}:** {value}")
 
 
-# Fields annotate must NEVER touch: they are gate-protected or index-backed, and a stamp
-# verb that could rewrite them would be a sanctioned, exit-0 bypass of the entire transition
-# ladder (the critic proved it: `annotate --field Status --value Fixed` cleared what `set`
-# had just refused). Case-insensitive.
-_ANNOTATE_DENYLIST = {"status", "triaged-by", "triage-severity"}
+# Fields annotate must NEVER touch: they are gate-protected, index-backed, or a cross-script
+# security control, and a stamp verb that could rewrite them would be a sanctioned, exit-0
+# bypass. `status`/`triaged-by`/`triage-severity` gate the transition ladder;
+# `provenance` is the verify_ac shell-execution boundary - annotate clearing an
+# `external` stamp would re-enable shell on untrusted content. The only
+# provenance mutation that matters (external -> non-external) is always the dangerous
+# direction, and there is no legitimate post-creation re-stamp. Case-insensitive.
+_ANNOTATE_DENYLIST = {"status", "triaged-by", "triage-severity", "provenance"}
 
 
 def annotate(repo_root: Path | str, artifact_id: str, field: str, value: str) -> dict:

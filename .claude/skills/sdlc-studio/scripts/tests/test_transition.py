@@ -903,6 +903,22 @@ class AnnotateCannotBypassGatesTests(unittest.TestCase):
                 self.assertNotEqual(rc, 0, spelling)
             self.assertEqual(p.read_text(encoding="utf-8"), before)
 
+    def test_annotate_refuses_the_provenance_security_stamp(self) -> None:
+        # Closing-critic F1: Provenance is a verify_ac shell-gate control - annotate clearing
+        # it exit-0 re-enabled shell on untrusted content. It must be denylisted like Status.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            p = self._v3_inbox_bug(root)
+            p.write_text(p.read_text(encoding="utf-8").replace(
+                "> **Severity:** Low\n", "> **Severity:** Low\n> **Provenance:** external\n"),
+                encoding="utf-8")
+            before = p.read_text(encoding="utf-8")
+            for spelling in ("Provenance", "provenance", " Provenance "):
+                rc = tr.main(["annotate", "--id", "BG0001", "--field", spelling,
+                              "--value", "internal", "--root", str(root)])
+                self.assertNotEqual(rc, 0, spelling)
+            self.assertEqual(p.read_text(encoding="utf-8"), before)
+
     def test_annotate_refuses_triage_fields(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
