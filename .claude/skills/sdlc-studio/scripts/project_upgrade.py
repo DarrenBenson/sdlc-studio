@@ -624,11 +624,15 @@ def rebaseline_apply(root: Path | str) -> list[str]:
         except Exception:  # noqa: BLE001 - a difficulty read must never break the apply pass
             continue
         # newline="" preserves the file's existing terminators (universal-newline mode would
-        # translate CRLF->LF on read, rewriting the whole file); only the inserted line is added.
-        text = p.read_text(encoding="utf-8", newline="")
+        # translate CRLF->LF on read, rewriting the whole file); only the inserted line is
+        # added. open() is used because Path.read_text/write_text only grew a newline=
+        # keyword in Python 3.13 and the floor is 3.10.
+        with open(p, encoding="utf-8", newline="") as fh:
+            text = fh.read()
         new_text, ok = _stamp_after_status(text, "Difficulty", band)
         if ok:
-            p.write_text(new_text, encoding="utf-8", newline="")
+            with open(p, "w", encoding="utf-8", newline="") as fh:
+                fh.write(new_text)
             actions.append(f"stamped Difficulty: {band} on {e['id']}")
     return actions
 

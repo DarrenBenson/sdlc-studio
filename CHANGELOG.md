@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing yet - v4.1 scope is groomed in the Deferred lane (CR0223-0225, CR0229-0231, CR0233).
+### Fixed
+
+- **CI portability: the schema-v3 backfill no longer uses a Python 3.13-only API
+  (BG0105).** `Path.read_text/write_text(newline=)` failed on CI's 3.12 while local 3.14
+  passed - now an `open()` pair with identical semantics, comment naming the 3.10 floor.
+- **The install downgrade guard now understands semver pre-release precedence (BG0106).**
+  Plain `sort -V` ranked `4.0.0-rc.1` above `4.0.0`, refusing every rc copy the GA
+  upgrade; cores now compare via sort -V with pre-release precedence on equal cores.
+  Found live when the GA forward-port was refused; seventeen edge cases critic-driven.
+
+v4.1 feature scope is groomed in the Deferred lane (CR0223-0225, CR0229-0231, CR0233).
 
 ## [4.0.0] - 2026-07-10
 

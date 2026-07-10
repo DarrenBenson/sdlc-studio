@@ -140,6 +140,28 @@ class DowngradeGuard(unittest.TestCase):
             dest = self._dest(Path(d), "3.6.0")
             self.assertIn("RC=1", self._would_downgrade(dest, "4.0.0-rc.1"))
 
+    def test_rc_to_ga_is_an_upgrade_not_a_downgrade(self) -> None:
+        # BG0106: semver pre-release precedence - 4.0.0-rc.1 is OLDER than 4.0.0,
+        # so the GA install over an rc copy must proceed (RC=1, no refusal).
+        with tempfile.TemporaryDirectory() as d:
+            dest = self._dest(Path(d), "4.0.0-rc.1")
+            out = self._would_downgrade(dest, "4.0.0")
+            self.assertIn("RC=1", out)
+            self.assertNotIn("refusing", out)
+
+    def test_ga_to_rc_is_a_downgrade(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            dest = self._dest(Path(d), "4.0.0")
+            self.assertIn("RC=0", self._would_downgrade(dest, "4.0.0-rc.1"))
+
+    def test_rc_ordering_within_prereleases(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            dest = self._dest(Path(d), "4.0.0-rc.1")
+            self.assertIn("RC=1", self._would_downgrade(dest, "4.0.0-rc.2"))  # upgrade
+        with tempfile.TemporaryDirectory() as d:
+            dest = self._dest(Path(d), "4.0.0-rc.2")
+            self.assertIn("RC=0", self._would_downgrade(dest, "4.0.0-rc.1"))  # downgrade
+
     def test_branch_name_is_not_a_false_downgrade(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             dest = self._dest(Path(d), "4.0.0")

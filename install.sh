@@ -371,13 +371,24 @@ installed_version() {
     echo "${v:-unknown}"
 }
 
-# True when version $1 is strictly older than $2 (semver via `sort -V`, tolerating -rc suffixes).
-# A non-semver token (a branch name, or `unknown`) never compares as older, so it is never a
-# false downgrade.
+# True when version $1 is strictly older than $2. Semver cores compare via `sort -V`;
+# when cores are equal, pre-release precedence applies (4.0.0-rc.1 is OLDER than 4.0.0 -
+# plain sort -V gets this backwards, BG0106). A non-semver token (a branch name, or
+# `unknown`) never compares as older, so it is never a false downgrade.
 version_lt() {
     [[ "$1" == "$2" ]] && return 1
     case "$1$2" in *[!0-9.rc+-]*) return 1 ;; esac  # not both semver-ish -> not comparable
-    [[ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | head -n1)" == "$1" ]]
+    local c1="${1%%-*}" c2="${2%%-*}" s1="" s2=""
+    [[ "$1" == *-* ]] && s1="${1#*-}"
+    [[ "$2" == *-* ]] && s2="${2#*-}"
+    if [[ "$c1" != "$c2" ]]; then
+        [[ "$(printf '%s\n%s\n' "$c1" "$c2" | sort -V | head -n1)" == "$c1" ]]
+        return
+    fi
+    [[ -n "$s1" && -z "$s2" ]] && return 0   # pre-release precedes its release
+    [[ -z "$s1" ]] && return 1               # release never older than its pre-release
+    [[ "$s1" == "$s2" ]] && return 1
+    [[ "$(printf '%s\n%s\n' "$s1" "$s2" | sort -V | head -n1)" == "$s1" ]]
 }
 
 # True (and prints a warning) when writing version `$2` over the sdlc-studio copy at `$1` would
