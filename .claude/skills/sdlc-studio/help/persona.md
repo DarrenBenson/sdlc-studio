@@ -6,6 +6,11 @@ Related: reference-persona.md, reference-persona-generate.md
 
 # /sdlc-studio persona - User Personas
 
+> **Personas are working seats, not static artifacts.** They consult on designs,
+> seat-score the backlog, review diffs, and hold the author != reviewer gate - Alan
+> Cooper's goal-directed personas brought to life. Resolve a seat for any review with
+> `persona_resolve.py resolve --seat <role> --render review`.
+
 ## You can just ask
 
 SDLC Studio is model-invoked - say it in plain language:

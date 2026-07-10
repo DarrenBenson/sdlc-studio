@@ -109,6 +109,11 @@ independent critic plus the gate - the check's output states this scoping.
      and author ids** and the **tier noted in the issues field**, so the `critiqued` gate requires a
      recorded APPROVE whose reviewer differs from the author - the depth scales, independence and
      honesty never do. When unsure of the risk band, use the full critic.
+     **The reviewer is a living persona, not a hand-typed name:** resolve the reviewing seat with
+     `persona_resolve.py resolve --seat qa --render review` (product/engineering for their
+     domains) and give the critic that framing - the seat's goals and refusal instincts are the
+     review lens, and the recorded reviewer id is the seat's name. A hand-typed identity is the
+     fallback when no seat card fits, never the norm.
    - `conformance check` - the deterministic gate (`scripts/conformance.py`):
      decomposed -> AC -> tested -> verified -> **reconciled** (no index drift) ->
      **critiqued** (a committed critic APPROVE) -> **documented** (the doc-coverage floor:

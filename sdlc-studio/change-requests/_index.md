@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 0 |
 | Approved | 0 |
-| In Progress | 5 |
+| In Progress | 6 |
 | Complete | 207 |
 | Rejected | 0 |
 | Deferred | 0 |
@@ -38,7 +38,7 @@
 | [CR-0214](CR0214-install-sh-local-source-mode-install-the-working.md) | install.sh local-source mode: install the working tree, not the published release | In Progress | Medium | Improvement | 2026-07-10 | -- |
 | [CR-0215](CR0215-big-bang-v4-documentation-pass-every-consuming-facing.md) | big-bang v4 documentation pass: every consuming-facing doc tells the v4 story | In Progress | High | Improvement | 2026-07-10 | -- |
 | [CR-0216](CR0216-project-upgrade-must-explicitly-ask-the-operator-before.md) | project upgrade must explicitly ask the operator before switching the id numbering scheme | In Progress | High | Improvement | 2026-07-10 | -- |
-| [CR-0217](CR0217-living-personas-are-the-explicit-default-for-reviews.md) | living personas are the explicit default for reviews, critics and consults | Proposed | Medium | Improvement | 2026-07-10 | -- |
+| [CR-0217](CR0217-living-personas-are-the-explicit-default-for-reviews.md) | living personas are the explicit default for reviews, critics and consults | In Progress | Medium | Improvement | 2026-07-10 | -- |
 
 ## Archived Releases
 

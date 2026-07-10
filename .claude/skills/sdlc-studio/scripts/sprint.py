@@ -570,7 +570,9 @@ def _render_seat_provenance(data: dict) -> None:
         when = f", inputs written {prov['written_at']}" if prov["written_at"] else ""
         print(f"  seats: {len(prov['scored'])}/{data['count']} unit(s) seat-scored{when}")
     if prov["unscored"]:
-        print(f"  no seat inputs (priority fallback): {', '.join(prov['unscored'])}")
+        print(f"  no seat inputs (priority fallback): {', '.join(prov['unscored'])} - "
+              f"seat-score them via an amigo consult writing "
+              f"sdlc-studio/.local/wsjf-inputs.json (reference-sprint.md, Seat-scored WSJF)")
     if prov["stale"]:
         print(f"  advisory: wsjf-inputs.json is {prov['age_days']} day(s) old "
               f"(window {prov['stale_after_days']}) - re-run the amigo consult "

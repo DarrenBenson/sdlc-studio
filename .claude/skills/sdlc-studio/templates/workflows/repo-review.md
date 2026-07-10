@@ -66,6 +66,8 @@ suggested remediation, effort S/M/L).
 
 ## Report
 
+Give each review leg a living seat, not an anonymous voice: resolve the fitting amigo with `scripts/persona_resolve.py resolve --seat <engineering|qa|product> --render review` and adopt its charter as the leg's lens (QA for reliability/test legs, Engineering for architecture/code, Product for docs and operator-facing surfaces).
+
 Create the report with `scripts/artifact.py new --type review --title "..."` - it
 allocates the id, writes the scaffold, and appends the `reviews/_index.md` row in one
 step (never hand-author the file or its index row; `reconcile` covers the review index
