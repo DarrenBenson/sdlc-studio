@@ -275,6 +275,26 @@ class IterTablesOnlyTests(unittest.TestCase):
         self.assertNotIn("in_table", plan)
 
 
+class CrashResumeIdempotentTests(unittest.TestCase):
+    """BG0091: archive appends moved rows before it trims the live index. A crash between
+    the two writes, then a re-run, must NOT duplicate the rows in the archive file."""
+
+    def test_rerun_after_partial_archive_does_not_duplicate(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d))
+            # simulate the crash: step 1 (archive write) completed, step 2 (live trim) did not.
+            adir = root / "sdlc-studio" / "stories" / "archive" / "r1"
+            adir.mkdir(parents=True)
+            (adir / "story.md").write_text(
+                "# story archive - r1\n\nx\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [US0001](US0001-x.md) | s | Done |\n", encoding="utf-8")
+            # US0001/US0003 are still Done in the live index (step 2 never ran)
+            arc.archive(root, "story", "r1")
+            atext = (adir / "story.md").read_text(encoding="utf-8")
+            self.assertEqual(atext.count("[US0001]"), 1, "US0001 archive row duplicated")
+            self.assertEqual(atext.count("[US0003]"), 1)
+
+
 if __name__ == "__main__":
     unittest.main()
 

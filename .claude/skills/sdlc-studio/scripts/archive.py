@@ -78,13 +78,20 @@ def archive(repo_root: Path | str, type_: str, release: str,
     sep_line = "|" + " --- |" * (header_line.count("|") - 1)
     if archive_path.exists():
         atext = archive_path.read_text(encoding="utf-8").rstrip("\n")
-        archive_path.write_text(atext + "\n" + "\n".join(moved_lines) + "\n", encoding="utf-8")
+        # Dedupe against ids already archived: a crash between this write and the live-index
+        # trim (step 2) leaves the rows in BOTH files, so a re-run would append them twice
+        # (permanent, unflagged - detect_duplicate_rows scans only the live index). Idempotent.
+        seen = {sdlc_md.norm_id(rid) for rid in reconcile._index_row_ids(atext)}
+        fresh = [ln for ln, rid in zip(moved_lines, ids)
+                 if sdlc_md.norm_id(rid) not in seen]
+        if fresh:
+            sdlc_md.atomic_write(archive_path, atext + "\n" + "\n".join(fresh) + "\n")
     else:
-        archive_path.write_text(
+        sdlc_md.atomic_write(archive_path,
             f"# {type_} archive - {release}\n\n"
             "Terminal rows archived from the live index. Artifact files are "
             "unchanged; these rows keep the census correct via parse_index's union.\n\n"
-            f"{header_line}\n{sep_line}\n" + "\n".join(moved_lines) + "\n", encoding="utf-8")
+            f"{header_line}\n{sep_line}\n" + "\n".join(moved_lines) + "\n")
 
     # 2) drop the moved rows from the live index and add/refresh the release bullet.
     kept = [ln for i, ln in enumerate(lines) if i not in moved_idx]

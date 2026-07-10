@@ -1,6 +1,7 @@
 # BG0091: archive.py is not idempotent per release: a crash between its two writes duplicates every archived row invisibly
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (red-then-green: crash-resume re-run does not duplicate archive rows; atomic writes; suite 1516)
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file

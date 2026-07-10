@@ -310,7 +310,10 @@ def parse_index(type_: str, repo_root: Path) -> dict:
         for af in sorted(archive_dir.rglob("*.md")):
             arows, _ = _index_rows_and_summary(af.read_text(encoding="utf-8"), vocab, aliases)
             for k, v in arows.items():
-                if v[1] != "Unknown" or k not in result["rows"]:
+                # a LIVE row always wins: an archive row only fills in an id absent from the
+                # live index. Otherwise a reopened (archived-then-live-again) artefact is
+                # permanently shadowed by its stale archive status - un-clearable drift.
+                if k not in result["rows"]:
                     result["rows"][k] = v
     return result
 
@@ -745,6 +748,12 @@ def _rewrite_index_lines(lines: list, fixes: dict, counts: dict, vocab: list,
             continue
         if kind == "data":
             in_summary, status_col, id_col = False, sc, ic
+            continue
+        # A header row _header_kind cannot classify (a Dependencies/Notes table, say) must
+        # RESET the tracked columns - otherwise the previous data table's status_col bleeds
+        # forward and clobbers an author-maintained cell that happens to be status-shaped.
+        if i + 1 < len(lines) and _SEP_ROW_RE.match(lines[i + 1]):
+            in_summary, status_col, id_col = False, None, None
             continue
         if in_summary and len(cells) == 2:        # summary count row
             new_line = _summary_cell_rewrite(cells, counts, vocab)

@@ -1567,5 +1567,63 @@ class FormatJsonParityTests(unittest.TestCase):
                     reconcile.main(argv[name] + ["--root", str(root), "--format", "json"])
                 json.loads(buf.getvalue())  # raises if not valid JSON
 
+
+class ReopenedArchiveDriftTests(unittest.TestCase):
+    """BG0081: a live row must win over an archive row for the same id - a reopened
+    (archived-then-live-again) artefact was shadowed by its archive row, giving permanent
+    un-clearable status-mismatch + count drift."""
+
+    def _seed(self, root: Path) -> None:
+        d = root / "sdlc-studio" / "stories"
+        (d / "archive" / "2026-06").mkdir(parents=True)
+        (d / "US0001-x.md").write_text(
+            "# US0001: x\n\n> **Status:** In Progress\n", encoding="utf-8")
+        (d / "_index.md").write_text(
+            "# Stories\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n"
+            "| In Progress | 1 |\n| **Total** | **1** |\n\n## All\n\n"
+            "| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [US0001](US0001-x.md) | x | In Progress |\n", encoding="utf-8")
+        (d / "archive" / "2026-06" / "story.md").write_text(
+            "# Archived\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [US0001](../../US0001-x.md) | x | Done |\n", encoding="utf-8")
+
+    def test_live_row_wins_over_archive_row(self) -> None:
+        with tempfile.TemporaryDirectory() as dd:
+            root = Path(dd)
+            self._seed(root)
+            self.assertEqual(reconcile.parse_index("story", root)["rows"]["US0001"][1],
+                             "In Progress")
+
+    def test_reopened_artefact_has_no_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as dd:
+            root = Path(dd)
+            self._seed(root)
+            self.assertEqual(reconcile.detect_type("story", root)["drift"], [])
+
+
+class IndexRewriterColumnBleedTests(unittest.TestCase):
+    """BG0082: an unclassifiable header (e.g. a Dependencies table) must RESET the tracked
+    status/id columns - otherwise the previous data table's column index bleeds forward and
+    the rewriter clobbers an author-maintained cell that happens to be status-shaped."""
+
+    def test_status_col_does_not_bleed_into_a_following_table(self) -> None:
+        vocab = ["Proposed", "In Progress", "Complete", "Blocked"]
+        lines = (
+            "## All\n\n"
+            "| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [CR-0001](CR0001-x.md) | x | Proposed |\n\n"
+            "## Dependencies\n\n"
+            "| CR | Depends on | Notes |\n| --- | --- | --- |\n"
+            "| CR-0001 | CR-0003 | Blocked until review lands |\n"
+        ).splitlines()
+        # a fix for CR-0001's real Status (Proposed -> Complete) must NOT touch the
+        # Dependencies row's 3rd cell (which starts with the vocab word 'Blocked')
+        fixes = {"CR0001": "Complete"}
+        _cu, applied = reconcile._rewrite_index_lines(lines, fixes, {}, vocab)
+        joined = "\n".join(lines)
+        self.assertIn("| [CR-0001](CR0001-x.md) | x | Complete |", joined)
+        self.assertIn("| CR-0001 | CR-0003 | Blocked until review lands |", joined)
+
+
 if __name__ == "__main__":
     unittest.main()

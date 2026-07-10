@@ -1,6 +1,7 @@
 # BG0082: reconcile index rewriter bleeds a stale Status column into following status-less tables, corrupting author-maintained cells
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (red-then-green: Dependencies-table Notes cell no longer clobbered by the master status_col; suite 1515)
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file

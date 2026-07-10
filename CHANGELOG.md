@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Reliability tier - index-writer crash/reopen safety (EP0027; BG0081, BG0082, BG0091).**
+  Three census-touching defects, each red-first and independently critic-approved: a reopened
+  (archived-then-live-again) artefact was permanently shadowed by its stale archive row - now a
+  live index row always wins over an archive row (BG0081); the index rewriter bled a previous
+  data table's Status column into a following unclassifiable table (Dependencies/Notes),
+  clobbering an author-maintained cell - now an unclassifiable header resets the tracked columns
+  (BG0082); `archive.py` appended moved rows before trimming the live index with no dedupe, so a
+  crash between the two writes then a re-run duplicated every archived row - now the append
+  dedupes against the archived ids and uses atomic writes (BG0091).
+
 ## [4.0.0] - 2026-07-09
 
 The maturity release. Schema v3 (distributed ULID identity + structured authorship/evidence

@@ -1,6 +1,7 @@
 # BG0081: a reopened-after-archive artefact creates permanent drift: archive rows shadow live index rows
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (red-then-green: live row wins over archive row; reopened artefact has 0 drift; suite 1514)
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file
