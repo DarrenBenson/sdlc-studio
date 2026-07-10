@@ -107,6 +107,20 @@ rules, the agents/services) live in that project's agent-instructions file
     map; `reference-scripts.md` is the full catalogue. Hand-allocating an id or
     hand-authoring an index a script owns is an error, not a shortcut.
 
+16. **The engagement floor: multi-file changes in a spec-bearing repo get the
+    planning pass, not a judgement call.** Measured, not asserted: on the base
+    models most teams run, leaving pipeline engagement to the model's own
+    scale-to-size judgement produced the same defect rate as no process at all,
+    while a mandated planning pass cut it by 4-5x at ~1.1-1.2x tokens
+    (the skill repository's 2026-07-10 benchmark rerun). So the floor is a rule: when a change
+    touches more than one source file in a repo that carries a numbered spec or an
+    sdlc-studio workspace, derive the spec delta FIRST - naming every existing
+    requirement the change interacts with and how each interaction is resolved -
+    and write acceptance criteria (one per interaction) before any code. Judgement
+    still scales everything above the floor (a single-file fix in an unspecced
+    repo needs no ceremony), and an operator who accepts the risk may opt out with
+    `engagement_floor: judgement` in `.config.yaml`. The default is the floor.
+
 ## Project constitution {#constitution}
 
 A project may declare its inviolable principles in an optional

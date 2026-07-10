@@ -67,6 +67,16 @@ Every substantive change flows through the skill:
 reconcile -> review.** No ad-hoc coding. Default to TDD: author the `Verify:`
 expression or failing test first, then make it pass.
 
+**The engagement floor (hard rule, not judgement):** when a change touches more than
+one source file in this repo, derive the specification delta FIRST - name every
+existing requirement the change interacts with and how each interaction is resolved -
+and write acceptance criteria (one per interaction) before any code. Scale-to-size
+judgement applies only above this floor. Why a rule: measured on the base models most
+teams run, judgement-gated engagement produced the same defect rate as no process,
+while the mandated pass cut it 4-5x for ~10-20% more tokens (see the skill's
+benchmarks). Operators may opt out with `engagement_floor: judgement` in
+`sdlc-studio/.config.yaml`; the default is the floor.
+
 ## How to work
 
 1. **Think before coding.** State assumptions explicitly. If multiple readings exist,

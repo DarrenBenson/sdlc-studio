@@ -106,6 +106,23 @@ Control minimum requirements for story readiness.
 
 ---
 
+## Engagement Floor {#engagement-floor}
+
+Default-on (NOT advisory): governs when the planning pass may be skipped.
+
+| Setting | Default | Used In |
+| --- | --- | --- |
+| `engagement_floor` | `floor` | reference-doctrine rule 16, agent-instructions template |
+
+`floor` (default): a multi-file change in a spec-bearing repo REQUIRES the planning
+pass - a spec delta naming each interacting requirement plus one acceptance criterion
+per interaction - before any code. This is the measured rule from the skill's 2026-07
+benchmark rerun (judgement-gated engagement matched no-process on base models; the
+mandated pass cut escapes 4-5x for ~10-20% more tokens). `judgement`: the operator
+accepts that risk and restores pure scale-to-size judgement everywhere.
+
+---
+
 ## TDD Trigger
 
 Control when TDD mode is recommended over Test-After.

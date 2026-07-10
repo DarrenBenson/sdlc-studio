@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The engagement floor ships in v4 as doctrine (the benchmark's direct product
+  consequence).** A multi-file change in a spec-bearing repo now REQUIRES the planning pass
+  (spec delta naming every interacting requirement, one acceptance criterion per interaction)
+  before code - a hard rule, not a judgement call, because the rerun measured judgement-gated
+  engagement performing no better than no process on base models while the mandated pass cut
+  escapes 4-5x for ~10-20% more tokens. Scale-to-size judgement still governs everything above
+  the floor; `engagement_floor: judgement` in `.config.yaml` is the explicit opt-out. Doctrine
+  rule 16, the shipped agent-instructions template, and the config reference all carry it; the
+  mechanical enforcement (gate refusal) follows in v4.1 (CR0229).
+
 - **The benchmark was rerun against the v4 release candidate before GA, across three model
   eras, and published whichever way it pointed (docs/benchmarks/2026-07-10-v4-rerun.md).**
   72 oracle-scored runs plus a post-hoc solution-quality rubric and the protocol's

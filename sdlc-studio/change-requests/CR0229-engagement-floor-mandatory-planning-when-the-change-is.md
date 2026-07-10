@@ -13,7 +13,7 @@ The v4 benchmark rerun (docs/benchmarks/2026-07-10-v4-rerun.md, finding 3) showe
 
 ## Acceptance Criteria
 
-- [ ] The doctrine and the shipped agent-instructions template state the floor as a hard rule (multi-file + spec-bearing repo -> mandatory spec-delta/AC pass before code), with the config opt-out named
+- [ ] (moved to CR0232, shipping in v4) ~~The doctrine and the shipped agent-instructions template state the floor as a hard rule~~
 - [ ] The floor is mechanically checkable where an sdlc-studio workspace exists (gate or conformance refuses a Done multi-file unit with no plan/AC artefact), advisory prose elsewhere
 - [ ] A future protocol revision measures the floor as its own benchmark arm (noted in protocol docs; not a blocking AC for this CR)
 
@@ -22,3 +22,4 @@ The v4 benchmark rerun (docs/benchmarks/2026-07-10-v4-rerun.md, finding 3) showe
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-10 | audit | Raised |
+| 2026-07-10 | Claude (sprint driver) | split per operator: the prose floor ships in v4 as CR0232; this CR keeps the mechanical gate + protocol arm for v4.1 |
