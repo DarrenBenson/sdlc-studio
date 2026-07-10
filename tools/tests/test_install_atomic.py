@@ -99,5 +99,52 @@ class ResolveTargetsAuto(unittest.TestCase):
         self.assertIn("copilot", out)
 
 
+class DowngradeGuard(unittest.TestCase):
+    """BG0100: install/sweep must refuse to overwrite a copy that is NEWER than the version being
+    installed, so an install from an older published release cannot silently revert newer local
+    work (a dev checkout ahead of the frozen remote)."""
+
+    def _dest(self, root: Path, version: str) -> Path:
+        d = root / "sdlc-studio"
+        (d / "templates").mkdir(parents=True)
+        (d / "SKILL.md").write_text("name: sdlc-studio\n", encoding="utf-8")
+        (d / "templates" / "version.yaml").write_text(
+            'skill_version: "%s"\n' % version, encoding="utf-8")
+        return d
+
+    def _would_downgrade(self, dest: Path, incoming: str, allow: str = "false") -> int:
+        driver = (
+            'source "%s"\n' % INSTALL_SH
+            + 'set +e\nwarn() { echo "WARN: $*" >&2; }\n'
+            + 'ALLOW_DOWNGRADE=%s\n' % allow
+            + 'would_downgrade "%s" "%s"; echo "RC=$?"\n' % (dest, incoming)
+        )
+        proc = subprocess.run(["bash", "-c", driver], capture_output=True, text=True,
+                              env={"PATH": "/usr/bin:/bin", "HOME": "/nonexistent"}, timeout=30)
+        return proc.stdout + proc.stderr
+
+    def test_refuses_downgrade_of_newer_copy(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            dest = self._dest(Path(d), "4.0.0-rc.1")
+            out = self._would_downgrade(dest, "3.6.0")
+            self.assertIn("RC=0", out)          # 0 = would downgrade -> caller skips
+            self.assertIn("refusing to downgrade", out)
+
+    def test_allows_downgrade_with_flag(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            dest = self._dest(Path(d), "4.0.0-rc.1")
+            self.assertIn("RC=1", self._would_downgrade(dest, "3.6.0", allow="true"))
+
+    def test_allows_upgrade(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            dest = self._dest(Path(d), "3.6.0")
+            self.assertIn("RC=1", self._would_downgrade(dest, "4.0.0-rc.1"))
+
+    def test_branch_name_is_not_a_false_downgrade(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            dest = self._dest(Path(d), "4.0.0")
+            self.assertIn("RC=1", self._would_downgrade(dest, "main"))  # non-semver -> not older
+
+
 if __name__ == "__main__":
     unittest.main()

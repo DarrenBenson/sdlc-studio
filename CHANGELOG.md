@@ -9,7 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Known issue found while dogfooding (EP0028 close; BG0100).** `install.sh` run from inside the dev repo downloads the PUBLISHED release and its sweep overwrites the repo's own git-tracked working tree with it (working-tree revert when the remote is behind local). Filed High; until fixed, use `./install.sh --no-sweep`, or mirror the local tree directly, to update an install from unreleased work.
 - **Retros and reviews are reconciled like every other type (EP0028, CR0211).** RETRO and RV
   were the last recurring numbered artefacts whose index rows were hand-edited. `reviews/` now
   has an `_index.md` (backfilled from the existing RV history), so `artifact new --type review`
@@ -87,6 +86,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **install.sh refuses to silently downgrade (BG0100, found dogfooding).** Running `install.sh`
+  from inside the dev repo downloads the published release and its sweep refreshes every copy on
+  the machine, including the repo's own working tree; when the remote was behind local (an unpushed
+  dev checkout), that silently reverted newer work. Both the primary install and the sweep now
+  compare versions (`version_lt` via `sort -V`, tolerating `-rc` and non-semver tokens) and **refuse
+  to overwrite a copy newer than the version being installed**, printing a loud warning and leaving
+  it untouched; `--allow-downgrade` forces it. The silent-downgrade vector is closed; a live dev
+  checkout being swept at the same-or-newer version still warrants `--no-sweep`.
 - **Era completion - v3 identity everywhere (EP0028; BG0086/87/88/93/97/99).** Six fixes so the
   schema-v3 default behaves, batch critic-approved (suite 1532, drift 0): `artifact new/batch`
   now links a story to a v3 ULID epic (`_find_epic` resolves the full record id instead of

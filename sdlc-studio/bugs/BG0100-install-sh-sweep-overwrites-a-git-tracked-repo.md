@@ -1,6 +1,7 @@
 # BG0100: install.sh sweep overwrites a git-tracked repo working tree with the downloaded release (working-tree data loss)
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (red-then-green bash-sourced tests: would_downgrade refuses 3.6.0 over a 4.0.0-rc.1 copy with a loud warning, allows it under --allow-downgrade, allows an upgrade, and a branch-name token is not a false downgrade; version_lt via sort -V; tools suite 121 OK). Scope: the silent-downgrade vector (remote behind local) is closed; a same/newer-version sweep over a live dev checkout still warrants --no-sweep (documented).
 > **Severity:** High
 > **Created:** 2026-07-10
 > **Created-by:** sdlc-studio file

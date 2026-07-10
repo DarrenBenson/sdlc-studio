@@ -53,6 +53,10 @@ Options:
     --no-sweep      Skip refreshing sdlc-studio copies found in other
                     tool locations (default: refresh them all so no
                     stale version lingers)
+    --allow-downgrade  Overwrite an install/copy that is NEWER than the version
+                    being installed (default: refuse, so an install from an
+                    older published release cannot silently downgrade newer
+                    local work - e.g. an unpushed dev checkout)
     --version VER   Install a specific version/tag (default: main)
     --help, -h      Show this help
 
@@ -92,6 +96,7 @@ DRY_RUN=false
 UNINSTALL=false
 LIST_TARGETS=false
 SWEEP=true
+ALLOW_DOWNGRADE=false
 VERSION="$BRANCH"
 TARGETS_RAW=""
 
@@ -101,6 +106,7 @@ while [[ $# -gt 0 ]]; do
         --local) INSTALL_MODE="local"; shift ;;
         --dry-run) DRY_RUN=true; shift ;;
         --no-sweep) SWEEP=false; shift ;;
+        --allow-downgrade) ALLOW_DOWNGRADE=true; shift ;;
         --uninstall) UNINSTALL=true; shift ;;
         --list-targets) LIST_TARGETS=true; shift ;;
         --target)
@@ -312,6 +318,9 @@ swap_install() {
 
 install_to() {
     local parent="$1" src="$2" dest="$1/$SKILL_NAME"
+    if would_downgrade "$dest" "$(installed_version "$src")"; then
+        return 0   # refused: a downgrade of newer local work is a skip, not a failure
+    fi
     if [[ "$DRY_RUN" == true ]]; then
         info "[dry run] would install to: $dest"; return
     fi
@@ -341,6 +350,30 @@ installed_version() {
     echo "${v:-unknown}"
 }
 
+# True when version $1 is strictly older than $2 (semver via `sort -V`, tolerating -rc suffixes).
+# A non-semver token (a branch name, or `unknown`) never compares as older, so it is never a
+# false downgrade.
+version_lt() {
+    [[ "$1" == "$2" ]] && return 1
+    case "$1$2" in *[!0-9.rc+-]*) return 1 ;; esac  # not both semver-ish -> not comparable
+    [[ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | head -n1)" == "$1" ]]
+}
+
+# True (and prints a warning) when writing version `$2` over the sdlc-studio copy at `$1` would
+# be a DOWNGRADE (the copy is newer) and --allow-downgrade was not given. Callers skip the write,
+# so an install from an older published release cannot silently revert newer local work (BG0100).
+would_downgrade() {
+    local dest="$1" incoming="$2" existing
+    [[ "$ALLOW_DOWNGRADE" == true ]] && return 1
+    [[ -d "$dest" ]] && is_skill_copy "$dest" || return 1
+    existing=$(installed_version "$dest")
+    if version_lt "$incoming" "$existing"; then
+        warn "$dest is at $existing, NEWER than the $incoming being installed - refusing to downgrade (pass --allow-downgrade to force). Newer local work is left untouched."
+        return 0
+    fi
+    return 1
+}
+
 # Identity guard: only ever touch a directory that is genuinely this skill.
 is_skill_copy() {
     [[ -f "$1/SKILL.md" ]] && grep -q '^name: sdlc-studio[[:space:]]*$' "$1/SKILL.md"
@@ -366,6 +399,11 @@ sweep_stale() {
                 continue
             fi
             old=$(installed_version "$dest")
+            # Never silently downgrade a copy that is newer than what we are installing - the
+            # sweep spreading an older published release over a newer dev checkout is BG0100.
+            if [[ "$DRY_RUN" != true ]] && would_downgrade "$dest" "$new_ver"; then
+                continue
+            fi
             found=true
             if [[ "$DRY_RUN" == true ]]; then
                 info "[dry run] would refresh: $dest ($old -> $new_ver)"
