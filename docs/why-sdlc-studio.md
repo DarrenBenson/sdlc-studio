@@ -45,9 +45,10 @@ worked." Faster code generation attacks the wrong constraint. The essays' indust
 analogy: "the code is the cloth. The organisation around it is where the money is" - at
 Cromford it was not any single machine that changed the economics of cotton, it was the
 mill: the organisation of machines, flow, and accountability around them. Prompt-and-hope
-AI coding is "a steam engine in every cottage" - the old way of working, a bit faster.
-Building the mill is the actual revolution, and it does not feel like one while you are
-laying it out. SDLC Studio is a mill you can install.
+AI coding is the absurdity the essay names "a steam engine in every cottage": a powerful
+machine bolted onto an unchanged cottage workflow - nobody ever did this, which is the
+point. Building the mill is the actual revolution, and it does not feel like one while
+you are laying it out. SDLC Studio is a mill you can install.
 
 Two more commitments follow from the essays. **The specification becomes the durable
 artifact and code becomes disposable output** - which is why the pipeline's centre of

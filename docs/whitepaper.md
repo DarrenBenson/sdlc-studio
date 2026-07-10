@@ -73,8 +73,11 @@ was, and remains, knowing what to build and being able to prove it worked." The
 essays' industrial analogy gives this paper its title. At Cromford it was not any
 single machine that changed the economics of cotton; it was the mill - the
 organisation of machines, flow, and accountability around them. "The code is the
-cloth. The organisation around it is where the money is." A steam engine in every
-cottage made the old work a little faster; building the mill was the revolution.
+cloth. The organisation around it is where the money is." Nobody put a steam engine
+in every cottage - the idea is absurd, a powerful machine bolted onto an unchanged
+cottage workflow. Yet that is precisely the shape of bolting a powerful model onto
+unchanged, unaccountable development habits. The revolution was never the engine;
+it was the mill built around it.
 
 Two consequences follow, and SDLC Studio is built on both. **The specification
 becomes the durable artefact and code becomes disposable output** - so the system's
@@ -162,14 +165,33 @@ point. Two measured campaigns exist: the original July 2026 study (five runs per
 cell, thirty in all) on the previous model generation, and a 72-run rerun
 (10 July 2026) of the same frozen fixtures against the v4 release candidate across
 three model tiers, extended by a ten-run mandated-arm addendum. The full
-reports, raw rows, and grading harness are in the repository.
+reports, raw rows, and grading harness are in the public repository
+(github.com/DarrenBenson/sdlc-studio, under `docs/benchmarks/` and `tools/bench/`);
+every path named in this paper resolves there.
 
-The fixtures are traps by construction. The headline fixture's ticket asks for a
-digest-notification feature whose naive implementation silently violates an
-*existing* quiet-hours rule elsewhere in the specification - the hidden-requirement
-interaction that ships from real backlogs every week. Everything needed to get it
-right is present in the visible workspace; the held-back suite decides pass or fail,
-never judgement.
+**What the test actually is, in plain terms.** Each fixture is a small, realistic
+codebase with a written specification of numbered rules and a ticket to deliver.
+The headline fixture is a notification service whose spec includes rule R5: nothing
+non-urgent is delivered during a user's quiet hours (22:00-07:00 local time), and a
+suppressed delivery is deferred, never dropped. The ticket asks for an everyday
+feature - digest mode, letting a user receive their notifications as one batch on
+demand instead of one at a time - and never mentions quiet hours. That silence is
+the trap: a digest is still a delivery, so the existing rule applies to the new
+feature, and the obvious implementation flushes a batch at 23:00 and wakes the user.
+The second fixture is the same idea for change requests: a support-reported
+one-line fix to duplicate-customer matching that quietly tempts the implementer to
+break two adjacent rules (names must stay case-sensitive; stored records must stay
+verbatim). Before any measured run, each fixture's held-back test suite was
+validated both ways - it fails the naive implementation and passes the correct one -
+and the agent never sees it. It plays the role of the customer finding out.
+
+This is the classic shape of a real production regression: not a bug in the new code,
+but an interaction between the new requirement and an existing one nobody re-read.
+Any team maintaining a living codebase with documented behaviour handles tickets of
+exactly this shape every week - which is why the benchmark asks only one question:
+does anything force the agent to re-read the spec it was given? Everything needed to
+get it right is present in the visible workspace; the held-back suite decides pass
+or fail, never judgement.
 
 **The quadrant.** Defect escapes on the trap fixture, by model and by how the
 discipline was engaged:
@@ -249,8 +271,11 @@ the floor.
 
 ## 5. The team is grown, not shipped
 
-Most agentic tooling that uses personas ships the same fixed cast of role-prompts to
-every project. SDLC Studio v4 generates the team from the project itself.
+Most agentic tooling ships no personas at all: the work is reviewed - where it is
+reviewed - by the model's own default character, at best behind a generic expert
+prompt. Where personas do appear, they are typically a fixed cast of role-prompts
+shipped identically to every project. SDLC Studio v4 does the third thing: it
+generates the team from the project itself.
 
 `persona generate --team` reads the requirements, the stack, and the risk signals,
 asks the operator only the questions it cannot infer (hard-capped, multiple-choice),
@@ -436,14 +461,15 @@ Stated with the same discipline the tool enforces:
 
 ## 11. Claims register {#claims-register}
 
-Every load-bearing claim in this paper, with its verification path. An unverifiable
-claim in a paper about verifiable delivery would be a poor start.
+Every load-bearing claim in this paper, with its verification path. Bare paths are
+relative to the public repository, github.com/DarrenBenson/sdlc-studio. An
+unverifiable claim in a paper about verifiable delivery would be a poor start.
 
 | Claim | Evidence |
 | --- | --- |
-| Quadrant escape figures; 1.07-1.18x mandated token overhead | `docs/benchmarks/2026-07-10-v4-rerun.md`; raw rows `tools/bench/results/runs.jsonl`; every figure independently recomputed by a reviewer agent before publication (archived summary: `tools/bench/results/v4-rerun/verification-note.md`) |
-| Pricing table and the 3-7 cent process premium | Pricing appendix of the same report; July 2026 list rates; 80/20 blend assumption stated |
-| July 10/10 vs 2/5 escape result; auditability 0.88 vs 0.60 | `docs/benchmarks/2026-07-08-n5-run.md` (previous model generation, kept dated) |
+| Quadrant escape figures; 1.07-1.18x mandated token overhead | [2026-07-10 rerun report](https://github.com/DarrenBenson/sdlc-studio/blob/main/docs/benchmarks/2026-07-10-v4-rerun.md); raw rows [runs.jsonl](https://github.com/DarrenBenson/sdlc-studio/blob/main/tools/bench/results/runs.jsonl); every figure independently recomputed by a reviewer agent before publication ([archived summary](https://github.com/DarrenBenson/sdlc-studio/blob/main/tools/bench/results/v4-rerun/verification-note.md)) |
+| Pricing table and the 3-7 cent process premium | [Pricing appendix](https://github.com/DarrenBenson/sdlc-studio/blob/main/docs/benchmarks/2026-07-10-v4-rerun.md) of the rerun report; July 2026 list rates; 80/20 blend assumption stated |
+| July 10/10 vs 2/5 escape result; auditability 0.88 vs 0.60 | [2026-07-08 N=5 report](https://github.com/DarrenBenson/sdlc-studio/blob/main/docs/benchmarks/2026-07-08-n5-run.md) (previous model generation, kept dated) |
 | Rubric convergence with the hidden suites; requirements-not-code-quality failures | Rubric archive `tools/bench/results/v4-rerun/`; convergence claim restricted to behavioural verdicts, artefact rows disclosed |
 | Engagement floor as default | Doctrine rule 16; `templates/agent-instructions.md`; `engagement_floor` in the config reference |
 | Independence gate, depth-gated closes, attestation ledger | `scripts/transition.py`, `scripts/critic.py`; the tool's own repository history is the working example |
@@ -462,7 +488,9 @@ claim in a paper about verifiable delivery would be a poor start.
   philosophical basis, quoted throughout.
 - SDLC Studio benchmark reports: protocol v2 pre-registration, the July 2026 N=5
   study, and the 10 July 2026 v4 rerun with the mandated-arm addendum and pricing
-  appendix - all under `docs/benchmarks/` with raw data in-repo.
+  appendix - all under
+  [github.com/DarrenBenson/sdlc-studio/tree/main/docs/benchmarks](https://github.com/DarrenBenson/sdlc-studio/tree/main/docs/benchmarks)
+  with raw data in the same repository.
 - *Why SDLC Studio* (`docs/why-sdlc-studio.md`) - the evidence argument at article
   length; the README for the ten-minute start.
 - DORA, *Accelerate State of DevOps* (2024); MIT, *The GenAI Divide* (2025).
