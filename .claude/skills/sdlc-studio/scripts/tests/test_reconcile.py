@@ -1671,6 +1671,55 @@ class MasterHeaderTieBreakTests(unittest.TestCase):
         self.assertIsNone(reconcile._master_data_header(lines, census))
 
 
+class EpicBreakdownTests(unittest.TestCase):
+    """BG0101: an epic's Story Breakdown checkboxes must be reconciled for EVERY unit type
+    listed (bug/CR/story), not only stories - a terminal unit behind an unchecked box (or a
+    checked box over a live unit) is drift, and apply syncs it mechanically."""
+
+    @staticmethod
+    def _fixture(root: Path) -> Path:
+        for rel, fname, body in [
+            ("epics", "EP0001-alpha.md",
+             "# EP0001: Alpha\n\n> **Status:** In Progress\n\n## Story Breakdown\n\n"
+             "- [ ] [BG0001](../bugs/BG0001-x.md) - fixed bug, box unchecked (drift)\n"
+             "- [x] [CR0001](../change-requests/CR0001-y.md) - live CR, box checked (drift)\n"
+             "- [ ] [US0001](../stories/US0001-z.md) - live story, box unchecked (clean)\n"
+             "- [ ] US9999 - placeholder stub with no backing file (skipped, never drift)\n"),
+            ("bugs", "BG0001-x.md", "# BG0001: x\n\n> **Status:** Fixed\n"),
+            ("change-requests", "CR0001-y.md", "# CR0001: y\n\n> **Status:** In Progress\n"),
+            ("stories", "US0001-z.md", "# US0001: z\n\n> **Status:** In Progress\n"),
+        ]:
+            d = root / "sdlc-studio" / rel
+            d.mkdir(parents=True, exist_ok=True)
+            (d / fname).write_text(body, encoding="utf-8")
+        return root
+
+    def test_detect_flags_both_directions_and_skips_placeholders(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            drift = reconcile.epic_breakdown_drift(self._fixture(Path(d)))
+            kinds = {(x["id"], x["kind"]) for x in drift}
+            self.assertIn(("BG0001", "breakdown-unticked"), kinds)   # terminal, box empty
+            self.assertIn(("CR0001", "breakdown-ticked-early"), kinds)  # live, box checked
+            self.assertEqual(len(drift), 2)  # US0001 clean, US9999 placeholder skipped
+
+    def test_apply_syncs_boxes_both_ways(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(Path(d))
+            res = reconcile.apply_breakdown(root)
+            self.assertEqual(sorted(res["synced"]), ["BG0001", "CR0001"])
+            text = (root / "sdlc-studio" / "epics" / "EP0001-alpha.md").read_text(encoding="utf-8")
+            self.assertIn("- [x] [BG0001]", text)
+            self.assertIn("- [ ] [CR0001]", text)
+            self.assertEqual(reconcile.epic_breakdown_drift(root), [])  # now clean
+            self.assertEqual(reconcile.apply_breakdown(root)["synced"], [])  # idempotent
+
+    def test_detect_runs_in_the_default_sweep(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(Path(d))
+            rc = reconcile.main(["detect", "--root", str(root)])
+            self.assertEqual(rc, 1)  # breakdown drift alone must make detect non-zero
+
+
 class MetaIndexTests(unittest.TestCase):
     """retros/ and reviews/ coverage: row presence only, house columns tolerated, the meta id
     namespace (RETRO/RV) that the pipeline id regexes exclude."""

@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 1 |
-| In Progress | 0 |
+| Open | 0 |
+| In Progress | 1 |
 | Fixed | 21 |
 | Verified | 0 |
 | Closed | 79 |
@@ -67,7 +67,7 @@
 | [BG0098](BG0098-lint-md-s-glob-skips-dot-directories-the.md) | lint:md's glob skips dot-directories: the shipped skill payload is never markdownlint-checked | Fixed | Medium | 2026-07-10 | 2026-07-10 |
 | [BG0099](BG0099-artifact-new-batch-cannot-link-a-story-to.md) | artifact new/batch cannot link a story to a v3 ULID epic: _find_epic splits the id on the first dash | Fixed | High | 2026-07-10 | 2026-07-10 |
 | [BG0100](BG0100-install-sh-sweep-overwrites-a-git-tracked-repo.md) | install.sh sweep overwrites a git-tracked repo working tree with the downloaded release (working-tree data loss) | Fixed | High | 2026-07-10 | 2026-07-10 |
-| [BG0101](BG0101-reconcile-is-blind-to-epic-story-breakdown-checkbox.md) | reconcile is blind to epic Story Breakdown checkbox drift for bug/CR units | Open | Medium | 2026-07-10 | 2026-07-10 |
+| [BG0101](BG0101-reconcile-is-blind-to-epic-story-breakdown-checkbox.md) | reconcile is blind to epic Story Breakdown checkbox drift for bug/CR units | In Progress | Medium | 2026-07-10 | 2026-07-10 |
 
 ## Archived Releases
 

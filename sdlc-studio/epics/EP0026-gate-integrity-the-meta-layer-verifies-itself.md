@@ -17,15 +17,15 @@ trust their own green. Runs pre-tag per the operator's backlog-clear-before-v4 d
 
 Unit roster (bugs fixed directly; CRs decompose via `cr action` at execution - stories land under this epic):
 
-- [ ] [CR0202](../change-requests/CR0202-detect-a-disabled-commit-gate-nothing-verifies-core.md) - detect a disabled commit gate (hooksPath advisory in gate/status)
-- [ ] [CR0203](../change-requests/CR0203-make-the-mutation-gate-earn-its-lane-wire.md) - mutation gate: wire a bounded run into sprint close, or remove the lane
-- [ ] [CR0204](../change-requests/CR0204-normalise-the-eleven-test-files-with-mid-file.md) - normalise the eleven mid-file `__main__` test guards (36 hidden classes)
-- [ ] [CR0209](../change-requests/CR0209-one-unit-close-verb-batch-gate-reporting-a.md) - unit-close orchestrator + batch gate reporting + metadata-stamp verb
-- [ ] [BG0085](../bugs/BG0085-sprint-plan-origin-drift-preflight-silently-dies-for.md) - sprint plan origin-drift preflight silently dies for --order manual
-- [ ] [BG0090](../bugs/BG0090-gate-py-fail-open-a-check-that-raises.md) - gate.py fail-open: a raising blocking check reads as PASS
-- [ ] [BG0094](../bugs/BG0094-plan-review-resolves-stories-with-a-case-sensitive.md) - plan_review case-sensitive story glob: unclearable false block
-- [ ] [BG0095](../bugs/BG0095-the-provenance-external-stamp-that-gates-shell-verifiers.md) - Provenance: external stamp has no writer on the ingest path
-- [ ] [BG0096](../bugs/BG0096-ci-never-runs-gate-py-although-the-pre.md) - CI never runs gate.py despite claimed parity
+- [x] [CR0202](../change-requests/CR0202-detect-a-disabled-commit-gate-nothing-verifies-core.md) - detect a disabled commit gate (hooksPath advisory in gate/status)
+- [x] [CR0203](../change-requests/CR0203-make-the-mutation-gate-earn-its-lane-wire.md) - mutation gate: wire a bounded run into sprint close, or remove the lane
+- [x] [CR0204](../change-requests/CR0204-normalise-the-eleven-test-files-with-mid-file.md) - normalise the eleven mid-file `__main__` test guards (36 hidden classes)
+- [x] [CR0209](../change-requests/CR0209-one-unit-close-verb-batch-gate-reporting-a.md) - unit-close orchestrator + batch gate reporting + metadata-stamp verb
+- [x] [BG0085](../bugs/BG0085-sprint-plan-origin-drift-preflight-silently-dies-for.md) - sprint plan origin-drift preflight silently dies for --order manual
+- [x] [BG0090](../bugs/BG0090-gate-py-fail-open-a-check-that-raises.md) - gate.py fail-open: a raising blocking check reads as PASS
+- [x] [BG0094](../bugs/BG0094-plan-review-resolves-stories-with-a-case-sensitive.md) - plan_review case-sensitive story glob: unclearable false block
+- [x] [BG0095](../bugs/BG0095-the-provenance-external-stamp-that-gates-shell-verifiers.md) - Provenance: external stamp has no writer on the ingest path
+- [x] [BG0096](../bugs/BG0096-ci-never-runs-gate-py-although-the-pre.md) - CI never runs gate.py despite claimed parity
 - [x] [US0113: Detect a disabled commit gate in gate and status](../stories/US0113-detect-a-disabled-commit-gate-in-gate-and.md)
 - [x] [US0114: Normalise mid-file main guards in the test suite](../stories/US0114-normalise-mid-file-main-guards-in-the-test.md)
 - [x] [US0115: Advisory lanes earn their signal: mutation wired into sprint close, disclosure triaged to zero](../stories/US0115-advisory-lanes-earn-their-signal-mutation-wired-into.md)

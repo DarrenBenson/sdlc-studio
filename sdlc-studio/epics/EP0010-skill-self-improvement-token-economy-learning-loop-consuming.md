@@ -144,7 +144,7 @@ shared with `reconcile.parse_index`.
 
 ## Story Breakdown
 
-- [ ] [US0040: index-archive writer + terminal-status vocab flag + dry-run (CR0125)](../stories/US0040-index-archive-writer-terminal-status-vocab-flag-dry.md)
+- [x] [US0040: index-archive writer + terminal-status vocab flag + dry-run (CR0125)](../stories/US0040-index-archive-writer-terminal-status-vocab-flag-dry.md)
 - [x] [US0041: next_id archive-union guard so archived ids are never reallocated (CR0125)](../stories/US0041-next-id-archive-union-guard-so-archived-ids.md)
 - [x] [US0042: retro hard close-gate: sprint close fails loud without a batch retro (CR0129)](../stories/US0042-retro-hard-close-gate-sprint-close-fails-loud.md)
 - [x] [US0043: lessons re-validation verb: close obsolete lessons by validity (CR0129)](../stories/US0043-lessons-re-validation-verb-close-obsolete-lessons-by.md)

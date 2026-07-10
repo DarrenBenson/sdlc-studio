@@ -654,6 +654,86 @@ def apply_meta(repo_root: Path | str, dry_run: bool = False) -> dict:
     return result
 
 
+# -----------------------------------------------------------------------------
+# Epic Story Breakdown checkboxes (every unit type, not only stories)
+#
+# The live cascade (transition._cascade_epic) ticks a STORY's box via its `Epic` field;
+# bugs and CRs listed in a breakdown have no such field, so their boxes were invisible to
+# both the cascade and this census - an epic could read Done over a breakdown that
+# contradicted its units. This lane compares each checkbox against its unit's
+# terminal-ness (the shared sdlc_md.terminal_statuses authority). A line whose id resolves
+# to no file (a founding-epic placeholder stub) is skipped, and a `Deferred` unit is
+# exempt in both directions (re-activatable: neither box state is provably wrong).
+# -----------------------------------------------------------------------------
+_BREAKDOWN_BOX_RE = re.compile(r"^\s*- \[( |x|X)\]\s")
+
+
+def _breakdown_units(root: Path, text: str):
+    """Yield (lineno, ticked, unit_id, unit_type, canonical_status) for each resolvable
+    checkbox line of an epic body."""
+    for i, ln in enumerate(text.splitlines()):
+        m = _BREAKDOWN_BOX_RE.match(ln)
+        if not m:
+            continue
+        idm = sdlc_md.ID_SEARCH_RE.search(ln)
+        if not idm:
+            continue
+        hit = sdlc_md.find_by_id(root, idm.group(0))
+        if not hit:
+            continue  # placeholder stub - no backing file, nothing to compare
+        upath, utype = hit
+        raw = sdlc_md.extract_field(upath.read_text(encoding="utf-8"), "Status") or ""
+        canon = _canonical_status(raw, sdlc_md.STATUS_VOCAB.get(utype, [])) or raw
+        yield i, m.group(1) in ("x", "X"), idm.group(0), utype, canon
+
+
+def epic_breakdown_drift(repo_root: Path | str) -> list[dict]:
+    """Checkbox drift across every epic's Story Breakdown: a terminal unit behind an
+    unchecked box (`breakdown-unticked`), or a checked box over a live unit
+    (`breakdown-ticked-early` - the direction that masks unfinished work)."""
+    root = Path(repo_root)
+    drift: list[dict] = []
+    for epath in sdlc_md.artifact_files("epic", root):
+        text = epath.read_text(encoding="utf-8")
+        eid = sdlc_md.extract_record_id(epath.stem) or epath.stem
+        for _ln, ticked, uid, utype, canon in _breakdown_units(root, text):
+            if canon == "Deferred":
+                continue
+            terminal = sdlc_md.is_terminal_status(utype, canon)
+            if terminal and not ticked:
+                drift.append({"type": "epic", "id": uid, "kind": "breakdown-unticked",
+                              "file_status": canon, "index_status": None,
+                              "fix": f"tick {uid} ({canon}) in {eid}'s breakdown"})
+            elif ticked and not terminal:
+                drift.append({"type": "epic", "id": uid, "kind": "breakdown-ticked-early",
+                              "file_status": canon, "index_status": None,
+                              "fix": f"untick {uid} ({canon}) in {eid}'s breakdown - "
+                                     f"a checked box over a live unit masks unfinished work"})
+    return drift
+
+
+def apply_breakdown(repo_root: Path | str, dry_run: bool = False) -> dict:
+    """Mechanically sync every epic-breakdown checkbox to its unit's terminal-ness (both
+    directions), the same edit the story cascade performs live. Returns {synced: [ids]}."""
+    root = Path(repo_root)
+    synced: list[str] = []
+    for epath in sdlc_md.artifact_files("epic", root):
+        text = epath.read_text(encoding="utf-8")
+        lines = text.splitlines()
+        changed = False
+        for i, ticked, uid, utype, canon in _breakdown_units(root, text):
+            if canon == "Deferred":
+                continue
+            want = sdlc_md.is_terminal_status(utype, canon)
+            if want != ticked:
+                lines[i] = re.sub(r"\[[ xX]\]", "[x]" if want else "[ ]", lines[i], count=1)
+                synced.append(uid)
+                changed = True
+        if changed and not dry_run:
+            sdlc_md.atomic_write(epath, "\n".join(lines) + ("\n" if text.endswith("\n") else ""))
+    return {"synced": synced}
+
+
 def cmd_detect(args: argparse.Namespace) -> int:
     """Run drift detection across the selected scope and report."""
     repo_root = Path(args.root).resolve()
@@ -669,6 +749,10 @@ def cmd_detect(args: argparse.Namespace) -> int:
     # 'meta' scope, never on a single pipeline scope like 'bugs'.
     if args.scope in (None, "meta"):
         all_drift.extend(meta_index_drift(repo_root))
+    # Breakdown checkboxes run on the default sweep and the 'epics' scope (they belong to
+    # the epic files even though the drifting unit may be a bug or CR).
+    if args.scope in (None, "epics"):
+        all_drift.extend(epic_breakdown_drift(repo_root))
 
     by_kind: dict[str, int] = {}
     for d in all_drift:
@@ -1284,10 +1368,13 @@ def cmd_apply(args: argparse.Namespace) -> int:
     n = 0
     unapplied = 0
     do_meta = args.scope in (None, "meta")
+    do_breakdown = args.scope in (None, "epics")
     if getattr(args, "format", "text") == "json":
         by_type = {t: apply_type(t, repo_root, dry_run=args.dry_run) for t in types}
         if do_meta:
             by_type["meta"] = apply_meta(repo_root, dry_run=args.dry_run)
+        if do_breakdown:
+            by_type["breakdown"] = apply_breakdown(repo_root, dry_run=args.dry_run)
         applied = sum(len(r.get("changes", [])) + len(r.get("appended", [])) for r in by_type.values())
         blocked = sum(len(r.get("unapplied", [])) + len(r.get("missing_unapplied", []))
                       + (1 if r.get("refused") else 0) for r in by_type.values())
@@ -1325,6 +1412,11 @@ def cmd_apply(args: argparse.Namespace) -> int:
                   f"{type_} index - no reconcile-managed summary block (add a Total "
                   f"row to the global summary); counts remain drifted", file=sys.stderr)
             unapplied += 1
+    if do_breakdown:
+        b = apply_breakdown(repo_root, dry_run=args.dry_run)
+        for uid in b["synced"]:
+            print(f"{'WOULD sync' if args.dry_run else 'synced'} breakdown checkbox for {uid}")
+            n += 1
     if do_meta:
         m = apply_meta(repo_root, dry_run=args.dry_run)
         for a in m["appended"]:
