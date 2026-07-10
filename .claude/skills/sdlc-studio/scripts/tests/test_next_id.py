@@ -13,6 +13,8 @@ from pathlib import Path
 
 SCRIPT_PATH = Path(__file__).resolve().parent.parent / "next_id.py"
 sys.path.insert(0, str(SCRIPT_PATH.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the shared gitutil helper
+import gitutil  # noqa: E402
 _spec = importlib.util.spec_from_file_location("next_id", SCRIPT_PATH)
 assert _spec and _spec.loader
 next_id = importlib.util.module_from_spec(_spec)
@@ -146,8 +148,7 @@ class AllocateNumberTests(unittest.TestCase):
         import os, shutil, subprocess
         if shutil.which("git") is None:
             self.skipTest("git not available")
-        env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
-               "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"}
+        env = gitutil.git_env()  # host config neutralised (gpgsign-safe)
         def g(args, cwd):
             subprocess.run(["git", *args], cwd=str(cwd), check=True, capture_output=True, env=env)
         with tempfile.TemporaryDirectory() as d:

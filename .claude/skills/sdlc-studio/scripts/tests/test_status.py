@@ -11,6 +11,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the shared gitutil helper
+import gitutil  # noqa: E402
+
 SCRIPT_PATH = Path(__file__).resolve().parent.parent / "status.py"
 _spec = importlib.util.spec_from_file_location("status", SCRIPT_PATH)
 assert _spec and _spec.loader
@@ -136,10 +139,9 @@ class WorkspaceAdvisoryTests(unittest.TestCase):
         cd.mkdir(parents=True)
         (cd / "CR0001-a.md").write_text("# CR-0001: a\n\n> **Status:** Proposed\n",
                                         encoding="utf-8")
-        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
-        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
-        subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
-                        "commit", "-qm", "base"], cwd=root, check=True)
+        gitutil.git(["init", "-q"], root)
+        gitutil.git(["add", "-A"], root)
+        gitutil.git(["commit", "-qm", "base"], root)
         return root
 
     def test_uncommitted_artifact_changes_are_named(self) -> None:

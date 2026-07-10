@@ -102,10 +102,12 @@ for t, info in d.get("types", {}).items():
   printf '       %s→ fix:%s address each failing check; run the named script for per-item detail (e.g. `%s/validate.py check`, `%s/conformance.py`); mechanical drift clears with `%s/reconcile.py apply`\n\n' "$B" "$N" "$skill" "$skill" "$skill"
 fi
 
-# Unit tests: only when the commit touches scripts/ or tools/ (keeps doc commits fast).
+# Unit tests: only when the commit touches scripts/, tools/, or templates/ (keeps pure-doc
+# commits fast). templates/ counts because several skill tests assert over the shipped
+# templates, so a template edit can break the suite.
 # Two suites: shipped skill scripts, and the repo-only tools/ checkers (kept out of
 # the skill payload so they do not ship to consuming projects).
-if git diff --cached --name-only | grep -qE "^\.claude/skills/sdlc-studio/scripts/|^tools/"; then
+if git diff --cached --name-only | grep -qE "^\.claude/skills/sdlc-studio/scripts/|^\.claude/skills/sdlc-studio/templates/|^tools/"; then
   run "skill-tests" \
     "every shipped skill script unit test passes" \
     "fix the code or the test named in the failure above; re-run: python3 -m unittest discover -s $skill/tests" \

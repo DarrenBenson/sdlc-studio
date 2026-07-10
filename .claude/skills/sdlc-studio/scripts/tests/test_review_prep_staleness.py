@@ -10,6 +10,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 import unittest
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the shared gitutil helper
+import gitutil  # noqa: E402
+
 SCRIPT = Path(__file__).resolve().parent.parent / "review_prep.py"
 
 
@@ -42,10 +45,8 @@ class ModifiedTests(unittest.TestCase):
         mod = _load()
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
-                   "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"}
             run = lambda *a: subprocess.run(["git", "-C", str(root), *a], check=True,
-                                            capture_output=True, env={**__import__("os").environ, **env})
+                                            capture_output=True, env=gitutil.git_env())
             run("init", "-q")
             f = root / "prd.md"
             f.write_text("x", encoding="utf-8")
@@ -69,10 +70,8 @@ class ModifiedTests(unittest.TestCase):
         mod = _load()
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
-                   "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"}
             run = lambda *a: subprocess.run(["git", "-C", str(root), *a], check=True,
-                                            capture_output=True, env=env)
+                                            capture_output=True, env=gitutil.git_env())
             run("init", "-q")
             base = root / "sdlc-studio"
             (base / ".local").mkdir(parents=True)

@@ -7,6 +7,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the shared gitutil helper
+import gitutil  # noqa: E402
+
 SCRIPT = Path(__file__).resolve().parent.parent / "sprint.py"
 
 
@@ -829,7 +832,8 @@ sprint = _load()
 
 
 def _run(cwd, *args):
-    return _sp.run(["git", "-C", str(cwd), *args], capture_output=True, text=True)
+    return _sp.run(["git", "-C", str(cwd), *args], capture_output=True, text=True,
+                   env=gitutil.git_env())  # host config neutralised (gpgsign-safe)
 
 
 def _behind_repo(d):

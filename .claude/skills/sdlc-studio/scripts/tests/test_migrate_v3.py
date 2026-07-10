@@ -14,7 +14,9 @@ from pathlib import Path
 
 SCR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCR))
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the shared gitutil helper
 from lib import sdlc_md  # noqa: E402
+import gitutil  # noqa: E402
 
 
 def _load(name: str):
@@ -257,12 +259,10 @@ class GitAddEpochParseTests(unittest.TestCase):
         import subprocess
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            gitutil.git(["init", "-q"], root)
             (root / "a.md").write_text("x\n", encoding="utf-8")
-            subprocess.run(["git", "-C", str(root), "-c", "user.email=t@t",
-                            "-c", "user.name=t", "add", "-A"], check=True)
-            subprocess.run(["git", "-C", str(root), "-c", "user.email=t@t",
-                            "-c", "user.name=t", "commit", "-qm", "add"], check=True)
+            gitutil.git(["add", "-A"], root)
+            gitutil.git(["commit", "-qm", "add"], root)
             epochs = migrate_v3._git_add_epochs(root)
             self.assertIn("a.md", epochs)
             self.assertGreater(epochs["a.md"], 1_000_000_000_000)  # a real ms epoch

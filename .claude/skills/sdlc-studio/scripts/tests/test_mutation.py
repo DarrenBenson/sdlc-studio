@@ -13,6 +13,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the shared gitutil helper
+import gitutil  # noqa: E402
+
 SCRIPT = Path(__file__).resolve().parent.parent / "mutation.py"
 
 
@@ -177,8 +180,7 @@ class LaneTests(unittest.TestCase):
             self.assertEqual([p.name for p in explicit], ["target.py"])
             subprocess.run(["git", "init", "-q"], cwd=root, check=True)
             subprocess.run(["git", "add", "-A"], cwd=root, check=True)
-            subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
-                            "commit", "-qm", "base"], cwd=root, check=True)
+            gitutil.git(["commit", "-qm", "base"], root)
             (root / "target.py").write_text(TARGET + "\n# touched\n", encoding="utf-8")
             since = mut.select_files(root, since="HEAD")
             self.assertEqual([p.name for p in since], ["target.py"])
@@ -343,8 +345,7 @@ class StoryLaneTests(unittest.TestCase):
             root = _fixture(Path(d))
             subprocess.run(["git", "init", "-q"], cwd=root, check=True)
             subprocess.run(["git", "add", "target.py"], cwd=root, check=True)
-            subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
-                            "commit", "-qm", "base"], cwd=root, check=True)
+            gitutil.git(["commit", "-qm", "base"], root)
             (root / "brand_new.py").write_text("def n():\n    return 2\n", encoding="utf-8")
             since = mut.select_files(root, since="HEAD")
             self.assertIn("brand_new.py", [p.name for p in since])

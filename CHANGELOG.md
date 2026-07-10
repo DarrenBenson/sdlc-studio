@@ -47,7 +47,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the repo-root docs (README, AGENTS, CLAUDE, ...) had never been scanned, so a broken `.md` link
   there was invisible; it now file-checks their links (anchored or not). The skill tree still
   checks only anchored intra-skill references - its templates and doc examples carry many
-  legitimate non-resolving bare links (`../prd.md`, `path/to/guide.md`).
+  legitimate non-resolving bare links (`../prd.md`, `path/to/guide.md`). The pre-commit hook now
+  runs the unit suites when `templates/` is staged too (not only `scripts/`/`tools/`), since
+  several tests assert over the shipped templates. Git-invoking tests share a new `gitutil` helper
+  that neutralises the host git config (`GIT_CONFIG_GLOBAL`/`SYSTEM` -> /dev/null), so a
+  developer's `commit.gpgsign` no longer makes the suite fail or hang.
 - **One CLI argument grammar across the script family (EP0028, CR0210).** The scripts disagreed
   on how ids and targets were passed - `audit check` took `--ids` comma-separated, `transition
   set` forced exactly one of `--id`/`--ids`, `artifact revision` required `--ids`, `ledger
