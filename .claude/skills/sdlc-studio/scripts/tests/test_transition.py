@@ -982,5 +982,70 @@ class AnnotateCannotBypassGatesTests(unittest.TestCase):
             self.assertEqual(p.read_text(encoding="utf-8"), before)
 
 
+class OneCallCloseTests(unittest.TestCase):
+    """CR0213: the three-verb bug close (annotate depth, record verdict, gated set) collapses
+    to one call - and every predictable refusal happens BEFORE any write."""
+
+    def _bug(self, root: Path) -> Path:
+        bd = root / "sdlc-studio" / "bugs"
+        bd.mkdir(parents=True)
+        (bd / "BG0001-x.md").write_text(
+            "# BG0001: a\n\n> **Status:** In Progress\n", encoding="utf-8")
+        (bd / "_index.md").write_text(
+            "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [BG0001](BG0001-x.md) | a | In Progress |\n", encoding="utf-8")
+        return root
+
+    def test_one_call_stamps_records_and_transitions(self) -> None:
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bug(Path(d))
+            with redirect_stdout(io.StringIO()):
+                rc = tr.main(["set", "--id", "BG0001", "--status", "Fixed",
+                              "--depth", "functional (one-call test)",
+                              "--verdict", "approve", "--reviewer", "Blake", "--author", "Alex",
+                              "--root", str(root)])
+            self.assertEqual(rc, 0)
+            text = (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
+            self.assertIn("> **Status:** Fixed", text)
+            self.assertIn("Verification depth:** functional (one-call test)", text)
+            log = (root / "sdlc-studio" / "reviews" / "critic-verdicts.md").read_text(encoding="utf-8")
+            self.assertIn("BG0001", log)
+            self.assertIn("Blake", log)
+
+    def test_self_review_refused_before_any_write(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bug(Path(d))
+            rc = tr.main(["set", "--id", "BG0001", "--status", "Fixed",
+                          "--depth", "functional", "--verdict", "approve",
+                          "--reviewer", "Alex", "--author", "Alex", "--root", str(root)])
+            self.assertEqual(rc, 2)
+            text = (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
+            self.assertIn("> **Status:** In Progress", text)           # no transition
+            self.assertNotIn("Verification depth", text)               # no depth stamp either
+            self.assertFalse((root / "sdlc-studio" / "reviews" / "critic-verdicts.md").exists())
+
+    def test_reviewer_without_author_is_a_usage_error(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bug(Path(d))
+            rc = tr.main(["set", "--id", "BG0001", "--status", "Fixed",
+                          "--verdict", "approve", "--reviewer", "Blake", "--root", str(root)])
+            self.assertEqual(rc, 2)
+
+    def test_depth_alone_still_gates_normally(self) -> None:
+        # --depth without reviewer/author: stamp + gated transition, no verdict recording
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bug(Path(d))
+            with redirect_stdout(io.StringIO()):
+                rc = tr.main(["set", "--id", "BG0001", "--status", "Fixed",
+                              "--depth", "functional (stamp only)", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            text = (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
+            self.assertIn("> **Status:** Fixed", text)
+
+
 if __name__ == "__main__":
     unittest.main()

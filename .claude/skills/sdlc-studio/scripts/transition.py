@@ -486,10 +486,29 @@ def cmd_set(args: argparse.Namespace) -> int:
         print("specify at least one id: --id (repeatable) or --ids as a comma list",
               file=sys.stderr)
         return 2
+    # One-call close (the three-verb ceremony was easy to half-do): --depth stamps
+    # `Verification depth`, --reviewer/--author record the independent verdict, then the
+    # gated transition runs - with every PREDICTABLE refusal raised before any write.
+    reviewer, author = getattr(args, "reviewer", None), getattr(args, "author", None)
+    if reviewer or author:
+        if not (reviewer and author and args.verdict):
+            print("error: the one-call verdict needs --verdict, --reviewer AND --author "
+                  "(or none of reviewer/author to skip recording one)", file=sys.stderr)
+            return 2
+        import critic
+        if critic._id(reviewer) == critic._id(author):
+            print("error: reviewer == author - independence is the floor; a self-review "
+                  "never clears the critiqued gate, so nothing was written", file=sys.stderr)
+            return 2
     results = []
     refused = 0
     for aid in ids:
         try:
+            if getattr(args, "depth", None) and not args.dry_run:
+                annotate(args.root, aid, "Verification depth", args.depth)
+            if reviewer and not args.dry_run:
+                import critic
+                critic.record_verdict(args.root, aid, args.verdict, reviewer, author)
             metrics = {k: v for k, v in {"iterations": _num(args.iterations),
                                          "wall_time_s": _num(args.wall_time_s),
                                          "critic_verdict": args.verdict}.items() if v is not None}
@@ -536,7 +555,14 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--root", default=".")
     s.add_argument("--iterations", help="run metric passed to the terminal-close telemetry event")
     s.add_argument("--wall-time-s", dest="wall_time_s", help="run metric for the telemetry event")
-    s.add_argument("--verdict", help="critic verdict recorded on the telemetry event")
+    s.add_argument("--verdict", help="critic verdict recorded on the telemetry event (and, with "
+                                     "--reviewer/--author, in the critic log)")
+    s.add_argument("--depth", help="one-call close: stamp `Verification depth` with this value "
+                                   "before the gated transition (replaces a separate annotate)")
+    s.add_argument("--reviewer", help="one-call close: record the critic verdict under this "
+                                      "reviewer (must differ from --author)")
+    s.add_argument("--author", help="one-call close: the authoring seat the reviewer judged "
+                                    "(reviewer != author enforced before any write)")
     s.add_argument("--force", action="store_true",
                    help="bypass the story->Done AC-verify gate; recorded as an override")
     s.add_argument("--triaged-by", dest="triaged_by",

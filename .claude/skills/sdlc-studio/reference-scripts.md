@@ -117,6 +117,7 @@ lists every script with a one-line summary; open the linked page for the full en
 - `init.py` - Deterministic greenfield initialiser - `init` is now an executable, not a manual
 - `decisions.py` - Project decisions log - the canonical home for load-bearing decisions, both
 - `transition.py` - Deterministic status transition + cascade. `set --id <ID> --status <new>` sets `Status`,
+  and the canonical one-call bug close is `set --id BGxxxx --status Fixed --depth "<tier (evidence)>" --verdict approve --reviewer <R> --author <A>` - depth stamp, independent verdict and gated transition in one call, every predictable refusal raised before any write,
 - `archive.py` - Index archival for large boards. `archive --type <t> --release <r>` moves a
 - `file_finding.py` - Deterministic Bug/CR/RFC filer for audit findings. Allocates a
 - `next_id.py` - `allocate`: next free ID for a type (`--remote` also scans `origin/main`)

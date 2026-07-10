@@ -1,6 +1,7 @@
 # CR-0213: one-call gated terminal transition for bugs: depth + verdict + status together
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Verification depth:** functional (red-then-green: one call stamps depth + records the independent verdict + runs the gated transition; self-review refused BEFORE any write - no stamp, no log, no status change, asserted byte-for-byte; reviewer-without-author a usage error; --depth alone still gates; suite 1581)
 > **Priority:** Low
 > **Type:** Improvement
 > **Date:** 2026-07-10

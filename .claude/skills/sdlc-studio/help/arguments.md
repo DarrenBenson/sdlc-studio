@@ -61,6 +61,8 @@ Full command-line argument reference. For the common subset, see `help/help.md`
 | Flag | Description |
 | --- | --- |
 | `annotate --id --field --value` | (transition.py) set/update one metadata field deterministically |
+| `set --depth "<text>"` | (transition.py) one-call close: stamp `Verification depth` before the gated transition |
+| `set --verdict --reviewer --author` | (transition.py) one-call close: record the independent critic verdict too (reviewer != author refused up front) |
 | `close --depth "<text>"` | stamp `Verification depth` before the terminal transition |
 | `close --verdict --reviewer --author` | record the critic verdict in the same call (reviewer != author refused up front) |
 | `close --issues "<note>"` | verdict issues/tier note for the recorded verdict |
