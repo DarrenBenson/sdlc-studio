@@ -73,7 +73,10 @@ def status_aliases(repo_root) -> list[str]:
     return [s.lower() for s in _require_str_list(got, "status_column")]
 
 
-_TITLE_ID_RE = re.compile(r"^#\s+[A-Za-z]{2,4}-?\d{3,4}\s*:", re.MULTILINE)
+# Matches an `# <ID>: title` heading for BOTH id eras: v2 sequential (`US0001`, `CR-0001`)
+# and v3 ULID (`BG-01JQK3F8`). The old `\d{3,4}`-only form dropped a ULID-titled artefact
+# that had lost its Status line from the census entirely.
+_TITLE_ID_RE = re.compile(r"^#\s+[A-Za-z]{2,4}-?(?:\d{3,4}|[0-9A-Z]{8,14})\s*:", re.MULTILINE)
 
 
 def is_artifact(text: str) -> bool:

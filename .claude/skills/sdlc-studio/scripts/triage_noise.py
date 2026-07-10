@@ -183,9 +183,14 @@ def _new_consolidation_cr(root, theme: str, title: str, detail: str, today: str)
     root = Path(root)
     file_id, disp = _alloc_cr_id(root)
     key = _theme_key(theme)
-    slug = f"low-severity-{key[:24]}-consolidated"
+    # The default theme is already "low-severity <type>s", and title/slug both prepend
+    # "Low-severity" - strip a leading low-severity from the theme so we don't emit
+    # "Low-severity low-severity crs" / "low-severity-low-severity-crs-consolidated".
+    stem = re.sub(r"^low-severity-?", "", key) or key
+    display_theme = re.sub(r"(?i)^low[- ]severity\s*", "", theme).strip() or theme
+    slug = f"low-severity-{stem[:24]}-consolidated"
     create_status = sdlc_md.INBOX_STATUS if sdlc_md.is_schema_v3(root) else "Proposed"
-    cr_title = f"Low-severity {theme} (consolidated)"
+    cr_title = f"Low-severity {display_theme} (consolidated)"
     body = (
         f"# {disp}: {cr_title}\n\n"
         f"> **Status:** {create_status}\n> **Priority:** Low\n> **Type:** Improvement\n"

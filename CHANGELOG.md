@@ -37,6 +37,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `persona_resolve resolve`, `loop_guard record`) via the shared `sdlc_md.add_format_arg`, so a
   machine caller reads them uniformly (`github_sync state` and `loop_guard status` were already
   JSON); a new `test_json_report.py` asserts each emits parseable JSON.
+  Small correctness fixes: `review_generate scan` accepts the secret via `--secret-env` (preferred,
+  off the process list) or `--secret-stdin`, not only argv (CWE-214); the artefact-title regex now
+  recognises a v3 ULID id so a ULID-titled artefact that lost its Status line is not dropped from
+  the census; `reconcile`'s master-table tie-break compares all equally-ranked winners, not just
+  the first and last (a distinct table between two mirrors is no longer misread as indistinguishable);
+  the Low-severity consolidation CR no longer doubles its theme into
+  `low-severity-low-severity-...` in the title or filename.
 - **One CLI argument grammar across the script family (EP0028, CR0210).** The scripts disagreed
   on how ids and targets were passed - `audit check` took `--ids` comma-separated, `transition
   set` forced exactly one of `--id`/`--ids`, `artifact revision` required `--ids`, `ledger

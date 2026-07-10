@@ -188,5 +188,20 @@ class FailLoudTests(unittest.TestCase):
                 conventions.section_present("## x\n", "fix", repo_root=root)
 
 
+class UlidTitleTests(unittest.TestCase):
+    """A v3 ULID-titled artefact that lost its Status line must still count as an artifact
+    (the old `\\d{3,4}`-only title regex dropped it from the census)."""
+
+    def test_v3_ulid_title_is_an_artifact(self) -> None:
+        self.assertTrue(conventions.is_artifact("# BG-01JQK3F8: a fix\n\nbody\n"))
+
+    def test_v2_sequential_title_still_matches(self) -> None:
+        self.assertTrue(conventions.is_artifact("# US0001: login\n"))
+        self.assertTrue(conventions.is_artifact("# CR-0001: change\n"))
+
+    def test_prose_heading_is_not_an_artifact(self) -> None:
+        self.assertFalse(conventions.is_artifact("# notes about the design\n"))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -159,5 +159,21 @@ class SessionCapTests(unittest.TestCase):
             self.assertEqual(tn.session_count(root), 1)              # only the CR open counted
 
 
+class ConsolidationSlugTests(unittest.TestCase):
+    """The default theme is already `low-severity <type>s`, and both the title and the filename
+    prepend `Low-severity` - so neither may double it into `low-severity-low-severity-...`."""
+
+    def test_default_theme_cr_slug_and_title_not_doubled(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d))
+            res = ff.file_finding(root, "bug", "a nit", _bug("low"))
+            path = Path(res["path"])
+            self.assertNotIn("low-severity-low-severity", path.name)
+            text = path.read_text(encoding="utf-8")
+            self.assertNotIn("Low-severity low-severity", text)
+            # the stored marker key is unchanged, so read-back matching still folds the next find
+            self.assertIn("> **Consolidation:** low-severity-bugs", text)
+
+
 if __name__ == "__main__":
     unittest.main()

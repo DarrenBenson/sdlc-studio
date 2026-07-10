@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from datetime import date
 from pathlib import Path
@@ -116,8 +117,28 @@ def cmd_prompt(args: argparse.Namespace) -> int:
     return 0
 
 
+def _resolve_secret(args: argparse.Namespace) -> str | None:
+    """The secret value from exactly one of --secret-env (preferred), --secret-stdin, or
+    --secret. Returns None when zero or more than one source is given (a usage error).
+    Passing a raw secret on argv (--secret) is visible in the process list (CWE-214); the
+    env/stdin paths keep it out."""
+    sources = [bool(args.secret_env), bool(args.secret_stdin), bool(args.secret)]
+    if sum(sources) != 1:
+        return None
+    if args.secret_env:
+        return os.environ.get(args.secret_env, "")
+    if args.secret_stdin:
+        return sys.stdin.readline().rstrip("\n")
+    return args.secret
+
+
 def cmd_scan(args: argparse.Namespace) -> int:
-    hits = scan_secret(args.root, args.secret)
+    secret = _resolve_secret(args)
+    if secret is None:
+        print("error: provide the secret via --secret-env VAR (preferred, keeps it off the "
+              "process list), --secret-stdin, or --secret (exactly one)", file=sys.stderr)
+        return 2
+    hits = scan_secret(args.root, secret)
     if hits:
         for rel, lineno in hits:
             print(f"{rel}:{lineno}: secret value present - must be location + rotation only")
@@ -144,7 +165,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     sc = sub.add_parser("scan", help="Fail if a secret value leaked into a produced artefact.")
     sc.add_argument("--root", default=".")
-    sc.add_argument("--secret", required=True)
+    sc.add_argument("--secret", help="the secret value (WARNING: visible in the process list; "
+                                     "prefer --secret-env or --secret-stdin)")
+    sc.add_argument("--secret-env", dest="secret_env", metavar="VAR",
+                    help="read the secret from environment variable VAR (kept off the process list)")
+    sc.add_argument("--secret-stdin", dest="secret_stdin", action="store_true",
+                    help="read the secret from the first line of stdin")
     sc.set_defaults(func=cmd_scan)
     return p
 

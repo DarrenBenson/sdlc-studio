@@ -1015,11 +1015,13 @@ def _master_data_header(lines: list, census: dict) -> tuple[int, list] | None:
         return None
     top = max(c[0] for c in candidates)
     winners = [c for c in candidates if c[0] == top]
-    if len(winners) > 1 and winners[0][2] != winners[-1][2]:
-        pass  # distinct headers sharing a rank still resolve by position below
-    elif len(winners) > 1:
-        return None  # indistinguishable mirrors: never guess between them
-    best = max(winners, key=lambda c: c[1])  # LAST wins among equally-ranked
+    # Indistinguishable mirrors (every top-ranked table has an IDENTICAL header) can never be
+    # told apart - return None so the caller reports the rows unapplied loudly. Comparing the
+    # whole winner set, not just winners[0] vs winners[-1], catches a 3-way tie whose distinct
+    # table sits between two identical mirrors (the first/last check missed it).
+    if len(winners) > 1 and len({tuple(c[2]) for c in winners}) == 1:
+        return None
+    best = max(winners, key=lambda c: c[1])  # distinct headers resolve by position: LAST wins
     return best[1], best[2]
 
 

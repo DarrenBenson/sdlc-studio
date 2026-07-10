@@ -1646,6 +1646,31 @@ class JsonExitCodeTests(unittest.TestCase):
             self.assertEqual(rc_json, rc_text)
 
 
+class MasterHeaderTieBreakTests(unittest.TestCase):
+    """_master_data_header must compare ALL equally-ranked winners, not just the first and
+    last. With two identical mirrors bracketing a distinct table, the old first-vs-last check
+    saw winners[0]==winners[-1] and wrongly declared them indistinguishable (returned None)."""
+
+    def test_distinct_table_between_mirrors_still_resolves(self) -> None:
+        census = {"US0001": ("US-0001", "Done")}  # _master_data_header needs 3+ column tables
+        lines = (
+            "| ID | Col | Foo |\n| --- | --- | --- |\n| US0001 | a | x |\n\n"
+            "| ID | Col | Bar |\n| --- | --- | --- |\n| US0001 | a | y |\n\n"
+            "| ID | Col | Foo |\n| --- | --- | --- |\n| US0001 | a | z |\n"
+        ).splitlines()
+        hdr = reconcile._master_data_header(lines, census)
+        self.assertIsNotNone(hdr)                       # old code returned None here
+        self.assertEqual(hdr[1], ["ID", "Col", "Foo"])  # LAST equally-ranked table wins
+
+    def test_all_identical_mirrors_return_none(self) -> None:
+        census = {"US0001": ("US-0001", "Done")}
+        lines = (
+            "| ID | Col | Foo |\n| --- | --- | --- |\n| US0001 | a | x |\n\n"
+            "| ID | Col | Foo |\n| --- | --- | --- |\n| US0001 | a | z |\n"
+        ).splitlines()
+        self.assertIsNone(reconcile._master_data_header(lines, census))
+
+
 class MetaIndexTests(unittest.TestCase):
     """retros/ and reviews/ coverage: row presence only, house columns tolerated, the meta id
     namespace (RETRO/RV) that the pipeline id regexes exclude."""

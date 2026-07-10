@@ -88,5 +88,39 @@ class TestSecretHandling(unittest.TestCase):
                              "clean remediation-only finding wrongly flagged")
 
 
+class SecretSourceTests(unittest.TestCase):
+    """CR0208 CWE-214: the secret can be passed off the process list (env/stdin), not only
+    on argv. Exactly one source must be given."""
+
+    def _args(self, **kw):
+        import argparse
+        base = dict(secret=None, secret_env=None, secret_stdin=False)
+        base.update(kw)
+        return argparse.Namespace(**base)
+
+    def test_env_source_reads_the_variable(self) -> None:
+        import os
+        os.environ["_RG_TEST_SECRET"] = "topsecret"
+        try:
+            self.assertEqual(rg._resolve_secret(self._args(secret_env="_RG_TEST_SECRET")), "topsecret")
+        finally:
+            del os.environ["_RG_TEST_SECRET"]
+
+    def test_argv_source_still_works(self) -> None:
+        self.assertEqual(rg._resolve_secret(self._args(secret="abc")), "abc")
+
+    def test_stdin_source_reads_first_line(self) -> None:
+        import io
+        from unittest import mock
+        with mock.patch.object(rg.sys, "stdin", io.StringIO("mysecret\nignored\n")):
+            self.assertEqual(rg._resolve_secret(self._args(secret_stdin=True)), "mysecret")
+
+    def test_no_source_is_a_usage_error(self) -> None:
+        self.assertIsNone(rg._resolve_secret(self._args()))
+
+    def test_multiple_sources_is_a_usage_error(self) -> None:
+        self.assertIsNone(rg._resolve_secret(self._args(secret="a", secret_env="X")))
+
+
 if __name__ == "__main__":
     unittest.main()
