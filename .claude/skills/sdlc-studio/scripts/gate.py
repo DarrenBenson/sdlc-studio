@@ -187,6 +187,52 @@ ADVISORY_WHEN_ABSENT = {
     },
 }
 
+def hook_enablement_gap(root) -> str | None:
+    """The one-line warning when a tree SHIPS a tracked pre-commit gate that this clone has
+    not enabled - or None when there is nothing to say. Fires only where it means something:
+    a git work tree containing `.githooks/pre-commit` (never a consuming project, which has
+    no .githooks; never a non-git directory). Shared by the gate lane and the status
+    dashboard so the two surfaces cannot drift."""
+    import os
+    import subprocess
+    hook = Path(root) / ".githooks" / "pre-commit"
+    if not hook.is_file():
+        return None
+    # Scrub repo-redirecting env: gate/status may run from inside ANOTHER repo's hook, and an
+    # inherited GIT_DIR/GIT_WORK_TREE would silently make git answer for that repo, not root.
+    env = {k: v for k, v in os.environ.items()
+           if k not in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE")}
+    try:
+        inside = subprocess.run(["git", "-C", str(root), "rev-parse", "--is-inside-work-tree"],
+                                capture_output=True, text=True, timeout=10, env=env)
+        if inside.returncode != 0 or inside.stdout.strip() != "true":
+            return None
+        cfg = subprocess.run(["git", "-C", str(root), "config", "core.hooksPath"],
+                             capture_output=True, text=True, timeout=10, env=env)
+    except (OSError, subprocess.SubprocessError):
+        return None  # git unavailable: nothing checkable, never a false alarm
+    val = cfg.stdout.strip() if cfg.returncode == 0 else ""
+    if val:
+        # Equivalent enabled spellings must read enabled: ".githooks", ".githooks/", or an
+        # absolute path to the same directory - git runs the hook under all of them.
+        if val.rstrip("/") == ".githooks":
+            return None
+        try:
+            if (Path(val).is_absolute()
+                    and Path(val).resolve() == (Path(root) / ".githooks").resolve()):
+                return None
+        except OSError:
+            pass
+    return ("tracked .githooks/pre-commit is NOT enabled in this clone (core.hooksPath "
+            "unset or elsewhere) - the commit gate is not running; fix: bash tools/enable-hooks.sh")
+
+
+def _hook_enabled(root: str) -> dict:
+    gap = hook_enablement_gap(root)
+    return {"count": 0 if gap is None else 1, "blocking": False,
+            "detail": gap or "hook enabled (or no tracked hook in this tree)"}
+
+
 # Lanes whose FAILURES block must also block when they CRASH: a raised exception in
 # (say) validate or reconcile means the gate proved nothing about that lane, and a
 # green gate over an unproven blocking lane is the false-assurance class (LL0008).
@@ -210,6 +256,7 @@ DEFAULT_CHECKS = {
     "disclosure": _disclosure,
     "doc-freshness": _doc_freshness,
     "mutation": _mutation,
+    "hook-enabled": _hook_enabled,
 }
 
 

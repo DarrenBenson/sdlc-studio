@@ -351,3 +351,34 @@ class BacklogFormatTests(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 
+
+
+class HookWarningTests(unittest.TestCase):
+    def setUp(self):
+        import os
+        self._env = {k: os.environ.get(k) for k in ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM")}
+        os.environ["GIT_CONFIG_GLOBAL"] = "/dev/null"
+        os.environ["GIT_CONFIG_SYSTEM"] = "/dev/null"
+
+    def tearDown(self):
+        import os
+        for k, v in self._env.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+    def test_pillars_surfaces_a_disabled_hook(self) -> None:
+        import io
+        import subprocess
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / ".githooks").mkdir()
+            (root / ".githooks" / "pre-commit").write_text("#!/bin/sh\n", encoding="utf-8")
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            (root / "sdlc-studio").mkdir()
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                status.main(["pillars", "--root", str(root)])
+            self.assertIn("enable-hooks.sh", buf.getvalue())

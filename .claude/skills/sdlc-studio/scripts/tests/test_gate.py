@@ -126,7 +126,7 @@ class GateRealWrapperTests(unittest.TestCase):
         self.assertEqual(set(gate.DEFAULT_CHECKS),
                          {"conformance", "reconcile", "index-derived", "validate", "constitution",
                           "integrity", "duplicate-id", "provenance", "doc-coverage", "disclosure",
-                          "doc-freshness", "mutation"})
+                          "doc-freshness", "mutation", "hook-enabled"})
 
     def test_real_wrappers_run_and_shape(self) -> None:
         # Exercises the real checks end-to-end against this repo; asserts structure,
@@ -136,7 +136,7 @@ class GateRealWrapperTests(unittest.TestCase):
                           "root (running from an installed copy)")
         r = gate.run_gate(str(REPO))
         self.assertIsInstance(r["ok"], bool)
-        self.assertEqual(len(r["checks"]), 12)
+        self.assertEqual(len(r["checks"]), 13)
         for c in r["checks"]:
             self.assertEqual(set(c), {"check", "count", "blocking", "status", "detail"})
 
@@ -544,3 +544,105 @@ class RaisingCheckTests(unittest.TestCase):
                 if r.get("blocking"):
                     self.assertIn(name, gate.BLOCKING_ON_ERROR,
                                   f"{name} blocks on failure but not on crash")
+
+
+class HookEnabledLaneTests(unittest.TestCase):
+    """CR0202/US0113: warn when the tracked hook exists but is not enabled; silent elsewhere.
+    Host git config is isolated: a machine's own global hooksPath must never colour these
+    fixtures (critic finding - a contaminated global red-ed the suite)."""
+
+    def setUp(self):
+        import os
+        self._env = {"GIT_CONFIG_GLOBAL": os.environ.get("GIT_CONFIG_GLOBAL"),
+                     "GIT_CONFIG_SYSTEM": os.environ.get("GIT_CONFIG_SYSTEM")}
+        os.environ["GIT_CONFIG_GLOBAL"] = "/dev/null"
+        os.environ["GIT_CONFIG_SYSTEM"] = "/dev/null"
+
+    def tearDown(self):
+        import os
+        for k, v in self._env.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+    def _tree(self, d, with_hook=True, git=True, enabled=False):
+        import subprocess
+        root = Path(d)
+        root.mkdir(parents=True, exist_ok=True)
+        if with_hook:
+            (root / ".githooks").mkdir(parents=True, exist_ok=True)
+            (root / ".githooks" / "pre-commit").write_text("#!/bin/sh\n", encoding="utf-8")
+        if git:
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            if enabled:
+                subprocess.run(["git", "-C", str(root), "config", "core.hooksPath", ".githooks"],
+                               check=True)
+        return root
+
+    def test_hook_present_but_disabled_warns_advisory(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            r = gate._hook_enabled(str(self._tree(d)))
+            self.assertEqual(r["count"], 1)
+            self.assertFalse(r["blocking"])
+            self.assertIn("enable-hooks.sh", r["detail"])
+
+    def test_hook_enabled_is_clean(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            r = gate._hook_enabled(str(self._tree(d, enabled=True)))
+            self.assertEqual(r["count"], 0)
+
+    def test_no_tracked_hook_is_clean(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            r = gate._hook_enabled(str(self._tree(d, with_hook=False)))
+            self.assertEqual(r["count"], 0)
+
+    def test_non_git_dir_is_clean(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            r = gate._hook_enabled(str(self._tree(d, git=False)))
+            self.assertEqual(r["count"], 0)
+
+    def test_lane_registered_and_advisory(self) -> None:
+        self.assertIn("hook-enabled", gate.DEFAULT_CHECKS)
+        self.assertNotIn("hook-enabled", gate.BLOCKING_ON_ERROR)
+
+
+class HookEnabledEquivalentConfigTests(HookEnabledLaneTests):
+    """Critic findings F2/F3: equivalent enabled configs must read enabled; foreign GIT_DIR
+    env must not redirect the check."""
+
+    def test_trailing_slash_hookspath_is_enabled(self) -> None:
+        import subprocess
+        with tempfile.TemporaryDirectory() as d:
+            root = self._tree(d)
+            subprocess.run(["git", "-C", str(root), "config", "core.hooksPath", ".githooks/"],
+                           check=True)
+            self.assertIsNone(gate.hook_enablement_gap(str(root)))
+
+    def test_absolute_hookspath_to_same_dir_is_enabled(self) -> None:
+        import subprocess
+        with tempfile.TemporaryDirectory() as d:
+            root = self._tree(d)
+            subprocess.run(["git", "-C", str(root), "config", "core.hooksPath",
+                            str((root / ".githooks").resolve())], check=True)
+            self.assertIsNone(gate.hook_enablement_gap(str(root)))
+
+    def test_foreign_git_dir_env_does_not_redirect_the_check(self) -> None:
+        import os
+        import subprocess
+        with tempfile.TemporaryDirectory() as d:
+            fixture = self._tree(Path(d) / "fixture")          # hook present, NOT enabled
+            other = Path(d) / "other"
+            subprocess.run(["git", "init", "-q", str(other)], check=True)
+            subprocess.run(["git", "-C", str(other), "config", "core.hooksPath", ".githooks"],
+                           check=True)
+            old = os.environ.get("GIT_DIR")
+            os.environ["GIT_DIR"] = str(other / ".git")
+            try:
+                gap = gate.hook_enablement_gap(str(fixture))
+            finally:
+                if old is None:
+                    os.environ.pop("GIT_DIR", None)
+                else:
+                    os.environ["GIT_DIR"] = old
+            self.assertIsNotNone(gap, "check must evaluate the fixture, not GIT_DIR's repo")

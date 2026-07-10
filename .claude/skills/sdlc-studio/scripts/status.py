@@ -252,6 +252,10 @@ def cmd_pillars(args: argparse.Namespace) -> int:
     adv = workspace_advisory(Path(args.root))
     if adv:
         print(f"advisory: {adv}")
+    import gate  # lazy sibling: one shared hook-gap message, so the two surfaces cannot drift
+    gap = gate.hook_enablement_gap(args.root)
+    if gap:
+        print(f"advisory: {gap}")
     _print_update_notice(args.root)
     return 0
 

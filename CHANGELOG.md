@@ -60,6 +60,13 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
 
 ### Added
 
+- **A disabled commit gate is now detectable (EP0026, CR0202; US0113).** New advisory
+  `hook-enabled` gate lane plus a matching `status` dashboard warning: when a git work tree
+  ships `.githooks/pre-commit` but `core.hooksPath` is unset or points elsewhere, both surfaces
+  say so and name the fix (`bash tools/enable-hooks.sh`). Deliberately silent everywhere it
+  means nothing - hook enabled, no tracked hook (every consuming project), or a non-git
+  directory - so the lane carries signal, not standing noise. One shared
+  `gate.hook_enablement_gap` message keeps the two surfaces from drifting.
 - **Context tiering - status/hint read closed-artefact digests, not the full corpus (EP0023,
   CR0179; US0104).** A long-lived repo pays a growing token tax on every status/planning pass
   that re-reads the whole closed corpus. Once the closed-artefact count reaches

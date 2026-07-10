@@ -12,17 +12,18 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 111 |
+| Done | 112 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **112** |
+| **Total** | **113** |
 
 ## All Stories
 
 | ID | Title | Status | Epic | Created | Updated |
 | --- | --- | --- | --- | --- | --- |
 | [US0112](US0112-hygiene-close-fixed-bugs-archive-over-threshold-indexes.md) | Hygiene: close fixed bugs, archive over-threshold indexes, apply small deferred fixes | Done | EP0025 | 2026-07-09 | 2026-07-09 |
+| [US0113](US0113-detect-a-disabled-commit-gate-in-gate-and.md) | Detect a disabled commit gate in gate and status | Done | EP0026 | 2026-07-10 | 2026-07-10 |
 
 ## Archived Releases
 

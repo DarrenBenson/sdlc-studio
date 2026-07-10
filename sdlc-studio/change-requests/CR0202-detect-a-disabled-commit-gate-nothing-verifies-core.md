@@ -1,6 +1,6 @@
 # CR-0202: detect a disabled commit gate: nothing verifies core.hooksPath on any surface
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** High
 > **Type:** tooling
 > **Date:** 2026-07-09
