@@ -24,3 +24,4 @@ Operator directive (2026-07-10): rerun the benchmarks before v4 launches - the p
 | 2026-07-10 | audit | Raised |
 | 2026-07-10 | Claude (sprint driver) | delivered: 72-run three-era rerun + post-hoc rubric axis (operator-requested); AC2's white-paper clause deferred to CR0227 close |
 | 2026-07-10 | Claude (sprint driver) | exploratory mandated-arm addendum (operator claim test): Sonnet 5/5 -> 1/5 escapes at 1.18x when planning is mandatory; Sam verified every figure; calibration-phase rows keep measured aggregates clean |
+| 2026-07-10 | Claude (sprint driver) | Opus mandated cell added per operator (3/3 both arms -> 0/5 at 1.07x) + pricing appendix (July 2026 list rates, 80/20 blend disclosed); Sam recomputed every cost cell to the cent |
