@@ -301,3 +301,45 @@ class TelemetryTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ResolutionAndFailLoudTests(unittest.TestCase):
+    """BG0094: lowercase stories must resolve (shared find_by_id, not a case-sensitive
+    glob); an unresolved story must fail LOUD in record and gate, never a null fingerprint
+    or a vacuous skip."""
+
+    def _v3(self, root: Path) -> None:
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n",
+                                                           encoding="utf-8")
+
+    def _story(self, root: Path, name: str) -> Path:
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        p = d / name
+        p.write_text("# US0101: lower\n\n> **Status:** Draft\n\n## Acceptance Criteria\n\n"
+                     "### AC1: x\n\n- **Given** a\n- **When** b\n- **Then** c\n",
+                     encoding="utf-8")
+        return p
+
+    def test_lowercase_story_file_resolves(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._v3(root)
+            p = self._story(root, "us0101-lower.md")
+            self.assertEqual(pr._resolve_story(root, "US0101"), p)
+
+    def test_record_refuses_an_unresolvable_story(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._v3(root)
+            with self.assertRaises(FileNotFoundError):
+                pr.record_review(root, "US9999", "APPROVE", "rev", "auth")
+
+    def test_gate_not_found_is_non_ok(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._v3(root)
+            res = pr.gate(root, "US9999")
+            self.assertFalse(res["ok"])
+            self.assertIn("not found", res["reason"])

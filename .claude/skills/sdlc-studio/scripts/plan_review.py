@@ -167,7 +167,13 @@ def record_review(root, story_id: str, verdict: str, reviewer: str, author: str,
     here; the fingerprint is stamped into the verdict's issues field."""
     root = Path(root)
     p = _resolve_story(root, story_id)
-    fp = ac_fingerprint(p.read_text(encoding="utf-8")) if p and p.exists() else "000000000000"
+    if p is None or not p.exists():
+        # Fail loud: a null fingerprint (the old behaviour) recorded an approval that could
+        # never match the story's real ACs - an unclearable false block discovered later.
+        raise FileNotFoundError(
+            f"cannot record a plan review for {story_id}: story not found - "
+            "check the id (lowercase filenames and aliases resolve; typos do not)")
+    fp = ac_fingerprint(p.read_text(encoding="utf-8"))
     issues = f"ac-hash={fp}" + (f"; {notes}" if notes else "")
     path = critic.record_verdict(root, story_id, verdict, reviewer, author, issues,
                                  phase="plan-review")
@@ -196,7 +202,9 @@ def gate(root, story_id: str, path: Path | str | None = None) -> dict:
                 "override": None, "signals": []}
     p = Path(path) if path else _resolve_story(root, story_id)
     if p is None or not p.exists():
-        return {"ok": True, "reason": f"story {story_id} not found - gate skipped",
+        # Fail closed and loud: a skipped gate over a typo'd id is the vacuous-PASS class.
+        return {"ok": False, "reason": (f"story {story_id} not found - the gate cannot "
+                                        "evaluate what it cannot resolve (fix the id/path)"),
                 "fired": False, "override": None, "signals": []}
     text = p.read_text(encoding="utf-8")
     trig = triggers(text, root, p)
@@ -218,14 +226,10 @@ def gate(root, story_id: str, path: Path | str | None = None) -> dict:
 
 
 def _resolve_story(root: Path, story_id: str) -> Path | None:
-    d = root / "sdlc-studio" / "stories"
-    if not d.exists():
-        return None
-    target = sdlc_md.norm_id(story_id)
-    for p in d.glob("US*.md"):
-        if sdlc_md.extract_record_id(p.stem) == target or p.stem.startswith(story_id):
-            return p
-    return None
+    """Delegate to the shared, alias-aware lookup (case-insensitive by construction) - the
+    case-sensitive `US*.md` glob this replaced missed lowercase-named stories entirely."""
+    hit = sdlc_md.find_by_id(root, story_id)
+    return hit[0] if hit and hit[1] == "story" else None
 
 
 def cmd_check(args: argparse.Namespace) -> int:

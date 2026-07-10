@@ -245,6 +245,13 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
   breakage could reach a green CI. The workflow gains a `gate.py --root .` step (after
   setup-python, PyYAML installed so config-driven lanes fail loud); the two doc claims are now
   true as written.
+- **plan_review resolves stories through the shared lookup and fails loud on a miss (EP0026;
+  BG0094).** `_resolve_story` re-implemented artefact lookup with a case-sensitive `US*.md`
+  glob, so lowercase-named stories never resolved: `record_review` stamped a null fingerprint
+  (an approval that could never match, an unclearable false block) and a pathless `gate()`
+  skipped with `ok: True` (vacuous PASS). It now delegates to the alias-aware
+  `sdlc_md.find_by_id`; recording against an unresolvable story raises, and a not-found gate
+  fails closed with a loud reason.
 - **The origin-drift preflight survives every plan order (EP0026; BG0085).** `sprint plan`
   always emits `waves` (None for manual order and empty batches), so the preflight raised
   TypeError and a blanket `except Exception: pass` swallowed it - silently disabling the

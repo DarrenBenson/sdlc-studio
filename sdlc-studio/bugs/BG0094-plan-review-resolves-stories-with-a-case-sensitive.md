@@ -1,9 +1,10 @@
 # BG0094: plan_review resolves stories with a case-sensitive US*.md glob: lowercase stories get a null fingerprint and an unclearable false block
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file
+> **Verification depth:** functional (red-then-green: lowercase story resolves via find_by_id; record on a miss raises; pathless gate not-found is non-ok; suite 1494 green)
 
 ## Summary
 
