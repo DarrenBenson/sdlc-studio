@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 0 |
+| Open | 1 |
 | In Progress | 0 |
 | Fixed | 20 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **99** |
+| **Total** | **100** |
 
 ## All Bugs
 
@@ -66,6 +66,7 @@
 | [BG0097](BG0097-the-finding-filer-emits-markdownlint-breaking-artefacts-when.md) | the finding filer emits markdownlint-breaking artefacts when prose contains underscore identifiers | Fixed | Low | 2026-07-10 | 2026-07-10 |
 | [BG0098](BG0098-lint-md-s-glob-skips-dot-directories-the.md) | lint:md's glob skips dot-directories: the shipped skill payload is never markdownlint-checked | Fixed | Medium | 2026-07-10 | 2026-07-10 |
 | [BG0099](BG0099-artifact-new-batch-cannot-link-a-story-to.md) | artifact new/batch cannot link a story to a v3 ULID epic: _find_epic splits the id on the first dash | Fixed | High | 2026-07-10 | 2026-07-10 |
+| [BG0100](BG0100-install-sh-sweep-overwrites-a-git-tracked-repo.md) | install.sh sweep overwrites a git-tracked repo working tree with the downloaded release (working-tree data loss) | Open | High | 2026-07-10 | 2026-07-10 |
 
 ## Archived Releases
 

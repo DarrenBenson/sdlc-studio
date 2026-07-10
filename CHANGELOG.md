@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Known issue found while dogfooding (EP0028 close; BG0100).** `install.sh` run from inside the dev repo downloads the PUBLISHED release and its sweep overwrites the repo's own git-tracked working tree with it (working-tree revert when the remote is behind local). Filed High; until fixed, use `./install.sh --no-sweep`, or mirror the local tree directly, to update an install from unreleased work.
 - **Retros and reviews are reconciled like every other type (EP0028, CR0211).** RETRO and RV
   were the last recurring numbered artefacts whose index rows were hand-edited. `reviews/` now
   has an `_index.md` (backfilled from the existing RV history), so `artifact new --type review`
