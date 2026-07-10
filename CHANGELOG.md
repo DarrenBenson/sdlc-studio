@@ -43,7 +43,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the census; `reconcile`'s master-table tie-break compares all equally-ranked winners, not just
   the first and last (a distinct table between two mirrors is no longer misread as indistinguishable);
   the Low-severity consolidation CR no longer doubles its theme into
-  `low-severity-low-severity-...` in the title or filename.
+  `low-severity-low-severity-...` in the title or filename. `check_links` gained a root-docs pass:
+  the repo-root docs (README, AGENTS, CLAUDE, ...) had never been scanned, so a broken `.md` link
+  there was invisible; it now file-checks their links (anchored or not). The skill tree still
+  checks only anchored intra-skill references - its templates and doc examples carry many
+  legitimate non-resolving bare links (`../prd.md`, `path/to/guide.md`).
 - **One CLI argument grammar across the script family (EP0028, CR0210).** The scripts disagreed
   on how ids and targets were passed - `audit check` took `--ids` comma-separated, `transition
   set` forced exactly one of `--id`/`--ids`, `artifact revision` required `--ids`, `ledger

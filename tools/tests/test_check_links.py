@@ -63,5 +63,34 @@ class CheckTests(unittest.TestCase):
             self.assertEqual(check_links.check(root, set()), [])
 
 
+class RootDocsTests(unittest.TestCase):
+    """The root docs (README, AGENTS, ...) sit outside the skill tree; check_root_docs must
+    verify their `.md` links exist, catching a broken link the skill scan never saw."""
+
+    def test_broken_root_doc_link_is_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "README.md").write_text("See [contributing](CONTRIBUTING.md).\n", encoding="utf-8")
+            broken = check_links.check_root_docs(root)
+            self.assertEqual(len(broken), 1)
+            self.assertIn("CONTRIBUTING.md", broken[0])
+
+    def test_resolving_root_doc_link_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "CONTRIBUTING.md").write_text("# contributing\n", encoding="utf-8")
+            (root / "README.md").write_text("See [contributing](CONTRIBUTING.md).\n", encoding="utf-8")
+            self.assertEqual(check_links.check_root_docs(root), [])
+
+    def test_anchored_root_doc_link_checks_the_file(self) -> None:
+        # an anchor-carrying root-doc link is still file-checked (anchor ignored)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "README.md").write_text("[x](docs/missing.md#section)\n", encoding="utf-8")
+            broken = check_links.check_root_docs(root)
+            self.assertEqual(len(broken), 1)
+            self.assertIn("docs/missing.md", broken[0])
+
+
 if __name__ == "__main__":
     unittest.main()

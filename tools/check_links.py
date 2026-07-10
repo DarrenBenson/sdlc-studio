@@ -29,6 +29,16 @@ DEFAULT_ALLOW = {"doc.md#section-name"}
 _ID_RE = re.compile(r"\{#([\w-]+)\}")
 _HEADING_RE = re.compile(r"^#{1,6}\s+(.*)")
 _REF_RE = re.compile(r"([\w./-]+\.md)#([\w-]+)")
+# Any markdown link to a `.md` file (anchored or not) - used by the root-docs file pass.
+# The skill tree is NOT scanned this way: its templates and doc examples carry many legitimate
+# non-resolving bare links (`../prd.md`, `path/to/guide.md`), so only anchored intra-skill
+# references are checked there. Root docs (README, AGENTS, ...) link to real files.
+_LINK_RE = re.compile(r"\]\(([\w./-]+\.md)(?:#[\w-]+)?\)")
+
+# Repo-root docs that link into the skill (and each other) but sit outside the skill tree,
+# so the skill-scoped scan never saw them.
+ROOT_DOCS = ("README.md", "AGENTS.md", "CLAUDE.md", "CONTRIBUTING.md",
+             "SECURITY.md", "INSTALL.md", "CHANGELOG.md")
 
 
 def slug(text: str) -> str:
@@ -98,6 +108,23 @@ def check(root: Path, allow: set[str]) -> list[str]:
     return sorted(broken)
 
 
+def check_root_docs(repo_root: Path) -> list[str]:
+    """File-existence for the repo-root docs' markdown links (README, AGENTS, CLAUDE, ...).
+    These sit outside the skill tree, so the skill scan never saw them; a link is checked
+    against the linking file's own directory (root-relative), anchors ignored (root docs
+    rarely target a cross-file anchor)."""
+    broken: list[str] = []
+    for name in ROOT_DOCS:
+        path = repo_root / name
+        if not path.exists():
+            continue
+        for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            for tgt in _LINK_RE.findall(line):
+                if not (path.parent / tgt).exists():
+                    broken.append(f"{name}:{i} -> {tgt} [file missing]")
+    return sorted(broken)
+
+
 def main(argv: list[str] | None = None) -> int:
     """Parse arguments, run the check, and report."""
     p = argparse.ArgumentParser(
@@ -105,6 +132,8 @@ def main(argv: list[str] | None = None) -> int:
         description="Verify intra-skill markdown anchor links resolve.",
     )
     p.add_argument("--root", default=DEFAULT_ROOT, help=f"Skill root (default: {DEFAULT_ROOT})")
+    p.add_argument("--repo-root", dest="repo_root", default=None,
+                   help="Repo root for the root-docs pass (default: inferred from --root)")
     p.add_argument("--allow", action="append", default=[],
                    help="Additional allowlisted `file.md#anchor` target (repeatable)")
     args = p.parse_args(argv)
@@ -113,8 +142,16 @@ def main(argv: list[str] | None = None) -> int:
     if not root.exists():
         print(f"error: root does not exist: {root}", file=sys.stderr)
         return 2
+    # The repo root is where the root docs live: given explicitly, or inferred by walking up
+    # from the skill root past `.claude/skills/<name>` (three levels) when that shape holds.
+    if args.repo_root is not None:
+        repo_root = Path(args.repo_root)
+    elif root.name == "sdlc-studio" and root.parent.name == "skills":
+        repo_root = root.parents[2]
+    else:
+        repo_root = Path(".")
     allow = set(DEFAULT_ALLOW) | set(args.allow)
-    broken = check(root, allow)
+    broken = check(root, allow) + check_root_docs(repo_root)
     if broken:
         print(f"Broken markdown anchor links ({len(broken)}):")
         for b in broken:
