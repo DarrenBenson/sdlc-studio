@@ -1019,3 +1019,45 @@ class OriginDriftCollisionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PreflightSurvivesAllOrdersTests(unittest.TestCase):
+    """BG0085: waves=None (manual order, empty batch) killed the preflight via a swallowed
+    TypeError - the --strict refusal must fire for EVERY order on a behind-origin clone."""
+
+    def _seed_cr(self, work):
+        crd = work / "sdlc-studio" / "change-requests"
+        crd.mkdir(parents=True, exist_ok=True)
+        (crd / "CR0002-local.md").write_text(
+            "# CR-0002: local\n\n> **Status:** Proposed\n> **Priority:** Medium\n",
+            encoding="utf-8")
+        (crd / "_index.md").write_text(
+            "# CRs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Proposed | 1 |\n"
+            "| **Total** | **1** |\n\n## All\n\n| ID | Title | Status | Priority | Type | Date | Linked Epics |\n"
+            "| --- | --- | --- | --- | --- | --- | --- |\n"
+            "| [CR-0002](CR0002-local.md) | local | Proposed | Medium | X | 2026-07-10 | -- |\n",
+            encoding="utf-8")
+
+    def test_manual_order_strict_refuses_when_behind(self):
+        import io
+        from contextlib import redirect_stderr, redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            work = _behind_repo(d)
+            self._seed_cr(work)
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                rc = sprint.main(["plan", "--crs", "Proposed", "--order", "manual",
+                                  "--strict", "--root", str(work)])
+            self.assertEqual(rc, 2, err.getvalue() + out.getvalue())
+            self.assertIn("behind", err.getvalue())
+
+    def test_empty_batch_strict_still_refuses_when_behind(self):
+        import io
+        from contextlib import redirect_stderr, redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            work = _behind_repo(d)  # no plannable units in work at all
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                rc = sprint.main(["plan", "--crs", "Proposed", "--order", "priority",
+                                  "--strict", "--root", str(work)])
+            self.assertEqual(rc, 2, err.getvalue() + out.getvalue())

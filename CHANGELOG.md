@@ -245,6 +245,13 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
   breakage could reach a green CI. The workflow gains a `gate.py --root .` step (after
   setup-python, PyYAML installed so config-driven lanes fail loud); the two doc claims are now
   true as written.
+- **The origin-drift preflight survives every plan order (EP0026; BG0085).** `sprint plan`
+  always emits `waves` (None for manual order and empty batches), so the preflight raised
+  TypeError and a blanket `except Exception: pass` swallowed it - silently disabling the
+  behind-origin warning and the documented `--strict` refusal on exactly those paths. Now
+  `(or [])` keeps the check alive and containment narrows to git's expected failure modes so a
+  programming error surfaces loudly; end-to-end tests refuse under `--strict` for manual order
+  and empty batches on a behind-origin clone.
 - **A crashing blocking check now fails the gate (EP0026; BG0090).** A check that raised a
   non-config exception was recorded `blocking: False` and excluded from the PASS calculation,
   so a buggy or crashed blocking lane (validate, reconcile, conformance...) silently converted

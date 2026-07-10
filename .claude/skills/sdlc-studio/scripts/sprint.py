@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -589,13 +590,18 @@ def cmd_plan(args: argparse.Namespace) -> int:
     # compare; warn (refuse under --strict). Fail-safe: no origin / up to date -> silent.
     try:
         drift = origin_drift(args.root, do_fetch=not getattr(args, "no_fetch", False))
-        batch_ids = [u for wave in data.get("waves", []) for u in wave]
+        # `waves` is None for manual order and empty batches (the key is always present) -
+        # `or []` keeps the preflight alive on exactly those paths (a swallowed TypeError
+        # here silently disabled the --strict refusal).
+        batch_ids = [u for wave in (data.get("waves") or []) for u in wave]
         warn = _drift_warning(drift, _batch_paths(args.root, batch_ids))
         if warn:
             print(warn, file=sys.stderr)
             if getattr(args, "strict", False):
                 return 2
-    except Exception:  # noqa: BLE001 - the drift check is advisory; never break planning
+    except (OSError, subprocess.SubprocessError, ValueError, KeyError):
+        # Advisory: git being absent/slow/odd must never break planning - but only the
+        # EXPECTED failure modes are contained; a programming error now surfaces loudly.
         pass
     if getattr(args, "write", False):  # persist the sprint-plan artifact for review
         out = Path(args.root) / "sdlc-studio" / ".local" / "sprint-plan.json"

@@ -1,9 +1,10 @@
 # BG0085: sprint plan origin-drift preflight silently dies for --order manual and empty batches; --strict cannot refuse
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file
+> **Verification depth:** functional (red-then-green end-to-end: behind-origin clone + --order manual --strict exits 2 with the behind warning; empty batch likewise; suite 1491 green)
 
 ## Summary
 

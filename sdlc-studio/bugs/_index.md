@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 16 |
+| Open | 15 |
 | In Progress | 0 |
-| Fixed | 2 |
+| Fixed | 3 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 0 |
@@ -51,7 +51,7 @@
 | [BG0082](BG0082-reconcile-index-rewriter-bleeds-a-stale-status-column.md) | reconcile index rewriter bleeds a stale Status column into following status-less tables, corrupting author-maintained cells | Open | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0083](BG0083-verify-ac-story-discovery-executes-companions-and-any.md) | verify_ac story discovery executes companions and any us*.md file, poisoning runs and ts-check | Open | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0084](BG0084-verify-ac-run-story-with-a-missing-path.md) | verify_ac run --story with a missing path exits 0 (false success) | Open | Medium | 2026-07-09 | 2026-07-09 |
-| [BG0085](BG0085-sprint-plan-origin-drift-preflight-silently-dies-for.md) | sprint plan origin-drift preflight silently dies for --order manual and empty batches; --strict cannot refuse | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0085](BG0085-sprint-plan-origin-drift-preflight-silently-dies-for.md) | sprint plan origin-drift preflight silently dies for --order manual and empty batches; --strict cannot refuse | Fixed | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0086](BG0086-v3-short-ids-carry-zero-randomness-uncoordinated-writers.md) | v3 short ids carry zero randomness: uncoordinated writers in the same ~1s window mint identical ids | Open | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0087](BG0087-migrate-v3-id-minting-wraps-at-1024-files.md) | migrate_v3 id minting wraps at 1024 files (silent rename overwrite) and pollutes slugs of dash-named files | Open | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0088](BG0088-format-json-suppresses-failure-exit-codes-on-reconcile.md) | --format json suppresses failure exit codes on reconcile apply and verify_ac report; reconcile fields is drift-blind in both formats | Open | Medium | 2026-07-09 | 2026-07-09 |
