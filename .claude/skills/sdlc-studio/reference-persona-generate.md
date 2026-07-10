@@ -386,9 +386,14 @@ compliance, ops/support, served-but-not-using groups); cards go to
 `sdlc-studio/personas/stakeholders/<name>.md` on
 `templates/personas/stakeholder-template.md` (goals, veto lines, evidence they read,
 Cooper Customer/Served designation, and the arbitration rule ON the card: buyer goals
-never override the Primary user's interface). Stakeholder cards KEEP the provisional
-stamp until `persona review` - they are assumption personas until validated (Cooper's
-rule). `consult stakeholders` names any provisional card in its output header.
+never override the Primary user's interface). Each card declares its type in a
+machine-readable `<!-- stakeholder: buyer | compliance | ops | served -->` comment -
+the consult groups on it. The Step 4.2 gate is the same command: `validate.py seats
+--require-stamp <every stakeholder card written>` verifies the stamps (stakeholder
+cards are never seat-schema-checked; their schema is advisory via `validate.py
+personas`). Stakeholder cards KEEP the provisional stamp until `persona review` - they
+are assumption personas until validated (Cooper's rule); there is NO batch-accept for
+stakeholders. `consult stakeholders` names any provisional card in its output header.
 
 ## Standalone invocation {#team-standalone}
 

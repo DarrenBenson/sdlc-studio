@@ -341,6 +341,49 @@ class PersonaWellFormedTests(unittest.TestCase):
                           sections=["Who They Are", "End Goals", "Behaviours & Context", "Frustrations"])
             self.assertEqual(validate.check_personas(repo), [])
 
+    STAKE = ("<!-- stakeholder: compliance -->\n# Ines Ferreira - DPO\n\n"
+             "> **Cast:** Customer\n\n## Who They Are\n\nx\n\n## What They Want\n\n1. x\n\n"
+             "## Veto Lines\n\n- x\n\n## Evidence They Read\n\n- x\n")
+
+    def _stakeholder(self, repo, name, body):
+        d = repo / "sdlc-studio" / "personas" / "stakeholders"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / name).write_text(body, encoding="utf-8")
+
+    def test_well_formed_stakeholder_no_findings(self):
+        # AC: check_personas learns the stakeholder schema - a generated panel produces
+        # no permanent layout/section warnings
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            self._stakeholder(repo, "ines.md", self.STAKE)
+            self.assertEqual(validate.check_personas(repo), [])
+
+    def test_stakeholder_missing_type_and_sections_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            self._stakeholder(repo, "bare.md", "# Someone\n\n## Who They Are\n\nx\n")
+            rules = {v["rule"] for v in validate.check_personas(repo)}
+            self.assertIn("stakeholder-type", rules)
+            self.assertIn("stakeholder-section", rules)
+            self.assertIn("stakeholder-cast", rules)
+
+    def test_stakeholder_unknown_type_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            self._stakeholder(repo, "ines.md",
+                              self.STAKE.replace("stakeholder: compliance",
+                                                 "stakeholder: shareholder"))
+            self.assertIn("stakeholder-type",
+                          {v["rule"] for v in validate.check_personas(repo)})
+
+    def test_stakeholder_check_is_advisory_only(self):
+        # check_personas' contract: never errors, never in the hard gate
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            self._stakeholder(repo, "bare.md", "# Someone\n")
+            sev = {v["severity"] for v in validate.check_personas(repo)}
+            self.assertEqual(sev, {"warning"})
+
     def test_missing_cast_role_flagged(self):
         with tempfile.TemporaryDirectory() as d:
             repo = pathlib.Path(d)
@@ -452,14 +495,16 @@ class PersonaWellFormedTests(unittest.TestCase):
             self.assertIn("2", out[0]["message"])
 
     def test_seats_and_stakeholders_are_canonical_not_nested(self):
-        # CR0218: the generator's own output homes never trip the layout advisory
+        # the generator's own output homes never trip the layout advisory (stakeholder
+        # cards get their own schema warnings instead - a different rule family)
         with tempfile.TemporaryDirectory() as d:
             repo = pathlib.Path(d)
             for sub in ("seats", "stakeholders"):
                 pdir = repo / "sdlc-studio" / "personas" / sub
                 pdir.mkdir(parents=True)
                 (pdir / "x.md").write_text("# X\n", encoding="utf-8")
-            self.assertEqual(validate.check_personas(repo), [])
+            rules = {v["rule"] for v in validate.check_personas(repo)}
+            self.assertNotIn("persona-layout", rules)
 
     def test_flat_personas_present_no_layout_advisory(self):
         # when flat design personas ARE found, nested files do not trigger the advisory
@@ -813,6 +858,43 @@ class SeatCheckTests(unittest.TestCase):
                            "<!-- role: qa -->\n<!-- provenance: generated "
                            "provisional-unverified hash=sha256:ABCDEF -->\n"))
             self.assertIn("seat-malformed-stamp", self._rules(Path(d)))
+
+    def test_require_stamp_covers_stakeholder_cards(self) -> None:
+        # The stakeholder flow reuses the same gate: a named stakeholders/ card is
+        # stamp-verified (not schema-checked as a seat), so --stakeholders shares the
+        # loud floor instead of growing a parallel one.
+        stamp = ("<!-- provenance: generated provisional-unverified "
+                 "hash=sha256:0123456789abcdef -->\n")
+        with tempfile.TemporaryDirectory() as d:
+            self._seat(Path(d), "priya.md", self.GOOD)
+            sdir = Path(d) / "sdlc-studio" / "personas" / "stakeholders"
+            sdir.mkdir(parents=True)
+            (sdir / "omar.md").write_text("# Omar - buyer\n", encoding="utf-8")
+            rules = {v["rule"] for v in validate.check_seats(
+                Path(d), require_stamp=[sdir / "omar.md"])}
+            self.assertIn("seat-no-stamp", rules)
+            self.assertNotIn("seat-require-miss", rules)
+            (sdir / "omar.md").write_text(stamp + "# Omar - buyer\n", encoding="utf-8")
+            errs = [v for v in validate.check_seats(Path(d),
+                                                    require_stamp=[sdir / "omar.md"])
+                    if v["severity"] == "error"]
+            self.assertEqual(errs, [])
+
+    def test_require_stamp_fails_loudly_on_an_unmatched_path(self) -> None:
+        # The critic's round-2 defect: a guard must fail loudly on input it cannot
+        # verify, never vacuously pass. A typo'd, relative-from-elsewhere, or
+        # outside-seats/ required path matches no scanned card and MUST error.
+        with tempfile.TemporaryDirectory() as d:
+            self._seat(Path(d), "priya.md", self.GOOD.replace(
+                "<!-- role: qa -->\n",
+                "<!-- role: qa -->\n<!-- provenance: reviewed 2026-07-10 -->\n"))
+            seats = Path(d) / "sdlc-studio" / "personas" / "seats"
+            for bad in (seats / "pirya.md",                       # typo
+                        Path("sdlc-studio/personas/seats/priya.md"),  # cwd-relative
+                        Path(d) / "sdlc-studio" / "personas" / "stakeholders" / "omar.md"):
+                rules = {v["rule"]
+                         for v in validate.check_seats(Path(d), require_stamp=[bad])}
+                self.assertIn("seat-require-miss", rules, msg=str(bad))
 
     def test_cli_require_stamp(self) -> None:
         import contextlib, io

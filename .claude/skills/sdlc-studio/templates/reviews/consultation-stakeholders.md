@@ -9,6 +9,7 @@ Variables: {{users}}, {{business}}, {{technical}}, {{analysis}}, {{recommendatio
 **Consulted:** {{timestamp}}
 **Artefact:** {{artefact_path}}
 **Stakeholders Consulted:** {{total_count}}
+**Provisional (unverified) cards:** {{provisional_names_or_none}}
 
 ---
 

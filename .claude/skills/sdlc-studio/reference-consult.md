@@ -207,7 +207,13 @@ Get feedback from all stakeholder personas (not team).
 
 1. **Load Stakeholder Personas**
    - Read all personas from `sdlc-studio/personas/stakeholders/`
-   - Group by type: Users, Business, Technical
+   - Group by the declared `<!-- stakeholder: ... -->` type (buyer, compliance, ops,
+     served); legacy cards without one group as Users, Business, Technical
+   - Check provenance: `scripts/persona_gen.py classify --root .` - any card still
+     `generated-pristine` is provisional-unverified and MUST be named in the output
+     header (its feedback is an assumption, not research)
+   - Apply each card's arbitration line: a buyer/Customer verdict never overrides the
+     Primary persona's interface - record the conflict, route the need elsewhere
 
 2. **Filter by Relevance** (optional with `--relevant`)
    - Score each persona's relevance to artefact

@@ -1,6 +1,6 @@
 # CR-0220: stakeholder panel generation: the other side of the table (persona generate --stakeholders)
 
-> **Status:** Proposed
+> **Status:** In Progress
 > **Depends on:** CR0218
 > **Priority:** High
 > **Type:** Feature

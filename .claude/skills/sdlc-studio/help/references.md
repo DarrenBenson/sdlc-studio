@@ -59,7 +59,7 @@ Five test references, each with a distinct scope - load the one that matches the
 ## Templates (v2 modular structure)
 
 - Core: `templates/core/*.md` (prd, trd, tsd, epic, story, plan, test-spec, bug, cr)
-- Personas: `templates/personas/` (persona-template, archetypes by category)
+- Personas: `templates/personas/` (persona-template, amigo seat schema, stakeholder-template, archetypes by category)
 - Indexes: `templates/indexes/*.md` (epic, story, plan, bug, test-spec, review)
 - Modules: `templates/modules/trd/*.md` (c4-diagrams, container-design, adr), `templates/modules/tsd/*.md` (contract-tests, performance-tests, security-tests), `templates/modules/epic/*.md` (engineering-view, product-view, test-view)
 - Config: `templates/config-defaults.yaml`, `templates/config.yaml`, `templates/version.yaml`

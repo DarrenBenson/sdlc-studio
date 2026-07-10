@@ -491,6 +491,35 @@ def check_personas(root: Path) -> list[dict]:
                 out.append({"severity": "warning", "rule": "persona-section", "file": str(p),
                             "message": f"missing section: {name}"})
 
+    # The stakeholder panel (personas/stakeholders/) has its own schema - the other side
+    # of the table: type declared, goals, veto lines, evidence read, Cooper Cast
+    # designation. Same advisory contract as design personas: warnings only, never gated.
+    sdir = pdir / "stakeholders"
+    if sdir.is_dir():
+        for p in sorted(sdir.glob("*.md")):
+            if p.name.startswith("_") or p.name.lower() in {"index.md", "readme.md"}:
+                continue
+            try:
+                text = p.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            m = _STAKEHOLDER_TYPE_RE.search(text)
+            if not m or m.group(1).lower() not in STAKEHOLDER_TYPES_ALLOWED:
+                out.append({"severity": "warning", "rule": "stakeholder-type", "file": str(p),
+                            "message": "no machine-readable `<!-- stakeholder: ... -->` type "
+                                       f"in the allowed set ({', '.join(sorted(STAKEHOLDER_TYPES_ALLOWED))}) "
+                                       "- the consult cannot group this card"})
+            hs = _headings(text)
+            for name in ("Who They Are", "What They Want", "Veto Lines", "Evidence They Read"):
+                if not _starts(hs, name.lower()):
+                    out.append({"severity": "warning", "rule": "stakeholder-section",
+                                "file": str(p), "message": f"missing section: {name}"})
+            if not re.search(r"\*\*Cast:\*\*\s*(Customer|Served)\b", text, re.I):
+                out.append({"severity": "warning", "rule": "stakeholder-cast", "file": str(p),
+                            "message": "no Cooper Cast designation (**Cast:** Customer | "
+                                       "Served) - the buyer-never-overrides-the-Primary "
+                                       "arbitration cannot be applied"})
+
     # LL0008: a pass must mean "inspected and well-formed", never "found nothing to inspect". When
     # the flat glob found no design personas but persona-shaped files sit in subdirs (e.g.
     # personas/team/, personas/amigos/), emit an advisory rather than a vacuous clean pass.
@@ -509,6 +538,9 @@ def check_personas(root: Path) -> list[dict]:
                                    f"({len(nested)} nested files found); not validated"})
     return out
 
+
+STAKEHOLDER_TYPES_ALLOWED = {"buyer", "compliance", "ops", "served"}
+_STAKEHOLDER_TYPE_RE = re.compile(r"<!--\s*stakeholder:\s*([a-z][a-z0-9-]*)\s*-->", re.I)
 
 SEAT_ROLES_ALLOWED = {"engineering", "qa", "product", "security", "sre", "data", "ux"}
 _SEAT_ROLE_RE = re.compile(r"<!--\s*role:\s*([a-z][a-z0-9-]*)\s*-->", re.I)
@@ -534,16 +566,20 @@ def check_seats(root: Path, require_stamp: list[Path] | None = None) -> list[dic
     (a malformed one silently classifies as authored, dropping out of the provisional
     advisory). `require_stamp` names files the flow just generated: each MUST carry a
     valid stamp or reviewed marker - authored cards are never in that list, so the check
-    stays non-circular. Cast size: >5 seats is an error (persona proliferation); missing
+    stays non-circular - and a named path that matches no scanned card is itself an
+    error (the guard fails loudly on input it cannot verify, never vacuously passes). Cast size: >5 seats is an error (persona proliferation); missing
     core roles is a warning (a project mid-authoring is legal). Runs standalone
     (`validate seats`) and is REQUIRED at the end of a team-generation flow; it is not in
     the default hard gate, so existing projects are never bricked by adoption."""
     out: list[dict] = []
-    required = {p.resolve() for p in (require_stamp or [])}
+    required = {p.resolve(): p for p in (require_stamp or [])}
+    required_seen: set[Path] = set()
     sdir = root / "sdlc-studio" / "personas" / "seats"
-    if not sdir.is_dir():
+    if not sdir.is_dir() and not required:
         return out
-    cards = sorted(sdir.glob("*.md"))
+    # no seats/ at all is legal for a --stakeholders-only run: the required-path
+    # reconciliation below still verifies stamps and fails loudly on misses
+    cards = sorted(sdir.glob("*.md")) if sdir.is_dir() else []
     roles_seen: dict[str, str] = {}
     for p in cards:
         try:
@@ -593,11 +629,42 @@ def check_seats(root: Path, require_stamp: list[Path] | None = None) -> list[dic
                                        "it would silently classify as authored and drop out "
                                        "of the provisional advisory"})
                 break
-        if p.resolve() in required and not stamped:
-            out.append({"severity": "error", "rule": "seat-no-stamp", "file": str(p),
-                        "message": "generated card carries no provenance stamp or reviewed "
-                                   "marker - run persona_gen.py stamp before completing "
-                                   "the flow"})
+        if p.resolve() in required:
+            required_seen.add(p.resolve())
+            if not stamped:
+                out.append({"severity": "error", "rule": "seat-no-stamp", "file": str(p),
+                            "message": "generated card carries no provenance stamp or "
+                                       "reviewed marker - run persona_gen.py stamp before "
+                                       "completing the flow"})
+    # The stakeholder flow shares this gate: a required path under personas/stakeholders/
+    # is stamp-verified (never seat-schema-checked), so --stakeholders gets the same loud
+    # floor instead of a parallel one.
+    stakedir = (root / "sdlc-studio" / "personas" / "stakeholders").resolve()
+    for res, orig in required.items():
+        if res in required_seen or res.parent != stakedir or not res.is_file():
+            continue
+        required_seen.add(res)
+        try:
+            text = res.read_text(encoding="utf-8")
+        except OSError as exc:
+            out.append({"severity": "error", "rule": "seat-unreadable", "file": str(orig),
+                        "message": f"unreadable stakeholder card: {exc}"})
+            continue
+        if not (persona_gen.STAMP_RE.search(text) or persona_gen.REVIEWED_RE.search(text)):
+            out.append({"severity": "error", "rule": "seat-no-stamp", "file": str(orig),
+                        "message": "generated card carries no provenance stamp or "
+                                   "reviewed marker - run persona_gen.py stamp before "
+                                   "completing the flow"})
+    # A guard must fail loudly on input it cannot verify, never vacuously pass: every
+    # required path that matched no scanned card (typo, cwd-relative from elsewhere,
+    # outside seats/ or stakeholders/) is an error, not a silent skip.
+    for res, orig in required.items():
+        if res not in required_seen:
+            out.append({"severity": "error", "rule": "seat-require-miss", "file": str(orig),
+                        "message": "required-stamp path matches no scanned card - the "
+                                   "stamp guarantee cannot be verified for it (check the "
+                                   "path; it must be a card under personas/seats/ or "
+                                   "personas/stakeholders/)"})
     if len(cards) > 5:
         out.append({"severity": "error", "rule": "seat-cast-size", "file": str(sdir),
                     "message": f"{len(cards)} seat cards (> 5) - persona proliferation; the "

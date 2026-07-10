@@ -314,6 +314,14 @@ Review and update existing personas.
    - Archive retired (don't delete)
    - Update revision history in index
 
+5. **Clear Provisional Labels** (generated seats and stakeholders)
+   - `scripts/persona_gen.py classify --root .` lists any card still
+     provisional-unverified (generated, never operator-reviewed)
+   - Walk each with the operator; on acceptance run
+     `scripts/persona_gen.py accept --file <card>` - the stamp becomes a dated
+     reviewed marker (Cooper's rule: an assumption persona stays labelled until
+     validated). A card the operator edits is already promoted to authored.
+
 ---
 
 # Enhanced Persona Structure {#enhanced-structure}

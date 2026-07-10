@@ -19,8 +19,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   clears the provisional labels, headless runs keep them and `status` surfaces the count.
   `validate.py seats` (with `--require-stamp` for just-written cards) is the error-level floor:
   declared role, review render, clean demographic denylist, one card per role, valid provenance
-  stamps. Repository review closes with a team offer. Eval scenario 07 exercises the flow on an
-  ambiguous-by-design fixture.
+  stamps, and a named path it cannot match is itself an error (a guard never vacuously passes).
+  `--stakeholders` generates the other side of the table into `personas/stakeholders/` on the new
+  stakeholder template - goals, veto lines, evidence-they-read, Cooper Customer/Served designation,
+  and the buyer-never-overrides-the-Primary arbitration rule stated on every card; the same
+  `--require-stamp` gate verifies their stamps, `validate.py personas` learns the stakeholder
+  schema (advisory), and `consult stakeholders` groups on the declared type and names any
+  still-provisional card in its output header. Stakeholder cards keep the provisional label until
+  `persona review` clears it - assumption personas stay labelled until validated. Repository
+  review closes with a team offer. Eval scenario 07 exercises the flow on an ambiguous-by-design
+  fixture.
 
 - **EP0029 - v4 GA readiness (the final pre-GA dogfood sprint).** The numbering switch is an
   explicit operator question end to end: `migrate_v3 apply`/`adopt` refuse without `--confirm`,
