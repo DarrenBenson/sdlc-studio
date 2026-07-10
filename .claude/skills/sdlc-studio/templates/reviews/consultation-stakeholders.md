@@ -75,7 +75,7 @@ Grouping: one section per DECLARED stakeholder type present on the panel - Buyer
 
 {{#each conflicts}}
 
-- **{{groups}}:** {{description}}
+- **{{conflicting_groups}}:** {{description}}
 {{/each}}
 
 *Arbitration:* a Buyer/Customer conflict with the Primary persona's interface is

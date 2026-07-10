@@ -1,6 +1,7 @@
 # CR-0221: Cooper usage pass: personas that arbitrate, not decorate
 
-> **Status:** In Progress
+> **Status:** Complete
+> **Verification depth:** functional (red-then-green: one-Primary warn/error matrix incl. casefold + mixed casts; serves dormancy, opt-in, resolution by H1 and filename, fenced-block immunity, coverage keyed on resolved file; critic probed all exit paths live; scenario 08 fixture verified self-consistent)
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-10
@@ -12,9 +13,9 @@ RFC0028, slimmed per consult. One-Primary ships as a WARNING (error only when tw
 
 ## Acceptance Criteria
 
-- [ ] validate.py warns on two Primary design personas (error only when both declare the same Interface:); optional Interface: field documented in the persona Quick Reference
-- [ ] Serves: convention in PRD/story templates; the coverage check activates only when the project carries >=1 Serves: tag (or config opt-in) and verifies named personas resolve to persona files; emits a coverage table, advisory
-- [ ] Consult templates carry the Primary-arbitration line and the >=1-objection-per-seat quota; persona review names the influences-no-decision judgement; reference-persona.md documents the scenario taxonomy (validation scenarios test robustness, never drive layout)
+- [x] validate.py warns on two Primary design personas (error only when both declare the same Interface:); optional Interface: field documented in the persona Quick Reference
+- [x] Serves: convention in PRD/story templates; the coverage check activates only when the project carries >=1 Serves: tag (or config opt-in) and verifies named personas resolve to persona files; emits a coverage table, advisory
+- [x] Consult templates carry the Primary-arbitration line and the >=1-objection-per-seat quota; persona review names the influences-no-decision judgement; reference-persona.md documents the scenario taxonomy (validation scenarios test robustness, never drive layout)
 
 ## Revision History
 

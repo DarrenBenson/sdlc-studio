@@ -848,7 +848,27 @@ class ServesCoverageTests(unittest.TestCase):
             res = validate.check_serves(repo)
             self.assertTrue(res["active"])
             self.assertEqual(res["findings"], [])
-            self.assertEqual(res["coverage"].get("Maya Chen"), 1)
+            self.assertEqual(res["coverage"].get("maya-chen.md"), 1)
+
+    def test_case_variants_never_fragment_coverage(self):
+        # coverage keys on the resolved file, not the tag's raw spelling
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, stories=[
+                ("US0001-x.md", self.STORY),
+                ("US0002-y.md", self.STORY.replace("US0001", "US0002").replace(
+                    "Maya Chen", "MAYA CHEN"))],
+                personas=[("maya-chen.md", "Maya Chen - Dispatcher")])
+            res = validate.check_serves(repo)
+            self.assertEqual(res["coverage"], {"maya-chen.md": 2})
+
+    def test_fenced_code_block_never_activates(self):
+        # a story QUOTING the convention in a code block must not activate the check
+        with tempfile.TemporaryDirectory() as d:
+            quoted = ("# US0001: x\n\n> **Status:** Draft\n\n"
+                      "```markdown\n**Serves:** Nobody Real\n```\n\n"
+                      "## Acceptance Criteria\n\n- **AC1:** x\n")
+            repo = self._repo(d, stories=[("US0001-x.md", quoted)])
+            self.assertFalse(validate.check_serves(repo)["active"])
 
     def test_unresolved_persona_name_is_flagged(self):
         # Sam's blocking condition: a named persona MUST resolve to a persona file -

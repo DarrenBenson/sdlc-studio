@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 3 |
+| Proposed | 2 |
 | Approved | 0 |
-| In Progress | 4 |
-| Complete | 213 |
+| In Progress | 2 |
+| Complete | 216 |
 | Rejected | 0 |
 | Deferred | 3 |
 | Superseded | 4 |
@@ -40,10 +40,10 @@
 | [CR-0216](CR0216-project-upgrade-must-explicitly-ask-the-operator-before.md) | project upgrade must explicitly ask the operator before switching the id numbering scheme | Complete | High | Improvement | 2026-07-10 | -- |
 | [CR-0217](CR0217-living-personas-are-the-explicit-default-for-reviews.md) | living personas are the explicit default for reviews, critics and consults | Complete | Medium | Improvement | 2026-07-10 | -- |
 | [CR-0218](CR0218-the-converged-seat-home-retire-amigos-precedence-one.md) | the converged seat home: retire amigos/ precedence, one layout, upgrade offers generation first | In Progress | High | Improvement | 2026-07-10 | -- |
-| [CR-0219](CR0219-team-generation-fresh-named-seats-grown-from-the.md) | team generation: fresh named seats grown from the project (persona generate --team) | In Progress | High | Feature | 2026-07-10 | -- |
-| [CR-0220](CR0220-stakeholder-panel-generation-the-other-side-of-the.md) | stakeholder panel generation: the other side of the table (persona generate --stakeholders) | In Progress | High | Feature | 2026-07-10 | -- |
-| [CR-0221](CR0221-cooper-usage-pass-personas-that-arbitrate-not-decorate.md) | Cooper usage pass: personas that arbitrate, not decorate | In Progress | Medium | Improvement | 2026-07-10 | -- |
-| [CR-0222](CR0222-positioning-and-lifecycle-wiring-the-honest-differentiator-everywhere.md) | positioning and lifecycle wiring: the honest differentiator, everywhere the team is met | Proposed | High | Improvement | 2026-07-10 | -- |
+| [CR-0219](CR0219-team-generation-fresh-named-seats-grown-from-the.md) | team generation: fresh named seats grown from the project (persona generate --team) | Complete | High | Feature | 2026-07-10 | -- |
+| [CR-0220](CR0220-stakeholder-panel-generation-the-other-side-of-the.md) | stakeholder panel generation: the other side of the table (persona generate --stakeholders) | Complete | High | Feature | 2026-07-10 | -- |
+| [CR-0221](CR0221-cooper-usage-pass-personas-that-arbitrate-not-decorate.md) | Cooper usage pass: personas that arbitrate, not decorate | Complete | Medium | Improvement | 2026-07-10 | -- |
+| [CR-0222](CR0222-positioning-and-lifecycle-wiring-the-honest-differentiator-everywhere.md) | positioning and lifecycle wiring: the honest differentiator, everywhere the team is met | In Progress | High | Improvement | 2026-07-10 | -- |
 | [CR-0223](CR0223-the-handoff-guide-a-first-class-remaining-work.md) | the handoff guide: a first-class remaining-work artefact at run close | Deferred | Medium | Feature | 2026-07-10 | -- |
 | [CR-0224](CR0224-multi-repo-context-the-repo-map-and-census.md) | multi-repo context: the repo map and census grow PVD-wide awareness | Deferred | Medium | Feature | 2026-07-10 | -- |
 | [CR-0225](CR0225-appetite-bounded-unattended-runs-a-budget-circuit-breaker.md) | appetite-bounded unattended runs: a budget circuit-breaker for epic-level execution | Deferred | Medium | Feature | 2026-07-10 | -- |

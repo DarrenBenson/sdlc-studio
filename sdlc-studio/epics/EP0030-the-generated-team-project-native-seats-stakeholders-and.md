@@ -17,9 +17,9 @@ conjunction. Gates the v4 GA tag.
 ## Story Breakdown
 
 - [ ] [CR0218](../change-requests/CR0218-the-converged-seat-home-retire-amigos-precedence-one.md) - converged seat home: retire amigos/ precedence, one layout, upgrade offers generation first (PREREQUISITE)
-- [ ] [CR0219](../change-requests/CR0219-team-generation-fresh-named-seats-grown-from-the.md) - team generation: fresh named seats grown from the project (depends CR0218)
-- [ ] [CR0220](../change-requests/CR0220-stakeholder-panel-generation-the-other-side-of-the.md) - stakeholder panel generation (depends CR0218)
-- [ ] [CR0221](../change-requests/CR0221-cooper-usage-pass-personas-that-arbitrate-not-decorate.md) - Cooper usage pass: personas that arbitrate, not decorate
+- [x] [CR0219](../change-requests/CR0219-team-generation-fresh-named-seats-grown-from-the.md) - team generation: fresh named seats grown from the project (depends CR0218)
+- [x] [CR0220](../change-requests/CR0220-stakeholder-panel-generation-the-other-side-of-the.md) - stakeholder panel generation (depends CR0218)
+- [x] [CR0221](../change-requests/CR0221-cooper-usage-pass-personas-that-arbitrate-not-decorate.md) - Cooper usage pass: personas that arbitrate, not decorate
 - [ ] [CR0226](../change-requests/CR0226-a-brand-new-readme-newcomer-value-first-existing.md) - brand-new newcomer-first README + existing-users page (depends CR0222)
 - [ ] [CR0227](../change-requests/CR0227-the-sdlc-studio-white-paper-the-mill-described.md) - the white paper: the mill, described properly (depends CR0222, CR0219, CR0220)
 - [ ] [CR0222](../change-requests/CR0222-positioning-and-lifecycle-wiring-the-honest-differentiator-everywhere.md) - positioning + lifecycle wiring incl. the urgent README claim fix (depends CR0219, CR0220)

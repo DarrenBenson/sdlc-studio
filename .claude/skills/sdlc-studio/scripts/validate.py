@@ -611,7 +611,10 @@ def check_serves(root: Path) -> dict:
                 text = p.read_text(encoding="utf-8")
             except OSError:
                 continue
-            names = [n.strip() for m in _SERVES_RE.finditer(text)
+            # strip fenced code blocks first - a story QUOTING the convention must not
+            # activate the check or mint phantom warnings
+            prose = re.sub(r"^```.*?^```\s*?$", "", text, flags=re.M | re.S)
+            names = [n.strip() for m in _SERVES_RE.finditer(prose)
                      for n in m.group(1).split(",") if n.strip()]
             if names:
                 tagged += 1
@@ -635,7 +638,9 @@ def check_serves(root: Path) -> dict:
                                  "message": f"Serves: '{n}' resolves to no persona file - "
                                             "fix the name or create the persona"})
             else:
-                coverage[n] = coverage.get(n, 0) + 1
+                # key coverage on the resolved file, not the tag's raw spelling, so
+                # case variants of one persona never fragment into separate rows
+                coverage[resolved] = coverage.get(resolved, 0) + 1
     return {"active": True, "findings": findings, "coverage": coverage}
 
 

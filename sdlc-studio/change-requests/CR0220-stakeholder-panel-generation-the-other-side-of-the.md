@@ -1,6 +1,7 @@
 # CR-0220: stakeholder panel generation: the other side of the table (persona generate --stakeholders)
 
-> **Status:** In Progress
+> **Status:** Complete
+> **Verification depth:** functional (red-then-green: stakeholder schema advisory checks incl. shipped-template self-check; --require-stamp covers stakeholder cards + fails loudly on unmatched paths; malformed-stamp always-on for both dirs; critic probed the template/reference agreement live)
 > **Depends on:** CR0218
 > **Priority:** High
 > **Type:** Feature
@@ -13,9 +14,9 @@ RFC0028. Generate the stakeholder panel consult already reads from personas/stak
 
 ## Acceptance Criteria
 
-- [ ] stakeholder-template.md ships (role, goals, vetoes, evidence read, Customer/Served designation, B2B arbitration line); --stakeholders generates into personas/stakeholders/ flat layout
-- [ ] `check_personas` learns the stakeholder schema (no permanent layout/section warnings on generated panels); consult stakeholders reads the generated panel and its output header names any provisional card
-- [ ] Stakeholder cards keep the provisional-unverified stamp until persona review clears them (Cooper's provisional rule applies to research-ungrounded cards)
+- [x] stakeholder-template.md ships (role, goals, vetoes, evidence read, Customer/Served designation, B2B arbitration line); --stakeholders generates into personas/stakeholders/ flat layout
+- [x] `check_personas` learns the stakeholder schema (no permanent layout/section warnings on generated panels); consult stakeholders reads the generated panel and its output header names any provisional card
+- [x] Stakeholder cards keep the provisional-unverified stamp until persona review clears them (Cooper's provisional rule applies to research-ungrounded cards)
 
 ## Revision History
 

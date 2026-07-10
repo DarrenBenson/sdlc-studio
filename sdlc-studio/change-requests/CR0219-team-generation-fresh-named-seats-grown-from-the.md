@@ -1,6 +1,6 @@
 # CR-0219: team generation: fresh named seats grown from the project (persona generate --team)
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Verification depth:** functional (red-then-green: persona_gen stamp/classify/accept with content-hash never-clobber - operator edit promotes to authored, restamp stable, accept refuses regeneration over reviewed cards; validate seats error-level floor (role/render/demographics/duplicate/cast-cap) exits 1 on errors; status surfaces provisional counts; the --team flow shipped with the <=4 question cap, shadowing guard and batch-accept; scenario 07 fixture is ambiguous by design (payments+health conflict) with scripted answers and ask-before-write ordering EBs; suites 1604+132)
 > **Depends on:** CR0218
 > **Priority:** High
@@ -14,12 +14,12 @@ RFC0028 core. Analyse PRD/TRD/TSD/config/repo-map onto behavioural variables and
 
 ## Acceptance Criteria
 
-- [ ] The --team flow follows Analyse -> Present discoveries -> Ask (<=4 default / <=1 quick, one at a time, every inference contestable via one batch adjust) -> Generate -> batch-accept close that clears TEAM provisional labels in-flow; headless runs keep the provisional stamp
-- [ ] Generated seats: declared role comment, dual render, Craft Goals/Non-Negotiables/Pushes-Back-When/Shadow grounded in the analysed domain and stack; a role-claiming amigos/ card triggers the migrate/retire path, never silent shadowing
-- [ ] A new error-level validate.py seats check owns the D4 hard error: role comment present and allowed, review-render headings present, provenance stamp present on generated cards, demographic-token denylist clean, seat cast 3-5 (Sam, blocking)
-- [ ] Never-clobber: authored-vs-generated discriminated by provenance stamp PLUS content hash; re-runs key on declared role (one generated card per role, diffing its own prior); --dry-run first-class
-- [ ] status emits an advisory count of unreviewed provisional seats; standalone repo-map-only invocation documented with a hint after review generate
-- [ ] Eval scenario 07: fixture ambiguous by design (conflicting risk classes, absent compliance regime) with scripted answers and the expected question axis in `grading_notes`; EBs include ask-before-write ordering, authored-seat byte-identity across run and re-run, domain keyword floor, forbidden headless-dodge
+- [x] The --team flow follows Analyse -> Present discoveries -> Ask (<=4 default / <=1 quick, one at a time, every inference contestable via one batch adjust) -> Generate -> batch-accept close that clears TEAM provisional labels in-flow; headless runs keep the provisional stamp
+- [x] Generated seats: declared role comment, dual render, Craft Goals/Non-Negotiables/Pushes-Back-When/Shadow grounded in the analysed domain and stack; a role-claiming amigos/ card triggers the migrate/retire path, never silent shadowing
+- [x] A new error-level validate.py seats check owns the D4 hard error: role comment present and allowed, review-render headings present, provenance stamp present on generated cards, demographic-token denylist clean, seat cast 3-5 (Sam, blocking)
+- [x] Never-clobber: authored-vs-generated discriminated by provenance stamp PLUS content hash; re-runs key on declared role (one generated card per role, diffing its own prior); --dry-run first-class
+- [x] status emits an advisory count of unreviewed provisional seats; standalone repo-map-only invocation documented with a hint after review generate
+- [x] Eval scenario 07: fixture ambiguous by design (conflicting risk classes, absent compliance regime) with scripted answers and the expected question axis in `grading_notes`; EBs include ask-before-write ordering, authored-seat byte-identity across run and re-run, domain keyword floor, forbidden headless-dodge
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # CR-0222: positioning and lifecycle wiring: the honest differentiator, everywhere the team is met
 
-> **Status:** Proposed
+> **Status:** In Progress
 > **Depends on:** CR0219, CR0220
 > **Priority:** High
 > **Type:** Improvement
