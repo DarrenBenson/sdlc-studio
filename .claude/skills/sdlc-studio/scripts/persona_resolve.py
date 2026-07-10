@@ -26,12 +26,14 @@ consult needs the review render, so a matched project seat lacking it is a hard 
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import version_check  # noqa: E402
+from lib import sdlc_md  # noqa: E402
 
 SEATS = ("engineering", "qa", "product")
 # Which render of the dual-render amigo card the caller wants framed.
@@ -183,6 +185,11 @@ def cmd_resolve(args: argparse.Namespace) -> int:
     except RenderError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps({"seat": args.seat, "render": args.render,
+                          "card_path": str(card) if card else None,
+                          "framing": frame(card, args.seat, args.render)}, indent=2))
+        return 0
     if args.path_only:
         print(str(card) if card else "")
         return 0
@@ -212,6 +219,7 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--root", default=".", help="project root")
     r.add_argument("--skip-personas", action="store_true", help="force the generic path (no framing)")
     r.add_argument("--path-only", action="store_true", help="print the resolved card path, not its body")
+    sdlc_md.add_format_arg(r)
     r.set_defaults(func=cmd_resolve)
     c = sub.add_parser("resolve-consult",
                        help="Resolve the seat a consult runs against, by declared role (review render).")

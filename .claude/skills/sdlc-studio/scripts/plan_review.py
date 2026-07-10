@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import hashlib
+import json
 import re
 import sys
 import tempfile
@@ -234,6 +235,9 @@ def _resolve_story(root: Path, story_id: str) -> Path | None:
 
 def cmd_check(args: argparse.Namespace) -> int:
     res = gate(args.root, args.id, args.path)
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps(res, indent=2))
+        return 0 if res["ok"] else 1
     print(("OK: " if res["ok"] else "BLOCKED: ") + res["reason"])
     return 0 if res["ok"] else 1  # check-failure: the family returns 1, not 2 (argparse owns 2)
 
@@ -256,6 +260,7 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--id", required=True, help="Story id, e.g. US0090")
     c.add_argument("--path", default=None, help="Story file (optional; resolved from --id)")
     c.add_argument("--root", default=".")
+    sdlc_md.add_format_arg(c)
     c.set_defaults(func=cmd_check)
     r = sub.add_parser("record", help="Record a plan-review verdict, PINNED to the story's "
                                       "current ACs (a later AC edit invalidates it).")

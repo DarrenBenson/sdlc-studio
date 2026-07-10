@@ -10,6 +10,7 @@ emptied US0006). Pure stdlib.
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -77,6 +78,9 @@ def cmd_record(args: argparse.Namespace) -> int:
 def cmd_show(args: argparse.Namespace) -> int:
     """Print the tranche ledger."""
     rows = read_ledger(args.root, args.tranche)
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps({"tranche": args.tranche, "decisions": rows}, indent=2))
+        return 0
     if not rows:
         print(f"no decisions for {args.tranche}")
         return 0
@@ -96,8 +100,9 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--root", default=".", help="Repo root (default: .)")
     r.set_defaults(func=cmd_record)
     s = sub.add_parser("show", help="Print the tranche ledger.")
-    s.add_argument("--tranche", required=True)
+    s.add_argument("--tranche", "--unit", dest="tranche", required=True)
     s.add_argument("--root", default=".", help="Repo root (default: .)")
+    sdlc_md.add_format_arg(s)
     s.set_defaults(func=cmd_show)
     return parser
 

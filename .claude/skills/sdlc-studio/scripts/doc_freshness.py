@@ -9,11 +9,13 @@ a fact LATEST.md actually states - it never demands one.
 """
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib import sdlc_md  # noqa: E402
 
 
 def _skill_dir(root: Path) -> Path:
@@ -105,8 +107,12 @@ def main(argv: list[str] | None = None) -> int:
     import argparse
     ap = argparse.ArgumentParser(description="Flag stale facts in LATEST.md (advisory).")
     ap.add_argument("--root", default=".")
+    sdlc_md.add_format_arg(ap)
     args = ap.parse_args(argv)
     r = check(args.root)
+    if args.format == "json":
+        print(json.dumps(r, indent=2))
+        return 0  # advisory: report, never fail
     if not r["applicable"]:
         print("doc-freshness: N/A (not the skill repo, or no LATEST.md)")
         return 0

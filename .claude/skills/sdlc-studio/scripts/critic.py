@@ -17,6 +17,7 @@ workers too, not only persona-framed ones. Pure stdlib.
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -228,6 +229,13 @@ def cmd_record(args: argparse.Namespace) -> int:
 
 
 def cmd_show(args: argparse.Namespace) -> int:
+    if getattr(args, "format", "text") == "json":
+        if args.unit:
+            print(json.dumps({"unit": args.unit, "verdict": verdict_for(
+                args.root, args.unit, args.phase)}, indent=2))
+        else:
+            print(json.dumps(read_verdicts(args.root, args.phase), indent=2))
+        return 0
     if args.unit:
         v = verdict_for(args.root, args.unit, args.phase)
         print(v if v else f"no verdict for {args.unit}")
@@ -256,6 +264,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--unit", default=None)
     s.add_argument("--phase", choices=PHASES, default="delivery")
     s.add_argument("--root", default=".")
+    sdlc_md.add_format_arg(s)
     s.set_defaults(func=cmd_show)
     return parser
 

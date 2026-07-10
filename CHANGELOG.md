@@ -32,7 +32,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   check-failures now return `1` like the rest of the family (argparse keeps `2` for usage
   errors). Test-output hygiene: the agent-instructions, budget and version checkers' reports no
   longer leak past the unittest summary (the named cases; broader error-path stderr from other
-  suites is a separate sweep).
+  suites is a separate sweep). `--format json` added to the report/check verbs that lacked it
+  (`spec_guard check`, `plan_review check`, `ledger show`, `critic show`, `doc_freshness`,
+  `persona_resolve resolve`, `loop_guard record`) via the shared `sdlc_md.add_format_arg`, so a
+  machine caller reads them uniformly (`github_sync state` and `loop_guard status` were already
+  JSON); a new `test_json_report.py` asserts each emits parseable JSON.
 - **One CLI argument grammar across the script family (EP0028, CR0210).** The scripts disagreed
   on how ids and targets were passed - `audit check` took `--ids` comma-separated, `transition
   set` forced exactly one of `--id`/`--ids`, `artifact revision` required `--ids`, `ledger

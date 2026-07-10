@@ -934,6 +934,13 @@ def add_ids_argument(parser, *, dest: str = "id", help_: str | None = None) -> N
                         help="legacy: comma-separated ids (equivalent to repeating --id)")
 
 
+def add_format_arg(parser, *, default: str = "text") -> None:
+    """Declare the standard `--format {text,json}` on a report/check subparser, so every
+    machine-readable verb spells its output switch the same way."""
+    parser.add_argument("--format", choices=("text", "json"), default=default,
+                        help="output format (default: %s)" % default)
+
+
 def resolve_ids(args, *, dest: str = "id") -> list[str]:
     """The id list from a parser built with `add_ids_argument` - `--id` (scalar or
     repeated) and `--ids` (comma list) merged, whitespace-trimmed, de-duplicated in

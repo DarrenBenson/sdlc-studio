@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import json
 import re
 import sys
 from pathlib import Path
@@ -105,6 +106,9 @@ def _changed(spec: str | None) -> list[str]:
 def cmd_check(args: argparse.Namespace) -> int:
     story_text = Path(args.story).read_text(encoding="utf-8") if args.story else ""
     res = check(args.root, _changed(args.changed), story_text)
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps(res, indent=2))
+        return 1 if res["untraced_files"] else 0
     if res["untraced_files"]:
         print("UNTRACED spec edit(s) - the story never references these files; a blocking "
               "finding unless the critic confirms the change was requested: "
@@ -127,6 +131,7 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Comma/newline-separated changed file paths (e.g. from git diff --name-only)")
     c.add_argument("--story", default=None, help="Story file being delivered (for AC citations)")
     c.add_argument("--root", default=".")
+    sdlc_md.add_format_arg(c)
     c.set_defaults(func=cmd_check)
     return p
 

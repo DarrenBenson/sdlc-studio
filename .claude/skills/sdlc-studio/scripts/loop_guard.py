@@ -75,6 +75,9 @@ def cmd_record(args: argparse.Namespace) -> int:
     state = record_attempt(state, args.unit, args.signature)
     v = verdict(state, args.unit, cap=args.cap, repeat=args.repeat)
     sdlc_md.atomic_write(path, json.dumps(state, indent=2))  # atomic: a crash mid-write must not reset guardrail state
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps(v, indent=2))
+        return QUARANTINE_EXIT if v["quarantine"] else 0
     if v["quarantine"]:
         print(f"{args.unit}: QUARANTINE after {v['attempts']} attempts (reason={v['reason']}) -> mark Blocked, continue")
         return QUARANTINE_EXIT
@@ -101,6 +104,7 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--unit", required=True, help="Unit id (e.g. US0010)")
         if name == "record":
             p.add_argument("--signature", required=True, help="Failure signature (e.g. test::name)")
+            sdlc_md.add_format_arg(p)  # status is already JSON-only
         p.add_argument("--cap", type=int, default=3, help="Attempts before quarantine (default 3)")
         p.add_argument("--repeat", type=int, default=2, help="Same-signature repeats before quarantine (default 2)")
         p.add_argument("--state", default=None, help="State file (default <root>/sdlc-studio/.local/loop-state.json)")
