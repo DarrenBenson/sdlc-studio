@@ -1,6 +1,6 @@
 # CR-0215: big-bang v4 documentation pass: every consuming-facing doc tells the v4 story
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Verification depth:** functional (README leads with the v4 multi-team story - collision-free ULID identity, the three-answer upgrade question, the quality floor, living Cooper personas; docs/why 'opt-in today, default in v4 later' claim corrected; quick-start verified e2e against the fresh global install: init stamps schema 3, filing mints BG-01KX5DSG ULID, drift 0; contradiction sweep + doc_coverage PASS + doc_freshness fresh + markdownlint clean; the curl line can only serve v4 post-tag - inherent, noted)
 > **Depends on:** CR0216, CR0212, CR0214, CR0213
 > **Priority:** High

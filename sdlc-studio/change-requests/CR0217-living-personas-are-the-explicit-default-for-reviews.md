@@ -1,6 +1,6 @@
 # CR-0217: living personas are the explicit default for reviews, critics and consults
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Verification depth:** functional (the critic/review flows now instruct persona_resolve seat resolution - reference-sprint critic section, repo-review template legs; sprint plan's no-seat-inputs advisory names the wsjf-inputs mechanism; SKILL.md + help/persona state the working-seats principle; dogfooded immediately: this sprint's doc review runs under the resolved Lena Product charter; suite 1581 + sprint 74, budgets/style/links OK)
 > **Priority:** Medium
 > **Type:** Improvement

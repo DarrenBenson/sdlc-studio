@@ -1,6 +1,6 @@
 # CR-0216: project upgrade must explicitly ask the operator before switching the id numbering scheme
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Verification depth:** functional (red-then-green: apply/adopt refuse without --confirm with zero writes; adopt stamps schema 3 forward-only renaming nothing, a post-adopt filing mints a ULID and mixed eras reconcile clean; the walk names all three operator answers (full/forward-only/decline) with the multi-team rationale; era-divergence advisory fires on v2-config+v3-ids, silent on forward-only mixes and pure v2; declining leaves a v2 project fully upgraded; suite 1577)
 > **Priority:** High
 > **Type:** Improvement

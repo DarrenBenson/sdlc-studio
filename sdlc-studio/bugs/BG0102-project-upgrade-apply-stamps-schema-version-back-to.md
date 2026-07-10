@@ -1,6 +1,6 @@
 # BG0102: project upgrade --apply stamps schema_version back to 2 on a schema-3 project
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Verification depth:** functional (red-then-green: project upgrade --apply on a schema-3 project with an older skill stamp now preserves schema_version: 3 in .version - max(effective, CURRENT_SCHEMA), an upgrade can only raise the stamp; suite 1571)
 > **Severity:** Medium
 > **Created:** 2026-07-10
