@@ -394,7 +394,6 @@ class NormalisationTests(unittest.TestCase):
             self.assertNotIn("count-mismatch", kinds)
 
 
-
 class DuplicateRowTests(unittest.TestCase):
     def _idx(self, repo, body):
         d = repo / "sdlc-studio" / "stories"; d.mkdir(parents=True, exist_ok=True)
@@ -488,7 +487,6 @@ class DuplicateRowTests(unittest.TestCase):
             r = reconcile.detect_duplicate_rows(repo)
             self.assertEqual(r["count"], 1)
             self.assertEqual(r["duplicates"][0]["count"], 2)
-
 
 
 class DependenciesTableStatusPoisonTests(unittest.TestCase):
@@ -1225,10 +1223,6 @@ class BG0044RegressionTests(unittest.TestCase):
             self.assertIn("**Total** | **1**", out)   # global summary recomputed only
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class IndexBloatAdvisoryTests(unittest.TestCase):
     """The archive process must be RECOMMENDED, not just shipped: when live
     terminal rows exceed indexes.archive_after the detect result carries an
@@ -1572,3 +1566,6 @@ class FormatJsonParityTests(unittest.TestCase):
                 with contextlib.redirect_stdout(buf):
                     reconcile.main(argv[name] + ["--root", str(root), "--format", "json"])
                 json.loads(buf.getvalue())  # raises if not valid JSON
+
+if __name__ == "__main__":
+    unittest.main()

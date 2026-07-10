@@ -348,11 +348,6 @@ class BacklogFormatTests(unittest.TestCase):
             self.assertIn("empty", out)           # explicit, not blank output
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
-
 class HookWarningTests(unittest.TestCase):
     def setUp(self):
         import os
@@ -382,3 +377,6 @@ class HookWarningTests(unittest.TestCase):
             with redirect_stdout(buf):
                 status.main(["pillars", "--root", str(root)])
             self.assertIn("enable-hooks.sh", buf.getvalue())
+
+if __name__ == "__main__":
+    unittest.main()

@@ -407,10 +407,6 @@ class UpgradeWalkTests(unittest.TestCase):
             self.assertEqual(pu.detect(Path(d))["project_schema"], 3)  # effective schema from config
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 FIXTURE_CHANGELOG = """# Changelog
 
 ## [3.4.0] - 2026-07-04
@@ -737,3 +733,5 @@ class NoFabricatedHistoryTests(unittest.TestCase):
             pu.rebaseline_apply(d)
             self.assertFalse((sd / ".local" / "telemetry.jsonl").exists())  # no back-dated rows
 
+if __name__ == "__main__":
+    unittest.main()

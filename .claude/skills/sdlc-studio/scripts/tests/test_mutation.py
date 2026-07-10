@@ -241,8 +241,6 @@ class LaneTests(unittest.TestCase):
             self.assertEqual([p.name for p in flagged], ["test_vacuous.py"])
 
 
-
-
 class ViabilityTests(unittest.TestCase):
     """A mutant that does not even parse is UNVIABLE - it is evidence of nothing,
     and must never be counted as killed (a vacuous suite would 'kill' it too)."""
@@ -350,8 +348,6 @@ class StoryLaneTests(unittest.TestCase):
             (root / "brand_new.py").write_text("def n():\n    return 2\n", encoding="utf-8")
             since = mut.select_files(root, since="HEAD")
             self.assertIn("brand_new.py", [p.name for p in since])
-
-
 
 
 class StalenessHashTests(unittest.TestCase):

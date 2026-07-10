@@ -418,10 +418,6 @@ class CR0109AuditChecks(unittest.TestCase):
             self.assertIn("cross-epic-ac", r["units"][0]["issues"])
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class RegressionTestHeuristicTests(unittest.TestCase):
     """CR0128 heuristic 2: a Fixed/Done bug whose recorded tests have no integration/regression
     case is flagged. The check is a name-signal heuristic; proving the test hits the seams is a
@@ -469,3 +465,6 @@ class RegressionTestHeuristicTests(unittest.TestCase):
             root = Path(t)
             r = self._bug_with(root, 5, "Fixed", "")
             self.assertNotIn("missing-regression-test", r["issues"])
+
+if __name__ == "__main__":
+    unittest.main()

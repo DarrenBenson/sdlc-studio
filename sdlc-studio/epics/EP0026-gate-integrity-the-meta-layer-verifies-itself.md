@@ -26,6 +26,7 @@ Unit roster (bugs fixed directly; CRs decompose via `cr action` at execution - s
 - [ ] [BG0095](../bugs/BG0095-the-provenance-external-stamp-that-gates-shell-verifiers.md) - Provenance: external stamp has no writer on the ingest path
 - [ ] [BG0096](../bugs/BG0096-ci-never-runs-gate-py-although-the-pre.md) - CI never runs gate.py despite claimed parity
 - [x] [US0113: Detect a disabled commit gate in gate and status](../stories/US0113-detect-a-disabled-commit-gate-in-gate-and.md)
+- [x] [US0114: Normalise mid-file main guards in the test suite](../stories/US0114-normalise-mid-file-main-guards-in-the-test.md)
 
 ## Revision History
 

@@ -944,10 +944,6 @@ class SharedDiscoveryTests(unittest.TestCase):
         self.assertEqual(args2.repo_root, "/y")
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class RestrictedHttpTests(unittest.TestCase):
     """US0101/CR0186: the http verb has a scheme floor in every mode and a host allow-list
     (restricted mode via SDLC_VERIFY_HTTP_HOSTS)."""
@@ -1079,3 +1075,5 @@ class DebugTraceTests(unittest.TestCase):
             # within-cap is a no-op
             self.assertFalse(sdlc_md.roll_jsonl(p, max_lines=4))
 
+if __name__ == "__main__":
+    unittest.main()

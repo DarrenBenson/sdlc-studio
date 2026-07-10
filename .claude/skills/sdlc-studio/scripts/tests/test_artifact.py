@@ -587,10 +587,6 @@ class MetaTypeTests(unittest.TestCase):
             self.assertEqual(rc, 0)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class RevisionVerbTests(unittest.TestCase):
     """`artifact.py revision`: deterministic batch appends to Revision History -
     the sprint-close mechanical task that used to be hand-scripted."""
@@ -748,3 +744,6 @@ class ProvenanceStampTests(unittest.TestCase):
             blob = _json.dumps(results, default=str) + err.getvalue()
             self.assertIn("external", blob.lower())
             self.assertNotIn('"status": "pass"', blob.lower())
+
+if __name__ == "__main__":
+    unittest.main()

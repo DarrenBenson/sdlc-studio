@@ -655,10 +655,6 @@ class RoundTripTests(unittest.TestCase):
             self.assertEqual(new[0]["file"], "LL0004-parseable.md")
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 LESSONS_FIXTURE = """# Project Lessons
 
 **Last Updated:** 2026-01-01
@@ -745,3 +741,6 @@ class SummaryTests(unittest.TestCase):
             first = out.read_text(encoding="utf-8")
             lessons.main(["summary", "--project-file", str(p), "--out", str(out)])
             self.assertEqual(out.read_text(encoding="utf-8"), first)  # byte-identical
+
+if __name__ == "__main__":
+    unittest.main()

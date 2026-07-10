@@ -1017,10 +1017,6 @@ class OriginDriftCollisionTests(unittest.TestCase):
             self.assertIn("behind", err.getvalue())
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class PreflightSurvivesAllOrdersTests(unittest.TestCase):
     """BG0085: waves=None (manual order, empty batch) killed the preflight via a swallowed
     TypeError - the --strict refusal must fire for EVERY order on a behind-origin clone."""
@@ -1061,3 +1057,6 @@ class PreflightSurvivesAllOrdersTests(unittest.TestCase):
                 rc = sprint.main(["plan", "--crs", "Proposed", "--order", "priority",
                                   "--strict", "--root", str(work)])
             self.assertEqual(rc, 2, err.getvalue() + out.getvalue())
+
+if __name__ == "__main__":
+    unittest.main()

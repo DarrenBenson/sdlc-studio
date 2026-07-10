@@ -1,6 +1,6 @@
 # CR-0204: normalise the eleven test files with mid-file `__main__` guards (36 classes silently dropped on direct runs)
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** tooling
 > **Date:** 2026-07-09

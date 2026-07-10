@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 112 |
+| Done | 113 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **113** |
+| **Total** | **114** |
 
 ## All Stories
 
@@ -24,6 +24,7 @@
 | --- | --- | --- | --- | --- | --- |
 | [US0112](US0112-hygiene-close-fixed-bugs-archive-over-threshold-indexes.md) | Hygiene: close fixed bugs, archive over-threshold indexes, apply small deferred fixes | Done | EP0025 | 2026-07-09 | 2026-07-09 |
 | [US0113](US0113-detect-a-disabled-commit-gate-in-gate-and.md) | Detect a disabled commit gate in gate and status | Done | EP0026 | 2026-07-10 | 2026-07-10 |
+| [US0114](US0114-normalise-mid-file-main-guards-in-the-test.md) | Normalise mid-file main guards in the test suite | Done | EP0026 | 2026-07-10 | 2026-07-10 |
 
 ## Archived Releases
 

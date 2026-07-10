@@ -465,10 +465,6 @@ class PersonaWellFormedTests(unittest.TestCase):
             self.assertEqual(validate.check_personas(repo), [])
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class NotAnArtifactSweepTests(unittest.TestCase):
     """An id-named file the census excludes (no artifact header) must be NAMED,
     never silently invisible - the operator either fixes the header or declares
@@ -716,3 +712,6 @@ class UlidIdFormatTests(unittest.TestCase):
                        "# x\n\n> **Status:** Open\n")
             rules = {v["rule"] for v in validate.validate_file(p, "bug")}
             self.assertIn("id-format", rules)
+
+if __name__ == "__main__":
+    unittest.main()

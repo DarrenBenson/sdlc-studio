@@ -293,10 +293,6 @@ class GateExitContractTests(unittest.TestCase):
             gate.run_gate = orig
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class RetroCloseGateTests(unittest.TestCase):
     """US0042 / CR0129: the sprint close must fail loud without the batch retro."""
 
@@ -444,7 +440,6 @@ class MutationLaneTests(unittest.TestCase):
                 os.chdir(old_cwd)
             self.assertEqual(report["checks"][0]["status"], "pass",
                              report["checks"][0]["detail"])
-
 
 
 class AdvisoryRegistryTests(unittest.TestCase):
@@ -646,3 +641,6 @@ class HookEnabledEquivalentConfigTests(HookEnabledLaneTests):
                 else:
                     os.environ["GIT_DIR"] = old
             self.assertIsNotNone(gap, "check must evaluate the fixture, not GIT_DIR's repo")
+
+if __name__ == "__main__":
+    unittest.main()

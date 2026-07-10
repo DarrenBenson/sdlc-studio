@@ -299,10 +299,6 @@ class TelemetryTests(unittest.TestCase):
             self.assertFalse(events[0]["independent"])
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class ResolutionAndFailLoudTests(unittest.TestCase):
     """BG0094: lowercase stories must resolve (shared find_by_id, not a case-sensitive
     glob); an unresolved story must fail LOUD in record and gate, never a null fingerprint
@@ -343,3 +339,6 @@ class ResolutionAndFailLoudTests(unittest.TestCase):
             res = pr.gate(root, "US9999")
             self.assertFalse(res["ok"])
             self.assertIn("not found", res["reason"])
+
+if __name__ == "__main__":
+    unittest.main()

@@ -917,8 +917,6 @@ class FriendlyAliasTests(unittest.TestCase):
             self.assertIn("#42", p.read_text(encoding="utf-8"))
 
 
-
-
 class LowercaseDiscoveryTests(unittest.TestCase):
     """US0077/CR0181: walk_local finds lowercase-named artefacts (was a case-sensitive glob)."""
 
@@ -969,10 +967,6 @@ class RootFlagTests(unittest.TestCase):
             github_sync.save_state(github_sync._empty_state(), sp)
             self.assertTrue(sp.exists())
             self.assertEqual(github_sync.load_state(sp)["version"], 1)
-
-
-if __name__ == "__main__":
-    unittest.main()
 
 
 # Obviously-fake, pattern-shaped sentinels (never real secrets).
@@ -1096,3 +1090,6 @@ class SecretPushTests(unittest.TestCase):
         # --allow-secrets skips the scan, so visibility is never consulted
         self.assertFalse(any(a[:2] == ("repo", "view") for a in all_calls))
         self.assertTrue(any(a[:2] == ("issue", "create") for a in all_calls))
+
+if __name__ == "__main__":
+    unittest.main()

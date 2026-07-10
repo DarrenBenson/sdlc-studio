@@ -189,7 +189,6 @@ class IndependenceTests(unittest.TestCase):
             self.assertFalse(mod.is_independent(v))
 
 
-
 class SeatDriftWarningTests(unittest.TestCase):
     """The persona lens must not drift out silently: recording a verdict under
     a reviewer that matches no declared seat/amigo draws a warning naming the

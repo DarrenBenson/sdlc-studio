@@ -363,7 +363,6 @@ class StatusVocabTests(unittest.TestCase):
                 self.assertEqual(sdlc_md.status_vocab("story", root), base, body)
 
 
-
 class RowAndHeaderTests(unittest.TestCase):
     def test_row_from_header_rfc_cells_under_named_columns(self):
         hdr = ["ID", "Title", "Priority", "Status", "Author", "Date", "Spawned CRs"]

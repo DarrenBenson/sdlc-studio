@@ -94,10 +94,6 @@ class DocFreshnessTests(unittest.TestCase):
             self.assertEqual(r["findings"], [])
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class AnchorWindowCeilingTests(unittest.TestCase):
     """The anchor is a window, not a ledger: LATEST.md over the configurable
     line ceiling draws an advisory naming the remedy (move sprint paragraphs
@@ -137,3 +133,6 @@ class AnchorWindowCeilingTests(unittest.TestCase):
             _latest(root, "# LATEST\n" + ("line\n" * 120))
             r = df.check(root)
             self.assertNotIn("anchor-ledger", [f["kind"] for f in r["findings"]])
+
+if __name__ == "__main__":
+    unittest.main()

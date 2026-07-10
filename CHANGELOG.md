@@ -245,6 +245,13 @@ enforcement) ships **active**, not dormant, and becomes the default for new proj
   breakage could reach a green CI. The workflow gains a `gate.py --root .` step (after
   setup-python, PyYAML installed so config-driven lanes fail loud); the two doc claims are now
   true as written.
+- **Every test-suite `__main__` guard sits at true end-of-file, enforced (EP0026, CR0204;
+  US0114).** Fifteen test files kept classes after a mid-file guard, so a direct
+  `python3 test_x.py` run silently dropped them (22 tests once vanished while reporting OK)
+  and agent appends risked truncation. An AST-driven normalisation relocated every guard
+  (verified pure relocation, zero tests lost: 1497 + 2 new = 1499); a new
+  `test_repo_hygiene.py` pins guard-at-EOF for every file and direct-run == discover parity,
+  so the layout cannot regress.
 - **The shipped payload is now markdownlint-covered (EP0026; BG0098).** `lint:md`'s `'**/*.md'`
   glob never matched dot-directories, so the 160+ shipped `.md` files under
   `.claude/skills/sdlc-studio/` were invisible to npm lint, the pre-commit hook AND CI - 2,502

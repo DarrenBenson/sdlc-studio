@@ -65,8 +65,6 @@ class _ReadSpy:
         self._patch.stop()
 
 
-
-
 def _bugs(root: Path) -> None:
     d = root / "sdlc-studio" / "bugs"; d.mkdir(parents=True)
     (d / "BG0001-closed.md").write_text(
@@ -104,7 +102,6 @@ class DigestTests(unittest.TestCase):
             (root / "sdlc-studio" / "bugs" / "BG0002-open.md").write_text(
                 "# BG0002: now closed\n\n> **Status:** Closed\n> **Severity:** Low\n", encoding="utf-8")
             self.assertTrue(digest.is_stale(root))
-
 
 
 class DigestReadPathTests(unittest.TestCase):

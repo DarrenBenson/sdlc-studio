@@ -124,7 +124,6 @@ class AllocateTests(unittest.TestCase):
             self.assertEqual(rc, 0)
 
 
-
 class AllocateNumberTests(unittest.TestCase):
     def test_empty_repo_allocates_one(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -165,10 +164,6 @@ class AllocateNumberTests(unittest.TestCase):
             self.assertEqual(next_id.allocate_number("cr", repo, remote=True), 10)  # above remote, not 1
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class ArchiveUnionTests(unittest.TestCase):
     """US0041 / CR0125: next_id must union the archive sub-indexes so an archived id is
     never re-issued, even after its artefact file is removed."""
@@ -199,3 +194,6 @@ class ArchiveUnionTests(unittest.TestCase):
             (sd / "US0001-a.md").write_text("# A\n\n> **Status:** Draft\n", encoding="utf-8")
             self.assertNotEqual(next_id.allocate_number("story", root, remote=False), 9)
             self.assertEqual(next_id.allocate_number("story", root, remote=False), 10)
+
+if __name__ == "__main__":
+    unittest.main()

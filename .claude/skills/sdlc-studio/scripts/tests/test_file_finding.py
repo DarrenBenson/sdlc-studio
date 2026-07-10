@@ -188,7 +188,6 @@ class FileTests(unittest.TestCase):
             self.assertNotIn("[CR-0001]", (cd / "_index.md").read_text(encoding="utf-8"))
 
 
-
 class AppendBoundToMasterTableTests(unittest.TestCase):
     def test_row_lands_in_master_not_a_trailing_view_table(self) -> None:
         # BG0066: append_index_row scanned to EOF and inserted after the LAST `| [` row
@@ -245,10 +244,6 @@ class ProvenanceAndDryRunTests(unittest.TestCase):
             self.assertEqual(idx.read_text(), before)    # index untouched
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class EraAwareAllocationTests(unittest.TestCase):
     def test_v3_project_mints_a_ulid_finding_id(self) -> None:
         # BG-era gap: the filer minted v2 sequential ids on schema-v3 projects, undermining
@@ -272,3 +267,6 @@ class EraAwareAllocationTests(unittest.TestCase):
             res = ff.file_finding(root, "bug", "era probe",
                                   {"severity": "high", "summary": "s", "steps": "r", "fix": "f"})
             self.assertEqual(res["id"], "BG0001")
+
+if __name__ == "__main__":
+    unittest.main()
