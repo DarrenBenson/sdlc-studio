@@ -109,7 +109,7 @@ def cmd_check(args: argparse.Namespace) -> int:
         print("UNTRACED spec edit(s) - the story never references these files; a blocking "
               "finding unless the critic confirms the change was requested: "
               + ", ".join(res["untraced_files"]))
-        return 2
+        return 1  # check-failure: the family returns 1 (argparse owns 2 for usage errors)
     if res["referenced_files"]:
         print("spec edit(s) the story references (NOT proof the change was requested - a "
               "reference is not a change-request; critic must confirm): "

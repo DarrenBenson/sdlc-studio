@@ -5,7 +5,9 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import sys
 import tempfile
 import unittest
@@ -28,6 +30,16 @@ def _skill(root: Path, skill_lines=100) -> Path:
 
 
 class BudgetTests(unittest.TestCase):
+    def setUp(self) -> None:
+        # the checker prints its report to stdout and findings to stderr; tests assert on
+        # the exit code, so capture both to keep the unittest summary clean
+        self._silence = contextlib.ExitStack()
+        self._silence.enter_context(contextlib.redirect_stdout(io.StringIO()))
+        self._silence.enter_context(contextlib.redirect_stderr(io.StringIO()))
+
+    def tearDown(self) -> None:
+        self._silence.close()
+
     def test_small_files_pass(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             sd = _skill(Path(d))

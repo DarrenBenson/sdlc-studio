@@ -235,7 +235,7 @@ def _resolve_story(root: Path, story_id: str) -> Path | None:
 def cmd_check(args: argparse.Namespace) -> int:
     res = gate(args.root, args.id, args.path)
     print(("OK: " if res["ok"] else "BLOCKED: ") + res["reason"])
-    return 0 if res["ok"] else 2
+    return 0 if res["ok"] else 1  # check-failure: the family returns 1, not 2 (argparse owns 2)
 
 
 def cmd_record(args: argparse.Namespace) -> int:

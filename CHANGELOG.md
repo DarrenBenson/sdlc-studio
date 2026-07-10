@@ -28,7 +28,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `_is_sep_line`, all unused) and duplicated helpers folded to one authority (`reconcile.
   _canonical_counts` collapsed into `_row_counts`; `artifact._schema_v3` delegates to
   `sdlc_md.is_schema_v3`; `sprint._default_branch` delegates to the now-public
-  `next_id.origin_default_branch`).
+  `next_id.origin_default_branch`). Exit-code drift fixed: `spec_guard` and `plan_review`
+  check-failures now return `1` like the rest of the family (argparse keeps `2` for usage
+  errors). Test-output hygiene: the agent-instructions, budget and version checkers' reports no
+  longer leak past the unittest summary (the named cases; broader error-path stderr from other
+  suites is a separate sweep).
 - **One CLI argument grammar across the script family (EP0028, CR0210).** The scripts disagreed
   on how ids and targets were passed - `audit check` took `--ids` comma-separated, `transition
   set` forced exactly one of `--id`/`--ids`, `artifact revision` required `--ids`, `ledger

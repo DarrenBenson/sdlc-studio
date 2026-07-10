@@ -5,7 +5,9 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import sys
 import tempfile
 import pathlib
@@ -235,12 +237,16 @@ class InstructionsTests(unittest.TestCase):
 
     def test_cmd_exit_nonzero_when_no_agents(self) -> None:
         with tempfile.TemporaryDirectory() as d:
-            self.assertEqual(validate.main(["instructions", "--root", d]), 1)
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = validate.main(["instructions", "--root", d])
+            self.assertEqual(rc, 1)
 
     def test_cmd_exit_zero_when_clean(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             (Path(d) / "AGENTS.md").write_text(GOOD_AGENTS, encoding="utf-8")
-            self.assertEqual(validate.main(["instructions", "--root", d]), 0)
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = validate.main(["instructions", "--root", d])
+            self.assertEqual(rc, 0)
 
 
 class PlaceholderTests(unittest.TestCase):

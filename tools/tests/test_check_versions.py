@@ -5,7 +5,9 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import sys
 import tempfile
 import unittest
@@ -36,6 +38,16 @@ def _fixture(root: Path, pkg="2.0.0", yaml="2.0.0", skill="2.0.0",
 
 
 class VersionTests(unittest.TestCase):
+    def setUp(self) -> None:
+        # the checker prints its report to stdout and findings to stderr; tests assert on
+        # the exit code, so capture both to keep the unittest summary clean
+        self._silence = contextlib.ExitStack()
+        self._silence.enter_context(contextlib.redirect_stdout(io.StringIO()))
+        self._silence.enter_context(contextlib.redirect_stderr(io.StringIO()))
+
+    def tearDown(self) -> None:
+        self._silence.close()
+
     def test_consistent_versions_pass(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             _fixture(Path(d))
