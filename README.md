@@ -277,7 +277,7 @@ No. It is a curl-installed Agent Skill (a plug-in for AI coding tools) - a folde
 <details>
 <summary>What do I need installed?</summary>
 
-Python 3.10+ for the bundled scripts (pure standard library, no pip installs). The `gh` CLI only for the GitHub sync commands, and whatever test runners your acceptance criteria invoke (pytest, vitest, go, ...).
+Python 3.10+ for the bundled scripts (standard library only; **PyYAML** is the one optional dependency, needed only if you set a project `.config.yaml` - without it the scripts degrade to the built-in defaults with a one-line warning, never a crash). The `gh` CLI only for the GitHub sync commands, and whatever test runners your acceptance criteria invoke (pytest, vitest, go, ...).
 
 </details>
 

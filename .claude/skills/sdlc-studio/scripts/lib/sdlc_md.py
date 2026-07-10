@@ -817,9 +817,14 @@ def new_ulid() -> str:
 
 
 def short_ulid() -> str:
-    """The 8-char id suffix - the timestamp-dominant prefix of a ULID, so short ids still
-    sort in creation order. Extended by the allocator on a rare directory clash."""
-    return new_ulid()[:8]
+    """The 8-char id suffix: 6 timestamp chars (so short ids coarsely sort in creation order -
+    the truncated prefix resolves to roughly a 17-minute bucket) + 2 random chars. The old
+    pure-timestamp prefix carried NO entropy, so two uncoordinated writers in the same ~1ms
+    window minted the SAME id; the random tail makes an in-window collision improbable
+    (~1/1024) rather than certain. Extended by the allocator on a rare directory clash - that
+    glob-retry is the true single-writer backstop, the tail only narrows the concurrent window."""
+    u = new_ulid()  # 10 timestamp chars + 16 random chars
+    return u[:6] + u[10:12]
 
 
 def mint_v3_id(root: Path, type_: str) -> str:

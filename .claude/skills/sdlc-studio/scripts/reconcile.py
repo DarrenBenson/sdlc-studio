@@ -1122,14 +1122,17 @@ def project_fields(repo_root: Path | str, type_: str = "story", dry_run: bool = 
 def cmd_fields(args: argparse.Namespace) -> int:
     """Project file-owned index cells (title/points); --apply writes, default reports."""
     r = project_fields(args.root, args.type, dry_run=not args.apply)
+    # BG0088: unapplied drift signals a non-zero exit in EVERY format (detect-consistent);
+    # once --apply has written the fixes there is no residual drift, so it exits 0.
+    rc = 1 if (r["drift"] and not args.apply) else 0
     if args.format == "json":
         print(json.dumps(r, indent=2))
-        return 0
+        return rc
     for d in r["drift"]:
         verb = "set" if args.apply else "WOULD set"
         print(f"{verb} {d['id']} {d['field']}: {d['index']!r} -> {d['file']!r}")
     print(f"fields: {len(r['drift'])} drift{' (applied)' if args.apply else ''}")
-    return 0
+    return rc
 
 
 def cmd_apply(args: argparse.Namespace) -> int:
@@ -1146,7 +1149,7 @@ def cmd_apply(args: argparse.Namespace) -> int:
                       + (1 if r.get("refused") else 0) for r in by_type.values())
         print(json.dumps({"dry_run": args.dry_run, "applied": applied, "unapplied": blocked,
                           "by_type": by_type}, indent=2))
-        return 0
+        return 1 if blocked else 0  # BG0088: JSON mode must signal failure like the text path
     for type_ in types:
         res = apply_type(type_, repo_root, dry_run=args.dry_run)
         if res.get("refused"):

@@ -1625,5 +1625,26 @@ class IndexRewriterColumnBleedTests(unittest.TestCase):
         self.assertIn("| CR-0001 | CR-0003 | Blocked until review lands |", joined)
 
 
+class JsonExitCodeTests(unittest.TestCase):
+    """BG0088: --format json must signal failure with the same exit code as the text path."""
+
+    def test_apply_json_exit_matches_text_on_unapplied(self) -> None:
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as dd:
+            root = Path(dd)
+            d = root / "sdlc-studio" / "stories"
+            d.mkdir(parents=True)
+            (d / "US0001-x.md").write_text("# US0001: x\n\n> **Status:** Done\n", encoding="utf-8")
+            # an index with no rewritable ID-column data table -> the fix is unapplied
+            (d / "_index.md").write_text(
+                "# Stories\n\n## All\n\nno data table here\n", encoding="utf-8")
+            with redirect_stdout(io.StringIO()):
+                rc_json = reconcile.main(["apply", "--scope", "stories", "--root", str(root),
+                                          "--format", "json"])
+                rc_text = reconcile.main(["apply", "--scope", "stories", "--root", str(root)])
+            self.assertEqual(rc_json, rc_text)
+
+
 if __name__ == "__main__":
     unittest.main()

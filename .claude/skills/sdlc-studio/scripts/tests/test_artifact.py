@@ -782,5 +782,26 @@ class OrchestratedCloseTests(unittest.TestCase):
             self.assertIn("> **Status:** Open", body)  # nothing transitioned
 
 
+
+
+class FindEpicV3Tests(unittest.TestCase):
+    """BG0099: _find_epic must resolve a v3 ULID epic - split('-')[0] yielded 'EP' and broke
+    story-to-epic wiring on the default (schema-v3) era."""
+
+    def test_story_links_to_a_v3_ulid_epic(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _v3(repo)
+            _index(repo, "epic", "| ID | Title | Status |")
+            _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+            ep = artifact.new(repo, "epic", "reading")
+            self.assertTrue(sdlc_md.is_v3_id(ep["id"]), ep["id"])
+            st = artifact.new(repo, "story", "add a book", {"epic": ep["id"]})
+            # the story wired into the epic's Story Breakdown (epic_linked true)
+            self.assertTrue(st.get("epic_linked"))
+            epath = next((repo / "sdlc-studio" / "epics").glob(f"{ep['id']}-*.md"))
+            self.assertIn(st["id"], epath.read_text(encoding="utf-8"))
+
+
 if __name__ == "__main__":
     unittest.main()

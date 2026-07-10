@@ -975,12 +975,13 @@ def cmd_report(args: argparse.Namespace) -> int:
     if data is None:
         print(f"error: {report_path} is not valid JSON", file=sys.stderr)
         return 2
+    stories = data.get("stories", {})
+    total_fail_all = sum(s.get("failed", 0) for s in stories.values())
     if args.format == "json":
         print(json.dumps(data, indent=2))
-        return 0
+        return 1 if total_fail_all else 0  # BG0088: JSON mode signals failure like text
 
     print(f"generated_at: {data.get('generated_at')}")
-    stories = data.get("stories", {})
     if not stories:
         print("no stories in report")
         return 0

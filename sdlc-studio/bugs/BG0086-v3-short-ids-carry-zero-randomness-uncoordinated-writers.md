@@ -1,6 +1,7 @@
 # BG0086: v3 short ids carry zero randomness: uncoordinated writers in the same ~1s window mint identical ids
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (red-then-green: at a fixed mocked instant 50 short_ulid calls yield >1 distinct id (entropy present, was 1 - the collision); a clock-driven test proves the 6-char prefix orders across a full ~17-min bucket; suite 1532). Carried caveat: the 2-char tail is ~10 bits, so a truly simultaneous uncoordinated write still collides ~1/1024 - the allocator's directory-glob retry is the single-writer backstop.
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file

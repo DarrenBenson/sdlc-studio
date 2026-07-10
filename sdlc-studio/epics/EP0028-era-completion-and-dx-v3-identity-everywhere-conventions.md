@@ -1,6 +1,6 @@
 # EP0028: Era completion and DX: v3 identity everywhere, conventions consistent
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-07-10
 > **Created-by:** sdlc-studio new
 

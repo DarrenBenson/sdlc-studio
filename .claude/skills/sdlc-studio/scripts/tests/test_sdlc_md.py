@@ -526,6 +526,32 @@ class UlidIdentityTests(unittest.TestCase):
         self.assertEqual(len(sid), 8)
         self.assertTrue(set(sid) <= set("0123456789ABCDEFGHJKMNPQRSTVWXYZ"))
 
+    def test_short_id_carries_randomness(self) -> None:
+        # BG0086: short_ulid was the pure timestamp prefix, so 50 rapid calls produced ONE
+        # value - two uncoordinated writers in the same ms window minted the same id. The
+        # short id must carry random bits so an in-window collision is improbable.
+        ids = {sdlc_md.short_ulid() for _ in range(50)}
+        self.assertGreater(len(ids), 40, "short_ulid has no in-window entropy")
+
+    def test_short_id_sorts_by_time_and_carries_entropy(self) -> None:
+        # BG0086: the 8-char short id must (a) still order by creation time at its coarse
+        # prefix resolution and (b) carry real per-id entropy so two writers in the same
+        # instant do not mint the same id. A 10ms sleep is far below the ~17-minute prefix
+        # bucket, so it never exercises a sort flip - drive the clock explicitly instead.
+        from unittest.mock import patch
+        # (a) two ids a full prefix-bucket apart sort in creation order
+        with patch("time.time", return_value=1_600_000_000.0):
+            early = sdlc_md.short_ulid()
+        with patch("time.time", return_value=1_600_000_000.0 + 4000):  # +4000s >> 17-min bucket
+            late = sdlc_md.short_ulid()
+        self.assertLess(early[:6], late[:6])
+        # (b) at a FIXED instant the tail still varies - the old pure-timestamp id was
+        # constant here (the BG0086 collision), so >1 distinct id proves the entropy landed
+        with patch("time.time", return_value=1_600_000_000.0):
+            ids = {sdlc_md.short_ulid() for _ in range(50)}
+        self.assertGreater(len(ids), 1)
+        self.assertTrue(all(len(i) == 8 for i in ids))
+
     def test_id_re_matches_both_eras(self) -> None:
         self.assertEqual(sdlc_md.extract_record_id("US0001-login"), "US0001")
         self.assertEqual(sdlc_md.extract_record_id("BG-01JQK3F8-fix-thing"), "BG-01JQK3F8")

@@ -90,5 +90,20 @@ class DocTests(unittest.TestCase):
             self.assertIn(int(val), [int(m) for m in matches], f"{key}={val} drifted from YAML {matches}")
 
 
+class GracefulDegradeTests(unittest.TestCase):
+    """BG0093: config.get must warn-and-default when config cannot be loaded (no PyYAML /
+    unreadable), never crash - unifying the three failure regimes into one."""
+
+    def test_get_returns_default_when_yaml_unavailable(self) -> None:
+        from unittest import mock
+        config = _load()
+        with tempfile.TemporaryDirectory() as d:
+            with mock.patch.object(config, "_yaml",
+                                   side_effect=RuntimeError("config loading needs PyYAML")):
+                # must NOT raise - degrade to the supplied default
+                self.assertEqual(config.get(d, "quality.mutation_max", 25), 25)
+                self.assertIsNone(config.get(d, "routing", None))
+
+
 if __name__ == "__main__":
     unittest.main()

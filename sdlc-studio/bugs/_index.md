@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 6 |
+| Open | 0 |
 | In Progress | 0 |
-| Fixed | 14 |
+| Fixed | 20 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 0 |
@@ -52,20 +52,20 @@
 | [BG0083](BG0083-verify-ac-story-discovery-executes-companions-and-any.md) | verify_ac story discovery executes companions and any us*.md file, poisoning runs and ts-check | Fixed | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0084](BG0084-verify-ac-run-story-with-a-missing-path.md) | verify_ac run --story with a missing path exits 0 (false success) | Fixed | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0085](BG0085-sprint-plan-origin-drift-preflight-silently-dies-for.md) | sprint plan origin-drift preflight silently dies for --order manual and empty batches; --strict cannot refuse | Fixed | Medium | 2026-07-09 | 2026-07-09 |
-| [BG0086](BG0086-v3-short-ids-carry-zero-randomness-uncoordinated-writers.md) | v3 short ids carry zero randomness: uncoordinated writers in the same ~1s window mint identical ids | Open | Medium | 2026-07-09 | 2026-07-09 |
-| [BG0087](BG0087-migrate-v3-id-minting-wraps-at-1024-files.md) | migrate_v3 id minting wraps at 1024 files (silent rename overwrite) and pollutes slugs of dash-named files | Open | Medium | 2026-07-09 | 2026-07-09 |
-| [BG0088](BG0088-format-json-suppresses-failure-exit-codes-on-reconcile.md) | --format json suppresses failure exit codes on reconcile apply and verify_ac report; reconcile fields is drift-blind in both formats | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0086](BG0086-v3-short-ids-carry-zero-randomness-uncoordinated-writers.md) | v3 short ids carry zero randomness: uncoordinated writers in the same ~1s window mint identical ids | Fixed | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0087](BG0087-migrate-v3-id-minting-wraps-at-1024-files.md) | migrate_v3 id minting wraps at 1024 files (silent rename overwrite) and pollutes slugs of dash-named files | Fixed | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0088](BG0088-format-json-suppresses-failure-exit-codes-on-reconcile.md) | --format json suppresses failure exit codes on reconcile apply and verify_ac report; reconcile fields is drift-blind in both formats | Fixed | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0089](BG0089-verify-ac-run-root-mixes-roots-story-discovery.md) | verify_ac run --root mixes roots: story discovery and report are cwd-relative, verifier cwd and history are root-relative | Fixed | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0090](BG0090-gate-py-fail-open-a-check-that-raises.md) | gate.py fail-open: a check that raises is recorded non-blocking and the gate prints PASS | Fixed | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0091](BG0091-archive-py-is-not-idempotent-per-release-a.md) | archive.py is not idempotent per release: a crash between its two writes duplicates every archived row invisibly | Fixed | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0092](BG0092-github-sync-push-exits-0-and-stamps-last.md) | github_sync push exits 0 and stamps last_push even when every gh create/edit failed | Fixed | Medium | 2026-07-09 | 2026-07-09 |
-| [BG0093](BG0093-config-failure-handling-remains-three-regime-post-cr0180.md) | config failure handling remains three-regime post-CR0180 and the decided PyYAML documentation never landed | Open | Medium | 2026-07-09 | 2026-07-09 |
+| [BG0093](BG0093-config-failure-handling-remains-three-regime-post-cr0180.md) | config failure handling remains three-regime post-CR0180 and the decided PyYAML documentation never landed | Fixed | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0094](BG0094-plan-review-resolves-stories-with-a-case-sensitive.md) | plan_review resolves stories with a case-sensitive US*.md glob: lowercase stories get a null fingerprint and an unclearable false block | Fixed | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0095](BG0095-the-provenance-external-stamp-that-gates-shell-verifiers.md) | the Provenance: external stamp that gates shell verifiers has no writer anywhere on the ingest path | Fixed | Medium | 2026-07-09 | 2026-07-09 |
 | [BG0096](BG0096-ci-never-runs-gate-py-although-the-pre.md) | CI never runs gate.py although the pre-commit hook and CONTRIBUTING claim parity | Fixed | Medium | 2026-07-09 | 2026-07-09 |
-| [BG0097](BG0097-the-finding-filer-emits-markdownlint-breaking-artefacts-when.md) | the finding filer emits markdownlint-breaking artefacts when prose contains underscore identifiers | Open | Low | 2026-07-10 | 2026-07-10 |
+| [BG0097](BG0097-the-finding-filer-emits-markdownlint-breaking-artefacts-when.md) | the finding filer emits markdownlint-breaking artefacts when prose contains underscore identifiers | Fixed | Low | 2026-07-10 | 2026-07-10 |
 | [BG0098](BG0098-lint-md-s-glob-skips-dot-directories-the.md) | lint:md's glob skips dot-directories: the shipped skill payload is never markdownlint-checked | Fixed | Medium | 2026-07-10 | 2026-07-10 |
-| [BG0099](BG0099-artifact-new-batch-cannot-link-a-story-to.md) | artifact new/batch cannot link a story to a v3 ULID epic: _find_epic splits the id on the first dash | Open | High | 2026-07-10 | 2026-07-10 |
+| [BG0099](BG0099-artifact-new-batch-cannot-link-a-story-to.md) | artifact new/batch cannot link a story to a v3 ULID epic: _find_epic splits the id on the first dash | Fixed | High | 2026-07-10 | 2026-07-10 |
 
 ## Archived Releases
 

@@ -69,7 +69,10 @@ def estimate(repo_root: Path | str, unit_path: Path | str) -> dict:
     root = Path(repo_root)
     unit_path = Path(unit_path)
     text = unit_path.read_text(encoding="utf-8")
-    cfg = config.load_config(root)
+    try:
+        cfg = config.load_config(root)
+    except (RuntimeError, OSError, ValueError):
+        cfg = {}  # BG0093: estimate degrades to built-in denominators, never crashes on config
 
     # zero/negative config denominators fall back to defaults - a config typo must
     # degrade the estimate, never crash it with a ZeroDivisionError (LL0008-adjacent)

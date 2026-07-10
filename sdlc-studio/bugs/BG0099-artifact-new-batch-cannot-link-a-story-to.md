@@ -1,6 +1,7 @@
 # BG0099: artifact new/batch cannot link a story to a v3 ULID epic: `_find_epic` splits the id on the first dash
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (red-then-green: story links to a v3 ULID epic; e2e greenfield story on schema-3 epic_linked=True; suite 1523)
 > **Severity:** High
 > **Created:** 2026-07-10
 > **Created-by:** sdlc-studio file

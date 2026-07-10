@@ -44,6 +44,11 @@ Project-level configuration for customising SDLC Studio behaviour.
 
 Project config only needs to specify values that differ from defaults.
 
+**PyYAML dependency (graceful):** parsing `.config.yaml` needs PyYAML (`pip install pyyaml`).
+Without it, the scripts do not crash: `config.get` degrades to the built-in default with a
+one-line stderr warning, so a stdlib-only machine runs on the defaults. A project that ships a
+`.config.yaml` should install PyYAML so its declared conventions are actually applied.
+
 ---
 
 ## Coverage Targets

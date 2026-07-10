@@ -268,5 +268,29 @@ class EraAwareAllocationTests(unittest.TestCase):
                                   {"severity": "high", "summary": "s", "steps": "r", "fix": "f"})
             self.assertEqual(res["id"], "BG0001")
 
+
+
+class MdSafeProseTests(unittest.TestCase):
+    """BG0097: the filer must not mint markdownlint-breaking artefacts - underscore
+    identifiers in prose are backtick-wrapped so MD037/MD050 do not fire."""
+
+    def test_underscore_tokens_backticked_in_rendered_body(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            res = ff.file_finding(root, "bug", "a defect",
+                                  {"severity": "high",
+                                   "summary": "calls _next_number then __main__ runs",
+                                   "steps": "r", "fix": "f"})
+            body = Path(res["path"]).read_text(encoding="utf-8")
+            self.assertIn("`_next_number`", body)
+            self.assertIn("`__main__`", body)
+            # no BARE underscore-emphasis pair survives on the summary line
+            self.assertNotIn(" _next_number ", body)
+
+    def test_already_backticked_not_doubled(self) -> None:
+        self.assertEqual(ff._md_safe("uses `_next_number` here"), "uses `_next_number` here")
+
+
 if __name__ == "__main__":
     unittest.main()

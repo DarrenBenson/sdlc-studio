@@ -48,9 +48,25 @@ def load_config(repo_root: Path | str = ".", defaults_path: Path | str = DEFAULT
     return cfg
 
 
+_DEGRADE_WARNED = False
+
+
 def get(repo_root: Path | str, dotted: str, default=None):
-    """Resolve a dotted key (e.g. `coverage.unit`) from the config, or `default`."""
-    cur = load_config(repo_root)
+    """Resolve a dotted key (e.g. `coverage.unit`) from the config, or `default`.
+
+    BG0093: if the config cannot be loaded at all (PyYAML absent, or an unreadable/malformed
+    override), degrade to `default` with a one-line stderr warning instead of raising - so a
+    stdlib-only machine gets the built-in default, not a traceback. This unifies the former
+    three regimes (warn-degrade / silent-default / hard-crash) into warn-and-default."""
+    global _DEGRADE_WARNED
+    try:
+        cur = load_config(repo_root)
+    except (RuntimeError, OSError, ValueError) as exc:
+        if not _DEGRADE_WARNED:
+            _DEGRADE_WARNED = True
+            print(f"warning: could not load .config.yaml ({exc}); using built-in defaults "
+                  "(config-driven behaviour needs PyYAML: pip install pyyaml)", file=sys.stderr)
+        return default
     for part in dotted.split("."):
         if not isinstance(cur, dict) or part not in cur:
             return default

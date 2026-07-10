@@ -178,10 +178,12 @@ def _header_cells(root: Path, type_: str) -> list[str] | None:
 
 
 def _find_epic(root: Path, epic_id: str) -> Path | None:
-    """The epic file whose id matches exactly (never a substring: EP001 != EP0010)."""
+    """The epic file whose id matches exactly (never a substring: EP001 != EP0010). Uses the
+    era-aware `extract_record_id`: `split('-')[0]` yielded just `EP` for a v3 ULID filename
+    (`EP-01JQK3F8-reading.md`), so story-to-epic wiring failed on the default schema."""
     eid = sdlc_md.norm_id(epic_id)
     return next((p for p in sdlc_md.artifact_files("epic", Path(root))
-                 if sdlc_md.norm_id(p.stem.split("-")[0]) == eid), None)
+                 if sdlc_md.norm_id(sdlc_md.extract_record_id(p.stem) or "") == eid), None)
 
 
 def _wire_story_to_epic(root: Path, epic_id: str, disp: str, title: str,

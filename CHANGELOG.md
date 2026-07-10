@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Era completion - v3 identity everywhere (EP0028; BG0086/87/88/93/97/99).** Six fixes so the
+  schema-v3 default behaves, batch critic-approved (suite 1532, drift 0): `artifact new/batch`
+  now links a story to a v3 ULID epic (`_find_epic` resolves the full record id instead of
+  splitting on the first dash, which yielded a bare `EP`); `migrate_v3` id minting scales past
+  1024 files (counter width grows with the entry count) and stops polluting dash-named slugs, a
+  uniqueness assertion fails loud on any collision; `short_ulid` carries a real 2-char entropy
+  tail so two uncoordinated writers in the same instant no longer mint identical ids (with the
+  allocator's directory-glob retry as the single-writer backstop); `config.get` degrades to the
+  caller's default with a warn-once when config can't load and `route.estimate` survives the
+  same, with the PyYAML runtime dependency now documented; `--format json` on `reconcile apply`,
+  `reconcile fields` and `verify_ac report` signals failure with a non-zero exit like the text
+  path; and the finding filer backtick-wraps underscore identifiers in rendered prose so it
+  stops minting markdownlint-breaking artefacts.
 - **Reliability tier - Low-severity debt batch (EP0027, CR0207; US0119).** Ten small hardening
   fixes, critic-approved: `atomic_write` now preserves the existing file's permissions instead
   of flipping every rewritten index/artefact to owner-only 0600; `loop_guard`/`resume` `.local`

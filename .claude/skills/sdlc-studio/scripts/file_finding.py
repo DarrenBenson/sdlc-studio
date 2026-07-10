@@ -84,10 +84,28 @@ def _next_number(repo_root: Path, type_: str) -> int:
 _STAMP = "> **Created-by:** sdlc-studio file\n"
 
 
+def _md_safe(text) -> str:
+    """Backtick-wrap bare snake_case/dunder identifier tokens in free prose so an unbackticked
+    `_` is not read as markdown emphasis (MD037/MD049/MD050) - the filer must not mint
+    lint-red artefacts. Only text OUTSIDE existing code spans is touched, so an
+    already-backticked token is left alone. (Reversed-link shapes like `)[1]` are a rarer
+    residual, noted in the CR.)"""
+    parts = str(text).split("`")
+    for i in range(0, len(parts), 2):  # even indices are outside backtick spans
+        parts[i] = re.sub(r"(?<![\w`])([A-Za-z_][\w.]*_[\w().\[\]]*)", r"`\1`", parts[i])
+    return "`".join(parts)
+
+
 def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
             status: str | None = None) -> str:
     """A structured artifact body (required sections populated). `status` overrides the
     per-type create status (schema v3 files findings into `inbox`); None keeps the default."""
+    f = {**f, **{k: _md_safe(f[k]) for k in ("summary", "steps", "fix", "recommendation")
+                 if isinstance(f.get(k), str)}}
+    if isinstance(f.get("acs"), list):
+        f = {**f, "acs": [_md_safe(a) for a in f["acs"]]}
+    if isinstance(f.get("options"), list):
+        f = {**f, "options": [_md_safe(o) for o in f["options"]]}
     if type_ == "bug":
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** {status or 'Open'}\n> **Severity:** {f['severity']}\n"

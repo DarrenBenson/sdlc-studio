@@ -1,6 +1,7 @@
 # BG0097: the finding filer emits markdownlint-breaking artefacts when prose contains underscore identifiers
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (red-then-green: underscore identifiers backticked in rendered prose; e2e - a filed bug with `_next_number`/`__main__` now passes markdownlint clean; suite 1532)
 > **Severity:** Low
 > **Created:** 2026-07-10
 > **Created-by:** sdlc-studio file

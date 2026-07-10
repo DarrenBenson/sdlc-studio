@@ -93,18 +93,35 @@ def build_id_map(repo_root: Path | str) -> dict[str, dict]:
             ms = add_epochs.get(rel) if rel is not None else None
             entries.append((ms if ms is not None else _mtime_ms(p), rec, type_, p))
     entries.sort(key=lambda e: (e[0], sdlc_md.norm_id(e[1])))  # stable creation order
+    cw = _counter_width(len(entries))  # scale the counter so it never wraps past the file count
     id_map: dict[str, dict] = {}
+    minted: set[str] = set()
     for i, (ms, rec, type_, p) in enumerate(entries):
         prefix = sdlc_md.ARTIFACT_TYPES[type_][1]
         # timestamp field from the file's date (sortable) + a monotonic per-file counter as the
         # low bits, so ids are unique AND keep date order without depending on wall-clock now.
+        # The counter width scales with the entry count: a fixed 2-char (10-bit) counter wrapped
+        # at 1024 files and silently overwrote via rename - a fail-loud uniqueness check backs it.
         ts = sdlc_md._b32(ms & ((1 << 48) - 1), 10)
-        suffix = ts[:6] + sdlc_md._b32(i, 2)  # 8-char short id, deterministic and ordered
+        suffix = ts[:6] + sdlc_md._b32(i, cw)
         new_id = f"{prefix}-{suffix}"
-        slug = p.stem.split("-", 1)[1] if "-" in p.stem else "x"
+        if new_id in minted:
+            raise RuntimeError(f"migrate_v3: id collision minting {new_id} for {rec} - refusing "
+                               "to overwrite a file; report this (should be impossible post-fix)")
+        minted.add(new_id)
+        # strip the leading v2 id token from the slug so the stale number is not embedded:
+        # `CR-0001-add-auth` -> `add-auth`, `US0001-login` -> `login`.
+        slug = re.sub(r"^[A-Za-z]+-?\d+-", "", p.stem) or "x"
         id_map[rec] = {"new_id": new_id, "type": type_, "old_path": p,
                        "new_path": p.parent / f"{new_id}-{slug}.md"}
     return id_map
+
+
+def _counter_width(n: int) -> int:
+    """Crockford-base32 chars needed to encode indices 0..n-1 without wrap (min 2 for the
+    compact short-id form). Each char holds 5 bits, so width = ceil(bits / 5)."""
+    bits = max(1, (n - 1).bit_length()) if n > 1 else 1
+    return max(2, -(-bits // 5))
 
 
 def _rewrite_links(text: str, norm_to_new: dict[str, str]) -> str:

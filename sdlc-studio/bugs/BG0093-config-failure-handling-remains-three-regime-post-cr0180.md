@@ -1,6 +1,7 @@
 # BG0093: config failure handling remains three-regime post-CR0180 and the decided PyYAML documentation never landed
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (red-then-green: config.get now degrades to the caller default with a warn-once when load_config raises RuntimeError/OSError/ValueError, route.estimate catches the same and estimates on built-in denominators; tests assert normal-read still works, the warning fires exactly once, and a degraded estimate is non-empty; README + reference-config document the PyYAML runtime dependency; suite 1532)
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file

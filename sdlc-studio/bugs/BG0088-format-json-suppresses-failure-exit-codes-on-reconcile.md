@@ -1,6 +1,7 @@
 # BG0088: --format json suppresses failure exit codes on reconcile apply and verify_ac report; reconcile fields is drift-blind in both formats
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (red-then-green: reconcile apply --format json exits with the same code as text on unapplied drift; cmd_fields + verify_ac report exit computed before the format branch; suite 1527)
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file

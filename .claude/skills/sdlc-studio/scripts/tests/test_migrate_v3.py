@@ -268,5 +268,42 @@ class GitAddEpochParseTests(unittest.TestCase):
             self.assertGreater(epochs["a.md"], 1_000_000_000_000)  # a real ms epoch
 
 
+class CounterWrapAndSlugTests(unittest.TestCase):
+    """BG0087: the per-file counter must not wrap (silent rename overwrite = data loss) and
+    the migrated slug must not embed the stale v2 number."""
+
+    def test_minted_ids_are_unique(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)
+            id_map = migrate_v3.build_id_map(root)
+            new_ids = [e["new_id"] for e in id_map.values()]
+            self.assertEqual(len(new_ids), len(set(new_ids)))
+
+    def test_counter_width_covers_the_entry_count(self) -> None:
+        # a 2-char base32 counter wraps at 1024; width must scale so >1024 entries stay unique.
+        self.assertGreaterEqual(migrate_v3._counter_width(1025), 3)
+        self.assertGreaterEqual(migrate_v3._counter_width(2000), 3)
+        self.assertEqual(migrate_v3._counter_width(10), 2)  # small batch keeps the compact form
+
+    def test_slug_drops_the_v2_number(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            crd = root / "sdlc-studio" / "change-requests"
+            crd.mkdir(parents=True)
+            (crd / "CR-0001-add-auth.md").write_text(
+                "# CR-0001: add auth\n\n> **Status:** Complete\n> **Priority:** Medium\n"
+                "> **Type:** Feature\n> **Created-by:** sdlc-studio new\n", encoding="utf-8")
+            (crd / "_index.md").write_text(
+                "# CRs\n\n## All\n\n| ID | Title | Status | Priority | Type | Date | Linked Epics |\n"
+                "| --- | --- | --- | --- | --- | --- | --- |\n"
+                "| [CR-0001](CR-0001-add-auth.md) | add auth | Complete | Medium | Feature | 2026-01-01 | - |\n",
+                encoding="utf-8")
+            id_map = migrate_v3.build_id_map(root)
+            new_path = id_map["CR-0001"]["new_path"]
+            self.assertNotIn("0001", new_path.stem)
+            self.assertTrue(new_path.stem.endswith("add-auth"))
+
+
 if __name__ == "__main__":
     unittest.main()

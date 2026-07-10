@@ -1,6 +1,7 @@
 # BG0087: migrate_v3 id minting wraps at 1024 files (silent rename overwrite) and pollutes slugs of dash-named files
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (red-then-green: minted ids unique + counter width scales past 1024 + slug drops v2 number; suite 1526)
 > **Severity:** Medium
 > **Created:** 2026-07-09
 > **Created-by:** sdlc-studio file
