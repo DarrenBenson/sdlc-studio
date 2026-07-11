@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 1 |
+| Draft | 0 |
 | In Review | 0 |
-| Accepted | 25 |
+| Accepted | 26 |
 | Superseded | 0 |
 | Withdrawn | 3 |
 | **Total** | **29** |
@@ -45,4 +45,4 @@
 | [RFC-0026](RFC0026-difficulty-aware-model-tier-routing-for-delegated-workers.md) | Difficulty-aware model-tier routing for delegated workers | High | Accepted | operator vision + benchmark spike D0012 | 2026-07-08 | CR0189-CR0192 |
 | [RFC-0027](RFC0027-roadmap-to-world-class-reliability-tier-gate-integrity.md) | Roadmap to world-class: reliability tier, gate integrity, era completion and evidence-backed maturity | High | Accepted | audit | 2026-07-09 | -- |
 | [RFC-0028](RFC0028-the-generated-team-project-native-personas-as-the.md) | the generated team: project-native personas as the v4 differentiator | Medium | Accepted | audit | 2026-07-10 | -- |
-| [RFC-0029](RFC0029-extract-the-benchmark-into-a-standalone-cross-harness.md) | Extract the benchmark into a standalone cross-harness project | P2 | Draft | Claude (Fable 5) | 2026-07-11 | -- |
+| [RFC-0029](RFC0029-extract-the-benchmark-into-a-standalone-cross-harness.md) | Extract the benchmark into a standalone cross-harness project | P2 | Accepted | Claude (Fable 5) | 2026-07-11 | -- |
