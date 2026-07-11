@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 0 |
+| Open | 2 |
 | In Progress | 0 |
 | Fixed | 28 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **107** |
+| **Total** | **109** |
 
 ## All Bugs
 
@@ -74,6 +74,8 @@
 | [BG0105](BG0105-rebaseline-apply-used-a-python-3-13-only.md) | rebaseline_apply used a Python 3.13-only API; CI (3.12) red on both v4 pushes | Fixed | Medium | 2026-07-10 | 2026-07-10 |
 | [BG0106](BG0106-install-downgrade-guard-ranks-a-pre-release-above.md) | install downgrade guard ranks a pre-release above its own release - rc users refused the GA upgrade | Fixed | High | 2026-07-10 | 2026-07-10 |
 | [BG0107](BG0107-ci-lacks-pytest-the-audit-quiz-class-d.md) | CI lacks pytest; the audit-quiz class-D grader fails its first CI exposure | Fixed | Low | 2026-07-10 | 2026-07-10 |
+| [BG0108](BG0108-artifact-py-schema-v3-skeletons-fail-their-own.md) | artifact.py schema-v3 skeletons fail their own validator (no Raised-by line) | Open | Medium | 2026-07-11 | 2026-07-11 |
+| [BG0109](BG0109-file-finding-py-hardcodes-audit-as-the-revision.md) | file_finding.py hardcodes 'audit' as the revision-history author, ignoring --author | Open | Low | 2026-07-11 | 2026-07-11 |
 
 ## Archived Releases
 

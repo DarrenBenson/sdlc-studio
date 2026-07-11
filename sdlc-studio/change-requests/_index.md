@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 0 |
+| Proposed | 2 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 222 |
@@ -14,7 +14,7 @@
 | Deferred | 7 |
 | Superseded | 4 |
 | Blocked | 0 |
-| **Total** | **233** |
+| **Total** | **235** |
 
 ## All Changes
 
@@ -55,6 +55,8 @@
 | [CR-0231](CR0231-protocol-v3-longitudinal-and-multi-team-fixtures-for.md) | protocol v3: longitudinal and multi-team fixtures for the compounding-value story | Deferred | Medium | Improvement | 2026-07-10 | -- |
 | [CR-0232](CR0232-engagement-floor-prose-half-the-doctrine-states-the.md) | engagement floor, prose half: the doctrine states the mandatory planning rule | Complete | High | Improvement | 2026-07-10 | -- |
 | [CR-0233](CR0233-gate-release-one-command-that-cannot-be-misread.md) | gate --release: one command that cannot be misread before a tag | Deferred | High | Improvement | 2026-07-10 | -- |
+| [CR-0234](CR0234-uniform-cli-grammar-across-skill-scripts.md) | Uniform CLI grammar across skill scripts | Proposed | P3 | Improvement | 2026-07-11 | -- |
+| [CR-0235](CR0235-a-lighter-planning-tier-for-story-epic-templates.md) | A lighter planning tier for story/epic templates | Proposed | P3 | Improvement | 2026-07-11 | -- |
 
 ## Archived Releases
 
