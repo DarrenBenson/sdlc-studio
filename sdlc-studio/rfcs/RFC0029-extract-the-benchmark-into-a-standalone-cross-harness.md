@@ -146,18 +146,28 @@ O2 - structurally independent, honestly branded, reproducible by anyone; the spi
 (cursor-agent + Composer 2.5 on the digest fixture) validates the adapter premise
 before any code moves.
 
+## Decision
+
+**O2 accepted** (operator, 2026-07-11): standalone branded repo **`sdlc-bench`**,
+private on GitHub now, public at launch when the leaderboard has real content.
+Rationale: structural independence with honest vendor-authored framing;
+reproducibility, not pretend-neutrality, is the credibility mechanism. The workstream
+is cross-repo: it lands as the new repo's PRD/epics/stories (managed by sdlc-studio
+there), not as CRs here; this repo's only follow-on is the eventual `tools/bench`
+pointer swap once the extraction ships.
+
 ## Open Decisions
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Adopt O2 (standalone branded repo) or an alternative | Open |
-| D2 | Repo name (`sdlc-bench` proposed) and site placement (apex vs `bench.` subdomain) | Open |
-| D3 | Run-record schema v1 fields as specified above | Open |
-| D4 | Fixture-generation retirement rule (frontier-clean trigger) and hash-at-freeze disclosure | Open |
-| D5 | Launch adapter set (claude-code + cursor-agent + copilot-cli; codex/opencode next) | Open |
-| D6 | Community-row policy (transcript-attached, re-scored, separate table) | Open |
-| D7 | Protocol v3 lives in the new repo (carries the mandated arm as first-class, per the rerun's caveat) | Open |
-| D8 | Task-family expansion order for gen-2026b (brownfield-long-history, multi-ticket sequences, conflicting requirements, non-Python) | Open |
+| D1 | Adopt O2 (standalone branded repo) or an alternative | Resolved: O2 accepted (operator, 2026-07-11) |
+| D2 | Repo name and visibility | Resolved: `sdlc-bench`, private now, public at launch; apex-vs-`bench.` site placement deferred to the site epic |
+| D3 | Run-record schema v1 fields as specified above | Resolved: as specified (incl. `tokens_source`, `spec_mutated`, generation id) |
+| D4 | Fixture-generation retirement rule (frontier-clean trigger) and hash-at-freeze disclosure | Resolved: as specified |
+| D5 | Launch adapter set | Resolved: claude-code, cursor-agent, copilot-cli, omp (LiteLLM gateway, 11 models); codex/opencode/agy follow |
+| D6 | Community-row policy (transcript-attached, re-scored, separate table) | Resolved: as specified |
+| D7 | Protocol v3 lives in the new repo (carries the mandated arm as first-class, per the rerun's caveat) | Resolved: yes |
+| D8 | Task-family expansion order for gen-2026b (brownfield-long-history, multi-ticket sequences, conflicting requirements, non-Python) | Open - decided during the new repo's fixtures epic |
 
 ## Spike results (2026-07-11, digest fixture, n=1 per arm)
 
