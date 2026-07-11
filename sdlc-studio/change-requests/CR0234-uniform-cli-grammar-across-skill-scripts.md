@@ -8,13 +8,21 @@
 
 ## Summary
 
-The scripts disagree on argument shape, so an agent must relearn each one mid-flow. Today's examples: status.py rejects a global '--root .' (root only exists per-subcommand, unlike validate.py/reconcile.py which accept it uniformly); transition.py set refuses '--author' alone on a non-terminal transition (the verdict triple is all-or-none, but recording WHO accepted an RFC is a legitimate single field); artifact.py accepts --root everywhere. One grammar: global --root on every script, and identity fields recordable without the full verdict ceremony on non-terminal transitions. Related friction noted but unfiled from the RV0007 sprint retro.
+Follow-on to CR0210 (Complete), which unified id-list forms, target selection and
+recorder field names but did not cover flag PLACEMENT. Today's residuals: status.py
+rejects a global '--root .' (root exists only per-subcommand, unlike
+validate.py/reconcile.py/artifact.py which accept it uniformly); and when
+transition.py set refuses '--author' without the verdict pair, the error does not
+mention `transition annotate` - the verb CR0209 shipped for exactly that identity
+stamp - so an agent that has not memorised the catalogue re-derives it the hard way
+(observed today: the RFC0029 acceptance stamp was skipped, then recovered later via
+annotate).
 
 ## Acceptance Criteria
 
-- [ ] Every skill script accepts --root as a global flag (before or after the subcommand)
-- [ ] transition.py set records --author on a non-terminal transition without requiring --verdict/--reviewer
-- [ ] A CLI-grammar conformance test sweeps every script's argparse tree
+- [ ] Every skill script accepts --root at the same position (global, valid before or after the subcommand)
+- [ ] transition.py set's all-or-none verdict error names `transition annotate` as the path for identity-only stamps
+- [ ] The CR0210 conformance sweep extends to flag placement (--root, --format) across every script's argparse tree
 
 ## Revision History
 

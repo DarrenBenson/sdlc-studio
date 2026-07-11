@@ -1,6 +1,7 @@
 # RFC-0029: Extract the benchmark into a standalone cross-harness project
 
 > **Status:** Accepted
+> **Accepted-by:** Darren (operator), 2026-07-11
 > **Date:** 2026-07-11
 > **Created-by:** sdlc-studio file
 
