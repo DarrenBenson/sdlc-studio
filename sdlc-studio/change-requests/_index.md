@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 2 |
+| Proposed | 7 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 222 |
 | Rejected | 0 |
-| Deferred | 7 |
-| Superseded | 4 |
+| Deferred | 0 |
+| Superseded | 6 |
 | Blocked | 0 |
 | **Total** | **235** |
 
@@ -44,17 +44,17 @@
 | [CR-0220](CR0220-stakeholder-panel-generation-the-other-side-of-the.md) | stakeholder panel generation: the other side of the table (persona generate --stakeholders) | Complete | High | Feature | 2026-07-10 | -- |
 | [CR-0221](CR0221-cooper-usage-pass-personas-that-arbitrate-not-decorate.md) | Cooper usage pass: personas that arbitrate, not decorate | Complete | Medium | Improvement | 2026-07-10 | -- |
 | [CR-0222](CR0222-positioning-and-lifecycle-wiring-the-honest-differentiator-everywhere.md) | positioning and lifecycle wiring: the honest differentiator, everywhere the team is met | Complete | High | Improvement | 2026-07-10 | -- |
-| [CR-0223](CR0223-the-handoff-guide-a-first-class-remaining-work.md) | the handoff guide: a first-class remaining-work artefact at run close | Deferred | Medium | Feature | 2026-07-10 | -- |
-| [CR-0224](CR0224-multi-repo-context-the-repo-map-and-census.md) | multi-repo context: the repo map and census grow PVD-wide awareness | Deferred | Medium | Feature | 2026-07-10 | -- |
-| [CR-0225](CR0225-appetite-bounded-unattended-runs-a-budget-circuit-breaker.md) | appetite-bounded unattended runs: a budget circuit-breaker for epic-level execution | Deferred | Medium | Feature | 2026-07-10 | -- |
+| [CR-0223](CR0223-the-handoff-guide-a-first-class-remaining-work.md) | the handoff guide: a first-class remaining-work artefact at run close | Proposed | Medium | Feature | 2026-07-10 | -- |
+| [CR-0224](CR0224-multi-repo-context-the-repo-map-and-census.md) | multi-repo context: the repo map and census grow PVD-wide awareness | Proposed | Medium | Feature | 2026-07-10 | -- |
+| [CR-0225](CR0225-appetite-bounded-unattended-runs-a-budget-circuit-breaker.md) | appetite-bounded unattended runs: a budget circuit-breaker for epic-level execution | Proposed | Medium | Feature | 2026-07-10 | -- |
 | [CR-0226](CR0226-a-brand-new-readme-newcomer-value-first-existing.md) | a brand-new README: newcomer value first, existing users get their own page | Complete | High | Improvement | 2026-07-10 | -- |
 | [CR-0227](CR0227-the-sdlc-studio-white-paper-the-mill-described.md) | the sdlc-studio white paper: the mill, described properly | Complete | High | Feature | 2026-07-10 | -- |
 | [CR-0228](CR0228-rerun-the-benchmark-suite-on-the-v4-release.md) | rerun the benchmark suite on the v4 release candidate | Complete | High | Improvement | 2026-07-10 | -- |
-| [CR-0229](CR0229-engagement-floor-mandatory-planning-when-the-change-is.md) | engagement floor: mandatory planning when the change is multi-file in a spec-bearing repo | Deferred | High | Improvement | 2026-07-10 | -- |
-| [CR-0230](CR0230-benchmark-harness-spec-updated-oracle-is-phrasing-brittle.md) | benchmark harness: spec-updated oracle is phrasing-brittle | Deferred | Medium | Improvement | 2026-07-10 | -- |
-| [CR-0231](CR0231-protocol-v3-longitudinal-and-multi-team-fixtures-for.md) | protocol v3: longitudinal and multi-team fixtures for the compounding-value story | Deferred | Medium | Improvement | 2026-07-10 | -- |
+| [CR-0229](CR0229-engagement-floor-mandatory-planning-when-the-change-is.md) | engagement floor: mandatory planning when the change is multi-file in a spec-bearing repo | Proposed | High | Improvement | 2026-07-10 | -- |
+| [CR-0230](CR0230-benchmark-harness-spec-updated-oracle-is-phrasing-brittle.md) | benchmark harness: spec-updated oracle is phrasing-brittle | Superseded | Medium | Improvement | 2026-07-10 | -- |
+| [CR-0231](CR0231-protocol-v3-longitudinal-and-multi-team-fixtures-for.md) | protocol v3: longitudinal and multi-team fixtures for the compounding-value story | Superseded | Medium | Improvement | 2026-07-10 | -- |
 | [CR-0232](CR0232-engagement-floor-prose-half-the-doctrine-states-the.md) | engagement floor, prose half: the doctrine states the mandatory planning rule | Complete | High | Improvement | 2026-07-10 | -- |
-| [CR-0233](CR0233-gate-release-one-command-that-cannot-be-misread.md) | gate --release: one command that cannot be misread before a tag | Deferred | High | Improvement | 2026-07-10 | -- |
+| [CR-0233](CR0233-gate-release-one-command-that-cannot-be-misread.md) | gate --release: one command that cannot be misread before a tag | Proposed | High | Improvement | 2026-07-10 | -- |
 | [CR-0234](CR0234-uniform-cli-grammar-across-skill-scripts.md) | Uniform CLI grammar across skill scripts | Proposed | P3 | Improvement | 2026-07-11 | -- |
 | [CR-0235](CR0235-a-lighter-planning-tier-for-story-epic-templates.md) | A lighter planning tier for story/epic templates | Proposed | P3 | Improvement | 2026-07-11 | -- |
 

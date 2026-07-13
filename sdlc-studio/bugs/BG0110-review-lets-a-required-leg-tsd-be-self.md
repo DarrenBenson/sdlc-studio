@@ -6,6 +6,7 @@
 > **Severity:** Medium
 > **Raised-by:** Claude (Opus 4.8); agent; claude-opus-4-8
 > **Found-in:** sdlc-bench (consuming project); evidence RV0004
+> **Depends on:** CR0233
 
 ## Summary
 

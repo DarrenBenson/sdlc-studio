@@ -1,6 +1,6 @@
 # CR-0230: benchmark harness: spec-updated oracle is phrasing-brittle
 
-> **Status:** Deferred
+> **Status:** Superseded
 > **Target:** v4.1
 > **Priority:** Medium
 > **Type:** Improvement
@@ -21,3 +21,4 @@ Two of the 72 v4-rerun rows are oracle artefacts: the ledger-drift fixture's `te
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-10 | audit | Raised |
+| 2026-07-13 | Darren | Superseded: re-homed to the `sdlc-bench` repo, which now owns the fixtures, protocol and arms under RFC0029. The oracle fix belongs where the frozen fixture lives; delivering it here would mean two homes for one workstream. Refiled as a `sdlc-bench` artefact. |

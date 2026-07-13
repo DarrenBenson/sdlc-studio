@@ -1,11 +1,12 @@
 # CR-0229: engagement floor: mandatory planning when the change is multi-file in a spec-bearing repo
 
-> **Status:** Deferred
+> **Status:** Proposed
 > **Target:** v4.1
 > **Priority:** High
 > **Type:** Improvement
 > **Date:** 2026-07-10
 > **Created-by:** sdlc-studio file
+> **Depends on:** BG0110
 
 ## Summary
 

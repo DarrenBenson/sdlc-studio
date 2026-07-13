@@ -1,6 +1,6 @@
 # CR-0231: protocol v3: longitudinal and multi-team fixtures for the compounding-value story
 
-> **Status:** Deferred
+> **Status:** Superseded
 > **Target:** v4.1
 > **Priority:** Medium
 > **Type:** Improvement
@@ -22,3 +22,4 @@ Operator observation from the v4 rerun (2026-07-10): the single-ticket fixtures 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-10 | audit | Raised |
+| 2026-07-13 | Darren | Superseded: re-homed to the `sdlc-bench` repo, which now owns the protocol and fixtures under RFC0029. Protocol v3 design is that project's workstream, not an sdlc-studio v4.1 tag blocker. Refiled as a `sdlc-bench` artefact. |
