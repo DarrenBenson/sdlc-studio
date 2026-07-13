@@ -7,7 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`gate.py --release`: one command that cannot be misread before a tag (CR0233).** The
+  standard gate plus an executing AC-verify pass, as a single exit code. The lane runs every
+  `Verify:` expression for real rather than reading a report that may carry a stale green -
+  the failure that let a rotted Verify layer reach the v4.0.0-rc.1 tag. It writes nothing, so
+  the gate stays read-only and hook-safe. Three refusals make a false green unreachable:
+  `--release` with the verify lane deselected refuses outright (no release verdict is printed
+  over an unexamined AC layer), a verifier blocked by the external-provenance trust boundary
+  reports as *unproven* rather than as a red AC (with `--allow-external` to run it once the
+  content is trusted - a passthrough, never a bypass), and a story set with no executable
+  `Verify:` expression at all now fails, because a lane with nothing to prove must not read
+  as proof.
+- **Cross-repo `Depends on:` resolution in the tranche audit (CR0224).** A dependency on an
+  artefact in a sibling repo is resolved through the PVD manifest instead of being reported
+  as unmet. The resolver that already worked inside `blocker_sweep` is lifted into
+  `lib/xrepo.py` and shared. An uncloned sibling degrades honestly: it is named, with its
+  path, and never silently passed - and the search continues past it, so the verdict follows
+  the disk state rather than the manifest's ordering. Projects with no manifest are
+  unaffected.
+
 ### Fixed
+
+- **The deterministic creators now emit artefacts the deterministic validator accepts
+  (BG0108).** A schema-v3 decomposition of 31 artefacts opened with roughly 130 validator
+  errors, and three separate agents each rediscovered and hand-stamped the fix. The creators
+  (`artifact.py new`/`batch`, `file_finding.py file`, and the consolidation CR) now stamp
+  `Raised-by`, carry the Impact and effort block a CR requires, and write the `Persona` line
+  only when a persona is named. Content supplied to a creator now reaches the artefact:
+  `--template full` previously grafted the core template over the caller's summary, steps,
+  fix, options and recommendation, so `batch` - which defaults to `full` - returned exit 0 and
+  a clean validator over an artefact the caller's words never reached. The guard against a
+  recurrence is a parametrised create-then-validate round trip across every creator, artefact
+  type and schema era, asserting both that the validator is clean and that the supplied content
+  landed. A content-less scaffold still reports its unfilled placeholders, deliberately: making
+  it green would mean writing non-AC text into the acceptance-criteria section, which passes
+  the validator's `no-ac` rule *and* promotes an unspecified story to `specified` in the
+  conformance gate.
+
+- **Lessons written with `--global` are no longer lost on the next skill update (BG0111).**
+  `lessons.py` resolved the skill tier relative to the *running* script, which in real use is
+  the installed copy under `~/.claude/` - not a git repository. Every `--global` lesson was
+  written into a directory the next update replaces, and the tool reported success. Nine
+  lessons had already been written there. `--global` now refuses, loudly, to write anywhere a
+  lesson cannot survive: outside a git work tree, into a gitignored directory (the vendored
+  `.claude/skills/` case, where `--is-inside-work-tree` alone is not enough), or into a
+  registry git does not track. It names which of the three it hit. The destination resolves
+  from a `skill_source_repo` config key, and the running-skill fallback now refuses an
+  installed or vendored copy rather than writing a lesson a commit there could never ship.
+  **The project tier is now the documented default; `--global` is the deliberate promotion.**
 
 - **CI portability: the schema-v3 backfill no longer uses a Python 3.13-only API
   (BG0105).** `Path.read_text/write_text(newline=)` failed on CI's 3.12 while local 3.14
@@ -21,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   shells `python -m pytest` inside fixture workspaces with no fallback; the runner lacked
   the module, failing the grader's first CI exposure.
 
-v4.1 feature scope is groomed in the Deferred lane (CR0223-0225, CR0229-0231, CR0233).
+v4.1 scope is the EP0031 + EP0032 sprint; the tag cuts when the backlog empties.
 
 ## [4.0.0] - 2026-07-10
 

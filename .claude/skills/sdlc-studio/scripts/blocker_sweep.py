@@ -7,10 +7,10 @@ Status `Blocked`, carries a `Depends on:` field, or an epic `Blocked By` row lon
 thing it waited on reached a terminal state, and nothing surfaces it as now-eligible.
 
 The sweep collects every blocker signal across the artefacts, resolves each referent's
-current status - in-repo by the file census (LL0001), cross-repo by reading the sibling
-repos named in `product-manifest.yaml` (reusing pvd.read_manifest) - and classifies each
-genuinely-blocked unit as now-unblocked (every referent terminal/delivered) or
-still-blocked (with the outstanding referent named).
+current status - in-repo by the file census (LL0001), cross-repo across the sibling repos
+named in `product-manifest.yaml`, both through the shared `lib/xrepo` resolver - and
+classifies each genuinely-blocked unit as now-unblocked (every referent terminal/delivered)
+or still-blocked (with the outstanding referent named).
 
 Per LL0008 it fails loud and never false-clears: a referent that is missing, unreadable, or
 in an unknown status is reported still-blocked / as an error, never silently cleared.
@@ -28,8 +28,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import pvd  # noqa: E402  (manifest read, no PyYAML dependency)
-from lib import sdlc_md  # noqa: E402
+from lib import sdlc_md, xrepo  # noqa: E402  (xrepo: in-repo + cross-repo id resolution)
 
 _BLOCKED = "Blocked"
 
@@ -46,58 +45,6 @@ def _referents(text: str) -> list[str]:
     return sorted(refs)
 
 
-def _status_in(root: Path, ref: str) -> dict | None:
-    """Resolve a referent by the file census in one repo: {type, status} or None if absent."""
-    target = sdlc_md.norm_id(ref)
-    for type_ in sdlc_md.ARTIFACT_TYPES:
-        for path in sdlc_md.artifact_files(type_, root):
-            rec = sdlc_md.extract_record_id(path.stem)
-            if rec and sdlc_md.norm_id(rec) == target:
-                raw = sdlc_md.extract_field(path.read_text(encoding="utf-8"), "Status")
-                st = sdlc_md.canonical_status(raw, sdlc_md.status_vocab(type_, root))
-                return {"type": type_, "status": st or (raw.strip() if raw else "Unknown")}
-    return None
-
-
-def _manifest_repos(root: Path, manifest: Path | None) -> list[tuple[str, Path]]:
-    """(label, repo-root) for each sibling repo in the PVD manifest, paths resolved relative
-    to the manifest. Returns [] when there is no manifest (in-repo-only run)."""
-    mpath = manifest or (root / "product-manifest.yaml")
-    if not Path(mpath).is_file():
-        return []
-    base = Path(mpath).resolve().parent
-    out: list[tuple[str, Path]] = []
-    for repo in pvd.read_manifest(Path(mpath)).get("repos", []):
-        rel = repo.get("path")
-        if not rel:
-            continue
-        rp = (base / rel).resolve()
-        out.append((repo.get("id") or rel, rp))
-    return out
-
-
-def _resolve(ref: str, root: Path, repos: list[tuple[str, Path]]) -> dict:
-    """Resolve a referent in-repo first, then across the manifest repos. The returned dict
-    always carries `cleared` and `error` so a caller never has to guess: an unresolved or
-    unknown-status referent is `cleared=False` with `error` set - never silently cleared."""
-    hit = _status_in(root, ref)
-    if hit is not None:
-        cleared = sdlc_md.is_terminal_status(hit["type"], hit["status"])
-        return {"id": ref, "repo": ".", "status": hit["status"], "cleared": cleared,
-                "error": None if cleared or hit["status"] != "Unknown"
-                else "unknown status"}
-    for label, rp in repos:
-        if not rp.exists():
-            return {"id": ref, "repo": label, "status": None, "cleared": False,
-                    "error": f"manifest repo {label} not found at {rp}"}
-        hit = _status_in(rp, ref)
-        if hit is not None:
-            cleared = sdlc_md.is_terminal_status(hit["type"], hit["status"])
-            return {"id": ref, "repo": label, "status": hit["status"], "cleared": cleared,
-                    "error": None if cleared or hit["status"] != "Unknown" else "unknown status"}
-    return {"id": ref, "repo": None, "status": None, "cleared": False, "error": "missing"}
-
-
 def sweep(root: Path | str, manifest: Path | str | None = None) -> dict:
     """Census every blocker signal and classify each genuinely-blocked unit.
 
@@ -108,7 +55,7 @@ def sweep(root: Path | str, manifest: Path | str | None = None) -> dict:
     a Blocked->Ready candidate.
     """
     rr = Path(root).resolve()
-    repos = _manifest_repos(rr, Path(manifest) if manifest else None)
+    repos = xrepo.manifest_repos(rr, manifest)
     units: list[dict] = []
     now_unblocked: list[str] = []
     still_blocked: list[str] = []
@@ -133,7 +80,7 @@ def sweep(root: Path | str, manifest: Path | str | None = None) -> dict:
                 signals.append("depends-on")
             if not signals:
                 continue
-            resolved = [_resolve(r, rr, repos) for r in refs]
+            resolved = [xrepo.resolve(r, rr, repos) for r in refs]
             genuinely_blocked = status == _BLOCKED or blocked_by
             unit = {"id": rec, "type": type_, "status": status or "Unknown",
                     "signals": signals, "referents": resolved}

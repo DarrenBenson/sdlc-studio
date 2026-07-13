@@ -33,8 +33,11 @@ import triage_noise  # noqa: E402  (sibling - v3 triage noise controls; dormant 
 TYPES = {
     "bug": {"dir": "bugs", "prefix": "BG", "disp": "BG{n:04d}",
             "status": "Open", "required": ("severity", "summary", "steps", "fix")},
+    # A CR carries an impact statement and an effort estimate: the validator demands both of
+    # any CR, so the filer demands both of its caller rather than minting one that fails.
     "cr": {"dir": "change-requests", "prefix": "CR", "disp": "CR-{n:04d}",
-           "status": "Proposed", "required": ("priority", "ctype", "summary", "acs")},
+           "status": "Proposed",
+           "required": ("priority", "ctype", "summary", "acs", "impact", "effort")},
     "rfc": {"dir": "rfcs", "prefix": "RFC", "disp": "RFC-{n:04d}",
             "status": "Draft", "required": ("summary", "options")},
 }
@@ -84,6 +87,13 @@ def _next_number(repo_root: Path, type_: str) -> int:
 _STAMP = "> **Created-by:** sdlc-studio file\n"
 
 
+def _stamp(f: dict) -> str:
+    """The provenance stamp plus the typed authorship of record. `Raised-by` is resolved from
+    `--author` at creation (defaulting to the invoking agent), so a filed artefact never opens
+    failing the schema-v3 authorship rule."""
+    return _STAMP + f"> **Raised-by:** {f.get('_raised_by') or sdlc_md.DEFAULT_AGENT_AUTHOR}\n"
+
+
 def _md_safe(text) -> str:
     """Backtick-wrap bare snake_case/dunder identifier tokens in free prose so an unbackticked
     `_` is not read as markdown emphasis (MD037/MD049/MD050) - the filer must not mint
@@ -100,7 +110,7 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
             status: str | None = None) -> str:
     """A structured artifact body (required sections populated). `status` overrides the
     per-type create status (schema v3 files findings into `inbox`); None keeps the default."""
-    f = {**f, **{k: _md_safe(f[k]) for k in ("summary", "steps", "fix", "recommendation")
+    f = {**f, **{k: _md_safe(f[k]) for k in ("summary", "steps", "fix", "recommendation", "impact")
                  if isinstance(f.get(k), str)}}
     if isinstance(f.get("acs"), list):
         f = {**f, "acs": [_md_safe(a) for a in f["acs"]]}
@@ -109,7 +119,7 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
     if type_ == "bug":
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** {status or 'Open'}\n> **Severity:** {f['severity']}\n"
-                f"> **Created:** {today}\n{_STAMP}\n"
+                f"> **Created:** {today}\n{_stamp(f)}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
                 f"## Steps to Reproduce\n\n{f['steps']}\n\n"
                 f"## Proposed Fix\n\n{f['fix']}\n\n"
@@ -122,14 +132,16 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
         acs = "\n".join(f"- [ ] {a}" for a in stripped)
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** {status or 'Proposed'}\n> **Priority:** {f['priority']}\n"
-                f"> **Type:** {f['ctype']}\n> **Date:** {today}\n{_STAMP}\n"
+                f"> **Type:** {f['ctype']}\n> **Date:** {today}\n{_stamp(f)}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
+                f"## Impact\n\n{f['impact']}\n\n"
+                f"**Effort:** {f['effort']}\n\n"
                 f"## Acceptance Criteria\n\n{acs}\n\n"
                 f"## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
                 f"| {today} | audit | Raised |\n")
     options = "\n".join(f"- **{o}**" for o in f["options"])
     return (f"# {disp_id}: {title}\n\n"
-            f"> **Status:** {status or 'Draft'}\n> **Date:** {today}\n{_STAMP}\n"
+            f"> **Status:** {status or 'Draft'}\n> **Date:** {today}\n{_stamp(f)}\n"
             f"## Summary\n\n{f['summary']}\n\n"
             f"## Design Options\n\n{options}\n\n"
             f"## Recommendation\n\n{f.get('recommendation', 'TBD - pending decision.')}\n\n"
@@ -227,6 +239,11 @@ def _file_finding_locked(root: Path, type_: str, spec: dict, title: str, fields:
         return {"id": disp_id, "file_id": file_id, "path": str(path),
                 "indexed": indexed, "dry_run": True}
     triage_noise.enforce_session_cap(root)  # refuse the N+1th individual finding loudly (v3)
+    raised_by = sdlc_md.authorship_value(fields.get("author"), root)
+    # The index's Author column takes the resolved author's name, so an unattributed filing
+    # still names whoever raised it (the invoking agent) rather than leaving the cell blank.
+    fields = {**fields, "_raised_by": raised_by,
+              "author": fields.get("author") or sdlc_md.parse_authorship_value(raised_by)["name"]}
     sdlc_md.atomic_write(path, _render(type_, disp_id, title, today, fields, create_status))
     triage_noise.record_creation(root)  # count this minted finding against the session budget
     # One shared header-driven row builder for both create paths: read the index's
@@ -245,6 +262,7 @@ def _file_finding_locked(root: Path, type_: str, spec: dict, title: str, fields:
 def cmd_file(args: argparse.Namespace) -> int:
     fields = {"severity": args.severity, "priority": args.priority, "ctype": args.ctype,
               "summary": args.summary, "steps": args.steps, "fix": args.fix,
+              "impact": args.impact, "effort": args.effort,
               "author": args.author, "recommendation": args.recommendation}
     fields = {k: v for k, v in fields.items() if v is not None}
     if args.ac:
@@ -276,10 +294,16 @@ def build_parser() -> argparse.ArgumentParser:
     f.add_argument("--ctype", help="cr type (Improvement/Feature/Bug)")
     f.add_argument("--steps", help="bug steps to reproduce")
     f.add_argument("--fix", help="bug proposed fix")
+    f.add_argument("--impact", help="cr: who this affects and what breaks (required for a cr)")
+    f.add_argument("--effort", choices=("S", "M", "L"),
+                   help="cr: effort estimate (required for a cr)")
     f.add_argument("--ac", action="append", help="cr acceptance criterion (repeatable)")
     f.add_argument("--option", action="append", help="rfc design option (repeatable)")
     f.add_argument("--recommendation", help="rfc recommendation")
-    f.add_argument("--author", default="audit")
+    f.add_argument("--author",
+                   help="authorship of record, stamped as `Raised-by`: 'Name; type; version' "
+                        "(type is human|persona|agent) or a bare name; defaults to the "
+                        "invoking agent (SDLC_AUTHOR when set)")
     f.add_argument("--root", default=".")
     f.add_argument("--dry-run", action="store_true", dest="dry_run", help="preview; write nothing")
     f.add_argument("--format", choices=("text", "json"), default="text")

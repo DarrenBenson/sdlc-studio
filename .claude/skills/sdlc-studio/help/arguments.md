@@ -80,9 +80,13 @@ re-runnable, so a refusal at a later gate never loses the earlier steps.
 | `--crs` | Sprint batch: CRs by state (e.g. `--crs proposed`) | - |
 | `--only` | Gate: run only these checks (comma-separated) | all |
 | `--skip` | Gate: skip these checks (comma-separated) | none |
+| `--release` | Gate: the pre-tag form - the standard gate plus an executing pass over every story's `Verify:` expression, as one exit code (read-only: no back-annotation, no report rewrite). Deselecting the `verify` lane under it is refused | off |
+| `--allow-external` | Gate `--release`: also run shell-backed verifiers on stories stamped `Provenance: external` (otherwise reported BLOCKED and unproven, never green) | off |
+| `--verify-batch` | Gate `--release`: run jest once and resolve jest verifiers from the cached result | off |
 | `--root` | Repo root for scripts (gate, reconcile, doc_coverage, ...) | . |
 | `--format` | Output format where supported: `text` or `json` | text |
 
 Sprint reuses `--epic` (deliver one epic) and `--agentic` / `--commit-strategy` from the
 rows above. The gate's checks are conformance, reconcile, validate, constitution, integrity,
-duplicate-id, provenance, doc-coverage (see `reference-sprint.md` and `scripts/gate.py`).
+duplicate-id, provenance, doc-coverage - plus `verify` under `--release` (see
+`reference-sprint.md`, `help/gate.md` and `scripts/gate.py`).

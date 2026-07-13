@@ -5,7 +5,8 @@ One command that runs the deterministic checks (conformance, reconcile drift, va
 constitution, integrity) over the artifact graph, prints a consolidated pass/fail, and
 exits non-zero only when a *blocking* check fails. No network, no CI/cloud assumption -
 runnable as a bare shell step in any CI (GitHub Actions, GitLab, Jenkins, a pre-commit
-hook). `--only` / `--skip` select checks.
+hook). `--only` / `--skip` select checks. `--release` is the pre-tag form: the same gate plus
+an EXECUTING acceptance-criteria verify pass, as one exit code.
 
 Each check is a callable `fn(root) -> {"count": int, "blocking": bool, "detail": str}`;
 the registry is injectable so the aggregation logic is testable without a full repo.
@@ -240,7 +241,7 @@ def _hook_enabled(root: str) -> dict:
 # buggy experimental check cannot brick the gate.
 BLOCKING_ON_ERROR = {
     "conformance", "reconcile", "index-derived", "validate",
-    "integrity", "duplicate-id", "doc-coverage", "retro",
+    "integrity", "duplicate-id", "doc-coverage", "retro", "verify",
 }
 
 DEFAULT_CHECKS = {
@@ -271,12 +272,90 @@ def _retro_present(root: str, retro_id: str) -> dict:
                        else f"missing batch retro {retro_id} - write it before closing the sprint")}
 
 
+VERIFY_TIMEOUT = 120  # per-verifier seconds; matches the verify_ac default
+_MAX_NAMED = 10       # failing ACs listed by name before the detail is elided
+
+
+def _elide(names: list[str]) -> str:
+    """`a, b, c (+2 more)` - name the failures, bound the line."""
+    more = f" (+{len(names) - _MAX_NAMED} more)" if len(names) > _MAX_NAMED else ""
+    return ", ".join(names[:_MAX_NAMED]) + more
+
+
+def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool = False,
+                batch: bool = False) -> dict:
+    """Blocking release-gate lane: EXECUTE every story's `Verify:` expression now, and fail
+    on any AC that is red OR unproven, naming each one.
+
+    Properties this lane must hold at once, and how it holds them:
+
+    * It EXECUTES rather than reading the stored verify-report. A merged report carries a
+      story's last green forward until something re-runs it, so a rotted verifier keeps
+      reading PASS - the stale green that reaches a tag. Silence is not assertion integrity.
+    * It does NOT write. `verify_ac run` in its normal mode rewrites each AC's
+      `- **Verified:**` back-annotation and overwrites `.local/verify-report.json`; the gate
+      is read-only (a pre-commit hook runs it), and a gate that edits tracked files while
+      judging them is not a gate. So the lane calls `verify_story(dry_run=True)` per story:
+      the verifiers run for real, nothing is written back, and the verdict is this run's.
+    * A verifier the trust boundary REFUSED TO RUN is reported as BLOCKED, never as red. On a
+      story stamped `Provenance: external`, a shell-backed verb is not executed (see
+      `verify_ac`), so its result is not evidence about the code: reporting it as a failing AC
+      sends the operator to debug a verifier that works. It still fails the lane - unproven is
+      not proof - and `allow_external` is the deliberate way to run it and reach a green.
+    * NOTHING TO PROVE IS NOT PROOF, at either level: an empty story set fails (a wrong --root,
+      a moved directory), and so does a story set with zero executable verifiers - otherwise
+      DELETING a rotted `Verify:` line would be the way to turn the release gate green.
+    """
+    import verify_ac
+    rr = Path(root).resolve()
+    stories = list(verify_ac.walk_stories(rr / "sdlc-studio" / "stories"))
+    if not stories:
+        return {"count": 1, "blocking": True,
+                "detail": "no stories under sdlc-studio/stories - the verify lane proved "
+                          "nothing about the AC layer (wrong --root?)"}
+    jest_cache = verify_ac.jest_batch_cache(rr, timeout) if batch else None
+    red: list[str] = []
+    blocked: list[str] = []
+    acs = manual = 0
+    for path in stories:
+        report = verify_ac.verify_story(path, dry_run=True, timeout=timeout, repo_root=rr,
+                                        jest_cache=jest_cache, allow_external=allow_external)
+        story_id = sdlc_md.extract_record_id(path.stem) or path.stem
+        acs += report.ac_count
+        manual += report.manual
+        for f in report.failures:
+            name = f"{story_id}::{f['ac']} ({f['verifier']})"
+            (blocked if f.get("kind") == "blocked" else red).append(name)
+    executable = acs - manual
+    if not executable:
+        return {"count": 1, "blocking": True,
+                "detail": f"no executable Verify: expression across {len(stories)} "
+                          f"story/stories ({acs} AC(s), {manual} manual) - the verify lane "
+                          f"proved nothing about the AC layer; author a Verify: line per AC"}
+    if not red and not blocked:
+        return {"count": 0, "blocking": True,
+                "detail": f"{executable}/{acs} executable AC(s) green across "
+                          f"{len(stories)} story/stories ({manual} manual)"}
+    parts = []
+    if red:
+        parts.append(f"{len(red)} red AC(s): {_elide(red)}")
+    if blocked:
+        parts.append(f"{len(blocked)} unproven AC(s) - verifier BLOCKED unrun by the "
+                     f"trust boundary (story stamped Provenance: external): {_elide(blocked)}; "
+                     f"pass --allow-external to run them once you trust the content")
+    return {"count": len(red) + len(blocked), "blocking": True, "detail": "; ".join(parts)}
+
+
 def run_gate(root: str = ".", only: list[str] | None = None,
              skip: list[str] | None = None, checks: dict | None = None,
-             require_retro: str | None = None) -> dict:
+             require_retro: str | None = None, release: bool = False,
+             allow_external: bool = False, verify_batch: bool = False) -> dict:
     """Run the selected checks and report. `ok` is False only when a BLOCKING check
     fails; a non-blocking failure is reported but does not fail the gate. `require_retro`
-    adds a blocking close-gate check that the named batch retro exists (the sprint close)."""
+    adds a blocking close-gate check that the named batch retro exists (the sprint close).
+    `release` adds the blocking `verify` lane - the pre-tag gate is then ONE command with
+    ONE exit code, not a gate plus a separate verify run whose exit code can be dropped;
+    deselecting that lane under `release` is refused, not honoured (see below)."""
     # Guard against a vacuous PASS on a wrong/missing root (a CI step pointed at the wrong
     # dir, or a failed checkout). "No project found" must FAIL, not look all-green. Only
     # applies to real runs; injected check registries (logic tests) skip it.
@@ -289,6 +368,9 @@ def run_gate(root: str = ".", only: list[str] | None = None,
     registry = dict(checks) if checks is not None else dict(DEFAULT_CHECKS)
     if require_retro:  # close-gate: bind the expected retro id into a blocking check
         registry["retro"] = lambda r, _rid=require_retro: _retro_present(r, _rid)
+    if release:  # pre-tag: the executing AC-verify lane joins the standard gate
+        registry["verify"] = (lambda r, _x=allow_external, _b=verify_batch:
+                              _verify_acs(r, allow_external=_x, batch=_b))
     # A wrong/typo'd --only/--skip (or a renamed check) must FAIL, not silently select
     # nothing and report a vacuous PASS - the false-assurance class LL0008 warns against.
     unknown = sorted({n for n in (list(only or []) + list(skip or [])) if n not in registry})
@@ -303,6 +385,17 @@ def run_gate(root: str = ".", only: list[str] | None = None,
         return {"ok": False, "checks": [{
             "check": "selection", "count": 0, "blocking": True, "status": "fail",
             "detail": "no checks selected - the gate proved nothing (check --only/--skip)"}]}
+    # The verify lane is what MAKES this a release gate. Honouring a --skip/--only that
+    # deselects it would print a release verdict over an unexamined AC layer - the
+    # passing-looking command the release mode exists to abolish. Refuse instead: a caller
+    # who does not want the AC layer examined wants the standard gate, and should say so.
+    if release and "verify" not in selected:
+        return {"ok": False, "checks": [{
+            "check": "selection", "count": 1, "blocking": True, "status": "fail",
+            "detail": "--release with the `verify` lane deselected proves nothing about the "
+                      "AC layer - a release verdict will not be printed over it. Drop the "
+                      "--skip/--only that excludes `verify`, or drop --release and run the "
+                      "standard gate"}]}
     results = []
     for name in selected:
         try:
@@ -328,15 +421,28 @@ def _split(v: str | None) -> list[str] | None:
 
 
 def cmd_gate(args: argparse.Namespace) -> int:
+    release = getattr(args, "release", False)
     report = run_gate(args.root, only=_split(args.only), skip=_split(args.skip),
-                      require_retro=getattr(args, "require_retro", None))
+                      require_retro=getattr(args, "require_retro", None), release=release,
+                      allow_external=getattr(args, "allow_external", False),
+                      verify_batch=getattr(args, "verify_batch", False))
     if args.format == "json":
         print(json.dumps(report, indent=2))
     else:
         for c in report["checks"]:
             mark = "PASS" if c["status"] == "pass" else ("FAIL" if c["blocking"] else "warn")
             print(f"  [{mark}] {c['check']}: {c['detail']}")
-        print(f"gate: {'PASS' if report['ok'] else 'FAIL'}")
+        # The release banner is printed only when the release gate actually RAN - i.e. the
+        # verify lane is in the results. Anything else prints the plain gate verdict, so a
+        # deselected AC layer can never wear a release PASS.
+        ran_release = release and any(c["check"] == "verify" for c in report["checks"])
+        print(f"gate{' --release' if ran_release else ''}: "
+              f"{'PASS' if report['ok'] else 'FAIL'}")
+        if ran_release and report["ok"]:
+            # A green mechanical gate is not the whole pre-tag ritual; say so, so a PASS here
+            # is never read as the checklist's judgement items being done.
+            print("  the checklist's judgement items remain: "
+                  "templates/workflows/release-gate.md")
     return 0 if report["ok"] else 1
 
 
@@ -347,6 +453,18 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--skip", help="Comma-separated checks to skip")
     p.add_argument("--require-retro", metavar="RETROxxxx",
                    help="Close-gate: fail unless this batch retro exists in sdlc-studio/retros/")
+    p.add_argument("--release", action="store_true",
+                   help="Pre-tag gate: also EXECUTE every story's Verify: expression and fail "
+                        "on any red or unproven AC (read-only - no Verified: back-annotation, "
+                        "no report rewrite). One command, one exit code, before you tag. "
+                        "Deselecting the `verify` lane under --release is refused")
+    p.add_argument("--allow-external", dest="allow_external", action="store_true",
+                   help="--release: run shell-backed verifiers on stories stamped "
+                        "`Provenance: external` too (off by default - the trust boundary; "
+                        "those verifiers are otherwise reported BLOCKED, never green)")
+    p.add_argument("--verify-batch", dest="verify_batch", action="store_true",
+                   help="--release: run jest once and resolve jest verifiers from the cached "
+                        "result, instead of a cold start per AC")
     p.add_argument("--format", choices=("text", "json"), default="text")
     p.set_defaults(func=cmd_gate)
     return p

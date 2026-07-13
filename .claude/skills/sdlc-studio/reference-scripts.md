@@ -127,7 +127,8 @@ lists every script with a one-line summary; open the linked page for the full en
 
 ### Reconcile, verify & checks - [reference-scripts-verify.md](reference-scripts-verify.md)
 
-- `gate.py` - Portable, ecosystem-neutral CI quality gate. Aggregates the deterministic checks
+- `gate.py` - Portable, ecosystem-neutral CI quality gate. Aggregates the deterministic checks;
+  `--release` is the pre-tag form (the same gate plus an executing AC-verify pass, one exit code)
 - `verify_ac.py` - Executes AC verifiers defined in story files and updates each AC's
 - `mutation.py` - The executable mutation-check gate - the complement of `verify_ac.py`: verify_ac
 - `reconcile.py` - Builds the artifact-file census and reports `_index.md` drift as JSON.

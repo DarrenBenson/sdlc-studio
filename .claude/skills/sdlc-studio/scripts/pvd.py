@@ -22,6 +22,9 @@ import stat
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib import xrepo  # noqa: E402  (the manifest parser + cross-repo id resolver)
+
 PROJECTED = Path("sdlc-studio") / "product" / "pvd.md"
 _VERSION = re.compile(r"^>?\s*\*\*Version:\*\*\s*(\S+)", re.M)
 
@@ -80,27 +83,10 @@ def drift(master: Path, target: Path) -> dict:
 
 
 def read_manifest(path: Path) -> dict:
-    """Best-effort parse of product-manifest.yaml (master_pvd + repos[].path) without a
-    hard PyYAML dependency."""
-    text = Path(path).read_text(encoding="utf-8")
-    master = None
-    repos: list[dict] = []
-    cur: dict | None = None
-    for line in text.splitlines():
-        s = line.strip()
-        if s.startswith("#") or not s:
-            continue
-        m = re.match(r"master_pvd:\s*(\S+)", s)
-        if m:
-            master = m.group(1)
-            continue
-        if s.startswith("- id:"):
-            cur = {"id": s.split(":", 1)[1].partition("#")[0].strip()}  # strip inline comment
-            repos.append(cur)
-        elif cur is not None and ":" in s:
-            k, _, v = s.partition(":")
-            cur[k.strip()] = v.partition("#")[0].strip()  # strip inline comment
-    return {"master_pvd": master, "repos": repos}
+    """Best-effort parse of product-manifest.yaml (master_pvd + repos[].path) without a hard
+    PyYAML dependency. The parser lives in `lib/xrepo` alongside the cross-repo id resolver
+    that reads it, so the manifest has one reader; this stays as the historical entry point."""
+    return xrepo.read_manifest(path)
 
 
 def cmd_sync(args: argparse.Namespace) -> int:

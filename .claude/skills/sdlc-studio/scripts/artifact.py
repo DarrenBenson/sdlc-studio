@@ -72,11 +72,38 @@ def _create_status(type_: str, root: Path) -> str:
     return SPEC[type_]["status"]
 
 
+def _text(f: dict, key: str, placeholder: str) -> str:
+    """Caller-supplied content for one section, else the scaffold placeholder the agent fills.
+    Free text is markdown-safed, so a creator never mints a lint-red artefact."""
+    val = f.get(key)
+    return file_finding._md_safe(val) if isinstance(val, str) and val.strip() else placeholder
+
+
+def _list(f: dict, key: str) -> list[str]:
+    items = f.get(key)
+    return [file_finding._md_safe(i) for i in items if str(i).strip()] \
+        if isinstance(items, list) else []
+
+
+def _story_acs(f: dict) -> str:
+    """The Acceptance Criteria body. Supplied criteria render as real, id'd ACs; with none
+    supplied the scaffold keeps its `{{placeholder}}` slots, which the validator reports as
+    unfilled - a scaffold is not yet a specified story, and the creator does not pretend it is."""
+    acs = _list(f, "acs")
+    if not acs:
+        return ("### AC1: {{define}}\n\n- **Given** {{context}}\n- **When** {{action}}\n"
+                "- **Then** {{outcome}}\n- **Verify:** {{executable check}}\n")
+    return "".join(f"- **AC{i}:** {a}\n" for i, a in enumerate(acs, 1))
+
+
 def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
     st = f.get("_status") or SPEC[type_]["status"]
-    # Provenance stamp - marks this artifact as tool-created (deterministic path).
+    # Provenance stamp - marks this artifact as tool-created (deterministic path). Raised-by is
+    # the typed authorship of record, stamped at creation from --author (defaulting to the
+    # invoking agent), so a schema-v3 artefact is never born failing its own authorship rule.
     head = (f"# {disp}: {title}\n\n> **Status:** {st}\n> **Created:** {today}\n"
-            f"> **Created-by:** sdlc-studio new\n")
+            f"> **Created-by:** sdlc-studio new\n"
+            f"> **Raised-by:** {f.get('_raised_by') or sdlc_md.DEFAULT_AGENT_AUTHOR}\n")
     # Record-only tranche reference: written ONLY as orchestrator pass-through (when the caller
     # supplies it); sdlc-studio never allocates it. Absent otherwise.
     if str(f.get("tranche") or "").strip():
@@ -84,43 +111,149 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
     rev = (f"\n## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
            f"| {today} | {f.get('author', 'sdlc')} | Created via `new` (deterministic) |\n")
     if type_ == "story":
-        return (head + f"> **Epic:** {f.get('epic') or '-'}\n> **Persona:** {{{{persona}}}}\n\n"
-                "## User Story\n\n**As a** {{role}}\n**I want** {{capability}}\n"
-                "**So that** {{benefit}}\n\n## Acceptance Criteria\n\n"
-                "### AC1: {{define}}\n\n- **Given** {{context}}\n- **When** {{action}}\n"
-                "- **Then** {{outcome}}\n- **Verify:** {{executable check}}\n" + rev)
+        # The Persona line is written only when a persona is named: an absent optional field is
+        # honestly absent, never an unresolved placeholder in the metadata block.
+        persona = f"> **Persona:** {f['persona']}\n" if str(f.get("persona") or "").strip() else ""
+        return (head + f"> **Epic:** {f.get('epic') or '-'}\n" + persona +
+                "\n## User Story\n\n**As a** {{role}}\n**I want** {{capability}}\n"
+                "**So that** {{benefit}}\n\n## Acceptance Criteria\n\n" + _story_acs(f) + rev)
     if type_ == "epic":
-        return (head + "\n## Summary\n\n{{what this epic groups}}\n\n"
-                "## Story Breakdown\n\n_No stories yet._\n" + rev)
+        acs = _list(f, "acs")
+        ac_body = ("\n## Acceptance Criteria\n\n" + "".join(f"- [ ] {a}\n" for a in acs)) if acs else ""
+        return (head + "\n## Summary\n\n" + _text(f, "summary", "{{what this epic groups}}") +
+                "\n\n## Story Breakdown\n\n_No stories yet._\n" + ac_body + rev)
     if type_ == "cr":
+        acs = _list(f, "acs")
+        ac_body = "".join(f"- [ ] {a}\n" for a in acs) if acs else "- [ ] {{criterion}}\n"
         return (head + f"> **Priority:** {f.get('priority', 'Medium')}\n"
                 f"> **Type:** {f.get('ctype', 'Feature')}\n\n"
-                "## Summary\n\n{{what changes and why}}\n\n"
-                "## Acceptance Criteria\n\n- [ ] {{criterion}}\n" + rev)
+                "## Summary\n\n" + _text(f, "summary", "{{what changes and why}}") +
+                "\n\n## Impact\n\n" + _text(f, "impact", "{{who this affects and what breaks}}") +
+                f"\n\n**Effort:** {f.get('effort') or '{{S|M|L}}'}\n\n"
+                "## Acceptance Criteria\n\n" + ac_body + rev)
     if type_ == "rfc":
-        return (head + "\n## Summary\n\n{{the unsettled design}}\n\n"
-                "## Design Options\n\n- **Option A** {{...}}\n\n"
-                "## Recommendation\n\nTBD\n\n## Open Decisions\n\n"
+        options = _list(f, "options")
+        opt_body = ("".join(f"- **{o}**\n" for o in options) if options
+                    else "- **Option A** {{...}}\n")
+        return (head + "\n## Summary\n\n" + _text(f, "summary", "{{the unsettled design}}") +
+                "\n\n## Design Options\n\n" + opt_body +
+                "\n## Recommendation\n\n" + _text(f, "recommendation", "TBD") +
+                "\n\n## Open Decisions\n\n"
                 "| # | Decision | Status |\n| --- | --- | --- |\n| D1 | {{decision}} | Open |\n" + rev)
     if type_ == "bug":
         return (head + f"> **Severity:** {f.get('severity', 'Medium')}\n\n"
-                "## Summary\n\n{{symptom}}\n\n## Steps to Reproduce\n\n{{steps}}\n\n"
-                "## Proposed Fix\n\n{{fix}}\n" + rev)
-    return head + "\n## Overview\n\n{{purpose}}\n" + rev  # plan / test-spec / workflow
+                "## Summary\n\n" + _text(f, "summary", "{{symptom}}") +
+                "\n\n## Steps to Reproduce\n\n" + _text(f, "steps", "{{steps}}") +
+                "\n\n## Proposed Fix\n\n" + _text(f, "fix", "{{fix}}") + "\n" + rev)
+    return head + "\n## Overview\n\n" + _text(f, "summary", "{{purpose}}") + "\n" + rev
 
 
 def _core_template(type_: str) -> Path:
     return _skill_root() / "templates" / "core" / f"{type_}.md"
 
 
-def _graft(minimal: str, core_path: Path) -> str:
+_AC_HEAD_RE = re.compile(r"^##\s+Acceptance Criteria\b.*$", re.M | re.I)
+_IMPACT_HEAD_RE = re.compile(r"^##\s+(?:Impact|Motivation)\b.*$", re.M | re.I)
+
+
+def _fill_acs(body: str, type_: str, f: dict) -> str:
+    """Write the caller's criteria into a grafted template's Acceptance Criteria section,
+    replacing its placeholder block."""
+    acs = _list(f, "acs")
+    if not acs or type_ not in ("story", "cr", "epic"):
+        return body
+    m = _AC_HEAD_RE.search(body)
+    if not m:
+        return body
+    rest = body[m.end():]
+    nxt = re.search(r"^##\s", rest, re.M)  # `### ACn` subsections belong to this section
+    tail = rest[nxt.start():] if nxt else ""
+    filled = _story_acs(f) if type_ == "story" else "".join(f"- [ ] {a}\n" for a in acs)
+    return f"{body[:m.end()]}\n\n{filled}\n{tail}"
+
+
+def _fill_impact(body: str, type_: str, f: dict) -> str:
+    """Write a CR's impact statement and effort estimate directly under its Impact heading.
+    The rich template heads straight into subsections, leaving the heading itself bodiless -
+    which reads as no impact statement at all."""
+    if type_ != "cr":
+        return body
+    block = ""
+    if str(f.get("impact") or "").strip():
+        block += f"\n\n{file_finding._md_safe(f['impact'])}"
+    if str(f.get("effort") or "").strip():
+        block += f"\n\n**Effort:** {f['effort']}"
+    m = _IMPACT_HEAD_RE.search(body)
+    if not block or not m:
+        return body
+    # the remainder already opens on its own blank line - do not stack a second (MD012)
+    return f"{body[:m.end()]}{block}{body[m.end():]}"
+
+
+# Each caller-supplied field and the section headings it may land under, in preference
+# order. A creator that accepts content and silently drops it is worse than one that never
+# accepted it: the caller gets exit 0 and a clean validator over an artefact its words never
+# reached. Nothing supplied is ever dropped - a template with no matching heading gets the
+# section appended rather than losing the content.
+_CONTENT_SECTIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("summary", ("Summary", "Overview")),
+    ("steps", ("Steps to Reproduce", "Reproduction")),
+    ("fix", ("Proposed Fix", "Fix")),
+    ("options", ("Design Options", "Options")),
+    ("recommendation", ("Recommendation",)),
+)
+_REV_SECTION_RE = re.compile(r"^##\s+Revision History\b.*$", re.M | re.I)
+
+
+def _rendered(key: str, f: dict) -> str:
+    """One field's content as the markdown its section takes: a bullet list for the list
+    fields, markdown-safed prose otherwise. Empty when the caller supplied nothing."""
+    if key in ("options", "acs"):
+        items = _list(f, key)
+        return "".join(f"- **{o}**\n" for o in items) if items else ""
+    val = f.get(key)
+    return f"{file_finding._md_safe(val)}\n" if isinstance(val, str) and val.strip() else ""
+
+
+def _put_section(body: str, names: tuple[str, ...], content: str) -> str:
+    """Replace the body of the first section named in `names` with `content`, or append the
+    section (before Revision History) when the template carries no such heading."""
+    for name in names:
+        m = re.search(rf"^##\s+{re.escape(name)}\b.*$", body, re.M | re.I)
+        if not m:
+            continue
+        rest = body[m.end():]
+        nxt = re.search(r"^##\s", rest, re.M)  # `###` subsections belong to this section
+        tail = rest[nxt.start():] if nxt else ""
+        return f"{body[:m.end()]}\n\n{content}\n{tail}"
+    section = f"## {names[0]}\n\n{content}"
+    m = _REV_SECTION_RE.search(body)
+    return f"{body[:m.start()]}{section}\n{body[m.start():]}" if m \
+        else f"{body.rstrip()}\n\n{section}"
+
+
+def _fill_content(body: str, type_: str, f: dict) -> str:
+    """Land the content the caller HAS in the grafted template. The graft leaves every
+    unsupplied slot as a `{{placeholder}}` for the agent, but supplied content must reach the
+    artefact - otherwise a batch that names its criteria still mints a scaffold the validator
+    rejects, which is how a decomposition ends up hand-stamping thirty files."""
+    for key, names in _CONTENT_SECTIONS:
+        content = _rendered(key, f)
+        if content:
+            body = _put_section(body, names, content)
+    return _fill_impact(_fill_acs(body, type_, f), type_, f)
+
+
+def _graft(minimal: str, core_path: Path, type_: str = "", f: dict | None = None) -> str:
     """The deterministic provenance head (identical to minimal, so validate/
     provenance behave the same) followed by the section body of `core_path`.
-    Placeholders stay unresolved for the agent. Falls back to minimal when the
+    Unsupplied placeholders stay unresolved for the agent. Falls back to minimal when the
     template has no `## ` section body to graft."""
     if "\n## " not in minimal or not core_path.exists():
         return minimal
-    head = minimal[:minimal.index("\n## ")]  # provenance + metadata block, no trailing newline
+    # provenance + metadata block. rstrip the trailing newline the metadata block ends on, or
+    # the join below stacks a second blank line before the first heading (MD012).
+    head = minimal[:minimal.index("\n## ")].rstrip("\n")
     core = re.sub(r"^<!--.*?-->\n+", "", core_path.read_text(encoding="utf-8"),
                   count=1, flags=re.DOTALL)
     lines = core.splitlines()
@@ -128,12 +261,14 @@ def _graft(minimal: str, core_path: Path) -> str:
     if start is None:  # no section body to graft - keep minimal
         return minimal
     body = "\n".join(lines[start:]).rstrip()
-    return f"{head}\n\n{body}\n"
+    # rstrip again: a section appended at the end of the body must not leave a trailing
+    # blank line once the file's closing newline is added (MD012).
+    return f"{head}\n\n{_fill_content(body, type_, f or {}).rstrip()}\n"
 
 
 def _render_full(type_: str, disp: str, title: str, today: str, f: dict) -> str:
     """`--template full`: minimal head + the rich body from `templates/core/<type>.md`."""
-    return _graft(_render(type_, disp, title, today, f), _core_template(type_))
+    return _graft(_render(type_, disp, title, today, f), _core_template(type_), type_, f)
 
 
 def _select_render(root: Path, type_: str, template: str | None):
@@ -147,7 +282,7 @@ def _select_render(root: Path, type_: str, template: str | None):
             raise conventions.ConventionsError(
                 f"conventions.templates.{type_} declares {proj}, which does not exist")
         return lambda t, disp, title, today, f: _graft(
-            _render(t, disp, title, today, f), proj)
+            _render(t, disp, title, today, f), proj, t, f)
     return _render_full if template == "full" else _render
 
 
@@ -338,6 +473,7 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
         if type_ in sdlc_md.FINDING_TYPES:
             triage_noise.enforce_session_cap(root)  # refuse the N+1th finding loudly (v3)
         f["_status"] = _create_status(type_, root)  # era-aware: findings file into inbox under v3
+        f["_raised_by"] = sdlc_md.authorship_value(f.get("author"), root)
         render = _select_render(root, type_, f.get("template"))
         body = render(type_, disp, title, f["date"], f)
         prov = str(f.get("provenance") or "").strip()
@@ -431,6 +567,7 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
             f = dict(it)
             f["date"] = today
             f["_status"] = create_status
+            f["_raised_by"] = sdlc_md.authorship_value(f.get("author"), root)
             p["path"].parent.mkdir(parents=True, exist_ok=True)
             sdlc_md.atomic_write(p["path"], render(type_, p["disp"], it["title"], today, f))
             header = _header_cells(root, type_)
@@ -475,7 +612,11 @@ def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
 def cmd_new(args: argparse.Namespace) -> int:
     f = {k: v for k, v in {"epic": args.epic, "priority": args.priority, "ctype": args.ctype,
                            "severity": args.severity, "author": args.author,
-                           "template": args.template,
+                           "template": args.template, "persona": args.persona,
+                           "summary": args.summary, "steps": args.steps, "fix": args.fix,
+                           "impact": args.impact, "effort": args.effort,
+                           "acs": args.ac, "options": args.option,
+                           "recommendation": args.recommendation,
                            "provenance": getattr(args, "provenance", None)}.items() if v}
     try:
         if args.type in META:
@@ -578,7 +719,21 @@ def build_parser() -> argparse.ArgumentParser:
                    help="origin stamp for ingested content (e.g. 'external' for a GitHub "
                         "issue body) - the verify_ac shell gate refuses shell/eval/http "
                         "verbs on externally-stamped artifacts")
-    n.add_argument("--author")
+    n.add_argument("--author",
+                   help="authorship of record, stamped as `Raised-by`: 'Name; type; version' "
+                        "(type is human|persona|agent) or a bare name; defaults to the "
+                        "invoking agent (SDLC_AUTHOR when set)")
+    # Content the validator demands of a filled artefact. Supply it here and the artefact is
+    # born clean; omit it and the scaffold keeps the slot for the agent to fill.
+    n.add_argument("--persona", help="story: the persona it serves")
+    n.add_argument("--summary", help="the Summary/Overview section")
+    n.add_argument("--steps", help="bug: steps to reproduce (the evidence a bug must carry)")
+    n.add_argument("--fix", help="bug: proposed fix")
+    n.add_argument("--impact", help="cr: who this affects and what breaks")
+    n.add_argument("--effort", choices=("S", "M", "L"), help="cr: effort estimate")
+    n.add_argument("--ac", action="append", help="story/cr acceptance criterion (repeatable)")
+    n.add_argument("--option", action="append", help="rfc design option (repeatable)")
+    n.add_argument("--recommendation", help="rfc: the recommended option")
     n.add_argument("--template", choices=("minimal", "full"), default="minimal",
                    help="scaffold richness: minimal (default) or the full templates/core body")
     n.add_argument("--root", default=".")

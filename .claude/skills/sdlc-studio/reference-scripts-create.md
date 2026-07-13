@@ -29,6 +29,16 @@ atomic pass: a reserved contiguous id block, every index row, and every story-to
 epic link wired in one go; a missing epic or id collision aborts before any write;
 `--dry-run` previews the id map. Batch defaults to `--template full` (the fan-out case).
 
+Every created artefact carries `> **Raised-by:** Name; type; version` (from `--author`,
+or the invoking agent when absent - `SDLC_AUTHOR` when set), which schema v3 requires of
+every artefact. Content the validator demands of a filled artefact can be supplied at
+creation and the artefact is born clean: `--persona` and `--ac` (repeatable) for a story,
+`--summary --steps --fix` for a bug, `--ac --impact --effort S|M|L` for a CR,
+`--summary --option --recommendation` for an RFC. Batch items take the same keys in the
+spec JSON. Omit them and you get a scaffold: the `{{placeholder}}` slots stay for the
+agent to fill, and `validate.py check` reports them as unfilled until it does - a scaffold
+is not yet a specified artefact, and the creator does not pretend otherwise.
+
 ### `init.py`
 
 Deterministic greenfield initialiser - `init` is now an executable, not a manual
@@ -80,11 +90,19 @@ Convention: `reference-outputs.md#index-archival`.
 
 Deterministic Bug/CR/RFC filer for audit findings. Allocates a
 collision-free ID, renders a STRUCTURED artifact (required sections enforced - it
-refuses a hollow stub), appends the index row, and recomputes the index counts
-(reusing reconcile's pass).
+refuses a hollow stub), stamps the typed authorship of record, appends the index row,
+and recomputes the index counts (reusing reconcile's pass).
 
 - `file --type bug|cr|rfc --title ... <fields>`: write one artifact
 - `rebuild --type <t>`: recompute a type's index summary counts
+
+Required fields per type are the ones the validator demands of a filed artefact: a bug
+carries its evidence (`--severity --summary --steps --fix`), a CR its criteria, impact
+and effort (`--priority --ctype --summary --ac --impact --effort S|M|L`), an RFC its
+options (`--summary --option`). `--author "Name; type; version"` (type is
+`human|persona|agent`) is stamped as `Raised-by`; with no author given, the invoking
+agent is stamped (`SDLC_AUTHOR` when set). What the filer writes passes `validate.py
+check` as written - a creator never emits an artefact its own validator rejects.
 
 Full methodology: `reference-audit.md`.
 

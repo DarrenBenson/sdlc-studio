@@ -77,6 +77,7 @@ class FileTests(unittest.TestCase):
             res = ff.file_finding(root, "cr", "Tighten the gate",
                                   {"priority": "High", "ctype": "Improvement",
                                    "summary": "It is loose.", "acs": ["it is tight", "tested"],
+                                   "impact": "the gate lets bad units through", "effort": "M",
                                    "date": "2026-06-20"})
             self.assertEqual(res["id"], "CR-0001")
             body = Path(res["path"]).read_text(encoding="utf-8")
@@ -99,6 +100,7 @@ class FileTests(unittest.TestCase):
                                    "summary": "s",
                                    "acs": ["- [ ] already boxed", "-[x] ticked variant",
                                            "bare text"],
+                                   "impact": "i", "effort": "S",
                                    "date": "2026-07-04"})
             body = Path(res["path"]).read_text(encoding="utf-8")
             self.assertIn("- [ ] already boxed", body)
@@ -152,7 +154,8 @@ class FileTests(unittest.TestCase):
             _seed_index(root, "cr")
             ff.file_finding(root, "cr", "a clean finding",
                             {"priority": "High", "ctype": "Improvement",
-                             "summary": "s", "acs": ["x"], "date": "2026-06-20"})
+                             "summary": "s", "acs": ["x"], "impact": "i", "effort": "S",
+                             "date": "2026-06-20"})
             drift = rc.detect_type("cr", root)["drift"]
             self.assertEqual(drift, [], f"expected 0 drift, got {drift}")
 
@@ -168,7 +171,8 @@ class FileTests(unittest.TestCase):
             _seed_index(root, "cr")
             res = ff.file_finding(root, "cr", "handle `a | b` inputs",
                                   {"priority": "Low", "ctype": "Bug", "summary": "s",
-                                   "acs": ["y"], "date": "2026-06-20"})
+                                   "acs": ["y"], "impact": "i", "effort": "S",
+                                   "date": "2026-06-20"})
             self.assertEqual(res["indexed"], True)
             self.assertEqual(rc.detect_type("cr", root)["drift"], [])  # escaped, parses
 
@@ -183,7 +187,8 @@ class FileTests(unittest.TestCase):
                 "# Index\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n"
                 "| Proposed | 0 |\n| **Total** | **0** |\n", encoding="utf-8")
             res = ff.file_finding(root, "cr", "x", {"priority": "Low", "ctype": "Bug",
-                                                    "summary": "s", "acs": ["y"]})
+                                                    "summary": "s", "acs": ["y"],
+                                                    "impact": "i", "effort": "S"})
             self.assertFalse(res["indexed"])  # no data table -> not appended
             self.assertNotIn("[CR-0001]", (cd / "_index.md").read_text(encoding="utf-8"))
 

@@ -90,7 +90,7 @@ The tooling sprint uses to create and close artifacts the same way every time (t
 
 | Command | Description |
 | --- | --- |
-| `scripts/artifact.py new --type <type> --title ...` | Create any of the 8 numbered artifacts: collision-free id, valid scaffold, index row, parent-epic wiring, `Created-by` stamp |
+| `scripts/artifact.py new --type <type> --title ...` | Create any of the 8 numbered artifacts: collision-free id, valid scaffold, index row, parent-epic wiring, `Created-by` + `Raised-by` stamps |
 | `scripts/artifact.py new --template full` | Scaffold the full template (all sections) instead of the minimal stub |
 | `scripts/artifact.py batch --type <type> --count N` | Reserve an id range and write N pre-wired scaffolds atomically (fan-out authoring); implies `--template full` |
 | `scripts/next_id.py allocate --type <type>` | The next collision-free id for a type (what `new`/`batch`/`file_finding` call internally; `--remote` also considers `origin/main`) |
@@ -302,9 +302,9 @@ Skill-internal helpers live in the skill's `scripts/` directory (`$CLAUDE_SKILL_
 | Command | Description |
 | --- | --- |
 | `/sdlc-studio lessons recall` | Surface relevant cross-project lessons before a decision |
-| `/sdlc-studio lessons add --global` | Promote a generalisable lesson to the skill's `lessons/` |
+| `/sdlc-studio lessons add --global` | Promote a lesson that generalises beyond this repo to the skill's `lessons/` (needs `skill_source_repo`) |
 | `/sdlc-studio lessons list` | Print accumulated project lessons (`.local/lessons.md`) |
-| `/sdlc-studio lessons add` | Append a new lesson to `.local/lessons.md` |
+| `/sdlc-studio lessons add` | Append a new lesson to `.local/lessons.md` (**the default tier**) |
 | `/sdlc-studio lessons prune --older EP0003` | Drop entries for old epics |
 
 ### Plan Files

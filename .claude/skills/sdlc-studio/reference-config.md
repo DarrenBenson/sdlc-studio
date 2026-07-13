@@ -13,6 +13,7 @@
 - [Epic Perspectives](#epic-perspectives)
 - [Review Configuration](#review-configuration)
 - [Persona Staleness](#personas-staleness-days)
+- [Skill Source Repo](#skill-source-repo)
 - [Contract Tables](#contract-tables)
 - [Release Strategy](#release-strategy)
 - [Using Config in Templates](#using-config-in-templates)
@@ -194,6 +195,25 @@ The Persona Review pass of `/sdlc-studio review` uses this window to decide whet
 | `staleness_days` | 90 | Days without a touch before a persona is flagged stale |
 
 A project where personas are consulted rarely by design (e.g. stable archetypes) can extend this; a project where personas are expected to be high-touch can shorten it. See `reference-review.md` for the cross-doc check that reads this value.
+
+---
+
+## Skill Source Repo {#skill-source-repo}
+
+Where a **promoted** lesson (`lessons add --global`) is written.
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| `skill_source_repo` | unset | Path to the sdlc-studio source checkout that `add --global` writes into |
+
+An installed or vendored skill copy is a deployment artefact: an update replaces the whole folder, so a lesson authored inside it is destroyed and nothing warns you. `lessons add --global` therefore writes only where git actually holds the file - inside a work tree, not gitignored, and with the lessons registry (`_index.md`) version-controlled - and refuses otherwise (non-zero exit, naming the reason and the remedy) instead of reporting a success it did not achieve. Work-tree membership alone is not enough: a vendored `.claude/skills/` copy is inside the consuming project's work tree and is normally gitignored.
+
+```text
+# sdlc-studio/.config.yaml
+skill_source_repo: ~/code/sdlc-studio
+```
+
+With the key set, a promoted lesson lands in `<skill_source_repo>/.claude/skills/sdlc-studio/lessons/`, `git status` in that repo shows it, and committing it ships the lesson with the next skill release. Unset, promotion is refused and the project tier (`sdlc-studio/.local/lessons.md`, the default, no config needed) still works. See `reference-agentic-lessons.md#lessons-accumulation`.
 
 ---
 

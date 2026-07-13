@@ -274,10 +274,36 @@ python3 "$CLAUDE_SKILL_DIR/scripts/lessons.py" prune --older EP0003
 
 The script creates the file (with header) on first append, assigns
 the next L-NNNN, inserts the entry at the top, and refreshes
-`**Last Updated:**`. Promotion to the cross-project tier is
-`add --global` (next LL id from `lessons/_template.md`, index row
-appended); whether a lesson *generalises* enough to promote stays a
-judgement call - see `help/lessons.md`.
+`**Last Updated:**`.
+
+### The project tier is the default; `--global` is the promotion
+
+A lesson learned on one project is not automatically true on the next. Record
+it where it was learned - `lessons add`, no flag - and promote it only once it
+clearly generalises beyond this repo. Cheap and reversible; the reverse (a local
+quirk asserted as a cross-project rule) is neither.
+
+Promotion is `add --global`: next LL id from `lessons/_template.md`, index row
+appended. It writes **only where git actually holds the file** - the lessons
+registry it appends to must be version-controlled, not merely sitting inside a
+work tree. Membership alone is not survival: a vendored skill copy under the
+consuming project's `.claude/skills/` is inside that work tree and is normally
+gitignored, so git never sees the lesson and the next install deletes it. An
+installed or vendored copy is a deployment artefact - the update replaces the
+folder - so `add --global` refuses that write (non-zero exit, naming the reason
+and the remedy) rather than reporting a success it did not achieve.
+
+Give promotion a tracked destination in the project's `sdlc-studio/.config.yaml`:
+
+```yaml
+skill_source_repo: ~/code/sdlc-studio   # the sdlc-studio source checkout
+```
+
+The lesson lands in that checkout's `.claude/skills/sdlc-studio/lessons/`,
+`git status` shows it, and the commit that lands it ships it with the next skill
+release. That commit is the whole promotion mechanism - nothing else "blesses" a
+lesson into a release. Whether a lesson generalises enough to promote stays a
+judgement call: see `help/lessons.md` and `reference-config.md#skill-source-repo`.
 
 ### File format
 

@@ -75,6 +75,7 @@ any of them is an error. For a mechanical task, reach for the script first
 | Change a status (+ index/epic cascade) | `scripts/transition.py set --id CR0001 --status Approved` |
 | Verify a story's executable ACs | `scripts/verify_ac.py` |
 | Run the portable CI gate | `scripts/gate.py` |
+| Gate a release tag (gate + executing AC verify, one exit code) | `scripts/gate.py --release` |
 
 The interactive commands (`/sdlc-studio bug create` and friends) are wrappers over the
 same allocation - a headless or consuming-project agent calls the scripts directly.

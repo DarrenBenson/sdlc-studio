@@ -39,5 +39,5 @@ and from per-project memory (project-specific facts).
 
 - IDs are global and zero-padded: `LL{NNNN}`. Files: `LL{NNNN}-{slug}.md`.
 - A lesson = **generalisable** wisdom (what to do differently next time, anywhere). A project fact (a config path, an incident, a box name) is **memory**, not a lesson.
-- This folder ships with the skill, so the seed set is release-curatable; Claudes add to it as they work, and additions are blessed into the next skill release.
+- This folder ships with the skill, so the seed set is release-curatable. An addition reaches the next release exactly one way: `lessons add --global` writes it into the skill **source checkout** (`skill_source_repo` in the project's `.config.yaml`), and someone commits it there. There is no other blessing path - and a write into an installed copy is refused, not silently lost, because a skill update replaces that folder wholesale.
 - Format: see `_template.md`. Mechanism + recall/promote hooks: `help/lessons.md` + `reference-agentic-lessons.md`.

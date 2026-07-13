@@ -1,6 +1,6 @@
 # CR-0233: gate --release: one command that cannot be misread before a tag
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Target:** v4.1
 > **Priority:** High
 > **Type:** Improvement

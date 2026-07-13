@@ -46,9 +46,16 @@ rules, the agents/services) live in that project's agent-instructions file
    backstop. Cutting this corner costs more downstream (it always surfaces as a
    same-day drift discovery).
 
-5. **`reconcile --verify` before every release tag.** Executes each story's
-   `Verify:` DSL; fails the gate on any `no`/`stale`. This is what makes "Done" mean
-   done. Author a `Verify:` line on every AC.
+5. **One command before every release tag: `scripts/gate.py --release`.** The standard gate
+   PLUS an executing pass over every story's `Verify:` DSL, failing as ONE exit code and
+   naming every red AC. So tagging over a rotted verify layer means ignoring a failing
+   command, rather than misreading a passing-looking one - the gate and the verify run are
+   no longer two exit codes an operator has to remember to read. The lane **executes** the
+   verifiers rather than reading the stored report (a merged report carries a stale green
+   forward), and writes nothing back. **Nothing to prove is not proof:** no stories, no
+   executable `Verify:` line, or a verifier the trust boundary refused to run all FAIL the
+   lane, and deselecting it under `--release` is refused rather than honoured. This is what
+   makes "Done" mean done. Author a `Verify:` line on every AC.
 
 6. **Full review set between releases – including a CODE leg.** A fast ship train
    accumulates drift that mechanical reconcile and doc-only review both miss. Run

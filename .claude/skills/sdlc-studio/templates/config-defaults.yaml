@@ -112,6 +112,16 @@ status_vocab: {}
 conformance:
   adopt_after: null
 
+# Skill source checkout. Where `lessons add --global` writes a promoted (cross-project)
+# lesson. The INSTALLED skill is a deployment artefact - the next skill update replaces it
+# wholesale - so a lesson authored there is destroyed. Point this at your sdlc-studio source
+# checkout and the lesson lands in a version-controlled file that `git status` shows, and
+# ships with the next release once committed. Unset, `add --global` refuses to write into an
+# untracked install and tells you why; the project tier (`sdlc-studio/.local/lessons.md`,
+# the default) always works and needs no config.
+# Example: skill_source_repo: ~/code/sdlc-studio
+skill_source_repo: null
+
 # Persona staleness window (in days). A persona without a consult / story / CR
 # reference older than this is flagged in the Persona Review pass of
 # `/sdlc-studio review`. See reference-review.md.

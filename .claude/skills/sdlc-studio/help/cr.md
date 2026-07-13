@@ -24,10 +24,17 @@ SDLC Studio is model-invoked - say it in plain language:
 ## File a CR non-interactively (the canonical path)
 
 ```bash
-python3 <skill>/scripts/artifact.py new --type cr --title "Add search to the catalogue"
+python3 <skill>/scripts/artifact.py new --type cr --title "Add search to the catalogue" \
+  --impact "who this affects and what breaks" --effort M
 python3 <skill>/scripts/file_finding.py file --type cr --title "..." --summary "..." \
-  --priority High --ac "- [ ] ..."   # when you already have criteria
+  --priority High --ctype Improvement --impact "..." --effort M \
+  --ac "- [ ] ..."                   # when you already have criteria
 ```
+
+Every CR carries an impact statement and an effort estimate (`S`, `M` or `L`) - the
+validator demands both, so the filer demands them of you rather than minting a CR that
+fails its own check. `--author "Name; type; version"` stamps the authorship of record;
+absent, the invoking agent is stamped.
 
 Ids and index rows are **tool-allocated** - hand-authoring either is an error
 (collision safety under concurrency and rebase). The interactive `/sdlc-studio cr create`

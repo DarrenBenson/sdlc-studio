@@ -1,6 +1,6 @@
 # BG0111: Lessons written by lessons.py are lost on the next skill update, and project-specific lessons are dumped into the shared cross-project registry
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Verification depth:** functional
 > **Created:** 2026-07-13

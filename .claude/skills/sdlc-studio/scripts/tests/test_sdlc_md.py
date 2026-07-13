@@ -294,7 +294,8 @@ class RemediationTests(unittest.TestCase):
         expected = {
             "conformance": {"decomposed", "specified", "verifiable", "verified", "reconciled", "critiqued"},
             "integrity": {"missing-required", "dangling"},
-            "audit": {"weak-AC", "unmet-deps", "already-terminal", "link-integrity", "underspecified", "not-found"},
+            "audit": {"weak-AC", "unmet-deps", "unresolved-deps", "already-terminal",
+                      "link-integrity", "underspecified", "not-found"},
             "reconcile": {"status-mismatch", "missing-row", "orphan-row", "missing-index", "count-mismatch"},
         }
         for check, kinds in expected.items():

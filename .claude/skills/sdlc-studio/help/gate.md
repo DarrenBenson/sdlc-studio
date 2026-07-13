@@ -10,6 +10,7 @@ SDLC Studio is model-invoked - say it in plain language:
 | --- | --- |
 | "Are we clear to commit this?" | `/sdlc-studio gate` |
 | "Run the quality checks before I push" | `/sdlc-studio gate` |
+| "Are we clear to tag?" | `/sdlc-studio gate --release` |
 | "Just check the index and drift, nothing else" | `/sdlc-studio gate --only reconcile,duplicate-id` |
 | "Skip the principles check this time" | `/sdlc-studio gate --skip constitution` |
 | "Give me the gate result as JSON for the pipeline" | `/sdlc-studio gate --format json` |
@@ -21,12 +22,65 @@ any CI (or a pre-commit hook) to enforce the discipline on a consuming project's
 
 ```bash
 python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --root .          # run all checks, exit 1 on a blocking failure
+python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --root . --release  # pre-tag: the same gate + an executing AC verify pass
 python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --only conformance,reconcile
 python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --skip constitution --format json
 ```
 
 Prints a consolidated report and exits non-zero only when a **blocking** check fails; a non-blocking
 failure is reported (`warn`) but does not fail the gate. No network, no CI/cloud assumption.
+
+## `--release`: the one command before a tag
+
+The pre-tag ritual is otherwise two commands - the gate, plus a separate verify run whose exit
+code you have to remember not to discard. `--release` makes it one:
+
+```bash
+python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --root . --release || exit 1   # do not tag on a red exit
+```
+
+It adds a blocking `verify` lane to the standard gate:
+
+- **It executes.** Every story's `Verify:` expression is run *now*. It does not read the stored
+  `verify-report.json`, because a merged report carries a story's last green forward until
+  something re-runs it - and a stale green is exactly how a rotted verify layer reaches a tag.
+- **It writes nothing.** No `- **Verified:**` back-annotation, no report rewrite. The gate stays
+  read-only, so it is safe from a hook and safe to run twice.
+- **It names the failures.** `2 red AC(s): US0001::AC3 (pytest tests/test_x.py::test_y), ...` -
+  and the whole thing is one exit code, so tagging over a red AC layer means *ignoring a failing
+  command* rather than misreading a passing-looking one.
+- **You cannot deselect the lane and keep the verdict.** `--release --skip verify` (or an
+  `--only` that leaves it out) is **refused**, not honoured: a release PASS printed over an
+  unexamined AC layer is the passing-looking command this mode exists to abolish. Want the AC
+  layer left alone? That is the standard gate - drop `--release`.
+
+### Nothing to prove is not proof
+
+The lane fails, rather than passing quietly, when it has examined nothing:
+
+| Situation | Lane says |
+| --- | --- |
+| No stories under `sdlc-studio/stories` | FAIL - wrong `--root`, or a moved directory |
+| Stories, but not one executable `Verify:` line | FAIL - so *deleting* a rotted `Verify:` line can never be the way to a green gate |
+| A verifier the trust boundary refused to run | FAIL, reported **BLOCKED**, never red (see below) |
+
+### The trust boundary (`--allow-external`)
+
+A story stamped `Provenance: external` does not get to reach a shell: its `shell` / `http` / `eval`
+verifiers are **not executed** (`reference-verify.md`). The lane reports those ACs as **unproven -
+BLOCKED**, never as red, because an unrun verifier is not evidence about the code - calling it a
+failing AC sends you to debug a verifier that works. Unproven still fails the gate. Pass
+`--allow-external` to run them once you trust the content; the AC then goes green or red on its
+own merits.
+
+### Speed
+
+`--verify-batch` runs jest **once** and resolves jest verifiers from the cached result, instead of
+a cold start per AC. Worth it on any JS project with more than a handful of jest ACs - a slow
+pre-tag command is one people route around.
+
+A green `--release` is the *mechanical* half of the pre-tag checklist. The judgement items still
+belong to the operator - see `templates/workflows/release-gate.md`.
 
 ### The checks
 
@@ -36,9 +90,12 @@ failure is reported (`warn`) but does not fail the gate. No network, no CI/cloud
 | **Index consistency** | `reconcile` (file-census drift), `duplicate-id` | yes |
 | **Provenance** | `provenance` (tool-created stamps) | only when `provenance.enforce` |
 | **Skill docs (skill repo only)** | `doc-coverage` (every command/script documented), `disclosure` (progressive-disclosure hygiene), `doc-freshness` (LATEST.md vs reality) | doc-coverage yes; disclosure + doc-freshness advisory |
+| **Executable ACs (`--release` only)** | `verify` (executes every story's `Verify:` expression) | yes |
 
 The four **artifact-quality** checks are the ones that police every artifact; the rest guard the
-index, provenance, and the skill's own docs. `--only` / `--skip` select a subset.
+index, provenance, and the skill's own docs. `--only` / `--skip` select a subset. The `verify`
+lane only joins the registry under `--release` (it runs test suites; the standard gate stays fast
+and read-only for a pre-commit hook).
 
 ## CI wiring (the gate is the mechanism; these are just examples)
 

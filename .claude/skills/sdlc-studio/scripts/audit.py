@@ -6,7 +6,11 @@ clean, verifiable batch. Per unit it flags, deterministically:
 
 - **weak-AC**       - no checkable AC, or the tautology placeholder (the
                       vacuous-pass class the downstream verify/conformance miss),
-- **unmet-deps**    - a `Depends on` referent that is not yet delivered,
+- **unmet-deps**    - a `Depends on` referent that is not yet delivered. Referents resolve
+                      in-repo first, then across the sibling repos a PVD product manifest
+                      names, so a cross-repo dependency delivered elsewhere counts as met,
+- **unresolved-deps** - a referent the audit could not check at all because the manifest's
+                      sibling checkout is not on disk (named, never silently passed),
 - **already-terminal** - already Complete/Superseded/Done (close, do not re-work),
 - **missing-regression-test** - a Fixed/Done bug whose recorded tests carry no
                       integration/regression-level case (name-signal only; the seam
@@ -26,7 +30,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import conventions, sdlc_md  # noqa: E402
+from lib import conventions, sdlc_md, xrepo  # noqa: E402  (xrepo: cross-repo id resolution)
 import integrity  # noqa: E402  (sibling script; scripts dir is on sys.path)
 import sprint  # noqa: E402
 import verify_ac  # noqa: E402  (reuse the Verify-line lint)
@@ -79,27 +83,36 @@ def _bug_underspecified(text: str, root: Path | None = None) -> bool:
     return not (has_repro and has_fix)
 
 
-def _unmet_deps(root: Path, text: str) -> list[str]:
-    """Referents of `Depends on` that are not yet delivered."""
+def _unmet_deps(root: Path, text: str) -> tuple[list[str], list[str]]:
+    """(unmet, unresolved) referents of `Depends on`.
+
+    Resolution runs through the shared `xrepo` helper, so a multi-repo product's real edge is
+    seen: a referent delivered in another repo of the PVD manifest MEETS the dependency
+    instead of being reported unmet. The two lists are distinct claims, never collapsed -
+    `unmet` says the referent exists and is not delivered (or is dead), `unresolved` says the
+    audit could not check it because the sibling checkout named in the manifest is not on
+    disk. The second is reported with the repo and path named, so it can be neither a silent
+    pass nor mistaken for a delivery failure.
+    """
     val = sdlc_md.extract_field(text, "Depends on") or sdlc_md.extract_field(text, "Depends On")
     if not val or integrity._is_blank(val):
-        return []
+        return [], []
+    repos = xrepo.manifest_repos(root)
     unmet: list[str] = []
+    unresolved: list[str] = []
     for ref in sorted({sdlc_md.norm_id(r) for r in sdlc_md.ID_SEARCH_RE.findall(val)}):
-        found = find_artifact(root, ref)
-        if found is None:
-            unmet.append(f"{ref}:missing")
-            continue
-        path, type_ = found
-        st = sdlc_md.canonical_status(
-            sdlc_md.extract_field(path.read_text(encoding="utf-8"), "Status"),
-            sdlc_md.status_vocab(type_, root),
-        ) or "Unknown"
-        if st in DEAD:
+        r = xrepo.resolve(ref, Path(root), repos)
+        st = r["status"]
+        if st is None:  # resolved nowhere: absent sibling checkout, or no such id at all
+            if r["error"] == xrepo.MISSING:
+                unmet.append(f"{ref}:missing")
+            else:
+                unresolved.append(f"{ref}: {r['error']}")
+        elif st in DEAD:
             unmet.append(f"{ref}:{st}(dead)")
         elif st not in MET:
             unmet.append(f"{ref}:{st}")
-    return unmet
+    return unmet, unresolved
 
 
 def _already_satisfied(root: Path, rid: str) -> bool:
@@ -173,7 +186,7 @@ def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None 
     if cross_epic_ids and sdlc_md.norm_id(rid) in cross_epic_ids:  # cross-epic AC leakage
         issues.append("cross-epic-ac")
     info: list[str] = []
-    unmet = _unmet_deps(root, text)
+    unmet, unresolved = _unmet_deps(root, text)
     if unmet and batch_ids:
         # only a PENDING in-batch dep is the planner's sequencing at work; a dead
         # (Rejected/Superseded) or missing dep cannot be delivered by wave order.
@@ -185,6 +198,8 @@ def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None 
         info.extend(f"sequenced-in-batch: {u.split(':')[0]}" for u in sequenced)
     if unmet:
         issues.append("unmet-deps: " + ", ".join(unmet))
+    if unresolved:  # the checkout is absent, so the dependency could not be checked either way
+        issues.append("unresolved-deps: " + ", ".join(unresolved))
     if status in integrity.TERMINAL:
         issues.append("already-terminal")
     if integrity_errors and rid in integrity_errors:

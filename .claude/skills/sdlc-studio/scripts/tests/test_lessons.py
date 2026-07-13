@@ -9,10 +9,15 @@ import contextlib
 import importlib.util
 import io
 import json
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the shared gitutil helper
+import gitutil  # noqa: E402
 
 SCRIPT_PATH = Path(__file__).resolve().parent.parent / "lessons.py"
 _spec = importlib.util.spec_from_file_location("lessons", SCRIPT_PATH)
@@ -63,13 +68,39 @@ def _run(argv: list[str]) -> tuple[int, str, str]:
     return rc, out.getvalue(), err.getvalue()
 
 
-def _make_skill_tier(root: Path) -> Path:
-    d = root / "lessons"
-    d.mkdir(parents=True)
+def _registry(d: Path) -> Path:
+    """The registry files a skill-tier lessons directory must hold."""
+    d.mkdir(parents=True, exist_ok=True)
     (d / "_template.md").write_text(TEMPLATE, encoding="utf-8")
     (d / "_index.md").write_text(INDEX, encoding="utf-8")
     (d / "LL0001-census-first.md").write_text("# LL0001\n", encoding="utf-8")
     (d / "LL0003-schema-alignment.md").write_text("# LL0003\n", encoding="utf-8")
+    return d
+
+
+def _make_skill_tier(root: Path, *, tracked: bool = True) -> Path:
+    """A skill-tier lessons registry under `root`.
+
+    `tracked=True` (the default) makes `root` a git work tree with the registry ADDED to
+    the index, because a skill-tier write is only real when git actually version-controls
+    the destination; `tracked=False` reproduces the untracked install the guard must refuse.
+    """
+    d = _registry(root / "lessons")
+    if tracked:
+        gitutil.git(["init", "-q"], cwd=root)
+        gitutil.git(["add", "-A"], cwd=root)
+    return d
+
+
+def _make_source_checkout(root: Path) -> Path:
+    """A git checkout shaped like the sdlc-studio SOURCE repo: the repo-only markers a
+    release is cut from, plus the skill payload at its canonical path."""
+    (root / "tools").mkdir(parents=True)
+    (root / "install.sh").write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+    (root / "tools" / "validate_skill.py").write_text("# guard\n", encoding="utf-8")
+    d = _registry(root / ".claude" / "skills" / "sdlc-studio" / "lessons")
+    gitutil.git(["init", "-q"], cwd=root)
+    gitutil.git(["add", "-A"], cwd=root)
     return d
 
 
@@ -468,11 +499,17 @@ class CmdAddFormattingTests(unittest.TestCase):
 
 
 class CmdAddGlobalErrorTests(unittest.TestCase):
+    """A tracked destination whose registry is incomplete: each missing part reports itself."""
+
+    def setUp(self) -> None:
+        _requires_git(self)
+
     def test_missing_template_errors(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             ldir = Path(d) / "lessons"
             ldir.mkdir()
             (ldir / "_index.md").write_text(INDEX, encoding="utf-8")
+            gitutil.git(["init", "-q"], cwd=Path(d))
             rc, _, err = _run(["add", "--global", "--title", "T", "--body", "B",
                                "--lessons-dir", str(ldir)])
             self.assertEqual(rc, 1)
@@ -483,6 +520,7 @@ class CmdAddGlobalErrorTests(unittest.TestCase):
             ldir = Path(d) / "lessons"
             ldir.mkdir()
             (ldir / "_template.md").write_text(TEMPLATE, encoding="utf-8")
+            gitutil.git(["init", "-q"], cwd=Path(d))
             rc, _, err = _run(["add", "--global", "--title", "T", "--body", "B",
                                "--lessons-dir", str(ldir)])
             self.assertEqual(rc, 1)
@@ -741,6 +779,187 @@ class SummaryTests(unittest.TestCase):
             first = out.read_text(encoding="utf-8")
             lessons.main(["summary", "--project-file", str(p), "--out", str(out)])
             self.assertEqual(out.read_text(encoding="utf-8"), first)  # byte-identical
+
+
+def _requires_git(case: unittest.TestCase) -> None:
+    if shutil.which("git") is None:
+        case.skipTest("git not available")
+
+
+class TrackedDestinationTests(unittest.TestCase):
+    """A skill-tier lesson must land somewhere version-controlled, or the write is refused.
+
+    The installed skill (`~/.claude/skills/sdlc-studio/`) is not a git work tree: a lesson
+    written there is destroyed by the next skill update. Writing it and reporting success is
+    the false-green failure LL0008 forbids.
+    """
+
+    def setUp(self) -> None:
+        _requires_git(self)
+
+    def test_global_add_into_untracked_dir_fails_loud(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            ldir = _make_skill_tier(Path(d), tracked=False)
+            before = (ldir / "_index.md").read_text(encoding="utf-8")
+            rc, out, err = _run(["add", "--global", "--title", "Doomed lesson",
+                                 "--body", "B", "--lessons-dir", str(ldir)])
+            self.assertNotEqual(rc, 0, "writing to an untracked install must not exit 0")
+            self.assertNotIn("Wrote", out)  # never report a success it did not achieve
+            self.assertIn("git work tree", err)
+            self.assertIn(str(ldir), err)
+            self.assertIn("skill_source_repo", err)  # the remedy, not just the refusal
+            # Nothing authored: no lesson file, and the index is byte-identical.
+            self.assertEqual(list(ldir.glob("LL0004-*.md")), [])
+            self.assertEqual((ldir / "_index.md").read_text(encoding="utf-8"), before)
+
+    def test_global_add_into_git_work_tree_succeeds(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            ldir = _make_skill_tier(Path(d), tracked=True)
+            rc, out, _ = _run(["add", "--global", "--title", "Kept lesson",
+                               "--body", "B", "--lessons-dir", str(ldir)])
+            self.assertEqual(rc, 0)
+            self.assertIn("Wrote LL0004", out)
+            self.assertTrue((ldir / "LL0004-kept-lesson.md").is_file())
+
+    def test_global_add_into_a_gitignored_dir_inside_a_work_tree_fails_loud(self) -> None:
+        # The install.sh --local case: the skill is vendored to `.claude/skills/` INSIDE the
+        # consuming project's work tree, and that path is gitignored. Work-tree membership
+        # says "tracked"; git never sees the file, and the next install deletes it.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            ldir = _registry(root / ".claude" / "skills" / "sdlc-studio" / "lessons")
+            (root / ".gitignore").write_text(".claude/skills/\n", encoding="utf-8")
+            gitutil.git(["init", "-q"], cwd=root)
+            gitutil.git(["add", "-A"], cwd=root)
+            before = (ldir / "_index.md").read_text(encoding="utf-8")
+
+            rc, out, err = _run(["add", "--global", "--title", "Silently lost",
+                                 "--body", "B", "--lessons-dir", str(ldir)])
+            self.assertNotEqual(rc, 0, "a gitignored destination must not exit 0")
+            self.assertNotIn("Wrote", out)
+            self.assertIn("ignores", err)
+            self.assertEqual(list(ldir.glob("LL0004-*.md")), [])
+            self.assertEqual((ldir / "_index.md").read_text(encoding="utf-8"), before)
+
+    def test_global_add_where_the_registry_is_not_version_controlled_fails_loud(self) -> None:
+        # Inside a work tree, not ignored, but the registry was never added to the index:
+        # git does not version-control it, so the write cannot be relied on to survive.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            ldir = _make_skill_tier(root, tracked=False)
+            gitutil.git(["init", "-q"], cwd=root)  # work tree, but nothing added
+            rc, out, err = _run(["add", "--global", "--title", "T", "--body", "B",
+                                 "--lessons-dir", str(ldir)])
+            self.assertNotEqual(rc, 0)
+            self.assertNotIn("Wrote", out)
+            self.assertIn("does not track", err)
+            self.assertEqual(list(ldir.glob("LL0004-*.md")), [])
+
+    def test_running_skill_fallback_refuses_a_vendored_copy(self) -> None:
+        # The fallback destination is the RUNNING skill's lessons/. A vendored copy committed
+        # inside some consuming project is a tracked git work tree, but committing there ships
+        # nothing with any release and the next install replaces the folder.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            vendored = _registry(root / ".claude" / "skills" / "sdlc-studio" / "lessons")
+            gitutil.git(["init", "-q"], cwd=root)
+            gitutil.git(["add", "-A"], cwd=root)
+            proj = root / "project"
+            proj.mkdir()
+            orig = lessons.SKILL_LESSONS_DIR
+            lessons.SKILL_LESSONS_DIR = vendored
+            try:
+                rc, out, err = _run(["add", "--global", "--title", "T", "--body", "B",
+                                     "--root", str(proj)])
+            finally:
+                lessons.SKILL_LESSONS_DIR = orig
+            self.assertNotEqual(rc, 0, "a vendored skill copy is not the skill source repo")
+            self.assertNotIn("Wrote", out)
+            self.assertNotIn("skill release", out)  # never claim a release it cannot reach
+            self.assertIn("skill_source_repo", err)
+            self.assertEqual(list(vendored.glob("LL0004-*.md")), [])
+
+    def test_running_skill_fallback_accepts_the_source_checkout(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            src = _make_source_checkout(root / "sdlc-studio")
+            proj = root / "project"
+            proj.mkdir()
+            orig = lessons.SKILL_LESSONS_DIR
+            lessons.SKILL_LESSONS_DIR = src
+            try:
+                rc, out, err = _run(["add", "--global", "--title", "From source",
+                                     "--body", "B", "--root", str(proj)])
+            finally:
+                lessons.SKILL_LESSONS_DIR = orig
+            self.assertEqual(rc, 0, err)
+            self.assertTrue((src / "LL0004-from-source.md").is_file())
+
+    def test_global_add_resolves_skill_source_repo_from_config(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            # The skill SOURCE checkout (a real git work tree), laid out as the repo is.
+            src = root / "src-repo"
+            skill = src / ".claude" / "skills" / "sdlc-studio"
+            _make_source_checkout(src)
+            # The consuming project, whose config points at that checkout.
+            proj = root / "project"
+            (proj / "sdlc-studio").mkdir(parents=True)
+            (proj / "sdlc-studio" / ".config.yaml").write_text(
+                f"skill_source_repo: {src}\n", encoding="utf-8")
+
+            rc, out, err = _run(["add", "--global", "--title", "Promoted lesson",
+                                 "--body", "B", "--tags", "process",
+                                 "--root", str(proj)])
+            self.assertEqual(rc, 0, err)
+            dest = skill / "lessons" / "LL0004-promoted-lesson.md"
+            self.assertTrue(dest.is_file(), "the lesson must land in the source checkout")
+            self.assertIn(str(dest), out)
+            # AC: `git status` in the source repo shows it.
+            status = subprocess.run(
+                ["git", "status", "--porcelain", "--untracked-files=all"], cwd=str(src),
+                capture_output=True, text=True, env=gitutil.git_env())
+            self.assertIn("LL0004-promoted-lesson.md", status.stdout)
+
+    def test_skill_source_repo_without_a_registry_fails_loud(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            src = root / "empty-repo"
+            src.mkdir()
+            gitutil.git(["init", "-q"], cwd=src)
+            proj = root / "project"
+            (proj / "sdlc-studio").mkdir(parents=True)
+            (proj / "sdlc-studio" / ".config.yaml").write_text(
+                f"skill_source_repo: {src}\n", encoding="utf-8")
+            rc, out, err = _run(["add", "--global", "--title", "T", "--body", "B",
+                                 "--root", str(proj)])
+            self.assertNotEqual(rc, 0)
+            self.assertNotIn("Wrote", out)
+            self.assertIn("skill_source_repo", err)
+            self.assertIn(str(src), err)
+
+    def test_resolver_falls_back_to_the_running_skill_without_config(self) -> None:
+        # No config key: the destination is the running skill's own lessons/ dir. The guard
+        # then decides - tracked in a source checkout, refused in an installed copy.
+        with tempfile.TemporaryDirectory() as d:
+            path, source = lessons.resolve_global_dir(None, d)
+            self.assertEqual(path, lessons.SKILL_LESSONS_DIR)
+            self.assertIn("running skill", source)
+
+    def test_untracked_reason_names_each_way_a_write_is_lost(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            ldir = _make_skill_tier(root, tracked=False)
+            # 1. No git at all: the installed skill.
+            self.assertIn("work tree", lessons.untracked_reason(ldir) or "")
+            # 2. A work tree, but the registry is not in the index.
+            gitutil.git(["init", "-q"], cwd=root)
+            self.assertIn("does not track", lessons.untracked_reason(ldir) or "")
+            # 3. Registry version-controlled: safe.
+            gitutil.git(["add", "-A"], cwd=root)
+            self.assertIsNone(lessons.untracked_reason(ldir))
+            self.assertTrue(lessons.is_tracked_destination(ldir))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -491,6 +491,7 @@ REMEDIATION: dict[str, dict[str, str]] = {
         "weak-AC": "replace the placeholder/empty AC with concrete, checkable acceptance criteria",
         "underspecified": "add Steps to Reproduce and a Proposed Fix to the bug",
         "unmet-deps": "deliver or re-order the dependency first (it is not yet done)",
+        "unresolved-deps": "check out the sibling repo the product manifest names (or fix its path) - the dependency could not be checked either way",
         "already-terminal": "already Complete/Done - drop it from the batch",
         "link-integrity": "fix the artifact's required links (see the integrity check)",
         "not-found": "the id matches no artifact on disk - check the batch list",
@@ -734,6 +735,39 @@ def parse_authorship(text: str, field: str = "Raised-by") -> dict | None:
     resolver treats `type` as one of human | persona | agent - persona today, agent later,
     with no schema change."""
     return parse_authorship_value(extract_field(text, field))
+
+
+AUTHOR_TYPES = ("human", "persona", "agent")
+# The identity a creator stamps when the caller named nobody: the tool acted on an agent's
+# behalf, and says so rather than attributing the artefact to a person who did not raise it.
+DEFAULT_AGENT_AUTHOR = "sdlc-studio; agent; v1"
+
+
+def authorship_value(author: str | None, repo_root) -> str:
+    """The `Name; type; version` authorship a creator stamps as `Raised-by`.
+
+    One resolver for every creation path, so a minted artefact always satisfies the
+    schema-v3 authorship rule. `author` may be a typed triple (`Dani Okafor; agent; v2` -
+    carried verbatim) or a bare name, whose type is inferred: `persona` when it resolves to
+    a persona document, else `human` (a named author is a person until a persona says
+    otherwise). With no author at all, the invoking agent's identity is used - `SDLC_AUTHOR`
+    from the environment when set, else the tool's own. An unknown type raises rather than
+    minting an artefact the validator will reject.
+    """
+    raw = (author or "").strip() or os.environ.get("SDLC_AUTHOR", "").strip() \
+        or DEFAULT_AGENT_AUTHOR
+    parsed = parse_authorship_value(raw) or {}
+    name = (parsed.get("name") or "").strip()
+    if not name:
+        parsed = parse_authorship_value(DEFAULT_AGENT_AUTHOR)
+        name = parsed["name"]
+    atype = (parsed.get("type") or "").strip().lower()
+    if not atype:
+        atype = "persona" if resolve_author(name, "persona", repo_root) else "human"
+    if atype not in AUTHOR_TYPES:
+        raise ValueError(f"author type {atype!r} must be one of {' | '.join(AUTHOR_TYPES)} "
+                         f"(pass --author 'Name; type; version')")
+    return f"{name}; {atype}; {(parsed.get('version') or '').strip() or 'v1'}"
 
 
 def resolve_author(name: str, atype: str, repo_root) -> bool:

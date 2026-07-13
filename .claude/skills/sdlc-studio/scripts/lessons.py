@@ -4,10 +4,19 @@
 Two lesson tiers (see help/lessons.md and reference-agentic-lessons.md):
 
   Project tier  `sdlc-studio/.local/lessons.md` in the consuming project -
-                transient agentic-wave failure memory, reverse-chronological
-                `## L-NNNN:` entries, never committed.
+                the DEFAULT tier: agentic-wave failure memory for this repo,
+                reverse-chronological `## L-NNNN:` entries.
   Skill tier    the skill's own `lessons/` folder - durable, generalisable
-                `LL{NNNN}-{slug}.md` lessons indexed in `_index.md`.
+                `LL{NNNN}-{slug}.md` lessons indexed in `_index.md`. Reached
+                with `--global`, the deliberate promotion, never the reflex.
+
+`add --global` only ever writes where git will actually hold the file: the lessons
+registry it appends to must be version-controlled (not merely sitting inside a work
+tree - a gitignored vendored install passes that and is still invisible to git). An
+installed or vendored copy is a deployment artefact, replaced wholesale by the next
+skill update, so a lesson authored there is deleted; the write is refused rather than
+falsely reported. Set `skill_source_repo` in the project's `sdlc-studio/.config.yaml`
+to give `--global` the skill SOURCE checkout to write to.
 
 Subcommands:
   list    Print project-tier lessons (newest first); --global for the skill tier.
@@ -23,7 +32,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -32,6 +43,11 @@ from lib import sdlc_md  # noqa: E402
 
 DEFAULT_PROJECT_FILE = "sdlc-studio/.local/lessons.md"
 SKILL_LESSONS_DIR = Path(__file__).resolve().parent.parent / "lessons"
+SOURCE_REPO_KEY = "skill_source_repo"
+RUNNING_SKILL = "the running skill"
+# Repo-only files a release is cut from: present in the sdlc-studio SOURCE checkout, absent
+# from every installed or vendored copy of the skill payload.
+SOURCE_MARKERS = ("install.sh", "tools/validate_skill.py")
 
 PROJECT_ENTRY_RE = re.compile(r"^##\s+(L-\d{4}):\s*(.+?)\s*$")
 FIELD_BULLET_RE = re.compile(r"^-\s+\*\*([^*]+):\*\*\s*(.*)$")
@@ -206,6 +222,136 @@ def append_index_row(index_path: Path, id_: str, filename: str, title: str,
 
 
 # -----------------------------------------------------------------------------
+# Skill tier: a tracked destination, or nothing
+# -----------------------------------------------------------------------------
+
+
+class ResolveError(Exception):
+    """The skill-tier destination could not be resolved to a real lessons registry."""
+
+
+def _git(args: list[str], cwd: Path) -> subprocess.CompletedProcess | None:
+    """Run git in `cwd`, or None when it cannot be run at all."""
+    # Scrub repo-redirecting env: a run from inside another repo's hook would otherwise make
+    # git answer for THAT repo, not for the destination directory.
+    env = {k: v for k, v in os.environ.items()
+           if k not in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE")}
+    try:
+        return subprocess.run(["git", "-C", str(cwd), *args], capture_output=True, text=True,
+                              timeout=10, env=env, check=False)
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
+def _git_ok(args: list[str], cwd: Path) -> bool:
+    """True when git ran and exited 0."""
+    proc = _git(args, cwd)
+    return proc is not None and proc.returncode == 0
+
+
+def untracked_reason(lessons_dir: Path) -> str | None:
+    """Why a lesson written into `lessons_dir` would not survive, or None when git holds it.
+
+    Work-tree MEMBERSHIP is not enough: a gitignored directory inside a work tree passes
+    `rev-parse --is-inside-work-tree` while git never sees a single file in it, so the next
+    update deletes the lesson exactly as an install would. The proof that git will hold the
+    write is that git already holds the registry the write joins - the `_index.md` this
+    lesson's row is appended to must be in the index. Anything unprovable (git absent, git
+    erroring) counts as unheld: the write is refused, never reported as a success it cannot
+    stand behind.
+    """
+    if not lessons_dir.is_dir():
+        return f"{lessons_dir} does not exist"
+    inside = _git(["rev-parse", "--is-inside-work-tree"], lessons_dir)
+    if inside is None or inside.returncode != 0 or inside.stdout.strip() != "true":
+        return "it is not inside a git work tree"
+    if _git_ok(["check-ignore", "-q", "."], lessons_dir):
+        return ("git ignores it (a gitignore rule matches the directory), so a file written "
+                "there is invisible to git")
+    if not _git_ok(["ls-files", "--error-unmatch", "_index.md"], lessons_dir):
+        return (f"git does not track its registry ({lessons_dir / '_index.md'}), so a lesson "
+                "written beside it is not version-controlled either")
+    return None
+
+
+def is_tracked_destination(lessons_dir: Path) -> bool:
+    """True when git version-controls the lessons registry in `lessons_dir`."""
+    return untracked_reason(Path(lessons_dir)) is None
+
+
+def is_skill_source_checkout(lessons_dir: Path) -> bool:
+    """True when `lessons_dir` is the registry of an sdlc-studio SOURCE checkout - the repo a
+    release is cut from - rather than a copy vendored into some other project.
+
+    A vendored install (`install.sh --local` puts one inside the consuming project's work
+    tree) can be a perfectly tracked git directory, and committing a lesson into it still
+    ships that lesson with no release at all, and the next install replaces the folder. Only
+    the source repo carries the repo-only release machinery, so that is what is checked.
+    """
+    top = _git(["rev-parse", "--show-toplevel"], lessons_dir)
+    if top is None or top.returncode != 0:
+        return False
+    root = Path(top.stdout.strip())
+    if not all((root / marker).is_file() for marker in SOURCE_MARKERS):
+        return False
+    try:
+        canonical = root / ".claude" / "skills" / "sdlc-studio" / "lessons"
+        return lessons_dir.resolve() == canonical.resolve()
+    except OSError:
+        return False
+
+
+def resolve_global_dir(explicit: str | None, repo_root) -> tuple[Path, str]:
+    """The skill-tier lessons directory to write to, plus a label naming where it came from.
+
+    Order: an explicit `--lessons-dir`; then the project's `skill_source_repo` config key
+    (the skill source checkout, which is version-controlled); then the running skill's own
+    `lessons/` folder - which is the INSTALLED copy in normal use, and is caught by the
+    tracked-destination guard.
+    """
+    if explicit:
+        return Path(explicit).expanduser(), "--lessons-dir"
+    configured = sdlc_md.project_override(repo_root, SOURCE_REPO_KEY)
+    if configured:
+        base = Path(str(configured)).expanduser()
+        for cand in (base / ".claude" / "skills" / "sdlc-studio" / "lessons",
+                     base / "lessons", base):
+            if (cand / "_index.md").is_file():
+                return cand, SOURCE_REPO_KEY
+        raise ResolveError(
+            f"{SOURCE_REPO_KEY} is set to {base}, but no lessons registry (a directory with "
+            "an _index.md) was found under it. Point it at the root of your sdlc-studio "
+            "source checkout.")
+    return SKILL_LESSONS_DIR, RUNNING_SKILL
+
+
+def refusal(lessons_dir: Path, source: str, reason: str) -> str:
+    """The refusal: where the write was aimed, why it would not survive, and how to fix it."""
+    return (
+        f"error: refusing to write a skill-tier lesson into {lessons_dir}\n"
+        f"  Source: {source}.\n"
+        f"  Why: {reason}. The lesson would be lost with nothing to warn you.\n"
+        "  Remedies:\n"
+        "    1. Record it as a PROJECT lesson (drop --global). That is the default tier and "
+        f"the right\n       home for most lessons: {DEFAULT_PROJECT_FILE}.\n"
+        "    2. Promote deliberately: point the project at the skill SOURCE checkout in "
+        "sdlc-studio/.config.yaml\n"
+        f"         {SOURCE_REPO_KEY}: /path/to/sdlc-studio\n"
+        "       then re-run; the lesson lands in a version-controlled file that `git status` "
+        "shows, and\n       ships with the next skill release once committed.\n"
+        "    3. Or pass that checkout directly: "
+        "--lessons-dir <checkout>/.claude/skills/sdlc-studio/lessons"
+    )
+
+
+NOT_SOURCE_REASON = (
+    "it is the running skill's own lessons/ folder and that is not an sdlc-studio source "
+    "checkout, so it is an installed or vendored copy - the next skill update replaces the "
+    "folder wholesale, and a commit there ships the lesson with no release"
+)
+
+
+# -----------------------------------------------------------------------------
 # Subcommands
 # -----------------------------------------------------------------------------
 
@@ -213,7 +359,7 @@ def append_index_row(index_path: Path, id_: str, filename: str, title: str,
 def cmd_list(args: argparse.Namespace) -> int:
     """Print lessons: project tier by default, skill tier with --global."""
     if args.global_:
-        rows = parse_index_rows(Path(args.lessons_dir) / "_index.md")
+        rows = parse_index_rows(Path(args.lessons_dir or SKILL_LESSONS_DIR) / "_index.md")
         if args.format == "json":
             print(json.dumps({"tier": "skill", "lessons": rows, "count": len(rows)},
                              indent=2))
@@ -253,7 +399,13 @@ def cmd_add(args: argparse.Namespace) -> int:
     """Append a project-tier entry, or promote to the skill tier with --global."""
     tags = [t.strip() for t in (args.tags or "").split(",") if t.strip()]
     if args.global_:
-        lessons_dir = Path(args.lessons_dir)
+        try:
+            lessons_dir, source = resolve_global_dir(args.lessons_dir, getattr(args, "root", "."))
+        except ResolveError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        # Structural checks first (they write nothing), so a malformed registry reports the
+        # part that is missing rather than being masked by the survival guard below.
         template_path = lessons_dir / "_template.md"
         index_path = lessons_dir / "_index.md"
         if not template_path.is_file():
@@ -261,6 +413,16 @@ def cmd_add(args: argparse.Namespace) -> int:
             return 1
         if not index_path.is_file():
             print(f"error: index not found: {index_path}", file=sys.stderr)
+            return 1
+        # Then: nothing is authored until git provably holds the destination...
+        reason = untracked_reason(lessons_dir)
+        if reason:
+            print(refusal(lessons_dir, source, reason), file=sys.stderr)
+            return 1
+        # ...and, when the destination was not chosen deliberately, until it is the skill
+        # SOURCE repo. A vendored copy can be tracked and still reach no release.
+        if source == RUNNING_SKILL and not is_skill_source_checkout(lessons_dir):
+            print(refusal(lessons_dir, source, NOT_SOURCE_REASON), file=sys.stderr)
             return 1
         id_ = next_global_id(lessons_dir)
         filename = f"{id_}-{sdlc_md.slug(args.title)}.md"
@@ -276,6 +438,8 @@ def cmd_add(args: argparse.Namespace) -> int:
         dest.write_text(content, encoding="utf-8")
         append_index_row(index_path, id_, filename, args.title, tags)
         print(f"Wrote {id_} to {dest} and appended the index row")
+        print("git version-controls that registry, so `git status` there shows the lesson; "
+              "commit it to ship it with the next skill release.")
         return 0
     path = Path(args.project_file)
     if path.is_file():
@@ -356,7 +520,7 @@ def _matches(title: str, tags: list[str], want_tags: list[str], query: str | Non
 def cmd_recall(args: argparse.Namespace) -> int:
     """Print skill-tier lessons matching --tags/--query (both tiers with --all)."""
     want_tags = [t.strip().lower() for t in (args.tags or "").split(",") if t.strip()]
-    rows = parse_index_rows(Path(args.lessons_dir) / "_index.md")
+    rows = parse_index_rows(Path(args.lessons_dir or SKILL_LESSONS_DIR) / "_index.md")
     matches = [
         {**r, "tier": "skill"}
         for r in rows if _matches(r["title"], r["tags"], want_tags, args.query)
@@ -499,8 +663,9 @@ def _common(sp: argparse.ArgumentParser) -> None:
     """Flags shared by every subcommand (tier locations and output format)."""
     sp.add_argument("--project-file", default=DEFAULT_PROJECT_FILE,
                     help=f"Project-tier lessons file (default: {DEFAULT_PROJECT_FILE})")
-    sp.add_argument("--lessons-dir", default=str(SKILL_LESSONS_DIR),
-                    help="Skill-tier lessons directory (default: the skill's lessons/)")
+    sp.add_argument("--lessons-dir", default=None,
+                    help="Skill-tier lessons directory (default: the running skill's lessons/; "
+                         "for `add --global` the config key skill_source_repo wins over it)")
     sp.add_argument("--format", choices=("text", "json"), default="text")
 
 
@@ -525,8 +690,10 @@ def build_parser() -> argparse.ArgumentParser:
     ad.add_argument("--wave", type=int, help="Wave number (project tier)")
     ad.add_argument("--tags", help="Comma-separated tags")
     ad.add_argument("--origin", help="Origin note for --global (default: cwd name)")
+    ad.add_argument("--root", default=".",
+                    help="Project root, read for the skill_source_repo config key (default: .)")
     ad.add_argument("--global", dest="global_", action="store_true",
-                    help="Create a skill-tier LL lesson and append the index row")
+                    help="Promote into the skill tier: a tracked destination is required")
     _common(ad)
     ad.set_defaults(func=cmd_add)
 

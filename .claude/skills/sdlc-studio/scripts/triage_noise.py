@@ -178,8 +178,12 @@ def _alloc_cr_id(root: Path) -> tuple[str, str]:
     return f"{prefix}{n:04d}", f"{prefix}-{n:04d}"
 
 
-def _new_consolidation_cr(root, theme: str, title: str, detail: str, today: str) -> Path:
-    """Mint a fresh consolidation CR for `theme`, seeded with the first finding, and index it."""
+def _new_consolidation_cr(root, theme: str, title: str, detail: str, today: str,
+                          author: str | None = None) -> Path:
+    """Mint a fresh consolidation CR for `theme`, seeded with the first finding, and index it.
+
+    A consolidation CR is a creator like any other, and its only era is v3 - so it carries the
+    typed `Raised-by` and the impact + effort block the v3 validator demands of every CR."""
     root = Path(root)
     file_id, disp = _alloc_cr_id(root)
     key = _theme_key(theme)
@@ -195,10 +199,15 @@ def _new_consolidation_cr(root, theme: str, title: str, detail: str, today: str)
         f"# {disp}: {cr_title}\n\n"
         f"> **Status:** {create_status}\n> **Priority:** Low\n> **Type:** Improvement\n"
         f"> **Date:** {today}\n> **Consolidation:** {key}\n"
-        f"> **Created-by:** sdlc-studio file\n\n"
+        f"> **Created-by:** sdlc-studio file\n"
+        f"> **Raised-by:** {sdlc_md.authorship_value(author, root)}\n\n"
         "## Summary\n\nA themed consolidation of Low-severity findings that individually do not "
         "warrant a standalone artefact (triage noise control, schema v3). Triage the batch, then "
         "action or reject as one.\n\n"
+        "## Impact\n\nEach finding here is Low-severity on its own; the batch is triaged, then "
+        "actioned or rejected as one. Left unconsolidated, the same findings would each mint an "
+        "artefact and drown the real signal.\n\n"
+        "**Effort:** S\n\n"
         f"## Consolidated Findings\n\n{_bullet(title, detail)}\n\n"
         "## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
         f"| {today} | audit | Consolidation opened |\n")
@@ -234,7 +243,7 @@ def consolidate_low_finding(root, type_: str, title: str, fields: dict, today: s
         result = {"id": cr_id, "path": str(existing), "consolidated_into": cr_id, "created": False}
     else:
         enforce_session_cap(root)  # opening a consolidation CR mints an artefact - honour the cap
-        path = _new_consolidation_cr(root, theme, title, detail, today)
+        path = _new_consolidation_cr(root, theme, title, detail, today, fields.get("author"))
         cr_id = sdlc_md.extract_record_id(path.stem)
         result = {"id": cr_id, "path": str(path), "consolidated_into": cr_id, "created": True}
     # Fail loud, not silent drop (the EP0014 principle): a consolidation CR aggregates many

@@ -31,6 +31,21 @@ def _cr(root, num, status="Proposed", ac="- [ ] integrity.py exits 1 when an act
     (d / f"CR{num:04d}-x.md").write_text(body, encoding="utf-8")
 
 
+def _epic(root, num, status="Done"):
+    d = root / "sdlc-studio" / "epics"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f"EP{num:04d}-x.md").write_text(
+        f"# EP{num:04d}: e\n\n> **Status:** {status}\n", encoding="utf-8")
+
+
+def _manifest(root, *repos):
+    """Write a PVD manifest naming `repos` as (id, path) pairs, in that order."""
+    lines = ["master_pvd: x", "repos:"]
+    for repo_id, path in repos:
+        lines += [f"  - id: {repo_id}", f"    path: {path}"]
+    (root / "product-manifest.yaml").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 TAUTOLOGY = "- [ ] Change implemented and verified; lint and tests green."
 
 
@@ -126,6 +141,105 @@ class DepsTerminalTests(unittest.TestCase):
             u = _load().audit_unit(root, "CR0002")
             self.assertFalse(u["ready"])
             self.assertTrue(any("dead" in i for i in u["issues"]))
+
+
+class CrossRepoDepsTests(unittest.TestCase):
+    """A `Depends on:` referent is resolved in-repo first, then across the repos the PVD
+    manifest names: a multi-repo product's cross-repo dependency is a real edge, not
+    `unmet-deps`. An absent sibling checkout is named, never silently passed."""
+
+    def test_dep_resolved_in_repo_wins(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1, status="Complete")
+            _cr(root, 2, status="Proposed", depends="CR0001")
+            _manifest(root, ("sib", "./sibling"))       # manifest present, sibling irrelevant
+            _epic(root / "sibling", 99, "Done")
+            u = _load().audit_unit(root, "CR0002")
+            self.assertTrue(u["ready"], u["issues"])
+
+    def test_dep_delivered_cross_repo_is_met(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 2, status="Proposed", depends="EP0099")   # referent lives in the sibling
+            _epic(root / "sibling", 99, "Done")
+            _manifest(root, ("sib", "./sibling"))
+            u = _load().audit_unit(root, "CR0002")
+            self.assertTrue(u["ready"], u["issues"])
+            self.assertNotIn("unmet-deps", "; ".join(u["issues"]))
+
+    def test_dep_undelivered_cross_repo_is_unmet(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 2, status="Proposed", depends="EP0099")
+            _epic(root / "sibling", 99, "In Progress")           # not delivered yet
+            _manifest(root, ("sib", "./sibling"))
+            u = _load().audit_unit(root, "CR0002")
+            self.assertFalse(u["ready"])
+            # its real cross-repo status is named, not a vacuous ":missing"
+            self.assertTrue(any("EP0099:In Progress" in i for i in u["issues"]), u["issues"])
+
+    def test_absent_sibling_checkout_is_named_not_silently_passed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 2, status="Proposed", depends="EP0088")
+            _manifest(root, ("gone", "./no-such-repo"))          # checkout absent
+            u = _load().audit_unit(root, "CR0002")
+            self.assertFalse(u["ready"])                          # never a silent pass
+            joined = "; ".join(u["issues"])
+            self.assertIn("gone", joined)                         # the repo is named
+            self.assertIn("no-such-repo", joined)                 # and its path
+            # unresolvable is not the same claim as undelivered - never a false "unmet"
+            self.assertNotIn("unmet-deps", joined)
+            self.assertIn("unresolved-deps", joined)
+
+
+class MultiRepoManifestTests(unittest.TestCase):
+    """A manifest naming several repos, with only some cloned - the case an operator is
+    actually in. An absent repo must not stop the search: resolution has to keep looking in
+    the repos that ARE on disk, and the verdict must not depend on the manifest's order."""
+
+    def _fixture(self, root: Path) -> None:
+        _cr(root, 2, status="Proposed", depends="EP0099")
+        _epic(root / "sibling", 99, "Done")          # delivered, and checked out
+
+    def test_absent_repo_does_not_mask_a_later_present_repo(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            # the absent repo is listed FIRST; the delivered referent sits in the second
+            _manifest(root, ("gone", "./no-such-repo"), ("sib", "./sibling"))
+            u = _load().audit_unit(root, "CR0002")
+            self.assertTrue(u["ready"], u["issues"])   # never a false block
+
+    def test_verdict_is_independent_of_manifest_order(self) -> None:
+        orders = (
+            (("gone", "./no-such-repo"), ("sib", "./sibling")),
+            (("sib", "./sibling"), ("gone", "./no-such-repo")),
+        )
+        verdicts = []
+        for repos in orders:
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._fixture(root)
+                _manifest(root, *repos)
+                u = _load().audit_unit(root, "CR0002")
+                verdicts.append((u["ready"], u["issues"]))
+        self.assertEqual(verdicts[0], verdicts[1], "same disk state, reordered manifest, "
+                                                   "different verdict")
+
+    def test_unresolvable_only_when_no_repo_resolves_it(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 2, status="Proposed", depends="EP0077")   # in neither repo
+            _epic(root / "sibling", 99, "Done")
+            _manifest(root, ("gone", "./no-such-repo"), ("sib", "./sibling"))
+            u = _load().audit_unit(root, "CR0002")
+            self.assertFalse(u["ready"])                         # never a silent pass
+            joined = "; ".join(u["issues"])
+            self.assertIn("unresolved-deps", joined)             # a repo went unsearched
+            self.assertIn("gone", joined)                        # and it is named
+            self.assertIn("no-such-repo", joined)
 
 
 class LinkIntegrityTests(unittest.TestCase):

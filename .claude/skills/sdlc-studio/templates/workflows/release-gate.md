@@ -17,6 +17,25 @@ Related: reference-reconcile.md (drift check), reference-verify.md (AC verificat
 
 ---
 
+## 0. The one command
+
+- [ ] `python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --root . --release` – **exit 0**.
+      This is the mechanical half of the whole checklist in a single command with a single
+      exit code: every standard gate check (conformance, drift, validate, integrity,
+      duplicate-id, doc-coverage, ...) **plus** an executing pass over every story's
+      `Verify:` expression, naming each red AC. It executes the verifiers rather than
+      reading the stored verify-report, because a merged report carries a story's last
+      green forward and a stale green is exactly how a rotted verify layer reaches a tag.
+      It writes nothing (no `Verified:` back-annotation, no report rewrite), so it is safe
+      to run repeatedly and from a hook. It fails on a red AC, on an AC whose verifier the
+      trust boundary refused to run (reported **BLOCKED** - unproven is not proof;
+      `--allow-external` runs those once you trust the content), and when there is nothing
+      to verify at all. You cannot deselect the verify lane and keep the release verdict:
+      `--release --skip verify` is refused.
+      **Do not tag on a red exit.** A non-zero exit here means tagging requires ignoring a
+      failing command - which is the point. Sections 1-8 below are the judgement items the
+      one command cannot make for you.
+
 ## 1. Local build + test
 
 - [ ] Typecheck (e.g. `npx tsc --noEmit`, `mypy`, `go vet`, etc.) – **zero** errors
@@ -131,6 +150,7 @@ Each section above addresses a class of incident that has been observed in real 
 
 | Section | Incident class it closes |
 | --- | --- |
+| 0. The one command | A pre-tag ritual split across two commands: the gate passes, the separate verify run's exit code is dropped or never run, and a release ships over a rotted `Verify:` layer that has read green for weeks |
 | 1. Build/test | CI failures discovered *after* tag, when the operator trusted their IDE / incremental runner |
 | 1. Version-literal landmine | Tests with hardcoded `'X.Y.Z'` version assertions break CI on every release-prep commit; shape assertions are stable across bumps |
 | 2. Adversarial review | Line-level nits (stale counts, hardcoded literals, regex gaps, flag-guard edge cases) that design-focused reviews routinely miss |

@@ -193,7 +193,10 @@ independent critic plus the gate - the check's output states this scoping.
       `sdlc-studio/retros/LESSONS-SUMMARY.md` from the still-valid lessons - the cheap, high-signal
       digest (progressive disclosure: the full log is the archive, the summary is what is loaded).
    5. **Read the summary at the start.** A new sprint reads `LESSONS-SUMMARY.md` plus `lessons recall`
-      at the **start** - not the full log - and surfaces generalisable lessons for `lessons add --global`.
+      at the **start** - not the full log. Lessons are recorded on the **project tier**
+      (`lessons add`, the default); a lesson is promoted with `lessons add --global` only once it
+      clearly generalises beyond this repo, and promotion needs `skill_source_repo` set - see
+      `help/lessons.md`.
    The retro is a general capability, reused here, not sprint-only.
 
 ## Definition of Done

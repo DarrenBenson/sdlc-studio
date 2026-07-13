@@ -57,17 +57,20 @@ PVD projection + drift. `sync` projects the one writable master
 Product Vision Document into a child repo read-only (copy in dev, symlink in prod);
 `drift` compares a projected copy against the master (in-sync / stale / behind / missing /
 error) via sha256 + version. An unreadable/missing master reports `error`, never a vacuous
-in-sync. `read_manifest` parses `product-manifest.yaml` (no PyYAML). See `reference-pvd.md`.
+in-sync. `read_manifest` parses `product-manifest.yaml` (no PyYAML); the parser itself lives in
+`lib/xrepo` beside the cross-repo id resolver that reads it, so the manifest has one reader.
+See `reference-pvd.md`.
 
 ### `blocker_sweep.py`
 
 The inverse of `audit`'s `unmet-deps`: finds units whose blockers have **cleared**. `sweep`
 collects every blocker signal (Status `Blocked`, a `Depends on:` field, an epic `Blocked By`
-row), resolves each referent's current status - in-repo by the file census, cross-repo by
-reading the sibling repos in `product-manifest.yaml` (reuses `pvd.read_manifest`) - and
-classifies each genuinely-blocked unit as now-unblocked (every referent terminal/delivered)
-or still-blocked (outstanding referent named). Fail-loud per LL0008: a missing/unreadable/
-unknown-status referent is reported still-blocked, never silently cleared. Read-only - it
+row), resolves each referent's current status - in-repo by the file census, cross-repo across
+the sibling repos in `product-manifest.yaml`, both through the shared `lib/xrepo` resolver that
+`audit` also uses - and classifies each genuinely-blocked unit as now-unblocked (every referent
+terminal/delivered) or still-blocked (outstanding referent named). Fail-loud per LL0008: a
+missing/unreadable/unknown-status referent is reported still-blocked, never silently
+cleared. Read-only - it
 proposes `Blocked -> Ready` candidates; the gated `transition` stays the actor. Runs before
 `sprint plan` and as the `reconcile detect --blocker-sweep` advisory lane (which never
 affects drift or the exit code). See `reference-sprint.md` and `reference-reconcile.md`.
@@ -142,10 +145,19 @@ and the skill's own cross-project `lessons/` registry.
 - `recall`: skill-tier lessons matching `--tags`/`--query` (case-insensitive
   substring); `--all` searches both tiers
 
-`add --global` writes within the skill's own `lessons/` folder (the registry
-ships with the skill); project-tier writes stay in `.local/`. Full workflow:
-`reference-agentic-lessons.md#lessons-accumulation`. User-facing help:
-`help/lessons.md`.
+The project tier is the default; `--global` is the deliberate promotion, and it
+writes **only where git actually holds the file**. Resolution order:
+`--lessons-dir`, then the `skill_source_repo` config key read from `--root`
+(default `.`), then the running skill's own `lessons/`. The destination must be
+inside a git work tree, **not gitignored**, and its `_index.md` must be
+version-controlled; the running-skill fallback must additionally be the skill
+SOURCE checkout, since a commit into a vendored copy ships with no release. Any
+of those failing is a refusal: non-zero exit, the reason, and the remedy.
+Nothing is authored, and no success is reported. Project-tier writes stay in
+`.local/`.
+
+Full workflow: `reference-agentic-lessons.md#lessons-accumulation`. Config key:
+`reference-config.md#skill-source-repo`. User-facing help: `help/lessons.md`.
 
 ### `sprint.py`
 

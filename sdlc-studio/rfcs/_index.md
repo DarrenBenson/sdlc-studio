@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 1 |
+| Draft | 2 |
 | In Review | 0 |
 | Accepted | 26 |
 | Superseded | 0 |
 | Withdrawn | 3 |
-| **Total** | **30** |
+| **Total** | **31** |
 
 ## All RFCs
 
@@ -47,3 +47,4 @@
 | [RFC-0028](RFC0028-the-generated-team-project-native-personas-as-the.md) | the generated team: project-native personas as the v4 differentiator | Medium | Accepted | audit | 2026-07-10 | -- |
 | [RFC-0029](RFC0029-extract-the-benchmark-into-a-standalone-cross-harness.md) | Extract the benchmark into a standalone cross-harness project | P2 | Accepted | Claude (Fable 5) | 2026-07-11 | -- |
 | [RFC-0030](RFC0030-pvd-wide-dependency-graph-a-declared-provides-consumes.md) | PVD-wide dependency graph: a declared provides/consumes contract, not inferred imports | Medium | Draft | Darren | 2026-07-13 | -- |
+| [RFC-0031](RFC0031-the-scaffold-contract-may-a-creator-emit-an.md) | The scaffold contract: may a creator emit an artefact that cannot pass validation? | Medium | Draft | Darren | 2026-07-13 | -- |

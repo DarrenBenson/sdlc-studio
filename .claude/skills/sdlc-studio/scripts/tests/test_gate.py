@@ -1,7 +1,10 @@
 """Unit tests for gate.py - the portable CI quality gate (CR0046)."""
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
+import json
 import sys
 import tempfile
 from pathlib import Path
@@ -316,6 +319,241 @@ class RetroCloseGateTests(unittest.TestCase):
             (rd / "RETRO0005-batch.md").write_text("# RETRO-0005\n", encoding="utf-8")
             report = gate.run_gate(str(root), checks={}, require_retro="RETRO0005")
             self.assertTrue(report["ok"])
+
+
+class ReleaseGateTests(unittest.TestCase):
+    """CR0233: `gate --release` = the standard gate PLUS an EXECUTING verify_ac pass, as one
+    exit code. Tagging on a red verify layer must mean ignoring a failing command, not
+    misreading a passing-looking one (BG0104's process half)."""
+
+    def _story(self, root: Path, verifier: str, verified: str = "") -> Path:
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True, exist_ok=True)
+        p = sd / "US0001-x.md"
+        body = ("# US0001: x\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n"
+                f"### AC1: works\n- **Verify:** {verifier}\n")
+        if verified:
+            body += f"- **Verified:** {verified}\n"
+        p.write_text(body, encoding="utf-8")
+        return p
+
+    def test_release_fails_on_a_failing_verify_line(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._story(root, "shell exit 1")
+            r = gate.run_gate(str(root), checks={}, release=True)
+            self.assertFalse(r["ok"])
+            lane = next(c for c in r["checks"] if c["check"] == "verify")
+            self.assertEqual(lane["status"], "fail")
+            self.assertTrue(lane["blocking"])
+            self.assertIn("US0001", lane["detail"])   # named failure, not a bare count
+            self.assertIn("AC1", lane["detail"])
+
+    def test_release_passes_on_a_green_verify_line(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._story(root, "shell true")
+            r = gate.run_gate(str(root), checks={}, release=True)
+            self.assertTrue(r["ok"], r["checks"])
+            self.assertEqual(r["checks"][0]["check"], "verify")
+
+    def test_release_does_not_mutate_story_files_or_the_report(self) -> None:
+        # The gate is read-only and is what the pre-commit hook runs: the lane must EXECUTE
+        # the verifiers without back-annotating `- **Verified:**` or rewriting the report.
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            story = self._story(root, "shell true")  # would flip Verified: none -> yes
+            before = story.read_bytes()
+            gate.run_gate(str(root), checks={}, release=True)
+            self.assertEqual(story.read_bytes(), before)
+            self.assertFalse((root / "sdlc-studio" / ".local" / "verify-report.json").exists())
+
+    def test_release_executes_rather_than_trusting_a_stale_green_report(self) -> None:
+        # A merged report carries stale greens forward; a stale green is the misread this
+        # lane exists to kill. A green report over a red verifier must still FAIL.
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._story(root, "shell exit 1", verified="yes (2026-01-01)")
+            local = root / "sdlc-studio" / ".local"
+            local.mkdir(parents=True)
+            (local / "verify-report.json").write_text(json.dumps({
+                "generated_at": "2026-01-01T00:00:00Z", "dry_run": False,
+                "stories": {"US0001-x": {"ac_count": 1, "verified": 1, "failed": 0,
+                                         "stale": 0, "manual": 0, "passed": ["AC1"],
+                                         "failures": [], "flips": []}}}), encoding="utf-8")
+            r = gate.run_gate(str(root), checks={}, release=True)
+            self.assertFalse(r["ok"])
+
+    def test_no_stories_is_not_a_vacuous_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            r = gate.run_gate(str(root), checks={}, release=True)
+            self.assertFalse(r["ok"])
+            self.assertIn("no stories", r["checks"][0]["detail"])
+
+    def test_verify_lane_absent_without_release(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._story(root, "shell exit 1")
+            r = gate.run_gate(str(root), checks={"a": _fake(0)})
+            self.assertNotIn("verify", [c["check"] for c in r["checks"]])
+            self.assertTrue(r["ok"])  # the standard gate stays read-only and verifier-free
+
+    def test_cli_release_flag_exits_one(self) -> None:
+        # The whole point: ONE exit code. Exercises the argparse plumbing, not just run_gate.
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._story(root, "shell exit 1")
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = gate.main(["--root", str(root), "--release", "--only", "verify",
+                                "--format", "json"])
+            self.assertEqual(rc, 1)
+
+    def test_verify_lane_blocks_on_error(self) -> None:
+        # A crashing verify lane means the gate proved nothing about the AC layer.
+        self.assertIn("verify", gate.BLOCKING_ON_ERROR)
+
+
+class ReleaseSelectionGuardTests(ReleaseGateTests):
+    """BG0111 review F1: `--release` must not print a release verdict when the lane that
+    DEFINES it was deselected. A green banner over a deselected verify lane is the
+    passing-looking command this CR exists to kill - the same false-assurance class the
+    unknown-check and no-checks-selected guards already refuse."""
+
+    def test_skip_verify_under_release_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._story(root, "shell exit 1")
+            r = gate.run_gate(str(root), checks={"a": _fake(0)}, release=True, skip=["verify"])
+            self.assertFalse(r["ok"])
+            self.assertEqual(r["checks"][0]["check"], "selection")
+            self.assertIn("verify", r["checks"][0]["detail"])
+
+    def test_only_excluding_verify_under_release_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._story(root, "shell exit 1")
+            r = gate.run_gate(str(root), checks={"a": _fake(0)}, release=True, only=["a"])
+            self.assertFalse(r["ok"])
+            self.assertEqual(r["checks"][0]["check"], "selection")
+
+    def test_cli_release_skip_verify_exits_one_and_prints_no_pass_banner(self) -> None:
+        # Sam's F1 reproduction: this printed "gate --release: PASS" and exited 0 over a red AC.
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._story(root, "shell exit 1")
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = gate.main(["--root", str(root), "--release", "--skip", "verify",
+                                "--only", "hook-enabled"])
+            out = buf.getvalue()
+            self.assertEqual(rc, 1)
+            self.assertNotIn("PASS", out.splitlines()[-1])
+            self.assertNotIn("judgement items", out)
+
+    def test_release_with_verify_selected_still_runs(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._story(root, "shell true")
+            r = gate.run_gate(str(root), checks={}, release=True, only=["verify"])
+            self.assertTrue(r["ok"], r["checks"])
+
+
+class ReleaseBlockedVerifierTests(ReleaseGateTests):
+    """BG0111 review F2: a verifier the trust boundary REFUSED TO RUN is not a red AC. It is
+    an unproven one - it must not read as either a failure of the code or as proof."""
+
+    def _external_story(self, root: Path, verifier: str) -> Path:
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True, exist_ok=True)
+        p = sd / "US0001-x.md"
+        p.write_text("# US0001: x\n\n> **Status:** Done\n> **Provenance:** external\n\n"
+                     f"## Acceptance Criteria\n\n### AC1: works\n- **Verify:** {verifier}\n",
+                     encoding="utf-8")
+        return p
+
+    def test_blocked_verifier_is_named_blocked_not_red(self) -> None:
+        # Sam's F2 reproduction: `shell true` on an external story reported "1 red AC(s)".
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._external_story(root, "shell true")   # would PASS if it were ever run
+            r = gate.run_gate(str(root), checks={}, release=True)
+            lane = r["checks"][0]
+            self.assertFalse(r["ok"])                       # not proven -> not a green release
+            self.assertNotIn("red AC", lane["detail"])      # ...but not a red AC either
+            self.assertIn("BLOCKED", lane["detail"])
+            self.assertIn("--allow-external", lane["detail"])
+            self.assertIn("US0001::AC1", lane["detail"])
+
+    def test_allow_external_runs_the_blocked_verifier_green(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._external_story(root, "shell true")
+            r = gate.run_gate(str(root), checks={}, release=True, allow_external=True)
+            self.assertTrue(r["ok"], r["checks"])           # a green release IS reachable
+
+    def test_allow_external_still_fails_a_genuinely_red_external_ac(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._external_story(root, "shell exit 1")
+            r = gate.run_gate(str(root), checks={}, release=True, allow_external=True)
+            self.assertFalse(r["ok"])
+            self.assertIn("red AC", r["checks"][0]["detail"])
+
+    def test_red_and_blocked_are_reported_separately(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._external_story(root, "shell true")       # blocked
+            sd = root / "sdlc-studio" / "stories"
+            (sd / "US0002-y.md").write_text(
+                "# US0002: y\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n"
+                "### AC1: red\n- **Verify:** shell exit 1\n", encoding="utf-8")
+            detail = gate.run_gate(str(root), checks={}, release=True)["checks"][0]["detail"]
+            self.assertIn("1 red AC(s): US0002::AC1", detail)
+            self.assertIn("BLOCKED", detail)
+            self.assertIn("US0001::AC1", detail)
+
+    def test_cli_allow_external_flag_wires_through(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._external_story(root, "shell true")
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = gate.main(["--root", str(root), "--release", "--only", "verify",
+                                "--allow-external"])
+            self.assertEqual(rc, 0)
+
+
+class ReleaseVacuityTests(ReleaseGateTests):
+    """BG0111 review F3: the vacuity guard must reach the VERIFIER set, not stop at the story
+    set. Zero executable ACs is nothing proved - so deleting a rotted Verify line must not be
+    the way to turn the release gate green."""
+
+    def test_zero_executable_acs_is_not_proof(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "US0001-x.md").write_text(
+                "# US0001: x\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n"
+                "### AC1: no verifier at all\n- **Given:** a rotted line was deleted\n"
+                "### AC2: human-checked\n- **Verify:** manual eyeball it\n", encoding="utf-8")
+            r = gate.run_gate(str(root), checks={}, release=True)
+            self.assertFalse(r["ok"])
+            self.assertIn("no executable", r["checks"][0]["detail"])
+
+    def test_one_executable_ac_among_manual_ones_still_proves_something(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "US0001-x.md").write_text(
+                "# US0001: x\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n"
+                "### AC1: executable\n- **Verify:** shell true\n"
+                "### AC2: human-checked\n- **Verify:** manual eyeball it\n", encoding="utf-8")
+            r = gate.run_gate(str(root), checks={}, release=True)
+            self.assertTrue(r["ok"], r["checks"])
+            self.assertIn("1 manual", r["checks"][0]["detail"])
 
 
 class MutationLaneTests(unittest.TestCase):

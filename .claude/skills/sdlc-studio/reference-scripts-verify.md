@@ -19,6 +19,25 @@ check registry is injectable, so the aggregation logic is unit-tested without a 
 `--require-retro RETROxxxx` adds a blocking close-gate check: the sprint/review close fails
 loud until the named batch retro exists in `sdlc-studio/retros/` (the hard retro gate).
 
+`--release` is the **pre-tag** form and the only command needed before a tag: it adds a blocking
+`verify` lane that **executes** every story's `Verify:` expression through `verify_ac` and names
+each red AC, so the gate and the AC layer fail as ONE exit code instead of two an operator must
+remember to read. The lane executes rather than reading the stored `verify-report.json` (a merged
+report carries a story's last green forward - a stale green is how a rotted verify layer reaches a
+tag), and it writes nothing: no `- **Verified:**` back-annotation, no report rewrite, so the gate
+stays read-only and hook-safe. The lane is absent without `--release` - the standard gate does not
+run test suites.
+
+Nothing to prove is not proof, so the lane fails rather than passing quietly when it has examined
+nothing: an empty story set fails, and so does a story set with zero executable `Verify:` lines
+(otherwise deleting a rotted verifier would be the way to a green release). Deselecting the lane
+under `--release` (`--skip verify`, or an `--only` that omits it) is **refused**, not honoured: no
+release verdict is printed over an unexamined AC layer. A verifier the trust boundary refused to
+run - a shell-backed verb on a story stamped `Provenance: external` - is reported **BLOCKED and
+unproven**, never red, since an unrun verifier is not evidence about the code; it still fails the
+lane, and `--allow-external` runs it once the content is trusted. `--verify-batch` runs jest once
+and resolves jest verifiers from the cached result rather than a cold start per AC.
+
 ### `verify_ac.py`
 
 Executes AC verifiers defined in story files and updates each AC's
