@@ -67,14 +67,10 @@
   critic-approved, evals green -> RETRO0018. Preceded by the nine-rc-blocker fix pack
   (RETRO0017) and EP0024/25 release engineering (RETRO0016); the five-leg RV0007 review filed
   BG0071-BG0099 / CR0202-CR0211 / RFC0027 - all now delivered.
-- **Backlog now: 11 units in the v4.1 sprint above** (was EMPTY at the v4.0 tag). No non-terminal artefacts across every type - this is the precondition the
-  operator set for the v4.0 tag. RFC0027 accepted (option C); the 9 founding epics (EP0001-0009) that
-  carried a stale `Ready` remain closed to Done. **The tag / freeze lift / push to consuming projects
-  stay an explicit operator action** (see `v4-rc-readiness.md`); `main` runs ahead of `origin`.
-- **v4.1 lane (filed, Deferred, `Target: v4.1`):** CR0223 handoff guide (remaining-work
-  artefact at run close), CR0224 multi-repo context (PVD-wide repo map + cross-repo deps),
-  CR0225 appetite-bounded unattended runs (budget circuit-breaker). **Tag precondition reads:
-  backlog clear of non-Deferred work** - Deferred-with-Target is groomed scope, not backlog.
+- **Backlog now: the 11 v4.1 units above** (it was EMPTY at the v4.0 tag - that was the
+  precondition the operator set for it, and v4.1 restores the same rule: the tag cuts when the
+  backlog empties). The 9 founding epics (EP0001-0009) that carried a stale `Ready` remain
+  closed to Done. `main` is level with `origin`.
 - **Deferred follow-ups (open ideas, unfiled):** a `reconcile detect --era` lens + per-artifact
   re-review markers + per-capability watermarks (CR0197 open decisions); a path-aware tightening of
   the spec-guard basename match; the 6 legacy-epic stale-`Ready` hygiene pass above.
