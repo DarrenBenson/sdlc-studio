@@ -33,6 +33,7 @@ from lib import sdlc_md  # noqa: E402
 META_TYPES: dict[str, tuple[str, str]] = {
     "review": ("sdlc-studio/reviews", "RV"),
     "retro": ("sdlc-studio/retros", "RETRO"),
+    "handoff": ("sdlc-studio/handoffs", "HO"),
 }
 
 

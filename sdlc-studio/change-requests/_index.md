@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 6 |
+| Proposed | 5 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 226 |
+| Complete | 227 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 6 |
@@ -44,7 +44,7 @@
 | [CR-0220](CR0220-stakeholder-panel-generation-the-other-side-of-the.md) | stakeholder panel generation: the other side of the table (persona generate --stakeholders) | Complete | High | Feature | 2026-07-10 | -- |
 | [CR-0221](CR0221-cooper-usage-pass-personas-that-arbitrate-not-decorate.md) | Cooper usage pass: personas that arbitrate, not decorate | Complete | Medium | Improvement | 2026-07-10 | -- |
 | [CR-0222](CR0222-positioning-and-lifecycle-wiring-the-honest-differentiator-everywhere.md) | positioning and lifecycle wiring: the honest differentiator, everywhere the team is met | Complete | High | Improvement | 2026-07-10 | -- |
-| [CR-0223](CR0223-the-handoff-guide-a-first-class-remaining-work.md) | the handoff guide: a first-class remaining-work artefact at run close | Proposed | Medium | Feature | 2026-07-10 | -- |
+| [CR-0223](CR0223-the-handoff-guide-a-first-class-remaining-work.md) | the handoff guide: a first-class remaining-work artefact at run close | Complete | Medium | Feature | 2026-07-10 | -- |
 | [CR-0224](CR0224-multi-repo-context-the-repo-map-and-census.md) | multi-repo context: the repo map and census grow PVD-wide awareness | Complete | Medium | Feature | 2026-07-10 | -- |
 | [CR-0225](CR0225-appetite-bounded-unattended-runs-a-budget-circuit-breaker.md) | appetite-bounded unattended runs: a budget circuit-breaker for epic-level execution | Proposed | Medium | Feature | 2026-07-10 | -- |
 | [CR-0226](CR0226-a-brand-new-readme-newcomer-value-first-existing.md) | a brand-new README: newcomer value first, existing users get their own page | Complete | High | Improvement | 2026-07-10 | -- |

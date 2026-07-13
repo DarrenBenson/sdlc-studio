@@ -185,7 +185,18 @@ def _insert_after_status(text: str, line: str) -> str:
 
 
 def _upsert_field(text: str, name: str, value: str) -> str:
-    """Set `**Name:** value` in place, or insert it after Status when the field is absent."""
+    """Set `**Name:** value` in place, or insert it after Status when the field is absent.
+
+    The single writer of a metadata line, and so the single place the line-break refusal
+    belongs - the analogue of the row writer's cell guard. A name or value carrying a line
+    break escapes the line it is written into, and whatever follows the break is read back as
+    a metadata field of its own; a triage stamp could therefore write any field into the
+    artefact it was closing, including one the file had no other way to acquire. Guarding the
+    writer means every caller inherits the refusal instead of each one remembering it - which
+    `annotate` did and the triage stamps did not.
+    """
+    sdlc_md.require_single_line("metadata field name", name)
+    sdlc_md.require_single_line(f"metadata field {name!r}", value)
     new_text, changed = _set_field(text, name, value)
     return new_text if changed else _insert_after_status(text, f"> **{name}:** {value}")
 
@@ -222,11 +233,10 @@ def annotate(repo_root: Path | str, artifact_id: str, field: str, value: str) ->
         remedy = _ANNOTATE_REMEDY.get(key, "status and triage records go through `transition "
                                             "set` so their gates run")
         raise ValueError(f"annotate refuses the gate-protected field {field!r}: {remedy}")
-    if len(field.splitlines()) > 1 or len(value.splitlines()) > 1:
-        # splitlines covers every separator universal-newline reads translate (\n, \r,
-        # \x0b/\x0c, \x85, U+2028/29) - a bare \n check left \r as an injection path
-        raise ValueError("annotate refuses line breaks in field/value - a multi-line value "
-                         "would inject extra metadata lines into the artifact")
+    # A line-broken field/value is refused by `_upsert_field` below - the one writer of a
+    # metadata line, and so the one place that rule lives. This verb keeps no copy of it: a
+    # caller-side copy is how the triage stamps came to be written by a writer that did not
+    # refuse them.
     path, type_ = _find(root, artifact_id)
     if path is None:
         raise FileNotFoundError(f"cannot annotate {artifact_id}: artifact not found")
@@ -462,9 +472,9 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
     executable ACs block the transition unless `force=True`. Scoped to stories - CR/epic/bug
     closures are unaffected. Manual-only / AC-less stories are never blocked."""
     root = Path(repo_root)
-    if re.match(r"^(RETRO|RV)-?\d+", artifact_id.strip(), re.IGNORECASE):
+    if re.match(r"^(RETRO|RV|HO)-?\d+", artifact_id.strip(), re.IGNORECASE):
         raise ValueError(
-            f"{artifact_id} is a meta-artifact (retro/review) outside the status "
+            f"{artifact_id} is a meta-artifact (retro/review/handoff) outside the status "
             f"machinery by design - edit the file directly; there is no status to cascade")
     path, type_ = _find(root, artifact_id)
     if path is None:

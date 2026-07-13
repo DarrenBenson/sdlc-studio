@@ -25,7 +25,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import sdlc_md  # noqa: E402
+from lib import run_state, sdlc_md  # noqa: E402
 import complexity  # noqa: E402  (sibling - blast-radius complexity for WSJF)
 import config  # noqa: E402  (sibling - routing block for tier enrichment)
 import lessons  # noqa: E402  (sibling - the still-valid lessons digest carried in the plan)
@@ -421,6 +421,33 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
     }
 
 
+GOALS = ("triage", "plan", "design", "done")  # the goal ladder a run is driven along
+
+
+def pending_handoff(repo_root: Path | str) -> dict | None:
+    """The handoff the LAST run left, when it left one - so the plan that follows a stopped
+    run starts from its tail instead of re-deriving it. None when there is no handoff, or
+    its worklist is gone.
+
+    `remaining` is what the handoff NAMES; `plannable` is what `--worklist` can resolve
+    (a remaining unit with no file on disk is named in the document and cannot be planned).
+    The two are reported separately: collapsing them would understate the tail."""
+    state = run_state.read(repo_root)
+    hid, rel = state.get("handoff"), state.get("handoff_worklist")
+    if not hid or not rel:
+        return None
+    path = Path(rel)
+    if not path.is_absolute():
+        path = Path(repo_root) / rel
+    if not path.exists():
+        return None
+    ids = [ln for ln in path.read_text(encoding="utf-8").splitlines()
+           if ln.strip() and not ln.strip().startswith("#")]
+    return {"id": hid, "worklist": str(path), "plannable": len(ids),
+            "remaining": state.get("handoff_remaining", len(ids)),
+            "outcome": state.get("outcome")}
+
+
 def build_authoring_plan(repo_root: Path | str, prd_path: str) -> dict:
     """The greenfield authoring plan: the batch source is a PRD, not existing units.
     The planner validates the PRD and signals **authoring mode**; the decomposition itself
@@ -711,6 +738,22 @@ def cmd_plan(args: argparse.Namespace) -> int:
         print(f"blocker sweep: {len(sweep['now_unblocked'])} newly-unblocked unit(s) "
               f"({', '.join(sweep['now_unblocked'])}) - propose Blocked -> Ready via the gated "
               f"transition, then re-plan to include them", file=sys.stderr)
+    # the last run's tail, surfaced where the next batch is chosen. A handoff the operator
+    # has to remember to open is a handoff that goes unread. An UNREADABLE run state stops
+    # the plan rather than being shrugged off: `--write` would otherwise overwrite the
+    # wreckage with a blank record, losing the previous run's id, batch and outcome.
+    try:
+        pending = pending_handoff(Path(args.root))
+    except run_state.RunStateError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if pending and str(worklist or "") != pending["worklist"]:
+        extra = ("" if pending["plannable"] == pending["remaining"]
+                 else f" ({pending['plannable']} of them plannable; the rest have no "
+                      f"artefact file - see the handoff)")
+        print(f"handoff: the last run ({pending['outcome']}) left {pending['id']} with "
+              f"{pending['remaining']} remaining item(s){extra} - plan them with "
+              f"--worklist {pending['worklist']}", file=sys.stderr)
     epics, rc = _validate_epic_scope(args, worklist, kinds)
     if rc is not None:
         return rc
@@ -729,6 +772,13 @@ def cmd_plan(args: argparse.Namespace) -> int:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(data, indent=2), encoding="utf-8")
         print(f"wrote sprint plan -> {out}")
+        # ...and OPEN the run. The batch approved here is the run's batch, and until now a
+        # run had no identity at all: no id, no start time, nowhere to record how it ended.
+        # The close (`handoff generate`) writes the outcome back to the same object.
+        state = run_state.open_run(args.root, batch=[u["id"] for u in data["batch"]],
+                                   goal=getattr(args, "goal", None), plan=str(out))
+        print(f"opened run {state['run_id']} (goal={state['goal'] or 'unset'}) "
+              f"-> {run_state.path(args.root)}")
     _render_plan(args, data, queries, worklist, epics)
     return 0
 
@@ -748,8 +798,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--epic", action="append", metavar="EPxxxx",
                    help="scope a story batch to one or more epics (repeatable; with --stories)")
     p.add_argument("--order", choices=("priority", "wsjf", "manual"), default="priority")
+    p.add_argument("--goal", choices=GOALS,
+                   help="the goal rung this run is driven to; recorded on the run state "
+                        "(with --write) so the close can say what the run aimed at")
     p.add_argument("--write", action="store_true",
-                   help="persist the sprint plan to sdlc-studio/.local/sprint-plan.json")
+                   help="persist the sprint plan to sdlc-studio/.local/sprint-plan.json AND "
+                        "open the run (id, start time, approved batch, goal) in "
+                        "sdlc-studio/.local/run-state.json - the object the close reads")
     p.add_argument("--strict", action="store_true",
                    help="refuse to plan when the index has drift or local is behind origin")
     p.add_argument("--no-fetch", action="store_true", dest="no_fetch",

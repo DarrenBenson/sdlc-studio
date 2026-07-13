@@ -523,6 +523,7 @@ def detect_type(type_: str, repo_root: Path) -> dict:
 _META_INDEX = {  # mirrors next_id.META_TYPES; kept local to avoid a reconcile->next_id import
     "retro": ("sdlc-studio/retros", "RETRO"),
     "review": ("sdlc-studio/reviews", "RV"),
+    "handoff": ("sdlc-studio/handoffs", "HO"),
 }
 
 
@@ -603,7 +604,7 @@ def _meta_row_fields(path: Path) -> tuple[str, str]:
     title = path.stem
     m = re.search(r"^#\s+(.+)$", text, re.M)
     if m:
-        title = re.sub(r"^(?:RV|RETRO)[-\s:]*\d+\s*[-:]\s*", "", m.group(1).strip())
+        title = re.sub(r"^(?:RV|RETRO|HO)[-\s:]*\d+\s*[-:]\s*", "", m.group(1).strip())
     dm = re.search(r"\*\*Date:\*\*\s*(\d{4}-\d{2}-\d{2})", text)
     if dm:
         return title, dm.group(1)

@@ -215,6 +215,35 @@ independent critic plus the gate - the check's output states this scoping.
    refused, not honoured - a close verdict is never printed over the thing it claims to have
    checked. The retro is a general capability, reused here, not sprint-only.
 
+8. **The handoff - when the run stops SHORT of its goal (a gate, not doctrine).** A run that
+   reached its goal owes a retro. A run that stopped for any other reason - budget spent, a unit
+   blocked, an operator stop - owes a human one more thing: the single document that says where to
+   pick it up. Until it exists, that tail is scattered across hints, the tranche ledger and the
+   retro, and the person joining an unattended run has to reconstruct it.
+
+   ```bash
+   handoff generate --title "<what this run was>" --outcome budget-spent --retro RETRO{this}
+   gate --require-retro RETRO{this} --require-handoff HO{this}
+   ```
+
+   `handoff generate` is a JOIN over evidence the run already produced (loop-state, verify-report,
+   the tranche audit, conformance, the run state) - it invents nothing. It names **every**
+   non-terminal unit with a pointer to start from (the failing AC, the check it stalled at, the
+   blocker, or the file), tags each `copilot-tail` or `judgement` with the reasons that produced the
+   tag, records the open decisions, links itself from the retro, and emits
+   `.local/handoff-worklist.txt`. The next run reads that back with the documented batch source -
+   `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt` - and `sprint plan` surfaces the
+   pending handoff unasked, so the tail is not a file someone has to remember to open.
+
+   `gate --require-handoff` fails unless the handoff exists AND a retro links it: a handoff nobody
+   links is a document nobody reads, and presence alone would certify exactly that. Deselecting the
+   bound `handoff` lane is refused, like every other bound lane.
+
+   **The run object.** `sprint plan --write --goal <rung>` opens the run in
+   `.local/run-state.json` (id, start time, approved batch, goal); the handoff closes it with its
+   outcome (`goal-reached` / `budget-spent` / `blocked` / `stopped`). A run nobody opened still gets
+   a handoff - it says the run was not opened rather than inventing a start time.
+
 ## Definition of Done
 
 A tranche is Done when (aligned to the operator's orchestrator discipline):
@@ -405,6 +434,8 @@ in loop step 5; per-tier escape/escalation rates accumulate in telemetry
 | `scripts/sprint.py plan` | select + order the batch (the triage plan); emits the still-valid lessons digest |
 | `scripts/lessons.py` | `revalidate` (close/extend/stamp by validity) + `summary` (regenerate the digest) |
 | `scripts/gate.py --require-retro` | the sprint-close gate: retro present, lessons re-validated, summary current |
+| `scripts/gate.py --require-handoff` | the stopped-short gate: the handoff exists and a retro links it |
+| `scripts/handoff.py generate` | the run-close handoff: remaining work, per item, with its pointer and suitability tag |
 | `scripts/audit.py check` | tranche audit: weak-AC, unmet-deps, already-terminal, link-integrity |
 | `scripts/integrity.py check` | referential integrity (required links + dangling refs) |
 | `scripts/conformance.py check` | the lifecycle-conformance gate (hard-fail; incl. reconciled + critiqued) |

@@ -75,7 +75,8 @@ catalogue and worked workflows below cover every tool.
 | Command | Description |
 | --- | --- |
 | `/sdlc-studio sprint <batch> --goal <rung>` | Goal-Driven Development loop: drive a prioritised tranche along the **goal ladder** `triage -> plan -> design -> done` (cumulative stop-points; natural language maps to the furthest rung). The primary delivery workflow |
-| `/sdlc-studio decisions add` / `list` / `promote` | Project decisions log (the project spine + delegated-agent handoff context): append a decision, list them, or promote a resolved open question |
+| `/sdlc-studio handoff generate` / `show` | The run-close handoff guide: the single "here is where you pick up" document a run that stopped short of its goal owes a human - every remaining item with its pointer (file / AC / check) and a suitability tag (copilot-tail vs judgement), plus a worklist the next `sprint plan --worklist` reads back |
+| `/sdlc-studio decisions add` / `list` / `promote` | Project decisions log (the project spine + delegated-agent context): append a decision, list them, or promote a resolved open question |
 | `/sdlc-studio pvd create` / `pvd sync` / `pvd drift` | Product Vision Document: the multi-repo product layer above the PRD |
 | `/sdlc-studio gate` | Portable, ecosystem-neutral CI quality gate over the deterministic checks |
 | `/sdlc-studio deploy` | Orchestrate-only deploy last-mile: gate, verify, record (operator-triggered, never autonomous) |
@@ -366,6 +367,12 @@ sdlc-studio/
     TS0001-*.md               # Test Specifications
   workflows/
     WF0001-*.md               # Workflow tracking
+  retros/
+    _index.md                 # Retro registry
+    RETRO0001-*.md            # Sprint retros (+ LESSONS-SUMMARY.md)
+  handoffs/
+    _index.md                 # Handoff registry
+    HO0001-*.md               # Run-close handoff guides (remaining work)
 
 tests/                        # Generated test code
   unit/

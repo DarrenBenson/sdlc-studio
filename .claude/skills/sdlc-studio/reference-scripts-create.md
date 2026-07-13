@@ -55,6 +55,30 @@ honest default - a
 placeholder fails the validator and `manual` asserts a proof nobody ran. Conformance's
 `verifiable` stage reports the gap out loud instead.
 
+#### Single-line fields are refused, not stripped
+
+A field written into a metadata line, an index cell, or a one-line bullet must be a single
+line: `--title`, `--author`, `--epic`, `--persona`, `--priority`, `--ctype`, `--severity`,
+`--effort`, `--provenance`, each `--ac`, each `--option`, each `--verify`, and the `revision`
+verb's `--note`. A line break in one of them escapes the construct it is written into - the
+value's tail lands as a metadata line, a table row, or an AC directive of its own, and the
+tool signs it. So a title could open a second `> **Status:**` line above the real one (the
+readers take the first, so the artefact is born whatever the title said), an author could
+write a metadata line under the tool's provenance stamp, and an AC could inject a sibling
+`- **Verify:** <command>` line that the verifier reads back and runs.
+
+Both creators refuse such a value before anything is allocated or written, naming the field
+and the character, and nothing lands on disk. The refusal covers every character that breaks
+a line - newline, carriage return, vertical tab, form feed, the file/group/record separators,
+NEL, U+2028, U+2029 - plus NUL, and it refuses a break wherever it sits: leading, interior or
+trailing alike. That last point matters, because the writer emits the value it was handed, not
+a trimmed one - a leading break renders a blank first cell and then a forged line, so it is
+refused exactly like an interior one. A surrounding space is not a line break and is not
+refused: the distinction is space versus line break, never position. It is a refusal, not a
+repair: silently dropping the break would hand back exit 0 over a record that does not say what
+the caller asked it to say. Detail that needs more than a line belongs in a body section
+(`--summary`, `--steps`, `--fix`, `--impact`), which is free to be as long as it needs.
+
 #### Template tiers
 
 `--template` chooses scaffold richness: `minimal` (the default bare stub), `planning`, or
@@ -180,7 +204,9 @@ options (`--summary --option`). `--author "Name; type; version"` (type is
 opens; with no author given, the invoking agent is stamped (`SDLC_AUTHOR` when set). A
 Low-severity finding that consolidates carries the same authorship into the consolidation
 CR. What the filer writes passes `validate.py check` as written - a creator never emits an
-artefact its own validator rejects.
+artefact its own validator rejects. The filer shares the single-line refusal above: a title,
+author, severity, priority or criterion carrying a line break is refused before any write,
+from the same authority, so neither creation path is an escape hatch for the other.
 
 Full methodology: `reference-audit.md`.
 

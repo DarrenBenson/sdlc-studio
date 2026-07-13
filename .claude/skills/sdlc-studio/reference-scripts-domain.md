@@ -184,6 +184,42 @@ The Goal-Driven Development loop's planner. `plan <query> --order priority|wsjf`
 
 Deprecated re-exporting alias for `sprint.py` (the old name); prefer `sprint`.
 
+### `handoff.py`
+
+The run-close handoff guide - the single "here is where you pick up" document a run that
+stopped short of its goal owes a human. `show` prints the join; `generate --outcome
+<goal-reached|budget-spent|blocked|stopped>` writes it. A **JOIN over evidence that already
+exists**, not new instrumentation: quarantined units + failure signatures from
+`.local/loop-state.json`, failing and unproven ACs from `.local/verify-report.json`, per-unit
+issues from `audit.audit_unit`, the stalled lifecycle stage from `conformance`, and the
+approved batch from `.local/run-state.json` (then `.local/sprint-plan.json`).
+
+Every non-terminal unit is named with at least one pointer - the failing AC, the check it
+stalled at, the blocker, or its own file - and a batch id with **no artefact on disk is
+still listed** (remaining-and-missing), as is a unit the loop quarantined outside the
+approved batch. Nothing is dropped. Each item carries a suitability tag, `copilot-tail` or
+`judgement`, seeded deterministically from the difficulty band (`route.estimate`), the
+quarantine reason, the stage reached and the audit issues, with the reasons attached; an
+item with no signal reads `judgement`, never a confidently-wrong tail.
+
+Created through the meta-artifact machinery (`artifact.meta_new` - tool-allocated `HO` id +
+index row, like a retro), linked from the retro via `--retro RETROxxxx` (refused before any
+write when that retro does not exist), and it **emits a worklist**
+(`.local/handoff-worklist.txt`) that the documented `sprint plan --worklist` reads back as
+the next batch - no fourth batch source. `gate --require-handoff HOxxxx` fails unless the
+handoff exists **and** a retro links it. See `help/handoff.md`, reference-sprint.md.
+
+### `lib/run_state.py`
+
+The run-state object (`sdlc-studio/.local/run-state.json`): a run's id, start time, goal
+rung, approved batch and outcome, in one place. The loop is executed by the model calling
+discrete scripts, so a run had no identity at all - what it did was scattered across seven
+files nothing joined. `sprint plan --write` opens it; `handoff generate` closes it with the
+outcome. **Extensible by contract**: `update()` merges and never drops a key it does not
+recognise, so a later capability adds its own fields without touching the module. A run
+nobody opened records `run_id: null` / `started_at: null` rather than a fabricated start.
+A library, not a command - the writers are `sprint.py` and `handoff.py`.
+
 ### `route.py`
 
 Difficulty-aware model-tier routing, **advisory - no gate reads a tier**, no model API ever called (ids are opaque strings the orchestrator passes to its own spawn mechanism). `estimate --unit` scores 0-100 from blast-radius cognitive/risk (`complexity.assess`), file scope, unresolved-path novelty, ACs and points - an unresolved signal defaults its subscore to 0.5 (never 0) and lowers confidence. `pick --unit --role author|critic` applies band->tier, kind floors, the low-confidence upward bump, and the critic rule (never smaller than the author; code units floor the critic at medium). `escalate --tier` steps to the next declared tier; `tiers` prints the resolved map (upward-only sparse degradation). Config: `reference-config.md#routing`.

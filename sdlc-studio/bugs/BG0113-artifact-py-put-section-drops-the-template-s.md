@@ -1,6 +1,7 @@
 # BG0113: artifact.py _put_section drops the template's ### subsection prompts when a field is supplied
 
 > **Status:** Open
+> **Target:** v4.1
 > **Severity:** Low
 > **Created:** 2026-07-13
 > **Created-by:** sdlc-studio file

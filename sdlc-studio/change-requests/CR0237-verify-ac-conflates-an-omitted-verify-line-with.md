@@ -1,6 +1,7 @@
 # CR-0237: verify_ac conflates an omitted Verify line with a declared manual one
 
 > **Status:** Proposed
+> **Target:** v4.1
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-13

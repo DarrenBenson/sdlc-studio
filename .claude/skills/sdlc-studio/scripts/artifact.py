@@ -125,15 +125,15 @@ def _verifiers_of(f: dict) -> list[str]:
     `shell=True`, and the same rewrite is command substitution: the backticked token executes.
     Verbatim is the only form that is both correct and safe. A line break is refused - it would
     inject a second directive line into the AC block, and only the first is the one anyone read.
+    That refusal is the shared one (`require_single_line`), so a Verify expression and every
+    other single-line field are judged by one rule and one character class.
     """
     out: list[str] = []
-    for v in (f.get("verify") or []):
+    for i, v in enumerate((f.get("verify") or []), 1):
         s = str(v)
         if not s.strip():
             continue
-        if len(s.splitlines()) > 1:
-            raise ValueError(f"a Verify expression must be one line: {s!r}")
-        out.append(s.strip())
+        out.append(sdlc_md.require_single_line(f"verify[{i}]", s.strip()))
     return out
 
 
@@ -445,12 +445,29 @@ def _wire_story_to_epic(root: Path, epic_id: str, disp: str, title: str,
     return False
 
 
-META = ("retro", "review")  # meta-artifacts: tool-created, outside the status machinery
+# Meta-artifacts: tool-created, outside the status machinery (no status vocab, no
+# transition gate, no conformance stage). A handoff belongs here for the same reason a
+# retro does - it is a generated record OF a run, not a unit of work that moves through one.
+META = ("retro", "review", "handoff")
 
 
-def _render_meta(type_: str, disp: str, title: str, today: str) -> str:
+def _render_meta(type_: str, disp: str, title: str, today: str, f: dict | None = None) -> str:
     """Retro renders from the shipped retro template (id/title/date filled, the
-    rest left as authoring scaffold); review gets a minimal findings scaffold."""
+    rest left as authoring scaffold); review gets a minimal findings scaffold; a handoff
+    renders the GENERATED body its caller supplies (there is no authoring scaffold to
+    fill - every section is derived from the run, and an unsupplied body says so plainly
+    rather than leaving a placeholder nothing will ever substitute)."""
+    f = f or {}
+    if type_ == "handoff":
+        meta = "".join(f"> **{k}:** {v}\n" for k, v in (f.get("meta") or []))
+        body = f.get("body") or (
+            "## Where to pick up\n\n_Not generated._ A handoff is a JOIN over the run's own "
+            "evidence: run `handoff generate` at the close so this document names what "
+            "remains, with each item's pointer and suitability tag.\n")
+        return (f"# {disp}: {title}\n\n> **Date:** {today}\n"
+                f"> **Created-by:** sdlc-studio new\n{meta}\n{body}"
+                f"\n## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
+                f"| {today} | sdlc-studio | Generated at the run close (`handoff generate`) |\n")
     if type_ == "retro":
         tmpl = Path(__file__).resolve().parent.parent / "templates" / "reviews" / "retro.md"
         if tmpl.exists():
@@ -473,10 +490,11 @@ def meta_new(repo_root: Path | str, type_: str, title: str, fields: dict | None 
     meta index exists with a data header (both retros/ and reviews/ now carry one; a
     project without the index still creates the file and reports indexed=False honestly)."""
     if type_ not in META:
-        raise ValueError(f"unknown meta type {type_!r} (expected retro|review)")
+        raise ValueError(f"unknown meta type {type_!r} (expected {'|'.join(META)})")
     import next_id
     root = Path(repo_root)
     f = dict(fields or {})
+    sdlc_md.check_creator_fields({**f, "title": title})  # refuse an injected line before any write
     today = f.get("date") or date.today().isoformat()
     n = next_id.allocate_number(type_, root)
     rel, prefix = next_id.META_TYPES[type_]
@@ -495,7 +513,7 @@ def meta_new(repo_root: Path | str, type_: str, title: str, fields: dict | None 
         return {"id": disp, "file_id": file_id, "path": str(path), "indexed": would_index,
                 "epic_linked": None, "dry_run": True}
     path.parent.mkdir(parents=True, exist_ok=True)
-    sdlc_md.atomic_write(path, _render_meta(type_, disp, title, today))
+    sdlc_md.atomic_write(path, _render_meta(type_, disp, title, today, f))
     indexed = False
     index_path = root / rel / "_index.md"
     if index_path.exists():
@@ -524,6 +542,10 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
         raise ValueError(f"unknown type {type_!r} (expected one of {', '.join(SPEC)})")
     root = Path(repo_root)
     f = dict(fields or {})
+    # Refuse a field that would break out of its metadata line, index cell or bullet BEFORE
+    # anything is allocated or written - a half-created artefact carrying injected lines is
+    # worse than no artefact. One guard, every field, at the top of the one create path.
+    sdlc_md.check_creator_fields({**f, "title": title})
     f["date"] = f.get("date") or date.today().isoformat()
     if type_ == "story":
         if not f.get("epic"):
@@ -614,6 +636,11 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
         raise ValueError("batch is empty")
     # Validate the whole batch BEFORE writing anything (atomic) - a story wired to a
     # missing epic is an orphan; a colliding id would corrupt the run.
+    for i, it in enumerate(items, 1):
+        try:  # an injected line in item N aborts the batch here, before any id is reserved
+            sdlc_md.check_creator_fields(it)
+        except ValueError as exc:
+            raise ValueError(f"batch item {i}: {exc}") from exc
     if type_ == "story":
         for it in items:
             if not it.get("epic"):
@@ -1009,6 +1036,9 @@ def cmd_revision(args: argparse.Namespace) -> int:
     root = Path(args.root)
     today = args.date or date.today().isoformat()
     author = args.author or "sdlc"
+    # The three cells this verb writes. Refused up front, once: they are the same for every id
+    # in the batch, so a break in one would corrupt every row it touched.
+    sdlc_md.check_creator_fields({"date": today, "author": author, "note": args.note})
     ids = sdlc_md.resolve_ids(args)
     if not ids:
         print("specify at least one id: --id (repeatable) or --ids as a comma list",

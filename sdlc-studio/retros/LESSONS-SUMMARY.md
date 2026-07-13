@@ -2,6 +2,7 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0006: A security fix needs a leading/trailing/interior placement matrix, not just a character list**
 - **L-0005: Editing a shared template obliges you to run its renderer's tests**
 - **L-0004: Add a closing full-diff pass when units share a file**
 - **L-0003: Read every creation path, not the one the design note names**

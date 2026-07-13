@@ -1047,5 +1047,48 @@ class LessonsCloseGateTests(unittest.TestCase):
         self.assertIn("lessons-validity", gate.BLOCKING_ON_ERROR)
 
 
+class BoundLaneRegistryTests(unittest.TestCase):
+    """Every lane a mode BINDS must be declared in BOUND_LANE_SUBJECT and must block on
+    error. A bound lane is what makes its mode: the refusal message has to be able to name
+    what a deselection would have printed a verdict over, and a bound lane that crashed
+    proved nothing. Both registries rot silently otherwise - hence the sweep."""
+
+    # (kwarg, the lanes it binds) - the modes run_gate offers
+    MODES = [
+        ("require_retro", ["retro", "lessons-summary", "lessons-validity"]),
+        ("require_lessons", ["lessons-summary", "lessons-validity"]),
+        ("require_handoff", ["handoff"]),
+        ("release", ["verify"]),
+    ]
+
+    def test_every_bound_lane_names_its_subject(self) -> None:
+        for _mode, lanes in self.MODES:
+            for lane in lanes:
+                self.assertIn(lane, gate.BOUND_LANE_SUBJECT,
+                              f"bound lane '{lane}' has no subject for the refusal message")
+
+    def test_every_bound_lane_blocks_on_error(self) -> None:
+        for lane in gate.BOUND_LANE_SUBJECT:
+            self.assertIn(lane, gate.BLOCKING_ON_ERROR,
+                          f"bound lane '{lane}' blocks on failure but not on crash")
+
+    def test_no_bound_lane_is_in_the_standard_gate(self) -> None:
+        # a mode's lane must not fire on a plain `gate` run (it would false-fire on a clone
+        # with no retro/handoff due, and train agents to skim the output)
+        for lane in gate.BOUND_LANE_SUBJECT:
+            self.assertNotIn(lane, gate.DEFAULT_CHECKS, lane)
+
+    def test_deselecting_any_bound_lane_is_refused(self) -> None:
+        for mode, lanes in self.MODES:
+            for lane in lanes:
+                with self.subTest(mode=mode, lane=lane):
+                    kw = {mode: True if mode == "release" or mode == "require_lessons"
+                          else ("RETRO0001" if mode == "require_retro" else "HO0001")}
+                    r = gate.run_gate(".", checks={"a": _fake(0)}, skip=[lane], **kw)
+                    self.assertFalse(r["ok"])
+                    self.assertEqual(r["checks"][0]["check"], "selection")
+                    self.assertIn(lane, r["checks"][0]["detail"])
+
+
 if __name__ == "__main__":
     unittest.main()

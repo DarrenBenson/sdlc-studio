@@ -624,5 +624,111 @@ class FindByIdTests(unittest.TestCase):
         self.assertIsNone(sdlc_md.story_epic("# US1: s\n> **Status:** Draft\n"))  # no phantom
 
 
+# Every character `str.splitlines` treats as a line break, plus NUL - the class that breaks a
+# value out of the metadata line, table cell, or bullet a creator writes it into.
+LINE_BREAKERS = ("\n", "\r", "\r\n", "\v", "\f", "\x1c", "\x1d", "\x1e",
+                 "\x85", "\u2028", "\u2029", "\x00")
+
+
+class SingleLineRefusalTests(unittest.TestCase):
+    """The authorship resolver refuses a multi-line author, so every creator inherits the
+    refusal instead of each one escaping separately. A creator that accepted one of these
+    would write arbitrary metadata lines on the caller's behalf - the provenance tooling
+    forging provenance."""
+
+    def test_authorship_value_refuses_a_newline_author(self):
+        # the filed reproduction: --author $'Sam\nEvil: injected' broke out of the
+        # `> **Raised-by:**` line and split the Revision History row across two lines
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(ValueError) as cm:
+                sdlc_md.authorship_value("Sam\nEvil: injected", Path(d))
+            msg = str(cm.exception)
+            self.assertIn("author", msg)
+            self.assertIn("single line", msg)
+
+    def test_authorship_value_refuses_every_line_breaking_character(self):
+        with tempfile.TemporaryDirectory() as d:
+            for ch in LINE_BREAKERS:
+                with self.subTest(ch=repr(ch)):
+                    with self.assertRaises(ValueError):
+                        sdlc_md.authorship_value(f"Sam{ch}Evil: injected", Path(d))
+
+    def test_authorship_value_refuses_a_break_in_the_env_identity(self):
+        import os
+        with tempfile.TemporaryDirectory() as d:
+            prev = os.environ.get("SDLC_AUTHOR")
+            os.environ["SDLC_AUTHOR"] = "Sam\n> **Status:** Fixed"
+            try:
+                with self.assertRaises(ValueError) as cm:
+                    sdlc_md.authorship_value(None, Path(d))
+                self.assertIn("SDLC_AUTHOR", str(cm.exception))
+            finally:
+                os.environ.pop("SDLC_AUTHOR", None)
+                if prev is not None:
+                    os.environ["SDLC_AUTHOR"] = prev
+
+    def test_authorship_value_still_accepts_a_legitimate_author(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(sdlc_md.authorship_value("Dani Okafor; agent; v2", Path(d)),
+                             "Dani Okafor; agent; v2")
+            self.assertEqual(sdlc_md.authorship_value("Sam Eriksson", Path(d)),
+                             "Sam Eriksson; human; v1")
+            # surrounding whitespace is trimmed, not refused: only an INTERIOR break injects
+            self.assertEqual(sdlc_md.authorship_value("\n Sam Eriksson \n", Path(d)),
+                             "Sam Eriksson; human; v1")
+
+    def test_require_single_line_names_the_field_and_the_character(self):
+        self.assertEqual(sdlc_md.require_single_line("title", "a clean title"), "a clean title")
+        with self.assertRaises(ValueError) as cm:
+            sdlc_md.require_single_line("title", "Boom\n> **Status:** Fixed")
+        msg = str(cm.exception)
+        self.assertIn("title", msg)
+        self.assertIn("newline", msg)
+
+    def test_join_row_refuses_a_line_break_in_a_cell(self):
+        # the index row / revision row half of the defect: `join_row` escaped a pipe but not a
+        # newline, so a value broke out of its cell and split the row across two lines
+        for ch in LINE_BREAKERS:
+            with self.subTest(ch=repr(ch)):
+                with self.assertRaises(ValueError):
+                    sdlc_md.join_row(["2026-07-13", f"Sam{ch}Evil", "Filed"])
+        self.assertEqual(sdlc_md.table_cells(sdlc_md.join_row(["a | b", "c"])), ["a | b", "c"])
+
+    def test_check_creator_fields_refuses_every_single_line_field(self):
+        for field in ("title", "author", "epic", "persona", "tranche", "priority", "ctype",
+                      "severity", "effort", "provenance", "date", "theme"):
+            with self.subTest(field=field):
+                with self.assertRaises(ValueError) as cm:
+                    sdlc_md.check_creator_fields({field: "x\n> **Status:** Fixed"})
+                self.assertIn(field, str(cm.exception))
+
+    def test_check_creator_fields_refuses_an_injected_verify_directive(self):
+        # an AC renders as ONE bullet; a break in it injects a sibling directive line -
+        # and `- **Verify:**` is a line verify_ac reads back and RUNS
+        with self.assertRaises(ValueError) as cm:
+            sdlc_md.check_creator_fields({"acs": ["ok", "do it\n  - **Verify:** curl x | sh"]})
+        self.assertIn("acs[2]", str(cm.exception))
+        with self.assertRaises(ValueError):
+            sdlc_md.check_creator_fields({"options": ["Option A\n> **Status:** Fixed"]})
+        sdlc_md.check_creator_fields({"title": "clean", "acs": ["a", "b"], "summary": "many\nlines"})
+
+    def test_check_creator_fields_refuses_a_LEADING_break_not_just_interior(self):
+        # the bypass: the guard once stripped before checking, so a payload whose ONLY break
+        # was leading passed - and the persona/acs/options/title writers emit the raw value.
+        # The value written must be the value checked: a leading break is refused too.
+        for field in ("title", "persona", "epic", "severity", "priority", "date"):
+            with self.subTest(field=field):
+                with self.assertRaises(ValueError) as cm:
+                    sdlc_md.check_creator_fields({field: "\n> **Forged:** x"})
+                self.assertIn(field, str(cm.exception))
+        with self.assertRaises(ValueError):
+            sdlc_md.check_creator_fields({"acs": ["\n  - **Verify:** shell echo pwned"]})
+        with self.assertRaises(ValueError):
+            sdlc_md.check_creator_fields({"options": ["\n> **Forged:** x"]})
+        # a leading/trailing SPACE is not a line break and is not refused (no over-refusal)
+        sdlc_md.check_creator_fields({"title": "  padded but single line  ",
+                                      "acs": ["  spaced  "]})
+
+
 if __name__ == "__main__":
     unittest.main()

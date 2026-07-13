@@ -207,11 +207,97 @@ def iter_tables(text: str, header_predicate=None):
         yield current
 
 
+# -----------------------------------------------------------------------------
+# Single-line values: the refusal every writer of a metadata line, a table cell,
+# or a one-line bullet shares
+# -----------------------------------------------------------------------------
+
+# Every character `str.splitlines` treats as a line break, plus NUL. A value carrying one of
+# these breaks OUT of the construct it is written into: the readers in this module take a file
+# a line at a time, so what the caller passed as one field becomes two lines, and whatever
+# follows the break is read as a metadata line, a table row, or an AC directive of its own -
+# lines nobody asked for, written by the tool, over the tool's own signature. NUL is not a line
+# break but has no place in a markdown document and truncates in C-backed tooling.
+_LINE_BREAK_NAMES: dict[str, str] = {
+    "\n": "newline (U+000A)", "\r": "carriage return (U+000D)",
+    "\v": "vertical tab (U+000B)", "\f": "form feed (U+000C)",
+    "\x1c": "file separator (U+001C)", "\x1d": "group separator (U+001D)",
+    "\x1e": "record separator (U+001E)", "\x85": "next line (U+0085)",
+    "\u2028": "line separator (U+2028)", "\u2029": "paragraph separator (U+2029)",
+    "\x00": "NUL (U+0000)",
+}
+_LINE_BREAK_RE = re.compile("[" + "".join(re.escape(c) for c in _LINE_BREAK_NAMES) + "]")
+
+# Fields a creator writes into a metadata line, an index cell, or a one-line bullet. Each must
+# be a single line or it escapes that construct. The prose fields (summary, steps, fix, impact,
+# recommendation) are deliberately absent: they are written into a section body, where more than
+# one line is the point.
+SINGLE_LINE_FIELDS: tuple[str, ...] = (
+    "title", "author", "epic", "persona", "tranche", "priority", "ctype", "severity",
+    "effort", "provenance", "date", "theme", "note",
+)
+# List fields whose every item renders as ONE bullet. An `acs` item is the sharpest of them: a
+# break in it injects a sibling `- **Verify:** <command>` line into the AC block, which the
+# verifier reads back and RUNS.
+SINGLE_LINE_LIST_FIELDS: tuple[str, ...] = ("acs", "options", "verify")
+
+
+def require_single_line(field: str, value: str) -> str:
+    """`value` unchanged, or ValueError naming the field and the character that breaks it.
+
+    Refuse, never strip. A value quietly rewritten is a success the tool did not achieve: the
+    caller is handed exit 0 over a record that does not say what they asked it to say. Loud is
+    the only honest answer. The refusal is by CHARACTER, not by position: a line break anywhere
+    escapes the construct - leading, interior or trailing alike - because the callers write the
+    value they were handed, not a trimmed one, and a leading break renders a blank first cell
+    then a forged line. A surrounding SPACE is not a line break and is not refused, so a
+    caller's untidiness ("  Sam  ") still passes; the distinction is space versus line break,
+    never where it sits.
+    """
+    m = _LINE_BREAK_RE.search(value or "")
+    if not m:
+        return value
+    raise ValueError(
+        f"{field} must be a single line - it carries a {_LINE_BREAK_NAMES[m.group(0)]} at "
+        f"position {m.start()}: {value!r}. The value would break out of its metadata line, "
+        "table cell or bullet and write lines nobody asked for; nothing was written. Remove "
+        "the break - detail that needs more than a line belongs in a body section.")
+
+
+def check_creator_fields(fields: dict) -> None:
+    """Refuse, BEFORE a creator writes anything, any supplied field that would break out of the
+    metadata line, index cell, or bullet it is written into.
+
+    One guard at one choke point, so every creation path inherits the refusal instead of each
+    escaping (or forgetting to escape) separately. Raises ValueError naming the field.
+
+    The RAW value is checked, never a stripped copy: the persona, acs, options and title
+    writers emit the value verbatim (`f"> **Persona:** {value}"`, `_md_safe(item)`), so a
+    payload whose only break is LEADING would pass a stripped check and then be written in full
+    - the exact bypass. The value that is checked here must be the value the writer emits.
+    """
+    for key in SINGLE_LINE_FIELDS:
+        val = fields.get(key)
+        if isinstance(val, str):
+            require_single_line(key, val)
+    for key in SINGLE_LINE_LIST_FIELDS:
+        items = fields.get(key)
+        if isinstance(items, (list, tuple)):
+            for i, item in enumerate(items, 1):
+                require_single_line(f"{key}[{i}]", str(item))
+
+
 def join_row(cells: list[str]) -> str:
     """Render a table row, re-escaping any literal pipe in a cell so a value that contains
     `|` round-trips through `table_cells` without shifting columns. The single row writer
-    every index builder shares."""
-    return "| " + " | ".join(c.replace("|", "\\|") for c in cells) + " |"
+    every index builder shares.
+
+    A cell carrying a line break is REFUSED, not written: escaping the pipe but not the newline
+    is what let an author's name split a row across two lines and open a second, forged one.
+    The pipe is escapable; the line break is not, so it is a refusal."""
+    return "| " + " | ".join(
+        require_single_line(f"table cell {i}", c).replace("|", "\\|")
+        for i, c in enumerate(cells, 1)) + " |"
 
 
 def find_data_header(lines: list[str]) -> tuple[int, list[str]] | None:
@@ -754,9 +840,17 @@ def authorship_value(author: str | None, repo_root) -> str:
     otherwise). With no author at all, the invoking agent's identity is used - `SDLC_AUTHOR`
     from the environment when set, else the tool's own. An unknown type raises rather than
     minting an artefact the validator will reject.
+
+    A multi-line author is REFUSED here, at the one resolver every creation path calls, rather
+    than escaped separately by each. The value is written into a `> **Raised-by:**` metadata
+    line AND an index cell AND a revision row: a line break in it escapes all three, letting
+    whoever supplies the name write arbitrary metadata lines under the tool's signature - the
+    provenance tooling forging provenance.
     """
-    raw = (author or "").strip() or os.environ.get("SDLC_AUTHOR", "").strip() \
-        or DEFAULT_AGENT_AUTHOR
+    raw = require_single_line("author", (author or "").strip())
+    if not raw:
+        raw = require_single_line("SDLC_AUTHOR", os.environ.get("SDLC_AUTHOR", "").strip()) \
+            or DEFAULT_AGENT_AUTHOR
     parsed = parse_authorship_value(raw) or {}
     name = (parsed.get("name") or "").strip()
     if not name:

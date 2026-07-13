@@ -1,6 +1,6 @@
 # CR-0223: the handoff guide: a first-class remaining-work artefact at run close
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Target:** v4.1 (deliberately deferred past the GA tag; operator-directed 2026-07-10)
 > **Priority:** Medium
 > **Type:** Feature

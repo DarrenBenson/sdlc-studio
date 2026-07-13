@@ -1061,5 +1061,58 @@ class OneCallCloseTests(unittest.TestCase):
             self.assertIn("> **Status:** Fixed", text)
 
 
+class MetadataLineInjectionTests(unittest.TestCase):
+    """Every writer of a metadata line inherits ONE refusal (`sdlc_md.require_single_line` in
+    `_upsert_field`), rather than each caller remembering to escape. `annotate` guarded its own
+    value; the triage stamps went straight to the writer and did not, so a triage record could
+    write arbitrary metadata lines into the artefact it was closing."""
+
+    BREAK = "\n> **Evil:** injected"
+
+    def test_triaged_by_cannot_inject_a_metadata_line(self) -> None:
+        # the fixture reproduction: --triaged-by $'Dani Okafor; human; v1\n> **Evil:** injected'
+        # stamped a `> **Evil:**` line that `extract_field` read back
+        with tempfile.TemporaryDirectory() as d:
+            root = _v3_bug_repo(Path(d))
+            with self.assertRaises(ValueError) as cm:
+                tr.transition(root, "BG0001", "Open",
+                              triaged_by="Dani Okafor; human; v1" + self.BREAK)
+            self.assertIn("single line", str(cm.exception))
+            text = (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
+            self.assertIsNone(tr.sdlc_md.extract_field(text, "Evil"))
+            self.assertNotIn("Evil", text)
+
+    def test_triage_severity_cannot_inject_a_metadata_line(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _v3_bug_repo(Path(d))
+            with self.assertRaises(ValueError):
+                tr.transition(root, "BG0001", "Open", triaged_by="Knox; agent; 1",
+                              triage_severity="low" + self.BREAK)
+            text = (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
+            self.assertNotIn("Evil", text)
+
+    def test_the_whole_line_breaking_class_is_refused_at_the_writer(self) -> None:
+        for ch in ("\n", "\r", "\v", "\f", "\x1c", "\x1d", "\x1e", "\x85",
+                   "\u2028", "\u2029", "\x00"):
+            with self.subTest(ch=repr(ch)):
+                with self.assertRaises(ValueError):
+                    tr._upsert_field("# x\n\n> **Status:** Open\n", "Triaged-by",
+                                     f"Knox{ch}> **Evil:** injected")
+                with self.assertRaises(ValueError):
+                    tr._upsert_field("# x\n\n> **Status:** Open\n", f"Bad{ch}Field", "v")
+
+    def test_annotate_still_refuses_and_a_clean_stamp_still_lands(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _v3_bug_repo(Path(d))
+            with self.assertRaises(ValueError):
+                tr.annotate(root, "BG0001", "Verification depth", "functional" + self.BREAK)
+            res = tr.transition(root, "BG0001", "Open", triaged_by="Knox; agent; 1",
+                                triage_severity="low")
+            self.assertEqual(res["to"], "Open")
+            text = (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
+            self.assertIn("> **Triaged-by:** Knox; agent; 1", text)
+            self.assertIn("> **Triage-severity:** low", text)
+
+
 if __name__ == "__main__":
     unittest.main()

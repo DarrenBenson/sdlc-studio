@@ -242,7 +242,7 @@ def _hook_enabled(root: str) -> dict:
 BLOCKING_ON_ERROR = {
     "conformance", "reconcile", "index-derived", "validate",
     "integrity", "duplicate-id", "doc-coverage", "retro", "verify",
-    "lessons-summary", "lessons-validity",
+    "lessons-summary", "lessons-validity", "handoff",
 }
 
 DEFAULT_CHECKS = {
@@ -271,6 +271,43 @@ def _retro_present(root: str, retro_id: str) -> dict:
     return {"count": 0 if present else 1, "blocking": True,
             "detail": (f"batch retro {retro_id} present" if present
                        else f"missing batch retro {retro_id} - write it before closing the sprint")}
+
+
+def _handoff_present(root: str, handoff_id: str) -> dict:
+    """Blocking close-gate check: a run that stopped short of its goal must leave the
+    handoff, and a retro must LINK it.
+
+    Both halves are the check. A handoff nobody links is a document nobody opens - the
+    person picking the work up reads the retro, and the retro is where the pointer belongs.
+    Presence alone would let the gate certify a handoff that is, in practice, invisible.
+    """
+    rr = Path(root)
+    stem = str(handoff_id).replace("-", "").upper()
+    d = rr / "sdlc-studio" / "handoffs"
+    hits = sorted(d.glob(f"{stem}*.md")) if d.is_dir() else []
+    if not hits:
+        return {"count": 1, "blocking": True,
+                "detail": f"missing handoff {handoff_id} - a run that stopped short of its "
+                          f"goal owes one (`handoff generate --outcome <how it ended>`)"}
+    retros = rr / "sdlc-studio" / "retros"
+    disp = f"{stem[:2]}-{stem[2:]}" if stem.startswith("HO") else stem
+    # A LINK, not a mention. A substring scan for the id passes on a retro whose prose
+    # DENIES the handoff exists ("we never wrote HO-0001") - it would certify the very
+    # absence it is meant to catch. The check is the markdown link shape the writer emits
+    # and a reader can actually follow: a link whose target is the handoff file.
+    import re
+    link_re = re.compile(rf"\[[^\]]*\]\([^)]*{re.escape(stem)}[^)]*\.md\)", re.IGNORECASE)
+    linked = [p.name for p in (sorted(retros.glob("RETRO*.md")) if retros.is_dir() else [])
+              if link_re.search(p.read_text(encoding="utf-8"))]
+    if not linked:
+        return {"count": 1, "blocking": True,
+                "detail": f"handoff {disp} exists but no retro links it (a markdown link to "
+                          f"the handoff file - a bare mention of the id is not a link a "
+                          f"reader can follow) - regenerate with `handoff generate --retro "
+                          f"RETROxxxx`, so the person picking the work up finds it from the "
+                          f"retro they read"}
+    return {"count": 0, "blocking": True,
+            "detail": f"handoff {disp} present, linked from {', '.join(linked)}"}
 
 
 def _lessons_summary(root: str) -> dict:
@@ -393,11 +430,23 @@ def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool =
     return {"count": len(red) + len(blocked), "blocking": True, "detail": "; ".join(parts)}
 
 
+# What each bound lane is FOR, named in the refusal so an operator who deselects one is
+# told what the verdict would have been printed over. A lane with no entry falls back to
+# the generic phrase.
+BOUND_LANE_SUBJECT = {
+    "verify": "the AC layer",
+    "retro": "the sprint close's learning loop",
+    "lessons-summary": "the sprint close's learning loop",
+    "lessons-validity": "the sprint close's learning loop",
+    "handoff": "the remaining-work handoff",
+}
+
+
 def run_gate(root: str = ".", only: list[str] | None = None,
              skip: list[str] | None = None, checks: dict | None = None,
              require_retro: str | None = None, release: bool = False,
              allow_external: bool = False, verify_batch: bool = False,
-             require_lessons: bool = False) -> dict:
+             require_lessons: bool = False, require_handoff: str | None = None) -> dict:
     """Run the selected checks and report. `ok` is False only when a BLOCKING check
     fails; a non-blocking failure is reported but does not fail the gate. `require_retro`
     is the SPRINT-CLOSE gate: it binds a blocking check that the named batch retro exists,
@@ -424,6 +473,9 @@ def run_gate(root: str = ".", only: list[str] | None = None,
     if require_retro or require_lessons:  # ...and the rest of the close's learning loop
         registry.update(LESSONS_CLOSE_CHECKS)
         bound.extend(LESSONS_CLOSE_CHECKS)
+    if require_handoff:  # a run that stopped short: the handoff must exist AND be linked
+        registry["handoff"] = lambda r, _hid=require_handoff: _handoff_present(r, _hid)
+        bound.append("handoff")
     if release:  # pre-tag: the executing AC-verify lane joins the standard gate
         registry["verify"] = (lambda r, _x=allow_external, _b=verify_batch:
                               _verify_acs(r, allow_external=_x, batch=_b))
@@ -449,16 +501,16 @@ def run_gate(root: str = ".", only: list[str] | None = None,
     # not want the lane examined wants the standard gate, and should say so.
     dropped = [n for n in bound if n not in selected]
     if dropped:
-        what = ("the AC layer" if dropped == ["verify"]
-                else "the sprint close's learning loop" if "verify" not in dropped
-                else "what it claims to gate")
+        subjects = sorted({BOUND_LANE_SUBJECT.get(n, "what it claims to gate")
+                           for n in dropped})
+        what = " and ".join(subjects)
         return {"ok": False, "checks": [{
             "check": "selection", "count": len(dropped), "blocking": True, "status": "fail",
             "detail": f"deselecting the bound lane(s) {', '.join(dropped)} proves nothing "
                       f"about {what} - that verdict will not be printed over them. Drop the "
                       f"--skip/--only that excludes them, or drop the mode flag "
-                      f"(--release/--require-retro/--require-lessons) and run the standard "
-                      f"gate"}]}
+                      f"(--release/--require-retro/--require-lessons/--require-handoff) and "
+                      f"run the standard gate"}]}
     results = []
     for name in selected:
         try:
@@ -489,7 +541,8 @@ def cmd_gate(args: argparse.Namespace) -> int:
                       require_retro=getattr(args, "require_retro", None), release=release,
                       allow_external=getattr(args, "allow_external", False),
                       verify_batch=getattr(args, "verify_batch", False),
-                      require_lessons=getattr(args, "require_lessons", False))
+                      require_lessons=getattr(args, "require_lessons", False),
+                      require_handoff=getattr(args, "require_handoff", None))
     if args.format == "json":
         print(json.dumps(report, indent=2))
     else:
@@ -524,6 +577,11 @@ def build_parser() -> argparse.ArgumentParser:
                    help="The lessons half of the close gate on its own: fail on a stale "
                         "LESSONS-SUMMARY.md (regenerate it with `lessons summary`) or on an open "
                         "lesson past its validity horizon (`lessons revalidate`)")
+    p.add_argument("--require-handoff", dest="require_handoff", metavar="HOxxxx",
+                   help="Run-close gate for a run that stopped SHORT of its goal: fail "
+                        "unless this handoff exists in sdlc-studio/handoffs/ and a retro "
+                        "links it (`handoff generate --outcome <how it ended> --retro "
+                        "RETROxxxx`). Deselecting the `handoff` lane under it is refused")
     p.add_argument("--release", action="store_true",
                    help="Pre-tag gate: also EXECUTE every story's Verify: expression and fail "
                         "on any red or unproven AC (read-only - no Verified: back-annotation, "

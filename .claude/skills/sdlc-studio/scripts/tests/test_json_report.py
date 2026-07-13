@@ -39,6 +39,7 @@ VERBS = [
     ("persona_resolve", "persona_resolve.py", ["resolve", "--seat", "product", "--format", "json"]),
     ("loop_guard", "loop_guard.py",
      ["record", "--unit", "US1", "--signature", "t::x", "--format", "json"]),
+    ("handoff", "handoff.py", ["show", "--ids", "US9999", "--format", "json"]),
 ]
 
 

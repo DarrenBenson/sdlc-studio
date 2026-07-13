@@ -397,5 +397,69 @@ class ConsolidationRevisionAuthorTests(unittest.TestCase):
             self.assertIn("| Sprint Driver |", _rev_row(body))
 
 
+class MetadataInjectionRefusalTests(unittest.TestCase):
+    """The filer inherits the resolver's refusal: a field carrying a line break is refused
+    before any write, so no artefact is minted with metadata lines nobody asked for and no
+    index row splits across two lines."""
+
+    BREAK = "\n> **Status:** Fixed"
+
+    def _bug(self, **over) -> dict:
+        return {"severity": "High", "summary": "s", "steps": "r", "fix": "f", **over}
+
+    def _nothing_written(self, root: Path) -> None:
+        d = root / "sdlc-studio" / "bugs"
+        self.assertEqual([p.name for p in d.glob("*.md") if p.name != "_index.md"], [])
+        idx = (d / "_index.md").read_text(encoding="utf-8")
+        self.assertEqual([ln for ln in idx.splitlines() if ln.startswith("| [")], [])
+
+    def test_multi_line_author_is_refused_and_nothing_is_written(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            with self.assertRaises(ValueError) as cm:
+                ff.file_finding(root, "bug", "t", self._bug(author="Sam\nEvil: injected"))
+            self.assertIn("author", str(cm.exception))
+            self._nothing_written(root)
+
+    def test_multi_line_title_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            with self.assertRaises(ValueError) as cm:
+                ff.file_finding(root, "bug", "Silent" + self.BREAK, self._bug())
+            self.assertIn("title", str(cm.exception))
+            self._nothing_written(root)
+
+    def test_multi_line_severity_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            with self.assertRaises(ValueError):
+                ff.file_finding(root, "bug", "t", self._bug(severity="Low" + self.BREAK))
+            self._nothing_written(root)
+
+    def test_multi_line_cr_criterion_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "cr")
+            with self.assertRaises(ValueError) as cm:
+                ff.file_finding(root, "cr", "t",
+                                {"priority": "High", "ctype": "Improvement", "summary": "s",
+                                 "impact": "i", "effort": "S",
+                                 "acs": ["ok", "do it\n- [ ] and this"]})
+            self.assertIn("acs", str(cm.exception))
+
+    def test_a_clean_finding_still_files(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            res = ff.file_finding(root, "bug", "a real defect",
+                                  self._bug(author="Dani Okafor; agent; v2"))
+            body = Path(res["path"]).read_text(encoding="utf-8")
+            self.assertIn("> **Raised-by:** Dani Okafor; agent; v2", body)
+            self.assertTrue(res["indexed"])
+
+
 if __name__ == "__main__":
     unittest.main()

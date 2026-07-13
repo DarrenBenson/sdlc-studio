@@ -1,6 +1,7 @@
 # BG0114: the documented conformance stage has no remediation hint, and the guard meant to catch that is blind to it
 
 > **Status:** Open
+> **Target:** v4.1
 > **Severity:** Medium
 > **Created:** 2026-07-13
 > **Created-by:** sdlc-studio file

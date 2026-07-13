@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The handoff guide: a generated record of where an agentic run stopped (CR0223).** When a
+  sprint or epic run ends short of its goal - blocked, budget spent, or halted - the tail of
+  remaining work was scattered across hints, the decisions ledger and the retro, with no single
+  document a human joining afterwards could pick up from. `handoff generate` now writes one: what
+  was delivered with its evidence, what remains with a per-item pointer (the file, the failing
+  AC, the stalled stage) and a suitability tag (copilot-tail versus judgement), and the open
+  decisions. It is a join over machine-readable state, not new instrumentation, and it is exact
+  about delivery - a Done unit whose acceptance criteria are red or stale is reported as
+  remaining, not delivered, because a status is a claim and the verifier is the evidence. It also
+  introduces the run-state object (`sdlc-studio/.local/run-state.json`) that records a run's
+  identity, batch and outcome under a lock, so the tail can be assembled and later work can build
+  on it. `sprint plan` reads a pending handoff back as an input.
+
 - **The lessons close-loop is now a mechanism, not doctrine (CR0236).** Sprint close was
   meant to summarise the lessons learned, and the next sprint was meant to read them. Only
   the retro artefact was ever enforced; regenerating the summary and reading it at the start
@@ -57,6 +70,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unaffected.
 
 ### Fixed
+
+- **Creator input fields can no longer forge metadata or inject an executable check (BG0115).**
+  A line break in a creator's input field broke out of its metadata line or table cell, because
+  the value was interpolated raw. Filed as a cosmetic newline in `--author`, it was a class: a
+  `--title` carrying a newline forged the `Status` line, so a bug could be born `Fixed` and every
+  reader downstream (reconcile, the dashboards, the transition gate) believed it; a `--ac`
+  carrying a newline injected a sibling `- **Verify:**` line that the AC verifier read back and
+  executed. Every field a creator writes into a metadata line or a table cell is now refused if
+  it contains a line break - across the whole break class, not only `\n` - at the writer, so the
+  value written is the value that was checked. A refused create writes nothing and burns no id.
 
 - **The creators record the authorship they were given, not a hardcoded one (BG0109).**
   `file_finding.py` wrote `audit` into every Revision History row regardless of `--author`,

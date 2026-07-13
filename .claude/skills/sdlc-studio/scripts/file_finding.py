@@ -205,6 +205,10 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     if missing:
         raise ValueError(f"{type_} finding missing required field(s): {', '.join(missing)} "
                          "- the filer refuses to write a hollow artifact")
+    # Refuse a field that would break out of its metadata line, index cell or bullet before
+    # anything is allocated or written - the same guard the general creator runs, from the
+    # same authority, so neither path is an escape hatch for the other.
+    sdlc_md.check_creator_fields({**fields, "title": title})
     root = Path(repo_root)
     today = fields.get("date") or date.today().isoformat()
     fields = {**fields, "date": today}

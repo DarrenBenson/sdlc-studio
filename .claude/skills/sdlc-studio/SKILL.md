@@ -228,6 +228,7 @@ approach decisions. The full index is in `help/references.md`.
 | `rfc` | Request For Comments – design exploration of an unsettled space, pre-CR |
 | `project` | Project-level orchestration across all epics |
 | `sprint` | Goal-Driven Development loop: a prioritised batch driven along the goal ladder `triage -> plan -> design -> done` |
+| `handoff` | The run-close handoff guide: what remains, per item, with its pointer and a copilot-tail / judgement tag |
 | `plan` | Claude Code plan-file lifecycle (list, archive) |
 | `decisions` | Project decisions log (the project spine + delegated-agent handoff): `add` / `list` / `promote` |
 | `reconcile` | Detect and fix status drift across all artifacts |

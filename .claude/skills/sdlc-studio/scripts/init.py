@@ -29,7 +29,7 @@ SKILL = Path(__file__).resolve().parent.parent
 SDLC = "sdlc-studio"
 # The full tree: the 8 numbered-artifact dirs plus the cross-cutting workspaces.
 DIRS = ["epics", "stories", "plans", "bugs", "change-requests", "rfcs", "test-specs",
-        "workflows", "retros", "decisions", "reviews", ".local"]
+        "workflows", "retros", "handoffs", "decisions", "reviews", ".local"]
 INDEX_TYPES = ["epic", "story", "plan", "bug", "cr", "rfc", "test-spec", "workflow"]
 SINGLETONS = ["prd", "trd", "tsd", "personas"]
 AGENT_FILES = [("agent-instructions.md", "AGENTS.md"),
