@@ -23,6 +23,16 @@ SKILL = Path(__file__).resolve().parent.parent
 LOG_REL = "sdlc-studio/decisions.md"
 _ROW = re.compile(r"^\|\s*D(\d{4})\s*\|")
 
+# A waiver is an ordinary decision row whose decision cell is the canonical token
+# `waiver: <subject>` - so it is greppable and machine-detectable, not narrative. The subject
+# names what is intentionally out of scope: a review leg (`leg:tsd`) or, reusably, any rule
+# (`rule:engagement-floor`). Lookup is anchored equality on that cell, never a substring, so a
+# row that merely mentions the subject is not mistaken for a waiver of it.
+WAIVER_PREFIX = "waiver:"
+# The four required DOCUMENT legs a `--leg` waiver may name. CODE is deliberately absent: it has
+# no single artefact whose presence can be tested, so it is out of scope for the leg-presence gate.
+DOC_LEGS = ("prd", "trd", "tsd", "personas")
+
 
 def _log_path(root: Path) -> Path:
     return Path(root) / LOG_REL
@@ -112,6 +122,34 @@ def add(root: Path | str, decision: str, rationale: str, status: str = "accepted
     return {"id": did, "status": status, "date": when}
 
 
+def _norm_subject(subject: str | None) -> str:
+    """Normalise a waiver subject (lowercase, whitespace-stripped) so `LEG:TSD`, ` leg:tsd `
+    and `leg:tsd` are the one key - lookup cannot miss on case or padding."""
+    return (subject or "").strip().lower()
+
+
+def record_waiver(root: Path | str, subject: str, rationale: str,
+                  today: str | None = None) -> dict:
+    """Record a machine-detectable waiver: a decision row `waiver: <subject>`, with the human
+    reason in the rationale cell. General over any waivable subject (a review leg `leg:tsd`, or
+    a rule `rule:engagement-floor`), so a later gate reuses the same primitive."""
+    subject = _norm_subject(subject)
+    if not subject:
+        raise ValueError("a waiver subject must be non-empty (e.g. leg:tsd or rule:<name>)")
+    return add(root, f"{WAIVER_PREFIX} {subject}", rationale, today=today)
+
+
+def waiver_for(root: Path | str, subject: str) -> str | None:
+    """The id of the ACCEPTED waiver for `subject`, or None. Anchored equality on the decision
+    cell (`waiver: <subject>`), never a substring: a row that merely mentions the subject, or a
+    superseded/revisited waiver, does not hold - so a prose reclassification cannot pass as one."""
+    want = f"{WAIVER_PREFIX} {_norm_subject(subject)}"
+    for rec in list_decisions(root):
+        if rec["status"] == "accepted" and rec["decision"].strip().lower() == want:
+            return rec["id"]
+    return None
+
+
 def promote(root: Path | str, source: str, decision: str, rationale: str,
             today: str | None = None) -> dict:
     """Promote a resolved PRD open question into the log with a back-link. One
@@ -183,6 +221,14 @@ def cmd_backfill(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_waive(args: argparse.Namespace) -> int:
+    subject = f"leg:{args.leg}" if args.leg else args.subject
+    r = record_waiver(args.root, subject, args.rationale)
+    print(json.dumps(r, indent=2) if args.format == "json"
+          else f"waived {_norm_subject(subject)} -> {r['id']} ({r['date']})")
+    return 0
+
+
 def cmd_list(args: argparse.Namespace) -> int:
     rows = list_decisions(args.root, args.status)
     if args.format == "json":
@@ -218,6 +264,16 @@ def build_parser() -> argparse.ArgumentParser:
     pr.add_argument("--root", default=".")
     pr.add_argument("--format", choices=("text", "json"), default="text")
     pr.set_defaults(func=cmd_promote)
+    wv = sub.add_parser("waive", help="Record a waiver: a required leg or rule is intentionally "
+                                      "out of scope here (a machine-detectable decision row).")
+    wv_what = wv.add_mutually_exclusive_group(required=True)
+    wv_what.add_argument("--leg", choices=DOC_LEGS,
+                         help="the required document leg being waived (CODE is out of scope)")
+    wv_what.add_argument("--subject", help="a general waiver subject, e.g. rule:engagement-floor")
+    wv.add_argument("--rationale", required=True, help="why it is out of scope for this project")
+    wv.add_argument("--root", default=".")
+    wv.add_argument("--format", choices=("text", "json"), default="text")
+    wv.set_defaults(func=cmd_waive)
     ls = sub.add_parser("list", help="List recorded decisions.")
     ls.add_argument("--status", help="filter by status")
     ls.add_argument("--root", default=".")

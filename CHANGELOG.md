@@ -84,6 +84,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A required review leg can no longer be waved away in prose (BG0110).** The unified review's
+  required legs are PRD, TRD, TSD and Persona. When one was absent, the review - being
+  model-authored prose - could reclassify it as "optional polish" and still pass, so a required
+  document could stay missing indefinitely while every review read clean. Leg presence is now
+  machine-visible (`review_prep` reports each leg as present, absent, or waived), and a
+  `review-legs` lane bound under `gate --release` fails on any required leg that is absent and
+  unwaived. The only way past it is an explicit, recorded waiver - a decisions-log entry stating
+  the leg is intentionally out of scope, which the review then reports as "waived (D00xx)". The
+  lane is bound, so it cannot be skipped or excluded away. The waiver primitive is general (it
+  names a subject, a leg or any rule), so later gates can reuse it. The CODE leg is deliberately
+  out of scope: it has no single artefact whose presence can be tested.
+
 - **Uniform CLI grammar across the skill scripts (CR0234).** Three grammar inconsistencies that
   each cost an agent a wrong turn are closed, and a conformance sweep now fails the build if a new
   script reintroduces the class. `--root` is accepted before the subcommand on every root-dealing

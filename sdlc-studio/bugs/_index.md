@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 6 |
+| Open | 5 |
 | In Progress | 0 |
-| Fixed | 32 |
+| Fixed | 33 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 0 |
@@ -76,7 +76,7 @@
 | [BG0107](BG0107-ci-lacks-pytest-the-audit-quiz-class-d.md) | CI lacks pytest; the audit-quiz class-D grader fails its first CI exposure | Fixed | Low | 2026-07-10 | 2026-07-10 |
 | [BG0108](BG0108-artifact-py-schema-v3-skeletons-fail-their-own.md) | artifact.py schema-v3 skeletons fail their own validator (no Raised-by line) | Fixed | Medium | 2026-07-11 | 2026-07-11 |
 | [BG0109](BG0109-file-finding-py-hardcodes-audit-as-the-revision.md) | file_finding.py hardcodes 'audit' as the revision-history author, ignoring --author | Fixed | Low | 2026-07-11 | 2026-07-11 |
-| [BG0110](BG0110-review-lets-a-required-leg-tsd-be-self.md) | review lets a required leg (TSD) be self-downgraded to optional in prose without an explicit waiver | Open | -- | 2026-07-13 | 2026-07-13 |
+| [BG0110](BG0110-review-lets-a-required-leg-tsd-be-self.md) | review lets a required leg (TSD) be self-downgraded to optional in prose without an explicit waiver | Fixed | -- | 2026-07-13 | 2026-07-13 |
 | [BG0111](BG0111-lessons-written-by-lessons-py-are-lost-on.md) | Lessons written by lessons.py are lost on the next skill update, and project-specific lessons are dumped into the shared cross-project registry | Fixed | -- | 2026-07-13 | 2026-07-13 |
 | [BG0112](BG0112-shipped-full-templates-emit-markdownlint-table-errors-md055.md) | shipped full templates emit markdownlint table errors (MD055/MD056/MD060) from the creator | Open | Low | 2026-07-13 | 2026-07-13 |
 | [BG0113](BG0113-artifact-py-put-section-drops-the-template-s.md) | artifact.py _put_section drops the template's ### subsection prompts when a field is supplied | Open | Low | 2026-07-13 | 2026-07-13 |

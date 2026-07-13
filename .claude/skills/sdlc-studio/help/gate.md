@@ -55,6 +55,22 @@ It adds a blocking `verify` lane to the standard gate:
   unexamined AC layer is the passing-looking command this mode exists to abolish. Want the AC
   layer left alone? That is the standard gate - drop `--release`.
 
+`--release` also binds a `review-legs` lane: every required **document leg** (PRD / TRD / TSD /
+Persona) must be **present** or **explicitly waived**, or the release fails. A prose review can
+call a missing leg "optional polish"; this lane cannot be talked around. Resolve an absent leg one
+of two ways - add the artefact, or record a waiver:
+
+```bash
+python3 "$CLAUDE_SKILL_DIR/scripts/decisions.py" waive --leg tsd \
+  --rationale "single-repo project; per-story Verify: discipline stands in for a TSD"
+```
+
+The lane then reports the leg as `waived (D00xx)`, never `optional`. The **CODE leg is out of
+scope** (it has no single artefact whose presence can be tested); every verdict states that
+exclusion, so a green lane is not misread as certifying the code. It is release-only for the same
+reason as `verify`: a leg legitimately absent mid-build is not a standard-gate failure. Deselecting
+it under `--release` is refused.
+
 ### Nothing to prove is not proof
 
 The lane fails, rather than passing quietly, when it has examined nothing:
@@ -114,6 +130,7 @@ two lessons lanes alone (a close with no retro due). Deselecting a bound lane
 | **Provenance** | `provenance` (tool-created stamps) | only when `provenance.enforce` |
 | **Skill docs (skill repo only)** | `doc-coverage` (every command/script documented), `disclosure` (progressive-disclosure hygiene), `doc-freshness` (LATEST.md vs reality) | doc-coverage yes; disclosure + doc-freshness advisory |
 | **Executable ACs (`--release` only)** | `verify` (executes every story's `Verify:` expression) | yes |
+| **Required legs (`--release` only)** | `review-legs` (every required document leg present or waived; CODE out of scope) | yes |
 | **Sprint close (`--require-retro` / `--require-lessons` only)** | `retro` (the batch retro exists), `lessons-summary` (LESSONS-SUMMARY.md is current), `lessons-validity` (no expired or horizon-less open lesson) | yes |
 
 The four **artifact-quality** checks are the ones that police every artifact; the rest guard the

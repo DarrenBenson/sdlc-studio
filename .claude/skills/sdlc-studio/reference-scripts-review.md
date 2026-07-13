@@ -68,8 +68,10 @@ Rules (all era-gated to schema v3, so a v2 project reports nothing): `authorship
 ### `review_prep.py` (read-only)
 
 - `prep`: deterministic inputs for the five-leg review (artifact staleness,
-  persona definition-vs-PRD usage, count and AC-verification inputs). Gathers inputs
-  only; the verdict stays with Claude. Full workflow: `reference-review.md`.
+  persona definition-vs-PRD usage, count and AC-verification inputs, and `required_legs` -
+  for each of the four required document legs, `{present, path, waiver}` so an absent leg is
+  machine-visible and a downgrade-without-a-waiver is detectable). Gathers inputs only; the
+  verdict stays with Claude. Full workflow: `reference-review.md`.
 
 ### `review_generate.py`
 

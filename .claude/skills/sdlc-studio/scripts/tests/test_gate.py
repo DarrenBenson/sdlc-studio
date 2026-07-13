@@ -326,7 +326,22 @@ class ReleaseGateTests(unittest.TestCase):
     exit code. Tagging on a red verify layer must mean ignoring a failing command, not
     misreading a passing-looking one (BG0104's process half)."""
 
+    def _legs(self, root: Path, skip: str = "") -> None:
+        """Lay down the four required document legs so the bound `review-legs` release lane is
+        satisfied, letting each release test isolate the behaviour it targets. `skip` omits one
+        leg to exercise an absent-and-unwaived required leg."""
+        b = root / "sdlc-studio"
+        b.mkdir(parents=True, exist_ok=True)
+        for leg in ("prd", "trd", "tsd"):
+            if leg != skip:
+                (b / f"{leg}.md").write_text(f"# {leg.upper()}\n", encoding="utf-8")
+        if skip != "personas":
+            pdir = b / "personas"
+            pdir.mkdir(exist_ok=True)
+            (pdir / "maya.md").write_text("# Maya\n", encoding="utf-8")
+
     def _story(self, root: Path, verifier: str, verified: str = "") -> Path:
+        self._legs(root)  # a release fixture needs its doc legs present (bound review-legs lane)
         sd = root / "sdlc-studio" / "stories"
         sd.mkdir(parents=True, exist_ok=True)
         p = sd / "US0001-x.md"
@@ -406,8 +421,8 @@ class ReleaseGateTests(unittest.TestCase):
             root = Path(t)
             self._story(root, "shell exit 1")
             with contextlib.redirect_stdout(io.StringIO()):
-                rc = gate.main(["--root", str(root), "--release", "--only", "verify",
-                                "--format", "json"])
+                rc = gate.main(["--root", str(root), "--release", "--format", "json",
+                                "--only", "verify,review-legs"])
             self.assertEqual(rc, 1)
 
     def test_verify_lane_blocks_on_error(self) -> None:
@@ -456,7 +471,8 @@ class ReleaseSelectionGuardTests(ReleaseGateTests):
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)
             self._story(root, "shell true")
-            r = gate.run_gate(str(root), checks={}, release=True, only=["verify"])
+            r = gate.run_gate(str(root), checks={}, release=True,
+                              only=["verify", "review-legs"])
             self.assertTrue(r["ok"], r["checks"])
 
 
@@ -465,6 +481,7 @@ class ReleaseBlockedVerifierTests(ReleaseGateTests):
     an unproven one - it must not read as either a failure of the code or as proof."""
 
     def _external_story(self, root: Path, verifier: str) -> Path:
+        self._legs(root)  # release fixture: the bound review-legs lane needs the doc legs present
         sd = root / "sdlc-studio" / "stories"
         sd.mkdir(parents=True, exist_ok=True)
         p = sd / "US0001-x.md"
@@ -519,8 +536,8 @@ class ReleaseBlockedVerifierTests(ReleaseGateTests):
             root = Path(t)
             self._external_story(root, "shell true")
             with contextlib.redirect_stdout(io.StringIO()):
-                rc = gate.main(["--root", str(root), "--release", "--only", "verify",
-                                "--allow-external"])
+                rc = gate.main(["--root", str(root), "--release", "--allow-external",
+                                "--only", "verify,review-legs"])
             self.assertEqual(rc, 0)
 
 
@@ -545,6 +562,7 @@ class ReleaseVacuityTests(ReleaseGateTests):
     def test_one_executable_ac_among_manual_ones_still_proves_something(self) -> None:
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)
+            self._legs(root)  # release-ready: satisfy the bound review-legs lane
             sd = root / "sdlc-studio" / "stories"
             sd.mkdir(parents=True)
             (sd / "US0001-x.md").write_text(
@@ -554,6 +572,88 @@ class ReleaseVacuityTests(ReleaseGateTests):
             r = gate.run_gate(str(root), checks={}, release=True)
             self.assertTrue(r["ok"], r["checks"])
             self.assertIn("1 manual", r["checks"][0]["detail"])
+
+
+class ReviewLegsGateTests(ReleaseGateTests):
+    """BG0110: a required DOCUMENT leg (PRD/TRD/TSD/Persona) that is ABSENT and UNWAIVED must
+    FAIL the release gate. A prose review can call a missing leg 'optional polish'; the gate
+    cannot be talked around - only a present artefact or a recorded waiver turns it green. The
+    CODE leg is out of scope (has no single testable artefact - decision D0022)."""
+
+    def _record_waiver(self, root: Path, leg: str, rationale: str = "out of scope here") -> str:
+        import decisions
+        return decisions.record_waiver(root, f"leg:{leg}", rationale)["id"]
+
+    def test_missing_tsd_no_waiver_fails_release(self) -> None:
+        # the Verify oracle: a project missing tsd.md with no waiver FAILS the lane
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._legs(root, skip="tsd")   # prd/trd/personas present; tsd absent
+            self._story(root, "shell true")  # verify lane itself is green
+            # _story lays all four legs, so re-remove tsd to model the absence
+            (root / "sdlc-studio" / "tsd.md").unlink()
+            r = gate.run_gate(str(root), checks={}, release=True)
+            self.assertFalse(r["ok"])
+            lane = next(c for c in r["checks"] if c["check"] == "review-legs")
+            self.assertEqual(lane["status"], "fail")
+            self.assertTrue(lane["blocking"])
+            self.assertIn("tsd", lane["detail"])
+
+    def test_recording_a_waiver_turns_it_green(self) -> None:
+        # ...and recording a waiver against a decision id turns the lane GREEN
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._story(root, "shell true")
+            (root / "sdlc-studio" / "tsd.md").unlink()   # absent
+            did = self._record_waiver(root, "tsd", "single-repo; per-story Verify: discipline")
+            r = gate.run_gate(str(root), checks={}, release=True)
+            self.assertTrue(r["ok"], r["checks"])
+            lane = next(c for c in r["checks"] if c["check"] == "review-legs")
+            self.assertEqual(lane["status"], "pass")
+            self.assertIn("waived", lane["detail"])
+            self.assertIn(did, lane["detail"])
+
+    def test_all_legs_present_passes_and_states_code_exclusion(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._story(root, "shell true")   # lays all four legs
+            r = gate.run_gate(str(root), checks={}, release=True)
+            lane = next(c for c in r["checks"] if c["check"] == "review-legs")
+            self.assertEqual(lane["status"], "pass")
+            self.assertIn("D0022", lane["detail"])   # names the CODE-leg exclusion and its decision
+
+    def test_review_legs_lane_absent_without_release(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._legs(root, skip="tsd")
+            r = gate.run_gate(str(root), checks={"a": _fake(0)})
+            self.assertNotIn("review-legs", [c["check"] for c in r["checks"]])
+            self.assertTrue(r["ok"])   # a missing leg mid-project is not a standard-gate failure
+
+    def test_review_legs_blocks_on_error(self) -> None:
+        self.assertIn("review-legs", gate.BLOCKING_ON_ERROR)
+
+    def test_deselecting_review_legs_under_release_is_refused(self) -> None:
+        # the lane cannot be skipped away: a release PASS over an unexamined leg set is the
+        # false-assurance class this lane exists to refuse
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._story(root, "shell true")
+            r = gate.run_gate(str(root), checks={}, release=True, skip=["review-legs"])
+            self.assertFalse(r["ok"])
+            self.assertEqual(r["checks"][0]["check"], "selection")
+            self.assertIn("review-legs", r["checks"][0]["detail"])
+
+    def test_a_leg_named_in_prose_only_does_not_pass(self) -> None:
+        # the defect: a decision that merely MENTIONS the leg is not a waiver for it
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._story(root, "shell true")
+            (root / "sdlc-studio" / "tsd.md").unlink()
+            import decisions
+            decisions.add(root, "TSD leg is optional polish, not a gap", "we decided so")
+            r = gate.run_gate(str(root), checks={}, release=True)
+            self.assertFalse(r["ok"])   # prose reclassification cannot green the lane
 
 
 class MutationLaneTests(unittest.TestCase):
@@ -1058,7 +1158,7 @@ class BoundLaneRegistryTests(unittest.TestCase):
         ("require_retro", ["retro", "lessons-summary", "lessons-validity"]),
         ("require_lessons", ["lessons-summary", "lessons-validity"]),
         ("require_handoff", ["handoff"]),
-        ("release", ["verify"]),
+        ("release", ["verify", "review-legs"]),
     ]
 
     def test_every_bound_lane_names_its_subject(self) -> None:

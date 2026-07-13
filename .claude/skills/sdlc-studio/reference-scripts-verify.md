@@ -50,6 +50,15 @@ tag), and it writes nothing: no `- **Verified:**` back-annotation, no report rew
 stays read-only and hook-safe. The lane is absent without `--release` - the standard gate does not
 run test suites.
 
+`--release` binds a second lane, `review-legs`: every required document leg (PRD/TRD/TSD/Persona)
+must be PRESENT or explicitly WAIVED against a recorded decision id, so a tag cannot pass over a
+silently-missing required artefact. A prose review can call an absent leg "optional polish"; the
+lane cannot be talked around - only the artefact, or a `decisions.py waive --leg <leg>` row, turns
+it green. It reads `review_prep.required_legs`. The CODE leg is out of scope (no single testable
+artefact) and every verdict states so. It is release-only for the same reason as `verify`: a leg
+legitimately absent mid-build is not a standard-gate failure. Deselecting it under `--release` is
+refused, as `verify` is.
+
 Nothing to prove is not proof, so the lane fails rather than passing quietly when it has examined
 nothing: an empty story set fails, and so does a story set with zero executable `Verify:` lines
 (otherwise deleting a rotted verifier would be the way to a green release). Deselecting the lane

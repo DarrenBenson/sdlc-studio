@@ -84,6 +84,63 @@ class InputsTests(unittest.TestCase):
             self.assertEqual(ins["ac_verification"], {"stories": 1, "verified": 2, "failed": 1})
 
 
+class RequiredLegsTests(unittest.TestCase):
+    """Leg absence is machine-visible: for each of the four required document legs, whether
+    the artefact is present and, if not, the waiver decision id (or null). An absent-and-unwaived
+    leg is no longer invisible in the prep JSON - the enabler of the BG0110 prose downgrade."""
+
+    def test_absent_leg_is_visible_and_unwaived(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            b = _base(root)
+            (b / "prd.md").write_text("# PRD\n", encoding="utf-8")
+            legs = review_prep.required_legs(root)
+            self.assertEqual(set(legs), {"prd", "trd", "tsd", "personas"})
+            self.assertTrue(legs["prd"]["present"])
+            self.assertFalse(legs["tsd"]["present"])
+            self.assertIsNone(legs["tsd"]["waiver"])
+            self.assertTrue(legs["prd"]["path"].endswith("prd.md"))
+
+    def test_waived_leg_carries_decision_id(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _base(root)
+            import decisions
+            r = decisions.record_waiver(root, "leg:tsd", "single-repo project")
+            legs = review_prep.required_legs(root)
+            self.assertFalse(legs["tsd"]["present"])
+            self.assertEqual(legs["tsd"]["waiver"], r["id"])
+
+    def test_personas_directory_counts_as_present(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            b = _base(root)
+            pdir = b / "personas"
+            pdir.mkdir()
+            (pdir / "maya.md").write_text("# Maya\n", encoding="utf-8")
+            self.assertTrue(review_prep.required_legs(root)["personas"]["present"])
+
+    def test_personas_md_fallback_counts_as_present(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            b = _base(root)
+            (b / "personas.md").write_text("## Maya\n", encoding="utf-8")
+            self.assertTrue(review_prep.required_legs(root)["personas"]["present"])
+
+    def test_prep_json_carries_required_legs(self) -> None:
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _base(root)
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                review_prep.main(["prep", "--root", str(root), "--format", "json"])
+            payload = json.loads(out.getvalue())
+            self.assertIn("required_legs", payload)
+            self.assertFalse(payload["required_legs"]["tsd"]["present"])
+
+
 class CmdTests(unittest.TestCase):
     def test_prep_runs_clean(self) -> None:
         with tempfile.TemporaryDirectory() as d:

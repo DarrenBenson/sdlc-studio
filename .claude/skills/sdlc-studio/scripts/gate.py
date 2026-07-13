@@ -242,7 +242,7 @@ def _hook_enabled(root: str) -> dict:
 BLOCKING_ON_ERROR = {
     "conformance", "reconcile", "index-derived", "validate",
     "integrity", "duplicate-id", "doc-coverage", "retro", "verify",
-    "lessons-summary", "lessons-validity", "handoff",
+    "lessons-summary", "lessons-validity", "handoff", "review-legs",
 }
 
 DEFAULT_CHECKS = {
@@ -430,11 +430,39 @@ def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool =
     return {"count": len(red) + len(blocked), "blocking": True, "detail": "; ".join(parts)}
 
 
+def _review_legs(root: str) -> dict:
+    """Blocking release-gate lane: every required DOCUMENT leg (PRD/TRD/TSD/Persona) must be
+    PRESENT or explicitly WAIVED against a recorded decision id. A required leg that is absent
+    and unwaived FAILS - the review cannot reclassify a missing leg as 'optional' in prose,
+    because a waiver is a decisions-log row (`decisions.py waive --leg <leg>`), not narrative.
+
+    The CODE leg is out of scope: it has no single artefact whose presence can be tested, so this
+    lane makes no claim about it (decision D0022) - it states that exclusion in every verdict, so a
+    green lane is never misread as certifying the code leg too.
+    """
+    import review_prep
+    legs = review_prep.required_legs(Path(root).resolve())
+    absent = sorted(k for k, v in legs.items() if not v["present"] and not v["waiver"])
+    waived = sorted(f"{k} ({v['waiver']})" for k, v in legs.items()
+                    if not v["present"] and v["waiver"])
+    if absent:
+        detail = (f"{len(absent)} required leg(s) absent and unwaived: {', '.join(absent)} - "
+                  f"add the artefact, or record a waiver (`decisions.py waive --leg <leg> "
+                  f"--rationale ...`); CODE leg out of scope (D0022)")
+    else:
+        present = sorted(k for k, v in legs.items() if v["present"])
+        detail = (f"{len(present)} required leg(s) present"
+                  + (f"; waived: {', '.join(waived)}" if waived else "")
+                  + " (CODE leg out of scope, D0022)")
+    return {"count": len(absent), "blocking": True, "detail": detail}
+
+
 # What each bound lane is FOR, named in the refusal so an operator who deselects one is
 # told what the verdict would have been printed over. A lane with no entry falls back to
 # the generic phrase.
 BOUND_LANE_SUBJECT = {
     "verify": "the AC layer",
+    "review-legs": "the required document legs (present or waived)",
     "retro": "the sprint close's learning loop",
     "lessons-summary": "the sprint close's learning loop",
     "lessons-validity": "the sprint close's learning loop",
@@ -476,10 +504,14 @@ def run_gate(root: str = ".", only: list[str] | None = None,
     if require_handoff:  # a run that stopped short: the handoff must exist AND be linked
         registry["handoff"] = lambda r, _hid=require_handoff: _handoff_present(r, _hid)
         bound.append("handoff")
-    if release:  # pre-tag: the executing AC-verify lane joins the standard gate
+    if release:  # pre-tag: the executing AC-verify lane joins the standard gate...
         registry["verify"] = (lambda r, _x=allow_external, _b=verify_batch:
                               _verify_acs(r, allow_external=_x, batch=_b))
         bound.append("verify")
+        # ...and every required document leg must be present or explicitly waived: a tag over a
+        # silently-missing required artefact is the BG0110 hole this refuses to leave open.
+        registry["review-legs"] = _review_legs
+        bound.append("review-legs")
     # A wrong/typo'd --only/--skip (or a renamed check) must FAIL, not silently select
     # nothing and report a vacuous PASS - the false-assurance class LL0008 warns against.
     unknown = sorted({n for n in (list(only or []) + list(skip or [])) if n not in registry})

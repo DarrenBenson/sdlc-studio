@@ -66,6 +66,8 @@ If `sdlc-studio/personas/` does not exist or contains no persona files, Persona 
 
 **PVD review is conditional.** The PVD leg runs **only when `sdlc-studio/product/pvd.md` exists** (a multi-repo product). A single-repo project has no PVD - the leg, and the Product Manager sign-off it carries, do not apply; the PRD is the top document and the Product Owner signs it.
 
+**The four required legs are not conditional.** PVD may read "not applicable" when its file is absent; PRD / TRD / TSD / Persona may not. When a required leg's artefact is missing, resolve it one of exactly two ways, never by narrative downgrade to "optional": **file a finding** (the default - a missing required artefact is a review finding to triage), or record an **explicit waiver** (`decisions.py waive --leg <leg> --rationale ...`) and report the leg as **"waived (see D00xx)"**. `review_prep.py`'s `required_legs` makes each leg's presence and waiver machine-visible, and `gate.py --release` fails on an absent-and-unwaived required leg - so a prose reclassification cannot reach a tag. CODE is out of scope (no single testable artefact).
+
 **RFC review (if `sdlc-studio/rfcs/` exists).** As part of the unified pass, scan the RFCs: flag any **Draft / In Review** RFC stalled > ~14 days with no Revision-History movement; flag **Open Decisions** unresolved > 7 days (name the owner); and for **Accepted** RFCs verify each workstream has a spawned CR that exists and links back. This catches design exploration that has gone quiet before it silently blocks the dependent CRs. Report-only – RFC acceptance is always a judgement call.
 
 ### 2. Run Document Reviews

@@ -159,6 +159,40 @@ def persona_usage(repo_root: Path) -> dict:
     }
 
 
+def _leg_path(base: Path, leg: str) -> tuple[Path, bool]:
+    """(primary artefact path, present?) for one required document leg. Personas resolve to the
+    personas/ directory (any file bar the index) when it holds cards, else the single
+    personas.md - the same source order the persona review and completion cascade read."""
+    if leg == "personas":
+        pdir = base / "personas"
+        files = [p for p in pdir.glob("*.md") if p.name != "_index.md"] if pdir.is_dir() else []
+        if files:
+            return pdir, True
+        pmd = base / "personas.md"
+        return pmd, pmd.exists()
+    p = base / f"{leg}.md"
+    return p, p.exists()
+
+
+def required_legs(repo_root: Path) -> dict:
+    """Presence + waiver state for each of the four required document legs (PRD/TRD/TSD/Persona).
+    For each leg: {present, path, waiver: <decision-id|null>}. This makes an absent leg
+    machine-visible - the review can no longer silently reclassify a required-but-missing leg as
+    'optional' in prose, because a downgrade without a recorded waiver is now detectable. The CODE
+    leg is out of scope: it has no single artefact whose presence can be tested (decision D0022)."""
+    import decisions
+    base = repo_root / "sdlc-studio"
+    out: dict[str, dict] = {}
+    for leg in decisions.DOC_LEGS:
+        path, present = _leg_path(base, leg)
+        out[leg] = {
+            "present": present,
+            "path": str(path.relative_to(repo_root)),
+            "waiver": decisions.waiver_for(repo_root, f"leg:{leg}"),
+        }
+    return out
+
+
 def inputs(repo_root: Path) -> dict:
     """Count and AC-verification inputs the review legs consume."""
     base = repo_root / "sdlc-studio"
@@ -188,6 +222,7 @@ def cmd_prep(args: argparse.Namespace) -> int:
         "needs_review": sorted(k for k, v in stale.items() if v["needs_review"]),
         "warnings": sorted(f"{k}: {v['warning']}" for k, v in stale.items() if "warning" in v),
         "persona_usage": persona_usage(repo_root),
+        "required_legs": required_legs(repo_root),
         "inputs": inputs(repo_root),
     }
     if args.format == "json":
@@ -195,9 +230,16 @@ def cmd_prep(args: argparse.Namespace) -> int:
     else:
         nr = data["needs_review"]
         pu = data["persona_usage"]
+        rl = data["required_legs"]
         print(f"needs_review ({len(nr)}): {', '.join(nr) if nr else 'none'}")
         for w in data["warnings"]:
             print(f"warning: {w}")
+        absent = [k for k, v in rl.items() if not v["present"] and not v["waiver"]]
+        waived = [f"{k} ({v['waiver']})" for k, v in rl.items()
+                  if not v["present"] and v["waiver"]]
+        print(f"required legs absent+unwaived ({len(absent)}): "
+              f"{', '.join(absent) if absent else 'none'}"
+              + (f"; waived: {', '.join(waived)}" if waived else ""))
         print(f"personas defined={len(pu['defined'])} unused={len(pu['unused'])}"
               + (f" ({', '.join(pu['unused'])})" if pu["unused"] else ""))
         print(f"counts: {data['inputs']['counts']}")

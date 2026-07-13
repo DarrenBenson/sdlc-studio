@@ -150,8 +150,12 @@ product (scope cuts, resolved PRD open questions) and implementation conventions
 envelope, ID scheme, token strategy, migrations, test harness). `add --decision ...
 --rationale ...` appends an auto-numbered, dated row to `sdlc-studio/decisions.md`; `list`
 prints it (filterable by status); `promote --from PRD-OQ3 ...` records a resolved PRD open
-question with a back-link (one record, two views). Append-only and greppable, so the spine lives
-in one place and feeds the handoff context delegated agents read - distinct from the
+question with a back-link (one record, two views). `waive --leg <prd|trd|tsd|personas>
+--rationale ...` (or `--subject rule:<name>` for the general case) records a machine-detectable
+waiver - a decision row `waiver: <subject>` stating a required leg or rule is intentionally out
+of scope here; `waiver_for(subject)` looks it up by anchored equality (a superseded waiver, or a
+row that merely mentions the subject, does not hold). Append-only and greppable, so the spine
+lives in one place and feeds the handoff context delegated agents read - distinct from the
 sprint per-tranche ledger (`ledger.py`).
 
 ### `transition.py`

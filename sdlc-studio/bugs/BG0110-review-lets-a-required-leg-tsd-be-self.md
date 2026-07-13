@@ -1,6 +1,7 @@
 # BG0110: review lets a required leg (TSD) be self-downgraded to optional in prose without an explicit waiver
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Created:** 2026-07-13
 > **Created-by:** sdlc-studio new
 > **Severity:** Medium

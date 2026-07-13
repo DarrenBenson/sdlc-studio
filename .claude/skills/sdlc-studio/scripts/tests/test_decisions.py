@@ -1,7 +1,9 @@
 """Unit tests for decisions.py - the project decisions log (CR0080)."""
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import sys
 import tempfile
 import unittest
@@ -144,6 +146,90 @@ class BackfillTests(unittest.TestCase):
             self.assertEqual(decisions.backfill_superseded(root), 1)
             self.assertEqual(_status_of(root, a["id"]), "superseded")
             self.assertEqual(decisions.backfill_superseded(root), 0)    # idempotent
+
+
+class WaiverTests(unittest.TestCase):
+    """A waiver is a machine-detectable decision row (`waiver: <subject>`) recording that a
+    rule is intentionally out of scope here. General over any subject - a review leg
+    (`leg:tsd`) or a rule (`rule:engagement-floor`) - so the primitive is reusable."""
+
+    def test_absent_waiver_is_none(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self.assertIsNone(decisions.waiver_for(Path(d), "leg:tsd"))
+
+    def test_record_then_lookup(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            r = decisions.record_waiver(root, "leg:tsd", "single-repo; Verify: discipline instead")
+            self.assertTrue(r["id"].startswith("D"))
+            self.assertEqual(decisions.waiver_for(root, "leg:tsd"), r["id"])
+            self.assertIsNone(decisions.waiver_for(root, "leg:trd"))   # a different leg is unmatched
+
+    def test_lookup_is_anchored_not_substring(self) -> None:
+        # a decision that merely MENTIONS the leg is not a waiver for it (the BG0110 defect)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            decisions.add(root, "TSD leg is optional polish, not a gap", "we said so")
+            self.assertIsNone(decisions.waiver_for(root, "leg:tsd"))
+
+    def test_lookup_is_full_match_not_prefix(self) -> None:
+        # a waiver of a LONGER subject must not satisfy a lookup for a prefix of it: `leg:tsd`
+        # is a prefix of the token `waiver: rule:engagement-floor-v2`? no - but a substring match
+        # on the shared stem would; full-cell equality is the only correct rule.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            decisions.record_waiver(root, "rule:engagement-floor-v2", "later")
+            self.assertIsNone(decisions.waiver_for(root, "rule:engagement-floor"))
+            self.assertIsNotNone(decisions.waiver_for(root, "rule:engagement-floor-v2"))
+
+    def test_subject_is_case_and_space_insensitive(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            decisions.record_waiver(root, "  LEG:TSD  ", "x")
+            self.assertIsNotNone(decisions.waiver_for(root, "leg:tsd"))
+
+    def test_superseded_waiver_no_longer_holds(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            r = decisions.record_waiver(root, "leg:tsd", "out of scope for now")
+            decisions.add(root, "TSD now required", "changed our mind", supersedes=r["id"])
+            self.assertIsNone(decisions.waiver_for(root, "leg:tsd"))   # only accepted waivers hold
+
+    def test_empty_subject_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(ValueError):
+                decisions.record_waiver(Path(d), "  ", "x")
+
+    def test_cli_waive_leg(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = decisions.main(["waive", "--leg", "tsd", "--rationale", "single-repo",
+                                     "--root", str(root)])
+            self.assertEqual(rc, 0)
+            self.assertIsNotNone(decisions.waiver_for(root, "leg:tsd"))
+
+    def test_cli_waive_rejects_out_of_scope_code_leg(self) -> None:
+        # CODE is out of scope (D0022): --leg choices are the four document legs only
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(SystemExit):
+                with contextlib.redirect_stderr(io.StringIO()):
+                    decisions.main(["waive", "--leg", "code", "--rationale", "x", "--root", d])
+
+    def test_cli_waive_general_subject_is_reusable(self) -> None:
+        # CR0229 reuse: a general rule waiver, not a leg
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            with contextlib.redirect_stdout(io.StringIO()):
+                decisions.main(["waive", "--subject", "rule:engagement-floor",
+                                "--rationale", "spike, no floor yet", "--root", str(root)])
+            self.assertIsNotNone(decisions.waiver_for(root, "rule:engagement-floor"))
+
+    def test_cli_waive_requires_exactly_one_of_leg_or_subject(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(SystemExit):
+                with contextlib.redirect_stderr(io.StringIO()):
+                    decisions.main(["waive", "--rationale", "x", "--root", d])   # neither given
 
 
 if __name__ == "__main__":
