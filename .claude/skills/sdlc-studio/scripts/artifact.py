@@ -19,7 +19,7 @@ from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import conventions, sdlc_md  # noqa: E402
+from lib import conventions, sdlc_md, tiers  # noqa: E402
 import file_finding  # noqa: E402  (reuse _slug, _next_number, append_index_row)
 import reconcile  # noqa: E402
 import triage_noise  # noqa: E402  (v3 triage noise controls; dormant on v2)
@@ -37,6 +37,17 @@ SPEC = {
     "rfc": {"status": "Draft", "terminal": "Accepted", "dash": True},
 }
 _PREFIX_TYPE = {sdlc_md.ARTIFACT_TYPES[t][1].upper(): t for t in SPEC}
+
+# Scaffold richness, lean to rich - from lib.tiers, the one authority the creator, the
+# validator, the transition gate and the conformance backstop all share. `planning` is the
+# pre-implementation tier: the sections a story must settle to be planned and prioritised
+# (ACs with Verify + Verification target, scope, technical notes) and none of the
+# implementation furniture. Creation stamps ONLY `planning` (`> **Template:** planning`); a
+# `full` stamp is written by `promote` alone, and only after it has added the sections - which
+# is what lets the gate check a `full` claim instead of believing it.
+MINIMAL, PLANNING, FULL = tiers.MINIMAL, tiers.PLANNING, tiers.FULL
+TEMPLATE_TIERS = tiers.TEMPLATE_TIERS
+TIER_FIELD = tiers.TIER_FIELD
 
 
 def _disp(type_: str, n: int) -> str:
@@ -85,15 +96,71 @@ def _list(f: dict, key: str) -> list[str]:
         if isinstance(items, list) else []
 
 
+TARGET_TIERS = ("functional", "conversational", "soak", "live")
+
+
+def _target_of(f: dict) -> str:
+    """The Verification target tier for supplied ACs, validated - or "" when none is given.
+
+    An unknown tier is REFUSED, never written: `transition`'s depth-parity gate matches the
+    tier against its own table and ignores what it does not recognise, so a typo'd target
+    would quietly drop the story out of the gate it was meant to opt into."""
+    val = str(f.get("target") or "").strip()
+    if not val:
+        return ""
+    if val.lower() not in TARGET_TIERS:
+        raise ValueError(f"unknown verification target {val!r} "
+                         f"(expected one of {', '.join(TARGET_TIERS)})")
+    return val.lower()
+
+
+def _verifiers_of(f: dict) -> list[str]:
+    """The executable checks supplied alongside the ACs, VERBATIM.
+
+    Never markdown-safed. A Verify line is a command `verify_ac` reads back and runs, and
+    markdown-safing an underscore rewrites it: `rg -q my_token src/` becomes
+    ``rg -q `my_token` src/``. For a list-form verb (pytest and friends, `shell=False`) those
+    backticks are only a corrupted literal argument - the check silently stops checking what it
+    says it checks. For a SHELL-backed verb, `_build_command` returns a string run under
+    `shell=True`, and the same rewrite is command substitution: the backticked token executes.
+    Verbatim is the only form that is both correct and safe. A line break is refused - it would
+    inject a second directive line into the AC block, and only the first is the one anyone read.
+    """
+    out: list[str] = []
+    for v in (f.get("verify") or []):
+        s = str(v)
+        if not s.strip():
+            continue
+        if len(s.splitlines()) > 1:
+            raise ValueError(f"a Verify expression must be one line: {s!r}")
+        out.append(s.strip())
+    return out
+
+
 def _story_acs(f: dict) -> str:
     """The Acceptance Criteria body. Supplied criteria render as real, id'd ACs; with none
     supplied the scaffold keeps its `{{placeholder}}` slots, which the validator reports as
-    unfilled - a scaffold is not yet a specified story, and the creator does not pretend it is."""
+    unfilled - a scaffold is not yet a specified story, and the creator does not pretend it is.
+
+    A supplied criterion may carry its executable check (`--verify`, positional with `--ac`)
+    and its verification target. Both are written only when given: there is no honest default
+    for a Verify line - a placeholder would fail the validator, and `manual` would assert a
+    proof nobody ran. An AC with no Verify line is reported by conformance's `verifiable`
+    stage, which is the system saying so out loud rather than papering over it."""
     acs = _list(f, "acs")
     if not acs:
         return ("### AC1: {{define}}\n\n- **Given** {{context}}\n- **When** {{action}}\n"
                 "- **Then** {{outcome}}\n- **Verify:** {{executable check}}\n")
-    return "".join(f"- **AC{i}:** {a}\n" for i, a in enumerate(acs, 1))
+    verifies = _verifiers_of(f)
+    target = _target_of(f)
+    out: list[str] = []
+    for i, a in enumerate(acs, 1):
+        out.append(f"- **AC{i}:** {a}\n")
+        if i <= len(verifies):
+            out.append(f"  - **Verify:** {verifies[i - 1]}\n")
+        if target:
+            out.append(f"  - **Verification target:** {target}\n")
+    return "".join(out)
 
 
 def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
@@ -104,12 +171,20 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
     head = (f"# {disp}: {title}\n\n> **Status:** {st}\n> **Created:** {today}\n"
             f"> **Created-by:** sdlc-studio new\n"
             f"> **Raised-by:** {f.get('_raised_by') or sdlc_md.DEFAULT_AGENT_AUTHOR}\n")
+    # The tier stamp the promotion gate reads. Written ONLY for `planning` - the tier that
+    # owes the project a promotion before implementation. An unstamped artefact is not
+    # planning-tier, so nothing that predates the tier is gated by it.
+    if f.get("_tier") == PLANNING:
+        head += f"> **{TIER_FIELD}:** {PLANNING}\n"
     # Record-only tranche reference: written ONLY as orchestrator pass-through (when the caller
     # supplies it); sdlc-studio never allocates it. Absent otherwise.
     if str(f.get("tranche") or "").strip():
         head += f"> **Tranche:** {str(f['tranche']).strip()}\n"
+    # The Author cell names the same authorship of record stamped above - never a literal, and
+    # a name rather than the typed triple (which is `Raised-by`'s job). One shared row writer
+    # with the filer, so both escape a `|` in a name instead of shifting the columns.
     rev = (f"\n## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
-           f"| {today} | {f.get('author', 'sdlc')} | Created via `new` (deterministic) |\n")
+           f"{file_finding.rev_row(today, f, 'Created via `new` (deterministic)')}\n")
     if type_ == "story":
         # The Persona line is written only when a persona is named: an absent optional field is
         # honestly absent, never an unresolved placeholder in the metadata block.
@@ -149,7 +224,15 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
 
 
 def _core_template(type_: str) -> Path:
-    return _skill_root() / "templates" / "core" / f"{type_}.md"
+    return tiers.core_template(type_)
+
+
+def _planning_template(type_: str) -> Path:
+    """The lean pre-implementation body for a type. Defined for the two types whose full
+    template has a structural floor a planning artefact cannot get under (story ~171 lines,
+    epic ~148); every other type's minimal scaffold is already that lean, and `_graft` falls
+    back to it when this file does not exist."""
+    return tiers.planning_template(type_)
 
 
 _AC_HEAD_RE = re.compile(r"^##\s+Acceptance Criteria\b.*$", re.M | re.I)
@@ -271,9 +354,16 @@ def _render_full(type_: str, disp: str, title: str, today: str, f: dict) -> str:
     return _graft(_render(type_, disp, title, today, f), _core_template(type_), type_, f)
 
 
+def _render_planning(type_: str, disp: str, title: str, today: str, f: dict) -> str:
+    """`--template planning`: the lean pre-implementation body, plus the tier stamp that
+    tells the transition gate this story owes a promotion before it can be implemented."""
+    f = {**f, "_tier": PLANNING}
+    return _graft(_render(type_, disp, title, today, f), _planning_template(type_), type_, f)
+
+
 def _select_render(root: Path, type_: str, template: str | None):
     """The renderer for one scaffold: a project-declared template
-    (conventions.templates.<type>) wins over --template minimal/full so the
+    (conventions.templates.<type>) wins over --template minimal/planning/full so the
     scaffold matches the house shape the read-side checks expect; declared but
     missing fails loud rather than silently falling back to the skill shape."""
     proj = conventions.template_for(type_, root)
@@ -283,7 +373,9 @@ def _select_render(root: Path, type_: str, template: str | None):
                 f"conventions.templates.{type_} declares {proj}, which does not exist")
         return lambda t, disp, title, today, f: _graft(
             _render(t, disp, title, today, f), proj, t, f)
-    return _render_full if template == "full" else _render
+    if template == FULL:
+        return _render_full
+    return _render_planning if template == PLANNING else _render
 
 
 def _skill_root() -> Path:
@@ -443,6 +535,8 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
             # Fail fast before writing - a story wired to a non-existent epic is an orphan whose
             # dangling link only surfaces at the next integrity run.
             raise ValueError(f"epic {f['epic']} not found - create it first, or fix the id")
+        _target_of(f)      # refuse an unknown target / multi-line Verify BEFORE any write,
+        _verifiers_of(f)   # so a bad field never half-creates an artefact
     # Serialise allocate -> collision-check -> write -> index-append against concurrent
     # writers, so two agents in one wave never mint the same id or clobber the index.
     with sdlc_md.allocation_lock(root):
@@ -474,6 +568,9 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
             triage_noise.enforce_session_cap(root)  # refuse the N+1th finding loudly (v3)
         f["_status"] = _create_status(type_, root)  # era-aware: findings file into inbox under v3
         f["_raised_by"] = sdlc_md.authorship_value(f.get("author"), root)
+        # The index Author column takes the resolved NAME, exactly as the filer's does: two
+        # creators, one column, one behaviour - never the raw triple, never a discarded identity.
+        f["author"] = sdlc_md.authorship_name(f["_raised_by"])
         render = _select_render(root, type_, f.get("template"))
         body = render(type_, disp, title, f["date"], f)
         prov = str(f.get("provenance") or "").strip()
@@ -523,6 +620,8 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
                 raise ValueError("each story item needs an 'epic'")
             if _find_epic(root, it["epic"]) is None:
                 raise ValueError(f"epic {it['epic']} not found - create it first")
+            _target_of(it)      # a bad target or Verify in item N must abort the whole
+            _verifiers_of(it)   # batch here, not after items 1..N-1 are already on disk
     # CR0183/BG0076: allocate the id block + write all files under the advisory lock,
     # so a concurrent `new`/`new_batch` cannot mint an overlapping id block.
     with sdlc_md.allocation_lock(root):
@@ -568,6 +667,7 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
             f["date"] = today
             f["_status"] = create_status
             f["_raised_by"] = sdlc_md.authorship_value(f.get("author"), root)
+            f["author"] = sdlc_md.authorship_name(f["_raised_by"])  # index cell: the name
             p["path"].parent.mkdir(parents=True, exist_ok=True)
             sdlc_md.atomic_write(p["path"], render(type_, p["disp"], it["title"], today, f))
             header = _header_cells(root, type_)
@@ -609,13 +709,111 @@ def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
                                  metrics=metrics, triaged_by=triaged_by)
 
 
+_SECTION_SPLIT_RE = re.compile(r"^(##\s+.*)$", re.M)
+
+
+def _tier_of(text: str) -> str | None:
+    """The artefact's declared template tier - one authority (lib.tiers)."""
+    return tiers.tier_of(text)
+
+
+def _sections(text: str) -> list[tuple[str, str]]:
+    """(heading text, block) for every `## ` section, in document order. A block runs to the
+    next `## ` heading, with the template's horizontal-rule separators trimmed - promotion
+    joins blocks with a blank line, so a stray `---` would render as a rule mid-document."""
+    out: list[tuple[str, str]] = []
+    parts = _SECTION_SPLIT_RE.split(text)
+    for i in range(1, len(parts), 2):
+        head = parts[i]
+        body = parts[i + 1] if i + 1 < len(parts) else ""
+        block = f"{head}{body}".rstrip()
+        while block.endswith("---"):  # drop the trailing rule (and the blank line above it)
+            block = block[: -len("---")].rstrip()
+        out.append((head[2:].strip(), block))
+    return out
+
+
+def _head_key(heading: str) -> str:
+    return heading.strip().lower()
+
+
+def promote(repo_root: Path | str, artifact_id: str, to: str = FULL) -> dict:
+    """Promote a planning-tier artefact to the full tier.
+
+    Every `## ` section the full template mandates and this artefact does not yet carry is
+    grafted in, in template order, with everything already written preserved verbatim; the
+    tier stamp is then re-cut to `full`. This is the remedy the transition gate names: a lean
+    story reaches implementation by GAINING the sections it was allowed to defer (the
+    constraint chain, edge cases, test scenarios, the rollback envelope), never by having the
+    gate waived. Idempotent - an artefact that is not planning-tier is already promoted and is
+    left untouched."""
+    if to != FULL:
+        raise ValueError(f"promote --to {to!r}: the only promotion target is {FULL!r}")
+    root = Path(repo_root)
+    hit = sdlc_md.find_by_id(root, artifact_id)
+    if hit is None:
+        raise ValueError(f"no artifact found for id {artifact_id!r}")
+    path, type_ = hit
+    text = path.read_text(encoding="utf-8")
+    tier = _tier_of(text)
+    # Promotion is owed whenever the artefact declares the planning tier OR is missing sections
+    # the full tier carries - which is also the remedy for an artefact whose `full` stamp was
+    # rewritten without the work. Nothing to add and nothing to correct is already promoted.
+    if tier != PLANNING and not tiers.missing_sections(text, type_):
+        return {"id": artifact_id, "type": type_, "path": str(path), "from": tier or FULL,
+                "to": tier or FULL, "promoted": False, "added": []}
+    core = _core_template(type_)
+    if not core.exists():
+        raise ValueError(f"no full template for type {type_!r} - nothing to promote into")
+    core_body = re.sub(r"^<!--.*?-->\n+", "", core.read_text(encoding="utf-8"),
+                       count=1, flags=re.DOTALL)
+    head = text[: text.index("\n## ")] if "\n## " in text else text.rstrip()
+    have = {_head_key(h): b for h, b in _sections(text)}
+    tmpl = _sections(core_body)
+    tmpl_keys = {_head_key(h) for h, _ in tmpl}
+    # sections this artefact has that the template does not know about (an agent's own
+    # additions) keep their place ahead of the revision log rather than being pushed past it
+    extra = [b for h, b in _sections(text) if _head_key(h) not in tmpl_keys]
+    blocks: list[str] = []
+    added: list[str] = []
+    for heading, block in tmpl:
+        key = _head_key(heading)
+        if key == "revision history":
+            blocks.extend(extra)
+            extra = []
+        if key in have:
+            blocks.append(have[key])
+        else:
+            blocks.append(block)
+            added.append(heading)
+    blocks.extend(extra)  # a template with no revision log - keep the additions at the end
+    body = "\n\n".join(b for b in blocks if b.strip())
+    new_text = transition._upsert_field(f"{head.rstrip()}\n\n{body}\n", TIER_FIELD, FULL)
+    sdlc_md.atomic_write(path, new_text)
+    return {"id": artifact_id, "type": type_, "path": str(path), "from": tier or MINIMAL,
+            "to": FULL, "promoted": True, "added": added}
+
+
+def cmd_promote(args: argparse.Namespace) -> int:
+    r = promote(args.root, args.id, to=args.to)
+    if args.format == "json":
+        print(json.dumps(r, indent=2))
+    elif r["promoted"]:
+        print(f"promoted {r['id']} {r['from']} -> {r['to']} "
+              f"({len(r['added'])} section(s) added: {', '.join(r['added']) or 'none'})")
+    else:
+        print(f"{r['id']} is already {r['to']}-tier - nothing to promote")
+    return 0
+
+
 def cmd_new(args: argparse.Namespace) -> int:
     f = {k: v for k, v in {"epic": args.epic, "priority": args.priority, "ctype": args.ctype,
                            "severity": args.severity, "author": args.author,
                            "template": args.template, "persona": args.persona,
                            "summary": args.summary, "steps": args.steps, "fix": args.fix,
                            "impact": args.impact, "effort": args.effort,
-                           "acs": args.ac, "options": args.option,
+                           "acs": args.ac, "verify": args.verify, "target": args.target,
+                           "options": args.option,
                            "recommendation": args.recommendation,
                            "provenance": getattr(args, "provenance", None)}.items() if v}
     try:
@@ -732,10 +930,19 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--impact", help="cr: who this affects and what breaks")
     n.add_argument("--effort", choices=("S", "M", "L"), help="cr: effort estimate")
     n.add_argument("--ac", action="append", help="story/cr acceptance criterion (repeatable)")
+    n.add_argument("--verify", action="append",
+                   help="story: the executable check for the AC in the same position "
+                        "(repeatable; pairs with --ac). Omit it and the AC carries no Verify "
+                        "line - which conformance reports, rather than inventing one")
+    n.add_argument("--target", choices=("functional", "conversational", "soak", "live"),
+                   help="story: the Verification target tier written on each supplied AC")
     n.add_argument("--option", action="append", help="rfc design option (repeatable)")
     n.add_argument("--recommendation", help="rfc: the recommended option")
-    n.add_argument("--template", choices=("minimal", "full"), default="minimal",
-                   help="scaffold richness: minimal (default) or the full templates/core body")
+    n.add_argument("--template", choices=TEMPLATE_TIERS, default=MINIMAL,
+                   help="scaffold richness: minimal (default); planning (story/epic: ACs with "
+                        "Verify + Verification target, scope, technical notes - no "
+                        "implementation furniture, and `promote` is required before an "
+                        "implementation status); or the full templates/core body")
     n.add_argument("--root", default=".")
     n.add_argument("--dry-run", action="store_true", dest="dry_run", help="preview; write nothing")
     n.add_argument("--format", choices=("text", "json"), default="text")
@@ -743,8 +950,9 @@ def build_parser() -> argparse.ArgumentParser:
     b = sub.add_parser("batch", help="Create many artifacts of one type in one atomic pass.")
     b.add_argument("--type", required=True, choices=tuple(SPEC))
     b.add_argument("--spec", required=True, help="JSON file: a list of {title, epic?, ...} items")
-    b.add_argument("--template", choices=("minimal", "full"), default="full",
-                   help="batch defaults to full (the fan-out case); --template minimal opts out")
+    b.add_argument("--template", choices=TEMPLATE_TIERS, default=FULL,
+                   help="batch defaults to full (the fan-out case); --template planning is the "
+                        "lean pre-implementation tier for a decomposition; minimal opts out")
     b.add_argument("--root", default=".")
     b.add_argument("--dry-run", action="store_true", dest="dry_run", help="preview the id map; write nothing")
     b.add_argument("--format", choices=("text", "json"), default="text")
@@ -772,6 +980,14 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--dry-run", action="store_true", dest="dry_run", help="preview; write nothing")
     c.add_argument("--format", choices=("text", "json"), default="text")
     c.set_defaults(func=cmd_close)
+    pr = sub.add_parser("promote", help="Promote a planning-tier artifact to the full "
+                                        "template (adds the deferred sections; idempotent).")
+    pr.add_argument("--id", required=True, help="Artifact id, e.g. US0023 / EP0007")
+    pr.add_argument("--to", choices=(FULL,), default=FULL,
+                    help="promotion target (full - the tier implementation requires)")
+    pr.add_argument("--root", default=".")
+    pr.add_argument("--format", choices=("text", "json"), default="text")
+    pr.set_defaults(func=cmd_promote)
     r = sub.add_parser("revision", help="Append a dated Revision History row per id (batch).")
     sdlc_md.add_ids_argument(r, help_="artifact ids; repeat --id or pass --ids as one comma list")
     r.add_argument("--note", required=True, help="the Change cell text")

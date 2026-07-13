@@ -16,8 +16,30 @@ pass/fail and exits non-zero only when a blocking check fails. `--only` / `--ski
 checks; constitution blocks only when `constitution.enforce` is set. No network, no CI
 assumption - runnable in any CI or a pre-commit hook (see `help/gate.md` for wiring). The
 check registry is injectable, so the aggregation logic is unit-tested without a full repo.
-`--require-retro RETROxxxx` adds a blocking close-gate check: the sprint/review close fails
-loud until the named batch retro exists in `sdlc-studio/retros/` (the hard retro gate).
+`--require-retro RETROxxxx` is the **sprint-close** form: it binds three blocking lanes, because
+the close is one obligation and a flag per step is a flag that gets forgotten.
+
+- `retro` - the named batch retro must exist in `sdlc-studio/retros/`.
+- `lessons-summary` - the committed `retros/LESSONS-SUMMARY.md` must be the digest of the CURRENT
+  lessons log. The lane **recomputes** that digest and compares, rather than reading a freshness
+  stamp: nothing to forge, and a lesson **closed** since the last regeneration fails it exactly as
+  an added one does. Layout and whitespace are not compared, so reformatting the file cannot
+  false-fire it. Fix: `lessons summary`.
+- `lessons-validity` - no open lesson may sit past its `Review-by` horizon, and none may carry no
+  horizon at all (unprovable is not proven - a lane that reported only expiries would pass a legacy
+  log vacuously). Fix: `lessons revalidate --close` / `--extend` / `--stamp`.
+
+`--require-lessons` binds the two lessons lanes alone (a close with no retro due). They pass on a
+project with no lessons **and no summary claiming any** - a greenfield repo has nothing to
+summarise, and the detail says so rather than reading as a silent green. They do **not** pass when
+the log is missing while the committed summary still lists lessons: the log is gitignored, so
+deleting it costs nothing and shows in no diff, and a check that read that as "nothing to
+summarise" could be defeated with one `rm`. The summary is the tracked half and the one making a
+claim, so the contradiction is refused (restore the log, or run `lessons summary` to clear the
+digest).
+
+Deselecting a **bound** lane (`--skip lessons-summary`, or an `--only` that omits it) is refused,
+not honoured, in every mode: no verdict is printed over the lane that defines it.
 
 `--release` is the **pre-tag** form and the only command needed before a tag: it adds a blocking
 `verify` lane that **executes** every story's `Verify:` expression through `verify_ac` and names
@@ -113,7 +135,9 @@ Live metrics (lint, type-check, coverage) are left to Claude to run. Help:
 ### `validate.py` (read-only)
 
 - `check`: lint artifact structure (ID, Status vocabulary, title, AC presence, an optional
-  record-only `Tranche` reference whose only shape rule is non-empty-when-present)
+  record-only `Tranche` reference whose only shape rule is non-empty-when-present, and a
+  `Template:` tier drawn from `minimal|planning|full` - an unrecognised tier is an error,
+  because it would read as "not planning" and silently disable the promotion gate)
 - `instructions`: hygiene-check the project's `AGENTS.md` / `CLAUDE.md` (AGENTS.md
   canonical, CLAUDE.md a `@AGENTS.md` pointer, operating-doctrine + `LATEST.md`
   pointers present, pre-release gate + compaction rule present, no per-ship-narrative
@@ -137,7 +161,9 @@ checks (`reference-decisions.md`) and as a reconcile pre-step.
 
 ### `conformance.py`
 
-The lifecycle-conformance gate. `detect_conformance` reports per-story stages (decomposed -> AC -> verifiable -> verified -> reconciled -> critiqued -> documented) and hard-fails any terminal unit with a stage missing. Repo-global signals (reconciled, documented) apply to every Done unit.
+The lifecycle-conformance gate. `detect_conformance` reports per-story stages (decomposed -> AC -> verifiable -> verified -> reconciled -> critiqued -> documented -> promoted) and hard-fails any terminal unit with a stage missing. Repo-global signals (reconciled, documented) apply to every Done unit.
+
+`promoted` is the backstop to the planning-tier transition gate, sharing its one authority (`lib/tiers.py`): a Done story that is missing the sections the full template carries is non-conformant, because the transition gate that normally refuses it can be walked around by hand-editing the status. It is keyed on the sections, not on the tier stamp - an unknown tier fails closed, and a `full` stamp over missing sections is refused as a claim rather than believed. A story with no tier stamp - every artefact predating the tier - is promoted by definition and never flagged, unless the project sets `quality.require_full_sections: true`, which judges every story on its sections. Remedy: `artifact.py promote --id <ID> --to full`.
 
 A failure does not just print a count. The gate and `conformance check` name the two whole-batch remedies inline: set `conformance.adopt_after` (forward-only adoption - accepts a bare id `103` or prefixed `US0103`, and ids up to and including the cutoff are exempt), or run `verify_ac` and back-annotate `- **Verified:**` to clear per-unit debt. The output also distinguishes unadopted-discipline debt (most units mass-missing the same stage - pre-existing, forward-only) from scattered per-unit gaps that may be a regression, so a grown-but-accepted count is not mistaken for a fresh breakage. The cutoff is parsed by the shared `sdlc_md.parse_cutoff` (one parser for both gates), which raises a clear error on an unparseable value rather than silently disabling the cutoff.
 

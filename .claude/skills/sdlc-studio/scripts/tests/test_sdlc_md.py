@@ -292,7 +292,8 @@ class RemediationTests(unittest.TestCase):
         # emit, and every hint is non-empty - so adding a finding-kind without a
         # hint (or emptying one) fails here instead of silently giving no guidance.
         expected = {
-            "conformance": {"decomposed", "specified", "verifiable", "verified", "reconciled", "critiqued"},
+            "conformance": {"decomposed", "specified", "verifiable", "verified", "reconciled",
+                            "critiqued", "promoted"},
             "integrity": {"missing-required", "dangling"},
             "audit": {"weak-AC", "unmet-deps", "unresolved-deps", "already-terminal",
                       "link-integrity", "underspecified", "not-found"},

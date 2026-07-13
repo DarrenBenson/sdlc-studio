@@ -139,11 +139,28 @@ and the skill's own cross-project `lessons/` registry.
 
 - `list`: project-tier entries newest first (`--global` for the skill tier)
 - `add`: append a project-tier entry (L-NNNN allocation, top insertion,
-  header upkeep); `--global` creates the next `LL{NNNN}-{slug}.md` from
-  `lessons/_template.md` and appends the `_index.md` row
+  header upkeep), stamped `Added:` + `Review-by:` (the validity horizon;
+  `--validity-days`, or the `lessons.validity_days` config key, default 90);
+  `--global` creates the next `LL{NNNN}-{slug}.md` from `lessons/_template.md`
+  and appends the `_index.md` row
 - `prune`: drop project-tier entries with Epic `<=` `--older` or `==` `--epic`
 - `recall`: skill-tier lessons matching `--tags`/`--query` (case-insensitive
   substring); `--all` searches both tiers
+- `revalidate`: list open lessons with their horizon, or act on them - `--close
+  L-NNNN` (no longer true), `--extend L-NNNN` (still true; the horizon moves out
+  by the validity window), `--stamp` (give every horizon-less open lesson one:
+  the backfill for a log written before horizons existed)
+- `summary`: regenerate the committed `retros/LESSONS-SUMMARY.md` from the
+  still-valid lessons - deterministic for a given log (no date in the output), so
+  it is reproducible and the close gate can recompute it and compare
+
+The close loop is mechanical, not doctrine: `gate --require-retro` (or
+`--require-lessons`) fails loud on a **stale** summary - it recomputes the digest
+from the log, so a lesson closed since the last regeneration fails it exactly as
+an added one does - and on any open lesson past its validity horizon or carrying
+none. `sprint plan` emits the still-valid digest into the plan itself, so the
+sprint-start read is not something an agent can skip. See
+`reference-agentic-lessons.md#close-loop`.
 
 The project tier is the default; `--global` is the deliberate promotion, and it
 writes **only where git actually holds the file**. Resolution order:
@@ -161,7 +178,7 @@ Full workflow: `reference-agentic-lessons.md#lessons-accumulation`. Config key:
 
 ### `sprint.py`
 
-The Goal-Driven Development loop's planner. `plan <query> --order priority|wsjf` selects + dependency-orders the batch (the triage plan); priority dominates, complexity breaks ties. `plan --prd <path>` bootstraps greenfield authoring; `plan --write` persists the sprint-plan artifact; `plan` runs `reconcile detect` first and surfaces drift, refusing under `--strict` (reconcile-before-plan). `--order wsjf` orders by seat-scored WSJF = (value+time-criticality+risk-reduction)/size from `.local/wsjf-inputs.json`, degrading to priority+complexity without inputs or under `--skip-personas`. Every planned unit is stamped with a `difficulty` band (route.py, advisory); with `routing.enabled` it also carries the `tier`/`model` recommendation; an estimator failure degrades that unit's routing fields, never the plan. See reference-sprint.md.
+The Goal-Driven Development loop's planner. `plan <query> --order priority|wsjf` selects + dependency-orders the batch (the triage plan); priority dominates, complexity breaks ties. `plan --prd <path>` bootstraps greenfield authoring; `plan --write` persists the sprint-plan artifact; `plan` runs `reconcile detect` first and surfaces drift, refusing under `--strict` (reconcile-before-plan). The plan **emits the still-valid lessons digest** (`lessons.plan_digest`: the project log, else the committed `LESSONS-SUMMARY.md`), so the sprint-start read arrives inside the plan rather than as an instruction to open a file; a stale summary is warned about here and **fails** the close gate. `--order wsjf` orders by seat-scored WSJF = (value+time-criticality+risk-reduction)/size from `.local/wsjf-inputs.json`, degrading to priority+complexity without inputs or under `--skip-personas`. Every planned unit is stamped with a `difficulty` band (route.py, advisory); with `routing.enabled` it also carries the `tier`/`model` recommendation; an estimator failure degrades that unit's routing fields, never the plan. See reference-sprint.md.
 
 ### `autosprint.py`
 

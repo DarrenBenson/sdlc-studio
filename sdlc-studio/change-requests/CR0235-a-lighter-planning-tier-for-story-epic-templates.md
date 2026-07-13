@@ -1,6 +1,6 @@
 # CR-0235: A lighter planning tier for story/epic templates
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** P3
 > **Type:** Improvement
 > **Date:** 2026-07-11

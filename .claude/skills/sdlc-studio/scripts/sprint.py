@@ -8,8 +8,12 @@ Ordering is by priority/severity (Critical first); dependency-topological; and W
 files a unit will touch (its `Affects`, scored by complexity.py) breaks
 ties within a priority, so the smaller blast-radius job goes first. Complexity never
 overrides priority, and the order degrades to plain priority when no complexity is
-known. The plan also carries a complexity-weighted per-unit token budget. Read-only;
-pure stdlib (complexity is a sibling helper).
+known. The plan also carries a complexity-weighted per-unit token budget.
+
+The plan also EMITS the still-valid lessons digest (`lessons.plan_digest`): the lessons the
+last sprints paid for arrive inside the plan the agent reads at sprint start, rather than as a
+prose instruction to open a file that an agent under effort pressure skips. Read-only;
+pure stdlib (complexity and lessons are sibling helpers).
 """
 from __future__ import annotations
 
@@ -24,6 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 import complexity  # noqa: E402  (sibling - blast-radius complexity for WSJF)
 import config  # noqa: E402  (sibling - routing block for tier enrichment)
+import lessons  # noqa: E402  (sibling - the still-valid lessons digest carried in the plan)
 import reconcile  # noqa: E402  (sibling - reconcile before plan)
 import blocker_sweep  # noqa: E402  (sibling - blocker sweep before plan)
 
@@ -410,6 +415,9 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
         "deps_declared": deps_declared,
         "seat_provenance": (_seat_provenance(root, batch)
                             if order == "wsjf" and not skip_personas else None),
+        # The lessons the last sprints paid for, IN the plan the agent reads at sprint start.
+        # A plan that merely pointed at LESSONS-SUMMARY.md relied on the agent opening it.
+        "lessons": lessons.plan_digest(root),
     }
 
 
@@ -428,6 +436,7 @@ def build_authoring_plan(repo_root: Path | str, prd_path: str) -> dict:
         "next": "decompose the PRD into epics, then Ready stories (the authoring phase); "
                 "stop at the epic-cut STOP for approval before authoring stories",
         "count": 0,
+        "lessons": lessons.plan_digest(repo_root),  # a greenfield start is a sprint start too
     }
 
 
@@ -595,6 +604,29 @@ def _render_waves(data: dict) -> None:
             print(f"  {b['id']} [{b['priority']}]")
 
 
+PLAN_DIGEST_MAX = 20  # lessons printed in the text plan before the tail is elided
+
+
+def _render_lessons(data: dict) -> None:
+    """The still-valid lessons, printed IN the plan. The sprint-start read was doctrine -
+    a prose instruction to open a file - so it was skipped; here it arrives unasked, in the
+    output the agent already reads. (The JSON form carries every lesson, uncapped.)"""
+    digest = data.get("lessons")
+    if not digest:
+        return
+    if digest["stale"]:  # the close gate FAILS on this; at plan time it is a loud warning
+        print(f"  warning: {digest['reason']}", file=sys.stderr)
+    if not digest["lessons"]:
+        return
+    print(f"  lessons in force ({digest['count']}) - read before starting:")
+    for item in digest["lessons"][:PLAN_DIGEST_MAX]:
+        gist = f" - {item['gist']}" if item["gist"] else ""
+        print(f"    {item['id']}: {item['title']}{gist}")
+    if digest["count"] > PLAN_DIGEST_MAX:
+        print(f"    (+{digest['count'] - PLAN_DIGEST_MAX} more - `lessons revalidate` closes "
+              f"the ones that no longer hold)")
+
+
 def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, epics) -> None:
     """Render a built plan to stdout: JSON, or the human batch header + provenance + waves."""
     if args.format == "json":
@@ -605,6 +637,7 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     print(f"batch: {data['count']} unit(s) ({src}){scope}, order={args.order}")
     _render_seat_provenance(data)
     _render_waves(data)
+    _render_lessons(data)
 
 
 def _plan_authoring(args: argparse.Namespace) -> int:
@@ -614,8 +647,11 @@ def _plan_authoring(args: argparse.Namespace) -> int:
     except FileNotFoundError as exc:
         print(f"{exc}", file=sys.stderr)
         return 2
-    print(json.dumps(data, indent=2) if args.format == "json"
-          else f"authoring plan: bootstrap from {data['prd']} (PRD -> epics -> stories)")
+    if args.format == "json":
+        print(json.dumps(data, indent=2))
+        return 0
+    print(f"authoring plan: bootstrap from {data['prd']} (PRD -> epics -> stories)")
+    _render_lessons(data)
     return 0
 
 

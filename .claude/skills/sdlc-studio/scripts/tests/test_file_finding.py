@@ -297,5 +297,105 @@ class MdSafeProseTests(unittest.TestCase):
         self.assertEqual(ff._md_safe("uses `_next_number` here"), "uses `_next_number` here")
 
 
+def _rev_row(body: str) -> str:
+    """The first Revision History data row of a rendered artefact."""
+    lines = body.splitlines()
+    head = next(i for i, ln in enumerate(lines) if ln.strip().startswith("## Revision History"))
+    rows = [ln for ln in lines[head:] if ln.strip().startswith("|")]
+    return rows[2]  # header, separator, then the created/filed row
+
+
+class RevisionAuthorTests(unittest.TestCase):
+    """The Revision History Author cell is the authorship of record, not a hardcoded literal:
+    the provenance tooling must not mint a false provenance record."""
+
+    FIELDS = {"bug": {"severity": "High", "summary": "s", "steps": "x", "fix": "y"},
+              "cr": {"priority": "High", "ctype": "Improvement", "summary": "s",
+                     "acs": ["a"], "impact": "i", "effort": "M"},
+              "rfc": {"summary": "s", "options": ["Option A"]}}
+
+    def _file(self, root: Path, type_: str, **extra) -> str:
+        _seed_index(root, type_)
+        res = ff.file_finding(root, type_, "a finding",
+                              {**self.FIELDS[type_], "date": "2026-07-13", **extra})
+        return Path(res["path"]).read_text(encoding="utf-8")
+
+    def test_named_author_reaches_the_revision_history(self) -> None:
+        for type_ in ("bug", "cr", "rfc"):
+            with self.subTest(type=type_), tempfile.TemporaryDirectory() as d:
+                body = self._file(Path(d), type_, author="Dani Okafor")
+                row = _rev_row(body)
+                self.assertIn("| Dani Okafor |", row)
+                self.assertNotIn("audit", row)
+
+    def test_typed_author_triple_renders_the_name_only(self) -> None:
+        # The table cell carries a NAME; the typed triple belongs in `Raised-by`.
+        with tempfile.TemporaryDirectory() as d:
+            body = self._file(Path(d), "rfc", author="Claude (Fable 5); agent; v5")
+            self.assertIn("> **Raised-by:** Claude (Fable 5); agent; v5", body)
+            row = _rev_row(body)
+            self.assertIn("| Claude (Fable 5) |", row)
+            self.assertNotIn(";", row)
+
+    def test_unattributed_filing_names_the_invoking_agent(self) -> None:
+        import os
+        with tempfile.TemporaryDirectory() as d:
+            prev = os.environ.get("SDLC_AUTHOR")
+            os.environ["SDLC_AUTHOR"] = "Sprint Driver; agent; v1"
+            try:
+                body = self._file(Path(d), "bug")
+            finally:
+                os.environ.pop("SDLC_AUTHOR")
+                if prev is not None:
+                    os.environ["SDLC_AUTHOR"] = prev
+            row = _rev_row(body)
+            self.assertIn("| Sprint Driver |", row)
+            self.assertNotIn("audit", row)
+
+    def test_pipe_in_author_does_not_shift_the_revision_columns(self) -> None:
+        # A raw `|` in a cell silently adds a column and drops the Change value. Every other
+        # row writer escapes it; the history row must too.
+        with tempfile.TemporaryDirectory() as d:
+            row = _rev_row(self._file(Path(d), "bug", author="Sam | Bob"))
+            self.assertEqual(len(sdlc_md.table_cells(row)), 3, row)
+            self.assertIn("Filed", row)
+
+
+class ConsolidationRevisionAuthorTests(unittest.TestCase):
+    """BG0109's own Steps to Reproduce run through the consolidation branch on schema v3: a
+    Low-severity finding never reaches the per-type render, so the CR it folds into must
+    resolve its author the same way."""
+
+    def _low_finding(self, root: Path, **extra) -> str:
+        _seed_index(root, "bug")
+        _seed_index(root, "cr")
+        (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
+        res = ff.file_finding(root, "bug", "a low defect",
+                              {"severity": "Low", "summary": "s", "steps": "x", "fix": "y",
+                               "date": "2026-07-13", **extra})
+        return Path(res["path"]).read_text(encoding="utf-8")
+
+    def test_consolidation_cr_names_the_author(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            body = self._low_finding(Path(d), author="Dani Okafor; agent; v2")
+            self.assertIn("> **Raised-by:** Dani Okafor; agent; v2", body)
+            row = _rev_row(body)
+            self.assertIn("| Dani Okafor |", row)
+            self.assertNotIn("audit", row)
+
+    def test_unattributed_consolidation_names_the_invoking_agent(self) -> None:
+        import os
+        with tempfile.TemporaryDirectory() as d:
+            prev = os.environ.get("SDLC_AUTHOR")
+            os.environ["SDLC_AUTHOR"] = "Sprint Driver; agent; v1"
+            try:
+                body = self._low_finding(Path(d))
+            finally:
+                os.environ.pop("SDLC_AUTHOR")
+                if prev is not None:
+                    os.environ["SDLC_AUTHOR"] = prev
+            self.assertIn("| Sprint Driver |", _rev_row(body))
+
+
 if __name__ == "__main__":
     unittest.main()

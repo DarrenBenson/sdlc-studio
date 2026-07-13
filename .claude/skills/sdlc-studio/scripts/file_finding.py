@@ -94,6 +94,20 @@ def _stamp(f: dict) -> str:
     return _STAMP + f"> **Raised-by:** {f.get('_raised_by') or sdlc_md.DEFAULT_AGENT_AUTHOR}\n"
 
 
+def _rev_author(f: dict) -> str:
+    """The Revision History Author cell: the name of the authorship of record, resolved from
+    `--author` (and defaulting to the invoking agent). The filer records who raised the
+    artefact, never a hardcoded literal."""
+    return sdlc_md.authorship_name(f.get("_raised_by") or f.get("author"))
+
+
+def rev_row(today: str, f: dict, change: str) -> str:
+    """The opening Revision History row an artefact is born with - the one writer both creation
+    paths share. Built through `join_row`, so a `|` in an author's name is escaped rather than
+    silently opening a fourth column and swallowing the Change cell."""
+    return sdlc_md.join_row([today, _rev_author(f), change])
+
+
 def _md_safe(text) -> str:
     """Backtick-wrap bare snake_case/dunder identifier tokens in free prose so an unbackticked
     `_` is not read as markdown emphasis (MD037/MD049/MD050) - the filer must not mint
@@ -124,7 +138,7 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
                 f"## Steps to Reproduce\n\n{f['steps']}\n\n"
                 f"## Proposed Fix\n\n{f['fix']}\n\n"
                 f"## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
-                f"| {today} | audit | Filed |\n")
+                f"{rev_row(today, f, 'Filed')}\n")
     if type_ == "cr":
         # normalise: an AC supplied with its own leading checkbox ('- [ ] x',
         # '-[x] y') is not doubled into '- [ ] - [ ] x'
@@ -138,7 +152,7 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
                 f"**Effort:** {f['effort']}\n\n"
                 f"## Acceptance Criteria\n\n{acs}\n\n"
                 f"## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
-                f"| {today} | audit | Raised |\n")
+                f"{rev_row(today, f, 'Raised')}\n")
     options = "\n".join(f"- **{o}**" for o in f["options"])
     return (f"# {disp_id}: {title}\n\n"
             f"> **Status:** {status or 'Draft'}\n> **Date:** {today}\n{_stamp(f)}\n"
@@ -148,7 +162,7 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
             f"## Open Decisions\n\n| # | Decision | Status |\n| --- | --- | --- |\n"
             f"| D1 | Act on this finding or keep status quo | Open |\n\n"
             f"## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
-            f"| {today} | audit | Filed |\n")
+            f"{rev_row(today, f, 'Filed')}\n")
 
 
 def append_index_row(repo_root: Path | str, type_: str, row_line: str) -> bool:
@@ -240,10 +254,10 @@ def _file_finding_locked(root: Path, type_: str, spec: dict, title: str, fields:
                 "indexed": indexed, "dry_run": True}
     triage_noise.enforce_session_cap(root)  # refuse the N+1th individual finding loudly (v3)
     raised_by = sdlc_md.authorship_value(fields.get("author"), root)
-    # The index's Author column takes the resolved author's name, so an unattributed filing
-    # still names whoever raised it (the invoking agent) rather than leaving the cell blank.
-    fields = {**fields, "_raised_by": raised_by,
-              "author": fields.get("author") or sdlc_md.parse_authorship_value(raised_by)["name"]}
+    # The index's Author column and the Revision History row both take the resolved author's
+    # NAME (the typed triple is the `Raised-by` field's job), so an unattributed filing still
+    # names whoever raised it - the invoking agent - rather than a literal or a blank cell.
+    fields = {**fields, "_raised_by": raised_by, "author": sdlc_md.authorship_name(raised_by)}
     sdlc_md.atomic_write(path, _render(type_, disp_id, title, today, fields, create_status))
     triage_noise.record_creation(root)  # count this minted finding against the session budget
     # One shared header-driven row builder for both create paths: read the index's

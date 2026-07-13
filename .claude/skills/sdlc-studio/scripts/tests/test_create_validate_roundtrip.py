@@ -58,7 +58,9 @@ CONTENT: dict[str, dict] = {
     "test-spec": {"summary": "what proves search works"},
     "workflow": {"summary": "the search rollout run"},
     "story": {"persona": "Alex Rivera",
-              "acs": ["the CLI exits 0 for a known id"]},
+              "acs": ["the CLI exits 0 for a known id"],
+              "verify": ["pytest -k known_id"],
+              "target": "functional"},
     "bug": {"severity": "Medium", "summary": "the id parser drops a trailing dash",
             "steps": "run the parser over a dash-suffixed id", "fix": "strip the trailing dash"},
     "cr": {"priority": "Medium", "ctype": "Improvement",
@@ -74,8 +76,8 @@ CONTENT: dict[str, dict] = {
 # The content keys whose value must appear verbatim in the rendered artefact. A creator that
 # accepts content and drops it is worse than one that never accepted it: the caller sees exit
 # 0 and a clean validator over an artefact its words never reached.
-PROSE_KEYS = ("persona", "summary", "steps", "fix", "impact", "recommendation")
-LIST_KEYS = ("acs", "options")
+PROSE_KEYS = ("persona", "summary", "steps", "fix", "impact", "recommendation", "target")
+LIST_KEYS = ("acs", "options", "verify")
 
 
 def _workspace(root: Path, era: str) -> None:
@@ -100,10 +102,12 @@ class ContentRoundTripTests(unittest.TestCase):
     def test_matrix(self) -> None:
         for era in ERAS:
             for type_ in NEW_TYPES:
-                # Both scaffold richnesses: `batch` defaults to the full templates/core body,
-                # so the fan-out path a decomposition actually runs is in the matrix too.
+                # Every scaffold richness: `batch` defaults to the full templates/core body,
+                # so the fan-out path a decomposition actually runs is in the matrix too, and
+                # the lean `planning` tier is a creator like any other - a tier outside this
+                # matrix is exactly the hole the round trip exists to close.
                 for creator in ("new", "batch"):
-                    for template in ("minimal", "full"):
+                    for template in ("minimal", "planning", "full"):
                         with self.subTest(creator=creator, type=type_, era=era,
                                           template=template):
                             self._check_artifact(creator, type_, era, template)

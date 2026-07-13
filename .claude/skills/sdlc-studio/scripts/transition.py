@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import sdlc_md  # noqa: E402
+from lib import sdlc_md, tiers  # noqa: E402
 import reconcile  # noqa: E402  (sibling - reuse the tested index-row + count sync)
 
 # Statuses that mean "complete" for the epic-breakdown checkbox (a story is ticked).
@@ -196,8 +196,18 @@ def _upsert_field(text: str, name: str, value: str) -> str:
 # `provenance` is the verify_ac shell-execution boundary - annotate clearing an
 # `external` stamp would re-enable shell on untrusted content. The only
 # provenance mutation that matters (external -> non-external) is always the dangerous
-# direction, and there is no legitimate post-creation re-stamp. Case-insensitive.
-_ANNOTATE_DENYLIST = {"status", "triaged-by", "triage-severity", "provenance"}
+# direction, and there is no legitimate post-creation re-stamp. `template` gates the
+# promotion ladder: annotating it to `full` cleared the planning gate AND its conformance
+# backstop in one exit-0 line, with no waiver and no record - a documented skip printing
+# green over the sections the tier deferred. The tier is changed by `artifact.py promote`,
+# which ADDS those sections; there is no legitimate way to change it without them.
+# Case-insensitive.
+_ANNOTATE_DENYLIST = {"status", "triaged-by", "triage-severity", "provenance", "template"}
+# The remedy named in the refusal, per denied field - so a refusal points somewhere.
+_ANNOTATE_REMEDY = {
+    "template": "the tier is changed by `artifact.py promote --id <id> --to full`, which adds "
+                "the deferred sections; a stamp without them is a claim, not the work",
+}
 
 
 def annotate(repo_root: Path | str, artifact_id: str, field: str, value: str) -> dict:
@@ -207,9 +217,11 @@ def annotate(repo_root: Path | str, artifact_id: str, field: str, value: str) ->
     unresolvable id, a gate-protected field, an injection-shaped value, or a file with no
     metadata block to anchor to."""
     root = Path(repo_root)
-    if field.strip().lower() in _ANNOTATE_DENYLIST:
-        raise ValueError(f"annotate refuses the gate-protected field {field!r}: status and "
-                         "triage records go through `transition set` so their gates run")
+    key = field.strip().lower()
+    if key in _ANNOTATE_DENYLIST:
+        remedy = _ANNOTATE_REMEDY.get(key, "status and triage records go through `transition "
+                                            "set` so their gates run")
+        raise ValueError(f"annotate refuses the gate-protected field {field!r}: {remedy}")
     if len(field.splitlines()) > 1 or len(value.splitlines()) > 1:
         # splitlines covers every separator universal-newline reads translate (\n, \r,
         # \x0b/\x0c, \x85, U+2028/29) - a bare \n check left \r as an injection path
@@ -295,6 +307,23 @@ def _cascade_epic(repo_root: Path, story_id: str, ticked: bool) -> str | None:
 _IMPL_TARGETS = {"In Progress", "Review", "Done"}
 
 
+def _tier_gate(root: Path, text: str, type_: str) -> str | None:
+    """Block reason when a story or epic reaches an implementation-facing status without the
+    sections the full template carries.
+
+    Keyed on the SECTIONS, not on the tier stamp: a stamp is a claim the subject can rewrite,
+    and a gate that trusts one is defeated by rewriting it. `lib.tiers.promotion_deficit` owns
+    the judgement (fail closed on an unknown tier; a `full` claim is checked against the
+    sections; an unstamped artefact is untouched unless the project sets
+    `quality.require_full_sections`).
+
+    Fires on EVERY entry to an implementation status, not just the first: the deficit is a
+    property of the file, not a one-off event, and it persists until the sections are there.
+    Not bypassable with `--force`, because the sanctioned route ADDS the sections rather than
+    waiving them - and `transition annotate` refuses the tier field for the same reason."""
+    return tiers.promotion_deficit(text, type_, strict=tiers.require_full_sections(root))
+
+
 def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
                      target_canon, from_canon, force, dry_run, triaged_by) -> str | None:
     """Run the ordered pre-write gates (bug-depth, depth-parity, done-verify, triage,
@@ -331,6 +360,15 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
             else:
                 verify_warn = f"AC-verify advisory (quality.done_requires_verified=false): {block}"
                 gate_warn = f"{gate_warn}; {verify_warn}" if gate_warn else verify_warn
+    # The tier gate fires on any entry to an implementation status, dry-run included (an
+    # honest preflight surfaces the refusal a real run would hit) and force included (the
+    # remedy is promotion, not a waiver). Epics are gated too: an epic's planning template
+    # asserts its constraint chain, success metrics and risk register "arrive with
+    # promotion", and an ungated epic made that assertion false.
+    if type_ in tiers.TIERED_TYPES and target_canon in _IMPL_TARGETS:
+        block = _tier_gate(root, text, type_)
+        if block:
+            blocks.append(f"{artifact_id} is not ready for {new_status}: {block}")
     # The triage gate fires on any exit from `inbox` for a v3 finding, dry-run included: an
     # honest preflight must surface the same refusal a real run would (never a false green).
     block = _triage_gate(root, type_, text, from_canon, target_canon, triaged_by)

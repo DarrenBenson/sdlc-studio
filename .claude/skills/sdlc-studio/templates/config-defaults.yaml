@@ -236,3 +236,10 @@ deploy:
 # feature is dormant - no digest is produced or read, so small repos see no behaviour change.
 digests:
   min_closed: 500    # closed-artefact count at/above which digests are produced and read
+
+# Project lessons - how long a lesson stays valid before it must be re-validated. `lessons add`
+# stamps `Review-by: {added + validity_days}`; at the sprint close the gate fails while an open
+# lesson sits past its horizon un-closed and un-extended (`lessons revalidate`). A shorter window
+# suits a fast-moving codebase where a lesson rots quickly; a longer one suits a stable domain.
+lessons:
+  validity_days: 90  # days a project lesson holds before re-validation is due

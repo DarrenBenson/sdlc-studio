@@ -13,6 +13,7 @@
 - [Epic Perspectives](#epic-perspectives)
 - [Review Configuration](#review-configuration)
 - [Persona Staleness](#personas-staleness-days)
+- [Lessons Validity](#lessons-validity)
 - [Skill Source Repo](#skill-source-repo)
 - [Contract Tables](#contract-tables)
 - [Release Strategy](#release-strategy)
@@ -195,6 +196,24 @@ The Persona Review pass of `/sdlc-studio review` uses this window to decide whet
 | `staleness_days` | 90 | Days without a touch before a persona is flagged stale |
 
 A project where personas are consulted rarely by design (e.g. stable archetypes) can extend this; a project where personas are expected to be high-touch can shorten it. See `reference-review.md` for the cross-doc check that reads this value.
+
+---
+
+## Lessons Validity {#lessons-validity}
+
+How long a project lesson holds before it must be re-validated.
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| `lessons.validity_days` | 90 | Days from `Added:` to the `Review-by:` horizon stamped by `lessons add` |
+
+At the sprint close, `gate --require-retro` (or `--require-lessons`) **fails** while an open lesson sits past its horizon: it is either closed (`lessons revalidate --close`, no longer true) or extended (`--extend`, still true). A lesson carrying no horizon at all fails the same lane - unprovable is not proven - and `revalidate --stamp` backfills one. Shorten the window on a fast-moving codebase where lessons rot quickly; lengthen it in a stable domain. See `reference-agentic-lessons.md#close-loop`.
+
+```text
+# sdlc-studio/.config.yaml
+lessons:
+  validity_days: 30
+```
 
 ---
 
@@ -401,6 +420,15 @@ quality:
   # (scripts/mutation.py); enumerations beyond it are counted as truncated -
   # un-checked coverage, never silently clean.
   mutation_max: 25
+  # require_full_sections (default false): the template-tier gate refuses a story or epic that
+  # reaches In Progress/Review/Done while missing the sections the full template carries. By
+  # default it judges only artefacts that declare a tier (`> **Template:**`) - an unstamped bare
+  # story is structurally identical to the pre-tier stories that reach Done today, so refusing
+  # it would refuse them. Set true to drop the stamp from the decision entirely and judge EVERY
+  # story and epic on its sections: the same rule applied universally, and the close for a
+  # project that does not want a hand-removed stamp to be worth anything. `conformance.py`'s
+  # `promoted` stage follows the same setting. Remedy either way: `artifact.py promote`.
+  require_full_sections: false
 
 story_quality:
   edge_cases:

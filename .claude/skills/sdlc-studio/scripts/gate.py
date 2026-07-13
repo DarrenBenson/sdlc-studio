@@ -242,6 +242,7 @@ def _hook_enabled(root: str) -> dict:
 BLOCKING_ON_ERROR = {
     "conformance", "reconcile", "index-derived", "validate",
     "integrity", "duplicate-id", "doc-coverage", "retro", "verify",
+    "lessons-summary", "lessons-validity",
 }
 
 DEFAULT_CHECKS = {
@@ -270,6 +271,52 @@ def _retro_present(root: str, retro_id: str) -> dict:
     return {"count": 0 if present else 1, "blocking": True,
             "detail": (f"batch retro {retro_id} present" if present
                        else f"missing batch retro {retro_id} - write it before closing the sprint")}
+
+
+def _lessons_summary(root: str) -> dict:
+    """Blocking close-gate lane: the committed LESSONS-SUMMARY.md must be the digest of the
+    CURRENT lessons log. Summarising the sprint's lessons was doctrine - prose four steps long,
+    of which only the retro was enforced - so an agent under effort pressure skipped it and the
+    next sprint read a summary that predated the last one's learning.
+
+    The verdict is recomputed, never trusted: `lessons.summary_status` regenerates the digest
+    from the log and compares it with what the file says, so a lesson CLOSED since the last
+    regeneration fails it exactly as an added one does. Nothing is stamped, so there is nothing
+    to forge; the only way to green is for the file to say what the log implies.
+    """
+    import lessons
+    status = lessons.summary_status(root)
+    if not status["applicable"]:
+        return {"count": 0, "blocking": True, "detail": status["reason"]}
+    if not status["stale"]:
+        return {"count": 0, "blocking": True, "detail": status["reason"]}
+    n = len(status["added"]) + len(status["removed"]) or 1
+    return {"count": n, "blocking": True, "detail": status["reason"]}
+
+
+def _lessons_validity(root: str) -> dict:
+    """Blocking close-gate lane: no open lesson may sit past its validity horizon unclosed and
+    unextended, and none may carry no horizon at all. The re-validation step, made mechanical.
+
+    An unstamped lesson counts. A lane that reported only EXPIRED entries would pass every
+    legacy log vacuously - a check that catches only the total case is not a check.
+    """
+    import lessons
+    status = lessons.validity_status(root)
+    if not status["applicable"]:
+        return {"count": 0, "blocking": True, "detail": status["reason"]}
+    n = len(status["expired"]) + len(status["unstamped"])
+    return {"count": n, "blocking": True, "detail": status["reason"]}
+
+
+# The close-gate lanes, bound as one set: the sprint close is a single obligation (write the
+# retro, re-validate the lessons, regenerate the digest the next sprint reads), so the command
+# the doctrine already prescribes - `gate --require-retro RETROxxxx` - carries all of it. A
+# separate flag per step is a step an agent under effort pressure forgets.
+LESSONS_CLOSE_CHECKS = {
+    "lessons-summary": _lessons_summary,
+    "lessons-validity": _lessons_validity,
+}
 
 
 VERIFY_TIMEOUT = 120  # per-verifier seconds; matches the verify_ac default
@@ -349,13 +396,17 @@ def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool =
 def run_gate(root: str = ".", only: list[str] | None = None,
              skip: list[str] | None = None, checks: dict | None = None,
              require_retro: str | None = None, release: bool = False,
-             allow_external: bool = False, verify_batch: bool = False) -> dict:
+             allow_external: bool = False, verify_batch: bool = False,
+             require_lessons: bool = False) -> dict:
     """Run the selected checks and report. `ok` is False only when a BLOCKING check
     fails; a non-blocking failure is reported but does not fail the gate. `require_retro`
-    adds a blocking close-gate check that the named batch retro exists (the sprint close).
-    `release` adds the blocking `verify` lane - the pre-tag gate is then ONE command with
-    ONE exit code, not a gate plus a separate verify run whose exit code can be dropped;
-    deselecting that lane under `release` is refused, not honoured (see below)."""
+    is the SPRINT-CLOSE gate: it binds a blocking check that the named batch retro exists,
+    plus the lessons lanes (`require_lessons` binds those alone) - the close's learning loop
+    is one obligation, so one command carries it. `release` adds the blocking `verify` lane -
+    the pre-tag gate is then ONE command with ONE exit code, not a gate plus a separate verify
+    run whose exit code can be dropped. A BOUND lane cannot be deselected: a mode's verdict
+    printed over the lane that defines it is the false-assurance class this gate exists to
+    refuse."""
     # Guard against a vacuous PASS on a wrong/missing root (a CI step pointed at the wrong
     # dir, or a failed checkout). "No project found" must FAIL, not look all-green. Only
     # applies to real runs; injected check registries (logic tests) skip it.
@@ -366,11 +417,17 @@ def run_gate(root: str = ".", only: list[str] | None = None,
                 "check": "scope", "count": 0, "blocking": True, "status": "fail",
                 "detail": f"no SDLC project under {root} (no sdlc-studio/ dir) - wrong --root?"}]}
     registry = dict(checks) if checks is not None else dict(DEFAULT_CHECKS)
+    bound: list[str] = []  # lanes a mode bound in: deselecting one is refused, not honoured
     if require_retro:  # close-gate: bind the expected retro id into a blocking check
         registry["retro"] = lambda r, _rid=require_retro: _retro_present(r, _rid)
+        bound.append("retro")
+    if require_retro or require_lessons:  # ...and the rest of the close's learning loop
+        registry.update(LESSONS_CLOSE_CHECKS)
+        bound.extend(LESSONS_CLOSE_CHECKS)
     if release:  # pre-tag: the executing AC-verify lane joins the standard gate
         registry["verify"] = (lambda r, _x=allow_external, _b=verify_batch:
                               _verify_acs(r, allow_external=_x, batch=_b))
+        bound.append("verify")
     # A wrong/typo'd --only/--skip (or a renamed check) must FAIL, not silently select
     # nothing and report a vacuous PASS - the false-assurance class LL0008 warns against.
     unknown = sorted({n for n in (list(only or []) + list(skip or [])) if n not in registry})
@@ -385,17 +442,23 @@ def run_gate(root: str = ".", only: list[str] | None = None,
         return {"ok": False, "checks": [{
             "check": "selection", "count": 0, "blocking": True, "status": "fail",
             "detail": "no checks selected - the gate proved nothing (check --only/--skip)"}]}
-    # The verify lane is what MAKES this a release gate. Honouring a --skip/--only that
-    # deselects it would print a release verdict over an unexamined AC layer - the
-    # passing-looking command the release mode exists to abolish. Refuse instead: a caller
-    # who does not want the AC layer examined wants the standard gate, and should say so.
-    if release and "verify" not in selected:
+    # A bound lane is what MAKES the mode that bound it: `verify` a release gate, `retro` and
+    # the lessons lanes a sprint close. Honouring a --skip/--only that deselects one would
+    # print that mode's verdict over the very thing it claims to have examined - the
+    # passing-looking command these modes exist to abolish. Refuse instead: a caller who does
+    # not want the lane examined wants the standard gate, and should say so.
+    dropped = [n for n in bound if n not in selected]
+    if dropped:
+        what = ("the AC layer" if dropped == ["verify"]
+                else "the sprint close's learning loop" if "verify" not in dropped
+                else "what it claims to gate")
         return {"ok": False, "checks": [{
-            "check": "selection", "count": 1, "blocking": True, "status": "fail",
-            "detail": "--release with the `verify` lane deselected proves nothing about the "
-                      "AC layer - a release verdict will not be printed over it. Drop the "
-                      "--skip/--only that excludes `verify`, or drop --release and run the "
-                      "standard gate"}]}
+            "check": "selection", "count": len(dropped), "blocking": True, "status": "fail",
+            "detail": f"deselecting the bound lane(s) {', '.join(dropped)} proves nothing "
+                      f"about {what} - that verdict will not be printed over them. Drop the "
+                      f"--skip/--only that excludes them, or drop the mode flag "
+                      f"(--release/--require-retro/--require-lessons) and run the standard "
+                      f"gate"}]}
     results = []
     for name in selected:
         try:
@@ -425,7 +488,8 @@ def cmd_gate(args: argparse.Namespace) -> int:
     report = run_gate(args.root, only=_split(args.only), skip=_split(args.skip),
                       require_retro=getattr(args, "require_retro", None), release=release,
                       allow_external=getattr(args, "allow_external", False),
-                      verify_batch=getattr(args, "verify_batch", False))
+                      verify_batch=getattr(args, "verify_batch", False),
+                      require_lessons=getattr(args, "require_lessons", False))
     if args.format == "json":
         print(json.dumps(report, indent=2))
     else:
@@ -452,7 +516,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--only", help="Comma-separated checks to run (default: all)")
     p.add_argument("--skip", help="Comma-separated checks to skip")
     p.add_argument("--require-retro", metavar="RETROxxxx",
-                   help="Close-gate: fail unless this batch retro exists in sdlc-studio/retros/")
+                   help="Sprint-close gate: fail unless this batch retro exists in "
+                        "sdlc-studio/retros/, the committed LESSONS-SUMMARY.md is the digest of "
+                        "the current lessons log, and every open lesson is inside its validity "
+                        "horizon (it implies --require-lessons - the close is one obligation)")
+    p.add_argument("--require-lessons", dest="require_lessons", action="store_true",
+                   help="The lessons half of the close gate on its own: fail on a stale "
+                        "LESSONS-SUMMARY.md (regenerate it with `lessons summary`) or on an open "
+                        "lesson past its validity horizon (`lessons revalidate`)")
     p.add_argument("--release", action="store_true",
                    help="Pre-tag gate: also EXECUTE every story's Verify: expression and fail "
                         "on any red or unproven AC (read-only - no Verified: back-annotation, "

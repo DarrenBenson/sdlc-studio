@@ -19,12 +19,21 @@ falsely reported. Set `skill_source_repo` in the project's `sdlc-studio/.config.
 to give `--global` the skill SOURCE checkout to write to.
 
 Subcommands:
-  list    Print project-tier lessons (newest first); --global for the skill tier.
-  add     Append a project-tier entry; --global promotes into the skill tier
-          (next LL id, file from _template.md, index row appended).
-  prune   Drop project-tier entries tied to old epics.
-  recall  Surface skill-tier lessons matching tags or a query; --all searches
-          both tiers.
+  list        Print project-tier lessons (newest first); --global for the skill tier.
+  add         Append a project-tier entry, stamped with a validity horizon; --global
+              promotes into the skill tier (next LL id, file from _template.md, index
+              row appended).
+  prune       Drop project-tier entries tied to old epics.
+  recall      Surface skill-tier lessons matching tags or a query; --all searches
+              both tiers.
+  revalidate  List open lessons with their horizon; --close / --extend / --stamp them.
+  summary     Regenerate the committed LESSONS-SUMMARY.md, the digest read at sprint start.
+
+The close loop is a mechanism, not doctrine: `summary` is DERIVED output of the lessons log,
+so `gate --require-retro` (the sprint-close gate) recomputes the digest and fails loud when
+the committed summary no longer matches, or when an open lesson has passed its validity
+horizon without being closed or extended. `sprint plan` carries the digest into the plan an
+agent reads at sprint start.
 
 Output: text by default, or JSON with --format json.
 """
@@ -36,13 +45,19 @@ import os
 import re
 import subprocess
 import sys
+from datetime import date, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 
 DEFAULT_PROJECT_FILE = "sdlc-studio/.local/lessons.md"
+DEFAULT_SUMMARY_FILE = "sdlc-studio/retros/LESSONS-SUMMARY.md"
 SKILL_LESSONS_DIR = Path(__file__).resolve().parent.parent / "lessons"
+# How long a project lesson stays valid before it must be re-validated (closed or extended).
+# Override per project with `lessons.validity_days` in sdlc-studio/.config.yaml.
+DEFAULT_VALIDITY_DAYS = 90
+VALIDITY_DAYS_KEY = "lessons.validity_days"
 SOURCE_REPO_KEY = "skill_source_repo"
 RUNNING_SKILL = "the running skill"
 # Repo-only files a release is cut from: present in the sdlc-studio SOURCE checkout, absent
@@ -51,6 +66,10 @@ SOURCE_MARKERS = ("install.sh", "tools/validate_skill.py")
 
 PROJECT_ENTRY_RE = re.compile(r"^##\s+(L-\d{4}):\s*(.+?)\s*$")
 FIELD_BULLET_RE = re.compile(r"^-\s+\*\*([^*]+):\*\*\s*(.*)$")
+# A rendered digest line, read back out of LESSONS-SUMMARY.md: `- **L-0001: title** - gist`.
+# The bold delimiters make the split unambiguous even when the gist itself contains " - ".
+SUMMARY_LINE_RE = re.compile(r"^-\s+\*\*(L-\d{4}):\s*(.+?)\*\*\s*(?:-\s*(.*))?$")
+ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 INDEX_ROW_RE = re.compile(
     r"^\|\s*\[(LL\d{4})\]\(([^)]+)\)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*$"
 )
@@ -456,6 +475,12 @@ def cmd_add(args: argparse.Namespace) -> int:
         bullets.append(f"- **Wave:** {args.wave}")
     if tags:
         bullets.append(f"- **Tags:** {', '.join(tags)}")
+    # Every new lesson carries a validity horizon, so the close gate's re-validation step has
+    # something to judge and the log cannot silently accrue lessons no one has re-read.
+    today = sdlc_md.now_date()
+    days = resolve_validity_days(getattr(args, "root", "."), getattr(args, "validity_days", None))
+    bullets.append(f"- **Added:** {today}")
+    bullets.append(f"- **Review-by:** {add_days(today, days)}")
     body_parts = []
     if bullets:
         body_parts.append("\n".join(bullets))
@@ -557,6 +582,292 @@ def is_closed(entry: dict) -> bool:
     return entry["fields"].get("status", "").strip().lower().startswith("closed")
 
 
+def upsert_field(entry: dict, name: str, value: str) -> None:
+    """Set `- **Name:** value` on an entry, in place: replace the existing bullet, or insert
+    one at the end of the entry's leading bullet block (so field bullets stay together and a
+    prose paragraph never gets a bullet stranded after it)."""
+    key = name.strip().lower()
+    lines = entry["body"].splitlines() if entry["body"] else []
+    bullet = f"- **{name}:** {value}"
+    for i, line in enumerate(lines):
+        m = FIELD_BULLET_RE.match(line)
+        if m and m.group(1).strip().lower() == key:
+            lines[i] = bullet
+            break
+    else:
+        last = -1  # end of the leading run of bullets/blanks
+        for i, line in enumerate(lines):
+            if FIELD_BULLET_RE.match(line):
+                last = i
+            elif line.strip():
+                break
+        lines.insert(last + 1, bullet)
+        # An entry whose body is a bare paragraph gets its first bullet inserted above prose.
+        # Without a blank line the paragraph renders as a lazy continuation of the list item.
+        nxt = last + 2
+        if nxt < len(lines) and lines[nxt].strip() and not FIELD_BULLET_RE.match(lines[nxt]):
+            lines.insert(nxt, "")
+    entry["body"] = "\n".join(lines).strip()
+    entry["fields"][key] = value
+
+
+def _is_iso_date(value: str) -> bool:
+    return bool(ISO_DATE_RE.match(value.strip()))
+
+
+def add_days(iso: str, days: int) -> str:
+    """`iso` + `days`, as a YYYY-MM-DD string."""
+    return (date.fromisoformat(iso.strip()) + timedelta(days=days)).isoformat()
+
+
+def resolve_validity_days(repo_root, explicit: int | None = None) -> int:
+    """The validity window: an explicit flag, else the project's `lessons.validity_days`,
+    else the default. A non-integer config value degrades to the default rather than
+    crashing the gate that reads it."""
+    if explicit is not None:
+        return int(explicit)
+    configured = sdlc_md.project_override(repo_root, VALIDITY_DAYS_KEY)
+    try:
+        return int(configured) if configured is not None else DEFAULT_VALIDITY_DAYS
+    except (TypeError, ValueError):
+        return DEFAULT_VALIDITY_DAYS
+
+
+def horizon_of(entry: dict, validity_days: int = DEFAULT_VALIDITY_DAYS) -> str | None:
+    """The date an open lesson must be re-validated by: its explicit `Review-by`, else its
+    `Added` date plus the validity window. None when the entry carries neither, or carries an
+    unparseable date - an UNPROVABLE horizon, which the close gate reports rather than waves
+    through (unproven is not proof; a legacy log must not pass vacuously)."""
+    review_by = entry["fields"].get("review-by", "").strip()
+    if review_by:
+        return review_by if _is_iso_date(review_by) else None
+    added = entry["fields"].get("added", "").strip()
+    if added and _is_iso_date(added):
+        return add_days(added, validity_days)
+    return None
+
+
+def default_project_file(repo_root) -> Path:
+    return Path(repo_root) / DEFAULT_PROJECT_FILE
+
+
+def default_summary_path(repo_root) -> Path:
+    return Path(repo_root) / DEFAULT_SUMMARY_FILE
+
+
+def digest_items(entries: list[dict]) -> list[dict]:
+    """The still-valid lessons, in log order (newest first): id, title, and the one-line gist
+    the summary carries. The single source of the digest's content - the renderer, the
+    staleness check, and the sprint plan all read this, so they cannot drift apart."""
+    items = []
+    for e in entries:
+        if is_closed(e):
+            continue
+        gist = (e["fields"].get("rule") or e["fields"].get("fix")
+                or e["fields"].get("applies to") or "").strip()
+        items.append({"id": e["id"], "title": e["title"].strip(), "gist": gist})
+    return items
+
+
+def _canon(item: dict) -> str:
+    """One digest item as a comparable string, with runs of whitespace collapsed. The
+    comparison unit for staleness: it is insensitive to how the summary is laid out (blank
+    lines, indentation, trailing spaces, boilerplate prose) and sensitive to every part of a
+    lesson the digest actually carries (id, title, gist)."""
+    text = f"{item['id']}: {item['title']}"
+    if item["gist"]:
+        text += f" - {item['gist']}"
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def expected_digest(entries: list[dict]) -> list[str]:
+    """What the summary must say, computed from the lessons log."""
+    return [_canon(i) for i in digest_items(entries)]
+
+
+def _unwrapped_lines(text: str) -> list[str]:
+    """The summary's lines, with hard-wrapped bullets folded back into one line.
+
+    A consuming project whose markdown linter enforces a line length wraps a long digest
+    bullet onto a second, INDENTED line. That is the same lesson, so it must read as the same
+    lesson - otherwise the project's linter and this gate are in permanent, unfixable
+    disagreement. The join is anchored on the indentation: a flush-left paragraph after the
+    bullets (someone's footer note) is left alone rather than folded into the last lesson's
+    gist, where it would corrupt the comparison instead of being ignored by it.
+    """
+    out: list[str] = []
+    for raw in text.splitlines():
+        stripped = raw.strip()
+        if not stripped:
+            out.append("")
+            continue
+        if (out and raw[:1].isspace() and out[-1].startswith("- ")
+                and not stripped.startswith("- ")):
+            out[-1] += " " + stripped
+        else:
+            out.append(stripped)
+    return out
+
+
+def summary_items(text: str) -> list[dict]:
+    """The digest items a LESSONS-SUMMARY.md actually carries (its bullet lines)."""
+    items = []
+    for line in _unwrapped_lines(text):
+        m = SUMMARY_LINE_RE.match(line)
+        if m:
+            items.append({"id": m.group(1), "title": m.group(2).strip(),
+                          "gist": (m.group(3) or "").strip()})
+    return items
+
+
+def parse_summary_digest(text: str) -> list[str]:
+    """What the summary says, in the same comparable form as `expected_digest`."""
+    return [_canon(i) for i in summary_items(text)]
+
+
+def _elide(names: list[str]) -> str:
+    """Name up to three digest items by id, bound the line."""
+    return ", ".join(n.split(" - ")[0] for n in names[:3]) + \
+        (f" (+{len(names) - 3} more)" if len(names) > 3 else "")
+
+
+def _drift_reason(summary: Path, added: list[str], removed: list[str]) -> str:
+    """Name what changed, bounded. Reordering (same lessons, different order) is drift too:
+    the generator's order is deterministic, so a differently-ordered file was not generated
+    from this log."""
+    elide = _elide
+    parts = []
+    if added:
+        parts.append(f"{len(added)} lesson(s) added since it was regenerated: {elide(added)}")
+    if removed:
+        parts.append(f"{len(removed)} closed or removed since: {elide(removed)}")
+    if not parts:
+        parts.append("its lessons are out of order")
+    return (f"{summary.name} is STALE - {'; '.join(parts)}. "
+            "Regenerate it: scripts/lessons.py summary")
+
+
+def summary_status(repo_root, project_file=None, summary_path=None) -> dict:
+    """Is the committed LESSONS-SUMMARY.md the digest of the CURRENT lessons log?
+
+    The summary is derived output, like an `_index.md`: the check recomputes the digest from
+    the log and compares it with the digest parsed back out of the file. Nothing is stamped
+    and nothing is trusted - the only way to a green verdict is for the file to actually say
+    what the log implies. That is what makes it robust to a lesson being CLOSED (its line
+    must disappear) as well as added, and to the count staying level while the membership
+    changes; and what stops it false-firing on how the file is laid out.
+    """
+    log = Path(project_file) if project_file else default_project_file(repo_root)
+    summary = Path(summary_path) if summary_path else default_summary_path(repo_root)
+    if not log.is_file():
+        # An absent log is only "nothing to summarise" when the COMMITTED summary agrees that
+        # there is nothing. A summary still listing lessons with no log behind it is a
+        # contradiction the gate must not pass over: otherwise `rm .local/lessons.md` is a
+        # one-command defeat of the whole close gate (the log is gitignored, so deleting it
+        # costs nothing and shows in no diff). The asymmetry is checkable without tracking
+        # the log - the summary is the tracked half, and it is the one making a claim.
+        listed = parse_summary_digest(summary.read_text(encoding="utf-8")) \
+            if summary.is_file() else []
+        if not listed:
+            return {"applicable": False, "stale": False, "open": 0, "added": [], "removed": [],
+                    "log": str(log), "summary": str(summary),
+                    "reason": f"no lessons log at {log} and no lessons in the summary - "
+                              "nothing to summarise"}
+        return {
+            "applicable": True, "stale": True, "open": len(listed), "added": [],
+            "removed": listed, "log": str(log), "summary": str(summary),
+            "reason": (f"{summary.name} lists {len(listed)} lesson(s) ({_elide(listed)}) but "
+                       f"the log they are derived from ({log}) does not exist - the lessons "
+                       "cannot be re-validated or the digest regenerated. Restore the log, or "
+                       "if this project genuinely has no lessons, run `lessons summary` to "
+                       "clear the digest."),
+        }
+    entries = parse_project_lessons(log.read_text(encoding="utf-8"))
+    expected = expected_digest(entries)
+    base = {"applicable": True, "open": len(expected), "log": str(log),
+            "summary": str(summary)}
+    if not summary.is_file():
+        return {**base, "stale": True, "added": expected, "removed": [],
+                "reason": (f"{summary} does not exist, but {len(expected)} still-valid "
+                           f"lesson(s) are logged in {log.name} - the sprint-start digest was "
+                           "never generated. Create it: scripts/lessons.py summary")}
+    actual = parse_summary_digest(summary.read_text(encoding="utf-8"))
+    if actual == expected:
+        return {**base, "stale": False, "added": [], "removed": [],
+                "reason": f"{summary.name} is current ({len(expected)} still-valid lesson(s))"}
+    added = [e for e in expected if e not in actual]
+    removed = [a for a in actual if a not in expected]
+    return {**base, "stale": True, "added": added, "removed": removed,
+            "reason": _drift_reason(summary, added, removed)}
+
+
+def validity_status(repo_root, project_file=None, validity_days: int | None = None,
+                    today: str | None = None) -> dict:
+    """Which open lessons are past their validity horizon, and which have none at all.
+
+    Both are findings. An expired lesson must be closed (`revalidate --close`) or extended
+    (`revalidate --extend`); an unstamped one has no horizon to judge, so it is unprovable
+    rather than proven, and is stamped (`revalidate --stamp`). Reporting only the expired
+    ones would pass every legacy log vacuously.
+    """
+    log = Path(project_file) if project_file else default_project_file(repo_root)
+    if not log.is_file():
+        return {"applicable": False, "open": 0, "expired": [], "unstamped": [],
+                "log": str(log), "reason": f"no lessons log at {log} - nothing to re-validate"}
+    days = resolve_validity_days(repo_root, validity_days)
+    now = today or sdlc_md.now_date()
+    open_entries = [e for e in parse_project_lessons(log.read_text(encoding="utf-8"))
+                    if not is_closed(e)]
+    expired, unstamped = [], []
+    for e in open_entries:
+        horizon = horizon_of(e, days)
+        if horizon is None:
+            unstamped.append(e["id"])
+        elif horizon < now:
+            expired.append({"id": e["id"], "title": e["title"], "horizon": horizon})
+    return {"applicable": True, "open": len(open_entries), "expired": expired,
+            "unstamped": unstamped, "validity_days": days, "today": now, "log": str(log),
+            "reason": _validity_reason(expired, unstamped, len(open_entries))}
+
+
+def _validity_reason(expired: list[dict], unstamped: list[str], open_count: int) -> str:
+    parts = []
+    if expired:
+        ids = ", ".join(f"{e['id']} (horizon {e['horizon']})" for e in expired[:3])
+        more = f" (+{len(expired) - 3} more)" if len(expired) > 3 else ""
+        parts.append(f"{len(expired)} open lesson(s) past their validity horizon: {ids}{more}"
+                     " - close them (revalidate --close) or extend them (revalidate --extend)")
+    if unstamped:
+        ids = ", ".join(unstamped[:3]) + (f" (+{len(unstamped) - 3} more)"
+                                          if len(unstamped) > 3 else "")
+        parts.append(f"{len(unstamped)} open lesson(s) carry no validity horizon: {ids}"
+                     " - stamp them (revalidate --stamp)")
+    return "; ".join(parts) if parts else f"{open_count} open lesson(s), all within validity"
+
+
+def plan_digest(repo_root, project_file=None, summary_path=None) -> dict:
+    """The still-valid lessons to READ at sprint start, carried in the plan itself.
+
+    Source order: the project log (the source of truth), else the committed summary - the log
+    is gitignored, so a fresh clone has only the summary, and a plan built there must still
+    carry the lessons rather than silently carry none.
+    """
+    log = Path(project_file) if project_file else default_project_file(repo_root)
+    summary = Path(summary_path) if summary_path else default_summary_path(repo_root)
+    if log.is_file():
+        items = digest_items(parse_project_lessons(log.read_text(encoding="utf-8")))
+        status = summary_status(repo_root, log, summary)
+        return {"source": "log", "lessons": items, "count": len(items),
+                "stale": status["stale"], "reason": status["reason"], "path": str(log)}
+    if summary.is_file():
+        items = summary_items(summary.read_text(encoding="utf-8"))
+        return {"source": "summary", "lessons": items, "count": len(items), "stale": False,
+                "reason": f"read from {summary.name} (no local lessons log)",
+                "path": str(summary)}
+    return {"source": "none", "lessons": [], "count": 0, "stale": False,
+            "reason": "no lessons recorded yet", "path": str(log)}
+
+
 def close_entry(entry: dict, reason: str | None) -> bool:
     """Mark an entry closed by appending a Status bullet. Idempotent - returns False if it
     was already closed (so re-running closes nothing new)."""
@@ -569,10 +880,37 @@ def close_entry(entry: dict, reason: str | None) -> bool:
     return True
 
 
+def _unknown_ids(wanted: list[str], known: set[str]) -> bool:
+    """True (having printed the refusal) when an id names no lesson in the log. A typo'd id
+    that reports '0 closed' and exits 0 is a no-op wearing a success: the operator believes
+    the lesson was closed and the close gate is then judging something nobody looked at."""
+    unknown = sorted(set(wanted) - known)
+    if not unknown:
+        return False
+    print(f"error: unknown lesson id(s): {', '.join(unknown)} - the log holds "
+          f"{', '.join(sorted(known)) if known else 'no lessons'}", file=sys.stderr)
+    return True
+
+
+def _revalidate_write(args: argparse.Namespace, path: Path, text: str,
+                      entries: list[dict], changed: list[str], verb: str) -> int:
+    """Persist a close/extend/stamp pass and report it."""
+    if changed:
+        write_project_file(path, project_header_of(text), entries)
+    if args.format == "json":
+        print(json.dumps({verb: changed}, indent=2))
+    else:
+        for cid in changed:
+            print(f"{verb.capitalize()} {cid}")
+        print(f"{len(changed)} {verb}")
+    return 0
+
+
 def cmd_revalidate(args: argparse.Namespace) -> int:
-    """List open project lessons, or close named ones by validity (generalises prune from
-    age-based to validity-based). Deterministic; the judgement of what is stale stays the
-    operator's, the closure record is mechanical."""
+    """List open project lessons with their validity horizon, or act on them: `--close` the
+    ones no longer true, `--extend` the ones still true past their horizon, `--stamp` the ones
+    carrying no horizon at all. Deterministic; the judgement stays the operator's, the record
+    is mechanical - and the close gate reads that record."""
     path = Path(args.project_file)
     if not path.is_file():
         if args.format == "json":
@@ -582,50 +920,78 @@ def cmd_revalidate(args: argparse.Namespace) -> int:
         return 0
     text = path.read_text(encoding="utf-8")
     entries = parse_project_lessons(text)
+    days = resolve_validity_days(getattr(args, "root", "."), getattr(args, "days", None))
+    today = sdlc_md.now_date()
+    known = {e["id"] for e in entries}
     if args.close:
+        if _unknown_ids(args.close, known):
+            return 2
         wanted = set(args.close)
         closed = [e["id"] for e in entries if e["id"] in wanted and close_entry(e, args.reason)]
-        if closed:
-            write_project_file(path, project_header_of(text), entries)
-        if args.format == "json":
-            print(json.dumps({"closed": closed}, indent=2))
-        else:
-            for cid in closed:
-                print(f"Closed {cid}")
-            print(f"{len(closed)} closed")
-        return 0
-    open_entries = [{"id": e["id"], "title": e["title"]} for e in entries if not is_closed(e)]
+        return _revalidate_write(args, path, text, entries, closed, "closed")
+    if getattr(args, "extend", None):
+        if _unknown_ids(args.extend, known):
+            return 2
+        wanted = set(args.extend)
+        shut = [e["id"] for e in entries if e["id"] in wanted and is_closed(e)]
+        if shut:
+            print(f"error: cannot extend closed lesson(s): {', '.join(sorted(shut))} - a closed "
+                  "lesson is no longer valid; record a new one instead of reviving it",
+                  file=sys.stderr)
+            return 2
+        extended = []
+        for e in entries:
+            if e["id"] in wanted:
+                upsert_field(e, "Review-by", add_days(today, days))
+                extended.append(e["id"])
+        return _revalidate_write(args, path, text, entries, extended, "extended")
+    if getattr(args, "stamp", False):
+        stamped = []
+        for e in entries:
+            if is_closed(e) or horizon_of(e, days) is not None:
+                continue
+            if not _is_iso_date(e["fields"].get("added", "")):
+                upsert_field(e, "Added", today)
+            upsert_field(e, "Review-by", add_days(today, days))
+            stamped.append(e["id"])
+        return _revalidate_write(args, path, text, entries, stamped, "stamped")
+    open_entries = [{"id": e["id"], "title": e["title"], "horizon": horizon_of(e, days)}
+                    for e in entries if not is_closed(e)]
     if args.format == "json":
-        print(json.dumps({"open": open_entries, "count": len(open_entries)}, indent=2))
+        print(json.dumps({"open": open_entries, "count": len(open_entries),
+                          "today": today, "validity_days": days}, indent=2))
         return 0
     if not open_entries:
         print("No open lessons.")
         return 0
     for e in open_entries:
-        print(f"{e['id']}  {e['title']}")
+        horizon = e["horizon"]
+        mark = ("no horizon" if horizon is None
+                else f"EXPIRED {horizon}" if horizon < today else f"valid to {horizon}")
+        print(f"{e['id']}  {e['title']}  [{mark}]")
     print(f"{len(open_entries)} open lesson(s) - close the stale ones with "
-          "`lessons revalidate --close L-NNNN`")
+          "`lessons revalidate --close L-NNNN`, keep the still-true ones with `--extend "
+          "L-NNNN`, give the undated ones a horizon with `--stamp`")
     return 0
 
 
 def build_summary_text(entries: list[dict]) -> str:
     """The rolling digest of still-valid lessons. Deterministic for a given input (no date),
-    so the generator is reproducible - the byte-identical regeneration AC depends on it."""
-    open_entries = [e for e in entries if not is_closed(e)]
+    so the generator is reproducible - the byte-identical regeneration AC depends on it, and
+    so does the staleness check, which recomputes this and compares."""
+    items = digest_items(entries)
     out = [
         "# Lessons Summary", "",
         "Rolling digest of still-valid project lessons, read at sprint start. The full log "
         "with closed entries lives in the project tier (`.local/lessons.md`); regenerate this "
         "with `lessons summary`.", "",
     ]
-    if not open_entries:
+    if not items:
         out.append("_No open lessons._")
-    for e in open_entries:
-        gist = (e["fields"].get("rule") or e["fields"].get("fix")
-                or e["fields"].get("applies to") or "").strip()
-        line = f"- **{e['id']}: {e['title']}**"
-        if gist:
-            line += f" - {gist}"
+    for item in items:
+        line = f"- **{item['id']}: {item['title']}**"
+        if item["gist"]:
+            line += f" - {item['gist']}"
         out.append(line)
     return "\n".join(out).rstrip() + "\n"
 
@@ -660,12 +1026,15 @@ def cmd_summary(args: argparse.Namespace) -> int:
 
 
 def _common(sp: argparse.ArgumentParser) -> None:
-    """Flags shared by every subcommand (tier locations and output format)."""
+    """Flags shared by every subcommand (tier locations, project root, output format)."""
     sp.add_argument("--project-file", default=DEFAULT_PROJECT_FILE,
                     help=f"Project-tier lessons file (default: {DEFAULT_PROJECT_FILE})")
     sp.add_argument("--lessons-dir", default=None,
                     help="Skill-tier lessons directory (default: the running skill's lessons/; "
                          "for `add --global` the config key skill_source_repo wins over it)")
+    sp.add_argument("--root", default=".",
+                    help="Project root, read for config keys (skill_source_repo, "
+                         f"{VALIDITY_DAYS_KEY}) (default: .)")
     sp.add_argument("--format", choices=("text", "json"), default="text")
 
 
@@ -690,8 +1059,9 @@ def build_parser() -> argparse.ArgumentParser:
     ad.add_argument("--wave", type=int, help="Wave number (project tier)")
     ad.add_argument("--tags", help="Comma-separated tags")
     ad.add_argument("--origin", help="Origin note for --global (default: cwd name)")
-    ad.add_argument("--root", default=".",
-                    help="Project root, read for the skill_source_repo config key (default: .)")
+    ad.add_argument("--validity-days", type=int, dest="validity_days",
+                    help=f"Validity window for the Review-by horizon (default: "
+                         f"{DEFAULT_VALIDITY_DAYS}, or the {VALIDITY_DAYS_KEY} config key)")
     ad.add_argument("--global", dest="global_", action="store_true",
                     help="Promote into the skill tier: a tracked destination is required")
     _common(ad)
@@ -712,10 +1082,20 @@ def build_parser() -> argparse.ArgumentParser:
     rc.set_defaults(func=cmd_recall)
 
     rv = sub.add_parser("revalidate",
-                        help="List open project lessons, or --close stale ones by validity.")
-    rv.add_argument("--close", nargs="+", metavar="L-NNNN",
-                    help="Close these lesson ids (mark no longer valid)")
+                        help="List open project lessons with their validity horizon, or "
+                             "--close / --extend / --stamp them.")
+    act = rv.add_mutually_exclusive_group()
+    act.add_argument("--close", nargs="+", metavar="L-NNNN",
+                     help="Close these lesson ids (mark no longer valid)")
+    act.add_argument("--extend", nargs="+", metavar="L-NNNN",
+                     help="Still true: push the Review-by horizon out by the validity window")
+    act.add_argument("--stamp", action="store_true",
+                     help="Give every open lesson that has no validity horizon one (the "
+                          "backfill for a log written before horizons existed)")
     rv.add_argument("--reason", help="Reason recorded on the closed lesson(s)")
+    rv.add_argument("--days", type=int,
+                    help=f"Validity window in days for --extend/--stamp (default: "
+                         f"{DEFAULT_VALIDITY_DAYS}, or the {VALIDITY_DAYS_KEY} config key)")
     _common(rv)
     rv.set_defaults(func=cmd_revalidate)
 

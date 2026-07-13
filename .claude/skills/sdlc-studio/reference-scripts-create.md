@@ -31,13 +31,82 @@ epic link wired in one go; a missing epic or id collision aborts before any writ
 
 Every created artefact carries `> **Raised-by:** Name; type; version` (from `--author`,
 or the invoking agent when absent - `SDLC_AUTHOR` when set), which schema v3 requires of
-every artefact. Content the validator demands of a filled artefact can be supplied at
+every artefact. The same resolved authorship names the artefact's opening Revision History
+row and its index Author column - the name alone there, since the typed triple is
+`Raised-by`'s job. Content the validator demands of a filled artefact can be supplied at
 creation and the artefact is born clean: `--persona` and `--ac` (repeatable) for a story,
 `--summary --steps --fix` for a bug, `--ac --impact --effort S|M|L` for a CR,
 `--summary --option --recommendation` for an RFC. Batch items take the same keys in the
 spec JSON. Omit them and you get a scaffold: the `{{placeholder}}` slots stay for the
 agent to fill, and `validate.py check` reports them as unfilled until it does - a scaffold
 is not yet a specified artefact, and the creator does not pretend otherwise.
+
+A story's criteria may carry their proof: `--verify` (repeatable, positional with `--ac`)
+writes the executable check on the matching AC, and `--target functional|conversational|soak|live`
+writes its `Verification target`. A Verify expression is written **verbatim**, never
+markdown-safed: it is a command `verify_ac` reads back and runs, and safing an underscore
+rewrites it (`rg -q my_token src/` becomes ``rg -q `my_token` src/``). For a list-form verb
+(`shell=False`) that is a corrupted literal argument - the check quietly stops checking what it
+says it checks. For a **shell-backed verb**, which runs under `shell=True`, the same rewrite is
+command substitution and the backticked token executes. A multi-line expression is refused.
+
+Neither flag is ever invented: an AC given no Verify line gets none, because there is no
+honest default - a
+placeholder fails the validator and `manual` asserts a proof nobody ran. Conformance's
+`verifiable` stage reports the gap out loud instead.
+
+#### Template tiers
+
+`--template` chooses scaffold richness: `minimal` (the default bare stub), `planning`, or
+`full` (the whole `templates/core/<type>.md` body; `batch` defaults to it, the fan-out case).
+
+**`planning`** is the lean pre-implementation tier for a story or epic. The full story
+template has a structural floor near 170 lines once every mandated heading survives (an epic
+near 150), so a pre-implementation story cannot get under it however economically it is
+written - and a planning batch that has settled nothing about edge cases or rollback is
+filing 170 lines of furniture per story. The planning tier carries what planning actually
+settles - metadata, the user story, ACs with their `Verify:` and `Verification target:` lines,
+scope, technical notes - and renders under 60 lines. The constraint chain, module views, edge
+cases, test scenarios, dependencies, estimation and the rollback envelope arrive with
+promotion, not before.
+
+The tier is a contract, not just a shape. A story or epic **cannot transition to In Progress,
+Review or Done while it is missing the sections the full template carries** - letting a lean
+scaffold reach Done would be a lane with nothing to prove reading as proof.
+
+**The gate reads the sections, not the stamp.** A stamp is a claim, and a gate that trusts a
+marker its subject can rewrite is defeated by rewriting it. So `lib/tiers.py` - the one
+authority the creator, the validator, the gate and the backstop all share - judges an artefact
+this way:
+
+- `planning`, or any tier **outside** `minimal|planning|full`, is unpromoted. Unknown **fails
+  closed**: a typo must never be the thing that switches a gate off.
+- a **`full` claim is checked** against the sections. Creation only ever stamps `planning`;
+  `promote` alone writes `full`, and only after adding the sections - so verifying the claim
+  costs no existing artefact and refuses a stamp that was rewritten without the work.
+- `transition annotate` **refuses the `Template` field** (it is gate-protected, like `Status`
+  and `Provenance`): annotating it to `full` would clear the gate and its backstop in one
+  exit-0 line, with no waiver and no record.
+- an artefact with **no stamp** is not judged by default. This is the measured boundary, not an
+  oversight: an unstamped bare story is structurally identical to the pre-tier stories that
+  reach Done today, and refusing it would refuse them.
+  **`quality.require_full_sections: true`** drops the stamp from the decision entirely and
+  judges every story and epic on its sections - the same rule, applied universally, as a
+  project's choice rather than a silent breaking change.
+
+`promote --id <ID>` is the remedy every refusal names. It grafts in each missing section in
+template order, preserves everything already written, and re-stamps the tier `full`
+(idempotent). Be clear about what that buys: the sections arrive as **empty
+`{{placeholder}}` scaffolds** (an unfilled constraint table, an empty edge-case table), and
+`validate.py`'s placeholder rule only inspects the AC section - so a promoted artefact is
+validator-clean with an empty constraint chain. Promotion gives you the headings and the
+obligation to fill them; it does not fill them, and it is not evidence that anyone did. The
+gate is **not** `--force`-bypassable, because the remedy adds the sections rather than waiving
+them. `conformance.py` backstops the whole thing with a `promoted` stage on Done stories,
+sharing the same authority, so a hand-edited `Status: Done` cannot walk around it.
+
+`planning` is defined for story and epic; for every other type, whose minimal scaffold is
+already that lean, it renders the minimal shape and no gate applies.
 
 ### `init.py`
 
@@ -68,6 +137,13 @@ syncs the index row + summary counts (`reconcile.apply_type`), and ticks/unticks
 checkbox in its epic's Story Breakdown; `index_synced` is the true post-state. **A story ->
 Done is gated on its AC-verify result** (red or never-run executable ACs refuse the
 transition; `--force` overrides; manual-only / AC-less and non-story types are never gated).
+**A story or epic -> In Progress / Review / Done is refused while it is missing the sections
+the full template carries** (`artifact.py promote --id <ID>`), on every entry to an
+implementation status and in dry-run too. The judgement is keyed on the sections rather than
+the tier stamp (`lib/tiers.py`), so an unknown tier fails closed and a rewritten `full` stamp is
+refused as a claim. Unlike the AC-verify gate this one is not `--force`-bypassable, and
+`annotate` refuses the `Template` field, because the remedy adds the sections rather than
+waiving them. Unstamped artefacts are unaffected unless `quality.require_full_sections` is set.
 **Schema v3:** a finding leaving `inbox` is gated too - a structured `--triaged-by` (refused
 without one), triager != raiser (separation of duties; solo-human warns), `--triage-severity`
 recorded. Dormant on v2. **A blocked transition reports EVERY unmet gate in one refusal**
@@ -100,9 +176,11 @@ Required fields per type are the ones the validator demands of a filed artefact:
 carries its evidence (`--severity --summary --steps --fix`), a CR its criteria, impact
 and effort (`--priority --ctype --summary --ac --impact --effort S|M|L`), an RFC its
 options (`--summary --option`). `--author "Name; type; version"` (type is
-`human|persona|agent`) is stamped as `Raised-by`; with no author given, the invoking
-agent is stamped (`SDLC_AUTHOR` when set). What the filer writes passes `validate.py
-check` as written - a creator never emits an artefact its own validator rejects.
+`human|persona|agent`) is stamped as `Raised-by` and names the Revision History row it
+opens; with no author given, the invoking agent is stamped (`SDLC_AUTHOR` when set). A
+Low-severity finding that consolidates carries the same authorship into the consolidation
+CR. What the filer writes passes `validate.py check` as written - a creator never emits an
+artefact its own validator rejects.
 
 Full methodology: `reference-audit.md`.
 

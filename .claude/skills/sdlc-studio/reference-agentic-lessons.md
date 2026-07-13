@@ -305,6 +305,32 @@ release. That commit is the whole promotion mechanism - nothing else "blesses" a
 lesson into a release. Whether a lesson generalises enough to promote stays a
 judgement call: see `help/lessons.md` and `reference-config.md#skill-source-repo`.
 
+### The close loop is a mechanism, not doctrine {#close-loop}
+
+Lessons are **summarised at the end of every sprint and read at the start of the
+next one**. Both halves are enforced; neither is a prose instruction to remember:
+
+| Step | Mechanism | Fails how |
+| --- | --- | --- |
+| Summarise at close | `gate --require-retro` (or `--require-lessons`) recomputes the digest from the lessons log and compares it with the committed `retros/LESSONS-SUMMARY.md` | non-zero, naming the lessons added or closed since it was last regenerated; fix: `lessons summary` |
+| Re-validate at close | the same gate reports every open lesson past its validity horizon, and every lesson carrying none | non-zero; fix: `lessons revalidate --close` / `--extend` / `--stamp` |
+| Read at start | `sprint plan` prints the still-valid lessons IN the plan (and carries them in its JSON) | nothing to skip: the digest arrives unasked |
+
+The summary is **derived output**, exactly like an `_index.md`. The check
+regenerates it from the log and compares, rather than trusting a freshness stamp
+in the file: there is no claim to forge, and a lesson **closed** since the last
+regeneration fails the gate just as an added one does (a signal that only counted
+entries would read green when one lesson goes out and another comes in). Layout,
+whitespace, and the boilerplate header are not part of the comparison, so
+reformatting the summary cannot false-fire it.
+
+**Validity horizon.** `lessons add` stamps `Added:` and `Review-by:` (the default
+window is 90 days; set `lessons.validity_days` in `sdlc-studio/.config.yaml`).
+At the close, an open lesson past its `Review-by` must be closed (it is no longer
+true) or extended (it still is). A lesson carrying **no** horizon is a finding
+too - unprovable is not proven, and a lane that only reported expiries would pass
+every legacy log vacuously. `lessons revalidate --stamp` backfills one.
+
 ### File format
 
 ```markdown
@@ -318,6 +344,8 @@ judgement call: see `help/lessons.md` and `reference-config.md#skill-source-repo
 
 - **Epic:** EP0004
 - **Wave:** 2
+- **Added:** 2026-04-15
+- **Review-by:** 2026-07-14
 - **Symptom:** Agent added `created_at` to the service schema as
   camelCase but existing tests expected snake_case
 - **Root cause:** `READ THESE FILES FIRST` omitted `src/db/schema.ts`
@@ -329,9 +357,10 @@ judgement call: see `help/lessons.md` and `reference-config.md#skill-source-repo
 ## L-0002: ...
 ```
 
-Each entry has a monotonic L-NNNN ID, an epic/wave context, a
-symptom, root cause, fix, and an "applies to" clause that helps
-agents decide whether the lesson is relevant to the current story.
+Each entry has a monotonic L-NNNN ID, an epic/wave context, a validity horizon,
+a symptom, root cause, fix, and an "applies to" clause that helps agents decide
+whether the lesson is relevant to the current story. A closed lesson carries
+`- **Status:** Closed - {reason}` and drops out of the summary digest.
 
 ### How lessons are consumed
 
@@ -341,3 +370,9 @@ injects a condensed `## Known Pitfalls on This Project` section into
 every Agent Prompt Template. Agents read this alongside
 `reference-agentic-lessons.md` and the story-specific prompt. The
 goal is for each wave to start smarter than the last.
+
+At sprint start, `sprint plan` emits the same still-valid lessons as part of the
+plan, so the batch an operator approves already carries them. The log is
+gitignored, so on a fresh clone the plan falls back to the committed
+`retros/LESSONS-SUMMARY.md` - which is why the close gate insists that file is
+current: it is the only copy that travels.

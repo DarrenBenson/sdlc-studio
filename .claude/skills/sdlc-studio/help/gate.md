@@ -11,6 +11,7 @@ SDLC Studio is model-invoked - say it in plain language:
 | "Are we clear to commit this?" | `/sdlc-studio gate` |
 | "Run the quality checks before I push" | `/sdlc-studio gate` |
 | "Are we clear to tag?" | `/sdlc-studio gate --release` |
+| "Can we close this sprint?" | `/sdlc-studio gate --require-retro RETRO0021` |
 | "Just check the index and drift, nothing else" | `/sdlc-studio gate --only reconcile,duplicate-id` |
 | "Skip the principles check this time" | `/sdlc-studio gate --skip constitution` |
 | "Give me the gate result as JSON for the pipeline" | `/sdlc-studio gate --format json` |
@@ -82,6 +83,28 @@ pre-tag command is one people route around.
 A green `--release` is the *mechanical* half of the pre-tag checklist. The judgement items still
 belong to the operator - see `templates/workflows/release-gate.md`.
 
+## `--require-retro`: the one command that closes a sprint
+
+```bash
+python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --root . --require-retro RETRO0021 || exit 1
+```
+
+The close's learning loop is one obligation, so one flag carries all of it. Three blocking lanes:
+
+- `retro` - the named batch retro exists in `sdlc-studio/retros/`.
+- `lessons-summary` - the committed `retros/LESSONS-SUMMARY.md` is the digest of the **current**
+  lessons log. The lane recomputes that digest and compares, so a lesson **closed** since the last
+  regeneration fails it just as an added one does; there is no freshness stamp to forge, and
+  reformatting the file cannot false-fire it. Fix: `lessons summary`.
+- `lessons-validity` - no open lesson is past its `Review-by` horizon, and none lacks one
+  (unprovable is not proven). Fix: `lessons revalidate --close` / `--extend` / `--stamp`.
+
+Summarising the sprint's lessons and reading them at the next sprint's start used to be prose,
+and prose gets skipped under effort pressure. Now the close **fails loud** without it, and
+`sprint plan` prints the lessons into the plan the next sprint reads. `--require-lessons` runs the
+two lessons lanes alone (a close with no retro due). Deselecting a bound lane
+(`--skip lessons-summary`) is refused, not honoured.
+
 ### The checks
 
 | Group | Checks | Blocks? |
@@ -91,6 +114,7 @@ belong to the operator - see `templates/workflows/release-gate.md`.
 | **Provenance** | `provenance` (tool-created stamps) | only when `provenance.enforce` |
 | **Skill docs (skill repo only)** | `doc-coverage` (every command/script documented), `disclosure` (progressive-disclosure hygiene), `doc-freshness` (LATEST.md vs reality) | doc-coverage yes; disclosure + doc-freshness advisory |
 | **Executable ACs (`--release` only)** | `verify` (executes every story's `Verify:` expression) | yes |
+| **Sprint close (`--require-retro` / `--require-lessons` only)** | `retro` (the batch retro exists), `lessons-summary` (LESSONS-SUMMARY.md is current), `lessons-validity` (no expired or horizon-less open lesson) | yes |
 
 The four **artifact-quality** checks are the ones that police every artifact; the rest guard the
 index, provenance, and the skill's own docs. `--only` / `--skip` select a subset. The `verify`

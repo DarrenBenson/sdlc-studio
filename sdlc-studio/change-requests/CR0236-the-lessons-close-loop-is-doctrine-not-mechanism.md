@@ -1,6 +1,6 @@
 # CR-0236: The lessons close-loop is doctrine, not mechanism: gate the summary at close and the read at start
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** High
 > **Type:** Improvement
 > **Date:** 2026-07-13

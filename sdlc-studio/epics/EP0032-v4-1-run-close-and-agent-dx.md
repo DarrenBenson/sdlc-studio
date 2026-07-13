@@ -18,7 +18,7 @@ other three are independent and parallel.
 - [ ] [CR0225](../change-requests/CR0225-appetite-bounded-unattended-runs-a-budget-circuit-breaker.md) - appetite-bounded runs: wall-clock + unit-count breaker fired at unit boundaries (depends CR0223; rescoped per D0020 - tokens are an advisory forecast, not a gate)
 - [x] [CR0224](../change-requests/CR0224-multi-repo-context-the-repo-map-and-census.md) - cross-repo Depends-on resolution: lift blocker_sweep's manifest resolver into a shared helper (rescoped per D0019; the PVD-wide edge list went to RFC0030) (independent)
 - [ ] [CR0234](../change-requests/CR0234-uniform-cli-grammar-across-skill-scripts.md) - uniform CLI grammar; scope grew with two instances hit while planning this sprint, one of which silently produced a wrong sprint plan (independent)
-- [ ] [CR0235](../change-requests/CR0235-a-lighter-planning-tier-for-story-epic-templates.md) - a planning template tier between minimal and full, so a planning story is not forced past 170 lines (independent)
+- [x] [CR0235](../change-requests/CR0235-a-lighter-planning-tier-for-story-epic-templates.md) - a planning template tier between minimal and full, so a planning story is not forced past 170 lines (independent)
 
 ## Revision History
 

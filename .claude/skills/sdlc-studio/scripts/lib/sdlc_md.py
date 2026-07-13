@@ -482,6 +482,7 @@ REMEDIATION: dict[str, dict[str, str]] = {
         "verified": "run `verify_ac` and back-annotate `- **Verified:** yes` (Done stories)",
         "reconciled": "index drift - run `reconcile` and fix the row/counts",
         "critiqued": "record an independent-critic verdict: `critic.py record --unit <id> --verdict approve` (author != reviewer; at sprint close the adversarial full-diff pass re-runs its own repros before approving - reference-sprint.md)",
+        "promoted": "this story is still a planning-tier scaffold - run `artifact.py promote --id <id> --to full` to add the sections it deferred (constraint chain, edge cases, test scenarios, rollback envelope)",
     },
     "integrity": {
         "missing-required": "add the required link field (Epic/Story); a standalone bug may leave it (advisory)",
@@ -768,6 +769,24 @@ def authorship_value(author: str | None, repo_root) -> str:
         raise ValueError(f"author type {atype!r} must be one of {' | '.join(AUTHOR_TYPES)} "
                          f"(pass --author 'Name; type; version')")
     return f"{name}; {atype}; {(parsed.get('version') or '').strip() or 'v1'}"
+
+
+def authorship_name(value: str | None) -> str:
+    """The display NAME of an authorship value, for a Revision History Author cell.
+
+    The history table names who acted; the typed triple lives in the `Raised-by` field, so a
+    cell takes `Dani Okafor`, not `Dani Okafor; agent; v2`. Accepts either form (a bare name
+    passes through). With nothing resolvable, the tool's own identity is named rather than a
+    hardcoded literal - a creator must never mint a false provenance record.
+
+    A formatter, NOT a resolver: it reads the value it is handed and does not consult
+    `SDLC_AUTHOR`. Feed it the output of `authorship_value()` (which does), never a raw
+    `--author` that may be empty - on `None` it names the tool, silently passing over an
+    invoking agent that `authorship_value` would have found.
+    """
+    parsed = parse_authorship_value(value) or {}
+    return (parsed.get("name") or "").strip() \
+        or parse_authorship_value(DEFAULT_AGENT_AUTHOR)["name"]
 
 
 def resolve_author(name: str, atype: str, repo_root) -> bool:

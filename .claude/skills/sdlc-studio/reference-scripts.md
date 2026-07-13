@@ -128,7 +128,8 @@ lists every script with a one-line summary; open the linked page for the full en
 ### Reconcile, verify & checks - [reference-scripts-verify.md](reference-scripts-verify.md)
 
 - `gate.py` - Portable, ecosystem-neutral CI quality gate. Aggregates the deterministic checks;
-  `--release` is the pre-tag form (the same gate plus an executing AC-verify pass, one exit code)
+  `--release` is the pre-tag form (the same gate plus an executing AC-verify pass, one exit code);
+  `--require-retro` is the sprint-close form (retro present + lessons re-validated + summary current)
 - `verify_ac.py` - Executes AC verifiers defined in story files and updates each AC's
 - `mutation.py` - The executable mutation-check gate - the complement of `verify_ac.py`: verify_ac
 - `reconcile.py` - Builds the artifact-file census and reports `_index.md` drift as JSON.
@@ -177,6 +178,7 @@ lists every script with a one-line summary; open the linked page for the full en
 - `digest.py` - Context tiering - mechanical, drift-checked digests of closed (terminal) artefacts so
 - `plan.py` - Claude Code plan-file manager for `~/.claude/plans/`.
 - `lessons.py` - Lessons manager for both tiers: the project's `sdlc-studio/.local/lessons.md`
+  and the skill's cross-project registry; `revalidate` + `summary` are the gated sprint-close loop
 - `sprint.py` - The Goal-Driven Development loop's planner. `plan <query> --order priority|wsjf` selects + dependency-orders...
 - `autosprint.py` - Deprecated re-exporting alias for `sprint.py` (the old name); prefer `sprint`.
 - `route.py` - Difficulty-aware model-tier routing, **advisory - no gate reads a tier**, no model API ever called (ids are ...

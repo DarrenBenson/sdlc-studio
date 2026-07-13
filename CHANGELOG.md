@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The lessons close-loop is now a mechanism, not doctrine (CR0236).** Sprint close was
+  meant to summarise the lessons learned, and the next sprint was meant to read them. Only
+  the retro artefact was ever enforced; regenerating the summary and reading it at the start
+  were prose, which an agent under effort pressure simply skips. Two blocking lanes now bind
+  to the close gate: `lessons-summary` refuses a `LESSONS-SUMMARY.md` that is stale against
+  the lessons log, and `lessons-validity` refuses an open lesson past its review horizon or
+  carrying none at all. The staleness check **recomputes the digest and compares it** rather
+  than trusting a stamp, a count or an mtime, so there is nothing to forge - closing one
+  lesson and adding another is caught even though the count never moves. `sprint plan` now
+  prints the lessons in force as part of the plan, so the agent reads them rather than being
+  pointed at a file it may not open. Closed in passing: `--skip retro` had been silently
+  voiding the retro gate; any deselected bound lane is now refused.
+
+- **A `planning` template tier, and a promotion contract that cannot be forged (CR0235).**
+  The full story template's structural floor is around 171 lines, so a pre-implementation
+  planning story could not get near its ~120-line target however economically it was written.
+  `--template planning` renders a story in 54 lines and an epic in 39, keeping the acceptance
+  criteria, their `Verify:` targets, scope and technical notes, and deferring the sections
+  implementation needs. Promotion (`artifact.py promote`) adds those sections back, losslessly
+  and idempotently. The tier is gated on the **presence of the deferred sections**, not on the
+  metadata stamp: a stamp is a claim, not the work, so a planning-tier story or epic cannot
+  reach In Progress, Review or Done by relabelling itself - `transition annotate` refuses the
+  field, a hand-forged `full` stamp is refused as a claim its sections do not support, and an
+  unrecognised tier fails closed rather than switching the gate off. Projects that want the
+  same rule applied to every story, stamped or not, can set
+  `quality.require_full_sections: true` (opt-in: only 16 of this repo's 119 existing stories
+  carry all eight sections, so enforcing it by default would be a breaking change).
+
 - **`gate.py --release`: one command that cannot be misread before a tag (CR0233).** The
   standard gate plus an executing AC-verify pass, as a single exit code. The lane runs every
   `Verify:` expression for real rather than reading a report that may carry a stale green -
@@ -29,6 +57,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unaffected.
 
 ### Fixed
+
+- **The creators record the authorship they were given, not a hardcoded one (BG0109).**
+  `file_finding.py` wrote `audit` into every Revision History row regardless of `--author`,
+  and `artifact.py` wrote the literal `sdlc` while dumping a full `Name; type; version` triple
+  into index cells that should carry a name. The provenance tooling was recording the wrong
+  provenance. All three creators now resolve authorship once, through the shared resolver, and
+  write the row through a single writer that escapes the value, so a name containing a pipe can
+  no longer shift a table's columns.
 
 - **The deterministic creators now emit artefacts the deterministic validator accepts
   (BG0108).** A schema-v3 decomposition of 31 artefacts opened with roughly 130 validator

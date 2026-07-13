@@ -21,10 +21,15 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import sdlc_md  # noqa: E402
+from lib import sdlc_md, tiers  # noqa: E402
 import persona_gen  # noqa: E402  (the provenance stamp/reviewed grammar - one source)
 
 _AC_SECTION_RE = re.compile(r"^#{2,}\s+.*acceptance criteria", re.I | re.M)
+
+# Scaffold tiers an artefact may declare in `> **Template:**`. From lib.tiers - the one
+# authority the creator, the gate and the backstop all read, so none of them can be working
+# from a different vocabulary than the others.
+TEMPLATE_TIERS = tiers.TEMPLATE_TIERS
 
 
 def _has_ac_section(text: str) -> bool:
@@ -102,6 +107,17 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
             f"status '{status}' is not one of the allowed {type_} statuses ({allowed}); "
             f"an established project status can be declared in sdlc-studio/.config.yaml "
             f"under status_vocab.{type_} - see reference-config.md")
+
+    # The scaffold tier the artefact was rendered at. Absent is valid and means "not the
+    # planning tier" (every artefact predating the tier). A value outside the known set is
+    # an error, not a shrug: `plannning` would read as not-planning and switch the
+    # promotion gate silently off - a lane with nothing to prove reading as proof.
+    tier = sdlc_md.extract_field(text, "Template")
+    if tier is not None and tier.strip().lower() not in TEMPLATE_TIERS:
+        add("error", "template-tier",
+            f"template tier '{tier}' is not one of {', '.join(TEMPLATE_TIERS)} - an "
+            "unrecognised tier reads as 'not planning' and would silently disable the "
+            "promotion gate")
 
     if type_ == "story":
         ac_ids = [

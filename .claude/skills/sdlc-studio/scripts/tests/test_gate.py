@@ -880,5 +880,172 @@ class HookEnabledEquivalentConfigTests(HookEnabledLaneTests):
                     os.environ["GIT_DIR"] = old
             self.assertIsNotNone(gap, "check must evaluate the fixture, not GIT_DIR's repo")
 
+
+class LessonsCloseGateTests(unittest.TestCase):
+    """CR0236: the close loop is a mechanism, not doctrine. The close gate fails loud on a
+    STALE LESSONS-SUMMARY.md (a lesson added or closed since it was last regenerated) and on
+    an open lesson past its validity horizon, exactly as it fails loud on a missing retro."""
+
+    FIXTURE = ("# Project Lessons\n\n**Last Updated:** 2026-01-01\n\n"
+               "## L-0001: First lesson\n\n- **Added:** 2999-01-01\n- **Rule:** do X\n")
+
+    def _log(self, root: Path, text: str | None = None) -> Path:
+        p = root / "sdlc-studio" / ".local" / "lessons.md"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(self.FIXTURE if text is None else text, encoding="utf-8")
+        (root / "sdlc-studio" / "retros").mkdir(parents=True, exist_ok=True)
+        return p
+
+    def _retro(self, root: Path, rid: str = "RETRO0005") -> None:
+        (root / "sdlc-studio" / "retros").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / "retros" / f"{rid}-batch.md").write_text(
+            f"# {rid}\n", encoding="utf-8")
+
+    def _regen(self, root: Path) -> None:
+        sys.path.insert(0, str(SCRIPT.parent))  # gate.py's own dir: the scripts/ package root
+        import lessons
+        with contextlib.redirect_stdout(io.StringIO()):
+            lessons.main(["summary", "--project-file",
+                          str(root / "sdlc-studio" / ".local" / "lessons.md")])
+
+    def test_close_gate_fails_on_a_stale_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._log(root)  # a populated log, no summary ever generated
+            self._retro(root)
+            report = gate.run_gate(str(root), checks={}, require_retro="RETRO0005")
+            self.assertFalse(report["ok"])
+            lane = next(c for c in report["checks"] if c["check"] == "lessons-summary")
+            self.assertEqual(lane["status"], "fail")
+            self.assertTrue(lane["blocking"])
+
+    def test_close_gate_passes_once_the_summary_is_regenerated(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._log(root)
+            self._retro(root)
+            self._regen(root)
+            report = gate.run_gate(str(root), checks={}, require_retro="RETRO0005")
+            self.assertTrue(report["ok"], report["checks"])
+
+    def test_close_gate_exit_codes_one_then_zero(self) -> None:
+        """The AC in exit-code form: 1 on a stale summary, 0 once regenerated."""
+        import argparse
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._log(root)
+            self._retro(root)
+            args = argparse.Namespace(root=str(root), format="text", skip=None,
+                                      only="retro,lessons-summary,lessons-validity",
+                                      require_retro="RETRO0005")
+            with contextlib.redirect_stdout(io.StringIO()) as out:
+                self.assertEqual(gate.cmd_gate(args), 1)
+            self.assertIn("lessons-summary", out.getvalue())
+            self._regen(root)
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(gate.cmd_gate(args), 0)
+
+    def test_a_lesson_closed_since_the_summary_was_written_is_stale(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            p = self._log(root, self.FIXTURE + "\n## L-0002: Second\n\n"
+                                               "- **Added:** 2999-01-01\n- **Rule:** do Y\n")
+            self._regen(root)
+            p.write_text(p.read_text(encoding="utf-8").replace(
+                "- **Rule:** do Y", "- **Rule:** do Y\n- **Status:** Closed - obsolete"),
+                encoding="utf-8")
+            report = gate.run_gate(str(root), checks={}, require_lessons=True)
+            self.assertFalse(report["ok"])
+            lane = next(c for c in report["checks"] if c["check"] == "lessons-summary")
+            self.assertIn("L-0002", lane["detail"])
+
+    def test_an_expired_open_lesson_fails_the_close_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._log(root, "# Project Lessons\n\n## L-0001: Old\n\n"
+                            "- **Review-by:** 2000-01-01\n- **Rule:** do X\n")
+            self._regen(root)
+            report = gate.run_gate(str(root), checks={}, require_lessons=True)
+            self.assertFalse(report["ok"])
+            lane = next(c for c in report["checks"] if c["check"] == "lessons-validity")
+            self.assertEqual(lane["status"], "fail")
+            self.assertTrue(lane["blocking"])
+            self.assertIn("L-0001", lane["detail"])
+
+    def test_a_horizon_less_open_lesson_fails_the_close_gate(self) -> None:
+        """Review F1: the lane must ACT on `unstamped`, not merely narrate it. A lane that
+        prints PASS while its own detail names a finding is the false-assurance class this
+        gate exists to abolish - and a legacy log (no horizons anywhere) would close a sprint
+        with the re-validation step never performed."""
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._log(root, "# Project Lessons\n\n## L-0001: Undated\n\n- **Rule:** do X\n")
+            self._regen(root)  # summary is current, so only the validity lane can fail
+            report = gate.run_gate(str(root), checks={}, require_lessons=True)
+            self.assertFalse(report["ok"])
+            lane = next(c for c in report["checks"] if c["check"] == "lessons-validity")
+            self.assertEqual(lane["status"], "fail")
+            self.assertTrue(lane["blocking"])
+            self.assertGreaterEqual(lane["count"], 1)  # the count is what makes it FAIL
+            self.assertIn("L-0001", lane["detail"])
+
+    def test_a_deleted_log_beside_a_populated_summary_is_refused(self) -> None:
+        """Review F2: `rm .local/lessons.md` must not be a one-command defeat of the close
+        gate. An absent log is only 'nothing to summarise' when the committed summary agrees
+        that there is nothing; a summary still listing lessons with no log behind it is a
+        contradiction, and the gate refuses rather than passing over it."""
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            log = self._log(root)
+            self._regen(root)
+            self.assertTrue(gate.run_gate(str(root), checks={}, require_lessons=True)["ok"])
+            log.unlink()  # the one-command defeat
+            report = gate.run_gate(str(root), checks={}, require_lessons=True)
+            self.assertFalse(report["ok"])
+            lane = next(c for c in report["checks"] if c["check"] == "lessons-summary")
+            self.assertEqual(lane["status"], "fail")
+
+    def test_a_greenfield_project_with_no_lessons_at_all_passes(self) -> None:
+        # the honest N/A: no log, and a summary that agrees there is nothing (or none at all).
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._retro(root)
+            report = gate.run_gate(str(root), checks={}, require_retro="RETRO0005")
+            self.assertTrue(report["ok"], report["checks"])
+
+    def test_require_retro_binds_the_lessons_lanes(self) -> None:
+        """No new flag for an agent under effort pressure to forget: the close-gate command
+        the doctrine already prescribes (`gate --require-retro`) carries the lessons lanes."""
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._log(root)
+            self._retro(root)
+            names = {c["check"] for c in
+                     gate.run_gate(str(root), checks={}, require_retro="RETRO0005")["checks"]}
+            self.assertIn("lessons-summary", names)
+            self.assertIn("lessons-validity", names)
+
+    def test_lessons_lanes_are_absent_from_the_standard_gate(self) -> None:
+        # the log is gitignored, so a teammate's clone has no log: a standard-gate lane
+        # would false-fire on their machine. The lanes are bound to the CLOSE gate only.
+        self.assertNotIn("lessons-summary", gate.DEFAULT_CHECKS)
+        self.assertNotIn("lessons-validity", gate.DEFAULT_CHECKS)
+
+    def test_deselecting_a_bound_lessons_lane_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._log(root)
+            self._retro(root)
+            r = gate.run_gate(str(root), checks={"a": _fake(0)}, require_lessons=True,
+                              skip=["lessons-summary"])
+            self.assertFalse(r["ok"])
+            self.assertEqual(r["checks"][0]["check"], "selection")
+            self.assertIn("lessons-summary", r["checks"][0]["detail"])
+
+    def test_lessons_lanes_block_on_error(self) -> None:
+        self.assertIn("lessons-summary", gate.BLOCKING_ON_ERROR)
+        self.assertIn("lessons-validity", gate.BLOCKING_ON_ERROR)
+
+
 if __name__ == "__main__":
     unittest.main()

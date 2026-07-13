@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import sdlc_md  # noqa: E402
+from lib import sdlc_md, tiers  # noqa: E402
 import reconcile  # noqa: E402  (sibling scripts; scripts dir is on sys.path)
 import critic  # noqa: E402
 import doc_coverage  # noqa: E402  (the `documented` stage)
@@ -118,10 +118,21 @@ def detect_conformance(repo_root: Path | str) -> dict:
         status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab) or "Unknown"
         decomposed = sdlc_md.extract_field(text, "Epic") is not None
         has_ac, has_verify, verified_states = _ac_signals(text)
-        verified = reconciled = critiqued = documented = None
+        verified = reconciled = critiqued = documented = promoted = None
         if status == "Done":
             verified, reconciled, critiqued, documented = _done_stages(
                 root, rid, verified_states, _no_index, drift_ids, _doc_ok)
+            # The backstop to the transition gate. That gate guards the tool path; a
+            # hand-edited `Status: Done` walks round it, and the story is then Done without
+            # the sections the tier deferred. Same doubling the AC-verify gate already has
+            # (transition refuses it; `verified` re-checks it here).
+            #
+            # Shares ONE authority with the gate (lib.tiers), so the two cannot disagree: an
+            # unknown tier fails closed, a `full` claim is checked against the sections rather
+            # than believed, and an unstamped story - every artefact predating the tier - is
+            # promoted by definition unless the project sets quality.require_full_sections.
+            promoted = tiers.promotion_deficit(
+                text, "story", strict=tiers.require_full_sections(root)) is None
         stages = {
             "decomposed": decomposed,
             "specified": has_ac,
@@ -130,10 +141,11 @@ def detect_conformance(repo_root: Path | str) -> dict:
             "reconciled": reconciled,
             "critiqued": critiqued,
             "documented": documented,
+            "promoted": promoted,
         }
         required = ["decomposed", "specified", "verifiable"]
         if status == "Done":
-            required += ["verified", "reconciled", "critiqued", "documented"]
+            required += ["verified", "reconciled", "critiqued", "documented", "promoted"]
         rid_num = sdlc_md.id_number(rid)
         exempt = cutoff_num is not None and rid_num is not None and rid_num <= cutoff_num
         missing = [] if exempt else [s for s in required if not stages[s]]

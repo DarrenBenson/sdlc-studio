@@ -1062,5 +1062,45 @@ class PreflightSurvivesAllOrdersTests(unittest.TestCase):
                                   "--strict", "--root", str(work)])
             self.assertEqual(rc, 2, err.getvalue() + out.getvalue())
 
+
+class PlanLessonsDigestTests(unittest.TestCase):
+    """CR0236 AC2: the plan an agent reads at sprint start CONTAINS the still-valid lessons -
+    it does not point at a file the agent may not open."""
+
+    LOG = ("# Project Lessons\n\n## L-0002: Read every creation path\n\n"
+           "- **Rule:** grep for every code path that does the thing\n\n"
+           "## L-0001: Closed one\n\n- **Status:** Closed - obsolete\n")
+
+    def _seed(self, root: Path) -> None:
+        _cr(root, 1, status="Proposed")
+        p = root / "sdlc-studio" / ".local" / "lessons.md"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(self.LOG, encoding="utf-8")
+
+    def test_build_plan_carries_the_open_lessons(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._seed(root)
+            plan = _load().build_plan(root, "cr", "Proposed")
+            ids = [x["id"] for x in plan["lessons"]["lessons"]]
+            self.assertEqual(ids, ["L-0002"])  # the closed one is not in force
+
+    def test_plan_output_prints_the_lessons(self) -> None:
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._seed(root)
+            out = io.StringIO()
+            with redirect_stdout(out):
+                rc = _load().main(["plan", "--crs", "Proposed", "--root", str(root),
+                                   "--no-fetch"])
+            self.assertEqual(rc, 0)
+            text = out.getvalue()
+            self.assertIn("L-0002", text)
+            self.assertIn("Read every creation path", text)
+            self.assertNotIn("L-0001", text)  # closed lessons are not in force
+
+
 if __name__ == "__main__":
     unittest.main()

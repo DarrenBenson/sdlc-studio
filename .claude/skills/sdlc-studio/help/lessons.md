@@ -26,7 +26,7 @@ project-specific *fact* (a config path, an incident, a box name) is **memory**,
 not a lesson – keep those in the project's memory store.
 
 All actions are backed by `python3 "$CLAUDE_SKILL_DIR/scripts/lessons.py"`
-(`list` / `add` / `prune` / `recall`).
+(`list` / `add` / `prune` / `recall` / `revalidate` / `summary`).
 
 ## You can just ask
 
@@ -39,6 +39,8 @@ SDLC Studio is model-invoked - say it in plain language:
 | "Anything we should know before deciding this?" | `/sdlc-studio lessons recall` |
 | "That mistake could bite any project - save it for all of them" | `/sdlc-studio lessons add --global` |
 | "Clear out the old lessons from the early epics" | `/sdlc-studio lessons prune --older EP0003` |
+| "Which lessons still hold?" | `/sdlc-studio lessons revalidate` |
+| "Refresh the summary before we close the sprint" | `/sdlc-studio lessons summary` |
 
 ## Quick Reference
 
@@ -48,11 +50,39 @@ SDLC Studio is model-invoked - say it in plain language:
 /sdlc-studio lessons add --epic EP0004 --wave 2  # Add with explicit context
 /sdlc-studio lessons prune --older EP0003      # Drop entries tied to old epics
 
+# The sprint close loop (gated - see below)
+/sdlc-studio lessons revalidate                # List open lessons with their validity horizon
+/sdlc-studio lessons revalidate --close L-0003 --reason "fixed upstream"   # unknown id: refused, not a no-op
+/sdlc-studio lessons revalidate --extend L-0004  # Still true: push the horizon out
+/sdlc-studio lessons revalidate --stamp        # Give horizon-less lessons a horizon (backfill)
+/sdlc-studio lessons summary                   # Regenerate retros/LESSONS-SUMMARY.md
+
 # Cross-project tier (skill lessons/ folder)
 /sdlc-studio lessons recall                    # Surface relevant cross-project lessons before a decision
 /sdlc-studio lessons recall --tags reconcile   # Filter by tag
 /sdlc-studio lessons add --global              # Promote a generalisable lesson (needs skill_source_repo)
 ```
+
+## The close loop is enforced, not advised
+
+Lessons are summarised at the end of every sprint and read at the start of the next
+one. Neither half depends on anyone remembering:
+
+- **The close gate fails loud on a stale summary.** `gate --require-retro RETROxxxx`
+  (or `--require-lessons`) recomputes the digest from the lessons log and compares it
+  with the committed `sdlc-studio/retros/LESSONS-SUMMARY.md`. A lesson **closed** since
+  the last regeneration fails it exactly as an added one does. The file is derived
+  output - there is no freshness stamp to forge, and reformatting it cannot false-fire
+  the check. Fix: `lessons summary`.
+- **The close gate fails loud on an unre-validated lesson.** Every lesson carries a
+  validity horizon (`Review-by:`, stamped at `add`; default 90 days, set
+  `lessons.validity_days` in `sdlc-studio/.config.yaml`). Past it, the lesson is
+  **closed** (`revalidate --close`, no longer true) or **extended** (`revalidate
+  --extend`, still true). A lesson carrying no horizon at all is a finding too -
+  `revalidate --stamp` backfills one.
+- **The next sprint reads them without being asked.** `sprint plan` prints the
+  still-valid lessons in the plan itself, so they arrive in the output the agent
+  already reads - not as a pointer to a file it may not open.
 
 ## Actions
 
@@ -116,6 +146,35 @@ are noise).
 ```text
 /sdlc-studio lessons prune --older EP0003    # Drop lessons tied to EP0003 or older
 /sdlc-studio lessons prune --epic EP0004     # Drop only EP0004 entries
+```
+
+### revalidate
+
+List the open lessons with their validity horizon, or act on one. Unlike `prune`
+(which deletes by epic age), `revalidate` records the judgement in the log: a closed
+lesson stays readable, with its reason, and drops out of the summary digest.
+
+**Usage:**
+
+```text
+/sdlc-studio lessons revalidate                          # List open lessons + horizons
+/sdlc-studio lessons revalidate --close L-0003 --reason "schema now enforced in CI"
+/sdlc-studio lessons revalidate --extend L-0004          # Still true: horizon moves out
+/sdlc-studio lessons revalidate --extend L-0004 --days 30
+/sdlc-studio lessons revalidate --stamp                  # Backfill missing horizons
+```
+
+### summary
+
+Regenerate the committed `sdlc-studio/retros/LESSONS-SUMMARY.md` from the still-valid
+lessons. Deterministic for a given log (no date in the output), so it is reproducible -
+which is what lets the close gate recompute it and compare rather than trust it.
+
+**Usage:**
+
+```text
+/sdlc-studio lessons summary                 # Rewrite retros/LESSONS-SUMMARY.md
+/sdlc-studio lessons summary --dry-run       # Report without writing
 ```
 
 ## When to Add a Lesson

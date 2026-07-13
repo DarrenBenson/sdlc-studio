@@ -961,5 +961,364 @@ class TrackedDestinationTests(unittest.TestCase):
             self.assertTrue(lessons.is_tracked_destination(ldir))
 
 
+class SummaryStalenessTests(unittest.TestCase):
+    """The summary is DERIVED output of the lessons log. Staleness is decided by recomputing
+    the digest from the log and comparing it with the digest parsed back out of the summary -
+    the `index-derived` discipline, applied to LESSONS-SUMMARY.md. No stamp, no mtime."""
+
+    def _seed(self, root: Path) -> tuple[Path, Path]:
+        p = root / "sdlc-studio" / ".local" / "lessons.md"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(LESSONS_FIXTURE, encoding="utf-8")
+        s = root / "sdlc-studio" / "retros" / "LESSONS-SUMMARY.md"
+        s.parent.mkdir(parents=True, exist_ok=True)
+        return p, s
+
+    def _regen(self, root: Path) -> None:
+        with contextlib.redirect_stdout(io.StringIO()):
+            lessons.main(["summary", "--project-file",
+                          str(root / "sdlc-studio" / ".local" / "lessons.md")])
+
+    def test_round_trip_summary_parses_back_to_the_expected_digest(self) -> None:
+        entries = lessons.parse_project_lessons(LESSONS_FIXTURE)
+        rendered = lessons.build_summary_text(entries)
+        self.assertEqual(lessons.parse_summary_digest(rendered),
+                         lessons.expected_digest(entries))
+
+    def test_regenerated_summary_is_fresh(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._seed(root)
+            self._regen(root)
+            st = lessons.summary_status(root)
+            self.assertTrue(st["applicable"])
+            self.assertFalse(st["stale"], st["reason"])
+
+    def test_an_added_lesson_makes_the_summary_stale(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            p, _ = self._seed(root)
+            self._regen(root)
+            with contextlib.redirect_stdout(io.StringIO()):
+                lessons.main(["add", "--project-file", str(p), "--title", "Third lesson",
+                              "--body", "something new"])
+            st = lessons.summary_status(root)
+            self.assertTrue(st["stale"])
+            self.assertTrue(any("Third lesson" in a for a in st["added"]))
+
+    def test_a_closed_lesson_makes_the_summary_stale(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            p, _ = self._seed(root)
+            self._regen(root)
+            with contextlib.redirect_stdout(io.StringIO()):
+                lessons.main(["revalidate", "--project-file", str(p), "--close", "L-0001"])
+            st = lessons.summary_status(root)
+            self.assertTrue(st["stale"])
+            self.assertTrue(any("L-0001" in r for r in st["removed"]))
+
+    def test_close_one_add_one_is_caught_though_the_count_is_unchanged(self) -> None:
+        """LL0015: a check that only catches the total case is not a check. A count or a
+        count+mtime signal reads GREEN here - one out, one in, same total."""
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            p, _ = self._seed(root)
+            self._regen(root)
+            before = lessons.summary_status(root)
+            with contextlib.redirect_stdout(io.StringIO()):
+                lessons.main(["revalidate", "--project-file", str(p), "--close", "L-0001"])
+                lessons.main(["add", "--project-file", str(p), "--title", "Replacement",
+                              "--body", "b"])
+            st = lessons.summary_status(root)
+            self.assertEqual(before["open"], st["open"])  # the count signal is blind here
+            self.assertTrue(st["stale"])
+
+    def test_an_edited_gist_makes_the_summary_stale(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            p, _ = self._seed(root)
+            self._regen(root)
+            p.write_text(p.read_text(encoding="utf-8").replace("always do X", "always do Z"),
+                         encoding="utf-8")
+            self.assertTrue(lessons.summary_status(root)["stale"])
+
+    def test_whitespace_edits_to_the_summary_do_not_false_fire(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            _, s = self._seed(root)
+            self._regen(root)
+            text = s.read_text(encoding="utf-8")
+            # trailing spaces, extra blank lines, a reworded boilerplate header
+            noisy = text.replace("# Lessons Summary", "# Lessons Summary\n\n<!-- generated -->")
+            noisy = noisy.replace("\n- **", "  \n\n-  **")
+            s.write_text(noisy + "\n\n", encoding="utf-8")
+            st = lessons.summary_status(root)
+            self.assertFalse(st["stale"], st["reason"])
+
+    def test_a_missing_summary_beside_a_populated_log_is_stale(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._seed(root)  # log written, summary never generated
+            st = lessons.summary_status(root)
+            self.assertTrue(st["applicable"])
+            self.assertTrue(st["stale"])
+
+    def test_no_lessons_log_and_no_summary_is_not_applicable(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            st = lessons.summary_status(Path(t))
+            self.assertFalse(st["applicable"])
+            self.assertFalse(st["stale"])
+
+    def test_a_deleted_log_beside_a_populated_summary_is_stale_not_vacuous(self) -> None:
+        """Review F2: deleting the log must not be the way to green. The summary and the log
+        disagree - one lists lessons, the other does not exist - and a check that reads that
+        as 'nothing to summarise' can be defeated with one `rm`."""
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            log, _ = self._seed(root)
+            self._regen(root)
+            log.unlink()
+            st = lessons.summary_status(root)
+            self.assertTrue(st["applicable"])
+            self.assertTrue(st["stale"])
+            self.assertIn("L-0002", st["reason"])
+
+    def test_a_deleted_log_beside_an_empty_summary_stays_not_applicable(self) -> None:
+        # the honest N/A: the summary agrees there is nothing to summarise.
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            s = root / "sdlc-studio" / "retros" / "LESSONS-SUMMARY.md"
+            s.parent.mkdir(parents=True)
+            s.write_text(lessons.build_summary_text([]), encoding="utf-8")
+            st = lessons.summary_status(root)
+            self.assertFalse(st["applicable"])
+            self.assertFalse(st["stale"])
+
+    def test_a_hard_wrapped_bullet_does_not_false_fire(self) -> None:
+        """Review F3: a consuming project with MD013 enabled wraps long lines. A wrapped
+        digest bullet is the same lesson, so it must stay green - otherwise the project's own
+        markdown linter and this gate would be in permanent, unfixable disagreement."""
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            _, s = self._seed(root)
+            self._regen(root)
+            wrapped = s.read_text(encoding="utf-8").replace(
+                "- **L-0002: Second lesson** - always do X",
+                "- **L-0002: Second lesson** -\n  always do X")
+            s.write_text(wrapped, encoding="utf-8")
+            st = lessons.summary_status(root)
+            self.assertFalse(st["stale"], st["reason"])
+
+    def test_a_flush_left_paragraph_after_the_bullets_is_not_swallowed(self) -> None:
+        # the join is indentation-anchored: a hand-added footer is not folded into the last
+        # lesson's gist (which would corrupt the comparison instead of ignoring the footer).
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            _, s = self._seed(root)
+            self._regen(root)
+            s.write_text(s.read_text(encoding="utf-8") + "\nSee also the retro index.\n",
+                         encoding="utf-8")
+            self.assertFalse(lessons.summary_status(root)["stale"])
+
+
+class ValidityHorizonTests(unittest.TestCase):
+    """An open lesson past its validity horizon must be closed or extended - the revalidate
+    step, made mechanical. An open lesson with NO horizon is unprovable, not proven: it
+    counts as a finding too, or the check would pass vacuously on every legacy log."""
+
+    def _seed(self, root: Path, text: str = LESSONS_FIXTURE) -> Path:
+        p = root / "sdlc-studio" / ".local" / "lessons.md"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text, encoding="utf-8")
+        return p
+
+    def test_add_stamps_added_and_review_by(self) -> None:
+        with tempfile.TemporaryDirectory() as t, FixedDate("2026-01-10"):
+            p = Path(t) / "lessons.md"
+            with contextlib.redirect_stdout(io.StringIO()):
+                lessons.main(["add", "--project-file", str(p), "--title", "T", "--body", "b"])
+            entry = lessons.parse_project_lessons(p.read_text(encoding="utf-8"))[0]
+            self.assertEqual(entry["fields"]["added"], "2026-01-10")
+            self.assertEqual(entry["fields"]["review-by"], "2026-04-10")  # +90 days
+
+    def test_an_expired_open_lesson_is_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._seed(root, LESSONS_FIXTURE.replace(
+                "- **Epic:** EP0005", "- **Epic:** EP0005\n- **Review-by:** 2026-01-01"))
+            st = lessons.validity_status(root, today="2026-06-01")
+            self.assertEqual([e["id"] for e in st["expired"]], ["L-0002"])
+
+    def test_a_lesson_inside_its_horizon_is_not_expired(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._seed(root, LESSONS_FIXTURE.replace(
+                "- **Epic:** EP0005", "- **Epic:** EP0005\n- **Review-by:** 2026-12-01"))
+            st = lessons.validity_status(root, today="2026-06-01")
+            self.assertEqual(st["expired"], [])
+
+    def test_a_closed_lesson_never_expires(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            p = self._seed(root, LESSONS_FIXTURE.replace(
+                "- **Epic:** EP0005", "- **Epic:** EP0005\n- **Review-by:** 2026-01-01"))
+            with contextlib.redirect_stdout(io.StringIO()):
+                lessons.main(["revalidate", "--project-file", str(p), "--close", "L-0002"])
+            st = lessons.validity_status(root, today="2026-06-01")
+            self.assertEqual(st["expired"], [])
+
+    def test_extend_pushes_the_horizon_forward(self) -> None:
+        with tempfile.TemporaryDirectory() as t, FixedDate("2026-06-01"):
+            root = Path(t)
+            p = self._seed(root, LESSONS_FIXTURE.replace(
+                "- **Epic:** EP0005", "- **Epic:** EP0005\n- **Review-by:** 2026-01-01"))
+            with contextlib.redirect_stdout(io.StringIO()):
+                lessons.main(["revalidate", "--project-file", str(p), "--extend", "L-0002"])
+            entry = {e["id"]: e for e in
+                     lessons.parse_project_lessons(p.read_text(encoding="utf-8"))}["L-0002"]
+            self.assertEqual(entry["fields"]["review-by"], "2026-08-30")  # +90 days
+            self.assertEqual(lessons.validity_status(root, today="2026-06-01")["expired"], [])
+
+    def test_an_undated_open_lesson_is_unstamped_and_stamp_fixes_it(self) -> None:
+        with tempfile.TemporaryDirectory() as t, FixedDate("2026-06-01"):
+            root = Path(t)
+            p = self._seed(root)  # the fixture carries no Added/Review-by (a legacy log)
+            st = lessons.validity_status(root, today="2026-06-01")
+            self.assertEqual(sorted(st["unstamped"]), ["L-0001", "L-0002"])
+            with contextlib.redirect_stdout(io.StringIO()):
+                lessons.main(["revalidate", "--project-file", str(p), "--stamp"])
+            st2 = lessons.validity_status(root, today="2026-06-01")
+            self.assertEqual(st2["unstamped"], [])
+            self.assertEqual(st2["expired"], [])
+
+    def test_stamping_a_prose_only_entry_keeps_it_parseable(self) -> None:
+        """Review F4: an entry whose body is a paragraph (no leading bullets) must not get a
+        bullet glued to the prose - that reads as a lazy list continuation and the field is
+        then unparseable, i.e. still horizon-less after a --stamp that reported success."""
+        with tempfile.TemporaryDirectory() as t, FixedDate("2026-06-01"):
+            root = Path(t)
+            p = self._seed(root, "# Project Lessons\n\n## L-0001: Prose only\n\n"
+                                 "A paragraph with no field bullets at all.\n")
+            with contextlib.redirect_stdout(io.StringIO()):
+                lessons.main(["revalidate", "--project-file", str(p), "--stamp"])
+            entry = lessons.parse_project_lessons(p.read_text(encoding="utf-8"))[0]
+            self.assertEqual(entry["fields"]["review-by"], "2026-08-30")
+            self.assertEqual(lessons.validity_status(root, today="2026-06-01")["unstamped"], [])
+            self.assertIn("A paragraph with no field bullets", entry["body"])
+
+    def test_an_unknown_id_is_refused_not_silently_no_opped(self) -> None:
+        """Review F5: `--close L-9999` on a typo'd id printed '0 closed' and exited 0 - a
+        no-op wearing a success. The operator believes the lesson is closed; the close gate
+        then fails on it, or worse, does not."""
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            p = self._seed(root)
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+                rc = lessons.main(["revalidate", "--project-file", str(p), "--close", "L-9999"])
+            self.assertEqual(rc, 2)
+            self.assertIn("L-9999", err.getvalue())
+            with contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
+                rc = lessons.main(["revalidate", "--project-file", str(p), "--extend", "L-9999"])
+            self.assertEqual(rc, 2)
+
+    def test_extending_a_closed_lesson_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            p = self._seed(root)
+            with contextlib.redirect_stdout(io.StringIO()):
+                lessons.main(["revalidate", "--project-file", str(p), "--close", "L-0001"])
+            with contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
+                rc = lessons.main(["revalidate", "--project-file", str(p), "--extend", "L-0001"])
+            self.assertEqual(rc, 2)
+
+    def test_closing_an_already_closed_lesson_stays_idempotent(self) -> None:
+        # the id EXISTS, so this is not the unknown-id case: re-closing is a no-op that
+        # reports 0 and exits 0 (the existing idempotence contract).
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            p = self._seed(root)
+            with contextlib.redirect_stdout(io.StringIO()):
+                lessons.main(["revalidate", "--project-file", str(p), "--close", "L-0001"])
+                rc = lessons.main(["revalidate", "--project-file", str(p), "--close", "L-0001"])
+            self.assertEqual(rc, 0)
+
+    def test_a_malformed_horizon_counts_as_unstamped_not_as_proven(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._seed(root, LESSONS_FIXTURE.replace(
+                "- **Epic:** EP0005", "- **Epic:** EP0005\n- **Review-by:** soon"))
+            st = lessons.validity_status(root, today="2026-06-01")
+            self.assertIn("L-0002", st["unstamped"])
+
+
+class ValidityDefaultDriftTests(unittest.TestCase):
+    """lessons.py reads the config key with the override-only reader (no PyYAML dependency on a
+    parser-critical path), so its fallback constant is a SECOND copy of the default. Guard it: a
+    change to config-defaults.yaml that leaves the constant behind would silently give projects
+    without an override a different horizon from the documented one."""
+
+    def test_constant_matches_config_defaults_yaml(self) -> None:
+        try:
+            import yaml
+        except ImportError:
+            self.skipTest("PyYAML not installed")
+        defaults = (Path(__file__).resolve().parents[2] / "templates" / "config-defaults.yaml")
+        data = yaml.safe_load(defaults.read_text(encoding="utf-8"))
+        self.assertEqual(data["lessons"]["validity_days"], lessons.DEFAULT_VALIDITY_DAYS)
+
+    def test_project_override_wins(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            (root / "sdlc-studio").mkdir()
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "lessons:\n  validity_days: 30\n", encoding="utf-8")
+            days = lessons.resolve_validity_days(root)
+            self.assertIn(days, (30, lessons.DEFAULT_VALIDITY_DAYS))  # 90 only without PyYAML
+            if days == 30:
+                self.assertEqual(lessons.resolve_validity_days(root, 7), 7)  # flag beats config
+
+    def test_a_junk_config_value_degrades_to_the_default(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            (root / "sdlc-studio").mkdir()
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "lessons:\n  validity_days: soon\n", encoding="utf-8")
+            self.assertEqual(lessons.resolve_validity_days(root), lessons.DEFAULT_VALIDITY_DAYS)
+
+
+class PlanDigestTests(unittest.TestCase):
+    """The sprint plan must CONTAIN the lessons, not point at a file."""
+
+    def test_digest_comes_from_the_log_when_present(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            p = root / "sdlc-studio" / ".local" / "lessons.md"
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(LESSONS_FIXTURE, encoding="utf-8")
+            d = lessons.plan_digest(root)
+            self.assertEqual(d["source"], "log")
+            self.assertEqual([x["id"] for x in d["lessons"]], ["L-0002", "L-0001"])
+
+    def test_digest_falls_back_to_the_committed_summary_when_the_log_is_absent(self) -> None:
+        # the log is gitignored: a fresh clone has only the summary, and the plan must still
+        # carry the lessons rather than silently carrying none.
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            s = root / "sdlc-studio" / "retros" / "LESSONS-SUMMARY.md"
+            s.parent.mkdir(parents=True, exist_ok=True)
+            s.write_text(lessons.build_summary_text(
+                lessons.parse_project_lessons(LESSONS_FIXTURE)), encoding="utf-8")
+            d = lessons.plan_digest(root)
+            self.assertEqual(d["source"], "summary")
+            self.assertEqual([x["id"] for x in d["lessons"]], ["L-0002", "L-0001"])
+
+    def test_no_lessons_anywhere_is_an_empty_digest(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            d = lessons.plan_digest(Path(t))
+            self.assertEqual(d["source"], "none")
+            self.assertEqual(d["lessons"], [])
+
+
 if __name__ == "__main__":
     unittest.main()

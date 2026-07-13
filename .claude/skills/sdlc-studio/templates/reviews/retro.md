@@ -35,6 +35,16 @@ Related: reference-sprint.md, help/lessons.md
 
 - {{lesson}}   <!-- record it: lessons add (project tier). Promote with --global only what generalises beyond this repo -->
 
+## Close loop (gated)
+
+`gate --require-retro RETROxxxx` (this retro's id, file form) fails until all three are true:
+
+- [ ] this retro exists (`artifact new --type retro`)
+- [ ] open lessons re-validated: each is closed, extended, or within its horizon (`lessons revalidate`)
+- [ ] `retros/LESSONS-SUMMARY.md` regenerated from the still-valid lessons (`lessons summary`)
+
+The next sprint reads them automatically: `sprint plan` prints the digest in the plan.
+
 ## Metrics
 
 - Tokens: {{tokens}} · Duration: {{duration}} · Critic rejects: {{rejects}}

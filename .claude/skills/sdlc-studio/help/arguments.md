@@ -56,6 +56,28 @@ Full command-line argument reference. For the common subset, see `help/help.md`
 | `--full` | Run fresh status analysis | false |
 | `--resume` | Resume cascading review from pause point | false |
 
+## Artifact creation (artifact.py)
+
+| Flag | Description |
+| --- | --- |
+| `new --template minimal\|planning\|full` | Scaffold richness. `minimal` (default) is the bare stub; `planning` is the lean pre-implementation tier for a story/epic (under 60 lines: ACs with `Verify:` and `Verification target:`, scope, technical notes - and no constraint chain, edge cases, test scenarios or rollback envelope); `full` is the whole `templates/core/` body. `batch` defaults to `full` |
+| `new --ac "<criterion>"` | Acceptance criterion (repeatable; story/CR/epic) |
+| `new --verify "<command>"` | The executable check for the AC in the same position (repeatable; pairs with `--ac`). Written verbatim - it is a command the verifier runs |
+| `new --target functional\|conversational\|soak\|live` | The `Verification target` tier written on each supplied AC |
+| `promote --id <ID> [--to full]` | Add every section the full template carries and this artifact lacks, preserving what is written, and re-stamp the tier `full`. The sections arrive as empty `{{placeholder}}` scaffolds - promotion gives you the headings and the obligation, not the content. Idempotent |
+
+A planning-tier story or epic **cannot reach In Progress, Review or Done while it is missing
+the sections the full template carries.** The gate reads the *sections*, not the stamp: an
+unrecognised tier fails closed, and a `full` stamp over missing sections is refused as a claim
+rather than believed (only `promote` writes that stamp, and only after adding them). It is not
+`--force`-bypassable, and `transition annotate` refuses the `Template` field for the same
+reason - the sections get added, never waived.
+
+An artifact with **no** `Template:` stamp is not judged by default: a bare unstamped story is
+structurally identical to the pre-tier stories that reach Done today, so refusing it would
+refuse them. Set `quality.require_full_sections: true` in `sdlc-studio/.config.yaml` to drop
+the stamp from the decision entirely and judge every story and epic on its sections.
+
 ## Unit close and annotation (transition.py / artifact.py)
 
 | Flag | Description |

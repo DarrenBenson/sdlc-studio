@@ -176,28 +176,44 @@ independent critic plus the gate - the check's output states this scoping.
    metrics passed: `--iterations`/`--verdict`/`--wall-time-s`/`--stages`) is appended to
    the gitignored `sdlc-studio/.local/telemetry.jsonl`. Advisory -
    it never affects the close; it feeds the deferred calibrate step.
-7. **Retro lifecycle (a hard gate, not doctrine).** The batch retro carries a 'critic loop, observed' section (findings, refutations, survivors of the adversarial pass) so its value stays visible sprint over sprint. The close runs a five-step learning loop,
-   each step script-backed so it cannot be silently skipped:
-   1. **Hard close gate.** The close runs `gate --require-retro RETRO{next}` and **fails loud**
-      (non-zero, no success report) until the batch retro exists in `sdlc-studio/retros/`, mirroring
-      the reconcile-drift-0 gate. Create it with `artifact new --type retro --title "..."` so the id
-      is tool-allocated and the index row appended (never hand-author either); `reconcile` then
-      covers the retro index for row-presence drift like every pipeline type. "Unconditional" is now
-      mechanical, not a habit.
+7. **Retro + lessons lifecycle (a hard gate, not doctrine).** The batch retro carries a 'critic loop, observed' section (findings, refutations, survivors of the adversarial pass) so its value stays visible sprint over sprint. The close runs a five-step learning loop. **Every step of it is mechanical:** one command,
+   `gate --require-retro RETRO{next}`, is the whole close gate, and it fails loud (non-zero, no
+   success report) on any of the three artefacts being absent or stale. A step that is only
+   described is a step an agent under effort pressure skips - so nothing here is only described:
+   1. **The retro exists.** The gate fails until the batch retro is in `sdlc-studio/retros/`. Create
+      it with `artifact new --type retro --title "..."` so the id is tool-allocated and the index row
+      appended (never hand-author either); `reconcile` then covers the retro index for row-presence
+      drift like every pipeline type.
    2. **Review + write lessons.** Durable lessons from the wave's `.local/lessons.md` are written
-      into the committed retro (delivered, blocked, lessons).
-   3. **Re-validate open lessons.** `lessons revalidate` lists open lessons; the stale ones are
-      closed by validity (`lessons revalidate --close L-NNNN`), generalising `prune --older` so the
-      log does not grow into noise.
-   4. **Refresh the rolling summary.** `lessons summary` regenerates the committed
-      `sdlc-studio/retros/LESSONS-SUMMARY.md` from the still-valid lessons - the cheap, high-signal
-      digest (progressive disclosure: the full log is the archive, the summary is what is loaded).
-   5. **Read the summary at the start.** A new sprint reads `LESSONS-SUMMARY.md` plus `lessons recall`
-      at the **start** - not the full log. Lessons are recorded on the **project tier**
+      into the committed retro (delivered, blocked, lessons). Each lesson is stamped with a validity
+      horizon when `lessons add` records it.
+   3. **Re-validate open lessons - gated.** The gate fails while any open lesson sits past its
+      validity horizon, or carries none at all. `lessons revalidate` lists them with their horizon;
+      each is then **closed** (`--close L-NNNN`, no longer true), **extended** (`--extend L-NNNN`,
+      still true - the horizon moves out), or **stamped** (`--stamp`, the backfill for a log written
+      before horizons existed). The log cannot silently grow into unread noise.
+   4. **Refresh the rolling summary - gated.** The gate recomputes the digest from the lessons log
+      and fails while the committed `sdlc-studio/retros/LESSONS-SUMMARY.md` disagrees with it -
+      a lesson **closed** since the last regeneration fails it exactly as an added one does. Fix:
+      `lessons summary`. The summary is derived output, like an `_index.md`: nothing is stamped and
+      nothing is trusted, so there is no freshness claim to forge - the only way to green is for the
+      file to say what the log implies. (Progressive disclosure: the full log stays the archive, the
+      summary is what is loaded.)
+   5. **Read the summary at the start - emitted, not requested.** `sprint plan` **prints the
+      still-valid lessons in the plan itself** (the JSON form carries them all), so the batch an
+      agent approves already contains the lessons the last sprints paid for; it does not point at a
+      file the agent may not open. It reads the log when there is one and the committed summary
+      otherwise (the log is gitignored, so a fresh clone has only the summary). Pair it with
+      `lessons recall` for the cross-project tier. Lessons are recorded on the **project tier**
       (`lessons add`, the default); a lesson is promoted with `lessons add --global` only once it
       clearly generalises beyond this repo, and promotion needs `skill_source_repo` set - see
       `help/lessons.md`.
-   The retro is a general capability, reused here, not sprint-only.
+
+   The lessons lanes ride on `--require-retro` deliberately: the close is ONE obligation, and a
+   separate flag per step is a flag that gets forgotten. `gate --require-lessons` runs the lessons
+   half alone (a close with no retro due). Deselecting a bound lane (`--skip lessons-summary`) is
+   refused, not honoured - a close verdict is never printed over the thing it claims to have
+   checked. The retro is a general capability, reused here, not sprint-only.
 
 ## Definition of Done
 
@@ -386,7 +402,9 @@ in loop step 5; per-tier escape/escalation rates accumulate in telemetry
 
 | Script | Role |
 | --- | --- |
-| `scripts/sprint.py plan` | select + order the batch (the triage plan) |
+| `scripts/sprint.py plan` | select + order the batch (the triage plan); emits the still-valid lessons digest |
+| `scripts/lessons.py` | `revalidate` (close/extend/stamp by validity) + `summary` (regenerate the digest) |
+| `scripts/gate.py --require-retro` | the sprint-close gate: retro present, lessons re-validated, summary current |
 | `scripts/audit.py check` | tranche audit: weak-AC, unmet-deps, already-terminal, link-integrity |
 | `scripts/integrity.py check` | referential integrity (required links + dangling refs) |
 | `scripts/conformance.py check` | the lifecycle-conformance gate (hard-fail; incl. reconciled + critiqued) |

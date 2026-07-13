@@ -6,15 +6,15 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 7 |
+| Proposed | 6 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 224 |
+| Complete | 226 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 6 |
 | Blocked | 0 |
-| **Total** | **237** |
+| **Total** | **238** |
 
 ## All Changes
 
@@ -56,9 +56,10 @@
 | [CR-0232](CR0232-engagement-floor-prose-half-the-doctrine-states-the.md) | engagement floor, prose half: the doctrine states the mandatory planning rule | Complete | High | Improvement | 2026-07-10 | -- |
 | [CR-0233](CR0233-gate-release-one-command-that-cannot-be-misread.md) | gate --release: one command that cannot be misread before a tag | Complete | High | Improvement | 2026-07-10 | -- |
 | [CR-0234](CR0234-uniform-cli-grammar-across-skill-scripts.md) | Uniform CLI grammar across skill scripts | Proposed | P3 | Improvement | 2026-07-11 | -- |
-| [CR-0235](CR0235-a-lighter-planning-tier-for-story-epic-templates.md) | A lighter planning tier for story/epic templates | Proposed | P3 | Improvement | 2026-07-11 | -- |
-| [CR-0236](CR0236-the-lessons-close-loop-is-doctrine-not-mechanism.md) | The lessons close-loop is doctrine, not mechanism: gate the summary at close and the read at start | Proposed | High | Improvement | 2026-07-13 | -- |
+| [CR-0235](CR0235-a-lighter-planning-tier-for-story-epic-templates.md) | A lighter planning tier for story/epic templates | Complete | P3 | Improvement | 2026-07-11 | -- |
+| [CR-0236](CR0236-the-lessons-close-loop-is-doctrine-not-mechanism.md) | The lessons close-loop is doctrine, not mechanism: gate the summary at close and the read at start | Complete | High | Improvement | 2026-07-13 | -- |
 | [CR-0237](CR0237-verify-ac-conflates-an-omitted-verify-line-with.md) | verify_ac conflates an omitted Verify line with a declared manual one | Proposed | Medium | Improvement | 2026-07-13 | -- |
+| [CR-0238](CR0238-triage-noise-open-codes-the-shared-revision-row.md) | triage_noise open-codes the shared revision-row writer instead of calling it | Proposed | Low | Improvement | 2026-07-13 | -- |
 
 ## Archived Releases
 

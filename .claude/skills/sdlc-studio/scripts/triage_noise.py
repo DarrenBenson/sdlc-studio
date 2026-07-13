@@ -195,12 +195,16 @@ def _new_consolidation_cr(root, theme: str, title: str, detail: str, today: str,
     slug = f"low-severity-{stem[:24]}-consolidated"
     create_status = sdlc_md.INBOX_STATUS if sdlc_md.is_schema_v3(root) else "Proposed"
     cr_title = f"Low-severity {display_theme} (consolidated)"
+    # One resolution for both records: the typed triple stamps `Raised-by`, its name opens the
+    # Revision History. A consolidation CR is the branch a Low finding takes on the default era,
+    # so a literal here would be the commonest wrong provenance record of all.
+    raised_by = sdlc_md.authorship_value(author, root)
     body = (
         f"# {disp}: {cr_title}\n\n"
         f"> **Status:** {create_status}\n> **Priority:** Low\n> **Type:** Improvement\n"
         f"> **Date:** {today}\n> **Consolidation:** {key}\n"
         f"> **Created-by:** sdlc-studio file\n"
-        f"> **Raised-by:** {sdlc_md.authorship_value(author, root)}\n\n"
+        f"> **Raised-by:** {raised_by}\n\n"
         "## Summary\n\nA themed consolidation of Low-severity findings that individually do not "
         "warrant a standalone artefact (triage noise control, schema v3). Triage the batch, then "
         "action or reject as one.\n\n"
@@ -210,7 +214,8 @@ def _new_consolidation_cr(root, theme: str, title: str, detail: str, today: str,
         "**Effort:** S\n\n"
         f"## Consolidated Findings\n\n{_bullet(title, detail)}\n\n"
         "## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
-        f"| {today} | audit | Consolidation opened |\n")
+        + sdlc_md.join_row([today, sdlc_md.authorship_name(raised_by),
+                            "Consolidation opened"]) + "\n")
     path = root / sdlc_md.ARTIFACT_TYPES["cr"][0] / f"{file_id}-{slug}.md"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(body, encoding="utf-8")

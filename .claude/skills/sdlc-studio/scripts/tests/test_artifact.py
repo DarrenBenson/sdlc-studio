@@ -784,6 +784,102 @@ class OrchestratedCloseTests(unittest.TestCase):
 
 
 
+class RevisionAuthorTests(unittest.TestCase):
+    """The Revision History Author cell carries the resolved authorship of record - a name,
+    never a hardcoded literal and never the typed triple."""
+
+    @staticmethod
+    def _rev_row(body: str) -> str:
+        lines = body.splitlines()
+        head = next(i for i, ln in enumerate(lines)
+                    if ln.strip().startswith("## Revision History"))
+        return [ln for ln in lines[head:] if ln.strip().startswith("|")][2]
+
+    def test_named_author_reaches_the_revision_history(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
+            r = artifact.new(repo, "cr", "authored", {"author": "Dani Okafor"})
+            self.assertIn("| Dani Okafor |",
+                          self._rev_row(Path(r["path"]).read_text(encoding="utf-8")))
+
+    def test_typed_author_triple_renders_the_name_only(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
+            r = artifact.new(repo, "cr", "authored", {"author": "Claude (Fable 5); agent; v5"})
+            body = Path(r["path"]).read_text(encoding="utf-8")
+            self.assertIn("> **Raised-by:** Claude (Fable 5); agent; v5", body)
+            row = self._rev_row(body)
+            self.assertIn("| Claude (Fable 5) |", row)
+            self.assertNotIn(";", row)
+
+    def test_unattributed_new_names_the_invoking_agent(self) -> None:
+        import os
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
+            prev = os.environ.get("SDLC_AUTHOR")
+            os.environ["SDLC_AUTHOR"] = "Sprint Driver; agent; v1"
+            try:
+                r = artifact.new(repo, "cr", "unattributed")
+            finally:
+                os.environ.pop("SDLC_AUTHOR")
+                if prev is not None:
+                    os.environ["SDLC_AUTHOR"] = prev
+            row = self._rev_row(Path(r["path"]).read_text(encoding="utf-8"))
+            self.assertIn("| Sprint Driver |", row)  # not the literal 'sdlc'
+
+
+RFC_HEADER = "| ID | Title | Priority | Status | Author | Date | Spawned CRs |"
+
+
+class IndexAuthorColumnTests(unittest.TestCase):
+    """The index Author column takes the same resolved NAME as the Revision History row -
+    `artifact new` and the finding filer are two creators writing one column."""
+
+    @staticmethod
+    def _row(repo: Path) -> str:
+        text = (repo / "sdlc-studio" / "rfcs" / "_index.md").read_text(encoding="utf-8")
+        return next(ln for ln in text.splitlines() if ln.strip().startswith("| [RFC"))
+
+    def test_typed_triple_is_not_dumped_into_the_index_cell(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "rfc", RFC_HEADER)
+            artifact.new(repo, "rfc", "a design", {"author": "Claude (Fable 5); agent; v5"})
+            row = self._row(repo)
+            self.assertIn("| Claude (Fable 5) |", row)
+            self.assertNotIn("agent; v5", row)
+
+    def test_unattributed_index_cell_names_the_invoking_agent(self) -> None:
+        import os
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "rfc", RFC_HEADER)
+            prev = os.environ.get("SDLC_AUTHOR")
+            os.environ["SDLC_AUTHOR"] = "Sprint Driver; agent; v1"
+            try:
+                artifact.new(repo, "rfc", "a design")
+            finally:
+                os.environ.pop("SDLC_AUTHOR")
+                if prev is not None:
+                    os.environ["SDLC_AUTHOR"] = prev
+            row = self._row(repo)
+            self.assertIn("| Sprint Driver |", row)  # not the discarded '--'
+
+    def test_batch_index_cell_takes_the_resolved_name(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "rfc", RFC_HEADER)
+            artifact.new_batch(repo, "rfc",
+                               [{"title": "a design", "author": "Dani Okafor; agent; v2"}],
+                               template="minimal")
+            row = self._row(repo)
+            self.assertIn("| Dani Okafor |", row)
+            self.assertNotIn("agent; v2", row)
+
+
 class FindEpicV3Tests(unittest.TestCase):
     """BG0099: _find_epic must resolve a v3 ULID epic - split('-')[0] yielded 'EP' and broke
     story-to-epic wiring on the default (schema-v3) era."""

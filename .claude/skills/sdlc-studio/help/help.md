@@ -92,6 +92,8 @@ The tooling sprint uses to create and close artifacts the same way every time (t
 | --- | --- |
 | `scripts/artifact.py new --type <type> --title ...` | Create any of the 8 numbered artifacts: collision-free id, valid scaffold, index row, parent-epic wiring, `Created-by` + `Raised-by` stamps |
 | `scripts/artifact.py new --template full` | Scaffold the full template (all sections) instead of the minimal stub |
+| `scripts/artifact.py new --template planning` | The lean pre-implementation tier (story/epic): ACs with `Verify:` + `Verification target:`, scope, technical notes - under 60 lines, no implementation furniture. Promote before implementation |
+| `scripts/artifact.py promote --id <ID>` | Promote a planning-tier artifact to the full template (adds the deferred sections; idempotent) |
 | `scripts/artifact.py batch --type <type> --count N` | Reserve an id range and write N pre-wired scaffolds atomically (fan-out authoring); implies `--template full` |
 | `scripts/next_id.py allocate --type <type>` | The next collision-free id for a type (what `new`/`batch`/`file_finding` call internally; `--remote` also considers `origin/main`) |
 | `scripts/artifact.py close --id <ID> --verdict approve` | Terminal-transition an artifact and record run telemetry |
@@ -306,6 +308,8 @@ Skill-internal helpers live in the skill's `scripts/` directory (`$CLAUDE_SKILL_
 | `/sdlc-studio lessons list` | Print accumulated project lessons (`.local/lessons.md`) |
 | `/sdlc-studio lessons add` | Append a new lesson to `.local/lessons.md` (**the default tier**) |
 | `/sdlc-studio lessons prune --older EP0003` | Drop entries for old epics |
+| `/sdlc-studio lessons revalidate` | List open lessons with their validity horizon; `--close` / `--extend` / `--stamp` them (gated at the sprint close) |
+| `/sdlc-studio lessons summary` | Regenerate `retros/LESSONS-SUMMARY.md`, the digest the next sprint reads (gated at the sprint close) |
 
 ### Plan Files
 
