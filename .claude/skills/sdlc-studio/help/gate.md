@@ -126,6 +126,7 @@ two lessons lanes alone (a close with no retro due). Deselecting a bound lane
 | Group | Checks | Blocks? |
 | --- | --- | --- |
 | **Artifact quality** | `conformance` (lifecycle stages), `validate` (structure/vocab), `integrity` (required links/refs), `constitution` (project principles) | yes (constitution only when `constitution.enforce`) |
+| **Engagement floor** | `engagement-floor` (a shipped multi-file unit with no AC / Verify / linked plan) | yes (advisory under `engagement_floor: judgement`) |
 | **Index consistency** | `reconcile` (file-census drift), `duplicate-id` | yes |
 | **Provenance** | `provenance` (tool-created stamps) | only when `provenance.enforce` |
 | **Skill docs (skill repo only)** | `doc-coverage` (every command/script documented), `disclosure` (progressive-disclosure hygiene), `doc-freshness` (LATEST.md vs reality) | doc-coverage yes; disclosure + doc-freshness advisory |

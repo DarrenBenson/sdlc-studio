@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 5 |
+| Open | 6 |
 | In Progress | 0 |
 | Fixed | 33 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **117** |
+| **Total** | **118** |
 
 ## All Bugs
 
@@ -84,6 +84,7 @@
 | [BG0115](BG0115-authorship-value-accepts-a-multi-line-author-corrupting.md) | authorship_value accepts a multi-line author, corrupting the Raised-by line and the index row | Fixed | High | 2026-07-13 | 2026-07-13 |
 | [BG0116](BG0116-a-consuming-project-s-first-retro-or-review.md) | a consuming project's first retro or review lands as reconcile drift (no meta index bootstrap) | Open | Low | 2026-07-13 | 2026-07-13 |
 | [BG0117](BG0117-a-prose-field-can-invent-a-metadata-line.md) | a prose field can invent a metadata line in an artefact body; the low-consolidation bullet squeezes a summary onto one line | Open | Low | 2026-07-13 | 2026-07-13 |
+| [BG0118](BG0118-engagement-floor-over-refuses-an-extension-less-real.md) | engagement-floor over-refuses an extension-less real file in Affects (Makefile, Dockerfile, dotfiles) | Open | Low | 2026-07-13 | 2026-07-13 |
 
 ## Archived Releases
 

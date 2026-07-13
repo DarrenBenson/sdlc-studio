@@ -126,7 +126,10 @@ rules, the agents/services) live in that project's agent-instructions file
     and write acceptance criteria (one per interaction) before any code. Judgement
     still scales everything above the floor (a single-file fix in an unspecced
     repo needs no ceremony), and an operator who accepts the risk may opt out with
-    `engagement_floor: judgement` in `.config.yaml`. The default is the floor.
+    `engagement_floor: judgement` in `.config.yaml`. The default is the floor. Where
+    an sdlc-studio workspace exists this is mechanically checked, not just asked for:
+    the `engagement-floor` gate lane refuses a shipped multi-file unit that carries no
+    acceptance criterion, `Verify:` line, or linked plan (see reference-config).
 
 ## Project constitution {#constitution}
 

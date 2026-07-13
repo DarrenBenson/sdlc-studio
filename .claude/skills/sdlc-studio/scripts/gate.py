@@ -119,6 +119,28 @@ def _doc_coverage(root: str) -> dict:
     return {"count": blocking, "blocking": True, "detail": detail}
 
 
+def _engagement_floor(root: str) -> dict:
+    """Blocking standard-gate lane: no shipped multi-file unit may reach a done outcome with no
+    planning artefact (an AC, a Verify line, or a linked plan). Deterministic - a source-file
+    count (declared Affects UNION the git cross-check) and a presence check, no model judgement.
+
+    Advisory, never blocking, when the project sets `engagement_floor: judgement` - the documented
+    project-global opt-out. A per-unit or project waiver, or the `adopt_after` cutoff, are the
+    other auditable ways past; a plain --skip deselects the lane visibly, it does not pass it.
+    """
+    import engagement_floor
+    result = engagement_floor.detect(root)
+    s = result["summary"]
+    # A forward cutoff (adopt_after above the highest existing id) silently disarms the whole
+    # floor - it must FAIL loudly, even in judgement mode, because it is a config error, not the
+    # sanctioned opt-out (that is judgement mode, which stays visible).
+    if s["cutoff_forward"]:
+        return {"count": 1, "blocking": True, "detail": engagement_floor.remedy_detail(result)}
+    blocking = result["mode"] != "judgement"
+    return {"count": s["violations"], "blocking": blocking,
+            "detail": engagement_floor.remedy_detail(result)}
+
+
 def _mutation(root: str) -> dict:
     """Advisory v1 lane: surface the mutation-check report's survivors. An absent
     report reads NOT-RUN (advisory) - never PASS: silence is not assertion integrity."""
@@ -243,6 +265,7 @@ BLOCKING_ON_ERROR = {
     "conformance", "reconcile", "index-derived", "validate",
     "integrity", "duplicate-id", "doc-coverage", "retro", "verify",
     "lessons-summary", "lessons-validity", "handoff", "review-legs",
+    "engagement-floor",
 }
 
 DEFAULT_CHECKS = {
@@ -255,6 +278,7 @@ DEFAULT_CHECKS = {
     "duplicate-id": _duplicate_id,
     "provenance": _provenance,
     "doc-coverage": _doc_coverage,
+    "engagement-floor": _engagement_floor,
     "disclosure": _disclosure,
     "doc-freshness": _doc_freshness,
     "mutation": _mutation,

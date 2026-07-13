@@ -114,7 +114,7 @@ Default-on (NOT advisory): governs when the planning pass may be skipped.
 
 | Setting | Default | Used In |
 | --- | --- | --- |
-| `engagement_floor` | `floor` | reference-doctrine rule 16, agent-instructions template |
+| `engagement_floor` | `floor` | reference-doctrine rule 16, agent-instructions, `engagement_floor.py` |
 
 `floor` (default): a multi-file change in a spec-bearing repo REQUIRES the planning
 pass - a spec delta naming each interacting requirement plus one acceptance criterion
@@ -122,6 +122,8 @@ per interaction - before any code. This is the measured rule from the skill's 20
 benchmark rerun (judgement-gated engagement matched no-process on base models; the
 mandated pass cut escapes 4-5x for ~10-20% more tokens). `judgement`: the operator
 accepts that risk and restores pure scale-to-size judgement everywhere.
+
+**Mechanically enforced** by the blocking `engagement-floor` gate lane (`engagement_floor.py`, see reference-scripts-verify): a shipped unit skips the planning pass only by planning (AC / `Verify:` / linked plan) or DECLARING a real single-file `Affects` path (prose like `n/a` does not count); a multi-file unit with no plan fails `unplanned`, one that neither plans nor declares fails `undeclared`. The guarantee is precise: pure omission is caught, and understatement is cross-checked by git only in a solo-id commit - understatement in a commit shared with another judged id is a known limit, tracked as CR0239. Two config shapes so mode and cutoff never collide - scalar `engagement_floor: judgement` opts out everywhere (lane reports, never blocks), or a mapping with `adopt_after:` (forward-only id cutoff; above the highest existing id is refused as a silent disarm) and optional `mode:`. `decisions.py waive --subject rule:engagement-floor[:<id>]` waives the project or one unit.
 
 ---
 

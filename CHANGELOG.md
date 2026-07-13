@@ -84,6 +84,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A mechanical engagement floor: ship a multi-file change with no planning and the gate
+  refuses (CR0229).** The v4 benchmark showed weaker models judging a multi-file, spec-touching
+  ticket too small for ceremony and shipping the hidden-requirement defect the ceremony catches,
+  while stronger models engaged unprompted - so the threshold cannot be left to the model's own
+  judgement. A deterministic `engagement-floor` gate lane now refuses a shipped unit that neither
+  planned (acceptance criteria, a `Verify:` line, or a linked plan) nor declares a real
+  single-file footprint in `Affects:`. The signal is a file count and a presence check, no model
+  call. A change is judged multi-file from its declared `Affects` and, as a cross-check against
+  understatement, the source files its own commit touched; adoption is gated by a cutoff so the
+  floor does not fail the existing backlog, and a cutoff set beyond the current work is refused
+  rather than silently disarming the floor. What the floor guarantees is stated precisely: pure
+  omission cannot dodge it, and understatement is caught when a unit's commit names only that
+  unit. Understatement in a commit shared with another work item is a known limit - git cannot
+  attribute a file to one id among several - and is tracked for a commit-id convention that would
+  close it. The operator opt-out is a recorded waiver, not a silent switch. Pairs with the
+  doctrine rule shipped in v4.
+
 - **A required review leg can no longer be waved away in prose (BG0110).** The unified review's
   required legs are PRD, TRD, TSD and Persona. When one was absent, the review - being
   model-authored prose - could reclassify it as "optional polish" and still pass, so a required

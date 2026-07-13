@@ -128,8 +128,8 @@ class GateRealWrapperTests(unittest.TestCase):
     def test_default_checks_present(self) -> None:
         self.assertEqual(set(gate.DEFAULT_CHECKS),
                          {"conformance", "reconcile", "index-derived", "validate", "constitution",
-                          "integrity", "duplicate-id", "provenance", "doc-coverage", "disclosure",
-                          "doc-freshness", "mutation", "hook-enabled"})
+                          "integrity", "duplicate-id", "provenance", "doc-coverage", "engagement-floor",
+                          "disclosure", "doc-freshness", "mutation", "hook-enabled"})
 
     def test_real_wrappers_run_and_shape(self) -> None:
         # Exercises the real checks end-to-end against this repo; asserts structure,
@@ -139,7 +139,7 @@ class GateRealWrapperTests(unittest.TestCase):
                           "root (running from an installed copy)")
         r = gate.run_gate(str(REPO))
         self.assertIsInstance(r["ok"], bool)
-        self.assertEqual(len(r["checks"]), 13)
+        self.assertEqual(len(r["checks"]), 14)
         for c in r["checks"]:
             self.assertEqual(set(c), {"check", "count", "blocking", "status", "detail"})
 
@@ -938,6 +938,56 @@ class HookEnabledLaneTests(unittest.TestCase):
     def test_lane_registered_and_advisory(self) -> None:
         self.assertIn("hook-enabled", gate.DEFAULT_CHECKS)
         self.assertNotIn("hook-enabled", gate.BLOCKING_ON_ERROR)
+
+
+class EngagementFloorLaneTests(unittest.TestCase):
+    """The engagement-floor lane is a blocking standard-gate lane by default, and advisory
+    (never blocking) when the project sets `engagement_floor: judgement`."""
+
+    def _unit(self, root, *, ac=False):
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        lines = ["# BG0500: sample", "", "> **Status:** Fixed",
+                 "> **Affects:** a/one.py, a/two.py", ""]
+        if ac:
+            lines += ["## Acceptance Criteria", "", "### AC1: works", "- a criterion"]
+        (d / "BG0500-sample.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    def test_lane_registered_and_blocking(self) -> None:
+        self.assertIn("engagement-floor", gate.DEFAULT_CHECKS)
+        self.assertIn("engagement-floor", gate.BLOCKING_ON_ERROR)
+
+    def test_multifile_no_ac_fails_the_lane(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            r = gate._engagement_floor(str(root))
+            self.assertEqual(r["count"], 1)
+            self.assertTrue(r["blocking"])
+
+    def test_planning_present_passes_the_lane(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, ac=True)
+            r = gate._engagement_floor(str(root))
+            self.assertEqual(r["count"], 0)
+
+    def test_judgement_mode_is_advisory_not_blocking(self) -> None:
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest("PyYAML absent - the judgement-mode config cannot be read")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "engagement_floor: judgement\n", encoding="utf-8")
+            r = gate._engagement_floor(str(root))
+            self.assertEqual(r["count"], 1)      # still reported
+            self.assertFalse(r["blocking"])       # but never blocks
+            # ...so the whole gate stays green over it.
+            report = gate.run_gate(str(root), only=["engagement-floor"])
+            self.assertTrue(report["ok"])
 
 
 class HookEnabledEquivalentConfigTests(HookEnabledLaneTests):

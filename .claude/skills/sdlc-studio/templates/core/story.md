@@ -14,7 +14,12 @@ Related: help/story.md, reference-story.md
 > **Reviewer:** {{reviewer}}
 > **Created:** {{created_date}}
 > **GitHub Issue:** {{github_issue}}
+> **Affects:** {{source files this story touches, comma-separated}}
 > **Plan-Review:** {{plan_review}}
+
+<!-- Affects: the source files this story changes. Declaring it lets the engagement floor
+     confirm a single-file change is genuinely small; a multi-file change without an acceptance
+     criterion is refused. See reference-config.md#engagement-floor. -->
 
 <!-- Plan-Review (schema v3, optional): the plan-review gate's verdict for a spec-derived
      story, as `verdict · reviewer · date` - recorded via `plan_review record` (which pins the

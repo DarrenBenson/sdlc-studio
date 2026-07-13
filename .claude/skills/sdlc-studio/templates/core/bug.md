@@ -13,6 +13,7 @@ Related: help/bug.md, reference-bug.md
 > **Assignee:** {{assignee}}
 > **Created:** {{created_date}}
 > **Verification depth:** {{verification_depth}}
+> **Affects:** {{source files this fix touches, comma-separated}}
 
 ## Summary
 

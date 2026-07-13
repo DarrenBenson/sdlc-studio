@@ -9,12 +9,12 @@
 | Proposed | 3 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 229 |
+| Complete | 230 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 6 |
 | Blocked | 0 |
-| **Total** | **238** |
+| **Total** | **239** |
 
 ## All Changes
 
@@ -50,7 +50,7 @@
 | [CR-0226](CR0226-a-brand-new-readme-newcomer-value-first-existing.md) | a brand-new README: newcomer value first, existing users get their own page | Complete | High | Improvement | 2026-07-10 | -- |
 | [CR-0227](CR0227-the-sdlc-studio-white-paper-the-mill-described.md) | the sdlc-studio white paper: the mill, described properly | Complete | High | Feature | 2026-07-10 | -- |
 | [CR-0228](CR0228-rerun-the-benchmark-suite-on-the-v4-release.md) | rerun the benchmark suite on the v4 release candidate | Complete | High | Improvement | 2026-07-10 | -- |
-| [CR-0229](CR0229-engagement-floor-mandatory-planning-when-the-change-is.md) | engagement floor: mandatory planning when the change is multi-file in a spec-bearing repo | Proposed | High | Improvement | 2026-07-10 | -- |
+| [CR-0229](CR0229-engagement-floor-mandatory-planning-when-the-change-is.md) | engagement floor: mandatory planning when the change is multi-file in a spec-bearing repo | Complete | High | Improvement | 2026-07-10 | -- |
 | [CR-0230](CR0230-benchmark-harness-spec-updated-oracle-is-phrasing-brittle.md) | benchmark harness: spec-updated oracle is phrasing-brittle | Superseded | Medium | Improvement | 2026-07-10 | -- |
 | [CR-0231](CR0231-protocol-v3-longitudinal-and-multi-team-fixtures-for.md) | protocol v3: longitudinal and multi-team fixtures for the compounding-value story | Superseded | Medium | Improvement | 2026-07-10 | -- |
 | [CR-0232](CR0232-engagement-floor-prose-half-the-doctrine-states-the.md) | engagement floor, prose half: the doctrine states the mandatory planning rule | Complete | High | Improvement | 2026-07-10 | -- |
@@ -60,6 +60,7 @@
 | [CR-0236](CR0236-the-lessons-close-loop-is-doctrine-not-mechanism.md) | The lessons close-loop is doctrine, not mechanism: gate the summary at close and the read at start | Complete | High | Improvement | 2026-07-13 | -- |
 | [CR-0237](CR0237-verify-ac-conflates-an-omitted-verify-line-with.md) | verify_ac conflates an omitted Verify line with a declared manual one | Proposed | Medium | Improvement | 2026-07-13 | -- |
 | [CR-0238](CR0238-triage-noise-open-codes-the-shared-revision-row.md) | triage_noise open-codes the shared revision-row writer instead of calling it | Proposed | Low | Improvement | 2026-07-13 | -- |
+| [CR-0239](CR0239-commit-id-convention-for-per-id-file-attribution.md) | Commit-id convention for per-id file attribution in the engagement floor | Proposed | Medium | Improvement | 2026-07-13 | -- |
 
 ## Archived Releases
 
