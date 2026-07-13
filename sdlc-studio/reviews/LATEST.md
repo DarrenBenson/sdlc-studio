@@ -16,6 +16,28 @@
 
 ## Current
 
+- **v4.1 SPRINT PLANNED - EP0031 + EP0032, 11 UNITS, 3 WAVES (2026-07-13).** The v4.1 window is
+  OPEN for a week; the tag cuts when the backlog empties. Operator tests by forward-porting to
+  the install, so land work in small green units on trunk.
+  - **EP0031 release integrity** (the gates that make the tag trustworthy): BG0111 (lessons
+    data loss), BG0108 (creators emit what the validator rejects), BG0109, then the sequenced
+    gate three - CR0233 (`gate --release`) -> BG0110 (leg-presence + waiver primitive) ->
+    CR0229 (engagement floor, mechanical). They share `gate.py`'s check registry, and
+    `test_gate.py` asserts the exact check-name set, so the sequencing is declared as
+    `Depends on:`, not left to memory.
+  - **EP0032 run-close and agent DX**: CR0223 (handoff guide - the KEYSTONE, it builds the
+    run-state object that does not exist today) -> CR0225 (appetite breaker); plus CR0224,
+    CR0234, CR0235 in parallel.
+  - **Triage decisions D0018-D0022.** CR0230/CR0231 Superseded and re-homed to `sdlc-bench`
+    (RFC0029 gave it the fixtures); CR0224 split, its PVD-wide edge list to RFC0030 (no honest
+    derivation - basename import matching); CR0225's token breaker dropped as unbuildable (a
+    script cannot observe token spend, so the budget would be self-reported by the actor it
+    constrains); CR0229's floor takes a required `Affects` field cross-checked against git,
+    adopting from the v4.1 tag date; BG0110 gates the four document legs, CODE excluded.
+  - **Known trap, unfixed until CR0234:** `sprint.py plan --crs A --crs B` silently keeps only
+    the last value. It produced a plan missing two CRs during this very grooming pass. Use a
+    `--worklist` file until it is fixed.
+
 - **EP0030 THE GENERATED TEAM DELIVERED - BACKLOG CLEAR, v4 TAG READY (2026-07-10).**
   The GA-gating epic closed 9/9 through the full independence gate (8 critic REJECTs
   across 6 units, every repair test-first and re-verified): team/stakeholder
@@ -45,7 +67,7 @@
   critic-approved, evals green -> RETRO0018. Preceded by the nine-rc-blocker fix pack
   (RETRO0017) and EP0024/25 release engineering (RETRO0016); the five-leg RV0007 review filed
   BG0071-BG0099 / CR0202-CR0211 / RFC0027 - all now delivered.
-- **Backlog now: EMPTY.** No non-terminal artefacts across every type - this is the precondition the
+- **Backlog now: 11 units in the v4.1 sprint above** (was EMPTY at the v4.0 tag). No non-terminal artefacts across every type - this is the precondition the
   operator set for the v4.0 tag. RFC0027 accepted (option C); the 9 founding epics (EP0001-0009) that
   carried a stale `Ready` remain closed to Done. **The tag / freeze lift / push to consuming projects
   stay an explicit operator action** (see `v4-rc-readiness.md`); `main` runs ahead of `origin`.
