@@ -1,6 +1,6 @@
 # RFC-0030: PVD-wide dependency graph: a declared provides/consumes contract, not inferred imports
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Date:** 2026-07-13
 > **Created-by:** sdlc-studio file
 
@@ -22,10 +22,11 @@ Option 1 (declared provides/consumes), but do not build it until a real multi-re
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Act on this finding or keep status quo | Open |
+| D1 | Act on this finding or keep status quo | Resolved (D0027): accepted in principle, build on demand |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-13 | audit | Filed |
+| 2026-07-14 | Darren | Accepted in principle and parked (operator decision D0027): the declared provides/consumes manifest contract is the only honest derivation, but it is not built until a real multi-repo consuming project needs it - CR0224's artefact-level cross-repo dependency resolution (shipped v4.1) may already suffice. Revisit on demand. |

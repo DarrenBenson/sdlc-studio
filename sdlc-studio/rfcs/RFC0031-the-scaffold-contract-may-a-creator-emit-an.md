@@ -1,6 +1,6 @@
 # RFC-0031: The scaffold contract: may a creator emit an artefact that cannot pass validation?
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Date:** 2026-07-13
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Darren; human; v1
@@ -23,10 +23,11 @@ Option 3, then reconsider. The critic's own finding is that the validator is RIG
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Act on this finding or keep status quo | Open |
+| D1 | Act on this finding or keep status quo | Resolved (D0028): status quo accepted, documented |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-13 | audit | Filed |
+| 2026-07-14 | Darren | Resolved status quo (operator decision D0028): a content-less scaffold is EXPECTED to fail validation until filled - the validator doing its job. Making it green would require writing filler into the acceptance-criteria section, which passes validate's no-ac rule AND silently promotes an unspecified story to 'specified' in conformance (the BG0108 corruption class). Documented as expected in reference-scripts-create.md; era-aware validation (warn-until-edited) reconsidered only if it trips someone in the field. No code change. |

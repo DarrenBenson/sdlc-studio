@@ -41,7 +41,13 @@ creation and the artefact is born clean: `--persona` and `--ac` (repeatable) for
 `--summary --option --recommendation` for an RFC. Batch items take the same keys in the
 spec JSON. Omit them and you get a scaffold: the `{{placeholder}}` slots stay for the
 agent to fill, and `validate.py check` reports them as unfilled until it does - a scaffold
-is not yet a specified artefact, and the creator does not pretend otherwise.
+is not yet a specified artefact, and the creator does not pretend otherwise. This is by
+design: a freshly created content-less scaffold is meant to fail validation until filled -
+the validator doing its job, not a defect. Making it pass would mean writing filler into
+the acceptance-criteria section, which satisfies the `no-ac` rule and silently promotes an
+unspecified story to `specified` in conformance - the corruption the empty-scaffold check
+exists to stop. So create then fill then validate; do not read the create-time report as a
+failure.
 
 A story's criteria may carry their proof: `--verify` (repeatable, positional with `--ac`)
 writes the executable check on the matching AC, and `--target functional|conversational|soak|live`
