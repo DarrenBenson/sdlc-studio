@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 3 |
+| Open | 4 |
 | In Progress | 0 |
 | Fixed | 28 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **110** |
+| **Total** | **111** |
 
 ## All Bugs
 
@@ -77,6 +77,7 @@
 | [BG0108](BG0108-artifact-py-schema-v3-skeletons-fail-their-own.md) | artifact.py schema-v3 skeletons fail their own validator (no Raised-by line) | Open | Medium | 2026-07-11 | 2026-07-11 |
 | [BG0109](BG0109-file-finding-py-hardcodes-audit-as-the-revision.md) | file_finding.py hardcodes 'audit' as the revision-history author, ignoring --author | Open | Low | 2026-07-11 | 2026-07-11 |
 | [BG0110](BG0110-review-lets-a-required-leg-tsd-be-self.md) | review lets a required leg (TSD) be self-downgraded to optional in prose without an explicit waiver | Open | -- | 2026-07-13 | 2026-07-13 |
+| [BG0111](BG0111-lessons-written-by-lessons-py-are-lost-on.md) | Lessons written by lessons.py are lost on the next skill update, and project-specific lessons are dumped into the shared cross-project registry | Open | -- | 2026-07-13 | 2026-07-13 |
 
 ## Archived Releases
 

@@ -25,6 +25,15 @@ and from per-project memory (project-specific facts).
 | [LL0010](LL0010-validate-a-defence-using-the-bug-it-defends-against-before-shipping-it.md) | Validate a defence using the bug it defends against, before shipping it | quality-gate, defence, testing, process, bug-class |
 | [LL0011](LL0011-a-gate-that-fails-on-ci-but-passes-locally-is-an-environment-gap-until-proven-otherwise.md) | A gate that fails on CI but passes locally is an environment gap until proven otherwise | ci, debugging, environment, fail-loud |
 | [LL0012](LL0012-a-new-private-helper-that-shadows-a-module-level-name-silently-breaks-every-existing-caller.md) | A new private helper that shadows a module-level name silently breaks every existing caller | python, refactoring, naming, testing |
+| [LL0013](LL0013-an-ac-that-enumerates-the-paths-it-checks-silently-exempts-the-path-it-forgot.md) | An AC that enumerates the paths it checks silently exempts the path it forgot | acceptance-criteria, testing, false-green, bug-class |
+| [LL0014](LL0014-a-mocked-boundary-tests-the-code-on-your-side-of-it-and-nothing-else.md) | A mocked boundary tests the code on your side of it, and nothing else | testing, mocking, coverage, false-green |
+| [LL0015](LL0015-a-guard-that-only-catches-the-total-case-is-not-a-guard.md) | A guard that only catches the total case is not a guard | defence, data-loss, bug-class, review |
+| [LL0016](LL0016-when-two-code-paths-build-the-same-artefact-they-must-agree-on-what-it-means.md) | When two code paths build the same artefact, they must agree on what it MEANS | consistency, data-loss, bug-class, architecture |
+| [LL0017](LL0017-a-function-that-only-ever-appears-inside-patch-is-untested-however-many-tests-cover-it.md) | A function that only ever appears inside patch() is untested, however many tests cover it | testing, mocking, coverage, false-green, bug-class |
+| [LL0018](LL0018-it-failed-and-it-did-not-run-are-different-questions-a-retry-loop-that-conflates-them-never-converges.md) | 'It failed' and 'it did not run' are different questions; a retry loop that conflates them never converges | retry, idempotence, status, bug-class, convergence |
+| [LL0019](LL0019-except-exception-does-not-catch-a-cancellation-a-lock-released-only-there-leaks-on-every-shutdown.md) | except Exception does not catch a cancellation - a lock released only there leaks on every shutdown | asyncio, python, shutdown, locks, bug-class |
+| [LL0020](LL0020-a-test-fixture-that-supplies-the-thing-under-test-proves-nothing-about-production.md) | A test fixture that supplies the thing under test proves nothing about production | testing, fixtures, observability, false-green, bug-class |
+| [LL0021](LL0021-verify-a-deploy-by-looking-at-the-running-system-not-by-re-reading-the-green-build.md) | Verify a deploy by looking at the running system, not by re-reading the green build | deploy, verification, observability, process |
 
 ## Notes
 
