@@ -139,8 +139,18 @@ def _find_consolidation_cr(root, theme: str) -> Path | None:
 
 
 def _bullet(title: str, detail: str) -> str:
+    """One consolidation-list item. A multi-line detail is rendered faithfully: its later lines
+    are indented two spaces so they stay part of the list item, rather than flattened by an
+    embedded raw newline that would break them OUT of the bullet into bare top-level lines (and a
+    line shaped like `> **Status:** x` would forge a metadata line). Nothing is dropped."""
     detail = (detail or "").strip()
-    return f"- **{title}**" + (f": {detail}" if detail else "")
+    if not detail:
+        return f"- **{title}**"
+    first, *rest = detail.splitlines()
+    lines = [f"- **{title}**: {first}"]
+    for ln in rest:
+        lines.append(f"  {ln}" if ln.strip() else "")  # indent content; keep a blank line blank
+    return "\n".join(lines)
 
 
 def _append_finding(path: Path, title: str, detail: str) -> None:
@@ -199,6 +209,12 @@ def _new_consolidation_cr(root, theme: str, title: str, detail: str, today: str,
     # Revision History. A consolidation CR is the branch a Low finding takes on the default era,
     # so a literal here would be the commonest wrong provenance record of all.
     raised_by = sdlc_md.authorship_value(author, root)
+    author_name = sdlc_md.authorship_name(raised_by)
+    # Lazy import (the file_finding <-> triage_noise load-time cycle is safe at call time): the
+    # consolidation CR is the third creator, so its revision-history row and index row go through
+    # the SAME shared writers the other two use, never a hand-copied expression that can drift.
+    import file_finding  # noqa: E402
+    rev = file_finding.rev_row(today, {"_raised_by": raised_by}, "Consolidation opened")
     body = (
         f"# {disp}: {cr_title}\n\n"
         f"> **Status:** {create_status}\n> **Priority:** Low\n> **Type:** Improvement\n"
@@ -214,20 +230,20 @@ def _new_consolidation_cr(root, theme: str, title: str, detail: str, today: str,
         "**Effort:** S\n\n"
         f"## Consolidated Findings\n\n{_bullet(title, detail)}\n\n"
         "## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
-        + sdlc_md.join_row([today, sdlc_md.authorship_name(raised_by),
-                            "Consolidation opened"]) + "\n")
+        f"{rev}\n")
     path = root / sdlc_md.ARTIFACT_TYPES["cr"][0] / f"{file_id}-{slug}.md"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(body, encoding="utf-8")
     # Index the CR through the same header-driven builder the create paths use (recomputes
-    # counts); lazy import breaks the file_finding <-> triage_noise load-time cycle.
-    import file_finding  # noqa: E402
+    # counts). The row carries the resolved author so an Author column added by a consuming
+    # project renders the authorship of record rather than '--'.
     idx = path.parent / "_index.md"
     if idx.exists():
         hdr = sdlc_md.find_data_header(idx.read_text(encoding="utf-8").splitlines())
         if hdr:
             link = f"[{disp}]({file_id}-{slug}.md)"
-            rowf = {"date": today, "priority": "Low", "ctype": "Improvement"}
+            rowf = {"date": today, "priority": "Low", "ctype": "Improvement",
+                    "author": author_name}
             row = sdlc_md.row_from_header(hdr[1], link, cr_title, create_status, rowf)
             file_finding.append_index_row(root, "cr", row)
     record_creation(root)             # a minted artefact counts against the session budget

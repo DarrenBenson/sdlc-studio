@@ -12,7 +12,7 @@ Related: help/epic.md, reference-epic.md
 ## Summary
 
 | Status | Count |
-| -------- | ------- |
+| --- | --- |
 | Draft | {{draft_count}} |
 | Ready | {{ready_count}} |
 | Approved | {{approved_count}} |
@@ -23,7 +23,7 @@ Related: help/epic.md, reference-epic.md
 ## Epics
 
 | ID | Title | Status | Owner | Stories | Target |
-|----|-------|--------|-------|---------|--------|
+| --- | --- | --- | --- | --- | --- |
 | [EP{{epic_id}}](EP{{epic_id}}-{{epic_slug}}.md) | {{epic_title}} | {{status}} | {{owner}} | {{story_count}} | {{target}} |
 
 ## Notes

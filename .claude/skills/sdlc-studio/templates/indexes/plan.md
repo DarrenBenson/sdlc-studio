@@ -11,7 +11,7 @@ Related: help/code.md, reference-code.md
 ## Summary
 
 | Status | Count |
-| -------- | ------- |
+| --- | --- |
 | Draft | {{draft_count}} |
 | In Progress | {{in_progress_count}} |
 | Complete | {{complete_count}} |
@@ -20,7 +20,7 @@ Related: help/code.md, reference-code.md
 ## Plans
 
 | ID | Story | Epic | Status | Created |
-|----|-------|------|--------|---------|
+| --- | --- | --- | --- | --- |
 | [PL{{plan_id}}](PL{{plan_id}}-{{plan_slug}}.md) | [US{{story_id}}](../stories/US{{story_id}}-{{story_slug}}.md) | [EP{{epic_id}}](../epics/EP{{epic_id}}-{{epic_slug}}.md) | {{status}} | {{created_date}} |
 
 ## Notes

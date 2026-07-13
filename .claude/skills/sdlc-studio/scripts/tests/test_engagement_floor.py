@@ -411,6 +411,44 @@ class ExtensionlessFootprintTests(unittest.TestCase):
             self.assertTrue(u["violation"])
 
 
+class RecogniserAgreementTests(unittest.TestCase):
+    """BG0119: the declared-boolean and the source-file count must recognise a real file footprint
+    the SAME way. The declared boolean (`_affects_declared`) and the file count both route through
+    one recogniser, so a token that is a real file is never seen by one and missed by the other. R1
+    (prose/version strings are not files) must stay closed in both."""
+
+    def test_bare_source_file_declared_and_counted_agree(self):
+        # RED before the fix: a bare code filename (no directory) was seen as a declaration by
+        # `_affects_declared` (real file) but counted 0 by `_declared_source_files`, which used the
+        # narrower `affects_files` (a non-slash token only counts on .py/.md/.yaml/.yml/.sh). The
+        # two recognisers disagreed on the same field. After: both see one real source footprint.
+        ef = _load()
+        text = "> **Affects:** engine.rs\n"
+        self.assertEqual(len(ef._declared_source_files(text)), 1)  # the count-side recogniser
+        self.assertTrue(ef._affects_declared(text))                # the boolean-side recogniser
+
+    def test_makefile_recogniser_and_declared_boolean_agree(self):
+        # The house-rule case: `Affects: Makefile`. The declared boolean sees one real file; the
+        # shared file recogniser (`_declared_file_tokens`) must see exactly the same one. (Makefile
+        # is a real file but not a SOURCE file, so it legitimately adds 0 to the source count - the
+        # agreement is at the recogniser layer, not the source-suffix filter.)
+        ef = _load()
+        text = "> **Affects:** Makefile\n"
+        self.assertEqual(len(ef._declared_file_tokens(text)), 1)
+        self.assertTrue(ef._affects_declared(text))
+        self.assertEqual(bool(ef._declared_file_tokens(text)), ef._affects_declared(text))
+
+    def test_r1_prose_and_version_string_are_footprints_in_neither_recogniser(self):
+        # R1 must stay closed in BOTH recognisers: prose (`n/a`) and a version string (`v1.2`) can
+        # be held to nothing, so neither the declared boolean nor the file recogniser may accept them.
+        ef = _load()
+        for noise in ("n/a", "various", "v1.2"):
+            text = f"> **Affects:** {noise}\n"
+            self.assertEqual(ef._declared_file_tokens(text), [], noise)
+            self.assertFalse(ef._affects_declared(text), noise)
+            self.assertEqual(ef._declared_source_files(text), set(), noise)
+
+
 class BatchCommitUnderstatementLimitTests(unittest.TestCase):
     """R2 (documented LIMIT, not a hole to close): understatement (declare 1 file, touch 3) is
     NOT caught when the unit shares its commit with another judged id, because F3's batch-skip

@@ -7,6 +7,8 @@ Run from the repo root:
 from __future__ import annotations
 
 import importlib.util
+import inspect
+import re
 import sys
 import tempfile
 import unittest
@@ -130,6 +132,30 @@ class ConsolidationTests(unittest.TestCase):
             self.assertIsNone(res.get("consolidated_into"))          # individual, into inbox
 
 
+class ConsolidationBulletTests(unittest.TestCase):
+    """A consolidation bullet must render a multi-line summary faithfully, not squeeze it onto one
+    line. A raw newline embedded in the bullet breaks the summary's later lines OUT of the list
+    item, so they land as bare top-level lines (and a line shaped like `> **Status:** x` forges a
+    metadata line). Each continuation line is indented to stay part of the item instead."""
+
+    def test_multi_line_summary_is_rendered_faithfully_not_flattened(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d))
+            summary = "first line of detail\nsecond line of detail\nthird line"
+            ff.file_finding(root, "bug", "a low nit", {**_bug("low"), "summary": summary})
+            crs = list((root / "sdlc-studio" / "change-requests").glob("CR*.md"))
+            self.assertEqual(len(crs), 1)
+            lines = crs[0].read_text(encoding="utf-8").splitlines()
+            for ln in summary.splitlines():                    # nothing is dropped
+                self.assertTrue(any(ln in b for b in lines), f"summary line lost: {ln!r}")
+            i = next(k for k, ln in enumerate(lines) if ln.startswith("- **a low nit**"))
+            # every continuation line is indented under the bullet, never a bare top-level line
+            self.assertTrue(lines[i + 1].startswith("  "),
+                            f"continuation not indented (flattened): {lines[i + 1]!r}")
+            self.assertTrue(lines[i + 2].startswith("  "),
+                            f"continuation not indented (flattened): {lines[i + 2]!r}")
+
+
 class SessionCapTests(unittest.TestCase):
     """AC2: the N+1th finding in a session is refused loudly."""
 
@@ -173,6 +199,72 @@ class ConsolidationSlugTests(unittest.TestCase):
             self.assertNotIn("Low-severity low-severity", text)
             # the stored marker key is unchanged, so read-back matching still folds the next find
             self.assertIn("> **Consolidation:** low-severity-bugs", text)
+
+
+def _consolidation_rev_row(body: str) -> str:
+    """The first Revision History data row of a consolidation CR body."""
+    lines = body.splitlines()
+    head = next(i for i, ln in enumerate(lines) if ln.strip().startswith("## Revision History"))
+    rows = [ln for ln in lines[head:] if ln.strip().startswith("|")]
+    return rows[2]  # header, separator, then the opened row
+
+
+class ConsolidationSharedWriterTests(unittest.TestCase):
+    """The consolidation CR is the third creator. Two distinct properties, two distinct guards:
+
+    * AC1 (singular choke point) is a purely STRUCTURAL benefit - the routed form
+      `rev_row(today, {"_raised_by": x}, "Consolidation opened")` is byte-identical to the
+      open-coded `join_row([today, authorship_name(x), "Consolidation opened"])`, so a regression
+      to open-coding is unobservable at output level. It is guarded at SOURCE level below (mirroring
+      the BG0114 source-scan pattern), which reddens against the open-coded form.
+    * AC2 (index author) and the escaping property are behavioural and guarded by the two tests
+      that follow the source-scan.
+    """
+
+    def test_revision_row_is_built_through_rev_row_not_open_coded(self) -> None:
+        # AC1's benefit is structural (one choke point), unobservable in output because the routed
+        # and open-coded forms render identical bytes. So pin it at source: `_new_consolidation_cr`
+        # must call `file_finding.rev_row(` and must NOT rebuild the row inline with a `join_row([`
+        # carrying the "Consolidation opened" literal. Reddens against a revert to open-coding.
+        src = inspect.getsource(tn._new_consolidation_cr)
+        self.assertIn("file_finding.rev_row(", src,
+                      "the revision row is not routed through the shared rev_row writer")
+        self.assertIsNone(
+            re.search(r"join_row\(\[[^\]]*Consolidation opened", src),
+            "the revision row is open-coded inline via join_row rather than routed through rev_row")
+
+    def test_revision_row_author_pipe_is_escaped(self) -> None:
+        # A second, behavioural guard on the ESCAPING property only (not routing - the source-scan
+        # above owns that): a pipe in the author must be escaped so the revision row stays a single
+        # 3-column row rather than splitting and dropping the Change cell. It does not depend on
+        # which `file_finding` module object is loaded, so it cannot go flaky under full discovery.
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d))
+            ff.file_finding(root, "bug", "a low nit", {**_bug("low"), "author": "Sam | Bob"})
+            crs = list((root / "sdlc-studio" / "change-requests").glob("CR*.md"))
+            self.assertEqual(len(crs), 1)
+            row = _consolidation_rev_row(crs[0].read_text(encoding="utf-8"))
+            self.assertEqual(len(ff.sdlc_md.table_cells(row)), 3, row)  # not split into 4
+            self.assertIn(r"Sam \| Bob", row)                           # escaped, not raw
+            self.assertIn("Consolidation opened", row)                  # Change cell intact
+
+    def test_index_row_carries_the_author(self) -> None:
+        # A consuming project whose CR index defines an Author column: the header-driven row
+        # builder must fill it with the authorship of record, never '--'.
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d))
+            idx = root / "sdlc-studio" / "change-requests" / "_index.md"
+            idx.write_text(
+                "# Index\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| inbox | 0 |\n"
+                "| **Total** | **0** |\n\n## All\n\n"
+                "| ID | Title | Status | Priority | Type | Author | Date |\n"
+                "| --- | --- | --- | --- | --- | --- | --- |\n", encoding="utf-8")
+            ff.file_finding(root, "bug", "a low nit",
+                            {**_bug("low"), "author": "Dani Okafor; agent; v2"})
+            row = next(ln for ln in idx.read_text(encoding="utf-8").splitlines()
+                       if ln.startswith("| ["))
+            cells = ff.sdlc_md.table_cells(row)
+            self.assertEqual(cells[5], "Dani Okafor")  # the Author column, not '--'
 
 
 if __name__ == "__main__":

@@ -66,8 +66,15 @@ def ensure_index(repo_root: Path | str, type_: str, today: str) -> bool:
     text = text.replace("{{last_updated}}", today)
     text = re.sub(r"\{\{[a-z_]*count\}\}", "0", text)  # zero the summary counts
     lines = [ln for ln in text.splitlines() if "{{" not in ln]  # drop sample rows/headings
+    # Dropping a sample line that sat between two blanks leaves a double blank line (MD012);
+    # collapse any run of blanks to one so the fresh index lints clean from creation.
+    collapsed: list[str] = []
+    for ln in lines:
+        if not ln.strip() and collapsed and not collapsed[-1].strip():
+            continue
+        collapsed.append(ln)
     idx.parent.mkdir(parents=True, exist_ok=True)
-    idx.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    idx.write_text("\n".join(collapsed).rstrip() + "\n", encoding="utf-8")
     return True
 
 
@@ -120,11 +127,32 @@ def _md_safe(text) -> str:
     return "`".join(parts)
 
 
+# The `**Field:**` declaration shape at either place `extract_field` anchors a field: a line
+# start (optional blockquote `>`) OR an inline ` · `-separated run. Both the anchor tokens AND
+# the whitespace class are mirrored, so the escape covers exactly what `extract_field` can read
+# - no wider (a `**bold:**` mid-sentence, anchored to neither, is left untouched), no narrower.
+# `[^\S\n]` is all of `\s` (NBSP, thin space, form feed, ...) EXCEPT newline, matching
+# `extract_field`'s `\s*` on a single line while never crossing a line in a multiline body (a
+# `·\n**Field:**` run is caught by the line-start branch instead, since the field opens a line).
+_META_DECL_RE = re.compile(r"(?m)((?:^>?|·)[^\S\n]*)\*\*([^*\n]+:)\*\*")
+
+
+def _prose_safe(text) -> str:
+    """`_md_safe`, plus a guard against a multi-line prose field inventing a metadata line.
+
+    A prose field (summary/steps/fix/impact/recommendation) is multi-line by design, so it is
+    not refused. But a line inside it shaped like `> **Waived:** yes` would be read by
+    `extract_field` (and a human) as a provenance stamp the head never declared. The bold
+    delimiters of such a line are escaped, so it renders as literal `**Field:**` text and no
+    longer parses as a declaration; the author's words are kept verbatim, nothing is dropped."""
+    return _META_DECL_RE.sub(r"\1\\*\\*\2\\*\\*", _md_safe(text))
+
+
 def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
             status: str | None = None) -> str:
     """A structured artifact body (required sections populated). `status` overrides the
     per-type create status (schema v3 files findings into `inbox`); None keeps the default."""
-    f = {**f, **{k: _md_safe(f[k]) for k in ("summary", "steps", "fix", "recommendation", "impact")
+    f = {**f, **{k: _prose_safe(f[k]) for k in ("summary", "steps", "fix", "recommendation", "impact")
                  if isinstance(f.get(k), str)}}
     if isinstance(f.get("acs"), list):
         f = {**f, "acs": [_md_safe(a) for a in f["acs"]]}

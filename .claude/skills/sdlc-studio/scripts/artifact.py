@@ -85,9 +85,10 @@ def _create_status(type_: str, root: Path) -> str:
 
 def _text(f: dict, key: str, placeholder: str) -> str:
     """Caller-supplied content for one section, else the scaffold placeholder the agent fills.
-    Free text is markdown-safed, so a creator never mints a lint-red artefact."""
+    Free text is prose-safed (markdown-safe plus the metadata-line guard), so a creator never
+    mints a lint-red artefact nor a body line a reader takes for provenance."""
     val = f.get(key)
-    return file_finding._md_safe(val) if isinstance(val, str) and val.strip() else placeholder
+    return file_finding._prose_safe(val) if isinstance(val, str) and val.strip() else placeholder
 
 
 def _list(f: dict, key: str) -> list[str]:
@@ -263,7 +264,7 @@ def _fill_impact(body: str, type_: str, f: dict) -> str:
         return body
     block = ""
     if str(f.get("impact") or "").strip():
-        block += f"\n\n{file_finding._md_safe(f['impact'])}"
+        block += f"\n\n{file_finding._prose_safe(f['impact'])}"
     if str(f.get("effort") or "").strip():
         block += f"\n\n**Effort:** {f['effort']}"
     m = _IMPACT_HEAD_RE.search(body)
@@ -295,18 +296,25 @@ def _rendered(key: str, f: dict) -> str:
         items = _list(f, key)
         return "".join(f"- **{o}**\n" for o in items) if items else ""
     val = f.get(key)
-    return f"{file_finding._md_safe(val)}\n" if isinstance(val, str) and val.strip() else ""
+    return f"{file_finding._prose_safe(val)}\n" if isinstance(val, str) and val.strip() else ""
 
 
 def _put_section(body: str, names: tuple[str, ...], content: str) -> str:
     """Replace the body of the first section named in `names` with `content`, or append the
-    section (before Revision History) when the template carries no such heading."""
+    section (before Revision History) when the template carries no such heading.
+
+    Only the PROSE body above the first `###` subsection is replaced: a template's `###`
+    scaffold prompts (a bug's `### Files Modified`/`### Tests Added`, an RFC's `### Option A`)
+    survive when the caller supplies the parent field, so an agent filling the artefact keeps
+    the guidance rather than having the supplied content silently swallow it."""
     for name in names:
         m = re.search(rf"^##\s+{re.escape(name)}\b.*$", body, re.M | re.I)
         if not m:
             continue
         rest = body[m.end():]
-        nxt = re.search(r"^##\s", rest, re.M)  # `###` subsections belong to this section
+        # Stop at the first `###` subsection or the next `##` heading, whichever comes first -
+        # the prose above the first subsection is replaced; the subsections beneath it are kept.
+        nxt = re.search(r"^(?:##|###)\s", rest, re.M)
         tail = rest[nxt.start():] if nxt else ""
         return f"{body[:m.end()]}\n\n{content}\n{tail}"
     section = f"## {names[0]}\n\n{content}"
@@ -484,11 +492,33 @@ def _render_meta(type_: str, disp: str, title: str, today: str, f: dict | None =
             f"| {today} | {{{{author}}}} | Created via `new` (deterministic) |\n")
 
 
+def _ensure_meta_index(root: Path, rel: str, type_: str, today: str) -> bool:
+    """Create `<rel>/_index.md` from `templates/indexes/<type>.md` when it is missing, so a
+    project's FIRST retro/review/handoff is INDEXED rather than a missing-index reconcile
+    drift item the operator then clears by hand. Mirrors `file_finding.ensure_index` (pipeline
+    types) and `handoff._ensure_index`. Idempotent; never clobbers an existing index. Returns
+    True iff it created the file."""
+    idx = root / rel / "_index.md"
+    if idx.exists():
+        return False
+    tmpl = _skill_root() / "templates" / "indexes" / f"{type_}.md"
+    if not tmpl.exists():
+        return False
+    text = re.sub(r"^<!--.*?-->\n+", "", tmpl.read_text(encoding="utf-8"),
+                  count=1, flags=re.DOTALL)
+    text = text.replace("{{last_updated}}", today)
+    lines = [ln for ln in text.splitlines() if "{{" not in ln]  # drop the sample row
+    idx.parent.mkdir(parents=True, exist_ok=True)
+    idx.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    return True
+
+
 def meta_new(repo_root: Path | str, type_: str, title: str, fields: dict | None = None,
              dry_run: bool = False) -> dict:
-    """Create a retro/review: allocated id, rendered file, and an index row when the
-    meta index exists with a data header (both retros/ and reviews/ now carry one; a
-    project without the index still creates the file and reports indexed=False honestly)."""
+    """Create a retro/review: allocated id, rendered file, and an index row. The meta index is
+    bootstrapped on the first create when missing (retros/, reviews/, handoffs/), so a
+    project's first retro/review lands indexed rather than as reconcile drift; a project that
+    has deleted its index still gets one re-seeded, and the row is appended to it."""
     if type_ not in META:
         raise ValueError(f"unknown meta type {type_!r} (expected {'|'.join(META)})")
     import next_id
@@ -505,15 +535,19 @@ def meta_new(repo_root: Path | str, type_: str, title: str, fields: dict | None 
     if path.exists():
         raise FileExistsError(path)
     if dry_run:
-        # Predict indexing honestly (like new()'s dry-run): a row is written only when the
-        # meta index exists AND has a data header (a project without the index -> False).
+        # Predict indexing honestly (like new()'s dry-run): a row lands when the meta index
+        # exists with a data header, OR would be bootstrapped from a shipped index template.
         idx = root / rel / "_index.md"
-        would_index = idx.exists() and sdlc_md.find_data_header(
+        has_header = idx.exists() and sdlc_md.find_data_header(
             idx.read_text(encoding="utf-8").splitlines()) is not None
-        return {"id": disp, "file_id": file_id, "path": str(path), "indexed": would_index,
+        would_bootstrap = (not idx.exists()) and (
+            _skill_root() / "templates" / "indexes" / f"{type_}.md").exists()
+        return {"id": disp, "file_id": file_id, "path": str(path),
+                "indexed": has_header or would_bootstrap,
                 "epic_linked": None, "dry_run": True}
     path.parent.mkdir(parents=True, exist_ok=True)
     sdlc_md.atomic_write(path, _render_meta(type_, disp, title, today, f))
+    _ensure_meta_index(root, rel, type_, today)  # bootstrap the meta index on first use
     indexed = False
     index_path = root / rel / "_index.md"
     if index_path.exists():

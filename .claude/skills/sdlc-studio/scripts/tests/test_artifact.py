@@ -472,6 +472,32 @@ class FullTemplateTests(unittest.TestCase):
             self.assertIn("**Created-by:** sdlc-studio new", text)
 
 
+class SubsectionPreservationTests(unittest.TestCase):
+    """BG0113: a supplied field replaces a section's prose body but keeps the template's
+    `###` subsection scaffold prompts beneath the `##` heading, so an agent filling the
+    artefact keeps the guidance rather than losing it."""
+
+    def test_fix_keeps_files_modified_and_tests_added_prompts(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            r = artifact.new(repo, "bug", "dropped subsection",
+                             {"template": "full", "fix": "swap the greedy regex"})
+            text = Path(r["path"]).read_text(encoding="utf-8")
+            self.assertIn("swap the greedy regex", text)       # supplied prose landed
+            self.assertIn("### Files Modified", text)           # scaffold prompt preserved
+            self.assertIn("### Tests Added", text)
+
+    def test_put_section_preserves_subsections(self) -> None:
+        body = ("## Proposed Fix\n\n> *hint*\n\n{{fix_description}}\n\n"
+                "### Files Modified\n\n| File | Change |\n| --- | --- |\n\n"
+                "## Revision History\n\n| Date | Author | Change |\n")
+        out = artifact._put_section(body, ("Proposed Fix", "Fix"), "the actual fix\n")
+        self.assertIn("the actual fix", out)
+        self.assertIn("### Files Modified", out)
+        self.assertNotIn("{{fix_description}}", out)   # prose body replaced
+        self.assertIn("## Revision History", out)       # next ## untouched
+
+
 class ProjectTemplateTests(unittest.TestCase):
     """RFC-0023 write path: `new` scaffolds the project's declared template
     (conventions.templates.<type>) so the scaffold matches the house shape the
@@ -547,13 +573,16 @@ class MetaTypeTests(unittest.TestCase):
             self.assertIn(res["id"], idx)
             self.assertTrue(res["indexed"])
 
-    def test_new_review_without_index_reports_honestly(self) -> None:
+    def test_new_review_without_index_bootstraps_and_indexes(self) -> None:
+        # BG0116: a review created before any index used to report indexed=False and leave a
+        # missing-index reconcile drift item. meta_new now bootstraps the index on first use,
+        # so the file is created AND indexed.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             (root / "sdlc-studio" / "reviews").mkdir(parents=True)
             res = artifact.meta_new(root, "review", "Adversarial code review")
             self.assertTrue(res["id"].startswith("RV-"))
-            self.assertFalse(res["indexed"])                 # no index -> honest False
+            self.assertTrue(res["indexed"])                  # index bootstrapped on first use
             self.assertTrue(Path(res["path"]).exists())
 
     def test_meta_row_lands_in_the_data_table_not_a_later_one(self) -> None:
@@ -585,6 +614,29 @@ class MetaTypeTests(unittest.TestCase):
                 rc = artifact.main(["new", "--type", "retro", "--title", "t",
                                     "--root", str(root)])
             self.assertEqual(rc, 0)
+
+    def test_first_retro_bootstraps_index_zero_drift(self) -> None:
+        # BG0116: init makes the retros/ dir but no _index.md, so the FIRST retro used to
+        # land as a missing-index reconcile drift item. meta_new now bootstraps the index
+        # (mirroring the handoff path) so the first retro is indexed, not drift.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "retros").mkdir(parents=True)   # dir only, no index
+            self.assertFalse((root / "sdlc-studio" / "retros" / "_index.md").exists())
+            res = artifact.meta_new(root, "retro", "First retro")
+            self.assertTrue((root / "sdlc-studio" / "retros" / "_index.md").exists())
+            self.assertTrue(res["indexed"])
+            drift = reconcile.meta_index_drift(root)
+            self.assertEqual(drift, [], f"first retro should leave 0 meta drift, got {drift}")
+
+    def test_first_review_bootstraps_index_zero_drift(self) -> None:
+        # BG0116: the same bootstrap covers reviews/.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "reviews").mkdir(parents=True)
+            res = artifact.meta_new(root, "review", "First review")
+            self.assertTrue(res["indexed"])
+            self.assertEqual(reconcile.meta_index_drift(root), [])
 
 
 class RevisionVerbTests(unittest.TestCase):

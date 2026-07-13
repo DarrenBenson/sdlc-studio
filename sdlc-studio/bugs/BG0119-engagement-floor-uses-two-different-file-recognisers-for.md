@@ -1,6 +1,7 @@
 # BG0119: engagement-floor uses two different file recognisers for the declared-boolean and the file-count
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Low
 > **Created:** 2026-07-13
 > **Created-by:** sdlc-studio file

@@ -107,6 +107,11 @@ def _fmt(violations: list[dict]) -> str:
 # replacement: markdownlint owns table mechanics, validate.py owns artefact structure.
 _TABLE_RULES = {"default": False, "MD055": True, "MD056": True, "MD058": True, "MD060": True}
 
+# A freshly written `_index.md` is materialised from its template by dropping the sample
+# `{{ }}` rows, which can leave a double blank line where a dropped row sat between two blanks.
+# So the index leg pins MD012 (no-multiple-blanks) on top of the table-rule family.
+_INDEX_RULES = {**_TABLE_RULES, "MD012": True}
+
 
 def _markdownlint() -> list[str] | None:
     """The markdownlint CLI, or None when Node is absent. Prefer the repo's pinned binary
@@ -118,13 +123,14 @@ def _markdownlint() -> list[str] | None:
     return [found] if found else None
 
 
-def _markdownlint_errors(path: Path) -> str:
-    """Empty string when the artefact's tables satisfy the table-rule family; otherwise the
-    CLI's report. Raises FileNotFoundError-free: caller must have checked _markdownlint() first."""
+def _markdownlint_errors(path: Path, rules: dict | None = None) -> str:
+    """Empty string when the file satisfies `rules` (the table-rule family by default);
+    otherwise the CLI's report. Raises FileNotFoundError-free: caller must have checked
+    _markdownlint() first."""
     cli = _markdownlint()
     assert cli is not None
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as cfg:
-        json.dump(_TABLE_RULES, cfg)
+        json.dump(rules if rules is not None else _TABLE_RULES, cfg)
         cfg_path = cfg.name
     try:
         proc = subprocess.run([*cli, "--config", cfg_path, str(path)],
@@ -247,12 +253,18 @@ class ScaffoldRoundTripTests(unittest.TestCase):
 
 
 class MarkdownlintRoundTripTests(unittest.TestCase):
-    """A creator must not emit an artefact whose tables the house markdownlint gate rejects.
+    """A creator must not emit an artefact - or the `_index.md` it touches - whose tables the
+    house markdownlint gate rejects.
 
     BG0108's round trip caught validator mismatches; this leg catches the sibling class - a
     deterministic creator emitting markdownlint-failing tables (unspaced delimiters, or handlebars
     loop markers left inside a table body as pipe-less rows). It degrades honestly: when Node (and
     so markdownlint) is absent, the test SKIPS with a message rather than passing silently.
+
+    The index leg matters because a brand-new index (a consuming project's first artefact of a
+    type) is written from the index template as-is - reconcile only rewrites it to compact style
+    on a later pass, so a fresh index that carries padded or tight delimiter rows lands failing
+    the workspace lint. Linting the artefact alone missed this, so the class is pinned here too.
     """
 
     def setUp(self) -> None:
@@ -274,6 +286,12 @@ class MarkdownlintRoundTripTests(unittest.TestCase):
                                            {**fields, "template": template})
                         errs = _markdownlint_errors(Path(res["path"]))
                         self.assertEqual(errs, "", f"{type_}/{template}:\n{errs}")
+                        # The freshly written `_index.md` the creator touched must lint clean too:
+                        # it is a consuming project's first index of the type, born from the
+                        # template with no reconcile pass behind it.
+                        idx = Path(res["path"]).parent / "_index.md"
+                        idx_errs = _markdownlint_errors(idx, _INDEX_RULES)
+                        self.assertEqual(idx_errs, "", f"{type_}/{template} _index.md:\n{idx_errs}")
 
 
 if __name__ == "__main__":

@@ -157,8 +157,14 @@ def _git_touched_source_files(root: Path, rid: str) -> set[str]:
 
 
 def _declared_source_files(text: str) -> set[str]:
-    """The source files a unit declares in its `Affects` field (doc paths dropped)."""
-    return {f for f in sdlc_md.affects_files(text) if Path(f).suffix in SOURCE_SUFFIXES}
+    """The source files a unit declares in its `Affects` field (doc/non-source paths dropped).
+
+    Recognises files through `_declared_file_tokens` - the SAME recogniser `_affects_declared`
+    uses - so the declared boolean and this count never disagree about what is a real footprint.
+    A real file that is not a code file (a `Makefile`, a `.md` doc) is a valid
+    declaration but not a source change, so it is dropped here by the source-suffix filter, not by
+    a second, narrower file recogniser."""
+    return {f for f in _declared_file_tokens(text) if Path(f).suffix in SOURCE_SUFFIXES}
 
 
 # A declaration must name at least one CHECKABLE footprint - a real file path, not prose. What
@@ -197,20 +203,31 @@ def _is_file_token(tok: str) -> bool:
     return bool(_DOTFILE_RE.fullmatch(base))
 
 
+def _declared_file_tokens(text: str) -> list[str]:
+    """The tokens in the unit's `Affects` field that name a real, checkable file, in declared
+    order. This is the ONE recogniser both `_affects_declared` (the declared boolean) and
+    `_declared_source_files` (the file count) share, so they can never disagree about what counts
+    as a real footprint. Each token is stripped of a trailing `(parenthetical)` and
+    backticks; an unfilled `{{placeholder}}` and any token `_is_file_token` rejects as prose
+    (`n/a`, `various`) or a version string (`v1.2`) is dropped."""
+    val = sdlc_md.extract_field(text, "Affects")
+    if val is None:
+        return []
+    out: list[str] = []
+    for tok in val.split(","):
+        tok = re.sub(r"\s*\(.*\)\s*$", "", tok.strip()).strip().strip("`").strip()
+        if tok and "{{" not in tok and _is_file_token(tok):
+            out.append(tok)
+    return out
+
+
 def _affects_declared(text: str) -> bool:
     """True when the unit's `Affects` field names at least one real file path. A blank field, an
     unfilled `{{placeholder}}`, or bare prose (`n/a`, `various`) is NOT a declaration: it cannot be
     held to a footprint, so it is omission-equivalent and must not satisfy the floor. (Does not
     match the story template's unrelated `**Affects production runtime:**` boolean - `extract_field`
     anchors on `Affects:`.)"""
-    val = sdlc_md.extract_field(text, "Affects")
-    if val is None:
-        return False
-    for tok in val.split(","):
-        tok = re.sub(r"\s*\(.*\)\s*$", "", tok.strip()).strip().strip("`").strip()
-        if tok and "{{" not in tok and _is_file_token(tok):
-            return True
-    return False
+    return bool(_declared_file_tokens(text))
 
 
 def _max_judged_id(root: Path) -> int:

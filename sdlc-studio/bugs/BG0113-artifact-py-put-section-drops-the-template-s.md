@@ -1,6 +1,7 @@
 # BG0113: artifact.py _put_section drops the template's ### subsection prompts when a field is supplied
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Target:** v4.1
 > **Severity:** Low
 > **Created:** 2026-07-13
@@ -24,3 +25,4 @@ Preserve ### subsections beneath a replaced ## heading: `_put_section` should re
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-13 | audit | Filed |
+| 2026-07-13 | Dani Okafor | Fixed test-first: `_put_section` now stops the replaced region at the first `###` subsection or next `##`, so a supplied `--fix`/`--option` replaces only the prose body and keeps the template's `###` scaffold prompts. Mutation-checked. |

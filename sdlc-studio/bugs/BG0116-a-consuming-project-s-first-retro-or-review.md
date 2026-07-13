@@ -1,6 +1,7 @@
 # BG0116: a consuming project's first retro or review lands as reconcile drift (no meta index bootstrap)
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Target:** v4.1
 > **Severity:** Low
 > **Created:** 2026-07-13
@@ -24,3 +25,4 @@ Bootstrap the meta index on first create, as CR0223's handoff path now does - or
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-13 | Dani Okafor | Filed |
+| 2026-07-13 | Dani Okafor | Fixed test-first (chose the CR0223 handoff path): `meta_new` bootstraps the meta `_index.md` from a shipped `templates/indexes/<type>.md` on first create, so the first retro/review lands indexed with 0 reconcile drift. Added `templates/indexes/retro.md`; rewrote the stale `templates/indexes/review.md` to the house `\| ID \| Title \| Date \|` shape. No reconcile detector change needed. |

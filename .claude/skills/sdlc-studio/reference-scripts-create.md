@@ -11,8 +11,10 @@ Detail pages for the **creation & mutation** scripts. See
 ### `artifact.py`
 
 - `new --type retro|review`: the meta-artifacts are tool-created too
-  (allocated id, template scaffold, index row where a meta index exists) - they stay
-  outside the status machinery (`transition` refuses them by design).
+  (allocated id, template scaffold, index row). The meta index is bootstrapped from
+  `templates/indexes/` on the first create when missing, so a project's first retro or
+  review lands indexed rather than as reconcile drift. They stay outside the status
+  machinery (`transition` refuses them by design).
 
 Deterministic artifact create + close cascade. `new --type <any of the 8 numbered
 types> --title ...` allocates a collision-free id, renders a valid scaffold (vocab-correct

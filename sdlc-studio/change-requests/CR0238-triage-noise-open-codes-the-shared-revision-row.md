@@ -1,6 +1,6 @@
 # CR-0238: triage_noise open-codes the shared revision-row writer instead of calling it
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Target:** v4.1
 > **Priority:** Low
 > **Type:** Improvement
@@ -20,11 +20,13 @@ Low today (the open-coded expression is correct), but it re-opens the exact drif
 
 ## Acceptance Criteria
 
-- [ ] `triage_noise` calls `file_finding.rev_row()` through the existing lazy import rather than open-coding its expression; the choke point is genuinely singular across all three creators
-- [ ] `triage_noise`'s index rowf carries the resolved author, so an Author column added by a consuming project renders the authorship of record rather than '--'
+- [x] `triage_noise` calls `file_finding.rev_row()` through the existing lazy import rather than open-coding its expression; the choke point is genuinely singular across all three creators
+- [x] `triage_noise`'s index rowf carries the resolved author, so an Author column added by a consuming project renders the authorship of record rather than '--'
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-13 | Sam Eriksson | Raised |
+| 2026-07-13 | Dani Okafor | Delivered: consolidation CR routes its revision row through `file_finding.rev_row`; index rowf carries the resolved author |
+| 2026-07-14 | Dani Okafor | AC1 (singular choke point) is a structural property - the routed and open-coded forms render byte-identical output, so it is guarded by a source-scan (`_new_consolidation_cr` must call `rev_row` and must not rebuild the row inline via `join_row`), red-first against the open-coded form. AC2 (index author) is mutation-guarded. A behavioural test additionally pins the pipe-escaping property |

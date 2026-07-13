@@ -12,7 +12,7 @@ Related: help/story.md, reference-story.md
 ## Summary
 
 | Status | Count |
-| -------- | ------- |
+| --- | --- |
 | Draft | {{draft_count}} |
 | Ready | {{ready_count}} |
 | Planned | {{planned_count}} |
@@ -26,13 +26,13 @@ Related: help/story.md, reference-story.md
 ### [EP{{epic_id}}: {{epic_title}}](../epics/EP{{epic_id}}-{{epic_slug}}.md)
 
 | ID | Title | Status | Points | Owner |
-|----|-------|--------|--------|-------|
+| --- | --- | --- | --- | --- |
 | [US{{story_id}}](US{{story_id}}-{{story_slug}}.md) | {{story_title}} | {{status}} | {{points}} | {{owner}} |
 
 ## All Stories
 
 | ID | Title | Epic | Status | Points | Persona |
-|----|-------|------|--------|--------|---------|
+| --- | --- | --- | --- | --- | --- |
 | [US{{story_id}}](US{{story_id}}-{{story_slug}}.md) | {{story_title}} | [EP{{epic_id}}](../epics/EP{{epic_id}}-{{epic_slug}}.md) | {{status}} | {{points}} | {{persona}} |
 
 ## Notes

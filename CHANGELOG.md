@@ -125,6 +125,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   tree and checks root placement, the store-versus-append mismatch on repeatable flags, the
   format-flag vocabulary, and that no `--root` alias binds a divergent destination.
 
+- **Cleanup wave: rendering, recognisers and guards, delivered from the sprint's own reviews
+  (BG0113, BG0116, BG0117, BG0119, BG0120, CR0238).** A supplied field no longer swallows the
+  template's `###` subsection prompts beneath the section it fills (BG0113); a consuming
+  project's first retro or review bootstraps its index instead of landing as drift, and a fresh
+  index of every type lints clean from creation (BG0116, BG0120); a prose field can no longer
+  forge a metadata line the artefact reader would take for provenance - the escape now mirrors
+  the field reader across its anchor set and whitespace class, and the low-severity consolidation
+  bullet renders a multi-line summary faithfully (BG0117); the engagement floor's declared-flag
+  and file-count now use one recogniser so they cannot disagree (BG0119); and the consolidation
+  filer routes its revision row through the one shared writer, guarded at source (CR0238).
+
 - **The release gate tells an omitted verifier from a declared manual one (CR0237).** The AC
   verifier counted an acceptance criterion with no `Verify:` line and one that says `Verify:
   manual` into the same bucket, so the release vacuity guard had to be repo-wide: one executable

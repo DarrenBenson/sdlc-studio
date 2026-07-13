@@ -13,7 +13,7 @@ Related: help/test-spec.md, reference-test-spec.md
 ## Summary by Epic
 
 | Spec | Epic | Cases | Automated | Status |
-|------|------|-------|-----------|--------|
+| --- | --- | --- | --- | --- |
 {{#each specs}}
 | [TS{{id}}](TS{{id}}-{{slug}}.md) | [EP{{epic_id}}](../../epics/EP{{epic_id}}-{{epic_slug}}.md) | {{case_count}} | {{automated_count}} ({{automated_pct}}%) | {{status}} |
 {{/each}}
@@ -21,7 +21,7 @@ Related: help/test-spec.md, reference-test-spec.md
 ## Coverage Summary
 
 | Metric | Value |
-| -------- | ------- |
+| --- | --- |
 | Epics with specs | {{epics_covered}}/{{total_epics}} |
 | Total test cases | {{total_cases}} |
 | Automated | {{total_automated}} ({{automation_pct}}%) |
@@ -30,7 +30,7 @@ Related: help/test-spec.md, reference-test-spec.md
 ## By Test Type
 
 | Type | Count | Automated |
-| ------ | ------- | ----------- |
+| --- | --- | --- |
 | Unit | {{unit_count}} | {{unit_automated}} |
 | Integration | {{integration_count}} | {{integration_automated}} |
 | API | {{api_count}} | {{api_automated}} |

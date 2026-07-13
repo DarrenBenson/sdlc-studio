@@ -249,6 +249,96 @@ class ProvenanceAndDryRunTests(unittest.TestCase):
             self.assertEqual(idx.read_text(), before)    # index untouched
 
 
+class ProseMetadataLineTests(unittest.TestCase):
+    """BG0117: a prose field (summary/steps/fix/impact/recommendation) is multi-line by
+    design, so it stays unguarded - but a line inside it that mimics a `> **Field:** value`
+    metadata declaration must be rendered so neither extract_field nor a reader mistakes body
+    prose for a provenance stamp."""
+
+    def test_summary_cannot_invent_a_metadata_field(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); _seed_index(root, "bug")
+            r = ff.file_finding(root, "bug", "prose metadata",
+                                {"severity": "High",
+                                 "summary": "ok\n> **Waived:** yes",
+                                 "steps": "x", "fix": "y"})
+            text = Path(r["path"]).read_text(encoding="utf-8")
+            self.assertIsNone(sdlc_md.extract_field(text, "Waived"),
+                              "a prose line must not forge a Waived metadata field")
+            self.assertIn("Waived", text)   # the author's words are still present, not dropped
+
+    def test_bare_metadata_shape_without_blockquote_also_neutralised(self) -> None:
+        # extract_field's `>` is optional, so a leading `**Field:**` (no `>`) forges a field
+        # the head lacks just as readily - the escape must catch it too.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); _seed_index(root, "bug")
+            r = ff.file_finding(root, "bug", "bare metadata",
+                                {"severity": "High",
+                                 "summary": "detail\n**Injected:** x",
+                                 "steps": "x", "fix": "y"})
+            text = Path(r["path"]).read_text(encoding="utf-8")
+            self.assertIsNone(sdlc_md.extract_field(text, "Injected"))
+
+    def test_inline_middot_metadata_run_neutralised(self) -> None:
+        # extract_field anchors a field on TWO branches: a line start (optional `>`) AND an
+        # inline ` · `-separated run. A line-start-only escape leaks the inline shape, so the
+        # escape must mirror both branches - exactly what extract_field can read, no wider.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); _seed_index(root, "bug")
+            r = ff.file_finding(root, "bug", "inline metadata",
+                                {"severity": "High",
+                                 "summary": "ok · **Waived:** yes",
+                                 "steps": "x", "fix": "y"})
+            text = Path(r["path"]).read_text(encoding="utf-8")
+            self.assertIsNone(sdlc_md.extract_field(text, "Waived"),
+                              "an inline `·`-separated run must not forge a metadata field")
+            self.assertIn("Waived", text)   # the author's words stay present
+
+    def test_non_ascii_whitespace_after_anchor_neutralised(self) -> None:
+        # extract_field uses `\s*` after its anchor, which matches NBSP (U+00A0), thin space,
+        # form feed, etc. A `[ \t]` escape is NARROWER, so an invisible NBSP after a `·` or `>`
+        # leaks a forged field. The escape must mirror the whole whitespace class (bar newline).
+        variants = {
+            "Waived": "affects auth ·\xa0**Waived:** yes",     # NBSP after the middot
+            "Approved": ">\xa0**Approved:** true",              # NBSP after the blockquote
+            "Injected": "\xa0**Injected:** x",                  # leading NBSP, bare declaration
+        }
+        for field, summary in variants.items():
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d); _seed_index(root, "bug")
+                r = ff.file_finding(root, "bug", f"nbsp {field}",
+                                    {"severity": "High", "summary": summary,
+                                     "steps": "x", "fix": "y"})
+                text = Path(r["path"]).read_text(encoding="utf-8")
+                self.assertIsNone(sdlc_md.extract_field(text, field),
+                                  f"non-ASCII whitespace before {field} must not forge a field")
+
+    def test_middot_then_newline_field_caught_by_line_start_branch(self) -> None:
+        # A `·\n**Field:**` run (middot, newline, field at the next line start) must still be
+        # caught - by the line-start branch, since the field now opens a line. The `·` branch is
+        # deliberately horizontal-only (no newline crossing); the two branches together cover it.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); _seed_index(root, "bug")
+            r = ff.file_finding(root, "bug", "middot newline",
+                                {"severity": "High",
+                                 "summary": "lead ·\n**Waived:** yes",
+                                 "steps": "x", "fix": "y"})
+            text = Path(r["path"]).read_text(encoding="utf-8")
+            self.assertIsNone(sdlc_md.extract_field(text, "Waived"))
+
+    def test_genuine_inline_bold_is_not_over_escaped(self) -> None:
+        # extract_field does NOT read `**important:**` in mid-sentence prose (no line-start /
+        # no `·` anchor), so the escape must leave it alone - match extract_field exactly.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); _seed_index(root, "bug")
+            r = ff.file_finding(root, "bug", "inline bold",
+                                {"severity": "High",
+                                 "summary": "the **important:** note stays bold",
+                                 "steps": "x", "fix": "y"})
+            text = Path(r["path"]).read_text(encoding="utf-8")
+            self.assertIn("the **important:** note", text)   # untouched, not escaped
+
+
 class EraAwareAllocationTests(unittest.TestCase):
     def test_v3_project_mints_a_ulid_finding_id(self) -> None:
         # BG-era gap: the filer minted v2 sequential ids on schema-v3 projects, undermining

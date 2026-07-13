@@ -1,6 +1,7 @@
 # BG0120: the index writer emits MD060 table errors on a freshly created index
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Low
 > **Created:** 2026-07-13
 > **Created-by:** sdlc-studio file
@@ -23,3 +24,4 @@ Emit compact single-dash delimiter rows from the index writer, matching what rec
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-13 | Dani Okafor | Filed |
+| 2026-07-13 | Dani Okafor | Fixed: index templates emit compact single-dash delimiters (MD060); `ensure_index` collapses blank runs left by dropped sample rows (MD012); the round-trip markdownlint leg now lints the touched `_index.md` too |

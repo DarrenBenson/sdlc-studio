@@ -7,7 +7,7 @@ This document tracks all implementation workflows for the project.
 ## Summary
 
 | Status | Count |
-| -------- | ------- |
+| --- | --- |
 | In Progress | {{in_progress_count}} |
 | Paused | {{paused_count}} |
 | Done | {{done_count}} |
@@ -18,7 +18,7 @@ This document tracks all implementation workflows for the project.
 Workflows currently in progress or paused.
 
 | ID | Story | Current Phase | Status | Last Updated |
-|----|-------|---------------|--------|--------------|
+| --- | --- | --- | --- | --- |
 {{#each active_workflows}}
 | [WF{{id}}](WF{{id}}-{{slug}}.md) | [US{{story_id}}](../stories/US{{story_id}}-{{story_slug}}.md) | {{current_phase}} | {{status}} | {{last_updated}} |
 {{/each}}
@@ -26,7 +26,7 @@ Workflows currently in progress or paused.
 ## Completed Workflows
 
 | ID | Story | Completed | Duration | Sessions |
-|----|-------|-----------|----------|----------|
+| --- | --- | --- | --- | --- |
 {{#each completed_workflows}}
 | [WF{{id}}](WF{{id}}-{{slug}}.md) | [US{{story_id}}](../stories/US{{story_id}}-{{story_slug}}.md) | {{completed_date}} | {{duration}} | {{session_count}} |
 {{/each}}

@@ -1,39 +1,18 @@
 <!--
-Template: Review Findings Index (Streamlined)
+Template: Review Index
 File: sdlc-studio/reviews/_index.md
-Status values: N/A (immutable records)
+Status values: N/A (generated records, outside the status machinery)
 Related: help/review.md, reference-review.md
 -->
-# Review Findings Index
+# Review Index
 
-Registry of all review findings for traceability and audit.
+**Last Updated:** {{last_updated}}
 
-## Summary
+Repository and artefact reviews, one per review pass (a unified review, an adversarial audit,
+or a periodic repository review). The report holds the evidence; confirmed findings are filed
+as Bugs/CRs/RFCs via `file_finding.py`. Tool-allocated (`artifact new --type review`) and
+reconciled for row presence like every other type.
 
-| Metric | Value |
-| -------- | ------- |
-| Total Reviews | {{total_reviews}} |
-| Open Critical Issues | {{open_critical}} |
-| Open Important Issues | {{open_important}} |
-| Last Review | {{last_review_date}} |
-
-## Reviews by Artifact
-
-| RV ID | Artifact | Type | Date | Critical | Important |
-|-------|----------|------|------|----------|-----------|
-{{#each reviews}}
-| [RV{{review_id}}](RV{{review_id}}-{{artifact_id}}-review.md) | {{artifact_id}} | {{artifact_type}} | {{review_date}} | {{critical_count}} | {{important_count}} |
-{{/each}}
-
-## Reviews Requiring Attention
-
-{{#if attention_required}}
-
-| RV ID | Artifact | Critical | Reason |
-|-------|----------|----------|--------|
-{{#each attention_required}}
-| RV{{review_id}} | {{artifact_id}} | {{critical_count}} | {{reason}} |
-{{/each}}
-{{else}}
-No reviews currently require attention.
-{{/if}}
+| ID | Title | Date |
+| --- | --- | --- |
+| [RV-{{review_id}}](RV{{review_id}}-{{review_slug}}.md) | {{title}} | {{date}} |
