@@ -272,6 +272,7 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--notes", default="", help="Optional free-text notes")
     r.add_argument("--root", default=".")
     r.set_defaults(func=cmd_record)
+    sdlc_md.add_global_root(p)
     return p
 
 

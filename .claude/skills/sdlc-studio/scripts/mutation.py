@@ -455,6 +455,7 @@ def build_parser() -> argparse.ArgumentParser:
     f = sub.add_parser("prefilter", help="List test files with no recognisable assertion.")
     f.add_argument("--tests", nargs="+", required=True)
     f.set_defaults(func=cmd_prefilter)
+    sdlc_md.add_global_root(p)
     return p
 
 

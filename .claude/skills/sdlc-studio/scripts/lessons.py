@@ -1106,6 +1106,7 @@ def build_parser() -> argparse.ArgumentParser:
     _common(sm)
     sm.set_defaults(func=cmd_summary)
 
+    sdlc_md.add_global_root(p)
     return p
 
 

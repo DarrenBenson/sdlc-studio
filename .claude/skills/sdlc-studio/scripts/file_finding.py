@@ -330,6 +330,7 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--type", required=True, choices=("bug", "cr", "rfc", "story", "epic"))
     r.add_argument("--root", default=".")
     r.set_defaults(func=cmd_rebuild)
+    sdlc_md.add_global_root(p)
     return p
 
 

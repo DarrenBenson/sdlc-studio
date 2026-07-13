@@ -239,6 +239,7 @@ def build_parser() -> argparse.ArgumentParser:
                    help="aggregate per type: count, mean iterations/wall-time, reopen rate, verdict mix")
     s.add_argument("--root", default="."); s.add_argument("--format", choices=("text", "json"), default="text")
     s.set_defaults(func=cmd_show)
+    sdlc_md.add_global_root(p)
     return p
 
 

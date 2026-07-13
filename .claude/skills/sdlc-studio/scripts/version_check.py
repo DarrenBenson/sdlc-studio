@@ -207,6 +207,7 @@ def build_parser() -> argparse.ArgumentParser:
     sc = sub.add_parser("scope", help="Print the detected install scope.")
     sc.add_argument("--skill-dir", default=None)
     sc.set_defaults(func=cmd_scope)
+    sdlc_md.add_global_root(p)
     return p
 
 

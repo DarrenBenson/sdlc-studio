@@ -134,6 +134,7 @@ def build_parser() -> argparse.ArgumentParser:
     sw.add_argument("--manifest", help="PVD manifest path (default: <root>/product-manifest.yaml)")
     sw.add_argument("--format", choices=("text", "json"), default="text")
     sw.set_defaults(func=cmd_sweep)
+    sdlc_md.add_global_root(p)
     return p
 
 

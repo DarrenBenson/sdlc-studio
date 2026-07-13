@@ -580,7 +580,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="Repo map JSON path",
     )
     q.add_argument("--top", type=int, default=15, help="Number of results (default 15)")
-    q.add_argument("--format", choices=("plain", "json"), default="plain")
+    q.add_argument("--format", choices=("text", "plain", "json"), default="text",
+                   help="output format: 'text' (default; 'plain' is a back-compat alias) or 'json'")
     q.set_defaults(func=cmd_query)
 
     s = sub.add_parser("stats", help="Print index stats.")
@@ -591,6 +592,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     s.set_defaults(func=cmd_stats)
 
+    sdlc_md.add_global_root(p)
     return p
 
 

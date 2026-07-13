@@ -16,6 +16,9 @@ import sys
 from datetime import date
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib import sdlc_md  # noqa: E402
+
 SKILL = Path(__file__).resolve().parent.parent
 LOG_REL = "sdlc-studio/decisions.md"
 _ROW = re.compile(r"^\|\s*D(\d{4})\s*\|")
@@ -220,6 +223,7 @@ def build_parser() -> argparse.ArgumentParser:
     ls.add_argument("--root", default=".")
     ls.add_argument("--format", choices=("text", "json"), default="text")
     ls.set_defaults(func=cmd_list)
+    sdlc_md.add_global_root(p)
     return p
 
 

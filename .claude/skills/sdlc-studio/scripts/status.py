@@ -439,6 +439,7 @@ def build_parser() -> argparse.ArgumentParser:
     tm.add_argument("--format", choices=("text", "json"), default="text")
     tm.set_defaults(func=cmd_triage_metrics)
 
+    sdlc_md.add_global_root(p)
     return p
 
 

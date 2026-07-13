@@ -562,6 +562,39 @@ def _bug_dep(root, num, severity="Medium", depends=None, status="Open"):
     (d / f"BG{num:04d}-x.md").write_text(body, encoding="utf-8")
 
 
+class RepeatedStatusFilterTests(unittest.TestCase):
+    """A status filter is a set: `--crs Proposed --crs Deferred` must select BOTH,
+    never silently drop the first (the argparse `store` overwrite that produced a
+    plan quietly missing two CRs)."""
+
+    def test_repeated_crs_merges_both_statuses(self) -> None:
+        sprint = _load()
+        args = sprint.build_parser().parse_args(
+            ["plan", "--crs", "Proposed", "--crs", "Deferred"])
+        queries, worklist, rc = sprint._plan_batch_source(args)
+        self.assertIsNone(rc)
+        self.assertEqual(queries, [("cr", "Proposed"), ("cr", "Deferred")])
+
+    def test_repeated_crs_reaches_both_units_in_the_plan(self) -> None:
+        sprint = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1, status="Proposed")
+            _cr(root, 2, status="Deferred")
+            plan = sprint.build_plan(
+                root, queries=[("cr", "Proposed"), ("cr", "Deferred")])
+            self.assertEqual(sorted(b["id"] for b in plan["batch"]), ["CR0001", "CR0002"])
+
+    def test_mixed_repeated_filters_merge(self) -> None:
+        sprint = _load()
+        args = sprint.build_parser().parse_args(
+            ["plan", "--crs", "Proposed", "--bugs", "Open", "--crs", "Deferred"])
+        queries, _worklist, rc = sprint._plan_batch_source(args)
+        self.assertIsNone(rc)
+        self.assertEqual(
+            queries, [("bug", "Open"), ("cr", "Proposed"), ("cr", "Deferred")])
+
+
 class MixedBatchTests(unittest.TestCase):
     """A bugs + CRs tranche is first-class: combined queries, one merged
     dependency-waved plan, cross-type edges honoured."""
@@ -993,7 +1026,7 @@ class OriginDriftCollisionTests(unittest.TestCase):
     def _args(self, work, strict):
         import argparse
         return argparse.Namespace(
-            prd=None, bugs="Open", crs=None, stories=None, worklist=None, epic=None,
+            prd=None, bugs=["Open"], crs=None, stories=None, worklist=None, epic=None,
             order="priority", write=False, strict=strict, no_fetch=False,
             skip_personas=False, root=str(work), format="json")
 

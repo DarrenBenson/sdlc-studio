@@ -172,6 +172,7 @@ def build_parser() -> argparse.ArgumentParser:
     sc.add_argument("--secret-stdin", dest="secret_stdin", action="store_true",
                     help="read the secret from the first line of stdin")
     sc.set_defaults(func=cmd_scan)
+    sdlc_md.add_global_root(p)
     return p
 
 

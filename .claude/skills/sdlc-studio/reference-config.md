@@ -217,6 +217,19 @@ lessons:
 
 ---
 
+## Run Appetite {#appetite}
+
+The unattended-run circuit breaker: how much a run may spend before it stops cleanly.
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| `appetite.minutes` | 0 | Wall-clock ceiling in minutes; 0 = unbounded |
+| `appetite.units` | 0 | Unit-count ceiling; 0 = unbounded |
+
+The breaker (`loop_guard budget`) is evaluated at unit boundaries and stops the run cleanly when the appetite is spent - a distinct exit code from a per-unit quarantine, with units left in their true status. `sprint plan --write --appetite-minutes N --appetite-units N` overrides these defaults per run (e.g. `appetite: {minutes: 180, units: 8}`). Both axes are deterministic (wall-clock from the run start, units from those now terminal); tokens are a forecast only, never a gate. The appetite is never auto-extended - a fresh run resets it. See `reference-sprint.md#appetite`.
+
+---
+
 ## Skill Source Repo {#skill-source-repo}
 
 Where a **promoted** lesson (`lessons add --global`) is written.

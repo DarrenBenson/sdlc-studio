@@ -1,6 +1,6 @@
 # CR-0234: Uniform CLI grammar across skill scripts
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** P3
 > **Type:** Improvement
 > **Date:** 2026-07-11

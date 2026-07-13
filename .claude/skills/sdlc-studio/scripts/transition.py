@@ -559,7 +559,9 @@ def cmd_set(args: argparse.Namespace) -> int:
     if reviewer or author:
         if not (reviewer and author and args.verdict):
             print("error: the one-call verdict needs --verdict, --reviewer AND --author "
-                  "(or none of reviewer/author to skip recording one)", file=sys.stderr)
+                  "together (or none, to skip recording one). To stamp an identity alone "
+                  "(e.g. an acceptance author) with no verdict, use `transition annotate`.",
+                  file=sys.stderr)
             return 2
         import critic
         if critic._id(reviewer) == critic._id(author):
@@ -656,6 +658,7 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--root", default=".")
     a.add_argument("--format", choices=("text", "json"), default="text")
     a.set_defaults(func=cmd_annotate)
+    sdlc_md.add_global_root(p)
     return p
 
 

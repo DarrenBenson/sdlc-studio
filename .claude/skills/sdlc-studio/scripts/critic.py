@@ -266,6 +266,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--root", default=".")
     sdlc_md.add_format_arg(s)
     s.set_defaults(func=cmd_show)
+    sdlc_md.add_global_root(parser)
     return parser
 
 

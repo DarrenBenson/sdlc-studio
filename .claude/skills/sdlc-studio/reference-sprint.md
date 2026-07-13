@@ -366,8 +366,9 @@ core (`epic`-from-PRD + `story`-from-epic + `cr action`), not a parallel path (D
   triage approval never authorises a production rollout. Deploy is operator-triggered and
   interactive, always.
 - **Deterministic** (the model cannot skip them): the iteration cap, the
-  repetition-breaker, the completion oracle (`scripts/loop_guard.py`), and the
-  **conformance check** (`scripts/conformance.py`).
+  repetition-breaker, the completion oracle, the **appetite breaker**
+  (`scripts/loop_guard.py`), and the **conformance check**
+  (`scripts/conformance.py`).
 - **Model-instructed:** the autonomy ceiling and escalation policy.
 - **Decisions ledger (D4):** a committed, append-only per-tranche log
   (`scripts/ledger.py` -> `sdlc-studio/decisions/<tranche>.md`); survives context
@@ -393,6 +394,33 @@ drop a unit, or declare itself done early:
 
 Without `--autonomous` the same guardrails apply as model-instructed policy - the
 portable Phase-1 path for tools without the scripts.
+
+## Appetite (the run-level circuit breaker) {#appetite}
+
+A per-unit quarantine bounds one unit; it does not bound the RUN. An unattended run
+otherwise has two outcomes only - it finishes, or it fails - with no way to say "spend
+this much and no more", which is the precondition for trusting it to go unattended. The
+appetite is that ceiling (Shape Up's fixed timebox: appetite is fixed, scope flexes).
+
+- **Declared at plan time:** `sprint plan --write --appetite-minutes N --appetite-units N`
+  records the appetite on the run state (either axis, or both; omit for an unbounded run).
+  The project default lives in `appetite.*` (`.config.yaml`); the flags override it.
+- **Evaluated at unit BOUNDARIES:** between units the loop runs
+  `loop_guard.py budget --root .`. It reads elapsed wall-clock from the run's `started_at`
+  and the units spent from those now terminal - both deterministic and harness-independent,
+  neither self-reported. When the appetite is spent it exits **4** (a distinct code); the
+  loop stops cleanly, the current unit is never abandoned mid-implementation.
+- **Not quarantine:** budget-exhausted has its OWN exit code (4, vs quarantine's 3) and
+  marks nothing - the units keep their true status rather than being flipped Blocked. The
+  loop then generates the handoff with `--outcome budget-spent`, which reports the appetite
+  declared vs spent vs delivered and names what remains.
+- **Never auto-extended:** a spent appetite is not topped up mid-run. Extending it is an
+  explicit operator action - a fresh `sprint plan --write` opens a new run with a new
+  appetite and a new clock.
+- **Tokens are a FORECAST, never a gate:** a script cannot observe token spend, so a token
+  ceiling would depend on the actor self-reporting the budget meant to constrain it. The
+  plan instead reports a token forecast (its per-unit estimate summed), labelled an
+  estimate; the close repeats it. It never stops a run.
 
 ## Model-tier routing {#model-tier-routing}
 
@@ -441,7 +469,7 @@ in loop step 5; per-tier escape/escalation rates accumulate in telemetry
 | `scripts/conformance.py check` | the lifecycle-conformance gate (hard-fail; incl. reconciled + critiqued) |
 | `scripts/critic.py record` | the committed independent-critic verdict per unit (D3) |
 | `scripts/route.py` | difficulty estimate + tier pick + escalation stepper (advisory) |
-| `scripts/loop_guard.py` | iteration cap, repetition-breaker, completion oracle |
+| `scripts/loop_guard.py` | iteration cap, repetition-breaker, completion oracle, appetite breaker (`budget`, exit 4) |
 | `scripts/ledger.py` | append-only per-tranche decisions ledger (survives compaction) |
 | `reconcile` / `review` / `verify_ac` | the closing gate + per-unit oracle (reused) |
 

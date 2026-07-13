@@ -237,6 +237,19 @@ deploy:
 digests:
   min_closed: 500    # closed-artefact count at/above which digests are produced and read
 
+# Run appetite - the unattended-run circuit breaker (Shape Up's fixed timebox). A run declares
+# how much it may spend; the breaker (`loop_guard budget`) is evaluated at unit BOUNDARIES and
+# stops the run cleanly when the appetite is spent, distinct from a per-unit quarantine (its own
+# exit code, and units keep their true status rather than being marked Blocked). Both axes are
+# deterministic and harness-independent: wall-clock from the run's start time, units from those
+# now terminal. A per-run `--appetite-minutes`/`--appetite-units` on `sprint plan --write`
+# overrides these defaults; 0 = unbounded (today's behaviour). Tokens are never a gate - a script
+# cannot observe token spend, so the plan reports a token FORECAST only. The appetite is never
+# auto-extended: extending it is an explicit operator action on a new run.
+appetite:
+  minutes: 0  # wall-clock ceiling in minutes; 0 = unbounded
+  units: 0    # unit-count ceiling; 0 = unbounded
+
 # Project lessons - how long a lesson stays valid before it must be re-validated. `lessons add`
 # stamps `Review-by: {added + validity_days}`; at the sprint close the gate fails while an open
 # lesson sits past its horizon un-closed and un-extended (`lessons revalidate`). A shorter window

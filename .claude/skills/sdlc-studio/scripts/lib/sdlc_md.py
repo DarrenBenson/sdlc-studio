@@ -8,6 +8,7 @@ scripts would otherwise each re-implement. Pure stdlib.
 """
 from __future__ import annotations
 
+import argparse
 import contextlib
 import json
 import os
@@ -1101,6 +1102,39 @@ def add_format_arg(parser, *, default: str = "text") -> None:
     machine-readable verb spells its output switch the same way."""
     parser.add_argument("--format", choices=("text", "json"), default=default,
                         help="output format (default: %s)" % default)
+
+
+def add_global_root(parser) -> None:
+    """Make `--root` uniform across the script family: valid BEFORE or AFTER the
+    subcommand. Call once at the end of `build_parser`, on the top-level parser.
+
+    It declares `--root` (default '.', dest 'root') on the top-level parser so
+    `prog --root X sub` parses, and re-points every per-subcommand `--root` that binds
+    the standard `root` dest to `argparse.SUPPRESS` so `prog sub --root Y` still
+    overrides without the subparser default clobbering a value given before the
+    subcommand. Every `--root` in the family binds the standard `root` dest (the
+    conformance sweep forbids a `--root` bound to any other dest, since the global
+    could not populate it and the two positions would silently diverge). A legacy
+    spelling like `run`'s `--repo-root` is kept as an alias onto that same `root` dest,
+    never a separate one. Idempotent: safe on a parser that already
+    carries a top-level `--root`, and a no-op on subcommands that never declared one
+    (they inherit the global value)."""
+    def _std_root(action) -> bool:
+        return "--root" in action.option_strings and action.dest == "root"
+
+    top_root = next((a for a in parser._actions if _std_root(a)), None)
+    if top_root is None:
+        top_root = parser.add_argument("--root", default=".", help="Repo root (default: .)")
+    # SUPPRESS every standard-dest per-subcommand `--root` so it does not overwrite a
+    # value given before the verb. Skip an action aliased with the top-level one (a
+    # `parents=` idiom shares the object) - mutating it would corrupt the global.
+    for a in parser._actions:
+        if isinstance(a, argparse._SubParsersAction):
+            for sp in a.choices.values():
+                for x in sp._actions:
+                    if _std_root(x) and x is not top_root:
+                        x.default = argparse.SUPPRESS
+    top_root.default = "."
 
 
 def resolve_ids(args, *, dest: str = "id") -> list[str]:

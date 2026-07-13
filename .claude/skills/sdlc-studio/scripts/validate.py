@@ -907,6 +907,7 @@ def build_parser() -> argparse.ArgumentParser:
                          "provenance stamp or reviewed marker (missing = error).")
     st.add_argument("--format", choices=("text", "json"), default="text")
     st.set_defaults(func=cmd_seats)
+    sdlc_md.add_global_root(p)
     return p
 
 

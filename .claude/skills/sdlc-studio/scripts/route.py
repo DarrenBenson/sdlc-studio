@@ -333,6 +333,7 @@ def build_parser() -> argparse.ArgumentParser:
     t = sub.add_parser("tiers", help="The resolved tier->model map after degradation.")
     common(t)
     t.set_defaults(func=cmd_tiers)
+    sdlc_md.add_global_root(p)
     return p
 
 

@@ -1663,6 +1663,7 @@ def build_parser() -> argparse.ArgumentParser:
     ar.add_argument("--dry-run", action="store_true", help="Report the relocation without writing")
     ar.add_argument("--format", choices=("text", "json"), default="text")
     ar.set_defaults(func=cmd_archive)
+    sdlc_md.add_global_root(p)
     return p
 
 

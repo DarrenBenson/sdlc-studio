@@ -97,9 +97,10 @@ Options:
 - `--map <path>`: Index path. Default:
   `sdlc-studio/.local/repo-map.json`.
 - `--top <n>`: Number of results. Default: 15.
-- `--format plain|json`: Output format. Default: plain.
+- `--format text|json`: Output format. Default: text (`plain` is a back-compat alias
+  for `text`).
 
-Plain output format:
+Text output format:
 
 ```text
   15.50  in=7    src/lib/auth/client.ts  [auth, client, login, email]

@@ -114,19 +114,19 @@ def cmd_record(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parent = argparse.ArgumentParser(add_help=False)  # --root works before OR after the subcommand
-    parent.add_argument("--root", default=".")
-    p = argparse.ArgumentParser(description="Orchestrate-only deploy last-mile.",
-                               parents=[parent])
+    p = argparse.ArgumentParser(description="Orchestrate-only deploy last-mile.")
     sub = p.add_subparsers(dest="cmd", required=True)
-    pf = sub.add_parser("preflight", parents=[parent],
+    pf = sub.add_parser("preflight",
                         help="gate + readiness verdict + operator hand-off (no deploy)")
     pf.add_argument("--format", choices=("text", "json"), default="text")
+    pf.add_argument("--root", default=".", help="Repo root (default: .)")
     pf.set_defaults(func=cmd_preflight)
-    rec = sub.add_parser("record", parents=[parent], help="append a deploy outcome to the deploy log")
+    rec = sub.add_parser("record", help="append a deploy outcome to the deploy log")
     rec.add_argument("--status", required=True, choices=_STATUSES)
     rec.add_argument("--detail", default="")
+    rec.add_argument("--root", default=".", help="Repo root (default: .)")
     rec.set_defaults(func=cmd_record)
+    sdlc_md.add_global_root(p)  # --root valid before OR after the subcommand
     return p
 
 

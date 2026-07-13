@@ -294,6 +294,7 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--format", choices=("text", "json"), default="text")
     c.set_defaults(func=cmd_collisions)
 
+    sdlc_md.add_global_root(p)
     return p
 
 

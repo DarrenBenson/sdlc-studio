@@ -170,6 +170,7 @@ def build_parser() -> argparse.ArgumentParser:
                    help="also backfill artifacts the provenance.adopt_after cutoff exempts")
     r.add_argument("--root", default="."); r.add_argument("--format", choices=("text", "json"), default="text")
     r.set_defaults(func=cmd_remake)
+    sdlc_md.add_global_root(p)
     return p
 
 

@@ -101,6 +101,7 @@ def build_parser() -> argparse.ArgumentParser:
     pr.add_argument("--dry-run", action="store_true", dest="dry_run")
     pr.add_argument("--format", choices=("text", "json"), default="text")
     pr.set_defaults(func=cmd_promote)
+    sdlc_md.add_global_root(p)
     return p
 
 

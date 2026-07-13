@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **A declared appetite bounds an unattended run (CR0225).** An agentic run had exactly two
+  ends: it finished, or it failed. It now accepts an appetite - `--appetite-minutes` and/or
+  `--appetite-units` - and a circuit breaker (`loop_guard budget`) stops the run cleanly when
+  the appetite is spent. The breaker is deterministic: elapsed time comes from the run's own
+  start timestamp and the unit count is read from each artefact's status on disk, so neither
+  input is a number the model reports about itself. It fires at unit boundaries, so no unit is
+  abandoned mid-implementation, and budget-exhausted has its own exit code, distinct from a
+  quarantine - the units keep their true status rather than being marked blocked. The run closes
+  by reporting appetite declared against spent against delivered and generating the handoff
+  guide. A token figure is reported as an estimate at plan and close, and is never a gate,
+  because a script cannot observe token spend and a self-reported budget is not a breaker. The
+  appetite is never auto-extended; extending it is a fresh run.
+
 - **The handoff guide: a generated record of where an agentic run stopped (CR0223).** When a
   sprint or epic run ends short of its goal - blocked, budget spent, or halted - the tail of
   remaining work was scattered across hints, the decisions ledger and the retro, with no single
@@ -70,6 +83,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unaffected.
 
 ### Fixed
+
+- **Uniform CLI grammar across the skill scripts (CR0234).** Three grammar inconsistencies that
+  each cost an agent a wrong turn are closed, and a conformance sweep now fails the build if a new
+  script reintroduces the class. `--root` is accepted before the subcommand on every root-dealing
+  script (and after the verb where the subcommand takes a root), instead of each script choosing
+  its own placement. A repeated status selector unions rather than silently discarding an earlier
+  value - `sprint plan --crs Proposed --crs Deferred` now plans both, where before it dropped
+  `Proposed` without a word and produced a plan that was quietly wrong. And `transition set`'s
+  all-or-none verdict error now names `transition annotate` as the path for an identity-only
+  stamp, rather than leaving the agent to rediscover it. The sweep walks every script's argparse
+  tree and checks root placement, the store-versus-append mismatch on repeatable flags, the
+  format-flag vocabulary, and that no `--root` alias binds a divergent destination.
 
 - **Creator input fields can no longer forge metadata or inject an executable check (BG0115).**
   A line break in a creator's input field broke out of its metadata line or table cell, because

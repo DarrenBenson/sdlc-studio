@@ -382,6 +382,7 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Cognitive 'high' threshold (default: config or 15)")
     a.add_argument("--format", choices=("text", "json"), default="text")
     a.set_defaults(func=cmd_assess)
+    sdlc_md.add_global_root(p)
     return p
 
 

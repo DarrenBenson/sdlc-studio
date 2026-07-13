@@ -98,14 +98,15 @@ re-runnable, so a refusal at a later gate never loses the earlier steps.
 | --- | --- | --- |
 | `--goal` | Sprint stop condition on the goal ladder `triage -> plan -> design -> done`: `triage` (sort a batch), `plan` (select + estimate), `design` (groom a backlog, no code), or `done` (deliver) | done |
 | `--order` | Sprint batch order: `priority` then WSJF, or `manual` | priority |
-| `--bugs` | Sprint batch: bugs by state (e.g. `--bugs open`) | - |
-| `--crs` | Sprint batch: CRs by state (e.g. `--crs proposed`) | - |
+| `--bugs` | Sprint batch: bugs by state (e.g. `--bugs open`); repeatable and combinable, `--bugs Open --bugs Blocked` merges both states | - |
+| `--crs` | Sprint batch: CRs by state (e.g. `--crs proposed`); repeatable and combinable, `--crs Proposed --crs Deferred` merges both states | - |
+| `--stories` | Sprint batch: stories by state (e.g. `--stories ready`); repeatable and combinable | - |
 | `--only` | Gate: run only these checks (comma-separated) | all |
 | `--skip` | Gate: skip these checks (comma-separated) | none |
 | `--release` | Gate: the pre-tag form - the standard gate plus an executing pass over every story's `Verify:` expression, as one exit code (read-only: no back-annotation, no report rewrite). Deselecting the `verify` lane under it is refused | off |
 | `--allow-external` | Gate `--release`: also run shell-backed verifiers on stories stamped `Provenance: external` (otherwise reported BLOCKED and unproven, never green) | off |
 | `--verify-batch` | Gate `--release`: run jest once and resolve jest verifiers from the cached result | off |
-| `--root` | Repo root for scripts (gate, reconcile, doc_coverage, ...) | . |
+| `--root` | Repo root for scripts (gate, reconcile, doc_coverage, ...); a global flag accepted **before** the subcommand on every root-dealing script (`transition --root X set ...`), and **after** the verb wherever the subcommand itself takes a root (`transition set ... --root X`) | . |
 | `--format` | Output format where supported: `text` or `json` | text |
 
 Sprint reuses `--epic` (deliver one epic) and `--agentic` / `--commit-strategy` from the

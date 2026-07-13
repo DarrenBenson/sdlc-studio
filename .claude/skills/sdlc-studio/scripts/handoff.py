@@ -389,6 +389,27 @@ def _rows(block: str):
         yield from tbl["rows"]
 
 
+def _appetite(root: Path, state: dict, ids: list[str], delivered: int) -> dict | None:
+    """The run's appetite line for the close: declared vs spent vs delivered, plus the token
+    forecast. None when no appetite was declared and no forecast was recorded - a run opened
+    without the breaker owes no appetite report. `spent` is measured, not self-reported:
+    wall-clock from the run's `started_at`, units from those now terminal (loop_guard). Token
+    is a FORECAST (recorded at plan time), labelled so and never a spend or a gate."""
+    appetite = state.get("appetite")
+    forecast = state.get("token_forecast")
+    if not appetite and forecast is None:
+        return None
+    appetite = appetite or {}
+    return {
+        "declared": {"minutes": appetite.get("minutes") or 0,
+                     "units": appetite.get("units") or 0},
+        "spent": {"minutes": round(loop_guard.elapsed_minutes(state.get("started_at")), 1),
+                  "units": loop_guard.units_consumed(root, ids)},
+        "delivered": delivered,
+        "token_forecast": forecast,
+    }
+
+
 def build(repo_root: Path | str, batch: list[str] | None = None,
           outcome: str | None = None) -> dict:
     """The JOIN: what was delivered, what remains, and what decisions are still owed.
@@ -419,6 +440,7 @@ def build(repo_root: Path | str, batch: list[str] | None = None,
         "dropped": dropped,
         "remaining": remaining,
         "open_decisions": _open_decisions(root, ids),
+        "appetite": _appetite(root, state, ids, len(delivered)),
         "summary": {"total": len(units), "delivered": len(delivered),
                     "dropped": len(dropped), "remaining": len(remaining), **tags},
         "worklist": str(WORKLIST_REL),
@@ -507,6 +529,26 @@ def _pickup_body(report: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _appetite_body(report: dict) -> str:
+    """The appetite line, rendered only when the run declared one (or carried a forecast):
+    what was budgeted, what it spent, what it delivered. The token line is a forecast,
+    labelled so - a run's appetite is wall-clock and units, never a token gate."""
+    ap = report.get("appetite")
+    if not ap:
+        return ""
+    d, sp = ap["declared"], ap["spent"]
+    mins = f"{d['minutes']:g} min" if d["minutes"] else "unbounded"
+    units = f"{d['units']} unit(s)" if d["units"] else "unbounded"
+    out = ["\n## Appetite\n",
+           f"- **Declared:** wall-clock {mins}, units {units}",
+           f"- **Spent:** {sp['minutes']:g} min, {sp['units']} unit(s) terminal",
+           f"- **Delivered:** {ap['delivered']} unit(s)"]
+    if ap.get("token_forecast"):
+        out.append(f"- **Token forecast:** ~{ap['token_forecast']:,} tokens - a plan-time "
+                   f"estimate, never a gate (a script cannot observe token spend)")
+    return "\n".join(out) + "\n"
+
+
 def render_body(report: dict) -> str:
     """The generated body. Every section is filled from the join - there is no authoring
     scaffold here, and so no `{{placeholder}}` that a renderer could fail to substitute.
@@ -518,7 +560,7 @@ def render_body(report: dict) -> str:
     dropped = (f"\n## Closed without delivery ({s['dropped']})\n\n"
                + _unit_table(report["dropped"], "")) if s["dropped"] else ""
     return (
-        "## Where to pick up\n\n" + _pickup_body(report) +
+        "## Where to pick up\n\n" + _pickup_body(report) + _appetite_body(report) +
         f"\n## Delivered ({s['delivered']})\n\n"
         + _unit_table(report["delivered"], "_Nothing was delivered in this run._")
         + dropped +
@@ -688,6 +730,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--root", default=".")
     sdlc_md.add_format_arg(s)
     s.set_defaults(func=cmd_show)
+    sdlc_md.add_global_root(p)
     return p
 
 

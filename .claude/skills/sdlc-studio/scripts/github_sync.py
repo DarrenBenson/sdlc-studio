@@ -726,6 +726,7 @@ def build_parser() -> argparse.ArgumentParser:
     st.add_argument("--root", default=".", help="Repo root (default: .)")
     st.set_defaults(func=cmd_state)
 
+    sdlc_md.add_global_root(p)
     return p
 
 

@@ -1,6 +1,7 @@
 """Unit tests for loop_guard.py (RED first - the script does not exist yet)."""
 from __future__ import annotations
 
+import datetime as _dt
 import importlib.util
 import json
 import sys
@@ -96,6 +97,119 @@ class CliTests(unittest.TestCase):
             self.assertEqual(mod.main(args), 0)
             data = json.loads(state.read_text(encoding="utf-8"))
             self.assertEqual(data["units"]["US"]["attempts"], 2)
+
+
+class BudgetVerdictTests(unittest.TestCase):
+    """The fourth guardrail: the run-level appetite breaker (pure function)."""
+
+    def test_minutes_exhausted_at_boundary(self) -> None:
+        mod = _load()
+        v = mod.budget_verdict(appetite_minutes=30, appetite_units=0,
+                               elapsed_minutes=30.0, units_done=0)
+        self.assertTrue(v["exhausted"])
+        self.assertEqual(v["reason"], "minutes")
+
+    def test_minutes_under_continues(self) -> None:
+        # kills an always-true mutant on the wall-clock arm.
+        mod = _load()
+        v = mod.budget_verdict(appetite_minutes=30, appetite_units=0,
+                               elapsed_minutes=29.9, units_done=0)
+        self.assertFalse(v["exhausted"])
+
+    def test_units_exhausted_at_boundary(self) -> None:
+        # MUTATION PROOF: removing the boundary check (the `units_done >= appetite_units`
+        # comparison) turns this red - the breaker would never fire on the unit-count arm.
+        mod = _load()
+        v = mod.budget_verdict(appetite_minutes=0, appetite_units=2,
+                               elapsed_minutes=0.0, units_done=2)
+        self.assertTrue(v["exhausted"])
+        self.assertEqual(v["reason"], "units")
+
+    def test_units_minus_one_continues(self) -> None:
+        # Boundary: one unit short of the appetite continues (kills a `>` -> `>=` off-by-one
+        # AND an always-true mutant on the unit arm).
+        mod = _load()
+        v = mod.budget_verdict(appetite_minutes=0, appetite_units=2,
+                               elapsed_minutes=0.0, units_done=1)
+        self.assertFalse(v["exhausted"])
+
+    def test_unbounded_never_fires(self) -> None:
+        # 0 appetite on both axes = today's unbounded behaviour: the breaker never fires,
+        # however much has been spent.
+        mod = _load()
+        v = mod.budget_verdict(appetite_minutes=0, appetite_units=0,
+                               elapsed_minutes=9999.0, units_done=9999)
+        self.assertFalse(v["exhausted"])
+
+    def test_either_axis_fires(self) -> None:
+        mod = _load()
+        v = mod.budget_verdict(appetite_minutes=10, appetite_units=5,
+                               elapsed_minutes=11.0, units_done=1)
+        self.assertTrue(v["exhausted"])
+        self.assertIn("minutes", v["reason"])
+        self.assertNotIn("units", v["reason"])
+
+
+class BudgetExitCodeTests(unittest.TestCase):
+    def test_budget_exit_distinct_from_quarantine(self) -> None:
+        # Budget-exhausted is NOT quarantine: a distinct exit code, so a harness can tell a
+        # clean stop (units left in their true status) from a per-unit block.
+        mod = _load()
+        self.assertNotEqual(mod.BUDGET_EXIT, mod.QUARANTINE_EXIT)
+
+
+class BudgetCliTests(unittest.TestCase):
+    def _write_run_state(self, root: Path, started_at: str, appetite: dict,
+                         batch: list) -> None:
+        p = root / "sdlc-studio" / ".local" / "run-state.json"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({
+            "schema": 1, "run_id": "RUN-TEST", "started_at": started_at,
+            "ended_at": None, "outcome": "running", "goal": None,
+            "batch": batch, "appetite": appetite,
+        }), encoding="utf-8")
+
+    def test_cli_wall_clock_exhausts(self) -> None:
+        # The CLI reads elapsed from run_state.started_at: a start two hours ago against a
+        # one-minute appetite exits BUDGET_EXIT.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            past = (_dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(hours=2)
+                    ).strftime("%Y-%m-%dT%H:%M:%SZ")
+            self._write_run_state(root, past, {"minutes": 1, "units": 0}, [])
+            mod = _load()
+            rc = mod.main(["budget", "--root", str(root), "--format", "json"])
+            self.assertEqual(rc, mod.BUDGET_EXIT)
+
+    def test_cli_unbounded_continues(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            past = (_dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(hours=2)
+                    ).strftime("%Y-%m-%dT%H:%M:%SZ")
+            self._write_run_state(root, past, {"minutes": 0, "units": 0}, [])
+            mod = _load()
+            rc = mod.main(["budget", "--root", str(root), "--format", "json"])
+            self.assertEqual(rc, 0)
+
+    def test_cli_flag_overrides_state(self) -> None:
+        # An explicit --appetite-minutes overrides the recorded appetite (ad-hoc breaker).
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            past = (_dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(hours=2)
+                    ).strftime("%Y-%m-%dT%H:%M:%SZ")
+            self._write_run_state(root, past, {"minutes": 0, "units": 0}, [])
+            mod = _load()
+            rc = mod.main(["budget", "--root", str(root), "--appetite-minutes", "1",
+                           "--format", "json"])
+            self.assertEqual(rc, mod.BUDGET_EXIT)
+
+    def test_cli_no_run_state_is_unbounded(self) -> None:
+        # No run opened -> no start time -> the breaker cannot fire (it never fabricates one).
+        with tempfile.TemporaryDirectory() as d:
+            mod = _load()
+            rc = mod.main(["budget", "--root", str(d), "--appetite-minutes", "1",
+                           "--format", "json"])
+            self.assertEqual(rc, 0)
 
 
 if __name__ == "__main__":

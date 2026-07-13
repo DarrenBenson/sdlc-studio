@@ -339,6 +339,28 @@ def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "pr
                           skip_personas=skip_personas, epics=epics)
 
 
+def _token_forecast(root: Path, batch: list[dict]) -> dict:
+    """The batch's token cost as a FORECAST - the plan's existing per-unit estimate
+    (`BASE_TOKEN_BUDGET` + `TOKENS_PER_COGNITIVE` x blast-radius complexity) summed. It is an
+    ESTIMATE and never a gate: a script cannot observe real token spend (see telemetry.py), so
+    a token ceiling would depend on the actor self-reporting the budget meant to constrain it.
+    The wall-clock / unit-count appetite is the breaker; this only informs the operator."""
+    total = 0
+    per_unit: dict[str, int] = {}
+    for it in batch:
+        budget = it.get("token_budget")
+        if budget is None:  # priority/manual order never stamped one - derive it here
+            seed = it.get("complexity")
+            if seed is None:
+                seed = _complexity_size(root, Path(it["path"]).read_text(encoding="utf-8"))
+            budget = BASE_TOKEN_BUDGET + TOKENS_PER_COGNITIVE * seed
+        per_unit[sdlc_md.norm_id(it["id"])] = budget
+        total += budget
+    return {"tokens": total, "per_unit": per_unit,
+            "basis": "plan per-unit estimate (base + complexity blast-radius); "
+                     "an ESTIMATE, never a gate - a script cannot observe token spend"}
+
+
 DEFAULT_SEAT_STALE_DAYS = 7  # advisory window; seat judgement does not rot on a clock
 
 
@@ -415,6 +437,8 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
         "deps_declared": deps_declared,
         "seat_provenance": (_seat_provenance(root, batch)
                             if order == "wsjf" and not skip_personas else None),
+        # A token cost FORECAST for the batch (estimate, never a gate - see _token_forecast).
+        "token_forecast": _token_forecast(root, batch) if batch else None,
         # The lessons the last sprints paid for, IN the plan the agent reads at sprint start.
         # A plan that merely pointed at LESSONS-SUMMARY.md relied on the agent opening it.
         "lessons": lessons.plan_digest(root),
@@ -654,6 +678,16 @@ def _render_lessons(data: dict) -> None:
               f"the ones that no longer hold)")
 
 
+def _render_token_forecast(data: dict) -> None:
+    """The batch's token forecast, labelled an estimate. Never a gate - it informs the
+    operator's appetite choice, it does not stop a run."""
+    tf = data.get("token_forecast")
+    if not tf or not tf.get("tokens"):
+        return
+    print(f"  token forecast: ~{tf['tokens']:,} tokens across {data['count']} unit(s) "
+          f"(estimate, never a gate - the run breaker is wall-clock/unit-count)")
+
+
 def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, epics) -> None:
     """Render a built plan to stdout: JSON, or the human batch header + provenance + waves."""
     if args.format == "json":
@@ -664,6 +698,7 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     print(f"batch: {data['count']} unit(s) ({src}){scope}, order={args.order}")
     _render_seat_provenance(data)
     _render_waves(data)
+    _render_token_forecast(data)
     _render_lessons(data)
 
 
@@ -686,13 +721,22 @@ def _plan_batch_source(args: argparse.Namespace) -> tuple[list, object, int | No
     """(queries, worklist, error_code). queries from --bugs/--crs/--stories (combinable),
     worklist from --worklist; the two are mutually exclusive and at least one is required.
     error_code is 2 on a bad combination (the message is already printed), else None."""
+    # each selector is repeatable (action="append"): --crs A --crs B is BOTH statuses,
+    # not the last one silently. None when unused; a list of one or more when given. A
+    # lone string (a hand-built Namespace) is coerced to one status, never iterated per
+    # character - the char-iteration is itself a silent-wrong-batch trap.
+    def _statuses(value) -> list[str]:
+        if value is None:
+            return []
+        return [value] if isinstance(value, str) else list(value)
+
     queries: list[tuple[str, str]] = []
-    if args.bugs is not None:
-        queries.append(("bug", args.bugs))
-    if args.crs is not None:
-        queries.append(("cr", args.crs))
-    if args.stories is not None:
-        queries.append(("story", args.stories))
+    for status in _statuses(args.bugs):
+        queries.append(("bug", status))
+    for status in _statuses(args.crs):
+        queries.append(("cr", status))
+    for status in _statuses(args.stories):
+        queries.append(("story", status))
     worklist = getattr(args, "worklist", None)
     if worklist and queries:
         print("--worklist is a complete batch source; do not combine it with "
@@ -727,7 +771,8 @@ def cmd_plan(args: argparse.Namespace) -> int:
     if rc is not None:
         return rc
     # reconcile before plan - a plan must be built on a drift-free census.
-    kinds = [k for k, _ in queries] if queries else list(sdlc_md.ARTIFACT_TYPES)
+    kinds = (list(dict.fromkeys(k for k, _ in queries)) if queries
+             else list(sdlc_md.ARTIFACT_TYPES))
     rc = _preplan_reconcile(args, kinds)
     if rc is not None:
         return rc
@@ -777,7 +822,25 @@ def cmd_plan(args: argparse.Namespace) -> int:
         # The close (`handoff generate`) writes the outcome back to the same object.
         state = run_state.open_run(args.root, batch=[u["id"] for u in data["batch"]],
                                    goal=getattr(args, "goal", None), plan=str(out))
-        print(f"opened run {state['run_id']} (goal={state['goal'] or 'unset'}) "
+        # Record the declared appetite (the run-level breaker `loop_guard budget` reads back)
+        # and the token forecast (an estimate the close reports) - additive fields on the
+        # run-state object, merged, never touching its schema. Only the axes the operator
+        # named are stored, so an unset axis still falls through to the project default.
+        extra: dict = {}
+        appetite = {}
+        if getattr(args, "appetite_minutes", None) is not None:
+            appetite["minutes"] = args.appetite_minutes
+        if getattr(args, "appetite_units", None) is not None:
+            appetite["units"] = args.appetite_units
+        if appetite:
+            extra["appetite"] = appetite
+        if data.get("token_forecast"):
+            extra["token_forecast"] = data["token_forecast"]["tokens"]
+        if extra:
+            state = run_state.update(args.root, **extra)
+        appetite_note = (f", appetite {appetite.get('minutes', '-')}min/"
+                         f"{appetite.get('units', '-')}units" if appetite else "")
+        print(f"opened run {state['run_id']} (goal={state['goal'] or 'unset'}{appetite_note}) "
               f"-> {run_state.path(args.root)}")
     _render_plan(args, data, queries, worklist, epics)
     return 0
@@ -787,10 +850,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="SDLC Studio sprint batch selection.")
     sub = parser.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("plan", help="Select and order a batch of work (the triage plan).")
-    p.add_argument("--bugs", metavar="STATUS", help="Bugs with this Status (e.g. Open); "
-                   "combinable with --crs/--stories for one merged mixed tranche")
-    p.add_argument("--crs", metavar="STATUS", help="CRs with this Status (e.g. Proposed); combinable")
-    p.add_argument("--stories", metavar="STATUS", help="Stories with this Status (e.g. Ready); combinable")
+    p.add_argument("--bugs", metavar="STATUS", action="append", help="Bugs with this Status "
+                   "(e.g. Open); repeatable and combinable with --crs/--stories for one merged "
+                   "mixed tranche")
+    p.add_argument("--crs", metavar="STATUS", action="append",
+                   help="CRs with this Status (e.g. Proposed); repeatable and combinable")
+    p.add_argument("--stories", metavar="STATUS", action="append",
+                   help="Stories with this Status (e.g. Ready); repeatable and combinable")
     p.add_argument("--worklist", metavar="PATH",
                    help="tranche file: one unit id per line (bullets/comments tolerated); "
                         "a complete batch source, not combinable with status queries")
@@ -805,6 +871,13 @@ def build_parser() -> argparse.ArgumentParser:
                    help="persist the sprint plan to sdlc-studio/.local/sprint-plan.json AND "
                         "open the run (id, start time, approved batch, goal) in "
                         "sdlc-studio/.local/run-state.json - the object the close reads")
+    p.add_argument("--appetite-minutes", type=float, default=None, dest="appetite_minutes",
+                   help="declared wall-clock ceiling for the run (with --write); the "
+                        "unit-boundary breaker (loop_guard budget) stops the run cleanly when "
+                        "it is spent. Never auto-extended - a fresh run resets it")
+    p.add_argument("--appetite-units", type=int, default=None, dest="appetite_units",
+                   help="declared unit-count ceiling for the run (with --write); evaluated at "
+                        "unit boundaries so no unit is abandoned mid-implementation")
     p.add_argument("--strict", action="store_true",
                    help="refuse to plan when the index has drift or local is behind origin")
     p.add_argument("--no-fetch", action="store_true", dest="no_fetch",
@@ -815,6 +888,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--root", default=".", help="Repo root (default: .)")
     p.add_argument("--format", choices=("text", "json"), default="text")
     p.set_defaults(func=cmd_plan)
+    sdlc_md.add_global_root(parser)
     return parser
 
 

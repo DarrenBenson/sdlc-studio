@@ -714,7 +714,7 @@ def _under_root(repo_root: Path, rel: str) -> Path:
 
 def cmd_run(args: argparse.Namespace) -> int:
     """Run verifiers across stories, update files, and write the report."""
-    repo_root = Path(args.repo_root).resolve()
+    repo_root = Path(args.root).resolve()
 
     if args.story:
         paths = [Path(args.story)]
@@ -1049,11 +1049,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Report output path",
     )
     r.add_argument(
-        "--repo-root", "--root",
-        dest="repo_root",
+        "--root", "--repo-root",
+        dest="root",
         default=".",
-        help="Repository root used as cwd for verifier commands (--root is an alias, "
-             "matching the flag grammar of every sibling script)",
+        help="Repository root used as cwd for verifier commands (--repo-root is a legacy "
+             "alias); binds the family-standard `root` dest so a global --root before the "
+             "verb and the flag after it resolve to one root, never diverge",
     )
     r.set_defaults(func=cmd_run)
 
@@ -1092,6 +1093,7 @@ def build_parser() -> argparse.ArgumentParser:
     rep.add_argument("--format", choices=("text", "json"), default="text")
     rep.set_defaults(func=cmd_report)
 
+    sdlc_md.add_global_root(p)
     return p
 
 

@@ -222,9 +222,23 @@ given command spells a list or a target. Deviations cost a round-trip every time
   dest="tranche", ...)`.
 - **target selection** (a status query vs an id list) is a mutually-exclusive choice the
   command validates, not two half-overlapping flags.
+- **repo root:** `--root` is a **global** flag accepted **before** the subcommand on every
+  root-dealing script, and **after** the verb wherever the subcommand declares a root. Declare
+  it per-subcommand where the verb needs it, then call `sdlc_md.add_global_root(parser)` once at
+  the end of `build_parser` - it adds the top-level `--root` and re-points the per-subcommand
+  copies so a value given before the verb is not clobbered. So `x --root R sub` works on every
+  such script, and `x sub --root R` works wherever the verb itself takes a root. It must always
+  bind the standard `root` dest (never an alias to another dest - the global cannot feed that,
+  and a root given before the verb would be silently dropped). A script that deals in no repo
+  root (projects a master, manages plan files) declares no `--root` and skips the helper.
+- **repeatable value flags:** a flag a user would naturally give more than once (a status
+  filter, an epic scope) uses `action="append"`, never the default `store` - repeating a
+  `store` flag **silently drops** every value but the last. If the help says `combinable`, the
+  action must append.
 
-`tests/test_cli_grammar.py` sweeps every id verb's argparse definition and fails if a new
-command accepts ids in a non-conforming form.
+`tests/test_cli_grammar.py` sweeps every script's argparse tree and fails if a new command
+accepts ids in a non-conforming form, declares `--root` only per-subcommand, or lets a
+`combinable` flag overwrite on repeat.
 
 **Options:**
 

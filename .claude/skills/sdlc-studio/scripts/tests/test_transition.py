@@ -50,6 +50,23 @@ def _read(root, *parts):
     return (root.joinpath("sdlc-studio", *parts)).read_text(encoding="utf-8")
 
 
+class VerdictErrorNamesAnnotateTests(unittest.TestCase):
+    """`set --author X` without the verdict pair is an identity-only stamp gone to the
+    wrong verb. The all-or-none refusal must name `transition annotate` - the verb
+    that exists for exactly that - so the actor is not left to re-derive it."""
+
+    def test_author_without_verdict_pair_names_annotate(self) -> None:
+        import io
+        from contextlib import redirect_stderr
+        args = tr.build_parser().parse_args(
+            ["set", "--id", "US0001", "--status", "Fixed", "--author", "dani"])
+        buf = io.StringIO()
+        with redirect_stderr(buf):
+            rc_val = tr.cmd_set(args)
+        self.assertEqual(rc_val, 2)
+        self.assertIn("annotate", buf.getvalue())
+
+
 class TransitionTests(unittest.TestCase):
     def test_sets_status_syncs_index_and_ticks_epic(self) -> None:
         with tempfile.TemporaryDirectory() as d:

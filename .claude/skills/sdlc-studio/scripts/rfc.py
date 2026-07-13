@@ -113,6 +113,7 @@ def build_parser() -> argparse.ArgumentParser:
     d.add_argument("--root", default=".", help="Repo root (default: .)")
     d.add_argument("--format", choices=("text", "json"), default="text")
     d.set_defaults(func=cmd_decide)
+    sdlc_md.add_global_root(parser)
     return parser
 
 

@@ -101,7 +101,7 @@ Rank files by relevance to a story or free-text description.
 /sdlc-studio repo map query --story US0001 --format json
 ```
 
-**Output example (plain):**
+**Output example (text):**
 
 ```text
   15.50  in=7    src/lib/auth/client.ts  [auth, client, login, email]
@@ -158,7 +158,7 @@ top hubs (by in_degree):
 | `--story <path_or_text>` | Story file path or free-text query | required |
 | `--map <path>` | Repo map JSON path | sdlc-studio/.local/repo-map.json |
 | `--top <n>` | Number of results | 15 |
-| `--format plain\|json` | Output format | plain |
+| `--format text\|json` | Output format (`plain` is a back-compat alias for `text`) | text |
 
 ### stats
 

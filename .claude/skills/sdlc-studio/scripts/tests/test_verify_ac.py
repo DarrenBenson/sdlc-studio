@@ -963,12 +963,16 @@ class SharedDiscoveryTests(unittest.TestCase):
                 ["run", "--dir", str(sd), "--id", "US0099", "--dry-run"])
             self.assertEqual(_quiet_cmd_run(args), 0)           # found, not "no story file"
 
-    def test_root_is_alias_of_repo_root(self):
-        # US0097/CR0181 AC3: --root is accepted as an alias of --repo-root (flag grammar parity)
+    def test_root_and_repo_root_bind_the_standard_dest(self):
+        # flag grammar parity: `--root` is the family-standard spelling and `--repo-root`
+        # is a legacy alias; BOTH bind the standard `root` dest, so a global --root before
+        # the verb and the flag after it resolve to one root (never diverge to `repo_root`).
         args = verify_ac.build_parser().parse_args(["run", "--root", "/x"])
-        self.assertEqual(args.repo_root, "/x")
+        self.assertEqual(args.root, "/x")
         args2 = verify_ac.build_parser().parse_args(["run", "--repo-root", "/y"])
-        self.assertEqual(args2.repo_root, "/y")
+        self.assertEqual(args2.root, "/y")
+        before = verify_ac.build_parser().parse_args(["--root", "/z", "run"])
+        self.assertEqual(before.root, "/z")
 
 
 class RestrictedHttpTests(unittest.TestCase):
@@ -1157,6 +1161,31 @@ class RootRelativePathsTests(unittest.TestCase):
                 os.chdir(cwd)
             # the run found the story under root (not "no stories found" from cwd) and wrote
             # the report where the Done gate reads it: root/sdlc-studio/.local/
+            self.assertEqual(rc, 0)
+            self.assertTrue((root / "sdlc-studio" / ".local" / "verify-report.json").exists())
+
+    def test_root_BEFORE_verb_is_honoured_not_silently_dropped(self) -> None:
+        # A --root given BEFORE the verb must run verifiers against THAT tree. The global
+        # --root and the --repo-root alias must resolve to one root, never diverge - a
+        # dropped root would compute the pass/fail verdict against the cwd, silently wrong.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "proj"
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "US0001-x.md").write_text(
+                "# US0001: x\n\n## Acceptance Criteria\n\n### AC1: a\n"
+                "- **Given** a\n- **When** b\n- **Then** c\n- **Verify:** file "
+                + str((root / "marker.txt")) + "\n", encoding="utf-8")
+            (root / "marker.txt").write_text("x\n", encoding="utf-8")
+            other = Path(d) / "elsewhere"
+            other.mkdir()
+            import os
+            cwd = os.getcwd()
+            os.chdir(other)  # a cwd with NO stories: a dropped root finds nothing here
+            try:
+                rc = _quiet_main(["--root", str(root), "run"])   # root BEFORE the verb
+            finally:
+                os.chdir(cwd)
             self.assertEqual(rc, 0)
             self.assertTrue((root / "sdlc-studio" / ".local" / "verify-report.json").exists())
 

@@ -17,6 +17,9 @@ import json
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib import sdlc_md  # noqa: E402
+
 DEFAULTS_PATH = Path(__file__).resolve().parent.parent / "templates" / "config-defaults.yaml"
 
 
@@ -90,6 +93,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--key", help="Dotted key, e.g. coverage.unit")
     s.add_argument("--root", default=".", help="Repo root (default: .)")
     s.set_defaults(func=cmd_show)
+    sdlc_md.add_global_root(parser)
     return parser
 
 

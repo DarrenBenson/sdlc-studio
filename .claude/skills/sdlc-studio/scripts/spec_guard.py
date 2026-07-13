@@ -133,6 +133,7 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--root", default=".")
     sdlc_md.add_format_arg(c)
     c.set_defaults(func=cmd_check)
+    sdlc_md.add_global_root(p)
     return p
 
 

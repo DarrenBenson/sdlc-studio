@@ -1022,6 +1022,7 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--date", help="override the Date cell (default: today)")
     r.add_argument("--root", default=".")
     r.set_defaults(func=cmd_revision)
+    sdlc_md.add_global_root(p)
     return p
 
 
