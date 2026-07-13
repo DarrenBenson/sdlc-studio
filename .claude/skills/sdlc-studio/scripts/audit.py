@@ -43,6 +43,29 @@ MET = {"Done", "Complete", "Verified", "Fixed", "Accepted", "Superseded", "Close
 DEAD = {"Rejected", "Withdrawn", "Won't Implement", "Won't Fix", "Deferred"}
 _AC_CHECKBOX = re.compile(r"^\s*- \[[ xX]\] ")
 
+# Every readiness issue kind audit_unit can put in a unit's `issues`, whose prefix
+# (before any `: detail` suffix) is fed to sdlc_md.remediation_lines("audit", ...) by
+# cmd_check. This is audit's finding-kind vocabulary and the single source of truth for
+# it: the remediation registry (sdlc_md.REMEDIATION["audit"]) must carry a hint for each,
+# a guard derives its expected key set from this tuple (so a new issue kind without a hint
+# reddens the guard), and a sibling test asserts this tuple matches the kinds actually
+# appended in source (so the tuple itself cannot silently drift). Informational `info`
+# notes (e.g. sequenced-in-batch) never block readiness and are not remediation kinds.
+# Keep this in step with the issue literals in audit_unit below.
+FINDING_KINDS = (
+    "not-found",
+    "weak-AC",
+    "weak-verify",
+    "underspecified",
+    "missing-regression-test",
+    "cross-epic-ac",
+    "unmet-deps",
+    "unresolved-deps",
+    "already-terminal",
+    "link-integrity",
+    "already-satisfied",
+)
+
 
 def find_artifact(root: Path, rec_id: str):
     """Locate an artifact file by id across all types; return (path, type) or None.

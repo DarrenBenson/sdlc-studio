@@ -16,27 +16,33 @@
 
 ## Current
 
-- **v4.1 SPRINT PLANNED - EP0031 + EP0032, 11 UNITS, 3 WAVES (2026-07-13).** The v4.1 window is
-  OPEN for a week; the tag cuts when the backlog empties. Operator tests by forward-porting to
-  the install, so land work in small green units on trunk.
-  - **EP0031 release integrity** (the gates that make the tag trustworthy): BG0111 (lessons
-    data loss), BG0108 (creators emit what the validator rejects), BG0109, then the sequenced
-    gate three - CR0233 (`gate --release`) -> BG0110 (leg-presence + waiver primitive) ->
-    CR0229 (engagement floor, mechanical). They share `gate.py`'s check registry, and
-    `test_gate.py` asserts the exact check-name set, so the sequencing is declared as
-    `Depends on:`, not left to memory.
-  - **EP0032 run-close and agent DX**: CR0223 (handoff guide - the KEYSTONE, it builds the
-    run-state object that does not exist today) -> CR0225 (appetite breaker); plus CR0224,
-    CR0234, CR0235 in parallel.
-  - **Triage decisions D0018-D0022.** CR0230/CR0231 Superseded and re-homed to `sdlc-bench`
-    (RFC0029 gave it the fixtures); CR0224 split, its PVD-wide edge list to RFC0030 (no honest
-    derivation - basename import matching); CR0225's token breaker dropped as unbuildable (a
-    script cannot observe token spend, so the budget would be self-reported by the actor it
-    constrains); CR0229's floor takes a required `Affects` field cross-checked against git,
-    adopting from the v4.1 tag date; BG0110 gates the four document legs, CODE excluded.
-  - **Known trap, unfixed until CR0234:** `sprint.py plan --crs A --crs B` silently keeps only
-    the last value. It produced a plan missing two CRs during this very grooming pass. Use a
-    `--worklist` file until it is fixed.
+- **v4.1 SPRINT - 12 PLANNED UNITS DELIVERED, EP0031 + EP0032 CLOSED (2026-07-13).** The v4.1
+  window stays OPEN for a week of local debugging via forward-port; the tag cuts when the backlog
+  is empty (D0025 - v4.1 absorbs everything the sprint finds, no v4.2 lane). Every unit went
+  through the full independence gate (a separate critic instance that re-runs its own
+  reproductions), and **12 of 14 units were rejected on the first pass** - the rejections caught,
+  behind green test suites: a shipped RCE (BG0115: a `--ac` newline injected an executable Verify
+  line), a handoff that silently dropped remaining work (CR0223), a verifier computing its verdict
+  against the wrong tree (CR0234), and a safety gate that did not actually gate (CR0229, three
+  rounds to an honest close). On trunk:
+  - **EP0031 release integrity:** BG0111 (lessons data loss), BG0108 (creators emit what the
+    validator accepts), BG0109 (authorship provenance), CR0233 (`gate --release`), BG0110
+    (leg-presence gate + the reusable waiver primitive), CR0229 (engagement floor), CR0236
+    (lessons close-loop gated).
+  - **EP0032 run-close + agent DX:** CR0223 (handoff guide + the run-state object), CR0225
+    (appetite breaker, built on it), CR0224 (cross-repo deps), CR0234 (uniform CLI grammar +
+    conformance sweep), CR0235 (planning template tier).
+  - **CR0229 is honest about its limit:** the engagement floor catches pure omission and
+    solo-commit understatement deterministically; understatement in a commit shared with another
+    id is a disclosed limit (git cannot attribute a file per-id), tracked as CR0239 for a
+    commit-id convention. D0021's overclaim superseded by D0026.
+  - **Cleanup wave IN FLIGHT (the sprint-discovered finds, all Target v4.1):** BG0112 (template
+    lint), BG0113 (`_put_section` drops subsections), BG0114 (conformance remediation gap),
+    BG0116 (meta-index bootstrap), BG0117 (prose-field metadata), BG0118 (floor path over-refusal),
+    CR0237 (verify_ac manual-vs-unspecified), CR0238 (triage_noise open-codes the row writer).
+  - **Needs an operator decision before the tag:** CR0239 (a commit-id convention enforced by a
+    hook - a workflow change, not a mechanical fix), RFC0030 (PVD edge list), RFC0031 (scaffold
+    contract). Each needs an accept/reject/park decision, not autonomous delivery.
 
 - **EP0030 THE GENERATED TEAM DELIVERED - BACKLOG CLEAR, v4 TAG READY (2026-07-10).**
   The GA-gating epic closed 9/9 through the full independence gate (8 critic REJECTs

@@ -33,6 +33,9 @@ except ImportError:
     _HAS_YAML = False
 repo_map = _load("repo_map", "repo_map.py")
 verify_ac = _load("verify_ac", "verify_ac.py")
+conformance = _load("conformance", "conformance.py")
+reconcile = _load("reconcile", "reconcile.py")
+audit = _load("audit", "audit.py")
 
 
 class TimeTests(unittest.TestCase):
@@ -291,13 +294,17 @@ class RemediationTests(unittest.TestCase):
         # Contract: each check's registry keys are exactly the finding-kinds it can
         # emit, and every hint is non-empty - so adding a finding-kind without a
         # hint (or emptying one) fails here instead of silently giving no guidance.
+        # The conformance, reconcile and audit sets are DERIVED from each check's own
+        # emission vocabulary, not restated here: a hardcoded answer key would share
+        # the registry's blind spot and certify a gap it was meant to catch. So a
+        # kind a check can emit but its registry lacks a hint for must redden this
+        # guard. integrity has only two, fixed, kinds and no such vocabulary constant,
+        # so its set stays explicit.
         expected = {
-            "conformance": {"decomposed", "specified", "verifiable", "verified", "reconciled",
-                            "critiqued", "promoted"},
+            "conformance": set(conformance.STAGES),
             "integrity": {"missing-required", "dangling"},
-            "audit": {"weak-AC", "unmet-deps", "unresolved-deps", "already-terminal",
-                      "link-integrity", "underspecified", "not-found"},
-            "reconcile": {"status-mismatch", "missing-row", "orphan-row", "missing-index", "count-mismatch"},
+            "audit": set(audit.FINDING_KINDS),
+            "reconcile": set(reconcile.DRIFT_KINDS),
         }
         for check, kinds in expected.items():
             reg = sdlc_md.REMEDIATION[check]

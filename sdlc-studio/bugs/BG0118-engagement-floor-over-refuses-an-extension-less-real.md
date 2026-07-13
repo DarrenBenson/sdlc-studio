@@ -1,6 +1,7 @@
 # BG0118: engagement-floor over-refuses an extension-less real file in Affects (Makefile, Dockerfile, dotfiles)
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Low
 > **Created:** 2026-07-13
 > **Created-by:** sdlc-studio file

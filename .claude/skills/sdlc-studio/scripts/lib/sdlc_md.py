@@ -569,6 +569,7 @@ REMEDIATION: dict[str, dict[str, str]] = {
         "verified": "run `verify_ac` and back-annotate `- **Verified:** yes` (Done stories)",
         "reconciled": "index drift - run `reconcile` and fix the row/counts",
         "critiqued": "record an independent-critic verdict: `critic.py record --unit <id> --verdict approve` (author != reviewer; at sprint close the adversarial full-diff pass re-runs its own repros before approving - reference-sprint.md)",
+        "documented": "skill docs are incomplete - run `doc_coverage.py` and add the missing help/help.md command entry or reference-scripts.md script entry it names (a no-op in a consuming project, which has no SKILL.md to cover)",
         "promoted": "this story is still a planning-tier scaffold - run `artifact.py promote --id <id> --to full` to add the sections it deferred (constraint chain, edge cases, test scenarios, rollback envelope)",
     },
     "integrity": {
@@ -583,6 +584,10 @@ REMEDIATION: dict[str, dict[str, str]] = {
         "already-terminal": "already Complete/Done - drop it from the batch",
         "link-integrity": "fix the artifact's required links (see the integrity check)",
         "not-found": "the id matches no artifact on disk - check the batch list",
+        "weak-verify": "the story's `- **Verify:**` line is not executable - replace the prose with a runnable command (pytest/jest/curl ...), or scope out executable AC for this project",
+        "missing-regression-test": "add an integration/regression-level test that reproduces the bug before the fix, so a recurrence is caught (see best-practices/testing.md)",
+        "cross-epic-ac": "an AC references another epic's scope - move it to a story under the owning epic, or rescope the AC to this epic",
+        "already-satisfied": "the unit's verifiers already pass - confirm with `verify_ac` and close it (do not re-build) rather than carrying it in the batch",
     },
     "reconcile": {
         "status-mismatch": "set the index row's Status to match the file (or fix the file)",
@@ -590,6 +595,9 @@ REMEDIATION: dict[str, dict[str, str]] = {
         "orphan-row": "remove the index row - no file backs it (or restore the file)",
         "missing-index": "create the type's `_index.md`",
         "count-mismatch": "recompute the summary counts from the index rows",
+        "index-status-column": "the index table's Status column is mis-named or absent, so rows cannot be compared - fix the `_index.md` header row (name the column `Status`) and re-run reconcile",
+        "breakdown-unticked": "an epic breakdown checkbox is unticked over a terminal unit - run `reconcile apply` to sync every breakdown box to its unit's status (both directions)",
+        "breakdown-ticked-early": "an epic breakdown checkbox is ticked over a still-live unit (masks unfinished work) - run `reconcile apply` to untick it, or finish the unit",
     },
 }
 

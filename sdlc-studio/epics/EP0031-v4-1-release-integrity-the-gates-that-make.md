@@ -1,6 +1,6 @@
 # EP0031: v4.1 release integrity: the gates that make the tag trustworthy
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-13
 > **Created-by:** sdlc-studio new
 

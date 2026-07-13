@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 3 |
+| Proposed | 2 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 230 |
+| Complete | 231 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 6 |
@@ -58,7 +58,7 @@
 | [CR-0234](CR0234-uniform-cli-grammar-across-skill-scripts.md) | Uniform CLI grammar across skill scripts | Complete | P3 | Improvement | 2026-07-11 | -- |
 | [CR-0235](CR0235-a-lighter-planning-tier-for-story-epic-templates.md) | A lighter planning tier for story/epic templates | Complete | P3 | Improvement | 2026-07-11 | -- |
 | [CR-0236](CR0236-the-lessons-close-loop-is-doctrine-not-mechanism.md) | The lessons close-loop is doctrine, not mechanism: gate the summary at close and the read at start | Complete | High | Improvement | 2026-07-13 | -- |
-| [CR-0237](CR0237-verify-ac-conflates-an-omitted-verify-line-with.md) | verify_ac conflates an omitted Verify line with a declared manual one | Proposed | Medium | Improvement | 2026-07-13 | -- |
+| [CR-0237](CR0237-verify-ac-conflates-an-omitted-verify-line-with.md) | verify_ac conflates an omitted Verify line with a declared manual one | Complete | Medium | Improvement | 2026-07-13 | -- |
 | [CR-0238](CR0238-triage-noise-open-codes-the-shared-revision-row.md) | triage_noise open-codes the shared revision-row writer instead of calling it | Proposed | Low | Improvement | 2026-07-13 | -- |
 | [CR-0239](CR0239-commit-id-convention-for-per-id-file-attribution.md) | Commit-id convention for per-id file attribution in the engagement floor | Proposed | Medium | Improvement | 2026-07-13 | -- |
 

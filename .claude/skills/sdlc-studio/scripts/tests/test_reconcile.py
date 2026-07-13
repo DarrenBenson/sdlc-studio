@@ -6,6 +6,7 @@ Run from the repo root:
 from __future__ import annotations
 
 import importlib.util
+import re
 import sys
 import tempfile
 import unittest
@@ -1895,6 +1896,24 @@ class MetaIndexTests(unittest.TestCase):
             self.assertEqual(reconcile.main(["detect", "--scope", "meta", "--root", str(root)]), 1)
             # a single pipeline scope must NOT drag meta drift in
             self.assertEqual(reconcile.main(["detect", "--scope", "bugs", "--root", str(root)]), 0)
+
+
+class DriftKindVocabularyTests(unittest.TestCase):
+    """DRIFT_KINDS must be the true emission vocabulary, not a restated answer key.
+
+    The remediation guard (test_sdlc_md) derives its expected reconcile key set from
+    reconcile.DRIFT_KINDS; if that tuple could silently drift from the detectors, the
+    guard would inherit the same blind spot the bug exists to kill. This ties the
+    tuple to what the module actually emits by scanning the source for `"kind":`
+    literals - so a detector that emits a new kind not in DRIFT_KINDS reddens here.
+    """
+
+    def test_drift_kinds_matches_kinds_emitted_in_source(self) -> None:
+        src = SCRIPT_PATH.read_text(encoding="utf-8")
+        emitted = set(re.findall(r'"kind":\s*"([a-z-]+)"', src))
+        self.assertEqual(
+            emitted, set(reconcile.DRIFT_KINDS),
+            "DRIFT_KINDS drifted from the `\"kind\":` literals the detectors emit")
 
 
 if __name__ == "__main__":

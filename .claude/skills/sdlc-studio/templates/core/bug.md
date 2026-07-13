@@ -63,13 +63,13 @@ Related: help/bug.md, reference-bug.md
 ### Files Modified
 
 | File | Change |
-|------|--------|
+| --- | --- |
 | {{file_path}} | {{change_description}} |
 
 ### Tests Added
 
 | Test | Description | File |
-|------|-------------|------|
+| --- | --- | --- |
 | TC{{test_id}} | {{test_description}} | {{test_file}} |
 
 ---
@@ -94,5 +94,5 @@ Related: help/bug.md, reference-bug.md
 ## Revision History
 
 | Date | Author | Change |
-|------|--------|--------|
+| --- | --- | --- |
 | {{created_date}} | {{reporter}} | Bug reported |

@@ -410,9 +410,14 @@ def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool =
       `verify_ac`), so its result is not evidence about the code: reporting it as a failing AC
       sends the operator to debug a verifier that works. It still fails the lane - unproven is
       not proof - and `allow_external` is the deliberate way to run it and reach a green.
-    * NOTHING TO PROVE IS NOT PROOF, at either level: an empty story set fails (a wrong --root,
-      a moved directory), and so does a story set with zero executable verifiers - otherwise
-      DELETING a rotted `Verify:` line would be the way to turn the release gate green.
+    * NOTHING TO PROVE IS NOT PROOF, and the guard is PER-STORY, not repo-wide. An empty story
+      set fails (a wrong --root, a moved directory). A story with an UNSPECIFIED AC - one
+      carrying no `Verify:` line at all - fails and is NAMED, because an omitted verifier is
+      not a passed one. This is per-story on purpose: a repo-wide "some executable verifier
+      exists" test let one green AC anywhere carry every verifier-less story along, so DELETING
+      a rotted `Verify:` line reached a green gate. A story whose ACs are ALL declared
+      `Verify: manual` is honestly declaring human verification and PASSES - the guard fires on
+      omission, never on a declared judgement call.
     """
     import verify_ac
     rr = Path(root).resolve()
@@ -424,34 +429,42 @@ def _verify_acs(root: str, timeout: int = VERIFY_TIMEOUT, allow_external: bool =
     jest_cache = verify_ac.jest_batch_cache(rr, timeout) if batch else None
     red: list[str] = []
     blocked: list[str] = []
-    acs = manual = 0
+    unspecified: list[str] = []
+    acs = manual = unspec = 0
     for path in stories:
         report = verify_ac.verify_story(path, dry_run=True, timeout=timeout, repo_root=rr,
                                         jest_cache=jest_cache, allow_external=allow_external)
         story_id = sdlc_md.extract_record_id(path.stem) or path.stem
         acs += report.ac_count
         manual += report.manual
+        unspec += report.unspecified
+        if report.unspecified:
+            unspecified.append(f"{story_id} ({report.unspecified} AC(s) with no Verify: line)")
         for f in report.failures:
             name = f"{story_id}::{f['ac']} ({f['verifier']})"
             (blocked if f.get("kind") == "blocked" else red).append(name)
-    executable = acs - manual
-    if not executable:
-        return {"count": 1, "blocking": True,
-                "detail": f"no executable Verify: expression across {len(stories)} "
-                          f"story/stories ({acs} AC(s), {manual} manual) - the verify lane "
-                          f"proved nothing about the AC layer; author a Verify: line per AC"}
-    if not red and not blocked:
-        return {"count": 0, "blocking": True,
-                "detail": f"{executable}/{acs} executable AC(s) green across "
-                          f"{len(stories)} story/stories ({manual} manual)"}
+    executable = acs - manual - unspec
     parts = []
+    if unspecified:
+        parts.append(f"{len(unspecified)} story/stories with an unspecified AC (no Verify: line "
+                     f"- an omitted verifier is not a passed one; author one or mark it "
+                     f"`Verify: manual`): {_elide(unspecified)}")
     if red:
         parts.append(f"{len(red)} red AC(s): {_elide(red)}")
     if blocked:
         parts.append(f"{len(blocked)} unproven AC(s) - verifier BLOCKED unrun by the "
                      f"trust boundary (story stamped Provenance: external): {_elide(blocked)}; "
                      f"pass --allow-external to run them once you trust the content")
-    return {"count": len(red) + len(blocked), "blocking": True, "detail": "; ".join(parts)}
+    if parts:
+        return {"count": len(unspecified) + len(red) + len(blocked), "blocking": True,
+                "detail": "; ".join(parts)}
+    if acs == 0:
+        return {"count": 1, "blocking": True,
+                "detail": f"no acceptance criteria across {len(stories)} story/stories - the "
+                          f"verify lane proved nothing about the AC layer (wrong --root?)"}
+    return {"count": 0, "blocking": True,
+            "detail": f"{executable}/{acs} executable AC(s) green across "
+                      f"{len(stories)} story/stories ({manual} manual)"}
 
 
 def _review_legs(root: str) -> dict:

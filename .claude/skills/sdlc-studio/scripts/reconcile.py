@@ -42,6 +42,25 @@ SCOPE_TYPES = {
 }
 DEFAULT_TYPES = ["story", "epic", "cr", "rfc", "plan", "test-spec", "bug", "workflow"]
 
+# Every drift kind this module can emit into a report's `by_kind`, which feeds
+# sdlc_md.remediation_lines("reconcile", ...). This is reconcile's finding-kind
+# vocabulary and the single source of truth for it: the remediation registry
+# (sdlc_md.REMEDIATION["reconcile"]) must carry a hint for each, a guard derives its
+# expected key set from this tuple (so a new kind without a hint reddens the guard),
+# and a sibling test asserts this tuple matches the kinds actually emitted in source
+# (so the tuple itself cannot silently drift from the detectors). Keep it in step with
+# the `"kind":` literals in the detectors below.
+DRIFT_KINDS = (
+    "missing-index",
+    "index-status-column",
+    "missing-row",
+    "status-mismatch",
+    "orphan-row",
+    "count-mismatch",
+    "breakdown-unticked",
+    "breakdown-ticked-early",
+)
+
 # Statuses that do NOT imply a backing file yet. An index row in one of these
 # states (or a non-vocabulary state such as a custom "Retired"/"Reserved") with
 # no file on disk is an intentional reservation or a documented retirement —

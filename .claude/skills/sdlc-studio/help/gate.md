@@ -78,8 +78,14 @@ The lane fails, rather than passing quietly, when it has examined nothing:
 | Situation | Lane says |
 | --- | --- |
 | No stories under `sdlc-studio/stories` | FAIL - wrong `--root`, or a moved directory |
-| Stories, but not one executable `Verify:` line | FAIL - so *deleting* a rotted `Verify:` line can never be the way to a green gate |
+| A story with an **unspecified** AC (no `Verify:` line at all) | FAIL, and the story is named - so *deleting* a rotted `Verify:` line can never be the way to a green gate |
+| A story whose ACs are all declared `Verify: manual` | PASS - a declared human-checked judgement is honest, and is not over-fired on |
 | A verifier the trust boundary refused to run | FAIL, reported **BLOCKED**, never red (see below) |
+
+The unspecified check is **per-story**, not repo-wide: an omitted `Verify:` line (nothing was
+asserted about the AC) is distinct from a declared `Verify: manual` one (a judgement call). One
+green executable AC elsewhere does not let a verifier-less story ride along - each story is judged on
+its own ACs.
 
 ### The trust boundary (`--allow-external`)
 

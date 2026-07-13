@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 2 |
+| Draft | 0 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 30 |
+| Done | 32 |
 | **Total** | **32** |
 
 > Generate-mode note: all epics are **Ready** (spec extracted from the existing
@@ -51,5 +51,5 @@
 | [EP0028](EP0028-era-completion-and-dx-v3-identity-everywhere-conventions.md) | Era completion and DX: v3 identity everywhere, conventions consistent | Done | -- | -- | 2026-07-10 | 2026-07-10 |
 | [EP0029](EP0029-v4-ga-readiness-dogfood-findings-closed-and-the.md) | v4 GA readiness: dogfood findings closed and the big-bang documented | Done | -- | -- | 2026-07-10 | 2026-07-10 |
 | [EP0030](EP0030-the-generated-team-project-native-seats-stakeholders-and.md) | the generated team: project-native seats, stakeholders and Cooper personas that arbitrate | Done | -- | -- | 2026-07-10 | 2026-07-10 |
-| [EP0031](EP0031-v4-1-release-integrity-the-gates-that-make.md) | v4.1 release integrity: the gates that make the tag trustworthy | Draft | -- | -- | 2026-07-13 | 2026-07-13 |
-| [EP0032](EP0032-v4-1-run-close-and-agent-dx.md) | v4.1 run-close and agent DX | Draft | -- | -- | 2026-07-13 | 2026-07-13 |
+| [EP0031](EP0031-v4-1-release-integrity-the-gates-that-make.md) | v4.1 release integrity: the gates that make the tag trustworthy | Done | -- | -- | 2026-07-13 | 2026-07-13 |
+| [EP0032](EP0032-v4-1-run-close-and-agent-dx.md) | v4.1 run-close and agent DX | Done | -- | -- | 2026-07-13 | 2026-07-13 |

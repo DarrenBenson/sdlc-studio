@@ -1,6 +1,6 @@
 # EP0032: v4.1 run-close and agent DX
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-13
 > **Created-by:** sdlc-studio new
 

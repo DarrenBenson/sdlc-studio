@@ -458,7 +458,8 @@ class StoryReport:
     verified: int = 0
     failed: int = 0
     stale: int = 0
-    manual: int = 0
+    manual: int = 0        # AC authored `Verify: manual ...` - a declared human-checked judgement
+    unspecified: int = 0   # AC with NO Verify: line at all - an omission, not a declaration
     passed: list[str] = field(default_factory=list)
     failures: list[dict] = field(default_factory=list)
     changed: int = 0
@@ -548,10 +549,17 @@ def verify_story(
     pending: list = []  # (block, new_state) - applied bottom-up after the loop
 
     for block in blocks:
-        # No verifier, or a human-checked AC authored as `Verify: manual ...` -> count it MANUAL,
-        # never shell it out. Shelling prose timed out and reported "failed" instead of "manual"
-        #: "manual/unverified" is honest; "failed" is not.
-        if block.verifier is None or _is_manual(block.verifier):
+        # Two distinct non-executable cases, counted SEPARATELY - conflating them is how a
+        # deleted (rather than declared) verifier reaches a green release gate:
+        #   * NO `Verify:` line at all -> UNSPECIFIED. An omission, not a claim. Nothing was
+        #     asserted about this AC, so nothing was proved.
+        #   * `Verify: manual ...` (or `manually ...`) -> MANUAL. A declared human-checked
+        #     judgement call. Never shell it out (shelling prose timed out and reported
+        #     "failed" instead - "manual" is honest, "failed" is not).
+        if block.verifier is None:
+            report.unspecified += 1
+            continue
+        if _is_manual(block.verifier):
             report.manual += 1
             continue
 
@@ -649,6 +657,7 @@ def write_report(path: Path, stories: list[StoryReport], dry_run: bool = False,
             "failed": s.failed,
             "stale": s.stale,
             "manual": s.manual,
+            "unspecified": s.unspecified,
             "passed": s.passed,
             "failures": s.failures,
             "flips": s.flips,
@@ -766,6 +775,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             f"[{tag}] {p.name}: "
             f"ac={report.ac_count} pass={report.verified} "
             f"fail={report.failed} manual={report.manual} "
+            f"unspecified={report.unspecified} "
             f"changes={report.changed}"
         )
         for fail in report.failures:
@@ -999,20 +1009,23 @@ def cmd_report(args: argparse.Namespace) -> int:
     if not stories:
         print("no stories in report")
         return 0
-    total_pass = total_fail = total_manual = 0
+    total_pass = total_fail = total_manual = total_unspecified = 0
     for sid, s in stories.items():
         total_pass += s.get("verified", 0)
         total_fail += s.get("failed", 0)
         total_manual += s.get("manual", 0)
+        total_unspecified += s.get("unspecified", 0)
         print(
             f"{sid}: ac={s.get('ac_count', 0)} "
             f"pass={s.get('verified', 0)} "
             f"fail={s.get('failed', 0)} "
-            f"manual={s.get('manual', 0)}"
+            f"manual={s.get('manual', 0)} "
+            f"unspecified={s.get('unspecified', 0)}"
         )
         for fail in s.get("failures", []):
             print(f"  FAIL {fail['ac']}: {fail['verifier']}")
-    print(f"total: pass={total_pass} fail={total_fail} manual={total_manual}")
+    print(f"total: pass={total_pass} fail={total_fail} "
+          f"manual={total_manual} unspecified={total_unspecified}")
     return 1 if total_fail > 0 else 0
 
 

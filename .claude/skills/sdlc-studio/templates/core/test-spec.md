@@ -20,18 +20,14 @@ Related: help/test-spec.md, reference-test-spec.md
 ### Stories Covered
 
 | Story | Title | Priority |
-|-------|-------|----------|
-{{#each stories}}
+| --- | --- | --- |
 | [US{{id}}](../../stories/US{{id}}-{{slug}}.md) | {{title}} | {{priority}} |
-{{/each}}
 
 ### AC Coverage Matrix
 
 | Story | AC | Description | Test Cases | Status |
-|-------|-----|-------------|------------|--------|
-{{#each ac_coverage}}
+| --- | --- | --- | --- | --- |
 | {{story}} | {{ac}} | {{description}} | {{test_cases}} | {{status}} |
-{{/each}}
 
 **Coverage:** {{covered_count}}/{{total_count}} ACs covered
 
@@ -102,10 +98,8 @@ Related: help/test-spec.md, reference-test-spec.md
 ## Automation Status
 
 | TC | Title | Status | Implementation |
-|----|-------|--------|----------------|
-{{#each test_cases}}
+| --- | --- | --- | --- |
 | TC{{id}} | {{title}} | Pending | - |
-{{/each}}
 
 ---
 
@@ -122,5 +116,5 @@ Related: help/test-spec.md, reference-test-spec.md
 ## Revision History
 
 | Date | Author | Change |
-|------|--------|--------|
+| --- | --- | --- |
 | {{created_date}} | {{author}} | Initial spec |

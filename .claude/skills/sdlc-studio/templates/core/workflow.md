@@ -36,10 +36,8 @@ Related: reference-story.md#story-implement-workflow
 Checkboxes synced from plan file. Updated as tasks complete.
 
 | # | Task | Status |
-|---|------|--------|
-{{#each plan_tasks}}
+| --- | --- | --- |
 | {{index}} | {{description}} | {{status}} |
-{{/each}}
 
 ---
 

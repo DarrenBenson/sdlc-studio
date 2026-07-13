@@ -161,11 +161,40 @@ def _declared_source_files(text: str) -> set[str]:
     return {f for f in sdlc_md.affects_files(text) if Path(f).suffix in SOURCE_SUFFIXES}
 
 
-# A declaration must name at least one CHECKABLE footprint - a real file path, not prose. A token
-# looks like a file when it ends in a `.ext` (optionally under directories). This rejects the
+# A declaration must name at least one CHECKABLE footprint - a real file path, not prose. What
+# makes a token a file is its BASENAME (the segment after the final `/`): it carries a real
+# extension, or is a known extension-less filename, or is a dotfile. This rejects the
 # omission-equivalent noise a weak model writes into the field - `n/a`, `various`, `multiple
-# files`, `see the commits`, `TBD` - which can be held to nothing and so is not a declaration.
-_FILE_TOKEN_RE = re.compile(r"[\w][\w./-]*\.[A-Za-z0-9]+$")
+# files`, `see the commits`, `TBD`, a version string like `v1.2` - which can be held to nothing
+# and so is not a declaration. `n/a` bears a `/`, so a bare separator cannot buy a pass: its
+# basename `a` is not a file.
+
+# A file extension is a dot then a LETTER then alphanumerics (`.py`, `.md`, `.tsx`). Anchoring on
+# a leading letter is what rejects a version string: `v1.2` ends `.2`, a numeric-only suffix, so
+# it is not read as a file.
+_FILE_EXT_RE = re.compile(r"\.[A-Za-z][A-Za-z0-9]*$")
+# Real files that carry no extension. Matched case-insensitively (LICENSE, Makefile, dockerfile).
+_KNOWN_EXTENSIONLESS = {"makefile", "dockerfile", "containerfile", "license", "licence"}
+# A dotfile: a leading `.` then a name (`.gitignore`, `.env`, `.env.local`), no path separator.
+_DOTFILE_RE = re.compile(r"\.[A-Za-z0-9][\w.-]*$")
+
+
+def _is_file_token(tok: str) -> bool:
+    """True when `tok` names a checkable file rather than prose. The final path segment must look
+    like a file: it carries a real extension (`src/x.py`, `a/b.md`), is a known extension-less
+    filename (`Makefile`, `Dockerfile`, `LICENSE`, `Containerfile`), or is a dotfile
+    (`.gitignore`, `.env`). A bare word (`various`, `TBD`), `n/a`, or a version string (`v1.2`) is
+    not a file. This is the invariant that keeps a declaration a checkable footprint, not prose."""
+    if not tok or any(ch.isspace() for ch in tok):
+        return False
+    base = tok.rsplit("/", 1)[-1]  # the basename - the segment after the final `/`
+    if not base:
+        return False
+    if _FILE_EXT_RE.search(base):
+        return True
+    if base.lower() in _KNOWN_EXTENSIONLESS:
+        return True
+    return bool(_DOTFILE_RE.fullmatch(base))
 
 
 def _affects_declared(text: str) -> bool:
@@ -179,7 +208,7 @@ def _affects_declared(text: str) -> bool:
         return False
     for tok in val.split(","):
         tok = re.sub(r"\s*\(.*\)\s*$", "", tok.strip()).strip().strip("`").strip()
-        if tok and "{{" not in tok and _FILE_TOKEN_RE.match(tok):
+        if tok and "{{" not in tok and _is_file_token(tok):
             return True
     return False
 

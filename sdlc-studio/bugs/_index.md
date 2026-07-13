@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 6 |
+| Open | 5 |
 | In Progress | 0 |
-| Fixed | 33 |
+| Fixed | 36 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 0 |
 | Superseded | 0 |
-| **Total** | **118** |
+| **Total** | **120** |
 
 ## All Bugs
 
@@ -78,13 +78,15 @@
 | [BG0109](BG0109-file-finding-py-hardcodes-audit-as-the-revision.md) | file_finding.py hardcodes 'audit' as the revision-history author, ignoring --author | Fixed | Low | 2026-07-11 | 2026-07-11 |
 | [BG0110](BG0110-review-lets-a-required-leg-tsd-be-self.md) | review lets a required leg (TSD) be self-downgraded to optional in prose without an explicit waiver | Fixed | -- | 2026-07-13 | 2026-07-13 |
 | [BG0111](BG0111-lessons-written-by-lessons-py-are-lost-on.md) | Lessons written by lessons.py are lost on the next skill update, and project-specific lessons are dumped into the shared cross-project registry | Fixed | -- | 2026-07-13 | 2026-07-13 |
-| [BG0112](BG0112-shipped-full-templates-emit-markdownlint-table-errors-md055.md) | shipped full templates emit markdownlint table errors (MD055/MD056/MD060) from the creator | Open | Low | 2026-07-13 | 2026-07-13 |
+| [BG0112](BG0112-shipped-full-templates-emit-markdownlint-table-errors-md055.md) | shipped full templates emit markdownlint table errors (MD055/MD056/MD060) from the creator | Fixed | Low | 2026-07-13 | 2026-07-13 |
 | [BG0113](BG0113-artifact-py-put-section-drops-the-template-s.md) | artifact.py _put_section drops the template's ### subsection prompts when a field is supplied | Open | Low | 2026-07-13 | 2026-07-13 |
-| [BG0114](BG0114-the-documented-conformance-stage-has-no-remediation-hint.md) | the documented conformance stage has no remediation hint, and the guard meant to catch that is blind to it | Open | Medium | 2026-07-13 | 2026-07-13 |
+| [BG0114](BG0114-the-documented-conformance-stage-has-no-remediation-hint.md) | the documented conformance stage has no remediation hint, and the guard meant to catch that is blind to it | Fixed | Medium | 2026-07-13 | 2026-07-13 |
 | [BG0115](BG0115-authorship-value-accepts-a-multi-line-author-corrupting.md) | authorship_value accepts a multi-line author, corrupting the Raised-by line and the index row | Fixed | High | 2026-07-13 | 2026-07-13 |
 | [BG0116](BG0116-a-consuming-project-s-first-retro-or-review.md) | a consuming project's first retro or review lands as reconcile drift (no meta index bootstrap) | Open | Low | 2026-07-13 | 2026-07-13 |
 | [BG0117](BG0117-a-prose-field-can-invent-a-metadata-line.md) | a prose field can invent a metadata line in an artefact body; the low-consolidation bullet squeezes a summary onto one line | Open | Low | 2026-07-13 | 2026-07-13 |
-| [BG0118](BG0118-engagement-floor-over-refuses-an-extension-less-real.md) | engagement-floor over-refuses an extension-less real file in Affects (Makefile, Dockerfile, dotfiles) | Open | Low | 2026-07-13 | 2026-07-13 |
+| [BG0118](BG0118-engagement-floor-over-refuses-an-extension-less-real.md) | engagement-floor over-refuses an extension-less real file in Affects (Makefile, Dockerfile, dotfiles) | Fixed | Low | 2026-07-13 | 2026-07-13 |
+| [BG0119](BG0119-engagement-floor-uses-two-different-file-recognisers-for.md) | engagement-floor uses two different file recognisers for the declared-boolean and the file-count | Open | Low | 2026-07-13 | 2026-07-13 |
+| [BG0120](BG0120-the-index-writer-emits-md060-table-errors-on.md) | the index writer emits MD060 table errors on a freshly created index | Open | Low | 2026-07-13 | 2026-07-13 |
 
 ## Archived Releases
 

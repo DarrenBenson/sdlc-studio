@@ -17,6 +17,9 @@ Two legs, because two different parties own the rules:
 from __future__ import annotations
 
 import importlib.util
+import json
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -94,6 +97,41 @@ def _errors(root: Path, path: Path, type_: str) -> list[dict]:
 
 def _fmt(violations: list[dict]) -> str:
     return "; ".join(f"[{v['rule']}] {v['message']}" for v in violations)
+
+
+# The house gate lints created artefacts with markdownlint. The skill's own config relaxes
+# the table rules (MD055/056/058/060), but a created artefact lands in the project workspace
+# under the ROOT ruleset where those rules are live - so a creator whose tables trip them ships
+# lint-failing output the validator never sees. This leg pins exactly that table-rule family so
+# the class cannot regress. It is a SECOND deterministic guard beside validate.py, not a
+# replacement: markdownlint owns table mechanics, validate.py owns artefact structure.
+_TABLE_RULES = {"default": False, "MD055": True, "MD056": True, "MD058": True, "MD060": True}
+
+
+def _markdownlint() -> list[str] | None:
+    """The markdownlint CLI, or None when Node is absent. Prefer the repo's pinned binary
+    (devDependency), then a PATH install; never fabricate a pass when neither exists."""
+    repo_bin = Path(__file__).resolve().parents[5] / "node_modules" / ".bin" / "markdownlint"
+    if repo_bin.exists():
+        return [str(repo_bin)]
+    found = shutil.which("markdownlint")
+    return [found] if found else None
+
+
+def _markdownlint_errors(path: Path) -> str:
+    """Empty string when the artefact's tables satisfy the table-rule family; otherwise the
+    CLI's report. Raises FileNotFoundError-free: caller must have checked _markdownlint() first."""
+    cli = _markdownlint()
+    assert cli is not None
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as cfg:
+        json.dump(_TABLE_RULES, cfg)
+        cfg_path = cfg.name
+    try:
+        proc = subprocess.run([*cli, "--config", cfg_path, str(path)],
+                              capture_output=True, text=True)
+    finally:
+        Path(cfg_path).unlink(missing_ok=True)
+    return "" if proc.returncode == 0 else (proc.stdout + proc.stderr).strip()
 
 
 class ContentRoundTripTests(unittest.TestCase):
@@ -206,6 +244,36 @@ class ScaffoldRoundTripTests(unittest.TestCase):
             self.assertIsNotNone(auth)
             self.assertEqual(auth["type"], "agent")
             self.assertTrue(sdlc_md.resolve_author(auth["name"], auth["type"], root))
+
+
+class MarkdownlintRoundTripTests(unittest.TestCase):
+    """A creator must not emit an artefact whose tables the house markdownlint gate rejects.
+
+    BG0108's round trip caught validator mismatches; this leg catches the sibling class - a
+    deterministic creator emitting markdownlint-failing tables (unspaced delimiters, or handlebars
+    loop markers left inside a table body as pipe-less rows). It degrades honestly: when Node (and
+    so markdownlint) is absent, the test SKIPS with a message rather than passing silently.
+    """
+
+    def setUp(self) -> None:
+        if _markdownlint() is None:
+            self.skipTest("markdownlint unavailable (Node absent) - table-lint leg skipped")
+
+    def test_created_artefacts_are_table_lint_clean(self) -> None:
+        for type_ in NEW_TYPES:
+            for template in ("minimal", "planning", "full"):
+                with self.subTest(type=type_, template=template):
+                    with tempfile.TemporaryDirectory() as d:
+                        root = Path(d)
+                        _workspace(root, "v3")
+                        fields = dict(CONTENT[type_])
+                        if type_ == "story":
+                            fields["epic"] = artifact.new(root, "epic", "parent epic",
+                                                          dict(CONTENT["epic"]))["id"]
+                        res = artifact.new(root, type_, f"a {type_}",
+                                           {**fields, "template": template})
+                        errs = _markdownlint_errors(Path(res["path"]))
+                        self.assertEqual(errs, "", f"{type_}/{template}:\n{errs}")
 
 
 if __name__ == "__main__":

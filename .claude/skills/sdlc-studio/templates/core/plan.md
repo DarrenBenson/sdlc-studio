@@ -41,7 +41,7 @@ Related: help/code.md, reference-code.md
 ### Library Documentation (Context7)
 
 | Library | Context7 ID | Key Patterns |
-|---------|-------------|--------------|
+| --- | --- | --- |
 | {{library}} | {{context7_id}} | {{patterns}} |
 
 ### Existing Patterns
@@ -66,18 +66,14 @@ Related: help/code.md, reference-code.md
 ## Implementation Tasks
 
 | # | Task | File | Depends On | Status |
-|---|------|------|------------|--------|
-{{#each tasks}}
+| --- | --- | --- | --- | --- |
 | {{index}} | {{description}} | `{{file_path}}` | {{dependencies}} | [ ] |
-{{/each}}
 
 ### Parallel Execution Groups
 
 | Group | Tasks | Prerequisite |
-|-------|-------|--------------|
-{{#each agentic_groups}}
+| --- | --- | --- |
 | {{group}} | {{tasks}} | {{prerequisite}} |
-{{/each}}
 
 ---
 
@@ -114,10 +110,8 @@ Related: help/code.md, reference-code.md
 ## Edge Case Handling
 
 | # | Edge Case (from Story) | Handling Strategy | Phase |
-|---|------------------------|-------------------|-------|
-{{#each edge_cases}}
+| --- | --- | --- | --- |
 | {{index}} | {{scenario}} | {{strategy}} | {{phase}} |
-{{/each}}
 
 **Coverage:** {{planned_count}}/{{story_count}} edge cases handled
 
@@ -126,7 +120,7 @@ Related: help/code.md, reference-code.md
 ## Risks & Mitigations
 
 | Risk | Impact | Mitigation |
-|------|--------|------------|
+| --- | --- | --- |
 | {{risk}} | {{impact}} | {{mitigation}} |
 
 ---

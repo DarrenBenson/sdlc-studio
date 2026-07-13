@@ -1,6 +1,7 @@
 # BG0112: shipped full templates emit markdownlint table errors (MD055/MD056/MD060) from the creator
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Target:** v4.1
 > **Severity:** Low
 > **Created:** 2026-07-13

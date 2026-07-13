@@ -357,6 +357,60 @@ class DeclarationIsCheckableTests(unittest.TestCase):
             self.assertFalse(_units(root)["BG0602"]["violation"])
 
 
+class ExtensionlessFootprintTests(unittest.TestCase):
+    """BG0118: a checkable footprint is not only a dotted path. An extension-less real file
+    (Makefile, Dockerfile, LICENSE, Containerfile) or a dotfile (.gitignore, .env) is a real,
+    checkable single-file declaration and must satisfy the floor - forcing a waiver on such an
+    honest single-file change would train reflexive waivering, the anti-pattern the floor avoids.
+    A version string (v1.2) and prose (n/a) are still NOT files."""
+
+    def test_known_extensionless_file_is_a_declaration(self):
+        for name in ("Makefile", "Dockerfile", "LICENSE", "Containerfile"):
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _write_unit(root, "bug", 620, status="Fixed", affects=[name])
+                u = _units(root)["BG0620"]
+                self.assertTrue(u["declared"], name)
+                self.assertFalse(u["violation"], name)
+
+    def test_dotfile_is_a_declaration(self):
+        for name in (".gitignore", ".env"):
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _write_unit(root, "bug", 621, status="Fixed", affects=[name])
+                u = _units(root)["BG0621"]
+                self.assertTrue(u["declared"], name)
+                self.assertFalse(u["violation"], name)
+
+    def test_extensionless_file_under_a_directory_is_a_declaration(self):
+        # The basename is what must look like a file - a path segment carrying a known
+        # extension-less name still counts.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write_unit(root, "bug", 622, status="Fixed", affects=["docker/Dockerfile"])
+            self.assertTrue(_units(root)["BG0622"]["declared"])
+
+    def test_version_string_is_not_a_declaration(self):
+        # BG0118 sibling false-accept: `v1.2` is a version, not a file - its `.2` is a numeric
+        # extension. It must NOT satisfy the floor.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write_unit(root, "bug", 623, status="Fixed", affects=["v1.2"])
+            u = _units(root)["BG0623"]
+            self.assertFalse(u["declared"])
+            self.assertTrue(u["violation"])
+            self.assertEqual(u["kind"], "undeclared")
+
+    def test_na_bearing_a_slash_is_still_not_a_declaration(self):
+        # `n/a` bears a `/` but its basename `a` is not a file - a bare `/` cannot buy a pass.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write_unit(root, "bug", 624, status="Fixed", affects=["n/a"])
+            u = _units(root)["BG0624"]
+            self.assertFalse(u["declared"])
+            self.assertTrue(u["violation"])
+
+
 class BatchCommitUnderstatementLimitTests(unittest.TestCase):
     """R2 (documented LIMIT, not a hole to close): understatement (declare 1 file, touch 3) is
     NOT caught when the unit shares its commit with another judged id, because F3's batch-skip

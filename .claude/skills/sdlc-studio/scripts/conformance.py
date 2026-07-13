@@ -30,6 +30,15 @@ _PLACEHOLDER = re.compile(r"\{\{[^}]*\}\}")
 # A bullet's fillable value: strip the leading marker (checkbox, **Label:**) -> group(1).
 _BULLET_VAL = re.compile(r"^\s*[-*]\s+(?:\[[ xX]\]\s+)?(?:\*\*[^*]+\*\*:?\s*)?(.*)$")
 
+# The lifecycle stages this check judges, in report order - its finding-kind vocabulary.
+# Every stage here can appear in a unit's `missing` list, so the remediation registry
+# (sdlc_md.REMEDIATION["conformance"]) must carry a hint for each; a guard derives its
+# expected key set from this tuple, so registry and check cannot drift out of step. The
+# first three apply to every story; the rest are required only once a story is Done.
+ALWAYS_STAGES = ("decomposed", "specified", "verifiable")
+DONE_STAGES = ("verified", "reconciled", "critiqued", "documented", "promoted")
+STAGES = ALWAYS_STAGES + DONE_STAGES
+
 
 def _real(value: str | None) -> bool:
     """True when a line's fillable value has substance beyond a {{placeholder}}:
@@ -143,9 +152,9 @@ def detect_conformance(repo_root: Path | str) -> dict:
             "documented": documented,
             "promoted": promoted,
         }
-        required = ["decomposed", "specified", "verifiable"]
+        required = list(ALWAYS_STAGES)
         if status == "Done":
-            required += ["verified", "reconciled", "critiqued", "documented", "promoted"]
+            required += list(DONE_STAGES)
         rid_num = sdlc_md.id_number(rid)
         exempt = cutoff_num is not None and rid_num is not None and rid_num <= cutoff_num
         missing = [] if exempt else [s for s in required if not stages[s]]

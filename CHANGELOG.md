@@ -125,6 +125,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   tree and checks root placement, the store-versus-append mismatch on repeatable flags, the
   format-flag vocabulary, and that no `--root` alias binds a divergent destination.
 
+- **The release gate tells an omitted verifier from a declared manual one (CR0237).** The AC
+  verifier counted an acceptance criterion with no `Verify:` line and one that says `Verify:
+  manual` into the same bucket, so the release vacuity guard had to be repo-wide: one executable
+  AC anywhere let every unverified story through, and under grandfathering, deleting a rotted
+  `Verify:` line reached a green release. The two are now separate - an omission is *unspecified*,
+  a declared judgement is *manual* - and the guard is per-story: a story with an unspecified AC
+  fails and is named, a story whose ACs are all declared-manual passes. This closes the last route
+  by which a rotted verify layer reached a tag.
+
+- **The gate's coverage guard no longer certifies a gap it was written to catch (BG0114).** The
+  `documented` conformance stage could appear as non-conformant with no remediation hint, and the
+  test meant to catch a missing hint passed only because its own expected set shared the omission -
+  a guard handed its own answer key. The same blind spot was live in two more checks: `reconcile`
+  (three drift kinds, including the one that masks unfinished work) and `audit` (four, including a
+  unit whose verifiers already pass being told "not ready" with no way forward). Each check now
+  exposes the kinds it can emit as one vocabulary the guard derives from, pinned to the real
+  emission sites by a test, so a new kind without a hint fails the build. Eight remediation hints
+  added; the one shipped hint whose command did not exist is corrected.
+
+- **The creators emit lint-clean tables (BG0112) and extension-less files count as a footprint
+  (BG0118).** A freshly created full-template artefact tripped the workspace's markdown table
+  rules - padded delimiter rows and dead handlebars loop markers left inside table bodies - so a
+  new plan, bug, test-spec or workflow started life failing the lint the project enforces. The
+  templates are fixed and a round-trip check now lints created artefacts against those rules (it
+  skips honestly when the linter is absent, never a false pass). Separately, the engagement floor
+  recognised only files with a dotted extension, so an honest single-file declaration of a
+  `Makefile` or a dotfile was wrongly refused; it now accepts an extension-less real file while
+  still rejecting prose.
+
 - **Creator input fields can no longer forge metadata or inject an executable check (BG0115).**
   A line break in a creator's input field broke out of its metadata line or table cell, because
   the value was interpolated raw. Filed as a cosmetic newline in `--author`, it was a class: a

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib.util
 import io
+import re
 import sys
 import tempfile
 import unittest
@@ -579,6 +580,26 @@ class RegressionTestHeuristicTests(unittest.TestCase):
             root = Path(t)
             r = self._bug_with(root, 5, "Fixed", "")
             self.assertNotIn("missing-regression-test", r["issues"])
+
+class FindingKindVocabularyTests(unittest.TestCase):
+    """FINDING_KINDS must be the true emission vocabulary, not a restated answer key.
+
+    The remediation guard (test_sdlc_md) derives its expected audit key set from
+    audit.FINDING_KINDS; if that tuple could silently drift from audit_unit, the guard
+    would inherit the same blind spot the bug exists to kill. This ties the tuple to
+    what the module actually appends to a unit's `issues` by scanning the source, so an
+    issue kind added without a FINDING_KINDS entry reddens here. Informational `info`
+    notes use `info.extend`, not `issues.append`, so they are correctly excluded.
+    """
+
+    def test_finding_kinds_matches_issue_literals_in_source(self) -> None:
+        src = SCRIPT.read_text(encoding="utf-8")
+        emitted = set(re.findall(r'issues\.append\(\s*"([a-zA-Z-]+)', src))
+        emitted |= set(re.findall(r'"issues":\s*\["([a-zA-Z-]+)"', src))
+        self.assertEqual(
+            emitted, set(_load().FINDING_KINDS),
+            "FINDING_KINDS drifted from the issue literals audit_unit appends")
+
 
 if __name__ == "__main__":
     unittest.main()

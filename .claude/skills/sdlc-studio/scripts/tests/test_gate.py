@@ -557,7 +557,10 @@ class ReleaseVacuityTests(ReleaseGateTests):
                 "### AC2: human-checked\n- **Verify:** manual eyeball it\n", encoding="utf-8")
             r = gate.run_gate(str(root), checks={}, release=True)
             self.assertFalse(r["ok"])
-            self.assertIn("no executable", r["checks"][0]["detail"])
+            # The deleted verifier is now caught per-story as UNSPECIFIED, and named - not
+            # conflated with the declared-manual AC2 into one repo-wide "no executable" count.
+            self.assertIn("unspecified", r["checks"][0]["detail"])
+            self.assertIn("US0001", r["checks"][0]["detail"])
 
     def test_one_executable_ac_among_manual_ones_still_proves_something(self) -> None:
         with tempfile.TemporaryDirectory() as t:
@@ -572,6 +575,78 @@ class ReleaseVacuityTests(ReleaseGateTests):
             r = gate.run_gate(str(root), checks={}, release=True)
             self.assertTrue(r["ok"], r["checks"])
             self.assertIn("1 manual", r["checks"][0]["detail"])
+
+
+class ReleasePerStoryVacuityTests(ReleaseGateTests):
+    """CR0237: the vacuity guard is PER-STORY, not repo-wide. verify_ac distinguishes a story's
+    UNSPECIFIED ACs (no Verify: line - an omission) from its DECLARED-manual ACs (a judgement
+    call). One green executable AC anywhere used to let every verifier-less story ride along, so
+    a grandfathered story with a DELETED Verify line still reached a green release gate - the
+    last route by which a rotted verify layer reaches a tag. The guard now names the omission
+    story-by-story, while an honestly all-manual story is not over-fired on."""
+
+    def _grandfathered(self, root: Path) -> Path:
+        """A story whose ACs carry NO Verify: line at all (a rotted verifier deleted, not fixed)."""
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True, exist_ok=True)
+        p = sd / "US0001-grandfathered.md"
+        p.write_text(
+            "# US0001: grandfathered\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n"
+            "### AC1: was verified once\n- **Given:** a rotted Verify line was deleted\n"
+            "### AC2: also bare\n- **Then:** still no verifier\n", encoding="utf-8")
+        return p
+
+    def test_grandfathered_deleted_verify_no_longer_reaches_green(self) -> None:
+        # THE RED (the CR0237 hole): a grandfathered story with deleted Verify lines rode along
+        # on another story's one green executable AC. Repo-wide `executable = acs - manual` was
+        # > 0, so the gate passed. Per-story, the omission is now caught and named.
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._legs(root)
+            self._grandfathered(root)
+            sd = root / "sdlc-studio" / "stories"
+            (sd / "US0002-green.md").write_text(
+                "# US0002: green\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n"
+                "### AC1: executable\n- **Verify:** shell true\n", encoding="utf-8")
+            r = gate.run_gate(str(root), checks={}, release=True)
+            lane = next(c for c in r["checks"] if c["check"] == "verify")
+            self.assertFalse(r["ok"])                       # the hole is closed
+            self.assertEqual(lane["status"], "fail")
+            self.assertIn("unspecified", lane["detail"])
+            self.assertIn("US0001", lane["detail"])         # the omission is named
+            self.assertNotIn("US0002", lane["detail"])      # the green story is not over-fired on
+
+    def test_all_manual_story_still_reaches_green(self) -> None:
+        # The trap to avoid: a story whose ACs are ALL declared `Verify: manual` is honestly
+        # declaring human verification. It must PASS - the guard fires on omission, not on a
+        # declared judgement call.
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._legs(root)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True, exist_ok=True)
+            (sd / "US0001-manual.md").write_text(
+                "# US0001: manual\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n"
+                "### AC1: human check\n- **Verify:** manual confirm the dashboard loads\n"
+                "### AC2: human check\n- **Verify:** manual confirm the export\n", encoding="utf-8")
+            r = gate.run_gate(str(root), checks={}, release=True)
+            self.assertTrue(r["ok"], r["checks"])           # all-manual is not over-fired on
+            self.assertIn("2 manual", r["checks"][0]["detail"])
+
+    def test_manual_and_unspecified_are_separate_report_counts(self) -> None:
+        # The report-shape change: an omitted Verify line and a declared `Verify: manual` are no
+        # longer summed into one bucket. Reverting the split reddens this.
+        import verify_ac
+        with tempfile.TemporaryDirectory() as t:
+            story = Path(t) / "US0001-x.md"
+            story.write_text(
+                "# US0001: x\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n"
+                "### AC1: declared manual\n- **Verify:** manual eyeball it\n"
+                "### AC2: omitted\n- **Given:** no verifier\n", encoding="utf-8")
+            rep = verify_ac.verify_story(story, dry_run=True, timeout=5, repo_root=Path(t))
+            self.assertEqual(rep.manual, 1)         # only the DECLARED-manual AC
+            self.assertEqual(rep.unspecified, 1)    # the omission is its own count
+            self.assertEqual(rep.failed, 0)
 
 
 class ReviewLegsGateTests(ReleaseGateTests):
