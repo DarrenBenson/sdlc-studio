@@ -7,6 +7,7 @@
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
 > **Depends on:** CR0255
+> **Affects:** .claude/skills/sdlc-studio/scripts/review_generate.py, README.md, docs/why-sdlc-studio.md
 
 ## Summary
 
