@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 7 |
+| Proposed | 6 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 251 |
+| Complete | 252 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 6 |
@@ -83,7 +83,7 @@
 | [CR-0259](CR0259-rfc0034-d3-a-sprint-capacity-budget-in-tokens.md) | RFC0034 D3: a sprint capacity budget in tokens/wall-clock, wired to CR0225 appetite | Complete | P3 | Feature | 2026-07-14 | -- |
 | [CR-0260](CR0260-a-breakdown-step-that-makes-a-backlog-plannable.md) | A breakdown step that makes a backlog plannable: Affects, size (bugs too), dependencies, shared-file clusters | Complete | P2 | Feature | 2026-07-14 | -- |
 | [CR-0261](CR0261-record-which-model-delivered-each-unit-on-the.md) | Record which model delivered each unit, on the artefact and in the committed history | Proposed | P2 | Feature | 2026-07-14 | -- |
-| [CR-0262](CR0262-the-forecast-seed-is-inert-max-cognitive-predicts.md) | The forecast seed is inert: max_cognitive predicts neither cost nor work (r = 0.00). Change the axis, not the coefficient | Proposed | P1 | Improvement | 2026-07-14 | -- |
+| [CR-0262](CR0262-the-forecast-seed-is-inert-max-cognitive-predicts.md) | The forecast seed is inert: max_cognitive predicts neither cost nor work (r = 0.00). Change the axis, not the coefficient | Complete | P1 | Improvement | 2026-07-14 | -- |
 | [CR-0263](CR0263-measure-the-estimator-per-estimator-and-give-unknown.md) | Measure the estimator, per estimator - and give "unknown" a first-class value | Proposed | P2 | Feature | 2026-07-14 | -- |
 | [CR-0264](CR0264-the-filer-has-no-duplicate-detection-three-overlapping.md) | The filer has no duplicate detection: three overlapping pairs accumulated in one backlog of eleven | Proposed | P2 | Feature | 2026-07-14 | -- |
 

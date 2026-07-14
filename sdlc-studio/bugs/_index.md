@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 4 |
 | In Progress | 0 |
-| Fixed | 55 |
+| Fixed | 59 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **141** |
+| **Total** | **145** |
 
 ## All Bugs
 
@@ -103,11 +103,15 @@
 | [BG0134](BG0134-the-engagement-floor-trailer-check-warns-after-the.md) | The engagement-floor trailer check warns after the commit has already landed, so it fails open | Fixed | Medium | 2026-07-14 | 2026-07-14 |
 | [BG0135](BG0135-reconcile-detect-is-blind-to-an-orphan-index.md) | reconcile detect is blind to an orphan index row whose artefact file is gone | Fixed | Medium | 2026-07-14 | 2026-07-14 |
 | [BG0136](BG0136-the-filer-writes-artefacts-the-planner-then-refuses.md) | The filer writes artefacts the planner then refuses: no --affects flag exists, so every filed bug is unplannable | Fixed | High | 2026-07-14 | 2026-07-14 |
-| [BG0137](BG0137-every-archived-index-row-link-is-wrong-depth.md) | Every archived index row link is wrong-depth: 361 dead links on GitHub | Open | Medium | 2026-07-14 | 2026-07-14 |
-| [BG0138](BG0138-ts0001-carries-13-broken-relative-links-where-is.md) | TS0001 carries 13 broken relative links (../../ where ../ is correct) | Open | Low | 2026-07-14 | 2026-07-14 |
+| [BG0137](BG0137-every-archived-index-row-link-is-wrong-depth.md) | Every archived index row link is wrong-depth: 361 dead links on GitHub | Fixed | Medium | 2026-07-14 | 2026-07-14 |
+| [BG0138](BG0138-ts0001-carries-13-broken-relative-links-where-is.md) | TS0001 carries 13 broken relative links (../../ where ../ is correct) | Fixed | Low | 2026-07-14 | 2026-07-14 |
 | [BG0139](BG0139-the-model-router-scores-a-docs-unit-trivial.md) | The model router scores a docs unit trivial with high confidence: its dominant signal is the predictor falsified today | Won't Fix | High | 2026-07-14 | 2026-07-14 |
-| [BG0140](BG0140-the-plan-time-forecast-is-written-to-gitignored.md) | The plan-time forecast is written to gitignored .local/, so BG0133 fix does not survive a clone | Open | High | 2026-07-14 | 2026-07-14 |
+| [BG0140](BG0140-the-plan-time-forecast-is-written-to-gitignored.md) | The plan-time forecast is written to gitignored .local/, so BG0133 fix does not survive a clone | Fixed | High | 2026-07-14 | 2026-07-14 |
 | [BG0141](BG0141-retro-extract-titles-a-lesson-from-its-first.md) | retro extract titles a lesson from its first LINE, so a wrapped lesson gets a title cut mid-sentence | Open | Low | 2026-07-14 | 2026-07-14 |
+| [BG0142](BG0142-reconcile-carries-the-same-archive-link-accommodation-that.md) | reconcile carries the same archive-link accommodation that check_links just shed, so a regressed row could hide there | Open | Low | 2026-07-14 | 2026-07-14 |
+| [BG0143](BG0143-the-new-body-link-pass-flags-links-inside.md) | The new body-link pass flags links inside code spans and fenced blocks, so no artefact can document a broken link | Fixed | Medium | 2026-07-14 | 2026-07-14 |
+| [BG0144](BG0144-the-grooming-gate-accepts-an-affects-naming-files.md) | The grooming gate accepts an Affects naming files that do not exist, and silently sizes the unit from nothing | Open | High | 2026-07-14 | 2026-07-14 |
+| [BG0145](BG0145-telemetry-cli-rejects-the-new-rate-seed-source.md) | telemetry CLI rejects the new rate seed-source, and complexity drops derivable churn risk for a docs unit | Open | Low | 2026-07-14 | 2026-07-14 |
 
 ## Archived Releases
 

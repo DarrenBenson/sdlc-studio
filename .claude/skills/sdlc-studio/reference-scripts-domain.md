@@ -46,10 +46,16 @@ the gate); adopting it is a project choice.
 
 Run telemetry recorder. `record` appends a per-unit run outcome
 (id, type, iterations, wall-time, stages, critic verdict, complexity, churn, reopened,
-tokens-when-supplied) to the gitignored `sdlc-studio/.local/telemetry.jsonl`. Local-only,
-no network, no upload; advisory (a write failure is swallowed, never raised into the loop);
-only whitelisted non-None fields are written; `read_all`/`show` skip malformed lines. Feeds
-the deferred calibrate step.
+tokens-when-supplied) to the **committed** evidence log `sdlc-studio/retros/evidence/actuals-*.jsonl`;
+`forecast` records the plan-time prediction beside it (`forecasts-*.jsonl`). Both are project
+evidence, not runtime state - no tool can regenerate an observation, and evidence the team
+cannot read on a fresh clone is not evidence - so they live beside the velocity history they
+are the rows of, and never in `.local/`. Sharded one file per UTC day, so two branches closing
+sprints on different days merge cleanly and a same-day clash is a conflict a human resolves,
+never a silent loss. No network, no upload; `record` is advisory (a write failure is swallowed,
+never raised into the loop); only whitelisted non-None fields are written; `read_all`/`show`
+skip malformed lines. `migrate` moves a pre-existing `.local/` log into the evidence dir
+without loss (a project that upgrades keeps its history; the old log is read until it does).
 
 ### `pvd.py`
 

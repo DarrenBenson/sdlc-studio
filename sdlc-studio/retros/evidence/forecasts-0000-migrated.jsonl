@@ -1,0 +1,27 @@
+{"id": "BG0126", "tokens": 245000, "seed": 39, "seed_source": "complexity", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 5000}, "planned_at": "2026-07-14"}
+{"id": "BG0127", "tokens": 310000, "seed": 52, "seed_source": "complexity", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 5000}, "planned_at": "2026-07-14"}
+{"id": "BG0130", "tokens": 125000, "seed": 15, "seed_source": "complexity", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 5000}, "planned_at": "2026-07-14"}
+{"id": "CR0248", "tokens": 310000, "seed": 52, "seed_source": "complexity", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 5000}, "planned_at": "2026-07-14"}
+{"id": "CR0249", "tokens": 245000, "seed": 39, "seed_source": "complexity", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 5000}, "planned_at": "2026-07-14"}
+{"id": "CR0250", "tokens": 50000, "seed": 0, "seed_source": "complexity", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 5000}, "planned_at": "2026-07-14"}
+{"id": "CR0257", "tokens": 67400, "seed": 29, "seed_source": "complexity", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 600}, "planned_at": "2026-07-14"}
+{"id": "CR0258", "tokens": 77000, "seed": 45, "seed_source": "complexity", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 600}, "planned_at": "2026-07-14"}
+{"id": "BG0132", "tokens": 73400, "seed": 39, "seed_source": "complexity", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 600}, "planned_at": "2026-07-14"}
+{"id": "CR0259", "tokens": 67400, "seed": 29, "seed_source": "complexity", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 600}, "planned_at": "2026-07-14"}
+{"id": "CR0260", "tokens": 67400, "seed": 29, "seed_source": "complexity", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 600}, "planned_at": "2026-07-14"}
+{"id": "CR0254", "tokens": 69200, "seed": 32, "seed_source": "complexity", "complexity": 32, "effort": "M", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 600}, "planned_at": "2026-07-14T16:43:38Z"}
+{"id": "CR0255", "tokens": 58400, "seed": 14, "seed_source": "complexity", "complexity": 14, "effort": "L", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 600}, "planned_at": "2026-07-14T16:43:38Z"}
+{"id": "CR0256", "tokens": 58400, "seed": 14, "seed_source": "complexity", "complexity": 14, "effort": "M", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 600}, "planned_at": "2026-07-14T16:43:38Z"}
+{"id": "CR0252", "tokens": 80000, "seed": 0, "seed_source": "effort", "effort": "L", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 600}, "planned_at": "2026-07-14T17:27:48Z"}
+{"id": "BG0133", "tokens": 63800, "seed": 23, "seed_source": "complexity", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 600}, "planned_at": "2026-07-14T17:27:48Z"}
+{"id": "BG0136", "tokens": 73400, "seed": 39, "seed_source": "complexity", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 600}, "planned_at": "2026-07-14T17:27:48Z"}
+{"id": "BG0134", "tokens": 50000, "seed": 0, "seed_source": "complexity", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 600}, "planned_at": "2026-07-14T17:27:48Z"}
+{"id": "BG0135", "tokens": 81200, "seed": 52, "seed_source": "complexity", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 600}, "planned_at": "2026-07-14T17:27:48Z"}
+{"id": "CR0262", "tokens": 65000, "seed": 25, "seed_source": "complexity", "complexity": 25, "effort": "M", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 600}, "planned_at": "2026-07-14T18:11:06Z"}
+{"id": "BG0139", "tokens": 65000, "seed": 25, "seed_source": "complexity", "complexity": 25, "effort": "M", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 600}, "planned_at": "2026-07-14T18:11:06Z"}
+{"id": "BG0140", "tokens": 77000, "seed": 45, "seed_source": "complexity", "complexity": 45, "effort": "S", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 600}, "planned_at": "2026-07-14T18:11:06Z"}
+{"id": "CR0261", "tokens": 77000, "seed": 45, "seed_source": "complexity", "complexity": 45, "effort": "S", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 600}, "planned_at": "2026-07-14T18:11:06Z"}
+{"id": "CR0263", "tokens": 77000, "seed": 45, "seed_source": "complexity", "complexity": 45, "effort": "M", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 600}, "planned_at": "2026-07-14T18:11:06Z"}
+{"id": "BG0137", "tokens": 65000, "seed": 25, "seed_source": "complexity", "complexity": 25, "effort": "M", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 600}, "planned_at": "2026-07-14T18:11:06Z"}
+{"id": "BG0138", "tokens": 65000, "seed": 25, "seed_source": "complexity", "complexity": 25, "effort": "S", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 600}, "planned_at": "2026-07-14T18:11:06Z"}
+{"id": "BG0141", "tokens": 68000, "seed": 30, "seed_source": "complexity", "complexity": 30, "effort": "S", "constants": {"BASE_TOKEN_BUDGET": 50000, "TOKENS_PER_COGNITIVE": 600}, "planned_at": "2026-07-14T18:11:06Z"}

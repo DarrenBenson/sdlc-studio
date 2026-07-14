@@ -9,6 +9,7 @@ Run from the repo root:
 from __future__ import annotations
 
 import importlib.util
+import re
 import sys
 import tempfile
 import unittest
@@ -70,6 +71,50 @@ class TerminalVocabTests(unittest.TestCase):
         self.assertFalse(sdlc_md.is_terminal_status("cr", "Proposed"))
         # a CR "Built" is not a default-vocab status here, so it is never terminal (stays active)
         self.assertFalse(sdlc_md.is_terminal_status("cr", "Built"))
+
+
+def _row_link_targets(text: str) -> list[str]:
+    return re.findall(r"\]\(([^)]+)\)", text)
+
+
+class ArchivedRowLinkDepthTests(unittest.TestCase):
+    """BG0137: the moved row's link must RESOLVE from the sub-index it now lives in.
+    The sub-index sits two levels below the artefact, so a copied bare filename 404s."""
+
+    def test_archived_row_link_resolves_from_the_subindex(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = _fixture(root)
+            archive.archive(root, "story", "r1")
+            sub = sd / "archive" / "r1" / "story.md"
+            targets = _row_link_targets(sub.read_text(encoding="utf-8"))
+            self.assertEqual(len(targets), 2)
+            for tgt in targets:
+                self.assertTrue((sub.parent / tgt).is_file(),
+                                f"archived row link {tgt} does not resolve from {sub}")
+
+    def test_rearchiving_does_not_deepen_an_already_correct_link(self) -> None:
+        # idempotency: archiving is re-runnable, and a second pass into the same release
+        # must not rewrite `../../x.md` into `../../../../x.md`.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = _fixture(root)
+            archive.archive(root, "story", "r1")
+            sub = sd / "archive" / "r1" / "story.md"
+            # a further terminal row appears in the live index and is archived into r1 too
+            (sd / "US0005-e.md").write_text("# US0005: t\n\n> **Status:** Done\n",
+                                            encoding="utf-8")
+            live = (sd / "_index.md").read_text(encoding="utf-8")
+            live = live.replace("| [US0002](US0002-b.md) | B | In Progress |\n",
+                                "| [US0002](US0002-b.md) | B | In Progress |\n"
+                                "| [US0005](US0005-e.md) | E | Done |\n")
+            (sd / "_index.md").write_text(live, encoding="utf-8")
+            archive.archive(root, "story", "r1")
+            targets = _row_link_targets(sub.read_text(encoding="utf-8"))
+            self.assertEqual(len(targets), 3)
+            for tgt in targets:
+                self.assertTrue((sub.parent / tgt).is_file(),
+                                f"archived row link {tgt} does not resolve from {sub}")
 
 
 class WriterTests(unittest.TestCase):

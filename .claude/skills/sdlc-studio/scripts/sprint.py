@@ -10,8 +10,14 @@ ties within a priority, so the smaller blast-radius job goes first. Complexity n
 overrides priority, and the order degrades to plain priority when no complexity is
 known. The WSJF job size is the review seat's estimate when the seats scored the unit,
 else the human `Effort:` (S/M/L) recorded on the artefact at filing, else a neutral
-default. The plan also carries a per-unit token budget, weighted by complexity, or by
-the declared effort when the unit names no files.
+default.
+
+The plan does NOT carry a per-unit token budget. It used to, scaled by complexity, and the
+seed was measured against 18 units of real telemetry at r = +0.03 against actual cost - no
+signal at all. Nothing else derivable at plan time beat a leave-one-out r of 0.415 either, so
+the per-unit forecast is gone rather than re-seeded. What the plan carries instead is the
+BATCH HISTORY (what sprints actually cost) and a batch forecast of unit-count x the measured
+per-unit rate. See the constants block below for the full measurement.
 
 The plan then SIZES the batch against the sprint's CAPACITY (`capacity.*`: tokens, wall-clock
 minutes, units) and says whether it fits - at plan time, while the operator can still cut it,
@@ -49,44 +55,72 @@ PRIORITY_FIELD = {"bug": "Severity", "cr": "Priority", "story": "Priority"}
 # bugs + CRs tranche orders on a single documented axis instead of two vocabularies.
 PRIORITY_WEIGHT = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3,
                    "P1": 0, "P2": 1, "P3": 2, "P4": 3}
-# The token forecast, calibrated against measured actuals for the first time.
+# ---------------------------------------------------------------------------
+# The token forecast: a BATCH tool on a MEASURED RATE. There is NO per-unit model.
+# ---------------------------------------------------------------------------
+# THE SEED WAS INERT, AND IT IS REPLACED BY NOTHING - because nothing measured better.
 #
-# PROVISIONAL - fitted to 6 units measured in one sprint, one model, one repo. It is a
-# HYPOTHESIS to be falsified by the next sprint's actuals, not a settled calibration. The
-# previous coefficient (5,000) was never validated at all; this one at least has evidence
-# behind it, and the next sprint tests it.
+# The forecast used to be `base + TOKENS_PER_COGNITIVE x max_cognitive`, where max_cognitive is
+# the blast-radius cognitive complexity of the files a unit touches. Measured against the 18
+# units with recorded actuals (CALIBRATION_FIT_UNITS), that seed correlates with actual cost at:
 #
-# What the 6 units showed:
-#   BASE holds. The one unit with complexity 0 (a docs-only change) cost 46,359 tokens, so a
-#   ~50k fixed floor per unit is real - it is the cost of an agent taking on the task at all
-#   (context, orientation, tests), independent of the code it touches.
+#     max_cognitive           r = +0.03    <- THE SEED THAT WAS IN USE. No signal at all.
 #
-#   The old slope was ~9x too steep. The observed slope is ~550 tokens per complexity point;
-#   the constant said 5,000. That inflated the batch estimate 3.3x (1,285,000 forecast against
-#   384,278 actually spent) and caused a real planning error: a 10-unit batch was cut to 5 on
-#   the belief it was too big, when it was not.
+# It is not weakly predictive - it carries nothing, and no coefficient can rescue it. Both past
+# recalibrations (5,000, then 600) fitted a slope through noise, which is why the model
+# over-forecast by 3.3x and then under-forecast by 0.55x and 0.39x on consecutive sprints. You
+# cannot scale zero. The fault is structural: max_cognitive measures how complicated the FILE is,
+# not how much of it must CHANGE. A one-line fix in a 2,000-line module inherits the whole
+# module's complexity; a docs unit has none at all (one seeded 0, forecast 80,000, cost 205,534).
 #
-#   Complexity is a WEAK PER-UNIT PREDICTOR and this forecast must be read as a BATCH tool.
-#   Two units of identical complexity (39) cost 46,792 and 98,513 - 2.1x apart. The cognitive
-#   complexity of the FILE is a poor proxy for the WORK done in it: a small, well-scoped fix in
-#   a large file does not pay the whole file's complexity. At the batch level the errors wash
-#   out (the fit lands within 9% across 6 units); per unit they do not.
-BASE_TOKEN_BUDGET = 50_000        # per-unit fixed floor - measured, holds
-TOKENS_PER_COGNITIVE = 600        # per point of blast-radius complexity - fitted, PROVISIONAL
+# EVERY OTHER PLAN-TIME CANDIDATE WAS THEN MEASURED, against the same 18 units:
+#
+#     files_affected          r = +0.44    the best single signal, and still only moderate
+#     test_impact             r = +0.40    test files covering the affected paths
+#     declared Effort (S/M/L) r = +0.34    the human's own guess
+#     fan_in (coupling)       r = +0.11    no signal
+#     ac_count                r = +0.07    requirement clarity: no signal
+#     max_cognitive           r = +0.03    no signal
+#     dirs touched            r = -0.01    no signal
+#
+# CHANGE-COMPLEXITY IS NOT DERIVABLE AT PLAN TIME, and that is stated rather than faked. Before
+# the change exists, every available "complexity" number is a property of the CONTAINER (the
+# file, its coupling, its churn), not of the edit. Each was tried; none correlated. Substituting
+# a container property for change-complexity is precisely the bug being removed here.
+#
+# THE BAR, SET BEFORE MEASURING: a per-unit seed had to reach leave-one-out r >= 0.50 and beat
+# files_affected alone. The best composite - with coefficients refitted inside every LOO fold AND
+# the feature subset chosen with hindsight, both of which flatter it - reached LOO r = +0.415.
+# It missed. So the per-unit forecast is DROPPED rather than kept as decoration. A number that
+# has never once been right is not a planning input, and re-dressing it in a new seed would be
+# the same error in a new costume.
+#
+# WHAT THE DATA DOES SUPPORT is the per-unit COST RATE, at batch scale only. The 18 measured
+# units average ~120,000 tokens. The spread is wide (43k-234k) and NO plan-time signal explains
+# it, so the plan quotes the RATE and the BATCH HISTORY and refuses to pretend it can tell the
+# units apart. `batch_history()` puts the measured sprints in front of the operator, because
+# "the last two five-unit sprints cost 642k and 902k" is a defensible basis for planning a
+# third, and a per-unit number that has never been right is not.
+#
+# NOT AUTO-FITTED. A human set this by reading the units named in CALIBRATION_FIT_UNITS. Nothing
+# recomputes it at runtime: an estimator that re-fits itself from its own outcomes can never be
+# falsified by them.
+BASE_TOKEN_BUDGET = 120_000       # the MEASURED per-unit rate (mean of 18 units) - the whole model
+TOKENS_PER_COGNITIVE = 0          # the inert axis, explicitly ZEROED: r = +0.03 against cost. Kept
+                                  # as a named zero rather than deleted, so the forecast record a
+                                  # plan writes still names the estimator that produced it, and a
+                                  # reader can see that complexity now multiplies by nothing.
 DEFAULT_UNKNOWN_SIZE = 3          # neutral WSJF denominator when neither the seat size nor
                                   # the declared effort resolves - unknown effort is never
                                   # treated as minimal (new-file work is often the biggest)
 # The human `Effort:` estimate (S/M/L), captured at filing, as a WSJF job size. It is the one
 # size a person actually recorded, so it beats the neutral default and loses only to a seat
 # score. M is deliberately the neutral default: declaring the middle changes nothing.
+#
+# It is a RANKING input, and only that. It does NOT price a unit: measured against actuals it
+# runs at r = +0.34, which is not enough to forecast on, and the forecast no longer reads it.
 EFFORT_SIZE = {"S": 1, "M": 3, "L": 8}
 EFFORT_ALIAS = {"SMALL": "S", "MEDIUM": "M", "LARGE": "L"}
-# The same estimate as a stand-in complexity seed for the TOKEN FORECAST, used only when a unit
-# declares no `Affects` (complexity 0) - otherwise a Large unit with no file list forecasts the
-# same flat floor as a Small one. Deliberately conservative, and bounded by the six measured
-# units the constants above were fitted to (complexity 0-52, actuals 42k-98k): S keeps the
-# measured floor, M sits mid-range, L near the top. A unit with real complexity is untouched.
-EFFORT_COMPLEXITY_PROXY = {"S": 0, "M": 25, "L": 50}
 
 # ---------------------------------------------------------------------------
 # What the constants above were FITTED to - so a ratio can never be quoted as evidence
@@ -104,8 +138,17 @@ EFFORT_COMPLEXITY_PROXY = {"S": 0, "M": 25, "L": 50}
 #
 # CHANGE THIS IN THE SAME COMMIT THAT CHANGES THE CONSTANTS. A refit that does not declare
 # its new training set will quietly go on quoting that training set back as validation.
-CALIBRATION_FIT_RETROS = ("RETRO0024",)
-CALIBRATION_FIT_UNITS = ("BG0126", "BG0127", "BG0130", "CR0248", "CR0249", "CR0250")
+#
+# The measured per-unit rate was set by reading the 18 units below - every unit that had a
+# recorded actual when the rate was chosen. All three sprints are therefore IN-SAMPLE, and the
+# planner will report NO out-of-sample evidence for this estimator until the next sprint closes.
+# That is the honest state of it: a model fitted this morning has not yet been tested, and the
+# plan says so rather than quoting its own training set back as confirmation.
+CALIBRATION_FIT_RETROS = ("RETRO0024", "RETRO0025", "RETRO0026")
+CALIBRATION_FIT_UNITS = ("BG0126", "BG0127", "BG0130", "CR0248", "CR0249", "CR0250",
+                         "CR0257", "CR0258", "BG0132", "CR0259", "CR0260",
+                         "BG0133", "BG0134", "BG0135", "BG0136", "CR0252",
+                         "BG0137", "BG0140")
 
 # How a recorded sprint stands in relation to the estimator IN FORCE.
 SAMPLE_IN = "in-sample"            # its actuals are the training data - training error, not evidence
@@ -161,12 +204,17 @@ def sample_class(retro_id: str | None, constants: dict | None) -> str:
 # to one or two sprints would fit noise.
 DEFAULT_CAPACITY = {"tokens": 500_000, "minutes": 240, "units": 8}
 
-# The honest error band on the token forecast. It is NOT a precision estimate: it was fitted to
-# 6 units of one sprint, one model, one repo, and out-of-sample it has already run ~0.7x (under-
-# forecasting) against 1.09x in-sample. +/-30% is the floor of the band; observed ratios in the
-# velocity history WIDEN it (never narrow it - one sprint agreeing with the model is not
-# evidence the model is tight).
-FORECAST_BAND = 0.30
+# The honest error band on the token forecast, and it is WIDE on purpose.
+#
+# The flat rate is one number over units that measured 43k-234k, so the per-unit error is large
+# by construction - that is the finding, not a defect in the band. Even at BATCH level, priced
+# against the three measured sprints, the rate lands at 1.87x, 0.93x and 0.67x. +/-50% is the
+# floor that spread implies; observed out-of-sample ratios in the velocity history WIDEN it and
+# never narrow it, because one sprint agreeing with the model is not evidence the model is tight.
+#
+# The band was +/-30% when the forecast claimed to read a unit's complexity. It is wider now, and
+# the widening is the point: the previous band was narrower than the model deserved.
+FORECAST_BAND = 0.50
 
 # Sprints of recorded velocity before the history is worth recalibrating the constants against.
 # Below this the plan says so, and changes nothing.
@@ -374,14 +422,19 @@ def _effort_code(text: str) -> str | None:
 
 
 def _token_budget(complexity_seed: int, effort: str | None) -> int:
-    """One unit's token forecast: the measured fixed floor plus the blast-radius slope.
+    """The token cost the plan attributes to ONE unit: the measured rate, for every unit.
 
-    When the unit declares no `Affects` (complexity 0) the human effort estimate stands in as
-    the seed, so a Large unit no longer forecasts the same flat base as a Small one. A unit
-    that DOES resolve complexity keeps the measured model unchanged - effort never inflates it.
+    This deliberately ignores both arguments. They are the two seeds that were tried and
+    falsified - blast-radius complexity (r = +0.03 against measured cost) and the declared
+    effort (r = +0.34) - and they are kept in the signature only because the forecast RECORD
+    still carries them as context for a future analyst. Nothing multiplies them.
+
+    A unit is priced at the rate because no plan-time signal predicts a unit's cost well enough
+    to price it individually (see the constants above: the best composite reached leave-one-out
+    r = +0.415 against a bar of 0.50). Quoting a bespoke per-unit number would be inventing
+    precision the measurement does not support.
     """
-    seed = complexity_seed or EFFORT_COMPLEXITY_PROXY.get(effort or "", 0)
-    return BASE_TOKEN_BUDGET + TOKENS_PER_COGNITIVE * seed
+    return BASE_TOKEN_BUDGET + TOKENS_PER_COGNITIVE * (complexity_seed or 0)
 
 
 def _dep_ids(value: str) -> set:
@@ -597,7 +650,12 @@ def _order_batch(root: Path, out: list[dict], deps: dict[str, set], order: str,
             it["complexity"] = seed
             if effort:
                 it["effort"] = effort
-            it["token_budget"] = _token_budget(seed, effort)
+            # NO per-unit `token_budget`. It used to be stamped here, complexity-scaled, and it
+            # was noise wearing a number: the seed correlates with actual cost at r = +0.03. A
+            # per-unit field that every reader takes for an estimate of THAT unit must not exist
+            # when nothing can estimate that unit. The batch forecast carries the number now.
+            # `complexity` survives as the WSJF tiebreak (a blast-radius RISK signal, never a
+            # size) - it orders units, it does not price them.
             inp = seat_inputs.get(sdlc_md.norm_id(it["id"]))
             # Size, in falling order of authority: the Engineering seat's estimate
             # (wsjf-inputs `size`), else the human `Effort:` recorded on the artefact,
@@ -649,17 +707,24 @@ def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "pr
 
 
 def _token_forecast(root: Path, batch: list[dict]) -> dict:
-    """The batch's token cost as a FORECAST - the plan's existing per-unit estimate
-    (`BASE_TOKEN_BUDGET` + `TOKENS_PER_COGNITIVE` x seed, where the seed is blast-radius
-    complexity, or the declared effort when the unit names no files) summed. It is an
-    ESTIMATE and never a gate: a script cannot observe real token spend (see telemetry.py), so
+    """The batch's token cost: UNIT COUNT x the measured rate. A BATCH number, not a sum of
+    per-unit estimates - because there are no per-unit estimates any more.
+
+    Every unit is priced identically, at `BASE_TOKEN_BUDGET`. That is not laziness, it is the
+    measurement: across 18 units, no plan-time signal predicts a unit's cost (the best composite
+    reached leave-one-out r = +0.415 against a declared bar of 0.50, and the seed previously in
+    use scored r = +0.03). Pricing units differently would mean claiming to know something the
+    evidence says nobody knows. So the forecast scales with HOW MANY units, which is the one
+    thing about a batch that is known at plan time.
+
+    An ESTIMATE and never a gate: a script cannot observe real token spend (see telemetry.py), so
     a token ceiling would depend on the actor self-reporting the budget meant to constrain it.
     The wall-clock / unit-count appetite is the breaker; this only informs the operator.
 
-    `units` carries what each number was MADE OF - the seed, where the seed came from, and the
-    constants in force. That is what gets recorded at plan time (`record_forecast`), so the
-    retro can judge the prediction that was actually made rather than recompute one."""
-    total = 0
+    `units` still carries each unit's `complexity` and `effort`. They no longer FEED the number -
+    they are recorded as CONTEXT, so the next analyst can correlate them against the actuals that
+    come back and check this decision rather than inherit it. `seed` is null: there is no seed.
+    """
     per_unit: dict[str, int] = {}
     units: dict[str, dict] = {}
     for it in batch:
@@ -668,22 +733,41 @@ def _token_forecast(root: Path, batch: list[dict]) -> dict:
         if cx is None:  # priority/manual order never stamped one - derive it here
             cx = _complexity_size(root, text)
         effort = it.get("effort") or _effort_code(text)
-        budget = it.get("token_budget")
-        if budget is None:
-            budget = _token_budget(cx, effort)
-        # the seed that actually multiplied: blast-radius complexity, else the effort stand-in
-        seed = cx or EFFORT_COMPLEXITY_PROXY.get(effort or "", 0)
-        source = "complexity" if cx else ("effort" if effort else "none")
         uid = sdlc_md.norm_id(it["id"])
-        per_unit[uid] = budget
-        units[uid] = {"tokens": budget, "seed": seed, "seed_source": source,
+        per_unit[uid] = BASE_TOKEN_BUDGET
+        units[uid] = {"tokens": BASE_TOKEN_BUDGET, "seed": None, "seed_source": "rate",
                       "complexity": cx, "effort": effort}
-        total += budget
-    return {"tokens": total, "per_unit": per_unit, "units": units,
+    return {"tokens": BASE_TOKEN_BUDGET * len(batch), "per_unit": per_unit, "units": units,
+            "rate": BASE_TOKEN_BUDGET, "history": batch_history(root),
             "constants": forecast_constants(),
-            "basis": "plan per-unit estimate (base + complexity blast-radius, or the declared "
-                     "effort when no files are named); an ESTIMATE, never a gate - a script "
-                     "cannot observe token spend"}
+            "basis": "unit count x the measured per-unit rate. There is NO per-unit model: no "
+                     "plan-time signal predicts a unit's cost (best leave-one-out r = 0.415 "
+                     "against a bar of 0.50), so every unit is priced at the same measured rate "
+                     "and the batch history is the real planning input. An ESTIMATE, never a "
+                     "gate - a script cannot observe token spend"}
+
+
+def batch_history(repo_root: Path | str) -> list[dict]:
+    """What sprints have ACTUALLY cost, per sprint, oldest first - the plan's real cost input.
+
+    This is what the operator should plan against, and the forecast above is what they should
+    treat with suspicion. "The last two five-unit sprints cost 642k and 902k" is a defensible
+    basis for sizing a third. A per-unit number derived from a signal that correlates with cost
+    at r = +0.03 is not, and quoting one lent the plan an authority the measurement never had.
+
+    Read-only, from the recorded velocity history. Fail-safe: no history is an empty list, never
+    an exception - a project with no measured sprints yet must still be able to plan.
+    """
+    out: list[dict] = []
+    for r in _velocity_rows(repo_root):
+        actual, units = r.get("actual_tokens"), r.get("measured")
+        if not isinstance(actual, (int, float)) or not actual:
+            continue
+        if not isinstance(units, (int, float)) or not units:
+            continue
+        out.append({"id": r.get("id"), "units": int(units), "tokens": int(actual),
+                    "per_unit": int(actual / units)})
+    return out
 
 
 def record_forecast(repo_root: Path | str, data: dict) -> dict:
@@ -1335,23 +1419,36 @@ def _render_cross_lessons(data: dict) -> None:
 
 
 def _render_token_forecast(data: dict) -> None:
-    """The batch's token forecast, quoted as a RANGE, never a bare number. The point estimate
-    on its own reads as a fact; it is a hypothesis that has already been ~30% out."""
+    """LEAD WITH WHAT SPRINTS HAVE ACTUALLY COST. The forecast follows, as a range, and says out
+    loud that it cannot tell the units apart - because it cannot, and a bare number would read as
+    a fact when it is a rate multiplied by a headcount."""
     tf = data.get("token_forecast")
     if not tf or not tf.get("tokens"):
         return
+    hist = tf.get("history") or []
+    if hist:
+        print("  batch history (what sprints ACTUALLY cost - the real planning input):")
+        for h in hist[-4:]:
+            print(f"    {h['id']}: {h['units']} unit(s), {h['tokens']:,} tokens "
+                  f"({h['per_unit']:,}/unit)")
     cap = data.get("capacity") or {}
     fc = cap.get("forecast") or {}
     band = (f" (plausible {fc['low']:,}-{fc['high']:,})"
             if fc.get("low") and fc.get("high") else "")
-    print(f"  token forecast: ~{tf['tokens']:,} tokens across {data['count']} unit(s)"
-          f"{band} - an estimate, never a gate")
+    rate = tf.get("rate") or BASE_TOKEN_BUDGET
+    print(f"  token forecast: ~{tf['tokens']:,} tokens = {data['count']} unit(s) x "
+          f"{rate:,} measured rate{band}")
+    print("    this does NOT price units individually, and cannot: no plan-time signal predicts "
+          "a unit's")
+    print("    cost (best leave-one-out r = 0.415; the old complexity seed scored 0.03). Every "
+          "unit is")
+    print("    quoted at the same rate. Read the batch history above, not this number.")
     rec = data.get("forecast_record")
     if rec and not rec.get("error"):
         n = len(rec.get("recorded", [])) + len(rec.get("already", []))
         print(f"  forecast recorded: {n} unit(s) at plan time, with the constants that produced "
-              f"them (base={BASE_TOKEN_BUDGET:,}, per-complexity={TOKENS_PER_COGNITIVE:,}). The "
-              f"retro judges THIS number - it never re-derives one")
+              f"them (rate={BASE_TOKEN_BUDGET:,}, per-complexity={TOKENS_PER_COGNITIVE:,} - the "
+              f"axis is dead). The retro judges THIS number - it never re-derives one")
 
 
 def _render_capacity(data: dict) -> None:
@@ -1389,8 +1486,8 @@ def _render_capacity(data: dict) -> None:
               if cal["enough_history"]
               else f"not enough history to recalibrate (need {cal['recalibrate_after']})")
     print(f"  capacity: the token half is a FORECAST, not a measurement - a script cannot "
-          f"observe token spend, and the model is a hypothesis fitted to one sprint. "
-          f"Calibration: {history}; {enough}. Nothing is re-fitted automatically.")
+          f"observe token spend, and the model is a flat measured RATE that cannot tell the "
+          f"units apart. Calibration: {history}; {enough}. Nothing is re-fitted automatically.")
     floor = cap.get("unit_wall_minutes_floor")
     wall = (f", ~{floor} min/unit of worker time measured (a FLOOR on a "
             f"{cap['units']}-unit run, not a forecast of it)" if floor else "")

@@ -174,8 +174,8 @@ independent critic plus the gate - the check's output states this scoping.
    assumptions / decisions-ledger reference / anything needing the operator).
    On each unit **close** (`artifact close`), a telemetry event (id, type, plus any run
    metrics passed: `--iterations`/`--verdict`/`--wall-time-s`/`--stages`) is appended to
-   the gitignored `sdlc-studio/.local/telemetry.jsonl`. Advisory -
-   it never affects the close; it feeds the deferred calibrate step.
+   the committed evidence log `sdlc-studio/retros/evidence/actuals-*.jsonl`. Advisory -
+   it never affects the close; it is the measured half of the estimate-vs-actual report.
 7. **Retro + lessons lifecycle (a hard gate, not doctrine).** The batch retro carries a 'critic loop, observed' section (findings, refutations, survivors of the adversarial pass) so its value stays visible sprint over sprint. The close runs a five-step learning loop. **Every step of it is mechanical:** one command,
    `gate --require-retro RETRO{next} --require-review`, is the whole close gate, and it fails loud
    (non-zero, no success report) on any of the artefacts being absent or stale. The close is
@@ -280,7 +280,7 @@ the furthest named rung ("plan the next sprint" -> `plan`; "plan **and break dow
 ### `--goal plan` - sprint planning
 
 From a backlog, **select** a sprint-sized batch (capacity / budget fit), **sequence** it by
-dependency, and **estimate** it - reusing `--order wsjf` + the complexity-weighted budget and `project plan`'s dependency order + wave estimation. `sprint.py plan --write`
+dependency, and **size** it - reusing `--order wsjf` + the measured batch rate and `project plan`'s dependency order + wave estimation. `sprint.py plan --write`
 persists the sprint-plan artifact; then stop for review. (Distinct from `triage`, which grooms
 the *whole given batch* for readiness; `plan` selects a sprint's *worth*.)
 
@@ -349,7 +349,7 @@ itself is the gate.
 
 | Field | Why the planner cannot work without it |
 | --- | --- |
-| `Affects:` | The files the unit will touch. Nothing can size a unit that names no files (the token forecast silently falls back to a flat per-unit floor), and nothing can see that two units touch the same file - so the planner reports them as safely parallel when they will collide. |
+| `Affects:` | The files the unit will touch. Nothing can see that two units touch the same file - so the planner reports them as safely parallel when they will collide - and nothing can order the batch by blast radius. It does NOT price the unit: no plan-time signal predicts a unit's cost well enough to try (see the token forecast below). |
 | a size | `Effort: S\|M\|L` (bug/CR - the job size of the work, not its urgency), or `Points:` (story), or a review-seat score in `sdlc-studio/.local/wsjf-inputs.json`. Without one, WSJF divides by a neutral default and the "estimate" is a placeholder wearing an estimate's clothes. |
 
 **Refused, not warned.** With any ungroomed unit in the batch, `sprint plan` exits non-zero and
@@ -464,8 +464,16 @@ appetite is that ceiling (Shape Up's fixed timebox: appetite is fixed, scope fle
   appetite and a new clock.
 - **Tokens are a FORECAST, never a gate:** a script cannot observe token spend, so a token
   ceiling would depend on the actor self-reporting the budget meant to constrain it. The
-  plan instead reports a token forecast (its per-unit estimate summed), labelled an
-  estimate; the close repeats it. It never stops a run.
+  plan reports a token forecast, labelled an estimate; the close repeats it. It never
+  stops a run.
+- **There is no per-unit estimate.** The forecast is the unit COUNT times a measured
+  per-unit rate, and it does not claim to tell the units apart. It used to: the seed was
+  the blast-radius complexity of the files a unit touched, and measured against 18 units of
+  real telemetry it correlated with actual cost at r = +0.03 - no signal at all. Every other
+  plan-time signal was then tested; the best reached a leave-one-out r of 0.42 against a bar
+  of 0.50, so the per-unit number was dropped rather than re-seeded. **Read the batch
+  history the plan prints - what sprints have actually cost - and treat the forecast as the
+  weaker number.** A per-unit figure that has never once been right is not a planning input.
 
 ## Model-tier routing {#model-tier-routing}
 

@@ -1,0 +1,9 @@
+{"id": "BG0137", "type": "bug", "iterations": 1, "wall_time_s": 528, "critic_verdict": "approve", "tokens": 80982, "model": "claude-opus-4-8"}
+{"id": "BG0137", "type": "bug"}
+{"id": "BG0140", "type": "bug", "iterations": 1, "wall_time_s": 963, "critic_verdict": "approve", "tokens": 150139, "model": "claude-opus-4-8"}
+{"id": "BG0140", "type": "bug"}
+{"id": "BG0138", "type": "bug", "iterations": 1, "wall_time_s": 378, "critic_verdict": "approve", "tokens": 77762, "model": "claude-opus-4-8"}
+{"id": "BG0138", "type": "bug"}
+{"id": "BG0143", "type": "bug"}
+{"id": "CR0262", "type": "cr", "iterations": 1, "wall_time_s": 1540, "critic_verdict": "approve", "tokens": 223308, "model": "claude-opus-4-8"}
+{"id": "CR0262", "type": "cr"}

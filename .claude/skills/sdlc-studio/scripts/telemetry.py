@@ -1,20 +1,57 @@
 #!/usr/bin/env python3
-"""Run telemetry recorder.
+"""Run telemetry recorder: the project's measured evidence, and the forecasts it judges.
 
-Append a per-unit run outcome to the gitignored `sdlc-studio/.local/telemetry.jsonl` so estimation and
-the complexity/churn calibration can become continuous instead of one-off.
-**Local-only, no upload, no network.** Tokens are recorded only when the caller passes them
-(a script cannot read them reliably). The loop wires `record` on each unit close.
+Two logs, both COMMITTED, both under `sdlc-studio/retros/evidence/`:
 
-It also holds the OTHER side of the estimate-vs-actual ratio: the plan-time FORECAST log
-(`sdlc-studio/.local/forecasts.jsonl`). A forecast that is not recorded when it is made does
-not exist - re-deriving it later, from the constants it is meant to be judging, is not a
-prediction. See the forecast section below.
+  actuals-*.jsonl    what a unit actually cost - one record per unit close.
+  forecasts-*.jsonl  what the planner PREDICTED it would cost, recorded when it predicted it.
+
+**No upload, no network.** Tokens are recorded only when the caller passes them (a script
+cannot read them reliably). The loop wires `record` on each unit close.
+
+WHY THEY ARE COMMITTED, AND NOT IN `.local/`
+--------------------------------------------
+Both logs are PROJECT EVIDENCE, not user-local runtime state. `.local/` is for state you can
+delete and lose nothing: run-state, worklists, caches, the repo map, the allocation lock - all
+of it regenerable by re-running a tool. These two are the opposite kind of thing. They are
+OBSERVATIONS of runs that already happened, and no tool can regenerate them: re-run the sprint
+and you get different numbers, not the same ones.
+
+Kept in `.local/`, they were on one machine. On a fresh clone, on CI, or for anybody else,
+every forecast was absent, every unit read UNFORECAST, and the entire estimate-vs-actual
+history read as no-evidence - so the estimator could not be falsified by anyone but the machine
+that ran the sprint. The rule is the one `retro.py` already applies to `VELOCITY.md`: evidence
+the team cannot read on a fresh clone is not evidence. `VELOCITY.md` is the committed SUMMARY;
+these are the committed per-unit rows underneath it, and they live beside it for that reason.
+
+SHARDING, AND THE MERGE STORY
+-----------------------------
+A single append-only JSONL is a bad shape for a file two people can both append to. So each log
+is sharded, one file per UTC day (`actuals-2026-07-14.jsonl`); readers concatenate the shards in
+name order, which is chronological, so the ordering both readers depend on is preserved.
+
+  Two sprints closed on different days, on different branches -> DIFFERENT FILES. Git merges
+  them cleanly and no record can be lost.
+
+  Two sprints closed on the same day, on different branches -> the same file, appended at the
+  end by both sides -> a MERGE CONFLICT, with both sides' records visible between the markers,
+  which a human resolves by keeping both. That is the intended outcome, and it is why the log is
+  deliberately NOT given a union merge driver: union would silently interleave, and interleaving
+  can flip which forecast for a unit is FIRST - quietly rewriting a prediction.
+
+The shard key is the day, not the sprint's retro id, because the retro does not exist yet when
+these records are written: the forecast is recorded at PLAN time and the actuals during the run,
+while the retro id is minted at close. Keying by it would mean rewriting the log afterwards -
+editing, with hindsight, the very record that exists to be un-editable.
+
+Nothing here is rolled. A bounded roll drops the OLDEST records first, which on a committed
+evidence log means deleting history out of git; the day shard bounds the file instead.
 
 Subcommands:
   record    Append one run-outcome record.
   forecast  Append one plan-time forecast record (what the planner predicted, and with what).
   show      Print the recorded records (count + the JSON); `--forecasts` for the forecast log.
+  migrate   Move a pre-existing `.local/` log into the committed evidence dir, without loss.
 """
 from __future__ import annotations
 
@@ -26,8 +63,22 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # resolve sibling imports (critic)
 from lib import sdlc_md  # noqa: E402
 
-# The project's gitignored state dir (sdlc-studio/.local/), not repo-root .local/.
-LOCAL = Path("sdlc-studio") / ".local" / "telemetry.jsonl"
+# The committed evidence dir, beside the retros and the velocity history it is the rows of.
+EVIDENCE = Path("sdlc-studio") / "retros" / "evidence"
+ACTUALS_PREFIX = "actuals"
+FORECASTS_PREFIX = "forecasts"
+
+# Where the logs used to live: user-local, gitignored, one machine. Still READ, so a project
+# that upgrades the skill does not lose the evidence it already has; `migrate` moves it. The
+# legacy log is read FIRST, which is also its correct chronological place - it predates every
+# shard.
+LEGACY_ACTUALS = Path("sdlc-studio") / ".local" / "telemetry.jsonl"
+LEGACY_FORECASTS = Path("sdlc-studio") / ".local" / "forecasts.jsonl"
+
+# The shard a migrated legacy log lands in. Named to sort BEFORE any dated shard, because
+# everything in it happened before the migration.
+MIGRATED_SHARD = "0000-migrated"
+
 # The captured fields. Optional ones are omitted when not supplied. The tier_* fields
 # (routing) record which model tier was recommended vs actually delivered a unit,
 # so per-tier escape/escalation rates become measurable - the routing calibration loop.
@@ -36,8 +87,75 @@ FIELDS = ("id", "type", "iterations", "wall_time_s", "stages", "critic_verdict",
           "tier_recommended", "tier_delivered", "model", "escalated")
 
 
-def _path(repo_root: Path | str) -> Path:
-    return Path(repo_root) / LOCAL
+def shard_id() -> str:
+    """The shard a record written now belongs to: the UTC date. Known at write time, always,
+    with no dependency on run state; sorts chronologically; partitions the log the way sprints
+    partition time."""
+    return sdlc_md.now_date()
+
+
+def _shard_path(repo_root: Path | str, prefix: str, shard: str | None = None) -> Path:
+    return Path(repo_root) / EVIDENCE / f"{prefix}-{shard or shard_id()}.jsonl"
+
+
+def _shards(repo_root: Path | str, prefix: str, legacy: Path) -> list[Path]:
+    """Every file the log is made of, OLDEST FIRST: the un-migrated legacy `.local/` log (when a
+    project still has one), then the tracked shards in name order.
+
+    The order is load-bearing on both sides - the actuals reader takes the last non-null value
+    per field, and the forecast reader takes the FIRST record for a unit - so it is defined by
+    the filename, never by directory iteration order."""
+    out: list[Path] = []
+    old = Path(repo_root) / legacy
+    if old.is_file():
+        out.append(old)
+    d = Path(repo_root) / EVIDENCE
+    if d.is_dir():
+        out.extend(sorted(d.glob(f"{prefix}-*.jsonl")))
+    return out
+
+
+def _read_jsonl(paths: list[Path]) -> list[dict]:
+    """Every record across the shards. A malformed line is skipped, never fatal - one corrupt
+    line must not cost the whole evidence base."""
+    out: list[dict] = []
+    for p in paths:
+        try:
+            text = p.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        for line in text.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rec = json.loads(line)
+            except ValueError:
+                continue
+            if isinstance(rec, dict):
+                out.append(rec)
+    return out
+
+
+def _append(path: Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as fh:
+        for row in rows:
+            fh.write(json.dumps(row) + "\n")
+
+
+def actuals_path(repo_root: Path | str, shard: str | None = None) -> Path:
+    """The actuals shard a record written now is appended to. Public: the loop, the tests and
+    an operator all need to be able to name the file the evidence lands in."""
+    return _shard_path(repo_root, ACTUALS_PREFIX, shard)
+
+
+def forecasts_path(repo_root: Path | str, shard: str | None = None) -> Path:
+    """The forecast shard a record written now is appended to."""
+    return _shard_path(repo_root, FORECASTS_PREFIX, shard)
+
+
+_path = actuals_path
 
 
 def record(repo_root: Path | str, fields: dict) -> dict:
@@ -45,11 +163,7 @@ def record(repo_root: Path | str, fields: dict) -> dict:
     failure is swallowed (telemetry must never break the loop)."""
     rec = {k: fields[k] for k in FIELDS if fields.get(k) is not None}
     try:
-        p = _path(repo_root)
-        p.parent.mkdir(parents=True, exist_ok=True)
-        with p.open("a", encoding="utf-8") as fh:
-            fh.write(json.dumps(rec) + "\n")
-        sdlc_md.roll_jsonl(p)  # bound the append-only telemetry log
+        _append(_path(repo_root), [rec])
     except Exception as exc:  # noqa: BLE001 - telemetry is advisory; never raise into the loop
         sdlc_md.debug("telemetry.record", exc)
     return rec
@@ -77,32 +191,16 @@ def record_plan_review(repo_root: Path | str, unit: str, verdict: str,
            "verdict": (verdict or "").upper(), "reviewer": reviewer, "author": author,
            "independent": independent}
     try:
-        p = _path(repo_root)
-        p.parent.mkdir(parents=True, exist_ok=True)
-        with p.open("a", encoding="utf-8") as fh:
-            fh.write(json.dumps(rec) + "\n")
-        sdlc_md.roll_jsonl(p)  # bound the append-only telemetry log
+        _append(_path(repo_root), [rec])
     except Exception as exc:  # noqa: BLE001 - telemetry is advisory; never raise into the loop
         sdlc_md.debug("telemetry.record", exc)
     return rec
 
 
 def read_all(repo_root: Path | str) -> list[dict]:
-    """All records; malformed lines are skipped (a corrupt line never breaks a read)."""
-    out: list[dict] = []
-    try:
-        text = _path(repo_root).read_text(encoding="utf-8")
-    except OSError:
-        return out
-    for line in text.splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            out.append(json.loads(line))
-        except ValueError:
-            continue
-    return out
+    """Every actuals record across the shards, oldest first. Malformed lines are skipped (a
+    corrupt line never breaks a read)."""
+    return _read_jsonl(_shards(repo_root, ACTUALS_PREFIX, LEGACY_ACTUALS))
 
 
 #: The per-unit fields an actual is made of. `type` and `model` are context, not
@@ -156,16 +254,16 @@ def actuals(repo_root: Path | str) -> dict[str, dict]:
 # estimator. It is not hypothetical: a recorded 5.2x miss was the entire evidence for a
 # recalibration, and the recalibration erased it.
 #
-# It lives NEXT TO the actuals, in the same gitignored run-state directory, because it is the
+# It lives NEXT TO the actuals, in the same committed evidence directory, because it is the
 # same kind of thing: a per-unit run record, keyed by unit id, written once by the tool that
-# observed it. Its own file rather than a record type inside telemetry.jsonl, so the bounded
-# roll on the append-only actuals log can never evict a forecast; and this log is deliberately
-# NOT rolled, because the record it would drop first is the oldest - the authoritative one.
+# observed it. Its own log rather than a record type inside the actuals, so the two can never
+# evict or overwrite one another.
 #
 # FIRST WINS. The reader takes the EARLIEST record for a unit. Re-planning a batch after the
 # work is done must not be able to rewrite what was predicted before it started; a later record
-# is kept as history and never overrides. Hindsight is not a forecast.
-FORECASTS = Path("sdlc-studio") / ".local" / "forecasts.jsonl"
+# is kept as history and never overrides. Hindsight is not a forecast. That is why the shards
+# are read in name order and never merged by a union driver: a reordering silently changes which
+# prediction is the one that stands.
 
 #: A forecast record. `tokens` is the number the plan quoted; `seed` is the complexity/effort
 #: input it came from; `constants` is the estimator that produced it (so a later reader can
@@ -175,28 +273,14 @@ FORECAST_FIELDS = ("id", "tokens", "seed", "seed_source", "complexity", "effort"
                    "constants", "planned_at")
 
 
-def _forecast_path(repo_root: Path | str) -> Path:
-    return Path(repo_root) / FORECASTS
+_forecast_path = forecasts_path
 
 
 def read_forecasts(repo_root: Path | str) -> list[dict]:
-    """Every forecast record, oldest first. A malformed line is skipped, never fatal."""
-    out: list[dict] = []
-    try:
-        text = _forecast_path(repo_root).read_text(encoding="utf-8")
-    except OSError:
-        return out
-    for line in text.splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            rec = json.loads(line)
-        except ValueError:
-            continue
-        if isinstance(rec, dict) and rec.get("id"):
-            out.append(rec)
-    return out
+    """Every forecast record across the shards, oldest first. A malformed line is skipped,
+    never fatal."""
+    return [r for r in _read_jsonl(_shards(repo_root, FORECASTS_PREFIX, LEGACY_FORECASTS))
+            if r.get("id")]
 
 
 def forecasts(repo_root: Path | str) -> dict[str, dict]:
@@ -238,13 +322,53 @@ def record_forecasts(repo_root: Path | str, records: list[dict]) -> dict:
         row["id"] = rid
         fresh.append(row)
     if fresh:
-        p = _forecast_path(repo_root)
-        p.parent.mkdir(parents=True, exist_ok=True)
-        with p.open("a", encoding="utf-8") as fh:
-            for row in fresh:
-                fh.write(json.dumps(row) + "\n")
+        _append(_forecast_path(repo_root), fresh)
     return {"path": str(_forecast_path(repo_root)),
             "recorded": [r["id"] for r in fresh], "already": already}
+
+
+# ---------------------------------------------------------------------------
+# Migration: a `.local/` log, moved into the committed evidence dir without loss.
+# ---------------------------------------------------------------------------
+
+def migrate(repo_root: Path | str) -> dict:
+    """Move any pre-existing `.local/` log into `retros/evidence/`, so evidence recorded before
+    the logs were committed reaches the repository instead of dying with the machine.
+
+    Loss-proof by construction, and then CHECKED. When the destination does not exist the file
+    is RENAMED - the bytes are not rewritten, so there is nothing to get wrong. When it does,
+    the lines absent from the destination are appended, and the source is only unlinked once
+    every one of its lines has been verified present. A dropped record here would be
+    unrecoverable: these runs cannot be re-measured.
+    """
+    root = Path(repo_root)
+    report: dict = {"moved": [], "skipped": []}
+    for legacy, prefix in ((LEGACY_ACTUALS, ACTUALS_PREFIX),
+                           (LEGACY_FORECASTS, FORECASTS_PREFIX)):
+        src = root / legacy
+        if not src.is_file():
+            report["skipped"].append(str(legacy))
+            continue
+        dst = _shard_path(root, prefix, MIGRATED_SHARD)
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        lines = [ln for ln in src.read_text(encoding="utf-8").splitlines() if ln.strip()]
+        if not dst.exists():
+            src.replace(dst)                      # a rename: the bytes are untouched
+        else:
+            have = {ln.strip() for ln in dst.read_text(encoding="utf-8").splitlines()}
+            missing = [ln for ln in lines if ln.strip() not in have]
+            with dst.open("a", encoding="utf-8") as fh:
+                for ln in missing:
+                    fh.write(ln.rstrip("\n") + "\n")
+            landed = {ln.strip() for ln in dst.read_text(encoding="utf-8").splitlines()}
+            absent = [ln for ln in lines if ln.strip() not in landed]
+            if absent:
+                raise RuntimeError(
+                    f"refusing to remove {src}: {len(absent)} record(s) did not reach {dst}")
+            src.unlink()
+        report["moved"].append({"from": str(legacy), "to": str(dst.relative_to(root)),
+                                "records": len(lines)})
+    return report
 
 
 def _int(v):
@@ -356,6 +480,21 @@ def cmd_forecast(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_migrate(args: argparse.Namespace) -> int:
+    res = migrate(args.root)
+    if args.format == "json":
+        print(json.dumps(res, indent=2))
+        return 0
+    if not res["moved"]:
+        print("nothing to migrate - no .local/ evidence log is left behind")
+        return 0
+    for m in res["moved"]:
+        print(f"moved {m['records']} record(s): {m['from']} -> {m['to']}")
+    print("the evidence is now under sdlc-studio/retros/evidence/ - git add it, and it will "
+          "survive a fresh clone")
+    return 0
+
+
 def cmd_show(args: argparse.Namespace) -> int:
     if getattr(args, "forecasts", False):
         recs = read_forecasts(args.root)
@@ -434,6 +573,11 @@ def build_parser() -> argparse.ArgumentParser:
                    help="print the plan-time forecast log instead of the measured actuals")
     s.add_argument("--root", default="."); s.add_argument("--format", choices=("text", "json"), default="text")
     s.set_defaults(func=cmd_show)
+    m = sub.add_parser("migrate", help="move a pre-existing .local/ evidence log into the "
+                                       "committed evidence dir (no loss; verified)")
+    m.add_argument("--root", default=".")
+    m.add_argument("--format", choices=("text", "json"), default="text")
+    m.set_defaults(func=cmd_migrate)
     sdlc_md.add_global_root(p)
     return p
 

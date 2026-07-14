@@ -283,7 +283,12 @@ def assess(repo_root: Path | str, files, threshold: int | None = None) -> dict:
     `files` is the set a story will touch (e.g. repo_map's ranked
     neighbourhood). Advisory only: a high score recommends a scoped refactor
     first, it never blocks. Returns the difficulty band, the hot functions, and
-    a refactor-first line per hotspot."""
+    a refactor-first line per hotspot.
+
+    Read `applicable` before `max_cognitive`. When the change touches nothing scoreable (docs,
+    config, plain text) the signal is INAPPLICABLE, not zero, and `difficulty` is `unknown`
+    rather than `low` - a non-code change is not an easy change, and a caller that reads the
+    bare 0 will conclude it is."""
     root = Path(repo_root)
     threshold = threshold if threshold is not None else cognitive_high(root)
     touched: list[dict] = []
@@ -295,9 +300,22 @@ def assess(repo_root: Path | str, files, threshold: int | None = None) -> dict:
             touched.append(rec)
     cogs = [t["cognitive"] for t in touched if t.get("cognitive") is not None]
     max_cog = max(cogs) if cogs else 0
+    # IS THE CODE-COMPLEXITY SIGNAL APPLICABLE AT ALL? A markdown, YAML or plain-text file
+    # RESOLVES on disk and then yields no scored function, so `max_cognitive` comes back 0 - and
+    # a consumer cannot tell that zero apart from "simple code". It is not simple code. It is not
+    # code. A resolved-but-inapplicable signal is more dangerous than an absent one, because
+    # absence is visible and a confident zero is not: a docs-only change scored `trivial` with
+    # HIGH confidence in the router on exactly this zero, and cost 205,534 tokens.
+    #
+    # So applicability is reported, and consumers treat an inapplicable signal as MISSING rather
+    # than as a measurement of zero. `scored_files` is the evidence for it: the number of touched
+    # files that produced at least one scored function.
+    scored_files = len({t["file"] for t in touched if t.get("cognitive") is not None})
+    applicable = scored_files > 0
     hotspots = sorted((t for t in touched if (t.get("cognitive") or 0) >= threshold),
                       key=lambda t: t["cognitive"], reverse=True)
-    difficulty = ("high" if max_cog >= threshold
+    difficulty = ("unknown" if not applicable
+                  else "high" if max_cog >= threshold
                   else "medium" if max_cog >= threshold / 2 else "low")
     refactor_first = [
         f"{h['file']}:{h['line']} {h['name']} (cognitive {h['cognitive']}) - "
@@ -324,6 +342,10 @@ def assess(repo_root: Path | str, files, threshold: int | None = None) -> dict:
             risk_band, risk_score = b, s
     return {"threshold": threshold, "touched_functions": len(touched),
             "max_cognitive": max_cog, "total_cognitive": sum(cogs),
+            # `applicable` is False when NOTHING the change touches can carry a code-complexity
+            # score (a docs-only or config-only change). `max_cognitive` is still 0 there, for
+            # callers that only want a number, but 0 means "no measurement", not "no complexity".
+            "applicable": applicable, "scored_files": scored_files,
             "difficulty": difficulty, "risk_band": risk_band, "risk_score": risk_score,
             "hotspots": hotspots, "refactor_first": refactor_first}
 

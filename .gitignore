@@ -83,7 +83,16 @@ $RECYCLE.BIN/
 .cache/
 *.orig
 
-# SDLC Studio user-local runtime state (workspace and skill-install copies)
+# SDLC Studio user-local runtime state (workspace and skill-install copies).
+#
+# The boundary: .local/ holds state you can DELETE and lose nothing, because a tool can
+# regenerate it - run-state, sprint plans, worklists, the repo map, the allocation lock,
+# caches, verify reports. It is machine-scoped and it churns every session.
+#
+# It is NOT for observations. The measured actuals and the plan-time forecasts are evidence
+# of runs that already happened, no tool can regenerate them, and evidence the team cannot
+# read on a fresh clone is not evidence. They are committed, under
+# sdlc-studio/retros/evidence/, beside the velocity history they are the rows of.
 sdlc-studio/.local/
 .claude/skills/sdlc-studio/.local/
 # Safety net: any nested .local/ (e.g. a test fixture's generated output) is runtime

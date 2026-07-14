@@ -674,11 +674,17 @@ class TheEstimateIsTheOneThatWasPredicted(unittest.TestCase):
 
     def test_the_forecast_is_recorded_without_write(self) -> None:
         """`--write` persists the plan artefact. The FORECAST is not optional: a forecast that
-        is only recorded when someone remembers a flag is a forecast that does not exist."""
+        is only recorded when someone remembers a flag is a forecast that does not exist.
+
+        And it is recorded where git can see it. A forecast written only to the gitignored
+        `.local/` state dir does not exist for anyone but the machine that planned the sprint."""
+        import telemetry as tel
         self.plan()
-        self.assertTrue(
-            (self.root / "sdlc-studio" / ".local" / "forecasts.jsonl").exists(),
-            "sprint plan must record its forecast whenever a plan is made")
+        recorded = tel.forecasts_path(self.root)
+        self.assertTrue(recorded.exists(),
+                        "sprint plan must record its forecast whenever a plan is made")
+        self.assertNotIn(".local", recorded.parts)
+        self.assertEqual(set(tel.forecasts(self.root)), {"CR0101", "CR0102"})
         self.assertFalse((self.root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
 
     def test_a_replan_after_the_fact_cannot_rewrite_what_was_predicted(self) -> None:

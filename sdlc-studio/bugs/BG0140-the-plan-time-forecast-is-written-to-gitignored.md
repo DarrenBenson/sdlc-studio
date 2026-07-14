@@ -1,9 +1,10 @@
 # BG0140: The plan-time forecast is written to gitignored .local/, so BG0133 fix does not survive a clone
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Effort:** S
 > **Affects:** .claude/skills/sdlc-studio/scripts/telemetry.py, .claude/skills/sdlc-studio/scripts/retro.py, .gitignore
+> **Verification depth:** functional - proven by ATTACK. A tree was built from `git ls-files` alone (a real fresh clone, with no `.local/` directory present at all) and `retro.py accuracy --id RETRO0026` reported 5 of 5 measured, 5 of 5 forecast at plan time, batch 0.39x - and `velocity` reproduced all three sprints (3.34x in-sample, 0.55x, 0.39x) exactly. Before the fix every unit in that tree read UNFORECAST and the history read as no-evidence.
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

@@ -508,10 +508,11 @@ class TelemetryOnCloseTests(unittest.TestCase):
         return root
 
     def _records(self, root: Path):
-        p = root / "sdlc-studio" / ".local" / "telemetry.jsonl"
-        if not p.exists():
-            return []
-        return [json.loads(l) for l in p.read_text(encoding="utf-8").splitlines() if l.strip()]
+        # Through the public read, not a hard-coded path: where the evidence lives is
+        # telemetry's business, and a test that pinned the path would have to be edited every
+        # time it moved rather than checking the behaviour it cares about.
+        import telemetry as tel
+        return tel.read_all(root)
 
     def test_terminal_transition_records_exactly_one_event(self) -> None:
         with tempfile.TemporaryDirectory() as d:

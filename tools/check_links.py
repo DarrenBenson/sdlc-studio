@@ -2,7 +2,7 @@
 """Check that markdown links resolve - anchors AND relative file targets.
 
 A skill-development CI tool (it lives in tools/, not in the runtime scripts/
-directory). Three passes:
+directory). Four passes:
 
 1. skill tree: every `{#anchor}` (on any line - the skill attaches anchors to
    non-heading lines too) plus implicit heading slugs are indexed, then every
@@ -13,10 +13,22 @@ directory). Three passes:
 3. workspace indexes (`sdlc-studio/**/_index.md`): an index row LINKS an
    artefact file, and that file must exist. Validating anchors alone let a row
    point at a deleted artefact and still pass.
+4. workspace artefact BODIES (everything else under `sdlc-studio/`): a
+   cross-reference inside an artefact - a test spec's Stories Covered table, a
+   Traceability row, a bug's Affects link - must name a real file too.
+
+Why pass 4 is scoped to the workspace and NOT to the skill tree: the skill tree
+is PAYLOAD. Its templates and best-practice guides deliberately ship links that
+resolve in a CONSUMING project rather than here (`../epics/EP{{epic_id}}-...md`,
+`path/to/guide.md`, `../prd.md`) - 56 of them. Flagging those would make the
+guard cry wolf on its own product, and a guard that cries wolf is one people
+learn to ignore. The workspace, by contrast, is real artefacts whose links a
+reader actually clicks on GitHub, so every one of them must resolve.
 
 Usage:
     python3 tools/check_links.py [--root DIR] [--repo-root DIR]
                                  [--workspace DIR] [--allow TARGET ...]
+                                 [--allow-body "SRC -> TARGET" ...]
 
 Exits non-zero when any real broken reference is found.
 """
@@ -32,6 +44,14 @@ DEFAULT_ROOT = ".claude/skills/sdlc-studio"
 
 # Illustrative link examples that are not real references.
 DEFAULT_ALLOW = {"doc.md#section-name"}
+
+# Body links (pass 4) that are deliberately unresolvable, keyed "<src> -> <target>" where
+# <src> is the artefact's path relative to the workspace. Empty by default and meant to stay
+# that way: a workspace artefact's links are navigation a reader clicks, so the honest remedy
+# for a broken one is to fix the link, not to silence the guard. The hook exists only so a
+# genuinely illustrative link (a bug report QUOTING the broken link it reports) can be named
+# out loud rather than quietly weakening the pass's scope.
+DEFAULT_BODY_ALLOW: set[str] = set()
 
 _ID_RE = re.compile(r"\{#([\w-]+)\}")
 _HEADING_RE = re.compile(r"^#{1,6}\s+(.*)")
@@ -124,10 +144,13 @@ def check_index_links(workspace: Path) -> list[str]:
     scan only the root docs, so a row pointing at a deleted artefact resolved nowhere and
     was reported by nobody - the index went on advertising an artefact that is not there.
 
-    An `archive/` sub-index row is read against the type directory as well as its own:
-    archiving moves the ROW into `<type>/archive/<release>/` and leaves the FILE in
-    `<type>/`, so the row carries the live index's bare filename. Returns [] when the
-    workspace does not exist (a consuming repo need not have one).
+    Every row link - live index or `archive/` sub-index - is resolved RELATIVE TO THE FILE
+    IT SITS IN, which is what a reader's click does. An archived row therefore has to climb
+    to the type directory (`../../x.md`), because archiving moves the ROW into
+    `<type>/archive/<release>/` and leaves the FILE in `<type>/`. This pass once read an
+    archived row against the type directory as well, which passed the wrong-depth bare
+    filenames the archiver used to copy across verbatim - 361 rows that all 404ed. Returns
+    [] when the workspace does not exist (a consuming repo need not have one).
     """
     broken: list[str] = []
     if not workspace.is_dir():
@@ -136,15 +159,72 @@ def check_index_links(workspace: Path) -> list[str]:
         parts = path.relative_to(workspace).parts
         if path.name != "_index.md" and "archive" not in parts:
             continue  # artifact bodies are not index rows; only the indexes are checked
-        type_dir = workspace / parts[0] if len(parts) > 1 else path.parent
         for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             if not line.lstrip().startswith("|"):
                 continue  # a row link, not the index's prose links
             for tgt in _LINK_RE.findall(line):
                 if (path.parent / tgt).exists():
                     continue
-                if "archive" in parts and (type_dir / tgt).exists():
-                    continue  # the row was archived; the file stayed in the type dir
+                rel = path.relative_to(workspace.parent).as_posix()
+                broken.append(f"{rel}:{i} -> {tgt} [file missing]")
+    return sorted(broken)
+
+
+_FENCE_RE = re.compile(r"^\s*(```|~~~)")
+_SPAN_RE = re.compile(r"`[^`]*`")
+
+
+def _without_code(text: str) -> list[str]:
+    """The document's lines with every fenced block and inline code span blanked out.
+
+    A link inside backticks or a fence is an EXAMPLE, not a reference. Without this, an
+    artefact cannot DOCUMENT a broken link - and a bug report about broken links must quote
+    the broken link it reports (BG0137 does exactly that, and failed the gate on it).
+
+    Line COUNT is preserved, never collapsed, so a reported line number still points at the
+    line the reader will open.
+    """
+    out: list[str] = []
+    in_fence = False
+    for line in text.splitlines():
+        if _FENCE_RE.match(line):
+            in_fence = not in_fence
+            out.append("")
+            continue
+        out.append("" if in_fence else _SPAN_RE.sub("", line))
+    return out
+
+
+def check_body_links(workspace: Path, allow: set[str]) -> list[str]:
+    """File-existence for the relative `.md` links inside workspace artefact BODIES.
+
+    The gap this closes: pass 3 reads index ROWS. An artefact's own cross-references - the
+    Stories Covered table in a test spec, a Traceability row, an Affects link - were scanned
+    by nobody, so an artefact could carry dead references indefinitely. TS0001 did: 13 links
+    written `../../stories/...` from `test-specs/`, one level too deep, every one a 404.
+
+    Scope: every `*.md` under the workspace EXCEPT `_index.md` and anything under an
+    `archive/` directory - those are pass 3's rows, and double-reporting them would be noise.
+    The skill tree is not touched at all (see the module docstring: it is payload).
+
+    Each link is resolved RELATIVE TO THE FILE IT SITS IN, which is what a reader's click
+    does. Anchors are ignored; only the file must exist. Returns [] when the workspace does
+    not exist (a consuming repo need not have one).
+    """
+    broken: list[str] = []
+    if not workspace.is_dir():
+        return broken
+    for path in sorted(workspace.rglob("*.md")):
+        rel_parts = path.relative_to(workspace).parts
+        if path.name == "_index.md" or "archive" in rel_parts:
+            continue  # index rows and archived rows belong to check_index_links
+        src = path.relative_to(workspace).as_posix()
+        for i, line in enumerate(_without_code(path.read_text(encoding="utf-8")), 1):
+            for tgt in _LINK_RE.findall(line):
+                if f"{src} -> {tgt}" in allow:
+                    continue
+                if (path.parent / tgt).exists():
+                    continue
                 rel = path.relative_to(workspace.parent).as_posix()
                 broken.append(f"{rel}:{i} -> {tgt} [file missing]")
     return sorted(broken)
@@ -181,6 +261,9 @@ def main(argv: list[str] | None = None) -> int:
                         "(default: <repo-root>/sdlc-studio; skipped when absent)")
     p.add_argument("--allow", action="append", default=[],
                    help="Additional allowlisted `file.md#anchor` target (repeatable)")
+    p.add_argument("--allow-body", dest="allow_body", action="append", default=[],
+                   help="Allowlist a deliberately unresolvable body link, given as "
+                        "\"<path-in-workspace> -> <target>\" (repeatable)")
     args = p.parse_args(argv)
 
     root = Path(args.root)
@@ -197,13 +280,15 @@ def main(argv: list[str] | None = None) -> int:
         repo_root = Path(".")
     workspace = Path(args.workspace) if args.workspace else repo_root / "sdlc-studio"
     allow = set(DEFAULT_ALLOW) | set(args.allow)
-    broken = check(root, allow) + check_root_docs(repo_root) + check_index_links(workspace)
+    body_allow = set(DEFAULT_BODY_ALLOW) | set(args.allow_body)
+    broken = (check(root, allow) + check_root_docs(repo_root)
+              + check_index_links(workspace) + check_body_links(workspace, body_allow))
     if broken:
         print(f"Broken markdown links ({len(broken)}):")
         for b in broken:
             print(f"  {b}")
         return 1
-    print("All markdown links resolve (anchors, root docs, index rows).")
+    print("All markdown links resolve (anchors, root docs, index rows, artefact bodies).")
     return 0
 
 

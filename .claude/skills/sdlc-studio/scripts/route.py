@@ -16,6 +16,18 @@ too-small model risks quality; a too-large one only cost). Sparse model maps deg
 UPWARD: an undeclared tier resolves to the nearest declared larger tier, never a smaller
 one; above the largest declared tier, the largest is used.
 
+A RESOLVED-BUT-INAPPLICABLE SIGNAL IS MORE DANGEROUS THAN AN ABSENT ONE, and the doctrine above
+did not used to reach it. A missing signal is visible; a confident zero is not. A markdown file
+RESOLVES on disk and then scores 0 for code complexity - not because the work is trivial but
+because there is no code to score - and the estimator read that 0 as a measurement. So a
+docs-only unit scored `trivial` with HIGH confidence, and cost 205,534 tokens. The signal had
+not gone missing, so nothing lowered the confidence, and the tier was never bumped.
+
+The fix is to ask whether a signal APPLIES, not merely whether it resolved: when nothing the
+unit touches can carry a code-complexity score (`complexity.assess` reports `applicable: False`),
+the `code` and `risk` signals are treated as MISSING - 0.5, listed in `missing`, confidence
+dropped, tier bumped up. A non-code change is not an easy change; it is an unmeasured one.
+
 Subcommands:
   estimate   Difficulty score/band + signals for one unit.
   pick       Tier + resolved model after policy floors (--role author|critic).
@@ -94,11 +106,22 @@ def estimate(repo_root: Path | str, unit_path: Path | str) -> dict:
     except (ValueError, IndexError):
         story_points = None
 
+    # The code signals are read ONLY when they are applicable - see the missing-signal doctrine
+    # in the module docstring. A markdown file resolves on disk and scores 0, and that 0 is an
+    # ABSENCE of measurement, not a measurement of zero. Taken as a real zero it drove the `code`
+    # and `risk` subscores to their floor with FULL confidence, which is how a docs-only unit came
+    # to score trivial/high and then cost 205,534 tokens. `complexity.assess` now says whether
+    # anything it touched could carry a score at all; when nothing could, both signals stay None
+    # and fall through to the missing-signal path (0.5, listed in `missing`, confidence lowered).
     max_cognitive = risk_score = None
+    code_inapplicable = False
     if resolved:
         try:
             a = complexity.assess(root, resolved)
-            max_cognitive, risk_score = a["max_cognitive"], a["risk_score"]
+            if a.get("applicable"):
+                max_cognitive, risk_score = a["max_cognitive"], a["risk_score"]
+            else:
+                code_inapplicable = True
         except Exception:  # noqa: BLE001 - degrade to missing, never break the estimate
             pass
 
@@ -133,6 +156,10 @@ def estimate(repo_root: Path | str, unit_path: Path | str) -> dict:
         "difficulty_band": band,
         "confidence": confidence,
         "missing": missing,
+        # Why the code signals are missing, when they are. "The unit declared no files" and "the
+        # unit declared three markdown files" are different states, and only one of them is the
+        # estimator's fault. A reader who cannot tell them apart cannot judge the estimate.
+        "code_inapplicable": code_inapplicable,
         "signals": {"max_cognitive": max_cognitive, "risk_score": risk_score,
                      "files_affected": len(declared), "new_files": new_files,
                      "ac_count": ac_count, "story_points": story_points},

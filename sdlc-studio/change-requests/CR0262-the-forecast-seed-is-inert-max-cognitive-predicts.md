@@ -1,9 +1,10 @@
 # CR-0262: The forecast seed is inert: max_cognitive predicts neither cost nor work (r = 0.00). Change the axis, not the coefficient
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** P1
 > **Type:** Improvement
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/route.py, .claude/skills/sdlc-studio/scripts/complexity.py
+> **Verification depth:** functional - the two contaminants were reproduced independently before the result was accepted. files_affected runs +0.72, -0.34, +0.87 WITHIN the three sprints (pooled +0.45): it flips sign, so it is not a predictor. 'Was Effort declared at all?' scores r = +0.425 against cost - a calendar artefact, since the field only exists on later, larger units - so the honest Effort value correlation is 0.353, not the 0.47 previously quoted. The plan now leads with batch history and carries no per-unit token_budget; route.py reports CR0252 as 34/low/LOW confidence with code and risk MISSING (was 14/trivial/HIGH), while a code unit (BG0133, 60/high) is unchanged.
 > **Depends on:** BG0140
 > **Date:** 2026-07-14
 > **Created-by:** sdlc-studio file

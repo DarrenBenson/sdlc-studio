@@ -190,6 +190,12 @@ class PickTests(unittest.TestCase):
                                     route.TIERS.index(match["tier"]))
 
     def test_doc_only_unit_gets_no_medium_critic_floor(self) -> None:
+        """The CODE critic floor is for code. A doc-only unit must not collect it.
+
+        It asserts the ADJUSTMENT, not the resulting tier: a doc unit's tier legitimately
+        rises anyway, because its code signal is inapplicable and unknown difficulty is
+        routed UP. Pinning the tier here would pin that bug back in.
+        """
         with tempfile.TemporaryDirectory() as d:
             tmp = Path(d)
             doc = tmp / "docs" / "guide.md"
@@ -197,8 +203,44 @@ class PickTests(unittest.TestCase):
             doc.write_text("# guide\n", encoding="utf-8")
             story = _story(tmp, affects="docs/guide.md", points="1", acs=1)
             critic = route.pick(tmp, story, role="critic", routing=self._routing_cfg())
-            self.assertLess(route.TIERS.index(critic["tier"]),
-                            route.TIERS.index("medium"))
+            self.assertNotIn("critic:code-medium-floor", critic["adjustments"])
+
+    def test_a_doc_only_unit_is_never_trivial_with_high_confidence(self) -> None:
+        """The router scored a docs-only unit `trivial` with HIGH confidence and it cost
+        205,534 tokens. A markdown file RESOLVES and then scores 0 for code complexity - an
+        absence of measurement, which was read as a measurement of zero.
+
+        The load-bearing assertion is the CONFIDENCE. A tool is allowed to be wrong; it is not
+        allowed to be certain and wrong, because certainty is what suppresses the tier bump.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            doc = tmp / "docs" / "guide.md"
+            doc.parent.mkdir(parents=True)
+            doc.write_text("# guide\n", encoding="utf-8")
+            story = _story(tmp, affects="docs/guide.md", points="1", acs=1)
+            est = route.estimate(tmp, story)
+            self.assertEqual(est["confidence"], "low")
+            self.assertTrue(est["code_inapplicable"])
+            self.assertIn("code", est["missing"])
+            self.assertIn("risk", est["missing"])
+            self.assertNotEqual(est["difficulty_band"], "trivial")
+            # and the low confidence must actually MOVE the routing decision, not just be
+            # reported next to it - an unheeded warning is decoration
+            self.assertIn("confidence:low", route.pick(tmp, story,
+                                                       routing=self._routing_cfg())["adjustments"])
+
+    def test_a_code_unit_still_reads_its_code_signals(self) -> None:
+        """The inapplicable-signal fix must not blind the estimator to real code. A resolved
+        .py file scores, and its signals are present and confident."""
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            _code_file(tmp, "src/hot.py", complexity_blocks=12)
+            story = _story(tmp, affects="src/hot.py", points="5", acs=3)
+            est = route.estimate(tmp, story)
+            self.assertFalse(est["code_inapplicable"])
+            self.assertIsNotNone(est["signals"]["max_cognitive"])
+            self.assertNotIn("code", est["missing"])
 
 
 class EscalateTests(unittest.TestCase):

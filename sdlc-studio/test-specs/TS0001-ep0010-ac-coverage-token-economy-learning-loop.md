@@ -16,19 +16,19 @@ delivery. Documentation-only ACs are verified manually plus the link/style guard
 
 ### Stories Covered
 
-| Story                                                                                        | Title                                                                | Priority |
-| -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | -------- |
-| [US0040](../../stories/US0040-index-archive-writer-terminal-status-vocab-flag-dry.md)        | index-archive writer + terminal-status vocab flag + dry-run (CR0125) | Medium   |
-| [US0041](../../stories/US0041-next-id-archive-union-guard-so-archived-ids.md)                | next_id archive-union guard (CR0125)                                 | Medium   |
-| [US0042](../../stories/US0042-retro-hard-close-gate-sprint-close-fails-loud.md)              | retro hard close-gate (CR0129)                                       | Medium   |
-| [US0043](../../stories/US0043-lessons-re-validation-verb-close-obsolete-lessons-by.md)       | lessons re-validation verb (CR0129)                                  | Medium   |
-| [US0044](../../stories/US0044-rolling-lessons-summary-generator-sprint-start-read-cr0129.md) | rolling LESSONS-SUMMARY generator + sprint-start read (CR0129)       | Medium   |
-| [US0045](../../stories/US0045-agentic-wave-worktree-doctrine-doc-enrichment-cr0126.md)       | agentic-wave worktree doctrine doc (CR0126)                          | Medium   |
-| [US0046](../../stories/US0046-pre-deploy-readiness-checklist-doc-cr0127.md)                  | pre-deploy readiness checklist doc (CR0127)                          | Medium   |
-| [US0047](../../stories/US0047-restore-the-runtime-scripts-coverage-gate-to-green.md)         | restore the runtime-scripts coverage gate to green on CI             | Medium   |
-| [US0048](../../stories/US0048-adopt-dependabot-ci-action-bumps-actions-checkout-v7.md)       | adopt Dependabot CI action bumps (checkout v7, setup-python v6)      | Medium   |
-| [US0049](../../stories/US0049-blocker-sweep-detection-now-unblocked-units-in-repo.md)        | blocker-sweep detection (in-repo + cross-repo via PVD) (CR0130)      | Medium   |
-| [US0050](../../stories/US0050-wire-the-blocker-sweep-before-sprint-planning-advisory.md)     | wire the blocker sweep pre-plan + reconcile lane (CR0130)            | Medium   |
+| Story                                                                                     | Title                                                                | Priority |
+| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | -------- |
+| [US0040](../stories/US0040-index-archive-writer-terminal-status-vocab-flag-dry.md)        | index-archive writer + terminal-status vocab flag + dry-run (CR0125) | Medium   |
+| [US0041](../stories/US0041-next-id-archive-union-guard-so-archived-ids.md)                | next_id archive-union guard (CR0125)                                 | Medium   |
+| [US0042](../stories/US0042-retro-hard-close-gate-sprint-close-fails-loud.md)              | retro hard close-gate (CR0129)                                       | Medium   |
+| [US0043](../stories/US0043-lessons-re-validation-verb-close-obsolete-lessons-by.md)       | lessons re-validation verb (CR0129)                                  | Medium   |
+| [US0044](../stories/US0044-rolling-lessons-summary-generator-sprint-start-read-cr0129.md) | rolling LESSONS-SUMMARY generator + sprint-start read (CR0129)       | Medium   |
+| [US0045](../stories/US0045-agentic-wave-worktree-doctrine-doc-enrichment-cr0126.md)       | agentic-wave worktree doctrine doc (CR0126)                          | Medium   |
+| [US0046](../stories/US0046-pre-deploy-readiness-checklist-doc-cr0127.md)                  | pre-deploy readiness checklist doc (CR0127)                          | Medium   |
+| [US0047](../stories/US0047-restore-the-runtime-scripts-coverage-gate-to-green.md)         | restore the runtime-scripts coverage gate to green on CI             | Medium   |
+| [US0048](../stories/US0048-adopt-dependabot-ci-action-bumps-actions-checkout-v7.md)       | adopt Dependabot CI action bumps (checkout v7, setup-python v6)      | Medium   |
+| [US0049](../stories/US0049-blocker-sweep-detection-now-unblocked-units-in-repo.md)        | blocker-sweep detection (in-repo + cross-repo via PVD) (CR0130)      | Medium   |
+| [US0050](../stories/US0050-wire-the-blocker-sweep-before-sprint-planning-advisory.md)     | wire the blocker sweep pre-plan + reconcile lane (CR0130)            | Medium   |
 
 ### AC Coverage Matrix
 
@@ -594,11 +594,11 @@ lessons_tree:
 
 ## Traceability
 
-| Artefact | Reference                                                                                    |
-| -------- | -------------------------------------------------------------------------------------------- |
-| PRD      | [sdlc-studio/prd.md](../../prd.md)                                                           |
-| Epic     | [EP0010](../../epics/EP0010-skill-self-improvement-token-economy-learning-loop-consuming.md) |
-| TSD      | [sdlc-studio/tsd.md](../tsd.md)                                                              |
+| Artefact | Reference                                                                                 |
+| -------- | ----------------------------------------------------------------------------------------- |
+| PRD      | [sdlc-studio/prd.md](../prd.md)                                                           |
+| Epic     | [EP0010](../epics/EP0010-skill-self-improvement-token-economy-learning-loop-consuming.md) |
+| TSD      | [sdlc-studio/tsd.md](../tsd.md)                                                           |
 
 ---
 

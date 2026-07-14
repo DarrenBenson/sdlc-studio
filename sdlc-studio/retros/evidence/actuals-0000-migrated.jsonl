@@ -1,0 +1,364 @@
+{"id": "US0037", "type": "story", "iterations": 1, "critic_verdict": "approve"}
+{"id": "CR0051", "type": "cr", "critic_verdict": "approve"}
+{"id": "US0038", "type": "story", "critic_verdict": "approve"}
+{"id": "CR0052", "type": "cr", "critic_verdict": "approve"}
+{"id": "US0039", "type": "story", "critic_verdict": "approve"}
+{"id": "CR0053", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0055", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0056", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0054", "type": "cr", "critic_verdict": "approve"}
+{"id": "BG0022", "type": "bug", "critic_verdict": "approve"}
+{"id": "CR0057", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0058", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0059", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0060", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0061", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0062", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0063", "type": "cr", "critic_verdict": "approve"}
+{"id": "BG0023", "type": "bug", "critic_verdict": "approve"}
+{"id": "CR0064", "type": "cr", "critic_verdict": "approve"}
+{"id": "BG0024", "type": "bug", "critic_verdict": "approve"}
+{"id": "BG0025", "type": "bug", "critic_verdict": "approve"}
+{"id": "BG0026", "type": "bug", "critic_verdict": "approve"}
+{"id": "BG0027", "type": "bug", "critic_verdict": "approve"}
+{"id": "BG0028", "type": "bug", "critic_verdict": "approve"}
+{"id": "BG0029", "type": "bug", "critic_verdict": "approve"}
+{"id": "BG0030", "type": "bug", "critic_verdict": "approve"}
+{"id": "BG0031", "type": "bug", "critic_verdict": "approve"}
+{"id": "BG0032", "type": "bug", "critic_verdict": "approve"}
+{"id": "CR0065", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0066", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0067", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0068", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0071", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0069", "type": "cr", "critic_verdict": "approve"}
+{"id": "BG0033", "type": "bug", "critic_verdict": "approve"}
+{"id": "CR0072", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0070", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0073", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0074", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0075", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0076", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0077", "type": "cr"}
+{"id": "CR0079", "type": "cr"}
+{"id": "CR0078", "type": "cr"}
+{"id": "CR0080", "type": "cr"}
+{"id": "CR0082", "type": "cr"}
+{"id": "CR0085", "type": "cr"}
+{"id": "CR0084", "type": "cr"}
+{"id": "CR0086", "type": "cr"}
+{"id": "CR0083", "type": "cr"}
+{"id": "CR0081", "type": "cr"}
+{"id": "RFC0019", "type": "rfc"}
+{"id": "CR0087", "type": "cr"}
+{"id": "CR0088", "type": "cr"}
+{"id": "CR0089", "type": "cr"}
+{"id": "CR0090", "type": "cr"}
+{"id": "CR0091", "type": "cr"}
+{"id": "CR0092", "type": "cr"}
+{"id": "CR0093", "type": "cr"}
+{"id": "CR0094", "type": "cr"}
+{"id": "CR0095", "type": "cr"}
+{"id": "CR0096", "type": "cr"}
+{"id": "CR0097", "type": "cr"}
+{"id": "CR0098", "type": "cr"}
+{"id": "CR0099", "type": "cr"}
+{"id": "BG0034", "type": "bug"}
+{"id": "CR0104", "type": "cr"}
+{"id": "CR0101", "type": "cr"}
+{"id": "CR0100", "type": "cr"}
+{"id": "CR0103", "type": "cr"}
+{"id": "CR0102", "type": "cr"}
+{"id": "CR0105", "type": "cr"}
+{"id": "BG0035", "type": "bug"}
+{"id": "BG0036", "type": "bug"}
+{"id": "CR0106", "type": "cr"}
+{"id": "CR0107", "type": "cr"}
+{"id": "BG0037", "type": "bug"}
+{"id": "CR0109", "type": "cr"}
+{"id": "CR0110", "type": "cr"}
+{"id": "CR0111", "type": "cr"}
+{"id": "CR0108", "type": "cr"}
+{"id": "CR0112", "type": "cr"}
+{"id": "CR0118", "type": "cr"}
+{"id": "CR0113", "type": "cr"}
+{"id": "CR0114", "type": "cr"}
+{"id": "CR0115", "type": "cr"}
+{"id": "CR0117", "type": "cr"}
+{"id": "CR0119", "type": "cr"}
+{"id": "BG0038", "type": "bug"}
+{"id": "CR0116", "type": "cr"}
+{"id": "BG0040", "type": "bug", "critic_verdict": "approve"}
+{"id": "CR0123", "type": "cr", "critic_verdict": "approve"}
+{"id": "BG0043", "type": "bug", "critic_verdict": "approve"}
+{"id": "BG0044", "type": "bug", "critic_verdict": "approve"}
+{"id": "CR0122", "type": "cr", "critic_verdict": "approve"}
+{"id": "BG0039", "type": "bug", "critic_verdict": "approve"}
+{"id": "CR0121", "type": "cr", "critic_verdict": "approve"}
+{"id": "BG0041", "type": "bug", "critic_verdict": "approve"}
+{"id": "BG0042", "type": "bug", "critic_verdict": "approve"}
+{"id": "CR0120", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0124", "type": "cr", "critic_verdict": "approve"}
+{"id": "US0051", "type": "story", "iterations": 1, "critic_verdict": "approve"}
+{"id": "US0052", "type": "story", "iterations": 2, "critic_verdict": "approve"}
+{"id": "CR0131", "type": "cr", "critic_verdict": "approve"}
+{"id": "CR0132", "type": "cr", "critic_verdict": "approve"}
+{"id": "BG0067", "type": "bug"}
+{"id": "EP0012", "type": "epic"}
+{"id": "EP0013", "type": "epic"}
+{"id": "EP0015", "type": "epic"}
+{"id": "EP0018", "type": "epic"}
+{"id": "CR0166", "type": "cr"}
+{"id": "CR0167", "type": "cr"}
+{"id": "CR0168", "type": "cr"}
+{"id": "CR0169", "type": "cr"}
+{"id": "CR0170", "type": "cr"}
+{"id": "CR0171", "type": "cr"}
+{"id": "CR0174", "type": "cr"}
+{"id": "CR0175", "type": "cr"}
+{"id": "CR0176", "type": "cr"}
+{"id": "CR0180", "type": "cr"}
+{"id": "CR0183", "type": "cr"}
+{"id": "CR0184", "type": "cr"}
+{"id": "CR0185", "type": "cr"}
+{"id": "US0074", "type": "story"}
+{"id": "US0075", "type": "story"}
+{"id": "CR0178", "type": "cr"}
+{"id": "US0083", "type": "story"}
+{"id": "US0084", "type": "story"}
+{"id": "US0085", "type": "story"}
+{"id": "US0086", "type": "story"}
+{"id": "US0087", "type": "story"}
+{"id": "US0088", "type": "story"}
+{"id": "US0089", "type": "story"}
+{"id": "CR0189", "type": "cr"}
+{"id": "CR0190", "type": "cr"}
+{"id": "CR0191", "type": "cr"}
+{"id": "CR0192", "type": "cr"}
+{"id": "CR0193", "type": "cr"}
+{"id": "CR0177", "type": "cr"}
+{"id": "US0072", "type": "story"}
+{"id": "EP0017", "type": "epic"}
+{"id": "US0065", "type": "story"}
+{"id": "US0067", "type": "story"}
+{"id": "US0068", "type": "story"}
+{"id": "US0066", "type": "story"}
+{"id": "EP0014", "type": "epic"}
+{"id": "US0093", "type": "story"}
+{"id": "US0090", "type": "story"}
+{"id": "US0091", "type": "story"}
+{"id": "US0092", "type": "story"}
+{"id": "CR0194", "type": "cr"}
+{"id": "CR0195", "type": "cr"}
+{"id": "CR0196", "type": "cr"}
+{"id": "EP0019", "type": "epic"}
+{"id": "US0094", "type": "story"}
+{"id": "BG0068", "type": "bug"}
+{"id": "BG0069", "type": "bug"}
+{"id": "US0097", "type": "story"}
+{"id": "US0099", "type": "story"}
+{"id": "US0095", "type": "story"}
+{"id": "US0098", "type": "story"}
+{"id": "US0096", "type": "story"}
+{"id": "CR0197", "type": "cr"}
+{"id": "CR0200", "type": "cr"}
+{"id": "CR0181", "type": "cr"}
+{"id": "CR0182", "type": "cr"}
+{"id": "CR0188", "type": "cr"}
+{"id": "EP0020", "type": "epic"}
+{"id": "EP0021", "type": "epic"}
+{"id": "CR0172", "type": "cr"}
+{"id": "CR0173", "type": "cr"}
+{"id": "US0102", "type": "story"}
+{"id": "US0100", "type": "story"}
+{"id": "US0101", "type": "story"}
+{"id": "US0104", "type": "story"}
+{"id": "US0103", "type": "story"}
+{"id": "CR0186", "type": "cr"}
+{"id": "CR0187", "type": "cr"}
+{"id": "CR0179", "type": "cr"}
+{"id": "EP0022", "type": "epic"}
+{"id": "EP0023", "type": "epic"}
+{"id": "US0105", "type": "story"}
+{"id": "US0106", "type": "story"}
+{"id": "US0107", "type": "story"}
+{"id": "BG0070", "type": "bug"}
+{"id": "US0108", "type": "story"}
+{"id": "US0109", "type": "story"}
+{"id": "US0110", "type": "story"}
+{"id": "US0111", "type": "story"}
+{"id": "US0112", "type": "story"}
+{"id": "CR0198", "type": "cr"}
+{"id": "CR0199", "type": "cr"}
+{"id": "CR0201", "type": "cr"}
+{"id": "EP0024", "type": "epic"}
+{"id": "EP0025", "type": "epic"}
+{"id": "EP0005", "type": "epic"}
+{"id": "EP0006", "type": "epic"}
+{"id": "EP0007", "type": "epic"}
+{"id": "EP0001", "type": "epic"}
+{"id": "EP0002", "type": "epic"}
+{"id": "EP0003", "type": "epic"}
+{"id": "EP0004", "type": "epic"}
+{"id": "EP0008", "type": "epic"}
+{"id": "EP0009", "type": "epic"}
+{"id": "BG0075", "type": "bug"}
+{"id": "BG0071", "type": "bug"}
+{"id": "BG0072", "type": "bug"}
+{"id": "BG0077", "type": "bug"}
+{"id": "BG0078", "type": "bug"}
+{"id": "BG0074", "type": "bug"}
+{"id": "BG0073", "type": "bug"}
+{"id": "BG0080", "type": "bug"}
+{"id": "BG0079", "type": "bug"}
+{"id": "RFC0027", "type": "rfc"}
+{"id": "BG0090", "type": "bug"}
+{"id": "BG0096", "type": "bug"}
+{"id": "US0113", "type": "story"}
+{"id": "CR0202", "type": "cr"}
+{"id": "BG0085", "type": "bug"}
+{"id": "BG0094", "type": "bug"}
+{"id": "BG0095", "type": "bug"}
+{"id": "BG0098", "type": "bug"}
+{"id": "US0114", "type": "story"}
+{"id": "CR0204", "type": "cr"}
+{"id": "US0115", "type": "story"}
+{"id": "CR0203", "type": "cr"}
+{"id": "US0116", "type": "story"}
+{"id": "CR0209", "type": "cr"}
+{"id": "EP0026", "type": "epic"}
+{"id": "BG0081", "type": "bug"}
+{"id": "BG0082", "type": "bug"}
+{"id": "BG0091", "type": "bug"}
+{"id": "BG0083", "type": "bug"}
+{"id": "BG0084", "type": "bug"}
+{"id": "BG0089", "type": "bug"}
+{"id": "BG0092", "type": "bug"}
+{"id": "US0117", "type": "story"}
+{"id": "CR0205", "type": "cr"}
+{"id": "BG0076", "type": "bug"}
+{"id": "US0118", "type": "story"}
+{"id": "CR0206", "type": "cr"}
+{"id": "US0119", "type": "story"}
+{"id": "CR0207", "type": "cr"}
+{"id": "EP0027", "type": "epic"}
+{"id": "BG0099", "type": "bug"}
+{"id": "BG0087", "type": "bug"}
+{"id": "BG0088", "type": "bug"}
+{"id": "BG0086", "type": "bug"}
+{"id": "BG0097", "type": "bug"}
+{"id": "BG0093", "type": "bug"}
+{"id": "CR0211", "type": "cr"}
+{"id": "CR0210", "type": "cr"}
+{"id": "CR0208", "type": "cr"}
+{"id": "EP0028", "type": "epic"}
+{"id": "BG0100", "type": "bug"}
+{"id": "CR0216", "type": "cr"}
+{"id": "CR0212", "type": "cr"}
+{"id": "CR0215", "type": "cr"}
+{"id": "CR0217", "type": "cr"}
+{"id": "BG0102", "type": "bug"}
+{"id": "BG0101", "type": "bug"}
+{"id": "CR0213", "type": "cr"}
+{"id": "CR0214", "type": "cr"}
+{"id": "EP0029", "type": "epic"}
+{"id": "RFC0028", "type": "rfc"}
+{"id": "CR0219", "type": "cr"}
+{"id": "CR0220", "type": "cr"}
+{"id": "CR0221", "type": "cr"}
+{"id": "CR0222", "type": "cr"}
+{"id": "CR0226", "type": "cr"}
+{"id": "BG0103", "type": "bug", "critic_verdict": "APPROVE"}
+{"id": "CR0228", "type": "cr"}
+{"id": "CR0232", "type": "cr"}
+{"id": "CR0227", "type": "cr"}
+{"id": "CR0218", "type": "cr"}
+{"id": "EP0030", "type": "epic"}
+{"id": "BG0104", "type": "bug", "critic_verdict": "APPROVE"}
+{"id": "BG0105", "type": "bug", "critic_verdict": "APPROVE"}
+{"id": "BG0106", "type": "bug", "critic_verdict": "APPROVE"}
+{"id": "BG0107", "type": "bug", "critic_verdict": "APPROVE"}
+{"id": "RFC0029", "type": "rfc"}
+{"id": "CR0230", "type": "cr"}
+{"id": "CR0231", "type": "cr"}
+{"id": "BG0111", "type": "bug"}
+{"id": "CR0233", "type": "cr"}
+{"id": "CR0224", "type": "cr"}
+{"id": "BG0108", "type": "bug"}
+{"id": "BG0109", "type": "bug"}
+{"id": "CR0235", "type": "cr"}
+{"id": "CR0236", "type": "cr"}
+{"id": "CR0223", "type": "cr"}
+{"id": "BG0115", "type": "bug"}
+{"id": "CR0225", "type": "cr"}
+{"id": "CR0234", "type": "cr"}
+{"id": "BG0110", "type": "bug"}
+{"id": "CR0229", "type": "cr"}
+{"id": "EP0031", "type": "epic"}
+{"id": "EP0032", "type": "epic"}
+{"id": "BG0112", "type": "bug"}
+{"id": "BG0114", "type": "bug"}
+{"id": "BG0118", "type": "bug"}
+{"id": "CR0237", "type": "cr"}
+{"id": "BG0113", "type": "bug"}
+{"id": "BG0116", "type": "bug"}
+{"id": "BG0117", "type": "bug"}
+{"id": "BG0119", "type": "bug"}
+{"id": "BG0120", "type": "bug"}
+{"id": "CR0238", "type": "cr"}
+{"id": "RFC0030", "type": "rfc"}
+{"id": "RFC0031", "type": "rfc"}
+{"id": "BG0121", "type": "bug"}
+{"id": "CR0239", "type": "cr"}
+{"id": "BG0122", "type": "bug"}
+{"id": "RFC0032", "type": "rfc"}
+{"id": "BG0124", "type": "bug"}
+{"id": "BG0123", "type": "bug"}
+{"id": "CR0240", "type": "cr"}
+{"id": "CR0242", "type": "cr"}
+{"id": "CR0244", "type": "cr"}
+{"id": "CR0241", "type": "cr"}
+{"id": "CR0245", "type": "cr"}
+{"id": "CR0246", "type": "cr"}
+{"id": "CR0247", "type": "cr"}
+{"id": "CR0243", "type": "cr"}
+{"id": "CR0242", "type": "cr"}
+{"id": "BG0125", "type": "bug"}
+{"id": "BG0128", "type": "bug"}
+{"id": "CR0251", "type": "cr"}
+{"id": "BG0129", "type": "bug"}
+{"id": "CR0253", "type": "cr"}
+{"id": "BG0126", "type": "bug", "iterations": 1, "wall_time_s": 272, "critic_verdict": "approve", "tokens": 46792, "model": "claude-opus-4-8"}
+{"id": "BG0126", "type": "bug"}
+{"id": "CR0250", "type": "cr", "iterations": 1, "wall_time_s": 80, "critic_verdict": "approve", "tokens": 46359, "model": "claude-opus-4-8"}
+{"id": "BG0130", "type": "bug", "iterations": 1, "wall_time_s": 189, "critic_verdict": "approve", "tokens": 42687, "model": "claude-opus-4-8"}
+{"id": "BG0130", "type": "bug"}
+{"id": "CR0250", "type": "cr"}
+{"id": "CR0249", "type": "cr", "iterations": 1, "wall_time_s": 475, "critic_verdict": "approve", "tokens": 98513, "model": "claude-opus-4-8"}
+{"id": "CR0248", "type": "cr", "iterations": 1, "wall_time_s": 485, "critic_verdict": "approve", "tokens": 84302, "model": "claude-opus-4-8"}
+{"id": "CR0248", "type": "cr"}
+{"id": "CR0249", "type": "cr"}
+{"id": "BG0127", "type": "bug", "iterations": 1, "wall_time_s": 347, "critic_verdict": "approve", "tokens": 65625, "model": "claude-opus-4-8"}
+{"id": "BG0127", "type": "bug"}
+{"id": "CR0257", "type": "cr", "iterations": 1, "wall_time_s": 483, "critic_verdict": "approve", "tokens": 97863, "model": "claude-opus-4-8"}
+{"id": "CR0258", "type": "cr", "iterations": 1, "wall_time_s": 690, "critic_verdict": "approve", "tokens": 107623, "model": "claude-opus-4-8"}
+{"id": "CR0257", "type": "cr"}
+{"id": "CR0258", "type": "cr"}
+{"id": "BG0132", "type": "bug", "iterations": 1, "wall_time_s": 725, "critic_verdict": "approve", "tokens": 129957, "model": "claude-opus-4-8"}
+{"id": "CR0259", "type": "cr", "iterations": 1, "wall_time_s": 772, "critic_verdict": "approve", "tokens": 144711, "model": "claude-opus-4-8"}
+{"id": "CR0259", "type": "cr"}
+{"id": "BG0132", "type": "bug"}
+{"id": "CR0260", "type": "cr", "iterations": 1, "wall_time_s": 1137, "critic_verdict": "approve", "tokens": 162204, "model": "claude-opus-4-8"}
+{"id": "CR0260", "type": "cr"}
+{"id": "BG0131", "type": "bug"}
+{"id": "BG0134", "type": "bug", "iterations": 1, "wall_time_s": 428, "critic_verdict": "approve", "tokens": 71935, "model": "claude-opus-4-8"}
+{"id": "BG0134", "type": "bug"}
+{"id": "CR0252", "type": "cr", "iterations": 1, "wall_time_s": 1134, "critic_verdict": "approve", "tokens": 205534, "model": "claude-opus-4-8"}
+{"id": "CR0252", "type": "cr"}
+{"id": "BG0135", "type": "bug", "iterations": 1, "wall_time_s": 1246, "critic_verdict": "approve", "tokens": 173804, "model": "claude-opus-4-8"}
+{"id": "BG0135", "type": "bug"}
+{"id": "BG0133", "type": "bug", "iterations": 1, "wall_time_s": 1431, "critic_verdict": "approve", "tokens": 217139, "model": "claude-opus-4-8"}
+{"id": "BG0133", "type": "bug"}
+{"id": "BG0136", "type": "bug", "iterations": 1, "wall_time_s": 1767, "critic_verdict": "approve", "tokens": 234091, "model": "claude-opus-4-8"}
+{"id": "BG0136", "type": "bug"}
+{"id": "BG0139", "type": "bug"}

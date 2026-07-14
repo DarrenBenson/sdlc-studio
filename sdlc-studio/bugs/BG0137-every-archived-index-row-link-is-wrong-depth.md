@@ -1,11 +1,12 @@
 # BG0137: Every archived index row link is wrong-depth: 361 dead links on GitHub
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Effort:** M
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Affects:** .claude/skills/sdlc-studio/scripts/archive.py, tools/check_links.py
+> **Verification depth:** functional - verified by ATTACK through the public guard, not by reading the report. An independent walker resolved every archived row link relative to the sub-index it sits in: 361 links, 361 resolve, 0 broken. Then one link was regressed to the pre-fix bare-filename depth and `tools/check_links.py` exited 1 and named it; restored, it exits 0. The guard is real and is not fail-open.
 > **Raised-by:** sdlc-studio; agent; v1
 
 ## Summary
@@ -14,7 +15,7 @@ archive.py copies the live index row verbatim into the archive sub-index, which 
 
 ## Steps to Reproduce
 
-1. Open any archive sub-index, e.g. sdlc-studio/bugs/archive/<release>/_index.md. 2. Read a row link: it is a bare filename, [BG-0001](BG0001-x.md). 3. The file it names is at sdlc-studio/bugs/BG0001-x.md, two levels up. 4. Click the link on GitHub -> 404. 5. Repeat for all 361 archived rows.
+1. Open any archive sub-index, e.g. sdlc-studio/bugs/archive/<release>/_index.md. 2. Read a row link: it is a bare filename, `[BG-0001](BG0001-x.md)`. 3. The file it names is at sdlc-studio/bugs/BG0001-x.md, two levels up. 4. Click the link on GitHub -> 404. 5. Repeat for all 361 archived rows.
 
 ## Proposed Fix
 
@@ -25,3 +26,10 @@ archive.py must rewrite the row link when it moves the row, not copy it verbatim
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-14 | sdlc-studio | Filed |
+
+## Correction to the repro (2026-07-14)
+
+The Steps above name the archive sub-index as `_index.md`. It is actually `<type>/archive/<release>/<type>.md`
+(e.g. `sdlc-studio/bugs/archive/v3.4.0/bug.md`). The repro PATH was wrong; the diagnosis, the depth and the
+count of 361 were all correct. Recorded rather than silently edited, because a bug report that was wrong in
+a checkable detail is worth knowing about.

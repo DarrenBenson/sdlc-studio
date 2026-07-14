@@ -3,9 +3,10 @@
 
 `archive --type <t> --release <r>` moves a type's TERMINAL index rows out of the live
 `_index.md` master table into `<type>/archive/{release}/{type}.md`, leaving a bullet
-pointer in the live index. Rows-only: the artifact FILES stay put (IDs and links
-intact). `reconcile`/`status` still count the archived rows because `parse_index` unions
-the archive sub-indexes, so the census stays correct and the live index stays
+pointer in the live index. Rows-only: the artifact FILES stay put, so the moved row's
+link is re-based to the depth of its new home (`x.md` -> `../../x.md`) and still opens
+the artifact. `reconcile`/`status` still count the archived rows because `parse_index`
+unions the archive sub-indexes, so the census stays correct and the live index stays
 bounded - the read-cost win on large projects.
 
 Explicit, operator-run (no auto-trigger). Idempotent per release. Read-then-write.
@@ -17,6 +18,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import posixpath
+import re
 import sys
 from pathlib import Path
 
@@ -30,6 +33,26 @@ import reconcile  # noqa: E402  (sibling - cell helpers + the union-aware count 
 # as if closed; the `--statuses` override remains for explicit operator opt-in.
 _ARCHIVABLE_TYPES = sorted(t for t in sdlc_md.ARTIFACT_TYPES if sdlc_md.terminal_statuses(t))
 _ARCHIVED_HEADING = "## Archived Releases"
+
+_MD_LINK_RE = re.compile(r"\]\(([^)\s]+)\)")
+
+
+def rebase_row_links(line: str, prefix: str) -> str:
+    """Re-base a moved row's markdown link targets by `prefix`.
+
+    A live index row links its artifact by bare filename, because the live index sits
+    beside the file. The archive sub-index does not: it sits `<type>/archive/<release>/`,
+    below the artifact, so a copied bare filename resolves nowhere and 404s on a hosted
+    render. Only a target that is still relative to the type directory is re-based; one
+    that already climbs out (`../`), or is absolute, or is a URL, is left alone - so
+    re-archiving into the same release cannot deepen a correct link.
+    """
+    def sub(m: re.Match) -> str:
+        tgt = m.group(1)
+        if tgt.startswith(("../", "/", "#")) or "://" in tgt:
+            return m.group(0)
+        return f"]({prefix}{tgt})"
+    return _MD_LINK_RE.sub(sub, line)
 
 
 def _range_label(ids: list) -> str:
@@ -64,9 +87,12 @@ def archive(repo_root: Path | str, type_: str, release: str,
     if not targets:
         return result
     moved_idx = {i for i, _id, _st in targets}
-    moved_lines = [lines[i] for i, _id, _st in targets]
     ids = [rid for _i, rid, _st in targets]
     archive_rel = f"{rel}/archive/{release}/{type_}.md"
+    # The row moves; the FILE does not. Re-base its link to the sub-index's depth
+    # (`x.md` -> `../../x.md`), computed from the paths rather than assumed.
+    link_prefix = posixpath.relpath(rel, posixpath.dirname(archive_rel)) + "/"
+    moved_lines = [rebase_row_links(lines[i], link_prefix) for i, _id, _st in targets]
     result.update(archived=ids, count=len(ids), archive_path=archive_rel)
     if dry_run:
         return result

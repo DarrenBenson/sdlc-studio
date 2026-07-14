@@ -119,15 +119,39 @@ class IndexLinkTests(unittest.TestCase):
             _write(root, "sdlc-studio/change-requests/CR0261-probe.md", "# CR\n")
             self.assertEqual(check_links.check_index_links(root / "sdlc-studio"), [])
 
-    def test_archive_subindex_row_resolves_against_the_type_dir(self) -> None:
+    def test_archive_subindex_row_resolves_relative_to_the_subindex(self) -> None:
         # archive.py moves ROWS to `<type>/archive/<release>/`, leaving the FILES in the
-        # type dir, so a sub-index row's bare filename is read from the type dir too.
+        # type dir, so an archived row must link two levels up to the artefact.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "sdlc-studio/bugs/archive/v1.0.0/bug.md",
+                   "| ID | Status |\n| --- | --- |\n| [BG0001](../../BG0001-x.md) | Fixed |\n")
+            _write(root, "sdlc-studio/bugs/BG0001-x.md", "# BG0001\n")
+            self.assertEqual(check_links.check_index_links(root / "sdlc-studio"), [])
+
+    def test_archive_subindex_row_at_the_wrong_depth_is_broken(self) -> None:
+        # BG0137: a bare filename does NOT resolve from `<type>/archive/<release>/` - it
+        # 404s on GitHub. The guard used to read it against the type dir and pass it.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _write(root, "sdlc-studio/bugs/archive/v1.0.0/bug.md",
                    "| ID | Status |\n| --- | --- |\n| [BG0001](BG0001-x.md) | Fixed |\n")
             _write(root, "sdlc-studio/bugs/BG0001-x.md", "# BG0001\n")
-            self.assertEqual(check_links.check_index_links(root / "sdlc-studio"), [])
+            broken = check_links.check_index_links(root / "sdlc-studio")
+            self.assertEqual(len(broken), 1)
+            self.assertIn("BG0001-x.md", broken[0])
+
+    def test_main_exits_non_zero_on_a_wrong_depth_archive_link(self) -> None:
+        # the public path: a wrong-depth archived row must FAIL the gate
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, ".claude/skills/sdlc-studio/SKILL.md", "# Skill\n")
+            _write(root, "sdlc-studio/bugs/archive/v1.0.0/bug.md",
+                   "| ID | Status |\n| --- | --- |\n| [BG0001](BG0001-x.md) | Fixed |\n")
+            _write(root, "sdlc-studio/bugs/BG0001-x.md", "# BG0001\n")
+            rc = check_links.main(["--root", str(root / ".claude/skills/sdlc-studio"),
+                                   "--repo-root", str(root)])
+            self.assertEqual(rc, 1)
 
     def test_archive_subindex_row_with_no_file_anywhere_is_broken(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -165,6 +189,165 @@ class IndexLinkTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             self.assertEqual(check_links.check_index_links(Path(d) / "sdlc-studio"), [])
 
+
+class BodyLinkTests(unittest.TestCase):
+    """BG0138: the index-row pass reads index ROWS only, so a cross-reference inside an
+    artefact BODY (a test spec's Stories Covered table, a Traceability row) could name a
+    file that is not there and nothing noticed. TS0001 carried 13 such links for weeks.
+
+    The pass is scoped to the workspace on purpose: the skill tree ships placeholder links
+    that are MEANT not to resolve here, and a guard that flags payload is a guard people
+    learn to ignore.
+    """
+
+    def _repo(self, root: Path) -> None:
+        """Minimal repo shape: a skill root (so main() runs) and nothing else."""
+        _write(root, ".claude/skills/sdlc-studio/SKILL.md", "# Skill\n")
+
+    def test_body_link_to_a_missing_file_is_broken(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "sdlc-studio/test-specs/TS0001-x.md",
+                   "| [US0040](../../stories/US0040-a.md) | thing |\n")
+            _write(root, "sdlc-studio/stories/US0040-a.md", "# US0040\n")
+            broken = check_links.check_body_links(root / "sdlc-studio", set())
+            self.assertEqual(len(broken), 1)
+            self.assertIn("../../stories/US0040-a.md", broken[0])
+
+    def test_body_link_resolving_relative_to_its_own_file_passes(self) -> None:
+        # `../stories/...` from `test-specs/` is what a reader's click follows
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "sdlc-studio/test-specs/TS0001-x.md",
+                   "| [US0040](../stories/US0040-a.md) | thing |\n"
+                   "| PRD | [prd](../prd.md) |\n")
+            _write(root, "sdlc-studio/stories/US0040-a.md", "# US0040\n")
+            _write(root, "sdlc-studio/prd.md", "# PRD\n")
+            self.assertEqual(check_links.check_body_links(root / "sdlc-studio", set()), [])
+
+    def test_anchored_body_link_is_still_file_checked(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "sdlc-studio/bugs/BG0001-x.md", "see [epic](../epics/EP0001-gone.md#scope)\n")
+            broken = check_links.check_body_links(root / "sdlc-studio", set())
+            self.assertEqual(len(broken), 1)
+            self.assertIn("EP0001-gone.md", broken[0])
+
+    def test_indexes_and_archives_are_left_to_the_index_row_pass(self) -> None:
+        # no double-reporting: check_index_links already owns these files
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "sdlc-studio/bugs/_index.md",
+                   "| [BG0001](BG0001-gone.md) | Open |\n")
+            _write(root, "sdlc-studio/bugs/archive/v1.0.0/_index.md",
+                   "| [BG0002](BG0002-gone.md) | Fixed |\n")
+            self.assertEqual(check_links.check_body_links(root / "sdlc-studio", set()), [])
+
+    def test_body_allowlist_suppresses_a_named_source_target_pair(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "sdlc-studio/bugs/BG0001-x.md", "quoting the defect: [BG](BG9999-gone.md)\n")
+            ws = root / "sdlc-studio"
+            self.assertEqual(len(check_links.check_body_links(ws, set())), 1)
+            allow = {"bugs/BG0001-x.md -> BG9999-gone.md"}
+            self.assertEqual(check_links.check_body_links(ws, allow), [])
+
+    def test_main_exits_non_zero_on_a_dead_body_link(self) -> None:
+        # THE BUG (BG0138): the gate must FAIL, not merely mention it. A guard that prints a
+        # failure and exits 0 is a fail-open - that shipped here as BG0134.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root)
+            _write(root, "sdlc-studio/test-specs/TS0001-x.md",
+                   "| [US0040](../../stories/US0040-a.md) | thing |\n")
+            _write(root, "sdlc-studio/stories/US0040-a.md", "# US0040\n")
+            rc = check_links.main(["--root", str(root / ".claude/skills/sdlc-studio"),
+                                   "--repo-root", str(root)])
+            self.assertEqual(rc, 1)
+
+    def test_main_passes_when_every_body_link_resolves(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root)
+            _write(root, "sdlc-studio/test-specs/TS0001-x.md",
+                   "| [US0040](../stories/US0040-a.md) | thing |\n")
+            _write(root, "sdlc-studio/stories/US0040-a.md", "# US0040\n")
+            rc = check_links.main(["--root", str(root / ".claude/skills/sdlc-studio"),
+                                   "--repo-root", str(root)])
+            self.assertEqual(rc, 0)
+
+    def test_skill_payload_placeholders_are_not_flagged(self) -> None:
+        """The guard must not cry wolf on the skill tree. Templates and best-practice docs
+        ship links that resolve in a CONSUMING project, not in this repo: a template's
+        `../epics/EP{{epic_id}}-...md`, a style guide's `path/to/guide.md`, a reference's
+        `../prd.md`. Those are payload. The body pass never looks at them, so main() stays
+        green with all of them present."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            skill = ".claude/skills/sdlc-studio"
+            _write(root, f"{skill}/SKILL.md", "# Skill\n")
+            _write(root, f"{skill}/templates/core/bug.md",
+                   "**Epic:** [EP{{epic_id}}](../epics/EP{{epic_id}}-{{epic_slug}}.md)\n"
+                   "**Depends on:** [CR](CR{{dep_id}}-{{dep_slug}}.md)\n")
+            _write(root, f"{skill}/best-practices/documentation.md",
+                   "See [the guide](path/to/guide.md) and [ref](path/to/ref.md).\n")
+            _write(root, f"{skill}/reference-cr.md",
+                   "The PRD lives at [prd](../prd.md); epics at "
+                   "[EP0001](../epics/EP0001-authentication.md).\n")
+            # a real workspace alongside it, entirely clean
+            _write(root, "sdlc-studio/test-specs/TS0001-x.md",
+                   "| [US0040](../stories/US0040-a.md) |\n")
+            _write(root, "sdlc-studio/stories/US0040-a.md", "# US0040\n")
+            rc = check_links.main(["--root", str(root / skill), "--repo-root", str(root)])
+            self.assertEqual(rc, 0)
+
+
+class BodyLinkCodeSpanTests(unittest.TestCase):
+    """BG0143: a link inside backticks or a fence is an EXAMPLE, not a reference.
+
+    Without this, an artefact cannot DOCUMENT a broken link - and a bug report ABOUT broken
+    links must quote the broken link it reports. BG0137 does exactly that, and the body pass
+    failed the whole repo on its own bug report.
+    """
+
+    def _repo(self, root: Path) -> None:
+        _write(root, ".claude/skills/sdlc-studio/SKILL.md", "# Skill\n")
+
+    def test_only_the_live_link_is_reported_not_the_documented_examples(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._repo(root)
+            _write(root, "sdlc-studio/bugs/BG9999-probe.md",
+                   "# BG9999\n\n"
+                   "Live: [x](gone-live.md)\n\n"
+                   "Span: `[x](gone-span.md)`\n\n"
+                   "Fence:\n\n"
+                   "```markdown\n"
+                   "[x](gone-fence.md)\n"
+                   "```\n")
+            broken = check_links.check_body_links(root / "sdlc-studio", set())
+            joined = " ".join(broken)
+            self.assertIn("gone-live.md", joined)       # a real dead reference
+            self.assertNotIn("gone-span.md", joined)    # an example, in a code span
+            self.assertNotIn("gone-fence.md", joined)   # an example, in a fence
+            self.assertEqual(len(broken), 1, broken)
+
+    def test_the_reported_line_number_survives_the_stripping(self):
+        """Blanking a fence must not COLLAPSE lines, or every number after it shifts."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._repo(root)
+            _write(root, "sdlc-studio/bugs/BG9998-probe.md",
+                   "# BG9998\n"          # 1
+                   "\n"                   # 2
+                   "```text\n"            # 3
+                   "noise\n"              # 4
+                   "```\n"                # 5
+                   "\n"                   # 6
+                   "Live: [x](gone.md)\n")  # 7
+            broken = check_links.check_body_links(root / "sdlc-studio", set())
+            self.assertEqual(len(broken), 1, broken)
+            self.assertIn(":7 ->", broken[0])
 
 if __name__ == "__main__":
     unittest.main()

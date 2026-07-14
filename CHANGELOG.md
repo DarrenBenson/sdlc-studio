@@ -163,6 +163,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **The per-unit token forecast is DROPPED. No plan-time predictor cleared the bar (CR0262).** The seed
+  the forecast was built on - `max_cognitive`, the cognitive complexity of the files a unit touches -
+  carries no signal: r = +0.03 against measured cost across 18 units. Both past recalibrations (5,000,
+  then 600) were fitting a slope through noise, which is why the model over-forecast by 3.3x and then
+  under-forecast by 0.55x and 0.39x on consecutive sprints. You cannot scale zero.
+
+  A bar was set BEFORE measuring (leave-one-out r >= 0.50, beating `files_affected` alone, LOO ratio
+  within 0.5x-2.0x for most units). **Nothing cleared it.** The best composite reached LOO r = 0.415 -
+  and that number is generous, because its coefficients were refitted inside every fold and its feature
+  set chosen with hindsight. Rather than ship a mediocre predictor, the per-unit estimate is gone.
+
+  Two contaminants were found in the candidates that looked promising, and both matter. **`files_affected`
+  flips sign within sprints** (+0.72, -0.34, +0.87; the pooled +0.44 is a between-sprint artefact) - a
+  signal that reverses direction is not a predictor. And **the `Effort` field's apparent strength was
+  partly a calendar**: scoring an undeclared Effort as zero inflates it, because the field only exists on
+  later, larger units - the mere PRESENCE of the field scores r = +0.43. Treated honestly as missing, the
+  human Effort value scores r = +0.35: still far better than the metric the code computes about itself,
+  but not what a naive pooled correlation claimed.
+
+  **Change-complexity is not derivable at plan time, and is not faked.** Before a change exists, every
+  available complexity number is a property of the CONTAINER (file, coupling, churn), and none correlate.
+  Substituting one is the bug being removed.
+
+  The plan now leads with **batch history - what sprints ACTUALLY cost** - and quotes a flat measured rate
+  (120,000 tokens per unit) with a wide band, saying plainly: read the history, not this number.
+
+- **The router no longer reads an inapplicable signal as a zero (CR0262, absorbing BG0139).** A markdown
+  file RESOLVES the code-complexity signal and yields no scored function - and that 0 is an absence, not a
+  measurement. `complexity.assess()` now reports whether it was applicable at all; when nothing touched can
+  carry a score, `code` and `risk` go MISSING, confidence drops, and the tier is bumped UP (the doctrine the
+  module always documented and never reached). **CR0252 - a docs unit that cost 205,534 tokens - went from
+  `14 / trivial / HIGH confidence` to `34 / low / LOW`.** Under routing it would have been sent to the
+  smallest model, confidently. Code units are unchanged.
+
 - **`appetite.minutes` / `appetite.units` of `0` now mean "inherit the capacity", not "unbounded"
   (CR0259).** A consuming project that left them at the default previously ran with no ceiling; it now
   inherits `capacity.minutes` (240) and `capacity.units` (8). This is a default-behaviour change, and

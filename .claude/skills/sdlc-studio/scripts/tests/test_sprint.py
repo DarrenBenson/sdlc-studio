@@ -353,7 +353,9 @@ class WsjfTests(unittest.TestCase):
             byid = {b["id"]: b for b in batch}
             self.assertEqual([b["id"] for b in batch], ["CR0002", "CR0001"])  # smaller job first
             self.assertGreater(byid["CR0001"]["complexity"], byid["CR0002"]["complexity"])
-            self.assertGreater(byid["CR0001"]["token_budget"], byid["CR0002"]["token_budget"])
+            # complexity ORDERS the batch; it no longer PRICES it. There is no per-unit
+            # token_budget any more - the seed correlates with actual cost at r = +0.03.
+            self.assertNotIn("token_budget", byid["CR0001"])
 
     def test_wsjf_falls_back_to_priority_without_affects(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -1255,11 +1257,13 @@ class EffortSizingTests(unittest.TestCase):
         self.assertIsNone(sp._effort_code("an agent under effort pressure skips it\n"))
 
 
-class EffortForecastTests(unittest.TestCase):
-    """The token forecast reflects the declared effort when no `Affects` is declared.
+class RateForecastTests(unittest.TestCase):
+    """The forecast is UNIT COUNT x a measured rate, and nothing else.
 
-    A unit with no file list forecast the flat `BASE_TOKEN_BUDGET` whatever its size, which is
-    how a batch of ten paperwork-light units forecast exactly 10 x 50,000.
+    It used to be `base + 600 x max_cognitive`, and the seed was measured against 18 units of
+    real telemetry at r = +0.03 against actual cost - no signal at all. The declared Effort
+    (r = +0.34) was no better. Both were dropped rather than re-weighted, so these tests ATTACK
+    the model: a forecast that still moves with a falsified seed has not changed axis.
     """
 
     def _cr(self, root, num, effort=None, affects=None):
@@ -1272,42 +1276,96 @@ class EffortForecastTests(unittest.TestCase):
             body += f"\n**Effort:** {effort}\n"
         (d / f"CR{num:04d}-x.md").write_text(body, encoding="utf-8")
 
-    def test_large_forecasts_more_than_small_when_no_files_are_named(self) -> None:
+    def test_complexity_no_longer_moves_the_forecast_at_all(self) -> None:
+        """THE LOAD-BEARING TEST. A trivial file and a deeply-nested one forecast the SAME.
+
+        This is the axis change, stated as behaviour. If a wildly more complex blast radius
+        still buys a bigger number, the inert seed is still driving the forecast.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            (root / "simple.py").write_text("def s(a):\n    return a\n", encoding="utf-8")
+            (root / "complex.py").write_text(
+                "def deep(a, b, c, d):\n    if a:\n        if b:\n            if c:\n"
+                "                if d:\n                    return 1\n", encoding="utf-8")
+            self._cr(root, 1, affects="complex.py")
+            self._cr(root, 2, affects="simple.py")
+            batch = sp.select_batch(root, "cr", "Proposed", order="wsjf")
+            byid = {b["id"]: b for b in batch}
+            # the complexity signal still EXISTS and still differs - it orders the batch ...
+            self.assertGreater(byid["CR0001"]["complexity"], byid["CR0002"]["complexity"])
+            # ... and it buys precisely nothing in the forecast
+            fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
+            self.assertEqual(fc["per_unit"]["CR0001"], fc["per_unit"]["CR0002"])
+
+    def test_effort_no_longer_moves_the_forecast_either(self) -> None:
+        """The effort proxy was the other falsified seed (r = +0.34). An S and an L forecast
+        the same number: the plan does not claim to know which will cost more, because it
+        cannot."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             sp = _load()
             self._cr(root, 1, effort="S")
             self._cr(root, 2, effort="L")
             fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]["per_unit"]
-            self.assertLess(fc["CR0001"], fc["CR0002"])
-            self.assertEqual(fc["CR0001"], sp.BASE_TOKEN_BUDGET)  # S keeps the measured floor
+            self.assertEqual(fc["CR0001"], fc["CR0002"])
+            self.assertEqual(fc["CR0001"], sp.BASE_TOKEN_BUDGET)
 
-    def test_effort_reaches_the_forecast_in_priority_order_too(self) -> None:
-        # priority/manual order never stamps a token_budget - the forecast derives it, and must
-        # read the effort there as well, or the same batch forecasts differently per order mode.
+    def test_the_batch_forecast_is_the_rate_times_the_headcount(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             sp = _load()
-            self._cr(root, 1, effort="L")
-            pri = sp.build_plan(root, "cr", "Proposed", order="priority")["token_forecast"]
-            wsjf = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
-            self.assertEqual(pri["tokens"], wsjf["tokens"])
-            self.assertGreater(pri["tokens"], sp.BASE_TOKEN_BUDGET)
+            for n in (1, 2, 3):
+                self._cr(root, n, effort="M")
+            fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
+            self.assertEqual(fc["tokens"], 3 * sp.BASE_TOKEN_BUDGET)
+            self.assertEqual(fc["rate"], sp.BASE_TOKEN_BUDGET)
 
-    def test_declared_complexity_is_never_inflated_by_effort(self) -> None:
-        # The constants are fitted to measured actuals: a unit whose files resolve keeps the
-        # measured model exactly. Effort only fills the gap where complexity is absent.
+    def test_the_order_mode_cannot_change_the_forecast(self) -> None:
+        """priority order never stamped a complexity seed, so the same batch used to forecast
+        differently depending on how it was sorted. A batch's cost cannot depend on the order
+        someone asked for it in."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             sp = _load()
             (root / "real.py").write_text(
                 "def f(x):\n    if x:\n        return 1\n    return 0\n", encoding="utf-8")
             self._cr(root, 1, effort="L", affects="real.py")
+            pri = sp.build_plan(root, "cr", "Proposed", order="priority")["token_forecast"]
+            wsjf = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
+            self.assertEqual(pri["tokens"], wsjf["tokens"])
+            self.assertEqual(pri["tokens"], sp.BASE_TOKEN_BUDGET)
+
+    def test_no_per_unit_token_budget_is_published_on_a_unit(self) -> None:
+        """AC3: the per-unit forecast is DROPPED, not silently retained. A field every reader
+        takes for an estimate of THAT unit must not exist when nothing can estimate that unit."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self._cr(root, 1, effort="L", affects="nonexistent.py")
             batch = sp.select_batch(root, "cr", "Proposed", order="wsjf")
-            cx = batch[0]["complexity"]
-            self.assertGreater(cx, 0)
-            self.assertEqual(batch[0]["token_budget"],
-                             sp.BASE_TOKEN_BUDGET + sp.TOKENS_PER_COGNITIVE * cx)
+            self.assertNotIn("token_budget", batch[0])
+
+    def test_the_recorded_forecast_carries_no_seed(self) -> None:
+        """The forecast RECORD says which estimator made it. `seed: None` and the zeroed
+        coefficient are how a later reader can tell this model apart from the one it replaced -
+        and complexity/effort are still recorded as CONTEXT, so the next analyst can test them
+        against the actuals rather than inherit this decision."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            (root / "real.py").write_text(
+                "def f(x):\n    if x:\n        return 1\n    return 0\n", encoding="utf-8")
+            self._cr(root, 1, effort="L", affects="real.py")
+            fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
+            unit = fc["units"]["CR0001"]
+            self.assertIsNone(unit["seed"])
+            self.assertEqual(unit["seed_source"], "rate")
+            self.assertGreater(unit["complexity"], 0)   # observed ...
+            self.assertEqual(unit["effort"], "L")       # ... and recorded ...
+            self.assertEqual(unit["tokens"], sp.BASE_TOKEN_BUDGET)  # ... but never multiplied
+            self.assertEqual(fc["constants"]["TOKENS_PER_COGNITIVE"], 0)
 
 
 try:
@@ -1449,12 +1507,16 @@ class CapacityHonestyTests(unittest.TestCase):
     @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
     def test_a_batch_under_budget_but_over_it_at_the_top_of_the_band_says_so(self) -> None:
         # The honest middle case: the point estimate fits, the plausible high end does not.
-        # Reporting only the point estimate would hide it.
+        # Reporting only the point estimate would hide it. Derived from the constants rather
+        # than hard-coded, so a recalibration cannot quietly turn this case into a different one.
+        sp = _load()
+        rate = sp.BASE_TOKEN_BUDGET
+        budget = int(rate * (1 + sp.FORECAST_BAND / 2))  # above the point, below the high end
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _config(root, "capacity:\n  tokens: 55000\n")
-            _cr(root, 1)  # forecast 50,000; high end 65,000
-            cap = _load().build_plan(root, "cr", "Proposed")["capacity"]
+            _config(root, f"capacity:\n  tokens: {budget}\n")
+            _cr(root, 1)  # one unit: forecast = the rate; high end = rate x (1 + band)
+            cap = sp.build_plan(root, "cr", "Proposed")["capacity"]
             self.assertEqual(cap["over"], [])
             self.assertTrue(cap["tokens_may_exceed"])
 
@@ -1507,9 +1569,12 @@ class CapacityHonestyTests(unittest.TestCase):
                         "out-of-sample |\n")
         self.assertEqual(agreeing, (round(1 - sp.FORECAST_BAND, 2),
                                     round(1 + sp.FORECAST_BAND, 2)))
-        under = band("| RETRO0001 | d | 6 | 6 | 6 | 280 | 400 | 0.7x | 10 | {cur} | "
-                     "out-of-sample |\n")
-        self.assertGreater(under[1], agreeing[1])  # 1/0.7 = 1.43 - the band widened
+        # a miss WORSE than the declared floor - derived from the constant, so the case stays a
+        # widening case whatever the band is set to, instead of quietly becoming a no-op
+        miss = round(1.0 / (1.0 + sp.FORECAST_BAND) * 0.8, 2)
+        under = band(f"| RETRO0001 | d | 6 | 6 | 6 | {int(400 * miss)} | 400 | {miss}x | 10 | "
+                     "{cur} | out-of-sample |\n")
+        self.assertGreater(under[1], agreeing[1])  # 1/miss is outside the floor - it widened
 
     def test_a_sprint_the_constants_were_fitted_to_does_not_widen_the_band_either(self) -> None:
         """Training error must not reach the operator's error bar any more than it reaches the
