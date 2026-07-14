@@ -5,44 +5,32 @@
 > AGENTS.md; per-sprint detail lives in the retros and CHANGELOG.md; keep this file under
 > `docs.latest_max_lines` (doc-freshness advisory) by moving past sprints to History lines.
 >
-> **Version:** `4.0.0` PUBLISHED (tags v4.0.0-rc.1 + v4.0.0, 2026-07-10; the maturity
-> release: schema v3 active + default for new projects) · **Date:** 2026-07-10 ·
-> **Gates:** 1632 skill + 132 tools tests pass, `gate` PASS, verify_ac 0 failed, drift 0.
+> **Version:** `4.1.0` READY TO TAG - backlog empty, the operator's tag precondition met
+> (2026-07-14) · **Gates:** 2011 skill + 141 tools tests pass, `gate` PASS, drift 0,
+> `gate --require-retro RETRO0021` PASS. `main` is level with `origin`.
 >
-> **Published at the operator's explicit direction (2026-07-10):** rc.1 tagged and pushed,
-> then BG0104 (rotted Verify layer, caught by the pre-tag ritual) fixed through the full
-> gate, then `4.0.0` cut and tagged. `main` is level with `origin`. Next cycle is the
-> Deferred v4.1 lane.
+> **The v4.1 sprint is DONE (2026-07-14):** 24 units delivered (EP0031 + EP0032 = 12 planned,
+> plus 12 discovered-finds), each through the full independence gate; ~12 of 14 first-pass
+> reviews rejected and repaired (the finds a green suite hid: an RCE via `--ac` injection, a
+> handoff that dropped work, a verifier judging the wrong tree, a safety gate that did not gate,
+> a `Refs:` trailer that disarmed its own check). RETRO0021 filed. **The v4.1 window stays open a
+> week for local forward-port testing (D0025); the tag, freeze lift, and push to consuming
+> projects remain the operator's explicit action.** v4.0.0 was published 2026-07-10 (schema v3
+> active + default; see the History lines).
 
 ## Current
 
-- **v4.1 SPRINT - 12 PLANNED UNITS DELIVERED, EP0031 + EP0032 CLOSED (2026-07-13).** The v4.1
-  window stays OPEN for a week of local debugging via forward-port; the tag cuts when the backlog
-  is empty (D0025 - v4.1 absorbs everything the sprint finds, no v4.2 lane). Every unit went
-  through the full independence gate (a separate critic instance that re-runs its own
-  reproductions), and **12 of 14 units were rejected on the first pass** - the rejections caught,
-  behind green test suites: a shipped RCE (BG0115: a `--ac` newline injected an executable Verify
-  line), a handoff that silently dropped remaining work (CR0223), a verifier computing its verdict
-  against the wrong tree (CR0234), and a safety gate that did not actually gate (CR0229, three
-  rounds to an honest close). On trunk:
-  - **EP0031 release integrity:** BG0111 (lessons data loss), BG0108 (creators emit what the
-    validator accepts), BG0109 (authorship provenance), CR0233 (`gate --release`), BG0110
-    (leg-presence gate + the reusable waiver primitive), CR0229 (engagement floor), CR0236
-    (lessons close-loop gated).
-  - **EP0032 run-close + agent DX:** CR0223 (handoff guide + the run-state object), CR0225
-    (appetite breaker, built on it), CR0224 (cross-repo deps), CR0234 (uniform CLI grammar +
-    conformance sweep), CR0235 (planning template tier).
-  - **CR0229 is honest about its limit:** the engagement floor catches pure omission and
-    solo-commit understatement deterministically; understatement in a commit shared with another
-    id is a disclosed limit (git cannot attribute a file per-id), tracked as CR0239 for a
-    commit-id convention. D0021's overclaim superseded by D0026.
-  - **Cleanup wave IN FLIGHT (the sprint-discovered finds, all Target v4.1):** BG0112 (template
-    lint), BG0113 (`_put_section` drops subsections), BG0114 (conformance remediation gap),
-    BG0116 (meta-index bootstrap), BG0117 (prose-field metadata), BG0118 (floor path over-refusal),
-    CR0237 (verify_ac manual-vs-unspecified), CR0238 (triage_noise open-codes the row writer).
-  - **Needs an operator decision before the tag:** CR0239 (a commit-id convention enforced by a
-    hook - a workflow change, not a mechanical fix), RFC0030 (PVD edge list), RFC0031 (scaffold
-    contract). Each needs an accept/reject/park decision, not autonomous delivery.
+- **v4.1 SPRINT DONE - BACKLOG EMPTY, READY TO TAG (2026-07-14).** 24 units delivered across
+  EP0031 (release integrity: BG0108-BG0111, CR0229, CR0233, CR0236) and EP0032 (run-close + DX:
+  CR0223-CR0225, CR0234, CR0235), plus the 12 discovered-finds the reviews surfaced (BG0112-BG0121,
+  CR0237-CR0239), all on trunk and critic-approved. Full detail in **RETRO0021**; decisions
+  D0018-D0029. Headline: ~12 of 14 first-pass reviews rejected and repaired, each behind a green
+  suite - the finds the independence gate caught include an RCE via `--ac` injection (BG0115), a
+  handoff that dropped work (CR0223), a verifier judging the wrong tree (CR0234), a safety gate
+  that did not gate (CR0229, 3 rounds), and a `Refs:` trailer that disarmed its own floor check
+  (CR0239). RFC0030 parked, RFC0031 status-quo (D0027/D0028); benchmark CRs re-homed to
+  `sdlc-bench`. **The tag / freeze lift / push stay the operator's explicit action after the
+  week of local forward-port testing.**
 
 - **EP0030 THE GENERATED TEAM DELIVERED - BACKLOG CLEAR, v4 TAG READY (2026-07-10).**
   The GA-gating epic closed 9/9 through the full independence gate (8 critic REJECTs

@@ -30,3 +30,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0018](RETRO0018-ep0026-ep0028-backlog-clear-sprint-gate-integrity-reliability.md) | EP0026-EP0028 backlog-clear sprint: gate integrity, reliability tier, era completion + DX | 2026-07-10 | -- | -- |
 | [RETRO-0019](RETRO0019-ep0029-v4-ga-readiness-the-sprint-the-personas.md) | EP0029 v4 GA readiness: the sprint the personas ran | 2026-07-10 | -- | -- |
 | [RETRO-0020](RETRO0020-ep0030-the-generated-team-the-ga-gating-sprint.md) | EP0030 the generated team - the GA-gating sprint | 2026-07-10 | -- | -- |
+| [RETRO-0021](RETRO0021-v4-1-sprint-ep0031-ep0032-the-discovered-finds.md) | v4.1 sprint: EP0031 + EP0032 + the discovered-finds tail | 2026-07-14 | -- | -- |
