@@ -32,3 +32,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0020](RETRO0020-ep0030-the-generated-team-the-ga-gating-sprint.md) | EP0030 the generated team - the GA-gating sprint | 2026-07-10 | -- | -- |
 | [RETRO-0021](RETRO0021-v4-1-sprint-ep0031-ep0032-the-discovered-finds.md) | v4.1 sprint: EP0031 + EP0032 + the discovered-finds tail | 2026-07-14 | -- | -- |
 | [RETRO-0022](RETRO0022-rfc0032-closing-the-learning-loop-and-the-day.md) | RFC0032: closing the learning loop (and the day the installer shipped broken) | 2026-07-14 | -- | -- |
+| [RETRO-0023](RETRO0023-internal-hardening-sprint-first-half-the-verify-ac.md) | Internal-hardening sprint (first half): the verify_ac and review_prep clusters | 2026-07-14 | -- | -- |

@@ -1,77 +1,54 @@
-# Unified Review – 2026-07-14 – the specs have drifted two majors behind the code
+# Unified Review – 2026-07-14 (close) – internal-hardening sprint delivered
 
-> **Review type:** Unified PRD/TRD/TSD/Persona consolidation
+> **Review type:** Sprint-close review (refreshed by the new `--require-review` gate, CR0253)
 > **Reviewer:** sdlc-studio; agent; v1
 > **Date:** 2026-07-14
-> **Triggered by:** manual `review` run (the sprint-close review is not yet gated - CR0253)
+> **Triggered by:** the CR0253 review-currency gate, which correctly flagged this anchor stale
 > **Project version:** 4.1.0 released; unreleased work on `main` under a freeze until ~2026-07-21
 
 ## Headline
 
-The code is in strong shape; the **project spec documents are not**. All three of PRD, TRD and TSD
-self-declare **Version 2.0.0** against a **v4.1.0** product, and none reflect the v4 flagship
-capabilities: the engagement floor, ULID collision-free identity, the generated team, or the
-RFC0032 learning loop. The PRD still uses the retired `autosprint` name; the TRD's ADR log stops
-before four architecturally-significant v4 decisions; the TSD does not know the mutation gate. The
-personas are alive (Maya and Trevor are consulted in 14 artefacts) but the PRD names neither. A repo
-whose whole thesis is spec-code alignment has its own PRD two majors behind - a dogfooding-integrity
-gap, filed as **CR0252** (P1, L).
+The internal-hardening sprint's first two clusters shipped: the `verify_ac` grep verb is fixed and
+tested (BG0125, BG0128), `verify_ac run` takes `--file` (CR0251), the persona-index miscount is
+gone (BG0129), and - the P1 - **the sprint-close review is now a hard gate** (CR0253). That last one
+closed the exact hole this anchor kept falling into: a stale `LATEST.md` reaching a close. The gate
+proved itself by flagging *this* review stale (18 artefacts changed) before it was refreshed.
 
-This review itself only happened because it was asked for by hand: **the sprint-close review is not
-gated** (reconcile and retro are; review currency is advisory-only), which is why the *previous*
-LATEST.md sat claiming "v4.0.0 GA / 4.1.0 READY TO TAG" long after that stopped being true. Filed as
-**CR0253** (P1).
+The spec docs remain the outstanding gap: PRD/TRD/TSD are still self-declared v2.0.0 against a
+v4.1.0 product (CR0252, P1, not in this sprint).
 
-```text
-══════════════════════════════════════════════════════════
-                   DOCUMENT REVIEW SUMMARY
-══════════════════════════════════════════════════════════
+## What shipped this sprint
 
-📋 PRD   v2.0.0   STALE   engagement floor / ULID / team / loop absent;
-                          "autosprint" (retired name) still used        -> CR0252
-📐 TRD   v2.0.0   STALE   ADR log stops at ADR-003; no ADRs for the
-                          four v4 decisions                             -> CR0252
-🧪 TSD   v2.0.0   STALE   mutation gate absent from the test strategy    -> CR0252
-👥 Persona        MIXED   personas alive (consulted x14) but unnamed in
-                          the PRD; index.md miscounted as a persona     -> BG0129
-──────────────────────────────────────────────────────────
-🔗 CROSS-DOCUMENT CONSISTENCY
-   PRD -> code : ✗ the shipped v4 feature set is undocumented
-   PRD -> Persona : ✗ Maya Okafor, Trevor Hale defined + consulted, not named in PRD
-   Sprint-close contract : ⚠ reconcile ✓ + retro ✓ + review ✗ (ungated - CR0253)
-══════════════════════════════════════════════════════════
-```
+| Unit | Status | What |
+| --- | --- | --- |
+| BG0125 | Fixed | grep verb expands globs; documented `src/**/*.ts` example no longer false-REDs; verb now tested |
+| BG0128 | Fixed | rg-vs-grep dialect difference documented (POSIX-ERE portability) |
+| CR0251 | Complete | `verify_ac run/lint` accept `--file` as an alias for `--story` |
+| BG0129 | Fixed | `review_prep` no longer counts `personas/index.md` as a phantom persona |
+| CR0253 | Complete | `gate --require-review` - the sprint close now blocks on a stale `LATEST.md` |
 
-## Per-document verdict
+## Document currency (unchanged from the prior review - CR0252 still pending)
 
-- **PRD** (`prd.md`, v2.0.0, 2026-07-04) - STALE. Feature Inventory and Functional Requirements
-  predate v4. No engagement floor, ULID identity, generated team, or learning loop. Uses
-  `autosprint` (renamed `sprint` at v4.0). Personas not referenced.
-- **TRD** (`trd.md`, v2.0.0, 2026-07-06) - STALE. ADRs 001-003 are sound (progressive-disclosure
-  router, JSON-emitting helpers, files-are-truth) but the log stops there; the engagement floor,
-  ULID identity, generated team and learning loop are all ADR-worthy and undocumented.
-- **TSD** (`tsd.md`, v2.0.0, 2026-06-20) - STALE. Knows the gate and verify_ac; does not cover the
-  mutation-check gate.
-- **Persona** - MIXED. Two real personas (Maya, Trevor) are load-bearing (consulted in 14
-  CRs/stories) but unnamed in the PRD; `personas/amigos/` holds 3 generated seats. `review_prep`
-  miscounts `index.md` as a third persona (BG0129).
+- **PRD/TRD/TSD** - STALE, self-declared v2.0.0; engagement floor / ULID / generated team / learning
+  loop still undocumented. Refresh is CR0252 (P1, deferred to v4.2).
+- **Persona** - Maya and Trevor consulted in 14 artefacts, still unnamed in the PRD (folds into
+  CR0252). The phantom "Persona Index" is gone as of BG0129.
 
-## Backlog rollup (12 non-terminal)
+## Backlog rollup (14 non-terminal)
 
-- **Bugs (5):** BG0125-BG0129 (grep verifier x2, meta_new lock, atomic_write, persona-index filter)
-- **CRs (6):** CR0248-CR0253 (archive dedupe, status-vocab, security hardening, verify_ac `--file`
-  friction, **CR0252 spec refresh P1**, **CR0253 review-gate P1**)
-- **RFC (1):** RFC0033 (reconcile the three-way `audit` overload; Draft, next up for decision)
+- **Bugs (1):** BG0126, BG0127 (meta_new lock, atomic_write - deferred heavy-file cluster)
+- **CRs (11):** CR0248/0249/0250/0252/0254-0259
+- **RFCs (2, Accepted):** RFC0033 (one `audit` command), RFC0034 (sizing/velocity loop)
 
 ## Production state
 
-v4.1.0 is released and Latest on GitHub. A release freeze holds until ~2026-07-21; unreleased work
-(RFC0032 learning loop, this review's findings) sits on `main` under `[Unreleased]` and is
-forward-ported to the installed copy for internal testing only. **No production release this week.**
+v4.1.0 released and Latest on GitHub. Freeze holds until ~2026-07-21; all sprint work is on `main`
+under `[Unreleased]`, forward-ported to the installed copy for internal testing. **No production
+release this week.**
 
 ## For a fresh session
 
-Start here, then read `AGENTS.md` for durable doctrine. The specs (`prd.md`/`trd.md`/`tsd.md`) are
-currently NOT a reliable description of the product - trust the CHANGELOG, `reference-*.md`, and the
-code until CR0252 lands. The highest-value pending work is CR0252 (refresh the specs) and the two
-P1 gaps this review exposed; RFC0033 is the next design decision.
+Start here, then `AGENTS.md`. The specs are still not a reliable product description until CR0252
+lands - trust the CHANGELOG, `reference-*.md`, and the code. Highest-value pending: CR0252 (specs),
+then the two v4.2 RFC workstreams. The internal-hardening sprint's second half (BG0126/BG0127 and
+CR0248/0249/0250) remains on the backlog.

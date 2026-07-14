@@ -2,6 +2,8 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0013: When two code paths express the same filter (`review_prep`'s two persona-index excludes), give**
+- **L-0012: A gate that enforces a ceremony should be run against its own delivery as the acceptance test:**
 - **L-0011: A false finding is not free: under a disposition gate that turns findings into work, a**
 - **L-0010: Marking a work item Complete while part of its acceptance criteria is unwired is the same**
 - **L-0009: A guard that branches on invocation mode must be tested in every invocation mode; assert on**
