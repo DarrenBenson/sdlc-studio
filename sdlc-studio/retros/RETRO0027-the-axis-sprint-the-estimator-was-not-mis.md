@@ -1,0 +1,137 @@
+# RETRO-0027: The axis sprint: the estimator was not mis-tuned, it was measuring nothing
+
+> **Date:** 2026-07-14
+> **Batch:** BG0140, BG0137, CR0262, BG0138, CR0263, CR0261, BG0141
+> **Goal:** make the evidence durable, then fix the axis - or drop the forecast honestly
+> **Delivered:** 7 / 7   **Blocked:** 0
+
+## Delivered
+
+- BG0140 - the evidence survives a clone. The forecast and actuals logs moved out of gitignored
+  `.local/` into tracked `retros/evidence/`, day-sharded, with no union merge driver (an interleave
+  could flip which forecast for a unit is first, silently rewriting a prediction). Proven by building
+  a tree from `git ls-files` alone: all three sprints reproduce exactly.
+- CR0262 - **the per-unit forecast is DROPPED. No plan-time predictor cleared the bar.** The seed was
+  inert (r = +0.03 against measured cost). The plan now leads with batch history and quotes a flat
+  measured rate. `route.py` stops reading an inapplicable signal as a zero: CR0252 goes from
+  `14 / trivial / HIGH` to `34 / low / LOW`.
+- CR0263 + CR0261 - attribution on both sides of the ratio: who estimated, what delivered. `unknown` is
+  a first-class Effort value that cannot be coerced into a number. A batch spanning two models records
+  no pooled ratio at all.
+- BG0137 - 361 archived index row links, every one a 404, fixed at the writer and backfilled. The
+  accommodation that was hiding them from `check_links` is removed.
+- BG0138 - nothing validated relative links inside artefact BODIES. Now something does.
+- BG0141 - a lesson is titled at its first SENTENCE, not its first line, and all 20 mangled titles were
+  backfilled. Those headlines are the digest the next sprint reads.
+
+## Blocked / deferred
+
+- Nothing blocked. Five new bugs were RAISED by the work: BG0142, BG0143, BG0144, BG0145, BG0146.
+
+## What went well
+
+- **CR0262 gave the honest answer instead of the flattering one.** It set a bar BEFORE measuring
+  (LOO r >= 0.50), nothing cleared it, and it dropped the per-unit forecast rather than ship a
+  mediocre predictor. The easy path - swap `max_cognitive` for `files_affected` and declare victory -
+  was available and was refused.
+- **CR0263 built a report that says "NOT ANSWERABLE".** The coercion question (does a compulsory
+  estimate become a careless one?) cannot be settled on 5 recorded estimates where the compulsory
+  cohort is also the latest cohort. It reconstructed the numbers offline, found them directionally
+  consistent with the hazard, and refused to quote them because n=4 says nothing.
+- Verification by ATTACK caught what reading would not: BG0140 proven by building a fresh clone from
+  `git ls-files`; BG0137 by walking all 361 links independently; BG0143 by probing code spans and
+  fences; BG0146 by noticing a generated sentence that refuted itself.
+
+## What was hard / what stalled
+
+- **The numbers I gave the operator were contaminated, and CR0262 caught it.** `files_affected` was
+  recommended at r = 0.45 - it **flips sign within sprints** (+0.72, -0.34, +0.87), so the pooled
+  figure is a between-sprint artefact. And the human `Effort` was quoted at 0.47 - but scoring an
+  undeclared Effort as zero inflates it, because the field only exists on later, larger units. The mere
+  PRESENCE of the field scores r = +0.43. Honestly, Effort is 0.35.
+- **A recalibration relabelled the evidence that caused it (BG0146).** RETRO0025 and RETRO0026 were
+  genuine out-of-sample falsifications. CR0262 fitted its new rate on their actuals, and the label
+  flipped to IN-SAMPLE with the text "this ratio is TRAINING ERROR - it lands near 1.0x by
+  construction", printed directly above 0.39x. BG0133's disease, through a different door.
+- **Two of my own bug reports carried invented file paths**, and the grooming gate accepted a fictional
+  `Affects` and sized the unit from nothing (BG0144).
+
+## Lessons
+
+- A signal that flips sign between cohorts is not a predictor, however good its pooled correlation
+  looks. Check WITHIN the groups before trusting an average ACROSS them.
+- The presence of a field is not a measurement. Scoring a missing value as zero turns "when this field
+  was invented" into a predictor, and the calendar will happily correlate with anything that grew over
+  time.
+- Setting the bar BEFORE measuring is what makes a negative result possible. CR0262 could drop the
+  forecast only because it had written down, in advance, what "good enough" meant.
+- Merging units to dodge a file collision destroys per-unit measurement. Two units of this sprint are
+  UNMEASURED because they were delivered inside a third's agent - and merging also makes units bigger
+  and less uniform, which is the opposite of what the evidence says to do.
+- Counting is not a worse estimator than modelling; it is the honest one when no signal exists. The
+  forecast that gives up on prediction is currently outperforming everything built to predict.
+
+## Estimate vs actual
+
+<!-- accuracy:begin (generated by retro.py accuracy --write) -->
+
+| Unit | Seed | Estimate (plan-time) | Actual | Ratio (est/actual) | Wall | Model |
+| --- | --- | --- | --- | --- | --- | --- |
+| BG0140 | 45 | 77,000 | 150,139 | 0.51x | 963s | claude-opus-4-8 |
+| BG0137 | 25 | 65,000 | 80,982 | 0.8x | 528s | claude-opus-4-8 |
+| CR0262 | 25 | 65,000 | 223,308 | 0.29x | 1540s | claude-opus-4-8 |
+| BG0138 | 25 | 65,000 | 77,762 | 0.84x | 378s | claude-opus-4-8 |
+| CR0263 | 45 | 77,000 | 257,400 | 0.3x | 1633s | claude-opus-4-8 |
+| CR0261 | 45 | 77,000 | - | **UNMEASURED** (no telemetry token record) | - | - |
+| BG0141 | 30 | 68,000 | - | **UNMEASURED** (no telemetry token record) | - | - |
+| **Batch (rated units only)** | | **349,000** | **789,591** | **0.44x** | **5042s** | claude-opus-4-8 |
+
+**5 of 7 unit(s) measured; 7 of 7 forecast at plan time.**
+Unmeasured: CR0261, BG0141. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
+
+Forecast by `base=50000 tpc=600`, recorded at plan time. STALE CONSTANTS: forecast by a DIFFERENT estimator from the one now in force. It judges that one, not this one, and is excluded.
+
+Ratio is estimate / actual: above 1 the plan over-forecast, below 1 it under-forecast. Nothing is re-fitted here - see VELOCITY.md for the trend across sprints, and change the constants only on evidence a human has looked at.
+<!-- accuracy:end -->
+
+**This sprint judges the estimator that died in it, and is correctly excluded from judging the one that
+replaced it.**
+
+The batch was forecast at **494,000** by `base=50,000 tpc=600`. CR0262 replaced those constants
+mid-sprint with a flat rate, so the row reads **stale-constants**: its ratio is honest evidence about
+the OLD model, and it is no evidence at all about the new one. That is the machinery working. Two days
+ago this would have silently re-derived every forecast to the new model's numbers and reported a
+comfortable ratio.
+
+**Two units are UNMEASURED, and it is a self-inflicted wound.** CR0261 and BG0141 were folded into
+CR0263's agent to avoid a collision on `retro.py`. Their cost is inside that unit's 257,400 and is not
+attributable. The loop reports them UNMEASURED rather than inventing a split, which is right - but the
+lesson is that the merge was the error.
+
+**The new flat rate has NO out-of-sample evidence yet.** Its first honest test is the next sprint, whose
+forecast is already recorded and cannot be re-derived.
+
+## Actions raised
+
+**Are there any CRs or Bugs you want to raise in this project to address any of the issues found?**
+
+| Finding | Disposition |
+| --- | --- |
+| A recalibration relabels past falsifications as training error, erasing the evidence that caused it | BG0146 |
+| The grooming gate accepts an `Affects` naming files that do not exist, and sizes the unit from nothing | BG0144 |
+| `reconcile` keeps the same archive-link accommodation `check_links` just shed, so a regression could hide there | BG0142 |
+| The body-link pass flagged links inside code spans and fences, so no artefact could document a broken link | BG0143 |
+| The telemetry CLI rejects the new `rate` seed-source; `complexity` drops derivable churn risk for a docs unit | BG0145 |
+| `files_affected` flips sign within sprints; the `Effort` correlation was inflated by a calendar artefact | declined: no ticket. Both are FINDINGS about the data, and both are already acted on - CR0262 dropped the forecast built on them, and CR0263 made `unknown` uncoercible so the contaminant cannot recur. Recorded as lessons. A ticket would be make-work over a question already answered. |
+| Merging units to dodge a file collision destroys per-unit measurement | declined: no ticket, because the fix is a habit rather than a change - stop merging. It is recorded as a lesson, and RFC0037's oversized-unit lens already pushes the other way. Revisit if it recurs. |
+
+## Close loop (gated)
+
+- [x] this retro exists AND passes its content check
+- [x] its lessons are in the project store
+- [x] open lessons re-validated
+- [x] `retros/LESSONS-SUMMARY.md` regenerated
+
+## Metrics
+
+- Tokens: 789,591 measured across 5 of 7 units - Duration: 6,268s of worker time - Critic rejects: 0

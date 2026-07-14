@@ -36,3 +36,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0024](RETRO0024-internal-hardening-sprint-complete-6-units-by-instrumented.md) | Internal-hardening sprint complete: 6 units by instrumented subagents, and the first velocity data | 2026-07-14 | -- | -- |
 | [RETRO-0025](RETRO0025-the-sizing-sprint-the-loop-measured-itself-and.md) | The sizing sprint: the loop measured itself and the estimator failed | 2026-07-14 | -- | -- |
 | [RETRO-0026](RETRO0026-the-integrity-sprint-the-loop-can-now-be.md) | The integrity sprint: the loop can now be falsified, and it falsified the estimator again | 2026-07-14 | -- | -- |
+| [RETRO-0027](RETRO0027-the-axis-sprint-the-estimator-was-not-mis.md) | The axis sprint: the estimator was not mis-tuned, it was measuring nothing | 2026-07-14 | -- | -- |

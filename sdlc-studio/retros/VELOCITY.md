@@ -34,3 +34,4 @@ about no run that ever happened.
 | RETRO0024 | 2026-07-14 | 6 | 6 | 6 | 1,285,000 | 384,278 | 3.34x | 1,848 | base=50000 tpc=5000 | in-sample | claude-opus-4-8 |
 | RETRO0025 | 2026-07-14 | 5 | 5 | 5 | 352,600 | 642,358 | 0.55x | 3,807 | base=50000 tpc=600 | in-sample | claude-opus-4-8 |
 | RETRO0026 | 2026-07-14 | 5 | 5 | 5 | 348,400 | 902,503 | 0.39x | 6,006 | base=50000 tpc=600 | in-sample | claude-opus-4-8 |
+| RETRO0027 | 2026-07-14 | 7 | 5 | 7 | 349,000 | 789,591 | 0.44x | 5,042 | base=50000 tpc=600 | stale-constants | claude-opus-4-8 |

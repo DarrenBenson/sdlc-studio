@@ -47,6 +47,8 @@ and from per-project memory (project-specific facts).
 | [LL0032](LL0032-size-work-on-volume-complexity-and-uncertainty-and-measure-the-complexity-of-the-change-not-of-the-file.md) | Size work on volume, complexity and uncertainty - and measure the complexity of the CHANGE, not of the file |  |
 | [LL0033](LL0033-a-population-average-is-not-a-ceiling-and-a-compulsory-estimate-is-not-an-estimate.md) | A population average is not a ceiling, and a compulsory estimate is not an estimate |  |
 | [LL0034](LL0034-derive-what-you-can-record-only-judgement-and-record-it-as-a-date-never-a-boolean.md) | Derive what you can; record only judgement - and record it as a date, never a boolean |  |
+| [LL0035](LL0035-a-signal-that-flips-sign-between-cohorts-is-not-a-predictor-whatever-its-pooled-correlation-says.md) | A signal that flips sign between cohorts is not a predictor, whatever its pooled correlation says |  |
+| [LL0036](LL0036-set-the-bar-before-you-measure-it-is-what-makes-a-negative-result-possible.md) | Set the bar before you measure - it is what makes a negative result possible |  |
 
 ## Notes
 

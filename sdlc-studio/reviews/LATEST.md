@@ -1,4 +1,4 @@
-# Unified Review - 2026-07-14 (close) - the integrity sprint: the loop can now be falsified, and it falsified the estimator again
+# Unified Review - 2026-07-14 (close) - the axis sprint: the estimator was not mis-tuned, it was measuring nothing
 
 > **Review type:** Sprint-close review (required by the `--require-review` gate, CR0253)
 > **Reviewer:** sdlc-studio; agent; v1
@@ -8,113 +8,89 @@
 
 ## Headline
 
-The integrity sprint is **complete - all 5 units** (BG0133, BG0134, BG0135, BG0136, CR0252), each
-delivered by an instrumented subagent and verified independently through the public CLI before its
-report was believed. **The only outstanding P1 is closed.**
+**All 7 units delivered.** The headline result is a NEGATIVE one, and it is the most valuable thing the
+project has produced: **no plan-time predictor of a unit's cost exists, so the per-unit forecast has been
+dropped rather than replaced with a mediocre one.**
 
-**BG0133 is the one that matters.** The measurement loop can now be falsified. The forecast is
-RECORDED at plan time with the constants that produced it, and `accuracy` reads that record - the
-re-derivation path is deleted, not left as a fallback. Proven by attack: doubling both constants in
-memory moves no recorded estimate. The 5.24x miss that CAUSED the recalibration, and had been erased
-BY it, is restored to the history.
+CR0262 set a bar BEFORE measuring - leave-one-out r >= 0.50, must beat the best single raw signal, ratio
+within 0.5x-2.0x for most units. Nothing cleared it. The seed the forecast had been built on
+(`max_cognitive`) scores **r = +0.03** against measured cost: both past recalibrations (5,000, then 600)
+were fitting a slope through noise. **You cannot scale zero.**
 
-**And the loop immediately falsified the estimator a second time.**
+The plan now leads with **batch history - what sprints ACTUALLY cost** - and quotes a flat measured rate
+with a wide band, saying plainly: read the history, not this number.
 
-| unit | est (plan-time) | actual | ratio |
-| --- | --- | --- | --- |
-| BG0134 | 50,000 | 71,935 | 0.70x |
-| BG0135 | 81,200 | 173,804 | 0.47x |
-| CR0252 | 80,000 | 205,534 | 0.39x |
-| BG0136 | 73,400 | 234,091 | 0.31x |
-| BG0133 | 63,800 | 217,139 | 0.29x |
-| **BATCH** | **348,400** | **902,503** | **0.39x** |
+**Two contaminants were found in the candidates that looked promising, and both were in numbers this
+review previously reported as fact:**
 
-The velocity history, honest for the first time:
-
-| sprint | est | actual | ratio | sample |
-| --- | --- | --- | --- | --- |
-| RETRO0024 | 1,285,000 | 384,278 | 3.34x | in-sample (excluded) |
-| RETRO0025 | 352,600 | 642,358 | 0.55x | out-of-sample |
-| RETRO0026 | 348,400 | 902,503 | 0.39x | out-of-sample |
-
-**Eleven of eleven units across two independent sprints, all missing in the same direction.** A model
-that misses monotonically on every unit of two sprints is not mis-tuned - it is measuring the wrong
-thing. The constants are UNCHANGED: re-fitting to 16 points would be the third repetition of the error
-documented twice already.
-
-**ANSWERED AFTER THE CLOSE, and it changes everything: the AXIS is inert, not the coefficient.** The
-operator asked which axis was wrong rather than what the estimate was. Measured across 16 units:
-
-| candidate predictor | r vs actual cost | r vs actual work |
+| candidate | pooled r | the truth |
 | --- | --- | --- |
-| **`max_cognitive` (THE SEED WE FORECAST FROM)** | **-0.006** | **-0.001** |
-| `route.py` difficulty_score | +0.216 | - |
-| declared human `Effort` (S/M/L) | +0.388 | +0.467 |
-| `files_affected` | +0.450 | +0.483 |
-| tool-uses (an OUTPUT, unusable at plan time) | +0.967 | - |
+| `files_affected` | +0.45 | **flips sign within sprints** (+0.72, -0.34, +0.87). A between-cohort artefact. |
+| declared `Effort` | +0.47 | inflated. Scoring an undeclared Effort as zero makes the field's mere PRESENCE score +0.43 - the field only exists on later, larger units. **Honest value: +0.35.** |
 
-**The seed carries no signal. Not weak - zero, twice.** Both recalibrations (5,000, then 600) were
-fitting a slope through noise, which is why the model failed in BOTH directions on consecutive sprints.
-You cannot scale zero. `max_cognitive` measures how complicated the FILE is, not how much of it must
-change: a one-line fix in a 2,000-line module inherits the whole module's complexity, and a docs unit
-has none at all (CR0252 seeded 0, forecast 80,000, cost 205,534).
+The human estimate is still an order of magnitude better than anything the code computes about itself.
+It is not what a naive pooled correlation claimed.
 
-What the data DOES support: **cost = ~2,300 tokens per tool-use, and that rate is STABLE** across three
-sprints (2,868 / 2,294 / 2,302), r = 0.967. Forecasting reduces to one question - how many actions will
-this take? The only plan-time signals with purchase on it are `files_affected` (0.48) and the declared
-human `Effort` (0.47). **Roughly equal: a person's five-second S/M/L guess is as good as anything the
-code computes, and both are infinitely better than the metric in use.**
+## The evidence is now durable, and the loop refuses to guess
 
-This is **CR0262 (P1)**, which carries the honest exit: if no plan-time predictor clears a stated bar,
-DROP the per-unit forecast rather than keep it as decoration, and plan from the batch history instead -
-two five-unit sprints cost 642k and 902k, which is a defensible basis for planning a third.
+- **BG0140:** the forecast and actuals logs moved out of gitignored `.local/` into tracked
+  `retros/evidence/`. Proven by building a tree from `git ls-files` alone: all three sprints reproduce
+  exactly. Before this, a fresh clone read UNFORECAST on every unit and the whole history read as
+  no-evidence.
+- **CR0263 + CR0261:** attribution on both sides of the ratio - who estimated, what delivered. **A batch
+  spanning two models records no pooled ratio at all.** `unknown` is a first-class Effort value that
+  cannot be coerced into a number, which is the structural fix for the contaminant above.
+- **The coercion report says NOT ANSWERABLE.** Does a compulsory estimate become a careless one? On 5
+  recorded estimates, where the compulsory cohort IS the latest cohort, the gate's effect cannot be
+  separated from the calendar's. The tool reconstructed it offline, found it directionally consistent
+  with the hazard, and **refused to quote it because n=4 says nothing.**
 
-## What the gates caught, unprompted
+## The gate caught its own authors, again
 
-- CR0260's breakdown gate refused **three bugs our own filer had written that same day** - the filer had
-  no `--affects` flag at all (BG0136), so it was manufacturing the gap the gate exists to close.
-- BG0136's fix surfaced that `templates/core/cr.md` carried a **decoy `**Effort:**`** above the real one.
-  `extract_field` takes the first match, so **every full-template CR had been unsized to the planner**
-  whatever `--effort` said.
-- BG0135's fix found **361 archived index rows link to the wrong depth** and 404 on GitHub (BG0137).
-- The transition gate refused two bugs to Fixed until a verification depth was recorded.
+- **BG0146 (HIGH, raised by this sprint's own verification):** CR0262 fitted its new rate on RETRO0025
+  and RETRO0026's actuals, and their labels flipped to IN-SAMPLE with the generated text *"this ratio is
+  TRAINING ERROR - it lands near 1.0x by construction"* - printed directly above **0.39x**. The claim
+  refutes itself. Both were **genuine out-of-sample falsifications** and they are the entire evidence for
+  dropping the forecast. **A recalibration relabelled the evidence that caused it** - BG0133's disease
+  through a different door.
+- **BG0144 (HIGH):** the grooming gate accepts an `Affects` naming files that DO NOT EXIST, and sizes the
+  unit from the flat floor. Two of this session's own bug reports carried invented paths.
+- **BG0137:** 361 archived index row links, every one a 404 - and the link guard had been *accommodating*
+  them.
 
-## Backlog rollup (12 non-terminal)
+## This sprint's own accuracy
 
-- **Bugs (5):** BG0140 (High - the forecast log is gitignored, so BG0133's fix does not survive a
-  clone), BG0139 (High - the model router scores a docs unit trivial with HIGH confidence, on the
-  same inert signal), BG0137 (Medium - 361 dead archive links), BG0138 (Low), BG0141 (Low - `retro
-  extract` truncates a lesson title mid-sentence, mangling the digest the next sprint reads)
-- **CRs (5):** **CR0262 (P1 - the forecast seed is inert; change the axis, not the coefficient)**,
-  CR0261 (P2 - record which model delivered each unit), CR0254, CR0255, CR0256 (the RFC0033 audit
-  workstream)
-- **RFCs (2, Proposed):** RFC0035 (the sprint report), RFC0036 (unattended multi-sprint: a rolling
-  policy, not a frozen queue)
+Forecast **494,000**, measured **789,591** across 5 of 7 units, ratio **0.44x** - labelled
+**stale-constants**, because CR0262 replaced the estimator mid-sprint. It judges the model that died in
+it and is correctly excluded from judging the one that replaced it. Two days ago this would have silently
+re-derived every forecast and reported a comfortable ratio.
 
-**Recommended next batch:** **CR0262 and BG0140 together.** CR0262 is the P1 - the forecast is
-currently computed from a signal with zero predictive power, and the router (BG0139) is dominated by
-the same signal, so one fix serves both. BG0140 is its precondition: until the forecast log survives a
-clone, the evidence any predictor must be validated against exists on one machine only. **Do not enable
-model routing until BG0139 lands.**
+Two units (CR0261, BG0141) are **UNMEASURED** because they were folded into a third's agent to dodge a
+file collision. Self-inflicted: merging units destroys per-unit measurement, and makes units bigger and
+less uniform - the opposite of what the evidence says to do.
 
-## A note on how the axis finding was made
+**The new flat rate has NO out-of-sample evidence yet.** Its first honest test is the next sprint, whose
+forecast (720,000 for 6 units) is already recorded and cannot be re-derived.
 
-It was not made by the tooling. Every number was already on disk; the loop had been honest for hours.
-It was made because the operator asked **which axis was wrong**, rather than what the estimate was -
-and that is a different question from any this project had been asking. The instruments were read
-competently and the wrong instrument was being read. Recorded as LL0031 (before tuning a coefficient,
-check that its input correlates with the target at all) and LL0030 (a plausible story fitted to a real
-pattern is not a finding).
+## Backlog rollup (13 non-terminal)
 
-## Production state
+- **Bugs (5):** BG0146 (High - the relabelling regression), BG0144 (High - fictional `Affects`), BG0142,
+  BG0145 (Low), BG0143 is Fixed
+- **CRs (4):** CR0264 (duplicate detection), CR0254, CR0255, CR0256 (the RFC0033 audit workstream)
+- **RFCs (4, Proposed/Draft):** RFC0035 (the sprint report), RFC0036 (unattended multi-sprint), RFC0037
+  (backlog triage - the ceremony that would have caught this sprint's three duplicate pairs)
 
-v4.1.0 released and Latest on GitHub. **Freeze holds until ~2026-07-21.** All sprint work is on `main`
-under `[Unreleased]`. No production release this week; forward-port to the installed copy for internal
-testing only.
+**Recommended next batch:** BG0146 first - until it lands, the velocity history mislabels its own
+evidence. Then BG0144. **Do not enable model routing yet** - the router's confidence handling is fixed
+(CR0262) but it has never been validated against outcomes.
 
 ## For a fresh session
 
-Start here, then `AGENTS.md`. **The specs are trustworthy again** (CR0252) - PRD, TRD and TSD are at
-4.1.0 with five new ADRs. Read `RETRO0026` for the second falsification and why the constants were
-deliberately left alone, and LL0026-LL0029 before touching the calibration, the router, or adding
-another optional ceremony.
+Start here, then `AGENTS.md`. The specs are current (CR0252). Read `RETRO0027` for why the per-unit
+forecast was dropped, and LL0035 (a signal that flips sign between cohorts is not a predictor) and LL0036
+(set the bar before you measure) before proposing any new estimator.
+
+**The estimation strategy is now a work-shaping strategy.** Units vary 5.5x in cost (42,687 to 234,091),
+and counting units is exactly as good a forecast as the units are uniform. The way to improve the forecast
+is not a cleverer model - it is smaller, more uniform units. The breakdown gate and RFC0037's
+oversized-unit lens ARE the estimation roadmap now.

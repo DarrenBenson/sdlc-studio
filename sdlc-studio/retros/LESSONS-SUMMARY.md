@@ -2,6 +2,11 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0033: Counting is not a worse estimator than modelling; it is the honest one when no signal exists.**
+- **L-0032: Merging units to dodge a file collision destroys per-unit measurement.**
+- **L-0031: Setting the bar BEFORE measuring is what makes a negative result possible.**
+- **L-0030: The presence of a field is not a measurement.**
+- **L-0029: A signal that flips sign between cohorts is not a predictor, however good its pooled correlation looks.**
 - **L-0028: A plausible story fitted to a real pattern is not a finding.**
 - **L-0027: Before tuning a coefficient, check that its input correlates with the target at all.**
 - **L-0026: A resolved-but-inapplicable signal is more dangerous than an absent one.**
