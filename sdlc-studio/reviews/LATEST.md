@@ -1,54 +1,61 @@
-# Unified Review – 2026-07-14 (close) – internal-hardening sprint delivered
+# Unified Review – 2026-07-14 (close) – internal-hardening sprint COMPLETE, and the first velocity data
 
-> **Review type:** Sprint-close review (refreshed by the new `--require-review` gate, CR0253)
+> **Review type:** Sprint-close review (required by the `--require-review` gate, CR0253)
 > **Reviewer:** sdlc-studio; agent; v1
 > **Date:** 2026-07-14
-> **Triggered by:** the CR0253 review-currency gate, which correctly flagged this anchor stale
+> **Triggered by:** the sprint close - review currency is now a hard gate
 > **Project version:** 4.1.0 released; unreleased work on `main` under a freeze until ~2026-07-21
 
 ## Headline
 
-The internal-hardening sprint's first two clusters shipped: the `verify_ac` grep verb is fixed and
-tested (BG0125, BG0128), `verify_ac run` takes `--file` (CR0251), the persona-index miscount is
-gone (BG0129), and - the P1 - **the sprint-close review is now a hard gate** (CR0253). That last one
-closed the exact hole this anchor kept falling into: a stale `LATEST.md` reaching a close. The gate
-proved itself by flagging *this* review stale (18 artefacts changed) before it was refreshed.
+The internal-hardening sprint is **complete - all 6 units**, every one delivered by an instrumented
+subagent and verified independently before commit. The review's findings are cleared: the `verify_ac`
+grep verb, the persona-index miscount, the retro disposition order, the `meta_new` allocation lock,
+the duplicated archive writer, the triplicated status vocabulary, and six non-atomic index writes.
+The P1 review gate (CR0253) shipped and immediately proved itself by flagging its own sprint's stale
+anchor.
 
-The spec docs remain the outstanding gap: PRD/TRD/TSD are still self-declared v2.0.0 against a
-v4.1.0 product (CR0252, P1, not in this sprint).
+**And the project has velocity data for the first time.** The token supplier (CR0258's hard half)
+works: a subagent's reported usage now lands in telemetry. Six units measured:
 
-## What shipped this sprint
+| unit | tools | wall | ACTUAL | estimate | over |
+| --- | --- | --- | --- | --- | --- |
+| CR0250 | 11 | 80s | 46,359 | 50,000 | 1.1x |
+| BG0126 | 14 | 272s | 46,792 | 245,000 | 5.2x |
+| BG0130 | 15 | 189s | 42,687 | 125,000 | 2.9x |
+| BG0127 | 27 | 347s | 65,625 | 310,000 | 4.7x |
+| CR0249 | 28 | 475s | 98,513 | 245,000 | 2.5x |
+| CR0248 | 39 | 485s | 84,302 | 310,000 | 3.7x |
+| **TOTAL** | | **31 min** | **384,278** | **1,285,000** | **3.3x** |
 
-| Unit | Status | What |
-| --- | --- | --- |
-| BG0125 | Fixed | grep verb expands globs; documented `src/**/*.ts` example no longer false-REDs; verb now tested |
-| BG0128 | Fixed | rg-vs-grep dialect difference documented (POSIX-ERE portability) |
-| CR0251 | Complete | `verify_ac run/lint` accept `--file` as an alias for `--story` |
-| BG0129 | Fixed | `review_prep` no longer counts `personas/index.md` as a phantom persona |
-| CR0253 | Complete | `gate --require-review` - the sprint close now blocks on a stale `LATEST.md` |
+**The estimator over-estimates 3.3x.** It is near-exact (1.1x) on the one unit with complexity 0 and
+over by 2.5x-5.2x on every unit touching a complex file - so the `complexity x 5,000` term is the
+error source, and the 50k base is about right for the fixed cost. **Cognitive complexity of the FILE
+is a poor proxy for the WORK done in it.** That is a real signal for CR0257/CR0259 - but N=6 is a
+signal, not a calibration. Do not recalibrate the bands from it yet.
 
-## Document currency (unchanged from the prior review - CR0252 still pending)
+## Document currency (unchanged - CR0252 still the outstanding P1)
 
-- **PRD/TRD/TSD** - STALE, self-declared v2.0.0; engagement floor / ULID / generated team / learning
-  loop still undocumented. Refresh is CR0252 (P1, deferred to v4.2).
+- **PRD/TRD/TSD** - STALE, self-declared v2.0.0 against a v4.1.0 product; engagement floor / ULID /
+  generated team / learning loop still undocumented. Refresh is **CR0252 (P1)**, deferred to v4.2.
 - **Persona** - Maya and Trevor consulted in 14 artefacts, still unnamed in the PRD (folds into
-  CR0252). The phantom "Persona Index" is gone as of BG0129.
+  CR0252). The phantom "Persona Index" is gone (BG0129).
 
-## Backlog rollup (14 non-terminal)
+## Backlog rollup (9 non-terminal)
 
-- **Bugs (1):** BG0126, BG0127 (meta_new lock, atomic_write - deferred heavy-file cluster)
-- **CRs (11):** CR0248/0249/0250/0252/0254-0259
+- **Bugs (1):** BG0131 (Low - the token metric's fixed floor; corrected from a wrong High)
+- **CRs (6):** CR0252 (P1, spec refresh), CR0254-0257, CR0259
 - **RFCs (2, Accepted):** RFC0033 (one `audit` command), RFC0034 (sizing/velocity loop)
 
 ## Production state
 
-v4.1.0 released and Latest on GitHub. Freeze holds until ~2026-07-21; all sprint work is on `main`
+v4.1.0 released and Latest on GitHub. Freeze holds until ~2026-07-21. All sprint work is on `main`
 under `[Unreleased]`, forward-ported to the installed copy for internal testing. **No production
 release this week.**
 
 ## For a fresh session
 
 Start here, then `AGENTS.md`. The specs are still not a reliable product description until CR0252
-lands - trust the CHANGELOG, `reference-*.md`, and the code. Highest-value pending: CR0252 (specs),
-then the two v4.2 RFC workstreams. The internal-hardening sprint's second half (BG0126/BG0127 and
-CR0248/0249/0250) remains on the backlog.
+lands - trust the CHANGELOG, `reference-*.md`, and the code. Highest-value pending: **CR0252** (the
+specs), then the two v4.2 RFC workstreams. The sizing loop (RFC0034) now has its first real data;
+CR0258's token half is unblocked (the supplier works) but the bands must not be fitted to N=6.

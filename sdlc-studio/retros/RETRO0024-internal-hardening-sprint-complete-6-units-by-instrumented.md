@@ -1,0 +1,98 @@
+# RETRO-0024: Internal-hardening sprint complete: 6 units by instrumented subagents, and the first velocity data
+
+> **Date:** 2026-07-14
+> **Batch:** BG0126, BG0127, BG0130, CR0248, CR0249, CR0250
+> **Goal:** clear the remaining review findings; measure every unit through the token supplier
+> **Delivered:** 6 / 6   **Blocked:** 0
+
+## Delivered
+
+- BG0126 - `meta_new` takes the allocation lock (concurrent retro/review ids could collide).
+- BG0127 - all six non-atomic `_index.md` writes now go through `atomic_write`, guarded by an
+  AST source-scan that catches a NEW offender rather than pinning today's six.
+- BG0130 - `retro.py` no longer reads a decline that cites an id as a filing.
+- CR0248 - one archive writer, one layout; reconcile's divergent duplicate removed.
+- CR0249 - per-type status vocabulary derives from `sdlc_md`, not triplicated.
+- CR0250 - the two security hardening notes documented.
+
+## Blocked / deferred
+
+- Nothing from this batch. CR0252 (the P1 spec refresh) and the two RFC workstreams were
+  deliberately out of scope and remain on the backlog.
+
+## What went well
+
+- **Every unit was delivered by an instrumented subagent and verified independently before commit.**
+  Not one was taken on trust; each was re-checked against the public path, the suite, and the gate.
+- The subagents raised findings I had not asked for and would have missed: the BG0127 agent swept the
+  tree and found SIX non-atomic index writes where I had named three, and built a source-scanning
+  guard so a new one cannot slip in. The CR0250 agent found that CR0250's OWN acceptance criterion
+  could never pass.
+- CR0253's review gate, shipped last sprint, proved itself by blocking this close until the review
+  was refreshed.
+- The token supplier works. Six units measured, and the project has velocity data for the first time.
+
+## What was hard / what stalled
+
+- **I drew confident conclusions from evidence that did not test them - three times in one day.** A
+  false High bug against a defence that already existed and was documented at the call site; a "5.2x
+  over-estimate" from N=1; and BG0131, a High bug claiming the token metric did not track work, filed
+  on three samples that all sat in one narrow band. Two larger units refuted it immediately. Each
+  time the conclusion arrived quickly and felt satisfying. That is the tell.
+- Parallel subagents in one working tree each ran the suite while another was mid-edit, producing
+  transient false failures. Both agents noticed, re-ran clean, and flagged the foreign edits rather
+  than touching them - but it is a real hazard of same-tree parallelism.
+
+## Lessons
+
+- A narrow sample can make a variable look constant; widen the RANGE before concluding. The failure
+  is not "too few samples" - five samples clustered at one end of the input space say nothing about
+  the slope.
+- Sweep for the class, do not fix the enumerated list. I named three non-atomic index writes; there
+  were six. A guard that scans the source beats a guard that pins today's offenders.
+- Verify a subagent's work through the public path before trusting the report. Every one of the six
+  reports was accurate - but that is a fact established by checking, not an assumption.
+
+## Estimate vs actual (the first velocity data)
+
+| unit | tools | wall | ACTUAL | estimate | over |
+| --- | --- | --- | --- | --- | --- |
+| CR0250 | 11 | 80s | 46,359 | 50,000 | 1.1x |
+| BG0126 | 14 | 272s | 46,792 | 245,000 | 5.2x |
+| BG0130 | 15 | 189s | 42,687 | 125,000 | 2.9x |
+| BG0127 | 27 | 347s | 65,625 | 310,000 | 4.7x |
+| CR0249 | 28 | 475s | 98,513 | 245,000 | 2.5x |
+| CR0248 | 39 | 485s | 84,302 | 310,000 | 3.7x |
+| **TOTAL** | | **31 min** | **384,278** | **1,285,000** | **3.3x** |
+
+**The estimator over-estimates 3.3x.** It is near-exact (1.1x) on the one unit with complexity 0, and
+over by 2.5x-5.2x on every unit touching a complex file. So the `complexity x 5,000` term is the error
+source and the 50k base is about right for the fixed cost: **cognitive complexity of the FILE is a
+poor proxy for the WORK done in it.** Tokens carry a large fixed floor (~40k of context per subagent)
+plus a component that scales with work - which is why the three small units looked identical.
+
+**This is a signal, not a calibration.** N=6, one model, one repo, one day. Do not fit the S/M/L
+bands to it.
+
+## Actions raised
+
+**Are there any CRs or Bugs you want to raise in this project to address any of the issues found?**
+
+| Finding | Disposition |
+| --- | --- |
+| The estimator's complexity term over-estimates 2.5x-5.2x; the file's complexity is a poor proxy for the work | declined: this is exactly the calibration CR0257/CR0259 exist to do, and N=6 is too small to fit bands to. The data is recorded in telemetry and this retro; the CRs will consume it when the sample widens |
+| Parallel subagents in one working tree see each other's mid-edit state and get transient false test failures | declined: both agents detected it, re-ran clean, and left foreign edits alone. Worktree isolation is the known remedy and is available when needed; not worth a code change on this evidence |
+| BG0131 was filed High on a conclusion the evidence did not support | LL0025 - recorded as a cross-project lesson and the bug corrected to Low. No further artefact: the fix is a habit |
+
+## Close loop (gated)
+
+- [x] this retro exists AND passes its content check (`retro.py validate --id RETRO0024`)
+- [x] its lessons are in the project store (`retro.py extract --id RETRO0024`)
+- [x] open lessons re-validated
+- [x] `retros/LESSONS-SUMMARY.md` regenerated
+- [x] the review is current (`gate --require-review`)
+
+## Metrics
+
+- Delivered 6/6 · all by instrumented subagents · 384,278 tokens actual vs 1,285,000 estimated (3.3x over)
+- 31 min agent wall-clock · 2073 tests green · gate green throughout

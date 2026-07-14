@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0016: Verify a subagent's work through the public path before trusting the report. Every one of the six**
+- **L-0015: Sweep for the class, do not fix the enumerated list. I named three non-atomic index writes; there**
+- **L-0014: A narrow sample can make a variable look constant; widen the RANGE before concluding. The failure**
 - **L-0013: When two code paths express the same filter (`review_prep`'s two persona-index excludes), give**
 - **L-0012: A gate that enforces a ceremony should be run against its own delivery as the acceptance test:**
 - **L-0011: A false finding is not free: under a disposition gate that turns findings into work, a**
