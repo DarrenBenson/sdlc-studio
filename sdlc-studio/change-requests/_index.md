@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 5 |
+| Proposed | 6 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 251 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 6 |
 | Blocked | 0 |
-| **Total** | **262** |
+| **Total** | **263** |
 
 ## All Changes
 
@@ -84,6 +84,7 @@
 | [CR-0260](CR0260-a-breakdown-step-that-makes-a-backlog-plannable.md) | A breakdown step that makes a backlog plannable: Affects, size (bugs too), dependencies, shared-file clusters | Complete | P2 | Feature | 2026-07-14 | -- |
 | [CR-0261](CR0261-record-which-model-delivered-each-unit-on-the.md) | Record which model delivered each unit, on the artefact and in the committed history | Proposed | P2 | Feature | 2026-07-14 | -- |
 | [CR-0262](CR0262-the-forecast-seed-is-inert-max-cognitive-predicts.md) | The forecast seed is inert: max_cognitive predicts neither cost nor work (r = 0.00). Change the axis, not the coefficient | Proposed | P1 | Improvement | 2026-07-14 | -- |
+| [CR-0263](CR0263-measure-the-estimator-per-estimator-and-give-unknown.md) | Measure the estimator, per estimator - and give "unknown" a first-class value | Proposed | P2 | Feature | 2026-07-14 | -- |
 
 ## Archived Releases
 

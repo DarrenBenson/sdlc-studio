@@ -92,3 +92,45 @@ RELATIVE sizing plus MEASURED VELOCITY - which is precisely what our own data sh
 Sources: Atlassian and Mountain Goat Software on the three factors of story-point estimation; Tawosi
 et al., "On the Relationship Between Story Points and Development Effort in Agile Open-Source Software"
 (ESEM 2022) for the 93% finding and the above-5-points consistency collapse.
+
+## Correction to the section above (same day, operator challenge)
+
+**The "industry ceiling" framing was wrong, and it is an instance of LL0030 committed one turn after
+LL0030 was written.**
+
+The study finds the correlation is medium-or-low in 93% of PROJECTS. That is a fact about what
+estimation TYPICALLY IS. It was written up above as a CEILING - a claim about what estimation CAN BE -
+and those are different statements. A population average hides its variance, and "most are poor at
+this" has never implied "nobody can be good at it".
+
+The operator's causal point is sharper than the study's: **an engineer does not want to estimate, they
+want to write code.** A study of story points in the wild therefore measures, to an unknown degree, HOW
+MUCH PEOPLE CARE rather than how well they could do it if they did. Low engagement and low capability
+produce an identical correlation, and the study cannot distinguish them. Accepting 0.47 as a bound was
+fatalism dressed as evidence.
+
+**And it does not need assuming, because this loop can now MEASURE it - per estimator.**
+
+The forecast, the actual and (CR0261) the model are all recorded. Record WHO estimated a unit and the
+tool can report: "your S/M/L calls run at r = 0.61, the auto-estimate at 0.30 - trust yours", and name
+the kinds of unit an individual systematically under-calls. Feedback on your own past calls is the one
+intervention known to improve human estimation, and it is nearly free here.
+
+**The hazard this exposes in what shipped TODAY.** BG0136 made `Effort` MANDATORY at filing. If
+estimating is a chore an engineer resents, a mandatory estimate produces a CARELESS estimate - and a
+careless estimate is worse than no estimate, because it looks like data and gets averaged into a
+forecast. The grooming gate may be manufacturing exactly the noise it was built to eliminate.
+
+That is testable, not arguable: compare the accuracy of `Effort` values recorded BEFORE the gate made
+them compulsory against those recorded after. If mandatory estimates are measurably worse, the gate
+needs a different answer - a required "I do not know" is an honest input; a coerced "M" is not.
+
+### Revised direction
+
+- Rebuild the seed on the three factors (volume incl. TEST IMPACT, complexity OF THE CHANGE, requirement
+  clarity), as above. Unchanged.
+- **Publish the correlation of every predictor, including the human one, and per estimator.** Do not
+  assume the human is weak; measure whether they are. An estimator that reports its own accuracy is the
+  only kind that can earn trust or lose it honestly.
+- **Watch for coerced estimates.** Test whether mandatory `Effort` is less accurate than voluntary
+  `Effort`, and give "unknown" a first-class value so nobody has to invent a size to get past a gate.
