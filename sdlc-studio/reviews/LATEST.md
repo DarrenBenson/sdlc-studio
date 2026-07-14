@@ -1,4 +1,4 @@
-# Unified Review - 2026-07-14 (close) - the sizing sprint: the loop measured itself, and the estimator failed
+# Unified Review - 2026-07-14 (close) - the integrity sprint: the loop can now be falsified, and it falsified the estimator again
 
 > **Review type:** Sprint-close review (required by the `--require-review` gate, CR0253)
 > **Reviewer:** sdlc-studio; agent; v1
@@ -8,60 +8,69 @@
 
 ## Headline
 
-The sizing sprint is **complete - all 5 units** (CR0257, CR0258, BG0132, CR0259, CR0260), each
+The integrity sprint is **complete - all 5 units** (BG0133, BG0134, BG0135, BG0136, CR0252), each
 delivered by an instrumented subagent and verified independently through the public CLI before its
-report was believed. RFC0034 is closed and **the breakdown step is now unavoidable**.
+report was believed. **The only outstanding P1 is closed.**
 
-**The important result is a negative one: the token estimator is falsified.** The loop built to
-measure the estimator did its job on its first honest run, and the thing it measured failed.
+**BG0133 is the one that matters.** The measurement loop can now be falsified. The forecast is
+RECORDED at plan time with the constants that produced it, and `accuracy` reads that record - the
+re-derivation path is deleted, not left as a fallback. Proven by attack: doubling both constants in
+memory moves no recorded estimate. The 5.24x miss that CAUSED the recalibration, and had been erased
+BY it, is restored to the history.
 
-| unit | est (plan-time) | actual | ratio | tool-uses |
+**And the loop immediately falsified the estimator a second time.**
+
+| unit | est (plan-time) | actual | ratio |
+| --- | --- | --- | --- |
+| BG0134 | 50,000 | 71,935 | 0.70x |
+| BG0135 | 81,200 | 173,804 | 0.47x |
+| CR0252 | 80,000 | 205,534 | 0.39x |
+| BG0136 | 73,400 | 234,091 | 0.31x |
+| BG0133 | 63,800 | 217,139 | 0.29x |
+| **BATCH** | **348,400** | **902,503** | **0.39x** |
+
+The velocity history, honest for the first time:
+
+| sprint | est | actual | ratio | sample |
 | --- | --- | --- | --- | --- |
-| CR0257 | 67,400 | 97,863 | 0.69x | 45 |
-| CR0258 | 77,000 | 107,623 | 0.72x | 36 |
-| BG0132 | 73,400 | 129,957 | 0.56x | 58 |
-| CR0259 | 67,400 | 144,711 | 0.47x | 60 |
-| CR0260 | 67,400 | 162,204 | 0.42x | 81 |
-| **BATCH** | **352,600** | **642,358** | **0.55x** | 280 |
+| RETRO0024 | 1,285,000 | 384,278 | 3.34x | in-sample (excluded) |
+| RETRO0025 | 352,600 | 642,358 | 0.55x | out-of-sample |
+| RETRO0026 | 348,400 | 902,503 | 0.39x | out-of-sample |
 
-`TOKENS_PER_COGNITIVE = 600` scored **1.09x in-sample** and **0.55x out-of-sample**. It under-forecasts
-every unit, monotonically: the larger the job, the worse the miss. The previous coefficient (5,000)
-over-forecast by 3.3x. Both were fitted to a single sprint; both failed the next one.
+**Eleven of eleven units across two independent sprints, all missing in the same direction.** A model
+that misses monotonically on every unit of two sprints is not mis-tuned - it is measuring the wrong
+thing. The constants are UNCHANGED: re-fitting to 16 points would be the third repetition of the error
+documented twice already.
 
-**The predictor is wrong, not the coefficient.** Cost correlates with tool-uses at r = 0.926 (~2,294
-tokens each) and barely with the cognitive complexity of the files touched. Cost tracks WORK DONE, and
-file complexity does not measure work done. But tool-uses is an OUTPUT, unknowable at plan time - so
-this is not a better constant waiting to be fitted, it is evidence that the input we forecast from does
-not carry the signal.
-
-**The constants have NOT been changed.** Re-fitting to 11 points would repeat, for a third time, the
-error this sprint documented twice. BG0133 must land first so a forecast is recorded at PLAN TIME;
-only then can a sprint be judged against what was actually predicted.
+**The open question is now the operator's, and it is not "what coefficient?"** It is **"is there a
+plan-time predictor at all?"** Cost tracks work done (tool-uses, r = 0.926), and work done is unknowable
+before the work is done. The live alternative is to drop the per-unit estimate and keep only the batch
+history - two five-unit sprints cost 642k and 902k, which is a defensible basis for planning the next
+one. A per-unit number that has never once been right is not.
 
 ## What the gates caught, unprompted
 
-- **CR0260's breakdown gate, on its first run, refused three bugs filed that same day by our own
-  filer** - all lacking `Affects`, because `file_finding.py` has no flag to record it (BG0136). The
-  grooming gap the gate exists to close was being manufactured by our own tooling.
-- It also caught two **false-parallel wave** pairs, one of which was CR0254/CR0260 - the CR that
-  introduced the check, colliding with a sibling on `sprint.py`.
-- The transition gate refused BG0132 to Fixed until a verification depth was recorded.
-- The filer refused two hollow bugs.
-- **BG0132 found 49 command-shaped `Verify:` lines across 18 artefacts** that nothing has ever
-  executed - including one that PASSED on unrelated prose while the feature it claimed to check did
-  not exist.
+- CR0260's breakdown gate refused **three bugs our own filer had written that same day** - the filer had
+  no `--affects` flag at all (BG0136), so it was manufacturing the gap the gate exists to close.
+- BG0136's fix surfaced that `templates/core/cr.md` carried a **decoy `**Effort:**`** above the real one.
+  `extract_field` takes the first match, so **every full-template CR had been unsized to the planner**
+  whatever `--effort` said.
+- BG0135's fix found **361 archived index rows link to the wrong depth** and 404 on GitHub (BG0137).
+- The transition gate refused two bugs to Fixed until a verification depth was recorded.
 
-## Backlog rollup (9 non-terminal)
+## Backlog rollup (10 non-terminal)
 
-- **Bugs (5, all raised by this session's dogfooding):** BG0133 (High - the estimator cannot falsify
-  itself), BG0136 (High - filer and planner disagree on what a complete artefact is), BG0134 (Medium -
-  engagement floor fails open), BG0135 (Medium - reconcile blind to orphan index rows), BG0131 (Low)
-- **CRs (4):** CR0252 (P1, spec refresh - still the outstanding P1), CR0254, CR0255, CR0256 (the
+- **Bugs (4):** BG0140 (High - the forecast log is gitignored, so BG0133's fix does not survive a
+  clone), BG0139 (High - the model router scores a docs unit trivial with HIGH confidence, on the
+  falsified predictor), BG0137 (Medium - 361 dead archive links), BG0138 (Low)
+- **CRs (4):** CR0261 (P2 - record which model delivered each unit), CR0254, CR0255, CR0256 (the
   RFC0033 audit workstream)
+- **RFCs (2, Proposed):** RFC0035 (the sprint report), RFC0036 (unattended multi-sprint: a rolling
+  policy, not a frozen queue)
 
-**Recommended next batch:** BG0133 first - it is the precondition for any future calibration decision,
-and until it lands the velocity history is not evidence. Then BG0136, which closes the loop between
-filer and planner. Then CR0252.
+**Recommended next batch:** BG0140 first - until the forecast log survives a clone, the evidence the
+whole loop rests on exists on one machine. Then BG0139 (do not enable routing before it lands) and
+CR0261, which BG0140 unblocks.
 
 ## Production state
 
@@ -71,7 +80,7 @@ testing only.
 
 ## For a fresh session
 
-Start here, then `AGENTS.md`. The specs are still not a reliable product description until CR0252
-lands - trust the CHANGELOG, `reference-*.md`, and the code. Read `RETRO0025` for the estimator's
-falsification and why the constants were deliberately left alone; read LL0026 and LL0027, promoted this
-sprint, before touching the calibration or adding another optional ceremony.
+Start here, then `AGENTS.md`. **The specs are trustworthy again** (CR0252) - PRD, TRD and TSD are at
+4.1.0 with five new ADRs. Read `RETRO0026` for the second falsification and why the constants were
+deliberately left alone, and LL0026-LL0029 before touching the calibration, the router, or adding
+another optional ceremony.

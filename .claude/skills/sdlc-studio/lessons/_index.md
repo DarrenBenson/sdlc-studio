@@ -40,6 +40,8 @@ and from per-project memory (project-specific facts).
 | [LL0025](LL0025-a-narrow-sample-can-make-a-variable-look-constant-widen-the-range-before-concluding.md) | A narrow sample can make a variable look constant - widen the range before concluding | measurement, calibration, evidence, false-conclusion, bug-class, humility |
 | [LL0026](LL0026-a-model-s-fit-against-the-data-it-was-fitted-to-is-not-validation-and-a-forecast-re-derived-at-judgement-time-is-not-a-prediction.md) | A model's fit against the data it was fitted to is not validation, and a forecast re-derived at judgement time is not a prediction |  |
 | [LL0027](LL0027-a-gate-belongs-in-the-command-people-actually-run-not-in-the-step-they-are-told-to-run.md) | A gate belongs in the command people actually run, not in the step they are told to run |  |
+| [LL0028](LL0028-verify-a-fix-by-attacking-it-not-by-re-reading-it.md) | Verify a fix by attacking it, not by re-reading it |  |
+| [LL0029](LL0029-a-record-kept-in-a-gitignored-working-directory-is-not-a-record.md) | A record kept in a gitignored working directory is not a record |  |
 
 ## Notes
 
