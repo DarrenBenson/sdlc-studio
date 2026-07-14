@@ -628,7 +628,7 @@ def _ensure_index(root: Path, today: str) -> bool:
     text = text.replace("{{last_updated}}", today)
     lines = [ln for ln in text.splitlines() if "{{" not in ln]  # drop the sample row
     idx.parent.mkdir(parents=True, exist_ok=True)
-    idx.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    sdlc_md.atomic_write(idx, "\n".join(lines).rstrip() + "\n")
     return True
 
 

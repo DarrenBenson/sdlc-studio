@@ -237,7 +237,7 @@ def append_index_row(index_path: Path, id_: str, filename: str, title: str,
     if anchor is None:
         raise ValueError(f"no lessons table found in {index_path}")
     lines.insert(anchor + 1, row)
-    index_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    sdlc_md.atomic_write(index_path, "\n".join(lines) + "\n")
 
 
 # -----------------------------------------------------------------------------

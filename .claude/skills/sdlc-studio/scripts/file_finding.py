@@ -79,7 +79,7 @@ def write_empty_index(idx: Path, tmpl: Path, today: str) -> bool:
             continue
         collapsed.append(ln)
     idx.parent.mkdir(parents=True, exist_ok=True)
-    idx.write_text("\n".join(collapsed).rstrip() + "\n", encoding="utf-8")
+    sdlc_md.atomic_write(idx, "\n".join(collapsed).rstrip() + "\n")
     return True
 
 

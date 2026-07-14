@@ -1404,8 +1404,8 @@ def project_fields(repo_root: Path | str, type_: str = "story", dry_run: bool = 
             lines[i] = _join_row(cells)
             changed = True
     if changed and not dry_run:
-        index_path.write_text("\n".join(lines) + ("\n" if original.endswith("\n") else ""),
-                              encoding="utf-8")
+        sdlc_md.atomic_write(index_path,
+                             "\n".join(lines) + ("\n" if original.endswith("\n") else ""))
     return {"drift": drift, "applied": len(drift) if (changed and not dry_run) else 0}
 
 

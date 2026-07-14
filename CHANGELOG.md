@@ -109,6 +109,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Every `_index.md` write is atomic now (BG0127).** `sdlc_md.atomic_write` exists so a reader never
+  sees a half-written index, and it was used on the main paths - but six index-mutating writers went
+  through a plain `write_text`, leaving a torn-read window: reconcile's full story-index rewrite,
+  `meta_new`'s row insert (which wrote the artefact file atomically two lines earlier), archive's
+  live-index trim, the pipeline and handoff index bootstraps, and the lessons index append. A guard
+  applied inconsistently is not a guard (LL0008). All six now go through `atomic_write`, and an
+  AST-scanning test fails on any NEW non-atomic index write - a source scan rather than a pin on
+  today's six, because an enumerated fix exempts the one it forgot (LL0013).
+
 - **`retro.py` no longer miscounts a decline that cites an artefact id (BG0130).** `dispositions_in`
   checked the artefact-id pattern before the decline pattern, so `declined: belongs to RFC0034
   (CR0257)` was reported as **filed** - the finding read as ticketed when it was deliberately not.

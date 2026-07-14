@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 2 |
+| Open | 1 |
 | In Progress | 0 |
-| Fixed | 49 |
+| Fixed | 50 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 1 |
@@ -93,7 +93,7 @@
 | [BG0124](BG0124-the-artefact-filer-injects-backticks-into-executable-verify.md) | The artefact filer injects backticks into executable Verify lines, producing false-green ACs | Won't Fix | Critical | 2026-07-14 | 2026-07-14 |
 | [BG0125](BG0125-grep-verifier-the-documented-path-glob-example-false.md) | grep verifier: the documented path_glob example false-REDs (verb has zero test coverage) | Fixed | Medium | 2026-07-14 | 2026-07-14 |
 | [BG0126](BG0126-meta-new-allocates-retro-review-handoff-ids-without.md) | meta_new allocates retro/review/handoff ids without allocation_lock (concurrent collision) | Fixed | Medium | 2026-07-14 | 2026-07-14 |
-| [BG0127](BG0127-several-index-md-writers-bypass-atomic-write-the.md) | Several _index.md writers bypass atomic_write, the module's own torn-write guard | Open | Medium | 2026-07-14 | 2026-07-14 |
+| [BG0127](BG0127-several-index-md-writers-bypass-atomic-write-the.md) | Several _index.md writers bypass atomic_write, the module's own torn-write guard | Fixed | Medium | 2026-07-14 | 2026-07-14 |
 | [BG0128](BG0128-grep-verifier-verb-silent-rg-grep-rqe-dialect.md) | grep verifier verb: silent rg/grep -rqE dialect swap makes a verdict environment-dependent | Fixed | Low | 2026-07-14 | 2026-07-14 |
 | [BG0129](BG0129-review-prep-counts-personas-index-md-as-a.md) | review_prep counts personas/index.md as a persona (the underscore-index filter misses it) | Fixed | Medium | 2026-07-14 | 2026-07-14 |
 | [BG0130](BG0130-retro-py-miscounts-a-decline-whose-reason-mentions.md) | retro.py miscounts a decline whose reason mentions an artefact id as filed | Fixed | Low | 2026-07-14 | 2026-07-14 |

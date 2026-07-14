@@ -571,7 +571,7 @@ def meta_new(repo_root: Path | str, type_: str, title: str, fields: dict | None 
                     j += 1
                 pos = j
                 lines.insert(pos, row)
-                index_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+                sdlc_md.atomic_write(index_path, "\n".join(lines) + "\n")
                 indexed = True
     return {"id": disp, "file_id": file_id, "path": str(path), "indexed": indexed,
             "epic_linked": None, "dry_run": False}

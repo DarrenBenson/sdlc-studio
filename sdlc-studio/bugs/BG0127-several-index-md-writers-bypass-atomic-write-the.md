@@ -1,6 +1,7 @@
 # BG0127: Several _index.md writers bypass atomic_write, the module's own torn-write guard
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file

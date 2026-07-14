@@ -106,7 +106,7 @@ def archive(repo_root: Path | str, type_: str, release: str,
             kept.insert(h + 2, bullet)
     else:
         kept += ["", _ARCHIVED_HEADING, "", bullet]
-    index_path.write_text("\n".join(kept) + "\n", encoding="utf-8")
+    sdlc_md.atomic_write(index_path, "\n".join(kept) + "\n")
 
     # 3) recompute the live summary counts (apply unions archive rows -> active+archived).
     reconcile.apply_type(type_, root)
