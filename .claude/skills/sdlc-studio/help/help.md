@@ -312,6 +312,21 @@ Skill-internal helpers live in the skill's `scripts/` directory (`$CLAUDE_SKILL_
 | `/sdlc-studio lessons revalidate` | List open lessons with their validity horizon; `--close` / `--extend` / `--stamp` them (gated at the sprint close) |
 | `/sdlc-studio lessons summary` | Regenerate `retros/LESSONS-SUMMARY.md`, the digest the next sprint reads (gated at the sprint close) |
 
+### Retro
+
+The **adapt** half of inspect-and-adapt: what the sprint taught, and what you will do about
+it. The close gate reads the retro's content, not its filename - see `help/retro.md`.
+
+| Command | Description |
+| --- | --- |
+| `/sdlc-studio retro create` | Write the retro for the batch just closed (`artifact new --type retro`) |
+| `/sdlc-studio retro validate` | Content check: required sections, a real lesson, every finding dispositioned (what the close gate calls) |
+| `/sdlc-studio retro dispose` | List each finding as filed, declined, or still undecided |
+| `/sdlc-studio retro extract` | Lift the retro's `## Lessons` into the project lessons log, so the next sprint plan reads them |
+
+Every finding takes a disposition: **filed** (a `BG`/`CR` id) or **declined with a reason**.
+Both are green - honesty costs exactly what noise costs. Silence does not pass.
+
 ### Plan Files
 
 | Command | Description |

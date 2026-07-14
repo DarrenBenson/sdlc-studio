@@ -310,7 +310,41 @@ class RetroCloseGateTests(unittest.TestCase):
             self.assertEqual(retro["status"], "fail")
             self.assertTrue(retro["blocking"])
 
-    def test_close_gate_passes_with_retro(self) -> None:
+    # A COMPLETE retro: every required section, a real lesson, and every finding
+    # dispositioned (one filed, one declined with a reason).
+    COMPLETE_RETRO = """# RETRO-0005: batch
+## Delivered
+- US0001 - shipped
+## What went well
+- the gate held
+## What was hard / what stalled
+- the deploy was slow
+## Lessons
+- deploys need a preflight check
+## Actions raised
+| Finding | Disposition |
+| --- | --- |
+| the deploy was slow | BG0125 |
+| flaky CI test | declined: tracked upstream, not ours to fix |
+"""
+
+    def test_close_gate_passes_with_a_complete_retro(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            rd = root / "sdlc-studio" / "retros"
+            rd.mkdir(parents=True)
+            (rd / "RETRO0005-batch.md").write_text(self.COMPLETE_RETRO, encoding="utf-8")
+            report = gate.run_gate(str(root), checks={}, require_retro="RETRO0005")
+            self.assertTrue(report["ok"])
+
+    def test_close_gate_fails_a_retro_that_is_only_a_heading(self) -> None:
+        """BG0123. This test previously asserted the OPPOSITE - it wrote `# RETRO-0005\\n`,
+        a file with no content whatsoever, and required the gate to PASS it. The suite was
+        guarding the bug: the leg globbed for a filename, so `touch` satisfied the one gate
+        that existed to make the retrospective un-skippable, and any attempt to fix that
+        would have been reported as a regression. Existence is not evidence (LL0023).
+        """
         import tempfile
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)
@@ -318,7 +352,10 @@ class RetroCloseGateTests(unittest.TestCase):
             rd.mkdir(parents=True)
             (rd / "RETRO0005-batch.md").write_text("# RETRO-0005\n", encoding="utf-8")
             report = gate.run_gate(str(root), checks={}, require_retro="RETRO0005")
-            self.assertTrue(report["ok"])
+            self.assertFalse(report["ok"])
+            leg = next(c for c in report["checks"] if c["check"] == "retro")
+            self.assertEqual(leg["status"], "fail")
+            self.assertTrue(leg["blocking"])
 
 
 class ReleaseGateTests(unittest.TestCase):
@@ -1122,9 +1159,26 @@ class LessonsCloseGateTests(unittest.TestCase):
         return p
 
     def _retro(self, root: Path, rid: str = "RETRO0005") -> None:
+        """A VALID retro fixture. These tests exercise the lessons lanes, not the retro leg,
+        but the retro leg now reads content rather than globbing a filename (BG0123), so a
+        bare `# RETRO0005` stub no longer satisfies it - and should not. The fixture has to
+        be the artefact the gate actually asks for."""
         (root / "sdlc-studio" / "retros").mkdir(parents=True, exist_ok=True)
         (root / "sdlc-studio" / "retros" / f"{rid}-batch.md").write_text(
-            f"# {rid}\n", encoding="utf-8")
+            f"""# {rid}: batch
+## Delivered
+- US0001 - shipped
+## What went well
+- it held
+## What was hard / what stalled
+- nothing notable
+## Lessons
+- keep the fixture honest
+## Actions raised
+| Finding | Disposition |
+| --- | --- |
+| nothing worth raising this batch | declined: no issue met the bar for an artefact |
+""", encoding="utf-8")
 
     def _regen(self, root: Path) -> None:
         sys.path.insert(0, str(SCRIPT.parent))  # gate.py's own dir: the scripts/ package root

@@ -222,6 +222,30 @@ from the same authority, so neither creation path is an escape hatch for the oth
 
 Full methodology: `reference-audit.md`.
 
+### `retro.py`
+
+The retro spine: the deterministic half of the retrospective, so the close gate has
+something to interrogate other than the filesystem.
+
+- `validate --id RETROxxxx`: the CONTENT check the close gate calls. Required sections
+  present, at least one real lesson (a `{{placeholder}}` is the template talking, not the
+  author), and a disposition recorded for every finding. A retro that exists but says
+  nothing is not a retro, and a gate that only checks the filename is satisfied by `touch`.
+- `dispose --id RETROxxxx`: report each finding as **filed** (an artefact id), **declined**
+  (with a reason) or **undecided**. Read-only; non-zero while any finding is undecided.
+- `extract --id RETROxxxx`: lift the retro's `## Lessons` bullets into the project lessons
+  log, so a lesson written in a retro reaches the digest the next sprint plan prints.
+  Idempotent by content - re-running converges rather than duplicating.
+
+**The disposition rule.** A finding is dispositioned when it is either filed as an artefact
+or **declined with a reason**. Declining is a first-class answer and is equally green, so
+honesty costs exactly what noise costs and there is nothing to game. What does not pass is
+silence: a finding written down and left to rot. The template asks the question directly
+("are there any CRs or Bugs you want to raise?"), because a gate on a question nobody was
+asked is just a wall.
+
+Related: `reference-retro.md`, `help/retro.md`, `help/lessons.md`.
+
 ### `persona_gen.py`
 
 Deterministic floor of team/stakeholder persona generation - the model-driven flow

@@ -287,14 +287,29 @@ DEFAULT_CHECKS = {
 
 
 def _retro_present(root: str, retro_id: str) -> dict:
-    """Blocking close-gate check: the batch's retro file must exist before a sprint/review
-    close reports success. Fail-loud per LL0008 - 'unconditional' retro is doctrine until it is
-    a gate. The sprint-close orchestration passes the next retro id via --require-retro."""
-    retros = Path(root) / "sdlc-studio" / "retros"
-    present = bool(list(retros.glob(f"{retro_id}*.md"))) if retros.is_dir() else False
-    return {"count": 0 if present else 1, "blocking": True,
-            "detail": (f"batch retro {retro_id} present" if present
-                       else f"missing batch retro {retro_id} - write it before closing the sprint")}
+    """Blocking close-gate check: the batch's retro must exist AND say something before a
+    sprint/review close reports success. Fail-loud per LL0008 - 'unconditional' retro is
+    doctrine until it is a gate. The sprint-close orchestration passes the next retro id
+    via --require-retro.
+
+    This leg used to glob for a filename, so a 0-byte file named RETRO9999.md passed it:
+    the one gate that made the retrospective un-skippable was the one an agent could
+    satisfy with `touch`. Existence is not evidence - so the check is now
+    delegated to `retro.py validate`, which interrogates the CONTENT: the required
+    sections, at least one real lesson, and a disposition for every finding.
+    """
+    import retro
+    res = retro.validate(root, retro_id)
+    if res["ok"]:
+        n_l, n_f = len(res["lessons"]), len(res["findings"])
+        return {"count": 0, "blocking": True,
+                "detail": (f"batch retro {retro_id}: {n_l} lesson(s), {n_f} finding(s) all "
+                           f"dispositioned ({len(res['filed'])} filed, "
+                           f"{len(res['declined'])} declined)")}
+    # Every error names its own remedy; surface them all rather than only the first, so one
+    # close tells you everything it wants instead of a queue of one-at-a-time refusals.
+    return {"count": len(res["errors"]), "blocking": True,
+            "detail": f"batch retro {retro_id} incomplete - " + "; ".join(res["errors"])}
 
 
 def _handoff_present(root: str, handoff_id: str) -> dict:

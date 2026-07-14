@@ -9,6 +9,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The retro has a deterministic spine: `scripts/retro.py` (RFC0032, CR0247).** The retro was the
+  only enforced ceremony with no script behind it, so the gate had nothing to interrogate but the
+  filesystem. `retro.py validate` is a content check (required sections, at least one real lesson,
+  every finding dispositioned); `dispose` reports each finding as filed, declined or undecided; and
+  `extract` lifts the retro's `## Lessons` bullets into the project lessons log, idempotently, so a
+  lesson written in a retro reaches the digest the next sprint actually reads. Previously it
+  reached nothing.
+
+- **The retro is documented at last (CR0240).** `help/retro.md` and `reference-retro.md` now exist.
+  The retro was the one ceremony the close gate blocked on and the one ceremony with no help file,
+  no reference file and no command in the router - so what belonged in a retro was folklore. The
+  skill's own `doc_coverage` guard caught this the moment `retro.py` landed, which is the guard
+  working exactly as intended.
+
+- **The retro template asks the question that turns a retro into work (RFC0032 D1, CR0243).**
+  A new `## Actions raised` section asks, in as many words: *are there any CRs or Bugs you want to
+  raise to address any of the issues found?* Every finding takes a disposition - **filed**, or
+  **declined with a reason**. Both are green, so honesty costs exactly what noise costs and there
+  is nothing to game. What does not pass is silence. The evidence that this works: 8 of 9 retros in
+  a consuming project carry a `## Lessons` section *because the template prompts for one* - and
+  those same 9 retros reference exactly 1 artefact id between them, because nothing ever asked.
+
+### Fixed
+
+- **The retro gate was satisfied by `touch` (BG0123).** Its leg globbed for a filename
+  (`retros.glob(f"{retro_id}*.md")`), so a 0-byte `RETRO9999.md` returned
+  `[PASS] retro: batch retro RETRO9999 present`. The one gate that existed to make the
+  retrospective un-skippable was the one an agent could satisfy without doing the work. It now
+  delegates to `retro.py validate` and reads the content. Existence is not evidence (LL0023).
+  The suite was **guarding the bug**: a test wrote a file containing only `# RETRO-0005` and
+  asserted the gate *passed* it, so fixing this would have been reported as a regression. That
+  test now asserts the opposite.
+
 - **LL0024 - a hazard found by calling a private helper directly may already be guarded at the only
   call site that matters.** BG0124 was filed as a High bug claiming the artefact filer corrupted
   executable `Verify:` lines into false greens. It was **wrong, and has been withdrawn**:

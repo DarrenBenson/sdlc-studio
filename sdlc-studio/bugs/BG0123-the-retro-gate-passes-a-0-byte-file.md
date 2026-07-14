@@ -1,6 +1,7 @@
 # BG0123: The retro gate passes a 0-byte file - it checks the filename, not the retro
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio new
 > **Provenance:** RFC0032

@@ -124,6 +124,7 @@ lists every script with a one-line summary; open the linked page for the full en
 - `next_id.py` - `allocate`: next free ID for a type (`--remote` also scans `origin/main`)
 - `ledger.py` - The append-only per-tranche decisions ledger. `record` appends a decision + rationale to `sdlc-studio/decisi...
 - `rfc.py` - RFC helpers - the `rfc decide` multi-RFC decision digest (per-draft open-decision + workstream counts + read...
+- `retro.py` - The retro spine. `validate --id RETROxxxx` is a CONTENT check (required sections, at least one real lesson, every finding dispositioned) and is what the close gate calls - a retro that exists but says nothing is not a retro. `dispose` reports each finding as filed / declined / undecided. `extract` lifts the retro's `## Lessons` bullets into the project lessons log, idempotently, so a lesson written in a retro reaches the digest the next sprint reads
 
 ### Reconcile, verify & checks - [reference-scripts-verify.md](reference-scripts-verify.md)
 

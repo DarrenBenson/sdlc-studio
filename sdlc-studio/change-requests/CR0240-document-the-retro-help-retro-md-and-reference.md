@@ -1,6 +1,6 @@
 # CR-0240: Document the retro: help/retro.md and reference-retro.md
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
