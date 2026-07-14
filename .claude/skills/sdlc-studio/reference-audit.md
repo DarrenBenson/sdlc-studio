@@ -36,6 +36,11 @@ find  ──►  verify  ──►  merge  ──►  file
  until-dry) N-of-M)                 triage or auto)
 ```
 
+0. **Recall (seed the lenses).** `scripts/lessons.py rank` first. The ranked lessons ARE
+   lenses - the classes this codebase has already paid for, hardest-biting first - and an
+   audit that does not know what has bitten before re-derives it or misses it. Add the top
+   bug-class lessons to the profile's lens set before finding anything. An audit is a search
+   for what you have not thought of; the registry is a list of what you *have*, and forgot.
 1. **Find.** For each lens in the profile, run a finder agent that returns candidate
    findings. Re-run each lens **until-dry** (K consecutive rounds with nothing new,
    K=2 default) so the tail is not missed.

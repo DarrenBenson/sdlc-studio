@@ -58,7 +58,12 @@ BULLET_RE = re.compile(r"^\s*[-*]\s+(.*\S)\s*$")
 PLACEHOLDER_RE = re.compile(r"\{\{.*?\}\}")
 
 # A disposition is an artefact id, or an explicit decline carrying a reason.
-ARTEFACT_ID_RE = re.compile(r"\b((?:CR|BG|US|RFC|EP)-?\d{4})\b", re.IGNORECASE)
+#
+# `LL` counts. Some findings are not tickets: the right outcome is a habit, and a habit's
+# durable form is a recorded lesson. Refusing to accept one would push those findings toward a
+# decline, which loses the lesson, or toward a make-work CR, which is the noise the decline path
+# exists to prevent. It is no cheaper to game than declining, which is already free.
+ARTEFACT_ID_RE = re.compile(r"\b((?:CR|BG|US|RFC|EP|LL)-?\d{4})\b", re.IGNORECASE)
 DECLINED_RE = re.compile(r"^\s*declined\s*:\s*(.+\S)\s*$", re.IGNORECASE)
 
 # A row in the `## Actions raised` table: | finding | disposition |

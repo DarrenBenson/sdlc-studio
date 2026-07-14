@@ -2,6 +2,11 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0011: A false finding is not free: under a disposition gate that turns findings into work, a**
+- **L-0010: Marking a work item Complete while part of its acceptance criteria is unwired is the same**
+- **L-0009: A guard that branches on invocation mode must be tested in every invocation mode; assert on**
+- **L-0008: A gate that checks an artefact exists, not what is in it, is satisfied by `touch`.**
+- **L-0007: A hazard found by calling a private helper directly may already be guarded at the only call**
 - **L-0006: A security fix needs a leading/trailing/interior placement matrix, not just a character list**
 - **L-0005: Editing a shared template obliges you to run its renderer's tests**
 - **L-0004: Add a closing full-diff pass when units share a file**

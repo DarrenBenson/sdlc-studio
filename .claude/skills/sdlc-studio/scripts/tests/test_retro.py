@@ -171,5 +171,29 @@ class TheOptOutIsHonoured(unittest.TestCase):
         self.assertFalse(leg["blocking"], "the documented opt-out must actually opt out")
         self.assertGreater(leg["count"], 0, "advisory must still REPORT - silence is not an opt-out")
 
+class ALessonIsAValidDisposition(RetroBase):
+    """Some findings are not tickets. The right outcome is a habit, and a habit's durable form
+    is a recorded lesson - so an `LL` id disposes of a finding.
+
+    Found by dogfooding: the first retro written with this tool disposed of a finding by
+    recording LL0024, and the gate refused it. Refusing would push such findings toward a
+    decline (which loses the lesson) or a make-work CR (which is the noise the decline path
+    exists to prevent). It is no cheaper to game than declining, which is already free.
+    """
+
+    def test_a_lesson_id_disposes_of_a_finding(self) -> None:
+        self.write(FULL.replace("| BG0125 |", "| LL0024 - recorded as a cross-project lesson |"))
+        res = self.validate()
+        self.assertTrue(res["ok"], res["errors"])
+        self.assertIn("LL0024", res["filed"])
+
+    def test_declined_for_now_is_not_declined(self) -> None:
+        """A disposition must be machine-verifiable. 'declined for now:' reads like a decision
+        to a human and is not one to the gate - which is the point: prose that only looks like
+        an answer is how findings rot."""
+        self.write(FULL.replace("| BG0125 |", "| declined for now: we might revisit |"))
+        self.assertFalse(self.validate()["ok"])
+
+
 if __name__ == "__main__":
     unittest.main()

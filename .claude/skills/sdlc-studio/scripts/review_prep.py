@@ -23,6 +23,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
+import lessons  # noqa: E402  (sibling - the ranked lesson lenses the review starts from)
 
 PROJECT_DOCS = ["prd", "trd", "tsd", "personas"]
 
@@ -212,6 +213,9 @@ def inputs(repo_root: Path) -> dict:
     return {"counts": counts, "ac_verification": ac_summary}
 
 
+LESSON_LENS_MAX = 12  # ranked, so the cap drops the least-biting, not an arbitrary tail
+
+
 def cmd_prep(args: argparse.Namespace) -> int:
     """Emit the review inputs."""
     repo_root = Path(args.root).resolve()
@@ -224,6 +228,10 @@ def cmd_prep(args: argparse.Namespace) -> int:
         "persona_usage": persona_usage(repo_root),
         "required_legs": required_legs(repo_root),
         "inputs": inputs(repo_root),
+        # The lessons the last mistakes were paid for, as REVIEW LENSES. A review that does not
+        # know what has already bitten this codebase re-derives it, or misses it. Ranked by what
+        # is biting hardest, so the review starts with the classes most likely to be here again.
+        "lessons": lessons.cross_digest(repo_root),
     }
     if args.format == "json":
         print(json.dumps(data, indent=2))
@@ -245,7 +253,28 @@ def cmd_prep(args: argparse.Namespace) -> int:
         print(f"counts: {data['inputs']['counts']}")
         if data["inputs"]["ac_verification"]:
             print(f"ac: {data['inputs']['ac_verification']}")
+        _render_lens(data["lessons"])
     return 0
+
+
+def _render_lens(digest: dict) -> None:
+    """The lessons, printed IN the prep output the reviewer already reads.
+
+    A prose instruction to go and open the lessons file is the kind of instruction that gets
+    skipped, which is how a class can be written down, paid for, and written down again. So the
+    lens arrives unasked, in the data the review starts from.
+    """
+    items = (digest or {}).get("lessons") or []
+    if not items:
+        return
+    n = digest["count"]
+    print(f"\nreview lenses - what has already bitten, hardest first ({n}):")
+    for it in items[:LESSON_LENS_MAX]:
+        cited = f" [x{it['recurrence']}]" if it.get("recurrence") else ""
+        print(f"  {it['id']}{cited}: {it['title']}")
+    if n > LESSON_LENS_MAX:
+        print(f"  (+{n - LESSON_LENS_MAX} more, ranked lower - `lessons.py rank` for the full "
+              f"order, `lessons.py recall` to read one)")
 
 
 def build_parser() -> argparse.ArgumentParser:

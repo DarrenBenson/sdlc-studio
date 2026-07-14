@@ -106,6 +106,35 @@ class TheDigestIsCarried(RankBase):
         empty = Path(self.tmp.name) / "nowhere"
         self.assertEqual(lessons.rank_lessons(str(self.root), str(empty)), [])
 
+class EveryReadPointCarriesTheLessons(unittest.TestCase):
+    """CR0242's real acceptance test.
+
+    The CR promised sprint plan AND review AND audit would read the registry. The first pass
+    wired only the sprint plan and the CR was marked Complete anyway - reporting a success it
+    did not achieve, which is LL0008, in the very change about failing to read LL0008. This
+    test exists so that claim is provable rather than asserted.
+    """
+
+    def test_sprint_plan_carries_the_cross_project_digest(self) -> None:
+        import sprint
+        self.assertTrue(hasattr(sprint, "_render_cross_lessons"))
+
+    def test_review_prep_carries_the_lessons_as_lenses(self) -> None:
+        import review_prep
+        self.assertTrue(hasattr(review_prep, "_render_lens"),
+                        "the review must start FROM the lessons, not be told to go and read them")
+
+    def test_the_audit_seeds_its_lenses_from_the_registry(self) -> None:
+        """The audit is an agent workflow, so its mechanism is the doc it reads. That is not a
+        cop-out: the field evidence is that a prompt inside the artefact you are already
+        working in DOES drive behaviour - 8 of 9 retros carried a Lessons section because the
+        template asked for one. What gets skipped is an instruction to go and open some OTHER
+        file."""
+        ref = Path(__file__).resolve().parents[2] / "reference-audit.md"
+        text = ref.read_text(encoding="utf-8")
+        self.assertIn("lessons.py rank", text)
+        self.assertIn("Recall", text)
+
 
 if __name__ == "__main__":
     unittest.main()

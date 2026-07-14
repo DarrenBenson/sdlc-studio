@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The review now starts FROM the lessons (CR0242, completing it properly).** `review_prep.py`
+  front-loads the mechanical inputs a review needs so it "starts from data instead of re-deriving
+  it" - and the ranked lessons are now part of that payload, as review lenses. The adversarial
+  audit seeds its lens set from the registry too (`reference-audit.md` step 0). CR0242 had been
+  marked Complete with only `sprint plan` wired, which is exactly LL0008 - reporting a success not
+  achieved - committed inside the change about nobody reading LL0008. A test now pins all three
+  read-points so the claim is provable rather than asserted.
+
+- **A recorded lesson disposes of a retro finding.** Found by dogfooding: the first retro written
+  with the new tooling disposed of a finding by recording `LL0024`, and the gate refused it.
+  Refusing pushes such findings toward a decline (which loses the lesson) or a make-work CR (which
+  is the noise the decline path exists to prevent). Some findings are not tickets - the right
+  outcome is a habit, and a habit's durable form is a lesson.
+
 - **Operational and incident lessons have a home (RFC0032, CR0245).** The lessons template now
   carries a heavier operational shape - an incident narrative, a tickable runbook written for
   someone following it under pressure at 3am, and a decay note saying what to re-verify before
