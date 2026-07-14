@@ -6,6 +6,7 @@
 > **Date:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
+> **Depends on:** CR0254
 
 ## Summary
 
