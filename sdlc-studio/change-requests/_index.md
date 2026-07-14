@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 2 |
+| Proposed | 7 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 233 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 6 |
 | Blocked | 0 |
-| **Total** | **241** |
+| **Total** | **246** |
 
 ## All Changes
 
@@ -63,6 +63,11 @@
 | [CR-0239](CR0239-commit-id-convention-for-per-id-file-attribution.md) | Commit-id convention for per-id file attribution in the engagement floor | Complete | Medium | Improvement | 2026-07-13 | -- |
 | [CR-0240](CR0240-document-the-retro-help-retro-md-and-reference.md) | Document the retro: help/retro.md and reference-retro.md | Proposed | P2 | docs | 2026-07-14 | -- |
 | [CR-0241](CR0241-a-passing-test-suite-must-be-silent-capture.md) | A passing test suite must be silent: capture tool stdout in the validator's own tests | Proposed | P3 | quality | 2026-07-14 | -- |
+| [CR-0242](CR0242-recall-the-cross-project-registry-gets-an-automatic.md) | Recall: the cross-project registry gets an automatic reader (review, audit, plan) | Proposed | P1 | feature | 2026-07-14 | -- |
+| [CR-0243](CR0243-disposition-every-retro-finding-becomes-a-filed-artefact.md) | Disposition: every retro finding becomes a filed artefact or a recorded decline | Proposed | P1 | feature | 2026-07-14 | -- |
+| [CR-0244](CR0244-a-live-ranked-lessons-summary-what-is-biting.md) | A live, ranked lessons summary: what is biting us most, right now | Proposed | P1 | feature | 2026-07-14 | -- |
+| [CR-0245](CR0245-give-operational-and-incident-lessons-a-home-in.md) | Give operational and incident lessons a home, in the shape teams actually write them | Proposed | P2 | feature | 2026-07-14 | -- |
+| [CR-0246](CR0246-the-learning-loop-is-doctrine-with-a-config.md) | The learning loop is doctrine with a config opt-out, and the claim goes in the benchmark | Proposed | P2 | docs | 2026-07-14 | -- |
 
 ## Archived Releases
 

@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 1 |
+| Draft | 0 |
 | In Review | 0 |
-| Accepted | 28 |
+| Accepted | 29 |
 | Superseded | 0 |
 | Withdrawn | 3 |
 | **Total** | **32** |
@@ -48,4 +48,4 @@
 | [RFC-0029](RFC0029-extract-the-benchmark-into-a-standalone-cross-harness.md) | Extract the benchmark into a standalone cross-harness project | P2 | Accepted | Claude (Fable 5) | 2026-07-11 | -- |
 | [RFC-0030](RFC0030-pvd-wide-dependency-graph-a-declared-provides-consumes.md) | PVD-wide dependency graph: a declared provides/consumes contract, not inferred imports | Medium | Accepted | Darren | 2026-07-13 | -- |
 | [RFC-0031](RFC0031-the-scaffold-contract-may-a-creator-emit-an.md) | The scaffold contract: may a creator emit an artefact that cannot pass validation? | Medium | Accepted | Darren | 2026-07-13 | -- |
-| [RFC-0032](RFC0032-close-the-learning-loop-retros-and-lessons-must.md) | Close the learning loop: retros and lessons must drive review, audit and the backlog | Medium | Draft | sdlc-studio | 2026-07-14 | -- |
+| [RFC-0032](RFC0032-close-the-learning-loop-retros-and-lessons-must.md) | Close the learning loop: retros and lessons must drive review, audit and the backlog | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
