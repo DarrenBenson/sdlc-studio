@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 1 |
+| Open | 2 |
 | In Progress | 0 |
 | Fixed | 50 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 1 |
 | Superseded | 0 |
-| **Total** | **131** |
+| **Total** | **132** |
 
 ## All Bugs
 
@@ -98,6 +98,7 @@
 | [BG0129](BG0129-review-prep-counts-personas-index-md-as-a.md) | review_prep counts personas/index.md as a persona (the underscore-index filter misses it) | Fixed | Medium | 2026-07-14 | 2026-07-14 |
 | [BG0130](BG0130-retro-py-miscounts-a-decline-whose-reason-mentions.md) | retro.py miscounts a decline whose reason mentions an artefact id as filed | Fixed | Low | 2026-07-14 | 2026-07-14 |
 | [BG0131](BG0131-the-subagent-token-metric-does-not-track-work.md) | The subagent token metric does not track work - it cannot be used for calibration as-is | Open | High | 2026-07-14 | 2026-07-14 |
+| [BG0132](BG0132-cr-acceptance-criteria-carry-verify-lines-that-nothing.md) | CR acceptance criteria carry Verify lines that nothing executes, so a false-green one is never caught | Open | Medium | 2026-07-14 | 2026-07-14 |
 
 ## Archived Releases
 

@@ -1,7 +1,7 @@
 # CR-0257: Sprint sizing ignores the captured Effort estimate, and bugs carry no size at all
 
 > **Provenance:** RFC0034 (estimate-side workstream)
-> **Status:** Proposed
+> **Status:** In Progress
 > **Priority:** P3
 > **Type:** Improvement
 > **Date:** 2026-07-14
@@ -54,9 +54,18 @@ Every sprint plan whose units lack Affects declarations or seat-scoring - i.e. m
 
 ## Acceptance Criteria
 
-- [ ] sprint.py reads the CR Effort field and uses it as a WSJF size input when no seat-score is present, ranked above the unknown default. Verify: rg -q -i 'effort' .claude/skills/sdlc-studio/scripts/sprint.py
-- [ ] Bugs carry an effort field (template + filer), so a bug can be sized. Verify: rg -qi 'effort' .claude/skills/sdlc-studio/templates/core/bug.md
-- [ ] The token forecast reflects Effort when Affects/complexity is absent, rather than a flat base x count. Verify: python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k sprint
+- [x] **The token forecast is calibrated against measured actuals.** DELIVERED 2026-07-14:
+      `TOKENS_PER_COGNITIVE` 5,000 -> 600, fitted to six measured units; batch forecast moved from
+      3.34x over to 1.09x. Pinned by `tests/test_token_calibration.py`, which fails against the old
+      coefficient. Provisional - the next sprint is its falsification test.
+- [ ] **`sprint.py` reads the CR `Effort:` field** and uses it as a WSJF size input when no
+      seat-score is present. NOT DONE - and note the original Verify line for this AC was a
+      false-green: `rg -qi 'effort' sprint.py` passes on unrelated prose ("agent under effort
+      pressure", "best-effort"). A real check must assert the FIELD is parsed, e.g. that
+      `sdlc_md.extract_field(text, "Effort")` is called and its S/M/L maps to a size.
+- [ ] **Bugs carry an effort field** (template + filer), so a bug can be sized at all. NOT DONE.
+- [ ] **The forecast reflects Effort when `Affects`/complexity is absent**, rather than falling back
+      to a flat base. NOT DONE.
 
 ## Revision History
 
