@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 0 |
+| Proposed | 4 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 241 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 6 |
 | Blocked | 0 |
-| **Total** | **247** |
+| **Total** | **251** |
 
 ## All Changes
 
@@ -69,6 +69,10 @@
 | [CR-0245](CR0245-give-operational-and-incident-lessons-a-home-in.md) | Give operational and incident lessons a home, in the shape teams actually write them | Complete | P2 | feature | 2026-07-14 | -- |
 | [CR-0246](CR0246-the-learning-loop-is-doctrine-with-a-config.md) | The learning loop is doctrine with a config opt-out, and the claim goes in the benchmark | Complete | P2 | docs | 2026-07-14 | -- |
 | [CR-0247](CR0247-the-deterministic-retro-spine-scripts-retro-py-and.md) | The deterministic retro spine: scripts/retro.py, and ranking computed not asserted | Complete | P1 | feature | 2026-07-14 | -- |
+| [CR-0248](CR0248-consolidate-the-two-divergent-archive-writers-into-one.md) | Consolidate the two divergent archive writers into one | Proposed | P2 | Improvement | 2026-07-14 | -- |
+| [CR-0249](CR0249-derive-per-type-status-vocab-from-the-single.md) | Derive per-type status vocab from the single source instead of triplicating it | Proposed | P3 | Improvement | 2026-07-14 | -- |
+| [CR-0250](CR0250-security-hardening-default-document-the-ac-verifier-http.md) | Security hardening: default-document the AC-verifier http host allowlist and the rolling-install checksum | Proposed | P3 | Improvement | 2026-07-14 | -- |
+| [CR-0251](CR0251-verify-ac-run-the-natural-file-flag-does.md) | verify_ac run: the natural --file flag does not exist (friction: it is --story) | Proposed | P4 | Improvement | 2026-07-14 | -- |
 
 ## Archived Releases
 

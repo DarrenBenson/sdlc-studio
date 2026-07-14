@@ -18,3 +18,4 @@ The volatile project-state pointer lives in `LATEST.md` (not a numbered review).
 | [RV-0005](RV0005-skill-review-v3.md) | Full skill review: best-practice, progressive disclosure, token efficiency (v3.0.1) | 2026-06-23 |
 | [RV-0006](RV0006-repository-review-2026-07-06-architecture-code-quality.md) | Repository review: architecture, code quality, defensive security | 2026-07-06 |
 | [RV-0007](RV0007-repository-review-2026-07-09-code-architecture-reliability.md) | Repository review: code, architecture, reliability | 2026-07-09 |
+| [RV-0008](RV0008-repository-review-sdlc-studio-skill-scripts-architecture-code.md) | Repository review: sdlc-studio skill scripts (architecture, code quality, security) | 2026-07-14 |
