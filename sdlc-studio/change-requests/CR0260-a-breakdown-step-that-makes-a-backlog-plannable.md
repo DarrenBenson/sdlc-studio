@@ -27,10 +27,31 @@ Every sprint plan. Today the planner's output is only as good as metadata nobody
 
 ## Acceptance Criteria
 
-- [ ] The design/breakdown step refuses to hand a batch to  while any unit lacks  or a size, naming the units - a backlog that cannot be sized is not a designed backlog.
-- [ ] Bugs carry a size/effort field (this is CR0257's undone AC2), mapped to the canonical unit RFC0034 D1 settled (S/M/L -> token bands; story points stay a within-story aid).
-- [ ] The planner surfaces SHARED-FILE CLUSTERS as a coordination hint, derived from the  it already parses: units touching the same file are reported as one cluster, not as independent parallel work.
-- [ ] A CR is decomposed into stories where the work warrants executable ACs, so Done is gated on real verifiers rather than prose (BG0132).
+**The breakdown must be UNAVOIDABLE.** A separate step nobody runs is doctrine, and this session
+proved three times what happens to doctrine: the retro gate was satisfiable by `touch`, the review
+was advisory so a stale one reached a close, and `--goal design` (which already exists and is
+specified to produce "a reviewable, estimated backlog") has never once been run. Enforcement must
+live in the command people actually invoke. Nobody runs `design`. Everybody runs `plan`.
+
+- [ ] **`sprint plan` REFUSES an ungroomed batch.** Blocking, non-zero, and it prints NO plan - a
+      plan over unsized units is the false-authority this exists to abolish. It names each offending
+      unit and what it lacks (`Affects`, size), and names the command that fixes it. A warning is not
+      enough: an advisory lane is the one that gets scrolled past.
+- [ ] **Validated against the bug it defends (LL0010):** a batch containing one unit with no
+      `Affects` must FAIL `plan`, and the same batch must pass once groomed. If it cannot fail, it is
+      not a gate.
+- [ ] **The escape is explicit and auditable, never accidental.** Following the engagement-floor and
+      `lessons.loop` pattern, an operator who knowingly accepts an unsized batch may opt out in
+      config; the lane then REPORTS and does not block. Omission is not an escape - only a recorded
+      decision is.
+- [ ] The planner surfaces **shared-file clusters** as a coordination hint, derived from the
+      `Affects` it already parses: units touching the same file are one cluster, not independent
+      parallel work. (It reported CR0257 and BG0132 as parallel while both touch `file_finding.py`;
+      the wave shape has been hand-corrected three times this session.)
+- [ ] A CR is decomposed into stories where the work warrants executable ACs, so Done is gated on
+      real verifiers rather than prose (BG0132).
+- [ ] (Bugs carrying a size field is **CR0257's AC2** - owned there, not duplicated here. CR0260
+      depends on it: the gate cannot refuse an unsized bug until a bug can carry a size.)
 
 ## Revision History
 
