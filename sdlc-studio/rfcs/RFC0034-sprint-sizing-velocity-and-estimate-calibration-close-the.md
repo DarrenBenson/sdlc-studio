@@ -68,7 +68,7 @@ token/wall-clock budget wired to CR0225's appetite.
 | # | Decision | Resolution | Status |
 | --- | --- | --- | --- |
 | D1 | The canonical size unit. | **Tokens are canonical.** Humans still estimate in Effort S/M/L (stories in points); those map to **calibrated token bands**. Bugs gain an effort field (CR0257). The bands ship **provisional** (a documented S/M/L -> token default) and are **recalibrated from velocity history** once D4 accumulates it. | Decided |
-| D2 | How "actual" is measured at close. | **From telemetry, which already logs it** - `tokens` + `wall_time_s` per unit (`telemetry.py` FIELDS). No new capture needed; the measure was ~80% built and simply never compared to an estimate. Wall-clock is the secondary guard. | Decided |
+| D2 | How "actual" is measured at close. | **Wall-clock from telemetry; tokens need a supplier (corrected).** `telemetry.py` has the `tokens` and `wall_time_s` FIELDS, but only wall-clock is measurable by the loop - a Python helper cannot observe LLM token spend (`sprint.py` says so in a comment), and in practice **the `tokens` field has never been populated: 330 telemetry records, zero token values**. So the measure half is ~80% built for wall-clock and ~0% for tokens: the field exists, the meter does not. The token actual must be SUPPLIED - the concrete path is to run each unit as an instrumented subagent and record its reported usage into `artifact.py close --tokens` (in CR0258). Wall-clock is the reliable actual until that lands. | Decided |
 | D3 | Capacity target - value, unit, owner. | **An operator-set per-sprint budget in tokens + wall-clock, wired to CR0225's appetite defaults**, so the plan-time "does this fit" and the run-time circuit-breaker are the same number. Provisional default now; recalibrated from velocity. | Decided |
 | D4 | The retro records estimate-vs-actual + accuracy. | **Yes** - `retro.py` + template read telemetry actuals against the plan's estimate, record the ratio, and accumulate a velocity/accuracy history the next plan reads. This is the keystone: it produces the data that calibrates D1's bands and D3's budget. | Decided |
 | D5 | Do story points stay? | **Kept as a within-story human aid that maps to a token band** - not summed for capacity. Points become an alias into the canonical unit, not a fourth vocabulary. | Decided |
@@ -84,6 +84,10 @@ freeze on `main` and ships with v4.2, not this week.
   S/M/L -> token-band mapping; bugs get an effort field.
 - **CR (D4, keystone):** the retro reads telemetry actuals against the plan estimate, records
   accuracy, and accumulates a velocity history; recalibrates the S/M/L token bands from it.
+  **Includes the token supplier** (corrected premise): tokens are never auto-measured, so this CR
+  must also make the loop record a real token actual - run each unit as an instrumented subagent
+  and feed its reported usage into `artifact.py close --tokens`. Wall-clock works today; tokens do
+  not until this lands.
 - **CR (D3):** a capacity model in tokens/wall-clock, operator-set, wired to CR0225's appetite
   defaults. Depends on the D4 history to move off the provisional default.
 
