@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **LL0024 - a tool that silently rewrites its caller's input is indistinguishable from one that
+  corrupts it.** From BG0124: the artefact filer ran a markdown-safety normaliser over the AC's
+  executable `Verify:` command, backticking snake_case identifiers to dodge an emphasis-lint rule.
+  The verifier runs those commands under a shell, where backticks are command substitution - so a
+  path became a command, the command searched the wrong target, and the AC returned 0. A false
+  green on the gate that decides Done. The corruption was not the deepest problem; the silence was.
+  Never normalise a field a machine will execute, announce every rewrite, and document which tools
+  mutate their input.
+
 - **LL0023 - a gate that checks an artefact exists, not what is in it, is satisfied by `touch`.**
   From BG0123: the retro leg globbed for a filename, so a 0-byte `RETRO9999.md` returned
   `[PASS] retro: batch retro RETRO9999 present`. The one gate that made the retrospective

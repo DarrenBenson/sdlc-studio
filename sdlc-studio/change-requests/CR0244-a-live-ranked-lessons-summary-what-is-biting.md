@@ -14,9 +14,9 @@ A flat append-only log is what grew until an infrastructure project had to evict
 
 ## Impact
 
-{{who this affects and what breaks}}
+Anyone who reads the summary to decide what to worry about. Changes the summary from a flat log into a ranked instrument, so ordering shifts as classes recur, decay, or get a structural guard. A flat log is what grew until an infrastructure project had to evict its 750-line lessons doc from memory entirely.
 
-**Effort:** {{S|M|L}}
+**Effort:** M
 
 ## Acceptance Criteria
 

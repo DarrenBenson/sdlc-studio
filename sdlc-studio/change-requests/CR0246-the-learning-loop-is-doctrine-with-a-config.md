@@ -14,9 +14,9 @@ Mirror the engagement floor: mandated because judgement-gated process was MEASUR
 
 ## Impact
 
-{{who this affects and what breaks}}
+Every project, since the loop ships on by default. Projects that do not want it set the config opt-out. The claim that the loop reduces repeat defects becomes a benchmark claim with a verification path, rather than an assertion - the register cuts both ways.
 
-**Effort:** {{S|M|L}}
+**Effort:** S
 
 ## Acceptance Criteria
 

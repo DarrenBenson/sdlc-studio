@@ -15,7 +15,7 @@ gate.py has a blocking retro leg - a sprint close cannot report success without 
 
 A gate that blocks on an undocumented artefact teaches the agent to satisfy the check rather than do the work.
 
-**Effort:** {{S|M|L}}
+**Effort:** S
 
 ## Acceptance Criteria
 

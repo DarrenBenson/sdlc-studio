@@ -15,7 +15,7 @@ The skill suite prints ERROR lines on a GREEN run. validate.py's unit tests feed
 
 Noise on a green run trains everyone - human and agent - to ignore ERROR lines, which is the exact reflex that lets a real one through. Adjacent to LL0009: a signal that cannot be distinguished from noise is not a signal.
 
-**Effort:** {{S|M|L}}
+**Effort:** S
 
 ## Acceptance Criteria
 

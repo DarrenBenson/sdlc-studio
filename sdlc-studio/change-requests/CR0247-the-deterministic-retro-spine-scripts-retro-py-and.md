@@ -14,9 +14,9 @@ The learning loop as designed still leans on agent judgement at every step, and 
 
 ## Impact
 
-{{who this affects and what breaks}}
+Every project running a retro. Replaces judgement with mechanism wherever the step is mechanical: parsing a `## Lessons` heading is parsing, counting recurrence is counting, checking each finding is filed or declined is a set difference. Closes BG0123, whose root cause is that no tool produces or validates a retro, so the gate can only glob a filename.
 
-**Effort:** {{S|M|L}}
+**Effort:** L
 
 ## Acceptance Criteria
 

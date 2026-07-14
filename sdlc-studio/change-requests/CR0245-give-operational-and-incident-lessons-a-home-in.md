@@ -14,9 +14,9 @@ an infrastructure project wrote a 750-line docs/ops-lessons.md OUTSIDE the works
 
 ## Impact
 
-{{who this affects and what breaks}}
+Teams doing deploy, incident and DR work - the category with the most expensive failures and, today, the least support in the registry. Nothing breaks; the cost of the gap is that such teams write their own lessons doc outside the workspace, where no tool reads it.
 
-**Effort:** {{S|M|L}}
+**Effort:** M
 
 ## Acceptance Criteria
 
