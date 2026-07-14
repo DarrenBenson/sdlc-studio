@@ -1368,6 +1368,56 @@ class BoundLaneRegistryTests(unittest.TestCase):
                     self.assertEqual(r["checks"][0]["check"], "selection")
                     self.assertIn(lane, r["checks"][0]["detail"])
 
+class ReviewCurrencyGateTests(unittest.TestCase):
+    """CR0253: the sprint-close review was never gated - doc_freshness is advisory, and
+    review-legs checks the docs EXIST, not that a review was RUN. --require-review binds a
+    BLOCKING leg: reviews/LATEST.md must be at least as new as every artefact. Presence is not
+    currency (BG0123's lesson, one leg over)."""
+
+    def _ws(self, d):
+        import os
+        root = Path(d)
+        (root / "sdlc-studio" / "reviews").mkdir(parents=True)
+        (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+        bug = root / "sdlc-studio" / "bugs" / "BG0001-x.md"
+        bug.write_text("# BG0001: x\n> **Status:** Open\n> **Severity:** Low\n## Summary\nx\n")
+        return root, bug
+
+    def _leg(self, root):
+        import gate
+        r = gate.run_gate(str(root), checks={}, require_review=True)
+        return next(c for c in r["checks"] if c["check"] == "review-current")
+
+    def test_missing_latest_fails(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            root, _ = self._ws(d)
+            leg = self._leg(root)
+            self.assertEqual(leg["status"], "fail")
+            self.assertTrue(leg["blocking"])
+
+    def test_stale_review_fails(self):
+        import tempfile, os, time
+        with tempfile.TemporaryDirectory() as d:
+            root, bug = self._ws(d)
+            lat = root / "sdlc-studio" / "reviews" / "LATEST.md"
+            lat.write_text("# review\n")
+            os.utime(lat, (time.time() - 100, time.time() - 100))   # LATEST older
+            os.utime(bug, (time.time(), time.time()))               # artefact newer
+            leg = self._leg(root)
+            self.assertEqual(leg["status"], "fail", leg["detail"])
+            self.assertIn("stale", leg["detail"])
+
+    def test_current_review_passes(self):
+        import tempfile, os, time
+        with tempfile.TemporaryDirectory() as d:
+            root, bug = self._ws(d)
+            lat = root / "sdlc-studio" / "reviews" / "LATEST.md"
+            lat.write_text("# review\n")
+            os.utime(lat, (time.time() + 100, time.time() + 100))   # LATEST newest
+            leg = self._leg(root)
+            self.assertEqual(leg["status"], "pass", leg["detail"])
+
 
 if __name__ == "__main__":
     unittest.main()

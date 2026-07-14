@@ -177,9 +177,13 @@ independent critic plus the gate - the check's output states this scoping.
    the gitignored `sdlc-studio/.local/telemetry.jsonl`. Advisory -
    it never affects the close; it feeds the deferred calibrate step.
 7. **Retro + lessons lifecycle (a hard gate, not doctrine).** The batch retro carries a 'critic loop, observed' section (findings, refutations, survivors of the adversarial pass) so its value stays visible sprint over sprint. The close runs a five-step learning loop. **Every step of it is mechanical:** one command,
-   `gate --require-retro RETRO{next}`, is the whole close gate, and it fails loud (non-zero, no
-   success report) on any of the three artefacts being absent or stale. A step that is only
-   described is a step an agent under effort pressure skips - so nothing here is only described:
+   `gate --require-retro RETRO{next} --require-review`, is the whole close gate, and it fails loud
+   (non-zero, no success report) on any of the artefacts being absent or stale. The close is
+   reconcile + review + retro: reconcile blocks on drift (the standard gate), `--require-review`
+   fails unless `reviews/LATEST.md` is at least as new as every artefact (run `review` to refresh
+   it - currency, not mere presence), and `--require-retro` carries the retro + lessons loop below.
+   A step that is only described is a step an agent under effort pressure skips - so nothing here is
+   only described:
    1. **The retro exists.** The gate fails until the batch retro is in `sdlc-studio/retros/`. Create
       it with `artifact new --type retro --title "..."` so the id is tool-allocated and the index row
       appended (never hand-author either); `reconcile` then covers the retro index for row-presence

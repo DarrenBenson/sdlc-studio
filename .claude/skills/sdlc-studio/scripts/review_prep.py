@@ -27,6 +27,11 @@ import lessons  # noqa: E402  (sibling - the ranked lesson lenses the review sta
 
 PROJECT_DOCS = ["prd", "trd", "tsd", "personas"]
 
+# Index files in personas/ are not personas. The dir uses `index.md` (some repos `_index.md`);
+# excluding only one let the other be parsed as a phantom persona ("Persona Index"). One set,
+# used by both the persona-usage and required-legs passes, so they cannot disagree.
+PERSONA_INDEX_NAMES = {"index.md", "_index.md"}
+
 
 def _git_iso(path: Path, repo_root: Path) -> str | None:
     """Last commit time for `path` as ISO-8601, or None if untracked/unavailable."""
@@ -133,7 +138,7 @@ def persona_usage(repo_root: Path) -> dict:
     # the single personas.md (H2 headings) otherwise. Keeps the source consistent
     # across the deterministic helpers.
     persona_files = [p for p in sorted(personas_dir.glob("*.md"))
-                     if p.name != "_index.md"] if personas_dir.is_dir() else []
+                     if p.name not in PERSONA_INDEX_NAMES] if personas_dir.is_dir() else []
     method = ""
     if persona_files:
         for p in persona_files:
@@ -166,7 +171,7 @@ def _leg_path(base: Path, leg: str) -> tuple[Path, bool]:
     personas.md - the same source order the persona review and completion cascade read."""
     if leg == "personas":
         pdir = base / "personas"
-        files = [p for p in pdir.glob("*.md") if p.name != "_index.md"] if pdir.is_dir() else []
+        files = [p for p in pdir.glob("*.md") if p.name not in PERSONA_INDEX_NAMES] if pdir.is_dir() else []
         if files:
             return pdir, True
         pmd = base / "personas.md"

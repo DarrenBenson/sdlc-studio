@@ -265,7 +265,7 @@ BLOCKING_ON_ERROR = {
     "conformance", "reconcile", "index-derived", "validate",
     "integrity", "duplicate-id", "doc-coverage", "retro", "verify",
     "lessons-summary", "lessons-validity", "handoff", "review-legs",
-    "engagement-floor",
+    "engagement-floor", "review-current",
 }
 
 DEFAULT_CHECKS = {
@@ -317,6 +317,36 @@ def _retro_present(root: str, retro_id: str) -> dict:
     suffix = "" if blocking else " (advisory: lessons.loop is judgement)"
     return {"count": len(res["errors"]), "blocking": blocking,
             "detail": f"batch retro {retro_id} incomplete{suffix} - " + "; ".join(res["errors"])}
+
+
+def _review_current(root: str) -> dict:
+    """Blocking close-gate check: the unified-review anchor (reviews/LATEST.md) must be at least
+    as new as every artefact. If any artefact changed since the last review, LATEST.md is stale
+    and a fresh session orients on an out-of-date claim.
+
+    The sprint close is reconcile + review + retro. Reconcile blocks on drift and retro is a
+    hard gate; this is the review leg, which was only advisory before (doc_freshness) - so a
+    stale review reached a close, and did. Presence is not currency: the review-legs lane checks
+    the doc legs EXIST; this checks the review was actually re-RUN. The estimate machinery is
+    reused from review_prep (git commit time, mtime fallback).
+    """
+    import review_prep
+    rr = Path(root)
+    latest = rr / "sdlc-studio" / "reviews" / "LATEST.md"
+    if not latest.is_file():
+        return {"count": 1, "blocking": True,
+                "detail": "no reviews/LATEST.md - run `review` before closing the sprint"}
+    latest_dt = review_prep._parse_dt(review_prep._modified_iso(latest, rr)[0])
+    stale = []
+    for key, rec in review_prep.staleness(rr).items():
+        m = review_prep._parse_dt(rec.get("last_modified"))
+        if m and latest_dt and m > latest_dt:
+            stale.append(key)
+    if stale:
+        return {"count": len(stale), "blocking": True,
+                "detail": (f"reviews/LATEST.md is stale - {len(stale)} artefact(s) changed since "
+                           f"the last review ({_elide(sorted(stale))}); run `review` before closing")}
+    return {"count": 0, "blocking": True, "detail": "reviews/LATEST.md is current with all artefacts"}
 
 
 def _handoff_present(root: str, handoff_id: str) -> dict:
@@ -526,6 +556,7 @@ BOUND_LANE_SUBJECT = {
     "lessons-summary": "the sprint close's learning loop",
     "lessons-validity": "the sprint close's learning loop",
     "handoff": "the remaining-work handoff",
+    "review-current": "the sprint close's review currency",
 }
 
 
@@ -533,7 +564,8 @@ def run_gate(root: str = ".", only: list[str] | None = None,
              skip: list[str] | None = None, checks: dict | None = None,
              require_retro: str | None = None, release: bool = False,
              allow_external: bool = False, verify_batch: bool = False,
-             require_lessons: bool = False, require_handoff: str | None = None) -> dict:
+             require_lessons: bool = False, require_handoff: str | None = None,
+             require_review: bool = False) -> dict:
     """Run the selected checks and report. `ok` is False only when a BLOCKING check
     fails; a non-blocking failure is reported but does not fail the gate. `require_retro`
     is the SPRINT-CLOSE gate: it binds a blocking check that the named batch retro exists,
@@ -563,6 +595,9 @@ def run_gate(root: str = ".", only: list[str] | None = None,
     if require_handoff:  # a run that stopped short: the handoff must exist AND be linked
         registry["handoff"] = lambda r, _hid=require_handoff: _handoff_present(r, _hid)
         bound.append("handoff")
+    if require_review:  # close-gate review leg: LATEST.md must be current with the artefacts
+        registry["review-current"] = _review_current
+        bound.append("review-current")
     if release:  # pre-tag: the executing AC-verify lane joins the standard gate...
         registry["verify"] = (lambda r, _x=allow_external, _b=verify_batch:
                               _verify_acs(r, allow_external=_x, batch=_b))
@@ -633,7 +668,8 @@ def cmd_gate(args: argparse.Namespace) -> int:
                       allow_external=getattr(args, "allow_external", False),
                       verify_batch=getattr(args, "verify_batch", False),
                       require_lessons=getattr(args, "require_lessons", False),
-                      require_handoff=getattr(args, "require_handoff", None))
+                      require_handoff=getattr(args, "require_handoff", None),
+                      require_review=getattr(args, "require_review", False))
     if args.format == "json":
         print(json.dumps(report, indent=2))
     else:
@@ -673,6 +709,10 @@ def build_parser() -> argparse.ArgumentParser:
                         "unless this handoff exists in sdlc-studio/handoffs/ and a retro "
                         "links it (`handoff generate --outcome <how it ended> --retro "
                         "RETROxxxx`). Deselecting the `handoff` lane under it is refused")
+    p.add_argument("--require-review", dest="require_review", action="store_true",
+                   help="The review half of the sprint close: fail unless reviews/LATEST.md is at "
+                        "least as new as every artefact (run `review` to refresh it). Currency, "
+                        "not presence - a stale review anchor is a fresh session's first read")
     p.add_argument("--release", action="store_true",
                    help="Pre-tag gate: also EXECUTE every story's Verify: expression and fail "
                         "on any red or unproven AC (read-only - no Verified: back-annotation, "

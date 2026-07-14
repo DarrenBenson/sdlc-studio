@@ -148,5 +148,33 @@ class CmdTests(unittest.TestCase):
             self.assertEqual(review_prep.main(["prep", "--root", d, "--format", "json"]), 0)
 
 
+class PersonaIndexNotCountedTests(unittest.TestCase):
+    """BG0129: the persona dir uses `index.md`; the filter excluded only `_index.md`, so the
+    index was parsed as a phantom persona ('Persona Index'). Both index spellings are now
+    excluded, in both the usage and required-legs passes."""
+
+    def _dir(self, d: Path) -> None:
+        pdir = d / "sdlc-studio" / "personas"
+        pdir.mkdir(parents=True)
+        (pdir / "index.md").write_text("# Persona Index\n")
+        (pdir / "maya.md").write_text("# Maya Okafor\n")
+        (d / "sdlc-studio" / "prd.md").write_text("# PRD\nMaya Okafor is our user.\n")
+
+    def test_index_md_is_not_a_persona(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self._dir(Path(d))
+            usage = review_prep.persona_usage(Path(d))
+            self.assertNotIn("Persona Index", usage["defined"])
+            self.assertEqual(usage["defined"], ["Maya Okafor"])
+
+    def test_underscore_index_still_excluded(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d) / "sdlc-studio" / "personas"; pdir.mkdir(parents=True)
+            (pdir / "_index.md").write_text("# Index\n")
+            (pdir / "sam.md").write_text("# Sam Rivera\n")
+            (Path(d) / "sdlc-studio" / "prd.md").write_text("# PRD\n")
+            self.assertEqual(review_prep.persona_usage(Path(d))["defined"], ["Sam Rivera"])
+
+
 if __name__ == "__main__":
     unittest.main()

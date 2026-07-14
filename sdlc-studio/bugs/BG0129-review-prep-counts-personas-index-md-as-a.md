@@ -1,6 +1,7 @@
 # BG0129: review_prep counts personas/index.md as a persona (the underscore-index filter misses it)
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file

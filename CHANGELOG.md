@@ -95,6 +95,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`verify_ac run` accepts `--file` as an alias for `--story` (CR0251).** `--file` is the flag an
   agent reaches for first; it errored before. Now aliased on both `run` and `lint`.
 
+- **The sprint-close review is a hard gate now, not just advice (CR0253).** The close is reconcile +
+  review + retro; reconcile blocked on drift and retro was promoted to a hard gate (RFC0032), but
+  review currency was only advisory (`doc_freshness`), so a stale review reached a close - and did:
+  `LATEST.md` sat claiming "ready to tag" long after that stopped being true. A new blocking
+  `gate --require-review` leg fails unless `reviews/LATEST.md` is at least as new as every artefact.
+  Currency, not presence (`review-legs` already checked the docs exist; this checks the review was
+  re-run). The deterministic input was already there in `review_prep`; it just needed a leg. The
+  documented close command is now `gate --require-retro RETRO{next} --require-review`.
+
+- **`review_prep` no longer counts `personas/index.md` as a persona (BG0129).** The filter excluded
+  `_index.md` but the index file is `index.md`, so every review reported a phantom "Persona Index".
+  Both spellings are excluded now, via one shared set used by both the usage and required-legs
+  passes.
+
 - **A passing test suite is silent again (CR0241).** Tests that feed the validator a
   deliberately-broken fixture were letting its diagnostics escape to the console, so a fully green
   run printed `ERROR` lines and the tail of 2000 passing tests read like a failure. That is not
