@@ -252,5 +252,243 @@ class AnExplicitDeclineBeatsAnIdInItsReason(RetroBase):
         self.assertEqual(row["state"], "undecided")
 
 
+
+# ---------------------------------------------------------------------------
+# Estimate vs actual: the loop only closes if an unmeasured unit says so.
+# ---------------------------------------------------------------------------
+
+BATCH_RETRO = """# RETRO-9000: a measured sprint
+
+> **Date:** 2026-07-14
+> **Batch:** BG0001, CR0001, CR0002
+> **Goal:** close the loop
+
+## Delivered
+- BG0001 - fixed it
+## What went well
+- it was measured
+## What was hard / what stalled
+- nothing
+## Lessons
+- measure the units
+## Actions raised
+| Finding | Disposition |
+| --- | --- |
+| nothing to raise | declined: clean sprint |
+"""
+
+UNIT = """# {prefix}-{num}: a unit
+
+> **Status:** Open
+> **Severity:** Medium
+
+## Summary
+A unit of work.
+"""
+
+
+class AccuracyBase(unittest.TestCase):
+    """A FIXTURE telemetry file, never the live one - a test that reads the project's own
+    telemetry would pass or fail on what the project happened to do that day."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        for d in ("retros", "bugs", "change-requests", ".local"):
+            (self.root / "sdlc-studio" / d).mkdir(parents=True, exist_ok=True)
+        (self.root / "sdlc-studio" / "retros" / "RETRO9000-t.md").write_text(
+            BATCH_RETRO, encoding="utf-8")
+        (self.root / "sdlc-studio" / "bugs" / "BG0001-a.md").write_text(
+            UNIT.format(prefix="BG", num="0001"), encoding="utf-8")
+        for n in ("0001", "0002"):
+            (self.root / "sdlc-studio" / "change-requests" / f"CR{n}-a.md").write_text(
+                UNIT.format(prefix="CR", num=n), encoding="utf-8")
+        self.addCleanup(self.tmp.cleanup)
+
+    def telemetry(self, *records: dict) -> None:
+        import json as _json
+        path = self.root / "sdlc-studio" / ".local" / "telemetry.jsonl"
+        path.write_text("".join(_json.dumps(r) + "\n" for r in records), encoding="utf-8")
+
+    def accuracy(self) -> dict:
+        return retro.accuracy(str(self.root), "RETRO9000")
+
+    def unit(self, res: dict, uid: str) -> dict:
+        return next(u for u in res["units"] if u["id"] == uid)
+
+
+class TheBatchIsMeasuredAgainstThePlan(AccuracyBase):
+    def test_the_batch_field_names_the_units(self) -> None:
+        self.assertEqual(retro.batch_ids(BATCH_RETRO), ["BG0001", "CR0001", "CR0002"])
+
+    def test_an_unfilled_batch_placeholder_names_nothing(self) -> None:
+        self.assertEqual(retro.batch_ids("> **Batch:** {{batch}}\n"), [])
+
+    def test_per_unit_ratio_is_estimate_over_actual(self) -> None:
+        """The estimate is the PLAN's model (sprint's constants), not a second copy of it."""
+        import sprint
+        self.telemetry(
+            {"id": "BG0001", "type": "bug", "tokens": 50_000, "wall_time_s": 100},
+            {"id": "CR0001", "type": "cr", "tokens": 25_000, "wall_time_s": 50},
+            {"id": "CR0002", "type": "cr", "tokens": 100_000, "wall_time_s": 250},
+        )
+        res = self.accuracy()
+        est = sprint.BASE_TOKEN_BUDGET  # no Affects -> complexity 0 -> the fixed floor
+        self.assertEqual(self.unit(res, "BG0001")["estimate"], est)
+        self.assertEqual(self.unit(res, "BG0001")["ratio"], round(est / 50_000, 2))
+        self.assertEqual(self.unit(res, "CR0001")["ratio"], round(est / 25_000, 2))
+        self.assertEqual(self.unit(res, "CR0002")["ratio"], round(est / 100_000, 2))
+        self.assertEqual(self.unit(res, "BG0001")["wall_time_s"], 100)
+
+    def test_batch_ratio_is_the_summed_estimate_over_the_summed_actual(self) -> None:
+        import sprint
+        self.telemetry(
+            {"id": "BG0001", "type": "bug", "tokens": 50_000, "wall_time_s": 100},
+            {"id": "CR0001", "type": "cr", "tokens": 25_000, "wall_time_s": 50},
+            {"id": "CR0002", "type": "cr", "tokens": 100_000, "wall_time_s": 250},
+        )
+        res = self.accuracy()
+        self.assertEqual(res["batch"]["estimate"], 3 * sprint.BASE_TOKEN_BUDGET)
+        self.assertEqual(res["batch"]["actual_tokens"], 175_000)
+        self.assertEqual(res["batch"]["ratio"],
+                         round(3 * sprint.BASE_TOKEN_BUDGET / 175_000, 2))
+        self.assertEqual(res["batch"]["wall_time_s"], 400)
+        self.assertEqual((res["n_measured"], res["n_unmeasured"]), (3, 0))
+
+    def test_a_later_bare_close_record_does_not_erase_the_measurement(self) -> None:
+        """The loop appends a bare `{id, type}` record on close. Reading the LAST record
+        wholesale would throw away the tokens the run actually reported."""
+        self.telemetry(
+            {"id": "BG0001", "type": "bug", "tokens": 50_000, "wall_time_s": 100},
+            {"id": "BG0001", "type": "bug"},
+        )
+        self.assertEqual(self.unit(self.accuracy(), "BG0001")["actual_tokens"], 50_000)
+
+
+class SilenceIsNotAMeasurement(AccuracyBase):
+    """The load-bearing case. A unit with no telemetry must be reported UNMEASURED - never
+    dropped from the list, never folded into the ratio. A silent skip lets a batch of three
+    units with one measurement report as a fully measured, accurate sprint."""
+
+    def test_a_unit_with_no_telemetry_is_reported_unmeasured(self) -> None:
+        self.telemetry({"id": "BG0001", "type": "bug", "tokens": 50_000})
+        res = self.accuracy()
+        self.assertEqual(res["n_units"], 3, "an unmeasured unit must not vanish from the batch")
+        self.assertEqual(res["n_measured"], 1)
+        self.assertEqual(res["n_unmeasured"], 2)
+        self.assertEqual(res["unmeasured"], ["CR0001", "CR0002"])
+        for uid in ("CR0001", "CR0002"):
+            u = self.unit(res, uid)
+            self.assertEqual(u["state"], "unmeasured")
+            self.assertIsNone(u["ratio"])
+            self.assertIsNone(u["actual_tokens"])
+            self.assertTrue(u["reason"])
+
+    def test_an_unmeasured_unit_is_excluded_from_the_batch_ratio(self) -> None:
+        """Not counted as accurate, and not counted as a miss either: its estimate must not
+        land in the numerator with nothing under it."""
+        import sprint
+        self.telemetry({"id": "BG0001", "type": "bug", "tokens": 50_000})
+        res = self.accuracy()
+        self.assertEqual(res["batch"]["estimate"], sprint.BASE_TOKEN_BUDGET,
+                         "the unmeasured units' estimates must stay out of the ratio")
+        self.assertEqual(res["batch"]["actual_tokens"], 50_000)
+
+    def test_a_record_with_no_token_value_is_not_a_measurement(self) -> None:
+        """330 telemetry records exist with wall-clock and no tokens. A record is not a token
+        measurement just because it exists."""
+        self.telemetry({"id": "BG0001", "type": "bug", "wall_time_s": 100})
+        u = self.unit(self.accuracy(), "BG0001")
+        self.assertEqual(u["state"], "unmeasured")
+
+    def test_a_wholly_unmeasured_batch_reports_no_ratio(self) -> None:
+        self.telemetry()
+        res = self.accuracy()
+        self.assertEqual(res["n_measured"], 0)
+        self.assertIsNone(res["batch"]["ratio"], "zero measurements must not report an accuracy")
+
+    def test_the_written_block_says_unmeasured_out_loud(self) -> None:
+        self.telemetry({"id": "BG0001", "type": "bug", "tokens": 50_000})
+        block = retro.accuracy_block(self.accuracy())
+        self.assertIn("UNMEASURED", block)
+        self.assertIn("1 of 3 unit(s) measured", block)
+
+
+class TheRetroCarriesTheReport(AccuracyBase):
+    def test_write_inserts_the_section_and_is_idempotent(self) -> None:
+        self.telemetry({"id": "BG0001", "type": "bug", "tokens": 50_000})
+        res = self.accuracy()
+        path = retro.write_accuracy(str(self.root), res)
+        first = path.read_text(encoding="utf-8")
+        self.assertIn("## Estimate vs actual", first)
+        self.assertIn("| BG0001 |", first)
+        self.assertIn("## Actions raised", first, "the rest of the retro must survive")
+        retro.write_accuracy(str(self.root), retro.accuracy(str(self.root), "RETRO9000"))
+        second = path.read_text(encoding="utf-8")
+        self.assertEqual(first.count(retro.ACCURACY_BEGIN), 1)
+        self.assertEqual(second.count(retro.ACCURACY_BEGIN), 1, "a refresh must not duplicate")
+
+    def test_a_refresh_keeps_the_authors_prose(self) -> None:
+        """The section holds the human's reading of the numbers. A tool that ate the analysis
+        on every refresh would teach people not to run it."""
+        self.telemetry({"id": "BG0001", "type": "bug", "tokens": 50_000})
+        retro.write_accuracy(str(self.root), self.accuracy())
+        path = self.root / "sdlc-studio" / "retros" / "RETRO9000-t.md"
+        path.write_text(path.read_text(encoding="utf-8").replace(
+            retro.ACCURACY_END, retro.ACCURACY_END + "\n\n- the estimator is too generous\n"),
+            encoding="utf-8")
+        retro.write_accuracy(str(self.root), retro.accuracy(str(self.root), "RETRO9000"))
+        self.assertIn("- the estimator is too generous", path.read_text(encoding="utf-8"))
+
+    def test_validate_still_passes_a_retro_carrying_the_new_section(self) -> None:
+        """The new section is not a required one: adding it must not fail every retro that
+        predates it, and carrying it must not fail the gate."""
+        self.telemetry({"id": "BG0001", "type": "bug", "tokens": 50_000})
+        retro.write_accuracy(str(self.root), self.accuracy())
+        self.assertTrue(retro.validate(str(self.root), "RETRO9000")["ok"])
+
+
+class TheVelocityHistoryAccumulates(AccuracyBase):
+    """The history the next plan reads. One row per sprint, keyed by retro id."""
+
+    def test_a_row_is_appended_and_read_back(self) -> None:
+        import sprint
+        self.telemetry({"id": "BG0001", "type": "bug", "tokens": 50_000, "wall_time_s": 100})
+        retro.record_velocity(str(self.root), self.accuracy())
+        hist = retro.velocity_history(str(self.root))
+        self.assertEqual(len(hist), 1)
+        row = hist[0]
+        self.assertEqual(row["id"], "RETRO9000")
+        self.assertEqual(row["date"], "2026-07-14")
+        self.assertEqual((row["units"], row["measured"]), (3, 1))
+        self.assertEqual(row["estimate"], sprint.BASE_TOKEN_BUDGET)
+        self.assertEqual(row["actual_tokens"], 50_000)
+        self.assertEqual(row["ratio"], 1.0)
+
+    def test_re_running_a_sprint_corrects_its_row_rather_than_duplicating_it(self) -> None:
+        self.telemetry({"id": "BG0001", "type": "bug", "tokens": 50_000})
+        retro.record_velocity(str(self.root), self.accuracy())
+        self.telemetry(
+            {"id": "BG0001", "type": "bug", "tokens": 50_000},
+            {"id": "CR0001", "type": "cr", "tokens": 50_000},
+        )
+        retro.record_velocity(str(self.root), self.accuracy())
+        hist = retro.velocity_history(str(self.root))
+        self.assertEqual(len(hist), 1, "a sprint must not be counted twice")
+        self.assertEqual(hist[0]["measured"], 2)
+
+    def test_two_sprints_accumulate(self) -> None:
+        self.telemetry({"id": "BG0001", "type": "bug", "tokens": 50_000})
+        retro.record_velocity(str(self.root), self.accuracy())
+        other = BATCH_RETRO.replace("RETRO-9000", "RETRO-9001")
+        (self.root / "sdlc-studio" / "retros" / "RETRO9001-t.md").write_text(
+            other, encoding="utf-8")
+        retro.record_velocity(str(self.root), retro.accuracy(str(self.root), "RETRO9001"))
+        self.assertEqual([r["id"] for r in retro.velocity_history(str(self.root))],
+                         ["RETRO9000", "RETRO9001"])
+
+    def test_no_history_yet_is_an_empty_list_not_a_crash(self) -> None:
+        self.assertEqual(retro.velocity_history(str(self.root)), [])
+
 if __name__ == "__main__":
     unittest.main()

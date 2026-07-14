@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The retro now asks whether the estimates were any good (CR0258).** `retro.py accuracy` reports
+  the plan's token forecast against what telemetry measured, per unit and per batch, and `--write`
+  records it in the retro and appends the sprint's row to `retros/VELOCITY.md` - a committed history,
+  so the next plan can see how the estimator has actually performed instead of trusting its
+  constants. Two honesty rules are enforced in code: a unit with no telemetry is reported
+  **UNMEASURED** and excluded from both sides of the ratio (silence is not a measurement, and every
+  report states how many of the batch it speaks for), and nothing auto-recalibrates - the report
+  stops at reporting, because auto-fitting constants to a handful of units fits noise and dresses it
+  as evidence. `telemetry.latest_actuals()` reads the last **non-null** value per field, so the bare
+  close-record the loop appends after an instrumented one no longer erases the measurement.
+
+- **The human `Effort:` estimate now reaches the planner (CR0257).** `sprint.py` reads a unit's
+  declared `Effort:` (S/M/L) and uses it as the WSJF job size when the review seats have not scored
+  the unit, and as a complexity stand-in for the token forecast when the unit names no files - so a
+  Large CR with no `Affects` no longer forecasts the same flat floor as a Small one. The size chain
+  is seat score, then declared effort, then a neutral default; an unreadable value is treated as
+  undeclared, never guessed. A unit with real complexity is never inflated by its effort, so the
+  measured forecast model is untouched. Bugs can now carry an `Effort:` too (`file_finding.py
+  --effort`, and the bug template), because the fix's job size sizes the sprint whether the work
+  arrived as a CR or a bug.
+
 - **LL0025 - a narrow sample can make a variable look constant; widen the range before concluding.**
   Three measured units came in flat within 9% (42.7k-46.8k tokens) and a High bug was filed saying
   the metric did not track work. Two larger units then landed at 84k and 98k - it tracked work fine.

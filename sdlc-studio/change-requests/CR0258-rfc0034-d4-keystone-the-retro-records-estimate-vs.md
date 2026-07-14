@@ -1,6 +1,6 @@
 # CR-0258: RFC0034 D4 (keystone): the retro records estimate-vs-actual size and accumulates velocity
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** P2
 > **Type:** Feature
 > **Date:** 2026-07-14

@@ -8,7 +8,10 @@ Ordering is by priority/severity (Critical first); dependency-topological; and W
 files a unit will touch (its `Affects`, scored by complexity.py) breaks
 ties within a priority, so the smaller blast-radius job goes first. Complexity never
 overrides priority, and the order degrades to plain priority when no complexity is
-known. The plan also carries a complexity-weighted per-unit token budget.
+known. The WSJF job size is the review seat's estimate when the seats scored the unit,
+else the human `Effort:` (S/M/L) recorded on the artefact at filing, else a neutral
+default. The plan also carries a per-unit token budget, weighted by complexity, or by
+the declared effort when the unit names no files.
 
 The plan also EMITS the still-valid lessons digest (`lessons.plan_digest`): the lessons the
 last sprints paid for arrive inside the plan the agent reads at sprint start, rather than as a
@@ -63,8 +66,19 @@ PRIORITY_WEIGHT = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3,
 BASE_TOKEN_BUDGET = 50_000        # per-unit fixed floor - measured, holds
 TOKENS_PER_COGNITIVE = 600        # per point of blast-radius complexity - fitted, PROVISIONAL
 DEFAULT_UNKNOWN_SIZE = 3          # neutral WSJF denominator when neither the seat size nor
-                                  # the complexity seed resolves - unknown effort is never
+                                  # the declared effort resolves - unknown effort is never
                                   # treated as minimal (new-file work is often the biggest)
+# The human `Effort:` estimate (S/M/L), captured at filing, as a WSJF job size. It is the one
+# size a person actually recorded, so it beats the neutral default and loses only to a seat
+# score. M is deliberately the neutral default: declaring the middle changes nothing.
+EFFORT_SIZE = {"S": 1, "M": 3, "L": 8}
+EFFORT_ALIAS = {"SMALL": "S", "MEDIUM": "M", "LARGE": "L"}
+# The same estimate as a stand-in complexity seed for the TOKEN FORECAST, used only when a unit
+# declares no `Affects` (complexity 0) - otherwise a Large unit with no file list forecasts the
+# same flat floor as a Small one. Deliberately conservative, and bounded by the six measured
+# units the constants above were fitted to (complexity 0-52, actuals 42k-98k): S keeps the
+# measured floor, M sits mid-range, L near the top. A unit with real complexity is untouched.
+EFFORT_COMPLEXITY_PROXY = {"S": 0, "M": 25, "L": 50}
 
 
 def _weight(pri: str) -> int:
@@ -100,6 +114,32 @@ def _complexity_size(root: Path, text: str) -> int:
     except Exception as exc:  # noqa: BLE001 - WSJF must degrade to priority, never break planning
         sdlc_md.debug("sprint._complexity_size", exc)
         return 0
+
+
+def _effort_code(text: str) -> str | None:
+    """The declared `Effort:` estimate normalised to S/M/L, or None when absent or unreadable.
+
+    Reads the metadata field through the shared parser, so a CR's `**Effort:** M` (body) and a
+    bug's `> **Effort:** L` (header) are the same field. Tolerates a decorated value
+    (`M - two files`, `Large`); anything it cannot map is treated as undeclared, never guessed.
+    """
+    raw = sdlc_md.extract_field(text, "Effort")
+    if not raw or not raw.strip():
+        return None
+    tok = raw.strip().split()[0].strip("*_`:,;.()").upper()
+    tok = EFFORT_ALIAS.get(tok, tok)
+    return tok if tok in EFFORT_SIZE else None
+
+
+def _token_budget(complexity_seed: int, effort: str | None) -> int:
+    """One unit's token forecast: the measured fixed floor plus the blast-radius slope.
+
+    When the unit declares no `Affects` (complexity 0) the human effort estimate stands in as
+    the seed, so a Large unit no longer forecasts the same flat base as a Small one. A unit
+    that DOES resolve complexity keeps the measured model unchanged - effort never inflates it.
+    """
+    seed = complexity_seed or EFFORT_COMPLEXITY_PROXY.get(effort or "", 0)
+    return BASE_TOKEN_BUDGET + TOKENS_PER_COGNITIVE * seed
 
 
 def _dep_ids(value: str) -> set:
@@ -309,23 +349,28 @@ def _order_batch(root: Path, out: list[dict], deps: dict[str, set], order: str,
     if order == "wsjf":  # seat-scored WSJF when available, else priority+complexity
         seat_inputs = {} if skip_personas else _wsjf_inputs(root)
         for it in out:
-            seed = _complexity_size(root, Path(it["path"]).read_text(encoding="utf-8"))
+            text = Path(it["path"]).read_text(encoding="utf-8")
+            seed = _complexity_size(root, text)
+            effort = _effort_code(text)
             it["complexity"] = seed
-            it["token_budget"] = BASE_TOKEN_BUDGET + TOKENS_PER_COGNITIVE * seed
+            if effort:
+                it["effort"] = effort
+            it["token_budget"] = _token_budget(seed, effort)
             inp = seat_inputs.get(sdlc_md.norm_id(it["id"]))
+            # Size, in falling order of authority: the Engineering seat's estimate
+            # (wsjf-inputs `size`), else the human `Effort:` recorded on the artefact,
+            # else the declared neutral default. The complexity seed is blast-radius
+            # risk (tiebreak + token budget), never the size - a one-line fix in a
+            # complex file must not sink.
+            seat_size = (inp or {}).get("size")
+            if isinstance(seat_size, (int, float)) and seat_size > 0:
+                size = seat_size
+            elif effort:
+                size = EFFORT_SIZE[effort]
+            else:
+                size = DEFAULT_UNKNOWN_SIZE
+            it["size"] = size
             if inp:  # the review seats scored this unit (value / time-criticality / risk)
-                # Size = the Engineering seat's estimate (wsjf-inputs `size`),
-                # else the declared neutral default. The complexity seed is
-                # blast-radius risk (tiebreak + token budget), never the size.
-                seat_size = inp.get("size")
-                if isinstance(seat_size, (int, float)) and seat_size > 0:
-                    size = seat_size
-                else:
-                    # no seat size: the complexity seed is blast-radius RISK, not
-                    # effort - it stays the tiebreak + budget input, never the
-                    # denominator (a one-line fix in a complex file must not sink)
-                    size = DEFAULT_UNKNOWN_SIZE
-                it["size"] = size
                 it["value"] = inp.get("value", 0)
                 it["time_criticality"] = inp.get("time_criticality", 0)
                 it["risk_reduction"] = inp.get("risk_reduction", 0)
@@ -363,7 +408,8 @@ def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "pr
 
 def _token_forecast(root: Path, batch: list[dict]) -> dict:
     """The batch's token cost as a FORECAST - the plan's existing per-unit estimate
-    (`BASE_TOKEN_BUDGET` + `TOKENS_PER_COGNITIVE` x blast-radius complexity) summed. It is an
+    (`BASE_TOKEN_BUDGET` + `TOKENS_PER_COGNITIVE` x seed, where the seed is blast-radius
+    complexity, or the declared effort when the unit names no files) summed. It is an
     ESTIMATE and never a gate: a script cannot observe real token spend (see telemetry.py), so
     a token ceiling would depend on the actor self-reporting the budget meant to constrain it.
     The wall-clock / unit-count appetite is the breaker; this only informs the operator."""
@@ -372,15 +418,17 @@ def _token_forecast(root: Path, batch: list[dict]) -> dict:
     for it in batch:
         budget = it.get("token_budget")
         if budget is None:  # priority/manual order never stamped one - derive it here
+            text = Path(it["path"]).read_text(encoding="utf-8")
             seed = it.get("complexity")
             if seed is None:
-                seed = _complexity_size(root, Path(it["path"]).read_text(encoding="utf-8"))
-            budget = BASE_TOKEN_BUDGET + TOKENS_PER_COGNITIVE * seed
+                seed = _complexity_size(root, text)
+            budget = _token_budget(seed, _effort_code(text))
         per_unit[sdlc_md.norm_id(it["id"])] = budget
         total += budget
     return {"tokens": total, "per_unit": per_unit,
-            "basis": "plan per-unit estimate (base + complexity blast-radius); "
-                     "an ESTIMATE, never a gate - a script cannot observe token spend"}
+            "basis": "plan per-unit estimate (base + complexity blast-radius, or the declared "
+                     "effort when no files are named); an ESTIMATE, never a gate - a script "
+                     "cannot observe token spend"}
 
 
 DEFAULT_SEAT_STALE_DAYS = 7  # advisory window; seat judgement does not rot on a clock

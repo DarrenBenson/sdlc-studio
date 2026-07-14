@@ -176,8 +176,14 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
     if isinstance(f.get("options"), list):
         f = {**f, "options": [_md_safe(o) for o in f["options"]]}
     if type_ == "bug":
+        # Effort is the job SIZE of the fix (Severity is its urgency - a different axis, and the
+        # one a bug has always carried). Optional, because a bug is often filed by someone who
+        # cannot yet size it; declared, it sizes the unit in the sprint plan instead of the
+        # planner falling back to a neutral default.
+        effort = f"> **Effort:** {f['effort']}\n" if f.get("effort") else ""
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** {status or 'Open'}\n> **Severity:** {f['severity']}\n"
+                f"{effort}"
                 f"> **Created:** {today}\n{_stamp(f)}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
                 f"## Steps to Reproduce\n\n{f['steps']}\n\n"
@@ -359,7 +365,8 @@ def build_parser() -> argparse.ArgumentParser:
     f.add_argument("--fix", help="bug proposed fix")
     f.add_argument("--impact", help="cr: who this affects and what breaks (required for a cr)")
     f.add_argument("--effort", choices=("S", "M", "L"),
-                   help="cr: effort estimate (required for a cr)")
+                   help="job size of the work: required for a cr, optional for a bug "
+                        "(a bug's Severity is urgency, not size). Sizes the sprint plan.")
     f.add_argument("--ac", action="append", help="cr acceptance criterion (repeatable)")
     f.add_argument("--option", action="append", help="rfc design option (repeatable)")
     f.add_argument("--recommendation", help="rfc recommendation")

@@ -1135,5 +1135,162 @@ class PlanLessonsDigestTests(unittest.TestCase):
             self.assertNotIn("L-0001", text)  # closed lessons are not in force
 
 
+class EffortSizingTests(unittest.TestCase):
+    """The human `Effort:` S/M/L captured at filing is a real WSJF size input.
+
+    It was recorded on every CR and read by nothing: with no seat score and no `Affects`, WSJF
+    collapsed to plain priority and every unit forecast the same flat base. These tests assert
+    the BEHAVIOUR changes (size and forecast move with the estimate), never that the string
+    'effort' appears in the source - `rg -qi effort sprint.py` passed while the field was
+    entirely unread, which is exactly the false-green this replaces.
+    """
+
+    def _cr(self, root, num, effort=None, priority="Medium", affects=None):
+        d = root / "sdlc-studio" / "change-requests"
+        d.mkdir(parents=True, exist_ok=True)
+        body = f"# CR-{num:04d}: c\n\n> **Status:** Proposed\n> **Priority:** {priority}\n"
+        if affects:
+            body += f"> **Affects:** {affects}\n"
+        body += "\n## Impact\n\nSomething.\n"
+        if effort:
+            body += f"\n**Effort:** {effort}\n"
+        (d / f"CR{num:04d}-x.md").write_text(body, encoding="utf-8")
+
+    def _bug(self, root, num, effort=None, severity="Medium"):
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        body = f"# BG{num:04d}: b\n\n> **Status:** Open\n> **Severity:** {severity}\n"
+        if effort:
+            body += f"> **Effort:** {effort}\n"
+        (d / f"BG{num:04d}-x.md").write_text(body, encoding="utf-8")
+
+    def test_small_and_large_effort_produce_different_sizes_without_seats_or_affects(self) -> None:
+        # The headline gap: no seat score, no Affects. Today both units size identically.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self._cr(root, 1, effort="S")
+            self._cr(root, 2, effort="L")
+            by_id = {b["id"]: b for b in sp.select_batch(root, "cr", "Proposed", order="wsjf")}
+            self.assertLess(by_id["CR0001"]["size"], by_id["CR0002"]["size"])
+            self.assertEqual(by_id["CR0001"]["size"], sp.EFFORT_SIZE["S"])
+            self.assertEqual(by_id["CR0002"]["size"], sp.EFFORT_SIZE["L"])
+
+    def test_undeclared_effort_keeps_the_neutral_default(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self._cr(root, 1)
+            batch = sp.select_batch(root, "cr", "Proposed", order="wsjf")
+            self.assertEqual(batch[0]["size"], sp.DEFAULT_UNKNOWN_SIZE)
+            self.assertNotIn("effort", batch[0])
+
+    def test_seat_size_still_beats_the_declared_effort(self) -> None:
+        # The seats scored it: their estimate is the authority, effort is the fallback.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self._cr(root, 1, effort="S")
+            local = root / "sdlc-studio" / ".local"
+            local.mkdir(parents=True, exist_ok=True)
+            import json as _json
+            (local / "wsjf-inputs.json").write_text(_json.dumps({
+                "CR0001": {"value": 9, "time_criticality": 9, "risk_reduction": 9, "size": 9}}),
+                encoding="utf-8")
+            batch = sp.select_batch(root, "cr", "Proposed", order="wsjf")
+            self.assertEqual(batch[0]["size"], 9)          # seat estimate, not EFFORT_SIZE['S']
+            self.assertEqual(batch[0]["wsjf"], 3.0)
+
+    def test_effort_divides_the_wsjf_score_when_seats_scored_no_size(self) -> None:
+        # Seats scored value/urgency/risk but left size out: the human estimate fills it.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self._cr(root, 1, effort="L")
+            local = root / "sdlc-studio" / ".local"
+            local.mkdir(parents=True, exist_ok=True)
+            import json as _json
+            (local / "wsjf-inputs.json").write_text(_json.dumps({
+                "CR0001": {"value": 9, "time_criticality": 9, "risk_reduction": 9}}),
+                encoding="utf-8")
+            batch = sp.select_batch(root, "cr", "Proposed", order="wsjf")
+            self.assertEqual(batch[0]["size"], sp.EFFORT_SIZE["L"])
+            self.assertEqual(batch[0]["wsjf"], round(27 / sp.EFFORT_SIZE["L"], 3))
+
+    def test_a_bug_can_be_sized_too(self) -> None:
+        # A bug's Severity is urgency; its Effort is size. Until now it had no size at all.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self._bug(root, 1, effort="S")
+            self._bug(root, 2, effort="L")
+            by_id = {b["id"]: b for b in sp.select_batch(root, "bug", "Open", order="wsjf")}
+            self.assertEqual(by_id["BG0001"]["size"], sp.EFFORT_SIZE["S"])
+            self.assertEqual(by_id["BG0002"]["size"], sp.EFFORT_SIZE["L"])
+
+    def test_decorated_and_worded_values_parse_and_junk_is_undeclared(self) -> None:
+        sp = _load()
+        self.assertEqual(sp._effort_code("**Effort:** M - two files\n"), "M")
+        self.assertEqual(sp._effort_code("> **Effort:** large\n"), "L")
+        self.assertIsNone(sp._effort_code("> **Effort:** unknown\n"))
+        self.assertIsNone(sp._effort_code("# no field here\n"))
+        self.assertIsNone(sp._effort_code("an agent under effort pressure skips it\n"))
+
+
+class EffortForecastTests(unittest.TestCase):
+    """The token forecast reflects the declared effort when no `Affects` is declared.
+
+    A unit with no file list forecast the flat `BASE_TOKEN_BUDGET` whatever its size, which is
+    how a batch of ten paperwork-light units forecast exactly 10 x 50,000.
+    """
+
+    def _cr(self, root, num, effort=None, affects=None):
+        d = root / "sdlc-studio" / "change-requests"
+        d.mkdir(parents=True, exist_ok=True)
+        body = f"# CR-{num:04d}: c\n\n> **Status:** Proposed\n> **Priority:** Medium\n"
+        if affects:
+            body += f"> **Affects:** {affects}\n"
+        if effort:
+            body += f"\n**Effort:** {effort}\n"
+        (d / f"CR{num:04d}-x.md").write_text(body, encoding="utf-8")
+
+    def test_large_forecasts_more_than_small_when_no_files_are_named(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self._cr(root, 1, effort="S")
+            self._cr(root, 2, effort="L")
+            fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]["per_unit"]
+            self.assertLess(fc["CR0001"], fc["CR0002"])
+            self.assertEqual(fc["CR0001"], sp.BASE_TOKEN_BUDGET)  # S keeps the measured floor
+
+    def test_effort_reaches_the_forecast_in_priority_order_too(self) -> None:
+        # priority/manual order never stamps a token_budget - the forecast derives it, and must
+        # read the effort there as well, or the same batch forecasts differently per order mode.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self._cr(root, 1, effort="L")
+            pri = sp.build_plan(root, "cr", "Proposed", order="priority")["token_forecast"]
+            wsjf = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
+            self.assertEqual(pri["tokens"], wsjf["tokens"])
+            self.assertGreater(pri["tokens"], sp.BASE_TOKEN_BUDGET)
+
+    def test_declared_complexity_is_never_inflated_by_effort(self) -> None:
+        # The constants are fitted to measured actuals: a unit whose files resolve keeps the
+        # measured model exactly. Effort only fills the gap where complexity is absent.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            (root / "real.py").write_text(
+                "def f(x):\n    if x:\n        return 1\n    return 0\n", encoding="utf-8")
+            self._cr(root, 1, effort="L", affects="real.py")
+            batch = sp.select_batch(root, "cr", "Proposed", order="wsjf")
+            cx = batch[0]["complexity"]
+            self.assertGreater(cx, 0)
+            self.assertEqual(batch[0]["token_budget"],
+                             sp.BASE_TOKEN_BUDGET + sp.TOKENS_PER_COGNITIVE * cx)
+
+
 if __name__ == "__main__":
     unittest.main()

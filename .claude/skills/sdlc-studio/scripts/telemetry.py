@@ -99,6 +99,45 @@ def read_all(repo_root: Path | str) -> list[dict]:
     return out
 
 
+#: The per-unit fields an actual is made of. `type` and `model` are context, not
+#: measurements; the rest are what a run actually cost.
+ACTUAL_FIELDS = ("type", "model", "tokens", "wall_time_s", "iterations", "complexity",
+                 "churn", "critic_verdict")
+
+
+def latest_actuals(records: list[dict]) -> dict[str, dict]:
+    """Per-unit measured actuals, keyed by normalised id: the LAST non-null value seen for
+    each field.
+
+    Last-non-null, not last-record. The loop appends a second, bare record on close
+    (`{"id": "BG0126", "type": "bug"}`), so taking the last record wholesale would erase a
+    measurement that was genuinely taken. A field no record ever carried stays ABSENT - it is
+    never defaulted to 0, because an unmeasured unit must be reportable as unmeasured rather
+    than as a unit that cost nothing.
+
+    Event records (plan-review) are not unit closes and are excluded.
+    """
+    out: dict[str, dict] = {}
+    for rec in records:
+        if rec.get("event"):
+            continue
+        rid = sdlc_md.norm_id(str(rec.get("id") or "").strip())
+        if not rid:
+            continue
+        bucket = out.setdefault(rid, {})
+        for field in ACTUAL_FIELDS:
+            val = rec.get(field)
+            if val is not None:
+                bucket[field] = val
+    return out
+
+
+def actuals(repo_root: Path | str) -> dict[str, dict]:
+    """`latest_actuals` over the project's telemetry log. The single read the retro's
+    estimate-vs-actual report goes through."""
+    return latest_actuals(read_all(repo_root))
+
+
 def _int(v):
     try:
         return int(v)

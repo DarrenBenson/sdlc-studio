@@ -1,7 +1,7 @@
 # CR-0257: Sprint sizing ignores the captured Effort estimate, and bugs carry no size at all
 
 > **Provenance:** RFC0034 (estimate-side workstream)
-> **Status:** In Progress
+> **Status:** Complete
 > **Priority:** P3
 > **Type:** Improvement
 > **Date:** 2026-07-14

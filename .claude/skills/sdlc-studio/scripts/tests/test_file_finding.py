@@ -551,5 +551,43 @@ class MetadataInjectionRefusalTests(unittest.TestCase):
             self.assertTrue(res["indexed"])
 
 
+class BugEffortTests(unittest.TestCase):
+    """A bug can declare a job SIZE. It only ever carried Severity, which is urgency, so a bug
+    could not be sized even in principle and always planned at the neutral default."""
+
+    FIELDS = {"severity": "High", "summary": "s", "steps": "x", "fix": "y"}
+
+    def test_declared_effort_lands_in_the_filed_bug(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            res = ff.file_finding(root, "bug", "a defect", {**self.FIELDS, "effort": "L"})
+            body = Path(res["path"]).read_text(encoding="utf-8")
+            self.assertIn("> **Effort:** L", body)
+            self.assertEqual(sdlc_md.extract_field(body, "Effort"), "L")
+
+    def test_effort_is_optional_and_absent_when_not_declared(self) -> None:
+        # A reporter who cannot size the fix is not blocked from filing it.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            res = ff.file_finding(root, "bug", "a defect", dict(self.FIELDS))
+            body = Path(res["path"]).read_text(encoding="utf-8")
+            self.assertNotIn("**Effort:**", body)
+            self.assertIsNone(sdlc_md.extract_field(body, "Effort"))
+
+    def test_cli_accepts_effort_for_a_bug(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            rc = ff.main(["file", "--type", "bug", "--title", "a defect", "--severity", "High",
+                          "--summary", "s", "--steps", "x", "--fix", "y", "--effort", "S",
+                          "--root", str(root)])
+            self.assertEqual(rc, 0)
+            filed = next((root / "sdlc-studio" / "bugs").glob("BG0001-*.md"))
+            self.assertEqual(
+                sdlc_md.extract_field(filed.read_text(encoding="utf-8"), "Effort"), "S")
+
+
 if __name__ == "__main__":
     unittest.main()

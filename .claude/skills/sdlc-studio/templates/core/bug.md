@@ -9,6 +9,7 @@ Related: help/bug.md, reference-bug.md
 > **Status:** {{status}}
 > **Severity:** {{severity}}
 > **Priority:** {{priority}}
+> **Effort:** {{S|M|L - job size of the fix, not its urgency; sizes the sprint plan}}
 > **Reporter:** {{reporter}}
 > **Assignee:** {{assignee}}
 > **Created:** {{created_date}}

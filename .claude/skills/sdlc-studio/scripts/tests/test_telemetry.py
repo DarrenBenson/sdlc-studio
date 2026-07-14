@@ -200,5 +200,34 @@ class PlanReviewEventTests(unittest.TestCase):
             self.assertEqual(rec["verdict"], "REJECT")
 
 
+class ActualsTests(unittest.TestCase):
+    """The measured actuals a retro's estimate-vs-actual report reads."""
+
+    def test_the_last_non_null_value_wins_not_the_last_record(self) -> None:
+        """The loop appends a bare close record after the instrumented one. Taking the last
+        record wholesale would erase a measurement that was genuinely taken."""
+        got = tel.latest_actuals([
+            {"id": "BG0126", "type": "bug", "tokens": 46792, "wall_time_s": 272},
+            {"id": "BG0126", "type": "bug"},
+        ])
+        self.assertEqual(got["BG0126"]["tokens"], 46792)
+        self.assertEqual(got["BG0126"]["wall_time_s"], 272)
+
+    def test_a_field_no_record_carried_is_absent_not_zero(self) -> None:
+        """An unmeasured unit must be reportable as unmeasured. A fabricated 0 would read as
+        a unit that cost nothing."""
+        got = tel.latest_actuals([{"id": "CR0001", "type": "cr", "wall_time_s": 10}])
+        self.assertNotIn("tokens", got["CR0001"])
+
+    def test_plan_review_events_are_not_unit_actuals(self) -> None:
+        got = tel.latest_actuals([{"event": "plan-review", "id": "CR0001", "verdict": "APPROVE"}])
+        self.assertEqual(got, {})
+
+    def test_actuals_reads_the_projects_log(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            tel.record(d, {"id": "CR0002", "type": "cr", "tokens": 1234})
+            self.assertEqual(tel.actuals(d)["CR0002"]["tokens"], 1234)
+
+
 if __name__ == "__main__":
     unittest.main()
