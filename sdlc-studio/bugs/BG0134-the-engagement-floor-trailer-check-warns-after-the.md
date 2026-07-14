@@ -1,11 +1,12 @@
 # BG0134: The engagement-floor trailer check warns after the commit has already landed, so it fails open
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Effort:** S
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Affects:** .githooks/commit-msg
+> **Verification depth:** functional - the hook was driven the way git drives it (message file as $1) across all four cases: a multi-id subject with no `Refs:` trailer exits 1 and prints pasteable trailer lines; the same subject with trailers exits 0; a single-id subject exits 0; and a `Revert` of a multi-id commit exits 0. 16 behavioural tests, and the load-bearing one fails against the old hook.
 > **Raised-by:** sdlc-studio; agent; v1
 
 ## Summary

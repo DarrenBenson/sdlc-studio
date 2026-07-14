@@ -92,5 +92,79 @@ class RootDocsTests(unittest.TestCase):
             self.assertIn("docs/missing.md", broken[0])
 
 
+class IndexLinkTests(unittest.TestCase):
+    """BG0135: an `_index.md` row linking an artefact file that does not exist was
+    invisible here - the checker validated ANCHORS, and never scanned the workspace at
+    all. A markdown link to a non-existent file must fail the guard, so a phantom row
+    cannot survive the gate.
+    """
+
+    def _index(self, root: Path, rel: str, rows: str) -> None:
+        _write(root, rel, "# Index\n\n| ID | Title | Status |\n| --- | --- | --- |\n" + rows)
+
+    def test_row_linking_a_missing_file_is_broken(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._index(root, "sdlc-studio/change-requests/_index.md",
+                        "| [CR-0261](CR0261-probe.md) | Probe | Proposed |\n")
+            broken = check_links.check_index_links(root / "sdlc-studio")
+            self.assertEqual(len(broken), 1)
+            self.assertIn("CR0261-probe.md", broken[0])
+
+    def test_row_linking_a_real_file_resolves(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._index(root, "sdlc-studio/change-requests/_index.md",
+                        "| [CR-0261](CR0261-probe.md) | Probe | Proposed |\n")
+            _write(root, "sdlc-studio/change-requests/CR0261-probe.md", "# CR\n")
+            self.assertEqual(check_links.check_index_links(root / "sdlc-studio"), [])
+
+    def test_archive_subindex_row_resolves_against_the_type_dir(self) -> None:
+        # archive.py moves ROWS to `<type>/archive/<release>/`, leaving the FILES in the
+        # type dir, so a sub-index row's bare filename is read from the type dir too.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "sdlc-studio/bugs/archive/v1.0.0/bug.md",
+                   "| ID | Status |\n| --- | --- |\n| [BG0001](BG0001-x.md) | Fixed |\n")
+            _write(root, "sdlc-studio/bugs/BG0001-x.md", "# BG0001\n")
+            self.assertEqual(check_links.check_index_links(root / "sdlc-studio"), [])
+
+    def test_archive_subindex_row_with_no_file_anywhere_is_broken(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "sdlc-studio/bugs/archive/v1.0.0/bug.md",
+                   "| ID | Status |\n| --- | --- |\n| [BG0002](BG0002-gone.md) | Fixed |\n")
+            broken = check_links.check_index_links(root / "sdlc-studio")
+            self.assertEqual(len(broken), 1)
+            self.assertIn("BG0002-gone.md", broken[0])
+
+    def test_main_exits_non_zero_on_a_dead_index_link(self) -> None:
+        # the public path: the guard must FAIL the gate, not just print a note
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, ".claude/skills/sdlc-studio/SKILL.md", "# Skill\n")
+            self._index(root, "sdlc-studio/change-requests/_index.md",
+                        "| [CR-0261](CR0261-probe.md) | Probe | Proposed |\n")
+            rc = check_links.main(["--root", str(root / ".claude/skills/sdlc-studio"),
+                                   "--repo-root", str(root)])
+            self.assertEqual(rc, 1)
+
+    def test_main_passes_when_every_index_link_resolves(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, ".claude/skills/sdlc-studio/SKILL.md", "# Skill\n")
+            self._index(root, "sdlc-studio/change-requests/_index.md",
+                        "| [CR-0261](CR0261-probe.md) | Probe | Proposed |\n")
+            _write(root, "sdlc-studio/change-requests/CR0261-probe.md", "# CR\n")
+            rc = check_links.main(["--root", str(root / ".claude/skills/sdlc-studio"),
+                                   "--repo-root", str(root)])
+            self.assertEqual(rc, 0)
+
+    def test_missing_workspace_is_not_a_failure(self) -> None:
+        # a consuming repo without a dogfooded workspace must not be failed for it
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(check_links.check_index_links(Path(d) / "sdlc-studio"), [])
+
+
 if __name__ == "__main__":
     unittest.main()

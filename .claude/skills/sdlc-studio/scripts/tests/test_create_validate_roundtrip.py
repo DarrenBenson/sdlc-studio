@@ -68,13 +68,17 @@ CONTENT: dict[str, dict] = {
               "acs": ["the CLI exits 0 for a known id"],
               "verify": ["pytest -k known_id"],
               "target": "functional"},
+    # A bug and a CR also carry their GROOMING - the files they touch and the job size - because
+    # `sprint plan` refuses a unit that declares neither, so a creator that would mint one is
+    # minting unplannable work. Both creation paths demand them (BG0136).
     "bug": {"severity": "Medium", "summary": "the id parser drops a trailing dash",
-            "steps": "run the parser over a dash-suffixed id", "fix": "strip the trailing dash"},
+            "steps": "run the parser over a dash-suffixed id", "fix": "strip the trailing dash",
+            "affects": "src/id_parser.py, src/ids.py", "effort": "S"},
     "cr": {"priority": "Medium", "ctype": "Improvement",
            "summary": "carry the effort estimate in the skeleton",
            "acs": ["the skeleton carries an impact statement"],
            "impact": "every CR filed today fails its own validator on first check",
-           "effort": "S"},
+           "effort": "S", "affects": "src/skeleton.py"},
     "rfc": {"summary": "how ids should be minted",
             "options": ["A - stay sequential", "B - mint a ULID"],
             "recommendation": "B, once the aliases are in place"},
@@ -194,6 +198,12 @@ class ContentRoundTripTests(unittest.TestCase):
         if fields.get("effort"):
             self.assertIn(f"**Effort:** {fields['effort']}", text,
                           f"{where}: --effort never reached the file")
+        if fields.get("affects"):
+            # Not just present as prose: the planner's own parser must READ it back as the
+            # files it declares, or the unit is ungroomed however good the line looks.
+            self.assertEqual(sdlc_md.affects_files(text),
+                             [p.strip() for p in fields["affects"].split(",")],
+                             f"{where}: --affects never reached the file as a readable field")
 
     def _check_file_finding(self, type_: str, era: str) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -219,6 +229,13 @@ class ContentRoundTripTests(unittest.TestCase):
             self.assertEqual(errs, [], f"consolidation CR: {_fmt(errs)}")
 
 
+# The grooming a bug or a CR may never be born without, whatever else is left to the agent.
+# A scaffold defers the PROSE (summary, steps, fix) to whoever fills it in; it does not get to
+# defer the two fields that decide whether the unit can be planned at all - the author knows
+# which files they are about to touch, and nobody knows it better at plan time.
+GROOM = {"affects": "src/thing.py", "effort": "S"}
+
+
 class ScaffoldRoundTripTests(unittest.TestCase):
     """A content-less scaffold may report unfilled CONTENT, never a creator-owned defect."""
 
@@ -231,6 +248,8 @@ class ScaffoldRoundTripTests(unittest.TestCase):
                         _workspace(root, era)
                         fields = ({"epic": artifact.new(root, "epic", "parent")["id"]}
                                   if type_ == "story" else {})
+                        if type_ in ("bug", "cr"):
+                            fields.update(GROOM)  # prose may be deferred; grooming may not
                         res = artifact.new(root, type_, f"a bare {type_}", fields)
                         owned = [v for v in _errors(root, Path(res["path"]), type_)
                                  if v["rule"] in CREATOR_RULES]
@@ -249,7 +268,7 @@ class ScaffoldRoundTripTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _workspace(root, "v3")
-            res = artifact.new(root, "bug", "unattributed", {"severity": "Medium"})
+            res = artifact.new(root, "bug", "unattributed", {"severity": "Medium", **GROOM})
             auth = sdlc_md.parse_authorship(Path(res["path"]).read_text(encoding="utf-8"))
             self.assertIsNotNone(auth)
             self.assertEqual(auth["type"], "agent")

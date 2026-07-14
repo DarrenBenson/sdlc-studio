@@ -108,6 +108,7 @@ File with the deterministic filer, which refuses a hollow artifact:
 python3 "$CLAUDE_SKILL_DIR/scripts/file_finding.py" file --type cr \
   --title "..." --priority High --ctype Improvement --summary "..." \
   --impact "who this affects and what breaks" --effort M \
+  --affects "src/one.py, src/two.py" \
   --ac "concrete, checkable criterion" --ac "..."
 ```
 

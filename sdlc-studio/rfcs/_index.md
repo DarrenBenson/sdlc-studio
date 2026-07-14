@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 0 |
+| Draft | 2 |
 | In Review | 0 |
 | Accepted | 31 |
 | Superseded | 0 |
 | Withdrawn | 3 |
-| **Total** | **34** |
+| **Total** | **36** |
 
 ## All RFCs
 
@@ -51,3 +51,5 @@
 | [RFC-0032](RFC0032-close-the-learning-loop-retros-and-lessons-must.md) | Close the learning loop: retros and lessons must drive review, audit and the backlog | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0033](RFC0033-one-weakness-hunt-one-name-reconcile-review-generate.md) | One weakness-hunt, one name: reconcile review generate, the adversarial audit, and the audit collision | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0034](RFC0034-sprint-sizing-velocity-and-estimate-calibration-close-the.md) | Sprint sizing, velocity and estimate calibration: close the estimate -> deliver -> recalibrate loop | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
+| [RFC-0035](RFC0035-the-sprint-report-what-a-sprint-delivered-what.md) | The sprint report: what a sprint delivered, what it cost, and whether the model choice was right | Medium | Draft | sdlc-studio | 2026-07-14 | -- |
+| [RFC-0036](RFC0036-running-several-sprints-unattended-a-rolling-policy-not.md) | Running several sprints unattended: a rolling policy, not a queue of frozen plans | Medium | Draft | sdlc-studio | 2026-07-14 | -- |

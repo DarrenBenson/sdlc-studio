@@ -68,8 +68,8 @@ any of them is an error. For a mechanical task, reach for the script first
 
 | Doing... | Run |
 | --- | --- |
-| Create an artifact (bug/CR/story/epic/RFC) | `scripts/artifact.py new --type bug --title "..."` |
-| File a finding as a Bug/CR/RFC | `scripts/file_finding.py file --type bug --title "..." --summary "..."` |
+| Create an artifact (bug/CR/story/epic/RFC) | `scripts/artifact.py new --type bug --title "..." --affects "a.py, b.py" --effort M` |
+| File a finding as a Bug/CR/RFC | `scripts/file_finding.py file --type bug --title "..." --summary "..." --affects "a.py" --effort M` |
 | Detect, then fix, index/status drift | `scripts/reconcile.py detect` then `apply` |
 | Diagnose structure or status-vocab errors | `scripts/validate.py check` |
 | Change a status (+ index/epic cascade) | `scripts/transition.py set --id CR0001 --status Approved` |

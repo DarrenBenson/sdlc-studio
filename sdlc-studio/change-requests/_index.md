@@ -9,12 +9,12 @@
 | Proposed | 4 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 250 |
+| Complete | 251 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 6 |
 | Blocked | 0 |
-| **Total** | **260** |
+| **Total** | **261** |
 
 ## All Changes
 
@@ -73,7 +73,7 @@
 | [CR-0249](CR0249-derive-per-type-status-vocab-from-the-single.md) | Derive per-type status vocab from the single source instead of triplicating it | Complete | P3 | Improvement | 2026-07-14 | -- |
 | [CR-0250](CR0250-security-hardening-default-document-the-ac-verifier-http.md) | Security hardening: default-document the AC-verifier http host allowlist and the rolling-install checksum | Complete | P3 | Improvement | 2026-07-14 | -- |
 | [CR-0251](CR0251-verify-ac-run-the-natural-file-flag-does.md) | verify_ac run: the natural --file flag does not exist (friction: it is --story) | Complete | P4 | Improvement | 2026-07-14 | -- |
-| [CR-0252](CR0252-refresh-prd-trd-tsd-to-the-v4-feature.md) | Refresh PRD/TRD/TSD to the v4 feature set (specs are self-declared v2.0.0 against a v4.1.0 product) | Proposed | P1 | Improvement | 2026-07-14 | -- |
+| [CR-0252](CR0252-refresh-prd-trd-tsd-to-the-v4-feature.md) | Refresh PRD/TRD/TSD to the v4 feature set (specs are self-declared v2.0.0 against a v4.1.0 product) | Complete | P1 | Improvement | 2026-07-14 | -- |
 | [CR-0253](CR0253-the-sprint-close-review-is-not-gated-make.md) | The sprint-close review is not gated - make review currency a hard gate like the retro | Complete | P1 | Improvement | 2026-07-14 | -- |
 | [CR-0254](CR0254-rfc0033-d1-rename-the-deterministic-audit-scripts-to.md) | RFC0033 D1: rename the deterministic audit scripts to free the audit stem | Proposed | P2 | Improvement | 2026-07-14 | -- |
 | [CR-0255](CR0255-rfc0033-d2-d4-d5-build-the-discoverable-audit.md) | RFC0033 D2/D4/D5: build the discoverable audit command (RFC0002's accepted, unshipped command) | Proposed | P2 | Feature | 2026-07-14 | -- |
@@ -82,6 +82,7 @@
 | [CR-0258](CR0258-rfc0034-d4-keystone-the-retro-records-estimate-vs.md) | RFC0034 D4 (keystone): the retro records estimate-vs-actual size and accumulates velocity | Complete | P2 | Feature | 2026-07-14 | -- |
 | [CR-0259](CR0259-rfc0034-d3-a-sprint-capacity-budget-in-tokens.md) | RFC0034 D3: a sprint capacity budget in tokens/wall-clock, wired to CR0225 appetite | Complete | P3 | Feature | 2026-07-14 | -- |
 | [CR-0260](CR0260-a-breakdown-step-that-makes-a-backlog-plannable.md) | A breakdown step that makes a backlog plannable: Affects, size (bugs too), dependencies, shared-file clusters | Complete | P2 | Feature | 2026-07-14 | -- |
+| [CR-0261](CR0261-record-which-model-delivered-each-unit-on-the.md) | Record which model delivered each unit, on the artefact and in the committed history | Proposed | P2 | Feature | 2026-07-14 | -- |
 
 ## Archived Releases
 

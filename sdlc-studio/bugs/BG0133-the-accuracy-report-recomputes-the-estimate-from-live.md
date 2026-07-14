@@ -1,11 +1,12 @@
 # BG0133: The accuracy report recomputes the estimate from live constants, so it cannot falsify the estimator
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Effort:** M
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint.py
+> **Verification depth:** functional - the defect was reproduced and the fix proven through the public API: both constants were DOUBLED in memory (base 50,000 -> 100,000; tpc 600 -> 1,200) and every recorded estimate stayed put (RETRO0024 1,285,000; RETRO0025 352,600). Before the fix these numbers were re-derived and moved with the constants. RETRO0024's true 5.24x miss on BG0126 is restored, and the planner's Calibration line now reports the OUT-OF-SAMPLE 0.55x with the in-sample row excluded, where it previously quoted the in-sample 1.09x as evidence.
 > **Raised-by:** sdlc-studio; agent; v1
 
 ## Summary

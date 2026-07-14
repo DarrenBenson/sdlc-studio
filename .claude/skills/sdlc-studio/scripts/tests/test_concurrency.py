@@ -191,7 +191,8 @@ class ConcurrentAllocationTests(unittest.TestCase):
 
             def worker(i: int) -> None:
                 try:
-                    r = artifact.new(repo, "bug", f"defect number {i}")
+                    r = artifact.new(repo, "bug", f"defect number {i}",
+                                     {"affects": "src/thing.py", "effort": "S"})
                     with lock:
                         ids.append(r["id"])
                 except Exception as e:  # noqa: BLE001 - collect for the assertion
@@ -221,7 +222,8 @@ class ConcurrentAllocationTests(unittest.TestCase):
                 try:
                     r = file_finding.file_finding(
                         repo, "bug", f"finding {i}",
-                        {"severity": "Medium", "summary": "s", "steps": "r", "fix": "f"})
+                        {"severity": "Medium", "summary": "s", "steps": "r", "fix": "f",
+                         "affects": "src/thing.py", "effort": "S"})
                     with lock:
                         ids.append(r["id"])
                 except Exception as e:  # noqa: BLE001

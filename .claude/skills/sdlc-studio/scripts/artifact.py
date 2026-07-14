@@ -193,6 +193,10 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
     # supplies it); sdlc-studio never allocates it. Absent otherwise.
     if str(f.get("tranche") or "").strip():
         head += f"> **Tranche:** {str(f['tranche']).strip()}\n"
+    # The files this unit will touch, in the ONE shape the planner parses - rendered by the same
+    # writer the finding filer uses, so the two creation paths cannot disagree about what the
+    # field looks like. Accepted for every type; DEMANDED of a bug and a CR (`check_groomed`).
+    head += file_finding._affects_line(f)
     # The Author cell names the same authorship of record stamped above - never a literal, and
     # a name rather than the typed triple (which is `Raised-by`'s job). One shared row writer
     # with the filer, so both escape a `|` in a name instead of shifting the columns.
@@ -229,7 +233,11 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
                 "\n\n## Open Decisions\n\n"
                 "| # | Decision | Status |\n| --- | --- | --- |\n| D1 | {{decision}} | Open |\n" + rev)
     if type_ == "bug":
-        return (head + f"> **Severity:** {f.get('severity', 'Medium')}\n\n"
+        # Effort is the job SIZE of the fix; Severity is its urgency. Two axes, and the planner
+        # sizes on the first: a bug created without one is a unit `sprint plan` refuses. `--effort`
+        # was accepted here and silently dropped - the CR body wrote it, the bug body never did.
+        effort = f"> **Effort:** {f['effort']}\n" if str(f.get("effort") or "").strip() else ""
+        return (head + f"> **Severity:** {f.get('severity', 'Medium')}\n" + effort + "\n"
                 "## Summary\n\n" + _text(f, "summary", "{{symptom}}") +
                 "\n\n## Steps to Reproduce\n\n" + _text(f, "steps", "{{steps}}") +
                 "\n\n## Proposed Fix\n\n" + _text(f, "fix", "{{fix}}") + "\n" + rev)
@@ -592,6 +600,13 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
     # CR/bug acceptance criterion means (nothing executes it - only a story's Verify line runs).
     file_finding.check_prose_acs(type_, f)
     f["date"] = f.get("date") or date.today().isoformat()
+    # A bug or a CR created here is a unit `sprint plan` will be asked to plan, and this is a
+    # documented create path - not a side door. So it answers to the SAME grooming demand as the
+    # finding filer, from the same authority: the body about to be written is judged by the
+    # planner's own `breakdown` predicate, and refused here if the planner would refuse it there.
+    if type_ in file_finding.GROOMED_TYPES:
+        preview = _select_render(root, type_, f.get("template"))
+        file_finding.check_groomed(root, type_, preview(type_, "PREVIEW", title, f["date"], f))
     if type_ == "story":
         if not f.get("epic"):
             # Lite profile has no epic layer: a story sits directly under the PRD. Every
@@ -681,10 +696,15 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
         raise ValueError("batch is empty")
     # Validate the whole batch BEFORE writing anything (atomic) - a story wired to a
     # missing epic is an orphan; a colliding id would corrupt the run.
+    groom_preview = (_select_render(root, type_, template)
+                     if type_ in file_finding.GROOMED_TYPES else None)
     for i, it in enumerate(items, 1):
         try:  # an injected line in item N aborts the batch here, before any id is reserved
             sdlc_md.check_creator_fields(it)
             file_finding.check_prose_acs(type_, it)  # ... as does a pseudo-`Verify:` criterion
+            if groom_preview is not None:  # ... as does a bug/CR the planner would refuse to plan
+                file_finding.check_groomed(root, type_, groom_preview(
+                    type_, "PREVIEW", str(it.get("title") or ""), today, {**it, "date": today}))
         except ValueError as exc:
             raise ValueError(f"batch item {i}: {exc}") from exc
     if type_ == "story":
@@ -887,6 +907,7 @@ def cmd_new(args: argparse.Namespace) -> int:
                            "template": args.template, "persona": args.persona,
                            "summary": args.summary, "steps": args.steps, "fix": args.fix,
                            "impact": args.impact, "effort": args.effort,
+                           "affects": args.affects,
                            "acs": args.ac, "verify": args.verify, "target": args.target,
                            "options": args.option,
                            "recommendation": args.recommendation,
@@ -1003,7 +1024,14 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--steps", help="bug: steps to reproduce (the evidence a bug must carry)")
     n.add_argument("--fix", help="bug: proposed fix")
     n.add_argument("--impact", help="cr: who this affects and what breaks")
-    n.add_argument("--effort", choices=("S", "M", "L"), help="cr: effort estimate")
+    n.add_argument("--effort", choices=("S", "M", "L"),
+                   help="the job SIZE of the work (not its urgency). Required for a bug and a "
+                        "cr: `sprint plan` refuses to plan a unit nobody sized")
+    n.add_argument("--affects",
+                   help="comma-separated files this unit will touch, written as the `Affects` "
+                        "metadata line the planner reads. Required for a bug and a cr: "
+                        "`sprint plan` refuses a unit that names no files - it cannot size one, "
+                        "nor see two units colliding on the same file")
     n.add_argument("--ac", action="append", help="story/cr acceptance criterion (repeatable)")
     n.add_argument("--verify", action="append",
                    help="story: the executable check for the AC in the same position "

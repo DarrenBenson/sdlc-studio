@@ -140,7 +140,10 @@ class DriftTests(unittest.TestCase):
             kinds = {(x["kind"], x["id"]) for x in result["drift"]}
             self.assertIn(("status-mismatch", "US0001"), kinds)  # Done vs Draft
             self.assertIn(("missing-row", "US0002"), kinds)       # file, no row
-            self.assertIn(("orphan-row", "US0099"), kinds)        # row, no file
+            # US0099's row LINKS US0099-ghost.md, which does not exist: still a phantom
+            # row with no file, now diagnosed precisely (BG0135) - it names the dead link
+            # rather than inferring the absence from the row's status.
+            self.assertIn(("dead-row-link", "US0099"), kinds)     # row, no file
             self.assertTrue(any(k[0] == "count-mismatch" for k in kinds))
 
     def test_clean_when_index_matches(self) -> None:
@@ -283,15 +286,17 @@ class ApplyTests(unittest.TestCase):
 
     def test_apply_appends_missing_but_never_removes_orphans(self) -> None:
         # missing-row is now mechanically applied (header-driven append);
-        # orphan-row stays report-only - removing history is never mechanical
+        # a phantom row stays report-only - removing history is never mechanical
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _fixture(root)
             res = reconcile.apply_type("story", root)
             self.assertEqual(res["appended"], ["US0002"])
             kinds = {dd["kind"] for dd in reconcile.detect_type("story", root)["drift"]}
-            self.assertNotIn("missing-row", kinds)  # US0002 appended
-            self.assertIn("orphan-row", kinds)       # US0099 not removed
+            self.assertNotIn("missing-row", kinds)   # US0002 appended
+            self.assertIn("dead-row-link", kinds)    # US0099 not removed, still reported
+            self.assertIn("US0099", (root / "sdlc-studio" / "stories" / "_index.md")
+                          .read_text(encoding="utf-8"))
 
 
 class NormalisationTests(unittest.TestCase):
@@ -1363,6 +1368,9 @@ class MissingRowAppendTests(unittest.TestCase):
             self.assertNotIn("CR0002", text)                 # nothing guessed in
 
     def test_orphan_rows_stay_report_only(self):
+        # the row LINKS CR0099-gone.md, so the phantom is diagnosed as a dead-row-link
+        # (BG0135). The invariant is unchanged: apply never removes it, detect always
+        # reports it - only an explicit --prune-orphans may cut it.
         orphan = self.BASE + "| [CR-0099](CR0099-gone.md) | gone | Complete |\n"
         with tempfile.TemporaryDirectory() as d:
             repo = self._repo(d, orphan)
@@ -1371,7 +1379,7 @@ class MissingRowAppendTests(unittest.TestCase):
                 encoding="utf-8")
             self.assertIn("CR-0099", text)                   # never removed
             kinds = [x["kind"] for x in reconcile.detect_type("cr", repo)["drift"]]
-            self.assertIn("orphan-row", kinds)               # still reported
+            self.assertIn("dead-row-link", kinds)            # still reported
 
 
 class AppendTargetingTests(unittest.TestCase):
@@ -1895,6 +1903,150 @@ class MetaIndexTests(unittest.TestCase):
             self.assertEqual(reconcile.main(["detect", "--scope", "meta", "--root", str(root)]), 1)
             # a single pipeline scope must NOT drag meta drift in
             self.assertEqual(reconcile.main(["detect", "--scope", "bugs", "--root", str(root)]), 0)
+
+
+class DeadRowLinkTests(unittest.TestCase):
+    """BG0135: the index is DERIVED, and reconcile is what makes that true - in BOTH
+    directions. An index row that LINKS an artefact file is asserting that file exists;
+    when the file is gone the row is a phantom, whatever its status.
+
+    The blind spot was the status gate: a freshly-filed CR is `Proposed`, and a
+    `Proposed` row with no file was read as an intentional reservation, so deleting the
+    file left a phantom row that `detect` (drift_items=0), `apply` ("changed 0 row(s)")
+    and `validate` (errors=0) all called clean. A reservation has no link; a link is a
+    promise. Drive the public CLI - a guard that cannot fail is not a guard.
+    """
+
+    BASE = ("# CRs\n\n"
+            "| Status | Count |\n| --- | --- |\n| Proposed | 1 |\n| **Total** | **1** |\n\n"
+            "## All Changes\n\n"
+            "| ID | Title | Status |\n| --- | --- | --- |\n")
+
+    def _repo(self, d: str, rows: str) -> Path:
+        root = Path(d)
+        cd = root / "sdlc-studio" / "change-requests"
+        cd.mkdir(parents=True)
+        (cd / "_index.md").write_text(self.BASE + rows, encoding="utf-8")
+        return root
+
+    def _detect(self, root: Path):
+        return reconcile.detect_type("cr", root)["drift"]
+
+    def test_proposed_row_linking_a_deleted_file_is_drift(self) -> None:
+        # The exact BG0135 repro: file a CR (Proposed), delete its file, keep the row.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, "| [CR-0261](CR0261-probe.md) | Probe | Proposed |\n")
+            drift = self._detect(root)
+            kinds = {x["kind"] for x in drift}
+            self.assertIn("dead-row-link", kinds)
+            item = next(x for x in drift if x["kind"] == "dead-row-link")
+            self.assertEqual(item["id"], "CR-0261")
+            self.assertIn("CR0261-probe.md", item["file"])       # names the missing file
+            # and the CLI must FAIL, not merely mention it
+            self.assertEqual(reconcile.main(["detect", "--root", str(root)]), 1)
+
+    def test_row_whose_file_exists_is_clean(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, "| [CR-0261](CR0261-probe.md) | Probe | Proposed |\n")
+            (root / "sdlc-studio" / "change-requests" / "CR0261-probe.md").write_text(
+                "# CR-0261: Probe\n\n> **Status:** Proposed\n", encoding="utf-8")
+            self.assertEqual(self._detect(root), [])
+            self.assertEqual(reconcile.main(["detect", "--root", str(root)]), 0)
+
+    def test_unlinked_reservation_row_is_still_not_drift(self) -> None:
+        # The reservation exemption survives: a Proposed row with NO link claims no file.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, "| CR-0262 | Reserved | Proposed |\n")
+            self.assertEqual(self._detect(root), [])
+
+    def test_dead_link_and_orphan_row_are_not_double_counted(self) -> None:
+        # A Complete row with a dead link is ONE finding (the precise one), not two.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, "| [CR-0263](CR0263-gone.md) | Gone | Complete |\n")
+            kinds = [x["kind"] for x in self._detect(root) if x["kind"] in
+                     ("dead-row-link", "orphan-row")]
+            self.assertEqual(kinds, ["dead-row-link"])
+
+    def test_apply_never_prunes_a_dead_row_by_default(self) -> None:
+        # A missing file can be a bad checkout, an in-flight rename or an unstaged file.
+        # apply must NOT silently delete the row; detect must keep reporting it.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, "| [CR-0261](CR0261-probe.md) | Probe | Proposed |\n")
+            reconcile.main(["apply", "--root", str(root)])
+            text = (root / "sdlc-studio" / "change-requests" / "_index.md").read_text(
+                encoding="utf-8")
+            self.assertIn("CR-0261", text)
+            self.assertIn("dead-row-link", {x["kind"] for x in self._detect(root)})
+
+    def test_apply_warns_loudly_about_the_row_it_will_not_prune(self) -> None:
+        # "changed 0 row(s)" over a phantom is how this survived the whole gate. apply
+        # declines to prune, but it must never be SILENT about what it left behind.
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, "| [CR-0261](CR0261-probe.md) | Probe | Proposed |\n")
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                reconcile.main(["apply", "--root", str(root)])
+            self.assertIn("CR-0261", err.getvalue())
+            self.assertIn("CR0261-probe.md", err.getvalue())
+
+    def test_prune_orphans_flag_removes_the_row_and_recomputes_counts(self) -> None:
+        # ...and only when the operator explicitly asks for it.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, "| [CR-0261](CR0261-probe.md) | Probe | Proposed |\n")
+            reconcile.main(["apply", "--prune-orphans", "--root", str(root)])
+            text = (root / "sdlc-studio" / "change-requests" / "_index.md").read_text(
+                encoding="utf-8")
+            self.assertNotIn("CR-0261", text)
+            self.assertIn("| **Total** | **0** |", text)   # summary follows the rows
+            self.assertEqual(self._detect(root), [])
+
+    def test_archived_row_resolves_against_the_type_dir(self) -> None:
+        # archive.py moves the ROW to `<type>/archive/<release>/` and leaves the FILE in
+        # the type dir, so the archived row's bare filename still resolves - not a phantom.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, "")
+            cd = root / "sdlc-studio" / "change-requests"
+            (cd / "CR0100-shipped.md").write_text(
+                "# CR-0100: Shipped\n\n> **Status:** Complete\n", encoding="utf-8")
+            arch = cd / "archive" / "v1.0.0"
+            arch.mkdir(parents=True)
+            (arch / "cr.md").write_text(
+                "| ID | Status |\n| --- | --- |\n| [CR-0100](CR0100-shipped.md) | Complete |\n",
+                encoding="utf-8")
+            self.assertNotIn("dead-row-link", {x["kind"] for x in self._detect(root)})
+
+    def test_archived_row_with_no_file_is_reported_but_never_pruned_here(self) -> None:
+        # A phantom in an archive sub-index is reported - but archive.py is the ONE archive
+        # writer, so reconcile refuses to edit its files and says so (exit 1, nothing lost).
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, "")
+            arch = root / "sdlc-studio" / "change-requests" / "archive" / "v1.0.0"
+            arch.mkdir(parents=True)
+            sub = arch / "cr.md"
+            sub.write_text(
+                "| ID | Status |\n| --- | --- |\n| [CR-0101](CR0101-gone.md) | Complete |\n",
+                encoding="utf-8")
+            self.assertIn("dead-row-link", {x["kind"] for x in self._detect(root)})
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = reconcile.main(["apply", "--prune-orphans", "--root", str(root)])
+            self.assertEqual(rc, 1)                               # asked, could not comply
+            self.assertIn("CR-0101", sub.read_text(encoding="utf-8"))   # row untouched
+            self.assertIn("archive", err.getvalue())
+
+    def test_prune_leaves_an_unlinked_orphan_row_alone(self) -> None:
+        # An inline-only record (no link) holds its ONLY copy in that row - never prune it.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d, "| CR-0264 | inline-only | Complete |\n")
+            reconcile.main(["apply", "--prune-orphans", "--root", str(root)])
+            text = (root / "sdlc-studio" / "change-requests" / "_index.md").read_text(
+                encoding="utf-8")
+            self.assertIn("inline-only", text)
+            self.assertIn("orphan-row", {x["kind"] for x in self._detect(root)})
 
 
 class DriftKindVocabularyTests(unittest.TestCase):

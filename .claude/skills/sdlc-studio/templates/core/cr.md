@@ -29,8 +29,12 @@ Related: help/cr.md, reference-cr.md
 
 ### Item 1: {{item_1_title}}
 
-**Priority:** {{item_1_priority}}
-**Effort:** {{item_1_effort}}
+<!-- `Item effort`, not `Effort`: `Effort` is the CR's own job size, read by the planner from
+the FIRST match in the document. A per-item field spelled the same way shadows it, and the CR
+plans as unsized. -->
+
+**Item priority:** {{item_1_priority}}
+**Item effort:** {{item_1_effort}}
 
 {{item_1_description}}
 

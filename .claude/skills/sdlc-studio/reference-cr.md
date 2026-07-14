@@ -328,6 +328,9 @@ and conflict policy.
      `/sdlc-studio cr create --from-issue <N>` so the user runs the
      correct create workflow with template fields under review
    - The script never invents template field values
+   - **Groom it as you ingest it:** the create carries `--affects` and
+     `--effort`, like any other CR - the agent reading the issue has the
+     repo open and can name the files; nobody can at plan time
    - **Stamp the origin mechanically:** a from-issue create runs
      `artifact.py new --type cr ... --provenance external` (never a
      hand-written field), so the issue body arrives carrying

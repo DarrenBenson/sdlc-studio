@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The specs describe the product again (CR0252).** The PRD and TSD self-declared v2.0.0 against a
+  v4.1.0 product; all three specs now cover the engagement floor, the breakdown gate, sprint capacity
+  and the run appetite, the sizing and velocity loop, ULID identity, the generated team, the learning
+  loop, the mutation gate and the release gate, with five new ADRs (engagement floor, ULID identity,
+  generated team, learning loop, breakdown gate) each recording the alternatives rejected and the
+  consequences, including the negative ones. Where the specs describe estimation they now say plainly
+  that the token forecast is a **falsified hypothesis, not a calibration**. The refresh found eight
+  things that were WRONG rather than merely missing: the PRD listed five open enforcement gaps that
+  have all shipped, quoted "17 open audit-filed bugs" against a real backlog of nine, said "10
+  scripts" where there are 58, and the TSD pinned "181 tests" in six places where the suite runs
+  2,194.
+
 - **The breakdown step is now unavoidable: `sprint plan` REFUSES an ungroomed batch (CR0260).** A unit
   is groomed when it declares both the files it will touch (`Affects:`) and a size (`Effort:` S/M/L, a
   story's `Points:`, or a seat score). If any unit in the batch lacks either, `plan` exits non-zero and
@@ -184,6 +196,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   added, removed or renamed.
 
 ### Fixed
+
+- **The forecast is now RECORDED when it is made, so the estimator can be falsified (BG0133).**
+  `retro.py accuracy` used to re-derive each estimate at retro time from the LIVE constants, so
+  recalibrating them silently rewrote what every past sprint was deemed to have predicted. The 5.2x
+  miss that CAUSED the recalibration had been erased BY it. `sprint plan` now records each unit's
+  forecast, the seed it came from, and the constants that produced it, unconditionally - not behind
+  `--write`, because a forecast that depends on someone remembering a flag is a forecast that does
+  not exist. `accuracy` reads that record and never re-derives; the re-derivation path is deleted,
+  not left as a fallback. A unit with no recorded forecast is UNFORECAST and excluded from both
+  sides of the ratio, exactly as UNMEASURED already was: silence on the estimate side is not
+  evidence either. And a velocity row whose forecast was produced by the constants currently in
+  force is labelled IN-SAMPLE and excluded from any figure shown as evidence - the planner used to
+  quote its own 1.09x training error back to the operator while the true out-of-sample figure was
+  0.55x. The label is derived at read time, so a future refit reclassifies a row rather than leaving
+  it standing as validation for a model it helped fit.
+
+- **The filer now demands what the planner demands, from ONE shared definition of groomed (BG0136).**
+  CR0260 made `sprint plan` refuse an ungroomed unit, but `file_finding.py` had no `--affects` flag
+  at all - so every bug it filed was born unplannable, and the gate refused three bugs our own filer
+  had written that same day. The filer does not restate the rule: it renders the body it is about to
+  write and hands it to `sprint.breakdown()` itself, so a third grooming field would land at both
+  ends at once, and an `--affects` the planner's parser cannot read back as a path list is refused as
+  no `Affects` at all. `artifact new`/`batch` enforce it too, because the help documents them as the
+  canonical path and enforcing only in the filer would move the bug rather than kill it. RFCs are
+  exempt: the planner never selects one, so demanding it would be grooming theatre. Two defects this
+  surfaced: `templates/core/cr.md` carried a decoy `**Effort:**` above the real one, so **every
+  full-template CR had been unsized to the planner whatever `--effort` said**, and `artifact new
+  --type bug --effort S` accepted the flag and silently dropped it.
+
+- **The engagement-floor trailer check refuses instead of warning after the fact (BG0134).** It
+  printed a failure-shaped message explaining that the floor could not attribute the commit, then
+  exited 0 and let it land - a guard that names the hole it is leaving, and leaves it. A multi-id
+  subject with no `Refs:` trailer now fails the commit and prints the exact trailer lines to paste.
+  A single-id subject still needs none, and merges, reverts and fixups are untouched: git wrote those
+  messages and the work they record was gated on its original commit. `--no-verify` remains the one
+  escape; the `SDLC_ENGAGEMENT_STRICT` env var is gone rather than left as a second bypass.
+
+- **reconcile sees an orphan index row, and so does the link checker (BG0135).** A row whose artefact
+  file is gone survived `reconcile detect`, `check_links` AND `validate` - three guards, one phantom.
+  The detector existed; the hole was the status gate, which treated a `Proposed`/`Draft` row with no
+  file as an intentional reservation - and the filer mints CRs as `Proposed`, so deleting a
+  freshly-filed artefact was invisible while deleting a `Complete` one would have been caught. The
+  principle now: **a row that LINKS a file is not a reservation - a link is a claim that the file is
+  there.** An unlinked row still reserves nothing, so that exemption survives. `apply` never prunes
+  by default (a bad checkout, an in-flight rename and a deletion look identical from here) but no
+  longer stays silent about it; `--prune-orphans` is the opt-in. `check_links` now validates index
+  row file targets, not just anchors.
 
 - **Every `_index.md` write is atomic now (BG0127).** `sdlc_md.atomic_write` exists so a reader never
   sees a half-written index, and it was used on the main paths - but six index-mutating writers went

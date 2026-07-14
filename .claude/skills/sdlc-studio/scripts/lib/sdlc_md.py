@@ -235,7 +235,7 @@ _LINE_BREAK_RE = re.compile("[" + "".join(re.escape(c) for c in _LINE_BREAK_NAME
 # one line is the point.
 SINGLE_LINE_FIELDS: tuple[str, ...] = (
     "title", "author", "epic", "persona", "tranche", "priority", "ctype", "severity",
-    "effort", "provenance", "date", "theme", "note",
+    "effort", "affects", "provenance", "date", "theme", "note",
 )
 # List fields whose every item renders as ONE bullet. An `acs` item is the sharpest of them: a
 # break in it injects a sibling `- **Verify:** <command>` line into the AC block, which the
@@ -629,6 +629,7 @@ REMEDIATION: dict[str, dict[str, str]] = {
         "status-mismatch": "set the index row's Status to match the file (or fix the file)",
         "missing-row": "add an index row for this artifact",
         "orphan-row": "remove the index row - no file backs it (or restore the file)",
+        "dead-row-link": "the index row links an artefact file that does not exist - restore the file (a bad checkout or an unstaged rename looks the same from here), or remove the row with `reconcile apply --prune-orphans`",
         "missing-index": "create the type's `_index.md`",
         "count-mismatch": "recompute the summary counts from the index rows",
         "index-status-column": "the index table's Status column is mis-named or absent, so rows cannot be compared - fix the `_index.md` header row (name the column `Status`) and re-run reconcile",

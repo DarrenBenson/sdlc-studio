@@ -3,9 +3,9 @@
 
 Builds the file census doctrine rule 3 prescribes - artifact files are the
 truth, `_index.md` tables are derived - and reports where the indexes have
-drifted. Three drift classes per type: status mismatch (file vs index row),
-missing row (a file with no index row), and orphan row (an index row with no
-file), plus summary-count drift.
+drifted. Reconciliation runs in BOTH directions: files -> rows (status mismatch,
+missing row) and rows -> files (orphan row: an index row with no file; dead row
+link: a row whose linked artefact file does not exist), plus summary-count drift.
 
 Subcommands:
   detect   Census + drift report as JSON/text (READ-ONLY).
@@ -14,6 +14,8 @@ Subcommands:
 
 Only `detect` is read-only; the judgement calls (orphan-row removal, checkbox/
 dependency/PRD-feature drift, CR cascades, changelog) stay with the agent.
+`apply --prune-orphans` is the one opt-in exception, and it removes only rows
+whose link is provably dead - never an unlinked row, which holds its only copy.
 
 Index archival lives in `archive.py` - the single archive writer. This module owns only
 the shared read helper it calls (`master_terminal_rows`).
@@ -58,16 +60,21 @@ DRIFT_KINDS = (
     "missing-row",
     "status-mismatch",
     "orphan-row",
+    "dead-row-link",
     "count-mismatch",
     "breakdown-unticked",
     "breakdown-ticked-early",
 )
 
-# Statuses that do NOT imply a backing file yet. An index row in one of these
-# states (or a non-vocabulary state such as a custom "Retired"/"Reserved") with
-# no file on disk is an intentional reservation or a documented retirement —
+# Statuses that do NOT imply a backing file yet. An UNLINKED index row in one of
+# these states (or a non-vocabulary state such as a custom "Retired"/"Reserved")
+# with no file on disk is an intentional reservation or a documented retirement —
 # not an orphan to remove. Only an active/terminal status (Done, In Progress,
 # Complete, …) with no file is a real orphan.
+#
+# The exemption is for UNLINKED rows only. A row that LINKS an artefact file is
+# asserting that file exists, whatever its status: when the link is dead the row
+# is a phantom, and `_dead_row_links` reports it (the status gate is bypassed).
 _NO_FILE_EXPECTED = {
     "Proposed", "Draft", "Deferred", "Superseded", "Withdrawn", "Rejected",
     "Won't Implement", "Won't Fix",
@@ -327,17 +334,25 @@ def parse_index(type_: str, repo_root: Path) -> dict:
     terminal = sdlc_md.terminal_statuses(type_)
     result["live_terminal_rows"] = sum(
         1 for _d, st in rows.values() if st in terminal)
-    archive_dir = repo_root / rel / "archive"
-    if archive_dir.is_dir():  # archived terminal rows still count toward the census
+    _merge_archive_rows(type_, repo_root, result["rows"], vocab, aliases)
+    return result
+
+
+def _merge_archive_rows(type_: str, repo_root: Path, rows: dict, vocab: list,
+                        aliases: tuple) -> dict:
+    """Union a type's `archive/**` sub-index rows into `rows`, in place - archived
+    terminal rows still count toward the census. A LIVE row always wins: an archive row
+    only fills in an id absent from the live index. Otherwise a reopened
+    (archived-then-live-again) artefact is permanently shadowed by its stale archive
+    status - un-clearable drift."""
+    archive_dir = repo_root / sdlc_md.ARTIFACT_TYPES[type_][0] / "archive"
+    if archive_dir.is_dir():
         for af in sorted(archive_dir.rglob("*.md")):
             arows, _ = _index_rows_and_summary(af.read_text(encoding="utf-8"), vocab, aliases)
             for k, v in arows.items():
-                # a LIVE row always wins: an archive row only fills in an id absent from the
-                # live index. Otherwise a reopened (archived-then-live-again) artefact is
-                # permanently shadowed by its stale archive status - un-clearable drift.
-                if k not in result["rows"]:
-                    result["rows"][k] = v
-    return result
+                if k not in rows:
+                    rows[k] = v
+    return rows
 
 
 def _census_filenames(type_: str, repo_root: Path) -> dict[str, str]:
@@ -417,15 +432,102 @@ def _census_row_drift(type_, census, rows, filenames, vocab, degenerate) -> list
     return out
 
 
-def _orphan_row_drift(type_, census, rows, vocab) -> list[dict]:
-    """A live index row whose status implies a backing file, but none exists."""
+# --- The other direction: rows -> files --------------------------------------
+# The census walks the FILES and fixes their rows. Nothing walked the ROWS, so a row
+# pointing at a file that no longer exists was never noticed and the index kept
+# advertising an artefact that is not there - the derived-index promise broken in the
+# direction reconcile is supposed to make true. A row's markdown link is the row's own
+# assertion that the file exists; when the link is dead, the row is a phantom.
+_ROW_LINK_RE = re.compile(r"\[[^\]]*\]\(([^)\s]+\.md)\)")
+
+
+def index_row_links(text: str) -> list[tuple[int, str, str]]:
+    """(1-based line, display id, link target) for every data row that links its OWN
+    artefact file - the link whose filename carries the row's id.
+
+    Only the row's own artefact is checked: a row may also link an epic, a CR or a
+    parent story in another column, and those are other rows' business (and other
+    directories' relative paths). A row with no self-link asserts nothing about a file -
+    it stays a reservation, judged by status alone in `_orphan_row_drift`.
+    """
+    out: list[tuple[int, str, str]] = []
+    for tbl in sdlc_md.iter_tables(text, header_predicate=_VOCAB_HEADER):
+        for lineno, cells in tbl["rows"]:
+            if len(cells) == 2 and cells[1].replace(",", "").isdigit():  # summary row
+                continue
+            m = next((sdlc_md.ID_SEARCH_RE.search(c) for c in cells
+                      if sdlc_md.ID_SEARCH_RE.search(c)), None)
+            if not m:
+                continue
+            rid = m.group(0)
+            for cell in cells:
+                for tgt in _ROW_LINK_RE.findall(cell):
+                    rec = sdlc_md.extract_record_id(Path(tgt).stem)
+                    if rec and _norm_id(rec) == _norm_id(rid):
+                        out.append((lineno, rid, tgt))
+                        break
+    return out
+
+
+def _index_files(type_: str, repo_root: Path) -> list[Path]:
+    """The index files that carry this type's rows: the live `_index.md` plus any
+    release sub-indexes under `<type>/archive/` (parse_index unions those rows into the
+    census, so a phantom row hiding in one is just as blind)."""
+    rel = repo_root / sdlc_md.ARTIFACT_TYPES[type_][0]
+    files = [rel / "_index.md"] if (rel / "_index.md").exists() else []
+    archive = rel / "archive"
+    if archive.is_dir():
+        files.extend(sorted(archive.rglob("*.md")))
+    return files
+
+
+def _link_exists(index_path: Path, type_dir: Path, target: str) -> bool:
+    """Does a row's link target resolve to a real file? Read file-relative, and - for a
+    row that lives in an `archive/` sub-index - also against the type directory, because
+    `archive` moves the ROW but leaves the FILE in the type dir, so the archived row
+    carries the live index's bare filename."""
+    if (index_path.parent / target).exists():
+        return True
+    return "archive" in index_path.relative_to(type_dir).parts and (type_dir / target).exists()
+
+
+def _dead_row_links(type_: str, repo_root: Path) -> list[dict]:
+    """An index row that LINKS an artefact file which does not exist - a phantom the
+    file census can never see (it walks files, and this file is gone). Status-blind on
+    purpose: a `Proposed` row that links a file is claiming that file, so deleting it
+    leaves drift exactly as a `Done` row would."""
+    type_dir = repo_root / sdlc_md.ARTIFACT_TYPES[type_][0]
+    out: list[dict] = []
+    for index_path in _index_files(type_, repo_root):
+        rel = index_path.relative_to(repo_root).as_posix()
+        for lineno, disp, target in index_row_links(
+                index_path.read_text(encoding="utf-8")):
+            if _link_exists(index_path, type_dir, target):
+                continue
+            out.append({"type": type_, "id": disp, "kind": "dead-row-link",
+                        "file_status": None, "index_status": None,
+                        "file": target, "index": rel, "line": lineno,
+                        "fix": f"{rel}:{lineno} links {target}, which does not exist - "
+                               f"restore the file, or remove the row "
+                               f"(reconcile apply --prune-orphans)"})
+    return out
+
+
+def _orphan_row_drift(type_, census, rows, vocab, linked: set | None = None) -> list[dict]:
+    """A live index row whose status implies a backing file, but none exists.
+
+    A row already reported as a `dead-row-link` is skipped: that finding is the same
+    phantom diagnosed precisely (it names the missing file and is the only safely
+    prunable class), and reporting both would double-count one row.
+    """
+    linked = linked or set()
     out: list[dict] = []
     for norm, (disp, istatus) in sorted(rows.items()):
-        if norm not in census:
+        if norm not in census and norm not in linked:
             icanon = _canonical_status(istatus, vocab)
-            # A row whose status doesn't imply a file yet (Proposed/Draft/…) or
-            # is a custom retirement (non-vocabulary) is an intentional
-            # reservation, not an orphan — don't flag it.
+            # An UNLINKED row whose status doesn't imply a file yet (Proposed/Draft/…)
+            # or is a custom retirement (non-vocabulary) is an intentional reservation,
+            # not an orphan — don't flag it.
             if icanon is None or icanon in _NO_FILE_EXPECTED:
                 continue
             out.append({"type": type_, "id": disp, "kind": "orphan-row",
@@ -515,7 +617,12 @@ def detect_type(type_: str, repo_root: Path) -> dict:
                       "file_status": None, "index_status": None, "fix": degenerate})
 
     drift += _census_row_drift(type_, census, rows, filenames, vocab, degenerate)
-    drift += _orphan_row_drift(type_, census, rows, vocab)
+    # Both directions: files -> rows (above), and rows -> files (here). A row whose
+    # linked file is gone is a phantom the census cannot see.
+    dead = _dead_row_links(type_, repo_root)
+    drift += dead
+    drift += _orphan_row_drift(type_, census, rows, vocab,
+                               {_norm_id(d["id"]) for d in dead})
     row_counts = _row_counts(rows, vocab)
     drift += _count_mismatch_drift(type_, census, index, row_counts, vocab, degenerate)
 
@@ -822,7 +929,8 @@ def cmd_detect(args: argparse.Namespace) -> int:
     # so the summary must be recomputed LAST, after every status edit settles. Signpost that order
     # rather than leave the operator to learn it by watching the count move the wrong way.
     fix_order = None
-    if {"status-mismatch", "missing-row", "orphan-row"} & set(by_kind) and "count-mismatch" in by_kind:
+    if ({"status-mismatch", "missing-row", "orphan-row", "dead-row-link"} & set(by_kind)
+            and "count-mismatch" in by_kind):
         fix_order = ("Recommended order: resolve the file/index status mismatches first, "
                      "re-sync the index rows, then recompute counts/summaries LAST "
                      "(fixing statuses moves the counts).")
@@ -1249,7 +1357,43 @@ def _insert_missing_data_rows(lines: list, hdr: tuple, to_append: list,
     return appended
 
 
-def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
+def _plan_prune(lines: list, rel_index: str, dead: list[dict]) -> tuple[list[int], list[dict], list[dict]]:
+    """(0-based line indices to delete, rows pruned here, dead rows this cannot prune).
+
+    Only a row whose LINK is dead is prunable, and only where that row physically lives
+    in the file being rewritten. Two deliberate refusals:
+
+    - an unlinked orphan row is never pruned: an inline-only record holds its ONLY copy
+      in that row, so deleting it destroys the record rather than a duplicate of it;
+    - a dead row in an `archive/` sub-index is reported, not pruned: `archive.py` is the
+      one archive writer, and a second writer editing its files is how two incompatible
+      layouts get born.
+    """
+    here = [d for d in dead if d["index"] == rel_index and 0 < d["line"] <= len(lines)]
+    elsewhere = [d for d in dead if d not in here]
+    return sorted(d["line"] - 1 for d in here), here, elsewhere
+
+
+def _prune_dead_rows(type_: str, root: Path, index_path: Path, lines: list, vocab: list,
+                     aliases: tuple, rows: dict, dead: list[dict]) -> tuple[list, list, dict]:
+    """Delete this index's dead-linked rows from `lines` (in place) and return
+    (pruned, prune_unapplied, the rows AS THEY WILL BE) - so the caller's summary
+    recompute follows the pruned buffer rather than the rows it no longer holds. Rows are
+    cut last-line-first, so an earlier row's index is never shifted by a later deletion."""
+    _cut, here, elsewhere = _plan_prune(
+        lines, index_path.relative_to(root).as_posix(), dead)
+    pruned: list[dict] = []
+    for d in sorted(here, key=lambda x: x["line"], reverse=True):
+        pruned.append({"id": d["id"], "file": d["file"], "row": lines[d["line"] - 1]})
+        del lines[d["line"] - 1]
+    if here:
+        rows, _summary = _index_rows_and_summary("\n".join(lines), vocab, aliases)
+        _merge_archive_rows(type_, root, rows, vocab, aliases)
+    return pruned, elsewhere, rows
+
+
+def apply_type(type_: str, repo_root: Path, dry_run: bool = False,
+               prune_orphans: bool = False) -> dict:
     """Apply the mechanical index fixes for one type: rewrite each drifted data
     row's Status cell to the file's canonical status, APPEND a row for each
     census file the index is missing (header-driven, matching the table's own
@@ -1257,6 +1401,13 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
     authority `detect` uses). Idempotent; cells are re-escaped on write.
     Orphan-row and missing-index stay report-only - removing history is a
     judgement call, never mechanical.
+
+    `prune_orphans` (opt-in, never the default) additionally DELETES rows whose linked
+    artefact file is gone (`dead-row-link`). It is off by default because a missing file
+    is not proof of a deletion: a bad checkout, an in-flight rename, or a file not yet
+    staged all look identical from here, and a silent prune would destroy the row that is
+    the artefact's last trace. `detect` always reports the phantom; removing it is the
+    operator's call, and each removed row is echoed verbatim as it goes.
 
     `changes`/`appended` list only the edits that actually landed in the buffer. A
     planned fix the writer could not persist (an off-schema/header-less row or a
@@ -1288,6 +1439,17 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
     lines = original.splitlines()
     aliases = tuple(conventions.status_aliases(root))
 
+    # Phantom rows (opt-in only): delete the rows whose linked file is gone, then re-read
+    # the surviving rows so the recomputed summary counts follow the buffer as it will be.
+    # `dead_rows` is reported whether or not the operator asked to prune: an index still
+    # advertising an artefact that is not there must never leave apply silent ("changed 0
+    # row(s)" over a phantom is how BG0135 survived every guard in the gate).
+    result["dead_rows"] = _dead_row_links(type_, root)
+    result["pruned"], result["prune_unapplied"] = [], []
+    if prune_orphans:
+        result["pruned"], result["prune_unapplied"], rows = _prune_dead_rows(
+            type_, root, index_path, lines, vocab, aliases, rows, result["dead_rows"])
+
     # Missing rows: append mechanically when (and only when) the data table can
     # be pinned by its own ID-column header - the row is built in the table's
     # column order, so a house layout is honoured, never guessed at.
@@ -1311,7 +1473,7 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False) -> dict:
     # declined to touch is surfaced as unapplied rather than fabricated as a clean flip.
     for ch in planned:
         (result["changes"] if _norm_id(ch["id"]) in applied else result["unapplied"]).append(ch)
-    if (result["changes"] or result["counts_updated"]) and not dry_run:
+    if (result["changes"] or result["counts_updated"] or result["pruned"]) and not dry_run:
         text = "\n".join(lines) + ("\n" if original.endswith("\n") else "")
         sdlc_md.atomic_write(index_path, text)
     return result
@@ -1432,26 +1594,50 @@ def cmd_apply(args: argparse.Namespace) -> int:
     types = SCOPE_TYPES.get(args.scope, DEFAULT_TYPES) if args.scope else DEFAULT_TYPES
     n = 0
     unapplied = 0
+    prune = getattr(args, "prune_orphans", False)
     do_meta = args.scope in (None, "meta")
     do_breakdown = args.scope in (None, "epics")
     if getattr(args, "format", "text") == "json":
-        by_type = {t: apply_type(t, repo_root, dry_run=args.dry_run) for t in types}
+        by_type = {t: apply_type(t, repo_root, dry_run=args.dry_run, prune_orphans=prune)
+                   for t in types}
         if do_meta:
             by_type["meta"] = apply_meta(repo_root, dry_run=args.dry_run)
         if do_breakdown:
             by_type["breakdown"] = apply_breakdown(repo_root, dry_run=args.dry_run)
-        applied = sum(len(r.get("changes", [])) + len(r.get("appended", [])) for r in by_type.values())
+        applied = sum(len(r.get("changes", [])) + len(r.get("appended", []))
+                      + len(r.get("pruned", [])) for r in by_type.values())
         blocked = sum(len(r.get("unapplied", [])) + len(r.get("missing_unapplied", []))
+                      + len(r.get("prune_unapplied", []))
                       + (1 if r.get("refused") else 0) for r in by_type.values())
         print(json.dumps({"dry_run": args.dry_run, "applied": applied, "unapplied": blocked,
                           "by_type": by_type}, indent=2))
         return 1 if blocked else 0  # JSON mode must signal failure like the text path
     for type_ in types:
-        res = apply_type(type_, repo_root, dry_run=args.dry_run)
+        res = apply_type(type_, repo_root, dry_run=args.dry_run, prune_orphans=prune)
         if res.get("refused"):
             print(f"REFUSED {type_}: {res['refused']}")
             unapplied += 1
             continue
+        for p in res.get("pruned", []):
+            # echo the row verbatim as it goes: the file is already gone, so this row was
+            # the artefact's last trace in the tree. It must survive in the run log.
+            print(f"{'WOULD prune' if args.dry_run else 'pruned'} {type_} row {p['id']} "
+                  f"(links {p['file']}, which does not exist): {p['row']}")
+            n += 1
+        pruned_ids = {p["id"] for p in res.get("pruned", [])}
+        for dr in res.get("dead_rows", []):
+            if dr["id"] in pruned_ids:
+                continue
+            # Never silent: a phantom row apply did not remove is still a phantom.
+            remedy = ("restore the file, or edit the archive sub-index (archive.py is the "
+                      "one archive writer - reconcile will not rewrite its files)"
+                      if "/archive/" in dr["index"] else
+                      "restore the file, or remove the row with "
+                      "`reconcile apply --prune-orphans`")
+            print(f"WARNING: {type_} row {dr['id']} ({dr['index']}:{dr['line']}) links "
+                  f"{dr['file']}, which does not exist - {remedy}", file=sys.stderr)
+        # Only when the operator ASKED to prune is an unprunable row an unapplied action.
+        unapplied += len(res.get("prune_unapplied", []))
         for a in res.get("appended", []):
             print(f"{'WOULD add' if args.dry_run else 'added'} missing {type_} row {a}")
             n += 1
@@ -1572,6 +1758,12 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--scope", choices=sorted(SCOPE_TYPES), help="Limit to one scope")
     a.add_argument("--root", default=".", help="Repo root (default: .)")
     a.add_argument("--dry-run", action="store_true", help="Report changes without writing")
+    a.add_argument("--prune-orphans", action="store_true",
+                   help="Also DELETE index rows whose linked artefact file does not exist "
+                        "(dead-row-link). Off by default: a missing file can be a bad "
+                        "checkout, an in-flight rename or an unstaged file, so the removal "
+                        "is never automatic. Each pruned row is echoed verbatim. An "
+                        "UNLINKED orphan row is never pruned - it holds its only copy.")
     a.add_argument("--format", choices=("text", "json"), default="text",
                    help="Output format (json for programmatic callers)")
     a.set_defaults(func=cmd_apply)

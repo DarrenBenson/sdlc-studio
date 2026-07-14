@@ -24,10 +24,20 @@ SDLC Studio is model-invoked - say it in plain language:
 ## File a bug non-interactively (the canonical path)
 
 ```bash
-python3 <skill>/scripts/artifact.py new --type bug --title "Player falls through floor"
+python3 <skill>/scripts/artifact.py new --type bug --title "Player falls through floor" \
+  --affects "src/physics/collide.py, src/world/floor.py" --effort M
 python3 <skill>/scripts/file_finding.py file --type bug --title "..." --summary "..." \
-  --steps "1. ..." --fix "..."   # when you already have repro + proposed fix
+  --steps "1. ..." --fix "..." \
+  --affects "src/physics/collide.py" --effort M   # repro + fix + grooming
 ```
+
+Every bug names the files it will touch (`--affects`) and its job size (`--effort S|M|L`,
+which is the size of the work - Severity is its urgency). Both creators **refuse** a bug
+without them, because `sprint plan` refuses to plan one: a unit that names no files cannot
+be sized, and the planner cannot see that two units touch the same file. You know which
+files are involved when you file; nobody knows it better at plan time. A project that has
+recorded `sprint.breakdown: judgement` gets a warning here instead of a refusal, exactly as
+its plan reports instead of blocking.
 
 Ids and index rows are **tool-allocated** - hand-authoring either is an error
 (collision safety under concurrency and rebase). The interactive `/sdlc-studio bug`

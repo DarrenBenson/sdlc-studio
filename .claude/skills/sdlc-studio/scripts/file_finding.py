@@ -19,6 +19,7 @@ import argparse
 import json
 import re
 import sys
+import tempfile
 from datetime import date
 from pathlib import Path
 
@@ -143,6 +144,94 @@ def check_prose_acs(type_: str, fields: dict) -> None:
             f"gate them to Done.\n"
             f"  e.g. not 'Verify: rg -qi effort sprint.py' but 'sprint.py reads the CR Effort "
             f"field and sizes the unit by it, rather than falling back to the flat default'.")
+
+
+# --- The grooming demand (the filer asks the PLANNER, it does not re-state the rule) ---------
+#
+# `sprint plan` REFUSES a batch holding an UNGROOMED unit - one that names neither the files it
+# will touch (`Affects`) nor a size. A creator that cannot even RECORD `Affects` mints exactly
+# that unit every time, and the repair then lands on an operator at plan time: the wrong person,
+# at the wrong moment. The author knows which files are involved WHEN THEY FILE. Nobody knows it
+# better later.
+#
+# So the creator asks the planner - not a second copy of the predicate, the predicate itself.
+# The body about to be written is handed to `sprint.breakdown`, and whatever IT calls ungroomed
+# is what the creator refuses. Two consequences a restated rule would have missed: a value the
+# planner's parser cannot read as a file (`--affects everything`) is refused here too, and a
+# future third grooming field lands in both ends at once.
+#
+# The escape is the planner's own, read from the same config key: `sprint.breakdown: judgement`
+# makes the gate report instead of block, and an operator who has opted out is not then blocked
+# at the creator either. Omission is not an escape - with no config, the fields are demanded.
+#
+# Scope: bug and CR - the finding types a sprint batch is built from. An RFC is not a unit of
+# sprint work at all (the planner never selects one), and its whole purpose is to settle a design
+# whose files are the OUTPUT of the decision, not an input to it: demanding `Affects` of an RFC
+# would be grooming theatre, a field nothing downstream reads. A story is gated by the same
+# planner, but it is created by decomposition rather than filed as a finding, and its grooming
+# is out of this fix's scope - `--affects` is accepted on it and written when supplied.
+GROOMED_TYPES = ("bug", "cr")
+
+# What to hand the author for each gap the gate can name. Keyed by the gate's own token.
+_GROOM_FLAG = {
+    "Affects": '--affects "path/to/file.py, path/to/other.py"  (the files this will touch)',
+    "size": "--effort S|M|L  (the job SIZE of the work - a bug's Severity is its urgency)",
+}
+
+
+def grooming_gaps(repo_root: Path | str, type_: str, text: str) -> tuple[list[str], bool]:
+    """What `sprint plan`'s breakdown gate would find missing on this artefact-to-be, and
+    whether the gate is blocking.
+
+    Judged by `sprint.breakdown` itself - the ONE definition of groomed - over the exact body
+    that is about to be written, as a batch of one. `skip_personas`: a review seat's estimate is
+    keyed by an id this artefact does not have yet, so the only size available to it is the one
+    the author writes on it, which is precisely what is being asked for."""
+    if type_ not in GROOMED_TYPES:
+        return [], False
+    import sprint  # noqa: PLC0415 - local: the creator borrows the planner's predicate, not its weight
+    with tempfile.TemporaryDirectory() as td:
+        preview = Path(td) / "preview.md"
+        preview.write_text(text, encoding="utf-8")
+        bd = sprint.breakdown(repo_root, [{"id": "PREVIEW", "type": type_,
+                                           "path": str(preview)}], skip_personas=True)
+    missing = list(bd["ungroomed"][0]["missing"]) if bd["ungroomed"] else []
+    return missing, bool(bd["blocking"])
+
+
+def check_groomed(repo_root: Path | str, type_: str, text: str) -> None:
+    """Refuse - BEFORE an id is allocated or a byte written - an artefact `sprint plan` would
+    then refuse to PLAN. Called from BOTH creation paths (the finding filer and `artifact new` /
+    `artifact batch`), so neither can mint a unit the other end of the pipeline rejects.
+
+    Under the recorded opt-out (`sprint.breakdown: judgement`) the creator warns instead of
+    refusing, exactly as the gate reports instead of blocking - one decision, honoured at both
+    ends. An opt-out that also went quiet would be the disease, not the cure."""
+    missing, blocking = grooming_gaps(repo_root, type_, text)
+    if not missing:
+        return
+    if not blocking:
+        print(f"warning: this {type_} is ungroomed (no {', '.join(missing)}) - written anyway, "
+              f"because this project records `sprint.breakdown: judgement`. `sprint plan` will "
+              f"quote it at a flat floor, not an estimate.", file=sys.stderr)
+        return
+    raise ValueError(
+        f"{type_} is UNGROOMED - refused. Nothing was allocated, nothing was written.\n"
+        f"  Missing: {', '.join(missing)}\n"
+        f"  Why: `sprint plan` REFUSES a batch holding this unit, so filing it this way mints "
+        f"work nobody can plan. Without `Affects` the planner cannot size it (the complexity "
+        f"seed is 0, so its forecast collapses to a flat floor nobody labelled as a fallback) "
+        f"and cannot see that two units touch the SAME FILE - it would report them as safely "
+        f"parallel when they will collide. Without a size, the estimate is a guess wearing a "
+        f"number.\n"
+        f"  Supply:\n"
+        + "".join(f"    {_GROOM_FLAG.get(m, m)}\n" for m in missing) +
+        f"  e.g. --affects \"scripts/sprint.py, scripts/file_finding.py\" --effort M\n"
+        f"  You know which files this touches NOW. Nobody knows it better at plan time - and "
+        f"an `Affects` the parser cannot read as a path (a prose phrase, a bare word) counts "
+        f"as no `Affects` at all.\n"
+        f"  Opt out ONLY as a recorded decision: set `sprint.breakdown: judgement` in "
+        f"sdlc-studio/.config.yaml and this becomes a warning, at both ends.")
 
 
 def scan_prose_acs(text: str) -> list[tuple[int, str, str]]:
@@ -281,6 +370,14 @@ def _prose_safe(text) -> str:
     return _META_DECL_RE.sub(r"\1\\*\\*\2\\*\\*", _md_safe(text))
 
 
+def _affects_line(f: dict) -> str:
+    """The `Affects` metadata line: the files this unit will touch, as the planner reads them
+    (`sdlc_md.affects_files` parses this exact field). Written only when declared - an absent
+    field is honestly absent, and for a bug or a CR the creator refuses to get that far."""
+    val = str(f.get("affects") or "").strip().strip(",")
+    return f"> **Affects:** {val}\n" if val else ""
+
+
 def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
             status: str | None = None) -> str:
     """A structured artifact body (required sections populated). `status` overrides the
@@ -293,13 +390,13 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
         f = {**f, "options": [_md_safe(o) for o in f["options"]]}
     if type_ == "bug":
         # Effort is the job SIZE of the fix (Severity is its urgency - a different axis, and the
-        # one a bug has always carried). Optional, because a bug is often filed by someone who
-        # cannot yet size it; declared, it sizes the unit in the sprint plan instead of the
-        # planner falling back to a neutral default.
+        # one a bug has always carried). Demanded, not optional: the sprint plan refuses a unit
+        # nobody sized, so a bug filed without one is work that cannot be planned. It sizes the
+        # unit in the plan instead of the planner falling back to a flat floor.
         effort = f"> **Effort:** {f['effort']}\n" if f.get("effort") else ""
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** {status or 'Open'}\n> **Severity:** {f['severity']}\n"
-                f"{effort}"
+                f"{effort}{_affects_line(f)}"
                 f"> **Created:** {today}\n{_stamp(f)}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
                 f"## Steps to Reproduce\n\n{f['steps']}\n\n"
@@ -313,7 +410,8 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
         acs = "\n".join(f"- [ ] {a}" for a in stripped)
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** {status or 'Proposed'}\n> **Priority:** {f['priority']}\n"
-                f"> **Type:** {f['ctype']}\n> **Date:** {today}\n{_stamp(f)}\n"
+                f"> **Type:** {f['ctype']}\n{_affects_line(f)}"
+                f"> **Date:** {today}\n{_stamp(f)}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
                 f"## Impact\n\n{f['impact']}\n\n"
                 f"**Effort:** {f['effort']}\n\n"
@@ -322,7 +420,8 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
                 f"{rev_row(today, f, 'Raised')}\n")
     options = "\n".join(f"- **{o}**" for o in f["options"])
     return (f"# {disp_id}: {title}\n\n"
-            f"> **Status:** {status or 'Draft'}\n> **Date:** {today}\n{_stamp(f)}\n"
+            f"> **Status:** {status or 'Draft'}\n{_affects_line(f)}"
+            f"> **Date:** {today}\n{_stamp(f)}\n"
             f"## Summary\n\n{f['summary']}\n\n"
             f"## Design Options\n\n{options}\n\n"
             f"## Recommendation\n\n{f.get('recommendation', 'TBD - pending decision.')}\n\n"
@@ -381,6 +480,10 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     root = Path(repo_root)
     today = fields.get("date") or date.today().isoformat()
     fields = {**fields, "date": today}
+    # ... and refuse an artefact the PLANNER would then refuse to plan: the body about to be
+    # written is judged by `sprint.breakdown` itself. A preview id is enough - the grooming
+    # fields the gate reads are in the metadata block, which does not depend on the id.
+    check_groomed(root, type_, _render(type_, "PREVIEW", title, today, fields))
     if dry_run:
         return _file_finding_locked(root, type_, spec, title, fields, today, dry_run=True)
     # CR0183/BG0076: allocate id + write file + append row under the advisory cross-process
@@ -449,7 +552,7 @@ def _file_finding_locked(root: Path, type_: str, spec: dict, title: str, fields:
 def cmd_file(args: argparse.Namespace) -> int:
     fields = {"severity": args.severity, "priority": args.priority, "ctype": args.ctype,
               "summary": args.summary, "steps": args.steps, "fix": args.fix,
-              "impact": args.impact, "effort": args.effort,
+              "impact": args.impact, "effort": args.effort, "affects": args.affects,
               "author": args.author, "recommendation": args.recommendation}
     fields = {k: v for k, v in fields.items() if v is not None}
     if args.ac:
@@ -483,8 +586,13 @@ def build_parser() -> argparse.ArgumentParser:
     f.add_argument("--fix", help="bug proposed fix")
     f.add_argument("--impact", help="cr: who this affects and what breaks (required for a cr)")
     f.add_argument("--effort", choices=("S", "M", "L"),
-                   help="job size of the work: required for a cr, optional for a bug "
-                        "(a bug's Severity is urgency, not size). Sizes the sprint plan.")
+                   help="job SIZE of the work (a bug's Severity is its urgency, not its size). "
+                        "Required for a bug and a cr: `sprint plan` refuses a unit nobody sized.")
+    f.add_argument("--affects",
+                   help="comma-separated files this unit will touch, written as the `Affects` "
+                        "metadata line. Required for a bug and a cr: `sprint plan` refuses a "
+                        "unit that names no files - it cannot size one, nor see two units "
+                        "colliding on the same file. Optional on an rfc (not a sprint unit)")
     f.add_argument("--ac", action="append", help="cr acceptance criterion (repeatable)")
     f.add_argument("--option", action="append", help="rfc design option (repeatable)")
     f.add_argument("--recommendation", help="rfc recommendation")

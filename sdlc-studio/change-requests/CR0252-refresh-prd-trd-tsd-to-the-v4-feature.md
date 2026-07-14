@@ -1,6 +1,6 @@
 # CR-0252: Refresh PRD/TRD/TSD to the v4 feature set (specs are self-declared v2.0.0 against a v4.1.0 product)
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** P1
 > **Type:** Improvement
 > **Date:** 2026-07-14

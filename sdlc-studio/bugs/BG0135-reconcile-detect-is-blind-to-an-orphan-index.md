@@ -1,11 +1,12 @@
 # BG0135: reconcile detect is blind to an orphan index row whose artefact file is gone
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Effort:** M
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, tools/check_links.py
+> **Verification depth:** functional - the original bug was reproduced end-to-end through the public CLI (file a CR with file_finding, delete its file): reconcile detect now reports drift_items=1 kind dead-row-link naming the file and line, and check_links reports the row as [file missing]. Both previously reported clean. The row was then removed with the new opt-in reconcile apply --prune-orphans, and the workspace returned to 0 drift, 0 dead links.
 > **Raised-by:** sdlc-studio; agent; v1
 
 ## Summary

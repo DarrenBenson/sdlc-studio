@@ -10,10 +10,14 @@ skip a ceremony under a gate produce the artefact, they do not omit it. So the l
 tests are the partial dodges: a retro that looks complete but left its `{{placeholder}}` in,
 left a finding undecided, or declined without giving a reason.
 """
+import contextlib
+import io
+import json
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import retro  # noqa: E402
@@ -305,10 +309,23 @@ class AccuracyBase(unittest.TestCase):
                 UNIT.format(prefix="CR", num=n), encoding="utf-8")
         self.addCleanup(self.tmp.cleanup)
 
+    #: The estimator that forecast these fixtures. A LITERAL, not sprint's live constants: a
+    #: test that read the constants would move with them, which is the defect under test.
+    CONSTANTS = {"BASE_TOKEN_BUDGET": 50_000, "TOKENS_PER_COGNITIVE": 600}
+    EST = 50_000  # the forecast recorded for each fixture unit
+
     def telemetry(self, *records: dict) -> None:
-        import json as _json
         path = self.root / "sdlc-studio" / ".local" / "telemetry.jsonl"
-        path.write_text("".join(_json.dumps(r) + "\n" for r in records), encoding="utf-8")
+        path.write_text("".join(json.dumps(r) + "\n" for r in records), encoding="utf-8")
+
+    def forecast(self, *unit_ids: str, tokens: int | None = None) -> None:
+        """The plan-time forecast, as `sprint plan` records it. A unit without one is
+        UNFORECAST and has no prediction to judge - which is a case in its own right."""
+        import telemetry as tel
+        tel.record_forecasts(str(self.root), [
+            {"id": uid, "tokens": tokens if tokens is not None else self.EST,
+             "seed": 0, "seed_source": "none", "constants": dict(self.CONSTANTS),
+             "planned_at": "2026-07-14T09:00:00+00:00"} for uid in unit_ids])
 
     def accuracy(self) -> dict:
         return retro.accuracy(str(self.root), "RETRO9000")
@@ -325,15 +342,15 @@ class TheBatchIsMeasuredAgainstThePlan(AccuracyBase):
         self.assertEqual(retro.batch_ids("> **Batch:** {{batch}}\n"), [])
 
     def test_per_unit_ratio_is_estimate_over_actual(self) -> None:
-        """The estimate is the PLAN's model (sprint's constants), not a second copy of it."""
-        import sprint
+        """The estimate is the forecast the PLAN recorded, read back verbatim."""
+        self.forecast("BG0001", "CR0001", "CR0002")
         self.telemetry(
             {"id": "BG0001", "type": "bug", "tokens": 50_000, "wall_time_s": 100},
             {"id": "CR0001", "type": "cr", "tokens": 25_000, "wall_time_s": 50},
             {"id": "CR0002", "type": "cr", "tokens": 100_000, "wall_time_s": 250},
         )
         res = self.accuracy()
-        est = sprint.BASE_TOKEN_BUDGET  # no Affects -> complexity 0 -> the fixed floor
+        est = self.EST
         self.assertEqual(self.unit(res, "BG0001")["estimate"], est)
         self.assertEqual(self.unit(res, "BG0001")["ratio"], round(est / 50_000, 2))
         self.assertEqual(self.unit(res, "CR0001")["ratio"], round(est / 25_000, 2))
@@ -341,23 +358,24 @@ class TheBatchIsMeasuredAgainstThePlan(AccuracyBase):
         self.assertEqual(self.unit(res, "BG0001")["wall_time_s"], 100)
 
     def test_batch_ratio_is_the_summed_estimate_over_the_summed_actual(self) -> None:
-        import sprint
+        self.forecast("BG0001", "CR0001", "CR0002")
         self.telemetry(
             {"id": "BG0001", "type": "bug", "tokens": 50_000, "wall_time_s": 100},
             {"id": "CR0001", "type": "cr", "tokens": 25_000, "wall_time_s": 50},
             {"id": "CR0002", "type": "cr", "tokens": 100_000, "wall_time_s": 250},
         )
         res = self.accuracy()
-        self.assertEqual(res["batch"]["estimate"], 3 * sprint.BASE_TOKEN_BUDGET)
+        self.assertEqual(res["batch"]["estimate"], 3 * self.EST)
         self.assertEqual(res["batch"]["actual_tokens"], 175_000)
-        self.assertEqual(res["batch"]["ratio"],
-                         round(3 * sprint.BASE_TOKEN_BUDGET / 175_000, 2))
+        self.assertEqual(res["batch"]["ratio"], round(3 * self.EST / 175_000, 2))
         self.assertEqual(res["batch"]["wall_time_s"], 400)
         self.assertEqual((res["n_measured"], res["n_unmeasured"]), (3, 0))
+        self.assertEqual(res["n_forecast"], 3)
 
     def test_a_later_bare_close_record_does_not_erase_the_measurement(self) -> None:
         """The loop appends a bare `{id, type}` record on close. Reading the LAST record
         wholesale would throw away the tokens the run actually reported."""
+        self.forecast("BG0001")
         self.telemetry(
             {"id": "BG0001", "type": "bug", "tokens": 50_000, "wall_time_s": 100},
             {"id": "BG0001", "type": "bug"},
@@ -369,6 +387,11 @@ class SilenceIsNotAMeasurement(AccuracyBase):
     """The load-bearing case. A unit with no telemetry must be reported UNMEASURED - never
     dropped from the list, never folded into the ratio. A silent skip lets a batch of three
     units with one measurement report as a fully measured, accurate sprint."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        # Every unit WAS forecast at plan time. What varies here is whether it was measured.
+        self.forecast("BG0001", "CR0001", "CR0002")
 
     def test_a_unit_with_no_telemetry_is_reported_unmeasured(self) -> None:
         self.telemetry({"id": "BG0001", "type": "bug", "tokens": 50_000})
@@ -387,10 +410,9 @@ class SilenceIsNotAMeasurement(AccuracyBase):
     def test_an_unmeasured_unit_is_excluded_from_the_batch_ratio(self) -> None:
         """Not counted as accurate, and not counted as a miss either: its estimate must not
         land in the numerator with nothing under it."""
-        import sprint
         self.telemetry({"id": "BG0001", "type": "bug", "tokens": 50_000})
         res = self.accuracy()
-        self.assertEqual(res["batch"]["estimate"], sprint.BASE_TOKEN_BUDGET,
+        self.assertEqual(res["batch"]["estimate"], self.EST,
                          "the unmeasured units' estimates must stay out of the ratio")
         self.assertEqual(res["batch"]["actual_tokens"], 50_000)
 
@@ -415,6 +437,10 @@ class SilenceIsNotAMeasurement(AccuracyBase):
 
 
 class TheRetroCarriesTheReport(AccuracyBase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.forecast("BG0001", "CR0001", "CR0002")
+
     def test_write_inserts_the_section_and_is_idempotent(self) -> None:
         self.telemetry({"id": "BG0001", "type": "bug", "tokens": 50_000})
         res = self.accuracy()
@@ -451,8 +477,11 @@ class TheRetroCarriesTheReport(AccuracyBase):
 class TheVelocityHistoryAccumulates(AccuracyBase):
     """The history the next plan reads. One row per sprint, keyed by retro id."""
 
+    def setUp(self) -> None:
+        super().setUp()
+        self.forecast("BG0001", "CR0001", "CR0002")
+
     def test_a_row_is_appended_and_read_back(self) -> None:
-        import sprint
         self.telemetry({"id": "BG0001", "type": "bug", "tokens": 50_000, "wall_time_s": 100})
         retro.record_velocity(str(self.root), self.accuracy())
         hist = retro.velocity_history(str(self.root))
@@ -461,9 +490,19 @@ class TheVelocityHistoryAccumulates(AccuracyBase):
         self.assertEqual(row["id"], "RETRO9000")
         self.assertEqual(row["date"], "2026-07-14")
         self.assertEqual((row["units"], row["measured"]), (3, 1))
-        self.assertEqual(row["estimate"], sprint.BASE_TOKEN_BUDGET)
+        self.assertEqual(row["estimate"], self.EST)
         self.assertEqual(row["actual_tokens"], 50_000)
         self.assertEqual(row["ratio"], 1.0)
+
+    def test_the_row_records_the_constants_that_produced_the_forecast(self) -> None:
+        """Without them the row cannot say WHICH estimator its ratio judges, and a reader is
+        left to assume it was the one in force - which is how training error gets quoted as
+        validation."""
+        self.telemetry({"id": "BG0001", "type": "bug", "tokens": 50_000})
+        retro.record_velocity(str(self.root), self.accuracy())
+        row = retro.velocity_history(str(self.root))[0]
+        self.assertEqual(row["constants"], self.CONSTANTS)
+        self.assertEqual(row["forecast"], 3, "the coverage of the ESTIMATE side is recorded too")
 
     def test_re_running_a_sprint_corrects_its_row_rather_than_duplicating_it(self) -> None:
         self.telemetry({"id": "BG0001", "type": "bug", "tokens": 50_000})
@@ -489,6 +528,333 @@ class TheVelocityHistoryAccumulates(AccuracyBase):
 
     def test_no_history_yet_is_an_empty_list_not_a_crash(self) -> None:
         self.assertEqual(retro.velocity_history(str(self.root)), [])
+
+
+# ---------------------------------------------------------------------------
+# BG0133: the estimate is what was PREDICTED, never what is now computed.
+# ---------------------------------------------------------------------------
+
+PLANNED_RETRO = """# RETRO-9100: a planned sprint
+
+> **Date:** 2026-07-15
+> **Batch:** CR0101, CR0102
+
+## Delivered
+- CR0101 - shipped
+## What went well
+- it was planned and measured
+## What was hard / what stalled
+- nothing
+## Lessons
+- record the forecast when it is made
+## Actions raised
+| Finding | Disposition |
+| --- | --- |
+| nothing to raise | declined: clean sprint |
+"""
+
+# A source file with enough branching that the blast-radius complexity is non-zero, so
+# TOKENS_PER_COGNITIVE actually multiplies something. A complexity-0 fixture would let a
+# change to the slope pass unnoticed.
+COMPLEX_SRC = """def f(a, b, c):
+    for i in range(a):
+        if i > b:
+            while c:
+                if i % 2:
+                    c -= 1
+                else:
+                    break
+        elif i < c:
+            try:
+                b += i
+            except ValueError:
+                b = 0
+    return b
+"""
+
+GROOMED_CR = """# CR-{num}: a unit
+
+> **Status:** Proposed
+> **Priority:** Medium
+> **Affects:** src/{name}.py
+> **Effort:** M
+
+## Summary
+A unit of work.
+"""
+
+
+class TheEstimateIsTheOneThatWasPredicted(unittest.TestCase):
+    """BG0133, the load-bearing case.
+
+    Plan a batch through the PUBLIC path, then CHANGE the forecast constants, then run
+    `accuracy`. The reported estimate must be UNMOVED. If moving the constants moves a past
+    sprint's estimate, the loop is re-deriving the forecast at judgement time from the very
+    constants it is meant to be judging, and it can never falsify its own estimator - which is
+    exactly how a recorded 5.2x miss was erased by the recalibration it caused.
+    """
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.addCleanup(self.tmp.cleanup)
+        (self.root / "sdlc-studio" / "retros").mkdir(parents=True)
+        (self.root / "sdlc-studio" / ".local").mkdir(parents=True)
+        crs = self.root / "sdlc-studio" / "change-requests"
+        crs.mkdir(parents=True)
+        src = self.root / "src"
+        src.mkdir()
+        for num, name in (("0101", "a"), ("0102", "b")):
+            (src / f"{name}.py").write_text(COMPLEX_SRC, encoding="utf-8")
+            (crs / f"CR{num}-x.md").write_text(
+                GROOMED_CR.format(num=num, name=name), encoding="utf-8")
+        (self.root / "sdlc-studio" / "retros" / "RETRO9100-t.md").write_text(
+            PLANNED_RETRO, encoding="utf-8")
+
+    def plan(self) -> int:
+        """The public path: `sprint plan`, exactly as an operator runs it."""
+        import sprint
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = sprint.main(["plan", "--crs", "Proposed", "--root", str(self.root),
+                              "--order", "wsjf", "--no-fetch", "--skip-personas"])
+        self.assertEqual(rc, 0, err.getvalue())
+        return rc
+
+    def measure(self) -> None:
+        path = self.root / "sdlc-studio" / ".local" / "telemetry.jsonl"
+        path.write_text(
+            json.dumps({"id": "CR0101", "type": "cr", "tokens": 90_000, "wall_time_s": 300})
+            + "\n"
+            + json.dumps({"id": "CR0102", "type": "cr", "tokens": 60_000, "wall_time_s": 200})
+            + "\n", encoding="utf-8")
+
+    def accuracy(self) -> dict:
+        return retro.accuracy(str(self.root), "RETRO9100")
+
+    def test_changing_the_constants_does_not_move_a_recorded_forecast(self) -> None:
+        import sprint
+        self.plan()          # the forecast is RECORDED here, by the plan that made it
+        self.measure()
+        before = self.accuracy()
+        self.assertEqual(before["n_measured"], 2)
+        self.assertGreater(before["batch"]["estimate"], 0)
+
+        # Now RECALIBRATE. Every past sprint's estimate must be unmoved: it is a record of
+        # what was predicted, not a function of today's code.
+        with mock.patch.object(sprint, "TOKENS_PER_COGNITIVE", 6_000), \
+                mock.patch.object(sprint, "BASE_TOKEN_BUDGET", 200_000):
+            after = self.accuracy()
+
+        self.assertEqual(after["batch"]["estimate"], before["batch"]["estimate"],
+                         "the recorded plan-time forecast moved when the constants changed - "
+                         "the report is re-deriving the estimate, so it can never falsify it")
+        self.assertEqual(after["batch"]["ratio"], before["batch"]["ratio"])
+        for uid in ("CR0101", "CR0102"):
+            a = next(u for u in after["units"] if u["id"] == uid)
+            b = next(u for u in before["units"] if u["id"] == uid)
+            self.assertEqual(a["estimate"], b["estimate"])
+            self.assertEqual(a["ratio"], b["ratio"])
+
+    def test_the_recorded_forecast_is_the_one_the_plan_actually_quoted(self) -> None:
+        """Not merely stable - CORRECT. The estimate the retro reports must equal the number
+        the planner forecast for that unit at plan time."""
+        import sprint
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            sprint.main(["plan", "--crs", "Proposed", "--root", str(self.root),
+                         "--order", "wsjf", "--no-fetch", "--skip-personas",
+                         "--format", "json"])
+        planned = json.loads(out.getvalue())["token_forecast"]["per_unit"]
+        self.measure()
+        res = self.accuracy()
+        for u in res["units"]:
+            self.assertEqual(u["estimate"], planned[u["id"]])
+        self.assertEqual(res["batch"]["estimate"], sum(planned.values()))
+
+    def test_the_forecast_is_recorded_without_write(self) -> None:
+        """`--write` persists the plan artefact. The FORECAST is not optional: a forecast that
+        is only recorded when someone remembers a flag is a forecast that does not exist."""
+        self.plan()
+        self.assertTrue(
+            (self.root / "sdlc-studio" / ".local" / "forecasts.jsonl").exists(),
+            "sprint plan must record its forecast whenever a plan is made")
+        self.assertFalse((self.root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
+
+    def test_a_replan_after_the_fact_cannot_rewrite_what_was_predicted(self) -> None:
+        """First wins. Re-planning a batch once the work is done must not let the estimator
+        re-forecast it with hindsight (or with new constants)."""
+        import sprint
+        self.plan()
+        self.measure()
+        first = self.accuracy()["batch"]["estimate"]
+        self.assertGreater(first, 0)
+        with mock.patch.object(sprint, "TOKENS_PER_COGNITIVE", 6_000):
+            self.plan()  # a second plan, with a different estimator, after the work is done
+        self.assertEqual(self.accuracy()["batch"]["estimate"], first,
+                         "a later plan overwrote what was predicted before the work started")
+
+
+class SilenceOnTheEstimateSideIsNotEvidenceEither(unittest.TestCase):
+    """The mirror of SilenceIsNotAMeasurement. A unit whose plan-time forecast was never
+    recorded is UNFORECAST: named, excluded from BOTH sides of the ratio, and counted in the
+    coverage line. It is never quietly re-derived, and never counted as accurate."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.addCleanup(self.tmp.cleanup)
+        for d in ("retros", "bugs", "change-requests", ".local"):
+            (self.root / "sdlc-studio" / d).mkdir(parents=True, exist_ok=True)
+        (self.root / "sdlc-studio" / "retros" / "RETRO9000-t.md").write_text(
+            BATCH_RETRO, encoding="utf-8")
+        (self.root / "sdlc-studio" / "bugs" / "BG0001-a.md").write_text(
+            UNIT.format(prefix="BG", num="0001"), encoding="utf-8")
+        for n in ("0001", "0002"):
+            (self.root / "sdlc-studio" / "change-requests" / f"CR{n}-a.md").write_text(
+                UNIT.format(prefix="CR", num=n), encoding="utf-8")
+        self.telemetry(
+            {"id": "BG0001", "type": "bug", "tokens": 50_000, "wall_time_s": 100},
+            {"id": "CR0001", "type": "cr", "tokens": 40_000, "wall_time_s": 80},
+            {"id": "CR0002", "type": "cr", "tokens": 30_000, "wall_time_s": 60},
+        )
+
+    def telemetry(self, *records: dict) -> None:
+        (self.root / "sdlc-studio" / ".local" / "telemetry.jsonl").write_text(
+            "".join(json.dumps(r) + "\n" for r in records), encoding="utf-8")
+
+    def forecast(self, *records: dict) -> None:
+        import telemetry as tel
+        tel.record_forecasts(str(self.root), list(records))
+
+    def accuracy(self) -> dict:
+        return retro.accuracy(str(self.root), "RETRO9000")
+
+    def unit(self, res: dict, uid: str) -> dict:
+        return next(u for u in res["units"] if u["id"] == uid)
+
+    def test_a_unit_with_no_recorded_forecast_is_reported_unforecast(self) -> None:
+        self.forecast({"id": "BG0001", "tokens": 50_000, "seed": 0,
+                       "constants": {"BASE_TOKEN_BUDGET": 50_000,
+                                     "TOKENS_PER_COGNITIVE": 600}})
+        res = self.accuracy()
+        self.assertEqual(res["n_units"], 3, "an unforecast unit must not vanish from the batch")
+        self.assertEqual(res["n_forecast"], 1)
+        self.assertEqual(res["unforecast"], ["CR0001", "CR0002"])
+        for uid in ("CR0001", "CR0002"):
+            u = self.unit(res, uid)
+            self.assertEqual(u["state"], "unforecast")
+            self.assertIsNone(u["estimate"], "an unforecast unit must not be handed an estimate")
+            self.assertIsNone(u["ratio"])
+            self.assertTrue(u["reason"])
+
+    def test_an_unforecast_unit_is_excluded_from_both_sides_of_the_ratio(self) -> None:
+        self.forecast({"id": "BG0001", "tokens": 50_000, "seed": 0,
+                       "constants": {"BASE_TOKEN_BUDGET": 50_000,
+                                     "TOKENS_PER_COGNITIVE": 600}})
+        b = self.accuracy()["batch"]
+        self.assertEqual(b["estimate"], 50_000)
+        self.assertEqual(b["actual_tokens"], 50_000,
+                         "a measured-but-unforecast unit's ACTUAL must stay out too - it has "
+                         "no prediction to judge")
+        self.assertEqual(b["ratio"], 1.0)
+
+    def test_a_wholly_unforecast_batch_reports_no_ratio(self) -> None:
+        res = self.accuracy()
+        self.assertEqual(res["n_forecast"], 0)
+        self.assertIsNone(res["batch"]["ratio"],
+                          "zero recorded forecasts must not report an accuracy")
+
+    def test_the_written_block_says_unforecast_out_loud(self) -> None:
+        block = retro.accuracy_block(self.accuracy())
+        self.assertIn("UNFORECAST", block)
+        self.assertIn("0 of 3", block)
+
+
+class TrainingErrorIsNotEvidence(unittest.TestCase):
+    """A sprint whose actuals the constants in force were FITTED to cannot validate them. Its
+    ratio lands near 1.0x by construction. It must be labelled IN-SAMPLE and kept out of every
+    accuracy figure quoted to the operator as evidence."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.addCleanup(self.tmp.cleanup)
+        (self.root / "sdlc-studio" / "retros").mkdir(parents=True)
+
+    def velocity(self, *rows: str) -> None:
+        import sprint
+        c = sprint.forecast_constants()
+        head = ("| Retro | Date | Units | Measured | Forecast | Estimate (tokens, plan-time) | "
+                "Actual (tokens) | Ratio (est/actual) | Wall (s) | Constants | Sample |\n"
+                "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
+        body = "".join(r.format(cur=f"base={c['BASE_TOKEN_BUDGET']} "
+                                    f"tpc={c['TOKENS_PER_COGNITIVE']}") for r in rows)
+        (self.root / "sdlc-studio" / "retros" / "VELOCITY.md").write_text(
+            head + body, encoding="utf-8")
+
+    def test_an_in_sample_row_is_excluded_from_the_reported_accuracy(self) -> None:
+        import sprint
+        fitted = sprint.CALIBRATION_FIT_RETROS[0]
+        self.velocity(
+            "| " + fitted + " | 2026-07-14 | 6 | 6 | 6 | 418,800 | 384,278 | 1.09x | 1,848 | "
+            "{cur} | in-sample |\n")
+        cal = sprint.calibration(self.root)
+        self.assertEqual(cal["sprints"], 0, "a training-error row is not an out-of-sample sprint")
+        self.assertEqual(cal["ratios"], [])
+        self.assertEqual(cal["in_sample"], 1)
+        self.assertEqual((cal["low"], cal["high"]),
+                         (round(1 - sprint.FORECAST_BAND, 2), round(1 + sprint.FORECAST_BAND, 2)),
+                         "an in-sample ratio must not even widen the band")
+
+    def test_the_planner_quotes_the_out_of_sample_figure_not_the_training_fit(self) -> None:
+        import sprint
+        fitted = sprint.CALIBRATION_FIT_RETROS[0]
+        self.velocity(
+            "| " + fitted + " | 2026-07-14 | 6 | 6 | 6 | 1,285,000 | 384,278 | 3.34x | 1,848 | "
+            "base=50000 tpc=5000 | in-sample |\n",
+            "| RETRO9001 | 2026-07-15 | 5 | 5 | 5 | 352,600 | 642,358 | 0.55x | 3,157 | "
+            "{cur} | out-of-sample |\n")
+        cal = sprint.calibration(self.root)
+        self.assertEqual(cal["ratios"], [0.55],
+                         "only the sprint forecast BEFORE the fit, by the constants in force, "
+                         "is evidence about the estimator")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            sprint.main(["plan", "--crs", "Proposed", "--root", str(self.root),
+                         "--no-fetch", "--skip-personas"])
+        line = next(ln for ln in out.getvalue().splitlines() if "Calibration:" in ln)
+        self.assertIn("0.55x", line)
+        self.assertNotIn("1.09x", line)
+        self.assertIn("out-of-sample", line)
+
+    def test_with_no_out_of_sample_row_the_planner_says_so_rather_than_quoting_the_fit(self) -> None:
+        import sprint
+        fitted = sprint.CALIBRATION_FIT_RETROS[0]
+        self.velocity(
+            "| " + fitted + " | 2026-07-14 | 6 | 6 | 6 | 418,800 | 384,278 | 1.09x | 1,848 | "
+            "{cur} | in-sample |\n")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            sprint.main(["plan", "--crs", "Proposed", "--root", str(self.root),
+                         "--no-fetch", "--skip-personas"])
+        line = next(ln for ln in out.getvalue().splitlines() if "Calibration:" in ln)
+        self.assertIn("no out-of-sample evidence", line)
+        self.assertNotIn("1.09x", line)
+
+    def test_a_legacy_row_with_no_recorded_constants_is_not_evidence(self) -> None:
+        """The old VELOCITY.md carried a re-derived estimate and no record of what produced it.
+        It cannot be read as a forecast, so it cannot be read as evidence."""
+        import sprint
+        (self.root / "sdlc-studio" / "retros" / "VELOCITY.md").write_text(
+            "| Retro | Date | Units | Measured | Estimate | Actual | Ratio | Wall |\n"
+            "| --- | --- | --- | --- | --- | --- | --- | --- |\n"
+            "| RETRO9002 | 2026-07-14 | 6 | 6 | 418,800 | 384,278 | 1.09x | 1,848 |\n",
+            encoding="utf-8")
+        cal = sprint.calibration(self.root)
+        self.assertEqual(cal["sprints"], 0)
+        self.assertEqual(cal["unforecast"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

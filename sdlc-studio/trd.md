@@ -1,9 +1,9 @@
 # Technical Requirements Document
 
 **Project:** SDLC Studio
-**Version:** 4.0.0
+**Version:** 4.1.0
 **Status:** Draft
-**Last Updated:** 2026-07-06
+**Last Updated:** 2026-07-14
 **PRD Reference:** [PRD](./prd.md)
 
 > Generated in **Generate mode** by reverse-engineering the skill's own source.
@@ -29,10 +29,14 @@ deterministic Python layer that the host agent reads and runs.
 ### Scope
 
 Covered: the progressive-disclosure router architecture, the split between the
-markdown knowledge base and the Python script layer, the 40+ scripts and their
-shared library, the data architecture (markdown artifacts plus JSON state), soft
-runtime dependencies, tool-neutral portability, and the architectural decisions
-(ADRs).
+markdown knowledge base and the Python script layer, the 58 scripts and their
+shared library, the data architecture (markdown artifacts plus JSON state, and the
+two id eras), the gate architecture, soft runtime dependencies, tool-neutral
+portability, and the architectural decisions (ADRs).
+
+Coverage: v4.1.0 as released, plus the `[Unreleased]` work on `main` (the breakdown
+gate, sprint capacity, the sizing loop, the retro learning loop). The document
+version tracks the product version; it is not itself a release artefact.
 
 Not covered: the per-command process flows (these live in the `reference-*.md`
 files and are the artifact behaviours, not the technical design); the content of
@@ -42,15 +46,24 @@ each project's TRD).
 ### Key Decisions
 
 - Progressive-disclosure router: `SKILL.md` is the only always-loaded file; all
-  detail loads on demand through a loading guide.
+  detail loads on demand through a loading guide. (ADR-001)
 - Determinism in scripts, judgement in the agent: side-effecting and mechanical
   work is delegated to pure-stdlib Python helpers that emit JSON; the agent
-  reasons over JSON, not raw markdown.
+  reasons over JSON, not raw markdown. (ADR-002)
 - Files are the source of truth; indexes and statuses are derived and reconciled
-  from a disk census.
+  from a disk census. (ADR-003)
 - GitHub integration through the `gh` CLI only - no PyGitHub or token handling.
+  (ADR-004)
 - `AGENTS.md` is the tool-neutral instruction standard; tool-specific files point
-  at it rather than duplicate it.
+  at it rather than duplicate it. (ADR-005)
+- A gate's fire/skip decision is computed from artefact fields and config, never
+  from model judgement; escapes are recorded, and an absent config blocks rather
+  than disarms. (ADR-006, and its four v4 instances: ADR-007 the engagement floor,
+  ADR-010 the learning loop, ADR-011 the breakdown gate)
+- Artefact identity is distributed: collision-free ULID ids let uncoordinated
+  writers file concurrently, with the sequential era kept valid forever. (ADR-008)
+- The engineering team is generated per project rather than shipped as a fixed
+  cast. (ADR-009)
 
 ---
 
@@ -105,15 +118,16 @@ ADR-002.
 
 | Component | Responsibility | Technology |
 | --- | --- | --- |
-| `SKILL.md` router | Always-loaded entry point: philosophy gates, type table, Progressive Loading Guide, pointers. ~195 lines, the only file paid for every invocation. | Markdown + YAML frontmatter |
-| `help/*.md` (31 files) | Type-specific command help, prerequisites, output, examples; loaded on demand per `[type]`. | Markdown |
-| `reference-*.md` (42 files) | Step-by-step workflow detail per domain; loaded only for multi-step workflows. | Markdown |
-| `templates/` (72 files) | Document and code templates with `{{placeholder}}` syntax; loaded only when creating artifacts. | Markdown / text |
-| `best-practices/` (19 files) | Quality guidelines consulted before producing artifacts. | Markdown |
-| `lessons/` | Cross-project lessons registry (`_index.md`, `LL{NNNN}-*.md`), recalled before substantive decisions. | Markdown |
-| `scripts/` (40+ scripts) | Deterministic Python helpers emitting JSON. Most are read-only; a bounded set writes artefacts and indexes (see §5 rule 5). | Python 3.10+ stdlib |
-| `scripts/lib/sdlc_md.py` | Shared parsing/utility library; single source of truth for markdown conventions. | Python 3.10+ stdlib |
-| `scripts/tests/` | Unit tests for the script layer (the dev-repo suite also covers repo-root `tools/`, so the exact count varies with checkout layout). | `unittest` |
+| `SKILL.md` router | Always-loaded entry point: philosophy gates, type table, Progressive Loading Guide, the Deterministic Entry Points card, pointers. ~260 lines (CI-budgeted under 500), the only file paid for every invocation. | Markdown + YAML frontmatter |
+| `help/*.md` (41 files) | Type-specific command help, prerequisites, output, examples; loaded on demand per `[type]`. | Markdown |
+| `reference-*.md` (52 files) | Step-by-step workflow detail per domain; loaded only for multi-step workflows. Each is line-budgeted. | Markdown |
+| `templates/` (78 files) | Document and code templates with `{{placeholder}}` syntax; loaded only when creating artifacts. Includes the persona/seat and stakeholder card schemas. | Markdown / text |
+| `best-practices/` (20 files) | Quality guidelines consulted before producing artifacts. | Markdown |
+| `lessons/` | Cross-project lessons registry (`_index.md`, `LL{NNNN}-*.md`), ranked and printed into every sprint plan (ADR-010). | Markdown |
+| `scripts/` (58 scripts) | Deterministic Python helpers emitting JSON. The read path is read-only; a bounded, tested set writes artefacts, indexes and gate state (see §5 rule 5). | Python 3.10+ stdlib |
+| `scripts/lib/` (6 modules) | Shared library. `sdlc_md.py` is the parsing core and the single source of truth for markdown conventions; `conventions.py`, `xrepo.py` and the rest carry per-domain shared logic. | Python 3.10+ stdlib |
+| `scripts/tests/` (76 modules) | Unit tests for the script layer; 2151 tests at the time of writing. The repo-only `tools/` checkers have their own suite under `tools/tests/`. | `unittest` |
+| `tools/` | Repo CI guards (style, links, skill frontmatter, versions, budgets, neutrality, action pins) plus the eval runner. Not part of the shipped payload. | Python / Bash |
 | `install.sh` / `install.ps1` | Cross-harness installers for six targets. | Bash / PowerShell |
 
 > **C4 Diagrams:** not generated for this brownfield extraction. Use
@@ -137,11 +151,27 @@ scaling property of the design.
 | Markdown knowledge base | Judgement: design decisions, drift adjudication, body-level edits, dashboards, the five-leg review verdict. | The agent |
 | Python script tier | Determinism: census, parsing, counting, ID allocation, drift detection, AC execution, repo indexing, GitHub sync. | Tested code |
 
-The split rule (`reference-scripts.md`): read-only helpers (`reconcile`, `status`,
-`validate`, `next_id`, `review_prep`) emit JSON and the agent does the judgement;
-the side-effecting helpers (`repo_map`, `verify_ac`, `github_sync`, `plan`,
-`lessons`) perform bounded, tested mutations. Everything else (reading files,
-walking directories, simple transforms) stays with the agent's built-in tools.
+The split rule (`reference-scripts.md`): read-only helpers (`reconcile detect`,
+`status`, `validate`, `next_id`, `review_prep`, `audit`, `critic`, `gate`) emit JSON
+and the agent does the judgement; the authoring and repair helpers (`artifact`,
+`file_finding`, `transition`, `reconcile apply`, `verify_ac`, `repo_map`,
+`github_sync`, `plan`, `lessons`, `retro`, `archive`) perform bounded, tested
+mutations. Everything else (reading files, walking directories, simple transforms)
+stays with the agent's built-in tools.
+
+#### The gate tier
+
+A third architectural element sits over both: `gate.py` composes the deterministic
+checks into **lanes**, each returning PASS / warn / FAIL, and the whole into one
+exit code. The default sweep runs conformance, reconcile, index-derived, validate,
+constitution, integrity, duplicate-id, provenance, doc-coverage, engagement-floor,
+disclosure, doc-freshness, mutation and hook-enabled. Bound lanes attach to a
+specific obligation and cannot be skipped or excluded away: `--require-retro` (the
+retro's content, plus the lessons summary and validity), `--require-review` (review
+currency, not presence), `--require-handoff`, and `--release`, which EXECUTES every
+story's `Verify:` expression rather than reading a stored report that could carry a
+stale green. The gate writes nothing, so it is hook-safe. Its lanes are the
+mechanism behind ADR-006 through ADR-011: a lane is how a rule stops being prose.
 
 ---
 
@@ -184,11 +214,13 @@ and the script CLI surface.
 
 `/sdlc-studio [type] [action] [flags]`. The router parses `type` and `action`,
 loads `help/{type}.md`, and follows the matching `reference-{domain}.md` workflow.
-Types: `prd`, `trd`, `tsd`, `persona`, `consult`, `chat`, `epic`, `story`, `code`,
-`test-spec`, `test-automation`, `test-env`, `bug`, `cr`, `rfc`, `project`, `plan`,
-`reconcile`, `status`, `hint`, `help`. The error-handling contract (missing
-prerequisites, existing files, ID collision, open questions, unknown language) is
-in `SKILL.md`.
+Types: `init`, `pvd`, `prd`, `trd`, `tsd`, `persona`, `consult`, `chat`, `epic`,
+`story`, `code`, `test-spec`, `test-automation`, `test-env`, `bug`, `cr`, `rfc`,
+`project`, `sprint`, `handoff`, `plan`, `decisions`, `reconcile`, `gate`, `deploy`,
+`mutation`, `skill-update`, `status`, `hint`, `help`. (`sprint` was named
+`autosprint` before v4.0; the old name is retired.) The error-handling contract
+(missing prerequisites, existing files, id collision, open questions, unknown
+language) is in `SKILL.md`.
 
 ### Script CLI contract
 
@@ -269,10 +301,30 @@ divergence from the PRD's data-architecture wording. [HIGH]
 | test-spec | `sdlc-studio/test-specs` | `TS` |
 | workflow | `sdlc-studio/workflows` | `WF` |
 
-IDs are 4-digit zero-padded. `CR`/`RFC` display with a dash (`CR-0001`); others do
-not (`US0001`). `ID_RE`, `norm_id`, and the globbing tolerate both forms and mixed
-case so a file named `cr0001.md` and an index entry `CR-0001` normalise to the same
-record. `id_number` extracts the numeric part.
+Retro (`RETRO`), review (`RV`) and handoff (`HO`) artefacts sit outside this
+registry - they are sequential-only meta artefacts created through `artifact.py`'s
+`meta_new` path, with their own index files and a reconcile `meta` lane. They carry
+no status/count block, which is why they need a separate lane rather than the
+pipeline census.
+
+#### Two id eras (schema v2 and v3)
+
+Sequential ids are 4-digit zero-padded. `CR`/`RFC` display with a dash (`CR-0001`);
+others do not (`US0001`). `ID_RE`, `norm_id`, and the globbing tolerate both forms
+and mixed case so a file named `cr0001.md` and an index entry `CR-0001` normalise to
+the same record. `id_number` extracts the numeric part.
+
+Under `schema_version: 3` (the v4 default) new artefacts mint a **ULID** id instead:
+`US-01JQK3F8`, a Crockford-base32 timestamp prefix with a real entropy tail. The
+point is that two uncoordinated writers - a human on a laptop and an agent in a
+container, on different git states - cannot mint the same id even in the same
+instant, without any central allocator to coordinate through. The allocator's
+directory-glob retry remains the single-writer backstop and `allocation_lock`
+serialises same-process writers, but the entropy is what makes the scheme safe
+across machines. The two eras **coexist**: `migrate_v3 adopt` is forward-only, so
+existing sequential ids stay valid in tickets, chat and docs, and only new artefacts
+are ULIDs. Every id-consuming regex, the census, and the title parser accept both.
+See ADR-008.
 
 #### Status vocabulary (`STATUS_VOCAB`)
 
@@ -298,7 +350,20 @@ ACs are parsed two ways: a heading `### AC1: Title` (`AC_HEADING_RE`) or a compa
 bullet `- **AC1:** text` (`AC_BULLET_RE`). Each AC may carry a `- **Verify:** ...`
 verifier line and a `- **Verified:** yes|no|stale|manual (...)` result line, parsed
 by `VERIFY_RE` / `VERIFIED_RE`. `verify_ac.py` rewrites the `Verified:` line in
-place.
+place. The parser is fenced-block aware, so an illustrative `Verify:` line inside a
+code block in a document is never executed.
+
+**Only a story carries an executable verifier.** CR and bug acceptance criteria are
+**prose**, and `file_finding.py` / `artifact.py` refuse a command-shaped `Verify:`
+in one at creation, from a single shared authority so the two paths cannot disagree.
+The reason is structural rather than stylistic: nothing executes a CR or bug AC, so
+a command written into one is a claim with no runner - a wrong one is a permanent
+false RED that nobody sees fail, and a loose one is a false GREEN. Both had already
+happened in this workspace: one verifier grepped for an env var under the wrong
+name, and one passed against unrelated prose while the feature it claimed to check
+did not exist. `validate.py` warns on the ones already in a tree. The corollary for
+the pipeline is that an un-decomposed CR reaches Done on prose alone, which is why
+`sprint plan` flags a Large or wide-footprint CR that no story cites (ADR-011).
 
 ### Storage Strategy
 
@@ -314,12 +379,21 @@ place.
 | File | Writer | Purpose |
 | --- | --- | --- |
 | `project-state.json` | project orchestration | Tracks `project plan` / `project implement` progress and dependency order. [MEDIUM] |
+| `run-state.json` | `sprint.py` / `handoff.py` | A run's identity, batch, resolved appetite and outcome, written under a lock. The breaker reads back the ceiling the plan stamped, so plan and run cannot disagree. [HIGH] |
 | `review-state.json` | review workflow | Review cadence and verdict state. [MEDIUM] |
 | `review-queue.json` | review workflow | Pending review inputs. [MEDIUM] |
-| `telemetry.jsonl` | `telemetry.py` (via `artifact close`) | Append-only run/close events feeding estimate calibration. [HIGH] |
+| `wsjf-inputs.json` | the review seats (via the plan-rung consult) | Per-unit value / time-criticality / risk-reduction / size scores feeding the WSJF order. [HIGH] |
+| `telemetry.jsonl` | `telemetry.py` (via `artifact close`) | Append-only run/close events feeding the estimate-vs-actual report. `latest_actuals()` reads the last **non-null** value per field, so a bare close record after an instrumented one cannot erase the measurement. [HIGH] |
 | `verify-history.jsonl` | `verify_ac.py` | Append-only per-AC verification history. [HIGH] |
 | `verify-report.json` | `verify_ac.py` | Machine-readable AC verification report (per-AC pass/fail/manual). [HIGH] |
+| `mutation-report.json` | `mutation.py` | Per-mutant killed / survived / error / unviable, with the git rev and a content hash per target, so a dirty tree cannot ride an old green. [HIGH] |
 | `repo-map.json` | `repo_map.py` | Per-file symbols, imports, in-degree score; queried for `READ THESE FILES FIRST` lists. [HIGH] |
+
+One measurement artefact is deliberately **committed** rather than `.local/`:
+`sdlc-studio/retros/VELOCITY.md`, one row per sprint (forecast, actual, ratio,
+coverage). It is a history a human reads to decide whether the forecast constants
+have earned a change - not a cache, and explicitly not an auto-recalibration input
+(ADR-010's honesty rule: the report stops at reporting).
 
 ### Migrations
 
@@ -401,9 +475,17 @@ production fixes: fixes land there first, then back-port to this repo (per
 ### Scaling Strategy
 
 Scaling is about context tokens, not machines. Progressive disclosure keeps the
-always-loaded footprint near-constant (`SKILL.md` ~195 lines) however large the
-corpus grows. Agentic waves bound concurrency. Read-only scripts run in well under a
-second (the script suite runs 1000+ tests in a few seconds).
+always-loaded footprint near-constant (`SKILL.md` ~260 lines, CI-budgeted under 500)
+however large the corpus grows. Agentic waves bound concurrency and the appetite
+breaker bounds an unattended run. Read-only scripts run in well under a second; the
+script suite runs 2151 tests in under a minute. The one deliberate exception is
+`mutation.py`, which re-runs the suite once per mutant and is measured in minutes -
+which is why its gate lane reads a stored report rather than executing, and reports
+STALE on a rev change or an edited target rather than passing.
+
+Distribution scales too, not just context: ULID identity (ADR-008) is what lets
+several uncoordinated writers - human and agent, on different machines and git
+states - file into one workspace without an id allocator to coordinate through.
 
 > **Container Design:** not applicable - the skill ships no containers. The
 > consuming project's `test-env` type handles containerised test environments.
@@ -438,13 +520,25 @@ second (the script suite runs 1000+ tests in a few seconds).
 
 | Metric | Target | Measurement |
 | --- | --- | --- |
-| Always-loaded context | ~195 lines (`SKILL.md`) | Line count of the router |
-| Script run time | Sub-second on a typical project | `scripts/tests` suite: 1000+ tests in a few seconds |
-| Reconcile / status | Sub-second | Read-only census over the artifact tree |
+| Always-loaded context | ~260 lines (`SKILL.md`), hard ceiling 500 | Line count of the router, gated by `check_budgets.py` |
+| Script run time | Sub-second on a typical project | `scripts/tests` suite: 2151 tests in under a minute |
+| Reconcile / status / gate | Sub-second | Read-only census over the artifact tree |
+| Mutation run | Minutes, by design | One suite run per mutant; not on the fast path |
 | Install | Single fetch-and-copy | `install.sh` / `install.ps1`, no build step |
 
 The binding performance budget is context tokens, addressed structurally by
 progressive disclosure rather than by a runtime metric.
+
+**The one cost model that is NOT met.** The sprint planner forecasts a batch's token
+cost from the cognitive complexity of the files a unit declares. The current
+coefficient was fitted to six units (1.09x in-sample) and scored **0.55x
+out-of-sample** on the next sprint, under-forecasting all five units monotonically.
+The predictor, not the coefficient, is at fault: cost correlates with tool-uses
+(r = 0.926) and barely with file complexity, and tool-uses is an output, unknowable
+at plan time. The constants have deliberately not been re-fitted (fitting to eleven
+points would fit noise), the forecast is a batch-level aid quoted with a band, and
+it is **never** a gate - a script cannot observe token spend, so a self-reported
+budget could not be a breaker even if the number were trustworthy. See §12.
 
 ---
 
@@ -455,14 +549,15 @@ progressive disclosure rather than by a runtime metric.
 **Status:** Accepted
 
 **Context:** A skill's entry file is loaded into the agent's context on every
-invocation. SDLC Studio is large (46 reference files, 39 help files, many
+invocation. SDLC Studio is large (52 reference files, 41 help files, many
 templates and best-practice guides - see the §3 component table). A monolithic skill file would spend a
 large, fixed token cost on every request regardless of the task.
 
-**Decision:** Keep `SKILL.md` as a lean router (~195 lines) carrying only
-philosophy gates, the type table, the Progressive Loading Guide, and pointers.
-Everything else loads on demand via the loading guide, which maps each task type to
-its primary/secondary/decision file loads.
+**Decision:** Keep `SKILL.md` as a lean router (~260 lines, CI-budgeted under 500)
+carrying only philosophy gates, the type table, the Progressive Loading Guide, the
+Deterministic Entry Points card, and pointers. Everything else loads on demand via
+the loading guide, which maps each task type to its primary/secondary/decision file
+loads.
 
 **Consequences:**
 
@@ -590,6 +685,218 @@ in a design is a review finding.
   the recorded-override path is the pressure valve, and threshold tuning becomes
   real config work.
 
+### ADR-007: The engagement floor - a mandated planning pass on multi-file changes
+
+**Status:** Accepted
+
+**Context:** The pipeline's value depends on the agent engaging it. The v4 benchmark
+rerun measured what actually happens when that decision is left to the model: on the
+base models most teams deploy, an agent free to scale ceremony to perceived ticket
+size shipped the hidden-requirement defect at the same rate as an agent with no
+process at all, because it judged the ticket too small for ceremony exactly when the
+ceremony would have caught the defect. Frontier models engaged unprompted. The
+mandated planning pass cut escapes 4-5x for roughly 10-20% more tokens.
+
+**Alternatives considered:**
+
+- *Leave it to judgement* (the pre-v4 behaviour). Falsified by the measurement above:
+  on the weaker half of the model population it is indistinguishable from no process.
+- *Mandate the full pipeline on every change.* Rejected: a single-line fix in an
+  unspecced repo does not need a spec delta, and a rule that obviously over-fires is
+  a rule people disable wholesale.
+- *A floor.* Below the line, mandate; above it, judgement still scales the ceremony.
+
+**Decision:** A change touching more than one source file in a repo that carries a
+numbered spec or an sdlc-studio workspace REQUIRES the planning pass before code: a
+spec delta naming every existing requirement the change interacts with, and one
+acceptance criterion per interaction. This is doctrine rule 16 and, where a workspace
+exists, a blocking gate lane: a shipped unit that neither planned (acceptance
+criteria, a `Verify:` line, or a linked plan) nor declares a real single-file
+`Affects:` path is refused. The signal is a file count and a presence check - no
+model call. Multi-file-ness is judged from the declared `Affects:` and cross-checked
+against the source files the unit's own commit touched.
+
+**Consequences:**
+
+- Positive: the ceremony cannot be skipped precisely where it pays. Pure omission
+  cannot dodge the floor, and understatement is caught whenever a unit's commit names
+  only that unit.
+- Positive: the escape is recorded, never silent - `engagement_floor: judgement` in
+  config, or a `decisions waive` entry naming the rule and optionally the unit.
+- Negative: git cannot attribute a file to one id among several, so understatement in
+  a commit shared with another work item was a disclosed hole. It is closed by an
+  opt-in `Refs: <id>` commit trailer, whose attribution is strictly additive - a "see
+  also" trailer can raise a unit's file count but never lower it, so the convention
+  cannot be used to disarm a unit's own check.
+- Negative: adoption needs an `adopt_after:` id cutoff or the floor fails an existing
+  backlog wholesale. A cutoff set beyond the current work is refused, because that
+  would be a silent disarm wearing a config key's clothes.
+
+### ADR-008: Collision-free ULID artefact ids, with the sequential era kept valid
+
+**Status:** Accepted
+
+**Context:** Artefact ids were sequential (`US0001`), allocated by scanning the
+highest existing number. That is safe for one writer. It is not safe for several
+uncoordinated ones - two agents on two machines, or a human and an agent on
+divergent git states, both scan the same tree and both mint the same id. The failure
+is silent until a merge, and it is the failure that stops the workspace being usable
+by a real team.
+
+**Alternatives considered:**
+
+- *A central allocator or lock file.* Rejected: it needs a shared writable location,
+  which the design deliberately does not have (files in a git repo, no service).
+- *Sequential ids plus renumbering at merge.* Rejected: an id that changes is not an
+  id. It has already been quoted in a ticket, a commit message and a conversation.
+- *UUIDv4.* Collision-free, but unsortable and unreadable.
+- *ULID.* Time-ordered prefix, Crockford base32, entropy tail.
+
+**Decision:** Under `schema_version: 3` (the v4 default), new artefacts mint a short
+ULID (`US-01JQK3F8`): a timestamp prefix that keeps ids roughly chronological, plus a
+real entropy tail so two writers in the same instant cannot collide. Existing
+sequential ids stay valid forever - `migrate_v3 adopt` is FORWARD-ONLY, and the two
+eras coexist by design. Every id-consuming regex, the census, and the title parser
+accept both.
+
+**Consequences:**
+
+- Positive: several human and agent writers can file concurrently, across machines and
+  git states, with no coordination and no allocator.
+- Positive: nothing an operator has already quoted anywhere breaks. Adoption is a
+  cutoff, not a rewrite; the operator is asked, and the migration refuses without
+  `--confirm`.
+- Negative: ids stop being memorable and countable ("we're at CR0260" no longer works
+  once the era flips). The numbering question is real enough that the upgrade walk
+  presents all three answers rather than choosing for the operator.
+- Negative: two id forms must be parsed forever, and a clone whose config says v2 while
+  its ids are v3 is a genuine mixed-mode hazard - reconcile emits an era-divergence
+  advisory for exactly that case.
+
+### ADR-009: Generate the engineering team from the project, do not ship a cast
+
+**Status:** Accepted
+
+**Context:** v3 shipped a fixed Three Amigos cast: the same Product Owner, Engineer and
+QA in every project. A fixed cast has fixed blind spots, and its objections are generic
+enough to be ignored. A payments QA and a games QA are paranoid about entirely different
+things, and the difference is where the value is.
+
+**Alternatives considered:**
+
+- *Keep the fixed cast.* Cheap, and its output is decorative.
+- *Make the operator author the personas.* Correct in principle and, in practice, the
+  step that never gets done.
+- *Generate the cast from the project.*
+
+**Decision:** `persona generate --team` analyses the PRD, TRD, config and repo map onto
+**behavioural variables and risk axes - never demographics** - asks hard-capped
+multi-choice questions only where the signals are genuinely ambiguous, and writes fresh
+named individuals into `personas/seats/`: 3 core roles plus up to 2 signal-earned
+extras, cast capped at 5. `--stakeholders` generates the other side of the table with
+veto lines and a Cooper arbitration rule on every card (a buyer's goal never overrides
+the Primary user's interface). Model judgement inside a deterministic frame:
+`persona_gen.py` owns the provenance stamp and content hash, `validate.py seats` is the
+error-level floor (declared role, review render, demographic denylist, one card per
+role, valid stamps).
+
+**Consequences:**
+
+- Positive: the objections are grounded in this project's stack, domain and risk class,
+  so a seat can plausibly catch something the author would not.
+- Positive: the provenance stamp plus content hash discriminate authored from generated
+  cards, so an operator's edit promotes a card to authored and a re-run can never clobber
+  it. A guard that cannot tell what it wrote from what a human wrote would eventually
+  destroy the human's work.
+- Negative: persona proliferation is the documented failure mode of the technique, so the
+  cast is hard-capped and extra seats need a strong signal, not a preference.
+- Negative: a generated persona is an assumption until validated. Cards keep a provisional
+  label until `persona review` clears them, and `status` surfaces the count - an
+  un-cleared cast is visible rather than quietly authoritative.
+
+### ADR-010: The learning loop is a gate on the retro's CONTENT, not its existence
+
+**Status:** Accepted
+
+**Context:** The retro was the one ceremony the close gate blocked on, and the gate
+globbed for a filename. A 0-byte `RETRO9999.md` passed it. Meanwhile the cross-project
+lessons registry had no automatic reader at all: a lesson could be written down, paid for,
+and written down again, without ever reaching the agent about to repeat it.
+
+**Alternatives considered:**
+
+- *Leave the retro as prose doctrine.* Same failure mode as judgement-gated engagement
+  (ADR-006): the step gated on goodwill is the step that gets skipped.
+- *Gate on the artefact's existence.* Already shipped, already falsified - satisfied by
+  `touch`.
+- *Gate on content and disposition, and make the store readable by machine.*
+
+**Decision:** Doctrine rule 17. A retro is checked on its content (`retro.py validate`:
+required sections, at least one real lesson, every finding dispositioned), every finding
+takes a disposition - **filed** as a Bug or CR, or **declined with a reason** - and the
+retro's lessons are lifted into the store (`retro extract`) that the next `sprint plan`
+prints unasked, including the ranked cross-project registry a new project inherits on day
+one. `lessons rank` orders by recurrence computed from citations in the files, recency,
+and structural-fix demotion. Bound close-gate lanes enforce it; `lessons.loop: judgement`
+makes them advisory.
+
+**Consequences:**
+
+- Positive: the retro produces work rather than prose, and a lesson written in one sprint
+  is read in the next by a mechanism rather than by remembering to look.
+- Positive: filing and declining are **both green**. This is load-bearing - if declining
+  cost more than filing, the gate would teach people to file rubbish to go green. What is
+  refused is silence: a finding written down and left to rot.
+- Positive: a ceremony gate needs a deterministic tool to interrogate, or it can only ask
+  the filesystem. The tell that a gate is about to be forgeable is that no script produces
+  or validates the artefact it gates on.
+- Negative: the default is mandated on ADR-006's *reasoning*, not yet on ADR-006's
+  *evidence*. The claim that closing the loop reduces repeat defects is **registered as a
+  claim to be measured, not asserted as a finding**, and that distinction is kept
+  explicitly rather than quietly elided.
+
+### ADR-011: The breakdown gate lives in `plan`, the command people actually run
+
+**Status:** Accepted
+
+**Context:** The `--goal design` rung has been specified for months to produce a
+reviewable, estimated backlog. It has never once been invoked. Backlogs reach `sprint plan`
+ungroomed, and the planner produced a plan anyway: a flat token forecast over unsized
+units, a wave that claimed two units were parallel when both rewrote the same file, and a
+Large CR that no story would ever gate on an executable acceptance criterion. Each looked
+exactly like a real plan.
+
+**Alternatives considered:**
+
+- *Keep grooming as a separate step and ask harder.* This is the thing that has already
+  failed, for months, in this repository.
+- *Warn at plan time.* An advisory lane is the lane that gets scrolled past, and the plan
+  would still print - so the false authority would still be produced.
+- *Refuse.*
+
+**Decision:** A unit is **groomed** only when it declares both the files it will touch
+(`Affects:`) and a size (`Effort:` S/M/L, a story's `Points:`, or a review-seat score).
+With any ungroomed unit in the batch, `sprint plan` exits non-zero and prints **no plan at
+all**, naming each offending unit, what it lacks, and the command that fixes it. The
+planner additionally derives shared-file clusters from the `Affects:` it already parses, so
+a declared dependency is no longer the only way to see a collision. `sprint.breakdown:
+judgement` downgrades the lane to a report; an absent config BLOCKS and an unknown mode
+falls back to enforce.
+
+**Consequences:**
+
+- Positive: a plan is never false authority over work nobody has sized. Enforcement sits in
+  the command that is actually invoked, which is the only place enforcement survives.
+- Positive: a shared file is a fact where a `Depends on:` edge is only a declaration. On its
+  first run the cluster check caught two false-parallel pairs in this repo's own backlog,
+  one of which was the change that introduced it.
+- Negative: the gate refuses real work on day one. Its first run refused three bugs filed
+  the same day by this project's own filer, because the filer has no flag to record
+  `Affects:` - when two tools judge the same artefact they must agree on what a complete one
+  is, and here they did not.
+- Negative: some work genuinely cannot be sized before it is investigated. That case is a
+  recorded config decision, not an exception the planner infers for itself.
+
 ---
 
 ## 12. Open Technical Questions
@@ -606,6 +913,20 @@ in a design is a review finding.
 - [ ] **Q:** What is the porting path for the Claude-Code-only agentic wave
   execution to other `AGENTS.md` harnesses?
   **Context:** it is the only non-neutral feature.
+- [ ] **Q:** Is there a plan-time predictor of delivery cost at all?
+  **Context:** the current predictor (cognitive complexity of the declared files) is
+  falsified out-of-sample at 0.55x, and the input that does correlate (tool-uses,
+  r = 0.926) is an output, unknowable when the plan is made. Two answers are open:
+  find an input that carries the signal, or drop the per-unit estimate and keep only
+  the recorded history in `VELOCITY.md`. Re-fitting the constant a third time is not
+  one of them. The precondition for either is recording the forecast when it is MADE
+  rather than re-deriving it at retro time from the live constants, which is what
+  makes the present loop unfalsifiable.
+- [ ] **Q:** Should the meta artefacts (retro, review, handoff) join `ARTIFACT_TYPES`?
+  **Context:** they are sequential-only, carry no status block, and need a separate
+  reconcile lane precisely because they sit outside the registry. Folding them in
+  would unify the census at the cost of making the status/count block optional
+  everywhere.
 
 ---
 
@@ -616,17 +937,31 @@ in a design is a review finding.
 - `SKILL.md` stays lean (router only); detail loads on demand.
 - Scripts stay pure stdlib, Python 3.10+; every workspace write is bounded and tested
   (§5 rule 5), going through `atomic_write` for shared files.
-- Every script has unit tests; all tests pass before a release is tagged.
-- `lib/sdlc_md.py` remains the single source of truth for markdown conventions.
+- Every script has unit tests; `gate.py --release` passes before a release is tagged.
+- `lib/sdlc_md.py` remains the single source of truth for markdown conventions; a
+  second module re-hardcoding the status vocabulary or the id grammar is a defect, not
+  a convenience.
 - GitHub access only via `gh`; no token handling, no third-party client.
 - `AGENTS.md` canonical; tool-specific files point at it.
+- Every new gate obeys ADR-006: the fire/skip decision is computable from artefact
+  fields, config and deterministic signals. A judgement-gated trigger in a design is a
+  review finding.
+- A gate asserts on **content**, never on an artefact's existence, and degrades
+  honestly: a surface a checker cannot handle is reported un-checked, never passed.
 
 ### Won't Have (This Version)
 
 - A network service, UI, or database.
-- A third-party Python dependency.
-- Executable conformance tests for the markdown command flows.
+- A required third-party Python dependency (PyYAML is used when present and degrades to
+  the caller's default when absent).
+- Executable conformance tests for the markdown command flows (the eval scenarios are a
+  partial stand-in, not a replacement).
 - Full agentic-wave parity outside Claude Code.
+- A token budget that gates. A script cannot observe token spend, so a self-reported
+  number could never be a breaker; tokens warn, minutes and units stop the run.
+- Auto-recalibration of the forecast constants from the velocity history. Fitting to a
+  handful of sprints fits noise and dresses it as evidence; a human reads the trend and
+  decides.
 
 ---
 
@@ -636,6 +971,7 @@ in a design is a review finding.
 | --- | --- | --- |
 | 2026-06-20 | 2.0.0 | Brownfield extraction of TRD from skill source (Generate mode) |
 | 2026-07-06 | 4.0.0 | Refresh to the shipped script layer: corrected the write contract (§5 rule 5 - the script write surface is bounded and tested, not absent), component counts, state-file inventory, and test figures; a freshness guard now prevents the stale claims recurring |
+| 2026-07-14 | 4.1.0 | The v4 architecture: the gate tier (§3), the two id eras (§6), story-only executable verifiers (§6), the run/appetite and measurement state files (§6), the falsified cost model (§10), and five new ADRs - ADR-007 the engagement floor, ADR-008 ULID identity, ADR-009 the generated team, ADR-010 the learning loop, ADR-011 the breakdown gate. Corrected the component counts, the router's line figure (~195 was stale; it is ~260) and the test count |
 
 ---
 

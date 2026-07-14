@@ -5,11 +5,19 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+
+try:
+    import yaml  # noqa: F401
+    HAVE_YAML = True
+except ImportError:  # pragma: no cover - the stdlib-only machine
+    HAVE_YAML = False
 
 SCRIPT = Path(__file__).resolve().parent.parent / "file_finding.py"
 
@@ -24,6 +32,12 @@ def _load():
 
 ff = _load()
 sdlc_md = ff.sdlc_md
+
+# Every bug/CR fixture below is GROOMED - it names the files it will touch and its job size -
+# because both creators now REFUSE a finding `sprint plan` could not plan (BG0136). The ungroomed
+# shape is the subject of GroomingGateTests, never an accident in a fixture.
+GROOM = {"affects": "src/thing.py", "effort": "S"}
+BUG = {"severity": "high", "summary": "s", "steps": "r", "fix": "f", **GROOM}
 
 
 def _seed_index(root: Path, type_: str) -> Path:
@@ -55,8 +69,7 @@ class FileTests(unittest.TestCase):
             (root / "sdlc-studio" / ".config.yaml").write_text(
                 "schema_version: 3\n", encoding="utf-8")
             idx = _seed_index(root, "bug")
-            res = ff.file_finding(root, "bug", "a defect",
-                                  {"severity": "high", "summary": "s", "steps": "r", "fix": "f"})
+            res = ff.file_finding(root, "bug", "a defect", dict(BUG))
             body = Path(res["path"]).read_text(encoding="utf-8")
             self.assertIn("> **Status:** inbox", body)
             self.assertIn("| inbox |", idx.read_text(encoding="utf-8"))
@@ -65,8 +78,7 @@ class FileTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _seed_index(root, "bug")
-            res = ff.file_finding(root, "bug", "a defect",
-                                  {"severity": "high", "summary": "s", "steps": "r", "fix": "f"})
+            res = ff.file_finding(root, "bug", "a defect", dict(BUG))
             self.assertIn("> **Status:** Open",
                           Path(res["path"]).read_text(encoding="utf-8"))
 
@@ -78,7 +90,7 @@ class FileTests(unittest.TestCase):
                                   {"priority": "High", "ctype": "Improvement",
                                    "summary": "It is loose.", "acs": ["it is tight", "tested"],
                                    "impact": "the gate lets bad units through", "effort": "M",
-                                   "date": "2026-06-20"})
+                                   "affects": "src/gate.py", "date": "2026-06-20"})
             self.assertEqual(res["id"], "CR-0001")
             body = Path(res["path"]).read_text(encoding="utf-8")
             self.assertIn("# CR-0001: Tighten the gate", body)
@@ -100,7 +112,7 @@ class FileTests(unittest.TestCase):
                                    "summary": "s",
                                    "acs": ["- [ ] already boxed", "-[x] ticked variant",
                                            "bare text"],
-                                   "impact": "i", "effort": "S",
+                                   "impact": "i", "effort": "S", "affects": "src/x.py",
                                    "date": "2026-07-04"})
             body = Path(res["path"]).read_text(encoding="utf-8")
             self.assertIn("- [ ] already boxed", body)
@@ -112,7 +124,7 @@ class FileTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _seed_index(root, "bug")
-            f = {"severity": "High", "summary": "x", "steps": "do y", "fix": "do z"}
+            f = {"severity": "High", "summary": "x", "steps": "do y", "fix": "do z", **GROOM}
             a = ff.file_finding(root, "bug", "first", f)
             b = ff.file_finding(root, "bug", "second", f)
             self.assertEqual(a["id"], "BG0001")
@@ -155,7 +167,7 @@ class FileTests(unittest.TestCase):
             ff.file_finding(root, "cr", "a clean finding",
                             {"priority": "High", "ctype": "Improvement",
                              "summary": "s", "acs": ["x"], "impact": "i", "effort": "S",
-                             "date": "2026-06-20"})
+                             "affects": "src/x.py", "date": "2026-06-20"})
             drift = rc.detect_type("cr", root)["drift"]
             self.assertEqual(drift, [], f"expected 0 drift, got {drift}")
 
@@ -172,7 +184,7 @@ class FileTests(unittest.TestCase):
             res = ff.file_finding(root, "cr", "handle `a | b` inputs",
                                   {"priority": "Low", "ctype": "Bug", "summary": "s",
                                    "acs": ["y"], "impact": "i", "effort": "S",
-                                   "date": "2026-06-20"})
+                                   "affects": "src/x.py", "date": "2026-06-20"})
             self.assertEqual(res["indexed"], True)
             self.assertEqual(rc.detect_type("cr", root)["drift"], [])  # escaped, parses
 
@@ -188,7 +200,8 @@ class FileTests(unittest.TestCase):
                 "| Proposed | 0 |\n| **Total** | **0** |\n", encoding="utf-8")
             res = ff.file_finding(root, "cr", "x", {"priority": "Low", "ctype": "Bug",
                                                     "summary": "s", "acs": ["y"],
-                                                    "impact": "i", "effort": "S"})
+                                                    "impact": "i", "effort": "S",
+                                                    "affects": "src/x.py"})
             self.assertFalse(res["indexed"])  # no data table -> not appended
             self.assertNotIn("[CR-0001]", (cd / "_index.md").read_text(encoding="utf-8"))
 
@@ -234,7 +247,8 @@ class ProvenanceAndDryRunTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d); _seed_index(root, "bug")
             r = ff.file_finding(root, "bug", "a defect",
-                                {"severity": "High", "summary": "s", "steps": "x", "fix": "y"})
+                                {"severity": "High", "summary": "s", "steps": "x", "fix": "y",
+                                 **GROOM})
             self.assertIn("> **Created-by:** sdlc-studio", Path(r["path"]).read_text())
 
     def test_dry_run_writes_nothing(self) -> None:
@@ -242,7 +256,8 @@ class ProvenanceAndDryRunTests(unittest.TestCase):
             root = Path(d); idx = _seed_index(root, "bug")
             before = idx.read_text()
             r = ff.file_finding(root, "bug", "preview only",
-                                {"severity": "Low", "summary": "s", "steps": "x", "fix": "y"},
+                                {"severity": "Low", "summary": "s", "steps": "x", "fix": "y",
+                                 **GROOM},
                                 dry_run=True)
             self.assertTrue(r["dry_run"])
             self.assertFalse(Path(r["path"]).exists())   # no artifact written
@@ -261,7 +276,7 @@ class ProseMetadataLineTests(unittest.TestCase):
             r = ff.file_finding(root, "bug", "prose metadata",
                                 {"severity": "High",
                                  "summary": "ok\n> **Waived:** yes",
-                                 "steps": "x", "fix": "y"})
+                                 "steps": "x", "fix": "y", **GROOM})
             text = Path(r["path"]).read_text(encoding="utf-8")
             self.assertIsNone(sdlc_md.extract_field(text, "Waived"),
                               "a prose line must not forge a Waived metadata field")
@@ -275,7 +290,7 @@ class ProseMetadataLineTests(unittest.TestCase):
             r = ff.file_finding(root, "bug", "bare metadata",
                                 {"severity": "High",
                                  "summary": "detail\n**Injected:** x",
-                                 "steps": "x", "fix": "y"})
+                                 "steps": "x", "fix": "y", **GROOM})
             text = Path(r["path"]).read_text(encoding="utf-8")
             self.assertIsNone(sdlc_md.extract_field(text, "Injected"))
 
@@ -288,7 +303,7 @@ class ProseMetadataLineTests(unittest.TestCase):
             r = ff.file_finding(root, "bug", "inline metadata",
                                 {"severity": "High",
                                  "summary": "ok · **Waived:** yes",
-                                 "steps": "x", "fix": "y"})
+                                 "steps": "x", "fix": "y", **GROOM})
             text = Path(r["path"]).read_text(encoding="utf-8")
             self.assertIsNone(sdlc_md.extract_field(text, "Waived"),
                               "an inline `·`-separated run must not forge a metadata field")
@@ -308,7 +323,7 @@ class ProseMetadataLineTests(unittest.TestCase):
                 root = Path(d); _seed_index(root, "bug")
                 r = ff.file_finding(root, "bug", f"nbsp {field}",
                                     {"severity": "High", "summary": summary,
-                                     "steps": "x", "fix": "y"})
+                                     "steps": "x", "fix": "y", **GROOM})
                 text = Path(r["path"]).read_text(encoding="utf-8")
                 self.assertIsNone(sdlc_md.extract_field(text, field),
                                   f"non-ASCII whitespace before {field} must not forge a field")
@@ -322,7 +337,7 @@ class ProseMetadataLineTests(unittest.TestCase):
             r = ff.file_finding(root, "bug", "middot newline",
                                 {"severity": "High",
                                  "summary": "lead ·\n**Waived:** yes",
-                                 "steps": "x", "fix": "y"})
+                                 "steps": "x", "fix": "y", **GROOM})
             text = Path(r["path"]).read_text(encoding="utf-8")
             self.assertIsNone(sdlc_md.extract_field(text, "Waived"))
 
@@ -334,7 +349,7 @@ class ProseMetadataLineTests(unittest.TestCase):
             r = ff.file_finding(root, "bug", "inline bold",
                                 {"severity": "High",
                                  "summary": "the **important:** note stays bold",
-                                 "steps": "x", "fix": "y"})
+                                 "steps": "x", "fix": "y", **GROOM})
             text = Path(r["path"]).read_text(encoding="utf-8")
             self.assertIn("the **important:** note", text)   # untouched, not escaped
 
@@ -349,8 +364,7 @@ class EraAwareAllocationTests(unittest.TestCase):
             (root / "sdlc-studio" / ".config.yaml").write_text(
                 "schema_version: 3\n", encoding="utf-8")
             idx = _seed_index(root, "bug")
-            res = ff.file_finding(root, "bug", "era probe",
-                                  {"severity": "high", "summary": "s", "steps": "r", "fix": "f"})
+            res = ff.file_finding(root, "bug", "era probe", dict(BUG))
             self.assertTrue(sdlc_md.is_v3_id(res["id"]), res["id"])
             self.assertTrue(Path(res["path"]).name.startswith(res["id"] + "-"), res["path"])
             self.assertIn(res["id"], idx.read_text(encoding="utf-8"))
@@ -359,8 +373,7 @@ class EraAwareAllocationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _seed_index(root, "bug")
-            res = ff.file_finding(root, "bug", "era probe",
-                                  {"severity": "high", "summary": "s", "steps": "r", "fix": "f"})
+            res = ff.file_finding(root, "bug", "era probe", dict(BUG))
             self.assertEqual(res["id"], "BG0001")
 
 
@@ -376,7 +389,7 @@ class MdSafeProseTests(unittest.TestCase):
             res = ff.file_finding(root, "bug", "a defect",
                                   {"severity": "high",
                                    "summary": "calls _next_number then __main__ runs",
-                                   "steps": "r", "fix": "f"})
+                                   "steps": "r", "fix": "f", **GROOM})
             body = Path(res["path"]).read_text(encoding="utf-8")
             self.assertIn("`_next_number`", body)
             self.assertIn("`__main__`", body)
@@ -399,9 +412,9 @@ class RevisionAuthorTests(unittest.TestCase):
     """The Revision History Author cell is the authorship of record, not a hardcoded literal:
     the provenance tooling must not mint a false provenance record."""
 
-    FIELDS = {"bug": {"severity": "High", "summary": "s", "steps": "x", "fix": "y"},
+    FIELDS = {"bug": {"severity": "High", "summary": "s", "steps": "x", "fix": "y", **GROOM},
               "cr": {"priority": "High", "ctype": "Improvement", "summary": "s",
-                     "acs": ["a"], "impact": "i", "effort": "M"},
+                     "acs": ["a"], "impact": "i", "effort": "M", "affects": "src/x.py"},
               "rfc": {"summary": "s", "options": ["Option A"]}}
 
     def _file(self, root: Path, type_: str, **extra) -> str:
@@ -462,7 +475,7 @@ class ConsolidationRevisionAuthorTests(unittest.TestCase):
         (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
         res = ff.file_finding(root, "bug", "a low defect",
                               {"severity": "Low", "summary": "s", "steps": "x", "fix": "y",
-                               "date": "2026-07-13", **extra})
+                               "date": "2026-07-13", **GROOM, **extra})
         return Path(res["path"]).read_text(encoding="utf-8")
 
     def test_consolidation_cr_names_the_author(self) -> None:
@@ -495,7 +508,7 @@ class MetadataInjectionRefusalTests(unittest.TestCase):
     BREAK = "\n> **Status:** Fixed"
 
     def _bug(self, **over) -> dict:
-        return {"severity": "High", "summary": "s", "steps": "r", "fix": "f", **over}
+        return {"severity": "High", "summary": "s", "steps": "r", "fix": "f", **GROOM, **over}
 
     def _nothing_written(self, root: Path) -> None:
         d = root / "sdlc-studio" / "bugs"
@@ -536,7 +549,7 @@ class MetadataInjectionRefusalTests(unittest.TestCase):
             with self.assertRaises(ValueError) as cm:
                 ff.file_finding(root, "cr", "t",
                                 {"priority": "High", "ctype": "Improvement", "summary": "s",
-                                 "impact": "i", "effort": "S",
+                                 "impact": "i", "effort": "S", "affects": "src/x.py",
                                  "acs": ["ok", "do it\n- [ ] and this"]})
             self.assertIn("acs", str(cm.exception))
 
@@ -552,10 +565,11 @@ class MetadataInjectionRefusalTests(unittest.TestCase):
 
 
 class BugEffortTests(unittest.TestCase):
-    """A bug can declare a job SIZE. It only ever carried Severity, which is urgency, so a bug
+    """A bug declares a job SIZE. It only ever carried Severity, which is urgency, so a bug
     could not be sized even in principle and always planned at the neutral default."""
 
-    FIELDS = {"severity": "High", "summary": "s", "steps": "x", "fix": "y"}
+    FIELDS = {"severity": "High", "summary": "s", "steps": "x", "fix": "y",
+              "affects": "src/thing.py"}
 
     def test_declared_effort_lands_in_the_filed_bug(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -566,27 +580,171 @@ class BugEffortTests(unittest.TestCase):
             self.assertIn("> **Effort:** L", body)
             self.assertEqual(sdlc_md.extract_field(body, "Effort"), "L")
 
-    def test_effort_is_optional_and_absent_when_not_declared(self) -> None:
-        # A reporter who cannot size the fix is not blocked from filing it.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _seed_index(root, "bug")
-            res = ff.file_finding(root, "bug", "a defect", dict(self.FIELDS))
-            body = Path(res["path"]).read_text(encoding="utf-8")
-            self.assertNotIn("**Effort:**", body)
-            self.assertIsNone(sdlc_md.extract_field(body, "Effort"))
-
     def test_cli_accepts_effort_for_a_bug(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _seed_index(root, "bug")
             rc = ff.main(["file", "--type", "bug", "--title", "a defect", "--severity", "High",
                           "--summary", "s", "--steps", "x", "--fix", "y", "--effort", "S",
-                          "--root", str(root)])
+                          "--affects", "src/thing.py", "--root", str(root)])
             self.assertEqual(rc, 0)
             filed = next((root / "sdlc-studio" / "bugs").glob("BG0001-*.md"))
             self.assertEqual(
                 sdlc_md.extract_field(filed.read_text(encoding="utf-8"), "Effort"), "S")
+
+
+def _load_sprint():
+    """The planner, loaded as the tests load every sibling - the filer is judged against the
+    REAL gate, not a re-description of it."""
+    spec = importlib.util.spec_from_file_location("sprint", SCRIPT.parent / "sprint.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["sprint"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+class GroomingGateTests(unittest.TestCase):
+    """BG0136: the filer wrote artefacts the planner then refused.
+
+    `sprint plan` refuses an UNGROOMED unit - one declaring neither the files it touches nor a
+    size - but `file_finding` had no `--affects` flag at all, so every bug it filed was born
+    ungroomed and unplannable. The two ends of one pipeline disagreed about what a complete
+    artefact IS (LL0016).
+
+    The load-bearing pair is the ROUND TRIP, through the public CLI: a bug filed with no
+    `--affects` is REFUSED, and the same bug filed WITH `--affects`/`--effort` is accepted AND
+    then passes the planner's own breakdown gate. Behaviour only - nothing here greps a source
+    file for a string.
+    """
+
+    def _file(self, root: Path, *extra: str) -> tuple[int, str]:
+        err = io.StringIO()
+        argv = ["file", "--type", "bug", "--title", "the parser drops a dash",
+                "--severity", "High", "--summary", "s", "--steps", "x", "--fix", "y",
+                "--root", str(root), *extra]
+        try:
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = ff.main(argv)
+        except ValueError as exc:      # the refusal the CLI wrapper turns into exit 1
+            return 1, str(exc)
+        return rc, err.getvalue()
+
+    def _bugs(self, root: Path) -> list[Path]:
+        return [p for p in (root / "sdlc-studio" / "bugs").glob("*.md") if p.name != "_index.md"]
+
+    def _breakdown(self, root: Path, filed: Path) -> dict:
+        """The PLANNER's verdict on the filed artefact - `sprint.breakdown` itself, the same
+        predicate `sprint plan` refuses on."""
+        sprint = _load_sprint()
+        return sprint.breakdown(root, [{"id": filed.stem.split("-")[0], "type": "bug",
+                                        "path": str(filed)}], skip_personas=True)
+
+    def test_a_bug_filed_without_affects_is_refused_and_nothing_is_written(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            idx = _seed_index(root, "bug")
+            before = idx.read_text(encoding="utf-8")
+            rc, msg = self._file(root, "--effort", "M")
+            self.assertEqual(rc, 1)
+            self.assertEqual(self._bugs(root), [])          # no artefact minted
+            self.assertEqual(idx.read_text(encoding="utf-8"), before)   # no index row, no id burnt
+            self.assertIn("Affects", msg)                   # the refusal names what is missing
+            self.assertIn("--affects", msg)                 # ... and the flag that supplies it
+
+    def test_a_bug_filed_without_a_size_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            rc, msg = self._file(root, "--affects", "src/thing.py")
+            self.assertEqual(rc, 1)
+            self.assertEqual(self._bugs(root), [])
+            self.assertIn("--effort", msg)
+
+    def test_the_round_trip_filed_then_plannable(self) -> None:
+        # THE bug. File it the way the tool now allows, and the planner must accept it - a
+        # filed artefact the planner still refuses is not a fix.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            rc, _ = self._file(root, "--affects", "src/thing.py, src/other.py",
+                               "--effort", "M")
+            self.assertEqual(rc, 0)
+            filed = self._bugs(root)[0]
+            text = filed.read_text(encoding="utf-8")
+            # the field is not just present - the planner's own parser reads it back
+            self.assertEqual(sdlc_md.affects_files(text), ["src/thing.py", "src/other.py"])
+            bd = self._breakdown(root, filed)
+            self.assertEqual(bd["ungroomed"], [], "the planner refused an artefact the filer wrote")
+            self.assertTrue(bd["ok"])
+
+    def test_an_affects_the_planner_cannot_read_is_refused(self) -> None:
+        # The filer asks the PLANNER, so a value that is not a readable path list counts as no
+        # `Affects` at all - a restated rule would have accepted this and minted a unit the
+        # planner then refuses, which is the bug in a new place.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            rc, msg = self._file(root, "--affects", "everything", "--effort", "M")
+            self.assertEqual(rc, 1)
+            self.assertEqual(self._bugs(root), [])
+            self.assertIn("Affects", msg)
+
+    def test_dry_run_refuses_too(self) -> None:
+        # A preview that says "would file" over an artefact the filer would refuse is a lie.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            rc, _ = self._file(root, "--dry-run")
+            self.assertEqual(rc, 1)
+
+    def test_an_rfc_needs_no_grooming(self) -> None:
+        # An RFC is not a unit of sprint work - the planner never selects one - and its files
+        # are the OUTPUT of the decision it exists to settle. Demanding `Affects` of it would be
+        # a field nothing downstream reads. It still RECORDS one when the author has it.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "rfc")
+            res = ff.file_finding(root, "rfc", "how ids should be minted",
+                                  {"summary": "weigh it", "options": ["A", "B"]})
+            self.assertTrue(Path(res["path"]).exists())
+            res2 = ff.file_finding(root, "rfc", "another design",
+                                   {"summary": "s", "options": ["A"], "affects": "src/ids.py"})
+            self.assertEqual(
+                sdlc_md.affects_files(Path(res2["path"]).read_text(encoding="utf-8")),
+                ["src/ids.py"])
+
+
+@unittest.skipUnless(HAVE_YAML, "PyYAML not installed - config-driven opt-out unreadable")
+class GroomingOptOutTests(unittest.TestCase):
+    """The escape is the PLANNER's, honoured at the filer: a project that records
+    `sprint.breakdown: judgement` has decided the lane reports instead of blocking, and it must
+    not then be blocked at the filer. Omission is not an escape."""
+
+    def _config(self, root: Path, body: str) -> None:
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(body, encoding="utf-8")
+
+    def test_judgement_mode_files_the_ungroomed_bug_with_a_warning(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            self._config(root, "sprint:\n  breakdown: judgement\n")
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                res = ff.file_finding(root, "bug", "a defect",
+                                      {"severity": "High", "summary": "s", "steps": "x",
+                                       "fix": "y"})
+            self.assertTrue(Path(res["path"]).exists())     # written: the operator opted out
+            self.assertIn("ungroomed", err.getvalue())      # ... but never quietly
+
+    def test_an_absent_config_still_demands_the_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            self._config(root, "schema_version: 2\n")       # config present, no opt-out recorded
+            with self.assertRaises(ValueError):
+                ff.file_finding(root, "bug", "a defect",
+                                {"severity": "High", "summary": "s", "steps": "x", "fix": "y"})
 
 
 if __name__ == "__main__":

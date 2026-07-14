@@ -54,7 +54,10 @@ def _repo(root: Path, cap: int = 20, v3: bool = True, low_consolidation: bool = 
 
 
 def _bug(severity: str) -> dict:
-    return {"severity": severity, "summary": "s", "steps": "r", "fix": "f"}
+    # Groomed: both creators refuse a finding `sprint plan` could not plan (BG0136), so even a
+    # Low nit names the files it touches and its size before it can fold into a themed CR.
+    return {"severity": severity, "summary": "s", "steps": "r", "fix": "f",
+            "affects": "src/thing.py", "effort": "S"}
 
 
 class ConsolidationTests(unittest.TestCase):

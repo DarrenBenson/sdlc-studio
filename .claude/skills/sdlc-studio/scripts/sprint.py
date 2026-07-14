@@ -40,6 +40,7 @@ import complexity  # noqa: E402  (sibling - blast-radius complexity for WSJF)
 import config  # noqa: E402  (sibling - routing block for tier enrichment)
 import lessons  # noqa: E402  (sibling - the still-valid lessons digest carried in the plan)
 import reconcile  # noqa: E402  (sibling - reconcile before plan)
+import telemetry  # noqa: E402  (sibling - the forecast log the plan records its prediction in)
 import blocker_sweep  # noqa: E402  (sibling - blocker sweep before plan)
 
 PRIORITY_FIELD = {"bug": "Severity", "cr": "Priority", "story": "Priority"}
@@ -86,6 +87,62 @@ EFFORT_ALIAS = {"SMALL": "S", "MEDIUM": "M", "LARGE": "L"}
 # units the constants above were fitted to (complexity 0-52, actuals 42k-98k): S keeps the
 # measured floor, M sits mid-range, L near the top. A unit with real complexity is untouched.
 EFFORT_COMPLEXITY_PROXY = {"S": 0, "M": 25, "L": 50}
+
+# ---------------------------------------------------------------------------
+# What the constants above were FITTED to - so a ratio can never be quoted as evidence
+# for a model against the very data that produced it.
+# ---------------------------------------------------------------------------
+# A model's fit against its own training data is TRAINING ERROR. It lands near 1.0x by
+# construction and it cannot be wrong, which is precisely why it reassures. The constants
+# above were fitted to the six units below, measured in one sprint (RETRO0024), and the
+# in-sample fit was 1.09x. Out-of-sample, on the next sprint, the same constants scored
+# 0.55x. The number that reassured was the one that could not be wrong.
+#
+# So the sprints whose actuals the constants were fitted to are NAMED here, and every
+# accuracy figure the planner quotes to an operator excludes them. Only a forecast made by
+# the constants in force, on a sprint that was NOT in the fit, is evidence.
+#
+# CHANGE THIS IN THE SAME COMMIT THAT CHANGES THE CONSTANTS. A refit that does not declare
+# its new training set will quietly go on quoting that training set back as validation.
+CALIBRATION_FIT_RETROS = ("RETRO0024",)
+CALIBRATION_FIT_UNITS = ("BG0126", "BG0127", "BG0130", "CR0248", "CR0249", "CR0250")
+
+# How a recorded sprint stands in relation to the estimator IN FORCE.
+SAMPLE_IN = "in-sample"            # its actuals are the training data - training error, not evidence
+SAMPLE_OUT = "out-of-sample"       # forecast by the constants in force, on data they never saw
+SAMPLE_STALE = "stale-constants"   # forecast by a DIFFERENT estimator - judges that one, not this one
+SAMPLE_MIXED = "mixed-constants"   # the batch was forecast by more than one estimator
+SAMPLE_NONE = "unforecast"         # no plan-time forecast was recorded - it predicted nothing
+
+
+def forecast_constants() -> dict:
+    """The estimator, as a record. Stamped on every forecast at plan time so a later reader can
+    tell WHICH model produced a number, instead of assuming it was this one."""
+    return {"BASE_TOKEN_BUDGET": BASE_TOKEN_BUDGET,
+            "TOKENS_PER_COGNITIVE": TOKENS_PER_COGNITIVE}
+
+
+def sample_class(retro_id: str | None, constants: dict | None) -> str:
+    """Is this recorded sprint evidence about the estimator in force, or is it its own fit?
+
+    Derived at READ time from two facts the row carries - which sprint it is, and which
+    constants produced its forecast - never from a label frozen when the row was written. A
+    refit that adds a sprint to the training set therefore reclassifies that sprint's row
+    immediately, instead of leaving it quoted as validation for a model it helped fit.
+    """
+    rid = (retro_id or "").strip().upper()
+    if rid and rid in {r.upper() for r in CALIBRATION_FIT_RETROS}:
+        return SAMPLE_IN
+    if constants == SAMPLE_MIXED:
+        return SAMPLE_MIXED
+    if not isinstance(constants, dict) or not constants:
+        return SAMPLE_NONE
+    try:
+        same = all(int(constants.get(k, -1)) == v for k, v in forecast_constants().items())
+    except (TypeError, ValueError):
+        return SAMPLE_NONE
+    return SAMPLE_OUT if same else SAMPLE_STALE
+
 
 # ---------------------------------------------------------------------------
 # Sprint capacity: ONE operator-set budget, TWO consumers.
@@ -156,31 +213,47 @@ def resolve_appetite(repo_root: Path | str, cli_minutes: float | None = None,
 
 
 def calibration(repo_root: Path | str) -> dict:
-    """What the velocity history says about the forecast the plan is about to quote.
+    """What the velocity history says about the forecast the plan is about to quote -
+    OUT-OF-SAMPLE, and nothing else.
+
+    A row whose actuals the constants in force were fitted to is training error. Quoting it as
+    the estimator's observed accuracy is how the planner came to reassure the operator with
+    1.09x while the estimator was actually running at 0.55x on live work. So an in-sample row
+    is counted, named, and EXCLUDED - from the reported ratio and from the band.
 
     REPORTS, never re-fits. `low`/`high` are multipliers on the point forecast that bound the
-    plausible actual: FORECAST_BAND is the floor, and any observed estimate/actual ratio widens
-    them (an actual of estimate/ratio). A history that agrees with the model does not shrink the
-    band - agreeing once is not evidence of precision."""
+    plausible actual: FORECAST_BAND is the floor, and any observed OUT-OF-SAMPLE estimate/actual
+    ratio widens them (an actual of estimate/ratio). A history that agrees with the model does
+    not shrink the band - agreeing once is not evidence of precision.
+    """
     rows: list[dict] = []
     try:
         import retro  # noqa: PLC0415 - deferred: the planner must not pay for the retro import graph
-        rows = [r for r in retro.velocity_history(repo_root)
-                if isinstance(r.get("ratio"), (int, float)) and r["ratio"] > 0]
+        rows = retro.velocity_history(repo_root)
     except Exception as exc:  # noqa: BLE001 - no history must never break planning
         sdlc_md.debug("sprint.calibration", exc)
-    ratios = [float(r["ratio"]) for r in rows]
+    by_class: dict[str, list[dict]] = {}
+    for r in rows:
+        by_class.setdefault(sample_class(r.get("id"), r.get("constants")), []).append(r)
+    evidence = [r for r in by_class.get(SAMPLE_OUT, [])
+                if isinstance(r.get("ratio"), (int, float)) and r["ratio"] > 0]
+    ratios = [float(r["ratio"]) for r in evidence]
     low, high = 1.0 - FORECAST_BAND, 1.0 + FORECAST_BAND
     if ratios:
         low = min(low, 1.0 / max(ratios))
         high = max(high, 1.0 / min(ratios))
-    return {"sprints": len(rows), "ratios": ratios,
+    excluded = {k: len(v) for k, v in by_class.items() if k != SAMPLE_OUT}
+    return {"sprints": len(evidence), "ratios": ratios,
             "low": round(low, 2), "high": round(high, 2),
+            "in_sample": len(by_class.get(SAMPLE_IN, [])),
+            "unforecast": len(by_class.get(SAMPLE_NONE, [])),
+            "stale_constants": len(by_class.get(SAMPLE_STALE, [])),
+            "excluded": excluded,
             "recalibrate_after": CALIBRATION_MIN_SPRINTS,
-            "enough_history": len(rows) >= CALIBRATION_MIN_SPRINTS,
-            "note": "the token forecast is a HYPOTHESIS fitted to 6 units of one sprint, one "
-                    "model, one repo; it is a BATCH tool with a weak per-unit signal, and it "
-                    "is not re-fitted automatically"}
+            "enough_history": len(evidence) >= CALIBRATION_MIN_SPRINTS,
+            "note": "out-of-sample rows only. A row whose actuals the constants were fitted to "
+                    "is training error and is excluded: it lands near 1.0x by construction. "
+                    "Nothing is re-fitted automatically"}
 
 
 def _unit_wall_minutes(cal_rows: list[dict]) -> float | None:
@@ -581,23 +654,61 @@ def _token_forecast(root: Path, batch: list[dict]) -> dict:
     complexity, or the declared effort when the unit names no files) summed. It is an
     ESTIMATE and never a gate: a script cannot observe real token spend (see telemetry.py), so
     a token ceiling would depend on the actor self-reporting the budget meant to constrain it.
-    The wall-clock / unit-count appetite is the breaker; this only informs the operator."""
+    The wall-clock / unit-count appetite is the breaker; this only informs the operator.
+
+    `units` carries what each number was MADE OF - the seed, where the seed came from, and the
+    constants in force. That is what gets recorded at plan time (`record_forecast`), so the
+    retro can judge the prediction that was actually made rather than recompute one."""
     total = 0
     per_unit: dict[str, int] = {}
+    units: dict[str, dict] = {}
     for it in batch:
+        text = Path(it["path"]).read_text(encoding="utf-8")
+        cx = it.get("complexity")
+        if cx is None:  # priority/manual order never stamped one - derive it here
+            cx = _complexity_size(root, text)
+        effort = it.get("effort") or _effort_code(text)
         budget = it.get("token_budget")
-        if budget is None:  # priority/manual order never stamped one - derive it here
-            text = Path(it["path"]).read_text(encoding="utf-8")
-            seed = it.get("complexity")
-            if seed is None:
-                seed = _complexity_size(root, text)
-            budget = _token_budget(seed, _effort_code(text))
-        per_unit[sdlc_md.norm_id(it["id"])] = budget
+        if budget is None:
+            budget = _token_budget(cx, effort)
+        # the seed that actually multiplied: blast-radius complexity, else the effort stand-in
+        seed = cx or EFFORT_COMPLEXITY_PROXY.get(effort or "", 0)
+        source = "complexity" if cx else ("effort" if effort else "none")
+        uid = sdlc_md.norm_id(it["id"])
+        per_unit[uid] = budget
+        units[uid] = {"tokens": budget, "seed": seed, "seed_source": source,
+                      "complexity": cx, "effort": effort}
         total += budget
-    return {"tokens": total, "per_unit": per_unit,
+    return {"tokens": total, "per_unit": per_unit, "units": units,
+            "constants": forecast_constants(),
             "basis": "plan per-unit estimate (base + complexity blast-radius, or the declared "
                      "effort when no files are named); an ESTIMATE, never a gate - a script "
                      "cannot observe token spend"}
+
+
+def record_forecast(repo_root: Path | str, data: dict) -> dict:
+    """RECORD what this plan predicted, per unit, WHEN it predicted it.
+
+    Unconditional - not behind `--write`. A forecast that is only written when someone
+    remembers a flag is a forecast that does not exist, and the retro is then left to
+    re-derive one from whatever the constants say by then. That is not a prediction, and a
+    loop built on it cannot falsify its own estimator.
+
+    Each record carries the number, the seed it came from, and the CONSTANTS that produced it,
+    so a later reader can tell which estimator to credit or blame. First record for a unit
+    wins on read (telemetry.forecasts), so a re-plan cannot rewrite it with hindsight.
+    """
+    fc = data.get("token_forecast") or {}
+    units = fc.get("units") or {}
+    if not units:
+        return {"recorded": [], "already": [], "path": None}
+    constants = fc.get("constants") or forecast_constants()
+    when = data.get("generated_at") or sdlc_md.now_iso8601()
+    recs = [{"id": uid, "tokens": u["tokens"], "seed": u["seed"],
+             "seed_source": u["seed_source"], "complexity": u["complexity"],
+             "effort": u["effort"], "constants": constants, "planned_at": when}
+            for uid, u in units.items()]
+    return telemetry.record_forecasts(repo_root, recs)
 
 
 # ---------------------------------------------------------------------------
@@ -1235,6 +1346,12 @@ def _render_token_forecast(data: dict) -> None:
             if fc.get("low") and fc.get("high") else "")
     print(f"  token forecast: ~{tf['tokens']:,} tokens across {data['count']} unit(s)"
           f"{band} - an estimate, never a gate")
+    rec = data.get("forecast_record")
+    if rec and not rec.get("error"):
+        n = len(rec.get("recorded", [])) + len(rec.get("already", []))
+        print(f"  forecast recorded: {n} unit(s) at plan time, with the constants that produced "
+              f"them (base={BASE_TOKEN_BUDGET:,}, per-complexity={TOKENS_PER_COGNITIVE:,}). The "
+              f"retro judges THIS number - it never re-derives one")
 
 
 def _render_capacity(data: dict) -> None:
@@ -1257,10 +1374,17 @@ def _render_capacity(data: dict) -> None:
         print(f"  capacity: within budget on the point estimate, but the top of the plausible "
               f"range ({fc['high']:,}) is over {b['tokens']:,} - the forecast is not that "
               f"precise.", file=sys.stderr)
+    # The Calibration line reports the OUT-OF-SAMPLE figure, or says plainly that it has none.
+    # It once quoted the in-sample 1.09x back as the estimator's observed accuracy while the
+    # live figure was 0.55x: a fit against its own training data cannot be wrong, which is
+    # exactly why it must never be shown as validation.
     sprints = cal["sprints"]
     ratios = ", ".join(f"{r}x" for r in cal["ratios"])
-    history = (f"{sprints} measured sprint(s), est/actual {ratios}" if sprints
-               else "no measured sprints yet")
+    dropped = ", ".join(f"{n} {k}" for k, n in sorted(cal["excluded"].items()) if n)
+    excluded = (f" ({dropped} row(s) excluded - a fit against its own training data is not "
+                f"evidence)" if dropped else "")
+    history = (f"{sprints} out-of-sample sprint(s), est/actual {ratios}{excluded}" if sprints
+               else f"no out-of-sample evidence yet{excluded}")
     enough = ("enough history to recalibrate - a human should re-read the trend"
               if cal["enough_history"]
               else f"not enough history to recalibrate (need {cal['recalibrate_after']})")
@@ -1459,6 +1583,17 @@ def cmd_plan(args: argparse.Namespace) -> int:
     rc = _origin_drift_preflight(args, data)
     if rc is not None:
         return rc
+    # RECORD THE FORECAST. Here, unconditionally, because here is where the prediction is MADE.
+    # Not under --write: a forecast that depends on a flag is one the next retro will find
+    # missing, and it will then have to re-derive an "estimate" from the constants it is
+    # supposed to be judging - which is not a prediction at all.
+    try:
+        data["forecast_record"] = record_forecast(args.root, data)
+    except OSError as exc:
+        data["forecast_record"] = {"recorded": [], "already": [], "error": str(exc)}
+        print(f"warning: the plan's token forecast could NOT be recorded ({exc}). This batch "
+              f"will be UNFORECAST at retro time and can say nothing about the estimator - "
+              f"the retro will NOT re-derive an estimate for it.", file=sys.stderr)
     if getattr(args, "write", False):  # persist the sprint-plan artifact for review
         out = Path(args.root) / "sdlc-studio" / ".local" / "sprint-plan.json"
         out.parent.mkdir(parents=True, exist_ok=True)

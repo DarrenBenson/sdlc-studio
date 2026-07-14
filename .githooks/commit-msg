@@ -1,35 +1,90 @@
 #!/usr/bin/env bash
-# SDLC Studio commit-msg hook (opt-in).
+# SDLC Studio commit-msg gate (opt-in).
 #
-# Warns when a commit subject names more than one work-item id (US/BG/CR) without a
-# `Refs: <id>` trailer disambiguating them. Such a shared commit is skipped by the
-# engagement floor's git leg - it cannot attribute a file to one id among several -
-# so an understated `Affects` would go uncaught. A `Refs:` trailer per owning id gives
-# the floor per-id attribution. This hook is the nudge to add one.
+# REFUSES a commit whose subject names more than one work-item id (US/BG/CR) without a
+# `Refs: <id>` trailer per owning id. Such a shared commit is skipped by the engagement
+# floor's git leg - it cannot attribute a file to one id among several - so an understated
+# `Affects` would go uncaught. The refusal is cheap to satisfy: the hook prints the exact
+# trailer lines to paste. The cost of enforcing is one retry; the cost of not enforcing is
+# an unattributable commit the floor cannot check.
+#
+# It used to print that reasoning and then exit 0, letting the commit land without the
+# trailer - a guard that named the hole it was leaving, and left it. Now the behaviour
+# matches the words.
 #
 # Opt-in: it runs only in a clone that has enabled the tracked hooks
 #   (bash tools/enable-hooks.sh -> core.hooksPath=.githooks). It is NEVER forced on a
 #   consuming project.
-# Warns by default, does not block. To block instead (an explicit opt-in), export
-#   SDLC_ENGAGEMENT_STRICT=1 - then a bare multi-id subject fails the commit.
-# Degrades honestly: with no python3, no script, or an unreadable message, it exits 0
-#   and never blocks a legitimate commit.
+# Deliberately allowed through:
+#   - a subject naming exactly ONE id (attribution is unambiguous - nothing to disambiguate)
+#   - a merge, revert, cherry-pick, rebase replay, fixup!/squash!/amend! - git wrote or
+#     replayed that message, the author cannot restructure it, and the work it records was
+#     gated on its original commit
+# Degrades honestly: with no python3, no script, or an unreadable message it exits 0 and
+#   never blocks a legitimate commit.
+# The one escape is the repo's usual one: git commit --no-verify. There is no second bypass.
 set -uo pipefail
 
 msg_file="${1:-}"
 [ -n "$msg_file" ] || exit 0
+[ -r "$msg_file" ] || exit 0
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+git_dir="$(git rev-parse --absolute-git-dir 2>/dev/null)" || exit 0
 script="$repo_root/.claude/skills/sdlc-studio/scripts/engagement_floor.py"
 
 command -v python3 >/dev/null 2>&1 || exit 0
 [ -f "$script" ] || exit 0
 
-args=(check-commit-msg)
-[ "${SDLC_ENGAGEMENT_STRICT:-}" = "1" ] && args+=(--strict)
-args+=("$msg_file")
+# A machine-written or replayed message: git is mid-merge / mid-revert / mid-cherry-pick /
+# mid-rebase. Refusing here would break `git merge` and `git revert` on a subject that
+# happens to name several ids, and nobody could satisfy the refusal anyway.
+for marker in MERGE_HEAD REVERT_HEAD CHERRY_PICK_HEAD rebase-merge rebase-apply; do
+  [ -e "$git_dir/$marker" ] && exit 0
+done
 
-# The script exits non-zero only under --strict on a genuine finding; a parse/read
-# failure inside it also exits 0, so a bad message never blocks.
-python3 "$script" "${args[@]}" || exit 1
-exit 0
+# The subject: the first line that is neither blank nor git scaffolding (`#`).
+subject="$(grep -m1 -v -e '^[[:space:]]*#' -e '^[[:space:]]*$' "$msg_file" || true)"
+case "$subject" in
+  # Same reasoning as the markers above, for the cases that carry no marker: a merge or
+  # revert message git generated, and an autosquash instruction whose final message is the
+  # target commit's (which was itself gated).
+  "Merge "*|"Revert "*|"fixup! "*|"squash! "*|"amend! "*) exit 0 ;;
+esac
+
+# The decision is the script's (single source of the id grammar). --strict makes it exit
+# non-zero on a finding; a parse/read failure inside it still exits 0, so a message the
+# script cannot understand never blocks.
+if out="$(python3 "$script" check-commit-msg --strict "$msg_file" 2>&1)"; then
+  exit 0
+fi
+
+if [ -t 2 ]; then R=$'\033[31m'; Y=$'\033[33m'; B=$'\033[1m'; N=$'\033[0m'; else R=; Y=; B=; N=; fi
+
+# Paste-ready trailers for the ids the subject names but no `Refs:` line covers. Ids are
+# normalised (CR-0257 -> CR0257) on both sides so a dashed spelling does not read as a gap.
+ids() { grep -oE '(US|BG|CR)-?[0-9]{4}' | tr -d '-' | sort -u; }
+named="$(printf '%s\n' "$subject" | ids)"
+covered="$(grep -iE '^[[:space:]]*Refs:' "$msg_file" | ids)"
+uncovered="$(comm -23 <(printf '%s\n' "$named") <(printf '%s\n' "$covered"))"
+
+{
+  printf '%sCommit refused.%s %scommit-msg: multi-id subject with no Refs: trailer%s\n' \
+    "$R" "$N" "$B" "$N"
+  printf '  enforces: a subject naming two or more work-item ids carries a `Refs: <id>` trailer\n'
+  printf '            per owning id, so the engagement floor can attribute this commit files\n'
+  printf '            per id (a shared commit with no trailer is skipped, and an understated\n'
+  printf '            Affects then goes uncaught).\n'
+  printf '  %s- detail -%s\n' "$Y" "$N"
+  printf '%s\n' "$out" | grep -v 'blocked by strict mode' | sed 's/^/    /'
+  printf '  %s-> fix:%s add these lines to the message body (after a blank line), then commit again:\n\n' \
+    "$B" "$N"
+  if [ -n "$uncovered" ]; then
+    printf '%s\n' "$uncovered" | sed 's/^/      Refs: /'
+  else
+    printf '      Refs: <id>   # one line per id the subject names\n'
+  fi
+  printf '\n  A subject naming a single id needs no trailer.\n'
+  printf '  Genuine emergency only: %sgit commit --no-verify%s\n' "$B" "$N"
+} >&2
+exit 1

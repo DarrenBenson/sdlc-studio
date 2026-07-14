@@ -25,16 +25,21 @@ SDLC Studio is model-invoked - say it in plain language:
 
 ```bash
 python3 <skill>/scripts/artifact.py new --type cr --title "Add search to the catalogue" \
-  --impact "who this affects and what breaks" --effort M
+  --impact "who this affects and what breaks" --effort M --affects "src/catalogue/search.py"
 python3 <skill>/scripts/file_finding.py file --type cr --title "..." --summary "..." \
   --priority High --ctype Improvement --impact "..." --effort M \
+  --affects "src/catalogue/search.py, src/api/routes.py" \
   --ac "- [ ] ..."                   # when you already have criteria
 ```
 
 Every CR carries an impact statement and an effort estimate (`S`, `M` or `L`) - the
 validator demands both, so the filer demands them of you rather than minting a CR that
-fails its own check. `--author "Name; type; version"` stamps the authorship of record;
-absent, the invoking agent is stamped.
+fails its own check. It carries `--affects` for the same reason: `sprint plan` refuses to
+plan a unit that names no files (it cannot be sized, and two units colliding on one file are
+invisible), so both creators refuse to write one. A project that has recorded
+`sprint.breakdown: judgement` gets a warning instead of a refusal, at both ends.
+`--author "Name; type; version"` stamps the authorship of record; absent, the invoking agent
+is stamped.
 
 Ids and index rows are **tool-allocated** - hand-authoring either is an error
 (collision safety under concurrency and rebase). The interactive `/sdlc-studio cr create`

@@ -1,11 +1,12 @@
 # BG0136: The filer writes artefacts the planner then refuses: no --affects flag exists, so every filed bug is unplannable
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Effort:** M
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/sprint.py
+> **Verification depth:** functional - the round trip that IS the bug was driven through the public CLI: filing a bug with no --affects is refused (exit 1, nothing written, no id burnt), and the same bug filed with --affects + --effort is accepted AND then passes sprint plan's breakdown gate with a real forecast (60,200) rather than the flat fallback floor. Filed, then plannable. The templates/core/cr.md decoy Effort field is confirmed renamed: artifact new --type cr --effort L now renders **Effort:** L and extract_field reads it back.
 > **Depends on:** BG0133
 > **Raised-by:** sdlc-studio; agent; v1
 

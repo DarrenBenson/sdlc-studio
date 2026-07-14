@@ -229,5 +229,76 @@ class ActualsTests(unittest.TestCase):
             self.assertEqual(tel.actuals(d)["CR0002"]["tokens"], 1234)
 
 
+class ForecastLogTests(unittest.TestCase):
+    """The estimate side of the ratio. A forecast is a RECORD of what was predicted, kept so
+    that judging it later cannot mean recomputing it from the model being judged."""
+
+    CONSTANTS = {"BASE_TOKEN_BUDGET": 50_000, "TOKENS_PER_COGNITIVE": 600}
+
+    def rec(self, uid: str, tokens: int, constants: dict | None = None) -> dict:
+        return {"id": uid, "tokens": tokens, "seed": 10, "seed_source": "complexity",
+                "constants": constants or self.CONSTANTS, "planned_at": "2026-07-14T09:00:00Z"}
+
+    def test_a_forecast_is_written_and_read_back_whole(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            tel.record_forecasts(d, [self.rec("CR0001", 56_000)])
+            got = tel.forecasts(d)["CR0001"]
+            self.assertEqual(got["tokens"], 56_000)
+            self.assertEqual(got["seed"], 10)
+            self.assertEqual(got["constants"], self.CONSTANTS,
+                             "a forecast that does not record its estimator cannot say which "
+                             "model its error belongs to")
+
+    def test_the_first_forecast_for_a_unit_wins(self) -> None:
+        """Hindsight is not a forecast. Re-planning after the work is done must not be able to
+        rewrite what was predicted before it started."""
+        with tempfile.TemporaryDirectory() as d:
+            tel.record_forecasts(d, [self.rec("CR0001", 56_000)])
+            tel.record_forecasts(d, [self.rec("CR0001", 999_000)])
+            self.assertEqual(tel.forecasts(d)["CR0001"]["tokens"], 56_000)
+            self.assertEqual(len(tel.read_forecasts(d)), 2, "the later one is kept as history")
+
+    def test_recording_the_same_forecast_twice_does_not_grow_the_log(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            tel.record_forecasts(d, [self.rec("CR0001", 56_000)])
+            res = tel.record_forecasts(d, [self.rec("CR0001", 56_000)])
+            self.assertEqual(res["recorded"], [])
+            self.assertEqual(res["already"], ["CR0001"])
+            self.assertEqual(len(tel.read_forecasts(d)), 1)
+
+    def test_a_unit_never_forecast_is_absent_not_zero(self) -> None:
+        """The mirror of the actuals rule. An absent forecast must be reportable as absent -
+        a 0, or a number derived on the spot, would read as a prediction nobody made."""
+        with tempfile.TemporaryDirectory() as d:
+            tel.record_forecasts(d, [self.rec("CR0001", 56_000)])
+            self.assertNotIn("CR0002", tel.forecasts(d))
+
+    def test_a_corrupt_line_does_not_break_the_read(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            tel.record_forecasts(d, [self.rec("CR0001", 56_000)])
+            p = Path(d) / tel.FORECASTS
+            p.write_text(p.read_text(encoding="utf-8") + "{not json\n", encoding="utf-8")
+            self.assertEqual(tel.forecasts(d)["CR0001"]["tokens"], 56_000)
+
+    def test_a_forecast_lives_beside_the_actuals_not_inside_them(self) -> None:
+        """The actuals log is rolled when it grows. A forecast must not be evictable by that
+        roll - the record it would drop first is the oldest, which is the authoritative one."""
+        with tempfile.TemporaryDirectory() as d:
+            tel.record_forecasts(d, [self.rec("CR0001", 56_000)])
+            tel.record(d, {"id": "CR0001", "type": "cr", "tokens": 40_000})
+            self.assertEqual(tel.actuals(d)["CR0001"]["tokens"], 40_000)
+            self.assertEqual(tel.forecasts(d)["CR0001"]["tokens"], 56_000)
+            self.assertNotEqual(tel.FORECASTS, tel.LOCAL)
+
+    def test_the_cli_records_a_forecast(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            rc = tel.main(["forecast", "--id", "CR0009", "--tokens", "67400", "--seed", "29",
+                           "--base", "50000", "--per-cognitive", "600", "--root", d])
+            self.assertEqual(rc, 0)
+            got = tel.forecasts(d)["CR0009"]
+            self.assertEqual(got["tokens"], 67_400)
+            self.assertEqual(got["constants"]["TOKENS_PER_COGNITIVE"], 600)
+
+
 if __name__ == "__main__":
     unittest.main()

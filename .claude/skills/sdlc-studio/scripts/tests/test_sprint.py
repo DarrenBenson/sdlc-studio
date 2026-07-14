@@ -1458,19 +1458,30 @@ class CapacityHonestyTests(unittest.TestCase):
             self.assertEqual(cap["over"], [])
             self.assertTrue(cap["tokens_may_exceed"])
 
+    # A velocity row as `retro.py accuracy --write` now writes it: the estimate AS FORECAST at
+    # plan time, and the constants that produced it. `{cur}` is the estimator in force, which is
+    # what makes the row out-of-sample evidence rather than a row about some other model.
+    VELOCITY_HEAD = (
+        "| Retro | Date | Units | Measured | Forecast | Estimate (tokens, plan-time) | "
+        "Actual (tokens) | Ratio (est/actual) | Wall (s) | Constants | Sample |\n"
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
+
+    def _velocity(self, root: Path, rows: str) -> None:
+        sp = _load()
+        cur = f"base={sp.BASE_TOKEN_BUDGET} tpc={sp.TOKENS_PER_COGNITIVE}"
+        retros = root / "sdlc-studio" / "retros"
+        retros.mkdir(parents=True, exist_ok=True)
+        (retros / "VELOCITY.md").write_text(
+            self.VELOCITY_HEAD + rows.format(cur=cur), encoding="utf-8")
+
     def test_nothing_is_recalibrated_from_the_velocity_history(self) -> None:
         """The constants are pinned to the actuals they were fitted to (see
         test_token_calibration). A plan built against a repo WITH velocity history must not
         move them - the history is reported, and a human decides."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            retros = root / "sdlc-studio" / "retros"
-            retros.mkdir(parents=True)
-            (retros / "VELOCITY.md").write_text(
-                "| Retro | Date | Units | Measured | Estimate | Actual | Ratio | Wall |\n"
-                "| --- | --- | --- | --- | --- | --- | --- | --- |\n"
-                "| RETRO0001 | 2026-07-14 | 6 | 6 | 418,800 | 384,278 | 1.09x | 1,848 |\n",
-                encoding="utf-8")
+            self._velocity(root, "| RETRO0001 | 2026-07-14 | 6 | 6 | 6 | 418,800 | 384,278 | "
+                                 "1.09x | 1,848 | {cur} | out-of-sample |\n")
             _cr(root, 1)
             sp = _load()
             base, slope = sp.BASE_TOKEN_BUDGET, sp.TOKENS_PER_COGNITIVE
@@ -1488,19 +1499,33 @@ class CapacityHonestyTests(unittest.TestCase):
         def band(rows: str) -> tuple:
             with tempfile.TemporaryDirectory() as d:
                 root = Path(d)
-                retros = root / "sdlc-studio" / "retros"
-                retros.mkdir(parents=True)
-                (retros / "VELOCITY.md").write_text(
-                    "| Retro | Date | Units | Measured | Estimate | Actual | Ratio | Wall |\n"
-                    "| --- | --- | --- | --- | --- | --- | --- | --- |\n" + rows, encoding="utf-8")
+                self._velocity(root, rows)
                 cal = sp.calibration(root)
                 return cal["low"], cal["high"]
 
-        agreeing = band("| RETRO0001 | d | 6 | 6 | 400 | 400 | 1.0x | 10 |\n")
+        agreeing = band("| RETRO0001 | d | 6 | 6 | 6 | 400 | 400 | 1.0x | 10 | {cur} | "
+                        "out-of-sample |\n")
         self.assertEqual(agreeing, (round(1 - sp.FORECAST_BAND, 2),
                                     round(1 + sp.FORECAST_BAND, 2)))
-        under = band("| RETRO0001 | d | 6 | 6 | 280 | 400 | 0.7x | 10 |\n")
+        under = band("| RETRO0001 | d | 6 | 6 | 6 | 280 | 400 | 0.7x | 10 | {cur} | "
+                     "out-of-sample |\n")
         self.assertGreater(under[1], agreeing[1])  # 1/0.7 = 1.43 - the band widened
+
+    def test_a_sprint_the_constants_were_fitted_to_does_not_widen_the_band_either(self) -> None:
+        """Training error must not reach the operator's error bar any more than it reaches the
+        reported ratio. A model's fit against its own training data is not a measurement of
+        anything, in either direction."""
+        sp = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            fitted = sp.CALIBRATION_FIT_RETROS[0]
+            self._velocity(root, "| " + fitted + " | d | 6 | 6 | 6 | 280 | 400 | 0.7x | 10 | "
+                                 "{cur} | in-sample |\n")
+            cal = sp.calibration(root)
+            self.assertEqual((cal["low"], cal["high"]),
+                             (round(1 - sp.FORECAST_BAND, 2), round(1 + sp.FORECAST_BAND, 2)))
+            self.assertEqual(cal["sprints"], 0)
+            self.assertEqual(cal["in_sample"], 1)
 
 
 class CapacityFeedsTheAppetiteTests(unittest.TestCase):

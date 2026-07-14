@@ -44,7 +44,8 @@ HONEST = ("sprint.py reads the CR Effort field and sizes the unit by it, rather 
           "back to the flat default")
 
 CR_FIELDS = {"priority": "P3", "ctype": "Improvement", "summary": "s",
-             "impact": "every sprint plan", "effort": "M", "date": "2026-07-14"}
+             "impact": "every sprint plan", "effort": "M", "affects": "scripts/sprint.py",
+             "date": "2026-07-14"}
 
 
 def _seed_cr_index(root: Path) -> Path:

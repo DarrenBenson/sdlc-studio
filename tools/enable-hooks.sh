@@ -5,14 +5,15 @@
 #
 # Enables two tracked hooks:
 #   - pre-commit  the full guard gate (style, links, budgets, tests, drift).
-#   - commit-msg  warns when a subject names more than one work-item id (US/BG/CR)
-#                 without a `Refs: <id>` trailer, so the engagement floor can attribute
-#                 a shared commit per id. Warns only; export SDLC_ENGAGEMENT_STRICT=1
-#                 to make it block instead.
+#   - commit-msg  REFUSES a commit whose subject names more than one work-item id
+#                 (US/BG/CR) without a `Refs: <id>` trailer per owning id, so the
+#                 engagement floor can attribute a shared commit per id. It prints the
+#                 trailer lines to paste. A single-id subject, and a merge / revert /
+#                 rebase replay, pass untouched.
 set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 git config core.hooksPath .githooks
-echo "Enabled: core.hooksPath -> .githooks (pre-commit gate + commit-msg nudge active)."
-echo "Make the commit-msg hook block instead of warn: export SDLC_ENGAGEMENT_STRICT=1"
+echo "Enabled: core.hooksPath -> .githooks (pre-commit gate + commit-msg gate active)."
+echo "A multi-id commit subject now needs a 'Refs: <id>' trailer per owning id."
 echo "Bypass a single commit in an emergency with: git commit --no-verify"

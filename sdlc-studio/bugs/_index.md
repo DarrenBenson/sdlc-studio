@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 4 |
 | In Progress | 0 |
-| Fixed | 51 |
+| Fixed | 55 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 2 |
 | Superseded | 0 |
-| **Total** | **136** |
+| **Total** | **140** |
 
 ## All Bugs
 
@@ -99,10 +99,14 @@
 | [BG0130](BG0130-retro-py-miscounts-a-decline-whose-reason-mentions.md) | retro.py miscounts a decline whose reason mentions an artefact id as filed | Fixed | Low | 2026-07-14 | 2026-07-14 |
 | [BG0131](BG0131-the-subagent-token-metric-does-not-track-work.md) | The subagent token metric does not track work - it cannot be used for calibration as-is | Won't Fix | High | 2026-07-14 | 2026-07-14 |
 | [BG0132](BG0132-cr-acceptance-criteria-carry-verify-lines-that-nothing.md) | CR acceptance criteria carry Verify lines that nothing executes, so a false-green one is never caught | Fixed | Medium | 2026-07-14 | 2026-07-14 |
-| [BG0133](BG0133-the-accuracy-report-recomputes-the-estimate-from-live.md) | The accuracy report recomputes the estimate from live constants, so it cannot falsify the estimator | Open | High | 2026-07-14 | 2026-07-14 |
-| [BG0134](BG0134-the-engagement-floor-trailer-check-warns-after-the.md) | The engagement-floor trailer check warns after the commit has already landed, so it fails open | Open | Medium | 2026-07-14 | 2026-07-14 |
-| [BG0135](BG0135-reconcile-detect-is-blind-to-an-orphan-index.md) | reconcile detect is blind to an orphan index row whose artefact file is gone | Open | Medium | 2026-07-14 | 2026-07-14 |
-| [BG0136](BG0136-the-filer-writes-artefacts-the-planner-then-refuses.md) | The filer writes artefacts the planner then refuses: no --affects flag exists, so every filed bug is unplannable | Open | High | 2026-07-14 | 2026-07-14 |
+| [BG0133](BG0133-the-accuracy-report-recomputes-the-estimate-from-live.md) | The accuracy report recomputes the estimate from live constants, so it cannot falsify the estimator | Fixed | High | 2026-07-14 | 2026-07-14 |
+| [BG0134](BG0134-the-engagement-floor-trailer-check-warns-after-the.md) | The engagement-floor trailer check warns after the commit has already landed, so it fails open | Fixed | Medium | 2026-07-14 | 2026-07-14 |
+| [BG0135](BG0135-reconcile-detect-is-blind-to-an-orphan-index.md) | reconcile detect is blind to an orphan index row whose artefact file is gone | Fixed | Medium | 2026-07-14 | 2026-07-14 |
+| [BG0136](BG0136-the-filer-writes-artefacts-the-planner-then-refuses.md) | The filer writes artefacts the planner then refuses: no --affects flag exists, so every filed bug is unplannable | Fixed | High | 2026-07-14 | 2026-07-14 |
+| [BG0137](BG0137-every-archived-index-row-link-is-wrong-depth.md) | Every archived index row link is wrong-depth: 361 dead links on GitHub | Open | Medium | 2026-07-14 | 2026-07-14 |
+| [BG0138](BG0138-ts0001-carries-13-broken-relative-links-where-is.md) | TS0001 carries 13 broken relative links (../../ where ../ is correct) | Open | Low | 2026-07-14 | 2026-07-14 |
+| [BG0139](BG0139-the-model-router-scores-a-docs-unit-trivial.md) | The model router scores a docs unit trivial with high confidence: its dominant signal is the predictor falsified today | Open | High | 2026-07-14 | 2026-07-14 |
+| [BG0140](BG0140-the-plan-time-forecast-is-written-to-gitignored.md) | The plan-time forecast is written to gitignored .local/, so BG0133 fix does not survive a clone | Open | High | 2026-07-14 | 2026-07-14 |
 
 ## Archived Releases
 

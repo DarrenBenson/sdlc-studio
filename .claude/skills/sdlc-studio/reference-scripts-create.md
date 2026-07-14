@@ -38,7 +38,18 @@ row and its index Author column - the name alone there, since the typed triple i
 `Raised-by`'s job. Content the validator demands of a filled artefact can be supplied at
 creation and the artefact is born clean: `--persona` and `--ac` (repeatable) for a story,
 `--summary --steps --fix` for a bug, `--ac --impact --effort S|M|L` for a CR,
-`--summary --option --recommendation` for an RFC. Batch items take the same keys in the
+`--summary --option --recommendation` for an RFC. A bug and a CR also carry their
+GROOMING - `--affects "a.py, b.py"` (the files the unit will touch) and `--effort S|M|L`
+(the job size of the work, not its urgency) - and both creators REFUSE one without them,
+because `sprint plan` refuses to plan such a unit: it cannot be sized, and two units
+colliding on one file are invisible to the planner. That demand is not a second copy of the
+rule: the body about to be written is handed to the planner's own breakdown predicate, so a
+value it cannot read back as a path list (a bare word, a prose phrase) counts as no
+`Affects` at all. A project that records `sprint.breakdown: judgement` gets a warning
+instead of a refusal, exactly as its plan reports instead of blocking; omission is not an
+opt-out. An RFC is exempt: it is not a unit of sprint work, and the files it touches are the
+OUTPUT of the design it exists to settle - it records an `--affects` when the author has
+one. Batch items take the same keys in the
 spec JSON. Omit them and you get a scaffold: the `{{placeholder}}` slots stay for the
 agent to fill, and `validate.py check` reports them as unfilled until it does - a scaffold
 is not yet a specified artefact, and the creator does not pretend otherwise. This is by
@@ -67,7 +78,7 @@ placeholder fails the validator and `manual` asserts a proof nobody ran. Conform
 
 A field written into a metadata line, an index cell, or a one-line bullet must be a single
 line: `--title`, `--author`, `--epic`, `--persona`, `--priority`, `--ctype`, `--severity`,
-`--effort`, `--provenance`, each `--ac`, each `--option`, each `--verify`, and the `revision`
+`--effort`, `--affects`, `--provenance`, each `--ac`, each `--option`, each `--verify`, and the `revision`
 verb's `--note`. A line break in one of them escapes the construct it is written into - the
 value's tail lands as a metadata line, a table row, or an AC directive of its own, and the
 tool signs it. So a title could open a second `> **Status:**` line above the real one (the
@@ -209,10 +220,15 @@ and recomputes the index counts (reusing reconcile's pass).
 - `file --type bug|cr|rfc --title ... <fields>`: write one artifact
 - `rebuild --type <t>`: recompute a type's index summary counts
 
-Required fields per type are the ones the validator demands of a filed artefact: a bug
-carries its evidence (`--severity --summary --steps --fix`), a CR its criteria, impact
-and effort (`--priority --ctype --summary --ac --impact --effort S|M|L`), an RFC its
-options (`--summary --option`). `--author "Name; type; version"` (type is
+Required fields per type are the ones the validator demands of a filed artefact, plus the
+grooming the PLANNER demands of a unit: a bug carries its evidence
+(`--severity --summary --steps --fix`) and its grooming (`--affects --effort S|M|L`), a CR
+its criteria, impact and effort (`--priority --ctype --summary --ac --impact --effort S|M|L`)
+and its `--affects`, an RFC its options (`--summary --option`) and no grooming at all (it is
+not a sprint unit). The filer refuses an ungroomed bug or CR for the same reason it refuses a
+hollow one: `sprint plan` would refuse to plan it, and an artefact one end of the pipeline
+writes and the other rejects is a repair handed to an operator who has less context than the
+author had. `--author "Name; type; version"` (type is
 `human|persona|agent`) is stamped as `Raised-by` and names the Revision History row it
 opens; with no author given, the invoking agent is stamped (`SDLC_AUTHOR` when set). A
 Low-severity finding that consolidates carries the same authorship into the consolidation

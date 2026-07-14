@@ -60,7 +60,9 @@ suggested remediation, effort S/M/L).
   reproduce is dropped or demoted to an open question in the report.
 - **Bug** = behaviour is wrong, insecure, or failing. **CR** = works as built but
   should change. File with `scripts/file_finding.py file --type bug|cr ...` - never
-  hand-allocate an id or edit an `_index.md`.
+  hand-allocate an id or edit an `_index.md`. Every bug and CR carries
+  `--affects "<files>"` and `--effort S|M|L`: you have the file:line in front of you now,
+  and a finding without them cannot be planned (the filer refuses it).
 - Every Medium-or-higher finding gets its own artefact; Low findings may be
   consolidated into at most two themed CRs.
 

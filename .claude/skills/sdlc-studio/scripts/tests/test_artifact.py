@@ -24,6 +24,12 @@ def _load():
 
 artifact = _load()
 
+# A bug and a CR may not be born UNGROOMED: both creators refuse a unit `sprint plan` could not
+# plan - one naming neither the files it touches nor a size (BG0136). The prose of a scaffold may
+# still be deferred to whoever fills it in; the grooming may not.
+GROOM = {"affects": "src/thing.py", "effort": "S"}
+GROOM_CLI = ["--affects", "src/thing.py", "--effort", "S"]
+
 
 def _index(repo: Path, type_: str, header: str) -> None:
     d = repo / sdlc_md.ARTIFACT_TYPES[type_][0]
@@ -59,7 +65,7 @@ class SchemaV3AllocationTests(unittest.TestCase):
             repo = Path(d)
             _v3(repo)
             _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
-            r = artifact.new(repo, "bug", "a defect")
+            r = artifact.new(repo, "bug", "a defect", dict(GROOM))
             self.assertRegex(r["id"], r"^BG-[0-9A-HJKMNP-TV-Z]{8,}$")
             self.assertEqual(r["id"], r["file_id"])   # v3: one canonical form
             self.assertTrue(r["indexed"])
@@ -70,8 +76,8 @@ class SchemaV3AllocationTests(unittest.TestCase):
             repo = Path(d)
             _v3(repo)
             _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
-            a = artifact.new(repo, "bug", "one")
-            b = artifact.new(repo, "bug", "two")
+            a = artifact.new(repo, "bug", "one", dict(GROOM))
+            b = artifact.new(repo, "bug", "two", dict(GROOM))
             self.assertNotEqual(a["id"], b["id"])
             self.assertEqual(reconcile.detect_type("bug", repo)["drift"], [])
 
@@ -79,7 +85,7 @@ class SchemaV3AllocationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
-            r = artifact.new(repo, "cr", "change")
+            r = artifact.new(repo, "cr", "change", dict(GROOM))
             self.assertEqual(r["id"], "CR-0001")   # no .config.yaml -> v2 sequential
 
     def test_v3_findings_file_into_inbox(self) -> None:
@@ -89,7 +95,7 @@ class SchemaV3AllocationTests(unittest.TestCase):
             repo = Path(d)
             _v3(repo)
             _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
-            r = artifact.new(repo, "bug", "a defect")
+            r = artifact.new(repo, "bug", "a defect", dict(GROOM))
             self.assertIn("> **Status:** inbox", Path(r["path"]).read_text(encoding="utf-8"))
             idx = (repo / "sdlc-studio" / "bugs" / "_index.md").read_text(encoding="utf-8")
             self.assertIn("| inbox |", idx)
@@ -100,7 +106,7 @@ class SchemaV3AllocationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
-            r = artifact.new(repo, "bug", "a defect")
+            r = artifact.new(repo, "bug", "a defect", dict(GROOM))
             self.assertIn("> **Status:** Open", Path(r["path"]).read_text(encoding="utf-8"))
 
 
@@ -153,7 +159,7 @@ class NewTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
-            r = artifact.new(repo, "cr", "change something")
+            r = artifact.new(repo, "cr", "change something", dict(GROOM))
             self.assertTrue(r["id"].startswith("CR-"))   # dash form
             self.assertTrue(r["file_id"].startswith("CR") and "-" not in r["file_id"])
             self.assertTrue(r["indexed"])
@@ -166,6 +172,8 @@ class NewTests(unittest.TestCase):
                 if t == "story":
                     _epic(repo)  # a story needs an existing parent epic (BG0022)
                 fields = {"epic": "EP0001"} if t == "story" else {}
+                if t in ("bug", "cr"):
+                    fields.update(GROOM)  # a scaffold may defer its prose, never its grooming
                 r = artifact.new(repo, t, f"a {t}", fields)
                 p = Path(r["path"])
                 errs = [v for v in validate.validate_file(p, t, repo)
@@ -182,7 +190,7 @@ class NewTests(unittest.TestCase):
             repo = Path(d)
             hdr = "| ID | Title | Status | Priority | Type | Date | Linked Epics |"
             _index(repo, "cr", hdr)
-            artifact.new(repo, "cr", "widthcheck")
+            artifact.new(repo, "cr", "widthcheck", dict(GROOM))
             idx = (repo / "sdlc-studio" / "change-requests" / "_index.md").read_text()
             row = next(l for l in idx.splitlines() if l.strip().startswith("| [CR-"))
             self.assertEqual(len(reconcile._table_cells(row)), hdr.count("|") - 1)
@@ -219,14 +227,14 @@ class NewTests(unittest.TestCase):
                 "| --- | --- | --- | --- | --- | --- | --- |\n"
                 "| [CR-0005](CR0005-x.md) | gone | Done | Medium | Feature | 2026-01-01 | - |\n",
                 encoding="utf-8")  # row present, file absent
-            r = artifact.new(repo, "cr", "fresh")
+            r = artifact.new(repo, "cr", "fresh", dict(GROOM))
             self.assertEqual(r["file_id"], "CR0006")  # above the lingering CR0005 row, not CR0001
 
     def test_pipe_in_title_escaped_in_row(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
-            artifact.new(repo, "cr", "a | b piped")
+            artifact.new(repo, "cr", "a | b piped", dict(GROOM))
             idx = (repo / "sdlc-studio" / "change-requests" / "_index.md").read_text()
             row = next(l for l in idx.splitlines() if l.strip().startswith("| [CR-"))
             cells = reconcile._table_cells(row)
@@ -239,7 +247,7 @@ class NewTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             (repo / "sdlc-studio").mkdir(parents=True)
-            r = artifact.new(repo, "bug", "no index here")
+            r = artifact.new(repo, "bug", "no index here", dict(GROOM))
             self.assertTrue(r["index_created"])
             self.assertTrue(r["indexed"])
             self.assertTrue(Path(r["path"]).exists())
@@ -311,7 +319,7 @@ class NewTests(unittest.TestCase):
             _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
             idx = repo / "sdlc-studio" / "change-requests" / "_index.md"
             before = idx.read_text()
-            r = artifact.new(repo, "cr", "preview", dry_run=True)
+            r = artifact.new(repo, "cr", "preview", dict(GROOM), dry_run=True)
             self.assertTrue(r["dry_run"])
             self.assertFalse(Path(r["path"]).exists())
             self.assertEqual(idx.read_text(), before)
@@ -481,7 +489,7 @@ class SubsectionPreservationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             r = artifact.new(repo, "bug", "dropped subsection",
-                             {"template": "full", "fix": "swap the greedy regex"})
+                             {**GROOM, "template": "full", "fix": "swap the greedy regex"})
             text = Path(r["path"]).read_text(encoding="utf-8")
             self.assertIn("swap the greedy regex", text)       # supplied prose landed
             self.assertIn("### Files Modified", text)           # scaffold prompt preserved
@@ -529,7 +537,7 @@ class ProjectTemplateTests(unittest.TestCase):
         self._yaml()
         with tempfile.TemporaryDirectory() as d:
             repo = self._repo(d)
-            r = artifact.new(repo, "bug", "wrong colour", {})
+            r = artifact.new(repo, "bug", "wrong colour", dict(GROOM))
             text = Path(r["path"]).read_text(encoding="utf-8")
             self.assertIn("**Created-by:** sdlc-studio new", text)  # provenance head intact
             self.assertIn("## Symptom", text)                        # house body grafted
@@ -539,7 +547,7 @@ class ProjectTemplateTests(unittest.TestCase):
     def test_undeclared_project_uses_skill_default(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             repo = self._repo(d, declare=False)
-            r = artifact.new(repo, "bug", "wrong colour", {})
+            r = artifact.new(repo, "bug", "wrong colour", dict(GROOM))
             text = Path(r["path"]).read_text(encoding="utf-8")
             self.assertIn("## Steps to Reproduce", text)             # v3.4.0 behaviour
 
@@ -549,7 +557,7 @@ class ProjectTemplateTests(unittest.TestCase):
             repo = self._repo(d, write_template=False)
             from lib import conventions
             with self.assertRaises(conventions.ConventionsError):
-                artifact.new(repo, "bug", "wrong colour", {})
+                artifact.new(repo, "bug", "wrong colour", dict(GROOM))
 
 
 class MetaTypeTests(unittest.TestCase):
@@ -730,7 +738,7 @@ class CloseUlidTests(unittest.TestCase):
             repo = Path(d)
             _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
             _v3(repo)
-            r = artifact.new(repo, "bug", "ulid close probe")
+            r = artifact.new(repo, "bug", "ulid close probe", dict(GROOM))
             self.assertTrue(sdlc_md.is_v3_id(r["id"]), r["id"])
             res = artifact.close(repo, r["id"], dry_run=True)
             self.assertEqual(res["type"], "bug")
@@ -759,7 +767,8 @@ class ConsolidationCliTests(unittest.TestCase):
             buf = io.StringIO()
             with redirect_stdout(buf):
                 rc = artifact.main(["new", "--type", "bug", "--title", "low probe",
-                                    "--severity", "Low", "--root", str(repo), "--dry-run"])
+                                    "--severity", "Low", *GROOM_CLI,
+                                    "--root", str(repo), "--dry-run"])
             self.assertEqual(rc, 0, buf.getvalue())
             self.assertIn("consolidate", buf.getvalue())
 
@@ -770,7 +779,7 @@ class ConsolidationCliTests(unittest.TestCase):
                 buf = io.StringIO()
                 with redirect_stdout(buf):
                     rc = artifact.main(["new", "--type", "bug", "--title", f"low probe {i}",
-                                        "--severity", "Low", "--root", str(repo)])
+                                        "--severity", "Low", *GROOM_CLI, "--root", str(repo)])
                 self.assertEqual(rc, 0, buf.getvalue())
                 self.assertIn("consolidated into CR", buf.getvalue())
                 self.assertIn(expect_created, buf.getvalue())
@@ -787,7 +796,7 @@ class ProvenanceStampTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
-            r = artifact.new(repo, "cr", "from an issue", {"provenance": "external"})
+            r = artifact.new(repo, "cr", "from an issue", {**GROOM, "provenance": "external"})
             body = Path(r["path"]).read_text(encoding="utf-8")
             self.assertIn("> **Provenance:** external", body)
             self.assertEqual(sdlc_md.extract_field(body, "Provenance"), "external")
@@ -796,7 +805,7 @@ class ProvenanceStampTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
-            r = artifact.new(repo, "cr", "home grown")
+            r = artifact.new(repo, "cr", "home grown", dict(GROOM))
             self.assertNotIn("**Provenance:**", Path(r["path"]).read_text(encoding="utf-8"))
 
     def test_externally_stamped_story_blocks_shell_verifiers(self) -> None:
@@ -831,7 +840,7 @@ class OrchestratedCloseTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
-            r = artifact.new(repo, "bug", "orchestrated close probe", {"severity": "Medium"})
+            r = artifact.new(repo, "bug", "orchestrated close probe", {**GROOM, "severity": "Medium"})
             rc = artifact.main(["close", "--id", r["id"],
                                 "--depth", "functional (probe suite green)",
                                 "--verdict", "APPROVE",
@@ -849,7 +858,7 @@ class OrchestratedCloseTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
-            r = artifact.new(repo, "bug", "self review probe", {"severity": "Medium"})
+            r = artifact.new(repo, "bug", "self review probe", {**GROOM, "severity": "Medium"})
             rc = artifact.main(["close", "--id", r["id"],
                                 "--depth", "functional", "--verdict", "APPROVE",
                                 "--reviewer", "Same One", "--author", "Same One",
@@ -876,7 +885,7 @@ class RevisionAuthorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
-            r = artifact.new(repo, "cr", "authored", {"author": "Dani Okafor"})
+            r = artifact.new(repo, "cr", "authored", {**GROOM, "author": "Dani Okafor"})
             self.assertIn("| Dani Okafor |",
                           self._rev_row(Path(r["path"]).read_text(encoding="utf-8")))
 
@@ -884,7 +893,7 @@ class RevisionAuthorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
-            r = artifact.new(repo, "cr", "authored", {"author": "Claude (Fable 5); agent; v5"})
+            r = artifact.new(repo, "cr", "authored", {**GROOM, "author": "Claude (Fable 5); agent; v5"})
             body = Path(r["path"]).read_text(encoding="utf-8")
             self.assertIn("> **Raised-by:** Claude (Fable 5); agent; v5", body)
             row = self._rev_row(body)
@@ -899,7 +908,7 @@ class RevisionAuthorTests(unittest.TestCase):
             prev = os.environ.get("SDLC_AUTHOR")
             os.environ["SDLC_AUTHOR"] = "Sprint Driver; agent; v1"
             try:
-                r = artifact.new(repo, "cr", "unattributed")
+                r = artifact.new(repo, "cr", "unattributed", dict(GROOM))
             finally:
                 os.environ.pop("SDLC_AUTHOR")
                 if prev is not None:
@@ -1002,7 +1011,7 @@ class MetadataInjectionRefusalTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = self._repo(d)
             with self.assertRaises(ValueError) as cm:
-                artifact.new(repo, "bug", "t", {"author": "Sam\nEvil: injected"})
+                artifact.new(repo, "bug", "t", {**GROOM, "author": "Sam\nEvil: injected"})
             self.assertIn("author", str(cm.exception))
             self._nothing_written(repo, "bug")
 
@@ -1034,9 +1043,23 @@ class MetadataInjectionRefusalTests(unittest.TestCase):
             with self.subTest(field=field), tempfile.TemporaryDirectory() as d:
                 repo = self._repo(d)
                 with self.assertRaises(ValueError) as cm:
-                    artifact.new(repo, "bug", "t", {field: "Low" + self.BREAK})
+                    artifact.new(repo, "bug", "t", {**GROOM, field: "Low" + self.BREAK})
                 self.assertIn(field, str(cm.exception))
                 self._nothing_written(repo, "bug")
+
+    def test_a_break_in_affects_is_refused_by_the_line_guard_not_by_luck(self) -> None:
+        # `affects` is interpolated into a metadata line, so a break in it forges one. The
+        # payload must be a VALID path list plus an injected line: a nonsense value would be
+        # stopped by the grooming demand instead, and the line guard would be untested while
+        # looking green - exactly the false green that hides a hole.
+        payload = "src/a.py" + self.BREAK
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            with self.assertRaises(ValueError) as cm:
+                artifact.new(repo, "bug", "t", {**GROOM, "affects": payload})
+            self.assertIn("affects", str(cm.exception))
+            self.assertNotIn("UNGROOMED", str(cm.exception))   # the LINE guard fired, not luck
+            self._nothing_written(repo, "bug")
 
     def test_batch_aborts_before_any_write_when_a_later_item_injects(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -1050,7 +1073,7 @@ class MetadataInjectionRefusalTests(unittest.TestCase):
     def test_revision_verb_refuses_a_multi_line_note_or_author(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             repo = self._repo(d)
-            artifact.new(repo, "bug", "t")
+            artifact.new(repo, "bug", "t", dict(GROOM))
             base = ["revision", "--id", "BG0001", "--root", str(repo)]
             for argv in ([*base, "--note", "done" + self.BREAK],
                          [*base, "--note", "ok", "--author", "Sam\nEvil"]):
@@ -1065,7 +1088,7 @@ class MetadataInjectionRefusalTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = self._repo(d)
             r = artifact.new(repo, "bug", "a real defect",
-                             {"author": "Dani Okafor; agent; v2", "severity": "High"})
+                             {**GROOM, "author": "Dani Okafor; agent; v2", "severity": "High"})
             body = Path(r["path"]).read_text(encoding="utf-8")
             self.assertIn("> **Raised-by:** Dani Okafor; agent; v2", body)
             self.assertTrue(r["indexed"])
@@ -1157,6 +1180,80 @@ class LeadingBreakBypassTests(unittest.TestCase):
                     for block in verify_ac.parse_story(p.read_text(encoding="utf-8")):
                         self.assertNotIn("touch", block.verifier or "")
             self.assertFalse(marker.exists(), "injected shell verifier executed - RCE open")
+
+
+class GroomingDemandTests(unittest.TestCase):
+    """BG0136: `artifact new` is a DOCUMENTED create path for a bug and a CR, so it answers to
+    the same grooming demand as the finding filer - from the same authority (the planner's own
+    `breakdown` predicate). A creator that let an ungroomed unit through would simply be where
+    the bug moved to.
+
+    Behaviour only: every assertion here creates (or fails to create) a real artefact and reads
+    the result, or asks the PLANNER what it makes of what was written.
+    """
+
+    def _bugs(self, repo: Path) -> list[Path]:
+        d = repo / "sdlc-studio" / "bugs"
+        return [p for p in d.glob("*.md") if p.name != "_index.md"] if d.exists() else []
+
+    def _plan_verdict(self, repo: Path, path: Path, type_: str) -> dict:
+        spec = importlib.util.spec_from_file_location(
+            "sprint", Path(__file__).resolve().parent.parent / "sprint.py")
+        sprint = importlib.util.module_from_spec(spec)
+        sys.modules["sprint"] = sprint
+        spec.loader.exec_module(sprint)
+        return sprint.breakdown(repo, [{"id": path.stem.split("-")[0], "type": type_,
+                                        "path": str(path)}], skip_personas=True)
+
+    def test_new_bug_without_grooming_is_refused_and_writes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+            with self.assertRaises(ValueError) as cm:
+                artifact.new(repo, "bug", "the parser drops a dash", {"severity": "High"})
+            self.assertIn("--affects", str(cm.exception))
+            self.assertEqual(self._bugs(repo), [])
+
+    def test_batch_aborts_wholly_on_one_ungroomed_item(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+            with self.assertRaises(ValueError) as cm:
+                artifact.new_batch(repo, "bug", [
+                    {"title": "groomed", **GROOM},
+                    {"title": "ungroomed", "severity": "High"},   # item 2 sinks the batch
+                ])
+            self.assertIn("item 2", str(cm.exception))
+            self.assertEqual(self._bugs(repo), [], "a partial batch reached disk")
+
+    def test_a_created_bug_is_plannable(self) -> None:
+        # The round trip through the OTHER creator: created here, and the planner accepts it.
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+            r = artifact.new(repo, "bug", "a defect",
+                             {"severity": "High", "affects": "src/a.py, src/b.py",
+                              "effort": "M"})
+            path = Path(r["path"])
+            self.assertEqual(sdlc_md.affects_files(path.read_text(encoding="utf-8")),
+                             ["src/a.py", "src/b.py"])
+            self.assertEqual(self._plan_verdict(repo, path, "bug")["ungroomed"], [])
+
+    def test_a_created_cr_is_plannable_on_every_template(self) -> None:
+        # The full template grafts a rich body over the same head. A CR whose size the planner
+        # cannot read back is unsized however the body was rendered.
+        for template in ("minimal", "planning", "full"):
+            with self.subTest(template=template), tempfile.TemporaryDirectory() as d:
+                repo = Path(d)
+                _index(repo, "cr",
+                       "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
+                r = artifact.new(repo, "cr", "tighten the gate",
+                                 {"priority": "High", "ctype": "Improvement", "impact": "i",
+                                  "affects": "src/gate.py", "effort": "L",
+                                  "template": template})
+                path = Path(r["path"])
+                self.assertEqual(self._plan_verdict(repo, path, "cr")["ungroomed"], [],
+                                 f"{template}: the planner refuses a CR this creator wrote")
 
 
 if __name__ == "__main__":

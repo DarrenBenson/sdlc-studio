@@ -11,11 +11,37 @@ Detailed workflow for the reconcile command that detects and fixes status drift 
 > **Deterministic helper - do the census with the script, not by hand.**
 > `python3 "$CLAUDE_SKILL_DIR/scripts/reconcile.py" detect [--scope <scope>] --format json`
 > builds the file census and returns the drift list (`status-mismatch`,
-> `missing-row`, `orphan-row`, `count-mismatch`, `missing-index`). Consume that
+> `missing-row`, `orphan-row`, `dead-row-link`, `count-mismatch`, `missing-index`). Consume that
 > JSON, then apply the fixes and the judgement calls the script does not make
 > (checkbox / dependency / PRD-feature drift, CR completion cascades, the
 > changelog). AC verification still runs via `verify_ac.py` (`--scope verify`).
 > The manual walk below is the fallback when the script is unavailable.
+
+## Reconciliation runs in both directions {#both-directions}
+
+The index is **derived**, and reconcile is what makes that true - which takes two passes,
+not one:
+
+- **Files to rows.** The census walks the artefact files and fixes their rows
+  (`status-mismatch`, `missing-row`).
+- **Rows to files.** Every index row is checked back against disk. A row with no backing
+  file is `orphan-row`; a row whose markdown **link** points at a file that does not exist
+  is `dead-row-link`, and it is reported whatever the row's status. A row's link is the
+  row's own claim that the file is there, so a `Proposed` row that links a deleted file is
+  a phantom, not a reservation. (An **unlinked** row in a not-yet-created status -
+  `Proposed`, `Draft`, or a custom `Retired` - stays exempt: it claims no file.)
+
+Without the second pass the index goes on advertising an artefact that is not there, and
+nothing in the gate notices: the census walks files, and this file is gone.
+
+`apply` never prunes a phantom row by default. A missing file can equally be a bad
+checkout, an in-flight rename, or a file not yet staged, and the row may be the artefact's
+last trace - so apply **warns** (loudly, on stderr, naming the row and the dead link) and
+leaves it. `apply --prune-orphans` is the explicit opt-in: it deletes only rows whose link
+is provably dead, echoes each one verbatim as it goes, and recomputes the counts. An
+unlinked orphan row is never pruned (an inline-only record holds its only copy there), and
+a phantom inside an `archive/` sub-index is reported but not rewritten - `archive.py` is
+the one archive writer.
 
 ## Self-diagnosing count-mismatch findings {#count-mismatch-diagnosis}
 
@@ -235,6 +261,8 @@ Print the change list as a structured report:
 > writes nothing) and `--dry-run` reports without writing. Structural classes
 > (missing-row / orphan-row / missing-index) and the judgement calls below
 > (CR-completion, PRD prose, breakdown/AC checkboxes) remain Claude-orchestrated.
+> A `dead-row-link` phantom is warned about on every run and removed only under the
+> explicit `--prune-orphans` (see [both directions](#both-directions)).
 >
 > **Apply reports only what it persisted.** A planned status fix the writer cannot place in the row
 > (an off-schema or header-less layout it declines to guess, rather than risk clobbering a title or
