@@ -1,6 +1,6 @@
 # CR-0243: Disposition: every retro finding becomes a filed artefact or a recorded decline
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio new
 > **Provenance:** RFC0032 D1

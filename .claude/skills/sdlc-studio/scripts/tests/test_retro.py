@@ -143,5 +143,33 @@ class GateUsesTheContentCheck(RetroBase):
         self.assertEqual(res["count"], 0, res["detail"])
 
 
+class TheOptOutIsHonoured(unittest.TestCase):
+    """`lessons.loop: judgement` mirrors the engagement floor's opt-out: the lane still
+    REPORTS, it just does not block. A documented setting that nothing reads would be the very
+    disease this loop exists to cure."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        (self.root / "sdlc-studio" / "retros").mkdir(parents=True)
+        (self.root / "sdlc-studio" / "retros" / "RETRO0001-t.md").write_text("", encoding="utf-8")
+        self.addCleanup(self.tmp.cleanup)
+
+    def _leg(self) -> dict:
+        import gate
+        return gate._retro_present(str(self.root), "RETRO0001")
+
+    def test_enforce_is_the_default_and_blocks(self) -> None:
+        leg = self._leg()
+        self.assertTrue(leg["blocking"])
+        self.assertGreater(leg["count"], 0)
+
+    def test_judgement_reports_but_does_not_block(self) -> None:
+        (self.root / "sdlc-studio" / ".config.yaml").write_text(
+            "lessons:\n  loop: judgement\n", encoding="utf-8")
+        leg = self._leg()
+        self.assertFalse(leg["blocking"], "the documented opt-out must actually opt out")
+        self.assertGreater(leg["count"], 0, "advisory must still REPORT - silence is not an opt-out")
+
 if __name__ == "__main__":
     unittest.main()

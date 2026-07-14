@@ -131,6 +131,24 @@ rules, the agents/services) live in that project's agent-instructions file
     the `engagement-floor` gate lane refuses a shipped multi-file unit that carries no
     acceptance criterion, `Verify:` line, or linked plan (see reference-config).
 
+17. **Close the learning loop: a retro must produce work, not just prose.** A team
+    that inspects and never adapts is holding a ceremony, not a retrospective. So
+    the retro is checked on its CONTENT, not its existence - a gate that tests for
+    a file is satisfied by `touch` - and every finding it records takes a
+    disposition: **filed** as a Bug or CR, or **declined with a reason**. Both are
+    green. Declining must cost exactly what filing costs, or the gate teaches people
+    to file rubbish to go green; what is refused is silence, a finding written down
+    and left to rot. The lessons a retro records are then lifted into the store
+    (`retro extract`), because a lesson that stays in the retro file is read by
+    nobody after the sprint that wrote it - and the store is printed into the next
+    sprint's plan unasked, including the cross-project registry a new project
+    inherits on day one. The reasoning is the engagement floor's: a process step
+    gated on judgement is the step that gets skipped. The evidence is not yet the
+    engagement floor's, and that distinction is kept honestly - the claim that the
+    loop reduces repeat defects is registered as a claim to be measured, not asserted
+    as a finding. Opt out with `lessons.loop: judgement`; the lane then reports and
+    never blocks. The default is the loop.
+
 ## Project constitution {#constitution}
 
 A project may declare its inviolable principles in an optional

@@ -108,10 +108,14 @@ fi
 # Two suites: shipped skill scripts, and the repo-only tools/ checkers (kept out of
 # the skill payload so they do not ship to consuming projects).
 if git diff --cached --name-only | grep -qE "^\.claude/skills/sdlc-studio/scripts/|^\.claude/skills/sdlc-studio/templates/|^tools/"; then
+  # One run of the suite, held to two standards: every test passes, AND a passing run is
+  # silent (an expected diagnostic from a bad-fixture test must be captured and asserted on,
+  # not leaked to the console, or a real error hides in the noise). Both read the same run -
+  # a guard paid for on every commit has to be cheap, or it gets disabled and guards nothing.
   run "skill-tests" \
-    "every shipped skill script unit test passes" \
-    "fix the code or the test named in the failure above; re-run: python3 -m unittest discover -s $skill/tests" \
-    -- python3 -m unittest discover -s "$skill/tests"
+    "every shipped skill script unit test passes, and a green run prints no stray diagnostics" \
+    "fix the code or the test named above; re-run: bash tools/skill-tests.sh" \
+    -- bash tools/skill-tests.sh "$skill"
   run "tool-tests" \
     "every repo-only tools/ checker unit test passes" \
     "fix the code or the test named in the failure above; re-run: python3 -m unittest discover -s tools/tests" \

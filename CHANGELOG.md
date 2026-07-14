@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Operational and incident lessons have a home (RFC0032, CR0245).** The lessons template now
+  carries a heavier operational shape - an incident narrative, a tickable runbook written for
+  someone following it under pressure at 3am, and a decay note saying what to re-verify before
+  trusting it. This is the category with the most expensive failures and, until now, the least
+  support: an infrastructure project wrote a 750-line ops-lessons document *outside* the workspace
+  because the registry had nowhere to put deploy, incident and DR lessons. It then outgrew the
+  agent's memory store and was evicted to a file no tool reads. Teams route around what does not
+  fit them.
+
+- **The learning loop is doctrine, with an opt-out (RFC0032 D5, CR0246).** Doctrine rule 17: a
+  retro is checked on its content, every finding is dispositioned, and its lessons are lifted into
+  the store the next sprint reads. Same shape as the engagement floor, and the same reasoning - a
+  process step gated on judgement is the step that gets skipped. Set `lessons.loop: judgement` to
+  make the lane advisory; it still reports, it never blocks. The claim behind the default, that
+  closing the loop cuts repeat defects, is **registered as a claim to be measured, not asserted**:
+  it is mandated on the engagement floor's reasoning and not yet on its evidence, and that
+  distinction is kept honestly rather than quietly elided.
+
 - **The cross-project lessons registry finally has an automatic reader (RFC0032 D2-D4, CR0242).**
   It had none. `sprint plan` carried a lessons digest, but that digest sourced the *project* tier;
   the `LL` registry was reachable only by explicitly running `lessons recall` - a prose
@@ -51,6 +69,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   those same 9 retros reference exactly 1 artefact id between them, because nothing ever asked.
 
 ### Fixed
+
+- **A passing test suite is silent again (CR0241).** Tests that feed the validator a
+  deliberately-broken fixture were letting its diagnostics escape to the console, so a fully green
+  run printed `ERROR` lines and the tail of 2000 passing tests read like a failure. That is not
+  cosmetic: it trains everyone, human and agent, to skim past `ERROR`, which is the exact reflex
+  that lets a real one through. A signal you cannot distinguish from noise is not a signal. The
+  expected diagnostics are now captured and **asserted on** - the tests are stronger for it, since
+  they previously checked only the exit code and never looked at what the validator actually said.
+  A new `test-noise` gate leg keeps it that way.
 
 - **The retro gate was satisfied by `touch` (BG0123).** Its leg globbed for a filename
   (`retros.glob(f"{retro_id}*.md")`), so a 0-byte `RETRO9999.md` returned

@@ -298,18 +298,25 @@ def _retro_present(root: str, retro_id: str) -> dict:
     delegated to `retro.py validate`, which interrogates the CONTENT: the required
     sections, at least one real lesson, and a disposition for every finding.
     """
+    import config
     import retro
+    # The documented opt-out (`lessons.loop: judgement`), mirroring the engagement floor: the
+    # lane still REPORTS, it just does not block. An opt-out that is documented but unread
+    # would be the very disease this loop exists to cure.
+    mode = str(config.get(root, "lessons.loop", "enforce") or "enforce").strip().lower()
+    blocking = mode != "judgement"
     res = retro.validate(root, retro_id)
     if res["ok"]:
         n_l, n_f = len(res["lessons"]), len(res["findings"])
-        return {"count": 0, "blocking": True,
+        return {"count": 0, "blocking": blocking,
                 "detail": (f"batch retro {retro_id}: {n_l} lesson(s), {n_f} finding(s) all "
                            f"dispositioned ({len(res['filed'])} filed, "
                            f"{len(res['declined'])} declined)")}
     # Every error names its own remedy; surface them all rather than only the first, so one
     # close tells you everything it wants instead of a queue of one-at-a-time refusals.
-    return {"count": len(res["errors"]), "blocking": True,
-            "detail": f"batch retro {retro_id} incomplete - " + "; ".join(res["errors"])}
+    suffix = "" if blocking else " (advisory: lessons.loop is judgement)"
+    return {"count": len(res["errors"]), "blocking": blocking,
+            "detail": f"batch retro {retro_id} incomplete{suffix} - " + "; ".join(res["errors"])}
 
 
 def _handoff_present(root: str, handoff_id: str) -> dict:

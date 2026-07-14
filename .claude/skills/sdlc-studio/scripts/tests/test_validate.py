@@ -183,17 +183,42 @@ class InferTypeTests(unittest.TestCase):
 
 
 class CheckCmdTests(unittest.TestCase):
+    """A PASSING suite must be silent.
+
+    These tests feed the validator a deliberately-broken story and assert it complains. The
+    complaint is the thing under test - but it was being written straight to the console, so a
+    fully green run printed `ERROR` lines and the tail of a 2000-test pass read like a failure.
+    Worse, it trains everyone (human and agent) to skim past `ERROR`, which is exactly the
+    reflex that lets a real one through: a signal indistinguishable from noise is not a signal.
+
+    So the diagnostics are captured, and asserted ON, rather than leaked. The assertions are
+    stronger for it - previously these tests checked only the exit code and never looked at
+    what the validator actually said.
+    """
+
+    def _check(self, root: str) -> tuple[int, str]:
+        """Run the validator, capturing what it says instead of spilling it to the console."""
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            rc = validate.main(["check", "--type", "story", "--root", root])
+        return rc, buf.getvalue()
+
     def test_check_exit_nonzero_on_error(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             _write(Path(d), "sdlc-studio/stories/US0001-bad.md", "# X\n\n> **Status:** Frozen\n")
-            rc = validate.main(["check", "--type", "story", "--root", d])
+            rc, out = self._check(d)
             self.assertEqual(rc, 1)
+            # Assert on the diagnostics now that we hold them: the exit code alone does not
+            # prove the validator objected for the RIGHT reason.
+            self.assertIn("status-vocab", out)
+            self.assertIn("no-ac", out)
 
     def test_check_exit_zero_when_clean(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             _write(Path(d), "sdlc-studio/stories/US0001-login.md", GOOD_STORY)
-            rc = validate.main(["check", "--type", "story", "--root", d])
+            rc, out = self._check(d)
             self.assertEqual(rc, 0)
+            self.assertNotIn("ERROR", out)
 
 
 GOOD_AGENTS = (

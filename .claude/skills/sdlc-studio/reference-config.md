@@ -205,11 +205,10 @@ A project where personas are consulted rarely by design (e.g. stable archetypes)
 
 ## Lessons Validity {#lessons-validity}
 
-How long a project lesson holds before it must be re-validated.
-
 | Setting | Default | Notes |
 | --- | --- | --- |
 | `lessons.validity_days` | 90 | Days from `Added:` to the `Review-by:` horizon stamped by `lessons add` |
+| `lessons.loop` | `enforce` | The learning loop. `enforce` (default): the retro's content is checked and every finding dispositioned - filed, or declined with a reason. `judgement`: reports, never blocks. Same shape and reasoning as the engagement floor - a step gated on judgement is the step that gets skipped - but the claim that it cuts repeat defects is registered to be measured, not asserted. See `reference-doctrine.md` rule 17 |
 
 At the sprint close, `gate --require-retro` (or `--require-lessons`) **fails** while an open lesson sits past its horizon: it is either closed (`lessons revalidate --close`, no longer true) or extended (`--extend`, still true). A lesson carrying no horizon at all fails the same lane - unprovable is not proven - and `revalidate --stamp` backfills one. Shorten the window on a fast-moving codebase where lessons rot quickly; lengthen it in a stable domain. See `reference-agentic-lessons.md#close-loop`.
 
