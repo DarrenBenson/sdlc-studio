@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **LL0025 - a narrow sample can make a variable look constant; widen the range before concluding.**
+  Three measured units came in flat within 9% (42.7k-46.8k tokens) and a High bug was filed saying
+  the metric did not track work. Two larger units then landed at 84k and 98k - it tracked work fine.
+  The three samples had all sat in one narrow band (11-15 tool uses), where a large fixed cost
+  dominates and the variable component is invisible. The failure was not "too few samples" but **too
+  narrow a range**: five samples clustered at one end of the input space say almost nothing about the
+  slope. State the range a conclusion covers ("constant across 11-15 tool uses"), not a claim it
+  never tested ("does not track work").
+
 - **The review now starts FROM the lessons (CR0242, completing it properly).** `review_prep.py`
   front-loads the mechanical inputs a review needs so it "starts from data instead of re-deriving
   it" - and the ranked lessons are now part of that payload, as review lenses. The adversarial
@@ -81,6 +90,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is nothing to game. What does not pass is silence. The evidence that this works: 8 of 9 retros in
   a consuming project carry a `## Lessons` section *because the template prompts for one* - and
   those same 9 retros reference exactly 1 artefact id between them, because nothing ever asked.
+
+### Changed
+
+- **One archive writer, one layout (CR0248).** `reconcile.py` carried a second, CLI-reachable
+  `archive` path that wrote a flat `<type>/archive/_index.md` with no live-index pointer, while
+  `archive.py` wrote the per-release layout with one. Archiving via both split a type's terminal rows
+  across two incompatible schemes, and the census survived either way, so nothing flagged the
+  incoherence (LL0016). Reconcile's duplicate is removed - it now only READS the archive into the
+  census; `archive.py` is the single writer. A guard test asserts the duplicate cannot silently
+  return.
+
+- **Per-type status vocabulary derives from one source (CR0249).** `artifact.SPEC` and
+  `file_finding.TYPES` each re-hardcoded the statuses that `lib/sdlc_md.py` already declares, so a
+  vocab change had to be made in three places or they drifted. Both now derive from `sdlc_md`, and a
+  guard test fails if either creator re-hardcodes a divergent value. A pure refactor - no status
+  added, removed or renamed.
 
 ### Fixed
 

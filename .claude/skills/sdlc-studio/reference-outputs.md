@@ -388,6 +388,10 @@ rows. Keep the live index bounded by archiving terminal rows by release:
   Re-runnable per release. See `scripts/archive.py`. It assumes one **master** status
   table per index (the `## All` table whose ID column carries the artifact ids); a
   secondary status view is never selected.
+- **One writer:** `scripts/archive.py` is the **only** path that relocates index rows,
+  and this release-grouped layout is the only archive layout. `reconcile` never archives -
+  it only reads (its census unions what the archiver wrote). A second writer with its own
+  layout would split a type's terminal rows across two schemes that no check can see.
 
 ### Slice-read large indexes {#index-slice-read}
 

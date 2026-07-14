@@ -130,6 +130,9 @@ Drift kinds: `status-mismatch`, `missing-row`, `orphan-row`, `count-mismatch`,
 checkbox/dependency/PRD-feature and CR-cascade drift that needs judgement.
 Full workflow: `reference-reconcile.md`.
 
+Reconcile does **not** archive. Index archival is `archive.py` alone (one layout, one
+writer); reconcile only reads the archive sub-indexes into the census.
+
 ### `status.py` (read-only)
 
 - `pillars`: four-pillar census (Requirements/Code/Tests/Reviews) as JSON

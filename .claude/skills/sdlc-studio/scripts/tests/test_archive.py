@@ -107,18 +107,10 @@ class MultiViewNoDoubleArchiveTests(unittest.TestCase):
             self.assertEqual(archived.count("US0001-x.md"), 1)   # archived exactly once
             self.assertEqual(idx.read_text("utf-8").count("US0001-x.md"), 1)  # view row kept
 
-    def test_reconcile_archiver_moves_master_row_once(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d); idx = self._multiview(root)
-            rc.archive_type("story", root, dry_run=False)
-            archived = (root / "sdlc-studio" / "stories" / "archive" / "_index.md").read_text("utf-8")
-            self.assertEqual(archived.count("US0001-x.md"), 1)
-            self.assertEqual(idx.read_text("utf-8").count("US0001-x.md"), 1)
-
     def _multiview_full_header(self, root: Path) -> Path:
         """A view sub-table with the SAME full `| ID | Title | Status |` header as the master -
-        the shape that made the OLD reconcile archiver move the shared row TWICE (this fixture
-        fails on pre-refactor code, so it genuinely locks the double-archive regression)."""
+        the shape that made an older archiver move the shared row TWICE (this fixture fails on
+        pre-refactor code, so it genuinely locks the double-archive regression)."""
         sd = root / "sdlc-studio" / "stories"; sd.mkdir(parents=True)
         for n in (1, 2):
             (sd / f"US000{n}-x.md").write_text(
@@ -133,12 +125,12 @@ class MultiViewNoDoubleArchiveTests(unittest.TestCase):
             "| [US0001](US0001-x.md) | x | Done |\n", encoding="utf-8")  # view subset, full header
         return idx
 
-    def test_reconcile_archiver_no_double_archive_with_full_header_view(self) -> None:
+    def test_no_double_archive_with_full_header_view(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d); idx = self._multiview_full_header(root)
-            rc.archive_type("story", root, dry_run=False)
-            archived = (root / "sdlc-studio" / "stories" / "archive" / "_index.md").read_text("utf-8")
-            self.assertEqual(archived.count("US0001-x.md"), 1)   # once (OLD moved it twice)
+            arc.archive(root, "story", "r1")
+            archived = (root / "sdlc-studio" / "stories" / "archive" / "r1" / "story.md").read_text("utf-8")
+            self.assertEqual(archived.count("US0001-x.md"), 1)   # once (an older writer moved it twice)
             self.assertEqual(archived.count("US0002-x.md"), 1)
             self.assertEqual(idx.read_text("utf-8").count("US0001-x.md"), 1)   # view row kept
 
@@ -250,12 +242,32 @@ class SingleArchiverTests(unittest.TestCase):
         for name in ("_master_header", "_terminal_rows", "_table_end", "_id_col"):
             self.assertFalse(hasattr(arc, name), f"{name} should be removed (delegates to reconcile)")
 
-    def test_both_archivers_delegate_to_the_shared_helper(self):
-        self.assertTrue(hasattr(rc, "master_terminal_rows"))
+    def test_the_archiver_delegates_to_the_shared_helper(self):
+        self.assertTrue(hasattr(rc, "master_terminal_rows"))   # the shared READ side stays
         arc_src = (SCRIPT.parent / "archive.py").read_text(encoding="utf-8")
+        self.assertIn("master_terminal_rows", arc_src)         # the one archiver delegates
+
+
+class OneArchiveWriterTests(unittest.TestCase):
+    """One archive layout, one writer: archive.py. reconcile must not ship a second archive
+    write path - two writers with different on-disk layouts (release sub-index + live pointer
+    vs a flat, pointerless archive/_index.md) split a type's terminal rows silently."""
+
+    def test_reconcile_registers_no_archive_subcommand(self):
+        actions = [a for a in rc.build_parser()._subparsers._group_actions]
+        names = sorted({n for a in actions for n in a.choices})
+        self.assertNotIn("archive", names, "reconcile must not re-register an archive subcommand")
+        self.assertEqual(names, ["apply", "detect", "fields"])
+
+    def test_reconcile_has_no_archive_writer(self):
+        for name in ("archive_plan", "archive_type", "cmd_archive"):
+            self.assertFalse(hasattr(rc, name), f"reconcile.{name} is the duplicate archive writer")
         rec_src = (SCRIPT.parent / "reconcile.py").read_text(encoding="utf-8")
-        self.assertIn("master_terminal_rows", arc_src)      # release archiver delegates
-        self.assertIn("master_terminal_rows", rec_src)      # flat archiver delegates
+        self.assertNotIn('add_parser("archive"', rec_src)
+
+    def test_archive_py_still_registers_archive(self):
+        sub = [a for a in arc.build_parser()._subparsers._group_actions]
+        self.assertIn("archive", {n for a in sub for n in a.choices})
 
 
 class IterTablesOnlyTests(unittest.TestCase):
@@ -265,14 +277,13 @@ class IterTablesOnlyTests(unittest.TestCase):
         import inspect
         self.assertIn("iter_tables", inspect.getsource(rc.master_terminal_rows))
 
-    def test_archive_paths_have_no_hand_rolled_walker(self):
+    def test_archive_path_has_no_hand_rolled_walker(self):
+        import inspect
         arc_src = (SCRIPT.parent / "archive.py").read_text(encoding="utf-8")
         self.assertNotIn("_table_end", arc_src)             # the removed walker is gone
-        rec_src = (SCRIPT.parent / "reconcile.py").read_text(encoding="utf-8")
-        # archive_plan no longer hand-rolls an in_table line loop
-        plan = rec_src[rec_src.index("def archive_plan"):rec_src.index("def archive_type")]
-        self.assertIn("master_terminal_rows", plan)
-        self.assertNotIn("in_table", plan)
+        src = inspect.getsource(arc.archive)                # the one writer delegates the read
+        self.assertIn("master_terminal_rows", src)
+        self.assertNotIn("in_table", src)
 
 
 class CrashResumeIdempotentTests(unittest.TestCase):

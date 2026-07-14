@@ -189,7 +189,8 @@ metadata field (e.g. `Verification depth`) in place - the stamp verb; no more ha
 
 ### `archive.py`
 
-Index archival for large boards. `archive --type <t> --release <r>` moves a
+Index archival for large boards - **the one archive writer** (`reconcile` reads the archive,
+never writes it). `archive --type <t> --release <r>` moves a
 type's terminal master-table rows into `<type>/archive/{release}/{type}.md` and leaves a
 bullet pointer in the live index - rows move, artifact files stay. `parse_index` unions
 the archive sub-indexes so the census stays correct. Explicit, idempotent per release.

@@ -29,17 +29,21 @@ import reconcile  # noqa: E402  (sibling - reuse the tested count recompute)
 import triage_noise  # noqa: E402  (sibling - v3 triage noise controls; dormant on v2)
 
 # Per-type: workspace dir, filename prefix, index display-id form, default status, and
-# the fields a non-hollow artifact must carry (the richness guard).
+# the fields a non-hollow artifact must carry (the richness guard). The `status` cell is
+# DERIVED from the status vocabulary in `lib.sdlc_md` - the one authority - so the filer and
+# the general creator can never disagree about the state a finding is born in.
 TYPES = {
     "bug": {"dir": "bugs", "prefix": "BG", "disp": "BG{n:04d}",
-            "status": "Open", "required": ("severity", "summary", "steps", "fix")},
+            "status": sdlc_md.create_status("bug"),
+            "required": ("severity", "summary", "steps", "fix")},
     # A CR carries an impact statement and an effort estimate: the validator demands both of
     # any CR, so the filer demands both of its caller rather than minting one that fails.
     "cr": {"dir": "change-requests", "prefix": "CR", "disp": "CR-{n:04d}",
-           "status": "Proposed",
+           "status": sdlc_md.create_status("cr"),
            "required": ("priority", "ctype", "summary", "acs", "impact", "effort")},
     "rfc": {"dir": "rfcs", "prefix": "RFC", "disp": "RFC-{n:04d}",
-            "status": "Draft", "required": ("summary", "options")},
+            "status": sdlc_md.create_status("rfc"),
+            "required": ("summary", "options")},
 }
 
 

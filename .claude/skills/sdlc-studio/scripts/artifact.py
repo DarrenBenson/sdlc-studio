@@ -25,16 +25,28 @@ import reconcile  # noqa: E402
 import triage_noise  # noqa: E402  (v3 triage noise controls; dormant on v2)
 import transition  # noqa: E402
 
-# Per-type create status, terminal (close) status, and disp-id form (cr/rfc carry a dash).
+# The disp-id form per type (cr/rfc carry a dash: `CR-0001`, every other type `US0001`).
+# The one per-type fact this module owns - the statuses beside it are NOT restated here.
+_DASH = {
+    "epic": False,
+    "story": False,
+    "plan": False,
+    "test-spec": False,
+    "workflow": False,
+    "bug": False,
+    "cr": True,
+    "rfc": True,
+}
+
+# Per-type create status, terminal (close) status, and disp-id form. The two statuses are
+# DERIVED from the status vocabulary in `lib.sdlc_md` - the one authority the validator, the
+# transition gate and the archiver already read - so a vocab change lands in one file rather
+# than silently drifting between three copies of the same table.
 SPEC = {
-    "epic": {"status": "Draft", "terminal": "Done", "dash": False},
-    "story": {"status": "Draft", "terminal": "Done", "dash": False},
-    "plan": {"status": "Draft", "terminal": "Complete", "dash": False},
-    "test-spec": {"status": "Draft", "terminal": "Complete", "dash": False},
-    "workflow": {"status": "Created", "terminal": "Done", "dash": False},
-    "bug": {"status": "Open", "terminal": "Fixed", "dash": False},
-    "cr": {"status": "Proposed", "terminal": "Complete", "dash": True},
-    "rfc": {"status": "Draft", "terminal": "Accepted", "dash": True},
+    t: {"status": sdlc_md.create_status(t),
+        "terminal": sdlc_md.default_terminal_status(t),
+        "dash": dash}
+    for t, dash in _DASH.items()
 }
 _PREFIX_TYPE = {sdlc_md.ARTIFACT_TYPES[t][1].upper(): t for t in SPEC}
 
@@ -756,7 +768,9 @@ def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
     type_ = infer_type_from_id(artifact_id)
     if type_ is None:
         raise ValueError(f"cannot infer type from id {artifact_id!r}")
-    st = status or SPEC[type_]["terminal"]
+    # The default close target comes from the shared vocab authority, not from a table this
+    # module keeps - so `close` and the vocab can never disagree about what closed means.
+    st = status or sdlc_md.default_terminal_status(type_)
     if dry_run:  # preview the transition target, write nothing, record nothing
         return {"id": artifact_id, "type": type_, "to": st, "dry_run": True}
     # transition records one telemetry event on entering the terminal set (and none on an

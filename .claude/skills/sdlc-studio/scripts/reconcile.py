@@ -11,10 +11,12 @@ Subcommands:
   detect   Census + drift report as JSON/text (READ-ONLY).
   apply    Rewrite drifted status cells, append missing rows, recompute counts (WRITES the index).
   fields   Project file-owned index cells (title/points); `--apply` writes.
-  archive  Relocate terminal index rows to an archive sub-index (WRITES the index).
 
 Only `detect` is read-only; the judgement calls (orphan-row removal, checkbox/
 dependency/PRD-feature drift, CR cascades, changelog) stay with the agent.
+
+Index archival lives in `archive.py` - the single archive writer. This module owns only
+the shared read helper it calls (`master_terminal_rows`).
 """
 from __future__ import annotations
 
@@ -1496,11 +1498,6 @@ def cmd_apply(args: argparse.Namespace) -> int:
     return 1 if unapplied else 0
 
 
-def _line_id(line: str) -> str | None:
-    m = sdlc_md.ID_SEARCH_RE.search(line)
-    return m.group(0) if m else None
-
-
 def _type_id_in(cell: str, prefix: str) -> str | None:
     """An artifact id of this type in a cell (e.g. US0042, allowing a CR-0042 dash)."""
     m = re.search(rf"\b{re.escape(prefix)}-?\d+\b", cell)
@@ -1508,7 +1505,8 @@ def _type_id_in(cell: str, prefix: str) -> str | None:
 
 
 def master_terminal_rows(text: str, type_: str, repo_root: Path | str) -> dict | None:
-    """The single shared archive walker: via `sdlc_md.iter_tables` (the one structural boundary,
+    """The archive READ side, shared with `archive.py` (the one archive writer): via
+    `sdlc_md.iter_tables` (the one structural boundary,
     no hand-rolled table parsing), find the MASTER data table for `type_` - the status-bearing
     table with the most rows carrying this type's id in its ID column, so a secondary/per-epic
     view can never win selection and cause a double-archive - and classify its id-bearing rows.
@@ -1553,98 +1551,6 @@ def master_terminal_rows(text: str, type_: str, repo_root: Path | str) -> dict |
     return {"header_line0": best["header_line"] - 1, "header_cells": best["header"], "rows": rows}
 
 
-def archive_plan(type_: str, repo_root: Path | str) -> dict | None:
-    """Compute which terminal rows to relocate from `<type>/_index.md` to the archive
-    sub-index. Returns {move, keep_text, archive_text, archive_path, index_path} or None
-    when there is no index or nothing terminal to move (idempotent no-op). Raises
-    ValueError on a data row whose status is not in the vocab - fail loud, never
-    silently drop or misfile a row (LL0008)."""
-    root = Path(repo_root)
-    rel = sdlc_md.ARTIFACT_TYPES[type_][0]
-    index_path = root / rel / "_index.md"
-    if not index_path.exists():
-        return None
-    if not sdlc_md.terminal_statuses(type_):
-        return None
-    original = index_path.read_text(encoding="utf-8")
-    lines = original.splitlines()
-    # Shared iter_tables walker (no hand-rolled table parsing): pick the master table and its
-    # terminal rows. Fail loud on an unrecognised status before any write (LL0008).
-    m = master_terminal_rows(original, type_, root)
-    if m is None:
-        return None
-    for line0, rid, status, _term in m["rows"]:
-        if status is None:
-            raw = lines[line0]
-            raise ValueError(
-                f"{type_} index row {rid}: status in {raw!r} is not a {type_} status - "
-                f"refusing to archive (fix the row first)")
-    move_idx = {line0 for line0, _id, _st, term in m["rows"] if term}
-    if not move_idx:
-        return None
-    header = lines[m["header_line0"]]
-    sep = "|" + " --- |" * (header.count("|") - 1)
-    move = [lines[i] for i in sorted(move_idx)]
-    keep = [ln for i, ln in enumerate(lines) if i not in move_idx]
-    moved_ids = {rid for _l, rid, _st, term in m["rows"] if term}
-    archive_path = root / rel / "archive" / "_index.md"
-    prior_rows: list[str] = []
-    if archive_path.exists():
-        for line in archive_path.read_text(encoding="utf-8").splitlines():
-            cells = _table_cells(line)
-            if (cells and len(cells) > 2
-                    and "status" not in [c.strip().lower() for c in cells]
-                    and _line_id(line) and _line_id(line) not in moved_ids):
-                prior_rows.append(line)
-    title = type_.replace("-", " ").title()
-    archive_rows = prior_rows + move
-    archive_text = f"# {title} Archive Index\n\n{header}\n{sep}\n" + "\n".join(archive_rows) + "\n"
-    keep_text = "\n".join(keep) + ("\n" if original.endswith("\n") else "")
-    return {"move": move, "keep_text": keep_text, "archive_text": archive_text,
-            "archive_path": archive_path, "index_path": index_path}
-
-
-def archive_type(type_: str, repo_root: Path | str, dry_run: bool = False) -> dict:
-    """Relocate `type_`'s terminal index rows to the archive sub-index. Validates the
-    whole index (fail loud) before any write, so a bad row aborts with no partial state."""
-    plan = archive_plan(type_, repo_root)
-    if plan is None:
-        return {"type": type_, "moved": 0, "archive": None}
-    if not dry_run:
-        plan["archive_path"].parent.mkdir(parents=True, exist_ok=True)
-        plan["archive_path"].write_text(plan["archive_text"], encoding="utf-8")
-        plan["index_path"].write_text(plan["keep_text"], encoding="utf-8")
-    return {"type": type_, "moved": len(plan["move"]),
-            "archive": str(plan["archive_path"].relative_to(Path(repo_root))),
-            "ids": [_line_id(m) for m in plan["move"]]}
-
-
-def cmd_archive(args: argparse.Namespace) -> int:
-    """Relocate terminal index rows to per-type archive sub-indexes; --dry-run reports only."""
-    repo_root = Path(args.root).resolve()
-    types = [args.type] if args.type else (
-        SCOPE_TYPES.get(args.scope, DEFAULT_TYPES) if args.scope else DEFAULT_TYPES)
-    results = []
-    try:
-        for type_ in types:
-            results.append(archive_type(type_, repo_root, dry_run=args.dry_run))
-    except ValueError as e:  # fail loud: no partial write across the sweep
-        print(f"error: {e}", file=sys.stderr)
-        return 1
-    if args.format == "json":
-        print(json.dumps(results, indent=2))
-        return 0
-    total = 0
-    for r in results:
-        if r["moved"]:
-            verb = "WOULD archive" if args.dry_run else "archived"
-            print(f"{verb} {r['moved']} {r['type']} row(s) -> {r['archive']}: {', '.join(r['ids'])}")
-            total += r["moved"]
-    print(f"archive: {'would move' if args.dry_run else 'moved'} {total} row(s)"
-          + (" [dry-run]" if args.dry_run else ""))
-    return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     """Construct the argparse parser for the detect subcommand."""
     p = argparse.ArgumentParser(
@@ -1675,13 +1581,11 @@ def build_parser() -> argparse.ArgumentParser:
     fi.add_argument("--root", default=".", help="Repo root (default: .)")
     fi.add_argument("--format", choices=("text", "json"), default="text")
     fi.set_defaults(func=cmd_fields)
-    ar = sub.add_parser("archive", help="Relocate terminal index rows to archive sub-indexes.")
-    ar.add_argument("--type", help="Single artifact type (default: all index-driven types)")
-    ar.add_argument("--scope", choices=sorted(SCOPE_TYPES), help="Limit to one scope")
-    ar.add_argument("--root", default=".", help="Repo root (default: .)")
-    ar.add_argument("--dry-run", action="store_true", help="Report the relocation without writing")
-    ar.add_argument("--format", choices=("text", "json"), default="text")
-    ar.set_defaults(func=cmd_archive)
+    # No `archive` subcommand here on purpose: `archive.py` is the ONE archive writer
+    # (release-grouped sub-index + live-index pointer). A second writer here relocated the
+    # same rows into a different, pointerless layout, and an operator using both silently
+    # split a type's terminal rows across two incompatible schemes. reconcile keeps only the
+    # shared READ helper (`master_terminal_rows`), which `archive.py` calls.
     sdlc_md.add_global_root(p)
     return p
 

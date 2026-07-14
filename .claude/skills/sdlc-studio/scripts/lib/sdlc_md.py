@@ -476,6 +476,42 @@ def terminal_statuses(type_: str) -> set[str]:
     return set(TERMINAL_STATUS.get(type_, set())) & set(STATUS_VOCAB.get(type_, []))
 
 
+# The status a freshly created artefact of each type is born in - the entry state of its
+# lifecycle. Declared HERE, beside the vocab it must belong to, because a create status is
+# not derivable from vocab order: a story starts at `Draft`, never at the vocab's first
+# entry `Proposed` (a pre-decomposition proposal state a created story does not occupy).
+# The creators (`artifact.SPEC`, `file_finding.TYPES`) derive from this rather than restate
+# it, so a vocab change lands in one file. Every value must be a member of STATUS_VOCAB.
+CREATE_STATUS: dict[str, str] = {
+    "epic": "Draft",
+    "story": "Draft",
+    "plan": "Draft",
+    "bug": "Open",
+    "cr": "Proposed",
+    "rfc": "Draft",
+    "test-spec": "Draft",
+    "workflow": "Created",
+}
+
+
+def create_status(type_: str) -> str:
+    """The status a newly created artefact of `type_` starts in. Empty for an unknown type.
+    Intersected with the vocab, exactly like `terminal_statuses`, so it can never name a
+    status the type does not define."""
+    st = CREATE_STATUS.get(type_, "")
+    return st if st in STATUS_VOCAB.get(type_, []) else ""
+
+
+def default_terminal_status(type_: str) -> str:
+    """The status a `close` moves `type_` to when the caller names none: the FIRST absorbing
+    state in the type's vocabulary order, which is its completed-successfully outcome (Done /
+    Complete / Fixed / Accepted). The later absorbing states are the abandonment outcomes
+    (Won't Fix, Rejected, Superseded, Withdrawn) - never a default; a caller asks for those
+    explicitly. Empty for an unknown type, or one with no absorbing state."""
+    absorbing = terminal_statuses(type_)
+    return next((s for s in STATUS_VOCAB.get(type_, []) if s in absorbing), "")
+
+
 # Findings (bug/cr/rfc) gain an `inbox` triage lane under schema v3 (EP0014): an
 # agent-filed finding lands in `inbox`, and a *different* seat triages it into the
 # workflow proper. The triaged target is the first accepted-into-workflow state per

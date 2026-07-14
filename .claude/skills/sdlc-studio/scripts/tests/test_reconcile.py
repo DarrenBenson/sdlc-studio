@@ -1535,7 +1535,7 @@ class FormatJsonParityTests(unittest.TestCase):
     """US0102/CR0187: every reconcile subcommand speaks --format json (parity locked so a
     new subcommand cannot ship text-only)."""
 
-    _SUBS = ("detect", "apply", "fields", "archive")
+    _SUBS = ("detect", "apply", "fields")
 
     def test_every_subparser_exposes_format_json(self) -> None:
         import argparse
@@ -1557,7 +1557,6 @@ class FormatJsonParityTests(unittest.TestCase):
             "detect": ["detect"],
             "apply": ["apply", "--dry-run"],
             "fields": ["fields"],
-            "archive": ["archive", "--dry-run"],
         }
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

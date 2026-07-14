@@ -1,4 +1,7 @@
-"""Unit tests for the reconcile.py index-archive writer (US0040 / CR0125).
+"""Unit tests for the index-archive writer (US0040 / CR0125).
+
+The writer is `archive.py` - the single archive path. `reconcile.py` keeps only the shared
+read helper; its duplicate write path (a flat, pointerless `archive/_index.md`) is gone.
 
 Run from the repo root:
     python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests
@@ -25,6 +28,7 @@ def _load(name: str):
 
 
 reconcile = _load("reconcile")
+archive = _load("archive")
 import sdlc_md  # noqa: E402  (on sys.path via lib)
 
 INDEX = (
@@ -73,47 +77,50 @@ class WriterTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             sd = _fixture(root)
-            res = reconcile.archive_type("story", root)
-            self.assertEqual(res["moved"], 2)
-            self.assertCountEqual(res["ids"], ["US0003", "US0004"])
+            res = archive.archive(root, "story", "r1")
+            self.assertEqual(res["count"], 2)
+            self.assertCountEqual(res["archived"], ["US0003", "US0004"])
             live = (sd / "_index.md").read_text(encoding="utf-8")
             self.assertIn("US0001", live)
-            self.assertNotIn("US0003", live)  # terminal row gone from live
-            self.assertNotIn("US0004", live)
-            self.assertIn("| **Total** | **4** |", live)  # summary block untouched
-            arch = (sd / "archive" / "_index.md").read_text(encoding="utf-8")
+            self.assertNotIn("US0003-c.md", live)  # terminal row gone from live
+            self.assertNotIn("US0004-d.md", live)
+            self.assertIn("| **Total** | **4** |", live)  # census union keeps the total whole
+            # the live index points at the release it was archived into (the range bullet)
+            self.assertIn("- **r1** (US0003-US0004, 2 archived) -> "
+                          "sdlc-studio/stories/archive/r1/story.md", live)
+            arch = (sd / "archive" / "r1" / "story.md").read_text(encoding="utf-8")
             self.assertIn("US0003", arch)
             self.assertIn("US0004", arch)
-            # idempotent: a second run moves nothing and leaves files byte-identical
+            # idempotent: a second run moves nothing and leaves the live index byte-identical
             before = (sd / "_index.md").read_text(encoding="utf-8")
-            res2 = reconcile.archive_type("story", root)
-            self.assertEqual(res2["moved"], 0)
+            res2 = archive.archive(root, "story", "r1")
+            self.assertEqual(res2["count"], 0)
             self.assertEqual((sd / "_index.md").read_text(encoding="utf-8"), before)
 
-    def test_index_archive_dryrun_and_failloud(self) -> None:
+    def test_index_archive_dryrun_and_unknown_status(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             sd = _fixture(root)
             before = (sd / "_index.md").read_text(encoding="utf-8")
             # dry-run writes nothing
-            res = reconcile.archive_type("story", root, dry_run=True)
-            self.assertEqual(res["moved"], 2)
+            res = archive.archive(root, "story", "r1", dry_run=True)
+            self.assertEqual(res["count"], 2)
             self.assertEqual((sd / "_index.md").read_text(encoding="utf-8"), before)
-            self.assertFalse((sd / "archive" / "_index.md").exists())
-            # fail loud: an unclassifiable status aborts with no write
-            bad = before.replace("| Draft |", "| Bogus |")
+            self.assertFalse((sd / "archive").exists())
+            # a row whose status is not in the vocab is never archived - it stays live
+            bad = before.replace("| A | Draft |", "| A | Bogus |")
             (sd / "_index.md").write_text(bad, encoding="utf-8")
-            with self.assertRaises(ValueError):
-                reconcile.archive_type("story", root)
-            self.assertEqual((sd / "_index.md").read_text(encoding="utf-8"), bad)
-            self.assertFalse((sd / "archive" / "_index.md").exists())
+            res = archive.archive(root, "story", "r1")
+            self.assertCountEqual(res["archived"], ["US0003", "US0004"])
+            self.assertIn("| [US0001](US0001-a.md) | A | Bogus |",
+                          (sd / "_index.md").read_text(encoding="utf-8"))
 
     def test_index_archive_reconcile_clean(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _fixture(root)
             self.assertEqual(reconcile.detect_type("story", root)["drift"], [])
-            reconcile.archive_type("story", root)
+            archive.archive(root, "story", "r1")
             # census still complete (archived rows unioned by parse_index), summary intact
             self.assertEqual(reconcile.detect_type("story", root)["drift"], [])
 
