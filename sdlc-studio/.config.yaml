@@ -29,3 +29,22 @@ engagement_floor:
   # at v4.1 adoption. 238 covers the current maxima (US0119/BG0117/CR0238); any new multi-file
   # story/bug/CR past it must carry an AC, a Verify line, or a linked plan - or a recorded waiver.
   adopt_after: 238
+
+# Sprint capacity - this repo's own ceiling, deliberately NOT the shipped default (500,000).
+# Measured, not forecast: the last 5-unit sprint cost 642,358 tokens of real subagent spend
+# (RETRO0025). The shipped default was derived from a 6-unit sprint that cost 384k, which is
+# below what a normal sprint here actually costs - so it would flag almost every batch, and a
+# warning that always fires is one an operator learns to scroll past.
+#
+# 700,000 sits just above the one real 5-unit sprint we have measured: a normal batch passes,
+# a genuinely oversized one still trips. It is an OPERATOR SETTING, not a fitted constant, and
+# it is set here rather than in templates/config-defaults.yaml because 642k is this repo's cost
+# with this model and these briefs - another project's units cost something else entirely.
+#
+# Read it against BG0133: until a forecast is recorded at PLAN TIME, the token half of this
+# check is built on an estimator known to under-forecast by ~1.8x, so `within budget` currently
+# means less than it appears to.
+capacity:
+  tokens: 700000
+  minutes: 240
+  units: 8

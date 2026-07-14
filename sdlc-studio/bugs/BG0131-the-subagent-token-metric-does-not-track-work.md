@@ -1,6 +1,6 @@
 # BG0131 (CORRECTED - the original claim was WRONG): The subagent token metric does not track work - it cannot be used for calibration as-is
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Effort:** S
 > **Created:** 2026-07-14
@@ -53,3 +53,21 @@ Define the measured quantity before using it. Establish what the harness's repor
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-14 | sdlc-studio | Filed |
+
+## Resolution: superseded by BG0133 (2026-07-14)
+
+Closed without further work, and not to make a sprint fit.
+
+The original claim ("the metric does not track work") was **wrong** and is corrected above: the
+metric tracks work fine, and the three flat samples that prompted it all sat in one narrow tool-use
+band (LL0025). What survived the correction was the residual observation that the token figure could
+not be used for calibration as-is.
+
+That residual is now **answered, and by a better analysis than this bug contains**. RETRO0025
+measured 11 units across two sprints and found the estimator falsified out-of-sample (0.55x against
+1.09x in-sample), and identified the actual defect: the PREDICTOR is wrong, not the coefficient -
+cost tracks work done (tool-uses, r = 0.926), and the cognitive complexity of a file does not measure
+work done. The fix for "cannot be used for calibration as-is" is **BG0133**: record the forecast at
+plan time so a sprint can be judged against what was actually predicted.
+
+Working this bug would be make-work over a superseded framing. The real work is BG0133.
