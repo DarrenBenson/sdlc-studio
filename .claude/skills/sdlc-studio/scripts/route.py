@@ -100,7 +100,11 @@ def estimate(repo_root: Path | str, unit_path: Path | str) -> dict:
     resolved = [str(r) for p in declared if (r := sdlc_md.resolve_affects(root, p))]
     new_files = len(declared) - len(resolved)
     ac_count = sdlc_md.count_acs(text)
-    points_raw = sdlc_md.extract_field(text, "Story Points")
+    # The canonical size field is `Points` (`sdlc_md.POINTS_FIELD`) - one vocabulary, one
+    # parser. `Story Points` is the same vocabulary under its old spelling, still on the stories
+    # already written, so it is read as a fallback rather than silently scoring them unsized.
+    points_raw = (sdlc_md.extract_field(text, sdlc_md.POINTS_FIELD)
+                  or sdlc_md.extract_field(text, "Story Points"))
     try:
         story_points = int(str(points_raw).strip().split()[0]) if points_raw else None
     except (ValueError, IndexError):

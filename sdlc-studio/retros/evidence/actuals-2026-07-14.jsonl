@@ -11,3 +11,11 @@
 {"id": "CR0263", "type": "cr"}
 {"id": "CR0261", "type": "cr"}
 {"id": "BG0141", "type": "bug"}
+{"id": "RFC0038", "type": "rfc"}
+{"id": "CR0265", "type": "cr", "iterations": 1, "wall_time_s": 1227, "critic_verdict": "approve", "tokens": 182905, "model": "claude-opus-4-8"}
+{"id": "CR0265", "type": "cr"}
+{"id": "CR0266", "type": "cr", "iterations": 1, "wall_time_s": 2324, "critic_verdict": "approve", "tokens": 270252, "model": "claude-opus-4-8"}
+{"id": "CR0267", "type": "cr", "iterations": 1, "wall_time_s": 2381, "critic_verdict": "approve", "tokens": 280635, "model": "claude-opus-4-8"}
+{"id": "CR0266", "type": "cr"}
+{"id": "CR0267", "type": "cr"}
+{"id": "BG0147", "type": "bug"}

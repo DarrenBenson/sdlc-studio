@@ -25,14 +25,15 @@ SDLC Studio is model-invoked - say it in plain language:
 
 ```bash
 python3 <skill>/scripts/artifact.py new --type bug --title "Player falls through floor" \
-  --affects "src/physics/collide.py, src/world/floor.py" --effort M
+  --affects "src/physics/collide.py, src/world/floor.py" --points 3
 python3 <skill>/scripts/file_finding.py file --type bug --title "..." --summary "..." \
   --steps "1. ..." --fix "..." \
-  --affects "src/physics/collide.py" --effort M   # repro + fix + grooming
+  --affects "src/physics/collide.py" --points 3   # repro + fix + grooming
 ```
 
-Every bug names the files it will touch (`--affects`) and its job size (`--effort S|M|L`,
-which is the size of the work - Severity is its urgency). Both creators **refuse** a bug
+Every bug names the files it will touch (`--affects`) and its job size (`--points`, on the
+modified Fibonacci scale 1, 2, 3, 5, 8, 13, 20 - the size of the work, where Severity is its
+urgency). Both creators **refuse** a bug
 without them, because `sprint plan` refuses to plan one: a unit that names no files cannot
 be sized, and the planner cannot see that two units touch the same file. You know which
 files are involved when you file; nobody knows it better at plan time. A project that has

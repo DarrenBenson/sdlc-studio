@@ -4,20 +4,23 @@
 `sprint plan` selects a batch of work by query (open bugs, proposed CRs, ready
 stories) and orders it, so the operator sees the triage plan before the run starts.
 Ordering is by priority/severity (Critical first); dependency-topological; and WSJF
-(`--order wsjf`): priority stays the dominant axis and the cognitive complexity of the
-files a unit will touch (its `Affects`, scored by complexity.py) breaks
-ties within a priority, so the smaller blast-radius job goes first. Complexity never
-overrides priority, and the order degrades to plain priority when no complexity is
-known. The WSJF job size is the review seat's estimate when the seats scored the unit,
-else the human `Effort:` (S/M/L) recorded on the artefact at filing, else a neutral
-default.
+(`--order wsjf`): **Cost of Delay divided by Points**, both on the modified Fibonacci scale.
+CoD falls out of the declared Priority, so WSJF runs on any groomed backlog - it needs NO seat
+scores, which is why it can now actually run. When the review seats HAVE scored a unit, their
+value + time-criticality + risk-reduction replaces the derived CoD; the denominator is always
+the unit's `Points`, because there is only one size vocabulary.
 
-The plan does NOT carry a per-unit token budget. It used to, scaled by complexity, and the
-seed was measured against 18 units of real telemetry at r = +0.03 against actual cost - no
-signal at all. Nothing else derivable at plan time beat a leave-one-out r of 0.415 either, so
-the per-unit forecast is gone rather than re-seeded. What the plan carries instead is the
-BATCH HISTORY (what sprints actually cost) and a batch forecast of unit-count x the measured
-per-unit rate. See the constants block below for the full measurement.
+Under WSJF, priority is deliberately NOT the dominant axis: a job worth less but four times
+cheaper does go first, and that is the whole economic content of WSJF. `--order priority` is
+there for anyone who wants strict priority bands instead.
+
+THE GATE REFUSES A UNIT ABOVE 8 POINTS (`sprint.points_split_above` to move the ceiling). Above
+it the estimate is not worth having, and the answer is to DECOMPOSE - a triage decision, not an
+estimation one. See the forecast block below for the measurement that demands it.
+
+The forecast is sum(points) x a tokens-per-point rate MEASURED from this project's own evidence.
+It carries the BATCH HISTORY (what sprints actually cost) beside it, and it names the evidence
+the rate came from, so nobody has to take the number on trust.
 
 The plan then SIZES the batch against the sprint's CAPACITY (`capacity.*`: tokens, wall-clock
 minutes, units) and says whether it fits - at plan time, while the operator can still cut it,
@@ -29,7 +32,7 @@ cannot observe token spend, and the token model is a hypothesis, not a measureme
 The plan also EMITS the still-valid lessons digest (`lessons.plan_digest`): the lessons the
 last sprints paid for arrive inside the plan the agent reads at sprint start, rather than as a
 prose instruction to open a file that an agent under effort pressure skips. Read-only;
-pure stdlib (complexity and lessons are sibling helpers).
+pure stdlib (lessons, telemetry and route are sibling helpers).
 """
 from __future__ import annotations
 
@@ -42,7 +45,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import run_state, sdlc_md  # noqa: E402
-import complexity  # noqa: E402  (sibling - blast-radius complexity for WSJF)
 import config  # noqa: E402  (sibling - routing block for tier enrichment)
 import lessons  # noqa: E402  (sibling - the still-valid lessons digest carried in the plan)
 import reconcile  # noqa: E402  (sibling - reconcile before plan)
@@ -55,133 +57,88 @@ PRIORITY_FIELD = {"bug": "Severity", "cr": "Priority", "story": "Priority"}
 # bugs + CRs tranche orders on a single documented axis instead of two vocabularies.
 PRIORITY_WEIGHT = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3,
                    "P1": 0, "P2": 1, "P3": 2, "P4": 3}
-# ---------------------------------------------------------------------------
-# The token forecast: a BATCH tool on a MEASURED RATE. There is NO per-unit model.
-# ---------------------------------------------------------------------------
-# THE SEED WAS INERT, AND IT IS REPLACED BY NOTHING - because nothing measured better.
-#
-# The forecast used to be `base + TOKENS_PER_COGNITIVE x max_cognitive`, where max_cognitive is
-# the blast-radius cognitive complexity of the files a unit touches. Measured against the 18
-# units with recorded actuals (CALIBRATION_FIT_UNITS), that seed correlates with actual cost at:
-#
-#     max_cognitive           r = +0.03    <- THE SEED THAT WAS IN USE. No signal at all.
-#
-# It is not weakly predictive - it carries nothing, and no coefficient can rescue it. Both past
-# recalibrations (5,000, then 600) fitted a slope through noise, which is why the model
-# over-forecast by 3.3x and then under-forecast by 0.55x and 0.39x on consecutive sprints. You
-# cannot scale zero. The fault is structural: max_cognitive measures how complicated the FILE is,
-# not how much of it must CHANGE. A one-line fix in a 2,000-line module inherits the whole
-# module's complexity; a docs unit has none at all (one seeded 0, forecast 80,000, cost 205,534).
-#
-# EVERY OTHER PLAN-TIME CANDIDATE WAS THEN MEASURED, against the same 18 units:
-#
-#     files_affected          r = +0.44    the best single signal, and still only moderate
-#     test_impact             r = +0.40    test files covering the affected paths
-#     declared Effort (S/M/L) r = +0.34    the human's own guess
-#     fan_in (coupling)       r = +0.11    no signal
-#     ac_count                r = +0.07    requirement clarity: no signal
-#     max_cognitive           r = +0.03    no signal
-#     dirs touched            r = -0.01    no signal
-#
-# CHANGE-COMPLEXITY IS NOT DERIVABLE AT PLAN TIME, and that is stated rather than faked. Before
-# the change exists, every available "complexity" number is a property of the CONTAINER (the
-# file, its coupling, its churn), not of the edit. Each was tried; none correlated. Substituting
-# a container property for change-complexity is precisely the bug being removed here.
-#
-# THE BAR, SET BEFORE MEASURING: a per-unit seed had to reach leave-one-out r >= 0.50 and beat
-# files_affected alone. The best composite - with coefficients refitted inside every LOO fold AND
-# the feature subset chosen with hindsight, both of which flatter it - reached LOO r = +0.415.
-# It missed. So the per-unit forecast is DROPPED rather than kept as decoration. A number that
-# has never once been right is not a planning input, and re-dressing it in a new seed would be
-# the same error in a new costume.
-#
-# WHAT THE DATA DOES SUPPORT is the per-unit COST RATE, at batch scale only. The 18 measured
-# units average ~120,000 tokens. The spread is wide (43k-234k) and NO plan-time signal explains
-# it, so the plan quotes the RATE and the BATCH HISTORY and refuses to pretend it can tell the
-# units apart. `batch_history()` puts the measured sprints in front of the operator, because
-# "the last two five-unit sprints cost 642k and 902k" is a defensible basis for planning a
-# third, and a per-unit number that has never been right is not.
-#
-# NOT AUTO-FITTED. A human set this by reading the units named in CALIBRATION_FIT_UNITS. Nothing
-# recomputes it at runtime: an estimator that re-fits itself from its own outcomes can never be
-# falsified by them.
-BASE_TOKEN_BUDGET = 120_000       # the MEASURED per-unit rate (mean of 18 units) - the whole model
-TOKENS_PER_COGNITIVE = 0          # the inert axis, explicitly ZEROED: r = +0.03 against cost. Kept
-                                  # as a named zero rather than deleted, so the forecast record a
-                                  # plan writes still names the estimator that produced it, and a
-                                  # reader can see that complexity now multiplies by nothing.
-DEFAULT_UNKNOWN_SIZE = 3          # neutral WSJF denominator when neither the seat size nor
-                                  # the declared effort resolves - unknown effort is never
-                                  # treated as minimal (new-file work is often the biggest)
-# The human `Effort:` estimate (S/M/L), captured at filing, as a WSJF job size. It is the one
-# size a person actually recorded, so it beats the neutral default and loses only to a seat
-# score. M is deliberately the neutral default: declaring the middle changes nothing.
-#
-# It is a RANKING input, and only that. It does NOT price a unit: measured against actuals it
-# runs at r = +0.34, which is not enough to forecast on, and the forecast no longer reads it.
-EFFORT_SIZE = {"S": 1, "M": 3, "L": 8}
-EFFORT_ALIAS = {"SMALL": "S", "MEDIUM": "M", "LARGE": "L"}
 
 # ---------------------------------------------------------------------------
-# "UNKNOWN" IS A FIRST-CLASS EFFORT VALUE.
+# COST OF DELAY: the WSJF numerator, derived from Priority, on the Fibonacci scale
 # ---------------------------------------------------------------------------
-# The grooming gate DEMANDS a size at filing. Until now the only sizes it would accept were
-# S, M and L - so an author who genuinely did not know had exactly one way past the gate: write
-# down a letter they did not believe. That is how a gate manufactures the noise it exists to
-# remove. A compulsory estimate from someone who does not know is not data; it is a guess with a
-# number's authority, and it is then averaged into a forecast as though it were an estimate.
+# WSJF = Cost of Delay / Job Size, and this project already records both halves. The size is
+# `Points` (the scale lives in lib/sdlc_md - one definition, read by everyone). The value half
+# is the declared Priority/Severity, which is exactly what a Cost of Delay is: how much it
+# costs to NOT do this yet.
 #
-# So `unknown` is an ANSWER. It satisfies the gate - the author HAS answered the question - and
-# it is EXCLUDED from every ratio, exactly as UNMEASURED and UNFORECAST already are.
+# The old WSJF needed the review seats to have scored value, time-criticality and risk-reduction
+# into `.local/wsjf-inputs.json` first. They almost never had, so WSJF almost never ran - and a
+# signal that scores r = +0.03 against measured cost was quietly doing the ordering instead.
+# A ranking that only works after a ceremony nobody performs is a ranking that does not work.
+# This one runs on any groomed backlog.
 #
-# It has NO POINTS, and nothing may invent some. `effort_points` returns None for it, and there
-# is no entry for it in EFFORT_SIZE, because the moment it maps to a number it enters a mean.
-# This is not hypothetical: scoring an UNDECLARED Effort as 0 made the field look predictive
-# against this project's own actuals (r = +0.58) purely because the field only existed on the
-# later, larger units - the PRESENCE of the field correlated with cost. Treated honestly as
-# missing, the same values score +0.48. A value nobody supplied is not a zero.
-EFFORT_UNKNOWN = "U"
-#: What an author may write to mean "I do not know". A `{{placeholder}}` is NOT one of them -
-#: that is the template talking, and an unfilled template is silence, not an answer.
-EFFORT_UNKNOWN_WORDS = frozenset({"U", "UNKNOWN", "UNSIZED", "?", "TBD"})
-
-
-def effort_points(code: str | None) -> int | None:
-    """The WSJF job-size points of a declared Effort, or None when it has none.
-
-    None for `unknown`, and None for an absent field. NEVER 0, and never the neutral middle:
-    both are numbers, and a number is what an honest unknown must not become. Every caller must
-    handle the None - which is the point, because that is where the exclusion happens.
-    """
-    return EFFORT_SIZE.get(str(code or "").strip().upper())
+# ONE RUNG PER BAND, on the same modified Fibonacci scale the points use. Each band is therefore
+# worth about 1.6x the one below - the golden ratio the scale is built on - so a unit has to be
+# more than ~1.6x bigger to lose a band of priority. That is the intended economics of WSJF and
+# not an accident of the mapping: a 3-point High DOES outrank an 8-point Critical, because you
+# can finish it and still start the Critical sooner than the Critical would have finished. An
+# operator who wants strict priority bands has `--order priority`, which is what it is for.
+COST_OF_DELAY = {"Critical": 13, "High": 8, "Medium": 5, "Low": 3,
+                 "P1": 13, "P2": 8, "P3": 5, "P4": 3}
+#: An unknown, blank or absent Priority ranks Medium - the same neutral rank `_weight` gives it.
+#: A half-filled template field must plan, never crash the planner, and never rank itself first.
+DEFAULT_COST_OF_DELAY = COST_OF_DELAY["Medium"]
 
 # ---------------------------------------------------------------------------
-# What the constants above were FITTED to - so a ratio can never be quoted as evidence
-# for a model against the very data that produced it.
+# THE FORECAST: sum(points) x a MEASURED tokens-per-point rate. No base term.
+# ---------------------------------------------------------------------------
+# For the first time this number rests on a signal that predicts. A blind re-estimation
+# recovered 21 delivered units AS FILED, stripped the declared size, and had three independent
+# estimators size them in modified Fibonacci with no access to the outcomes:
+#
+#     Points (median of 3)    r = +0.68 pooled, +0.78 on units of 8 or below, and POSITIVE
+#                             within every one of the four sprints
+#     declared Effort (S/M/L) r = +0.35    retired: a second size vocabulary, and worse
+#     max_cognitive           r = +0.03    dead, and it was ordering the batch
+#
+# A POINT IS A STABLE UNIT OF COST FROM 2 TO 8, and it BREAKS ABOVE THAT. Measured tokens per
+# point, by band: 2-pt 22,370 | 3-pt 26,153 | 5-pt 27,396 | 8-pt 25,171 | 13-pt 14,144. The 13s
+# are systematically OVER-estimated - 1.9x cheaper per point than every band below - and all
+# three estimators returned them with LOW confidence and the words "should be split", unprompted.
+# That is why the gate refuses above 8 (`points_split_above`): the ceiling is not a ceremony, it
+# is the boundary of the region where the model is known to work.
+#
+# NO BASE TERM, DELIBERATELY. A least-squares fit adds one (8,043) and does WORSE: 11/19 units
+# inside the 0.75x-1.25x band, 9/19 leave-one-out, against 12/19 for the flat rate with NO
+# fitting at all. The simple model won on the evidence and it is not re-complicated here.
+#
+# THE RATE IS MEASURED, NOT FITTED, and it is re-measured from the project's own evidence every
+# time a plan is built (`tokens_per_point`): the points a plan RECORDED, against the tokens the
+# work actually cost. The seed below is the starting rate for a project with no evidence of its
+# own yet, and the plan always says which of the two it is quoting.
+POINTS_RATE_SEED = 25_000
+POINTS_RATE_SEED_BASIS = (
+    "the shipped default from a blind re-estimation of 21 delivered units, recovered as filed "
+    "and sized in modified Fibonacci by three independent estimators with no access to the "
+    "outcomes; 19 had measured actuals. A point measured 22,370-27,396 tokens across the 2-, "
+    "3-, 5- and 8-point bands (~25,000, flat). No base term: fitting one does worse than not "
+    "fitting at all. Your project's own evidence replaces this the moment it has enough")
+#: Units of the project's OWN evidence before its measured rate replaces the seed. A rate
+#: re-fitted to one or two units is fitting noise - a fit to one or two sprints has burned this
+#: estimator before, and a wild single unit would drag the rate for the whole next sprint.
+RATE_MIN_UNITS = 5
+
+# ---------------------------------------------------------------------------
+# What the rate was measured FROM - so a ratio can never be quoted as evidence for a model
+# against the very data that produced it.
 # ---------------------------------------------------------------------------
 # A model's fit against its own training data is TRAINING ERROR. It lands near 1.0x by
-# construction and it cannot be wrong, which is precisely why it reassures. The constants
-# above were fitted to the six units below, measured in one sprint (RETRO0024), and the
-# in-sample fit was 1.09x. Out-of-sample, on the next sprint, the same constants scored
-# 0.55x. The number that reassured was the one that could not be wrong.
+# construction and it cannot be wrong, which is precisely why it reassures: an earlier estimator
+# was quoted at 1.09x in-sample while it was running at 0.55x on live work.
 #
-# So the sprints whose actuals the constants were fitted to are NAMED here, and every
-# accuracy figure the planner quotes to an operator excludes them. Only a forecast made by
-# the constants in force, on a sprint that was NOT in the fit, is evidence.
+# The sprints whose actuals the rate was read from are NAMED here, and every accuracy figure the
+# planner quotes to an operator excludes them. Only a forecast made by the estimator in force, on
+# a sprint that was NOT in the measurement, is evidence.
 #
-# CHANGE THIS IN THE SAME COMMIT THAT CHANGES THE CONSTANTS. A refit that does not declare
-# its new training set will quietly go on quoting that training set back as validation.
-#
-# The measured per-unit rate was set by reading the 18 units below - every unit that had a
-# recorded actual when the rate was chosen. All three sprints are therefore IN-SAMPLE, and the
-# planner will report NO out-of-sample evidence for this estimator until the next sprint closes.
-# That is the honest state of it: a model fitted this morning has not yet been tested, and the
-# plan says so rather than quoting its own training set back as confirmation.
-CALIBRATION_FIT_RETROS = ("RETRO0024", "RETRO0025", "RETRO0026")
-CALIBRATION_FIT_UNITS = ("BG0126", "BG0127", "BG0130", "CR0248", "CR0249", "CR0250",
-                         "CR0257", "CR0258", "BG0132", "CR0259", "CR0260",
-                         "BG0133", "BG0134", "BG0135", "BG0136", "CR0252",
-                         "BG0137", "BG0140")
+# CHANGE THIS IN THE SAME COMMIT THAT CHANGES THE RATE. It is declared per SPRINT, not per unit:
+# the blind re-estimation read these four sprints' actuals, and naming a unit list this rate was
+# never fitted to unit-by-unit would be inventing a precision the measurement does not have.
+CALIBRATION_FIT_RETROS = ("RETRO0024", "RETRO0025", "RETRO0026", "RETRO0027")
 
 # How a recorded sprint stands in relation to the estimator IN FORCE.
 SAMPLE_IN = "in-sample"            # its actuals are the training data - training error, not evidence
@@ -191,11 +148,62 @@ SAMPLE_MIXED = "mixed-constants"   # the batch was forecast by more than one est
 SAMPLE_NONE = "unforecast"         # no plan-time forecast was recorded - it predicted nothing
 
 
-def forecast_constants() -> dict:
+def tokens_per_point(repo_root: Path | str | None = None) -> dict:
+    """The tokens-per-point rate IN FORCE, MEASURED from this project's own evidence.
+
+    The join is the closed loop: the points a plan RECORDED at plan time (the forecast log,
+    first-record-wins, so hindsight cannot rewrite it) against the tokens the work ACTUALLY cost
+    (the actuals log). Total tokens over total points - not the mean of the per-unit ratios,
+    which would over-weight the small units.
+
+    Below `RATE_MIN_UNITS` the project's own measurement is noise, and the seed stands: a rate
+    re-fitted to one unit is exactly the mistake that produced two bad recalibrations. The count
+    is REPORTED either way, so a reader can see how close the project is to owning its own rate.
+
+    Fail-safe: unreadable evidence yields the seed, never an exception - a project must be able
+    to plan before it has measured anything.
+    """
+    seed = {"rate": POINTS_RATE_SEED, "source": "seed", "units": 0, "points": 0, "tokens": 0,
+            "ids": [], "min_units": RATE_MIN_UNITS, "basis": POINTS_RATE_SEED_BASIS}
+    if repo_root is None:
+        return seed
+    try:
+        forecasts = telemetry.forecasts(repo_root)
+        actuals = telemetry.actuals(repo_root)
+    except Exception as exc:  # noqa: BLE001 - no evidence must never break planning
+        sdlc_md.debug("sprint.tokens_per_point", exc)
+        return seed
+    points = tokens = 0
+    ids: list[str] = []
+    for uid, fc in sorted(forecasts.items()):
+        pts = fc.get("points")
+        actual = (actuals.get(uid) or {}).get("tokens")
+        if not isinstance(pts, int) or isinstance(pts, bool) or pts <= 0:
+            continue
+        if not isinstance(actual, (int, float)) or isinstance(actual, bool) or actual <= 0:
+            continue
+        points += pts
+        tokens += int(actual)
+        ids.append(uid)
+    seed["units"], seed["points"], seed["tokens"], seed["ids"] = len(ids), points, tokens, ids
+    if len(ids) < RATE_MIN_UNITS or not points:
+        return seed          # counted, named, and NOT yet trusted
+    return {"rate": int(round(tokens / points)), "source": "measured", "units": len(ids),
+            "points": points, "tokens": tokens, "ids": ids, "min_units": RATE_MIN_UNITS,
+            "basis": (f"measured from this project's evidence: {len(ids)} delivered unit(s), "
+                      f"{points} point(s) forecast at plan time, {tokens:,} tokens actually "
+                      f"spent (sdlc-studio/retros/evidence/)")}
+
+
+def forecast_constants(repo_root: Path | str | None = None) -> dict:
     """The estimator, as a record. Stamped on every forecast at plan time so a later reader can
-    tell WHICH model produced a number, instead of assuming it was this one."""
-    return {"BASE_TOKEN_BUDGET": BASE_TOKEN_BUDGET,
-            "TOKENS_PER_COGNITIVE": TOKENS_PER_COGNITIVE}
+    tell WHICH model produced a number, instead of assuming it was this one.
+
+    A row forecast by the OLD estimator (a flat per-unit rate scaled by a dead complexity axis)
+    carries different keys entirely, so `sample_class` reads it as what it is: evidence about a
+    different model, and not about this one.
+    """
+    return {"TOKENS_PER_POINT": tokens_per_point(repo_root)["rate"]}
 
 
 # ---------------------------------------------------------------------------
@@ -287,13 +295,14 @@ def effort_gate_era(repo_root: Path | str, unit_id: str, stamped: str | None) ->
     return EFFORT_GATE_COMPULSORY if num > cut else EFFORT_GATE_VOLUNTARY
 
 
-def sample_class(retro_id: str | None, constants: dict | None) -> str:
+def sample_class(retro_id: str | None, constants: dict | None,
+                 repo_root: Path | str | None = None) -> str:
     """Is this recorded sprint evidence about the estimator in force, or is it its own fit?
 
     Derived at READ time from two facts the row carries - which sprint it is, and which
     constants produced its forecast - never from a label frozen when the row was written. A
-    refit that adds a sprint to the training set therefore reclassifies that sprint's row
-    immediately, instead of leaving it quoted as validation for a model it helped fit.
+    re-measurement that adds a sprint to the training set therefore reclassifies that sprint's
+    row immediately, instead of leaving it quoted as validation for a model it helped fit.
     """
     rid = (retro_id or "").strip().upper()
     if rid and rid in {r.upper() for r in CALIBRATION_FIT_RETROS}:
@@ -303,7 +312,8 @@ def sample_class(retro_id: str | None, constants: dict | None) -> str:
     if not isinstance(constants, dict) or not constants:
         return SAMPLE_NONE
     try:
-        same = all(int(constants.get(k, -1)) == v for k, v in forecast_constants().items())
+        same = all(int(constants.get(k, -1)) == v
+                   for k, v in forecast_constants(repo_root).items())
     except (TypeError, ValueError):
         return SAMPLE_NONE
     return SAMPLE_OUT if same else SAMPLE_STALE
@@ -328,14 +338,11 @@ DEFAULT_CAPACITY = {"tokens": 500_000, "minutes": 240, "units": 8}
 
 # The honest error band on the token forecast, and it is WIDE on purpose.
 #
-# The flat rate is one number over units that measured 43k-234k, so the per-unit error is large
-# by construction - that is the finding, not a defect in the band. Even at BATCH level, priced
-# against the three measured sprints, the rate lands at 1.87x, 0.93x and 0.67x. +/-50% is the
-# floor that spread implies; observed out-of-sample ratios in the velocity history WIDEN it and
-# never narrow it, because one sprint agreeing with the model is not evidence the model is tight.
-#
-# The band was +/-30% when the forecast claimed to read a unit's complexity. It is wider now, and
-# the widening is the point: the previous band was narrower than the model deserved.
+# Points predict cost well (r = +0.68), but "well" is not "tightly": the held-out batch ratios in
+# the blind re-estimation were 0.98x, 1.47x, 0.84x and 0.82x, and one sprint in four fell outside
+# 0.75x-1.25x. +/-50% is the floor that spread implies; observed out-of-sample ratios in the
+# velocity history WIDEN it and never narrow it, because one sprint agreeing with the model is not
+# evidence the model is tight.
 FORECAST_BAND = 0.50
 
 # Sprints of recorded velocity before the history is worth recalibrating the constants against.
@@ -404,7 +411,8 @@ def calibration(repo_root: Path | str) -> dict:
         sdlc_md.debug("sprint.calibration", exc)
     by_class: dict[str, list[dict]] = {}
     for r in rows:
-        by_class.setdefault(sample_class(r.get("id"), r.get("constants")), []).append(r)
+        by_class.setdefault(sample_class(r.get("id"), r.get("constants"), repo_root),
+                            []).append(r)
     evidence = [r for r in by_class.get(SAMPLE_OUT, [])
                 if isinstance(r.get("ratio"), (int, float)) and r["ratio"] > 0]
     ratios = [float(r["ratio"]) for r in evidence]
@@ -516,56 +524,6 @@ def _resolve(root: Path, p: str) -> Path | None:
     return sdlc_md.resolve_affects(root, p)
 
 
-def _complexity_size(root: Path, text: str) -> int:
-    """Max cognitive complexity across the files a unit will touch (0 if none resolve)."""
-    paths = [str(r) for p in _affects_files(text) if (r := _resolve(root, p))]
-    if not paths:
-        return 0
-    try:
-        return complexity.assess(root, paths)["max_cognitive"]
-    except Exception as exc:  # noqa: BLE001 - WSJF must degrade to priority, never break planning
-        sdlc_md.debug("sprint._complexity_size", exc)
-        return 0
-
-
-def _effort_code(text: str) -> str | None:
-    """The declared `Effort:` normalised to S, M, L or U (unknown) - None when the field is
-    absent or unreadable.
-
-    Reads the metadata field through the shared parser, so a CR's `**Effort:** M` (body) and a
-    bug's `> **Effort:** L` (header) are the same field. Tolerates a decorated value
-    (`M - two files`, `Large`); anything it cannot map is treated as undeclared, never guessed.
-
-    `U` and `None` are DIFFERENT ANSWERS and must never collapse into one. `U` is "I do not
-    know", which is a declaration and passes the grooming gate. `None` is silence - the author
-    did not answer - and silence is still not an answer.
-    """
-    raw = sdlc_md.extract_field(text, "Effort")
-    if not raw or not raw.strip():
-        return None
-    tok = raw.strip().split()[0].strip("*_`:,;.()").upper()
-    tok = EFFORT_ALIAS.get(tok, tok)
-    if tok in EFFORT_UNKNOWN_WORDS:
-        return EFFORT_UNKNOWN
-    return tok if tok in EFFORT_SIZE else None
-
-
-def _token_budget(complexity_seed: int, effort: str | None) -> int:
-    """The token cost the plan attributes to ONE unit: the measured rate, for every unit.
-
-    This deliberately ignores both arguments. They are the two seeds that were tried and
-    falsified - blast-radius complexity (r = +0.03 against measured cost) and the declared
-    effort (r = +0.34) - and they are kept in the signature only because the forecast RECORD
-    still carries them as context for a future analyst. Nothing multiplies them.
-
-    A unit is priced at the rate because no plan-time signal predicts a unit's cost well enough
-    to price it individually (see the constants above: the best composite reached leave-one-out
-    r = +0.415 against a bar of 0.50). Quoting a bespoke per-unit number would be inventing
-    precision the measurement does not support.
-    """
-    return BASE_TOKEN_BUDGET + TOKENS_PER_COGNITIVE * (complexity_seed or 0)
-
-
 def _dep_ids(value: str) -> set:
     """The leading artifact-ID tokens of a `Depends on` field, normalised.
 
@@ -585,13 +543,22 @@ def _dep_ids(value: str) -> set:
 
 
 def _rank_key(it: dict):
-    """Tiebreak order among ready units: highest WSJF first, else priority then the
-    smaller blast-radius job, else priority then id. Shared by topo order + waves."""
+    """Tiebreak order among ready units: highest WSJF first, else priority, then id.
+
+    THE COMPLEXITY TIE-BREAK IS GONE. It used to sit here, between priority and id, so
+    the running order within a priority band was decided by `max_cognitive` - a number measured
+    at r = +0.03 against actual cost, under a docstring vouching that "the smaller blast-radius
+    job goes first". It measured how complicated the FILE was, never how big the JOB was.
+    Shortest-job-first is a sound heuristic; it just needs a size signal that is real, and it now
+    has one - so it does the work up in the WSJF denominator, where a size signal belongs.
+
+    With no WSJF (priority order, or a unit the grooming opt-out let through unsized) the order
+    falls to id: arbitrary, and honestly so. Arbitrary beats meaningful-looking and arbitrary.
+    Shared by topo order + waves.
+    """
     w = _weight(it["priority"])
     if "wsjf" in it:
         return (-it["wsjf"], w, it["id"])
-    if "complexity" in it:
-        return (w, it["complexity"], it["id"])
     return (w, it["id"])
 
 
@@ -658,15 +625,45 @@ def _topo_order(items: list[dict], deps: dict[str, set]) -> list[dict]:
     return order
 
 
-def wsjf_score(value: float, time_criticality: float, risk_reduction: float, size: float) -> float:
-    """WSJF = (value + time-criticality + risk-reduction) / job size. Size >= 1."""
-    return round((value + time_criticality + risk_reduction) / max(size, 1), 3)
+def cost_of_delay(priority: str) -> int:
+    """The WSJF numerator for a declared Priority/Severity, on the Fibonacci scale.
+
+    Case-tolerant, and tolerant of a decorated value (`High (gate)`) exactly as `_weight` is -
+    the two read the same field and must never disagree about what it says. An unknown, blank or
+    absent value is Medium: a half-filled template field must plan, and it must not rank itself
+    first by accident.
+    """
+    toks = (priority or "").strip().split()
+    if not toks:
+        return DEFAULT_COST_OF_DELAY
+    tok = toks[0].rstrip(":,;")
+    key = tok.upper() if re.fullmatch(r"[Pp]\d", tok) else tok.title()
+    return COST_OF_DELAY.get(key, DEFAULT_COST_OF_DELAY)
+
+
+def wsjf_score(cod: float, points: float) -> float:
+    """WSJF = Cost of Delay / Points. Points >= 1 (the scale has no zero, and a zero
+    denominator would make the cheapest possible job out of a unit nobody sized)."""
+    return round(cod / max(points, 1), 3)
+
+
+def _seat_cost_of_delay(inp: dict) -> float:
+    """The seats' Cost of Delay: value + time-criticality + risk-reduction, the classic
+    three-part CoD. Missing parts score 0 - a component the seats did not discuss adds
+    nothing, and must not be imputed."""
+    return sum(float(inp.get(k, 0) or 0)
+               for k in ("value", "time_criticality", "risk_reduction"))
 
 
 def _wsjf_inputs(root: Path) -> dict:
     """Per-unit value/time-criticality/risk-reduction the review seats scored, written
     to `sdlc-studio/.local/wsjf-inputs.json` by the model after the PO/Eng/QA consult. Keyed by
-    normalised id. Absent -> {} -> the planner falls back to priority + complexity."""
+    normalised id.
+
+    An OPTIONAL override of the CoD the planner derives from Priority, and nothing more: absent
+    (the normal case) the WSJF still runs, because Priority is always there. The seats do NOT
+    supply a size - `Points` is the one size vocabulary, and a second one is what this change
+    removed."""
     raw = sdlc_md.read_json(root / "sdlc-studio" / ".local" / "wsjf-inputs.json", {})
     return {sdlc_md.norm_id(k): v for k, v in raw.items()} if isinstance(raw, dict) else {}
 
@@ -768,47 +765,37 @@ def _enrich_routing(root: Path, out: list[dict]) -> None:
 
 def _order_batch(root: Path, out: list[dict], deps: dict[str, set], order: str,
                  skip_personas: bool) -> list[dict]:
-    """WSJF enrichment + dependency-topological ordering over one (possibly mixed) batch."""
+    """WSJF enrichment + dependency-topological ordering over one (possibly mixed) batch.
+
+    WSJF = Cost of Delay / Points, and it needs NOTHING but the artefact: the CoD falls out of
+    the declared Priority, and the Points are on the unit (the grooming gate refuses a batch
+    where they are not). Seat scores, when they exist, replace the derived CoD - they never
+    replace the size, because there is one size vocabulary and the seats do not speak a second.
+
+    A unit with NO points scores no WSJF and falls to priority order. That is only reachable
+    through the recorded `sprint.breakdown: judgement` opt-out - and it is the honest outcome:
+    a unit nobody sized cannot be ranked by size.
+    """
     _enrich_routing(root, out)  # difficulty always; tier/model when routing.enabled
-    if order == "wsjf":  # seat-scored WSJF when available, else priority+complexity
+    if order == "wsjf":
         seat_inputs = {} if skip_personas else _wsjf_inputs(root)
         for it in out:
             text = Path(it["path"]).read_text(encoding="utf-8")
-            seed = _complexity_size(root, text)
-            effort = _effort_code(text)
-            it["complexity"] = seed
-            if effort:
-                it["effort"] = effort
-            # NO per-unit `token_budget`. It used to be stamped here, complexity-scaled, and it
-            # was noise wearing a number: the seed correlates with actual cost at r = +0.03. A
-            # per-unit field that every reader takes for an estimate of THAT unit must not exist
-            # when nothing can estimate that unit. The batch forecast carries the number now.
-            # `complexity` survives as the WSJF tiebreak (a blast-radius RISK signal, never a
-            # size) - it orders units, it does not price them.
+            points = sdlc_md.read_points(text)
+            if points is None:
+                continue                       # unsized: no WSJF, and nothing is invented
+            it["points"] = points
             inp = seat_inputs.get(sdlc_md.norm_id(it["id"]))
-            # Size, in falling order of authority: the Engineering seat's estimate
-            # (wsjf-inputs `size`), else the human `Effort:` recorded on the artefact,
-            # else the declared neutral default. The complexity seed is blast-radius
-            # risk (tiebreak + token budget), never the size - a one-line fix in a
-            # complex file must not sink.
-            seat_size = (inp or {}).get("size")
-            pts = effort_points(effort)   # None for a declared `unknown`, and for no Effort
-            if isinstance(seat_size, (int, float)) and seat_size > 0:
-                size = seat_size
-            elif pts is not None:
-                size = pts
-            else:
-                # A declared `unknown` lands HERE, at the neutral default - never at a
-                # fabricated 1 or 0. It is a real answer for the gate and a real absence for
-                # the arithmetic, and those are not in conflict.
-                size = DEFAULT_UNKNOWN_SIZE
-            it["size"] = size
-            if inp:  # the review seats scored this unit (value / time-criticality / risk)
+            if inp:
                 it["value"] = inp.get("value", 0)
                 it["time_criticality"] = inp.get("time_criticality", 0)
                 it["risk_reduction"] = inp.get("risk_reduction", 0)
-                it["wsjf"] = wsjf_score(it["value"], it["time_criticality"],
-                                        it["risk_reduction"], size)
+                it["cod"] = _seat_cost_of_delay(inp)
+                it["cod_source"] = "seats"
+            else:
+                it["cod"] = cost_of_delay(it["priority"])
+                it["cod_source"] = "priority"
+            it["wsjf"] = wsjf_score(it["cod"], points)
     if order in ("priority", "wsjf"):
         out = _topo_order(out, deps)
     return out
@@ -840,51 +827,63 @@ def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "pr
 
 
 def _token_forecast(root: Path, batch: list[dict]) -> dict:
-    """The batch's token cost: UNIT COUNT x the measured rate. A BATCH number, not a sum of
-    per-unit estimates - because there are no per-unit estimates any more.
+    """The batch's token cost: SUM OF THE POINTS x a MEASURED tokens-per-point rate.
 
-    Every unit is priced identically, at `BASE_TOKEN_BUDGET`. That is not laziness, it is the
-    measurement: across 18 units, no plan-time signal predicts a unit's cost (the best composite
-    reached leave-one-out r = +0.415 against a declared bar of 0.50, and the seed previously in
-    use scored r = +0.03). Pricing units differently would mean claiming to know something the
-    evidence says nobody knows. So the forecast scales with HOW MANY units, which is the one
-    thing about a batch that is known at plan time.
+    A per-unit forecast, and for the first time an honest one: points predict measured cost at
+    r = +0.68 (+0.78 at 8 points and below), where every computed signal this project tried
+    failed - the one the forecast used to run on scored +0.03. A point is a stable unit of cost
+    across the whole legal range, because the gate refuses the range where it stops being one.
+
+    STRICTLY LINEAR IN POINTS. There is no base term, and adding one is a regression, not an
+    improvement: a least-squares fit produces an 8,043 base and lands 11/19 units in band
+    (9/19 leave-one-out) against 12/19 for the flat rate with no fitting at all.
 
     An ESTIMATE and never a gate: a script cannot observe real token spend (see telemetry.py), so
     a token ceiling would depend on the actor self-reporting the budget meant to constrain it.
     The wall-clock / unit-count appetite is the breaker; this only informs the operator.
 
-    `units` still carries each unit's `complexity` and `effort`. They no longer FEED the number -
-    they are recorded as CONTEXT, so the next analyst can correlate them against the actuals that
-    come back and check this decision rather than inherit it. `seed` is null: there is no seed.
+    Each unit's record carries the POINTS it was priced from - which is what lets the NEXT plan
+    measure the rate from this one's outcome - plus the ATTRIBUTION of the size call: WHO made it
+    (`estimator`) and under what compulsion (`effort_gate`: the size gate's compulsion, whose key
+    name predates Points). Both are recorded at PLAN TIME, when the field was read, for the same
+    reason the number is: a size read off the artefact months later may have been revised with
+    hindsight, and a value revised after the outcome is not a prediction.
 
-    It also carries the ATTRIBUTION of the size call: WHO made it (`estimator`) and under what
-    compulsion (`effort_gate`). Both are recorded at PLAN TIME, when the field was read, for the
-    same reason the token forecast is: an Effort read off the artefact months later may have been
-    revised with hindsight, and a value revised after the outcome is not a prediction.
+    A unit with no points is NOT priced at some stand-in - it is named in `unpriced` and left out
+    of the total. Only the recorded grooming opt-out can produce one, and a batch that opted out
+    of being sized does not get a forecast that pretends otherwise.
     """
+    rate_info = tokens_per_point(root)
+    rate = rate_info["rate"]
     per_unit: dict[str, int] = {}
     units: dict[str, dict] = {}
+    unpriced: list[str] = []
+    total_points = 0
     gate = effort_gate(root)   # the compulsion in force for this whole plan
     for it in batch:
         text = Path(it["path"]).read_text(encoding="utf-8")
-        cx = it.get("complexity")
-        if cx is None:  # priority/manual order never stamped one - derive it here
-            cx = _complexity_size(root, text)
-        effort = it.get("effort") or _effort_code(text)
         uid = sdlc_md.norm_id(it["id"])
-        per_unit[uid] = BASE_TOKEN_BUDGET
-        units[uid] = {"tokens": BASE_TOKEN_BUDGET, "seed": None, "seed_source": "rate",
-                      "complexity": cx, "effort": effort,
-                      "estimator": estimator_of(root, text), "effort_gate": gate}
-    return {"tokens": BASE_TOKEN_BUDGET * len(batch), "per_unit": per_unit, "units": units,
-            "rate": BASE_TOKEN_BUDGET, "history": batch_history(root),
-            "constants": forecast_constants(),
-            "basis": "unit count x the measured per-unit rate. There is NO per-unit model: no "
-                     "plan-time signal predicts a unit's cost (best leave-one-out r = 0.415 "
-                     "against a bar of 0.50), so every unit is priced at the same measured rate "
-                     "and the batch history is the real planning input. An ESTIMATE, never a "
-                     "gate - a script cannot observe token spend"}
+        points = it.get("points")
+        if points is None:  # priority/manual order never stamped one - read it here
+            points = sdlc_md.read_points(text)
+        if points is None:
+            unpriced.append(uid)
+            continue
+        total_points += points
+        per_unit[uid] = points * rate
+        units[uid] = {"tokens": points * rate, "points": points, "rate": rate,
+                      "rate_source": rate_info["source"],
+                      "estimator": estimator_of(root, text), "size_gate": gate}
+    return {"tokens": total_points * rate, "points": total_points, "per_unit": per_unit,
+            "units": units, "rate": rate, "rate_source": rate_info["source"],
+            "rate_units": rate_info["units"], "rate_basis": rate_info["basis"],
+            "unpriced": unpriced, "history": batch_history(root),
+            "constants": forecast_constants(root),
+            "basis": "sum(points) x a tokens-per-point rate measured from the evidence (never "
+                     "fitted, and with no base term - fitting one does worse). Points predict "
+                     "measured cost at r = +0.68, and +0.78 at 8 points and below, which is the "
+                     "range the gate allows. An ESTIMATE, never a gate - a script cannot observe "
+                     "token spend"}
 
 
 def batch_history(repo_root: Path | str) -> list[dict]:
@@ -918,35 +917,43 @@ def record_forecast(repo_root: Path | str, data: dict) -> dict:
     re-derive one from whatever the constants say by then. That is not a prediction, and a
     loop built on it cannot falsify its own estimator.
 
-    Each record carries the number, the seed it came from, and the CONSTANTS that produced it,
-    so a later reader can tell which estimator to credit or blame. It also carries WHO made the
-    size call and under what compulsion, which is what makes per-estimator accuracy - and the
-    coercion comparison - answerable from the evidence instead of from opinion. First record for
-    a unit wins on read (telemetry.forecasts), so a re-plan cannot rewrite it with hindsight.
+    Each record carries the number, the POINTS it was priced from, and the CONSTANTS that
+    produced it, so a later reader can tell which estimator to credit or blame. It also carries
+    WHO made the size call and under what compulsion, which is what makes per-estimator accuracy
+    - and the coercion comparison - answerable from the evidence instead of from opinion. First
+    record for a unit wins on read (telemetry.forecasts), so a re-plan cannot rewrite it with
+    hindsight.
+
+    The `points` on the record are what CLOSE the loop: the next plan measures its rate by
+    dividing the tokens these units actually cost by the points recorded here, before the work
+    started. A points value re-read off the artefact afterwards would be an estimate revised with
+    hindsight, and it would quietly drive the ratio towards 1.0x.
     """
     fc = data.get("token_forecast") or {}
     units = fc.get("units") or {}
     if not units:
         return {"recorded": [], "already": [], "path": None}
-    constants = fc.get("constants") or forecast_constants()
+    constants = fc.get("constants") or forecast_constants(repo_root)
     when = data.get("generated_at") or sdlc_md.now_iso8601()
-    recs = [{"id": uid, "tokens": u["tokens"], "seed": u["seed"],
-             "seed_source": u["seed_source"], "complexity": u["complexity"],
-             "effort": u["effort"], "estimator": u.get("estimator"),
-             "effort_gate": u.get("effort_gate"),
+    recs = [{"id": uid, "tokens": u["tokens"], "points": u["points"],
+             "estimator": u.get("estimator"), "size_gate": u.get("size_gate"),
              "constants": constants, "planned_at": when}
             for uid, u in units.items()]
     return telemetry.record_forecasts(repo_root, recs)
 
 
 # ---------------------------------------------------------------------------
-# The breakdown gate: a plan over an UNGROOMED batch is REFUSED.
+# The breakdown gate: a plan over an UNGROOMED or UNSPLITTABLE batch is REFUSED.
 # ---------------------------------------------------------------------------
 # A plan that looks authoritative over units nobody was required to groom is the false
-# authority this gate exists to abolish. A unit that names no files cannot be sized: the
-# complexity seed is 0, so the forecast collapses to the flat per-unit floor, and the
-# planner cannot see that two units touch the SAME FILE - so it reports them as safely
-# parallel when they will collide. Both gaps were closed by hand before every plan.
+# authority this gate exists to abolish. A unit with no `Points` cannot be forecast at all,
+# and a unit that names no files cannot be checked against its neighbours - the planner
+# cannot see that two of them touch the SAME FILE, so it reports them as safely parallel
+# when they will collide. Both gaps were closed by hand before every plan.
+#
+# The gate also refuses a unit sized ABOVE the split ceiling. That one is not about grooming
+# but about triage: the unit IS sized, honestly, and the honest size says nobody could size
+# it. See `points_split_above`.
 #
 # Enforcement lives HERE, in the command people actually invoke. A separate grooming step
 # that nobody runs is doctrine, and doctrine is what gets skipped under effort pressure: the
@@ -959,9 +966,10 @@ def record_forecast(repo_root: Path | str, data: dict) -> dict:
 # unreadable or unknown mode is not an escape either - it falls back to enforce.
 BREAKDOWN_MODES = ("enforce", "judgement")
 
-# A CR at or above this many declared files, or declared Large, is doing enough work to warrant
-# stories: only a story carries executable `Verify:` lines, so an un-decomposed CR's Done is
-# gated on prose. Advisory - "where the work warrants" is a judgement the report can only name.
+# A CR at or above this many declared files, or sized at the split ceiling, is doing enough work
+# to warrant stories: only a story carries executable `Verify:` lines, so an un-decomposed CR's
+# Done is gated on prose. Advisory - "where the work warrants" is a judgement the report can only
+# name.
 DECOMPOSE_FILE_THRESHOLD = 5
 
 
@@ -969,6 +977,27 @@ def breakdown_mode(repo_root: Path | str) -> str:
     """`enforce` (the default) or the recorded opt-out `judgement`. Never fails open."""
     mode = str(config.get(repo_root, "sprint.breakdown", "enforce") or "enforce").strip().lower()
     return mode if mode in BREAKDOWN_MODES else "enforce"
+
+
+def points_split_above(repo_root: Path | str) -> int:
+    """The point ceiling a unit must be SPLIT above. `sdlc_md.POINTS_SPLIT_ABOVE` (8) unless the
+    project has recorded a different one in `sprint.points_split_above`.
+
+    Configurable because 8 is where the evidence broke for THIS project's units, and another
+    team's 8 is not this one's. A project that finds 8-point units too chunky to deliver in one
+    go tightens to 5, and the gate refuses more. Raising it is a recorded decision too - and it
+    is a decision to forecast in a range where the estimate is known to fall apart (the 13s came
+    in 1.9x cheaper per point than every band below).
+
+    A malformed or non-positive value degrades to the shipped ceiling rather than disabling the
+    gate: a gate that a typo can switch off is not a gate.
+    """
+    try:
+        value = int(config.get(repo_root, "sprint.points_split_above",
+                               sdlc_md.POINTS_SPLIT_ABOVE))
+    except (TypeError, ValueError):
+        return sdlc_md.POINTS_SPLIT_ABOVE
+    return value if value > 0 else sdlc_md.POINTS_SPLIT_ABOVE
 
 
 def _affect_key(root: Path, p: str) -> str:
@@ -987,35 +1016,16 @@ def _affect_key(root: Path, p: str) -> str:
     return re.sub(r"^\./", "", p.strip())
 
 
-def _declared_size(text: str, seat: dict | None) -> str | None:
-    """The size a PERSON recorded for this unit, from any accepted source, or None.
+def _declared_size(text: str) -> int | None:
+    """The size a PERSON recorded for this unit: its `Points`, on the modified Fibonacci scale.
+    None when the field is absent, or carries a value the scale does not have.
 
-    Accepted, in falling order of authority: the review seat's estimate, the artefact's
-    `Effort:` (S/M/L, or a declared `unknown`), a story's `Points:`. With none of the three the
-    unit is UNSIZED - nobody answered the question at all.
-
-    A declared `unknown` IS an answer, and it passes. The gate exists to stop work whose size
-    nobody considered, not to extract a letter from someone who does not have one: a size
-    invented to satisfy a gate is the noise the gate was built to remove. It carries no points
-    (`effort_points` returns None for it), so it is excluded from every ratio downstream and can
-    never be averaged in as though it were an estimate."""
-    seat_size = (seat or {}).get("size")
-    if isinstance(seat_size, (int, float)) and seat_size > 0:
-        return f"seat size {seat_size}"
-    effort = _effort_code(text)
-    if effort == EFFORT_UNKNOWN:
-        return "Effort: unknown (declared)"
-    if effort:
-        return f"Effort: {effort}"
-    raw = sdlc_md.extract_field(text, "Points")
-    if raw and raw.strip():
-        tok = raw.strip().split()[0].strip("*_`:,;.()")
-        try:
-            if float(tok) > 0:
-                return f"Points: {tok}"
-        except ValueError:
-            pass
-    return None
+    ONE source, because there is one size vocabulary (lib/sdlc_md owns the scale and the parser).
+    A seat estimate is no longer accepted here: the seats price VALUE, and a second size
+    vocabulary living beside the first is exactly what this change deleted. Nor is an `unknown`
+    an answer any more - the scale IS the estimate, and it is relative ("is this bigger than that
+    one"), so a person who has delivered anything at all can place a unit on it."""
+    return sdlc_md.read_points(text)
 
 
 def _shared_file_clusters(files_by_unit: dict[str, list[str]]) -> list[dict]:
@@ -1076,14 +1086,23 @@ def _ids_cited_by_stories(root: Path) -> set:
 def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = False) -> dict:
     """Is this batch GROOMED enough to plan? The census the gate refuses on.
 
-    A unit is groomed when it declares the files it will touch (`Affects`) AND a size somebody
-    actually recorded. Everything else the lane surfaces - shared-file clusters, CRs big enough
-    to warrant stories - is derived from the same two fields, at no extra cost to the operator.
-    Read-only: it reports, and `cmd_plan` decides what to do about it."""
+    A unit is plannable when it declares the files it will touch (`Affects`), carries `Points`,
+    and those points are AT OR BELOW the split ceiling. The third condition is the new one, and
+    it is a triage rule, not an estimation one: above the ceiling the estimate is not worth
+    having (the 13s in the blind re-estimation were over-estimated by 1.9x per point, and all
+    three estimators said so unprompted), and the answer is to DECOMPOSE the unit rather than to
+    estimate it harder.
+
+    `ungroomed` and `oversized` are counted separately because they are different failures with
+    different fixes: one unit was never sized, the other was sized honestly and is too big.
+    Everything else the lane surfaces - shared-file clusters, CRs big enough to warrant stories -
+    falls out of the same fields at no extra cost to the operator. Read-only: it reports, and
+    `cmd_plan` decides what to do about it."""
     root = Path(repo_root)
-    seats = {} if skip_personas else _wsjf_inputs(root)
     cited = _ids_cited_by_stories(root)
+    ceiling = points_split_above(root)
     ungroomed: list[dict] = []
+    oversized: list[dict] = []
     groomed: list[str] = []
     files_by_unit: dict[str, list[str]] = {}
     decompose: list[dict] = []
@@ -1094,27 +1113,30 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
             sdlc_md.debug("sprint.breakdown", exc)
             continue
         declared = _affects_files(text)
-        size = _declared_size(text, seats.get(sdlc_md.norm_id(it["id"])))
+        points = _declared_size(text)
         files_by_unit[it["id"]] = sorted({_affect_key(root, p) for p in declared})
-        missing = ([] if declared else ["Affects"]) + ([] if size else ["size"])
+        missing = ([] if declared else ["Affects"]) + ([] if points else ["Points"])
         if missing:
             ungroomed.append({"id": it["id"], "type": it["type"], "path": it["path"],
                               "missing": missing})
+        elif points > ceiling:
+            oversized.append({"id": it["id"], "type": it["type"], "path": it["path"],
+                              "points": points, "ceiling": ceiling})
         else:
             groomed.append(it["id"])
         if it["type"] == "cr" and sdlc_md.norm_id(it["id"]) not in cited:
-            big = _effort_code(text) == "L"
+            big = points is not None and points >= ceiling
             wide = len(declared) >= DECOMPOSE_FILE_THRESHOLD
             if big or wide:
-                why = ("declared Large" if big
-                       else f"touches {len(declared)} files")
+                why = (f"{points} points" if big else f"touches {len(declared)} files")
                 decompose.append({"id": it["id"], "why": why})
     mode = breakdown_mode(root)
     return {"mode": mode, "blocking": mode != "judgement",
-            "ungroomed": ungroomed, "groomed": groomed,
+            "ungroomed": ungroomed, "oversized": oversized, "groomed": groomed,
+            "ceiling": ceiling,
             "clusters": _shared_file_clusters(files_by_unit),
             "decompose": decompose,
-            "ok": not ungroomed}
+            "ok": not ungroomed and not oversized}
 
 
 DEFAULT_SEAT_STALE_DAYS = 7  # advisory window; seat judgement does not rot on a clock
@@ -1477,13 +1499,26 @@ BREAKDOWN_FIX = """  fix each one on the artefact, then re-plan:
     Affects   > **Affects:** path/to/file.py, path/to/other.py
               the files the unit will touch. Without it nothing can size the unit, and
               nothing can see that two units touch the same file.
-    size      > **Effort:** S|M|L    (bug/CR - the job size of the work, not its urgency)
-              > **Points:** 3        (story)
-              or have the review seats score it -> sdlc-studio/.local/wsjf-inputs.json
+    Points    > **Points:** 3
+              the job size on the modified Fibonacci scale ({scale}) - not its urgency,
+              and not a guess at hours. It is RELATIVE: is this bigger than the last 3 you
+              delivered? Nothing else is accepted: a 7 is the false precision the scale
+              exists to prevent, and above {ceiling} the unit must be SPLIT, not estimated.
   see the whole grooming list, read-only:  sprint.py breakdown {sel}
   opt out ONLY as a recorded decision: set `sprint.breakdown: judgement` in
   sdlc-studio/.config.yaml and this lane reports instead of blocking. Omission is not an
   escape - an absent config BLOCKS."""
+
+SPLIT_FIX = """  split each one into units of {ceiling} points or fewer, then re-plan:
+    `cr action <id>` decomposes a CR into stories; a story that big is two stories.
+    Each piece gets its OWN Points, and they do NOT have to sum to the original - the
+    whole reason the estimate was refused is that nobody could size the thing in one go.
+  tighten or move the ceiling as a RECORDED decision, in sdlc-studio/.config.yaml:
+    sprint:
+      points_split_above: 5    # this team finds 8-point units too chunky
+  raising it is a decision to forecast where the model is known to break - the 13s came in
+  1.9x cheaper per point than every band below, and all three blind estimators returned
+  them with low confidence and the words "should be split"."""
 
 
 def _refuse_ungroomed(bd: dict, count: int, sel: str) -> None:
@@ -1493,14 +1528,56 @@ def _refuse_ungroomed(bd: dict, count: int, sel: str) -> None:
     n = len(bd["ungroomed"])
     print(f"sprint plan REFUSED: {n} of {count} unit(s) are ungroomed. NO PLAN WAS PRINTED.\n",
           file=sys.stderr)
-    print("  A plan over unsized units is false authority. A unit that names no files cannot\n"
-          "  be sized (the forecast silently falls back to a flat floor), and the planner\n"
-          "  cannot see that two units touch the same file - so it reports them as safely\n"
-          "  parallel when they will collide. A plan you cannot trust is worse than no plan.\n",
+    print("  A plan over unsized units is false authority. A unit with no Points cannot be\n"
+          "  forecast at all, a unit that names no files cannot be checked for collisions,\n"
+          "  and the planner then reports two units as safely parallel when they will\n"
+          "  collide. A plan you cannot trust is worse than no plan.\n",
           file=sys.stderr)
     print("  ungroomed:", file=sys.stderr)
     print("\n".join(_breakdown_detail(bd)), file=sys.stderr)
-    print(BREAKDOWN_FIX.format(sel=sel), file=sys.stderr)
+    print(_breakdown_fix(bd, sel), file=sys.stderr)
+
+
+def _breakdown_fix(bd: dict, sel: str) -> str:
+    return BREAKDOWN_FIX.format(
+        sel=sel, ceiling=bd.get("ceiling", sdlc_md.POINTS_SPLIT_ABOVE),
+        scale=", ".join(str(p) for p in sdlc_md.POINTS_SCALE))
+
+
+def _oversized_detail(bd: dict) -> list[str]:
+    """The units over the ceiling, one line each: which unit, how big, where it lives."""
+    return [f"    {u['id']:<8} {u['points']:>3} points  (ceiling {u['ceiling']})  {u['path']}"
+            for u in bd["oversized"]]
+
+
+def _refuse_oversized(bd: dict, count: int) -> None:
+    """The split refusal. A unit above the ceiling is REFUSED - not warned about - because the
+    warning was already tried: the estimators who sized these units said "should be split",
+    unprompted, and the sprint that shipped one is the sprint whose forecast missed."""
+    n = len(bd["oversized"])
+    ceiling = bd["ceiling"]
+    print(f"sprint plan REFUSED: {n} of {count} unit(s) are above {ceiling} points. "
+          f"NO PLAN WAS PRINTED.\n", file=sys.stderr)
+    print(f"  Above {ceiling} points the estimate is not worth having, and the answer is to\n"
+          f"  DECOMPOSE the unit - not to estimate it harder. That is a TRIAGE decision, not\n"
+          f"  an estimation one. A point is a stable unit of cost up to {ceiling} (22k-27k\n"
+          f"  tokens per point, measured) and stops being one above it: the 13-point units in\n"
+          f"  the blind re-estimation came in at 14,144 per point, 1.9x cheaper, and all three\n"
+          f"  estimators returned them with LOW confidence saying they should be split. The one\n"
+          f"  sprint whose forecast missed its band is the one that contained a 13.\n",
+          file=sys.stderr)
+    print("  too big:", file=sys.stderr)
+    print("\n".join(_oversized_detail(bd)), file=sys.stderr)
+    print(SPLIT_FIX.format(ceiling=ceiling), file=sys.stderr)
+
+
+def _report_oversized(bd: dict, count: int) -> None:
+    """The recorded opt-out still REPORTS an oversized unit; it just does not block."""
+    print(f"breakdown: {len(bd['oversized'])} of {count} unit(s) are above "
+          f"{bd['ceiling']} points and should be SPLIT - planning anyway "
+          f"(sprint.breakdown: judgement). Their forecast is outside the range the rate was "
+          f"measured in:", file=sys.stderr)
+    print("\n".join(_oversized_detail(bd)), file=sys.stderr)
 
 
 def _report_ungroomed(bd: dict, count: int) -> None:
@@ -1508,8 +1585,8 @@ def _report_ungroomed(bd: dict, count: int) -> None:
     does not block. An opt-out that also went quiet would be the disease, not the cure."""
     n = len(bd["ungroomed"])
     print(f"breakdown: {n} of {count} unit(s) are ungroomed - planning anyway "
-          f"(sprint.breakdown: judgement). Their forecast is a flat floor, not an estimate:",
-          file=sys.stderr)
+          f"(sprint.breakdown: judgement). They carry NO forecast at all - an unsized unit is "
+          f"left out of the batch total rather than priced at a stand-in:", file=sys.stderr)
     print("\n".join(_breakdown_detail(bd)), file=sys.stderr)
 
 
@@ -1570,9 +1647,9 @@ def _render_cross_lessons(data: dict) -> None:
 
 
 def _render_token_forecast(data: dict) -> None:
-    """LEAD WITH WHAT SPRINTS HAVE ACTUALLY COST. The forecast follows, as a range, and says out
-    loud that it cannot tell the units apart - because it cannot, and a bare number would read as
-    a fact when it is a rate multiplied by a headcount."""
+    """LEAD WITH WHAT SPRINTS HAVE ACTUALLY COST. The forecast follows, as a range, and it STATES
+    ITS RATE AND WHERE THAT RATE CAME FROM - a bare number would read as a fact, when it is a
+    measurement multiplied by an estimate."""
     tf = data.get("token_forecast")
     if not tf or not tf.get("tokens"):
         return
@@ -1586,20 +1663,21 @@ def _render_token_forecast(data: dict) -> None:
     fc = cap.get("forecast") or {}
     band = (f" (plausible {fc['low']:,}-{fc['high']:,})"
             if fc.get("low") and fc.get("high") else "")
-    rate = tf.get("rate") or BASE_TOKEN_BUDGET
-    print(f"  token forecast: ~{tf['tokens']:,} tokens = {data['count']} unit(s) x "
-          f"{rate:,} measured rate{band}")
-    print("    this does NOT price units individually, and cannot: no plan-time signal predicts "
-          "a unit's")
-    print("    cost (best leave-one-out r = 0.415; the old complexity seed scored 0.03). Every "
-          "unit is")
-    print("    quoted at the same rate. Read the batch history above, not this number.")
+    print(f"  token forecast: ~{tf['tokens']:,} tokens = {tf['points']} point(s) x "
+          f"{tf['rate']:,} tokens per point{band}")
+    print(f"    rate ({tf['rate_source']}): {tf['rate_basis']}")
+    if tf["rate_source"] == "seed" and tf["rate_units"]:
+        print(f"    this project has {tf['rate_units']} unit(s) of its own evidence so far; the "
+              f"rate becomes ITS measurement at {RATE_MIN_UNITS}")
+    if tf.get("unpriced"):
+        print(f"    NOT forecast (no Points, and nothing is invented for them): "
+              f"{', '.join(tf['unpriced'])}")
     rec = data.get("forecast_record")
     if rec and not rec.get("error"):
         n = len(rec.get("recorded", [])) + len(rec.get("already", []))
-        print(f"  forecast recorded: {n} unit(s) at plan time, with the constants that produced "
-              f"them (rate={BASE_TOKEN_BUDGET:,}, per-complexity={TOKENS_PER_COGNITIVE:,} - the "
-              f"axis is dead). The retro judges THIS number - it never re-derives one")
+        print(f"  forecast recorded: {n} unit(s) at plan time, with the points and the rate that "
+              f"produced them. The retro judges THIS number - it never re-derives one, and the "
+              f"points recorded here are what the NEXT rate is measured from")
 
 
 def _render_capacity(data: dict) -> None:
@@ -1637,8 +1715,9 @@ def _render_capacity(data: dict) -> None:
               if cal["enough_history"]
               else f"not enough history to recalibrate (need {cal['recalibrate_after']})")
     print(f"  capacity: the token half is a FORECAST, not a measurement - a script cannot "
-          f"observe token spend, and the model is a flat measured RATE that cannot tell the "
-          f"units apart. Calibration: {history}; {enough}. Nothing is re-fitted automatically.")
+          f"observe token spend, and the model is points x a measured tokens-per-point rate, "
+          f"honest to about +/-50%. Calibration: {history}; {enough}. Nothing is re-fitted "
+          f"automatically.")
     floor = cap.get("unit_wall_minutes_floor")
     wall = (f", ~{floor} min/unit of worker time measured (a FLOOR on a "
             f"{cap['units']}-unit run, not a forecast of it)" if floor else "")
@@ -1760,11 +1839,17 @@ def cmd_breakdown(args: argparse.Namespace) -> int:
         print(json.dumps(bd, indent=2))
         return 0
     print(f"breakdown: {len(batch)} unit(s), {len(bd['ungroomed'])} ungroomed, "
+          f"{len(bd['oversized'])} above {bd['ceiling']} points, "
           f"{len(bd['clusters'])} shared-file cluster(s) (mode={bd['mode']})")
     if bd["ungroomed"]:
         print("  ungroomed - `sprint plan` refuses a batch holding any of these:")
         print("\n".join(_breakdown_detail(bd)))
-        print(BREAKDOWN_FIX.format(sel=_selector_hint(args, queries, worklist)))
+        print(_breakdown_fix(bd, _selector_hint(args, queries, worklist)))
+    if bd["oversized"]:
+        print(f"  too big to estimate - `sprint plan` refuses these; SPLIT them into units of "
+              f"{bd['ceiling']} points or fewer:")
+        print("\n".join(_oversized_detail(bd)))
+        print(SPLIT_FIX.format(ceiling=bd["ceiling"]))
     _render_clusters({"breakdown": bd})
     _render_decompose({"breakdown": bd})
     return 0
@@ -1818,16 +1903,26 @@ def cmd_plan(args: argparse.Namespace) -> int:
     except ValueError as exc:  # dependency cycle / bad status / unknown worklist id
         print(f"cannot order the batch: {exc}", file=sys.stderr)
         return 2
-    # THE BREAKDOWN GATE. Before anything is printed, written, or opened: is this batch
-    # groomed enough to plan? An ungroomed batch is REFUSED - blocking, non-zero, and no plan
-    # at all, because a plan over unsized units is exactly the false authority the gate exists
-    # to abolish. It fires here, ahead of the drift preflight, so a refusal costs no fetch.
+    # THE BREAKDOWN GATE. Before anything is printed, written, or opened: is this batch groomed
+    # enough to plan, and is any unit too big to have been estimated at all? Either failure is
+    # REFUSED - blocking, non-zero, and no plan at all, because a plan over unsized or unsizeable
+    # units is exactly the false authority the gate exists to abolish. It fires here, ahead of
+    # the drift preflight, so a refusal costs no fetch.
+    #
+    # The two are reported TOGETHER but refused in one go: an operator fixing a backlog wants the
+    # whole census, not one failure per re-run.
     bd = data.get("breakdown")
-    if bd and bd["ungroomed"]:
+    if bd and (bd["ungroomed"] or bd["oversized"]):
         if bd["blocking"]:
-            _refuse_ungroomed(bd, data["count"], _selector_hint(args, queries, worklist))
+            if bd["ungroomed"]:
+                _refuse_ungroomed(bd, data["count"], _selector_hint(args, queries, worklist))
+            if bd["oversized"]:
+                _refuse_oversized(bd, data["count"])
             return 2
-        _report_ungroomed(bd, data["count"])
+        if bd["ungroomed"]:
+            _report_ungroomed(bd, data["count"])
+        if bd["oversized"]:
+            _report_oversized(bd, data["count"])
     rc = _origin_drift_preflight(args, data)
     if rc is not None:
         return rc
@@ -1911,7 +2006,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="skip the git fetch in the origin-drift preflight (compare against the "
                         "already-fetched origin ref)")
     p.add_argument("--skip-personas", action="store_true", dest="skip_personas",
-                   help="ignore review-seat WSJF inputs; order by priority + complexity")
+                   help="ignore review-seat WSJF inputs; the Cost of Delay is then derived from "
+                        "the declared Priority, which is what WSJF runs on by default")
     p.add_argument("--root", default=".", help="Repo root (default: .)")
     p.add_argument("--format", choices=("text", "json"), default="text")
     p.set_defaults(func=cmd_plan)

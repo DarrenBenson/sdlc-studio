@@ -107,15 +107,15 @@ File with the deterministic filer, which refuses a hollow artifact:
 ```bash
 python3 "$CLAUDE_SKILL_DIR/scripts/file_finding.py" file --type cr \
   --title "..." --priority High --ctype Improvement --summary "..." \
-  --impact "who this affects and what breaks" --effort M \
+  --impact "who this affects and what breaks" --points 5 \
   --affects "src/one.py, src/two.py" \
   --ac "concrete, checkable criterion" --ac "..."
 ```
 
 It allocates the ID, renders the structured artifact, stamps the authorship of record
 (`--author "Name; type; version"`, defaulting to the invoking agent), appends the index
-row, and recomputes the index counts. A CR without an impact statement and an effort
-estimate is refused, because the validator refuses it too. Triage first (review the
+row, and recomputes the index counts. A CR without an impact statement and a `--points`
+size is refused, because the validator refuses it too. Triage first (review the
 survivors), then file the approved set.
 
 ## Budget {#audit-budget}

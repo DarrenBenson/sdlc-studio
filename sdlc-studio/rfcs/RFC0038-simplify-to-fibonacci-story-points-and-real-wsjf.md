@@ -1,6 +1,6 @@
 # RFC-0038: Simplify to Fibonacci story points and real WSJF, and test it by blind re-estimation of past sprints
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/route.py, .claude/skills/sdlc-studio/templates/core/bug.md
 > **Date:** 2026-07-14
 > **Created-by:** sdlc-studio file
@@ -131,3 +131,136 @@ estimators asked for it unprompted.
   and the flat per-unit rate.
 
 Five signals become two. And for the first time, the size number on an artefact means something.
+
+## Correction: an epic is T-shirt sized, not pointed (operator, 2026-07-14)
+
+**Story points belong on stories. The clue is in the name.** Epics are T-shirt sized (S/M/L/XL). This
+is standard practice and the operator's field experience, and the current epic template violates it:
+it asks for `**Story Points:**` on the epic itself.
+
+The template also conflates two different things under one name:
+
+- **The estimate**, made BEFORE decomposition, when the stories are not yet known. Necessarily coarse -
+  and a T-shirt size is coarse ON PURPOSE. It says "roughly this big" without pretending to a precision
+  nobody has.
+- **The roll-up**, the sum of the epic's stories' points. That exists only AFTER decomposition, and it
+  is DERIVED, never estimated.
+
+Asking for story points on an epic demands the second before the first is possible. **It is the same
+false-precision error the Fibonacci scale exists to prevent** - a 7 is refused because the widening gaps
+ARE the estimate - one level up the hierarchy.
+
+And the distinction is load-bearing, not tidiness. **A derived roll-up can be recomputed and reconciled
+against the stories, so it can never silently drift. An estimated one cannot be checked against
+anything** - and a number nobody can check is exactly the false authority this project keeps hunting.
+
+So the size vocabulary is layered, and each layer is sized by what is knowable at that layer:
+
+| level | size | when | checkable? |
+| --- | --- | --- | --- |
+| Epic | **T-shirt** (S/M/L/XL) | before decomposition | no - and it does not pretend to be |
+| Story / Bug / CR | **Points** (modified Fibonacci) | at filing, relative to delivered units | yes - against measured actuals |
+| Epic point total | **derived** (sum of its stories) | after decomposition | yes - reconcile recomputes it |
+
+Carried by **CR0268**.
+
+## Correction 2: size by what a thing IS (operator, 2026-07-14)
+
+**Points belong on the thing that is DELIVERED and MEASURED. A T-shirt belongs on the CONTAINER that
+must be decomposed first.** A CR is a REQUEST - it is not a unit of work until someone breaks it down,
+and pointing it is guessing at a shape that does not exist yet.
+
+| level | size | why |
+| --- | --- | --- |
+| Epic | **T-shirt** (S/M/L/XL) | a container, sized before its stories exist |
+| CR | **T-shirt** (S/M/L/XL) | a REQUEST, sized before it is broken down |
+| Story | **Points** (Fibonacci) | the delivery unit - measured, and gated on executable ACs |
+| Bug | **Points** (Fibonacci) | delivered directly; it is not a container |
+
+### This project already preaches this and does not do it
+
+**BG0132 established that only STORIES carry executable acceptance criteria** - a CR's ACs are prose, so
+its Done is gated on nothing. `sprint plan` nags about it on every single run: *"decompose into stories
+(only a story's Done is gated on executable ACs)"*. **We have never once complied.** Every CR goes
+straight to a subagent as one unit.
+
+So the doctrine says CRs become stories and the practice says CRs are delivered whole, and **the sizing
+question is simply where that contradiction finally surfaced.** Adopting the rule is therefore not a
+template change - it is closing a gap between what this project claims and what it does.
+
+### It is the same lever as the above-8 split rule, pulled from the other end
+
+CR0266 as a single 8-point unit is one big job. **Decomposed, it is three stories of 3+3+2** - smaller,
+more uniform, each measured separately. RFC0038 proved that counting is exactly as good as the units are
+uniform (they vary **5.5x** today), and that the estimate breaks above 8. **Forcing a CR through
+decomposition is how units get small enough for the estimate to be worth having.**
+
+### The caveat, stated rather than inherited
+
+The **r = 0.68** evidence in this RFC comes from **CR-sized and BUG-sized units**. Applying points to
+**STORY-sized** units is an EXTRAPOLATION - a reasonable one, since the scale was most stable at 2-8 and
+stories are smaller - but there are **zero story-level actuals**. It must be re-validated once story
+telemetry exists. Until then the confidence is borrowed, not earned.
+
+Carried by **CR0269** (the vocabulary and the decomposition gate) and **CR0268** (the epic template).
+
+## Correction 3: TWO BACKLOGS - RFCs and CRs are REQUESTS (operator, 2026-07-14)
+
+**An RFC and a CR are not small pieces of work. They are REQUESTS that have not become work yet.** They
+form an intake queue, and they enter the product backlog only by being DECOMPOSED into epics and stories.
+
+| | **Request backlog** (intake) | **Product backlog** (delivery) |
+| --- | --- | --- |
+| holds | **RFCs and CRs** - requests | Epics, Stories, Bugs |
+| sized by | T-shirt (S/M/L/XL) | Points (stories and bugs) |
+| sprintable? | **never** | yes |
+| output | RFC -> CRs; CR -> epics/stories | delivered |
+
+### The chain, and where we jump the rails
+
+```text
+RFC0038  (design exploration)
+   |
+   +-> CR0265 .. CR0270          <- this step we DO
+          |
+          +-> stories            <- this step we have NEVER done
+                 |
+                 +-> delivered, pointed, measured
+```
+
+**The RFC-to-CR step works.** RFC0038 spawned six CRs today. **The CR-to-story step has never once
+happened** - every CR goes straight to a subagent whole. We do half the refinement chain and then jump
+the rails.
+
+### Refinement is work, but it is not delivery
+
+Exploring an RFC and decomposing a CR cost real effort - RFC0038's blind experiment burned roughly
+160,000 tokens and shipped no product. That is discovery, and it is fine. But it must **NEVER** land in a
+velocity figure, or velocity stops meaning *what we shipped*. **Velocity is story points delivered, from
+stories and bugs only.** A T-shirt is never summed into it, because it is not a measurement.
+
+This lands hard, because **`sprint plan --crs Proposed` is our PRIMARY command.** We have been sprinting
+the INTAKE QUEUE for the entire life of the project. Every CR has gone straight to a subagent whole, and
+not one has ever been decomposed - while `sprint plan` printed *"decompose into stories"* on every single
+run, and BG0132 established that only a STORY carries executable acceptance criteria, so **a CR's Done has
+always been gated on prose and nothing else.**
+
+Doctrine that is printed and ignored is not doctrine, it is decoration (LL0027).
+
+### The deterministic gates (CR0270)
+
+- **G1.** `sprint plan` REFUSES a CR as a sprint unit - not merely an undecomposed one, **a CR full
+  stop**. The product backlog it plans from is stories and bugs.
+- **G2.** A CR **cannot reach a terminal status by assertion.** Its status is DERIVED from its children:
+  Complete when every story and epic it produced is Done. A CR with no children cannot be Complete,
+  because **a CR that produced nothing delivered nothing.** (LL0034: derive what you can - a status that
+  can be true in the record and false in reality must be computed, not stamped.)
+- **G3.** Traceability is **bidirectional and checkable**. `cr action` writes the parent link on both
+  sides; reconcile verifies every link resolves in both directions, so the two backlogs cannot drift.
+- **G4.** `status` reports **two backlogs**. An undecomposed CR is INTAKE, not work in progress - counting
+  it as backlog has been overstating what is actually ready to deliver.
+- **G5.** reconcile reports a non-terminal CR with **no children** as UNDECOMPOSED, as a countable drift
+  kind, so the intake queue cannot silently become a graveyard of requests nobody turned into work.
+
+This closes the oldest gap in the project. BG0132 said only stories are gated on executable ACs, and we
+have never once produced a story from a CR.

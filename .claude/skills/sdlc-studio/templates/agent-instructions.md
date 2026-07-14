@@ -104,7 +104,7 @@ benchmarks). Operators may opt out with `engagement_floor: judgement` in
      indexed - a bare `indexed=false` means "no index yet", not "the tool does not index".
    - **Create every artifact with the non-interactive script - it is the canonical path:**
      `python3 <skill>/scripts/artifact.py new --type bug --title "..."
-     --affects "a.py, b.py" --effort M` (same for cr / story / epic / rfc; a finding with
+     --affects "a.py, b.py" --points 3` (same for cr / story / epic / rfc; a finding with
      repro + fix travels better through `scripts/file_finding.py file`). A bug or a CR must
      name the files it touches and its size - both creators refuse one that cannot be
      planned. It allocates a collision-free id, writes the file,

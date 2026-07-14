@@ -192,7 +192,8 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
                 "reproduction steps")
         elif type_ == "cr" and not _cr_has_evidence(text):
             add("error", "evidence-present",
-                "CR needs both an impact statement and an effort estimate (S/M/L)")
+                "CR needs both an impact statement and a size - `**Points:** <"
+                + "|".join(str(p) for p in sdlc_md.POINTS_SCALE) + ">")
 
     _check_placeholders(text, add)
     return out
@@ -248,11 +249,19 @@ def _bug_has_evidence(text: str) -> bool:
 
 
 def _cr_has_evidence(text: str) -> bool:
-    """A CR carries an impact statement AND an effort estimate."""
+    """A CR carries an impact statement AND a size.
+
+    The size is `Points` on the modified Fibonacci scale - the ONE size vocabulary the creators
+    now write and the planner reads (`sdlc_md.read_points`). The retired `Effort` S/M/L is still
+    ACCEPTED here, and only here: this is a read over artefacts already on disk, and a validator
+    that turned every CR filed before the vocabulary changed into an error would be reporting a
+    fact about history, not a defect anyone can fix. Nothing WRITES an Effort any more, so the
+    tolerance drains as the backlog is re-estimated rather than living on as a second vocabulary.
+    """
     has_impact = _section_has_content(text, "Impact", "Impact Assessment", "Motivation")
-    has_effort = bool(re.search(r"effort", text, re.I)) and bool(
+    legacy_effort = bool(re.search(r"effort", text, re.I)) and bool(
         re.search(r"\b[SML]\b|small|medium|large", text, re.I))
-    return has_impact and has_effort
+    return has_impact and (sdlc_md.read_points(text) is not None or legacy_effort)
 
 
 def _check_placeholders(text: str, add) -> None:

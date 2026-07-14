@@ -37,11 +37,12 @@ TYPES = {
     "bug": {"dir": "bugs", "prefix": "BG", "disp": "BG{n:04d}",
             "status": sdlc_md.create_status("bug"),
             "required": ("severity", "summary", "steps", "fix")},
-    # A CR carries an impact statement and an effort estimate: the validator demands both of
-    # any CR, so the filer demands both of its caller rather than minting one that fails.
+    # A CR carries an impact statement and a size: the validator demands both of any CR, so the
+    # filer demands both of its caller rather than minting one that fails. The size is `Points`
+    # on the modified Fibonacci scale - the ONE size vocabulary (`sdlc_md.POINTS_SCALE`).
     "cr": {"dir": "change-requests", "prefix": "CR", "disp": "CR-{n:04d}",
            "status": sdlc_md.create_status("cr"),
-           "required": ("priority", "ctype", "summary", "acs", "impact", "effort")},
+           "required": ("priority", "ctype", "summary", "acs", "impact", "points")},
     "rfc": {"dir": "rfcs", "prefix": "RFC", "disp": "RFC-{n:04d}",
             "status": sdlc_md.create_status("rfc"),
             "required": ("summary", "options")},
@@ -142,7 +143,7 @@ def check_prose_acs(type_: str, fields: dict) -> None:
             f"criterion to hold. Executable proof arrives when the {type_.upper()} is actioned "
             f"into stories, which carry real `- **Verify:**` lines that verify_ac runs and that "
             f"gate them to Done.\n"
-            f"  e.g. not 'Verify: rg -qi effort sprint.py' but 'sprint.py reads the CR Effort "
+            f"  e.g. not 'Verify: rg -qi points sprint.py' but 'sprint.py reads the CR Points "
             f"field and sizes the unit by it, rather than falling back to the flat default'.")
 
 
@@ -175,7 +176,9 @@ GROOMED_TYPES = ("bug", "cr")
 # What to hand the author for each gap the gate can name. Keyed by the gate's own token.
 _GROOM_FLAG = {
     "Affects": '--affects "path/to/file.py, path/to/other.py"  (the files this will touch)',
-    "size": "--effort S|M|L  (the job SIZE of the work - a bug's Severity is its urgency)",
+    "size": (f"--points {'|'.join(str(p) for p in sdlc_md.POINTS_SCALE)}  (the job SIZE of the "
+             f"work, RELATIVE to units you have already delivered - a bug's Severity is its "
+             f"urgency, a different axis)"),
 }
 
 
@@ -226,7 +229,7 @@ def check_groomed(repo_root: Path | str, type_: str, text: str) -> None:
         f"number.\n"
         f"  Supply:\n"
         + "".join(f"    {_GROOM_FLAG.get(m, m)}\n" for m in missing) +
-        f"  e.g. --affects \"scripts/sprint.py, scripts/file_finding.py\" --effort M\n"
+        f"  e.g. --affects \"scripts/sprint.py, scripts/file_finding.py\" --points 5\n"
         f"  You know which files this touches NOW. Nobody knows it better at plan time - and "
         f"an `Affects` the parser cannot read as a path (a prose phrase, a bare word) counts "
         f"as no `Affects` at all.\n"
@@ -389,14 +392,14 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
     if isinstance(f.get("options"), list):
         f = {**f, "options": [_md_safe(o) for o in f["options"]]}
     if type_ == "bug":
-        # Effort is the job SIZE of the fix (Severity is its urgency - a different axis, and the
+        # Points are the job SIZE of the fix (Severity is its urgency - a different axis, and the
         # one a bug has always carried). Demanded, not optional: the sprint plan refuses a unit
         # nobody sized, so a bug filed without one is work that cannot be planned. It sizes the
         # unit in the plan instead of the planner falling back to a flat floor.
-        effort = f"> **Effort:** {f['effort']}\n" if f.get("effort") else ""
+        points = f"> **Points:** {f['points']}\n" if f.get("points") is not None else ""
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** {status or 'Open'}\n> **Severity:** {f['severity']}\n"
-                f"{effort}{_affects_line(f)}"
+                f"{points}{_affects_line(f)}"
                 f"> **Created:** {today}\n{_stamp(f)}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
                 f"## Steps to Reproduce\n\n{f['steps']}\n\n"
@@ -414,7 +417,7 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
                 f"> **Date:** {today}\n{_stamp(f)}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
                 f"## Impact\n\n{f['impact']}\n\n"
-                f"**Effort:** {f['effort']}\n\n"
+                f"**Points:** {f['points']}\n\n"
                 f"## Acceptance Criteria\n\n{acs}\n\n"
                 f"## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
                 f"{rev_row(today, f, 'Raised')}\n")
@@ -552,7 +555,7 @@ def _file_finding_locked(root: Path, type_: str, spec: dict, title: str, fields:
 def cmd_file(args: argparse.Namespace) -> int:
     fields = {"severity": args.severity, "priority": args.priority, "ctype": args.ctype,
               "summary": args.summary, "steps": args.steps, "fix": args.fix,
-              "impact": args.impact, "effort": args.effort, "affects": args.affects,
+              "impact": args.impact, "points": args.points, "affects": args.affects,
               "author": args.author, "recommendation": args.recommendation}
     fields = {k: v for k, v in fields.items() if v is not None}
     if args.ac:
@@ -585,9 +588,16 @@ def build_parser() -> argparse.ArgumentParser:
     f.add_argument("--steps", help="bug steps to reproduce")
     f.add_argument("--fix", help="bug proposed fix")
     f.add_argument("--impact", help="cr: who this affects and what breaks (required for a cr)")
-    f.add_argument("--effort", choices=("S", "M", "L"),
-                   help="job SIZE of the work (a bug's Severity is its urgency, not its size). "
-                        "Required for a bug and a cr: `sprint plan` refuses a unit nobody sized.")
+    # Deliberately NOT an argparse `choices` list: argparse would exit 2 with a bare "invalid
+    # choice", and the whole point of refusing a 7 is to explain WHY the scale has no 7. The
+    # value is checked by `sdlc_md.check_points` - the one definition both creators share.
+    f.add_argument("--points",
+                   help="job SIZE of the work, on the modified Fibonacci scale "
+                        f"({', '.join(str(p) for p in sdlc_md.POINTS_SCALE)}) - RELATIVE to "
+                        "units already delivered, not a prediction of time. A bug's Severity is "
+                        "its urgency, a different axis. Required for a bug and a cr: `sprint "
+                        "plan` refuses a unit nobody sized. A value off the scale is refused, "
+                        "never rounded; above 8, split the unit.")
     f.add_argument("--affects",
                    help="comma-separated files this unit will touch, written as the `Affects` "
                         "metadata line. Required for a bug and a cr: `sprint plan` refuses a "

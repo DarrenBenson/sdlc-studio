@@ -322,21 +322,35 @@ def actuals(repo_root: Path | str) -> dict[str, dict]:
 # are read in name order and never merged by a union driver: a reordering silently changes which
 # prediction is the one that stands.
 
-#: A forecast record. `tokens` is the number the plan quoted; `seed` is the complexity/effort
-#: input it came from; `constants` is the estimator that produced it (so a later reader can
-#: tell whether the row was forecast by the constants now in force, or by a different model);
-#: `planned_at` is when the plan was made.
+#: A forecast record. `points` is the SIZE the plan recorded, on the modified Fibonacci scale;
+#: `tokens` is the number the plan quoted (points x the measured rate); `constants` is the
+#: estimator that produced it (so a later reader can tell whether the row was forecast by the
+#: estimator now in force, or by a different one); `planned_at` is when the plan was made.
 #:
-#: The ATTRIBUTION of the size call rides here too, and it is recorded at PLAN TIME for the same
-#: reason the number is: an `Effort` read off the artefact later may have been revised with
-#: hindsight, and a value revised after the outcome is not a prediction.
-#:   `estimator`   WHO made the size call ("unattributed" when nobody claimed it - never guessed)
-#:   `effort_gate` under what compulsion: `compulsory` (the grooming gate refuses an unsized
-#:                 unit) or `voluntary`. A compulsory estimate from someone who does not want to
-#:                 estimate is a careless one, and that hazard is only testable if the compulsion
-#:                 in force is on the record.
-FORECAST_FIELDS = ("id", "tokens", "seed", "seed_source", "complexity", "effort",
-                   "estimator", "effort_gate", "constants", "planned_at")
+#: POINTS ARE THE SIZE, AND THEY ARE RECORDED HERE - not read off the artefact at judgement
+#: time. Same rule as the token number, for the same reason: a size revised once the outcome was
+#: known is not a prediction, and this project has already watched one get revised. Velocity
+#: (points delivered per sprint) and the tokens-per-point rate derived from it are both read out
+#: of these records, so if the size is not on the record the sprint is UNSIZED and nothing
+#: invents a number for it.
+#:
+#: The ATTRIBUTION of the size call rides here too, recorded at PLAN TIME for the same reason:
+#:   `estimator`  WHO made the size call ("unattributed" when nobody claimed it - never guessed)
+#:   `size_gate`  under what compulsion: `compulsory` (the grooming gate refuses an unsized
+#:                unit) or `voluntary`. A compulsory estimate from someone who does not want to
+#:                estimate is a careless one, and that hazard is only testable if the compulsion
+#:                in force is on the record.
+#:
+#: `seed`, `seed_source` and `complexity` are the inputs of the RETIRED per-unit estimator. They
+#: are kept in the schema because records already carry them, and an evidence log is not
+#: rewritten to suit today's model - nothing writes them now.
+FORECAST_FIELDS = ("id", "tokens", "points", "seed", "seed_source", "complexity",
+                   "estimator", "size_gate", "constants", "planned_at")
+
+#: The field `size_gate` used to be called `effort_gate`, when the size was an Effort. A caller
+#: still passing the old name is understood, so no record is lost across the rename; the log is
+#: written under the new one.
+LEGACY_GATE_FIELD = "effort_gate"
 
 
 _forecast_path = forecasts_path
@@ -384,6 +398,9 @@ def record_forecasts(repo_root: Path | str, records: list[dict]) -> dict:
             already.append(rid)
             continue
         seen.add(key)
+        rec = dict(rec)
+        if rec.get("size_gate") is None and rec.get(LEGACY_GATE_FIELD) is not None:
+            rec["size_gate"] = rec[LEGACY_GATE_FIELD]   # the rename, absorbed - never dropped
         row = {k: rec[k] for k in FORECAST_FIELDS if rec.get(k) is not None}
         row["id"] = rid
         fresh.append(row)
@@ -527,23 +544,43 @@ def summarise(records: list[dict]) -> dict:
     return out
 
 
+def _constants(pairs: list[str] | None) -> dict:
+    """The estimator that produced a forecast, as `KEY=INT` pairs.
+
+    Deliberately open: the estimator's shape has changed twice already, and a recorder that
+    hardcodes today's field names cannot record yesterday's forecast or tomorrow's. What the log
+    needs is that the estimator be NAMED on the row, not that it be one particular estimator.
+    """
+    out: dict = {}
+    for pair in pairs or []:
+        key, _, val = str(pair).partition("=")
+        key = key.strip()
+        if not key or _int(val) is None:
+            raise ValueError(f"--constant expects KEY=INT, got {pair!r}")
+        out[key] = _int(val)
+    return out
+
+
 def cmd_forecast(args: argparse.Namespace) -> int:
     """Record ONE plan-time forecast by hand. `sprint plan` records the batch's forecasts
     itself; this exists so a forecast recoverable from the record (an old retro's own
     estimate-vs-actual table) can be restored, and so the log can be inspected."""
-    rec = {"id": args.id, "tokens": _int(args.tokens), "seed": _int(args.seed),
-           "seed_source": args.seed_source, "effort": args.effort,
-           "estimator": args.estimator, "effort_gate": args.effort_gate,
+    points = sdlc_md.check_points(args.points) if args.points is not None else None
+    rec = {"id": args.id, "tokens": _int(args.tokens), "points": points,
+           "estimator": args.estimator, "size_gate": args.size_gate,
            "planned_at": args.planned_at or sdlc_md.now_iso8601(),
-           "constants": {"BASE_TOKEN_BUDGET": _int(args.base),
-                         "TOKENS_PER_COGNITIVE": _int(args.per_cognitive)}}
+           "constants": _constants(args.constant)}
     res = record_forecasts(args.root, [rec])
     if args.format == "json":
         print(json.dumps(res, indent=2))
-    elif res["recorded"]:
-        print(f"recorded forecast {args.id} ({rec['tokens']:,} tokens) -> {res['path']}")
+        return 0
+    if res["recorded"]:
+        size = f", {points} point(s)" if points else ""
+        print(f"recorded forecast {args.id} ({rec['tokens']:,} tokens{size}) -> {res['path']}")
     else:
         print(f"forecast {args.id} already recorded, unchanged - the first one stands")
+    if points is not None and (warn := sdlc_md.points_split_warning(points)):
+        print(warn, file=sys.stderr)
     return 0
 
 
@@ -570,8 +607,10 @@ def cmd_show(args: argparse.Namespace) -> int:
             return 0
         for r in recs:
             c = r.get("constants") or {}
-            print(f"  {r['id']:8} est={r.get('tokens', 0):>9,}  seed={r.get('seed')}  "
-                  f"base={c.get('BASE_TOKEN_BUDGET')} tpc={c.get('TOKENS_PER_COGNITIVE')}  "
+            est = " ".join(f"{k}={v}" for k, v in sorted(c.items())) or "-"
+            pts = r.get("points")
+            print(f"  {r['id']:8} est={r.get('tokens', 0):>9,}  "
+                  f"points={pts if pts is not None else '-':>3}  [{est}]  "
                   f"planned {r.get('planned_at', '-')}")
         print(f"{len(recs)} forecast record(s); the FIRST for a unit is its plan-time forecast")
         return 0
@@ -622,19 +661,19 @@ def build_parser() -> argparse.ArgumentParser:
     f = sub.add_parser("forecast", help="Record one plan-time token forecast (the estimate side "
                                         "of the ratio; `sprint plan` records a batch's itself).")
     f.add_argument("--id", required=True); f.add_argument("--tokens", required=True)
-    f.add_argument("--seed", help="the complexity/effort input the forecast came from")
-    f.add_argument("--seed-source", dest="seed_source", default="complexity",
-                   choices=("complexity", "effort", "none"))
-    f.add_argument("--effort", help="the declared Effort (S/M/L, or U for a declared unknown)")
+    f.add_argument("--points", help="the size the plan recorded, on the modified Fibonacci "
+                                    "scale (1, 2, 3, 5, 8, 13, 20). Velocity and the "
+                                    "tokens-per-point rate are both derived from it")
     f.add_argument("--estimator", help="WHO made the size call (default: unattributed - it is "
                                        "never inferred from whoever filed the unit)")
-    f.add_argument("--effort-gate", dest="effort_gate",
+    f.add_argument("--size-gate", dest="size_gate",
                    choices=("compulsory", "voluntary"),
-                   help="was the Effort compulsory at filing, or freely given? The coercion "
+                   help="was the size compulsory at filing, or freely given? The coercion "
                         "hazard is only testable if the compulsion is on the record")
-    f.add_argument("--base", required=True, help="BASE_TOKEN_BUDGET in force at plan time")
-    f.add_argument("--per-cognitive", dest="per_cognitive", required=True,
-                   help="TOKENS_PER_COGNITIVE in force at plan time")
+    f.add_argument("--constant", action="append", metavar="KEY=INT",
+                   help="the estimator in force at plan time, e.g. TOKENS_PER_POINT=25000. "
+                        "Repeatable. Recorded, never recomputed: a row must say which model "
+                        "produced its number, or it judges nothing")
     f.add_argument("--planned-at", dest="planned_at", help="when the plan was made (ISO8601)")
     f.add_argument("--root", default=".")
     f.add_argument("--format", choices=("text", "json"), default="text")

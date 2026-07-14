@@ -1,4 +1,4 @@
-"""Attribution: WHO estimated a unit, WHAT model delivered it, and what "unknown" means.
+"""Attribution: WHO sized a unit, WHAT model delivered it, and what an unrecorded size means.
 
 Three defects, one schema.
 
@@ -10,17 +10,15 @@ Three defects, one schema.
    the artefact, not in the committed velocity history. The moment a second model is used, a
    mean across the two describes neither of them.
 
-3. An Effort was COMPULSORY at filing and had no way to say "I do not know". A compulsory
-   estimate from someone who does not know produces a number that looks like data, and the
-   project has already been bitten by exactly that: scoring an UNDECLARED Effort as 0 made the
-   field appear predictive (r = +0.58 here) because the field only EXISTED on the later, larger
-   units. The presence of the field correlated with cost. Treated honestly as missing, the same
-   values score +0.48.
+3. A size nobody recorded was scored as though it were a size. Scoring an UNDECLARED size as 0
+   made the field appear predictive here (r = +0.58) because the field only EXISTED on the
+   later, larger units: the PRESENCE of the field correlated with cost. Treated honestly as
+   missing, the same values score +0.48.
 
 The load-bearing tests, and the ones to read first:
 
-  `UnknownIsAFirstClassEffort` - an honest `unknown` passes the grooming gate AND is excluded
-  from every ratio. It is never coerced to a number.
+  `AnUnsizedUnitIsExcludedNeverCoerced` - a unit the plan never sized is named and excluded from
+  every figure, and the size sitting on the artefact today is never read back to fill the gap.
 
   `AFigureAcrossTwoModelsIsSegmentedOrRefused` - never silently averaged.
 
@@ -35,7 +33,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import retro  # noqa: E402
-import sprint  # noqa: E402
 import telemetry  # noqa: E402
 
 
@@ -43,7 +40,7 @@ BUG = """# BG{num}: a unit
 
 > **Status:** Open
 > **Severity:** Medium
-> **Effort:** {effort}
+> **Points:** {points}
 > **Affects:** src/bg{num}.py
 {extra}
 ## Summary
@@ -82,17 +79,17 @@ class Fixture(unittest.TestCase):
             (self.root / "sdlc-studio" / d).mkdir(parents=True, exist_ok=True)
         self.addCleanup(self.tmp.cleanup)
 
-    def bug(self, num: str, effort: str = "M", extra: str = "") -> None:
+    def bug(self, num: str, points: int | str = 3, extra: str = "") -> None:
         (self.root / "sdlc-studio" / "bugs" / f"BG{num}-a.md").write_text(
-            BUG.format(num=num, effort=effort, extra=extra), encoding="utf-8")
+            BUG.format(num=num, points=points, extra=extra), encoding="utf-8")
 
     def retro(self, *batch: str, rid: str = "RETRO9100") -> None:
         (self.root / "sdlc-studio" / "retros" / f"{rid}-t.md").write_text(
             RETRO_TEXT.format(batch=", ".join(batch)), encoding="utf-8")
 
     def forecast(self, uid: str, **fields) -> None:
-        rec = {"id": uid, "tokens": 120_000, "seed_source": "rate",
-               "constants": {"BASE_TOKEN_BUDGET": 120_000, "TOKENS_PER_COGNITIVE": 0},
+        rec = {"id": uid, "tokens": 120_000,
+               "constants": {"TOKENS_PER_POINT": 25_000},
                "planned_at": "2026-07-14T09:00:00+00:00"}
         rec.update(fields)
         telemetry.record_forecasts(str(self.root), [rec])
@@ -103,68 +100,26 @@ class Fixture(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# "Unknown" is a FIRST-CLASS Effort value. The load-bearing pair.
+# A unit the plan never sized is UNSIZED - named, excluded, never coerced.
 # ---------------------------------------------------------------------------
 
-class UnknownIsAFirstClassEffort(Fixture):
-    """Nobody should have to invent a size to get past a gate.
+class AnUnsizedUnitIsExcludedNeverCoerced(Fixture):
+    """The contaminant this whole schema exists to prevent, and it is not hypothetical: scoring
+    an UNDECLARED size as 0 once made the size field look predictive here (r = +0.58) purely
+    because the field only EXISTED on the later, larger units. The PRESENCE of the field
+    correlated with cost. Treated honestly as missing, the same values scored +0.48.
 
-    Before this, `> **Effort:** unknown` read as NO effort at all: the grooming gate refused
-    the unit, and the only way past was to write down a letter you did not believe. A
-    compulsory estimate from someone who does not know is not data - it is noise with a
-    number's authority, and it is averaged in as though it were an estimate.
+    So a unit whose PLAN recorded no Points is UNSIZED: named, counted, and excluded from every
+    figure - exactly as UNMEASURED and UNFORECAST already are. It is never coerced to a number,
+    and the size on the artefact today is never read back to fill the gap, because a size
+    written down after the outcome was known is not an estimate.
     """
 
-    def test_unknown_is_a_recognised_effort_value_and_not_an_absent_one(self) -> None:
-        self.assertEqual(sprint._effort_code("> **Effort:** unknown\n"), sprint.EFFORT_UNKNOWN)
-        self.assertEqual(sprint._effort_code("> **Effort:** U\n"), sprint.EFFORT_UNKNOWN)
-        self.assertEqual(sprint._effort_code("> **Effort:** ?\n"), sprint.EFFORT_UNKNOWN)
-        # an ABSENT field is still absent - "I did not answer" is not "I answered unknown"
-        self.assertIsNone(sprint._effort_code("# nothing here\n"))
-        # and the template's own placeholder is the template talking, not an author
-        self.assertIsNone(sprint._effort_code("> **Effort:** {{S|M|L}}\n"))
-
-    def test_unknown_is_never_coerced_to_a_number(self) -> None:
-        """The contaminant, in one assertion. `unknown` has NO points, and no code path may
-        invent some: the moment it maps to 0 (or to the neutral 3) it enters a mean."""
-        self.assertIsNone(sprint.effort_points(sprint.EFFORT_UNKNOWN))
-        self.assertNotIn(sprint.EFFORT_UNKNOWN, sprint.EFFORT_SIZE)
-        self.assertEqual(sprint.effort_points("S"), 1)
-        self.assertEqual(sprint.effort_points("M"), 3)
-        self.assertEqual(sprint.effort_points("L"), 8)
-        self.assertIsNone(sprint.effort_points(None))
-
-    def test_an_honest_unknown_satisfies_the_grooming_gate(self) -> None:
-        """The whole point. `sprint plan` REFUSES an unsized unit; a declared `unknown` is an
-        answer, so it is sized enough to plan and nobody has to lie to the gate."""
-        self.bug("0001", effort="unknown")
-        batch = [{"id": "BG0001", "type": "bug",
-                  "path": str(self.root / "sdlc-studio" / "bugs" / "BG0001-a.md")}]
-        bd = sprint.breakdown(self.root, batch, skip_personas=True)
-        self.assertEqual(bd["ungroomed"], [], "a declared `unknown` Effort must pass the "
-                                              "grooming gate - a gate you can only pass by "
-                                              "inventing a number manufactures the noise it "
-                                              "exists to remove")
-        self.assertEqual(bd["groomed"], ["BG0001"])
-
-    def test_an_absent_effort_still_fails_the_gate(self) -> None:
-        """The escape must not become a hole. Silence is still not an answer."""
-        (self.root / "sdlc-studio" / "bugs" / "BG0002-a.md").write_text(
-            "# BG0002: a unit\n\n> **Status:** Open\n> **Affects:** src/x.py\n\n## Summary\nx\n",
-            encoding="utf-8")
-        batch = [{"id": "BG0002", "type": "bug",
-                  "path": str(self.root / "sdlc-studio" / "bugs" / "BG0002-a.md")}]
-        bd = sprint.breakdown(self.root, batch, skip_personas=True)
-        self.assertEqual([u["missing"] for u in bd["ungroomed"]], [["size"]])
-
-    def test_an_unknown_unit_is_excluded_from_every_accuracy_figure(self) -> None:
-        """The other half, and the half that matters. It passes the gate - and then it is
-        EXCLUDED, exactly as UNMEASURED and UNFORECAST already are. It is named, never
-        averaged, and never silently dropped."""
-        self.bug("0001", effort="unknown")
-        self.bug("0002", effort="M")
-        self.forecast("BG0001", effort="U", estimator="dani")
-        self.forecast("BG0002", effort="M", estimator="dani")
+    def test_a_unit_the_plan_never_sized_is_excluded_from_every_accuracy_figure(self) -> None:
+        self.bug("0001")
+        self.bug("0002")
+        self.forecast("BG0001", estimator="dani")               # no points recorded at plan time
+        self.forecast("BG0002", points=3, estimator="dani")
         self.actual("BG0001", 200_000, model="model-a")
         self.actual("BG0002", 100_000, model="model-a")
 
@@ -180,13 +135,15 @@ class UnknownIsAFirstClassEffort(Fixture):
         # and the mean is the mean of the RATED unit alone - 200,000 never entered it
         self.assertEqual(seg["mean_actual"], 100_000)
 
-    def test_unknown_never_reaches_the_wsjf_size_as_a_number(self) -> None:
-        """It falls to the declared neutral default - the same place an unsized unit falls -
-        rather than to a fabricated 1 or 0. New-file work is often the biggest."""
-        self.bug("0001", effort="unknown")
-        batch = sprint.select_batch(self.root, "bug", "Open", order="wsjf", skip_personas=True)
-        self.assertEqual(batch[0]["effort"], sprint.EFFORT_UNKNOWN)
-        self.assertEqual(batch[0]["size"], sprint.DEFAULT_UNKNOWN_SIZE)
+    def test_the_size_on_the_artefact_today_is_not_read_back_to_fill_the_gap(self) -> None:
+        """BG0001 carries `Points: 3` on the file right now. That is not what the plan
+        predicted, and hindsight is not a forecast."""
+        self.bug("0001", points=3)
+        self.forecast("BG0001", estimator="dani")               # the PLAN recorded no size
+        self.actual("BG0001", 200_000, model="model-a")
+        rep = retro.estimator_report(self.root)
+        self.assertEqual(rep["unsized"], ["BG0001"])
+        self.assertIsNone(next(u for u in rep["units"] if u["id"] == "BG0001")["points"])
 
 
 # ---------------------------------------------------------------------------
@@ -258,7 +215,7 @@ class AFigureAcrossTwoModelsIsSegmentedOrRefused(Fixture):
                 ((60_000, "small"), (90_000, "small"), (200_000, "large")), 1):
             uid = f"BG000{n}"
             self.bug(f"000{n}")
-            self.forecast(uid, effort="M", estimator="dani")
+            self.forecast(uid, points=3, estimator="dani")
             self.actual(uid, tokens, model=model)
         rep = retro.estimator_report(self.root)
         self.assertIsNone(rep["pooled"],
@@ -272,42 +229,30 @@ class AFigureAcrossTwoModelsIsSegmentedOrRefused(Fixture):
 # ---------------------------------------------------------------------------
 
 class TheEstimateRecordsWhoMadeIt(Fixture):
-    def test_the_artefact_names_the_estimator_and_the_plan_records_it(self) -> None:
-        self.bug("0001", extra="> **Estimated-by:** Dani Okafor; human; v1\n")
-        batch = sprint.select_batch(self.root, "bug", "Open", order="wsjf", skip_personas=True)
-        data = sprint.build_plan(self.root, queries=[("bug", "Open")], order="wsjf",
-                                 skip_personas=True)
-        sprint.record_forecast(self.root, data)
-        fc = telemetry.forecasts(self.root)["BG0001"]
-        self.assertEqual(batch[0]["id"], "BG0001")
-        self.assertEqual(fc["estimator"], "Dani Okafor")
-        self.assertEqual(fc["effort"], "M")
-
     def test_an_unnamed_estimator_is_unattributed_and_never_inferred(self) -> None:
         """Nobody's accuracy is attributed to them by guesswork. With no `Estimated-by`, the
         estimate belongs to nobody - which is a fact, not a gap to be filled."""
         self.bug("0001")
-        data = sprint.build_plan(self.root, queries=[("bug", "Open")], order="wsjf",
-                                 skip_personas=True)
-        sprint.record_forecast(self.root, data)
-        self.assertEqual(telemetry.forecasts(self.root)["BG0001"]["estimator"],
-                         sprint.ESTIMATOR_UNATTRIBUTED)
+        self.forecast("BG0001", points=3)
+        self.actual("BG0001", 100_000, model="model-a")
+        rep = retro.estimator_report(self.root)
+        self.assertEqual(rep["units"][0]["estimator"], retro.ESTIMATOR_UNATTRIBUTED)
 
     def test_accuracy_is_segmented_per_estimator(self) -> None:
-        """The whole point: 'your S/M/L calls run at r = 0.9, the auto-estimate at 0.1 - trust
+        """The whole point: 'your point calls run at r = 0.9, the auto-estimate at 0.1 - trust
         yours'. A pooled figure cannot say that, and a population average from a study of other
         people cannot say it either."""
         # dani calls it right: bigger size, bigger cost.
-        for n, (eff, tokens) in enumerate(((("S"), 50_000), ("M", 120_000), ("L", 300_000)), 1):
+        for n, (pts, tokens) in enumerate(((2, 50_000), (5, 120_000), (8, 300_000)), 1):
             uid = f"BG010{n}"
-            self.bug(f"010{n}", effort=eff)
-            self.forecast(uid, effort=eff, estimator="dani")
+            self.bug(f"010{n}", points=pts)
+            self.forecast(uid, points=pts, estimator="dani")
             self.actual(uid, tokens, model="model-a")
         # the auto-estimate calls it backwards.
-        for n, (eff, tokens) in enumerate((("L", 50_000), ("M", 120_000), ("S", 300_000)), 1):
+        for n, (pts, tokens) in enumerate(((8, 50_000), (5, 120_000), (2, 300_000)), 1):
             uid = f"BG020{n}"
-            self.bug(f"020{n}", effort=eff)
-            self.forecast(uid, effort=eff, estimator="auto")
+            self.bug(f"020{n}", points=pts)
+            self.forecast(uid, points=pts, estimator="auto")
             self.actual(uid, tokens, model="model-a")
 
         rep = retro.estimator_report(self.root)
@@ -318,25 +263,25 @@ class TheEstimateRecordsWhoMadeIt(Fixture):
         self.assertEqual(rep["by_model"]["model-a"]["best_estimator"], "dani")
 
     def test_the_report_names_the_classes_an_estimator_systematically_under_calls(self) -> None:
-        """Directional bias is CORRECTABLE; a bare correlation is not. An estimator whose S
-        calls cost far more than their scale implies is told so, by name."""
-        # Every S this estimator calls blows up; their M and L are on scale.
-        rows = [("0301", "S", 300_000), ("0302", "S", 280_000),
-                ("0303", "M", 120_000), ("0304", "M", 110_000),
-                ("0305", "L", 300_000), ("0306", "L", 320_000)]
-        for num, eff, tokens in rows:
-            self.bug(num, effort=eff)
-            self.forecast(f"BG{num}", effort=eff, estimator="dani")
+        """Directional bias is CORRECTABLE; a bare correlation is not. An estimator whose 2s
+        cost far more than their own scale implies is told so, by name."""
+        # Every 2 this estimator calls blows up; their 5s and 8s are on scale.
+        rows = [("0301", 2, 300_000), ("0302", 2, 280_000),
+                ("0303", 5, 120_000), ("0304", 5, 110_000),
+                ("0305", 8, 300_000), ("0306", 8, 320_000)]
+        for num, pts, tokens in rows:
+            self.bug(num, points=pts)
+            self.forecast(f"BG{num}", points=pts, estimator="dani")
             self.actual(f"BG{num}", tokens, model="model-a")
         seg = retro.estimator_report(self.root)["by_model"]["model-a"]["estimators"]["dani"]
         bias = {b["class"]: b["direction"] for b in seg["bias"]}
-        self.assertEqual(bias["Effort S"], "under-calls")
-        self.assertNotEqual(bias["Effort L"], "under-calls")
+        self.assertEqual(bias["2-point"], "under-calls")
+        self.assertNotEqual(bias["8-point"], "under-calls")
 
     def test_a_class_of_one_claims_no_direction(self) -> None:
         """One unit is an anecdote. The report says so rather than calling a bias off n=1."""
-        self.bug("0401", effort="S")
-        self.forecast("BG0401", effort="S", estimator="dani")
+        self.bug("0401", points=2)
+        self.forecast("BG0401", points=2, estimator="dani")
         self.actual("BG0401", 300_000, model="model-a")
         seg = retro.estimator_report(self.root)["by_model"]["model-a"]["estimators"]["dani"]
         self.assertEqual({b["direction"] for b in seg["bias"]}, {"not enough units"})
@@ -383,26 +328,30 @@ class TheDeliveredModelReachesTheArtefact(Fixture):
 # ---------------------------------------------------------------------------
 
 class TheCoercionHazardIsAnsweredNotAsserted(Fixture):
-    """BG0136 made Effort COMPULSORY at filing. If sizing is a chore, a compulsory estimate is
-    a CARELESS estimate - and a careless number is worse than none, because it looks like data.
+    """The grooming gate makes a size COMPULSORY at filing. If sizing is a chore, a compulsory
+    estimate is a CARELESS estimate - and a careless number is worse than none, because it looks
+    like data.
 
     This is testable, and the test must be able to come out EITHER WAY. What it may never do is
     claim a finding it cannot support: before/after is itself a cohort split, so a difference
     between the eras is confounded with everything else that changed over the same period.
     """
 
-    def _era(self, uid: str, num: str, era: str, effort: str, tokens: int) -> None:
-        self.bug(num, effort=effort)
-        self.forecast(uid, effort=effort, estimator="dani", effort_gate=era)
+    VOLUNTARY = "voluntary"
+    COMPULSORY = "compulsory"
+
+    def _era(self, uid: str, num: str, era: str, points: int, tokens: int) -> None:
+        self.bug(num, points=points)
+        self.forecast(uid, points=points, estimator="dani", size_gate=era)
         self.actual(uid, tokens, model="model-a")
 
     def test_the_two_eras_are_compared_and_never_pooled(self) -> None:
-        for n, (eff, tok) in enumerate((("S", 50_000), ("M", 120_000), ("L", 300_000),
-                                        ("M", 130_000), ("S", 60_000)), 1):
-            self._era(f"BG050{n}", f"050{n}", sprint.EFFORT_GATE_VOLUNTARY, eff, tok)
-        for n, (eff, tok) in enumerate((("L", 50_000), ("M", 120_000), ("S", 300_000),
-                                        ("M", 130_000), ("S", 60_000)), 1):
-            self._era(f"BG060{n}", f"060{n}", sprint.EFFORT_GATE_COMPULSORY, eff, tok)
+        for n, (pts, tok) in enumerate(((2, 50_000), (5, 120_000), (8, 300_000),
+                                        (5, 130_000), (2, 60_000)), 1):
+            self._era(f"BG050{n}", f"050{n}", self.VOLUNTARY, pts, tok)
+        for n, (pts, tok) in enumerate(((8, 50_000), (5, 120_000), (2, 300_000),
+                                        (5, 130_000), (2, 60_000)), 1):
+            self._era(f"BG060{n}", f"060{n}", self.COMPULSORY, pts, tok)
         coercion = retro.estimator_report(self.root)["coercion"]
         self.assertEqual(coercion["by_era"]["voluntary"]["n"], 5)
         self.assertEqual(coercion["by_era"]["compulsory"]["n"], 5)
@@ -415,38 +364,33 @@ class TheCoercionHazardIsAnsweredNotAsserted(Fixture):
     def test_a_cohort_too_small_to_separate_the_effects_says_so(self) -> None:
         """The required outcome when the data cannot answer. Silence, or a confident r off
         n = 1, would both be worse than the refusal."""
-        self._era("BG0701", "0701", sprint.EFFORT_GATE_VOLUNTARY, "M", 120_000)
-        self._era("BG0702", "0702", sprint.EFFORT_GATE_COMPULSORY, "S", 60_000)
+        self._era("BG0701", "0701", self.VOLUNTARY, 5, 120_000)
+        self._era("BG0702", "0702", self.COMPULSORY, 2, 60_000)
         coercion = retro.estimator_report(self.root)["coercion"]
         self.assertFalse(coercion["answered"])
         self.assertIn("cannot", coercion["answer"].lower())
         self.assertIsNone(coercion["by_era"]["voluntary"]["r"])
 
     def test_an_era_the_record_never_stamped_is_unknown_not_guessed(self) -> None:
-        """The 20 units already measured were recorded before the planner stamped the era.
-        They are an UNKNOWN cohort, and they are not quietly filed on one side of the split."""
-        self.bug("0801", effort="M")
-        self.forecast("BG0801", effort="M", estimator="dani")   # no effort_gate stamp
+        """The units already measured were recorded before the planner stamped the era. They
+        are an UNKNOWN cohort, and they are not quietly filed on one side of the split."""
+        self.bug("0801", points=5)
+        self.forecast("BG0801", points=5, estimator="dani")   # no size_gate stamp
         self.actual("BG0801", 120_000, model="model-a")
         coercion = retro.estimator_report(self.root)["coercion"]
         self.assertEqual(coercion["by_era"]["unknown"]["n"], 1)
         self.assertEqual(coercion["by_era"]["voluntary"]["n"], 0)
         self.assertEqual(coercion["by_era"]["compulsory"]["n"], 0)
 
-    def test_a_project_may_declare_the_boundary_for_evidence_recorded_before_the_stamp(self) -> None:
-        """A backfill, and an auditable one: the project declares the id cutoff at which the
-        gate became compulsory. It is a DECLARATION in the project's own config, never an
-        inference from a date - and a stamped record always beats it."""
-        (self.root / "sdlc-studio" / ".config.yaml").write_text(
-            "estimator:\n  compulsory_after:\n    BG: 800\n", encoding="utf-8")
-        self.assertEqual(sprint.effort_gate_era(self.root, "BG0801", None),
-                         sprint.EFFORT_GATE_COMPULSORY)
-        self.assertEqual(sprint.effort_gate_era(self.root, "BG0799", None),
-                         sprint.EFFORT_GATE_VOLUNTARY)
-        # the stamp on the record WINS over the declaration - it was observed, not declared
-        self.assertEqual(
-            sprint.effort_gate_era(self.root, "BG0801", sprint.EFFORT_GATE_VOLUNTARY),
-            sprint.EFFORT_GATE_VOLUNTARY)
+    def test_the_pre_rename_gate_field_is_still_understood(self) -> None:
+        """The field was `effort_gate` when the size was an Effort. Evidence already on disk
+        carries that name, and a rename that quietly dropped it would delete history."""
+        self.bug("0802", points=5)
+        self.forecast("BG0802", points=5, estimator="dani", effort_gate=self.COMPULSORY)
+        self.actual("BG0802", 120_000, model="model-a")
+        coercion = retro.estimator_report(self.root)["coercion"]
+        self.assertEqual(coercion["by_era"]["compulsory"]["n"], 1)
+        self.assertEqual(coercion["by_era"]["unknown"]["n"], 0)
 
 
 # ---------------------------------------------------------------------------

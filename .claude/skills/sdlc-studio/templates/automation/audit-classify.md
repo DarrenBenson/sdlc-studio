@@ -32,12 +32,12 @@ non-hollow artifact - hollow auto-files become findings themselves):
   "severity": "...",            // bug
   "steps": "...", "fix": "...", // bug
   "priority": "...", "ctype": "Improvement|Feature|Bug", "acs": ["..."],  // cr
-  "affects": "src/one.py, src/two.py", "effort": "S|M|L",  // bug + cr: the grooming
+  "affects": "src/one.py, src/two.py", "points": 3,      // bug + cr: the grooming
   "options": ["..."], "recommendation": "..."                            // rfc
 }
 ```
 
 Then file each with `scripts/file_finding.py file --type <t> --title ... <fields>`
 (triage-then-approve by default; auto-file only when explicitly enabled). A bug or CR
-without `--affects` and `--effort` is refused: you classified it with the evidence open,
+without `--affects` and `--points` is refused: you classified it with the evidence open,
 and a finding nobody can plan is a repair deferred to someone with less context.

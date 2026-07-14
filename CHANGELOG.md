@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Sizing is now Fibonacci story points, validated by blind experiment (RFC0038, CR0265-CR0267).** A
+  blind re-estimation of 21 delivered units - recovered as filed, sized in modified Fibonacci by three
+  independent estimators with no access to outcomes - found points predict cost at **r = +0.68 pooled,
+  +0.78 on units of 8 or below**, POSITIVE within every sprint, where every computed metric had failed
+  (`max_cognitive` scored +0.03) and a naive `files_affected` flipped sign between sprints. Points
+  replace `Effort` S/M/L (which scored +0.35). `Points:` on the scale 1, 2, 3, 5, 8, 13, 20 is demanded
+  by the filer and both `artifact` creators from one shared definition; a value off the scale is
+  REFUSED, because a 7 is exactly the false precision the widening Fibonacci gaps exist to prevent.
+
+- **`sprint plan` refuses a unit above 8 points (CR0266).** A point was a stable unit of cost from 2 to
+  8 (22k-27k tokens each) and broke above it: the 13s came in at 14k per point, over-estimated, and all
+  three blind estimators returned them low-confidence saying "should be split". Above 8 the estimate is
+  not worth having and the unit must be decomposed - a triage decision, not an estimation one. The
+  ceiling is configurable (`sprint.points_split_above`). Closes BG0147: the dead `max_cognitive`
+  tie-break no longer orders the batch.
+
+- **WSJF is Cost of Delay / Points, and runs without seat scores (CR0266).** CoD maps from Priority on
+  the same Fibonacci scale (Critical 13, High 8, Medium 5, Low 3), so a small High can outrank a big
+  Critical under `--order wsjf` - the whole economic point of Weighted Shortest Job First. The default
+  order stays `priority`, so this is opt-in. Seat scores remain an optional CoD override.
+
+- **The token forecast is sum(points) x a MEASURED tokens-per-point rate (CR0266, CR0267).** The rate is
+  derived from the project's own `VELOCITY.md` history (actual tokens over points delivered), segmented
+  per model and refused across them, never a stored constant. It ships with a documented seed (~25,000,
+  from the blind experiment) that the plan labels as a seed and that a project's own evidence replaces
+  once it has five measured sprints. No base term - fitting one does measurably worse. Velocity is
+  recorded in points, and a delivered unit above 8 points is flagged in the retro with its own
+  tokens-per-point, so the decomposition rule is answerable from each sprint's numbers.
+
 - **The evidence records WHO estimated and WHAT delivered, and refuses to average across either
   (CR0263, CR0261).** A forecast now carries the `estimator` (from the artefact's `Estimated-by:`,
   never inferred from whoever filed the ticket) and the `effort_gate` era (`compulsory` / `voluntary`,

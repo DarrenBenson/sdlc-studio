@@ -39,7 +39,7 @@ memory only, never on disk.
 
 Run these as parallel passes; each returns a structured findings list (title,
 file:line evidence, what the code does, why it is a defect or gap, severity,
-suggested remediation, effort S/M/L).
+suggested remediation, size in points on the modified Fibonacci scale).
 
 1. **Architecture** - module boundaries and coupling, data flow and mutable-state
    ownership, error-handling consistency, config and secrets approach, concurrency
@@ -61,8 +61,8 @@ suggested remediation, effort S/M/L).
 - **Bug** = behaviour is wrong, insecure, or failing. **CR** = works as built but
   should change. File with `scripts/file_finding.py file --type bug|cr ...` - never
   hand-allocate an id or edit an `_index.md`. Every bug and CR carries
-  `--affects "<files>"` and `--effort S|M|L`: you have the file:line in front of you now,
-  and a finding without them cannot be planned (the filer refuses it).
+  `--affects "<files>"` and `--points N` (modified Fibonacci): you have the file:line in front
+  of you now, and a finding without them cannot be planned (the filer refuses it).
 - Every Medium-or-higher finding gets its own artefact; Low findings may be
   consolidated into at most two themed CRs.
 

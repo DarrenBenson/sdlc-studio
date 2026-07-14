@@ -235,12 +235,102 @@ _LINE_BREAK_RE = re.compile("[" + "".join(re.escape(c) for c in _LINE_BREAK_NAME
 # one line is the point.
 SINGLE_LINE_FIELDS: tuple[str, ...] = (
     "title", "author", "epic", "persona", "tranche", "priority", "ctype", "severity",
-    "effort", "affects", "provenance", "date", "theme", "note",
+    "points", "affects", "provenance", "date", "theme", "note",
 )
 # List fields whose every item renders as ONE bullet. An `acs` item is the sharpest of them: a
 # break in it injects a sibling `- **Verify:** <command>` line into the AC block, which the
 # verifier reads back and RUNS.
 SINGLE_LINE_LIST_FIELDS: tuple[str, ...] = ("acs", "options", "verify")
+
+
+# -----------------------------------------------------------------------------
+# The size vocabulary: modified Fibonacci story points, and nothing else
+# -----------------------------------------------------------------------------
+#
+# ONE size vocabulary, on ONE scale, read by ONE parser. A blind re-estimation of 21 delivered
+# units - each recovered as filed, its declared size stripped, sized by three independent
+# estimators with no access to the outcome - scored r = +0.68 against measured cost (and +0.78
+# on units of 8 or below), and stayed POSITIVE within every sprint. Every computed metric tried
+# before it failed: the best of them scored +0.03, and the one that looked promising flipped
+# sign between cohorts. A three-level ordinal (S/M/L) managed +0.35 - better than the machine,
+# worse than points, and a second answer to the same question. It is retired.
+#
+# WHY FIBONACCI, AND WHY A VALUE OFF IT IS REFUSED RATHER THAN ROUNDED. The gaps widen as the
+# numbers grow, so the SCALE ITSELF encodes that uncertainty grows with size. That is the whole
+# property, and it is the property a linear scale destroys. It is much harder to argue a unit is
+# a 7 rather than an 8 than it is to choose between a 5 and an 8 - so a 7 is not a finer
+# estimate, it is false precision about something inherently uncertain. Rounding it silently to
+# 8 would hand the author a number they did not choose and record it as though they had; the
+# scale IS the estimate, so the refusal is the point. The estimate is RELATIVE ("is this bigger
+# than that one"), never an absolute prediction of time or tokens.
+POINTS_FIELD = "Points"
+POINTS_SCALE: tuple[int, ...] = (1, 2, 3, 5, 8, 13, 20)
+# Above this, a unit MUST be split. Estimator consistency collapses beyond it - in the blind
+# re-estimation the 13s were systematically OVER-estimated (1.9x cheaper per point than every
+# band below), and all three estimators returned them with low confidence and the words "should
+# be split". A 13 or a 20 is a legal estimate and a TRIAGE failure: it is accepted, and it warns.
+POINTS_SPLIT_ABOVE = 8
+_POINTS_SCALE_TEXT = ", ".join(str(p) for p in POINTS_SCALE)
+
+
+def check_points(value) -> int:
+    """`value` as an int on the modified Fibonacci scale, or ValueError naming the scale.
+
+    The ONE definition of a legal size, called from `check_creator_fields` - so every creation
+    path inherits it and none is the way round another. Refuse, never round: a value quietly
+    rewritten is recorded as an estimate the author never made.
+    """
+    raw = str(value).strip().strip("*`_ ")
+    try:
+        num = int(raw)
+        if str(num) != raw:                       # "5.0", "+5", " 5 " already stripped
+            raise ValueError(raw)
+    except ValueError:
+        num = None
+    if num in POINTS_SCALE:
+        return num
+    raise ValueError(
+        f"Points value {str(value)!r} is not on the modified Fibonacci scale - refused. "
+        f"Nothing was allocated, nothing was written.\n"
+        f"  The scale is: {_POINTS_SCALE_TEXT}. Nothing else - not S/M/L, not `unknown`, not 7.\n"
+        f"  Why: the gaps widen deliberately, because uncertainty grows with size. A 7 is the "
+        f"false precision the Fibonacci scale exists to prevent - it is much harder to argue a "
+        f"unit is a 7 rather than an 8 than to choose between a 5 and an 8. The scale IS the "
+        f"estimate, so a value off it is never rounded for you: you make the call.\n"
+        f"  Points are RELATIVE, not absolute - not 'how long will this take' but 'is this "
+        f"bigger than that one', sized against units you have already delivered.\n"
+        f"  A unit above {POINTS_SPLIT_ABOVE} points must be SPLIT, not estimated harder.")
+
+
+def points_split_warning(points: int) -> str | None:
+    """The warning a legal-but-too-big estimate earns, or None. Not a refusal: the estimate is
+    honest, and the answer to it is decomposition - which is the author's call, not the tool's."""
+    if points <= POINTS_SPLIT_ABOVE:
+        return None
+    return (f"warning: {points} points is above {POINTS_SPLIT_ABOVE} - this unit should be "
+            f"SPLIT. Estimator consistency collapses beyond {POINTS_SPLIT_ABOVE} points (the "
+            f"13s in the blind re-estimation were systematically over-estimated), so a unit "
+            f"this size is a triage failure, not an estimation problem. Written anyway - "
+            f"decomposition is your call, not the tool's.")
+
+
+def read_points(text: str) -> int | None:
+    """The size declared on an artefact, or None when it carries none.
+
+    THE reader - the one every consumer of a size shares. Anchored on `extract_field`, so a
+    bug's `> **Points:** 5` (metadata block), a CR's `**Points:** 5` (body) and an inline
+    `· **Points:** 5` run are the same field, and a `**Points:**` mentioned in prose is not.
+    Tolerates a decorated value (`5 (relative)`); a value the scale does not carry reads as no
+    size at all, exactly as the creators refuse to write one.
+    """
+    raw = extract_field(text, POINTS_FIELD)
+    if not raw or not raw.strip():
+        return None
+    tok = raw.strip().split()[0].strip("*_`:,;.()")
+    try:
+        return check_points(tok)
+    except ValueError:
+        return None
 
 
 def require_single_line(field: str, value: str) -> str:
@@ -276,6 +366,10 @@ def check_creator_fields(fields: dict) -> None:
     writers emit the value verbatim (`f"> **Persona:** {value}"`, `_md_safe(item)`), so a
     payload whose only break is LEADING would pass a stripped check and then be written in full
     - the exact bypass. The value that is checked here must be the value the writer emits.
+
+    The SIZE is checked here for the same reason: it is the one field with a closed vocabulary,
+    and this is the one place both creators already pass through. A scale restated at each
+    creator is a scale the two can disagree about.
     """
     for key in SINGLE_LINE_FIELDS:
         val = fields.get(key)
@@ -286,6 +380,10 @@ def check_creator_fields(fields: dict) -> None:
         if isinstance(items, (list, tuple)):
             for i, item in enumerate(items, 1):
                 require_single_line(f"{key}[{i}]", str(item))
+    if fields.get("points") is not None:
+        warn = points_split_warning(check_points(fields["points"]))
+        if warn:
+            print(warn, file=sys.stderr)
 
 
 def join_row(cells: list[str]) -> str:
@@ -315,10 +413,12 @@ def find_data_header(lines: list[str]) -> tuple[int, list[str]] | None:
 
 def row_from_header(header: list[str], link: str, title: str, status: str, f: dict) -> str:
     """Build an index data row matching the index's own columns - generic across every type,
-    so both create paths emit identical rows. `f` supplies priority/type/severity/
-    author/epic/date; unknown columns get `--`."""
+    so both create paths emit identical rows. `f` supplies priority/type/severity/points/
+    author/epic/date; unknown columns get `--`. Every cell is rendered as text: a numeric field
+    (a size) reaches the row as the int the caller supplied, and a cell is markdown."""
     field_for = {"priority": ("priority", "Medium"), "type": ("ctype", "Feature"),
-                 "epic": ("epic", "--"), "severity": ("severity", "--"), "author": ("author", "--")}
+                 "epic": ("epic", "--"), "severity": ("severity", "--"),
+                 "author": ("author", "--"), "points": ("points", "--")}
     out: list[str] = []
     for h in header:
         hl = h.strip().lower()
@@ -332,7 +432,7 @@ def row_from_header(header: list[str], link: str, title: str, status: str, f: di
             out.append(f.get("date", "--"))
         elif hl in field_for:
             key, default = field_for[hl]
-            out.append(f.get(key, default))
+            out.append(str(f.get(key, default)))
         else:
             out.append("--")
     return join_row(out)

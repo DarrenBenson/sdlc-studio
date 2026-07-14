@@ -57,7 +57,7 @@ def _bug(severity: str) -> dict:
     # Groomed: both creators refuse a finding `sprint plan` could not plan (BG0136), so even a
     # Low nit names the files it touches and its size before it can fold into a themed CR.
     return {"severity": severity, "summary": "s", "steps": "r", "fix": "f",
-            "affects": "src/thing.py", "effort": "S"}
+            "affects": "src/thing.py", "points": 3}
 
 
 class ConsolidationTests(unittest.TestCase):

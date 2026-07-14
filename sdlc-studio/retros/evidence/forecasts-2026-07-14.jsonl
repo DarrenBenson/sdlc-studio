@@ -6,3 +6,6 @@
 {"id": "CR0256", "tokens": 120000, "seed_source": "rate", "complexity": 14, "effort": "M", "constants": {"BASE_TOKEN_BUDGET": 120000, "TOKENS_PER_COGNITIVE": 0}, "planned_at": "2026-07-14T20:02:38Z"}
 {"id": "CR0263", "tokens": 120000, "seed_source": "rate", "complexity": 45, "effort": "M", "constants": {"BASE_TOKEN_BUDGET": 120000, "TOKENS_PER_COGNITIVE": 0}, "planned_at": "2026-07-14T20:02:38Z"}
 {"id": "CR0261", "tokens": 120000, "seed_source": "rate", "complexity": 45, "effort": "S", "constants": {"BASE_TOKEN_BUDGET": 120000, "TOKENS_PER_COGNITIVE": 0}, "planned_at": "2026-07-14T20:02:38Z"}
+{"id": "CR0265", "tokens": 120000, "seed_source": "rate", "complexity": 43, "effort": "M", "estimator": "unattributed", "effort_gate": "compulsory", "constants": {"BASE_TOKEN_BUDGET": 120000, "TOKENS_PER_COGNITIVE": 0}, "planned_at": "2026-07-14T21:54:02Z"}
+{"id": "CR0266", "tokens": 120000, "seed_source": "rate", "complexity": 24, "effort": "L", "estimator": "unattributed", "effort_gate": "compulsory", "constants": {"BASE_TOKEN_BUDGET": 120000, "TOKENS_PER_COGNITIVE": 0}, "planned_at": "2026-07-14T21:54:02Z"}
+{"id": "CR0267", "tokens": 120000, "seed_source": "rate", "complexity": 34, "effort": "M", "estimator": "unattributed", "effort_gate": "compulsory", "constants": {"BASE_TOKEN_BUDGET": 120000, "TOKENS_PER_COGNITIVE": 0}, "planned_at": "2026-07-14T21:54:02Z"}

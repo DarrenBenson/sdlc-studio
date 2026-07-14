@@ -61,7 +61,7 @@ What would you like to do?
    For each change item:
    - Item title and description
    - Per-item priority (optional, defaults to CR priority)
-   - Per-item effort estimate (optional, in story points)
+   - Per-item size estimate (optional, in story points on the modified Fibonacci scale)
    - Affected modules or components
 
    Multi-item CRs are common. Each item becomes a `### Item N:` sub-section.
@@ -329,7 +329,7 @@ and conflict policy.
      correct create workflow with template fields under review
    - The script never invents template field values
    - **Groom it as you ingest it:** the create carries `--affects` and
-     `--effort`, like any other CR - the agent reading the issue has the
+     `--points`, like any other CR - the agent reading the issue has the
      repo open and can name the files; nobody can at plan time
    - **Stamp the origin mechanically:** a from-issue create runs
      `artifact.py new --type cr ... --provenance external` (never a

@@ -394,12 +394,17 @@ class AccuracyBase(unittest.TestCase):
         path = self.root / "sdlc-studio" / ".local" / "telemetry.jsonl"
         path.write_text("".join(json.dumps(r) + "\n" for r in records), encoding="utf-8")
 
-    def forecast(self, *unit_ids: str, tokens: int | None = None) -> None:
+    def forecast(self, *unit_ids: str, tokens: int | None = None,
+                 points: dict[str, int] | None = None) -> None:
         """The plan-time forecast, as `sprint plan` records it. A unit without one is
-        UNFORECAST and has no prediction to judge - which is a case in its own right."""
+        UNFORECAST and has no prediction to judge - which is a case in its own right.
+
+        `points` is the SIZE the plan recorded. A unit with no recorded points is unsized, and
+        nothing invents one for it from the artefact as it stands today."""
         import telemetry as tel
         tel.record_forecasts(str(self.root), [
             {"id": uid, "tokens": tokens if tokens is not None else self.EST,
+             "points": (points or {}).get(uid),
              "seed": 0, "seed_source": "none", "constants": dict(self.CONSTANTS),
              "planned_at": "2026-07-14T09:00:00+00:00"} for uid in unit_ids])
 
@@ -607,6 +612,132 @@ class TheVelocityHistoryAccumulates(AccuracyBase):
 
 
 # ---------------------------------------------------------------------------
+# VELOCITY IS MEASURED IN POINTS, and the rate is DERIVED from that history.
+# ---------------------------------------------------------------------------
+# The load-bearing pair. A rate that is written down as a constant decays into an article of
+# faith the moment the project changes; this one is a QUOTIENT of two things the history
+# records, so it is re-measured every sprint and cannot drift away from the evidence.
+
+class VelocityIsMeasuredInPoints(AccuracyBase):
+    """Points delivered per sprint - the number an agile team actually plans with - and the
+    tokens-per-point rate read back OUT of that history, never a constant."""
+
+    def test_points_delivered_are_recorded_and_the_rate_is_derived_from_them(self) -> None:
+        self.forecast("BG0001", "CR0001", "CR0002", points={"BG0001": 2, "CR0001": 3,
+                                                            "CR0002": 5})
+        self.telemetry(
+            {"id": "BG0001", "type": "bug", "tokens": 50_000, "model": "m1"},
+            {"id": "CR0001", "type": "cr", "tokens": 75_000, "model": "m1"},
+            {"id": "CR0002", "type": "cr", "tokens": 125_000, "model": "m1"},
+        )
+        res = self.accuracy()
+        self.assertEqual(res["batch"]["points"], 10)
+        retro.record_velocity(str(self.root), res)
+
+        row = retro.velocity_history(str(self.root))[0]
+        self.assertEqual(row["points"], 10, "the sprint's velocity, in points")
+        self.assertEqual(row["actual_tokens"], 250_000)
+
+        # The rate is a quotient of the history, and it matches the measured actuals exactly.
+        rate = retro.measured_rate(str(self.root))
+        self.assertEqual(rate["by_model"]["m1"]["tokens_per_point"], 25_000)
+        self.assertEqual(rate["by_model"]["m1"]["points"], 10)
+        self.assertEqual(rate["tokens_per_point"], 25_000)
+        self.assertEqual(res["batch"]["oversized"], [],
+                         "every unit was at or below the threshold - nothing to flag")
+
+    def test_a_history_with_no_points_yields_no_rate_and_invents_nothing(self) -> None:
+        """The whole guard against a hardcoded constant: with nothing measured there is no
+        rate, and the report says so rather than quoting a number from somewhere else."""
+        self.forecast("BG0001")
+        self.telemetry({"id": "BG0001", "type": "bug", "tokens": 50_000, "model": "m1"})
+        retro.record_velocity(str(self.root), self.accuracy())
+        rate = retro.measured_rate(str(self.root))
+        self.assertIsNone(rate["tokens_per_point"])
+        self.assertEqual(rate["by_model"], {})
+
+    def test_the_rate_is_never_pooled_across_models(self) -> None:
+        self.forecast("BG0001", "CR0001", points={"BG0001": 2, "CR0001": 2})
+        self.telemetry(
+            {"id": "BG0001", "type": "bug", "tokens": 40_000, "model": "small"},
+            {"id": "CR0001", "type": "cr", "tokens": 40_000, "model": "large"},
+        )
+        retro.record_velocity(str(self.root), self.accuracy())
+        rate = retro.measured_rate(str(self.root))
+        self.assertIsNone(rate["tokens_per_point"],
+                          "a rate pooled across two models describes neither of them")
+        self.assertTrue(rate["refused"])
+
+    def test_an_old_row_survives_the_points_columns(self) -> None:
+        """LL0028: the migration is ATTACKED, not re-read. A VELOCITY.md written before points
+        existed must keep every number it recorded when a new row is appended beside it."""
+        legacy = (
+            "# Velocity history\n\n"
+            "| Retro | Date | Units | Measured | Forecast | Estimate (tokens, plan-time) | "
+            "Actual (tokens) | Ratio (est/actual) | Wall (s) | Constants | Sample | Model |\n"
+            "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
+            "| RETRO0024 | 2026-07-14 | 6 | 6 | 6 | 1,285,000 | 384,278 | 3.34x | 1,848 | "
+            "base=50000 tpc=5000 | in-sample | claude-opus-4-8 |\n")
+        retro.velocity_path(str(self.root)).write_text(legacy, encoding="utf-8")
+
+        self.forecast("BG0001", points={"BG0001": 2})
+        self.telemetry({"id": "BG0001", "type": "bug", "tokens": 50_000, "model": "m1"})
+        retro.record_velocity(str(self.root), self.accuracy())
+
+        rows = {r["id"]: r for r in retro.velocity_history(str(self.root))}
+        old = rows["RETRO0024"]
+        self.assertEqual((old["units"], old["measured"], old["forecast"]), (6, 6, 6))
+        self.assertEqual((old["estimate"], old["actual_tokens"]), (1_285_000, 384_278))
+        self.assertEqual(old["ratio"], 3.34)
+        self.assertEqual(old["wall_time_s"], 1848)
+        self.assertEqual(old["constants"],
+                         {"BASE_TOKEN_BUDGET": 50_000, "TOKENS_PER_COGNITIVE": 5_000})
+        self.assertEqual(old["model"], "claude-opus-4-8")
+        self.assertIsNone(old["points"], "a sprint that recorded no points reports none")
+        self.assertEqual(rows["RETRO9000"]["points"], 2)
+
+
+class AUnitAboveTheSplitThresholdIsFlagged(AccuracyBase):
+    """A 13 is a legal estimate and a TRIAGE failure. The retro says so, with the evidence:
+    its tokens-per-point against the rest of the batch. That is what makes the decomposition
+    rule answerable each sprint instead of an article of faith."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.forecast("BG0001", "CR0001", "CR0002",
+                      points={"BG0001": 3, "CR0001": 5, "CR0002": 13})
+        self.telemetry(
+            {"id": "BG0001", "type": "bug", "tokens": 75_000, "model": "m1"},
+            {"id": "CR0001", "type": "cr", "tokens": 125_000, "model": "m1"},
+            {"id": "CR0002", "type": "cr", "tokens": 130_000, "model": "m1"},
+        )
+
+    def test_the_oversized_unit_is_named_with_its_rate(self) -> None:
+        b = self.accuracy()["batch"]
+        over = b["oversized"]
+        self.assertEqual([u["id"] for u in over], ["CR0002"])
+        self.assertEqual(over[0]["points"], 13)
+        self.assertEqual(over[0]["tokens_per_point"], 10_000)
+        # And the rate of everything else, to price the miss against.
+        self.assertEqual(b["tokens_per_point_within"], 25_000)
+
+    def test_the_written_retro_says_it_should_have_been_split(self) -> None:
+        block = retro.accuracy_block(self.accuracy())
+        self.assertIn("CR0002", block)
+        self.assertIn("should have been split", block.lower())
+        self.assertIn("10,000", block, "its tokens-per-point is stated, not merely asserted")
+        self.assertIn("25,000", block, "against the rate of the units at or below the threshold")
+
+    def test_the_oversized_unit_still_counts_toward_the_velocity(self) -> None:
+        """It is flagged, not disqualified. The team delivered 21 points; the sprint's rate is
+        dragged by the 13, and the row says which units dragged it."""
+        res = self.accuracy()
+        self.assertEqual(res["batch"]["points"], 21)
+        retro.record_velocity(str(self.root), res)
+        self.assertEqual(retro.velocity_history(str(self.root))[0]["oversized"], 1)
+
+
+# ---------------------------------------------------------------------------
 # BG0133: the estimate is what was PREDICTED, never what is now computed.
 # ---------------------------------------------------------------------------
 
@@ -629,9 +760,7 @@ PLANNED_RETRO = """# RETRO-9100: a planned sprint
 | nothing to raise | declined: clean sprint |
 """
 
-# A source file with enough branching that the blast-radius complexity is non-zero, so
-# TOKENS_PER_COGNITIVE actually multiplies something. A complexity-0 fixture would let a
-# change to the slope pass unnoticed.
+# A source file the groomed CR points its Affects at, so the batch has something to touch.
 COMPLEX_SRC = """def f(a, b, c):
     for i in range(a):
         if i > b:
@@ -653,7 +782,7 @@ GROOMED_CR = """# CR-{num}: a unit
 > **Status:** Proposed
 > **Priority:** Medium
 > **Affects:** src/{name}.py
-> **Effort:** M
+> **Points:** 3
 
 ## Summary
 A unit of work.
@@ -716,10 +845,10 @@ class TheEstimateIsTheOneThatWasPredicted(unittest.TestCase):
         self.assertEqual(before["n_measured"], 2)
         self.assertGreater(before["batch"]["estimate"], 0)
 
-        # Now RECALIBRATE. Every past sprint's estimate must be unmoved: it is a record of
-        # what was predicted, not a function of today's code.
-        with mock.patch.object(sprint, "TOKENS_PER_COGNITIVE", 6_000), \
-                mock.patch.object(sprint, "BASE_TOKEN_BUDGET", 200_000):
+        # Now RECALIBRATE - move the tokens-per-point rate the estimator forecasts with. Every
+        # past sprint's estimate must be unmoved: it is a record of what was predicted, not a
+        # function of today's rate.
+        with mock.patch.object(sprint, "POINTS_RATE_SEED", 60_000):
             after = self.accuracy()
 
         self.assertEqual(after["batch"]["estimate"], before["batch"]["estimate"],
@@ -771,8 +900,8 @@ class TheEstimateIsTheOneThatWasPredicted(unittest.TestCase):
         self.measure()
         first = self.accuracy()["batch"]["estimate"]
         self.assertGreater(first, 0)
-        with mock.patch.object(sprint, "TOKENS_PER_COGNITIVE", 6_000):
-            self.plan()  # a second plan, with a different estimator, after the work is done
+        with mock.patch.object(sprint, "POINTS_RATE_SEED", 60_000):
+            self.plan()  # a second plan, with a different rate, after the work is done
         self.assertEqual(self.accuracy()["batch"]["estimate"], first,
                          "a later plan overwrote what was predicted before the work started")
 
@@ -866,12 +995,13 @@ class TrainingErrorIsNotEvidence(unittest.TestCase):
 
     def velocity(self, *rows: str) -> None:
         import sprint
-        c = sprint.forecast_constants()
+        # Rendered through the PUBLIC cell writer, not a hand-built string: the estimator's
+        # shape has changed twice, and a test that spells its keys out re-breaks every time.
+        c = sprint.forecast_constants(self.root)
         head = ("| Retro | Date | Units | Measured | Forecast | Estimate (tokens, plan-time) | "
                 "Actual (tokens) | Ratio (est/actual) | Wall (s) | Constants | Sample |\n"
                 "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
-        body = "".join(r.format(cur=f"base={c['BASE_TOKEN_BUDGET']} "
-                                    f"tpc={c['TOKENS_PER_COGNITIVE']}") for r in rows)
+        body = "".join(r.format(cur=retro.constants_cell(c)) for r in rows)
         (self.root / "sdlc-studio" / "retros" / "VELOCITY.md").write_text(
             head + body, encoding="utf-8")
 

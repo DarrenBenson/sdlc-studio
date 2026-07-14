@@ -348,12 +348,30 @@ class ForecastLogTests(unittest.TestCase):
 
     def test_the_cli_records_a_forecast(self) -> None:
         with tempfile.TemporaryDirectory() as d:
-            rc = tel.main(["forecast", "--id", "CR0009", "--tokens", "67400", "--seed", "29",
-                           "--base", "50000", "--per-cognitive", "600", "--root", d])
+            rc = tel.main(["forecast", "--id", "CR0009", "--tokens", "75000", "--points", "3",
+                           "--constant", "TOKENS_PER_POINT=25000", "--root", d])
             self.assertEqual(rc, 0)
             got = tel.forecasts(d)["CR0009"]
-            self.assertEqual(got["tokens"], 67_400)
-            self.assertEqual(got["constants"]["TOKENS_PER_COGNITIVE"], 600)
+            self.assertEqual(got["tokens"], 75_000)
+            self.assertEqual(got["points"], 3, "the SIZE is on the record, not just the tokens")
+            self.assertEqual(got["constants"]["TOKENS_PER_POINT"], 25_000)
+
+    def test_the_estimator_is_recorded_whatever_shape_it_has(self) -> None:
+        """The estimator has already changed twice. A recorder that only knows today's field
+        names cannot record yesterday's forecast, and the history is what falsifies the model."""
+        with tempfile.TemporaryDirectory() as d:
+            tel.main(["forecast", "--id", "CR0010", "--tokens", "50000",
+                      "--constant", "BASE_TOKEN_BUDGET=50000",
+                      "--constant", "TOKENS_PER_COGNITIVE=600", "--root", d])
+            self.assertEqual(tel.forecasts(d)["CR0010"]["constants"],
+                             {"BASE_TOKEN_BUDGET": 50_000, "TOKENS_PER_COGNITIVE": 600})
+
+    def test_a_size_off_the_fibonacci_scale_is_refused_not_rounded(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(ValueError):
+                tel.main(["forecast", "--id", "CR0011", "--tokens", "50000", "--points", "7",
+                          "--constant", "TOKENS_PER_POINT=25000", "--root", d])
+            self.assertEqual(tel.forecasts(d), {}, "nothing was written")
 
 
 class MigrationLosesNothing(unittest.TestCase):

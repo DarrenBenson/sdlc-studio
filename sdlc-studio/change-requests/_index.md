@@ -6,15 +6,15 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 4 |
+| Proposed | 8 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 254 |
+| Complete | 257 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 6 |
 | Blocked | 0 |
-| **Total** | **264** |
+| **Total** | **271** |
 
 ## All Changes
 
@@ -86,6 +86,13 @@
 | [CR-0262](CR0262-the-forecast-seed-is-inert-max-cognitive-predicts.md) | The forecast seed is inert: max_cognitive predicts neither cost nor work (r = 0.00). Change the axis, not the coefficient | Complete | P1 | Improvement | 2026-07-14 | -- |
 | [CR-0263](CR0263-measure-the-estimator-per-estimator-and-give-unknown.md) | Measure the estimator, per estimator - and give "unknown" a first-class value | Complete | P2 | Feature | 2026-07-14 | -- |
 | [CR-0264](CR0264-the-filer-has-no-duplicate-detection-three-overlapping.md) | The filer has no duplicate detection: three overlapping pairs accumulated in one backlog of eleven | Proposed | P2 | Feature | 2026-07-14 | -- |
+| [CR-0265](CR0265-rfc0038-u1-points-modified-fibonacci-become-the-one.md) | RFC0038 U1: Points (modified Fibonacci) become the one size vocabulary, replacing Effort S/M/L | Complete | P1 | Improvement | 2026-07-14 | -- |
+| [CR-0266](CR0266-rfc0038-u2-sprint-py-speaks-points-the-gate.md) | RFC0038 U2: sprint.py speaks points - the gate refuses above 8, WSJF is CoD/points, and the dead machinery is deleted | Complete | P1 | Improvement | 2026-07-14 | -- |
+| [CR-0267](CR0267-rfc0038-u3-velocity-is-measured-in-points-and.md) | RFC0038 U3: velocity is measured in points, and the docs stop describing a model that no longer exists | Complete | P2 | Improvement | 2026-07-14 | -- |
+| [CR-0268](CR0268-rfc0038-u4-an-epic-carries-a-t-shirt.md) | RFC0038 U4: an epic carries a T-shirt size, not story points - and its point total is DERIVED, not estimated | Proposed | P2 | Improvement | 2026-07-14 | -- |
+| [CR-0269](CR0269-rfc0038-u5-size-by-what-a-thing-is.md) | RFC0038 U5: size by what a thing IS - T-shirt on containers, points on delivery units, and a CR must decompose before it can be planned | Proposed | P1 | Improvement | 2026-07-14 | -- |
+| [CR-0270](CR0270-rfc0038-u7-stamp-project-and-points-on-every.md) | RFC0038 U7: stamp project and points on every evidence record, so cross-project data is collatable and never blindly pooled | Proposed | P1 | Improvement | 2026-07-14 | -- |
+| [CR-0271](CR0271-rfc0038-u6-two-backlogs-rfcs-and-crs-are.md) | RFC0038 U6: two backlogs - RFCs and CRs are requests, gated so they cannot reach Done without becoming work | Proposed | P1 | Improvement | 2026-07-14 | -- |
 
 ## Archived Releases
 

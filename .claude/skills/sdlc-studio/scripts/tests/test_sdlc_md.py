@@ -703,7 +703,7 @@ class SingleLineRefusalTests(unittest.TestCase):
 
     def test_check_creator_fields_refuses_every_single_line_field(self):
         for field in ("title", "author", "epic", "persona", "tranche", "priority", "ctype",
-                      "severity", "effort", "provenance", "date", "theme"):
+                      "severity", "points", "provenance", "date", "theme"):
             with self.subTest(field=field):
                 with self.assertRaises(ValueError) as cm:
                     sdlc_md.check_creator_fields({field: "x\n> **Status:** Fixed"})

@@ -37,10 +37,10 @@ every artefact. The same resolved authorship names the artefact's opening Revisi
 row and its index Author column - the name alone there, since the typed triple is
 `Raised-by`'s job. Content the validator demands of a filled artefact can be supplied at
 creation and the artefact is born clean: `--persona` and `--ac` (repeatable) for a story,
-`--summary --steps --fix` for a bug, `--ac --impact --effort S|M|L` for a CR,
+`--summary --steps --fix` for a bug, `--ac --impact --points` for a CR,
 `--summary --option --recommendation` for an RFC. A bug and a CR also carry their
-GROOMING - `--affects "a.py, b.py"` (the files the unit will touch) and `--effort S|M|L`
-(the job size of the work, not its urgency) - and both creators REFUSE one without them,
+GROOMING - `--affects "a.py, b.py"` (the files the unit will touch) and `--points N`
+(the job size on the modified Fibonacci scale, not its urgency) - and both creators REFUSE one without them,
 because `sprint plan` refuses to plan such a unit: it cannot be sized, and two units
 colliding on one file are invisible to the planner. That demand is not a second copy of the
 rule: the body about to be written is handed to the planner's own breakdown predicate, so a
@@ -78,7 +78,7 @@ placeholder fails the validator and `manual` asserts a proof nobody ran. Conform
 
 A field written into a metadata line, an index cell, or a one-line bullet must be a single
 line: `--title`, `--author`, `--epic`, `--persona`, `--priority`, `--ctype`, `--severity`,
-`--effort`, `--affects`, `--provenance`, each `--ac`, each `--option`, each `--verify`, and the `revision`
+`--points`, `--affects`, `--provenance`, each `--ac`, each `--option`, each `--verify`, and the `revision`
 verb's `--note`. A line break in one of them escapes the construct it is written into - the
 value's tail lands as a metadata line, a table row, or an AC directive of its own, and the
 tool signs it. So a title could open a second `> **Status:**` line above the real one (the
@@ -222,8 +222,8 @@ and recomputes the index counts (reusing reconcile's pass).
 
 Required fields per type are the ones the validator demands of a filed artefact, plus the
 grooming the PLANNER demands of a unit: a bug carries its evidence
-(`--severity --summary --steps --fix`) and its grooming (`--affects --effort S|M|L`), a CR
-its criteria, impact and effort (`--priority --ctype --summary --ac --impact --effort S|M|L`)
+(`--severity --summary --steps --fix`) and its grooming (`--affects --points`), a CR
+its criteria, impact and size (`--priority --ctype --summary --ac --impact --points`)
 and its `--affects`, an RFC its options (`--summary --option`) and no grooming at all (it is
 not a sprint unit). The filer refuses an ungroomed bug or CR for the same reason it refuses a
 hollow one: `sprint plan` would refuse to plan it, and an artefact one end of the pipeline

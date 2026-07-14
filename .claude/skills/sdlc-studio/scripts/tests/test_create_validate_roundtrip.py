@@ -56,7 +56,7 @@ CREATOR_RULES = {"id-format", "no-title", "no-status", "status-vocab", "tranche-
                  "authorship-structured", "authorship-type", "authorship-unresolved"}
 
 # What a real caller supplies per type - the content the validator demands under v3
-# (bug evidence, CR impact + effort), the AC a story is specified by, and the prose the
+# (bug evidence, CR impact + size), the AC a story is specified by, and the prose the
 # caller already holds. Every value is distinctive, so the test can prove it reached the file.
 CONTENT: dict[str, dict] = {
     "epic": {"summary": "everything search-shaped",
@@ -73,12 +73,12 @@ CONTENT: dict[str, dict] = {
     # minting unplannable work. Both creation paths demand them (BG0136).
     "bug": {"severity": "Medium", "summary": "the id parser drops a trailing dash",
             "steps": "run the parser over a dash-suffixed id", "fix": "strip the trailing dash",
-            "affects": "src/id_parser.py, src/ids.py", "effort": "S"},
+            "affects": "src/id_parser.py, src/ids.py", "points": 3},
     "cr": {"priority": "Medium", "ctype": "Improvement",
-           "summary": "carry the effort estimate in the skeleton",
+           "summary": "carry the size estimate in the skeleton",
            "acs": ["the skeleton carries an impact statement"],
            "impact": "every CR filed today fails its own validator on first check",
-           "effort": "S", "affects": "src/skeleton.py"},
+           "points": 3, "affects": "src/skeleton.py"},
     "rfc": {"summary": "how ids should be minted",
             "options": ["A - stay sequential", "B - mint a ULID"],
             "recommendation": "B, once the aliases are in place"},
@@ -195,9 +195,9 @@ class ContentRoundTripTests(unittest.TestCase):
         for key in LIST_KEYS:
             for item in fields.get(key) or []:
                 self.assertIn(item, text, f"{where}: --{key} item {item!r} never reached the file")
-        if fields.get("effort"):
-            self.assertIn(f"**Effort:** {fields['effort']}", text,
-                          f"{where}: --effort never reached the file")
+        if fields.get("points"):
+            self.assertEqual(sdlc_md.read_points(text), fields["points"],
+                             f"{where}: --points never reached the file")
         if fields.get("affects"):
             # Not just present as prose: the planner's own parser must READ it back as the
             # files it declares, or the unit is ungroomed however good the line looks.
@@ -233,7 +233,7 @@ class ContentRoundTripTests(unittest.TestCase):
 # A scaffold defers the PROSE (summary, steps, fix) to whoever fills it in; it does not get to
 # defer the two fields that decide whether the unit can be planned at all - the author knows
 # which files they are about to touch, and nobody knows it better at plan time.
-GROOM = {"affects": "src/thing.py", "effort": "S"}
+GROOM = {"affects": "src/thing.py", "points": 3}
 
 
 class ScaffoldRoundTripTests(unittest.TestCase):

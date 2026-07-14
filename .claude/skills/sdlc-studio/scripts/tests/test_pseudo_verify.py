@@ -44,7 +44,7 @@ HONEST = ("sprint.py reads the CR Effort field and sizes the unit by it, rather 
           "back to the flat default")
 
 CR_FIELDS = {"priority": "P3", "ctype": "Improvement", "summary": "s",
-             "impact": "every sprint plan", "effort": "M", "affects": "scripts/sprint.py",
+             "impact": "every sprint plan", "points": 5, "affects": "scripts/sprint.py",
              "date": "2026-07-14"}
 
 
@@ -201,7 +201,7 @@ class ValidatorWarningTests(unittest.TestCase):
         p.write_text(
             "# CR-0001: x\n\n> **Status:** Proposed\n> **Priority:** P3\n\n## Summary\n\n"
             "The old AC said `Verify: rg -qi effort sprint.py`, which passes on prose.\n\n"
-            "## Impact\n\nevery sprint plan.\n\n**Effort:** M\n\n"
+            "## Impact\n\nevery sprint plan.\n\n> **Points:** 3\n\n"
             f"## Acceptance Criteria\n\n- [ ] {ac}\n\n## Revision History\n\n"
             "| Date | Author | Change |\n| --- | --- | --- |\n| 2026-07-14 | a | Raised |\n",
             encoding="utf-8")

@@ -176,6 +176,12 @@ def _story_acs(f: dict) -> str:
     return "".join(out)
 
 
+# The unfilled size slot, in the scale's own words - so a scaffold the caller never sized names
+# the vocabulary rather than an empty line. A bug or a CR never reaches it (the grooming gate
+# refuses an unsized one before any render); it is the honest placeholder for every other path.
+_POINTS_SLOT = "{{" + "|".join(str(p) for p in sdlc_md.POINTS_SCALE) + "}}"
+
+
 def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
     st = f.get("_status") or SPEC[type_]["status"]
     # Provenance stamp - marks this artifact as tool-created (deterministic path). Raised-by is
@@ -221,7 +227,7 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
                 f"> **Type:** {f.get('ctype', 'Feature')}\n\n"
                 "## Summary\n\n" + _text(f, "summary", "{{what changes and why}}") +
                 "\n\n## Impact\n\n" + _text(f, "impact", "{{who this affects and what breaks}}") +
-                f"\n\n**Effort:** {f.get('effort') or '{{S|M|L}}'}\n\n"
+                f"\n\n**Points:** {f.get('points') or _POINTS_SLOT}\n\n"
                 "## Acceptance Criteria\n\n" + ac_body + rev)
     if type_ == "rfc":
         options = _list(f, "options")
@@ -233,11 +239,10 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
                 "\n\n## Open Decisions\n\n"
                 "| # | Decision | Status |\n| --- | --- | --- |\n| D1 | {{decision}} | Open |\n" + rev)
     if type_ == "bug":
-        # Effort is the job SIZE of the fix; Severity is its urgency. Two axes, and the planner
-        # sizes on the first: a bug created without one is a unit `sprint plan` refuses. `--effort`
-        # was accepted here and silently dropped - the CR body wrote it, the bug body never did.
-        effort = f"> **Effort:** {f['effort']}\n" if str(f.get("effort") or "").strip() else ""
-        return (head + f"> **Severity:** {f.get('severity', 'Medium')}\n" + effort + "\n"
+        # Points are the job SIZE of the fix; Severity is its urgency. Two axes, and the planner
+        # sizes on the first: a bug created without one is a unit `sprint plan` refuses.
+        points = f"> **Points:** {f['points']}\n" if str(f.get("points") or "").strip() else ""
+        return (head + f"> **Severity:** {f.get('severity', 'Medium')}\n" + points + "\n"
                 "## Summary\n\n" + _text(f, "summary", "{{symptom}}") +
                 "\n\n## Steps to Reproduce\n\n" + _text(f, "steps", "{{steps}}") +
                 "\n\n## Proposed Fix\n\n" + _text(f, "fix", "{{fix}}") + "\n" + rev)
@@ -277,7 +282,7 @@ def _fill_acs(body: str, type_: str, f: dict) -> str:
 
 
 def _fill_impact(body: str, type_: str, f: dict) -> str:
-    """Write a CR's impact statement and effort estimate directly under its Impact heading.
+    """Write a CR's impact statement and size estimate directly under its Impact heading.
     The rich template heads straight into subsections, leaving the heading itself bodiless -
     which reads as no impact statement at all."""
     if type_ != "cr":
@@ -285,8 +290,8 @@ def _fill_impact(body: str, type_: str, f: dict) -> str:
     block = ""
     if str(f.get("impact") or "").strip():
         block += f"\n\n{file_finding._prose_safe(f['impact'])}"
-    if str(f.get("effort") or "").strip():
-        block += f"\n\n**Effort:** {f['effort']}"
+    if str(f.get("points") or "").strip():
+        block += f"\n\n**Points:** {f['points']}"
     m = _IMPACT_HEAD_RE.search(body)
     if not block or not m:
         return body
@@ -906,7 +911,7 @@ def cmd_new(args: argparse.Namespace) -> int:
                            "severity": args.severity, "author": args.author,
                            "template": args.template, "persona": args.persona,
                            "summary": args.summary, "steps": args.steps, "fix": args.fix,
-                           "impact": args.impact, "effort": args.effort,
+                           "impact": args.impact, "points": args.points,
                            "affects": args.affects,
                            "acs": args.ac, "verify": args.verify, "target": args.target,
                            "options": args.option,
@@ -1024,9 +1029,15 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--steps", help="bug: steps to reproduce (the evidence a bug must carry)")
     n.add_argument("--fix", help="bug: proposed fix")
     n.add_argument("--impact", help="cr: who this affects and what breaks")
-    n.add_argument("--effort", choices=("S", "M", "L"),
-                   help="the job SIZE of the work (not its urgency). Required for a bug and a "
-                        "cr: `sprint plan` refuses to plan a unit nobody sized")
+    # No argparse `choices`: a bare "invalid choice" teaches nothing, and the reason the scale
+    # has no 7 is the whole lesson. `sdlc_md.check_points` - shared with the finding filer - is
+    # what refuses it, with the scale in the message.
+    n.add_argument("--points",
+                   help="the job SIZE of the work on the modified Fibonacci scale "
+                        f"({', '.join(str(p) for p in sdlc_md.POINTS_SCALE)}) - RELATIVE to "
+                        "units already delivered, not its urgency and not a time prediction. "
+                        "Required for a bug and a cr: `sprint plan` refuses to plan a unit "
+                        "nobody sized. A value off the scale is refused, never rounded")
     n.add_argument("--affects",
                    help="comma-separated files this unit will touch, written as the `Affects` "
                         "metadata line the planner reads. Required for a bug and a cr: "

@@ -385,7 +385,7 @@ class AdoptForwardOnlyTests(unittest.TestCase):
             artifact = _load("artifact")
             res = artifact.new(root, "bug", "a fresh v3 bug",
                                {"severity": "Medium", "priority": "Medium",
-                                "affects": "src/thing.py", "effort": "S"})
+                                "affects": "src/thing.py", "points": 3})
             self.assertRegex(res["id"], r"^BG-[0-9A-Z]{8,}")   # new era id
             drift = (reconcile.detect_type("story", root)["drift"]
                      + reconcile.detect_type("epic", root)["drift"])

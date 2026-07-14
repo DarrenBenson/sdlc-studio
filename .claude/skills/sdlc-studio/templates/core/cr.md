@@ -10,7 +10,7 @@ Related: help/cr.md, reference-cr.md
 > **Priority:** {{priority}}
 > **Type:** {{type}}
 > **Requester:** {{requester}}
-> **Estimated-by:** {{who made the Effort call - so the report can tell you your own hit rate}}
+> **Estimated-by:** {{who made the size call - so the report can tell you your own hit rate}}
 > **Delivered-by:** {{the model that delivered it - written at close, not at filing}}
 > **Date:** {{date}}
 > **Affects:** {{affects}}
@@ -18,10 +18,11 @@ Related: help/cr.md, reference-cr.md
 > **GitHub Issue:** {{github_issue}}
 
 <!--
-The CR's own `**Effort:**` (S, M, L, or `unknown`) sits under Impact Assessment below. `unknown`
-is a real answer: it satisfies the grooming gate, so nobody has to invent a size to get the CR
-planned, and it is excluded from every accuracy figure rather than coerced into a number. A size
-guessed to satisfy a gate is worse than no size, because it looks like data.
+The CR's own `**Points:**` sits under Impact Assessment below: a RELATIVE size on the modified
+Fibonacci scale (1, 2, 3, 5, 8, 13, 20), sized against units already delivered rather than
+predicted in hours. The gaps widen deliberately, because uncertainty grows with size - a value
+off the scale is REFUSED, never rounded, because the scale IS the estimate. Above 8, split the
+CR: estimator consistency collapses beyond it.
 -->
 
 ## Summary
@@ -38,12 +39,12 @@ guessed to satisfy a gate is worse than no size, because it looks like data.
 
 ### Item 1: {{item_1_title}}
 
-<!-- `Item effort`, not `Effort`: `Effort` is the CR's own job size, read by the planner from
+<!-- `Item points`, not `Points`: `Points` is the CR's own job size, read by the planner from
 the FIRST match in the document. A per-item field spelled the same way shadows it, and the CR
 plans as unsized. -->
 
 **Item priority:** {{item_1_priority}}
-**Item effort:** {{item_1_effort}}
+**Item points:** {{item_1_points}}
 
 {{item_1_description}}
 
@@ -55,7 +56,7 @@ plans as unsized. -->
 
 ## Impact Assessment
 
-**Effort:** {{S|M|L, or `unknown` - the CR's own job size, read by the planner}}
+**Points:** {{1|2|3|5|8|13|20 - the CR's own job size, read by the planner}}
 
 ### Existing Functionality
 

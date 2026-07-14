@@ -1,9 +1,10 @@
 # BG0147: The dead complexity signal still orders the batch: CR0262 removed it from the forecast and left it as the WSJF tie-breaker
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Effort:** S
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py
+> **Verification depth:** functional - the dead `max_cognitive` tie-break is deleted from _rank_key (grep returns zero), and equal-WSJF units now fall to id order. Verified through the public plan CLI: ordering is by WSJF then id, never by the complexity of the files touched.
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

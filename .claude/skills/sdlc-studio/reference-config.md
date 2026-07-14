@@ -204,7 +204,8 @@ lessons:
 
 | Setting | Default | Notes |
 | --- | --- | --- |
-| `sprint.breakdown` | `enforce` | Default-on, NOT advisory. `enforce`: `sprint plan` REFUSES a batch holding a unit that declares no `Affects` or no size (`Effort:` / `Points:` / a review-seat score). It names each ungroomed unit, says what it lacks, and exits non-zero **without printing a plan** - a plan over unsized units is false authority. `judgement`: the lane reports and does not block, the same shape as the engagement floor and the lessons loop. Omission is not an escape - with no config at all the gate BLOCKS, and an unknown mode falls back to `enforce`. `sprint.py breakdown` reports the same census, read-only. See `reference-sprint.md#breakdown` |
+| `sprint.breakdown` | `enforce` | Default-on, NOT advisory. `enforce`: `sprint plan` REFUSES a batch holding a unit that declares no `Affects` or no `Points:` - and refuses a unit above the split threshold, since above it the estimate is not worth having. It names each ungroomed unit, says what it lacks, and exits non-zero **without printing a plan** - a plan over unsized units is false authority. `judgement`: the lane reports and does not block, the same shape as the engagement floor and the lessons loop. Omission is not an escape - with no config at all the gate BLOCKS, and an unknown mode falls back to `enforce`. `sprint.py breakdown` reports the same census, read-only. See `reference-sprint.md#breakdown` |
+| `sprint.split_above` | `8` | The `Points:` value above which the gate refuses a unit and demands it be split. A point is a stable unit of cost up to here and breaks beyond it, so above it decomposition is a triage decision, not an estimation one. Tighten to `5` for smaller units. |
 
 ---
 
@@ -218,9 +219,9 @@ How much ONE sprint may cost. The single source for both the plan-time "does thi
 | `capacity.minutes` | 240 | Wall-clock ceiling for the run; feeds the appetite breaker |
 | `capacity.units` | 8 | Unit-count ceiling for the run; feeds the appetite breaker |
 
-`sprint plan` sizes the batch against these and flags an over-budget batch **at plan time** - while the operator can still cut it, instead of mid-run when the breaker halts the sprint. Over budget never refuses to plan: a script cannot observe token spend, and the token model is a hypothesis (fitted to six units of one sprint, and already ~30% out of sample), so the plan quotes a plausible **range** rather than a bare number that reads as fact. The wall-clock and unit axes are the real breaker. 0 on an axis = unbounded.
+`sprint plan` sizes the batch against these and flags an over-budget batch **at plan time** - while the operator can still cut it, instead of mid-run when the breaker halts the sprint. Over budget never refuses to plan: a script cannot observe token spend, and the forecast is `sum(Points) x a measured tokens-per-point rate`, so the plan quotes a plausible **range** rather than a bare number that reads as fact. The wall-clock and unit axes are the real breaker. 0 on an axis = unbounded.
 
-**Provisional.** The defaults are round numbers over one measured sprint (6 units, 384,278 tokens actual). `sdlc-studio/retros/VELOCITY.md` gains a row per sprint; once it holds enough rows a human re-reads the trend and decides whether they have earned a change. Nothing recalibrates automatically - a fit to one or two sprints fits noise.
+**Provisional, and re-measured.** The tokens-per-point rate is derived from `sdlc-studio/retros/VELOCITY.md` - actual tokens over points delivered - and re-read every sprint, so it tracks the project rather than a constant. Until enough sprints have recorded points it falls back to a seed rate, and the plan says which it used. Nothing recalibrates the capacity ceilings automatically - a human reads the velocity trend and decides.
 
 ---
 

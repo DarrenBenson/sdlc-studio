@@ -9,8 +9,8 @@ Related: help/bug.md, reference-bug.md
 > **Status:** {{status}}
 > **Severity:** {{severity}}
 > **Priority:** {{priority}}
-> **Effort:** {{S|M|L, or `unknown` - job size of the fix, not its urgency; sizes the sprint plan}}
-> **Estimated-by:** {{who made the Effort call - so the report can tell you your own hit rate}}
+> **Points:** {{1|2|3|5|8|13|20 - job size of the fix, not its urgency; sizes the sprint plan}}
+> **Estimated-by:** {{who made the size call - so the report can tell you your own hit rate}}
 > **Delivered-by:** {{the model that delivered it - written at close, not at filing}}
 > **Reporter:** {{reporter}}
 > **Assignee:** {{assignee}}
@@ -19,11 +19,12 @@ Related: help/bug.md, reference-bug.md
 > **Affects:** {{source files this fix touches, comma-separated}}
 
 <!--
-Effort accepts `unknown`. It is a real answer and it satisfies the grooming gate: nobody has to
-invent a size to get a unit planned. An honest `unknown` is excluded from every accuracy figure,
-exactly as an unmeasured unit is - it is never coerced into a number and never averaged in as
-though it were an estimate. A size guessed to satisfy a gate is worse than no size, because it
-looks like data.
+Points are a RELATIVE size on the modified Fibonacci scale (1, 2, 3, 5, 8, 13, 20) - not "how
+long will this take" but "is this bigger than that one", sized against units already delivered.
+The gaps widen deliberately: uncertainty grows with size, and it is much harder to argue a unit
+is a 7 rather than an 8 than to choose between a 5 and an 8. A value off the scale is REFUSED,
+never rounded - the scale IS the estimate. Above 8, split the unit: estimator consistency
+collapses beyond it, so a bigger number is a triage failure, not a harder estimate.
 -->
 
 ## Summary

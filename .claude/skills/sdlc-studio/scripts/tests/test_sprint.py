@@ -26,25 +26,27 @@ def _load():
     return mod
 
 
-# The default fixtures are GROOMED - they declare the files they touch and a size - because
-# `sprint plan` refuses a batch that is not, and a fixture that could not be planned would
-# be testing the gate rather than the behaviour under test. Each declares its OWN file (no
-# shared-file cluster) and Effort S (complexity proxy 0), so every unit's token forecast is the
-# unchanged flat base and the numeric assertions elsewhere in this file still hold.
+# The default fixtures are GROOMED - they declare the files they touch and their Points - because
+# `sprint plan` refuses a batch that is not, and a fixture that could not be planned would be
+# testing the gate rather than the behaviour under test. Each declares its OWN file (no
+# shared-file cluster) and 2 points, so a default unit's forecast is 2 x the rate.
 # `groomed=False` is the deliberate ungroomed shape the gate's own tests need.
-def _bug(root, num, status="Open", severity="Medium", groomed=True):
+FIXTURE_POINTS = 2
+
+
+def _bug(root, num, status="Open", severity="Medium", groomed=True, points=FIXTURE_POINTS):
     d = root / "sdlc-studio" / "bugs"
     d.mkdir(parents=True, exist_ok=True)
-    meta = (f"> **Affects:** src/bg{num:04d}.py\n> **Effort:** S\n" if groomed else "")
+    meta = (f"> **Affects:** src/bg{num:04d}.py\n> **Points:** {points}\n" if groomed else "")
     (d / f"BG{num:04d}-x.md").write_text(
         f"# BG{num:04d}: b\n\n> **Status:** {status}\n> **Severity:** {severity}\n{meta}",
         encoding="utf-8")
 
 
-def _cr(root, num, status="Proposed", priority="Medium", groomed=True):
+def _cr(root, num, status="Proposed", priority="Medium", groomed=True, points=FIXTURE_POINTS):
     d = root / "sdlc-studio" / "change-requests"
     d.mkdir(parents=True, exist_ok=True)
-    meta = (f"> **Affects:** src/cr{num:04d}.py\n> **Effort:** S\n" if groomed else "")
+    meta = (f"> **Affects:** src/cr{num:04d}.py\n> **Points:** {points}\n" if groomed else "")
     (d / f"CR{num:04d}-x.md").write_text(
         f"# CR-{num:04d}: c\n\n> **Status:** {status}\n> **Priority:** {priority}\n{meta}",
         encoding="utf-8")
@@ -326,84 +328,76 @@ class CliTests(unittest.TestCase):
 
 
 class WsjfTests(unittest.TestCase):
-    """--order wsjf weights priority against touched-code complexity (RFC0009 WS3)."""
+    """--order wsjf ranks Cost of Delay (from Priority) against Points. No seat scores needed.
 
-    def _cr_aff(self, root, num, priority, affects, depends=None):
+    It used to rank priority against the cognitive complexity of the files a unit's `Affects`
+    named - a signal that scores r = +0.03 against measured cost (BG0147). These tests replace
+    the ones that pinned that ordering, and assert the size that decides the order is the size
+    somebody actually estimated.
+    """
+
+    def _cr_pts(self, root, num, priority, points, affects=None, depends=None):
         d = root / "sdlc-studio" / "change-requests"
         d.mkdir(parents=True, exist_ok=True)
+        aff = affects if affects is not None else f"src/cr{num:04d}.py"
         body = (f"# CR-{num:04d}: c\n\n> **Status:** Proposed\n> **Priority:** {priority}\n"
-                f"> **Affects:** {affects}\n")
+                f"> **Affects:** {aff}\n> **Points:** {points}\n")
         if depends:
             body += f"> **Depends on:** {depends}\n"
         (d / f"CR{num:04d}-x.md").write_text(body, encoding="utf-8")
 
-    _DEEP = ("def deep(a, b, c, d):\n    if a:\n        if b:\n            if c:\n"
-             "                if d:\n                    return 1\n")
+    def test_wsjf_prefers_the_smaller_job_at_equal_priority(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr_pts(root, 1, "High", 8)
+            self._cr_pts(root, 2, "High", 2)
+            batch = _load().select_batch(root, "cr", "Proposed", order="wsjf")
+            byid = {b["id"]: b for b in batch}
+            self.assertEqual([b["id"] for b in batch], ["CR0002", "CR0001"])  # smaller job first
+            self.assertGreater(byid["CR0002"]["wsjf"], byid["CR0001"]["wsjf"])
+            self.assertNotIn("token_budget", byid["CR0001"])   # no per-unit budget field
 
-    def test_wsjf_prefers_smaller_job_at_equal_priority(self) -> None:
+    def test_the_file_a_unit_touches_does_not_decide_the_order(self) -> None:
+        """The blast radius of the FILE is not the size of the JOB - the mistake BG0147 names.
+        Two 3-point units, one in a deeply nested module: neither outranks the other."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             (root / "simple.py").write_text("def s(a):\n    return a\n", encoding="utf-8")
             (root / "complex.py").write_text(
                 "def deep(a, b, c, d):\n    if a:\n        if b:\n            if c:\n"
                 "                if d:\n                    return 1\n", encoding="utf-8")
-            self._cr_aff(root, 1, "High", "complex.py")
-            self._cr_aff(root, 2, "High", "simple.py")
+            self._cr_pts(root, 1, "High", 3, affects="complex.py")
+            self._cr_pts(root, 2, "High", 3, affects="simple.py")
             batch = _load().select_batch(root, "cr", "Proposed", order="wsjf")
-            byid = {b["id"]: b for b in batch}
-            self.assertEqual([b["id"] for b in batch], ["CR0002", "CR0001"])  # smaller job first
-            self.assertGreater(byid["CR0001"]["complexity"], byid["CR0002"]["complexity"])
-            # complexity ORDERS the batch; it no longer PRICES it. There is no per-unit
-            # token_budget any more - the seed correlates with actual cost at r = +0.03.
-            self.assertNotIn("token_budget", byid["CR0001"])
+            self.assertEqual(batch[0]["wsjf"], batch[1]["wsjf"])              # identical WSJF
+            self.assertEqual([b["id"] for b in batch], ["CR0001", "CR0002"])  # falls to id
 
-    def test_wsjf_falls_back_to_priority_without_affects(self) -> None:
+    def test_wsjf_still_ranks_when_no_affects_path_resolves(self) -> None:
+        """New-file work (the biggest jobs) used to score complexity 0 and rank as the cheapest
+        possible unit. Its size is now what its author said it was."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            self._cr_aff(root, 1, "Low", "")
-            self._cr_aff(root, 2, "High", "")
+            self._cr_pts(root, 1, "High", 8, affects="does/not/exist.py")
+            self._cr_pts(root, 2, "High", 2, affects="also/missing.py")
             batch = _load().select_batch(root, "cr", "Proposed", order="wsjf")
-            self.assertEqual([b["id"] for b in batch], ["CR0002", "CR0001"])  # High first
+            self.assertEqual([b["id"] for b in batch], ["CR0002", "CR0001"])
+            self.assertEqual(batch[1]["points"], 8)   # the new-file unit is BIG, not free
 
-    def test_wsjf_degrades_when_affects_unresolvable(self) -> None:
+    def test_priority_still_decides_between_units_of_equal_size(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            self._cr_aff(root, 1, "High", "nonexistent/foo.py")
-            batch = _load().select_batch(root, "cr", "Proposed", order="wsjf")
-            self.assertEqual(batch[0]["complexity"], 0)  # unresolved path -> 0, no crash
-
-    def test_priority_dominates_complexity(self) -> None:
-        # A degraded (size-0) lower-priority unit must NOT outrank an assessed higher one.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "complex.py").write_text(self._DEEP, encoding="utf-8")
-            self._cr_aff(root, 1, "Critical", "complex.py")     # assessed, big job
-            self._cr_aff(root, 2, "Medium", "nonexistent.py")   # degraded, size 0
+            self._cr_pts(root, 1, "Medium", 3)
+            self._cr_pts(root, 2, "Critical", 3)
             ids = [b["id"] for b in _load().select_batch(root, "cr", "Proposed", order="wsjf")]
-            self.assertEqual(ids, ["CR0001", "CR0002"])         # Critical first regardless
+            self.assertEqual(ids, ["CR0002", "CR0001"])
 
-    def test_deps_win_over_complexity_tiebreak(self) -> None:
+    def test_deps_win_over_the_wsjf_order(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            (root / "complex.py").write_text(self._DEEP, encoding="utf-8")
-            self._cr_aff(root, 1, "High", "complex.py")            # big job
-            self._cr_aff(root, 2, "High", "", depends="CR0001")    # tiny job, needs CR0001
+            self._cr_pts(root, 1, "High", 8)                       # big job
+            self._cr_pts(root, 2, "High", 1, depends="CR0001")     # tiny job, needs CR0001
             ids = [b["id"] for b in _load().select_batch(root, "cr", "Proposed", order="wsjf")]
             self.assertLess(ids.index("CR0001"), ids.index("CR0002"))  # dep before dependent
-
-    def test_degrades_when_assess_raises(self) -> None:
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "x.py").write_text("def f():\n    return 1\n", encoding="utf-8")
-            self._cr_aff(root, 1, "High", "x.py")
-            orig = mod.complexity.assess
-            mod.complexity.assess = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom"))
-            try:
-                batch = mod.select_batch(root, "cr", "Proposed", order="wsjf")
-            finally:
-                mod.complexity.assess = orig
-            self.assertEqual(batch[0]["complexity"], 0)  # exception swallowed, no crash
 
     def test_affects_parse_backtick_and_paren(self) -> None:
         files = _load()._affects_files(
@@ -451,9 +445,9 @@ class SeatWsjfTests(unittest.TestCase):
     """CR0099: seat-scored WSJF ordering, with graceful fallback."""
 
     def test_wsjf_score_math(self) -> None:
-        # (value + tc + rr) / size
-        self.assertEqual(_load().wsjf_score(8, 2, 3, 4), round(13 / 4, 3))
-        self.assertEqual(_load().wsjf_score(5, 0, 0, 0), 5.0)   # size floored to 1
+        # Cost of Delay / Points
+        self.assertEqual(_load().wsjf_score(13, 4), round(13 / 4, 3))
+        self.assertEqual(_load().wsjf_score(5, 0), 5.0)   # points floored to 1, never /0
 
     def _inputs(self, root, mapping):
         import json
@@ -472,24 +466,27 @@ class SeatWsjfTests(unittest.TestCase):
             self.assertEqual([b["id"] for b in batch][0], "CR0001")  # WSJF beat raw priority
             self.assertIn("wsjf", batch[0])
 
-    def test_falls_back_without_inputs(self) -> None:
+    def test_wsjf_runs_without_any_seat_inputs(self) -> None:
+        # The whole point of the rewrite: WSJF runs on the priority-derived CoD, so a groomed
+        # backlog with no seat consult still gets a real WSJF - not a fall to bare priority.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _cr(root, 1, priority="Low")
             _cr(root, 2, priority="High")
             batch = _load().select_batch(root, "cr", "Proposed", order="wsjf")   # no inputs
-            self.assertEqual([b["id"] for b in batch][0], "CR0002")  # priority wins
-            self.assertNotIn("wsjf", batch[0])
+            self.assertEqual([b["id"] for b in batch][0], "CR0002")  # higher CoD, equal points
+            self.assertIn("wsjf", batch[0])
+            self.assertEqual(batch[0]["cod_source"], "priority")
 
-    def test_skip_personas_ignores_inputs(self) -> None:
+    def test_skip_personas_still_ranks_by_the_derived_cost_of_delay(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _cr(root, 1, priority="Low")
             _cr(root, 2, priority="High")
             self._inputs(root, {"CR0001": {"value": 20}})
             batch = _load().select_batch(root, "cr", "Proposed", order="wsjf", skip_personas=True)
-            self.assertEqual([b["id"] for b in batch][0], "CR0002")  # inputs ignored -> priority
-            self.assertNotIn("wsjf", batch[0])
+            self.assertEqual([b["id"] for b in batch][0], "CR0002")  # seat input ignored
+            self.assertEqual(batch[0]["cod_source"], "priority")
 
 
 class SeatProvenanceTests(unittest.TestCase):
@@ -688,100 +685,6 @@ class WeightRobustnessTests(unittest.TestCase):
         self.assertEqual(sp._weight("  "), 2)          # blank -> Medium, no crash
         self.assertEqual(sp._weight("High (gate)"), 1)
         self.assertEqual(sp._weight("p1"), 0)
-
-
-class SeatSizeTests(unittest.TestCase):
-    """The Engineering seat can supply size in wsjf-inputs.json; an unresolvable
-    Affects (new-file work) is UNKNOWN size, never minimal."""
-
-    def _inputs(self, root, data):
-        d = root / "sdlc-studio" / ".local"
-        d.mkdir(parents=True, exist_ok=True)
-        import json as _json
-        (d / "wsjf-inputs.json").write_text(_json.dumps(data), encoding="utf-8")
-
-    def test_seat_size_preferred_over_complexity_seed(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _cr(root, 1)
-            self._inputs(root, {"CR0001": {"value": 9, "time_criticality": 9,
-                                           "risk_reduction": 9, "size": 9}})
-            batch = _load().select_batch(root, "cr", "Proposed", order="wsjf")
-            self.assertEqual(batch[0]["size"], 9)
-            self.assertEqual(batch[0]["wsjf"], 3.0)  # 27 / seat size 9, not /1
-
-    def test_unresolvable_affects_uses_declared_default_not_minimal(self) -> None:
-        # New-file work with no seat size is UNKNOWN effort: the declared neutral
-        # default divides the score, instead of size 0 -> cheapest job in the batch.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            sp = _load()
-            dd = root / "sdlc-studio" / "change-requests"
-            dd.mkdir(parents=True, exist_ok=True)
-            (dd / "CR0001-x.md").write_text(
-                "# CR-0001: c\n\n> **Status:** Proposed\n> **Priority:** Medium\n"
-                "> **Affects:** scripts/does-not-exist-yet.py\n", encoding="utf-8")
-            self._inputs(root, {"CR0001": {"value": 9, "time_criticality": 9,
-                                           "risk_reduction": 9}})
-            batch = sp.select_batch(root, "cr", "Proposed", order="wsjf")
-            self.assertEqual(batch[0]["size"], sp.DEFAULT_UNKNOWN_SIZE)
-            self.assertEqual(batch[0]["wsjf"],
-                             round(27 / sp.DEFAULT_UNKNOWN_SIZE, 3))  # never /1
-
-    def test_resolvable_affects_still_seeds_from_complexity(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "real.py").write_text("def f(x):\n    if x:\n        return 1\n    return 0\n",
-                                          encoding="utf-8")
-            dd = root / "sdlc-studio" / "change-requests"
-            dd.mkdir(parents=True, exist_ok=True)
-            (dd / "CR0001-x.md").write_text(
-                "# CR-0001: c\n\n> **Status:** Proposed\n> **Priority:** Medium\n"
-                "> **Affects:** real.py\n", encoding="utf-8")
-            self._inputs(root, {"CR0001": {"value": 6, "time_criticality": 0,
-                                           "risk_reduction": 0}})
-            batch = _load().select_batch(root, "cr", "Proposed", order="wsjf")
-            self.assertIn("wsjf", batch[0])   # complexity seed still works when files resolve
-
-
-class FallbackSizeTests(unittest.TestCase):
-    """CR0149: without a seat size, the complexity seed never stands in as the
-    WSJF denominator - a one-line fix in a complex file must not sink."""
-
-    def test_small_fix_in_complex_file_ranks_by_default_not_file_complexity(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            sp = _load()
-            # a complex existing file the "small fix" CR touches
-            (root / "big.py").write_text(
-                "def f(x):\n" + "".join(f"    if x > {i}:\n        x -= {i}\n"
-                                         for i in range(12)) + "    return x\n",
-                encoding="utf-8")
-            dd = root / "sdlc-studio" / "change-requests"
-            dd.mkdir(parents=True, exist_ok=True)
-            (dd / "CR0001-x.md").write_text(
-                "# CR-0001: small fix\n\n> **Status:** Proposed\n> **Priority:** Medium\n"
-                "> **Affects:** big.py\n", encoding="utf-8")
-            (dd / "CR0002-x.md").write_text(
-                "# CR-0002: peer\n\n> **Status:** Proposed\n> **Priority:** Medium\n",
-                encoding="utf-8")
-            local = root / "sdlc-studio" / ".local"
-            local.mkdir(parents=True, exist_ok=True)
-            import json as _json
-            (local / "wsjf-inputs.json").write_text(_json.dumps({
-                "CR0001": {"value": 9, "time_criticality": 9, "risk_reduction": 9},
-                "CR0002": {"value": 3, "time_criticality": 3, "risk_reduction": 3}}),
-                encoding="utf-8")
-            batch = sp.select_batch(root, "cr", "Proposed", order="wsjf")
-            by_id = {b["id"]: b for b in batch}
-            # denominator is the neutral default for BOTH (no seat size anywhere);
-            # the higher-scored small fix ranks first instead of sinking on
-            # big.py's cognitive complexity
-            self.assertEqual(by_id["CR0001"]["size"], sp.DEFAULT_UNKNOWN_SIZE)
-            self.assertEqual(by_id["CR0001"]["wsjf"], round(27 / sp.DEFAULT_UNKNOWN_SIZE, 3))
-            self.assertEqual([b["id"] for b in batch][0], "CR0001")
-            # the seed survives as tiebreak input, not as size
-            self.assertGreater(by_id["CR0001"]["complexity"], 0)
 
 
 class WorklistTests(unittest.TestCase):
@@ -1082,7 +985,7 @@ class PreflightSurvivesAllOrdersTests(unittest.TestCase):
         crd.mkdir(parents=True, exist_ok=True)
         (crd / "CR0002-local.md").write_text(
             "# CR-0002: local\n\n> **Status:** Proposed\n> **Priority:** Medium\n"
-            "> **Affects:** src/cr0002.py\n> **Effort:** S\n",   # groomed: the gate is not the subject here
+            "> **Affects:** src/cr0002.py\n> **Points:** 2\n",   # groomed: the gate is not the subject here
             encoding="utf-8")
         (crd / "_index.md").write_text(
             "# CRs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Proposed | 1 |\n"
@@ -1153,229 +1056,6 @@ class PlanLessonsDigestTests(unittest.TestCase):
             self.assertIn("L-0002", text)
             self.assertIn("Read every creation path", text)
             self.assertNotIn("L-0001", text)  # closed lessons are not in force
-
-
-class EffortSizingTests(unittest.TestCase):
-    """The human `Effort:` S/M/L captured at filing is a real WSJF size input.
-
-    It was recorded on every CR and read by nothing: with no seat score and no `Affects`, WSJF
-    collapsed to plain priority and every unit forecast the same flat base. These tests assert
-    the BEHAVIOUR changes (size and forecast move with the estimate), never that the string
-    'effort' appears in the source - `rg -qi effort sprint.py` passed while the field was
-    entirely unread, which is exactly the false-green this replaces.
-    """
-
-    def _cr(self, root, num, effort=None, priority="Medium", affects=None):
-        d = root / "sdlc-studio" / "change-requests"
-        d.mkdir(parents=True, exist_ok=True)
-        body = f"# CR-{num:04d}: c\n\n> **Status:** Proposed\n> **Priority:** {priority}\n"
-        if affects:
-            body += f"> **Affects:** {affects}\n"
-        body += "\n## Impact\n\nSomething.\n"
-        if effort:
-            body += f"\n**Effort:** {effort}\n"
-        (d / f"CR{num:04d}-x.md").write_text(body, encoding="utf-8")
-
-    def _bug(self, root, num, effort=None, severity="Medium"):
-        d = root / "sdlc-studio" / "bugs"
-        d.mkdir(parents=True, exist_ok=True)
-        body = f"# BG{num:04d}: b\n\n> **Status:** Open\n> **Severity:** {severity}\n"
-        if effort:
-            body += f"> **Effort:** {effort}\n"
-        (d / f"BG{num:04d}-x.md").write_text(body, encoding="utf-8")
-
-    def test_small_and_large_effort_produce_different_sizes_without_seats_or_affects(self) -> None:
-        # The headline gap: no seat score, no Affects. Today both units size identically.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            sp = _load()
-            self._cr(root, 1, effort="S")
-            self._cr(root, 2, effort="L")
-            by_id = {b["id"]: b for b in sp.select_batch(root, "cr", "Proposed", order="wsjf")}
-            self.assertLess(by_id["CR0001"]["size"], by_id["CR0002"]["size"])
-            self.assertEqual(by_id["CR0001"]["size"], sp.EFFORT_SIZE["S"])
-            self.assertEqual(by_id["CR0002"]["size"], sp.EFFORT_SIZE["L"])
-
-    def test_undeclared_effort_keeps_the_neutral_default(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            sp = _load()
-            self._cr(root, 1)
-            batch = sp.select_batch(root, "cr", "Proposed", order="wsjf")
-            self.assertEqual(batch[0]["size"], sp.DEFAULT_UNKNOWN_SIZE)
-            self.assertNotIn("effort", batch[0])
-
-    def test_seat_size_still_beats_the_declared_effort(self) -> None:
-        # The seats scored it: their estimate is the authority, effort is the fallback.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            sp = _load()
-            self._cr(root, 1, effort="S")
-            local = root / "sdlc-studio" / ".local"
-            local.mkdir(parents=True, exist_ok=True)
-            import json as _json
-            (local / "wsjf-inputs.json").write_text(_json.dumps({
-                "CR0001": {"value": 9, "time_criticality": 9, "risk_reduction": 9, "size": 9}}),
-                encoding="utf-8")
-            batch = sp.select_batch(root, "cr", "Proposed", order="wsjf")
-            self.assertEqual(batch[0]["size"], 9)          # seat estimate, not EFFORT_SIZE['S']
-            self.assertEqual(batch[0]["wsjf"], 3.0)
-
-    def test_effort_divides_the_wsjf_score_when_seats_scored_no_size(self) -> None:
-        # Seats scored value/urgency/risk but left size out: the human estimate fills it.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            sp = _load()
-            self._cr(root, 1, effort="L")
-            local = root / "sdlc-studio" / ".local"
-            local.mkdir(parents=True, exist_ok=True)
-            import json as _json
-            (local / "wsjf-inputs.json").write_text(_json.dumps({
-                "CR0001": {"value": 9, "time_criticality": 9, "risk_reduction": 9}}),
-                encoding="utf-8")
-            batch = sp.select_batch(root, "cr", "Proposed", order="wsjf")
-            self.assertEqual(batch[0]["size"], sp.EFFORT_SIZE["L"])
-            self.assertEqual(batch[0]["wsjf"], round(27 / sp.EFFORT_SIZE["L"], 3))
-
-    def test_a_bug_can_be_sized_too(self) -> None:
-        # A bug's Severity is urgency; its Effort is size. Until now it had no size at all.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            sp = _load()
-            self._bug(root, 1, effort="S")
-            self._bug(root, 2, effort="L")
-            by_id = {b["id"]: b for b in sp.select_batch(root, "bug", "Open", order="wsjf")}
-            self.assertEqual(by_id["BG0001"]["size"], sp.EFFORT_SIZE["S"])
-            self.assertEqual(by_id["BG0002"]["size"], sp.EFFORT_SIZE["L"])
-
-    def test_decorated_and_worded_values_parse_and_junk_is_undeclared(self) -> None:
-        sp = _load()
-        self.assertEqual(sp._effort_code("**Effort:** M - two files\n"), "M")
-        self.assertEqual(sp._effort_code("> **Effort:** large\n"), "L")
-        self.assertIsNone(sp._effort_code("# no field here\n"))
-        self.assertIsNone(sp._effort_code("an agent under effort pressure skips it\n"))
-
-    def test_an_honest_unknown_is_a_value_not_an_absence(self) -> None:
-        """`unknown` used to read as NO effort, so the grooming gate refused the unit and the
-        only way past was to write down a letter you did not believe. It is now an ANSWER - one
-        that satisfies the gate and carries no points, so it is excluded from every ratio rather
-        than coerced into a number. See test_attribution.UnknownIsAFirstClassEffort."""
-        sp = _load()
-        self.assertEqual(sp._effort_code("> **Effort:** unknown\n"), sp.EFFORT_UNKNOWN)
-        self.assertIsNone(sp.effort_points(sp.EFFORT_UNKNOWN))
-        # silence is still not an answer: an ABSENT field is not a declared unknown
-        self.assertIsNone(sp._effort_code("# no field here\n"))
-
-
-class RateForecastTests(unittest.TestCase):
-    """The forecast is UNIT COUNT x a measured rate, and nothing else.
-
-    It used to be `base + 600 x max_cognitive`, and the seed was measured against 18 units of
-    real telemetry at r = +0.03 against actual cost - no signal at all. The declared Effort
-    (r = +0.34) was no better. Both were dropped rather than re-weighted, so these tests ATTACK
-    the model: a forecast that still moves with a falsified seed has not changed axis.
-    """
-
-    def _cr(self, root, num, effort=None, affects=None):
-        d = root / "sdlc-studio" / "change-requests"
-        d.mkdir(parents=True, exist_ok=True)
-        body = f"# CR-{num:04d}: c\n\n> **Status:** Proposed\n> **Priority:** Medium\n"
-        if affects:
-            body += f"> **Affects:** {affects}\n"
-        if effort:
-            body += f"\n**Effort:** {effort}\n"
-        (d / f"CR{num:04d}-x.md").write_text(body, encoding="utf-8")
-
-    def test_complexity_no_longer_moves_the_forecast_at_all(self) -> None:
-        """THE LOAD-BEARING TEST. A trivial file and a deeply-nested one forecast the SAME.
-
-        This is the axis change, stated as behaviour. If a wildly more complex blast radius
-        still buys a bigger number, the inert seed is still driving the forecast.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            sp = _load()
-            (root / "simple.py").write_text("def s(a):\n    return a\n", encoding="utf-8")
-            (root / "complex.py").write_text(
-                "def deep(a, b, c, d):\n    if a:\n        if b:\n            if c:\n"
-                "                if d:\n                    return 1\n", encoding="utf-8")
-            self._cr(root, 1, affects="complex.py")
-            self._cr(root, 2, affects="simple.py")
-            batch = sp.select_batch(root, "cr", "Proposed", order="wsjf")
-            byid = {b["id"]: b for b in batch}
-            # the complexity signal still EXISTS and still differs - it orders the batch ...
-            self.assertGreater(byid["CR0001"]["complexity"], byid["CR0002"]["complexity"])
-            # ... and it buys precisely nothing in the forecast
-            fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
-            self.assertEqual(fc["per_unit"]["CR0001"], fc["per_unit"]["CR0002"])
-
-    def test_effort_no_longer_moves_the_forecast_either(self) -> None:
-        """The effort proxy was the other falsified seed (r = +0.34). An S and an L forecast
-        the same number: the plan does not claim to know which will cost more, because it
-        cannot."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            sp = _load()
-            self._cr(root, 1, effort="S")
-            self._cr(root, 2, effort="L")
-            fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]["per_unit"]
-            self.assertEqual(fc["CR0001"], fc["CR0002"])
-            self.assertEqual(fc["CR0001"], sp.BASE_TOKEN_BUDGET)
-
-    def test_the_batch_forecast_is_the_rate_times_the_headcount(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            sp = _load()
-            for n in (1, 2, 3):
-                self._cr(root, n, effort="M")
-            fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
-            self.assertEqual(fc["tokens"], 3 * sp.BASE_TOKEN_BUDGET)
-            self.assertEqual(fc["rate"], sp.BASE_TOKEN_BUDGET)
-
-    def test_the_order_mode_cannot_change_the_forecast(self) -> None:
-        """priority order never stamped a complexity seed, so the same batch used to forecast
-        differently depending on how it was sorted. A batch's cost cannot depend on the order
-        someone asked for it in."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            sp = _load()
-            (root / "real.py").write_text(
-                "def f(x):\n    if x:\n        return 1\n    return 0\n", encoding="utf-8")
-            self._cr(root, 1, effort="L", affects="real.py")
-            pri = sp.build_plan(root, "cr", "Proposed", order="priority")["token_forecast"]
-            wsjf = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
-            self.assertEqual(pri["tokens"], wsjf["tokens"])
-            self.assertEqual(pri["tokens"], sp.BASE_TOKEN_BUDGET)
-
-    def test_no_per_unit_token_budget_is_published_on_a_unit(self) -> None:
-        """AC3: the per-unit forecast is DROPPED, not silently retained. A field every reader
-        takes for an estimate of THAT unit must not exist when nothing can estimate that unit."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            sp = _load()
-            self._cr(root, 1, effort="L", affects="nonexistent.py")
-            batch = sp.select_batch(root, "cr", "Proposed", order="wsjf")
-            self.assertNotIn("token_budget", batch[0])
-
-    def test_the_recorded_forecast_carries_no_seed(self) -> None:
-        """The forecast RECORD says which estimator made it. `seed: None` and the zeroed
-        coefficient are how a later reader can tell this model apart from the one it replaced -
-        and complexity/effort are still recorded as CONTEXT, so the next analyst can test them
-        against the actuals rather than inherit this decision."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            sp = _load()
-            (root / "real.py").write_text(
-                "def f(x):\n    if x:\n        return 1\n    return 0\n", encoding="utf-8")
-            self._cr(root, 1, effort="L", affects="real.py")
-            fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
-            unit = fc["units"]["CR0001"]
-            self.assertIsNone(unit["seed"])
-            self.assertEqual(unit["seed_source"], "rate")
-            self.assertGreater(unit["complexity"], 0)   # observed ...
-            self.assertEqual(unit["effort"], "L")       # ... and recorded ...
-            self.assertEqual(unit["tokens"], sp.BASE_TOKEN_BUDGET)  # ... but never multiplied
-            self.assertEqual(fc["constants"]["TOKENS_PER_COGNITIVE"], 0)
 
 
 try:
@@ -1520,12 +1200,12 @@ class CapacityHonestyTests(unittest.TestCase):
         # Reporting only the point estimate would hide it. Derived from the constants rather
         # than hard-coded, so a recalibration cannot quietly turn this case into a different one.
         sp = _load()
-        rate = sp.BASE_TOKEN_BUDGET
+        rate = sp.POINTS_RATE_SEED
         budget = int(rate * (1 + sp.FORECAST_BAND / 2))  # above the point, below the high end
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _config(root, f"capacity:\n  tokens: {budget}\n")
-            _cr(root, 1)  # one unit: forecast = the rate; high end = rate x (1 + band)
+            _cr(root, 1, points=1)  # one 1-point unit: forecast = the rate; high end = rate x (1 + band)
             cap = sp.build_plan(root, "cr", "Proposed")["capacity"]
             self.assertEqual(cap["over"], [])
             self.assertTrue(cap["tokens_may_exceed"])
@@ -1540,25 +1220,28 @@ class CapacityHonestyTests(unittest.TestCase):
 
     def _velocity(self, root: Path, rows: str) -> None:
         sp = _load()
-        cur = f"base={sp.BASE_TOKEN_BUDGET} tpc={sp.TOKENS_PER_COGNITIVE}"
+        # the estimator IN FORCE, spelled as the velocity Constants cell records it. With no
+        # evidence of its own the project's rate is the seed, so an out-of-sample row must carry
+        # exactly that - a row with any other rate is judging a DIFFERENT estimator.
+        cur = f"TOKENS_PER_POINT={sp.forecast_constants(root)['TOKENS_PER_POINT']}"
         retros = root / "sdlc-studio" / "retros"
         retros.mkdir(parents=True, exist_ok=True)
         (retros / "VELOCITY.md").write_text(
             self.VELOCITY_HEAD + rows.format(cur=cur), encoding="utf-8")
 
     def test_nothing_is_recalibrated_from_the_velocity_history(self) -> None:
-        """The constants are pinned to the actuals they were fitted to (see
-        test_token_calibration). A plan built against a repo WITH velocity history must not
-        move them - the history is reported, and a human decides."""
+        """The rate is measured from the forecast/actual evidence, not re-fitted from the
+        velocity narrative. A plan built against a repo WITH velocity history reports it, and a
+        human decides - the plan does not move its own rate off one narrative row."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._velocity(root, "| RETRO0001 | 2026-07-14 | 6 | 6 | 6 | 418,800 | 384,278 | "
                                  "1.09x | 1,848 | {cur} | out-of-sample |\n")
             _cr(root, 1)
             sp = _load()
-            base, slope = sp.BASE_TOKEN_BUDGET, sp.TOKENS_PER_COGNITIVE
+            before = sp.tokens_per_point(root)["rate"]
             cal = sp.build_plan(root, "cr", "Proposed")["capacity"]["calibration"]
-            self.assertEqual((sp.BASE_TOKEN_BUDGET, sp.TOKENS_PER_COGNITIVE), (base, slope))
+            self.assertEqual(sp.tokens_per_point(root)["rate"], before)  # the narrative moved nothing
             self.assertEqual(cal["sprints"], 1)
             self.assertFalse(cal["enough_history"])  # one sprint is not a calibration
 
@@ -1672,14 +1355,14 @@ class CapacityFeedsTheAppetiteTests(unittest.TestCase):
             self.assertEqual(app["minutes_source"], "config capacity.minutes")
 
 
-def _groomed_cr(root: Path, num: int, affects: str, effort: str = "M",
+def _groomed_cr(root: Path, num: int, affects: str, points: int = 3,
                 status: str = "Proposed", priority: str = "Medium") -> None:
-    """A CR a planner can actually plan: it names the files it touches and its job size."""
+    """A CR a planner can actually plan: it names the files it touches and its Points."""
     d = root / "sdlc-studio" / "change-requests"
     d.mkdir(parents=True, exist_ok=True)
     (d / f"CR{num:04d}-x.md").write_text(
         f"# CR-{num:04d}: c\n\n> **Status:** {status}\n> **Priority:** {priority}\n"
-        f"> **Affects:** {affects}\n> **Effort:** {effort}\n", encoding="utf-8")
+        f"> **Affects:** {affects}\n> **Points:** {points}\n", encoding="utf-8")
 
 
 def _src(root: Path, rel: str) -> str:
@@ -1760,7 +1443,7 @@ class BreakdownGateTests(unittest.TestCase):
             _, _, err = self._plan(root)
             self.assertIn("CR0007", err)                 # which unit
             self.assertIn("Affects", err)                # what it lacks
-            self.assertIn("Effort", err)                 # ...and the other half
+            self.assertIn("Points", err)                 # ...and the other half
             self.assertIn("breakdown", err)              # the command that fixes it
             self.assertIn("sprint.breakdown: judgement", err)   # the recorded escape
 
@@ -1846,6 +1529,333 @@ class SharedFileClusterTests(unittest.TestCase):
             self.assertEqual(bd["clusters"], [])
 
 
+def _pointed_cr(root: Path, num: int, points, affects: str = None, priority: str = "Medium",
+                status: str = "Proposed") -> None:
+    """A CR carrying a Points estimate (and, by default, a resolvable Affects)."""
+    d = root / "sdlc-studio" / "change-requests"
+    d.mkdir(parents=True, exist_ok=True)
+    aff = affects if affects is not None else _src(root, f"src/cr{num:04d}.py")
+    pts = f"> **Points:** {points}\n" if points is not None else ""
+    (d / f"CR{num:04d}-x.md").write_text(
+        f"# CR-{num:04d}: c\n\n> **Status:** {status}\n> **Priority:** {priority}\n"
+        f"> **Affects:** {aff}\n{pts}", encoding="utf-8")
+
+
+class SplitGateTests(unittest.TestCase):
+    """THE GATE REFUSES ABOVE 8 POINTS - the rule that makes the cost model work.
+
+    A point was a stable unit of cost from 2 to 8 (22k-27k tokens per point) and then BROKE: the
+    13s came in at 14,144 per point, systematically over-estimated, and all three blind estimators
+    returned them with low confidence and the words "should be split". Above the threshold the
+    estimate is not worth having, and the answer is DECOMPOSITION, not a harder estimate.
+
+    Behaviour only: every assertion drives the public `plan` path and reads its exit code and its
+    output. The load-bearing pair is fail-then-pass - a 13 REFUSES, the same batch at 8 PLANS.
+    """
+
+    def _plan(self, root: Path, *extra: str) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = _load().main(["plan", "--crs", "Proposed", "--root", str(root),
+                               "--no-fetch", "--skip-personas", *extra])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_a_thirteen_point_unit_is_refused_and_the_same_batch_at_eight_plans(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _pointed_cr(root, 1, 3)
+            _pointed_cr(root, 2, 13)          # over the ceiling
+            rc, out, err = self._plan(root)
+            self.assertNotEqual(rc, 0)
+            self.assertIn("CR0002", err)                    # named
+            self.assertIn("13", err)                        # with its estimate
+            self.assertIn("split", err.lower())             # and told what to do
+            self.assertNotIn("batch:", out)                 # NO PLAN AT ALL
+            self.assertNotIn("token forecast", out)
+            self.assertNotIn("CR0001", out)
+            # the ONLY change: that unit is re-sized to 8. The same batch now plans.
+            _pointed_cr(root, 2, 8)
+            rc, out, _ = self._plan(root)
+            self.assertEqual(rc, 0)
+            self.assertIn("batch: 2 unit(s)", out)
+
+    def test_a_twenty_is_refused_too_and_an_eight_is_not(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _pointed_cr(root, 1, 20)
+            self.assertNotEqual(self._plan(root)[0], 0)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _pointed_cr(root, 1, 8)          # right on the line - the data says 8s are stable
+            self.assertEqual(self._plan(root)[0], 0)
+
+    def test_a_refused_batch_writes_no_plan_and_opens_no_run(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _pointed_cr(root, 1, 13)
+            rc, _, _ = self._plan(root, "--write")
+            self.assertNotEqual(rc, 0)
+            self.assertFalse((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
+            self.assertFalse((root / "sdlc-studio" / ".local" / "run-state.json").exists())
+
+    @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
+    def test_the_ceiling_is_configurable_a_project_can_tighten_it_to_five(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _config(root, "sprint:\n  points_split_above: 5\n")
+            _pointed_cr(root, 1, 8)          # legal by default, too chunky for THIS project
+            rc, out, err = self._plan(root)
+            self.assertNotEqual(rc, 0)
+            self.assertIn("CR0001", err)
+            self.assertIn("5", err)
+            self.assertNotIn("batch:", out)
+            _pointed_cr(root, 1, 5)
+            self.assertEqual(self._plan(root)[0], 0)
+
+    def test_a_unit_with_no_points_is_still_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _pointed_cr(root, 1, None)       # Affects, but nobody sized it
+            rc, out, err = self._plan(root)
+            self.assertNotEqual(rc, 0)
+            self.assertIn("CR0001", err)
+            self.assertIn("Points", err)
+            self.assertNotIn("batch:", out)
+
+    def test_a_unit_with_no_affects_is_still_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _pointed_cr(root, 1, 3, affects="")
+            rc, out, err = self._plan(root)
+            self.assertNotEqual(rc, 0)
+            self.assertIn("CR0001", err)
+            self.assertIn("Affects", err)
+            self.assertNotIn("batch:", out)
+
+
+class PointsForecastTests(unittest.TestCase):
+    """FORECAST = sum(points) x a tokens-per-point rate MEASURED from the evidence.
+
+    Not fitted, and with NO base term: a least-squares fit adds one (8,043) and does WORSE than
+    the flat rate. These tests ATTACK the model - a forecast that does not scale linearly with
+    points, or that quietly ignores the project's own measured rate, has not changed axis.
+    """
+
+    def _evidence(self, root: Path, rows: list[tuple[str, int, int]]) -> None:
+        """(id, points forecast at plan time, tokens actually spent) -> the two evidence logs."""
+        ev = root / "sdlc-studio" / "retros" / "evidence"
+        ev.mkdir(parents=True, exist_ok=True)
+        (ev / "forecasts-2026-01-01.jsonl").write_text(
+            "".join(json.dumps({"id": i, "points": p, "tokens": p * 1}) + "\n"
+                    for i, p, _ in rows), encoding="utf-8")
+        (ev / "actuals-2026-01-01.jsonl").write_text(
+            "".join(json.dumps({"id": i, "type": "cr", "tokens": t}) + "\n"
+                    for i, _, t in rows), encoding="utf-8")
+
+    def test_the_batch_forecast_is_the_points_times_the_measured_rate(self) -> None:
+        """THE LOAD-BEARING FORECAST TEST. The rate comes from the project's own evidence -
+        tokens actually spent, divided by the points that were forecast for them."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            # 5 delivered units: 20 points cost 400,000 tokens -> a measured 20,000 per point
+            self._evidence(root, [("BG0001", 2, 40_000), ("BG0002", 3, 60_000),
+                                  ("BG0003", 5, 100_000), ("BG0004", 8, 160_000),
+                                  ("BG0005", 2, 40_000)])
+            rate = sp.tokens_per_point(root)
+            self.assertEqual(rate["rate"], 20_000)
+            self.assertEqual(rate["source"], "measured")
+            _pointed_cr(root, 1, 3)
+            _pointed_cr(root, 2, 5)
+            fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
+            self.assertEqual(fc["points"], 8)
+            self.assertEqual(fc["rate"], 20_000)
+            self.assertEqual(fc["tokens"], 8 * 20_000)          # sum(points) x measured rate
+            self.assertEqual(fc["per_unit"]["CR0001"], 3 * 20_000)
+            self.assertEqual(fc["per_unit"]["CR0002"], 5 * 20_000)
+
+    def test_there_is_no_base_term(self) -> None:
+        """A fitted base term does WORSE than the flat rate. The forecast is strictly linear in
+        points: a unit of 8 costs exactly 4x a unit of 2, with nothing added per unit."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            _pointed_cr(root, 1, 2)
+            _pointed_cr(root, 2, 8)
+            fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
+            self.assertEqual(fc["per_unit"]["CR0002"], 4 * fc["per_unit"]["CR0001"])
+            self.assertEqual(fc["tokens"], 10 * fc["rate"])
+
+    def test_without_evidence_the_rate_is_the_seed_and_says_so(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            rate = sp.tokens_per_point(root)
+            self.assertEqual(rate["source"], "seed")
+            self.assertEqual(rate["rate"], sp.POINTS_RATE_SEED)
+            self.assertIn("blind re-estimation", rate["basis"])
+
+    def test_a_handful_of_units_is_not_a_measurement(self) -> None:
+        """A rate re-fitted to one or two units is fitting noise - this project has been burned
+        there before. Below the minimum the seed stands, and the plan says how far off it is."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            self._evidence(root, [("BG0001", 2, 400_000)])   # one wild unit
+            rate = sp.tokens_per_point(root)
+            self.assertEqual(rate["source"], "seed")
+            self.assertEqual(rate["units"], 1)               # it is COUNTED, not hidden
+
+    def test_the_order_mode_cannot_change_the_forecast(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            _pointed_cr(root, 1, 5)
+            pri = sp.build_plan(root, "cr", "Proposed", order="priority")["token_forecast"]
+            wsjf = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
+            self.assertEqual(pri["tokens"], wsjf["tokens"])
+            self.assertEqual(pri["tokens"], 5 * pri["rate"])
+
+    def test_the_plan_states_the_rate_and_where_it_came_from(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _pointed_cr(root, 1, 3)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = _load().main(["plan", "--crs", "Proposed", "--root", str(root),
+                                   "--no-fetch", "--skip-personas"])
+            self.assertEqual(rc, 0)
+            text = out.getvalue()
+            self.assertIn("3 point(s)", text)
+            self.assertIn("per point", text)
+            self.assertIn("blind re-estimation", text)  # the evidence the rate came from
+
+    def test_the_recorded_forecast_carries_the_points_it_was_made_from(self) -> None:
+        """The closed loop: the plan records the points it forecast on, so the NEXT plan can
+        measure the rate from them against the actuals that come back."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            _pointed_cr(root, 1, 5)
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                sp.main(["plan", "--crs", "Proposed", "--root", str(root), "--no-fetch",
+                         "--skip-personas"])
+            sys.path.insert(0, str(SCRIPT.parent))
+            import telemetry
+            rec = telemetry.forecasts(root)["CR0001"]
+            self.assertEqual(rec["points"], 5)
+            self.assertEqual(rec["tokens"], 5 * sp.POINTS_RATE_SEED)
+
+
+class WsjfIsCostOfDelayOverPointsTests(unittest.TestCase):
+    """WSJF = Cost of Delay / Points, and it runs WITHOUT seat scores.
+
+    The old WSJF needed `.local/wsjf-inputs.json`, so it almost never ran - which is why a dead
+    complexity signal (r = +0.03 against cost) was doing the ordering instead (BG0147).
+    """
+
+    def test_it_runs_with_no_seat_inputs_at_all(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            _pointed_cr(root, 1, 8, priority="High")
+            _pointed_cr(root, 2, 2, priority="High")     # same value, 4x cheaper
+            batch = sp.select_batch(root, "cr", "Proposed", order="wsjf", skip_personas=True)
+            self.assertEqual([b["id"] for b in batch], ["CR0002", "CR0001"])
+            by_id = {b["id"]: b for b in batch}
+            self.assertEqual(by_id["CR0002"]["wsjf"], sp.wsjf_score(sp.cost_of_delay("High"), 2))
+            self.assertEqual(by_id["CR0001"]["cod_source"], "priority")
+
+    def test_cost_of_delay_falls_out_of_priority_on_the_fibonacci_scale(self) -> None:
+        sp = _load()
+        self.assertGreater(sp.cost_of_delay("Critical"), sp.cost_of_delay("High"))
+        self.assertGreater(sp.cost_of_delay("High"), sp.cost_of_delay("Medium"))
+        self.assertGreater(sp.cost_of_delay("Medium"), sp.cost_of_delay("Low"))
+        self.assertEqual(sp.cost_of_delay("P1"), sp.cost_of_delay("Critical"))
+        # every rung is on the same modified Fibonacci scale the points use
+        for band in ("Critical", "High", "Medium", "Low"):
+            self.assertIn(sp.cost_of_delay(band), sp.sdlc_md.POINTS_SCALE)
+        # an absent or unreadable priority ranks Medium - it never crashes the planner
+        self.assertEqual(sp.cost_of_delay(""), sp.cost_of_delay("Medium"))
+        self.assertEqual(sp.cost_of_delay("nonsense"), sp.cost_of_delay("Medium"))
+
+    def test_a_cheaper_job_of_equal_value_goes_first(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _pointed_cr(root, 1, 8, priority="Medium")
+            _pointed_cr(root, 2, 3, priority="Medium")
+            batch = _load().select_batch(root, "cr", "Proposed", order="wsjf",
+                                         skip_personas=True)
+            self.assertEqual([b["id"] for b in batch], ["CR0002", "CR0001"])
+
+    def test_the_dead_complexity_signal_no_longer_orders_the_batch(self) -> None:
+        """BG0147. Two identical units - same priority, same points - one touching a deeply
+        nested file and one touching a trivial one. The blast-radius complexity of the FILE
+        (r = +0.03 against measured cost) must not decide which runs first."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            (root / "complex.py").write_text(
+                "def deep(a, b, c, d):\n    if a:\n        if b:\n            if c:\n"
+                "                if d:\n                    return 1\n", encoding="utf-8")
+            (root / "simple.py").write_text("def s(a):\n    return a\n", encoding="utf-8")
+            _pointed_cr(root, 1, 3, affects="complex.py", priority="High")
+            _pointed_cr(root, 2, 3, affects="simple.py", priority="High")
+            batch = sp.select_batch(root, "cr", "Proposed", order="wsjf", skip_personas=True)
+            # equal WSJF: the order falls to id, which is arbitrary and HONEST. It must not be
+            # decided by a number with no demonstrated meaning.
+            self.assertEqual([b["id"] for b in batch], ["CR0001", "CR0002"])
+            for b in batch:
+                self.assertNotIn("complexity", b)
+
+    def test_seat_scores_override_the_derived_cost_of_delay_when_they_exist(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            _pointed_cr(root, 1, 5, priority="Low")      # low priority ...
+            _pointed_cr(root, 2, 5, priority="High")
+            local = root / "sdlc-studio" / ".local"
+            local.mkdir(parents=True, exist_ok=True)
+            (local / "wsjf-inputs.json").write_text(json.dumps({
+                "CR0001": {"value": 20, "time_criticality": 0, "risk_reduction": 0}}),
+                encoding="utf-8")
+            batch = sp.select_batch(root, "cr", "Proposed", order="wsjf")
+            by_id = {b["id"]: b for b in batch}
+            self.assertEqual([b["id"] for b in batch][0], "CR0001")  # ... the seats outrank it
+            self.assertEqual(by_id["CR0001"]["cod_source"], "seats")
+            self.assertEqual(by_id["CR0001"]["wsjf"], sp.wsjf_score(20, 5))
+            self.assertEqual(by_id["CR0002"]["cod_source"], "priority")
+
+    def test_points_divide_the_seat_score_too(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            _pointed_cr(root, 1, 8)
+            local = root / "sdlc-studio" / ".local"
+            local.mkdir(parents=True, exist_ok=True)
+            (local / "wsjf-inputs.json").write_text(json.dumps({
+                "CR0001": {"value": 9, "time_criticality": 9, "risk_reduction": 9, "size": 1}}),
+                encoding="utf-8")
+            batch = sp.select_batch(root, "cr", "Proposed", order="wsjf")
+            # the seat `size` is NOT a second size vocabulary: points are the denominator
+            self.assertEqual(batch[0]["points"], 8)
+            self.assertEqual(batch[0]["wsjf"], sp.wsjf_score(27, 8))
+
+    def test_a_declared_dependency_still_beats_the_wsjf_order(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            d2 = root / "sdlc-studio" / "change-requests"
+            _pointed_cr(root, 1, 8, priority="Low")
+            _pointed_cr(root, 2, 1, priority="Critical")
+            (d2 / "CR0002-x.md").write_text(
+                (d2 / "CR0002-x.md").read_text(encoding="utf-8") + "> **Depends on:** CR0001\n",
+                encoding="utf-8")
+            ids = [b["id"] for b in _load().select_batch(root, "cr", "Proposed", order="wsjf",
+                                                         skip_personas=True)]
+            self.assertLess(ids.index("CR0001"), ids.index("CR0002"))
+
+
 class BreakdownReportTests(unittest.TestCase):
     """`sprint breakdown` - the read-only report the refusal names."""
 
@@ -1866,18 +1876,19 @@ class BreakdownReportTests(unittest.TestCase):
 
     def test_a_large_cr_with_no_stories_is_flagged_for_decomposition(self) -> None:
         """Only stories carry executable Verify lines, so a big CR's Done is gated on prose
-        until it is decomposed."""
+        until it is decomposed. A CR sized AT the split ceiling (legal, but the biggest a
+        single unit may be) is doing enough work to warrant stories."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _groomed_cr(root, 1, _src(root, "src/a.py"), effort="L")
-            _groomed_cr(root, 2, _src(root, "src/b.py"), effort="S")
+            _groomed_cr(root, 1, _src(root, "src/a.py"), points=8)   # at the ceiling
+            _groomed_cr(root, 2, _src(root, "src/b.py"), points=2)
             bd = _load().build_plan(root, "cr", "Proposed", skip_personas=True)["breakdown"]
             self.assertEqual([u["id"] for u in bd["decompose"]], ["CR0001"])
 
     def test_a_cr_a_story_already_cites_is_not_flagged(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _groomed_cr(root, 1, _src(root, "src/a.py"), effort="L")
+            _groomed_cr(root, 1, _src(root, "src/a.py"), points=8)
             sd = root / "sdlc-studio" / "stories"
             sd.mkdir(parents=True, exist_ok=True)
             (sd / "US0001-x.md").write_text(

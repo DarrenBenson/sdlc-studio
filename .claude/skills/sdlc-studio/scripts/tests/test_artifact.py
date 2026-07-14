@@ -27,8 +27,8 @@ artifact = _load()
 # A bug and a CR may not be born UNGROOMED: both creators refuse a unit `sprint plan` could not
 # plan - one naming neither the files it touches nor a size (BG0136). The prose of a scaffold may
 # still be deferred to whoever fills it in; the grooming may not.
-GROOM = {"affects": "src/thing.py", "effort": "S"}
-GROOM_CLI = ["--affects", "src/thing.py", "--effort", "S"]
+GROOM = {"affects": "src/thing.py", "points": 3}
+GROOM_CLI = ["--affects", "src/thing.py", "--points", "3"]
 
 
 def _index(repo: Path, type_: str, header: str) -> None:
@@ -1038,7 +1038,7 @@ class MetadataInjectionRefusalTests(unittest.TestCase):
             self._nothing_written(repo, "story")
 
     def test_every_metadata_field_a_creator_interpolates_is_refused(self) -> None:
-        for field in ("severity", "priority", "ctype", "effort", "provenance",
+        for field in ("severity", "priority", "ctype", "points", "provenance",
                       "persona", "tranche", "epic"):
             with self.subTest(field=field), tempfile.TemporaryDirectory() as d:
                 repo = self._repo(d)
@@ -1233,7 +1233,7 @@ class GroomingDemandTests(unittest.TestCase):
             _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
             r = artifact.new(repo, "bug", "a defect",
                              {"severity": "High", "affects": "src/a.py, src/b.py",
-                              "effort": "M"})
+                              "points": 5})
             path = Path(r["path"])
             self.assertEqual(sdlc_md.affects_files(path.read_text(encoding="utf-8")),
                              ["src/a.py", "src/b.py"])
@@ -1249,7 +1249,7 @@ class GroomingDemandTests(unittest.TestCase):
                        "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
                 r = artifact.new(repo, "cr", "tighten the gate",
                                  {"priority": "High", "ctype": "Improvement", "impact": "i",
-                                  "affects": "src/gate.py", "effort": "L",
+                                  "affects": "src/gate.py", "points": 8,
                                   "template": template})
                 path = Path(r["path"])
                 self.assertEqual(self._plan_verdict(repo, path, "cr")["ungroomed"], [],

@@ -713,7 +713,12 @@ class SeparationOfDutiesTests(unittest.TestCase):
 
 
 class EvidenceSchemaTests(unittest.TestCase):
-    """US0062/CR0171: v3 bugs need evidence; v3 CRs need impact + effort. v2 exempt."""
+    """US0062/CR0171: v3 bugs need evidence; v3 CRs need impact + a size. v2 exempt.
+
+    The size is `Points` on the modified Fibonacci scale. The retired `Effort` S/M/L still
+    passes HERE, and only here: this is a read over artefacts already on disk, and turning
+    every CR filed before the vocabulary changed into an error would report a fact about
+    history rather than a defect anyone can fix. Nothing writes an Effort any more."""
 
     def _v3(self, root: Path) -> None:
         (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
@@ -741,21 +746,42 @@ class EvidenceSchemaTests(unittest.TestCase):
             self.assertNotIn("evidence-present",
                              [v["rule"] for v in validate.validate_file(p, "bug", root)])
 
-    def test_cr_without_effort_fails(self) -> None:
+    def _cr(self, root: Path, tail: str) -> Path:
+        return _write(root, "sdlc-studio/change-requests/CR0001-x.md",
+                      f"# CR-0001: x\n\n> **Status:** Proposed\n> **Priority:** Low\n"
+                      f"> **Type:** X\n{self._AUTH}\n{tail}")
+
+    def test_cr_without_a_size_fails(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d); self._v3(root)
-            p = _write(root, "sdlc-studio/change-requests/CR0001-x.md",
-                       f"# CR-0001: x\n\n> **Status:** Proposed\n> **Priority:** Low\n> **Type:** X\n{self._AUTH}\n"
-                       "## Impact\n\nusers are affected\n")
+            p = self._cr(root, "## Impact\n\nusers are affected\n")
             self.assertIn("evidence-present",
                           [v["rule"] for v in validate.validate_file(p, "cr", root)])
 
-    def test_cr_with_impact_and_effort_passes(self) -> None:
+    def test_cr_with_impact_and_points_passes(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d); self._v3(root)
-            p = _write(root, "sdlc-studio/change-requests/CR0001-x.md",
-                       f"# CR-0001: x\n\n> **Status:** Proposed\n> **Priority:** Low\n> **Type:** X\n{self._AUTH}\n"
-                       "## Impact\n\nusers are affected and blocked\n\n## Effort\n\n**M.** moderate\n")
+            p = self._cr(root, "## Impact\n\nusers are affected and blocked\n\n**Points:** 5\n")
+            self.assertNotIn("evidence-present",
+                             [v["rule"] for v in validate.validate_file(p, "cr", root)])
+
+    def test_a_cr_sized_off_the_scale_is_not_sized_at_all(self) -> None:
+        # A 7 is not a size the tool will write, and it is not one it will accept as a size on
+        # read either - otherwise a hand-edited artefact re-admits the precision the scale exists
+        # to refuse, and the validator becomes the hole in the gate.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); self._v3(root)
+            p = self._cr(root, "## Impact\n\nusers are affected and blocked\n\n**Points:** 7\n")
+            self.assertIn("evidence-present",
+                          [v["rule"] for v in validate.validate_file(p, "cr", root)])
+
+    def test_a_legacy_effort_cr_already_on_disk_still_passes(self) -> None:
+        # The backlog carries hundreds of these. They are re-estimated by a planning pass, not
+        # by a validator turning red on history nobody can change.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); self._v3(root)
+            p = self._cr(root, "## Impact\n\nusers are affected and blocked\n\n"
+                               "## Effort\n\n**M.** moderate\n")
             self.assertNotIn("evidence-present",
                              [v["rule"] for v in validate.validate_file(p, "cr", root)])
 

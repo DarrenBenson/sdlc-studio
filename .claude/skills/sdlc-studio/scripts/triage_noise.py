@@ -35,6 +35,12 @@ import next_id  # noqa: E402
 
 _LOW_TOKENS = {"low", "p4", "trivial", "minor"}
 
+# The opening size of a consolidation CR, on the one size scale (`sdlc_md.POINTS_SCALE`). A
+# consolidation is not sized by its findings - it is sized by the act of triaging a themed batch
+# and actioning or rejecting it as one, which is a small, well-understood job. It is an opening
+# estimate a triager revises, never a number derived from the findings inside it.
+CONSOLIDATION_POINTS = 3
+
 
 def _cfg(root, key: str, default):
     try:
@@ -193,7 +199,7 @@ def _new_consolidation_cr(root, theme: str, title: str, detail: str, today: str,
     """Mint a fresh consolidation CR for `theme`, seeded with the first finding, and index it.
 
     A consolidation CR is a creator like any other, and its only era is v3 - so it carries the
-    typed `Raised-by` and the impact + effort block the v3 validator demands of every CR."""
+    typed `Raised-by` and the impact + size block the v3 validator demands of every CR."""
     root = Path(root)
     file_id, disp = _alloc_cr_id(root)
     key = _theme_key(theme)
@@ -227,7 +233,10 @@ def _new_consolidation_cr(root, theme: str, title: str, detail: str, today: str,
         "## Impact\n\nEach finding here is Low-severity on its own; the batch is triaged, then "
         "actioned or rejected as one. Left unconsolidated, the same findings would each mint an "
         "artefact and drown the real signal.\n\n"
-        "**Effort:** S\n\n"
+        # The size of the CONSOLIDATION, not of any one finding in it: triaging a themed batch
+        # of Low-severity findings and actioning or rejecting it as one. Re-estimate it when the
+        # batch is triaged - by then its real shape is known, and this is only the opening call.
+        f"**Points:** {CONSOLIDATION_POINTS}\n\n"
         f"## Consolidated Findings\n\n{_bullet(title, detail)}\n\n"
         "## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
         f"{rev}\n")

@@ -36,7 +36,7 @@ sdlc_md = ff.sdlc_md
 # Every bug/CR fixture below is GROOMED - it names the files it will touch and its job size -
 # because both creators now REFUSE a finding `sprint plan` could not plan (BG0136). The ungroomed
 # shape is the subject of GroomingGateTests, never an accident in a fixture.
-GROOM = {"affects": "src/thing.py", "effort": "S"}
+GROOM = {"affects": "src/thing.py", "points": 3}
 BUG = {"severity": "high", "summary": "s", "steps": "r", "fix": "f", **GROOM}
 
 
@@ -89,7 +89,7 @@ class FileTests(unittest.TestCase):
             res = ff.file_finding(root, "cr", "Tighten the gate",
                                   {"priority": "High", "ctype": "Improvement",
                                    "summary": "It is loose.", "acs": ["it is tight", "tested"],
-                                   "impact": "the gate lets bad units through", "effort": "M",
+                                   "impact": "the gate lets bad units through", "points": 5,
                                    "affects": "src/gate.py", "date": "2026-06-20"})
             self.assertEqual(res["id"], "CR-0001")
             body = Path(res["path"]).read_text(encoding="utf-8")
@@ -112,7 +112,7 @@ class FileTests(unittest.TestCase):
                                    "summary": "s",
                                    "acs": ["- [ ] already boxed", "-[x] ticked variant",
                                            "bare text"],
-                                   "impact": "i", "effort": "S", "affects": "src/x.py",
+                                   "impact": "i", "points": 3, "affects": "src/x.py",
                                    "date": "2026-07-04"})
             body = Path(res["path"]).read_text(encoding="utf-8")
             self.assertIn("- [ ] already boxed", body)
@@ -166,7 +166,7 @@ class FileTests(unittest.TestCase):
             _seed_index(root, "cr")
             ff.file_finding(root, "cr", "a clean finding",
                             {"priority": "High", "ctype": "Improvement",
-                             "summary": "s", "acs": ["x"], "impact": "i", "effort": "S",
+                             "summary": "s", "acs": ["x"], "impact": "i", "points": 3,
                              "affects": "src/x.py", "date": "2026-06-20"})
             drift = rc.detect_type("cr", root)["drift"]
             self.assertEqual(drift, [], f"expected 0 drift, got {drift}")
@@ -183,7 +183,7 @@ class FileTests(unittest.TestCase):
             _seed_index(root, "cr")
             res = ff.file_finding(root, "cr", "handle `a | b` inputs",
                                   {"priority": "Low", "ctype": "Bug", "summary": "s",
-                                   "acs": ["y"], "impact": "i", "effort": "S",
+                                   "acs": ["y"], "impact": "i", "points": 3,
                                    "affects": "src/x.py", "date": "2026-06-20"})
             self.assertEqual(res["indexed"], True)
             self.assertEqual(rc.detect_type("cr", root)["drift"], [])  # escaped, parses
@@ -200,7 +200,7 @@ class FileTests(unittest.TestCase):
                 "| Proposed | 0 |\n| **Total** | **0** |\n", encoding="utf-8")
             res = ff.file_finding(root, "cr", "x", {"priority": "Low", "ctype": "Bug",
                                                     "summary": "s", "acs": ["y"],
-                                                    "impact": "i", "effort": "S",
+                                                    "impact": "i", "points": 3,
                                                     "affects": "src/x.py"})
             self.assertFalse(res["indexed"])  # no data table -> not appended
             self.assertNotIn("[CR-0001]", (cd / "_index.md").read_text(encoding="utf-8"))
@@ -414,7 +414,7 @@ class RevisionAuthorTests(unittest.TestCase):
 
     FIELDS = {"bug": {"severity": "High", "summary": "s", "steps": "x", "fix": "y", **GROOM},
               "cr": {"priority": "High", "ctype": "Improvement", "summary": "s",
-                     "acs": ["a"], "impact": "i", "effort": "M", "affects": "src/x.py"},
+                     "acs": ["a"], "impact": "i", "points": 5, "affects": "src/x.py"},
               "rfc": {"summary": "s", "options": ["Option A"]}}
 
     def _file(self, root: Path, type_: str, **extra) -> str:
@@ -549,7 +549,7 @@ class MetadataInjectionRefusalTests(unittest.TestCase):
             with self.assertRaises(ValueError) as cm:
                 ff.file_finding(root, "cr", "t",
                                 {"priority": "High", "ctype": "Improvement", "summary": "s",
-                                 "impact": "i", "effort": "S", "affects": "src/x.py",
+                                 "impact": "i", "points": 3, "affects": "src/x.py",
                                  "acs": ["ok", "do it\n- [ ] and this"]})
             self.assertIn("acs", str(cm.exception))
 
@@ -564,33 +564,33 @@ class MetadataInjectionRefusalTests(unittest.TestCase):
             self.assertTrue(res["indexed"])
 
 
-class BugEffortTests(unittest.TestCase):
+class BugSizeTests(unittest.TestCase):
     """A bug declares a job SIZE. It only ever carried Severity, which is urgency, so a bug
-    could not be sized even in principle and always planned at the neutral default."""
+    could not be sized even in principle and always planned at the neutral default. The size is
+    `Points` on the modified Fibonacci scale - the one size vocabulary (see test_points.py)."""
 
     FIELDS = {"severity": "High", "summary": "s", "steps": "x", "fix": "y",
               "affects": "src/thing.py"}
 
-    def test_declared_effort_lands_in_the_filed_bug(self) -> None:
+    def test_declared_points_land_in_the_filed_bug(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _seed_index(root, "bug")
-            res = ff.file_finding(root, "bug", "a defect", {**self.FIELDS, "effort": "L"})
+            res = ff.file_finding(root, "bug", "a defect", {**self.FIELDS, "points": 8})
             body = Path(res["path"]).read_text(encoding="utf-8")
-            self.assertIn("> **Effort:** L", body)
-            self.assertEqual(sdlc_md.extract_field(body, "Effort"), "L")
+            self.assertEqual(sdlc_md.read_points(body), 8)
 
-    def test_cli_accepts_effort_for_a_bug(self) -> None:
+    def test_cli_accepts_points_for_a_bug(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _seed_index(root, "bug")
             rc = ff.main(["file", "--type", "bug", "--title", "a defect", "--severity", "High",
-                          "--summary", "s", "--steps", "x", "--fix", "y", "--effort", "S",
+                          "--summary", "s", "--steps", "x", "--fix", "y", "--points", "3",
                           "--affects", "src/thing.py", "--root", str(root)])
             self.assertEqual(rc, 0)
             filed = next((root / "sdlc-studio" / "bugs").glob("BG0001-*.md"))
             self.assertEqual(
-                sdlc_md.extract_field(filed.read_text(encoding="utf-8"), "Effort"), "S")
+                sdlc_md.read_points(filed.read_text(encoding="utf-8")), 3)
 
 
 def _load_sprint():
@@ -612,7 +612,7 @@ class GroomingGateTests(unittest.TestCase):
     artefact IS (LL0016).
 
     The load-bearing pair is the ROUND TRIP, through the public CLI: a bug filed with no
-    `--affects` is REFUSED, and the same bug filed WITH `--affects`/`--effort` is accepted AND
+    `--affects` is REFUSED, and the same bug filed WITH `--affects`/`--points` is accepted AND
     then passes the planner's own breakdown gate. Behaviour only - nothing here greps a source
     file for a string.
     """
@@ -644,7 +644,7 @@ class GroomingGateTests(unittest.TestCase):
             root = Path(d)
             idx = _seed_index(root, "bug")
             before = idx.read_text(encoding="utf-8")
-            rc, msg = self._file(root, "--effort", "M")
+            rc, msg = self._file(root, "--points", "5")
             self.assertEqual(rc, 1)
             self.assertEqual(self._bugs(root), [])          # no artefact minted
             self.assertEqual(idx.read_text(encoding="utf-8"), before)   # no index row, no id burnt
@@ -658,7 +658,7 @@ class GroomingGateTests(unittest.TestCase):
             rc, msg = self._file(root, "--affects", "src/thing.py")
             self.assertEqual(rc, 1)
             self.assertEqual(self._bugs(root), [])
-            self.assertIn("--effort", msg)
+            self.assertIn("--points", msg)
 
     def test_the_round_trip_filed_then_plannable(self) -> None:
         # THE bug. File it the way the tool now allows, and the planner must accept it - a
@@ -667,7 +667,7 @@ class GroomingGateTests(unittest.TestCase):
             root = Path(d)
             _seed_index(root, "bug")
             rc, _ = self._file(root, "--affects", "src/thing.py, src/other.py",
-                               "--effort", "M")
+                               "--points", "5")
             self.assertEqual(rc, 0)
             filed = self._bugs(root)[0]
             text = filed.read_text(encoding="utf-8")
@@ -684,7 +684,7 @@ class GroomingGateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _seed_index(root, "bug")
-            rc, msg = self._file(root, "--affects", "everything", "--effort", "M")
+            rc, msg = self._file(root, "--affects", "everything", "--points", "5")
             self.assertEqual(rc, 1)
             self.assertEqual(self._bugs(root), [])
             self.assertIn("Affects", msg)

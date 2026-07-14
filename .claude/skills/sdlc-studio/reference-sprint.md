@@ -310,21 +310,20 @@ epic(s) - repeatable, union. Without it, `--stories Draft` selects every Draft s
 epics (the friction that forces hand-scoping). Dependency ordering, `--write`, and WSJF all operate
 on the scoped batch. Epic-scoping is story-only (it errors with `--crs`/`--bugs`).
 
-**Seat-scored WSJF.** Sprint planning is a value/effort/risk judgement, not a bare
-priority sort. At the plan rung, consult the review seats - **Product Owner** for value
-(+ time-criticality, risk-reduction), **Engineering** for effort (an optional `size` per unit -
-story-point scale - which OVERRIDES the complexity seed), **QA** for risk - and write their
-scores to `sdlc-studio/.local/wsjf-inputs.json`
-(`{<id>: {value, time_criticality, risk_reduction, size?}}`). Without a seat size the score
-divides by the declared neutral default - never by the complexity signal, which measures the
-cognitive complexity of the EXISTING files touched (blast-radius RISK, kept as the
-within-priority tiebreak and the token-budget input, not effort: a one-line fix in a complex
-file is not a big job). Unknown effort is never treated as minimal. `sprint plan
---order wsjf` then orders by
-**WSJF = (value + time-criticality + risk-reduction) / size**, recording the components in the
-sprint-plan artifact. With no seat inputs (or `--skip-personas`) it degrades gracefully to
-priority + complexity. The seat consult is the isolated-subagent consult; the planner
-math is deterministic.
+**Seat-scored WSJF.** Sprint planning is a value/size/risk judgement, not a bare
+priority sort. WSJF is Cost of Delay over job size, and both sit on the same modified Fibonacci
+scale (1, 2, 3, 5, 8, 13, 20). The job size is the unit's **`Points:`** - the one size
+vocabulary, recorded on the artefact. Cost of Delay is derived from Priority, or supplied by the
+review seats: consult **Product Owner** for value (+ time-criticality, risk-reduction) and
+**QA** for risk, and write their scores to `sdlc-studio/.local/wsjf-inputs.json`
+(`{<id>: {value, time_criticality, risk_reduction}}`). Seat scores replace the derived CoD; they
+never replace the size, because there is one size vocabulary and the seats do not speak a second.
+`sprint plan --order wsjf` then orders by **WSJF = Cost of Delay / Points**, recording the
+components in the sprint-plan artifact. A unit with no Points scores no WSJF and falls to
+priority order - which is only reachable through the recorded grooming opt-out, since the gate
+otherwise refuses an unsized batch. With no seat inputs (or `--skip-personas`) the CoD comes from
+Priority alone. The seat consult is the isolated-subagent consult; the planner math is
+deterministic.
 
 ### `--goal design` - establish the dependency graph
 
@@ -349,8 +348,8 @@ itself is the gate.
 
 | Field | Why the planner cannot work without it |
 | --- | --- |
-| `Affects:` | The files the unit will touch. Nothing can see that two units touch the same file - so the planner reports them as safely parallel when they will collide - and nothing can order the batch by blast radius. It does NOT price the unit: no plan-time signal predicts a unit's cost well enough to try (see the token forecast below). |
-| a size | `Effort: S\|M\|L` (bug/CR - the job size of the work, not its urgency), or `Points:` (story), or a review-seat score in `sdlc-studio/.local/wsjf-inputs.json`. Without one, WSJF divides by a neutral default and the "estimate" is a placeholder wearing an estimate's clothes. |
+| `Affects:` | The files the unit will touch. Nothing can see that two units touch the same file - so the planner reports them as safely parallel when they will collide - and nothing can order the batch by blast radius. |
+| `Points:` | The job size on the modified Fibonacci scale (1, 2, 3, 5, 8, 13, 20) - the one size vocabulary, on every unit type. It is RELATIVE ("is this bigger than the last 3 you delivered"), not a guess at hours, and a value off the scale is refused rather than rounded. **Above 8 the unit must be SPLIT, not estimated harder:** past that point estimator consistency collapses, and the gate refuses it (the threshold is configurable). This is the number WSJF divides by and the number the token forecast multiplies. |
 
 **Refused, not warned.** With any ungroomed unit in the batch, `sprint plan` exits non-zero and
 prints **no plan at all**: it names each offending unit, says what it lacks, and names the
@@ -466,14 +465,16 @@ appetite is that ceiling (Shape Up's fixed timebox: appetite is fixed, scope fle
   ceiling would depend on the actor self-reporting the budget meant to constrain it. The
   plan reports a token forecast, labelled an estimate; the close repeats it. It never
   stops a run.
-- **There is no per-unit estimate.** The forecast is the unit COUNT times a measured
-  per-unit rate, and it does not claim to tell the units apart. It used to: the seed was
-  the blast-radius complexity of the files a unit touched, and measured against 18 units of
-  real telemetry it correlated with actual cost at r = +0.03 - no signal at all. Every other
-  plan-time signal was then tested; the best reached a leave-one-out r of 0.42 against a bar
-  of 0.50, so the per-unit number was dropped rather than re-seeded. **Read the batch
-  history the plan prints - what sprints have actually cost - and treat the forecast as the
-  weaker number.** A per-unit figure that has never once been right is not a planning input.
+- **The forecast is points times a MEASURED rate.** `forecast = sum(Points) x tokens-per-point`,
+  where the rate is derived from this project's own history - actual tokens over points
+  delivered, recorded in `retros/VELOCITY.md` and re-measured every sprint. Nothing hardcodes
+  it: a blind re-estimation of 21 delivered units scored points at r = +0.68 against measured
+  cost (r = +0.78 on units of 8 or below), where every computed signal tried before it managed
+  +0.03. A point is a stable unit of cost from 2 to 8 (about 25,000 tokens each) and breaks
+  above it, which is why a unit over 8 points is split rather than forecast. Until the project
+  has measured enough of its own units the rate falls back to a seed, and the plan says which it
+  used. **Read the velocity history the plan prints** - `retro.py velocity` - to see the rate the
+  next forecast will use and how past sprints actually landed against it.
 
 ## Model-tier routing {#model-tier-routing}
 
