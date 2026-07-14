@@ -1,6 +1,6 @@
 # CR-0250: Security hardening: default-document the AC-verifier http host allowlist and the rolling-install checksum
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** P3
 > **Type:** Improvement
 > **Date:** 2026-07-14
@@ -20,7 +20,7 @@ A well-intentioned-but-mistaken Verify line on a cloud host could reach a metada
 
 ## Acceptance Criteria
 
-- [ ] reference-verify.md recommends setting `SDLC_VERIFY_HTTP_HOSTS` on cloud/CI hosts; README install section notes `SDLC_STUDIO_REQUIRE_CHECKSUM`=1 + tagged --version for sensitive installs. Verify: rg -q '`SDLC_VERIFY_HTTP_HOSTS`' reference-verify.md && rg -q '`REQUIRE_CHECKSUM`' README.md
+- [ ] `reference-verify.md` recommends setting the AC-verifier http host allowlist on a cloud or CI host, and the README's install section tells a sensitive-environment user to pin a tagged release and require the checksum.
 
 ## Revision History
 

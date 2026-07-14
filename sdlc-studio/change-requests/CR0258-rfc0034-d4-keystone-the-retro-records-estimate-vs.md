@@ -16,6 +16,10 @@ The measure half of the sizing loop, and the keystone of RFC0034 - it produces t
 
 The token supplier is validated end-to-end. A unit (BG0126) was run as a background subagent; its completion notification carried `<usage><subagent_tokens>46792</subagent_tokens><duration_ms>271825</duration_ms></usage>`. Feeding those into `telemetry.py record --id BG0126 --type bug --tokens 46792 --wall-time-s 272` produced the **first telemetry record with a real token value** (of 330+ prior records, all null). So the mechanism this CR needs already works with the existing pieces: harness-reported subagent usage -> `telemetry.py record`. What remains for the CR is to make the sprint/autosprint loop do it automatically per unit, and to compare the actual against the plan estimate.
 
+## BLOCKED on BG0131 (the token metric is not valid)
+
+The supplier PoC delivered three real units and the reported token figure did NOT track the work: 42.7k-46.8k (+/-9%) across units whose wall-clock varied 240% and whose kind differed completely. It correlates with neither wall-clock nor tool-uses. So the token half of this CR is blocked until BG0131 establishes what the figure actually counts and sources a valid actual. **The wall-clock half is unaffected** and can proceed - it demonstrably differentiated all three units.
+
 ## Cross-harness portability
 
 The supplier is a neutral SINK plus a per-harness SOURCE adapter, and must stay that way - the skill installs to five harnesses and is ecosystem-neutral. `telemetry.py record --tokens --wall-time-s` is portable (plain Python, any harness calls it). Only the token NUMBER is harness-specific: Claude Code reports `subagent_tokens` on a subagent completion (the PoC path); a raw-API harness reads the `usage` field on every response (precise, always present); Codex/Gemini CLIs expose their own usage output; a harness with no token visibility gets none. So the CR must abstract the source, not hardcode subagents. **Wall-clock is the universal floor** - every harness can measure elapsed time, so wall-clock velocity works everywhere and token velocity works wherever usage is exposed (always, for anything built on an LLM API).

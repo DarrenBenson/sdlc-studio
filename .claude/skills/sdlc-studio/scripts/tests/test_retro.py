@@ -195,5 +195,62 @@ class ALessonIsAValidDisposition(RetroBase):
         self.assertFalse(self.validate()["ok"])
 
 
+class AnExplicitDeclineBeatsAnIdInItsReason(RetroBase):
+    """A decline routinely cites the work it defers to: 'declined: belongs to RFC0034
+    (CR0257)'. Classifying that as FILED because it contains an id reports the finding as
+    ticketed when it was deliberately not - the tally lies in exactly the direction that
+    flatters the sprint. The explicit prefix must win.
+
+    Found by dogfooding: the first retro run reported '2 filed, 1 declined' for what was
+    1 filed and 2 declined.
+    """
+
+    def test_a_decline_citing_an_artefact_id_is_declined_not_filed(self) -> None:
+        rows = retro.dispositions_in(
+            FULL.replace("| BG0125 |", "| declined: belongs to RFC0034 (CR0257) |"))
+        row = next(r for r in rows if r["finding"] == "the deploy was slow")
+        self.assertEqual(row["state"], "declined", row)
+        self.assertEqual(row["detail"], "belongs to RFC0034 (CR0257)")
+
+    def test_the_tally_counts_it_as_declined(self) -> None:
+        """The fix must hold at the PUBLIC path, not just in the helper (LL0024)."""
+        self.write(FULL.replace("| BG0125 |", "| declined: belongs to RFC0034 (CR0257) |"))
+        res = self.validate()
+        self.assertTrue(res["ok"], res["errors"])
+        self.assertEqual(res["filed"], [])
+        self.assertEqual(len(res["declined"]), 2)
+
+    def test_a_bare_artefact_id_is_still_filed(self) -> None:
+        rows = retro.dispositions_in(FULL)
+        row = next(r for r in rows if r["finding"] == "the deploy was slow")
+        self.assertEqual(row["state"], "filed")
+        self.assertEqual(row["detail"], "BG0125")
+
+    def test_an_id_with_prose_is_still_filed(self) -> None:
+        rows = retro.dispositions_in(
+            FULL.replace("| BG0125 |", "| LL0024 - recorded as a lesson |"))
+        row = next(r for r in rows if r["finding"] == "the deploy was slow")
+        self.assertEqual(row["state"], "filed")
+        self.assertEqual(row["detail"], "LL0024")
+
+    def test_a_bare_declined_is_still_undecided(self) -> None:
+        rows = retro.dispositions_in(FULL.replace("| BG0125 |", "| declined |"))
+        row = next(r for r in rows if r["finding"] == "the deploy was slow")
+        self.assertEqual(row["state"], "undecided")
+
+    def test_a_plain_decline_is_still_declined(self) -> None:
+        rows = retro.dispositions_in(
+            FULL.replace("| BG0125 |", "| declined: not worth an artefact this sprint |"))
+        row = next(r for r in rows if r["finding"] == "the deploy was slow")
+        self.assertEqual(row["state"], "declined")
+        self.assertEqual(row["detail"], "not worth an artefact this sprint")
+
+    def test_a_placeholder_is_still_undecided(self) -> None:
+        rows = retro.dispositions_in(
+            FULL.replace("| BG0125 |", "| {{BG0123 / declined: why not}} |"))
+        row = next(r for r in rows if r["finding"] == "the deploy was slow")
+        self.assertEqual(row["state"], "undecided")
+
+
 if __name__ == "__main__":
     unittest.main()

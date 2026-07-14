@@ -1,10 +1,12 @@
 # BG0130: retro.py miscounts a decline whose reason mentions an artefact id as filed
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Low
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
+> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py
 
 ## Summary
 

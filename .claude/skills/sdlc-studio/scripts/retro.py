@@ -137,12 +137,17 @@ def dispositions_in(text: str) -> list[dict]:
         if finding.lower() in {"finding", "issue"} or not finding:
             continue
         state, detail = "undecided", ""
+        # Order matters. An explicit `declined:` prefix WINS over an artefact id in its
+        # reason - a decline routinely cites the work it defers to ("declined: belongs to
+        # RFC0034"), and reading that id as a filing would report the finding as ticketed
+        # when it was deliberately not. A bare `declined` with no reason stays undecided:
+        # silence wearing a decision's clothes.
         if PLACEHOLDER_RE.search(disp) or not disp:
             state = "undecided"
-        elif ARTEFACT_ID_RE.search(disp):
-            state, detail = "filed", ARTEFACT_ID_RE.search(disp).group(1).upper()
         elif (d := DECLINED_RE.match(disp)) and not PLACEHOLDER_RE.search(d.group(1)):
             state, detail = "declined", d.group(1).strip()
+        elif ARTEFACT_ID_RE.search(disp):
+            state, detail = "filed", ARTEFACT_ID_RE.search(disp).group(1).upper()
         rows.append({"finding": finding, "raw": disp, "state": state, "detail": detail})
     return rows
 

@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 2 |
 | In Progress | 0 |
-| Fixed | 48 |
+| Fixed | 49 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 1 |
 | Superseded | 0 |
-| **Total** | **130** |
+| **Total** | **131** |
 
 ## All Bugs
 
@@ -96,7 +96,8 @@
 | [BG0127](BG0127-several-index-md-writers-bypass-atomic-write-the.md) | Several _index.md writers bypass atomic_write, the module's own torn-write guard | Open | Medium | 2026-07-14 | 2026-07-14 |
 | [BG0128](BG0128-grep-verifier-verb-silent-rg-grep-rqe-dialect.md) | grep verifier verb: silent rg/grep -rqE dialect swap makes a verdict environment-dependent | Fixed | Low | 2026-07-14 | 2026-07-14 |
 | [BG0129](BG0129-review-prep-counts-personas-index-md-as-a.md) | review_prep counts personas/index.md as a persona (the underscore-index filter misses it) | Fixed | Medium | 2026-07-14 | 2026-07-14 |
-| [BG0130](BG0130-retro-py-miscounts-a-decline-whose-reason-mentions.md) | retro.py miscounts a decline whose reason mentions an artefact id as filed | Open | Low | 2026-07-14 | 2026-07-14 |
+| [BG0130](BG0130-retro-py-miscounts-a-decline-whose-reason-mentions.md) | retro.py miscounts a decline whose reason mentions an artefact id as filed | Fixed | Low | 2026-07-14 | 2026-07-14 |
+| [BG0131](BG0131-the-subagent-token-metric-does-not-track-work.md) | The subagent token metric does not track work - it cannot be used for calibration as-is | Open | High | 2026-07-14 | 2026-07-14 |
 
 ## Archived Releases
 

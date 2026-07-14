@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 10 |
+| Proposed | 9 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 243 |
+| Complete | 244 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 6 |
@@ -71,7 +71,7 @@
 | [CR-0247](CR0247-the-deterministic-retro-spine-scripts-retro-py-and.md) | The deterministic retro spine: scripts/retro.py, and ranking computed not asserted | Complete | P1 | feature | 2026-07-14 | -- |
 | [CR-0248](CR0248-consolidate-the-two-divergent-archive-writers-into-one.md) | Consolidate the two divergent archive writers into one | Proposed | P2 | Improvement | 2026-07-14 | -- |
 | [CR-0249](CR0249-derive-per-type-status-vocab-from-the-single.md) | Derive per-type status vocab from the single source instead of triplicating it | Proposed | P3 | Improvement | 2026-07-14 | -- |
-| [CR-0250](CR0250-security-hardening-default-document-the-ac-verifier-http.md) | Security hardening: default-document the AC-verifier http host allowlist and the rolling-install checksum | Proposed | P3 | Improvement | 2026-07-14 | -- |
+| [CR-0250](CR0250-security-hardening-default-document-the-ac-verifier-http.md) | Security hardening: default-document the AC-verifier http host allowlist and the rolling-install checksum | Complete | P3 | Improvement | 2026-07-14 | -- |
 | [CR-0251](CR0251-verify-ac-run-the-natural-file-flag-does.md) | verify_ac run: the natural --file flag does not exist (friction: it is --story) | Complete | P4 | Improvement | 2026-07-14 | -- |
 | [CR-0252](CR0252-refresh-prd-trd-tsd-to-the-v4-feature.md) | Refresh PRD/TRD/TSD to the v4 feature set (specs are self-declared v2.0.0 against a v4.1.0 product) | Proposed | P1 | Improvement | 2026-07-14 | -- |
 | [CR-0253](CR0253-the-sprint-close-review-is-not-gated-make.md) | The sprint-close review is not gated - make review currency a hard gate like the retro | Complete | P1 | Improvement | 2026-07-14 | -- |

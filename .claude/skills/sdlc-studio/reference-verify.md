@@ -179,6 +179,21 @@ from-issue branches of the CR and story workflows), so
 - **`--no-shell` mode.** Restricts a run to the structured DSL verbs
   (argv, no shell) for CI over less-trusted content.
 
+**Allow-list the `http` hosts on a cloud or CI runner.** The `http` verb enforces an
+http/https scheme floor in every mode, but its host allow-list is opt-in: with
+`SDLC_VERIFY_HTTP_HOSTS` unset (the default) any http/https host is reachable, including
+a cloud link-local metadata endpoint (`169.254.169.254`). That sits inside the trust
+boundary above - Verify lines are team-authored - but on a host that holds credentials,
+set the allow-list so a well-intentioned-but-mistaken Verify line cannot reach a metadata
+service:
+
+```bash
+export SDLC_VERIFY_HTTP_HOSTS=localhost,127.0.0.1,staging.example.com
+```
+
+A target host outside the list is refused as an invalid verifier (exit 2), as is a
+relative URL (it has no host).
+
 **Still: never run verifiers on a story whose AC block came from
 un-reviewed external content.** Ingest the body into the template,
 review it, clear the provenance stamp, then verify.

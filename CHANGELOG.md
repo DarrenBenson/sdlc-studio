@@ -84,6 +84,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`retro.py` no longer miscounts a decline that cites an artefact id (BG0130).** `dispositions_in`
+  checked the artefact-id pattern before the decline pattern, so `declined: belongs to RFC0034
+  (CR0257)` was reported as **filed** - the finding read as ticketed when it was deliberately not.
+  An explicit `declined:` prefix now wins. A bare `declined` with no reason still counts as
+  undecided.
+
+- **Security hardening notes documented (CR0250).** `reference-verify.md` now recommends setting the
+  AC-verifier's `http` host allowlist on a cloud or CI host (with it unset, a well-intentioned Verify
+  line could reach a link-local metadata endpoint - inside the trust boundary, but worth closing).
+  The README tells anyone installing in a sensitive environment to pin a tagged release and set
+  `SDLC_STUDIO_REQUIRE_CHECKSUM=1`.
+
 - **The `grep` verifier verb now expands globs, so the documented example works (BG0125).** `grep
   "..." src/**/*.ts` false-RED'd on present code because the verb runs argv (no shell) and the glob
   reached `rg`/`grep` literally. Globs are now expanded against the run directory before the tool
