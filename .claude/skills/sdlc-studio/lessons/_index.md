@@ -44,6 +44,7 @@ and from per-project memory (project-specific facts).
 | [LL0029](LL0029-a-record-kept-in-a-gitignored-working-directory-is-not-a-record.md) | A record kept in a gitignored working directory is not a record |  |
 | [LL0030](LL0030-a-plausible-story-fitted-to-a-real-pattern-is-not-a-finding-test-it-against-the-data-already-on-disk.md) | A plausible story fitted to a real pattern is not a finding - test it against the data already on disk |  |
 | [LL0031](LL0031-before-tuning-a-coefficient-check-that-its-input-correlates-with-the-target-at-all.md) | Before tuning a coefficient, check that its input correlates with the target at all |  |
+| [LL0032](LL0032-size-work-on-volume-complexity-and-uncertainty-and-measure-the-complexity-of-the-change-not-of-the-file.md) | Size work on volume, complexity and uncertainty - and measure the complexity of the CHANGE, not of the file |  |
 
 ## Notes
 
