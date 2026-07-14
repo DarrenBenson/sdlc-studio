@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 1 |
+| Draft | 0 |
 | In Review | 0 |
-| Accepted | 30 |
+| Accepted | 31 |
 | Superseded | 0 |
 | Withdrawn | 3 |
 | **Total** | **34** |
@@ -50,4 +50,4 @@
 | [RFC-0031](RFC0031-the-scaffold-contract-may-a-creator-emit-an.md) | The scaffold contract: may a creator emit an artefact that cannot pass validation? | Medium | Accepted | Darren | 2026-07-13 | -- |
 | [RFC-0032](RFC0032-close-the-learning-loop-retros-and-lessons-must.md) | Close the learning loop: retros and lessons must drive review, audit and the backlog | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0033](RFC0033-one-weakness-hunt-one-name-reconcile-review-generate.md) | One weakness-hunt, one name: reconcile review generate, the adversarial audit, and the audit collision | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
-| [RFC-0034](RFC0034-sprint-sizing-velocity-and-estimate-calibration-close-the.md) | Sprint sizing, velocity and estimate calibration: close the estimate -> deliver -> recalibrate loop | Medium | Draft | sdlc-studio | 2026-07-14 | -- |
+| [RFC-0034](RFC0034-sprint-sizing-velocity-and-estimate-calibration-close-the.md) | Sprint sizing, velocity and estimate calibration: close the estimate -> deliver -> recalibrate loop | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |

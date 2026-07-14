@@ -1,6 +1,6 @@
 # RFC-0034: Sprint sizing, velocity and estimate calibration: close the estimate -> deliver -> recalibrate loop
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -56,25 +56,36 @@ output is never checked against reality.
 
 ## Recommendation
 
-Lean **A**. It is the only option that answers all three of the operator's questions, and it uses
-the unit an agent sprint actually terminates on. But the decisions below are real - this is raised to
-be worked, not actioned; the freeze gives it time. CR0257 becomes its estimate-side workstream.
+Option **A accepted** - the full loop with tokens as the canonical unit. It is the only option that
+answers all three of the operator's questions and it uses the unit an agent sprint actually
+terminates on. All five decisions resolved below; they cohere into one design: **everything speaks
+tokens.** Humans estimate in Effort S/M/L (points for stories), which map to calibrated token bands;
+actual is read from telemetry (already logged per unit); the retro compares them; capacity is a
+token/wall-clock budget wired to CR0225's appetite.
 
 ## Open Decisions
 
-| # | Decision | Status |
-| --- | --- | --- |
-| D1 | **The canonical size unit.** Reconcile Effort S/M/L, story points, complexity, and tokens. Is there one canonical estimate unit, or a documented mapping between them (e.g. S/M/L -> a token band via measured history)? Bugs need a size too (CR0257). | Open |
-| D2 | **How is "actual" measured at close?** Tokens (telemetry already records per-run tokens), wall-clock, unit-count, or delivered-effort-sum? The measure has to be cheap and automatic or the retro will not carry it. | Open |
-| D3 | **Capacity target - value, unit, and owner.** Is there a per-sprint budget? In what unit (tokens/wall-clock, per the recommendation)? Who sets it, and does it feed CR0225's appetite defaults so plan-time capacity and run-time appetite agree? | Open |
-| D4 | **The retro records estimate-vs-actual and accuracy** (the measure half). A `retro.py` + template enhancement: capture estimated size, actual, and the ratio; accumulate a velocity/accuracy history the next plan can read. | Open |
-| D5 | **Do story points stay?** Keep points as a within-story human sizing aid feeding the canonical unit, or retire them in favour of one axis? Avoid a fourth vocabulary that also does not reconcile. | Open |
+| # | Decision | Resolution | Status |
+| --- | --- | --- | --- |
+| D1 | The canonical size unit. | **Tokens are canonical.** Humans still estimate in Effort S/M/L (stories in points); those map to **calibrated token bands**. Bugs gain an effort field (CR0257). The bands ship **provisional** (a documented S/M/L -> token default) and are **recalibrated from velocity history** once D4 accumulates it. | Decided |
+| D2 | How "actual" is measured at close. | **From telemetry, which already logs it** - `tokens` + `wall_time_s` per unit (`telemetry.py` FIELDS). No new capture needed; the measure was ~80% built and simply never compared to an estimate. Wall-clock is the secondary guard. | Decided |
+| D3 | Capacity target - value, unit, owner. | **An operator-set per-sprint budget in tokens + wall-clock, wired to CR0225's appetite defaults**, so the plan-time "does this fit" and the run-time circuit-breaker are the same number. Provisional default now; recalibrated from velocity. | Decided |
+| D4 | The retro records estimate-vs-actual + accuracy. | **Yes** - `retro.py` + template read telemetry actuals against the plan's estimate, record the ratio, and accumulate a velocity/accuracy history the next plan reads. This is the keystone: it produces the data that calibrates D1's bands and D3's budget. | Decided |
+| D5 | Do story points stay? | **Kept as a within-story human aid that maps to a token band** - not summed for capacity. Points become an alias into the canonical unit, not a fourth vocabulary. | Decided |
 
 ## Workstream (spawned on acceptance)
 
-- **CR0257 (filed):** the estimate side - `Effort`/complexity feed the planner; bugs get a size.
-- **CR (D4):** retro records estimated-vs-actual and accuracy; velocity history accumulates.
-- **CR (D3):** a capacity model in tokens/wall-clock, wired to CR0225's appetite defaults.
+D4 is the keystone - it produces the history that calibrates D1's bands and D3's budget - so the
+estimate and capacity pieces ship with **provisional** bands/defaults first and calibrate once the
+history exists. It is a public-behaviour change to planning and the retro, so it lands under the
+freeze on `main` and ships with v4.2, not this week.
+
+- **CR0257 (filed):** estimate side - `Effort`/complexity feed the planner with a provisional
+  S/M/L -> token-band mapping; bugs get an effort field.
+- **CR (D4, keystone):** the retro reads telemetry actuals against the plan estimate, records
+  accuracy, and accumulates a velocity history; recalibrates the S/M/L token bands from it.
+- **CR (D3):** a capacity model in tokens/wall-clock, operator-set, wired to CR0225's appetite
+  defaults. Depends on the D4 history to move off the provisional default.
 
 ## Related
 
