@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **A sprint capacity budget, and the plan-time check and the run-time breaker are now one number
+  (CR0259).** `capacity.tokens` / `capacity.minutes` / `capacity.units` give the operator a
+  per-sprint ceiling. `sprint plan` sizes the batch against it and flags an over-budget batch AT
+  PLAN TIME, instead of the operator discovering it when the run breaker halts the sprint mid-flight.
+  The appetite is resolved once, at plan time, and stamped on the run state, so `loop_guard` reads
+  back the same ceiling the plan showed and the two cannot disagree. Over-budget is a WARNING and
+  never a gate, even under `--strict`: a script cannot observe token spend, so the token half is a
+  forecast and is quoted with a plausible band rather than as a bare number. The band widens on an
+  observed miss and never narrows - a sprint that agrees with the model is not evidence of precision.
+
+- **The filer refuses a command-shaped `Verify:` in a CR or bug acceptance criterion (BG0132).**
+  Only STORIES carry executable verifiers. The convention had drifted into writing `Verify: <command>`
+  into CR/bug AC prose, which looks executable and is never run - so a wrong one is a permanent false
+  RED and a loose one is a false GREEN. Both had already happened: one grepped for an env var under
+  the wrong name, and one (`rg -qi 'effort' sprint.py`) PASSED on unrelated prose while the feature it
+  claimed to check did not exist. `file_finding.py` and `artifact.py` now refuse one at creation, from
+  a single shared authority so the two paths cannot disagree, with an error that says why nothing runs
+  it and what to write instead. `validate.py` warns on the ones already in the tree; all 49 of them,
+  across 18 artefacts, are rewritten as honest statements of the observable outcome. Prose that uses
+  the word verify honestly is deliberately untouched.
+
 - **The retro now asks whether the estimates were any good (CR0258).** `retro.py accuracy` reports
   the plan's token forecast against what telemetry measured, per unit and per batch, and `--write`
   records it in the retro and appends the sprint's row to `retros/VELOCITY.md` - a committed history,
@@ -113,6 +134,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   those same 9 retros reference exactly 1 artefact id between them, because nothing ever asked.
 
 ### Changed
+
+- **`appetite.minutes` / `appetite.units` of `0` now mean "inherit the capacity", not "unbounded"
+  (CR0259).** A consuming project that left them at the default previously ran with no ceiling; it now
+  inherits `capacity.minutes` (240) and `capacity.units` (8). This is a default-behaviour change, and
+  it is the point of the CR - plan capacity and run appetite are one source with two consumers, and a
+  run that silently had no breaker was the thing worth removing. The stop is clean, with a handoff, and
+  the plan prints the ceiling and where it came from. Set the keys explicitly to choose your own.
 
 - **The token forecast is calibrated against measured actuals for the first time (CR0257).**
   `TOKENS_PER_COGNITIVE` drops 5,000 -> 600; the 50,000 base stays (validated - the one

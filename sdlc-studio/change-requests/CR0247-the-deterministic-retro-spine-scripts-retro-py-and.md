@@ -20,11 +20,18 @@ Every project running a retro. Replaces judgement with mechanism wherever the st
 
 ## Acceptance Criteria
 
-- [ ] scripts/retro.py exists with new / extract / dispose / validate, sharing lib/`sdlc_md.py` like every other script. Verify: test -f .claude/skills/sdlc-studio/scripts/retro.py
-- [ ] retro.py extract parses the '## Lessons' section into the lessons store mechanically - 8 of 9 retros in a consuming project already carry that heading, so the input exists. Verify: python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k retro
-- [ ] retro.py validate checks CONTENT (required sections, at least one lesson, every finding dispositioned) and the gate leg calls it, so BG0123's 0-byte file FAILS. Verify: python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k retro
-- [ ] lessons.py rank computes recurrence, recency and structural-fix demotion from the artefacts - recomputed, never asserted, as reconcile does for the indexes (LL0001). Verify: python3 .claude/skills/sdlc-studio/scripts/lessons.py rank --dry-run
-- [ ] The defence is validated using the bug it defends against before it is trusted (LL0010): the 0-byte retro must fail the new leg. Verify: python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k retro
+- [ ] `scripts/retro.py` exists with new / extract / dispose / validate, sharing `lib/sdlc_md.py`
+      like every other script, so a retro is created and closed by tooling rather than by hand.
+- [ ] `retro extract` parses the `## Lessons` section into the lessons store mechanically - 8 of
+      the 9 retros in a consuming project already carry that heading, so the input exists and the
+      extraction needs no reformatting pass.
+- [ ] `retro validate` checks CONTENT (required sections, at least one lesson, every finding
+      dispositioned) and the gate leg calls it, so BG0123's 0-byte retro FAILS the close instead
+      of satisfying it.
+- [ ] `lessons rank` computes recurrence, recency and structural-fix demotion FROM the artefacts -
+      recomputed, never asserted, as reconcile does for the indexes (LL0001).
+- [ ] The defence is validated using the bug it defends against, before it is trusted (LL0010):
+      the 0-byte retro fails the new leg.
 
 ## Revision History
 

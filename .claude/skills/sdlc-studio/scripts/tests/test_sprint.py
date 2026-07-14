@@ -1,6 +1,7 @@
 """Unit tests for sprint.py (RED first - the script does not exist yet)."""
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import sys
 import tempfile
@@ -1290,6 +1291,268 @@ class EffortForecastTests(unittest.TestCase):
             self.assertGreater(cx, 0)
             self.assertEqual(batch[0]["token_budget"],
                              sp.BASE_TOKEN_BUDGET + sp.TOKENS_PER_COGNITIVE * cx)
+
+
+try:
+    import yaml  # noqa: F401
+    HAVE_YAML = True
+except ImportError:  # pragma: no cover - the config override needs PyYAML
+    HAVE_YAML = False
+
+
+def _load_loop_guard():
+    path = SCRIPT.parent / "loop_guard.py"
+    spec = importlib.util.spec_from_file_location("loop_guard", path)
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["loop_guard"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _config(root: Path, body: str) -> None:
+    d = root / "sdlc-studio"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / ".config.yaml").write_text(body, encoding="utf-8")
+
+
+def _drift_free_crs(root: Path, n: int) -> None:
+    """n Proposed CRs plus the matching index, so `--strict` has nothing else to refuse on."""
+    crd = root / "sdlc-studio" / "change-requests"
+    crd.mkdir(parents=True, exist_ok=True)
+    rows = []
+    for i in range(1, n + 1):
+        _cr(root, i)
+        rows.append(f"| [CR-{i:04d}](CR{i:04d}-x.md) | c | Proposed | Medium | X "
+                    f"| 2026-07-14 | -- |")
+    (crd / "_index.md").write_text(
+        f"# CRs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Proposed | {n} |\n"
+        f"| **Total** | **{n}** |\n\n## All\n\n"
+        "| ID | Title | Status | Priority | Type | Date | Linked Epics |\n"
+        "| --- | --- | --- | --- | --- | --- | --- |\n" + "\n".join(rows) + "\n",
+        encoding="utf-8")
+
+
+class CapacityBudgetTests(unittest.TestCase):
+    """CR0259: the batch is sized against the sprint capacity AT PLAN TIME.
+
+    Behaviour only - these assert what the planner REPORTS, never that a word appears in the
+    source. The over-budget signal is a warning: the plan is still produced, and still exits 0.
+    """
+
+    def test_a_batch_within_capacity_reports_within_budget(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1)
+            cap = _load().build_plan(root, "cr", "Proposed")["capacity"]
+            self.assertEqual(cap["over"], [])
+            self.assertFalse(cap["over_budget"])
+
+    @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
+    def test_a_batch_over_the_token_budget_is_flagged_with_the_numbers(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _config(root, "capacity:\n  tokens: 60000\n")  # one unit's floor is 50,000
+            _cr(root, 1)
+            _cr(root, 2)
+            cap = _load().build_plan(root, "cr", "Proposed")["capacity"]
+            self.assertIn("tokens", cap["over"])
+            self.assertTrue(cap["over_budget"])
+            # the numbers are reported, not just the verdict
+            self.assertEqual(cap["budget"]["tokens"], 60_000)
+            self.assertGreater(cap["forecast"]["tokens"], 60_000)
+
+    @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
+    def test_a_batch_over_the_unit_budget_is_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _config(root, "capacity:\n  units: 2\n")
+            for n in (1, 2, 3):
+                _cr(root, n)
+            cap = _load().build_plan(root, "cr", "Proposed")["capacity"]
+            self.assertIn("units", cap["over"])
+            self.assertEqual(cap["units"], 3)
+            self.assertEqual(cap["budget"]["units"], 2)
+
+    @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
+    def test_zero_on_an_axis_is_unbounded(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _config(root, "capacity:\n  tokens: 0\n  units: 0\n")
+            for n in range(1, 6):
+                _cr(root, n)
+            cap = _load().build_plan(root, "cr", "Proposed")["capacity"]
+            self.assertEqual(cap["over"], [])
+
+    @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
+    def test_over_budget_warns_but_never_refuses_to_plan(self) -> None:
+        """The estimate is not authoritative enough to refuse to plan on. Even under --strict -
+        which DOES refuse on index drift and origin drift - an over-budget batch exits 0."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _config(root, "capacity:\n  tokens: 1\n  units: 1\n")
+            _drift_free_crs(root, 2)          # nothing else can refuse: the census is clean
+            sp = _load()
+            data = sp.build_plan(root, "cr", "Proposed")
+            self.assertEqual(sorted(data["capacity"]["over"]), ["tokens", "units"])
+            rc = sp.main(["plan", "--crs", "Proposed", "--root", str(root),
+                          "--no-fetch", "--strict"])
+            self.assertEqual(rc, 0)
+
+    @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
+    def test_the_over_budget_verdict_reaches_the_operator_output(self) -> None:
+        import io
+        import contextlib
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _config(root, "capacity:\n  units: 1\n")
+            _cr(root, 1)
+            _cr(root, 2)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                _load().main(["plan", "--crs", "Proposed", "--root", str(root), "--no-fetch"])
+            printed = out.getvalue() + err.getvalue()
+            self.assertIn("OVER BUDGET", printed)
+            self.assertIn("units 2/1", printed)          # the numbers, not just a label
+            self.assertIn("WARNING, not a gate", printed)
+
+
+class CapacityHonestyTests(unittest.TestCase):
+    """The report must state its own uncertainty. The forecast is mis-calibrated out-of-sample
+    by ~30%, so a bare point estimate would read as a fact it is not."""
+
+    def test_the_forecast_is_quoted_as_a_range_around_the_point_estimate(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1)
+            fc = _load().build_plan(root, "cr", "Proposed")["capacity"]["forecast"]
+            self.assertLess(fc["low"], fc["tokens"])
+            self.assertGreater(fc["high"], fc["tokens"])
+
+    @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
+    def test_a_batch_under_budget_but_over_it_at_the_top_of_the_band_says_so(self) -> None:
+        # The honest middle case: the point estimate fits, the plausible high end does not.
+        # Reporting only the point estimate would hide it.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _config(root, "capacity:\n  tokens: 55000\n")
+            _cr(root, 1)  # forecast 50,000; high end 65,000
+            cap = _load().build_plan(root, "cr", "Proposed")["capacity"]
+            self.assertEqual(cap["over"], [])
+            self.assertTrue(cap["tokens_may_exceed"])
+
+    def test_nothing_is_recalibrated_from_the_velocity_history(self) -> None:
+        """The constants are pinned to the actuals they were fitted to (see
+        test_token_calibration). A plan built against a repo WITH velocity history must not
+        move them - the history is reported, and a human decides."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            retros = root / "sdlc-studio" / "retros"
+            retros.mkdir(parents=True)
+            (retros / "VELOCITY.md").write_text(
+                "| Retro | Date | Units | Measured | Estimate | Actual | Ratio | Wall |\n"
+                "| --- | --- | --- | --- | --- | --- | --- | --- |\n"
+                "| RETRO0001 | 2026-07-14 | 6 | 6 | 418,800 | 384,278 | 1.09x | 1,848 |\n",
+                encoding="utf-8")
+            _cr(root, 1)
+            sp = _load()
+            base, slope = sp.BASE_TOKEN_BUDGET, sp.TOKENS_PER_COGNITIVE
+            cal = sp.build_plan(root, "cr", "Proposed")["capacity"]["calibration"]
+            self.assertEqual((sp.BASE_TOKEN_BUDGET, sp.TOKENS_PER_COGNITIVE), (base, slope))
+            self.assertEqual(cal["sprints"], 1)
+            self.assertFalse(cal["enough_history"])  # one sprint is not a calibration
+
+    def test_an_observed_under_forecast_widens_the_band_it_never_narrows_it(self) -> None:
+        """A sprint that came in 0.7x (the estimator under-forecasting) must widen the upper
+        end. A sprint that agreed with the model must NOT shrink the band - agreeing once is
+        not evidence of precision."""
+        sp = _load()
+
+        def band(rows: str) -> tuple:
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                retros = root / "sdlc-studio" / "retros"
+                retros.mkdir(parents=True)
+                (retros / "VELOCITY.md").write_text(
+                    "| Retro | Date | Units | Measured | Estimate | Actual | Ratio | Wall |\n"
+                    "| --- | --- | --- | --- | --- | --- | --- | --- |\n" + rows, encoding="utf-8")
+                cal = sp.calibration(root)
+                return cal["low"], cal["high"]
+
+        agreeing = band("| RETRO0001 | d | 6 | 6 | 400 | 400 | 1.0x | 10 |\n")
+        self.assertEqual(agreeing, (round(1 - sp.FORECAST_BAND, 2),
+                                    round(1 + sp.FORECAST_BAND, 2)))
+        under = band("| RETRO0001 | d | 6 | 6 | 280 | 400 | 0.7x | 10 |\n")
+        self.assertGreater(under[1], agreeing[1])  # 1/0.7 = 1.43 - the band widened
+
+
+class CapacityFeedsTheAppetiteTests(unittest.TestCase):
+    """One configured source, two consumers: the plan-time check and the run-time breaker."""
+
+    def test_the_appetite_defaults_to_the_configured_capacity(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            sp = _load()
+            app = sp.resolve_appetite(Path(d))
+            self.assertEqual(app["minutes"], float(sp.DEFAULT_CAPACITY["minutes"]))
+            self.assertEqual(app["units"], sp.DEFAULT_CAPACITY["units"])
+
+    @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
+    def test_capacity_units_become_the_run_breakers_ceiling(self) -> None:
+        """The whole point of the CR: the number the plan flags the batch against is the number
+        the run breaker later stops on. Plan a 2-unit batch under a capacity of 1 unit; the plan
+        says over-budget, and `loop_guard budget` - reading the run state the plan opened -
+        halts the run at exactly that unit."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _config(root, "capacity:\n  units: 1\n")
+            _cr(root, 1)
+            _cr(root, 2)
+            sp = _load()
+            data = sp.build_plan(root, "cr", "Proposed")
+            self.assertIn("units", data["capacity"]["over"])          # flagged at PLAN time
+            rc = sp.main(["plan", "--crs", "Proposed", "--root", str(root),
+                          "--no-fetch", "--write"])
+            self.assertEqual(rc, 0)
+
+            guard = _load_loop_guard()
+            # the breaker resolves the SAME ceiling, from the run state the plan stamped
+            args = argparse.Namespace(appetite_minutes=None, appetite_units=None)
+            minutes, units = guard._resolve_appetite(root, args)
+            self.assertEqual(units, 1)
+            self.assertEqual(minutes, float(sp.DEFAULT_CAPACITY["minutes"]))
+
+            # ...and it FIRES there: one unit terminal is the whole appetite.
+            (root / "sdlc-studio" / "change-requests" / "CR0001-x.md").write_text(
+                "# CR-0001: c\n\n> **Status:** Complete\n> **Priority:** Medium\n",
+                encoding="utf-8")
+            rc = guard.main(["budget", "--root", str(root)])
+            self.assertEqual(rc, guard.BUDGET_EXIT)
+
+    @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
+    def test_an_explicit_appetite_flag_overrides_capacity_on_both_consumers(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _config(root, "capacity:\n  units: 8\n")
+            for n in (1, 2, 3):
+                _cr(root, n)
+            sp = _load()
+            # the plan sizes the batch against the ceiling the RUN will use, not the config one
+            cap = sp.build_plan(root, "cr", "Proposed", appetite_units=2)["capacity"]
+            self.assertIn("units", cap["over"])
+            self.assertEqual(cap["appetite"]["units"], 2)
+            self.assertEqual(cap["budget"]["units"], 2)
+
+    @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
+    def test_an_explicitly_configured_appetite_still_wins_over_capacity(self) -> None:
+        # Back-compat: a project that pinned appetite.* before capacity existed keeps its pin.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _config(root, "capacity:\n  units: 8\n  minutes: 240\nappetite:\n  units: 3\n")
+            app = _load().resolve_appetite(root)
+            self.assertEqual(app["units"], 3)
+            self.assertEqual(app["units_source"], "config appetite.units")
+            self.assertEqual(app["minutes"], 240.0)          # unpinned axis inherits capacity
+            self.assertEqual(app["minutes_source"], "config capacity.minutes")
 
 
 if __name__ == "__main__":

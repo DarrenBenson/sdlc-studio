@@ -20,12 +20,16 @@ Every review, audit and sprint plan in every project. Adds roughly 930 tokens of
 
 ## Acceptance Criteria
 
-- [ ] Sprint plan, review and audit each emit the still-valid cross-project lessons as one line per lesson, in the output the agent already reads. Verify: rg -q 'lessons' .claude/skills/sdlc-studio/scripts/review.py
-- [ ] The digest is the FULL set, not a tag-filtered subset - a filter would exempt LL0004/LL0006/LL0021 (LL0013).
-      Verify: `python3 .claude/skills/sdlc-studio/scripts/lessons.py recall --format json | jq -e '.matches | length >= 22'`
+- [ ] Sprint plan, review and audit each emit the still-valid cross-project lessons as one line per
+      lesson, in the output the agent already reads - an agent running any of the three sees them
+      without asking for them.
+- [ ] The digest is the FULL still-valid set, not a tag-filtered subset: every lesson in the
+      registry appears, LL0004/LL0006/LL0021 included. A filter is how a fix exempts the lesson it
+      forgot (LL0013).
 - [ ] The plan digest cap is raised to 50 and the elided tail still prints its `+N more` count, so
       nothing is dropped silently.
-- [ ] A project with an empty project-tier store still recalls the skill-tier registry (day-one lens). Verify: python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k lessons
+- [ ] A project with an empty project-tier store still recalls the skill-tier registry, so the
+      lessons lens works on day one rather than after the first local lesson is written.
 
 ## Revision History
 

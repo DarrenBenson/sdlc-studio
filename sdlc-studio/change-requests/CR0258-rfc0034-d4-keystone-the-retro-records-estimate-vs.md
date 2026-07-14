@@ -32,10 +32,17 @@ Every sprint close gains an estimate-vs-actual readout and the project gains a v
 
 ## Acceptance Criteria
 
-- [ ] A real token actual is recorded per unit: the loop runs a unit as an instrumented subagent (or equivalent) and feeds its reported usage into `artifact.py close --tokens`, so telemetry `tokens` is populated rather than null. Verify: python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k 'telemetry or token'
-- [ ] The retro template carries an estimate-vs-actual size section, and retro.py populates it from telemetry (tokens/`wall_time_s)` against the plan estimate, recording the accuracy ratio. Verify: rg -qi 'estimate.*actual|accuracy|velocity' .claude/skills/sdlc-studio/templates/reviews/retro.md
-- [ ] A velocity/accuracy history accumulates across retros and is readable by the next plan. Verify: python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k 'retro or velocity'
-- [ ] The S/M/L -> token-band mapping recalibrates from the accumulated history (LL0010: prove it against a fixture history where the naive band is wrong). Verify: python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k calibrat
+- [ ] A real token actual is recorded per unit: the loop runs a unit as an instrumented subagent
+      (or equivalent) and feeds its reported usage into `artifact close --tokens`, so the
+      telemetry `tokens` field carries a measured number rather than null.
+- [ ] The retro template carries an estimate-vs-actual size section, and the retro spine populates
+      it from telemetry (`tokens` / `wall_time_s`) against the plan estimate, recording the
+      accuracy ratio - the retro states how wrong the plan was, in a number.
+- [ ] A velocity/accuracy history accumulates across retros and the NEXT plan reads it, so the
+      second sprint is estimated with the first sprint's evidence.
+- [ ] The S/M/L -> token-band mapping recalibrates from that accumulated history rather than
+      staying at its seeded guess, and the recalibration is proved against a history in which the
+      naive band is demonstrably wrong (LL0010).
 
 ## Revision History
 

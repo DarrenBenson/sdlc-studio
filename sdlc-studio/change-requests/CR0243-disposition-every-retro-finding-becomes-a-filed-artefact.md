@@ -39,21 +39,16 @@ just a wall.
 ## Acceptance Criteria
 
 - [ ] **AC1:** The retro template asks, explicitly, whether any CRs or Bugs should be raised to
-      address the issues found, and carries a section for the answer.
-      Verify: `rg -qi 'CRs or Bugs' .claude/skills/sdlc-studio/templates/core/retro.md`
-- [ ] **AC2:** A retro finding can be filed as a Bug or CR via `file_finding.py`, as review already
-      does.
-      Verify: `rg -q retro .claude/skills/sdlc-studio/scripts/file_finding.py`
-- [ ] **AC3:** A new gate leg BLOCKS a sprint close when a retro finding is neither filed nor
-      declined.
-      Verify: `rg -q disposition .claude/skills/sdlc-studio/scripts/gate.py`
-- [ ] **AC4:** A finding declined WITH a recorded reason passes the gate - decline is a first-class
-      disposition, not a workaround, so honesty costs exactly what noise costs.
-      Verify: `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k gate`
-- [ ] **AC5:** The gate leg is validated against the bug it defends (LL0010): a retro with an
-      undispositioned finding must FAIL, and an empty retro must FAIL (BG0123), before the leg is
-      trusted.
-      Verify: `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k disposition`
+      address the issues found, and carries a section for the answer - so an agent writing a retro
+      cannot reach the end without having been asked.
+- [ ] **AC2:** A retro finding can be filed as a Bug or CR through the deterministic filer, exactly
+      as a review finding already is: one command, a real id, an index row.
+- [ ] **AC3:** A sprint close FAILS while any retro finding is neither filed nor declined.
+- [ ] **AC4:** A finding declined WITH a recorded reason passes that gate - decline is a
+      first-class disposition, not a workaround, so honesty costs exactly what noise costs.
+- [ ] **AC5:** The gate leg is validated against the bug it defends (LL0010): a retro carrying an
+      undispositioned finding FAILS the close, and an empty retro FAILS it (BG0123), before the leg
+      is trusted.
 
 ## Revision History
 

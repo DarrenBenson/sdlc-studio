@@ -20,7 +20,9 @@ Every future status-vocab change risks silent drift between the three hardcoded 
 
 ## Acceptance Criteria
 
-- [ ] SPEC/TYPES status defaults derive from `sdlc_md` rather than restating them. Verify: rg -n '`terminal_statuses`|`STATUS_VOCAB`' artifact.py `file_finding.py` finds the derivation
+- [ ] The `SPEC`/`TYPES` status defaults in `artifact.py` and `file_finding.py` are DERIVED from
+      the `sdlc_md` status vocabulary rather than restating it: changing the vocabulary in the one
+      authority changes what both creators mint, with no second list to remember.
 
 ## Revision History
 

@@ -20,9 +20,13 @@ Teams doing deploy, incident and DR work - the category with the most expensive 
 
 ## Acceptance Criteria
 
-- [ ] The registry supports an operational/incident lesson category alongside engineering/process. Verify: rg -q 'operational|incident' .claude/skills/sdlc-studio/lessons/_template.md
-- [ ] The template carries the shape real lessons take: incident narrative, runbook/checklist, artefact citations, declared decay. Verify: rg -q 'Runbook|Checklist' .claude/skills/sdlc-studio/lessons/_template.md
-- [ ] an infrastructure project's ops-lessons.md can be represented without loss - validated against the real file, not a fixture (LL0020). Verify: python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k lessons
+- [ ] The registry supports an operational/incident lesson category alongside engineering and
+      process, and a lesson filed in it is recalled by the same lens as the others.
+- [ ] The template carries the shape real lessons take: incident narrative, runbook or checklist,
+      artefact citations, declared decay.
+- [ ] A real infrastructure project's `ops-lessons.md` can be represented in it without loss -
+      validated against the real file, not a fixture written to fit (LL0020): every lesson in it
+      maps to a registry entry with nothing dropped.
 
 ## Revision History
 

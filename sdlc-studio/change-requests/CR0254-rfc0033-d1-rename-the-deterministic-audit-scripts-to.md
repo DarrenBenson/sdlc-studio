@@ -20,7 +20,9 @@ No user-facing change; the two commands keep working under new script names. Dow
 
 ## Acceptance Criteria
 
-- [ ] audit.py and `audit_check.py` are renamed; no import or call site references the old names; tests pass under the new names. Verify: test ! -f .claude/skills/sdlc-studio/scripts/audit.py && test -f .claude/skills/sdlc-studio/scripts/readiness.py
+- [ ] `audit.py` and `audit_check.py` are renamed (to `readiness.py` and its checker), the old
+      files no longer exist, no import or call site still reaches for the old names, and the suite
+      passes under the new ones - the rename leaves no shim and no dangling reference.
 
 ## Revision History
 

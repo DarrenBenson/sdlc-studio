@@ -21,7 +21,10 @@ The strongest weakness-hunt in the skill becomes discoverable and invokable for 
 
 ## Acceptance Criteria
 
-- [ ] 'audit' is a documented command (help/audit.md exists, catalogue + Type Reference rows present) with repo/project/code profiles and a refute panel. Verify: test -f .claude/skills/sdlc-studio/help/audit.md && rg -q 'sdlc-studio audit' .claude/skills/sdlc-studio/help/help.md
+- [ ] `audit` is a documented, discoverable command: `help/audit.md` exists, the command catalogue
+      and the Type Reference both carry its row, and an agent reading the help finds it without
+      being told it exists. It offers the repo, project and code profiles, and its output carries
+      a refute panel.
 
 ## Revision History
 

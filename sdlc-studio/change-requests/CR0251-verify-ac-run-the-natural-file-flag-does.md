@@ -20,7 +20,9 @@ An agent or operator running a single-story verify guesses --file, hits an argpa
 
 ## Acceptance Criteria
 
-- [ ] `verify_ac.py` run accepts --file as an alias for --story (or the help/docs prominently name --story where an example would use a file). Verify: python3 scripts/`verify_ac.py` run --file X --dry-run does not error on the flag
+- [ ] `verify_ac run` accepts `--file` as an alias for `--story` (or the help and docs name
+      `--story` prominently enough that nobody reaches for `--file`): an agent that passes the
+      natural flag gets the verification it asked for, not an unrecognised-argument error.
 
 ## Revision History
 

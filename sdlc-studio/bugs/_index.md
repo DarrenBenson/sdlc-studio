@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 3 |
+| Open | 4 |
 | In Progress | 0 |
-| Fixed | 50 |
+| Fixed | 51 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 1 |
 | Superseded | 0 |
-| **Total** | **133** |
+| **Total** | **135** |
 
 ## All Bugs
 
@@ -98,8 +98,10 @@
 | [BG0129](BG0129-review-prep-counts-personas-index-md-as-a.md) | review_prep counts personas/index.md as a persona (the underscore-index filter misses it) | Fixed | Medium | 2026-07-14 | 2026-07-14 |
 | [BG0130](BG0130-retro-py-miscounts-a-decline-whose-reason-mentions.md) | retro.py miscounts a decline whose reason mentions an artefact id as filed | Fixed | Low | 2026-07-14 | 2026-07-14 |
 | [BG0131](BG0131-the-subagent-token-metric-does-not-track-work.md) | The subagent token metric does not track work - it cannot be used for calibration as-is | Open | High | 2026-07-14 | 2026-07-14 |
-| [BG0132](BG0132-cr-acceptance-criteria-carry-verify-lines-that-nothing.md) | CR acceptance criteria carry Verify lines that nothing executes, so a false-green one is never caught | Open | Medium | 2026-07-14 | 2026-07-14 |
+| [BG0132](BG0132-cr-acceptance-criteria-carry-verify-lines-that-nothing.md) | CR acceptance criteria carry Verify lines that nothing executes, so a false-green one is never caught | Fixed | Medium | 2026-07-14 | 2026-07-14 |
 | [BG0133](BG0133-the-accuracy-report-recomputes-the-estimate-from-live.md) | The accuracy report recomputes the estimate from live constants, so it cannot falsify the estimator | Open | High | 2026-07-14 | 2026-07-14 |
+| [BG0134](BG0134-the-engagement-floor-trailer-check-warns-after-the.md) | The engagement-floor trailer check warns after the commit has already landed, so it fails open | Open | Medium | 2026-07-14 | 2026-07-14 |
+| [BG0135](BG0135-reconcile-detect-is-blind-to-an-orphan-index.md) | reconcile detect is blind to an orphan index row whose artefact file is gone | Open | Medium | 2026-07-14 | 2026-07-14 |
 
 ## Archived Releases
 

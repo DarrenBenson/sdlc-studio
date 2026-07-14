@@ -23,6 +23,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md, tiers  # noqa: E402
 import persona_gen  # noqa: E402  (the provenance stamp/reviewed grammar - one source)
+import file_finding  # noqa: E402  (the pseudo-`Verify:` detector the creators refuse on - one authority)
 
 _AC_SECTION_RE = re.compile(r"^#{2,}\s+.*acceptance criteria", re.I | re.M)
 
@@ -129,6 +130,21 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
             add("error", "no-ac",
                 "story has no acceptance criteria (`### ACn`, `- **ACn:**`, or a "
                 "populated `## Acceptance Criteria` section)")
+
+    # A CR/bug acceptance criterion is prose. A command-shaped `Verify:` written into it is
+    # executed by nothing (verify_ac only runs a STORY's canonical `- **Verify:**` line), so it is
+    # assurance with no proof behind it: a wrong command is a permanent false red, and a loose one
+    # (a grep that matches unrelated prose) is a false green on a feature nobody built. The
+    # creators now REFUSE to write one; this reports the ones already on disk. A warning, not an
+    # error: the instances predate the guard, and the gate must not fail unrelated work - but they
+    # are named, with their line, rather than silently tolerated.
+    if type_ in ("cr", "bug"):
+        for lineno, line, cmd in file_finding.scan_prose_acs(text):
+            add("warning", "pseudo-verify",
+                f"line {lineno}: acceptance criterion carries a command-shaped `Verify:` "
+                f"({cmd!r}) that NOTHING executes - only a story's `- **Verify:**` line is run. "
+                f"Restate it as the observable outcome; executable proof belongs on the stories "
+                f"this is actioned into. Offending line: {line.strip()}")
 
     # Schema-v3 team-schema: a typed, resolvable `raised_by`. v2 artefacts are exempt, so the
     # rule cannot fail an existing sequential-id project until it opts into v3.

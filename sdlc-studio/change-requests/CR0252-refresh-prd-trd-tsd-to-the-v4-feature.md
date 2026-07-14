@@ -20,7 +20,11 @@ Anyone reading the PRD/TRD/TSD to understand the product learns a pre-v4 skill. 
 
 ## Acceptance Criteria
 
-- [ ] PRD/TRD/TSD declare v4.x and cover the engagement floor, ULID identity, generated team, and learning loop; PRD uses 'sprint' not 'autosprint'; TRD has ADRs for the four v4 decisions; TSD covers the mutation gate. Verify: rg -qi 'engagement floor|learning loop' sdlc-studio/trd.md && rg -qi '4\.' sdlc-studio/prd.md
+- [ ] The PRD, TRD and TSD declare v4.x and cover what v4 actually ships: the engagement floor,
+      ULID identity, the generated team, and the learning loop. The PRD says 'sprint' throughout,
+      never the retired 'autosprint'. The TRD carries an ADR for each of the four v4 decisions.
+      The TSD covers the mutation gate. A reader of the three documents alone would not be
+      surprised by the shipped product.
 
 ## Revision History
 

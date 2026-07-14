@@ -21,18 +21,14 @@ A gate that blocks on an undocumented artefact teaches the agent to satisfy the 
 
 - [ ] **AC1:** `help/retro.md` exists and documents the retro command surface, the sections a
       retro must carry, and what a finding is.
-      Verify: `test -f .claude/skills/sdlc-studio/help/retro.md`
 - [ ] **AC2:** `reference-retro.md` exists and documents the workflow, including how a finding is
       dispositioned (filed as a Bug/CR, or declined with a recorded reason).
-      Verify: `test -f .claude/skills/sdlc-studio/reference-retro.md`
 - [ ] **AC3:** Both files are reachable from the router, so they are discoverable rather than
-      orphaned: `help/references.md` and `help/help.md` link them.
-      Verify: `rg -q 'retro' .claude/skills/sdlc-studio/help/references.md .claude/skills/sdlc-studio/help/help.md`
-- [ ] **AC4:** The blocking gate leg names the doc it expects, so an agent that trips
-      `--require-retro` is told where the rules live rather than left to guess.
-      Verify: `rg -q 'retro' .claude/skills/sdlc-studio/scripts/gate.py`
-- [ ] **AC5:** The full gate stays green.
-      Verify: `python3 .claude/skills/sdlc-studio/scripts/gate.py`
+      orphaned: `help/references.md` and `help/help.md` link them, and an agent that asks for
+      retro help is routed to them without knowing the filenames.
+- [ ] **AC4:** An agent that trips the blocking `--require-retro` leg is told, in the failure
+      message, where the rules live - it names the doc rather than leaving the agent to guess.
+- [ ] **AC5:** The full gate stays green with the new docs in place.
 
 ## Revision History
 

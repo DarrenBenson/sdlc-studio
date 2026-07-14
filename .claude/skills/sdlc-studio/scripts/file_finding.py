@@ -47,6 +47,122 @@ TYPES = {
 }
 
 
+# --- The pseudo-Verify refusal (one authority, both creation paths) -------------------------
+#
+# Only a STORY carries an executable check: its canonical `- **Verify:**` line is parsed and RUN
+# by verify_ac.py, and gates the story to Done. A CR or bug carries PROSE acceptance criteria -
+# a checklist a human reads. Writing a command-shaped `Verify: <cmd>` into that prose mints a
+# check that LOOKS executable and is run by nothing, so a wrong command is a permanent false red
+# and a vacuous one (a grep that matches unrelated prose) is a false green on an unbuilt feature.
+# The creators refuse to write one; the validator warns about the ones already on disk.
+#
+# MATCHED (refused): a `Verify:` / `**Verify:**` lead-in whose tail, once its wrapping backticks,
+# quotes and bold markers are stripped, is command-shaped - it opens with a shell/tool verb
+# (`rg -q x`, `test -f x`, `python3 -m unittest`, `./install.sh`), or it carries a shell operator
+# (`&&`, `||`, `$(...)`, a pipe into a command).
+#
+# LET THROUGH (honest prose): the word verify anywhere in a criterion ("Verify the operator sees
+# the banner", "the verifier reports it"), and a `Verify:` lead-in followed by an outcome rather
+# than a command ("Verify: the operator sees a red banner naming the file"). The target is the
+# command shape, not the word.
+_VERIFY_LEAD_RE = re.compile(r"\bverif(?:y|ies|ied)\s*:\s*(\S[^\n]*)", re.I)
+# Verbs that are commands and nothing else: leading one of these IS the command shape.
+_TOOL_VERBS = frozenset("""
+    rg ripgrep grep egrep fgrep ag ack pytest py.test tox python python3 npm npx pnpm yarn
+    node deno bash zsh fish jq yq curl wget xargs cargo cmake mvn gradle dotnet rake composer
+    git gh sed awk docker kubectl terraform ruby php shell sudo printf
+""".split())
+# Verbs that are also ordinary English ("test that it fails", "make the banner red", "find the
+# file"). One of these opens a command only when what FOLLOWS it is command-shaped too: a flag,
+# or a path/module argument. Otherwise it is prose, and prose is allowed.
+_AMBIGUOUS_VERBS = frozenset("test [ find make go ls cat head tail wc diff sh env echo".split())
+_CMD_ARG_RE = re.compile(r"^-{1,2}[A-Za-z]|/|\.(?:py|sh|md|js|ts|json|ya?ml|txt|toml|cfg)\b")
+_SHELL_OP_RE = re.compile(r"&&|\|\||\$\(|\|\s*(?:jq|grep|rg|wc|head|tail|sed|awk|xargs)\b")
+_WRAPPERS = "`'\"*() \t"
+
+
+def command_shaped(tail: str) -> bool:
+    """True when `tail` reads as a command rather than an outcome.
+
+    Command-shaped: it opens with a tool verb (`rg -q x`, `python3 -m unittest ...`), or with a
+    `./path` invocation, or with an English-ambiguous verb whose next token is itself
+    command-shaped (`test -f x`, `find src/ -name ...`), or it carries a shell operator
+    (`&&`, `||`, `$(...)`, a pipe into a command). Everything else - including a sentence that
+    merely opens with the word `test` or `make` - is prose, and prose is what a CR/bug criterion
+    is supposed to be."""
+    t = tail.strip().strip(_WRAPPERS).strip()
+    t = re.sub(r"^!\s*", "", t)  # a negated command (`! rg -q x`) is still a command
+    if not t:
+        return False
+    tokens = t.split()
+    first = tokens[0]
+    if first in _TOOL_VERBS or re.match(r"^\.{0,2}/\S", first):
+        return True
+    if first in _AMBIGUOUS_VERBS and len(tokens) > 1 and _CMD_ARG_RE.search(tokens[1]):
+        return True
+    return bool(_SHELL_OP_RE.search(t))
+
+
+def pseudo_verify(text: str) -> str | None:
+    """The command-shaped pseudo-`Verify:` in one acceptance criterion, or None.
+
+    Returns the offending command so the caller can quote it back - naming the exact string is
+    what makes the refusal teachable rather than cryptic."""
+    for m in _VERIFY_LEAD_RE.finditer(str(text)):
+        tail = m.group(1)
+        if command_shaped(tail):
+            return tail.strip().strip(_WRAPPERS).strip()
+    return None
+
+
+def check_prose_acs(type_: str, fields: dict) -> None:
+    """Refuse, BEFORE any id is allocated or any byte written, a CR/bug acceptance criterion
+    carrying a command-shaped `Verify:`. Called from BOTH creation paths (the finding filer and
+    `artifact new` / `artifact batch`), so neither is an escape hatch for the other.
+
+    Stories are untouched: their `--verify` lines are the real, executed thing."""
+    if type_ not in ("cr", "bug"):
+        return
+    items = fields.get("acs")
+    if not isinstance(items, (list, tuple)):
+        return
+    for i, ac in enumerate(items, 1):
+        cmd = pseudo_verify(ac)
+        if cmd is None:
+            continue
+        raise ValueError(
+            f"{type_} acceptance criterion {i} carries a command-shaped `Verify:` check "
+            f"({cmd!r}) - refused.\n"
+            f"  Why: nothing runs it. verify_ac only executes the canonical `- **Verify:**` line "
+            f"of a STORY. A command written into {type_.upper()} acceptance-criteria prose is "
+            f"never executed, so a wrong one is a permanent false red and a loose one is a false "
+            f"green - it 'passes' on unrelated prose while the feature does not exist.\n"
+            f"  Instead: state the OBSERVABLE outcome - what would have to be true for this "
+            f"criterion to hold. Executable proof arrives when the {type_.upper()} is actioned "
+            f"into stories, which carry real `- **Verify:**` lines that verify_ac runs and that "
+            f"gate them to Done.\n"
+            f"  e.g. not 'Verify: rg -qi effort sprint.py' but 'sprint.py reads the CR Effort "
+            f"field and sizes the unit by it, rather than falling back to the flat default'.")
+
+
+def scan_prose_acs(text: str) -> list[tuple[int, str, str]]:
+    """Every command-shaped pseudo-`Verify:` inside an artefact's Acceptance Criteria section, as
+    (1-based line number, the line, the offending command). The read-only counterpart of
+    `check_prose_acs`, for the instances already on disk (the validator's warning lane)."""
+    out: list[tuple[int, str, str]] = []
+    in_ac = False
+    for n, line in enumerate(text.splitlines(), 1):
+        if line.startswith("## "):
+            in_ac = "acceptance criteria" in line.lower()
+            continue
+        if not in_ac:
+            continue
+        cmd = pseudo_verify(line)
+        if cmd:
+            out.append((n, line, cmd))
+    return out
+
+
 def index_template_path(type_: str) -> Path:
     return Path(__file__).resolve().parent.parent / "templates" / "indexes" / f"{type_}.md"
 
@@ -260,6 +376,8 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     # anything is allocated or written - the same guard the general creator runs, from the
     # same authority, so neither path is an escape hatch for the other.
     sdlc_md.check_creator_fields({**fields, "title": title})
+    # ... and refuse a CR/bug criterion carrying a command-shaped `Verify:` - a check nobody runs.
+    check_prose_acs(type_, fields)
     root = Path(repo_root)
     today = fields.get("date") or date.today().isoformat()
     fields = {**fields, "date": today}

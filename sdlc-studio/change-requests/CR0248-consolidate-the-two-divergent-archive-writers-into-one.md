@@ -20,7 +20,10 @@ An operator who uses both entry points gets a silently incoherent archive layout
 
 ## Acceptance Criteria
 
-- [ ] One archive layout and one writer: reconcile delegates to archive.py::archive (or vice-versa); the duplicate `archive_type`/`archive_plan`/`cmd_archive` path is removed. Verify: rg -c '`add_parser..archive`' reconcile.py returns 0
+- [ ] One archive layout and one writer: reconcile delegates to `archive.py::archive` (or
+      vice-versa), and the duplicate `archive_type`/`archive_plan`/`cmd_archive` path is gone -
+      reconcile no longer exposes an `archive` subcommand of its own, so there is no second door
+      to a second layout.
 
 ## Revision History
 

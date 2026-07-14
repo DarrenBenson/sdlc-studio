@@ -14,6 +14,8 @@
 - [Review Configuration](#review-configuration)
 - [Persona Staleness](#personas-staleness-days)
 - [Lessons Validity](#lessons-validity)
+- [Sprint Capacity](#capacity)
+- [Run Appetite](#appetite)
 - [Skill Source Repo](#skill-source-repo)
 - [Contract Tables](#contract-tables)
 - [Release Strategy](#release-strategy)
@@ -63,11 +65,7 @@ Control test coverage thresholds used in TSD, status dashboard, and test specs.
 | `integration` | 85 | TSD | API and database interaction coverage |
 | `e2e` | 100 | TSD, e2e-guidelines | Feature file coverage target |
 
-### When to Adjust
-
-- **Lower for legacy code**: Brownfield projects may need 70-80% initially
-- **Higher for critical systems**: Financial/medical may require 95%+
-- **Lower for prototypes**: Experimental code may use 60%
+**When to adjust:** lower for brownfield/legacy code (70-80% initially) or prototypes (60%); raise for critical systems (financial/medical may require 95%+).
 
 ---
 
@@ -82,13 +80,7 @@ Control minimum requirements for story readiness.
 | `edge_cases.api` | 8 | story template, reference-story |
 | `edge_cases.other` | 5 | reference-story, reference-decisions |
 
-**API stories require more edge cases** because they handle:
-
-- Input validation
-- Authentication/authorisation
-- Rate limiting
-- Concurrent access
-- Network failures
+**API stories require more edge cases** because they handle input validation, authentication/authorisation, rate limiting, concurrent access, and network failures.
 
 ### Test Scenarios
 
@@ -137,11 +129,7 @@ Control when TDD mode is recommended over Test-After.
 | --- | --- | --- |
 | `edge_case_threshold` | 5 | reference-decisions, help/code |
 
-**Rationale**: Stories with many edge cases benefit from TDD because:
-
-- Tests clarify expected behaviour before implementation
-- Edge cases are harder to retrofit
-- TDD prevents "happy path only" implementations
+**Rationale**: stories with many edge cases benefit from TDD - tests clarify expected behaviour before implementation, edge cases are hard to retrofit, and TDD prevents "happy path only" implementations.
 
 ---
 
@@ -153,11 +141,7 @@ Control when to split E2E spec files.
 | --- | --- | --- |
 | `max_tests_per_spec` | 50 | reference-test-e2e-guidelines |
 
-**Why 50?** Larger spec files:
-
-- Take longer to run
-- Are harder to parallelise
-- Make failures harder to isolate
+**Why 50?** Larger spec files take longer to run, are harder to parallelise, and make failures harder to isolate.
 
 ---
 
@@ -220,16 +204,32 @@ lessons:
 
 ---
 
-## Run Appetite {#appetite}
+## Sprint Capacity {#capacity}
 
-The unattended-run circuit breaker: how much a run may spend before it stops cleanly.
+How much ONE sprint may cost. The single source for both the plan-time "does this batch fit?" check and the run-time breaker's appetite, so the two cannot disagree.
 
 | Setting | Default | Notes |
 | --- | --- | --- |
-| `appetite.minutes` | 0 | Wall-clock ceiling in minutes; 0 = unbounded |
-| `appetite.units` | 0 | Unit-count ceiling; 0 = unbounded |
+| `capacity.tokens` | 500000 | Token-forecast ceiling for the batch; a warning only, never a gate |
+| `capacity.minutes` | 240 | Wall-clock ceiling for the run; feeds the appetite breaker |
+| `capacity.units` | 8 | Unit-count ceiling for the run; feeds the appetite breaker |
 
-The breaker (`loop_guard budget`) is evaluated at unit boundaries and stops the run cleanly when the appetite is spent - a distinct exit code from a per-unit quarantine, with units left in their true status. `sprint plan --write --appetite-minutes N --appetite-units N` overrides these defaults per run (e.g. `appetite: {minutes: 180, units: 8}`). Both axes are deterministic (wall-clock from the run start, units from those now terminal); tokens are a forecast only, never a gate. The appetite is never auto-extended - a fresh run resets it. See `reference-sprint.md#appetite`.
+`sprint plan` sizes the batch against these and flags an over-budget batch **at plan time** - while the operator can still cut it, instead of mid-run when the breaker halts the sprint. Over budget never refuses to plan: a script cannot observe token spend, and the token model is a hypothesis (fitted to six units of one sprint, and already ~30% out of sample), so the plan quotes a plausible **range** rather than a bare number that reads as fact. The wall-clock and unit axes are the real breaker. 0 on an axis = unbounded.
+
+**Provisional.** The defaults are round numbers over one measured sprint (6 units, 384,278 tokens actual). `sdlc-studio/retros/VELOCITY.md` gains a row per sprint; once it holds enough rows a human re-reads the trend and decides whether they have earned a change. Nothing recalibrates automatically - a fit to one or two sprints fits noise.
+
+---
+
+## Run Appetite {#appetite}
+
+The unattended-run circuit breaker: how much a run may spend before it stops cleanly. Its default **is** the sprint capacity above; these keys pin one axis independently of it.
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| `appetite.minutes` | 0 | 0 = inherit `capacity.minutes` |
+| `appetite.units` | 0 | 0 = inherit `capacity.units` |
+
+The appetite is resolved **once**, at plan time, most specific first: `sprint plan --appetite-minutes N --appetite-units N`, then a non-zero key above, then the sprint capacity. `sprint plan --write` stamps the resolved pair on the run state, and that is what the breaker (`loop_guard budget`) reads back - so the ceiling the plan sized the batch against is the ceiling that stops the run. The breaker is evaluated at unit boundaries and stops the run cleanly when the appetite is spent - a distinct exit code from a per-unit quarantine, with units left in their true status. Both axes are deterministic (wall-clock from the run start, units from those now terminal); tokens are a forecast only, never a gate. The appetite is never auto-extended - a fresh run resets it. See `reference-sprint.md#appetite`.
 
 ---
 

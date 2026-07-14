@@ -24,3 +24,26 @@ sprint plan must RECORD its per-unit token forecast, and the constants that prod
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-14 | sdlc-studio | Filed |
+
+## Observed consequence (added after CR0259 landed)
+
+The self-confirming loop is now closed and shown to the operator. `sprint plan` prints:
+
+```text
+capacity: ... Calibration: 1 measured sprint(s), est/actual 1.09x; not enough
+history to recalibrate (need 5). Nothing is re-fitted automatically.
+```
+
+That 1.09x is the in-sample fit against the six units the constants were fitted to. It is
+training error, and it is near 1.0x by construction. The planner now quotes it back to the
+operator as the estimator's observed accuracy, at the same time as the out-of-sample figure on
+the current sprint is running at roughly 0.7x. The number that reassures is the one that cannot
+be wrong.
+
+Two things follow for the fix:
+
+- The velocity history must record the estimate **as forecast at plan time**, so a row can never
+  be re-derived by the constants it is supposed to be judging.
+- A row whose estimate was produced by the constants currently in force must be labelled
+  IN-SAMPLE and excluded from any accuracy figure shown as evidence. Only rows forecast BEFORE
+  the current constants were fitted are out-of-sample, and only those tell the operator anything.

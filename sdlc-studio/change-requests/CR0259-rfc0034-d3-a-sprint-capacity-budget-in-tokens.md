@@ -1,6 +1,6 @@
 # CR-0259: RFC0034 D3: a sprint capacity budget in tokens/wall-clock, wired to CR0225 appetite
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** P3
 > **Type:** Feature
 > **Date:** 2026-07-14
@@ -21,8 +21,11 @@ The operator gets a plan-time 'this batch is too big' signal instead of discover
 
 ## Acceptance Criteria
 
-- [ ] sprint plan reports the batch estimate against a configured token/wall-clock budget and flags over-budget. Verify: rg -qi 'budget|capacity' .claude/skills/sdlc-studio/scripts/sprint.py
-- [ ] The capacity budget feeds CR0225's appetite defaults (one source, two consumers). Verify: rg -qi 'appetite|capacity' .claude/skills/sdlc-studio/reference-config.md
+- [ ] `sprint plan` reports the batch's estimated size against the configured token and wall-clock
+      budget, and a batch that exceeds it is flagged AT PLAN TIME - the operator is told before
+      the run starts, not when the breaker halts it mid-sprint.
+- [ ] The capacity budget feeds CR0225's appetite defaults: one configured number, two consumers
+      (plan-time fit and run-time breaker), so the two limits cannot disagree.
 
 ## Revision History
 

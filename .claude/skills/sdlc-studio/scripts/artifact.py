@@ -587,6 +587,10 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
     # anything is allocated or written - a half-created artefact carrying injected lines is
     # worse than no artefact. One guard, every field, at the top of the one create path.
     sdlc_md.check_creator_fields({**f, "title": title})
+    # A CR/bug criterion is prose: refuse a command-shaped `Verify:` written into it, from the
+    # SAME authority the filer uses, so the two creation paths cannot disagree about what a
+    # CR/bug acceptance criterion means (nothing executes it - only a story's Verify line runs).
+    file_finding.check_prose_acs(type_, f)
     f["date"] = f.get("date") or date.today().isoformat()
     if type_ == "story":
         if not f.get("epic"):
@@ -680,6 +684,7 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
     for i, it in enumerate(items, 1):
         try:  # an injected line in item N aborts the batch here, before any id is reserved
             sdlc_md.check_creator_fields(it)
+            file_finding.check_prose_acs(type_, it)  # ... as does a pseudo-`Verify:` criterion
         except ValueError as exc:
             raise ValueError(f"batch item {i}: {exc}") from exc
     if type_ == "story":

@@ -1,11 +1,12 @@
 # BG0132: CR acceptance criteria carry Verify lines that nothing executes, so a false-green one is never caught
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/artifact.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/validate.py
+> **Verification depth:** functional - the refusal was exercised through the public CLI (`file_finding.py file --type cr`): a command-shaped `Verify: rg -qi ...` acceptance criterion is refused with a teaching error and no artefact written, while the same CR with an honest prose outcome is accepted and filed. Also covered by 13 behavioural tests, none of which assert a string in a source file.
 
 ## Summary
 

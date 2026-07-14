@@ -20,7 +20,12 @@ Every sprint close. The unified review (and its LATEST.md anchor, the documented
 
 ## Acceptance Criteria
 
-- [ ] A blocking gate leg (e.g. --require-review, mirroring --require-retro) FAILS a sprint close when artefacts have changed since LATEST.md was written. The deterministic input already exists (`review_prep.staleness` / `needs_review)`; wire it to a blocking leg. `doc_freshness` stays, or is folded in. Validate against the bug it defends (LL0010): a close with a stale LATEST.md must FAIL. Verify: rg -q 'require.review\|review.currency' .claude/skills/sdlc-studio/scripts/gate.py
+- [ ] A blocking gate leg (e.g. `--require-review`, mirroring `--require-retro`) FAILS a sprint
+      close when artefacts have changed since `LATEST.md` was written. The deterministic input
+      already exists (`review_prep.staleness` / `needs_review`); it is wired to a blocking leg.
+      `doc_freshness` stays, or is folded in. Validated against the bug it defends (LL0010): a
+      close attempted with a stale `LATEST.md` fails, and the same close passes once the review is
+      refreshed.
 
 ## Revision History
 

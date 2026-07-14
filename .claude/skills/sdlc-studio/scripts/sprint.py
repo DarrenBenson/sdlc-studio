@@ -13,6 +13,13 @@ else the human `Effort:` (S/M/L) recorded on the artefact at filing, else a neut
 default. The plan also carries a per-unit token budget, weighted by complexity, or by
 the declared effort when the unit names no files.
 
+The plan then SIZES the batch against the sprint's CAPACITY (`capacity.*`: tokens, wall-clock
+minutes, units) and says whether it fits - at plan time, while the operator can still cut it,
+rather than mid-run when the breaker halts the sprint. The same capacity resolves the run
+APPETITE that `loop_guard budget` later breaks on, so the plan-time ceiling and the run-time
+ceiling are ONE number and cannot disagree. Over budget is a WARNING, never a refusal: a script
+cannot observe token spend, and the token model is a hypothesis, not a measurement.
+
 The plan also EMITS the still-valid lessons digest (`lessons.plan_digest`): the lessons the
 last sprints paid for arrive inside the plan the agent reads at sprint start, rather than as a
 prose instruction to open a file that an agent under effort pressure skips. Read-only;
@@ -79,6 +86,168 @@ EFFORT_ALIAS = {"SMALL": "S", "MEDIUM": "M", "LARGE": "L"}
 # units the constants above were fitted to (complexity 0-52, actuals 42k-98k): S keeps the
 # measured floor, M sits mid-range, L near the top. A unit with real complexity is untouched.
 EFFORT_COMPLEXITY_PROXY = {"S": 0, "M": 25, "L": 50}
+
+# ---------------------------------------------------------------------------
+# Sprint capacity: ONE operator-set budget, TWO consumers.
+# ---------------------------------------------------------------------------
+# The plan-time question ("does this batch fit?") and the run-time circuit breaker
+# ("stop, the appetite is spent") were two numbers that could disagree: an operator could plan a
+# 12-unit batch and then watch the breaker halt it at 8, mid-sprint. They are now one number.
+# `capacity.*` is the source; the appetite is RESOLVED ONCE, here, at plan time, and stamped on
+# the run state - which is exactly what `loop_guard budget` reads back at each unit boundary. So
+# the ceiling the plan checked the batch against IS the ceiling that stops the run.
+#
+# PROVISIONAL. These defaults are round numbers over one measured sprint (6 units, 384,278
+# tokens actual, RETRO0024), not a calibration. `retro.velocity_history` accumulates a row per
+# sprint; once it has CALIBRATION_MIN_SPRINTS rows a human re-reads the trend and decides
+# whether the numbers have earned a change. NOTHING here re-fits anything automatically - a fit
+# to one or two sprints would fit noise.
+DEFAULT_CAPACITY = {"tokens": 500_000, "minutes": 240, "units": 8}
+
+# The honest error band on the token forecast. It is NOT a precision estimate: it was fitted to
+# 6 units of one sprint, one model, one repo, and out-of-sample it has already run ~0.7x (under-
+# forecasting) against 1.09x in-sample. +/-30% is the floor of the band; observed ratios in the
+# velocity history WIDEN it (never narrow it - one sprint agreeing with the model is not
+# evidence the model is tight).
+FORECAST_BAND = 0.30
+
+# Sprints of recorded velocity before the history is worth recalibrating the constants against.
+# Below this the plan says so, and changes nothing.
+CALIBRATION_MIN_SPRINTS = 5
+
+
+def capacity(repo_root: Path | str) -> dict:
+    """The configured per-sprint capacity: tokens, wall-clock minutes, unit count.
+
+    0 on an axis means that axis is unbounded (the pre-capacity behaviour). A malformed value
+    degrades to the shipped default rather than crashing the planner."""
+    out: dict = {}
+    for axis, default in DEFAULT_CAPACITY.items():
+        try:
+            out[axis] = max(0, int(config.get(repo_root, f"capacity.{axis}", default)))
+        except (TypeError, ValueError):
+            out[axis] = default
+    return out
+
+
+def resolve_appetite(repo_root: Path | str, cli_minutes: float | None = None,
+                     cli_units: int | None = None) -> dict:
+    """The run appetite in force, resolved ONCE - at plan time, from the capacity budget.
+
+    Per axis, most specific first: the CLI flag, then an explicitly configured `appetite.*`
+    (non-zero; the pre-capacity key, still honoured), then the sprint capacity. The resolved
+    pair is what the plan checks the batch against AND what `sprint plan --write` stamps on the
+    run state for `loop_guard budget` to break on. One number, two consumers.
+    """
+    cap = capacity(repo_root)
+
+    def pick(flag, axis: str) -> tuple:
+        if flag is not None:
+            return flag, f"--appetite-{axis}"
+        legacy = config.get(repo_root, f"appetite.{axis}", 0) or 0
+        if legacy:
+            return legacy, f"config appetite.{axis}"
+        return cap[axis], f"config capacity.{axis}"
+
+    minutes, m_src = pick(cli_minutes, "minutes")
+    units, u_src = pick(cli_units, "units")
+    return {"minutes": float(minutes or 0), "units": int(units or 0),
+            "minutes_source": m_src, "units_source": u_src}
+
+
+def calibration(repo_root: Path | str) -> dict:
+    """What the velocity history says about the forecast the plan is about to quote.
+
+    REPORTS, never re-fits. `low`/`high` are multipliers on the point forecast that bound the
+    plausible actual: FORECAST_BAND is the floor, and any observed estimate/actual ratio widens
+    them (an actual of estimate/ratio). A history that agrees with the model does not shrink the
+    band - agreeing once is not evidence of precision."""
+    rows: list[dict] = []
+    try:
+        import retro  # noqa: PLC0415 - deferred: the planner must not pay for the retro import graph
+        rows = [r for r in retro.velocity_history(repo_root)
+                if isinstance(r.get("ratio"), (int, float)) and r["ratio"] > 0]
+    except Exception as exc:  # noqa: BLE001 - no history must never break planning
+        sdlc_md.debug("sprint.calibration", exc)
+    ratios = [float(r["ratio"]) for r in rows]
+    low, high = 1.0 - FORECAST_BAND, 1.0 + FORECAST_BAND
+    if ratios:
+        low = min(low, 1.0 / max(ratios))
+        high = max(high, 1.0 / min(ratios))
+    return {"sprints": len(rows), "ratios": ratios,
+            "low": round(low, 2), "high": round(high, 2),
+            "recalibrate_after": CALIBRATION_MIN_SPRINTS,
+            "enough_history": len(rows) >= CALIBRATION_MIN_SPRINTS,
+            "note": "the token forecast is a HYPOTHESIS fitted to 6 units of one sprint, one "
+                    "model, one repo; it is a BATCH tool with a weak per-unit signal, and it "
+                    "is not re-fitted automatically"}
+
+
+def _unit_wall_minutes(cal_rows: list[dict]) -> float | None:
+    """Mean per-unit SUBAGENT wall time from the velocity history, in minutes, or None.
+
+    A lower bound on a run, never a forecast of it: the history records the time the workers
+    spent, not the elapsed clock of the run around them (orchestration, reviews, operator
+    STOPs). It is reported as a floor so nobody reads it as the answer."""
+    total_s = sum(r["wall_time_s"] for r in cal_rows
+                  if isinstance(r.get("wall_time_s"), (int, float)))
+    units = sum(r["measured"] for r in cal_rows if isinstance(r.get("measured"), (int, float)))
+    if not total_s or not units:
+        return None
+    return round(total_s / units / 60.0, 1)
+
+
+def capacity_report(repo_root: Path | str, batch: list[dict], forecast: dict | None,
+                    appetite: dict) -> dict:
+    """Does this batch fit the sprint's capacity? Answered AT PLAN TIME, as a WARNING.
+
+    Never a gate. A script cannot observe token spend (see telemetry.py), so a token ceiling
+    would depend on the actor self-reporting the budget meant to constrain it; and the forecast
+    itself is mis-calibrated out-of-sample by ~30%. Refusing to plan on a number that soft would
+    be false authority. The real breaker is wall-clock/unit-count, and it fires on the SAME
+    appetite reported here.
+    """
+    root = Path(repo_root)
+    cap = capacity(root)
+    cal = calibration(root)
+    tokens = int((forecast or {}).get("tokens") or 0)
+    units = len(batch)
+    token_budget = cap["tokens"]
+    unit_budget = appetite["units"]        # the number the run breaker will actually stop on
+    minute_budget = appetite["minutes"]    # ditto
+
+    over: list[str] = []
+    if token_budget and tokens > token_budget:
+        over.append("tokens")
+    if unit_budget and units > unit_budget:
+        over.append("units")
+    low, high = int(tokens * cal["low"]), int(tokens * cal["high"])
+    return {
+        "budget": {"tokens": token_budget, "minutes": minute_budget, "units": unit_budget},
+        "forecast": {"tokens": tokens, "low": low, "high": high},
+        "units": units,
+        "over": over,
+        "over_budget": bool(over),
+        # under budget on the point estimate, but the top of the honest band is not
+        "tokens_may_exceed": bool(token_budget and "tokens" not in over and high > token_budget),
+        "appetite": appetite,
+        "calibration": cal,
+        "unit_wall_minutes_floor": _unit_wall_minutes(_velocity_rows(root)),
+        "advisory": True,
+        "basis": "a WARNING, never a gate - a script cannot observe token spend, and the "
+                 "forecast is a hypothesis. The run breaker is wall-clock/unit-count, on the "
+                 "same appetite reported here",
+    }
+
+
+def _velocity_rows(repo_root: Path | str) -> list[dict]:
+    """The raw velocity rows (fail-safe: [] when there is no history or retro cannot load)."""
+    try:
+        import retro  # noqa: PLC0415
+        return retro.velocity_history(repo_root)
+    except Exception as exc:  # noqa: BLE001
+        sdlc_md.debug("sprint._velocity_rows", exc)
+        return []
 
 
 def _weight(pri: str) -> int:
@@ -468,10 +637,15 @@ def _seat_provenance(root: Path, batch: list[dict]) -> dict:
 def build_plan(repo_root: Path | str, kind: str | None = None, status: str | None = None,
                order: str = "priority", skip_personas: bool = False,
                epics: set[str] | None = None, queries: list[tuple[str, str]] | None = None,
-               worklist: str | None = None) -> dict:
+               worklist: str | None = None, appetite_minutes: float | None = None,
+               appetite_units: int | None = None) -> dict:
     """The triage plan: the ordered batch, a count, and (for ordered modes) the dependency
     WAVES - the parallelisable levels operators otherwise hand-derive. The batch source is
-    a single kind+status, composed `queries`, or a `worklist` file (ids one per line)."""
+    a single kind+status, composed `queries`, or a `worklist` file (ids one per line).
+
+    The plan also sizes the batch against the sprint CAPACITY and resolves the run appetite
+    from it, so the ceiling the operator is shown at plan time is the ceiling the run breaker
+    later stops on."""
     root = Path(repo_root)
     if worklist is not None:
         batch, deps = _worklist_units(root, worklist)
@@ -495,6 +669,8 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
         # whether ANY in-batch dependency edge was declared - a flat single wave with no
         # edges is parallel because no one declared a `Depends on:`, not because none exist.
         deps_declared = any(deps[k] & set(deps) for k in deps)
+    forecast = _token_forecast(root, batch) if batch else None
+    appetite = resolve_appetite(root, appetite_minutes, appetite_units)
     return {
         "generated_at": sdlc_md.now_iso8601(),
         "kind": "+".join(k for k, _ in queries),
@@ -508,7 +684,10 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
         "seat_provenance": (_seat_provenance(root, batch)
                             if order == "wsjf" and not skip_personas else None),
         # A token cost FORECAST for the batch (estimate, never a gate - see _token_forecast).
-        "token_forecast": _token_forecast(root, batch) if batch else None,
+        "token_forecast": forecast,
+        # Does the batch FIT? Sized against the sprint capacity at PLAN time - and carrying the
+        # run appetite resolved from that same capacity, so the two cannot disagree.
+        "capacity": capacity_report(root, batch, forecast, appetite),
         # The lessons the last sprints paid for, IN the plan the agent reads at sprint start.
         # A plan that merely pointed at LESSONS-SUMMARY.md relied on the agent opening it.
         "lessons": lessons.plan_digest(root),
@@ -788,13 +967,55 @@ def _render_cross_lessons(data: dict) -> None:
 
 
 def _render_token_forecast(data: dict) -> None:
-    """The batch's token forecast, labelled an estimate. Never a gate - it informs the
-    operator's appetite choice, it does not stop a run."""
+    """The batch's token forecast, quoted as a RANGE, never a bare number. The point estimate
+    on its own reads as a fact; it is a hypothesis that has already been ~30% out."""
     tf = data.get("token_forecast")
     if not tf or not tf.get("tokens"):
         return
-    print(f"  token forecast: ~{tf['tokens']:,} tokens across {data['count']} unit(s) "
-          f"(estimate, never a gate - the run breaker is wall-clock/unit-count)")
+    cap = data.get("capacity") or {}
+    fc = cap.get("forecast") or {}
+    band = (f" (plausible {fc['low']:,}-{fc['high']:,})"
+            if fc.get("low") and fc.get("high") else "")
+    print(f"  token forecast: ~{tf['tokens']:,} tokens across {data['count']} unit(s)"
+          f"{band} - an estimate, never a gate")
+
+
+def _render_capacity(data: dict) -> None:
+    """Does the batch fit? The plan-time capacity check - and the appetite the run will break
+    on, which is the same number. Loud when over budget, and honest about its own error bar."""
+    cap = data.get("capacity")
+    if not cap:
+        return
+    b, fc, app, cal = cap["budget"], cap["forecast"], cap["appetite"], cap["calibration"]
+    units = f"{cap['units']}/{b['units']}" if b["units"] else f"{cap['units']}/unbounded"
+    tokens = (f"~{fc['tokens']:,}/{b['tokens']:,}" if b["tokens"]
+              else f"~{fc['tokens']:,}/unbounded")
+    verdict = ("OVER BUDGET (" + ", ".join(cap["over"]) + ")") if cap["over"] else "within budget"
+    print(f"  capacity: units {units}, tokens {tokens} - {verdict}")
+    if cap["over"]:
+        print(f"  capacity: this batch does not fit. Cut it, or raise the appetite deliberately "
+              f"(--appetite-units / --appetite-minutes). This is a WARNING, not a gate - "
+              f"planning is never refused on a token estimate.", file=sys.stderr)
+    elif cap["tokens_may_exceed"]:
+        print(f"  capacity: within budget on the point estimate, but the top of the plausible "
+              f"range ({fc['high']:,}) is over {b['tokens']:,} - the forecast is not that "
+              f"precise.", file=sys.stderr)
+    sprints = cal["sprints"]
+    ratios = ", ".join(f"{r}x" for r in cal["ratios"])
+    history = (f"{sprints} measured sprint(s), est/actual {ratios}" if sprints
+               else "no measured sprints yet")
+    enough = ("enough history to recalibrate - a human should re-read the trend"
+              if cal["enough_history"]
+              else f"not enough history to recalibrate (need {cal['recalibrate_after']})")
+    print(f"  capacity: the token half is a FORECAST, not a measurement - a script cannot "
+          f"observe token spend, and the model is a hypothesis fitted to one sprint. "
+          f"Calibration: {history}; {enough}. Nothing is re-fitted automatically.")
+    floor = cap.get("unit_wall_minutes_floor")
+    wall = (f", ~{floor} min/unit of worker time measured (a FLOOR on a "
+            f"{cap['units']}-unit run, not a forecast of it)" if floor else "")
+    print(f"  capacity: the run BREAKER is wall-clock/unit-count - appetite "
+          f"{app['minutes']:g} min ({app['minutes_source']}) / {app['units']} unit(s) "
+          f"({app['units_source']}){wall}")
 
 
 def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, epics) -> None:
@@ -808,6 +1029,7 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     _render_seat_provenance(data)
     _render_waves(data)
     _render_token_forecast(data)
+    _render_capacity(data)
     _render_lessons(data)
     _render_cross_lessons(data)
 
@@ -916,7 +1138,9 @@ def cmd_plan(args: argparse.Namespace) -> int:
     try:
         data = build_plan(args.root, order=args.order,
                           skip_personas=getattr(args, "skip_personas", False), epics=epics,
-                          queries=queries or None, worklist=worklist)
+                          queries=queries or None, worklist=worklist,
+                          appetite_minutes=getattr(args, "appetite_minutes", None),
+                          appetite_units=getattr(args, "appetite_units", None))
     except ValueError as exc:  # dependency cycle / bad status / unknown worklist id
         print(f"cannot order the batch: {exc}", file=sys.stderr)
         return 2
@@ -933,25 +1157,19 @@ def cmd_plan(args: argparse.Namespace) -> int:
         # The close (`handoff generate`) writes the outcome back to the same object.
         state = run_state.open_run(args.root, batch=[u["id"] for u in data["batch"]],
                                    goal=getattr(args, "goal", None), plan=str(out))
-        # Record the declared appetite (the run-level breaker `loop_guard budget` reads back)
-        # and the token forecast (an estimate the close reports) - additive fields on the
-        # run-state object, merged, never touching its schema. Only the axes the operator
-        # named are stored, so an unset axis still falls through to the project default.
-        extra: dict = {}
-        appetite = {}
-        if getattr(args, "appetite_minutes", None) is not None:
-            appetite["minutes"] = args.appetite_minutes
-        if getattr(args, "appetite_units", None) is not None:
-            appetite["units"] = args.appetite_units
-        if appetite:
-            extra["appetite"] = appetite
+        # Record the RESOLVED appetite and the token forecast - additive fields on the
+        # run-state object, merged, never touching its schema. The appetite was resolved once,
+        # from the sprint capacity (flag > appetite.* > capacity.*), and the plan has already
+        # sized the batch against it; stamping it here is what makes `loop_guard budget` break
+        # on the very number the operator was shown. 0 on an axis is unbounded, as before.
+        resolved = data["capacity"]["appetite"]
+        appetite = {"minutes": resolved["minutes"], "units": resolved["units"]}
+        extra: dict = {"appetite": appetite}
         if data.get("token_forecast"):
             extra["token_forecast"] = data["token_forecast"]["tokens"]
-        if extra:
-            state = run_state.update(args.root, **extra)
-        appetite_note = (f", appetite {appetite.get('minutes', '-')}min/"
-                         f"{appetite.get('units', '-')}units" if appetite else "")
-        print(f"opened run {state['run_id']} (goal={state['goal'] or 'unset'}{appetite_note}) "
+        state = run_state.update(args.root, **extra)
+        print(f"opened run {state['run_id']} (goal={state['goal'] or 'unset'}, appetite "
+              f"{appetite['minutes']:g}min/{appetite['units']}units) "
               f"-> {run_state.path(args.root)}")
     _render_plan(args, data, queries, worklist, epics)
     return 0
@@ -983,12 +1201,15 @@ def build_parser() -> argparse.ArgumentParser:
                         "open the run (id, start time, approved batch, goal) in "
                         "sdlc-studio/.local/run-state.json - the object the close reads")
     p.add_argument("--appetite-minutes", type=float, default=None, dest="appetite_minutes",
-                   help="declared wall-clock ceiling for the run (with --write); the "
-                        "unit-boundary breaker (loop_guard budget) stops the run cleanly when "
-                        "it is spent. Never auto-extended - a fresh run resets it")
+                   help="wall-clock ceiling for the run; overrides the sprint capacity "
+                        "(config capacity.minutes). The unit-boundary breaker (loop_guard "
+                        "budget) stops the run cleanly when it is spent, and the plan sizes "
+                        "the batch against this same number. Never auto-extended")
     p.add_argument("--appetite-units", type=int, default=None, dest="appetite_units",
-                   help="declared unit-count ceiling for the run (with --write); evaluated at "
-                        "unit boundaries so no unit is abandoned mid-implementation")
+                   help="unit-count ceiling for the run; overrides the sprint capacity "
+                        "(config capacity.units). Evaluated at unit boundaries so no unit is "
+                        "abandoned mid-implementation, and flagged at PLAN time when the batch "
+                        "does not fit")
     p.add_argument("--strict", action="store_true",
                    help="refuse to plan when the index has drift or local is behind origin")
     p.add_argument("--no-fetch", action="store_true", dest="no_fetch",

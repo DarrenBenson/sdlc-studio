@@ -20,10 +20,13 @@ Anyone who reads the summary to decide what to worry about. Changes the summary 
 
 ## Acceptance Criteria
 
-- [ ] The summary is ranked, not flat: recurrence, recency and structural-fix demotion order it. Verify: python3 .claude/skills/sdlc-studio/scripts/lessons.py summary --dry-run
-- [ ] A lesson whose class has recurred across repos ranks above a one-off of the same age. Verify: python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k rank
-- [ ] A lesson with a shipped structural guard is demoted, not deleted - the history stays, the shouting stops. Verify: python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k demote
-- [ ] The summary is recomputed and compared, never trusted, and the gate still fails on staleness. Verify: python3 .claude/skills/sdlc-studio/scripts/gate.py
+- [ ] The summary is ranked, not flat: recurrence, recency and structural-fix demotion decide the
+      order, and the top of the list is what is biting now.
+- [ ] A lesson whose class has recurred across repos ranks above a one-off of the same age.
+- [ ] A lesson with a shipped structural guard is demoted, not deleted - the history stays, the
+      shouting stops.
+- [ ] The summary is recomputed from the artefacts and compared, never trusted (LL0001), and a
+      stale summary still fails the gate.
 
 ## Revision History
 

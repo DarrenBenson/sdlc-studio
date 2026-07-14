@@ -21,7 +21,10 @@ One weakness-hunt, one name. Anyone following the README's 'review generate' on-
 
 ## Acceptance Criteria
 
-- [ ] review generate is removed (script surface + help), audit --profile repo carries its three legs with the refute panel, and no tracked doc references 'review generate'. Verify: ! rg -q 'review generate' README.md docs/why-sdlc-studio.md docs/existing-users.md
+- [ ] `review generate` is gone from the script surface and the help, `audit --profile repo` carries
+      its three legs with the refute panel, and no tracked doc still points a reader at the retired
+      command - the README and the docs included. An operator following any shipped instruction
+      lands on `audit`.
 
 ## Revision History
 

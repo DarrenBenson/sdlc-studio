@@ -20,9 +20,12 @@ Every project, since the loop ships on by default. Projects that do not want it 
 
 ## Acceptance Criteria
 
-- [ ] The loop is on by default and documented in the doctrine. Verify: rg -q 'learning loop|lessons' .claude/skills/sdlc-studio/reference-doctrine.md
-- [ ] A config opt-out exists and is documented. Verify: rg -q 'lessons' .claude/skills/sdlc-studio/reference-config.md
-- [ ] The claim that the loop reduces repeat defects is registered as a benchmark claim with a verification path, not asserted. Verify: rg -q 'learning loop|lessons' docs/whitepaper.md
+- [ ] The loop is on by default, and the doctrine says so: a project that does nothing gets the
+      learning loop.
+- [ ] A project can turn it off through config, and the opt-out is documented where an operator
+      looking for it would look.
+- [ ] The claim that the loop reduces repeat defects is registered as a benchmark claim with a
+      stated verification path, not asserted in prose as though it were already proved.
 
 ## Revision History
 

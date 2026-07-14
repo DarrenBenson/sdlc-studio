@@ -70,17 +70,18 @@ Three legs. The first stops the corruption; the second and third stop it recurri
 
 ## Acceptance Criteria
 
-- [ ] **AC1:** A Verify command survives the filer byte-for-byte, including snake_case paths.
-      Verify: `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k md_safe`
-- [ ] **AC2:** The defence is validated against the bug it defends (LL0010): filing an AC whose
-      Verify names a snake_case path must NOT introduce a backtick.
-      Verify: `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k filer`
+- [ ] **AC1:** A Verify command survives the filer byte-for-byte, including a `snake_case` path:
+      the stored line is character-for-character the one the caller supplied, with no backtick
+      introduced anywhere in it. Pinned by the `md_safe` unit tests.
+- [ ] **AC2:** The defence is validated against the bug it defends (LL0010): filing a story AC
+      whose Verify names a `snake_case` path, then reading the artefact back and running it
+      through `verify_ac`, executes the intended command - not a directory search, and not a
+      command substitution. Pinned by the filer unit tests.
 - [ ] **AC3:** The filer reports any normalisation it applied to caller input rather than doing it
-      silently.
-      Verify: `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k normalis`
-- [ ] **AC4:** The scripts catalogue records which scripts rewrite caller input, and what they will
-      not touch.
-      Verify: `rg -qi normalis .claude/skills/sdlc-studio/reference-scripts.md`
+      silently: a caller whose prose was rewritten sees which field was touched and how.
+- [ ] **AC4:** The scripts catalogue (`reference-scripts.md`) records which scripts rewrite caller
+      input and what they will never touch, so the next author does not rediscover this by
+      shipping a corrupted verifier.
 
 ## Revision History
 
