@@ -1,6 +1,6 @@
 # BG0139: The model router scores a docs unit trivial with high confidence: its dominant signal is the predictor falsified today
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** High
 > **Effort:** M
 > **Affects:** .claude/skills/sdlc-studio/scripts/route.py, .claude/skills/sdlc-studio/scripts/complexity.py
@@ -25,3 +25,26 @@ Do not enable routing on this score. Three things, in order. (a) Treat a resolve
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-14 | sdlc-studio | Filed |
+
+## Resolution: DUPLICATE - subsumed by CR0262 (2026-07-14)
+
+Closed without separate work, and not to shrink a sprint. This bug and CR0262 are the same change,
+filed twice, hours apart, by the same agent.
+
+- BG0139's fix **(a)** - "treat a resolved-but-inapplicable signal as MISSING, not as zero" - is
+  **CR0262 AC4**, verbatim.
+- BG0139's fix **(b)** - "add a signal that carries non-code difficulty; the declared Effort is the
+  obvious candidate" - is **CR0262 AC1**.
+- BG0139's fix **(c)** - "validate the router against measured actuals, out-of-sample, before anyone
+  trusts it" - is **CR0262 AC2**.
+
+Both bugs are the same root cause: the router and the forecast are dominated by the SAME inert signal
+(`max_cognitive`, r = -0.006 against cost). Fixing the signal in one place fixes both consumers, and
+splitting it across two artefacts would split the acceptance criteria for one change so that neither is
+complete on its own - and would dispatch two agents concurrently into `route.py` and `complexity.py`.
+
+**The routing warning stands and is carried by CR0262: do not enable `routing.enabled` until the seed
+is rebuilt and validated out-of-sample.**
+
+It was caught only because CR0260's shared-file clustering put the two in one collision cluster. That
+the tooling has no duplicate detection at filing is now **CR0264**.

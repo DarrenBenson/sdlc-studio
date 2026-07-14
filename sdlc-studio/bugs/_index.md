@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 5 |
+| Open | 4 |
 | In Progress | 0 |
 | Fixed | 55 |
 | Verified | 0 |
 | Closed | 79 |
-| Won't Fix | 2 |
+| Won't Fix | 3 |
 | Superseded | 0 |
 | **Total** | **141** |
 
@@ -105,7 +105,7 @@
 | [BG0136](BG0136-the-filer-writes-artefacts-the-planner-then-refuses.md) | The filer writes artefacts the planner then refuses: no --affects flag exists, so every filed bug is unplannable | Fixed | High | 2026-07-14 | 2026-07-14 |
 | [BG0137](BG0137-every-archived-index-row-link-is-wrong-depth.md) | Every archived index row link is wrong-depth: 361 dead links on GitHub | Open | Medium | 2026-07-14 | 2026-07-14 |
 | [BG0138](BG0138-ts0001-carries-13-broken-relative-links-where-is.md) | TS0001 carries 13 broken relative links (../../ where ../ is correct) | Open | Low | 2026-07-14 | 2026-07-14 |
-| [BG0139](BG0139-the-model-router-scores-a-docs-unit-trivial.md) | The model router scores a docs unit trivial with high confidence: its dominant signal is the predictor falsified today | Open | High | 2026-07-14 | 2026-07-14 |
+| [BG0139](BG0139-the-model-router-scores-a-docs-unit-trivial.md) | The model router scores a docs unit trivial with high confidence: its dominant signal is the predictor falsified today | Won't Fix | High | 2026-07-14 | 2026-07-14 |
 | [BG0140](BG0140-the-plan-time-forecast-is-written-to-gitignored.md) | The plan-time forecast is written to gitignored .local/, so BG0133 fix does not survive a clone | Open | High | 2026-07-14 | 2026-07-14 |
 | [BG0141](BG0141-retro-extract-titles-a-lesson-from-its-first.md) | retro extract titles a lesson from its first LINE, so a wrapped lesson gets a title cut mid-sentence | Open | Low | 2026-07-14 | 2026-07-14 |
 

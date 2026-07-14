@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 2 |
+| Draft | 3 |
 | In Review | 0 |
 | Accepted | 31 |
 | Superseded | 0 |
 | Withdrawn | 3 |
-| **Total** | **36** |
+| **Total** | **37** |
 
 ## All RFCs
 
@@ -53,3 +53,4 @@
 | [RFC-0034](RFC0034-sprint-sizing-velocity-and-estimate-calibration-close-the.md) | Sprint sizing, velocity and estimate calibration: close the estimate -> deliver -> recalibrate loop | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0035](RFC0035-the-sprint-report-what-a-sprint-delivered-what.md) | The sprint report: what a sprint delivered, what it cost, and whether the model choice was right | Medium | Draft | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0036](RFC0036-running-several-sprints-unattended-a-rolling-policy-not.md) | Running several sprints unattended: a rolling policy, not a queue of frozen plans | Medium | Draft | sdlc-studio | 2026-07-14 | -- |
+| [RFC-0037](RFC0037-backlog-triage-as-a-first-class-ceremony-keep.md) | Backlog triage as a first-class ceremony: keep the backlog clean and actionable BEFORE planning | Medium | Draft | sdlc-studio | 2026-07-14 | -- |

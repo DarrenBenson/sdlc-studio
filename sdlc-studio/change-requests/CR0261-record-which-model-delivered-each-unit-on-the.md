@@ -4,6 +4,7 @@
 > **Priority:** P2
 > **Type:** Feature
 > **Affects:** .claude/skills/sdlc-studio/scripts/telemetry.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/templates/core/bug.md, .claude/skills/sdlc-studio/templates/core/story.md
+> **Depends on:** CR0263
 > **Date:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

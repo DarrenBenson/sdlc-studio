@@ -5,6 +5,8 @@
 > **Effort:** S
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file
+> **Affects:** sdlc-studio/test-specs/TS0001-core-artifact-lifecycle.md, tools/check_links.py
+> **Depends on:** BG0137
 > **Raised-by:** sdlc-studio; agent; v1
 
 ## Summary

@@ -4,6 +4,7 @@
 > **Severity:** Low
 > **Effort:** S
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py
+> **Depends on:** CR0263
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

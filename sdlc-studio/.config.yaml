@@ -36,7 +36,9 @@ engagement_floor:
 # below what a normal sprint here actually costs - so it would flag almost every batch, and a
 # warning that always fires is one an operator learns to scroll past.
 #
-# 700,000 sits just above the one real 5-unit sprint we have measured: a normal batch passes,
+# 1,000,000 sits just above the WORST measured sprint (RETRO0026: 5 units, 902,503 tokens).
+# Raised from 700,000 on 2026-07-14 after that sprint blew straight through it. Two measured
+# sprints now: 642,358 and 902,503. The old note said 700,000 sat just above the one sprint we had: a normal batch passes,
 # a genuinely oversized one still trips. It is an OPERATOR SETTING, not a fitted constant, and
 # it is set here rather than in templates/config-defaults.yaml because 642k is this repo's cost
 # with this model and these briefs - another project's units cost something else entirely.
@@ -45,6 +47,6 @@ engagement_floor:
 # check is built on an estimator known to under-forecast by ~1.8x, so `within budget` currently
 # means less than it appears to.
 capacity:
-  tokens: 700000
+  tokens: 1000000
   minutes: 240
   units: 8

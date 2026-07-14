@@ -4,6 +4,7 @@
 > **Priority:** P1
 > **Type:** Improvement
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/route.py, .claude/skills/sdlc-studio/scripts/complexity.py
+> **Depends on:** BG0140
 > **Date:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -134,3 +135,10 @@ needs a different answer - a required "I do not know" is an honest input; a coer
   only kind that can earn trust or lose it honestly.
 - **Watch for coerced estimates.** Test whether mandatory `Effort` is less accurate than voluntary
   `Effort`, and give "unknown" a first-class value so nobody has to invent a size to get past a gate.
+
+## Absorbs BG0139 (2026-07-14)
+
+BG0139 (the model router scores a docs unit trivial with HIGH confidence) is closed as a duplicate of
+this CR. Its three fixes are AC4, AC1 and AC2 here, verbatim. Same root cause: the router and the
+forecast are dominated by the same inert signal, so one fix serves both consumers. **Do not enable
+`routing.enabled` until this ships and the seed is validated out-of-sample.**
