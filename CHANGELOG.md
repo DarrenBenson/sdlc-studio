@@ -84,6 +84,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`curl ... | bash` installed nothing, silently (BG0122).** The source-vs-execute guard at the
+  bottom of `install.sh` compared `${BASH_SOURCE[0]}` with `$0`. Piped, bash reads the script from
+  stdin, so there is no source file: `BASH_SOURCE[0]` is unset while `$0` is `bash`. The test
+  failed, `main` was never called, and the installer defined its functions, fell off the bottom and
+  exited 0 - no output, no error, no install, for the exact one-line invocation the README
+  advertises. The guard now falls back to `${BASH_SOURCE[0]:-$0}`, which runs `main` when piped and
+  when executed as a file, and still suppresses it when sourced (so the functions stay
+  unit-testable). The suite could not have caught this: it only ever sourced the script, the one
+  mode that was never broken. `tools/tests/test_install_piped.py` now pipes the installer for real
+  and asserts on stdout, not the exit code - the broken script exited 0.
+
 - **The engagement floor's shared-commit gap is closable with a `Refs:` trailer (CR0239).**
   The floor could not catch understatement in a commit that named two work-items, because git
   cannot attribute a file to one id among several. A `Refs: <id>` line in the commit body is now

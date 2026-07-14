@@ -547,6 +547,8 @@ main() {
 
 # Run main only when executed, not when sourced (so the functions above are
 # unit-testable in isolation - e.g. tools/tests/test_install_sweep.py).
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+# Piped (curl | bash) there is no source file, so BASH_SOURCE[0] is unset and
+# the :-$0 fallback is what makes main run in the README's advertised install.
+if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
     main
 fi
