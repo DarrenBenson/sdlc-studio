@@ -1,6 +1,6 @@
 # RFC-0033: One weakness-hunt, one name: reconcile review generate, the adversarial audit, and the audit collision
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -67,20 +67,34 @@ the repo's own RFC-vs-CR rule. Raised for investigation, not yet decided.
 
 ## Recommendation
 
-Lean A (fold to one adversarial `audit` with profiles, refute panel included), because it is the
-only option that makes the strong tool the discoverable one. But every open decision below is real
-and the freeze means there is no rush - this is raised to be investigated, not to be actioned this
-week.
+Option **A** - fold to one adversarial `audit` with profiles, refute panel included - **accepted**.
+It is the only option that makes the strong tool the discoverable one. All five decisions below are
+resolved.
 
 ## Open Decisions
 
-| # | Decision | Status |
-| --- | --- | --- |
-| D1 | **The three-way name collision.** `audit.py` (tranche) and `audit_check.py` (schema linter) own the `audit` stem. Before any user-facing `audit` command exists, do these get renamed (to what - `tranche`/`readiness`? `schema-check`?), or does the user command avoid the stem entirely? A rename touches the gate and sprint call sites. | Open |
-| D2 | **Fold, or keep both (A vs B)?** Is `review generate` genuinely redundant with the adversarial audit, or is the zero-setup, no-refute on-ramp worth keeping precisely because it is lighter for a first look at a stranger's repo? | Open |
-| D3 | **Public rename under the freeze.** `review generate` is in the README and two docs pages as the try-before-you-adopt entry point. If it becomes an alias, when does the doc change ship - with the freeze lift, or never (keep the alias forever)? An alias that is never removed is not churn but is a permanent second name. | Open |
-| D4 | **Does the on-ramp get the refute panel?** If `review generate` survives as a profile, does it gain the N-of-M refutation (slower, but no false findings reach the freshly-filed backlog), or stay fast-and-loose on the argument that an on-ramp is advisory? This session's BG0124 is the evidence that "advisory" findings still cost. | Open |
-| D5 | **Verb, if not `audit`.** If D1 keeps the deterministic scripts on the `audit` stem, the user command needs another verb - `weakness`, `hunt`, `review --adversarial`? The name should say "adversarial weakness-hunt", not overload a word that already means two other things. | Open |
+| # | Decision | Resolution | Status |
+| --- | --- | --- | --- |
+| D1 | The three-way name collision on the `audit` stem. | **Rename the two deterministic scripts.** `audit.py` (sprint pre-flight readiness) -> `readiness.py`; `audit_check.py` (schema linter) -> `schema_check.py`. This frees `audit` for the user-facing adversarial weakness-hunt. Both are internal - the renames touch the gate and sprint call sites and the tests, no public surface. | Decided |
+| D2 | Fold `review generate` into `audit`, or keep both. | **Fold.** The zero-setup repo review becomes `audit --profile repo`, alongside project and code profiles, and gains the refute panel it lacks today. `review` keeps only the consistency job. One name per weakness-hunt. | Decided |
+| D3 | The public rename of `review generate`. | **Remove immediately, no alias.** The command is not well-known (model-invoked; users say "review this repo" in plain language), so a permanent alias would be more clutter than kindness. `review generate` is deleted and the README + `docs/why-sdlc-studio.md` + `docs/existing-users.md` switch to `audit --profile repo`. | Decided |
+| D4 | Does the on-ramp get the refute panel? | **Yes** - resolved by D2's fold. Every profile, including `repo`, runs the N-of-M refutation. This session's BG0124 (a confident false finding a refute pass would have caught) is the evidence that an "advisory" on-ramp without it still costs. | Decided |
+| D5 | Verb, if not `audit`. | **Moot** - resolved by D1. With the deterministic scripts renamed off the stem, the user command is `audit`, the name RFC0002 accepted. | Decided |
+
+## Workstream (spawned on acceptance)
+
+Per the repo's RFC-vs-CR rule, this accepted RFC spawns its CRs rather than being actioned directly.
+D1 gates the rest. Implementation is a public-surface change (removing a documented command, editing
+the README), so it lands under the freeze on `main` unreleased and ships with v4.2 - it is not a
+this-week production release.
+
+- **CR (D1):** rename `audit.py` -> `readiness.py` and `audit_check.py` -> `schema_check.py`, update
+  every call site (gate, sprint), tests and `reference-scripts.md`. Unblocks the stem.
+- **CR (D2, D4, D5):** build the `audit` command - `help/audit.md`, Type Reference row, catalogue
+  entry, the `repo`/`project`/`code` profiles, and the refute panel wired to the finder legs. Makes
+  RFC0002's accepted command discoverable and invokable at last.
+- **CR (D3):** retire `review generate` - fold its three legs into `audit --profile repo`, delete the
+  command, and switch the README and the two docs pages to `audit`.
 
 ## Revision History
 
