@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 7 |
+| Proposed | 8 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 233 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 6 |
 | Blocked | 0 |
-| **Total** | **246** |
+| **Total** | **247** |
 
 ## All Changes
 
@@ -68,6 +68,7 @@
 | [CR-0244](CR0244-a-live-ranked-lessons-summary-what-is-biting.md) | A live, ranked lessons summary: what is biting us most, right now | Proposed | P1 | feature | 2026-07-14 | -- |
 | [CR-0245](CR0245-give-operational-and-incident-lessons-a-home-in.md) | Give operational and incident lessons a home, in the shape teams actually write them | Proposed | P2 | feature | 2026-07-14 | -- |
 | [CR-0246](CR0246-the-learning-loop-is-doctrine-with-a-config.md) | The learning loop is doctrine with a config opt-out, and the claim goes in the benchmark | Proposed | P2 | docs | 2026-07-14 | -- |
+| [CR-0247](CR0247-the-deterministic-retro-spine-scripts-retro-py-and.md) | The deterministic retro spine: scripts/retro.py, and ranking computed not asserted | Proposed | P1 | feature | 2026-07-14 | -- |
 
 ## Archived Releases
 

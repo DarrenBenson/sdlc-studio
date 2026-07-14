@@ -35,6 +35,7 @@ and from per-project memory (project-specific facts).
 | [LL0020](LL0020-a-test-fixture-that-supplies-the-thing-under-test-proves-nothing-about-production.md) | A test fixture that supplies the thing under test proves nothing about production | testing, fixtures, observability, false-green, bug-class |
 | [LL0021](LL0021-verify-a-deploy-by-looking-at-the-running-system-not-by-re-reading-the-green-build.md) | Verify a deploy by looking at the running system, not by re-reading the green build | deploy, verification, observability, process |
 | [LL0022](LL0022-a-guard-that-branches-on-invocation-mode-must-be-tested-in-every-invocation-mode.md) | A guard that branches on invocation mode must be tested in every invocation mode | testing, false-green, shell, bug-class, silent-failure |
+| [LL0023](LL0023-a-gate-that-checks-an-artefact-exists-not-what-is-in-it-is-satisfied-by-touch.md) | A gate that checks an artefact exists, not what is in it, is satisfied by touch | gate, false-green, ceremony, bug-class, silent-failure, process |
 
 ## Notes
 

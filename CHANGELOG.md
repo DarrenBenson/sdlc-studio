@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **LL0023 - a gate that checks an artefact exists, not what is in it, is satisfied by `touch`.**
+  From BG0123: the retro leg globbed for a filename, so a 0-byte `RETRO9999.md` returned
+  `[PASS] retro: batch retro RETRO9999 present`. The one gate that made the retrospective
+  un-skippable was the one an agent could satisfy without doing the work. A ceremony gate must
+  assert on content and on the disposition of what the artefact contains; existence is not
+  evidence. The tell that you are about to build one: there is no deterministic tool that produces
+  or validates the artefact, so the gate has nothing to interrogate but the filesystem.
+
 - **LL0022 - a guard that branches on invocation mode must be tested in every invocation mode.**
   Promoted to the cross-project registry from BG0122. A source-vs-execute guard has as many code
   paths as there are invocation modes (piped, executed, sourced), and the installer's suite only
