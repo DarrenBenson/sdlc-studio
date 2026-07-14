@@ -12,6 +12,10 @@
 
 The measure half of the sizing loop, and the keystone of RFC0034 - it produces the history that calibrates the S/M/L token bands (D1) and the capacity budget (D3). **Corrected premise (RFC0034 D2):** telemetry.py has the `tokens` and `wall_time_s` FIELDS, but only wall-clock is actually captured - a script cannot observe LLM token spend, and in practice the `tokens` field has NEVER been populated (330 records, zero token values). So this CR has two parts, not one: (1) a TOKEN SUPPLIER - run each unit as an instrumented subagent and feed its reported usage into `artifact.py close --tokens`, so a real token actual exists; and (2) wire retro.py + the retro template to read that actual (tokens; wall-clock works today) against the plan's estimated size, record the accuracy ratio per unit and per sprint, and accumulate a velocity/accuracy history the next plan reads. Answers 'were the estimates accurate?' - today unanswerable because nothing measures tokens.
 
+## Supplier PoC (proven 2026-07-14)
+
+The token supplier is validated end-to-end. A unit (BG0126) was run as a background subagent; its completion notification carried `<usage><subagent_tokens>46792</subagent_tokens><duration_ms>271825</duration_ms></usage>`. Feeding those into `telemetry.py record --id BG0126 --type bug --tokens 46792 --wall-time-s 272` produced the **first telemetry record with a real token value** (of 330+ prior records, all null). So the mechanism this CR needs already works with the existing pieces: harness-reported subagent usage -> `telemetry.py record`. What remains for the CR is to make the sprint/autosprint loop do it automatically per unit, and to compare the actual against the plan estimate.
+
 ## Impact
 
 Every sprint close gains an estimate-vs-actual readout and the project gains a velocity baseline it has never had. Once history accumulates, the provisional S/M/L token bands (CR0257) and the capacity budget (D3 CR) recalibrate from real data instead of a guess.

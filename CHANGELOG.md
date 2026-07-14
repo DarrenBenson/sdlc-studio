@@ -104,6 +104,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   re-run). The deterministic input was already there in `review_prep`; it just needed a leg. The
   documented close command is now `gate --require-retro RETRO{next} --require-review`.
 
+- **`meta_new` now takes the allocation lock (BG0126).** Retro/review/handoff creation allocated an
+  always-sequential id and appended its index row without `sdlc_md.allocation_lock`, unlike every
+  other creation path, so two concurrent `artifact new --type retro`/`--type review` could mint the
+  same id and clobber each other's index insert. Wrapped to match `new()`/`file_finding()`.
+  Delivered as the vehicle for the **token-supplier PoC** (CR0258): run as a background subagent, its
+  harness-reported usage (46,792 tokens / 272s) was fed into `telemetry.py record`, producing the
+  first telemetry record with a real token value - proving the supplier the sizing loop needs.
+
 - **`review_prep` no longer counts `personas/index.md` as a persona (BG0129).** The filter excluded
   `_index.md` but the index file is `index.md`, so every review reported a phantom "Persona Index".
   Both spellings are excluded now, via one shared set used by both the usage and required-legs

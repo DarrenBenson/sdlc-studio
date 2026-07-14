@@ -1,6 +1,7 @@
 # BG0126: meta_new allocates retro/review/handoff ids without allocation_lock (concurrent collision)
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file

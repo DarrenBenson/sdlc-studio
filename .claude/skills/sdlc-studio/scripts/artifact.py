@@ -517,46 +517,50 @@ def meta_new(repo_root: Path | str, type_: str, title: str, fields: dict | None 
     f = dict(fields or {})
     sdlc_md.check_creator_fields({**f, "title": title})  # refuse an injected line before any write
     today = f.get("date") or date.today().isoformat()
-    n = next_id.allocate_number(type_, root)
-    rel, prefix = next_id.META_TYPES[type_]
-    file_id = f"{prefix}{n:04d}"
-    disp = f"{prefix}-{n:04d}"
-    slug = file_finding._slug(title)
-    path = root / rel / f"{file_id}-{slug}.md"
-    if path.exists():
-        raise FileExistsError(path)
-    if dry_run:
-        # Predict indexing honestly (like new()'s dry-run): a row lands when the meta index
-        # exists with a data header, OR would be bootstrapped from a shipped index template.
-        idx = root / rel / "_index.md"
-        has_header = idx.exists() and sdlc_md.find_data_header(
-            idx.read_text(encoding="utf-8").splitlines()) is not None
-        would_bootstrap = (not idx.exists()) and (
-            _skill_root() / "templates" / "indexes" / f"{type_}.md").exists()
-        return {"id": disp, "file_id": file_id, "path": str(path),
-                "indexed": has_header or would_bootstrap,
-                "epic_linked": None, "dry_run": True}
-    path.parent.mkdir(parents=True, exist_ok=True)
-    sdlc_md.atomic_write(path, _render_meta(type_, disp, title, today, f))
-    _ensure_meta_index(root, rel, type_, today)  # bootstrap the meta index on first use
-    indexed = False
-    index_path = root / rel / "_index.md"
-    if index_path.exists():
-        lines = index_path.read_text(encoding="utf-8").splitlines()
-        hdr = sdlc_md.find_data_header(lines)
-        if hdr is not None:
-            row = sdlc_md.row_from_header(hdr[1], f"[{disp}]({file_id}-{slug}.md)", title,
-                                          "--", {"date": today, **f})
-            # bound the scan to the DATA table itself: stop at the first
-            # non-table line so a later link-first table never attracts the row
-            pos = hdr[0] + 2  # past header + separator
-            j = pos
-            while j < len(lines) and lines[j].strip().startswith("|"):
-                j += 1
-            pos = j
-            lines.insert(pos, row)
-            index_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-            indexed = True
+    # Serialise allocate -> collision-check -> write -> index-append against concurrent
+    # writers (retro/review/handoff ids are always sequential, the case the lock most
+    # matters for), so two waves closing at once never mint the same id or clobber the index.
+    with sdlc_md.allocation_lock(root):
+        n = next_id.allocate_number(type_, root)
+        rel, prefix = next_id.META_TYPES[type_]
+        file_id = f"{prefix}{n:04d}"
+        disp = f"{prefix}-{n:04d}"
+        slug = file_finding._slug(title)
+        path = root / rel / f"{file_id}-{slug}.md"
+        if path.exists():
+            raise FileExistsError(path)
+        if dry_run:
+            # Predict indexing honestly (like new()'s dry-run): a row lands when the meta index
+            # exists with a data header, OR would be bootstrapped from a shipped index template.
+            idx = root / rel / "_index.md"
+            has_header = idx.exists() and sdlc_md.find_data_header(
+                idx.read_text(encoding="utf-8").splitlines()) is not None
+            would_bootstrap = (not idx.exists()) and (
+                _skill_root() / "templates" / "indexes" / f"{type_}.md").exists()
+            return {"id": disp, "file_id": file_id, "path": str(path),
+                    "indexed": has_header or would_bootstrap,
+                    "epic_linked": None, "dry_run": True}
+        path.parent.mkdir(parents=True, exist_ok=True)
+        sdlc_md.atomic_write(path, _render_meta(type_, disp, title, today, f))
+        _ensure_meta_index(root, rel, type_, today)  # bootstrap the meta index on first use
+        indexed = False
+        index_path = root / rel / "_index.md"
+        if index_path.exists():
+            lines = index_path.read_text(encoding="utf-8").splitlines()
+            hdr = sdlc_md.find_data_header(lines)
+            if hdr is not None:
+                row = sdlc_md.row_from_header(hdr[1], f"[{disp}]({file_id}-{slug}.md)", title,
+                                              "--", {"date": today, **f})
+                # bound the scan to the DATA table itself: stop at the first
+                # non-table line so a later link-first table never attracts the row
+                pos = hdr[0] + 2  # past header + separator
+                j = pos
+                while j < len(lines) and lines[j].strip().startswith("|"):
+                    j += 1
+                pos = j
+                lines.insert(pos, row)
+                index_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+                indexed = True
     return {"id": disp, "file_id": file_id, "path": str(path), "indexed": indexed,
             "epic_linked": None, "dry_run": False}
 

@@ -585,6 +585,31 @@ class MetaTypeTests(unittest.TestCase):
             self.assertTrue(res["indexed"])                  # index bootstrapped on first use
             self.assertTrue(Path(res["path"]).exists())
 
+    def test_meta_new_takes_allocation_lock(self) -> None:
+        # BG0126: meta_new used to allocate + index-append unguarded, so two concurrent
+        # retro/review creates could mint the same sequential id and clobber the index.
+        # Prove the lock is now entered around the create (fails against the pre-fix code).
+        import contextlib
+        entered = []
+        real_lock = sdlc_md.allocation_lock
+
+        @contextlib.contextmanager
+        def _spy(root, *a, **k):
+            entered.append(root)
+            with real_lock(root, *a, **k):
+                yield
+
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "retros").mkdir(parents=True)
+            orig = sdlc_md.allocation_lock
+            sdlc_md.allocation_lock = _spy
+            try:
+                artifact.meta_new(root, "retro", "Locked retro")
+            finally:
+                sdlc_md.allocation_lock = orig
+        self.assertTrue(entered, "meta_new must take sdlc_md.allocation_lock")
+
     def test_meta_row_lands_in_the_data_table_not_a_later_one(self) -> None:
         # critic finding: a later link-first table must not attract the new row
         with tempfile.TemporaryDirectory() as d:
