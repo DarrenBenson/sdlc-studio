@@ -2,6 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Low
+> **Effort:** S
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

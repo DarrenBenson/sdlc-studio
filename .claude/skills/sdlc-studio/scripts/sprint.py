@@ -600,6 +600,177 @@ def _token_forecast(root: Path, batch: list[dict]) -> dict:
                      "cannot observe token spend"}
 
 
+# ---------------------------------------------------------------------------
+# The breakdown gate: a plan over an UNGROOMED batch is REFUSED.
+# ---------------------------------------------------------------------------
+# A plan that looks authoritative over units nobody was required to groom is the false
+# authority this gate exists to abolish. A unit that names no files cannot be sized: the
+# complexity seed is 0, so the forecast collapses to the flat per-unit floor, and the
+# planner cannot see that two units touch the SAME FILE - so it reports them as safely
+# parallel when they will collide. Both gaps were closed by hand before every plan.
+#
+# Enforcement lives HERE, in the command people actually invoke. A separate grooming step
+# that nobody runs is doctrine, and doctrine is what gets skipped under effort pressure: the
+# grooming rung that already exists, and is specified to produce a reviewable estimated
+# backlog, has never once been run. So `plan` refuses instead of warning: an advisory lane is
+# the one that gets scrolled past.
+#
+# The escape is a RECORDED DECISION, never an omission: `sprint.breakdown: judgement` in the
+# project config makes the lane report instead of block. Absence of config means BLOCK, and an
+# unreadable or unknown mode is not an escape either - it falls back to enforce.
+BREAKDOWN_MODES = ("enforce", "judgement")
+
+# A CR at or above this many declared files, or declared Large, is doing enough work to warrant
+# stories: only a story carries executable `Verify:` lines, so an un-decomposed CR's Done is
+# gated on prose. Advisory - "where the work warrants" is a judgement the report can only name.
+DECOMPOSE_FILE_THRESHOLD = 5
+
+
+def breakdown_mode(repo_root: Path | str) -> str:
+    """`enforce` (the default) or the recorded opt-out `judgement`. Never fails open."""
+    mode = str(config.get(repo_root, "sprint.breakdown", "enforce") or "enforce").strip().lower()
+    return mode if mode in BREAKDOWN_MODES else "enforce"
+
+
+def _affect_key(root: Path, p: str) -> str:
+    """One file, one key - however the path was written.
+
+    A declared path is resolved where it exists, so `scripts/x.py` and the same file spelled
+    from the repo root are ONE file for clustering. An unresolvable (not-yet-existing) path
+    keeps its declared spelling rather than being dropped: a new file two units both create is
+    still a collision."""
+    r = _resolve(root, p)
+    if r is not None:
+        try:
+            return str(r.relative_to(root))
+        except ValueError:
+            return str(r)
+    return re.sub(r"^\./", "", p.strip())
+
+
+def _declared_size(text: str, seat: dict | None) -> str | None:
+    """The size a PERSON recorded for this unit, from any accepted source, or None.
+
+    Accepted, in falling order of authority: the review seat's estimate, the artefact's
+    `Effort:` (S/M/L), a story's `Points:`. With none of the three the unit is UNSIZED - the
+    forecast would quote it at the flat floor and the operator would never know that number
+    was a fallback rather than an estimate."""
+    seat_size = (seat or {}).get("size")
+    if isinstance(seat_size, (int, float)) and seat_size > 0:
+        return f"seat size {seat_size}"
+    effort = _effort_code(text)
+    if effort:
+        return f"Effort: {effort}"
+    raw = sdlc_md.extract_field(text, "Points")
+    if raw and raw.strip():
+        tok = raw.strip().split()[0].strip("*_`:,;.()")
+        try:
+            if float(tok) > 0:
+                return f"Points: {tok}"
+        except ValueError:
+            pass
+    return None
+
+
+def _shared_file_clusters(files_by_unit: dict[str, list[str]]) -> list[dict]:
+    """Units that touch the SAME FILE are ONE cluster, not independent parallel work.
+
+    Derived from the `Affects` the planner already parses. The dependency graph knows only what
+    someone DECLARED in `Depends on:`; a shared file is a FACT, and two units editing one file
+    collide whether or not anyone declared it. Union-find over the shared files; a unit that
+    shares nothing is not a cluster."""
+    parent = {uid: uid for uid in files_by_unit}
+
+    def find(x: str) -> str:
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(a: str, b: str) -> None:
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[max(ra, rb)] = min(ra, rb)
+
+    by_file: dict[str, list[str]] = {}
+    for uid, files in files_by_unit.items():
+        for f in files:
+            by_file.setdefault(f, []).append(uid)
+    for uids in by_file.values():
+        for other in uids[1:]:
+            union(uids[0], other)
+    groups: dict[str, list[str]] = {}
+    for uid in files_by_unit:
+        groups.setdefault(find(uid), []).append(uid)
+    out: list[dict] = []
+    for members in groups.values():
+        if len(members) < 2:
+            continue
+        members = sorted(members)
+        shared = sorted(f for f, uids in by_file.items() if len(set(uids) & set(members)) > 1)
+        out.append({"units": members, "files": shared})
+    return sorted(out, key=lambda c: c["units"])
+
+
+def _ids_cited_by_stories(root: Path) -> set:
+    """Every artifact id any story mentions - so a CR a story already actions is not flagged
+    for decomposition a second time."""
+    cited: set = set()
+    for path in sdlc_md.artifact_files("story", root):
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError as exc:  # noqa: PERF203 - an unreadable story must not break planning
+            sdlc_md.debug("sprint._ids_cited_by_stories", exc)
+            continue
+        for m in sdlc_md.ID_SEARCH_RE.finditer(text):
+            cited.add(sdlc_md.norm_id(m.group(0)))
+    return cited
+
+
+def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = False) -> dict:
+    """Is this batch GROOMED enough to plan? The census the gate refuses on.
+
+    A unit is groomed when it declares the files it will touch (`Affects`) AND a size somebody
+    actually recorded. Everything else the lane surfaces - shared-file clusters, CRs big enough
+    to warrant stories - is derived from the same two fields, at no extra cost to the operator.
+    Read-only: it reports, and `cmd_plan` decides what to do about it."""
+    root = Path(repo_root)
+    seats = {} if skip_personas else _wsjf_inputs(root)
+    cited = _ids_cited_by_stories(root)
+    ungroomed: list[dict] = []
+    groomed: list[str] = []
+    files_by_unit: dict[str, list[str]] = {}
+    decompose: list[dict] = []
+    for it in batch:
+        try:
+            text = Path(it["path"]).read_text(encoding="utf-8")
+        except OSError as exc:  # noqa: PERF203
+            sdlc_md.debug("sprint.breakdown", exc)
+            continue
+        declared = _affects_files(text)
+        size = _declared_size(text, seats.get(sdlc_md.norm_id(it["id"])))
+        files_by_unit[it["id"]] = sorted({_affect_key(root, p) for p in declared})
+        missing = ([] if declared else ["Affects"]) + ([] if size else ["size"])
+        if missing:
+            ungroomed.append({"id": it["id"], "type": it["type"], "path": it["path"],
+                              "missing": missing})
+        else:
+            groomed.append(it["id"])
+        if it["type"] == "cr" and sdlc_md.norm_id(it["id"]) not in cited:
+            big = _effort_code(text) == "L"
+            wide = len(declared) >= DECOMPOSE_FILE_THRESHOLD
+            if big or wide:
+                why = ("declared Large" if big
+                       else f"touches {len(declared)} files")
+                decompose.append({"id": it["id"], "why": why})
+    mode = breakdown_mode(root)
+    return {"mode": mode, "blocking": mode != "judgement",
+            "ungroomed": ungroomed, "groomed": groomed,
+            "clusters": _shared_file_clusters(files_by_unit),
+            "decompose": decompose,
+            "ok": not ungroomed}
+
+
 DEFAULT_SEAT_STALE_DAYS = 7  # advisory window; seat judgement does not rot on a clock
 
 
@@ -681,6 +852,10 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
         "count": len(batch),
         "waves": waves,
         "deps_declared": deps_declared,
+        # Is the batch GROOMED enough to plan at all? `cmd_plan` REFUSES on this (unless the
+        # project has recorded the `judgement` opt-out) - and it also carries the shared-file
+        # clusters the declared dependency graph cannot see.
+        "breakdown": breakdown(root, batch, skip_personas) if batch else None,
         "seat_provenance": (_seat_provenance(root, batch)
                             if order == "wsjf" and not skip_personas else None),
         # A token cost FORECAST for the batch (estimate, never a gate - see _token_forecast).
@@ -910,6 +1085,88 @@ def _render_waves(data: dict) -> None:
             print(f"  {b['id']} [{b['priority']}]")
 
 
+def _render_clusters(data: dict) -> None:
+    """Shared-file clusters, and the waves they falsify.
+
+    A `Depends on:` edge is a DECLARATION; a shared file is a FACT. The wave computation only
+    knows the declarations, so it has called two units parallel while both rewrote one module.
+    The cluster is printed with the plan, and a wave holding more than one member of the same
+    cluster is called out as NOT safely parallel."""
+    bd = data.get("breakdown") or {}
+    clusters = bd.get("clusters") or []
+    if not clusters:
+        return
+    print("  shared-file clusters (one cluster = one file in common, so NOT parallel):")
+    for c in clusters:
+        shown = ", ".join(c["files"][:3])
+        more = f" (+{len(c['files']) - 3} more)" if len(c["files"]) > 3 else ""
+        print(f"    {', '.join(c['units'])} -> {shown}{more}")
+    for i, wave in enumerate(data.get("waves") or [], 1):
+        for c in clusters:
+            both = [u for u in wave if u in set(c["units"])]
+            if len(both) > 1:
+                print(f"  warning: wave {i} is NOT safely parallel - {', '.join(both)} touch "
+                      f"{', '.join(c['files'][:2])}. Run them in sequence, or declare "
+                      f"`Depends on:` so the waves say so.", file=sys.stderr)
+
+
+def _render_decompose(data: dict) -> None:
+    """CRs doing enough work to warrant stories. Only a story carries executable `Verify:`
+    lines, so an un-decomposed CR of this size reaches Done on prose alone."""
+    items = (data.get("breakdown") or {}).get("decompose") or []
+    if not items:
+        return
+    print("  decompose into stories (only a story's Done is gated on executable ACs):")
+    for it in items:
+        print(f"    {it['id']} ({it['why']}) -> `cr action {it['id']}`")
+
+
+def _breakdown_detail(bd: dict) -> list[str]:
+    """The ungroomed units, one line each: which unit, what it lacks, where it lives."""
+    return [f"    {u['id']:<8} lacks: {', '.join(u['missing']):<15} {u['path']}"
+            for u in bd["ungroomed"]]
+
+
+BREAKDOWN_FIX = """  fix each one on the artefact, then re-plan:
+    Affects   > **Affects:** path/to/file.py, path/to/other.py
+              the files the unit will touch. Without it nothing can size the unit, and
+              nothing can see that two units touch the same file.
+    size      > **Effort:** S|M|L    (bug/CR - the job size of the work, not its urgency)
+              > **Points:** 3        (story)
+              or have the review seats score it -> sdlc-studio/.local/wsjf-inputs.json
+  see the whole grooming list, read-only:  sprint.py breakdown {sel}
+  opt out ONLY as a recorded decision: set `sprint.breakdown: judgement` in
+  sdlc-studio/.config.yaml and this lane reports instead of blocking. Omission is not an
+  escape - an absent config BLOCKS."""
+
+
+def _refuse_ungroomed(bd: dict, count: int, sel: str) -> None:
+    """The refusal. It is the only message the operator gets, so it teaches: what is wrong,
+    why a plan over it would be worse than no plan, exactly how to fix each unit, and how to
+    opt out on purpose."""
+    n = len(bd["ungroomed"])
+    print(f"sprint plan REFUSED: {n} of {count} unit(s) are ungroomed. NO PLAN WAS PRINTED.\n",
+          file=sys.stderr)
+    print("  A plan over unsized units is false authority. A unit that names no files cannot\n"
+          "  be sized (the forecast silently falls back to a flat floor), and the planner\n"
+          "  cannot see that two units touch the same file - so it reports them as safely\n"
+          "  parallel when they will collide. A plan you cannot trust is worse than no plan.\n",
+          file=sys.stderr)
+    print("  ungroomed:", file=sys.stderr)
+    print("\n".join(_breakdown_detail(bd)), file=sys.stderr)
+    print(BREAKDOWN_FIX.format(sel=sel), file=sys.stderr)
+
+
+def _report_ungroomed(bd: dict, count: int) -> None:
+    """The recorded opt-out (`sprint.breakdown: judgement`): the lane still REPORTS, it just
+    does not block. An opt-out that also went quiet would be the disease, not the cure."""
+    n = len(bd["ungroomed"])
+    print(f"breakdown: {n} of {count} unit(s) are ungroomed - planning anyway "
+          f"(sprint.breakdown: judgement). Their forecast is a flat floor, not an estimate:",
+          file=sys.stderr)
+    print("\n".join(_breakdown_detail(bd)), file=sys.stderr)
+
+
 # Lessons printed in the text plan before the tail is elided. One line per lesson costs
 # roughly 40 tokens, so the whole of a mature registry fits inside a rounding error on a
 # sprint plan; the cap exists to bound the display, not to ration the content. Growth is
@@ -1028,6 +1285,8 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     print(f"batch: {data['count']} unit(s) ({src}){scope}, order={args.order}")
     _render_seat_provenance(data)
     _render_waves(data)
+    _render_clusters(data)
+    _render_decompose(data)
     _render_token_forecast(data)
     _render_capacity(data)
     _render_lessons(data)
@@ -1096,6 +1355,49 @@ def _validate_epic_scope(args: argparse.Namespace, worklist, kinds: list) -> tup
     return epics, None
 
 
+def _selector_hint(args: argparse.Namespace, queries: list, worklist) -> str:
+    """The batch selectors, re-spelled as flags, so a refusal can name the exact command that
+    reports the same census - rather than a generic one the operator has to reconstruct."""
+    if worklist:
+        return f"--worklist {worklist}"
+    flag = {"bug": "--bugs", "cr": "--crs", "story": "--stories"}
+    sel = " ".join(f"{flag.get(k, '--' + k)} {s}" for k, s in queries)
+    root = getattr(args, "root", ".")
+    return f"{sel} --root {root}" if root not in (".", None) else sel
+
+
+def cmd_breakdown(args: argparse.Namespace) -> int:
+    """The read-only grooming census: what this batch lacks before a plan can be trusted.
+
+    Reports; never blocks and never writes (the enforcement is `plan`, the command people
+    actually invoke - a separate step nobody runs is doctrine). Exists so the refusal has a
+    command to name, and so a backlog can be groomed against the same census the gate reads."""
+    queries, worklist, rc = _plan_batch_source(args)
+    if rc is not None:
+        return rc
+    root = Path(args.root)
+    skip = getattr(args, "skip_personas", False)
+    try:
+        batch = (_worklist_units(root, worklist)[0] if worklist
+                 else select_batches(root, queries, order="priority", skip_personas=skip))
+    except ValueError as exc:
+        print(f"cannot read the batch: {exc}", file=sys.stderr)
+        return 2
+    bd = breakdown(root, batch, skip_personas=skip)
+    if args.format == "json":
+        print(json.dumps(bd, indent=2))
+        return 0
+    print(f"breakdown: {len(batch)} unit(s), {len(bd['ungroomed'])} ungroomed, "
+          f"{len(bd['clusters'])} shared-file cluster(s) (mode={bd['mode']})")
+    if bd["ungroomed"]:
+        print("  ungroomed - `sprint plan` refuses a batch holding any of these:")
+        print("\n".join(_breakdown_detail(bd)))
+        print(BREAKDOWN_FIX.format(sel=_selector_hint(args, queries, worklist)))
+    _render_clusters({"breakdown": bd})
+    _render_decompose({"breakdown": bd})
+    return 0
+
+
 def cmd_plan(args: argparse.Namespace) -> int:
     """Print the ordered batch the operator approves before a run."""
     if getattr(args, "prd", None):  # greenfield authoring - the batch is a PRD
@@ -1144,6 +1446,16 @@ def cmd_plan(args: argparse.Namespace) -> int:
     except ValueError as exc:  # dependency cycle / bad status / unknown worklist id
         print(f"cannot order the batch: {exc}", file=sys.stderr)
         return 2
+    # THE BREAKDOWN GATE. Before anything is printed, written, or opened: is this batch
+    # groomed enough to plan? An ungroomed batch is REFUSED - blocking, non-zero, and no plan
+    # at all, because a plan over unsized units is exactly the false authority the gate exists
+    # to abolish. It fires here, ahead of the drift preflight, so a refusal costs no fetch.
+    bd = data.get("breakdown")
+    if bd and bd["ungroomed"]:
+        if bd["blocking"]:
+            _refuse_ungroomed(bd, data["count"], _selector_hint(args, queries, worklist))
+            return 2
+        _report_ungroomed(bd, data["count"])
     rc = _origin_drift_preflight(args, data)
     if rc is not None:
         return rc
@@ -1220,6 +1532,19 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--root", default=".", help="Repo root (default: .)")
     p.add_argument("--format", choices=("text", "json"), default="text")
     p.set_defaults(func=cmd_plan)
+
+    b = sub.add_parser("breakdown", help="Report what a batch lacks before it can be planned "
+                                         "(Affects, size, shared-file clusters). Read-only.")
+    b.add_argument("--bugs", metavar="STATUS", action="append")
+    b.add_argument("--crs", metavar="STATUS", action="append")
+    b.add_argument("--stories", metavar="STATUS", action="append")
+    b.add_argument("--worklist", metavar="PATH")
+    b.add_argument("--skip-personas", action="store_true", dest="skip_personas",
+                   help="ignore review-seat sizes; judge only what the artefacts declare")
+    b.add_argument("--root", default=".", help="Repo root (default: .)")
+    b.add_argument("--format", choices=("text", "json"), default="text")
+    b.set_defaults(func=cmd_breakdown)
+
     sdlc_md.add_global_root(parser)
     return parser
 

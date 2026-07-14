@@ -180,7 +180,7 @@ lists every script with a one-line summary; open the linked page for the full en
 - `plan.py` - Claude Code plan-file manager for `~/.claude/plans/`.
 - `lessons.py` - Lessons manager for both tiers: the project's `sdlc-studio/.local/lessons.md`
   and the skill's cross-project registry; `revalidate` + `summary` are the gated sprint-close loop
-- `sprint.py` - The Goal-Driven Development loop's planner. `plan <query> --order priority|wsjf` selects + dependency-orders...
+- `sprint.py` - The Goal-Driven Development loop's planner. `plan <query> --order priority|wsjf` selects + dependency-orders...; `plan` refuses an ungroomed batch, `breakdown` reports the same census read-only...
 - `autosprint.py` - Deprecated re-exporting alias for `sprint.py` (the old name); prefer `sprint`.
 - `handoff.py` - The run-close handoff guide: a JOIN over the run's own evidence naming every
   remaining item with its pointer (file / AC / check) and a copilot-tail vs judgement tag; emits the

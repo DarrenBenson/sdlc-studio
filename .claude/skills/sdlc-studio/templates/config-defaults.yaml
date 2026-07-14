@@ -269,6 +269,17 @@ appetite:
   minutes: 0  # 0 = inherit capacity.minutes
   units: 0    # 0 = inherit capacity.units
 
+# Sprint breakdown gate - a plan is REFUSED over an ungroomed batch. A unit that declares no
+# `Affects` cannot be sized (the token forecast falls back to a flat floor), and the planner
+# cannot see that two units touch the same file - so it reports them as safely parallel when
+# they will collide. `enforce` (the default): `sprint plan` names each ungroomed unit, says what
+# it lacks, and exits non-zero WITHOUT printing a plan - a plan over unsized units is false
+# authority. `judgement`: the lane reports and does not block, the same shape as the engagement
+# floor and the lessons loop. Omission is not an escape: with no config at all the gate BLOCKS.
+# `sprint.py breakdown` reports the same census, read-only. See reference-sprint.md.
+sprint:
+  breakdown: enforce   # enforce | judgement
+
 # Project lessons - how long a lesson stays valid before it must be re-validated. `lessons add`
 # stamps `Review-by: {added + validity_days}`; at the sprint close the gate fails while an open
 # lesson sits past its horizon un-closed and un-extended (`lessons revalidate`). A shorter window

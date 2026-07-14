@@ -2,7 +2,10 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import importlib.util
+import io
+import json
 import sys
 import tempfile
 import unittest
@@ -23,18 +26,28 @@ def _load():
     return mod
 
 
-def _bug(root, num, status="Open", severity="Medium"):
+# The default fixtures are GROOMED - they declare the files they touch and a size - because
+# `sprint plan` refuses a batch that is not, and a fixture that could not be planned would
+# be testing the gate rather than the behaviour under test. Each declares its OWN file (no
+# shared-file cluster) and Effort S (complexity proxy 0), so every unit's token forecast is the
+# unchanged flat base and the numeric assertions elsewhere in this file still hold.
+# `groomed=False` is the deliberate ungroomed shape the gate's own tests need.
+def _bug(root, num, status="Open", severity="Medium", groomed=True):
     d = root / "sdlc-studio" / "bugs"
     d.mkdir(parents=True, exist_ok=True)
+    meta = (f"> **Affects:** src/bg{num:04d}.py\n> **Effort:** S\n" if groomed else "")
     (d / f"BG{num:04d}-x.md").write_text(
-        f"# BG{num:04d}: b\n\n> **Status:** {status}\n> **Severity:** {severity}\n", encoding="utf-8")
+        f"# BG{num:04d}: b\n\n> **Status:** {status}\n> **Severity:** {severity}\n{meta}",
+        encoding="utf-8")
 
 
-def _cr(root, num, status="Proposed", priority="Medium"):
+def _cr(root, num, status="Proposed", priority="Medium", groomed=True):
     d = root / "sdlc-studio" / "change-requests"
     d.mkdir(parents=True, exist_ok=True)
+    meta = (f"> **Affects:** src/cr{num:04d}.py\n> **Effort:** S\n" if groomed else "")
     (d / f"CR{num:04d}-x.md").write_text(
-        f"# CR-{num:04d}: c\n\n> **Status:** {status}\n> **Priority:** {priority}\n", encoding="utf-8")
+        f"# CR-{num:04d}: c\n\n> **Status:** {status}\n> **Priority:** {priority}\n{meta}",
+        encoding="utf-8")
 
 
 class StatusArgCanonicalisationTests(unittest.TestCase):
@@ -125,8 +138,11 @@ class NoDepsHintTests(unittest.TestCase):
         d = root / "sdlc-studio" / "stories"
         d.mkdir(parents=True, exist_ok=True)
         dep = f"> **Depends on:** {depends}\n" if depends else ""
+        # groomed (own file, declared points): the missing-`Depends on` hint is the subject
+        # here, and the breakdown gate would otherwise refuse the batch before it is reached.
         (d / f"US{num:04d}-x.md").write_text(
-            f"# US{num:04d}: s\n\n> **Status:** {status}\n{dep}", encoding="utf-8")
+            f"# US{num:04d}: s\n\n> **Status:** {status}\n{dep}"
+            f"> **Affects:** src/us{num:04d}.py\n> **Points:** 3\n", encoding="utf-8")
 
     def test_plan_flags_no_declared_deps(self) -> None:
         # >1 unit, no Depends on anywhere -> deps_declared False, one flat parallel wave.
@@ -1063,7 +1079,8 @@ class PreflightSurvivesAllOrdersTests(unittest.TestCase):
         crd = work / "sdlc-studio" / "change-requests"
         crd.mkdir(parents=True, exist_ok=True)
         (crd / "CR0002-local.md").write_text(
-            "# CR-0002: local\n\n> **Status:** Proposed\n> **Priority:** Medium\n",
+            "# CR-0002: local\n\n> **Status:** Proposed\n> **Priority:** Medium\n"
+            "> **Affects:** src/cr0002.py\n> **Effort:** S\n",   # groomed: the gate is not the subject here
             encoding="utf-8")
         (crd / "_index.md").write_text(
             "# CRs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Proposed | 1 |\n"
@@ -1553,6 +1570,220 @@ class CapacityFeedsTheAppetiteTests(unittest.TestCase):
             self.assertEqual(app["units_source"], "config appetite.units")
             self.assertEqual(app["minutes"], 240.0)          # unpinned axis inherits capacity
             self.assertEqual(app["minutes_source"], "config capacity.minutes")
+
+
+def _groomed_cr(root: Path, num: int, affects: str, effort: str = "M",
+                status: str = "Proposed", priority: str = "Medium") -> None:
+    """A CR a planner can actually plan: it names the files it touches and its job size."""
+    d = root / "sdlc-studio" / "change-requests"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f"CR{num:04d}-x.md").write_text(
+        f"# CR-{num:04d}: c\n\n> **Status:** {status}\n> **Priority:** {priority}\n"
+        f"> **Affects:** {affects}\n> **Effort:** {effort}\n", encoding="utf-8")
+
+
+def _src(root: Path, rel: str) -> str:
+    """A real source file the Affects paths can resolve against."""
+    p = root / rel
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("def f():\n    return 1\n", encoding="utf-8")
+    return rel
+
+
+class BreakdownGateTests(unittest.TestCase):
+    """The breakdown gate: `sprint plan` REFUSES an ungroomed batch.
+
+    Behaviour only. Every assertion here runs the public `plan` path and reads its exit code
+    and its OUTPUT; none of them greps the source for a string. The load-bearing pair is
+    fail-then-pass: a batch with one unit that declares no `Affects` must FAIL, and the SAME
+    batch must pass once groomed. A gate that cannot fail is not a gate.
+    """
+
+    def _plan(self, root: Path, *extra: str) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = _load().main(["plan", "--crs", "Proposed", "--root", str(root),
+                               "--no-fetch", "--skip-personas", *extra])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_a_batch_with_one_ungroomed_unit_fails_plan(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _groomed_cr(root, 1, _src(root, "src/a.py"))
+            _cr(root, 2, groomed=False)
+            rc, out, err = self._plan(root)
+            self.assertNotEqual(rc, 0)
+            self.assertIn("CR0002", err)
+            self.assertIn("Affects", err)
+            # NO PLAN AT ALL - not the batch header, not the waves, not the forecast
+            self.assertNotIn("batch:", out)
+            self.assertNotIn("wave", out)
+            self.assertNotIn("token forecast", out)
+
+    def test_the_same_batch_passes_once_groomed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _groomed_cr(root, 1, _src(root, "src/a.py"))
+            _groomed_cr(root, 2, _src(root, "src/b.py"))
+            rc, out, _ = self._plan(root)
+            self.assertEqual(rc, 0)
+            self.assertIn("batch: 2 unit(s)", out)
+
+    def test_a_unit_naming_files_but_no_size_is_still_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _groomed_cr(root, 1, _src(root, "src/a.py"))
+            d2 = root / "sdlc-studio" / "change-requests"
+            (d2 / "CR0002-x.md").write_text(
+                "# CR-0002: c\n\n> **Status:** Proposed\n> **Priority:** Medium\n"
+                "> **Affects:** src/a.py\n", encoding="utf-8")
+            rc, out, err = self._plan(root)
+            self.assertNotEqual(rc, 0)
+            self.assertIn("CR0002", err)
+            self.assertIn("size", err)
+            self.assertNotIn("batch:", out)
+
+    def test_a_refused_plan_writes_nothing_and_opens_no_run(self) -> None:
+        """The refusal must not leave a half-authoritative artefact behind."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1, groomed=False)
+            rc, _, _ = self._plan(root, "--write")
+            self.assertNotEqual(rc, 0)
+            self.assertFalse((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
+            self.assertFalse((root / "sdlc-studio" / ".local" / "run-state.json").exists())
+
+    def test_the_refusal_names_the_unit_what_it_lacks_and_the_fix(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 7, groomed=False)
+            _, _, err = self._plan(root)
+            self.assertIn("CR0007", err)                 # which unit
+            self.assertIn("Affects", err)                # what it lacks
+            self.assertIn("Effort", err)                 # ...and the other half
+            self.assertIn("breakdown", err)              # the command that fixes it
+            self.assertIn("sprint.breakdown: judgement", err)   # the recorded escape
+
+    @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
+    def test_the_recorded_opt_out_reports_and_does_not_block(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _config(root, "sprint:\n  breakdown: judgement\n")
+            _cr(root, 1, groomed=False)
+            rc, out, err = self._plan(root)
+            self.assertEqual(rc, 0)
+            self.assertIn("batch: 1 unit(s)", out)       # the plan IS printed
+            self.assertIn("CR0001", err)                 # ...and the lane still reports
+
+    @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
+    def test_an_unknown_mode_is_not_an_escape(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _config(root, "sprint:\n  breakdown: whatever\n")
+            _cr(root, 1, groomed=False)
+            rc, out, _ = self._plan(root)
+            self.assertNotEqual(rc, 0)
+            self.assertNotIn("batch:", out)
+
+    def test_omission_is_not_an_escape(self) -> None:
+        """No config file at all must BLOCK. Only a recorded decision opts out."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, 1, groomed=False)
+            self.assertFalse((root / "sdlc-studio" / ".config.yaml").exists())
+            rc, out, _ = self._plan(root)
+            self.assertNotEqual(rc, 0)
+            self.assertNotIn("batch:", out)
+
+
+class SharedFileClusterTests(unittest.TestCase):
+    """Units touching the same file are ONE cluster, not independent parallel work."""
+
+    def test_two_units_touching_one_file_are_clustered(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            shared = _src(root, "src/shared.py")
+            _groomed_cr(root, 1, shared)
+            _groomed_cr(root, 2, f"{shared}, {_src(root, 'src/other.py')}")
+            _groomed_cr(root, 3, _src(root, "src/alone.py"))
+            bd = _load().build_plan(root, "cr", "Proposed", skip_personas=True)["breakdown"]
+            self.assertEqual([c["units"] for c in bd["clusters"]], [["CR0001", "CR0002"]])
+            self.assertIn("src/shared.py", bd["clusters"][0]["files"])
+
+    def test_the_same_file_declared_two_ways_still_clusters(self) -> None:
+        """A path that resolves to one file is one file, however it was written."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _src(root, ".claude/skills/sdlc-studio/scripts/x.py")
+            _groomed_cr(root, 1, "scripts/x.py")
+            _groomed_cr(root, 2, ".claude/skills/sdlc-studio/scripts/x.py")
+            bd = _load().build_plan(root, "cr", "Proposed", skip_personas=True)["breakdown"]
+            self.assertEqual([c["units"] for c in bd["clusters"]], [["CR0001", "CR0002"]])
+
+    def test_a_false_parallel_wave_is_called_out(self) -> None:
+        """The bug this defends: two units reported as safely parallel while both edit one file."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            shared = _src(root, "src/shared.py")
+            _groomed_cr(root, 1, shared)
+            _groomed_cr(root, 2, shared)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = _load().main(["plan", "--crs", "Proposed", "--root", str(root),
+                                   "--no-fetch", "--skip-personas"])
+            self.assertEqual(rc, 0)
+            self.assertIn("(parallel)", out.getvalue())   # the DAG still says parallel...
+            self.assertIn("NOT safely parallel", err.getvalue())  # ...and the planner says no
+            self.assertIn("CR0001", err.getvalue())
+            self.assertIn("CR0002", err.getvalue())
+
+    def test_independent_units_raise_no_cluster(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _groomed_cr(root, 1, _src(root, "src/a.py"))
+            _groomed_cr(root, 2, _src(root, "src/b.py"))
+            bd = _load().build_plan(root, "cr", "Proposed", skip_personas=True)["breakdown"]
+            self.assertEqual(bd["clusters"], [])
+
+
+class BreakdownReportTests(unittest.TestCase):
+    """`sprint breakdown` - the read-only report the refusal names."""
+
+    def test_it_reports_the_ungroomed_units_without_blocking(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _groomed_cr(root, 1, _src(root, "src/a.py"))
+            _cr(root, 2, groomed=False)
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+                rc = _load().main(["breakdown", "--crs", "Proposed", "--root", str(root),
+                                   "--format", "json"])
+            self.assertEqual(rc, 0)          # a report, never a gate
+            data = json.loads(out.getvalue())
+            self.assertEqual([u["id"] for u in data["ungroomed"]], ["CR0002"])
+            self.assertEqual(data["groomed"], ["CR0001"])
+            self.assertEqual(data["mode"], "enforce")
+
+    def test_a_large_cr_with_no_stories_is_flagged_for_decomposition(self) -> None:
+        """Only stories carry executable Verify lines, so a big CR's Done is gated on prose
+        until it is decomposed."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _groomed_cr(root, 1, _src(root, "src/a.py"), effort="L")
+            _groomed_cr(root, 2, _src(root, "src/b.py"), effort="S")
+            bd = _load().build_plan(root, "cr", "Proposed", skip_personas=True)["breakdown"]
+            self.assertEqual([u["id"] for u in bd["decompose"]], ["CR0001"])
+
+    def test_a_cr_a_story_already_cites_is_not_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _groomed_cr(root, 1, _src(root, "src/a.py"), effort="L")
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True, exist_ok=True)
+            (sd / "US0001-x.md").write_text(
+                "# US0001: s\n\n> **Status:** Ready\n\nActions CR0001.\n", encoding="utf-8")
+            bd = _load().build_plan(root, "cr", "Proposed", skip_personas=True)["breakdown"]
+            self.assertEqual(bd["decompose"], [])
 
 
 if __name__ == "__main__":

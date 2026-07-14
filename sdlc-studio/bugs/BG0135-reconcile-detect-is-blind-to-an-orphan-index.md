@@ -5,6 +5,7 @@
 > **Effort:** M
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file
+> **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, tools/check_links.py
 > **Raised-by:** sdlc-studio; agent; v1
 
 ## Summary

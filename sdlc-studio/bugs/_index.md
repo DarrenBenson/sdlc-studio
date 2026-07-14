@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 4 |
+| Open | 5 |
 | In Progress | 0 |
 | Fixed | 51 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 1 |
 | Superseded | 0 |
-| **Total** | **135** |
+| **Total** | **136** |
 
 ## All Bugs
 
@@ -102,6 +102,7 @@
 | [BG0133](BG0133-the-accuracy-report-recomputes-the-estimate-from-live.md) | The accuracy report recomputes the estimate from live constants, so it cannot falsify the estimator | Open | High | 2026-07-14 | 2026-07-14 |
 | [BG0134](BG0134-the-engagement-floor-trailer-check-warns-after-the.md) | The engagement-floor trailer check warns after the commit has already landed, so it fails open | Open | Medium | 2026-07-14 | 2026-07-14 |
 | [BG0135](BG0135-reconcile-detect-is-blind-to-an-orphan-index.md) | reconcile detect is blind to an orphan index row whose artefact file is gone | Open | Medium | 2026-07-14 | 2026-07-14 |
+| [BG0136](BG0136-the-filer-writes-artefacts-the-planner-then-refuses.md) | The filer writes artefacts the planner then refuses: no --affects flag exists, so every filed bug is unplannable | Open | High | 2026-07-14 | 2026-07-14 |
 
 ## Archived Releases
 

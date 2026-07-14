@@ -5,6 +5,7 @@
 > **Effort:** S
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file
+> **Affects:** .githooks/commit-msg
 > **Raised-by:** sdlc-studio; agent; v1
 
 ## Summary

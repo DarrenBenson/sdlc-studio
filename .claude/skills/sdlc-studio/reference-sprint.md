@@ -297,6 +297,13 @@ wave - which means "no one declared a dependency", not "no dependencies exist". 
 genuinely independent batch. The fix is to declare the dependencies (the `--goal design` rung
 below), then re-plan.
 
+**Shared-file clusters.** A `Depends on:` edge is a *declaration*; a shared file is a *fact*. The
+planner therefore also derives clusters from the `Affects` it already parses: units touching the
+same file are **one cluster**, not independent parallel work, and a wave holding more than one
+member of a cluster is called out as NOT safely parallel (run them in sequence, or declare the
+edge so the waves say so). Without this the planner reported two units as safely parallel while
+both rewrote the same module.
+
 **Scope by epic.** A sprint is usually the next epic or two, not a whole status class, so
 `plan --stories <status> --epic EPxxxx [--epic EPyyyy]` restricts the batch to stories in the named
 epic(s) - repeatable, union. Without it, `--stories Draft` selects every Draft story across all
@@ -329,6 +336,40 @@ This is model-instructed grooming: read the story prose, decide the real orderin
 needs. Without it, `plan` degrades to a flat single wave and only the prose holds the W1-W4
 sequence - the hand-derivation the waves feature exists to remove. Declare the edges at design,
 and the existing wave computation produces the real levels at plan.
+
+## The breakdown gate - `plan` refuses an ungroomed batch {#breakdown}
+
+Grooming has to be **unavoidable**, so it is enforced in the command people actually invoke.
+A separate breakdown step nobody runs is doctrine, and doctrine is what gets skipped under
+effort pressure: the `--goal design` rung above is *specified* to produce a reviewable,
+estimated backlog, and in practice a backlog reaches `plan` ungroomed anyway. So `plan`
+itself is the gate.
+
+**A unit is groomed when it declares both:**
+
+| Field | Why the planner cannot work without it |
+| --- | --- |
+| `Affects:` | The files the unit will touch. Nothing can size a unit that names no files (the token forecast silently falls back to a flat per-unit floor), and nothing can see that two units touch the same file - so the planner reports them as safely parallel when they will collide. |
+| a size | `Effort: S\|M\|L` (bug/CR - the job size of the work, not its urgency), or `Points:` (story), or a review-seat score in `sdlc-studio/.local/wsjf-inputs.json`. Without one, WSJF divides by a neutral default and the "estimate" is a placeholder wearing an estimate's clothes. |
+
+**Refused, not warned.** With any ungroomed unit in the batch, `sprint plan` exits non-zero and
+prints **no plan at all**: it names each offending unit, says what it lacks, and names the
+command that fixes it. A plan over unsized units is exactly the false authority the gate exists
+to abolish, and an advisory lane is the one that gets scrolled past.
+
+**The escape is a recorded decision, never an omission.** An operator who knowingly accepts an
+ungroomed batch sets `sprint.breakdown: judgement` in `sdlc-studio/.config.yaml`; the lane then
+REPORTS and does not block. With no config at all the gate BLOCKS, and an unknown mode falls
+back to `enforce` - the same shape as the engagement floor and the lessons loop.
+
+**Decompose a CR into stories where the work warrants it.** Only a story carries executable
+`- **Verify:**` lines, so an un-decomposed CR reaches Done on prose alone. The plan flags a CR
+that is declared Large, or touches five or more files, and that no story yet cites: run
+`cr action CR....` to cut it into stories whose Done is gated on real verifiers.
+
+`sprint.py breakdown --crs Proposed` (also `--bugs`/`--stories`/`--worklist`) reports the same
+census read-only - ungroomed units, shared-file clusters, decomposition candidates - so a
+backlog can be groomed against exactly what the gate reads. It never blocks and never writes.
 
 ## Authoring mode - greenfield, from a PRD
 
@@ -463,7 +504,8 @@ in loop step 5; per-tier escape/escalation rates accumulate in telemetry
 
 | Script | Role |
 | --- | --- |
-| `scripts/sprint.py plan` | select + order the batch (the triage plan); emits the still-valid lessons digest |
+| `scripts/sprint.py plan` | select + order the batch (the triage plan); emits the still-valid lessons digest; REFUSES an ungroomed batch |
+| `scripts/sprint.py breakdown` | the read-only grooming census: ungroomed units, shared-file clusters, decomposition candidates |
 | `scripts/lessons.py` | `revalidate` (close/extend/stamp by validity) + `summary` (regenerate the digest) |
 | `scripts/gate.py --require-retro` | the sprint-close gate: retro present, lessons re-validated, summary current |
 | `scripts/gate.py --require-handoff` | the stopped-short gate: the handoff exists and a retro links it |

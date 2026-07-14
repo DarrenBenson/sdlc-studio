@@ -1,6 +1,6 @@
 # CR-0260: A breakdown step that makes a backlog plannable: Affects, size (bugs too), dependencies, shared-file clusters
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** P2
 > **Type:** Feature
 > **Date:** 2026-07-14

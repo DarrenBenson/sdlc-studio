@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The breakdown step is now unavoidable: `sprint plan` REFUSES an ungroomed batch (CR0260).** A unit
+  is groomed when it declares both the files it will touch (`Affects:`) and a size (`Effort:` S/M/L, a
+  story's `Points:`, or a seat score). If any unit in the batch lacks either, `plan` exits non-zero and
+  prints **no plan at all** - a plan over unsized units is false authority, and the flat forecast, the
+  fake-parallel wave and the unsizeable bug all look exactly like a real plan. The refusal names each
+  unit, what it lacks, and the command that fixes it. Enforcement lives in `plan` because that is the
+  command people actually run: `--goal design` has always been specified to produce an estimated
+  backlog and has never once been invoked. The escape is a recorded decision, never an omission -
+  `sprint.breakdown: judgement` makes the lane report instead of block, and an absent config BLOCKS.
+
+  The planner also now derives **shared-file clusters** from the `Affects` it already parses, so two
+  units touching the same file are no longer reported as safely parallel. It caught two false-parallel
+  pairs in this repo's own backlog on its first run, one of which was the CR that introduced it.
+  A Large CR that no story cites is flagged for decomposition, because only a story's Done is gated on
+  executable acceptance criteria.
+
 - **A sprint capacity budget, and the plan-time check and the run-time breaker are now one number
   (CR0259).** `capacity.tokens` / `capacity.minutes` / `capacity.units` give the operator a
   per-sprint ceiling. `sprint plan` sizes the batch against it and flags an over-budget batch AT

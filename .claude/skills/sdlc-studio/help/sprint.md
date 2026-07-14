@@ -57,9 +57,19 @@ next sprint" resolves to `--goal design` (the goals are cumulative stop-points).
 | `--strict` | (with `plan`) refuse to plan when the index has drift (reconcile-before-plan) | off |
 | `--autonomous` | unattended mode: the deterministic guardrails (cap, repetition-breaker, completion oracle) enforce stop/stall instead of model discretion | off |
 
+## The breakdown gate
+
+`sprint plan` **refuses** a batch whose units are not groomed: every unit must declare
+`Affects:` (the files it will touch) and a size (`Effort: S|M|L` on a bug/CR, `Points:` on a
+story, or a review-seat score). Ungroomed, it exits non-zero and prints **no plan at all** - a
+plan over unsized units cannot be sized or safely parallelised, and looks authoritative anyway.
+The refusal names each unit, what it lacks, and the fix. `sprint breakdown <batch>` reports the
+same census read-only. Opt out only as a recorded decision: `sprint.breakdown: judgement` in
+`sdlc-studio/.config.yaml` makes the lane report instead of block.
+
 ## What happens
 
-1. **Plan** - `sprint plan` selects + orders the batch.
+1. **Plan** - `sprint plan` selects + orders the batch, refusing an ungroomed one.
 2. **Tranche audit** - `audit.py check` grooms the batch for readiness (weak-AC,
    unmet-deps, already-terminal, link-integrity) before you approve it.
 3. **Triage STOP** - the groomed plan is shown; you approve, then it runs

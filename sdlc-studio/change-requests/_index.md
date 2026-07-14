@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 5 |
+| Proposed | 4 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 249 |
+| Complete | 250 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 6 |
@@ -81,7 +81,7 @@
 | [CR-0257](CR0257-sprint-sizing-ignores-the-captured-effort-estimate-and.md) | Sprint sizing ignores the captured Effort estimate, and bugs carry no size at all | Complete | P3 | Improvement | 2026-07-14 | -- |
 | [CR-0258](CR0258-rfc0034-d4-keystone-the-retro-records-estimate-vs.md) | RFC0034 D4 (keystone): the retro records estimate-vs-actual size and accumulates velocity | Complete | P2 | Feature | 2026-07-14 | -- |
 | [CR-0259](CR0259-rfc0034-d3-a-sprint-capacity-budget-in-tokens.md) | RFC0034 D3: a sprint capacity budget in tokens/wall-clock, wired to CR0225 appetite | Complete | P3 | Feature | 2026-07-14 | -- |
-| [CR-0260](CR0260-a-breakdown-step-that-makes-a-backlog-plannable.md) | A breakdown step that makes a backlog plannable: Affects, size (bugs too), dependencies, shared-file clusters | Proposed | P2 | Feature | 2026-07-14 | -- |
+| [CR-0260](CR0260-a-breakdown-step-that-makes-a-backlog-plannable.md) | A breakdown step that makes a backlog plannable: Affects, size (bugs too), dependencies, shared-file clusters | Complete | P2 | Feature | 2026-07-14 | -- |
 
 ## Archived Releases
 

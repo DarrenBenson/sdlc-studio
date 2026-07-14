@@ -14,6 +14,7 @@
 - [Review Configuration](#review-configuration)
 - [Persona Staleness](#personas-staleness-days)
 - [Lessons Validity](#lessons-validity)
+- [Sprint Breakdown Gate](#breakdown)
 - [Sprint Capacity](#capacity)
 - [Run Appetite](#appetite)
 - [Skill Source Repo](#skill-source-repo)
@@ -108,12 +109,7 @@ Default-on (NOT advisory): governs when the planning pass may be skipped.
 | --- | --- | --- |
 | `engagement_floor` | `floor` | reference-doctrine rule 16, agent-instructions, `engagement_floor.py` |
 
-`floor` (default): a multi-file change in a spec-bearing repo REQUIRES the planning
-pass - a spec delta naming each interacting requirement plus one acceptance criterion
-per interaction - before any code. This is the measured rule from the skill's 2026-07
-benchmark rerun (judgement-gated engagement matched no-process on base models; the
-mandated pass cut escapes 4-5x for ~10-20% more tokens). `judgement`: the operator
-accepts that risk and restores pure scale-to-size judgement everywhere.
+`floor` (default): a multi-file change in a spec-bearing repo REQUIRES the planning pass - a spec delta naming each interacting requirement plus one acceptance criterion per interaction - before any code. This is the measured rule from the skill's 2026-07 benchmark rerun (judgement-gated engagement matched no-process on base models; the mandated pass cut escapes 4-5x for ~10-20% more tokens). `judgement`: the operator accepts that risk and restores pure scale-to-size judgement everywhere.
 
 **Mechanically enforced** by the blocking `engagement-floor` gate lane (`engagement_floor.py`, see reference-scripts-verify): a shipped unit skips the planning pass only by planning (AC / `Verify:` / linked plan) or DECLARING a real single-file `Affects` path (prose like `n/a` does not count); a multi-file unit with no plan fails `unplanned`, one that neither plans nor declares fails `undeclared`. The guarantee is precise: pure omission is caught, and understatement is cross-checked by git in a solo-id commit. Understatement in a commit shared with another judged id was a disclosed limit, now closable with a `Refs: <id>` commit trailer: the git leg attributes a commit's files to each id its `Refs:` trailer names, so a shared commit becomes per-id attributable (a bare co-named subject is still skipped). See reference-scripts-verify for the trailer grammar. Two config shapes so mode and cutoff never collide - scalar `engagement_floor: judgement` opts out everywhere (lane reports, never blocks), or a mapping with `adopt_after:` (forward-only id cutoff; above the highest existing id is refused as a silent disarm) and optional `mode:`. `decisions.py waive --subject rule:engagement-floor[:<id>]` waives the project or one unit.
 
@@ -201,6 +197,14 @@ At the sprint close, `gate --require-retro` (or `--require-lessons`) **fails** w
 lessons:
   validity_days: 30
 ```
+
+---
+
+## Sprint Breakdown Gate {#breakdown}
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| `sprint.breakdown` | `enforce` | Default-on, NOT advisory. `enforce`: `sprint plan` REFUSES a batch holding a unit that declares no `Affects` or no size (`Effort:` / `Points:` / a review-seat score). It names each ungroomed unit, says what it lacks, and exits non-zero **without printing a plan** - a plan over unsized units is false authority. `judgement`: the lane reports and does not block, the same shape as the engagement floor and the lessons loop. Omission is not an escape - with no config at all the gate BLOCKS, and an unknown mode falls back to `enforce`. `sprint.py breakdown` reports the same census, read-only. See `reference-sprint.md#breakdown` |
 
 ---
 
@@ -317,11 +321,7 @@ patterns (cold-spawn, smoke budget, soak).
 
 ## Model-Tier Routing {#routing}
 
-Difficulty-aware model-tier routing. **Advisory and opt-in** - no gate ever reads
-a tier, and the skill never calls a model API: model ids are opaque strings the orchestrating
-agent passes to its own worker-spawn mechanism, so the feature is tool-neutral across agent
-CLIs. With `enabled: false` (the default) the sprint plan still carries each unit's
-difficulty band; `tier` and `model` appear only when enabled.
+Difficulty-aware model-tier routing. **Advisory and opt-in** - no gate ever reads a tier, and the skill never calls a model API: model ids are opaque strings the orchestrating agent passes to its own worker-spawn mechanism, so the feature is tool-neutral across agent CLIs. With `enabled: false` (the default) the sprint plan still carries each unit's difficulty band; `tier` and `model` appear only when enabled.
 
 ```text
 routing:
