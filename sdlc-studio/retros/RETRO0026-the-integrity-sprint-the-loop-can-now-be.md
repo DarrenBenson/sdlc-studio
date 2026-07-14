@@ -64,6 +64,22 @@
 - A resolved-but-inapplicable signal is more dangerous than an absent one. The router defaults a
   MISSING signal to 0.5 and lowers confidence, but a markdown file RESOLVES the code-complexity
   signal to zero - so a docs unit scores trivial with HIGH confidence (BG0139).
+- Before tuning a coefficient, check that its input correlates with the target at all. The cost
+  model was recalibrated TWICE (5,000, then 600) and both refits were noise: the seed correlates
+  with actual cost at r = -0.006. A miss tells you the output is wrong; it does not tell you whether
+  the fault is the SCALE or the AXIS, and those need opposite fixes. The diagnostic is one line, and
+  nobody ran it for two sprints.
+- A plausible story fitted to a real pattern is not a finding. This retro originally recorded that
+  the estimator was "chasing a standard that moved" - that the briefs got harder and the work grew
+  beneath them. It was refuted by data already on disk: tokens PER ACTION are flat across all three
+  sprints, so nothing about the cost of the work moved. The story explained every observation and was
+  wrong, because nobody asked what number would falsify it.
+
+<!-- amended 2026-07-14, after the close: the operator asked which AXIS was wrong, rather than what
+     the estimate was. That question produced the three lessons above and CR0262, and it arrived
+     AFTER this retro was gated. Amended in place rather than deferred to RETRO0027, because the
+     finding is about THIS sprint's data and would have been mis-attributed to the next one. The
+     learning loop assumes findings arrive before the retro closes; this one did not. -->
 
 ## Estimate vs actual
 
@@ -119,7 +135,9 @@ basis for planning the next one. A per-unit number that has never once been righ
 | A sprint report should compose delivered value, accuracy, lessons, tickets raised and models used - and price rework, not counterfactual savings | RFC0035 |
 | Running several sprints unattended should regenerate each plan at its boundary, not replay a frozen queue | RFC0036 |
 | A story is still created ungroomed by `artifact new` - the filer gate closed the bug/CR path only | declined: not filed as a separate ticket. Stories are minted by decomposition batches rather than filed as findings, so the same demand is the wrong shape there and needs the decomposition path designed first. Recorded here so it is not lost, and it belongs to whoever next touches decomposition. |
-| The estimator is falsified a second time (0.39x); the predictor, not the coefficient, is wrong | declined: deliberately no ticket. Re-fitting to 16 points would repeat, a third time, the error documented in RETRO0025 and LL0026. The real question - whether a plan-time predictor exists at all - is an operator decision on evidence, and BG0140 must land first so the evidence survives a clone. |
+| The estimator is falsified a second time (0.39x); the predictor, not the coefficient, is wrong | CR0262 |
+| The forecast seed is INERT: max_cognitive correlates with cost at r = -0.006 and with work at r = -0.001, so no coefficient can ever work | CR0262 |
+| The learning loop assumes findings arrive BEFORE the retro closes. This sprint's most valuable finding arrived after it was gated, and had nowhere to go | declined: recorded here as an amendment rather than filed. Amending the retro is the right answer when a finding is about that sprint's data, and it worked. A mechanism to force it would be ceremony over a case that is rare and self-correcting - the operator asked, and the loop absorbed it. Revisit if it recurs. |
 
 ## Close loop (gated)
 

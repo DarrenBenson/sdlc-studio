@@ -2,6 +2,8 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0028: A plausible story fitted to a real pattern is not a finding. This retro originally recorded that**
+- **L-0027: Before tuning a coefficient, check that its input correlates with the target at all. The cost**
 - **L-0026: A resolved-but-inapplicable signal is more dangerous than an absent one. The router defaults a**
 - **L-0025: A decoy field beats a correct one: `templates/core/cr.md` carried a placeholder `**Effort:**` above**
 - **L-0024: The tool that measures a sprint cannot be built by that sprint. Anything self-measuring needs its**
