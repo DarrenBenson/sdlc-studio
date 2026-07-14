@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **LL0022 - a guard that branches on invocation mode must be tested in every invocation mode.**
+  Promoted to the cross-project registry from BG0122. A source-vs-execute guard has as many code
+  paths as there are invocation modes (piped, executed, sourced), and the installer's suite only
+  ever exercised the one that was never broken. Two rules: test every mode the guard
+  discriminates, and assert on output rather than the exit code whenever the failure mode is "did
+  not run" - the broken installer exited 0, so an exit-code assertion would have passed against
+  the bug. Corollary: check the probe fails against the pre-fix code before trusting it.
+
 ## [4.1.0] - 2026-07-14
 
 ### Added

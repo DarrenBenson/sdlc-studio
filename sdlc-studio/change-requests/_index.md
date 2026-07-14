@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 0 |
+| Proposed | 2 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 233 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 6 |
 | Blocked | 0 |
-| **Total** | **239** |
+| **Total** | **241** |
 
 ## All Changes
 
@@ -61,6 +61,8 @@
 | [CR-0237](CR0237-verify-ac-conflates-an-omitted-verify-line-with.md) | verify_ac conflates an omitted Verify line with a declared manual one | Complete | Medium | Improvement | 2026-07-13 | -- |
 | [CR-0238](CR0238-triage-noise-open-codes-the-shared-revision-row.md) | triage_noise open-codes the shared revision-row writer instead of calling it | Complete | Low | Improvement | 2026-07-13 | -- |
 | [CR-0239](CR0239-commit-id-convention-for-per-id-file-attribution.md) | Commit-id convention for per-id file attribution in the engagement floor | Complete | Medium | Improvement | 2026-07-13 | -- |
+| [CR-0240](CR0240-document-the-retro-help-retro-md-and-reference.md) | Document the retro: help/retro.md and reference-retro.md | Proposed | P2 | docs | 2026-07-14 | -- |
+| [CR-0241](CR0241-a-passing-test-suite-must-be-silent-capture.md) | A passing test suite must be silent: capture tool stdout in the validator's own tests | Proposed | P3 | quality | 2026-07-14 | -- |
 
 ## Archived Releases
 

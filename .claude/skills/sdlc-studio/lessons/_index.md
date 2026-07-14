@@ -34,6 +34,7 @@ and from per-project memory (project-specific facts).
 | [LL0019](LL0019-except-exception-does-not-catch-a-cancellation-a-lock-released-only-there-leaks-on-every-shutdown.md) | except Exception does not catch a cancellation - a lock released only there leaks on every shutdown | asyncio, python, shutdown, locks, bug-class |
 | [LL0020](LL0020-a-test-fixture-that-supplies-the-thing-under-test-proves-nothing-about-production.md) | A test fixture that supplies the thing under test proves nothing about production | testing, fixtures, observability, false-green, bug-class |
 | [LL0021](LL0021-verify-a-deploy-by-looking-at-the-running-system-not-by-re-reading-the-green-build.md) | Verify a deploy by looking at the running system, not by re-reading the green build | deploy, verification, observability, process |
+| [LL0022](LL0022-a-guard-that-branches-on-invocation-mode-must-be-tested-in-every-invocation-mode.md) | A guard that branches on invocation mode must be tested in every invocation mode | testing, false-green, shell, bug-class, silent-failure |
 
 ## Notes
 
