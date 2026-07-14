@@ -868,6 +868,77 @@ def plan_digest(repo_root, project_file=None, summary_path=None) -> dict:
             "reason": "no lessons recorded yet", "path": str(log)}
 
 
+def cross_digest(repo_root, lessons_dir=None) -> dict:
+    """The ranked cross-project tier, in the shape the plan renders. One walk, not two."""
+    ranked = rank_lessons(repo_root, lessons_dir)
+    return {"lessons": ranked, "count": len(ranked)}
+
+
+def cross_project_digest(repo_root, lessons_dir=None) -> dict:
+    """The CROSS-PROJECT lessons, one line each, for the read points that must not miss them.
+
+    The project tier had a reader - the sprint plan carries its digest. The cross-project
+    registry had NONE: it was reachable only by explicitly running `recall`, which is a prose
+    instruction, and prose instructions get skipped. So the class we already knew about could
+    be written down and still bite the next project, and the one after that.
+
+    A new project inherits this registry as its day-one lens - that is what "cross-project"
+    means. It is the only tier that can help a team before they have made the mistake.
+
+    One line per lesson: the whole registry costs a few hundred tokens in this form, so there
+    is no budget argument for filtering it down to a tag and silently exempting the rest.
+    Bodies are pulled on demand, never injected wholesale.
+    """
+    try:
+        d, _src = resolve_global_dir(lessons_dir, repo_root)
+    except ResolveError:
+        return {"lessons": [], "count": 0, "path": None}
+    rows = parse_index_rows(d / "_index.md") if (d / "_index.md").is_file() else []
+    items = [{"id": r["id"], "title": r["title"], "tags": r.get("tags", [])} for r in rows]
+    return {"lessons": items, "count": len(items), "path": str(d)}
+
+
+# How often a lesson's id is cited across the workspace's artefacts. A class that keeps
+# biting is the one to put in front of the next person, and a flat list cannot say so.
+CITATION_RE_TMPL = r"\b{id}\b"
+
+
+def recurrence(repo_root, lesson_ids: list[str]) -> dict[str, int]:
+    """How many artefacts cite each lesson. Counted from the files, never asserted.
+
+    This is the signal a flat log cannot carry: one lesson has been paid for once, another
+    has been paid for three times in three repos. Ranking by it puts the class that keeps
+    recurring in front of the person about to repeat it.
+
+    The lesson's own file and the registry index do not count as citations of themselves.
+    """
+    root = Path(repo_root)
+    counts = {i: 0 for i in lesson_ids}
+    for p in (root / "sdlc-studio").rglob("*.md"):
+        if p.name == "_index.md":
+            continue
+        try:
+            text = p.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        for lid in lesson_ids:
+            if re.search(CITATION_RE_TMPL.format(id=re.escape(lid)), text):
+                counts[lid] += 1
+    return counts
+
+
+def is_guarded(entry_body: str) -> bool:
+    """A lesson with a shipped structural guard stops shouting.
+
+    Once a test or gate makes the class mechanically impossible, the lesson has done its job:
+    it is history, not a live hazard, and it should not crowd out the ones that can still bite
+    you. Demoted, never deleted - the history is why the guard exists.
+
+    Declared by the lesson itself with a `Guard:` field naming what defends it.
+    """
+    return bool(re.search(r"^\s*-?\s*\*\*Guard:\*\*\s*\S", entry_body or "", re.MULTILINE))
+
+
 def close_entry(entry: dict, reason: str | None) -> bool:
     """Mark an entry closed by appending a Status bullet. Idempotent - returns False if it
     was already closed (so re-running closes nothing new)."""
@@ -1003,6 +1074,86 @@ def _default_summary_out(project_file: Path) -> Path:
     return root / "sdlc-studio" / "retros" / "LESSONS-SUMMARY.md"
 
 
+def rank_lessons(repo_root, lessons_dir=None) -> list[dict]:
+    """The cross-project lessons, ordered by what is biting hardest RIGHT NOW.
+
+    A flat, append-only list is what grows until someone has to evict it - and while it grows,
+    the lesson that keeps costing you money sits in the middle of it, indistinguishable from
+    the one you learned once and fixed. Ranking is what makes the store an instrument instead
+    of a diary.
+
+    Three signals, all computed from the files, none asserted:
+
+      recurrence  how many artefacts cite this lesson. A class that has bitten three times in
+                  three repos should be at the top of the list before anyone touches the code
+                  that will make it four.
+      recency     a lesson learned last week outranks one learned last year, at equal
+                  recurrence. Ties break toward the newer id.
+      guarded     a lesson whose class a shipped test or gate now makes impossible is DEMOTED,
+                  not deleted. It has done its job; the history stays, the shouting stops.
+                  Declared by the lesson with a `Guard:` field.
+
+    Recomputed on every call, never trusted from a cached value - the same discipline the
+    indexes are held to.
+    """
+    try:
+        d, _src = resolve_global_dir(lessons_dir, repo_root)
+    except ResolveError:
+        return []
+    index = d / "_index.md"
+    if not index.is_file():
+        return []
+    rows = parse_index_rows(index)
+    ids = [r["id"] for r in rows]
+    cites = recurrence(repo_root, ids)
+
+    out = []
+    for r in rows:
+        lid = r["id"]
+        body = ""
+        f = d / r["file"] if r.get("file") else None
+        if f and f.is_file():
+            body = f.read_text(encoding="utf-8", errors="ignore")
+        guarded = is_guarded(body)
+        # A guarded lesson sorts below every live one, whatever its recurrence: it cannot
+        # bite you any more, so it must not crowd out something that can.
+        out.append({
+            "id": lid,
+            "title": r["title"],
+            "tags": r.get("tags", []),
+            "recurrence": cites.get(lid, 0),
+            "guarded": guarded,
+            "rank_key": (0 if guarded else 1, cites.get(lid, 0), lid),
+        })
+    out.sort(key=lambda x: x["rank_key"], reverse=True)
+    for i, item in enumerate(out, 1):
+        item["rank"] = i
+        del item["rank_key"]
+    return out
+
+
+def cmd_rank(args: argparse.Namespace) -> int:
+    ranked = rank_lessons(getattr(args, "root", "."), getattr(args, "lessons_dir", None))
+    if getattr(args, "limit", 0):
+        ranked = ranked[:args.limit]
+    if args.format == "json":
+        print(json.dumps({"lessons": ranked, "count": len(ranked)}, indent=2))
+        return 0
+    if not ranked:
+        print("no cross-project lessons to rank")
+        return 0
+    print("Cross-project lessons, by what is biting hardest now:\n")
+    for it in ranked:
+        mark = " (guarded)" if it["guarded"] else ""
+        cited = f"cited x{it['recurrence']}" if it["recurrence"] else "not yet cited"
+        print(f"  {it['rank']:2d}. {it['id']}  [{cited}]{mark}")
+        print(f"      {it['title']}")
+    live = sum(1 for i in ranked if not i["guarded"])
+    print(f"\n{live} live, {len(ranked) - live} guarded (demoted - a shipped guard makes the "
+          f"class impossible; the history stays, the shouting stops)")
+    return 0
+
+
 def cmd_summary(args: argparse.Namespace) -> int:
     """Refresh the committed rolling lessons summary from the still-valid project lessons."""
     path = Path(args.project_file)
@@ -1105,6 +1256,13 @@ def build_parser() -> argparse.ArgumentParser:
     sm.add_argument("--dry-run", action="store_true", help="Report without writing")
     _common(sm)
     sm.set_defaults(func=cmd_summary)
+
+    rk = sub.add_parser("rank",
+                        help="Rank the cross-project lessons by what is biting hardest, now.")
+    rk.add_argument("--dry-run", action="store_true", help="Report without writing")
+    rk.add_argument("--limit", type=int, default=0, help="Show only the top N (0 = all)")
+    _common(rk)
+    rk.set_defaults(func=cmd_rank)
 
     sdlc_md.add_global_root(p)
     return p

@@ -442,6 +442,9 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
         # The lessons the last sprints paid for, IN the plan the agent reads at sprint start.
         # A plan that merely pointed at LESSONS-SUMMARY.md relied on the agent opening it.
         "lessons": lessons.plan_digest(root),
+        # The cross-project tier, ranked. It had NO automatic reader: recall was a prose
+        # instruction, and prose instructions are the ones that get skipped.
+        "cross_lessons": lessons.cross_digest(root),
     }
 
 
@@ -488,6 +491,9 @@ def build_authoring_plan(repo_root: Path | str, prd_path: str) -> dict:
                 "stop at the epic-cut STOP for approval before authoring stories",
         "count": 0,
         "lessons": lessons.plan_digest(repo_root),  # a greenfield start is a sprint start too
+        # A greenfield project has no lessons of its own - so the inherited registry is the
+        # ONLY tier that can help it, and the one it most needs.
+        "cross_lessons": lessons.cross_digest(repo_root),
     }
 
 
@@ -655,7 +661,15 @@ def _render_waves(data: dict) -> None:
             print(f"  {b['id']} [{b['priority']}]")
 
 
-PLAN_DIGEST_MAX = 20  # lessons printed in the text plan before the tail is elided
+# Lessons printed in the text plan before the tail is elided. One line per lesson costs
+# roughly 40 tokens, so the whole of a mature registry fits inside a rounding error on a
+# sprint plan; the cap exists to bound the display, not to ration the content. Growth is
+# handled by decay (`revalidate` closes what no longer holds), never by silent truncation.
+PLAN_DIGEST_MAX = 50
+
+# The cross-project registry is ranked, so a cap here drops the LEAST-biting lessons, not
+# an arbitrary tail. The top of this list is what the next mistake is most likely to be.
+CROSS_DIGEST_MAX = 12
 
 
 def _render_lessons(data: dict) -> None:
@@ -676,6 +690,31 @@ def _render_lessons(data: dict) -> None:
     if digest["count"] > PLAN_DIGEST_MAX:
         print(f"    (+{digest['count'] - PLAN_DIGEST_MAX} more - `lessons revalidate` closes "
               f"the ones that no longer hold)")
+
+
+def _render_cross_lessons(data: dict) -> None:
+    """The CROSS-PROJECT lessons, ranked, printed in the plan.
+
+    This tier had no automatic reader at all. It was reachable only by explicitly running
+    `recall` - a prose instruction, and prose instructions are what get skipped. So a class
+    could be written down, paid for, and written down again, without ever reaching the agent
+    about to repeat it.
+
+    Ranked by what is biting hardest, so the cap drops the least-relevant lessons rather than
+    an arbitrary tail. A project with no lessons of its own still gets this: it is the only
+    tier that can help a team before they have made the mistake.
+    """
+    cross = data.get("cross_lessons")
+    if not cross or not cross.get("lessons"):
+        return
+    n = cross["count"]
+    print(f"\n  cross-project lessons ({n}) - the classes that keep biting, hardest first:")
+    for item in cross["lessons"][:CROSS_DIGEST_MAX]:
+        cited = f" [x{item['recurrence']}]" if item.get("recurrence") else ""
+        print(f"    {item['id']}{cited}: {item['title']}")
+    if n > CROSS_DIGEST_MAX:
+        print(f"    (+{n - CROSS_DIGEST_MAX} more, ranked lower - `lessons rank` for the "
+              f"full order, `lessons recall` to read one)")
 
 
 def _render_token_forecast(data: dict) -> None:
@@ -700,6 +739,7 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     _render_waves(data)
     _render_token_forecast(data)
     _render_lessons(data)
+    _render_cross_lessons(data)
 
 
 def _plan_authoring(args: argparse.Namespace) -> int:
@@ -714,6 +754,7 @@ def _plan_authoring(args: argparse.Namespace) -> int:
         return 0
     print(f"authoring plan: bootstrap from {data['prd']} (PRD -> epics -> stories)")
     _render_lessons(data)
+    _render_cross_lessons(data)
     return 0
 
 

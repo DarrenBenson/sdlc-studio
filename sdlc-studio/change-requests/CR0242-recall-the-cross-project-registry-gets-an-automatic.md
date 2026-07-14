@@ -1,6 +1,6 @@
 # CR-0242: Recall: the cross-project registry gets an automatic reader (review, audit, plan)
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio new
 > **Provenance:** RFC0032 D2, D3, D4

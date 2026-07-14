@@ -311,6 +311,7 @@ Skill-internal helpers live in the skill's `scripts/` directory (`$CLAUDE_SKILL_
 | `/sdlc-studio lessons prune --older EP0003` | Drop entries for old epics |
 | `/sdlc-studio lessons revalidate` | List open lessons with their validity horizon; `--close` / `--extend` / `--stamp` them (gated at the sprint close) |
 | `/sdlc-studio lessons summary` | Regenerate `retros/LESSONS-SUMMARY.md`, the digest the next sprint reads (gated at the sprint close) |
+| `/sdlc-studio lessons rank` | Rank the cross-project lessons by what is biting hardest now (recurrence, recency; a guarded class is demoted) |
 
 ### Retro
 

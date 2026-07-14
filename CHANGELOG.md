@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The cross-project lessons registry finally has an automatic reader (RFC0032 D2-D4, CR0242).**
+  It had none. `sprint plan` carried a lessons digest, but that digest sourced the *project* tier;
+  the `LL` registry was reachable only by explicitly running `lessons recall` - a prose
+  instruction, and prose instructions are the ones that get skipped. So a class could be written
+  down, paid for, and written down again without ever reaching the agent about to repeat it. The
+  ranked registry is now printed in the plan, unasked, in the output the agent already reads. A new
+  project inherits it as its day-one lens, which is the only tier that can help a team *before*
+  they have made the mistake. `PLAN_DIGEST_MAX` raised 20 -> 50; the elided tail stays loud.
+
+- **`lessons rank` - the summary is a live instrument, not a diary (RFC0032 D6, CR0244).** Ranked by
+  **recurrence** (how many artefacts cite the lesson - computed from the files, never asserted),
+  **recency**, and **structural-fix demotion**: a lesson whose class a shipped guard now makes
+  impossible is demoted, not deleted, so it stops crowding out the ones that can still bite you.
+  Declare the guard with a `Guard:` field. On this repo's own registry the ranking puts **LL0008**
+  ("a deterministic tool must fail loud, never report success it did not achieve") **second, cited
+  34 times** - the exact class behind today's installer bug, a deploy that reported success over a
+  stale container, and a truncated secrets file. It was written down the whole time. Nothing was
+  showing it to anyone.
+
 - **The retro has a deterministic spine: `scripts/retro.py` (RFC0032, CR0247).** The retro was the
   only enforced ceremony with no script behind it, so the gate had nothing to interrogate but the
   filesystem. `retro.py validate` is a content check (required sections, at least one real lesson,
