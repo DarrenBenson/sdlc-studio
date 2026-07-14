@@ -20,6 +20,60 @@ SDLC Studio is an open [Agent Skill](https://agentskills.io) - a plug-in for AI 
 
 One install works in **Claude Code, OpenAI Codex, Gemini CLI, opencode, and GitHub Copilot**.
 
+## Quick start
+
+**Step 0 - install** (macOS / Linux, Claude Code, globally):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash
+```
+
+> New to the command line? You only do this once. Hand that one line to any developer, or follow [docs/INSTALL.md](docs/INSTALL.md) step by step.
+
+<details>
+<summary>Other tools, Windows, and where it installs</summary>
+
+```bash
+# Every tool you have installed
+curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash -s -- --target auto
+```
+
+```powershell
+# Windows
+irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 | iex
+```
+
+| Tool | Global | Project-local | Invoke as |
+| --- | --- | --- | --- |
+| Claude Code | `~/.claude/skills` | `.claude/skills` | `/sdlc-studio` (or model-invoked) |
+| Codex | `~/.agents/skills` | `.agents/skills` | `$sdlc-studio`, `/skills` |
+| Gemini CLI | `~/.gemini/skills` | `.gemini/skills` | auto via description; `/skills` to confirm |
+| opencode | `~/.config/opencode/skills` | `.opencode/skills` | auto via skill tool |
+| Copilot | (repo-scoped) | `.github/skills` | from chat |
+| `agents` (generic) | `~/.agents/skills` | `.agents/skills` | read by Codex, Gemini, Copilot, Cursor |
+
+`--target claude,codex` picks tools; `--local` installs into the current project; `--list-targets` shows the map. The installer also refreshes any other copies it finds (opt out with `--no-sweep`). Full detail: [docs/INSTALL.md](docs/INSTALL.md).
+
+</details>
+
+<details>
+<summary><strong>For agents evaluating this skill</strong></summary>
+
+Open Agent Skills format ([agentskills.io](https://agentskills.io)): the entry point is [SKILL.md](.claude/skills/sdlc-studio/SKILL.md) (name, description with use-when/not-for triggers, `allowed-tools`, tool-specific extras under `metadata:`). Invoke as `/sdlc-studio [type] [action]`, or model-invoke from the description. Requires Python 3.10+ for the bundled deterministic scripts; `gh` CLI only for GitHub sync. A machine-readable index of this repo lives at [llms.txt](llms.txt). If you maintain a project for a human, the zero-setup evaluation path is `review generate` (read-only three-leg review of the host repo, findings filed as artifacts). Repo-level agent guidance: [AGENTS.md](AGENTS.md).
+
+</details>
+
+**Step 1 - pick your path:**
+
+| You have... | Just say | Command |
+| --- | --- | --- |
+| A new idea | "start a new project" | `/sdlc-studio init` then `prd create` |
+| Existing code | "extract the spec from this code" | `/sdlc-studio prd generate` |
+
+**Step 2 - never lose your place:** `/sdlc-studio status` shows where you are; `/sdlc-studio hint` tells you the single next thing to do.
+
+## Evaluating it
+
 > **Evaluating this for a team?** The white paper - *[The Mill, Not the Engine](docs/whitepaper.md)*
 > ([designed PDF](docs/whitepaper.pdf)) - is the deep version: the operating model, the measured
 > benchmark evidence across three model tiers, governance, and the adoption path, with every claim
@@ -100,58 +154,6 @@ You drive the whole lifecycle in plain language - the AI works out what you mean
 "what should I work on next?"                        →  /sdlc-studio hint
 "where is the project up to?"                        →  /sdlc-studio status
 ```
-
-## Quick start
-
-**Step 0 - install** (macOS / Linux, Claude Code, globally):
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash
-```
-
-> New to the command line? You only do this once. Hand that one line to any developer, or follow [docs/INSTALL.md](docs/INSTALL.md) step by step.
-
-<details>
-<summary>Other tools, Windows, and where it installs</summary>
-
-```bash
-# Every tool you have installed
-curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash -s -- --target auto
-```
-
-```powershell
-# Windows
-irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 | iex
-```
-
-| Tool | Global | Project-local | Invoke as |
-| --- | --- | --- | --- |
-| Claude Code | `~/.claude/skills` | `.claude/skills` | `/sdlc-studio` (or model-invoked) |
-| Codex | `~/.agents/skills` | `.agents/skills` | `$sdlc-studio`, `/skills` |
-| Gemini CLI | `~/.gemini/skills` | `.gemini/skills` | auto via description; `/skills` to confirm |
-| opencode | `~/.config/opencode/skills` | `.opencode/skills` | auto via skill tool |
-| Copilot | (repo-scoped) | `.github/skills` | from chat |
-| `agents` (generic) | `~/.agents/skills` | `.agents/skills` | read by Codex, Gemini, Copilot, Cursor |
-
-`--target claude,codex` picks tools; `--local` installs into the current project; `--list-targets` shows the map. The installer also refreshes any other copies it finds (opt out with `--no-sweep`). Full detail: [docs/INSTALL.md](docs/INSTALL.md).
-
-</details>
-
-<details>
-<summary><strong>For agents evaluating this skill</strong></summary>
-
-Open Agent Skills format ([agentskills.io](https://agentskills.io)): the entry point is [SKILL.md](.claude/skills/sdlc-studio/SKILL.md) (name, description with use-when/not-for triggers, `allowed-tools`, tool-specific extras under `metadata:`). Invoke as `/sdlc-studio [type] [action]`, or model-invoke from the description. Requires Python 3.10+ for the bundled deterministic scripts; `gh` CLI only for GitHub sync. A machine-readable index of this repo lives at [llms.txt](llms.txt). If you maintain a project for a human, the zero-setup evaluation path is `review generate` (read-only three-leg review of the host repo, findings filed as artifacts). Repo-level agent guidance: [AGENTS.md](AGENTS.md).
-
-</details>
-
-**Step 1 - pick your path:**
-
-| You have... | Just say | Command |
-| --- | --- | --- |
-| A new idea | "start a new project" | `/sdlc-studio init` then `prd create` |
-| Existing code | "extract the spec from this code" | `/sdlc-studio prd generate` |
-
-**Step 2 - never lose your place:** `/sdlc-studio status` shows where you are; `/sdlc-studio hint` tells you the single next thing to do.
 
 ## How it works
 
