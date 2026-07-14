@@ -45,3 +45,54 @@ Triage inside `plan`, with filing-time duplicate detection (CR0264) as its cheap
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-14 | sdlc-studio | Filed |
+
+## How triage state is recorded (operator proposal, 2026-07-14)
+
+Operator: *"Maybe we should flag a groomed or triaged item from one that is not - or at least a date of
+last triage?"* The second half is the right answer, and the first half is a trap worth naming.
+
+### GROOMED is derived - never stamp it
+
+`sprint.breakdown()` already computes it from the artefact itself: does it declare `Affects`, does it
+declare a size. **Derived state cannot lie and cannot go stale.** A `Groomed: yes` stamp creates a fact
+that can be true in the stamp and false in the file, and under a gate somebody will set it to get past
+the gate. Keep it computed. There is nothing to record.
+
+### TRIAGED is a judgement - record it, but NOT as a boolean
+
+Triage is a human decision ("I looked: this is not a duplicate, it is still wanted, it is sized right").
+Nothing can derive it, so it has to be written down. But `Triaged: yes` is precisely the failure this
+project already has a lesson for - **L-0008: a gate that checks an artefact EXISTS, not what is IN it,
+is satisfied by `touch`.** The retro gate died of exactly this: an empty file with the right name passed
+it. A triage boolean is the same artefact in a new costume, and under a gate it becomes a reflex.
+
+### Record the DATE, and derive staleness from the backlog moving underneath it
+
+**A triage decision is a judgement made against a backlog SNAPSHOT, and it decays when the backlog
+changes.** "This is not a duplicate" was true when it was checked, and says NOTHING about the artefact
+filed an hour later. So triage does not go stale after thirty days. It goes stale **the moment something
+is filed that could invalidate it.**
+
+Two precedents in this repo already implement exactly this shape:
+
+- **`review-current` (CR0253):** `reviews/LATEST.md` must be at least as new as EVERY artefact; if any
+  changed since, the review is stale and the close is refused. The machinery (`review_prep.staleness`,
+  git commit time with an mtime fallback) is reusable as-is.
+- **Lessons validity:** every lesson carries a `Review-by` horizon and `lessons revalidate` forces a
+  decision - closed, extended, or still within its horizon.
+
+### The rule
+
+> `> **Triaged:** 2026-07-14` on the artefact. A unit's triage is STALE if any artefact was CREATED
+> after that date (a new candidate for duplication that the triage never saw), or if the unit itself
+> changed after it. `sprint plan` reports stale triage alongside the shared-file clusters.
+
+Conservative on purpose: a newly filed artefact could duplicate almost anything, so any new filing
+staleness-marks the untriaged judgement rather than pretending to reason about which pairs are at risk.
+That is the same conservatism the review gate already applies, and it is why the review gate has now
+caught its own sprint twice.
+
+**And it degrades honestly.** An artefact with no `Triaged:` line has never been triaged - which is a
+FACT, not a failure, and is exactly what a fresh backlog looks like. It reports; it does not block. The
+blocking lens stays the mechanical one (an oversized unit must be decomposed), because a duplicate is a
+judgement and only the author can settle it.
