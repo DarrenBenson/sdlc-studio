@@ -38,8 +38,30 @@ PRIORITY_FIELD = {"bug": "Severity", "cr": "Priority", "story": "Priority"}
 # bugs + CRs tranche orders on a single documented axis instead of two vocabularies.
 PRIORITY_WEIGHT = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3,
                    "P1": 0, "P2": 1, "P3": 2, "P4": 3}
-BASE_TOKEN_BUDGET = 50_000        # per-unit floor
-TOKENS_PER_COGNITIVE = 5_000      # added per point of blast-radius cognitive complexity
+# The token forecast, calibrated against measured actuals for the first time.
+#
+# PROVISIONAL - fitted to 6 units measured in one sprint, one model, one repo. It is a
+# HYPOTHESIS to be falsified by the next sprint's actuals, not a settled calibration. The
+# previous coefficient (5,000) was never validated at all; this one at least has evidence
+# behind it, and the next sprint tests it.
+#
+# What the 6 units showed:
+#   BASE holds. The one unit with complexity 0 (a docs-only change) cost 46,359 tokens, so a
+#   ~50k fixed floor per unit is real - it is the cost of an agent taking on the task at all
+#   (context, orientation, tests), independent of the code it touches.
+#
+#   The old slope was ~9x too steep. The observed slope is ~550 tokens per complexity point;
+#   the constant said 5,000. That inflated the batch estimate 3.3x (1,285,000 forecast against
+#   384,278 actually spent) and caused a real planning error: a 10-unit batch was cut to 5 on
+#   the belief it was too big, when it was not.
+#
+#   Complexity is a WEAK PER-UNIT PREDICTOR and this forecast must be read as a BATCH tool.
+#   Two units of identical complexity (39) cost 46,792 and 98,513 - 2.1x apart. The cognitive
+#   complexity of the FILE is a poor proxy for the WORK done in it: a small, well-scoped fix in
+#   a large file does not pay the whole file's complexity. At the batch level the errors wash
+#   out (the fit lands within 9% across 6 units); per unit they do not.
+BASE_TOKEN_BUDGET = 50_000        # per-unit fixed floor - measured, holds
+TOKENS_PER_COGNITIVE = 600        # per point of blast-radius complexity - fitted, PROVISIONAL
 DEFAULT_UNKNOWN_SIZE = 3          # neutral WSJF denominator when neither the seat size nor
                                   # the complexity seed resolves - unknown effort is never
                                   # treated as minimal (new-file work is often the biggest)

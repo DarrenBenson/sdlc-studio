@@ -93,6 +93,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **The token forecast is calibrated against measured actuals for the first time (CR0257).**
+  `TOKENS_PER_COGNITIVE` drops 5,000 -> 600; the 50,000 base stays (validated - the one
+  complexity-0 unit measured 46,359). Six units delivered by instrumented subagents were measured
+  end-to-end: the batch forecast was **1,285,000 against 384,278 actually spent - 3.3x over**. At 600
+  it lands at 1.09x. The inflation was not harmless: a 10-unit batch was cut to 5 on the belief it
+  was too big, when it was not. Two limits are pinned in tests so they cannot be quietly forgotten:
+  this is a **hypothesis** fitted to six units (the next sprint is its falsification test - the value
+  it replaces was never validated at all), and **complexity is a weak per-unit predictor**, so the
+  forecast is a **batch** tool - two units of identical complexity cost 2.1x apart, because the
+  complexity of the FILE is a poor proxy for the WORK done in it.
+
 - **One archive writer, one layout (CR0248).** `reconcile.py` carried a second, CLI-reachable
   `archive` path that wrote a flat `<type>/archive/_index.md` with no live-index pointer, while
   `archive.py` wrote the per-release layout with one. Archiving via both split a type's terminal rows
