@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 4 |
+| Open | 5 |
 | In Progress | 0 |
 | Fixed | 60 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **146** |
+| **Total** | **147** |
 
 ## All Bugs
 
@@ -113,6 +113,7 @@
 | [BG0144](BG0144-the-grooming-gate-accepts-an-affects-naming-files.md) | The grooming gate accepts an Affects naming files that do not exist, and silently sizes the unit from nothing | Open | High | 2026-07-14 | 2026-07-14 |
 | [BG0145](BG0145-telemetry-cli-rejects-the-new-rate-seed-source.md) | telemetry CLI rejects the new rate seed-source, and complexity drops derivable churn risk for a docs unit | Open | Low | 2026-07-14 | 2026-07-14 |
 | [BG0146](BG0146-a-recalibration-relabels-past-falsifications-as-training-error.md) | A recalibration relabels past falsifications as training error, erasing the evidence that caused it | Open | High | 2026-07-14 | 2026-07-14 |
+| [BG0147](BG0147-the-dead-complexity-signal-still-orders-the-batch.md) | The dead complexity signal still orders the batch: CR0262 removed it from the forecast and left it as the WSJF tie-breaker | Open | Medium | 2026-07-14 | 2026-07-14 |
 
 ## Archived Releases
 
