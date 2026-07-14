@@ -2,6 +2,11 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0021: A calibration fitted to work delivered under one standard does not survive a change in the standard.**
+- **L-0020: When two tools judge the same artefact, they must agree on what a COMPLETE one is. The filer writes**
+- **L-0019: A gate belongs in the command people actually run, not in a step they are told to run. The design**
+- **L-0018: Reporting a model's fit against the same data it was fitted to is training error, not validation. It**
+- **L-0017: An estimate re-derived at judgement time from the constants it is meant to be judging is not a**
 - **L-0016: Verify a subagent's work through the public path before trusting the report. Every one of the six**
 - **L-0015: Sweep for the class, do not fix the enumerated list. I named three non-atomic index writes; there**
 - **L-0014: A narrow sample can make a variable look constant; widen the RANGE before concluding. The failure**
