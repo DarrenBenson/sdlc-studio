@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 9 |
+| Proposed | 10 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 241 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 6 |
 | Blocked | 0 |
-| **Total** | **256** |
+| **Total** | **257** |
 
 ## All Changes
 
@@ -78,6 +78,7 @@
 | [CR-0254](CR0254-rfc0033-d1-rename-the-deterministic-audit-scripts-to.md) | RFC0033 D1: rename the deterministic audit scripts to free the audit stem | Proposed | P2 | Improvement | 2026-07-14 | -- |
 | [CR-0255](CR0255-rfc0033-d2-d4-d5-build-the-discoverable-audit.md) | RFC0033 D2/D4/D5: build the discoverable audit command (RFC0002's accepted, unshipped command) | Proposed | P2 | Feature | 2026-07-14 | -- |
 | [CR-0256](CR0256-rfc0033-d3-retire-review-generate-fold-into-audit.md) | RFC0033 D3: retire review generate - fold into audit --profile repo and remove it | Proposed | P2 | Improvement | 2026-07-14 | -- |
+| [CR-0257](CR0257-sprint-sizing-ignores-the-captured-effort-estimate-and.md) | Sprint sizing ignores the captured Effort estimate, and bugs carry no size at all | Proposed | P3 | Improvement | 2026-07-14 | -- |
 
 ## Archived Releases
 
