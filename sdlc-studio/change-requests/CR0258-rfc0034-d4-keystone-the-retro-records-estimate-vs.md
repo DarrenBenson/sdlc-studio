@@ -16,6 +16,10 @@ The measure half of the sizing loop, and the keystone of RFC0034 - it produces t
 
 The token supplier is validated end-to-end. A unit (BG0126) was run as a background subagent; its completion notification carried `<usage><subagent_tokens>46792</subagent_tokens><duration_ms>271825</duration_ms></usage>`. Feeding those into `telemetry.py record --id BG0126 --type bug --tokens 46792 --wall-time-s 272` produced the **first telemetry record with a real token value** (of 330+ prior records, all null). So the mechanism this CR needs already works with the existing pieces: harness-reported subagent usage -> `telemetry.py record`. What remains for the CR is to make the sprint/autosprint loop do it automatically per unit, and to compare the actual against the plan estimate.
 
+## Cross-harness portability
+
+The supplier is a neutral SINK plus a per-harness SOURCE adapter, and must stay that way - the skill installs to five harnesses and is ecosystem-neutral. `telemetry.py record --tokens --wall-time-s` is portable (plain Python, any harness calls it). Only the token NUMBER is harness-specific: Claude Code reports `subagent_tokens` on a subagent completion (the PoC path); a raw-API harness reads the `usage` field on every response (precise, always present); Codex/Gemini CLIs expose their own usage output; a harness with no token visibility gets none. So the CR must abstract the source, not hardcode subagents. **Wall-clock is the universal floor** - every harness can measure elapsed time, so wall-clock velocity works everywhere and token velocity works wherever usage is exposed (always, for anything built on an LLM API).
+
 ## Impact
 
 Every sprint close gains an estimate-vs-actual readout and the project gains a velocity baseline it has never had. Once history accumulates, the provisional S/M/L token bands (CR0257) and the capacity budget (D3 CR) recalibrate from real data instead of a guess.
