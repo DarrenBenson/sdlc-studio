@@ -42,6 +42,7 @@ and from per-project memory (project-specific facts).
 | [LL0027](LL0027-a-gate-belongs-in-the-command-people-actually-run-not-in-the-step-they-are-told-to-run.md) | A gate belongs in the command people actually run, not in the step they are told to run |  |
 | [LL0028](LL0028-verify-a-fix-by-attacking-it-not-by-re-reading-it.md) | Verify a fix by attacking it, not by re-reading it |  |
 | [LL0029](LL0029-a-record-kept-in-a-gitignored-working-directory-is-not-a-record.md) | A record kept in a gitignored working directory is not a record |  |
+| [LL0030](LL0030-a-plausible-story-fitted-to-a-real-pattern-is-not-a-finding-test-it-against-the-data-already-on-disk.md) | A plausible story fitted to a real pattern is not a finding - test it against the data already on disk |  |
 
 ## Notes
 

@@ -7,7 +7,7 @@ Rolling digest of still-valid project lessons, read at sprint start. The full lo
 - **L-0024: The tool that measures a sprint cannot be built by that sprint. Anything self-measuring needs its**
 - **L-0023: A record kept in a gitignored working directory is not a record. The evidence that makes a loop**
 - **L-0022: Verify a fix by ATTACKING it, not by re-reading it. BG0133's proof was to double the constants and**
-- **L-0021: A calibration fitted to work delivered under one standard does not survive a change in the standard.**
+- **L-0021: RETRACTED - A calibration fitted to work delivered under one standard does not survive a change in the standard.**
 - **L-0020: When two tools judge the same artefact, they must agree on what a COMPLETE one is. The filer writes**
 - **L-0019: A gate belongs in the command people actually run, not in a step they are told to run. The design**
 - **L-0018: Reporting a model's fit against the same data it was fitted to is training error, not validation. It**
