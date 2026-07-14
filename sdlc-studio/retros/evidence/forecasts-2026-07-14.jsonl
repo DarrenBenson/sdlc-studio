@@ -9,3 +9,7 @@
 {"id": "CR0265", "tokens": 120000, "seed_source": "rate", "complexity": 43, "effort": "M", "estimator": "unattributed", "effort_gate": "compulsory", "constants": {"BASE_TOKEN_BUDGET": 120000, "TOKENS_PER_COGNITIVE": 0}, "planned_at": "2026-07-14T21:54:02Z"}
 {"id": "CR0266", "tokens": 120000, "seed_source": "rate", "complexity": 24, "effort": "L", "estimator": "unattributed", "effort_gate": "compulsory", "constants": {"BASE_TOKEN_BUDGET": 120000, "TOKENS_PER_COGNITIVE": 0}, "planned_at": "2026-07-14T21:54:02Z"}
 {"id": "CR0267", "tokens": 120000, "seed_source": "rate", "complexity": 34, "effort": "M", "estimator": "unattributed", "effort_gate": "compulsory", "constants": {"BASE_TOKEN_BUDGET": 120000, "TOKENS_PER_COGNITIVE": 0}, "planned_at": "2026-07-14T21:54:02Z"}
+{"id": "CR0270", "tokens": 75000, "points": 3, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-14T23:11:10Z"}
+{"id": "CR0268", "tokens": 50000, "points": 2, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-14T23:11:10Z"}
+{"id": "CR0269", "tokens": 125000, "points": 5, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-14T23:11:10Z"}
+{"id": "CR0271", "tokens": 200000, "points": 8, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-14T23:11:10Z"}

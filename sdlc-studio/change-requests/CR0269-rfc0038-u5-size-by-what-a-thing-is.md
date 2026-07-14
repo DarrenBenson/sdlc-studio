@@ -4,6 +4,7 @@
 > **Priority:** P1
 > **Type:** Improvement
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/templates/core/cr.md, .claude/skills/sdlc-studio/scripts/file_finding.py
+> **Depends on:** CR0270
 > **Date:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
