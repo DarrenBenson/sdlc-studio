@@ -1,108 +1,77 @@
-# LATEST - current project state (v4.0.0 GA published 2026-07-10)
+# Unified Review – 2026-07-14 – the specs have drifted two majors behind the code
 
-> The current-state anchor - a WINDOW, not a ledger. **Re-read this and run
-> `/sdlc-studio status` after any context reset or compaction.** Durable guidance lives in
-> AGENTS.md; per-sprint detail lives in the retros and CHANGELOG.md; keep this file under
-> `docs.latest_max_lines` (doc-freshness advisory) by moving past sprints to History lines.
->
-> **Version:** `4.1.0` READY TO TAG - backlog empty, the operator's tag precondition met
-> (2026-07-14) · **Gates:** 2011 skill + 141 tools tests pass, `gate` PASS, drift 0,
-> `gate --require-retro RETRO0021` PASS. `main` is level with `origin`.
->
-> **The v4.1 sprint is DONE (2026-07-14):** 24 units delivered (EP0031 + EP0032 = 12 planned,
-> plus 12 discovered-finds), each through the full independence gate; ~12 of 14 first-pass
-> reviews rejected and repaired (the finds a green suite hid: an RCE via `--ac` injection, a
-> handoff that dropped work, a verifier judging the wrong tree, a safety gate that did not gate,
-> a `Refs:` trailer that disarmed its own check). RETRO0021 filed. **The v4.1 window stays open a
-> week for local forward-port testing (D0025); the tag, freeze lift, and push to consuming
-> projects remain the operator's explicit action.** v4.0.0 was published 2026-07-10 (schema v3
-> active + default; see the History lines).
+> **Review type:** Unified PRD/TRD/TSD/Persona consolidation
+> **Reviewer:** sdlc-studio; agent; v1
+> **Date:** 2026-07-14
+> **Triggered by:** manual `review` run (the sprint-close review is not yet gated - CR0253)
+> **Project version:** 4.1.0 released; unreleased work on `main` under a freeze until ~2026-07-21
 
-## Current
+## Headline
 
-- **v4.1 SPRINT DONE - BACKLOG EMPTY, READY TO TAG (2026-07-14).** 24 units delivered across
-  EP0031 (release integrity: BG0108-BG0111, CR0229, CR0233, CR0236) and EP0032 (run-close + DX:
-  CR0223-CR0225, CR0234, CR0235), plus the 12 discovered-finds the reviews surfaced (BG0112-BG0121,
-  CR0237-CR0239), all on trunk and critic-approved. Full detail in **RETRO0021**; decisions
-  D0018-D0029. Headline: ~12 of 14 first-pass reviews rejected and repaired, each behind a green
-  suite - the finds the independence gate caught include an RCE via `--ac` injection (BG0115), a
-  handoff that dropped work (CR0223), a verifier judging the wrong tree (CR0234), a safety gate
-  that did not gate (CR0229, 3 rounds), and a `Refs:` trailer that disarmed its own floor check
-  (CR0239). RFC0030 parked, RFC0031 status-quo (D0027/D0028); benchmark CRs re-homed to
-  `sdlc-bench`. **The tag / freeze lift / push stay the operator's explicit action after the
-  week of local forward-port testing.**
+The code is in strong shape; the **project spec documents are not**. All three of PRD, TRD and TSD
+self-declare **Version 2.0.0** against a **v4.1.0** product, and none reflect the v4 flagship
+capabilities: the engagement floor, ULID collision-free identity, the generated team, or the
+RFC0032 learning loop. The PRD still uses the retired `autosprint` name; the TRD's ADR log stops
+before four architecturally-significant v4 decisions; the TSD does not know the mutation gate. The
+personas are alive (Maya and Trevor are consulted in 14 artefacts) but the PRD names neither. A repo
+whose whole thesis is spec-code alignment has its own PRD two majors behind - a dogfooding-integrity
+gap, filed as **CR0252** (P1, L).
 
-- **EP0030 THE GENERATED TEAM DELIVERED - BACKLOG CLEAR, v4 TAG READY (2026-07-10).**
-  The GA-gating epic closed 9/9 through the full independence gate (8 critic REJECTs
-  across 6 units, every repair test-first and re-verified): team/stakeholder
-  generation (persona_gen + validate seats/serves floors, scenarios 07-08), the
-  Cooper usage pass, positioning (mill/cockpit docs/why + newcomer README +
-  docs/existing-users.md), the WHITE PAPER (docs/whitepaper.md + designed PDF via
-  tools/whitepaper_pdf.py; seven-paper consensus check; claims register; three-seat
-  gate + operator-correction round), the BENCHMARK RERUN (82 runs, three model eras,
-  rubric axis, pricing appendix - headline: judgement-gated process = no process on
-  base models, mandated process = near-frontier at base prices; docs/benchmarks/
-  2026-07-10-v4-rerun.md), and the ENGAGEMENT FLOOR shipped as doctrine rule 16 +
-  config default (CR0232). BG0103 found-and-fixed by dogfooding delivery agents.
-  RETRO0020 filed. v4.1 lane: CR0223-0225, CR0229 (mechanical floor), CR0230
-  (harness oracle), CR0231 (protocol v3 longitudinal/multi-team) - all Deferred,
-  Target v4.1, never gating. **The tag, freeze lift, and push remain the operator's
-  explicit action.**
+This review itself only happened because it was asked for by hand: **the sprint-close review is not
+gated** (reconcile and retro are; review currency is advisory-only), which is why the *previous*
+LATEST.md sat claiming "v4.0.0 GA / 4.1.0 READY TO TAG" long after that stopped being true. Filed as
+**CR0253** (P1).
 
-- **EP0029 v4 GA READINESS DELIVERED - BACKLOG CLEAR AGAIN (2026-07-10).** The final pre-GA
-  dogfood sprint, run BY the personas: 9/9 units (breakdown-checkbox reconcile lane, the
-  consented three-answer numbering switch incl. forward-only `adopt` + era-divergence warning,
-  one-call gated bug close, `install.sh --from`, `eval_run`, the big-bang v4 README/docs pass,
-  living-personas-by-default). Sam (QA) rejected wave 1 with 3 working repros - all repaired
-  test-first and re-verified by the same seat; Lena (Product) rejected one false INSTALL.md
-  sentence - fixed; eval gate 8/8 via the new runner. Suites 1586+132, drift 0. See RETRO0019.
-- **RV0007 ROADMAP DELIVERED (2026-07-10).** RFC0027 option C: EP0026 gate integrity (10) +
-  EP0027 reliability tier (11) + EP0028 era completion/DX (9) all Done, every unit
-  critic-approved, evals green -> RETRO0018. Preceded by the nine-rc-blocker fix pack
-  (RETRO0017) and EP0024/25 release engineering (RETRO0016); the five-leg RV0007 review filed
-  BG0071-BG0099 / CR0202-CR0211 / RFC0027 - all now delivered.
-- **Backlog now: the 11 v4.1 units above** (it was EMPTY at the v4.0 tag - that was the
-  precondition the operator set for it, and v4.1 restores the same rule: the tag cuts when the
-  backlog empties). The 9 founding epics (EP0001-0009) that carried a stale `Ready` remain
-  closed to Done. `main` is level with `origin`.
-- **Deferred follow-ups (open ideas, unfiled):** a `reconcile detect --era` lens + per-artifact
-  re-review markers + per-capability watermarks (CR0197 open decisions); a path-aware tightening of
-  the spec-guard basename match; the 6 legacy-epic stale-`Ready` hygiene pass above.
-- **Benchmark evidence base (N=5, `2026-07-08-n5-run.md`):** unstructured arms escaped 10/10 on
-  notify-digest vs mandated-planning 2/5 (Fisher p 0.083); Auditability tracked escapes (R 0.88 >
-  A 0.68 > B 0.60); routing 0.40 cost index, ~3.1x baseline tokens. Failure mode "a bad plan
-  propagates" -> CR0194. Positioning docs cite these numbers.
+```text
+══════════════════════════════════════════════════════════
+                   DOCUMENT REVIEW SUMMARY
+══════════════════════════════════════════════════════════
 
-## History (detail lives in the named retro / CHANGELOG entry)
+📋 PRD   v2.0.0   STALE   engagement floor / ULID / team / loop absent;
+                          "autosprint" (retired name) still used        -> CR0252
+📐 TRD   v2.0.0   STALE   ADR log stops at ADR-003; no ADRs for the
+                          four v4 decisions                             -> CR0252
+🧪 TSD   v2.0.0   STALE   mutation gate absent from the test strategy    -> CR0252
+👥 Persona        MIXED   personas alive (consulted x14) but unnamed in
+                          the PRD; index.md miscounted as a persona     -> BG0129
+──────────────────────────────────────────────────────────
+🔗 CROSS-DOCUMENT CONSISTENCY
+   PRD -> code : ✗ the shipped v4 feature set is undocumented
+   PRD -> Persona : ✗ Maya Okafor, Trevor Hale defined + consulted, not named in PRD
+   Sprint-close contract : ⚠ reconcile ✓ + retro ✓ + review ✗ (ungated - CR0253)
+══════════════════════════════════════════════════════════
+```
 
-- **EP0022 + EP0023 RV0006 debt + context tiering (2026-07-09)** supply-chain SHA pins + installer checksum, sync/verifier hardening, shared-layer consolidation, complexity-hotspot decomposition, context-tiering digests; closes CR0186/CR0187/CR0179 -> RETRO0015
-- **EP0020 + EP0021 clear-the-decks (2026-07-09)** upgrade re-baseline, `reference-scripts` split, shared discovery, archive consolidation, origin-drift pre-flight; BG0068/BG0069; closes CR0197/0200/0181/0182/0188 -> RETRO0014
-- **EP0019 plan-integrity hardening (2026-07-09, schema-v3 dormant)** deterministic plan-review gate (AC-vs-spec, fingerprint-pinned), reviewer charter + telemetry, spec-edit guard, bench phase field; closes CR0194/0195/0196 -> RETRO0013
-- **EP0014 agentic triage (2026-07-09, schema-v3 dormant)** inbox->triaged vocab + gated transition, noise controls (session cap, Low consolidation), record-only Tranche, sampled-audit metrics; closes CR0173/CR0172 -> RETRO0012
-- **v4 Tranche 2 (WIP, unreleased)** authorship & enforcement (EP0013) + tooling debt (EP0018, several CRs scoped forward) + benchmark protocol; 13 stories, era-gated -> CHANGELOG
-- **v4 foundation (WIP, unreleased)** distributed artefact identity, schema v3 (EP0012/EP0015): ULIDs, `migrate_v3.py`, GitHub aliases, atomic writes; RFC0024/0025; preceded by RV0006 (14 bugs) -> CHANGELOG
-- **US0072/EP0017** README reframe + `docs/why-sdlc-studio.md` value doc + agent discoverability (`llms.txt`, SKILL.md triggers) -> CHANGELOG
-- **v3.6.0** review/lite on-ramp (EP0016): `review generate` zero-setup review + `profile: lite` -> CHANGELOG
-- **BG0067** verify_ac pytest -k DSL glued path+marker (false file-not-found) - fixed, shlex.split
-- **2026-07-08** backlog sweep: EP0012/13/15/18 + 13 story-Done CRs closed mechanically, 0 drift
-- **2026-07-D** field-hardening: convention layer + adoption onboarding -> RETRO0010
-- **D0006** first instrumented sprint: telemetry-on-close, workspace advisory, BG0051 -> RETRO0009
-- **2026-07-C** the re-scoped seven: iter_tables, mutation v2, batch transitions -> RETRO0008
-- **2026-07-B** the mutation gate (RFC0022 -> EP0011), 44-bug sweep, WSJF sizing -> RETRO0007
-- **2026-07** mixed backlog clear: first seat-scored WSJF sprint, depth tiers -> RETRO0006
-- **EP0010** token economy + learning loop: index archival, retro gate, blocker sweep -> RETRO0005
-- **v3.1.1** field-hardening from 4 upgrade-run retrospectives (RFC0021 seats/amigos) -> CHANGELOG
-- **v3.1.0** your personal engineering team (RFC0020 amigos + independence gate) -> CHANGELOG
-- **v3.0.1** consolidated v3 line: sprint lifecycle (RFC0019), greenfield DevEx CR0077-0086,
-  hygiene sprint CR0094-0099, RV0005 self-review -> `RV0005-skill-review-v3.md`, CHANGELOG
-- **v2.1-v2.4** autosprint + control plane; version check; PVD/provenance/gate/personas;
-  project upgrade + deploy last-mile + neutrality guard -> CHANGELOG
+## Per-document verdict
 
-## Operating reminders
+- **PRD** (`prd.md`, v2.0.0, 2026-07-04) - STALE. Feature Inventory and Functional Requirements
+  predate v4. No engagement floor, ULID identity, generated team, or learning loop. Uses
+  `autosprint` (renamed `sprint` at v4.0). Personas not referenced.
+- **TRD** (`trd.md`, v2.0.0, 2026-07-06) - STALE. ADRs 001-003 are sound (progressive-disclosure
+  router, JSON-emitting helpers, files-are-truth) but the log stops there; the engagement floor,
+  ULID identity, generated team and learning loop are all ADR-worthy and undocumented.
+- **TSD** (`tsd.md`, v2.0.0, 2026-06-20) - STALE. Knows the gate and verify_ac; does not cover the
+  mutation-check gate.
+- **Persona** - MIXED. Two real personas (Maya, Trevor) are load-bearing (consulted in 14
+  CRs/stories) but unnamed in the PRD; `personas/amigos/` holds 3 generated seats. `review_prep`
+  miscounts `index.md` as a third persona (BG0129).
 
-- Trunk-based: small green commits to main, each gated on `npm run lint && npm test && gate`.
-- Forward-port skill edits repo -> install targets via manual rsync (not `install.sh --local`).
-- Stakes-scaled review (CR0061): full independent critic for code/risky units; lighter recorded
-  review for pure-doc/mechanical ones.
-- Consuming projects only receive features when a release is TAGGED - a fat [Unreleased]
-  changelog is a standing prompt to propose one.
+## Backlog rollup (12 non-terminal)
+
+- **Bugs (5):** BG0125-BG0129 (grep verifier x2, meta_new lock, atomic_write, persona-index filter)
+- **CRs (6):** CR0248-CR0253 (archive dedupe, status-vocab, security hardening, verify_ac `--file`
+  friction, **CR0252 spec refresh P1**, **CR0253 review-gate P1**)
+- **RFC (1):** RFC0033 (reconcile the three-way `audit` overload; Draft, next up for decision)
+
+## Production state
+
+v4.1.0 is released and Latest on GitHub. A release freeze holds until ~2026-07-21; unreleased work
+(RFC0032 learning loop, this review's findings) sits on `main` under `[Unreleased]` and is
+forward-ported to the installed copy for internal testing only. **No production release this week.**
+
+## For a fresh session
+
+Start here, then read `AGENTS.md` for durable doctrine. The specs (`prd.md`/`trd.md`/`tsd.md`) are
+currently NOT a reliable description of the product - trust the CHANGELOG, `reference-*.md`, and the
+code until CR0252 lands. The highest-value pending work is CR0252 (refresh the specs) and the two
+P1 gaps this review exposed; RFC0033 is the next design decision.

@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 4 |
+| Proposed | 6 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 241 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 6 |
 | Blocked | 0 |
-| **Total** | **251** |
+| **Total** | **253** |
 
 ## All Changes
 
@@ -73,6 +73,8 @@
 | [CR-0249](CR0249-derive-per-type-status-vocab-from-the-single.md) | Derive per-type status vocab from the single source instead of triplicating it | Proposed | P3 | Improvement | 2026-07-14 | -- |
 | [CR-0250](CR0250-security-hardening-default-document-the-ac-verifier-http.md) | Security hardening: default-document the AC-verifier http host allowlist and the rolling-install checksum | Proposed | P3 | Improvement | 2026-07-14 | -- |
 | [CR-0251](CR0251-verify-ac-run-the-natural-file-flag-does.md) | verify_ac run: the natural --file flag does not exist (friction: it is --story) | Proposed | P4 | Improvement | 2026-07-14 | -- |
+| [CR-0252](CR0252-refresh-prd-trd-tsd-to-the-v4-feature.md) | Refresh PRD/TRD/TSD to the v4 feature set (specs are self-declared v2.0.0 against a v4.1.0 product) | Proposed | P1 | Improvement | 2026-07-14 | -- |
+| [CR-0253](CR0253-the-sprint-close-review-is-not-gated-make.md) | The sprint-close review is not gated - make review currency a hard gate like the retro | Proposed | P1 | Improvement | 2026-07-14 | -- |
 
 ## Archived Releases
 

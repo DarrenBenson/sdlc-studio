@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 4 |
+| Open | 5 |
 | In Progress | 0 |
 | Fixed | 44 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 1 |
 | Superseded | 0 |
-| **Total** | **128** |
+| **Total** | **129** |
 
 ## All Bugs
 
@@ -95,6 +95,7 @@
 | [BG0126](BG0126-meta-new-allocates-retro-review-handoff-ids-without.md) | meta_new allocates retro/review/handoff ids without allocation_lock (concurrent collision) | Open | Medium | 2026-07-14 | 2026-07-14 |
 | [BG0127](BG0127-several-index-md-writers-bypass-atomic-write-the.md) | Several _index.md writers bypass atomic_write, the module's own torn-write guard | Open | Medium | 2026-07-14 | 2026-07-14 |
 | [BG0128](BG0128-grep-verifier-verb-silent-rg-grep-rqe-dialect.md) | grep verifier verb: silent rg/grep -rqE dialect swap makes a verdict environment-dependent | Open | Low | 2026-07-14 | 2026-07-14 |
+| [BG0129](BG0129-review-prep-counts-personas-index-md-as-a.md) | review_prep counts personas/index.md as a persona (the underscore-index filter misses it) | Open | Medium | 2026-07-14 | 2026-07-14 |
 
 ## Archived Releases
 
