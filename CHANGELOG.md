@@ -9,14 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **LL0024 - a tool that silently rewrites its caller's input is indistinguishable from one that
-  corrupts it.** From BG0124: the artefact filer ran a markdown-safety normaliser over the AC's
-  executable `Verify:` command, backticking snake_case identifiers to dodge an emphasis-lint rule.
-  The verifier runs those commands under a shell, where backticks are command substitution - so a
-  path became a command, the command searched the wrong target, and the AC returned 0. A false
-  green on the gate that decides Done. The corruption was not the deepest problem; the silence was.
-  Never normalise a field a machine will execute, announce every rewrite, and document which tools
-  mutate their input.
+- **LL0024 - a hazard found by calling a private helper directly may already be guarded at the only
+  call site that matters.** BG0124 was filed as a High bug claiming the artefact filer corrupted
+  executable `Verify:` lines into false greens. It was **wrong, and has been withdrawn**:
+  `artifact.py` already routes `--verify` through a verbatim path that never markdown-safes it, and
+  that function's docstring already spelled out both failure modes. The hazard was real, the
+  exposure was zero, the defence was already there. It was "proven" by calling the private
+  `_md_safe()` directly - which tests the helper and says nothing about the pipeline, the only thing
+  that ships. Reproduce through the public path or you have not reproduced it; look for the guard
+  before filing; and a confident false finding is not free, because a process that turns findings
+  into work will faithfully manufacture work from a wrong one.
 
 - **LL0023 - a gate that checks an artefact exists, not what is in it, is satisfied by `touch`.**
   From BG0123: the retro leg globbed for a filename, so a 0-byte `RETRO9999.md` returned

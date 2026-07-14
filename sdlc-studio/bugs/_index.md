@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 2 |
+| Open | 1 |
 | In Progress | 0 |
 | Fixed | 43 |
 | Verified | 0 |
 | Closed | 79 |
-| Won't Fix | 0 |
+| Won't Fix | 1 |
 | Superseded | 0 |
 | **Total** | **124** |
 
@@ -90,7 +90,7 @@
 | [BG0121](BG0121-the-meta-index-bootstrap-path-lacks-the-blank.md) | the meta-index bootstrap path lacks the blank-collapse and the index lint guard skips meta templates | Fixed | Low | 2026-07-14 | 2026-07-14 |
 | [BG0122](BG0122-install-sh-no-ops-when-piped-to-bash.md) | install.sh no-ops when piped to bash (curl \| bash installs nothing) | Fixed | Critical | 2026-07-14 | 2026-07-14 |
 | [BG0123](BG0123-the-retro-gate-passes-a-0-byte-file.md) | The retro gate passes a 0-byte file - it checks the filename, not the retro | Open | High | 2026-07-14 | 2026-07-14 |
-| [BG0124](BG0124-the-artefact-filer-injects-backticks-into-executable-verify.md) | The artefact filer injects backticks into executable Verify lines, producing false-green ACs | Open | Critical | 2026-07-14 | 2026-07-14 |
+| [BG0124](BG0124-the-artefact-filer-injects-backticks-into-executable-verify.md) | The artefact filer injects backticks into executable Verify lines, producing false-green ACs | Won't Fix | Critical | 2026-07-14 | 2026-07-14 |
 
 ## Archived Releases
 

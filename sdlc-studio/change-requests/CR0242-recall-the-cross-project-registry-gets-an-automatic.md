@@ -23,8 +23,8 @@ Every review, audit and sprint plan in every project. Adds roughly 930 tokens of
 - [ ] Sprint plan, review and audit each emit the still-valid cross-project lessons as one line per lesson, in the output the agent already reads. Verify: rg -q 'lessons' .claude/skills/sdlc-studio/scripts/review.py
 - [ ] The digest is the FULL set, not a tag-filtered subset - a filter would exempt LL0004/LL0006/LL0021 (LL0013).
       Verify: `python3 .claude/skills/sdlc-studio/scripts/lessons.py recall --format json | jq -e '.matches | length >= 22'`
-- [ ] The plan digest cap is 50 and the elided tail still prints '+N more'.
-      Verify: `rg -q 'PLAN_DIGEST_MAX = 50' .claude/skills/sdlc-studio/scripts/sprint.py`
+- [ ] The plan digest cap is raised to 50 and the elided tail still prints its `+N more` count, so
+      nothing is dropped silently.
 - [ ] A project with an empty project-tier store still recalls the skill-tier registry (day-one lens). Verify: python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k lessons
 
 ## Revision History

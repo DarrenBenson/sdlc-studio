@@ -1,6 +1,38 @@
 # BG0124: The artefact filer injects backticks into executable Verify lines, producing false-green ACs
 
-> **Status:** Open
+## WITHDRAWN - not a bug, the defence already exists
+
+**This bug is wrong and is retained only as the evidence trail for [[LL0024]].**
+
+`artifact.py` routes `--verify` through `_verifiers_of()`, which passes the command through
+**verbatim** and never markdown-safes it. Its docstring already describes both failure modes this
+bug "discovered" - a corrupted literal argument under a list-form verb, and command substitution
+under a shell-backed one - and concludes: *"Verbatim is the only form that is both correct and
+safe."* Someone had already thought this through and defended it.
+
+Proven end-to-end, which is what should have been done before filing:
+
+```text
+artifact.py new --type story --verify "shell rg -q retro .../scripts/file_finding.py"
+stored:  - **Verify:** shell rg -q retro .../scripts/file_finding.py
+         (verbatim - no backticks - the guard holds)
+```
+
+**How the false finding was reached.** `_md_safe()` was called **directly**, in isolation, on a
+verify-shaped string. It does backtick snake_case tokens - that is its job, and it is correct for
+the prose it is actually given. But the real pipeline never hands it a Verify line. The hazard was
+real; the exposure was zero; the guard was already there and documented. Testing the helper proved
+nothing about the path (LL0014, LL0017).
+
+The original AC corruption that started this hunt was self-inflicted: a shell command was written
+into `--ac` **prose**, where commands do not belong, instead of into `--verify`. The tool then
+correctly markdown-safed the prose it was given.
+
+Everything below is the original, incorrect report, kept for the record.
+
+---
+
+> **Status:** Won't Fix
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio new
 > **Provenance:** RFC0032 workstream

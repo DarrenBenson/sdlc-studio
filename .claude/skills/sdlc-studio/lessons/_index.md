@@ -36,7 +36,7 @@ and from per-project memory (project-specific facts).
 | [LL0021](LL0021-verify-a-deploy-by-looking-at-the-running-system-not-by-re-reading-the-green-build.md) | Verify a deploy by looking at the running system, not by re-reading the green build | deploy, verification, observability, process |
 | [LL0022](LL0022-a-guard-that-branches-on-invocation-mode-must-be-tested-in-every-invocation-mode.md) | A guard that branches on invocation mode must be tested in every invocation mode | testing, false-green, shell, bug-class, silent-failure |
 | [LL0023](LL0023-a-gate-that-checks-an-artefact-exists-not-what-is-in-it-is-satisfied-by-touch.md) | A gate that checks an artefact exists, not what is in it, is satisfied by touch | gate, false-green, ceremony, bug-class, silent-failure, process |
-| [LL0024](LL0024-a-tool-that-silently-rewrites-its-caller-s-input-is-indistinguishable-from-one-that-corrupts-it.md) | A tool that silently rewrites its caller's input is indistinguishable from one that corrupts it | tooling, silent-failure, false-green, bug-class, determinism, dx |
+| [LL0024](LL0024-a-tool-that-silently-rewrites-its-caller-s-input-is-indistinguishable-from-one-that-corrupts-it.md) | A hazard found by calling a private helper directly may already be guarded at the only call site that matters | testing, false-positive, review, tooling, bug-class, humility |
 
 ## Notes
 

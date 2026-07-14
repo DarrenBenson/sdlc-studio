@@ -1,40 +1,52 @@
 ---
 
 id: LL0024
-title: A tool that silently rewrites its caller's input is indistinguishable from one that corrupts it
-tags: [tooling, silent-failure, false-green, bug-class, determinism, dx]
+title: A hazard found by calling a private helper directly may already be guarded at the only call site that matters
+tags: [testing, false-positive, review, tooling, bug-class, humility]
 added: 2026-07-14
-origin: BG0124 - the artefact filer backticked executable Verify lines
+origin: BG0124 - a High bug filed against a defence that already existed
 ---
 
-**Lesson.** The artefact filer ran a markdown-safety normaliser over every field it was given, including the AC's executable Verify command. It backtick-wrapped snake_case identifiers to dodge an emphasis-lint rule - correct for prose, catastrophic for a command, because the verifier runs Verify lines under a shell where backticks are command substitution. A path became a command; the command searched the wrong target; the AC returned 0. A false GREEN on the gate that decides Done.
+**Lesson.** An agent reviewing the artefact tooling found that `_md_safe()` backtick-wraps
+snake_case identifiers, reasoned that a Verify line run under `shell=True` would then suffer
+command substitution, demonstrated exactly that by calling `_md_safe()` **directly** on a
+verify-shaped string, and filed a High bug about false-green acceptance criteria.
 
-The corruption was not the deepest problem. The SILENCE was. The caller passed one string and a different string was stored, and nothing in the output said so. It was invisible at the only moment anyone could have caught it, and it was found only because someone happened to read the stored file and notice a backtick they had not typed.
+The bug was not real. `artifact.py` routes `--verify` through a separate function that passes the
+command through verbatim and never markdown-safes it - and that function's docstring already spelled
+out both failure modes, concluding *"verbatim is the only form that is both correct and safe."* The
+hazard was genuine. The exposure was zero. The defence was already there, deliberate, and
+documented.
 
-Three rules:
+The reasoning was sound at every step and the conclusion was still false, because every step
+happened on the wrong side of the boundary. Calling the private helper proved what the helper does.
+It proved nothing about what the **pipeline** does, and the pipeline is the only thing that ships.
 
-1. **Never normalise an executable.** If a field is going to be executed, evaluated or parsed by a machine downstream, it is not prose and no prettifier may touch it. Split the artefact at that boundary and pass the executable half through byte-for-byte.
+**The rules:**
 
-2. **Announce every rewrite.** A tool that transforms caller input must report what it changed. 'normalised: 3 tokens backticked in Summary' costs one line and makes the transform reviewable. Silent normalisation and silent corruption are the same event from the caller's side.
+1. **Reproduce through the public path, or you have not reproduced it.** Drive the actual command,
+   the actual entry point, the artefact the user would really get. If the repro invokes a private
+   function directly, it is a hypothesis, not a finding.
 
-3. **Document which tools mutate input.** A catalogue that says what a script DOES, but not that it rewrites what you hand it, is a trap for every agent after this one.
+2. **Before filing, look for the guard.** Ask "would anyone sensible have defended this already?"
+   and go and look. Read the call site, not just the helper. Here the answer was sitting in a
+   docstring at the call site, which is exactly where a competent author would have put it.
 
-The tell: a helper named for a display concern (`_md_safe`, `prettify`, `sanitise`) applied to a
-field that a machine will later execute. Look for the boundary; it is almost never where the
-formatter thinks it is.
+3. **A false finding is not free.** This one cost a High bug, a severity correction, a lesson, and
+   three commits - all of it noise in the ledger, all of it needing withdrawal. Under a disposition
+   gate that turns findings into work, a confident false finding manufactures work for everyone
+   downstream. The cost of filing scales with how much the process trusts you.
 
-**Postscript, recorded because it is the best evidence in this file.** Writing this lesson, the
-author passed the body to the tool inside a double-quoted shell string. The shell
-command-substituted the three backticked tokens above, ran them, and stored their empty output -
-so the sentence naming the tell arrived with the tell deleted from it. The bug bit the person
-documenting the bug, in the act of documenting it, through the same mechanism. Backticks in a
-string bound for a shell are not decoration, and knowing that does not save you - only not putting
-them there does.
+4. **Suspicion of your own certainty rises with the elegance of the theory.** The failure mode here
+   was seductive precisely because it was a *good* piece of reasoning about a *real* hazard. The
+   more satisfying the bug, the harder you should look for the reason it cannot happen.
 
-Related: [[LL0008]] (report no success you did not achieve), [[LL0009]] (silent misleading failure outranks loud), [[LL0016]] (two code paths building the same artefact must agree on what it MEANS).
+This is [[LL0014]] and [[LL0017]] turned on the reviewer instead of the tested code: a boundary you
+mock, or step around, tests the code on your side of it and nothing else. And it is the mirror of
+[[LL0010]] - validate a defence against the bug it defends against - because the defence existed and
+was never checked.
 
-**Why / what it cost.** {{the failure or friction that taught it}}
-
-**How to apply.** {{the concrete check or habit that prevents recurrence}}
-
-**Generalises to.** {{the class of situations this covers – when to recall it}}
+**Postscript.** The AC corruption that started the hunt was self-inflicted: a shell command had been
+written into `--ac` prose, where commands do not belong, instead of into `--verify`. The tool then
+correctly normalised the prose it was given. The tool was right and the caller was wrong, which is
+the ordinary case and the one an agent is least inclined to consider.
