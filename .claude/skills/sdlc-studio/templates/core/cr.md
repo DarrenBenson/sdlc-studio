@@ -10,10 +10,19 @@ Related: help/cr.md, reference-cr.md
 > **Priority:** {{priority}}
 > **Type:** {{type}}
 > **Requester:** {{requester}}
+> **Estimated-by:** {{who made the Effort call - so the report can tell you your own hit rate}}
+> **Delivered-by:** {{the model that delivered it - written at close, not at filing}}
 > **Date:** {{date}}
 > **Affects:** {{affects}}
 > **Depends on:** {{depends_on}}
 > **GitHub Issue:** {{github_issue}}
+
+<!--
+The CR's own `**Effort:**` (S, M, L, or `unknown`) sits under Impact Assessment below. `unknown`
+is a real answer: it satisfies the grooming gate, so nobody has to invent a size to get the CR
+planned, and it is excluded from every accuracy figure rather than coerced into a number. A size
+guessed to satisfy a gate is worse than no size, because it looks like data.
+-->
 
 ## Summary
 
@@ -45,6 +54,8 @@ plans as unsized. -->
 ---
 
 ## Impact Assessment
+
+**Effort:** {{S|M|L, or `unknown` - the CR's own job size, read by the planner}}
 
 ### Existing Functionality
 

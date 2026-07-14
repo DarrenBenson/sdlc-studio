@@ -1252,9 +1252,19 @@ class EffortSizingTests(unittest.TestCase):
         sp = _load()
         self.assertEqual(sp._effort_code("**Effort:** M - two files\n"), "M")
         self.assertEqual(sp._effort_code("> **Effort:** large\n"), "L")
-        self.assertIsNone(sp._effort_code("> **Effort:** unknown\n"))
         self.assertIsNone(sp._effort_code("# no field here\n"))
         self.assertIsNone(sp._effort_code("an agent under effort pressure skips it\n"))
+
+    def test_an_honest_unknown_is_a_value_not_an_absence(self) -> None:
+        """`unknown` used to read as NO effort, so the grooming gate refused the unit and the
+        only way past was to write down a letter you did not believe. It is now an ANSWER - one
+        that satisfies the gate and carries no points, so it is excluded from every ratio rather
+        than coerced into a number. See test_attribution.UnknownIsAFirstClassEffort."""
+        sp = _load()
+        self.assertEqual(sp._effort_code("> **Effort:** unknown\n"), sp.EFFORT_UNKNOWN)
+        self.assertIsNone(sp.effort_points(sp.EFFORT_UNKNOWN))
+        # silence is still not an answer: an ABSENT field is not a declared unknown
+        self.assertIsNone(sp._effort_code("# no field here\n"))
 
 
 class RateForecastTests(unittest.TestCase):

@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The evidence records WHO estimated and WHAT delivered, and refuses to average across either
+  (CR0263, CR0261).** A forecast now carries the `estimator` (from the artefact's `Estimated-by:`,
+  never inferred from whoever filed the ticket) and the `effort_gate` era (`compulsory` / `voluntary`,
+  read from the grooming gate itself rather than restated). An actual carries the `model`, now also
+  stamped on the artefact as `Delivered-by:`. Accuracy is segmented per estimator and per model, and
+  **a batch delivered by more than one model records NO pooled ratio at all** - one ratio across two
+  models describes neither of them. The report names the classes an estimator systematically
+  under-calls, because a directional bias is correctable and a bare correlation is not.
+
+- **`unknown` is a first-class Effort value (CR0263).** Nobody has to invent a size to get past the
+  grooming gate. `EFFORT_SIZE` has no numeric entry for it, so it cannot be silently coerced: it
+  satisfies the gate, and is named and EXCLUDED from every ratio, exactly as UNMEASURED and UNFORECAST
+  already are. An *absent* Effort is still refused - silence is not an answer, but "I do not know" is.
+  This is the fix for a contaminant that had already bitten the project: scoring an undeclared Effort
+  as zero inflated its apparent correlation with cost from 0.48 to 0.58, because the field only exists
+  on later, larger units. The presence of a field is not a measurement of anything.
+
+- **The coercion question is asked, and the tool refuses to answer it (CR0263).** BG0136 made `Effort`
+  compulsory, and a compulsory estimate may be a careless one. The report compares voluntary against
+  compulsory eras - and prints **NOT ANSWERABLE**, because only 5 of 29 units have an Effort recorded
+  at plan time, and the compulsory cohort IS the latest cohort, so the gate's effect cannot be
+  separated from the calendar's. An offline reconstruction is directionally consistent with the hazard
+  (voluntary n=12 r=0.54, compulsory n=4 r=0.32) and is **not** quoted by the tool, because n=4 says
+  nothing. A report that says "I cannot tell you" is worth more than one that guesses.
+
 - **The specs describe the product again (CR0252).** The PRD and TSD self-declared v2.0.0 against a
   v4.1.0 product; all three specs now cover the engagement floor, the breakdown gate, sprint capacity
   and the run appetite, the sizing and velocity loop, ULID identity, the generated team, the learning

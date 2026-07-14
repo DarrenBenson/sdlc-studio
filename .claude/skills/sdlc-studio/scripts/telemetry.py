@@ -57,6 +57,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -158,14 +159,70 @@ def forecasts_path(repo_root: Path | str, shard: str | None = None) -> Path:
 _path = actuals_path
 
 
+# ---------------------------------------------------------------------------
+# The delivered model, ON THE ARTEFACT.
+# ---------------------------------------------------------------------------
+# The model was captured here and went nowhere a reader would ever look. You could not open a
+# bug and see what built it; the committed history had no model column; and while the log lived
+# in `.local/` a fresh clone lost the attribution entirely. It matters three times over: which
+# model delivered a change is audit information, a cost-per-unit figure means nothing without
+# knowing which model paid it, and a benchmark that compares models needs exactly this field.
+#
+# So the close STAMPS it on the unit. Idempotent (a re-record updates the line rather than adding
+# a second), last-model-wins (the model that delivered the final state is the one that delivered
+# it), and best-effort: a stamp that cannot land must never cost the measurement.
+DELIVERED_BY_RE = re.compile(r"(?im)^([^\S\n]*>[^\S\n]*)\*\*Delivered-by:\*\*.*$")
+
+
+def stamp_delivery(repo_root: Path | str, unit_id: str, model: str) -> Path | None:
+    """Record on the ARTEFACT the model that delivered it. Returns the path, or None when there
+    is no artefact to stamp.
+
+    Writes into the header metadata blockquote (the contiguous `>` run under the H1) and nowhere
+    else, so a prose blockquote or a table in the body cannot be corrupted."""
+    found = sdlc_md.find_by_id(repo_root, unit_id)
+    if not found:
+        return None
+    path = found[0]
+    text = path.read_text(encoding="utf-8")
+    line = f"> **Delivered-by:** {str(model).strip()}"
+    if DELIVERED_BY_RE.search(text):
+        new = DELIVERED_BY_RE.sub(lambda m: f"{m.group(1)}**Delivered-by:** {model}", text, count=1)
+    else:
+        lines = text.splitlines()
+        h1 = next((i for i, ln in enumerate(lines) if ln.lstrip().startswith("# ")), None)
+        if h1 is None:
+            return None
+        i = h1 + 1
+        while i < len(lines) and not lines[i].strip():
+            i += 1
+        if i < len(lines) and lines[i].lstrip().startswith(">"):
+            last = i
+            while last + 1 < len(lines) and lines[last + 1].lstrip().startswith(">"):
+                last += 1
+            lines.insert(last + 1, line)
+        else:  # no header metadata block - open one directly under the H1
+            lines[h1 + 1:h1 + 1] = ["", line]
+        new = "\n".join(lines) + ("\n" if text.endswith("\n") else "")
+    if new != text:
+        sdlc_md.atomic_write(path, new)
+    return path
+
+
 def record(repo_root: Path | str, fields: dict) -> dict:
-    """Append one record (only the recognised, non-None fields). Best-effort: a write
-    failure is swallowed (telemetry must never break the loop)."""
+    """Append one record (only the recognised, non-None fields), and stamp the delivering model
+    on the unit itself. Best-effort: a write failure is swallowed (telemetry must never break
+    the loop)."""
     rec = {k: fields[k] for k in FIELDS if fields.get(k) is not None}
     try:
         _append(_path(repo_root), [rec])
     except Exception as exc:  # noqa: BLE001 - telemetry is advisory; never raise into the loop
         sdlc_md.debug("telemetry.record", exc)
+    if rec.get("id") and rec.get("model"):
+        try:
+            stamp_delivery(repo_root, str(rec["id"]), str(rec["model"]))
+        except Exception as exc:  # noqa: BLE001 - a stamp that cannot land never costs the measurement
+            sdlc_md.debug("telemetry.stamp_delivery", exc)
     return rec
 
 
@@ -269,8 +326,17 @@ def actuals(repo_root: Path | str) -> dict[str, dict]:
 #: input it came from; `constants` is the estimator that produced it (so a later reader can
 #: tell whether the row was forecast by the constants now in force, or by a different model);
 #: `planned_at` is when the plan was made.
+#:
+#: The ATTRIBUTION of the size call rides here too, and it is recorded at PLAN TIME for the same
+#: reason the number is: an `Effort` read off the artefact later may have been revised with
+#: hindsight, and a value revised after the outcome is not a prediction.
+#:   `estimator`   WHO made the size call ("unattributed" when nobody claimed it - never guessed)
+#:   `effort_gate` under what compulsion: `compulsory` (the grooming gate refuses an unsized
+#:                 unit) or `voluntary`. A compulsory estimate from someone who does not want to
+#:                 estimate is a careless one, and that hazard is only testable if the compulsion
+#:                 in force is on the record.
 FORECAST_FIELDS = ("id", "tokens", "seed", "seed_source", "complexity", "effort",
-                   "constants", "planned_at")
+                   "estimator", "effort_gate", "constants", "planned_at")
 
 
 _forecast_path = forecasts_path
@@ -467,6 +533,7 @@ def cmd_forecast(args: argparse.Namespace) -> int:
     estimate-vs-actual table) can be restored, and so the log can be inspected."""
     rec = {"id": args.id, "tokens": _int(args.tokens), "seed": _int(args.seed),
            "seed_source": args.seed_source, "effort": args.effort,
+           "estimator": args.estimator, "effort_gate": args.effort_gate,
            "planned_at": args.planned_at or sdlc_md.now_iso8601(),
            "constants": {"BASE_TOKEN_BUDGET": _int(args.base),
                          "TOKENS_PER_COGNITIVE": _int(args.per_cognitive)}}
@@ -558,7 +625,13 @@ def build_parser() -> argparse.ArgumentParser:
     f.add_argument("--seed", help="the complexity/effort input the forecast came from")
     f.add_argument("--seed-source", dest="seed_source", default="complexity",
                    choices=("complexity", "effort", "none"))
-    f.add_argument("--effort", help="the declared Effort (S/M/L), when there was one")
+    f.add_argument("--effort", help="the declared Effort (S/M/L, or U for a declared unknown)")
+    f.add_argument("--estimator", help="WHO made the size call (default: unattributed - it is "
+                                       "never inferred from whoever filed the unit)")
+    f.add_argument("--effort-gate", dest="effort_gate",
+                   choices=("compulsory", "voluntary"),
+                   help="was the Effort compulsory at filing, or freely given? The coercion "
+                        "hazard is only testable if the compulsion is on the record")
     f.add_argument("--base", required=True, help="BASE_TOKEN_BUDGET in force at plan time")
     f.add_argument("--per-cognitive", dest="per_cognitive", required=True,
                    help="TOKENS_PER_COGNITIVE in force at plan time")

@@ -131,6 +131,82 @@ class Extraction(RetroBase):
         self.assertEqual(retro.lessons_in("## Lessons\n- <!-- record it: lessons add -->\n"), [])
 
 
+WRAPPED = """# RETRO-9999: a sprint
+## Delivered
+- US0001 - shipped it
+## What went well
+- fine
+## What was hard / what stalled
+- nothing
+## Lessons
+- A plausible story fitted to a real pattern is not a finding. This retro originally recorded that
+  the estimator was mis-calibrated, which was a story, not a measurement - the seed correlates
+  with cost at r = +0.03.
+- deploys need a preflight check
+
+Some prose after the list, which is not a lesson.
+## Actions raised
+| Finding | Disposition |
+| --- | --- |
+| nothing | declined: clean sprint |
+"""
+
+
+class ALessonIsTitledFromItsSentenceNotItsLine(RetroBase):
+    """A lesson wrapped across three lines was read as its FIRST LINE - so the store held a
+    third of it, and the headline stopped mid-clause ("...This retro originally recorded that").
+    Those headlines are what `sprint plan` prints as the lessons digest at the top of every plan:
+    the surface the whole learning loop exists to serve, and the one an agent under effort
+    pressure reads instead of opening the file. A headline that stops mid-clause is skimmed past.
+
+    The defect is invisible unless a lesson happens to be long, which is why it survived - so the
+    fixture here is deliberately a WRAPPED one.
+    """
+
+    def test_a_wrapped_lesson_is_read_whole_not_to_the_first_line_break(self) -> None:
+        found = retro.lessons_in(WRAPPED)
+        self.assertEqual(len(found), 2)
+        self.assertIn("r = +0.03", found[0], "the rest of the lesson was lost at the wrap")
+        self.assertNotIn("\n", found[0])
+
+    def test_the_title_is_the_complete_first_sentence(self) -> None:
+        title = retro.lesson_title(retro.lessons_in(WRAPPED)[0])
+        self.assertEqual(title, "A plausible story fitted to a real pattern is not a finding.")
+
+    def test_the_title_does_not_depend_on_where_the_author_wrapped(self) -> None:
+        """The load-bearing property. Re-wrap the same lesson anywhere and the headline is the
+        same headline."""
+        one = "- One sentence that is long. And a second one here.\n"
+        two = "- One sentence that\n  is long. And a second one here.\n"
+        self.assertEqual(retro.lesson_title(retro.lessons_in(f"## Lessons\n{one}")[0]),
+                         retro.lesson_title(retro.lessons_in(f"## Lessons\n{two}")[0]))
+
+    def test_prose_after_the_list_is_not_folded_into_the_last_lesson(self) -> None:
+        self.assertNotIn("Some prose", " ".join(retro.lessons_in(WRAPPED)))
+
+    def test_an_abbreviation_or_a_decimal_does_not_end_the_sentence(self) -> None:
+        self.assertEqual(retro.lesson_title("Check the seed, e.g. max_cognitive, first. Then fit."),
+                         "Check the seed, e.g. max_cognitive, first.")
+        self.assertEqual(retro.lesson_title("It scored r = 0.03. Not weak - nothing."),
+                         "It scored r = 0.03.")
+
+    def test_a_single_sentence_lesson_is_its_own_title_so_the_store_does_not_churn(self) -> None:
+        self.assertEqual(retro.lesson_title("deploys need a preflight check"),
+                         "deploys need a preflight check")
+
+    def test_the_stored_body_keeps_the_whole_lesson(self) -> None:
+        """The headline is a headline. The record is not truncated to it."""
+        self.write(WRAPPED)
+        args = mock.Mock(root=str(self.root), id="RETRO9999", dry_run=False, format="text")
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(retro.cmd_extract(args), 0)
+        import lessons as lessons_mod
+        text = lessons_mod.default_project_file(str(self.root)).read_text(encoding="utf-8")
+        self.assertIn("## L-0001: A plausible story fitted to a real pattern is not a finding.",
+                      text)
+        self.assertIn("r = +0.03", text, "the body must keep the full text, not just the title")
+
+
 class GateUsesTheContentCheck(RetroBase):
     """The fix must hold at the PUBLIC path, not just in the helper (LL0024)."""
 

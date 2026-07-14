@@ -20,11 +20,17 @@ and decides whether the constants have earned a change.
 
 Read the coverage columns too. A ratio computed over 2 rated units of 10 is a ratio about
 2 units, and the row says so.
+
+Read the MODEL column before comparing any two rows. Cost per unit is meaningless without
+knowing which model paid it: a sprint delivered by a smaller model must not land in the same
+average as one delivered by a larger, and the mean of the two would describe neither. A sprint
+that MIXED models records `mixed` and NO ratio at all, rather than an averaged number that is
+about no run that ever happened.
 -->
 # Velocity history
 
-| Retro | Date | Units | Measured | Forecast | Estimate (tokens, plan-time) | Actual (tokens) | Ratio (est/actual) | Wall (s) | Constants | Sample |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| RETRO0024 | 2026-07-14 | 6 | 6 | 6 | 1,285,000 | 384,278 | 3.34x | 1,848 | base=50000 tpc=5000 | in-sample |
-| RETRO0025 | 2026-07-14 | 5 | 5 | 5 | 352,600 | 642,358 | 0.55x | 3,807 | base=50000 tpc=600 | out-of-sample |
-| RETRO0026 | 2026-07-14 | 5 | 5 | 5 | 348,400 | 902,503 | 0.39x | 6,006 | base=50000 tpc=600 | out-of-sample |
+| Retro | Date | Units | Measured | Forecast | Estimate (tokens, plan-time) | Actual (tokens) | Ratio (est/actual) | Wall (s) | Constants | Sample | Model |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| RETRO0024 | 2026-07-14 | 6 | 6 | 6 | 1,285,000 | 384,278 | 3.34x | 1,848 | base=50000 tpc=5000 | in-sample | claude-opus-4-8 |
+| RETRO0025 | 2026-07-14 | 5 | 5 | 5 | 352,600 | 642,358 | 0.55x | 3,807 | base=50000 tpc=600 | in-sample | claude-opus-4-8 |
+| RETRO0026 | 2026-07-14 | 5 | 5 | 5 | 348,400 | 902,503 | 0.39x | 6,006 | base=50000 tpc=600 | in-sample | claude-opus-4-8 |

@@ -1,9 +1,10 @@
 # BG0141: retro extract titles a lesson from its first LINE, so a wrapped lesson gets a title cut mid-sentence
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Effort:** S
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py
+> **Verification depth:** functional - a lesson is now titled at its first SENTENCE, not its first line. All 20 pre-existing truncated titles were backfilled through `retro.lesson_title()` itself (the same function the extractor uses, so backfill and writer cannot disagree), re-deriving the 8 whose titles were cut before the first full stop from the retro bullets they came from. No title in the digest is now cut mid-clause.
 > **Depends on:** CR0263
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file

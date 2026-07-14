@@ -123,6 +123,39 @@ EFFORT_SIZE = {"S": 1, "M": 3, "L": 8}
 EFFORT_ALIAS = {"SMALL": "S", "MEDIUM": "M", "LARGE": "L"}
 
 # ---------------------------------------------------------------------------
+# "UNKNOWN" IS A FIRST-CLASS EFFORT VALUE.
+# ---------------------------------------------------------------------------
+# The grooming gate DEMANDS a size at filing. Until now the only sizes it would accept were
+# S, M and L - so an author who genuinely did not know had exactly one way past the gate: write
+# down a letter they did not believe. That is how a gate manufactures the noise it exists to
+# remove. A compulsory estimate from someone who does not know is not data; it is a guess with a
+# number's authority, and it is then averaged into a forecast as though it were an estimate.
+#
+# So `unknown` is an ANSWER. It satisfies the gate - the author HAS answered the question - and
+# it is EXCLUDED from every ratio, exactly as UNMEASURED and UNFORECAST already are.
+#
+# It has NO POINTS, and nothing may invent some. `effort_points` returns None for it, and there
+# is no entry for it in EFFORT_SIZE, because the moment it maps to a number it enters a mean.
+# This is not hypothetical: scoring an UNDECLARED Effort as 0 made the field look predictive
+# against this project's own actuals (r = +0.58) purely because the field only existed on the
+# later, larger units - the PRESENCE of the field correlated with cost. Treated honestly as
+# missing, the same values score +0.48. A value nobody supplied is not a zero.
+EFFORT_UNKNOWN = "U"
+#: What an author may write to mean "I do not know". A `{{placeholder}}` is NOT one of them -
+#: that is the template talking, and an unfilled template is silence, not an answer.
+EFFORT_UNKNOWN_WORDS = frozenset({"U", "UNKNOWN", "UNSIZED", "?", "TBD"})
+
+
+def effort_points(code: str | None) -> int | None:
+    """The WSJF job-size points of a declared Effort, or None when it has none.
+
+    None for `unknown`, and None for an absent field. NEVER 0, and never the neutral middle:
+    both are numbers, and a number is what an honest unknown must not become. Every caller must
+    handle the None - which is the point, because that is where the exclusion happens.
+    """
+    return EFFORT_SIZE.get(str(code or "").strip().upper())
+
+# ---------------------------------------------------------------------------
 # What the constants above were FITTED to - so a ratio can never be quoted as evidence
 # for a model against the very data that produced it.
 # ---------------------------------------------------------------------------
@@ -163,6 +196,95 @@ def forecast_constants() -> dict:
     tell WHICH model produced a number, instead of assuming it was this one."""
     return {"BASE_TOKEN_BUDGET": BASE_TOKEN_BUDGET,
             "TOKENS_PER_COGNITIVE": TOKENS_PER_COGNITIVE}
+
+
+# ---------------------------------------------------------------------------
+# WHO estimated a unit, and under WHAT COMPULSION.
+# ---------------------------------------------------------------------------
+# The loop recorded a forecast and an actual, and never who made the size call. So it could tell
+# an operator what estimation is like IN GENERAL - a population average from a study of other
+# people - and could not tell them whether THEIR judgement was any good. Those are different
+# questions, and only the second one is actionable. Low engagement and low capability produce an
+# identical correlation in a population study, and the study cannot separate them; a per-person
+# figure against measured actuals can.
+#
+# So the plan RECORDS the estimator, and the accuracy report is segmented by them. Feedback on
+# your own past calls is the one intervention known to improve human estimation, and here it
+# costs a field.
+#
+# It is NEVER INFERRED. With no `Estimated-by:` on the artefact and no project default, the
+# estimate belongs to nobody - which is a fact, not a gap to be filled by guessing from whoever
+# happened to file the ticket. Attributing a bad call to a person who did not make it is worse
+# than attributing it to no one.
+ESTIMATOR_UNATTRIBUTED = "unattributed"
+
+
+def estimator_of(repo_root: Path | str, text: str) -> str:
+    """WHO made the size call on this unit: the artefact's `Estimated-by:`, else the project's
+    declared default, else `unattributed`."""
+    raw = sdlc_md.extract_field(text, "Estimated-by")
+    if raw and raw.strip() and raw.strip() not in ("-", "--"):
+        name = (sdlc_md.parse_authorship_value(raw) or {}).get("name") or raw
+        name = str(name).strip().strip("*_`")
+        if name and not name.startswith("{{"):
+            return name
+    default = config.get(repo_root, "estimator.default", None)
+    default = str(default or "").strip()
+    return default or ESTIMATOR_UNATTRIBUTED
+
+
+# Was an Effort COMPULSORY when it was written, or freely given? The coercion hazard turns on
+# this, and it is only answerable if the answer is RECORDED: a compulsory estimate from someone
+# who does not want to estimate is a careless estimate, and a careless number is worse than none.
+EFFORT_GATE_COMPULSORY = "compulsory"  # the grooming gate refuses a unit with no size
+EFFORT_GATE_VOLUNTARY = "voluntary"    # `sprint.breakdown: judgement` - the size is freely given
+EFFORT_GATE_UNKNOWN = "unknown"        # recorded before the planner stamped the era
+
+
+def effort_gate(repo_root: Path | str) -> str:
+    """The compulsion in force RIGHT NOW, stamped on every forecast the plan records.
+
+    Read from the grooming gate itself (`breakdown_mode`), not from a second copy of the rule:
+    when the gate blocks an unsized unit, an Effort is compulsory, by definition."""
+    return (EFFORT_GATE_COMPULSORY if breakdown_mode(repo_root) == "enforce"
+            else EFFORT_GATE_VOLUNTARY)
+
+
+def effort_gate_era(repo_root: Path | str, unit_id: str, stamped: str | None) -> str:
+    """The era an Effort was recorded in. The STAMP on the forecast record wins - it was
+    observed at the moment the plan read the field.
+
+    For evidence recorded BEFORE the planner stamped the era, a project may DECLARE the
+    boundary, per id prefix, in its own config:
+
+        estimator:
+          compulsory_after:
+            BG: 136        # every bug filed after BG0136 had to carry an Effort
+
+    A declaration, in the project's config, that a human can be held to - not an inference from
+    a timestamp. A commit date is when the work was COMMITTED, not when the size was written,
+    and guessing the era from one would put units on the wrong side of the very split the
+    comparison exists to make. With neither a stamp nor a declaration the era is UNKNOWN, and an
+    unknown-era unit is reported as its own cohort rather than quietly filed on one side.
+    """
+    if stamped in (EFFORT_GATE_COMPULSORY, EFFORT_GATE_VOLUNTARY):
+        return stamped
+    cutoffs = config.get(repo_root, "estimator.compulsory_after", None)
+    if not isinstance(cutoffs, dict) or not cutoffs:
+        return EFFORT_GATE_UNKNOWN
+    uid = sdlc_md.norm_id(str(unit_id or ""))
+    m = re.match(r"([A-Za-z]+)", uid)
+    num = sdlc_md.id_number(uid)
+    if not m or num is None:
+        return EFFORT_GATE_UNKNOWN
+    cut = {str(k).upper(): v for k, v in cutoffs.items()}.get(m.group(1).upper())
+    try:
+        cut = sdlc_md.parse_cutoff(cut)
+    except Exception:  # noqa: BLE001 - a malformed cutoff declares nothing; it never guesses
+        return EFFORT_GATE_UNKNOWN
+    if cut is None:
+        return EFFORT_GATE_UNKNOWN
+    return EFFORT_GATE_COMPULSORY if num > cut else EFFORT_GATE_VOLUNTARY
 
 
 def sample_class(retro_id: str | None, constants: dict | None) -> str:
@@ -407,17 +529,24 @@ def _complexity_size(root: Path, text: str) -> int:
 
 
 def _effort_code(text: str) -> str | None:
-    """The declared `Effort:` estimate normalised to S/M/L, or None when absent or unreadable.
+    """The declared `Effort:` normalised to S, M, L or U (unknown) - None when the field is
+    absent or unreadable.
 
     Reads the metadata field through the shared parser, so a CR's `**Effort:** M` (body) and a
     bug's `> **Effort:** L` (header) are the same field. Tolerates a decorated value
     (`M - two files`, `Large`); anything it cannot map is treated as undeclared, never guessed.
+
+    `U` and `None` are DIFFERENT ANSWERS and must never collapse into one. `U` is "I do not
+    know", which is a declaration and passes the grooming gate. `None` is silence - the author
+    did not answer - and silence is still not an answer.
     """
     raw = sdlc_md.extract_field(text, "Effort")
     if not raw or not raw.strip():
         return None
     tok = raw.strip().split()[0].strip("*_`:,;.()").upper()
     tok = EFFORT_ALIAS.get(tok, tok)
+    if tok in EFFORT_UNKNOWN_WORDS:
+        return EFFORT_UNKNOWN
     return tok if tok in EFFORT_SIZE else None
 
 
@@ -663,11 +792,15 @@ def _order_batch(root: Path, out: list[dict], deps: dict[str, set], order: str,
             # risk (tiebreak + token budget), never the size - a one-line fix in a
             # complex file must not sink.
             seat_size = (inp or {}).get("size")
+            pts = effort_points(effort)   # None for a declared `unknown`, and for no Effort
             if isinstance(seat_size, (int, float)) and seat_size > 0:
                 size = seat_size
-            elif effort:
-                size = EFFORT_SIZE[effort]
+            elif pts is not None:
+                size = pts
             else:
+                # A declared `unknown` lands HERE, at the neutral default - never at a
+                # fabricated 1 or 0. It is a real answer for the gate and a real absence for
+                # the arithmetic, and those are not in conflict.
                 size = DEFAULT_UNKNOWN_SIZE
             it["size"] = size
             if inp:  # the review seats scored this unit (value / time-criticality / risk)
@@ -724,9 +857,15 @@ def _token_forecast(root: Path, batch: list[dict]) -> dict:
     `units` still carries each unit's `complexity` and `effort`. They no longer FEED the number -
     they are recorded as CONTEXT, so the next analyst can correlate them against the actuals that
     come back and check this decision rather than inherit it. `seed` is null: there is no seed.
+
+    It also carries the ATTRIBUTION of the size call: WHO made it (`estimator`) and under what
+    compulsion (`effort_gate`). Both are recorded at PLAN TIME, when the field was read, for the
+    same reason the token forecast is: an Effort read off the artefact months later may have been
+    revised with hindsight, and a value revised after the outcome is not a prediction.
     """
     per_unit: dict[str, int] = {}
     units: dict[str, dict] = {}
+    gate = effort_gate(root)   # the compulsion in force for this whole plan
     for it in batch:
         text = Path(it["path"]).read_text(encoding="utf-8")
         cx = it.get("complexity")
@@ -736,7 +875,8 @@ def _token_forecast(root: Path, batch: list[dict]) -> dict:
         uid = sdlc_md.norm_id(it["id"])
         per_unit[uid] = BASE_TOKEN_BUDGET
         units[uid] = {"tokens": BASE_TOKEN_BUDGET, "seed": None, "seed_source": "rate",
-                      "complexity": cx, "effort": effort}
+                      "complexity": cx, "effort": effort,
+                      "estimator": estimator_of(root, text), "effort_gate": gate}
     return {"tokens": BASE_TOKEN_BUDGET * len(batch), "per_unit": per_unit, "units": units,
             "rate": BASE_TOKEN_BUDGET, "history": batch_history(root),
             "constants": forecast_constants(),
@@ -779,8 +919,10 @@ def record_forecast(repo_root: Path | str, data: dict) -> dict:
     loop built on it cannot falsify its own estimator.
 
     Each record carries the number, the seed it came from, and the CONSTANTS that produced it,
-    so a later reader can tell which estimator to credit or blame. First record for a unit
-    wins on read (telemetry.forecasts), so a re-plan cannot rewrite it with hindsight.
+    so a later reader can tell which estimator to credit or blame. It also carries WHO made the
+    size call and under what compulsion, which is what makes per-estimator accuracy - and the
+    coercion comparison - answerable from the evidence instead of from opinion. First record for
+    a unit wins on read (telemetry.forecasts), so a re-plan cannot rewrite it with hindsight.
     """
     fc = data.get("token_forecast") or {}
     units = fc.get("units") or {}
@@ -790,7 +932,9 @@ def record_forecast(repo_root: Path | str, data: dict) -> dict:
     when = data.get("generated_at") or sdlc_md.now_iso8601()
     recs = [{"id": uid, "tokens": u["tokens"], "seed": u["seed"],
              "seed_source": u["seed_source"], "complexity": u["complexity"],
-             "effort": u["effort"], "constants": constants, "planned_at": when}
+             "effort": u["effort"], "estimator": u.get("estimator"),
+             "effort_gate": u.get("effort_gate"),
+             "constants": constants, "planned_at": when}
             for uid, u in units.items()]
     return telemetry.record_forecasts(repo_root, recs)
 
@@ -847,13 +991,20 @@ def _declared_size(text: str, seat: dict | None) -> str | None:
     """The size a PERSON recorded for this unit, from any accepted source, or None.
 
     Accepted, in falling order of authority: the review seat's estimate, the artefact's
-    `Effort:` (S/M/L), a story's `Points:`. With none of the three the unit is UNSIZED - the
-    forecast would quote it at the flat floor and the operator would never know that number
-    was a fallback rather than an estimate."""
+    `Effort:` (S/M/L, or a declared `unknown`), a story's `Points:`. With none of the three the
+    unit is UNSIZED - nobody answered the question at all.
+
+    A declared `unknown` IS an answer, and it passes. The gate exists to stop work whose size
+    nobody considered, not to extract a letter from someone who does not have one: a size
+    invented to satisfy a gate is the noise the gate was built to remove. It carries no points
+    (`effort_points` returns None for it), so it is excluded from every ratio downstream and can
+    never be averaged in as though it were an estimate."""
     seat_size = (seat or {}).get("size")
     if isinstance(seat_size, (int, float)) and seat_size > 0:
         return f"seat size {seat_size}"
     effort = _effort_code(text)
+    if effort == EFFORT_UNKNOWN:
+        return "Effort: unknown (declared)"
     if effort:
         return f"Effort: {effort}"
     raw = sdlc_md.extract_field(text, "Points")

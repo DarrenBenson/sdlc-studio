@@ -9,12 +9,22 @@ Related: help/bug.md, reference-bug.md
 > **Status:** {{status}}
 > **Severity:** {{severity}}
 > **Priority:** {{priority}}
-> **Effort:** {{S|M|L - job size of the fix, not its urgency; sizes the sprint plan}}
+> **Effort:** {{S|M|L, or `unknown` - job size of the fix, not its urgency; sizes the sprint plan}}
+> **Estimated-by:** {{who made the Effort call - so the report can tell you your own hit rate}}
+> **Delivered-by:** {{the model that delivered it - written at close, not at filing}}
 > **Reporter:** {{reporter}}
 > **Assignee:** {{assignee}}
 > **Created:** {{created_date}}
 > **Verification depth:** {{verification_depth}}
 > **Affects:** {{source files this fix touches, comma-separated}}
+
+<!--
+Effort accepts `unknown`. It is a real answer and it satisfies the grooming gate: nobody has to
+invent a size to get a unit planned. An honest `unknown` is excluded from every accuracy figure,
+exactly as an unmeasured unit is - it is never coerced into a number and never averaged in as
+though it were an estimate. A size guessed to satisfy a gate is worse than no size, because it
+looks like data.
+-->
 
 ## Summary
 

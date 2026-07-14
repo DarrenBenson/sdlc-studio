@@ -30,6 +30,24 @@ engagement_floor:
   # story/bug/CR past it must carry an AC, a Verify line, or a linked plan - or a recorded waiver.
   adopt_after: 238
 
+estimator:
+  # The coercion check (`retro.py estimator`). BG0136 made `Effort` COMPULSORY at filing, so
+  # every unit filed after it had to carry one - and a compulsory estimate from someone who does
+  # not want to estimate is a careless estimate, which is worse than none because it looks like
+  # data. That hazard is testable, and this is the boundary it is tested across.
+  #
+  # Going forward NOTHING here is needed: the planner STAMPS the era on every forecast record it
+  # writes, and a stamp always beats this declaration. This exists only for the evidence recorded
+  # BEFORE the stamp did, and it is a DECLARATION a human made by reading the filing history -
+  # never an inference from a commit date, which is when work was COMMITTED, not when the size
+  # was written.
+  #
+  # BG0136 itself and everything before it: voluntary. CR0260 is the last CR filed before the
+  # gate landed.
+  compulsory_after:
+    BG: 136
+    CR: 260
+
 # Sprint capacity - this repo's own ceiling, deliberately NOT the shipped default (500,000).
 # Measured, not forecast: the last 5-unit sprint cost 642,358 tokens of real subagent spend
 # (RETRO0025). The shipped default was derived from a 6-unit sprint that cost 384k, which is

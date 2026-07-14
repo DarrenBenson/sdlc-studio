@@ -12,6 +12,8 @@ Related: help/story.md, reference-story.md
 > **Serves:** {{optional - design personas whose End Goals this story serves; names must resolve to persona files (validate serves)}}
 > **Owner:** {{owner}}
 > **Reviewer:** {{reviewer}}
+> **Estimated-by:** {{who made the size call - so the report can tell you your own hit rate}}
+> **Delivered-by:** {{the model that delivered it - written at close, not at filing}}
 > **Created:** {{created_date}}
 > **GitHub Issue:** {{github_issue}}
 > **Affects:** {{source files this story touches, comma-separated}}
