@@ -84,6 +84,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The `grep` verifier verb now expands globs, so the documented example works (BG0125).** `grep
+  "..." src/**/*.ts` false-RED'd on present code because the verb runs argv (no shell) and the glob
+  reached `rg`/`grep` literally. Globs are now expanded against the run directory before the tool
+  sees them; an unmatched glob passes through literally so a genuinely missing target still fails
+  honestly. The verb had zero test coverage (which is why this survived) - it now has tests,
+  including the exact false-RED case. Its `rg`-vs-`grep -rqE` dialect difference (BG0128) is
+  documented in `reference-verify.md`: keep patterns POSIX-ERE-portable, or install ripgrep.
+
+- **`verify_ac run` accepts `--file` as an alias for `--story` (CR0251).** `--file` is the flag an
+  agent reaches for first; it errored before. Now aliased on both `run` and `lint`.
+
 - **A passing test suite is silent again (CR0241).** Tests that feed the validator a
   deliberately-broken fixture were letting its diagnostics escape to the console, so a fully green
   run printed `ERROR` lines and the tail of 2000 passing tests read like a failure. That is not

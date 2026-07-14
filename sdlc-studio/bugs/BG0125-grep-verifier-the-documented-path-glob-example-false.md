@@ -1,6 +1,7 @@
 # BG0125: grep verifier: the documented path_glob example false-REDs (verb has zero test coverage)
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file

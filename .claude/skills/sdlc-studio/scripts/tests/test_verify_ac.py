@@ -1215,5 +1215,47 @@ class FencedVerifyTests(unittest.TestCase):
         self.assertEqual(blocks[0].verifier, "shell true")
 
 
+class GrepVerbTests(unittest.TestCase):
+    """The grep verb had zero coverage, which is why BG0125/BG0128 survived. These fail against
+    the pre-fix builder (which passed a glob to rg/grep literally)."""
+
+    def test_documented_glob_matches_present_code(self) -> None:
+        """BG0125: `grep <re> src/**/*.ts` false-RED'd on present code. It must now PASS."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "src" / "auth").mkdir(parents=True)
+            (root / "src" / "auth" / "client.ts").write_text("export class AuthClient {}\n")
+            res = verify_ac.run_verifier('grep "export class AuthClient" src/**/*.ts',
+                                         timeout=30, cwd=root, allow_shell=False)
+            self.assertTrue(res.ok, f"{res.kind} exit={res.exit_code} {res.stderr}")
+
+    def test_glob_matching_nothing_fails_honestly(self) -> None:
+        """An unmatched glob must FAIL (not vacuously pass) - it is a real missing target."""
+        with tempfile.TemporaryDirectory() as d:
+            res = verify_ac.run_verifier('grep "x" src/**/*.ts',
+                                         timeout=30, cwd=Path(d), allow_shell=False)
+            self.assertFalse(res.ok)
+
+    def test_expand_globs_passes_plain_paths_through(self) -> None:
+        self.assertEqual(verify_ac._expand_globs(["src/a.ts"], None), ["src/a.ts"])
+
+    def test_expand_globs_unmatched_glob_is_literal(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(verify_ac._expand_globs(["nope/**/*.zz"], Path(d)), ["nope/**/*.zz"])
+
+
+class RunFileAliasTests(unittest.TestCase):
+    """CR0251: --file is the flag an agent reaches for; it aliases --story."""
+
+    def test_run_accepts_file_as_alias_for_story(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            story = Path(d) / "US0001-x.md"
+            # AC checks an absolute path so it passes regardless of the verifier's cwd - the
+            # test isolates the flag alias (rc 0 = parsed + ran), not path resolution.
+            story.write_text(f"# US0001: x\n\n### AC1: t\n\n- **Verify:** file {story}\n")
+            rc = _quiet_main(["run", "--file", str(story), "--dry-run"])
+            self.assertEqual(rc, 0)
+
+
 if __name__ == "__main__":
     unittest.main()

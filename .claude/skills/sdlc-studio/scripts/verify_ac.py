@@ -35,6 +35,7 @@ Trust boundary (verifiers run against possibly-untrusted content):
 from __future__ import annotations
 
 import argparse
+import glob
 import json
 import os
 import re
@@ -224,7 +225,7 @@ def run_verifier(expression: str, timeout: int, cwd: Path,
             return VerifierResult(False, "blocked", 2, "", _SHELL_DISABLED_MSG, 0)
         return _run_eval(expr, timeout, cwd, start)
     try:
-        kind, cmd = _build_command(expr, allow_fallback=allow_fallback)
+        kind, cmd = _build_command(expr, allow_fallback=allow_fallback, cwd=cwd)
     except ValueError as e:
         return VerifierResult(False, "invalid", 2, "", str(e), 0)
 
@@ -306,7 +307,24 @@ def lint_runner_available(expr: str, _which=None) -> str | None:
             f"rewrite the line, or ignore if verification runs elsewhere (advisory)")
 
 
-def _build_command(expr: str, allow_fallback: bool = False) -> tuple[str, list[str] | str]:
+def _expand_globs(paths: list[str], cwd) -> list[str]:
+    """Expand any glob path against cwd - the grep verb runs argv, with no shell to expand it.
+
+    An unmatched glob passes through literally so the tool reports an honest not-found (a real
+    failing AC) rather than silently matching nothing. A plain path is returned untouched.
+    """
+    out: list[str] = []
+    for p in paths:
+        if any(ch in p for ch in "*?["):
+            base = os.path.join(str(cwd), p) if cwd else p
+            hits = sorted(glob.glob(base, recursive=True))
+            out.extend(hits if hits else [p])
+        else:
+            out.append(p)
+    return out
+
+
+def _build_command(expr: str, allow_fallback: bool = False, cwd=None) -> tuple[str, list[str] | str]:
     """Translate a verifier expression into a subprocess command.
 
     Returns (kind, command) where command is a list for argv-style runs or
@@ -333,7 +351,7 @@ def _build_command(expr: str, allow_fallback: bool = False) -> tuple[str, list[s
         path = tail.strip('"\'')
         return "file", ["test", "-e", path]
     if head == "grep" and tail:
-        # grep <regex> <path_glob>
+        # grep <regex> <path>  - the path may be a glob (e.g. src/**/*.ts).
         try:
             args = shlex.split(tail)
         except ValueError as e:
@@ -341,8 +359,14 @@ def _build_command(expr: str, allow_fallback: bool = False) -> tuple[str, list[s
         if len(args) < 2:
             raise ValueError("grep: expected <regex> <path>")
         pattern, *paths = args
-        tool = "rg" if shutil.which("rg") else "grep"
-        if tool == "rg":
+        # The verb runs as an argv list (no shell), so a glob would otherwise reach rg/grep
+        # literally and always miss - the documented `src/**/*.ts` example matched present code
+        # only after this expansion, against cwd, before the tool sees the paths.
+        paths = _expand_globs(paths, cwd)
+        # rg (Rust regex) when present, else grep -rqE (POSIX ERE). Different dialects: keep grep
+        # patterns POSIX-ERE-portable, or install rg for consistent behaviour - see
+        # reference-verify.md.
+        if shutil.which("rg"):
             return "grep", ["rg", "-q", pattern] + paths
         return "grep", ["grep", "-rqE", pattern] + paths
     if head == "http" and tail:
@@ -1039,7 +1063,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     r = sub.add_parser("run", help="Run verifiers and update story files")
     r.add_argument("--dir", default="sdlc-studio/stories", help="Stories directory")
-    r.add_argument("--story", help="Single story file (overrides --dir)")
+    r.add_argument("--story", "--file", dest="story", help="Single story file (overrides --dir)")
     r.add_argument("--id", help="Single story by id, e.g. US0001 (resolved under --dir)")
     r.add_argument("--dry-run", action="store_true", help="Do not modify story files")
     r.add_argument("--fresh", action="store_true",
@@ -1074,7 +1098,7 @@ def build_parser() -> argparse.ArgumentParser:
     ln = sub.add_parser("lint", help="Advisory: flag non-DSL / mis-written Verify lines")
     ln.add_argument("--root", default=".", help="Repo root --dir is resolved under")
     ln.add_argument("--dir", default="sdlc-studio/stories", help="Stories directory")
-    ln.add_argument("--story", help="Single story file (overrides --dir)")
+    ln.add_argument("--story", "--file", dest="story", help="Single story file (overrides --dir)")
     ln.set_defaults(func=cmd_lint)
 
     tc = sub.add_parser("ts-check", help="Validate a test-spec's AC Coverage Matrix")

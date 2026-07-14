@@ -107,6 +107,13 @@ back to `shell`.
 | `eval <cmd> --threshold <f>` | run a graded eval tool; pass when its JSON `{"score": f}` >= threshold | `eval promptfoo eval -c judge.yaml --threshold 0.8` |
 | `shell <cmd>` | Arbitrary shell, pass on exit 0 | `shell test -f dist/bundle.js` |
 
+**The `grep` verb.** The path may be a glob (`src/**/*.ts`); it is expanded against the run
+directory before the tool sees it, so the documented example matches present code (an unmatched
+glob passes through literally, giving an honest not-found). The engine is ripgrep when present,
+else `grep -rqE` - **different regex dialects** (Rust regex vs POSIX ERE). For a verdict that is
+identical everywhere, keep `grep` patterns POSIX-ERE-portable (avoid `\d`, `\w`, `\b`, lookahead)
+or install ripgrep so every host uses the same engine.
+
 The `http` form builds a pipeline equivalent to:
 
 ```bash

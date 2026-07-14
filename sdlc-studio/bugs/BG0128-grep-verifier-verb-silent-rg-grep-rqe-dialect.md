@@ -1,6 +1,7 @@
 # BG0128: grep verifier verb: silent rg/grep -rqE dialect swap makes a verdict environment-dependent
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Low
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file
