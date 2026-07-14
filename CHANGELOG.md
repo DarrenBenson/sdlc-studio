@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-07-14
+
 ### Added
 
 - **A declared appetite bounds an unattended run (CR0225).** An agentic run had exactly two

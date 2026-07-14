@@ -6,7 +6,7 @@
 
 Ask for software in plain language. The team plans it, builds it, tests it, and proves it is done.
 
-**Version 4.0.0**
+**Version 4.1.0**
 
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Lint](https://github.com/DarrenBenson/sdlc-studio/actions/workflows/lint.yml/badge.svg)](https://github.com/DarrenBenson/sdlc-studio/actions/workflows/lint.yml)
