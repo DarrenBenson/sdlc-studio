@@ -45,6 +45,10 @@ artifact = _load()
 ERAS = ("v2", "v3")
 NEW_TYPES = ("epic", "story", "plan", "test-spec", "workflow", "bug", "cr", "rfc")
 FILE_TYPES = ("bug", "cr", "rfc")
+# The meta types (retro/review/handoff) bootstrap their own `_index.md` on first create, from
+# the same index templates and the same shared writer as the pipeline types - so their fresh
+# index must lint clean too. Kept beside NEW_TYPES so neither family goes unguarded.
+META_TYPES = ("retro", "review", "handoff")
 
 # The rules a CREATOR owns: it holds (or can derive) every input they need, so none of
 # them may fire on a freshly minted artefact - filled or not.
@@ -265,6 +269,9 @@ class MarkdownlintRoundTripTests(unittest.TestCase):
     type) is written from the index template as-is - reconcile only rewrites it to compact style
     on a later pass, so a fresh index that carries padded or tight delimiter rows lands failing
     the workspace lint. Linting the artefact alone missed this, so the class is pinned here too.
+    The index leg covers the meta types (retro/review/handoff) as well as the eight pipeline
+    types, because both families bootstrap their first index from the same templates through the
+    same writer - a regression to a meta index template must redden here too.
     """
 
     def setUp(self) -> None:
@@ -292,6 +299,21 @@ class MarkdownlintRoundTripTests(unittest.TestCase):
                         idx = Path(res["path"]).parent / "_index.md"
                         idx_errs = _markdownlint_errors(idx, _INDEX_RULES)
                         self.assertEqual(idx_errs, "", f"{type_}/{template} _index.md:\n{idx_errs}")
+
+    def test_created_meta_indexes_are_lint_clean(self) -> None:
+        """The meta types (retro/review/handoff) bootstrap their first `_index.md` from the same
+        templates through the same writer as the pipeline types - so that fresh index must lint
+        clean too. Without this leg a regression to a meta index template escapes the guard."""
+        for type_ in META_TYPES:
+            with self.subTest(type=type_):
+                with tempfile.TemporaryDirectory() as d:
+                    root = Path(d)
+                    _workspace(root, "v3")
+                    res = artifact.meta_new(root, type_, f"a {type_}")
+                    idx = Path(res["path"]).parent / "_index.md"
+                    self.assertTrue(idx.exists(), f"{type_}: meta index was not bootstrapped")
+                    idx_errs = _markdownlint_errors(idx, _INDEX_RULES)
+                    self.assertEqual(idx_errs, "", f"{type_} _index.md:\n{idx_errs}")
 
 
 if __name__ == "__main__":

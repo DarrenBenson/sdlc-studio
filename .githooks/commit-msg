@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# SDLC Studio commit-msg hook (opt-in).
+#
+# Warns when a commit subject names more than one work-item id (US/BG/CR) without a
+# `Refs: <id>` trailer disambiguating them. Such a shared commit is skipped by the
+# engagement floor's git leg - it cannot attribute a file to one id among several -
+# so an understated `Affects` would go uncaught. A `Refs:` trailer per owning id gives
+# the floor per-id attribution. This hook is the nudge to add one.
+#
+# Opt-in: it runs only in a clone that has enabled the tracked hooks
+#   (bash tools/enable-hooks.sh -> core.hooksPath=.githooks). It is NEVER forced on a
+#   consuming project.
+# Warns by default, does not block. To block instead (an explicit opt-in), export
+#   SDLC_ENGAGEMENT_STRICT=1 - then a bare multi-id subject fails the commit.
+# Degrades honestly: with no python3, no script, or an unreadable message, it exits 0
+#   and never blocks a legitimate commit.
+set -uo pipefail
+
+msg_file="${1:-}"
+[ -n "$msg_file" ] || exit 0
+
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+script="$repo_root/.claude/skills/sdlc-studio/scripts/engagement_floor.py"
+
+command -v python3 >/dev/null 2>&1 || exit 0
+[ -f "$script" ] || exit 0
+
+args=(check-commit-msg)
+[ "${SDLC_ENGAGEMENT_STRICT:-}" = "1" ] && args+=(--strict)
+args+=("$msg_file")
+
+# The script exits non-zero only under --strict on a genuine finding; a parse/read
+# failure inside it also exits 0, so a bad message never blocks.
+python3 "$script" "${args[@]}" || exit 1
+exit 0

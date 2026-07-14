@@ -84,6 +84,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The engagement floor's shared-commit gap is closable with a `Refs:` trailer (CR0239).**
+  The floor could not catch understatement in a commit that named two work-items, because git
+  cannot attribute a file to one id among several. A `Refs: <id>` line in the commit body is now
+  read as an explicit statement of which id owns the change: the git leg attributes that commit's
+  files to each id a trailer names, closing the case a bare co-named subject left open. The
+  attribution is strictly additive - keyed on the commit subject, a body trailer can only raise a
+  unit's file count, never lower it, so a conventional "see also" `Refs:` on a solo commit cannot
+  disarm that unit's own check. An opt-in `commit-msg` hook nudges an author to add a trailer when
+  a subject names several ids; it warns rather than blocks, and only blocks under an explicit
+  strict opt-in. Consuming projects are never forced onto the convention.
+
 - **A mechanical engagement floor: ship a multi-file change with no planning and the gate
   refuses (CR0229).** The v4 benchmark showed weaker models judging a multi-file, spec-touching
   ticket too small for ceremony and shipping the hidden-requirement defect the ceremony catches,

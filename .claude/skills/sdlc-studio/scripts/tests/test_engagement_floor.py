@@ -480,6 +480,202 @@ class BatchCommitUnderstatementLimitTests(unittest.TestCase):
             self.assertEqual(u["source_files"], 1)
 
 
+class RefsTrailerAttributionTests(unittest.TestCase):
+    """CR0239: a `Refs: <id>` commit trailer gives the git leg per-id attribution a bare co-named
+    subject cannot. When a commit body carries `Refs: US0301`, that commit's files attribute to
+    US0301 even though the subject also names US0302 - closing the shared-commit understatement
+    gap D0026 disclosed. A Refs trailer is trusted BECAUSE it is explicit, but it is ADDITIVE: it
+    can only ever raise a count, never lower one, and it never divides a commit's files between the
+    ids it names (each named id gets the full set)."""
+
+    def _git(self, root, *args):
+        subprocess.run(["git", "-C", str(root), *args], check=True,
+                       capture_output=True, text=True)
+
+    def _init_repo(self, root):
+        self._git(root, "init", "-q")
+        self._git(root, "config", "user.email", "t@t")
+        self._git(root, "config", "user.name", "t")
+
+    def _commit_three_files(self, root, subject, body=""):
+        (root / "src").mkdir(exist_ok=True)
+        for n in ("one", "two", "three"):
+            (root / "src" / f"{n}.py").write_text("x=1\n", encoding="utf-8")
+        self._git(root, "add", "-A")
+        msg = subject if not body else f"{subject}\n\n{body}"
+        self._git(root, "commit", "-q", "-m", msg)
+
+    def test_refs_trailer_attributes_a_shared_commit_and_violates(self):
+        # THE red-then-green case: a commit whose SUBJECT names US0301 and US0302, three source
+        # files, body `Refs: US0301`, and US0301 carries NO plan. Before Refs, the batch-skip fed
+        # US0301 zero files and it passed (understatement uncaught). After Refs, all three files
+        # attribute to US0301 -> multi-file, no plan -> it VIOLATES.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._init_repo(root)
+            _write_unit(root, "story", 301, status="Done")  # no Affects, no AC
+            _write_unit(root, "story", 302, status="Done", ac=True)  # planned, not our concern
+            self._commit_three_files(root, "US0301 US0302: batch across three files",
+                                     body="Refs: US0301")
+            units = _units(root)
+            u = units["US0301"]
+            self.assertEqual(u["source_files"], 3)
+            self.assertTrue(u["multi_file"])
+            self.assertTrue(u["violation"])
+            self.assertEqual(u["kind"], "unplanned")
+
+    def test_id_not_named_in_refs_is_still_skipped(self):
+        # US0302 is co-named in the subject but NOT in the Refs trailer: the floor cannot attribute
+        # the commit's files to it (only Refs makes a shared commit attributable), so its git leg
+        # stays empty - the pre-CR0239 behaviour, unchanged.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._init_repo(root)
+            self._commit_three_files(root, "US0301 US0302: batch across three files",
+                                     body="Refs: US0301")
+            ef = _load()
+            self.assertEqual(len(ef._git_touched_source_files(root, "US0301")), 3)
+            self.assertEqual(ef._git_touched_source_files(root, "US0302"), set())
+
+    def test_multi_id_commit_without_refs_still_skips(self):
+        # No Refs trailer at all: the shared commit still feeds NO id (F3 batch-skip), unchanged.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._init_repo(root)
+            self._commit_three_files(root, "US0301 US0302: batch across three files")
+            ef = _load()
+            self.assertEqual(ef._git_touched_source_files(root, "US0301"), set())
+            self.assertEqual(ef._git_touched_source_files(root, "US0302"), set())
+
+    def test_refs_naming_two_ids_gives_each_the_full_set(self):
+        # `Refs: US0301, US0302` -> BOTH ids get all three files. Refs never divides a commit's
+        # files between the ids it names, so it cannot LOWER a count below the real footprint.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._init_repo(root)
+            self._commit_three_files(root, "US0301 US0302: shared change",
+                                     body="Refs: US0301, US0302")
+            ef = _load()
+            self.assertEqual(len(ef._git_touched_source_files(root, "US0301")), 3)
+            self.assertEqual(len(ef._git_touched_source_files(root, "US0302")), 3)
+
+    def test_refs_is_additive_and_never_lowers_a_solo_count(self):
+        # A solo commit (subject names only US0301) touching three files feeds US0301 three files.
+        # A self-naming Refs trailer must not change that - Refs only ever adds attribution.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._init_repo(root)
+            self._commit_three_files(root, "US0301: solo change", body="Refs: US0301")
+            ef = _load()
+            self.assertEqual(len(ef._git_touched_source_files(root, "US0301")), 3)
+
+    def test_refs_grammar_accepts_multiple_lines_and_dashed_ids(self):
+        # Grammar: repeatable `Refs:` lines, and the dashed id spelling (`US-0301`) matches too.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._init_repo(root)
+            self._commit_three_files(root, "US0301 US0302: shared change",
+                                     body="Refs: US-0301\nRefs: US0302")
+            ef = _load()
+            self.assertEqual(len(ef._git_touched_source_files(root, "US0301")), 3)
+            self.assertEqual(len(ef._git_touched_source_files(root, "US0302")), 3)
+
+    def test_solo_subject_with_foreign_refs_still_counts_the_solo_footprint(self):
+        # THE safety hole (critic reject). A commit whose SUBJECT names only US0301 (a solo
+        # commit), body carrying a see-also `Refs: US0302` (a DIFFERENT id), touching three files;
+        # US0301 declares one. The `Refs:` convention means see-also in universal git usage, so an
+        # author WILL write this. The solo cross-check must still count all three files and VIOLATE
+        # - a body `Refs:` naming a foreign id must never disarm the subject id's own attribution.
+        # (Before the subject-line batch test, the foreign id inflated the full-message batch count
+        # and dropped US0301 to zero: understatement escaped a case the pre-Refs floor caught.)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._init_repo(root)
+            _write_unit(root, "story", 301, status="Done", affects=["src/one.py"])
+            self._commit_three_files(root, "US0301: solo change", body="Refs: US0302")
+            ef = _load()
+            self.assertEqual(len(ef._git_touched_source_files(root, "US0301")), 3)
+            u = _units(root)["US0301"]
+            self.assertEqual(u["source_files"], 3)
+            self.assertTrue(u["multi_file"])
+            self.assertTrue(u["violation"])
+
+    def test_refs_never_lowers_count_below_the_no_refs_baseline(self):
+        # The load-bearing invariant, proven across the matrix: for EVERY `Refs:` body variant and
+        # every subject shape, a unit's git-attributed source-file count is never below the count it
+        # gets with NO `Refs:` line at all (the pre-convention baseline). A trailer only ever raises.
+        subjects = ("US0301: solo change", "US0301 US0302: shared change")
+        bodies = ("Refs: US0301", "Refs: US0302", "Refs: US0301, US0302", "Refs: US0399", "")
+        ef = _load()
+        for subject in subjects:
+            for target in ("US0301", "US0302"):
+                # Baseline: the same subject with no Refs line at all.
+                with tempfile.TemporaryDirectory() as d0:
+                    base = Path(d0)
+                    self._init_repo(base)
+                    self._commit_three_files(base, subject)
+                    baseline = len(ef._git_touched_source_files(base, target))
+                for body in bodies:
+                    with tempfile.TemporaryDirectory() as d1:
+                        root = Path(d1)
+                        self._init_repo(root)
+                        self._commit_three_files(root, subject, body=body)
+                        got = len(ef._git_touched_source_files(root, target))
+                        self.assertGreaterEqual(
+                            got, baseline,
+                            f"{target} lowered below baseline: subject={subject!r} "
+                            f"body={body!r} got={got} baseline={baseline}")
+
+
+class CommitMsgCheckTests(unittest.TestCase):
+    """CR0239 commit-msg hook brain: `check_commit_message` warns when a subject names more than
+    one judged id WITHOUT a Refs: trailer covering them - the nudge to add Refs so the floor can
+    attribute per id. It never blocks unless strict, and never blocks on a message it cannot make
+    sense of (degrade honestly)."""
+
+    def _check(self, text, strict=False):
+        return _load().check_commit_message(text, strict=strict)
+
+    def test_multi_id_subject_without_refs_warns(self):
+        code, warning = self._check("US0301 US0302: batch fix")
+        self.assertEqual(code, 0)  # warn, do not block
+        self.assertIsNotNone(warning)
+        self.assertIn("US0301", warning)
+        self.assertIn("US0302", warning)
+
+    def test_multi_id_subject_without_refs_blocks_under_strict(self):
+        code, warning = self._check("US0301 US0302: batch fix", strict=True)
+        self.assertEqual(code, 1)
+        self.assertIsNotNone(warning)
+
+    def test_multi_id_subject_fully_covered_by_refs_is_clean(self):
+        code, warning = self._check("US0301 US0302: batch fix\n\nRefs: US0301, US0302", strict=True)
+        self.assertEqual(code, 0)
+        self.assertIsNone(warning)
+
+    def test_multi_id_subject_partially_covered_names_the_gap(self):
+        code, warning = self._check("US0301 US0302: batch fix\n\nRefs: US0301")
+        self.assertEqual(code, 0)
+        self.assertIsNotNone(warning)
+        self.assertIn("US0302", warning)
+        self.assertNotIn("US0301", warning)  # covered ids are not flagged
+
+    def test_solo_id_subject_is_clean(self):
+        code, warning = self._check("US0301: solo fix", strict=True)
+        self.assertEqual(code, 0)
+        self.assertIsNone(warning)
+
+    def test_no_judged_id_is_clean(self):
+        code, warning = self._check("chore: tidy up", strict=True)
+        self.assertEqual(code, 0)
+        self.assertIsNone(warning)
+
+    def test_comment_lines_are_ignored_when_finding_the_subject(self):
+        # git may prepend a blank/comment scaffold; the subject is the first real line.
+        code, warning = self._check("# please enter the commit message\n\nUS0301 US0302: fix")
+        self.assertIsNotNone(warning)
+
+
 class ForwardCutoffTests(unittest.TestCase):
     """F2 (critic reject): a forward cutoff (adopt_after above the highest existing id) is a
     silent whole-project disarm, worse than judgement mode. It must be flagged, not honoured

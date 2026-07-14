@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 1 |
+| Open | 0 |
 | In Progress | 0 |
-| Fixed | 41 |
+| Fixed | 42 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 0 |
@@ -87,7 +87,7 @@
 | [BG0118](BG0118-engagement-floor-over-refuses-an-extension-less-real.md) | engagement-floor over-refuses an extension-less real file in Affects (Makefile, Dockerfile, dotfiles) | Fixed | Low | 2026-07-13 | 2026-07-13 |
 | [BG0119](BG0119-engagement-floor-uses-two-different-file-recognisers-for.md) | engagement-floor uses two different file recognisers for the declared-boolean and the file-count | Fixed | Low | 2026-07-13 | 2026-07-13 |
 | [BG0120](BG0120-the-index-writer-emits-md060-table-errors-on.md) | the index writer emits MD060 table errors on a freshly created index | Fixed | Low | 2026-07-13 | 2026-07-13 |
-| [BG0121](BG0121-the-meta-index-bootstrap-path-lacks-the-blank.md) | the meta-index bootstrap path lacks the blank-collapse and the index lint guard skips meta templates | Open | Low | 2026-07-14 | 2026-07-14 |
+| [BG0121](BG0121-the-meta-index-bootstrap-path-lacks-the-blank.md) | the meta-index bootstrap path lacks the blank-collapse and the index lint guard skips meta templates | Fixed | Low | 2026-07-14 | 2026-07-14 |
 
 ## Archived Releases
 

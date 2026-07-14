@@ -1,6 +1,7 @@
 # BG0121: the meta-index bootstrap path lacks the blank-collapse and the index lint guard skips meta templates
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Low
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file

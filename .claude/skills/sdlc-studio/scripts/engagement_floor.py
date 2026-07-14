@@ -22,11 +22,14 @@ The exact guarantee (D0026 - do not overstate it):
     are omission-equivalent and do not count.
   * UNDERSTATEMENT IN A SOLO-ID COMMIT is caught. Where a unit declares one file but its commit
     (naming only that unit) touched more, the git cross-check raises the count and the floor fires.
-  * UNDERSTATEMENT IN A SHARED COMMIT is NOT caught, and this is a known limit, not a bug. When a
-    unit shares its commit with another judged id, the batch is skipped (git cannot attribute a
-    file to one id among several without a commit-id convention), so an understated declaration
-    stands. Closing this needs the per-id commit convention tracked as CR0239. The floor does not
-    claim to catch it.
+  * UNDERSTATEMENT IN A SHARED COMMIT was a disclosed limit, now closable with a commit-id
+    convention. When a unit shares its commit with another judged id, git cannot attribute a file
+    to one id among several, so a bare co-named subject is still skipped. But a `Refs: <id>` trailer
+    in the commit body is an explicit statement of which id owns the change: the git leg reads it
+    and attributes that commit's files to each id a trailer names, even in a shared commit. So the
+    understatement IS caught once the owning unit carries a `Refs:` trailer. Absent the trailer the
+    shared commit is still skipped (the pre-convention behaviour, unchanged); the `check-commit-msg`
+    hook nudges an author to add one.
 
 The two file-count signals are the declared `Affects` field and the git cross-check, and they
 share a blind spot (git sees a unit only when its commit solely names its id), so requiring the
@@ -47,9 +50,12 @@ Escape valves, each auditable, none a silent judgement:
     waiver is a decisions-log row with a rationale, greppable and machine-detectable, not a silent
     config boolean.
 
-The git leg does not attribute a BATCH commit (one naming several ids) to any of them: it cannot
-know which file belongs to which id, so such a commit feeds no id's count (the declared `Affects`
-carries a genuinely multi-file unit instead).
+The git leg does not attribute a BATCH commit (one whose SUBJECT names several ids) to any of them
+UNLESS a `Refs: <id>` trailer names the id: it otherwise cannot know which file belongs to which id,
+so a bare batch commit feeds no id's count (the declared `Affects` carries a genuinely multi-file
+unit instead). The batch test looks at the subject line only, so a body `Refs:` trailer can only ADD
+attribution to the ids it names, never remove the solo cross-check from a commit whose subject names
+one id - the explicit per-id ownership statement lifts the skip, it never imposes one.
 
 Read-only; pure stdlib core (git is a soft dependency: absent, the floor rests on the declared
 `Affects` signal alone).
@@ -93,6 +99,11 @@ FLOOR_THRESHOLD = 1  # "multi-file" = strictly more than one source file
 WAIVER_RULE = "rule:engagement-floor"           # the whole-project opt-out subject
 _PLAN_LINK_RE = re.compile(r"\bPL-?\d{4}\b")     # a reference to a plan artefact
 _JUDGED_ID_RE = re.compile(r"\b((?:US|BG|CR)-?\d{4})\b")  # a judged-type id in a commit message
+# A `Refs:` commit trailer line. Grammar: a line beginning `Refs:` (case-insensitive), then one or
+# more judged ids separated by commas and/or whitespace; repeatable across lines. A trailer is an
+# explicit statement of which id owns the change, so the git leg trusts it to attribute a shared
+# commit's files per id where a bare co-named subject cannot be apportioned.
+_REFS_LINE_RE = re.compile(r"^[ \t]*Refs:[ \t]*(.+)$", re.MULTILINE | re.IGNORECASE)
 _REC = "\x1e"    # per-commit record separator in the git format
 _MSGEND = "\x1f"  # message/file-list separator within a record
 _GIT_TIMEOUT = 30
@@ -118,13 +129,34 @@ def _mode_and_cutoff(root: Path) -> tuple[str, int | None]:
     return mode, cutoff
 
 
+def _refs_ids(message: str) -> set[str]:
+    """The judged-type ids named in a commit's `Refs:` trailer line(s), normalised. Empty when the
+    message carries no such trailer. Both the comma-list and repeated-line spellings accumulate, so
+    `Refs: US0301, US0302` and two `Refs:` lines mean the same set."""
+    ids: set[str] = set()
+    for m in _REFS_LINE_RE.finditer(message):
+        for i in _JUDGED_ID_RE.findall(m.group(1)):
+            ids.add(sdlc_md.norm_id(i))
+    return ids
+
+
 def _git_touched_source_files(root: Path, rid: str) -> set[str]:
     """Source files the commits mentioning `rid` touched (`git log --grep`). Empty when not a git
     repo or git is unavailable - the floor then rests on the declared `Affects` alone.
 
-    A BATCH commit (one whose message names more than one judged-type id) is skipped: git cannot
-    know which of its files belongs to which id, so attributing the whole file set to each would
-    inflate every id in the batch. Such a unit is carried by its declared `Affects` instead.
+    A commit's files attribute to `rid` when EITHER a `Refs: <id>` trailer names `rid` (an explicit
+    per-id ownership statement, so a shared commit becomes attributable), OR the commit SUBJECT LINE
+    names at most one judged id (the original solo cross-check). A BATCH commit - a subject naming
+    more than one judged id, with no `Refs:` trailer naming `rid` - is still skipped: git cannot
+    apportion its files by id, so attributing the whole set to each would inflate every id in it.
+
+    The batch test reads the SUBJECT LINE only, never the body. This is what makes a `Refs:` trailer
+    strictly ADDITIVE: because a body `Refs:` line cannot enlarge the subject's judged-id count, it
+    can never turn a solo-subject commit into a pseudo-batch and so strip the subject id's own
+    attribution - the failure that would void the solo-id cross-check for the conventional see-also
+    use of `Refs:`. A trailer only ever raises a count, never lowers one, for any body content; and
+    each id it names gets the commit's FULL file set (never a divided share), so it cannot understate
+    a real footprint either.
     """
     # Match either commit-message spelling of the id (`CR0234` and `CR-0234`), since a repo's
     # convention may differ from its filename convention - a spelling mismatch would silently
@@ -146,8 +178,17 @@ def _git_touched_source_files(root: Path, rid: str) -> set[str]:
         if _MSGEND not in record:
             continue
         message, _, file_blob = record.partition(_MSGEND)
-        distinct = {sdlc_md.norm_id(i) for i in _JUDGED_ID_RE.findall(message)}
-        if len(distinct) > 1:  # a batch commit: cannot apportion its files, so it feeds no id
+        refs = _refs_ids(message)
+        subject = message.split("\n", 1)[0]
+        subject_ids = {sdlc_md.norm_id(i) for i in _JUDGED_ID_RE.findall(subject)}
+        # Attribute when a `Refs:` trailer names this id (explicit ownership of a shared commit),
+        # OR when the SUBJECT LINE names at most one judged id (the solo cross-check). The batch
+        # test reads the subject ONLY, never the body: a body `Refs:` line can then only ADD
+        # attribution (raise-direction) - it can never inflate a solo-subject commit into a
+        # pseudo-batch and so strip the subject id's own count. A genuine multi-id SUBJECT with no
+        # trailer naming us is still skipped (git cannot apportion its files). So a trailer can
+        # raise a count but never lower one, for any body content.
+        if norm not in refs and len(subject_ids) > 1:
             continue
         for line in file_blob.splitlines():
             f = line.strip()
@@ -383,6 +424,71 @@ def remedy_detail(result: dict) -> str:
             f"{REMEDY_WAIVER}")
 
 
+def _subject_line(message: str) -> str:
+    """The commit subject: the first line that is neither blank nor a git comment (`#`). git may
+    scaffold a message file with instructions and, in verbose mode, a diff; both start `#`."""
+    for line in message.splitlines():
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#"):
+            return stripped
+    return ""
+
+
+def _strip_comments(message: str) -> str:
+    """Drop git comment lines (`#`) so a `Refs:` in the scaffolding cannot be mistaken for one the
+    author wrote, and a commented-out subject cannot be mistaken for the real one."""
+    return "\n".join(ln for ln in message.splitlines() if not ln.lstrip().startswith("#"))
+
+
+def check_commit_message(message: str, *, strict: bool = False) -> tuple[int, str | None]:
+    """The commit-msg hook's decision, as pure logic (so it is unit-testable without a hook).
+
+    Warns when the subject names more than one judged id and a `Refs:` trailer does not cover them
+    all - the case where the engagement floor's git leg would otherwise skip the commit and an
+    understated `Affects` would stand. The nudge is to add `Refs: <id>` per owning id.
+
+    Returns (exit_code, warning). A clean message returns (0, None). A warning returns its text and
+    exits 1 only under `strict` (an explicit opt-in); otherwise it exits 0 - the hook advises, it
+    does not block on a heuristic. Any message this cannot parse returns (0, None): the hook must
+    never block a legitimate commit on its own confusion.
+    """
+    body = _strip_comments(message)
+    subject = _subject_line(message)
+    subject_ids = {sdlc_md.norm_id(i) for i in _JUDGED_ID_RE.findall(subject)}
+    if len(subject_ids) <= 1:
+        return 0, None  # solo or no judged id: the floor handles it, nothing to nudge
+    uncovered = sorted(subject_ids - _refs_ids(body))
+    if not uncovered:
+        return 0, None  # every co-named id has an explicit Refs trailer
+    warning = (
+        "commit subject names more than one work-item id but "
+        + ("some lack" if len(uncovered) < len(subject_ids) else "none carry")
+        + " a Refs: trailer: " + ", ".join(uncovered) + ". Without it the engagement floor cannot "
+        "attribute this commit's files per id (a shared commit is skipped), so an understated "
+        "Affects would go uncaught. Add a trailer line per owning id, e.g. `Refs: "
+        + uncovered[0] + "`."
+    )
+    return (1 if strict else 0), warning
+
+
+def cmd_check_commit_msg(args: argparse.Namespace) -> int:
+    """Read a commit message file (the argument git passes a commit-msg hook) and apply
+    `check_commit_message`. Degrades honestly: an unreadable file is not the author's fault, so it
+    warns to stderr and exits 0 (never blocks) regardless of strict."""
+    try:
+        message = Path(args.file).read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        print(f"engagement floor (commit-msg): could not read {args.file}: {exc}", file=sys.stderr)
+        return 0
+    code, warning = check_commit_message(message, strict=args.strict)
+    if warning:
+        print(f"engagement floor (commit-msg): {warning}", file=sys.stderr)
+        if code != 0:
+            print("  (blocked by strict mode; commit with --no-verify to override, or add Refs:)",
+                  file=sys.stderr)
+    return code
+
+
 def cmd_check(args: argparse.Namespace) -> int:
     """Run the floor; exit non-zero on a violation unless the project is in judgement mode."""
     result = detect(args.root)
@@ -420,6 +526,12 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--root", default=".", help="Repo root (default: .)")
     c.add_argument("--format", choices=("text", "json"), default="text")
     c.set_defaults(func=cmd_check)
+    m = sub.add_parser("check-commit-msg",
+                       help="Commit-msg hook: warn on a multi-id subject with no Refs: trailer.")
+    m.add_argument("file", help="Path to the commit message file git passes the hook.")
+    m.add_argument("--strict", action="store_true",
+                   help="Block (exit 1) instead of warning - an explicit opt-in.")
+    m.set_defaults(func=cmd_check_commit_msg)
     sdlc_md.add_global_root(parser)
     return parser
 

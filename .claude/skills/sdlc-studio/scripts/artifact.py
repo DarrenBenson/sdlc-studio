@@ -495,22 +495,13 @@ def _render_meta(type_: str, disp: str, title: str, today: str, f: dict | None =
 def _ensure_meta_index(root: Path, rel: str, type_: str, today: str) -> bool:
     """Create `<rel>/_index.md` from `templates/indexes/<type>.md` when it is missing, so a
     project's FIRST retro/review/handoff is INDEXED rather than a missing-index reconcile
-    drift item the operator then clears by hand. Mirrors `file_finding.ensure_index` (pipeline
-    types) and `handoff._ensure_index`. Idempotent; never clobbers an existing index. Returns
-    True iff it created the file."""
+    drift item the operator then clears by hand. Delegates to `file_finding.write_empty_index`,
+    the one index-writer that also backs `file_finding.ensure_index` (pipeline types), so a
+    meta index is rendered identically to a pipeline one - carrying the same blank-collapse.
+    Idempotent; never clobbers an existing index. Returns True iff it created the file."""
     idx = root / rel / "_index.md"
-    if idx.exists():
-        return False
     tmpl = _skill_root() / "templates" / "indexes" / f"{type_}.md"
-    if not tmpl.exists():
-        return False
-    text = re.sub(r"^<!--.*?-->\n+", "", tmpl.read_text(encoding="utf-8"),
-                  count=1, flags=re.DOTALL)
-    text = text.replace("{{last_updated}}", today)
-    lines = [ln for ln in text.splitlines() if "{{" not in ln]  # drop the sample row
-    idx.parent.mkdir(parents=True, exist_ok=True)
-    idx.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
-    return True
+    return file_finding.write_empty_index(idx, tmpl, today)
 
 
 def meta_new(repo_root: Path | str, type_: str, title: str, fields: dict | None = None,

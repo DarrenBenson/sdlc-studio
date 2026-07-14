@@ -47,18 +47,19 @@ def index_template_path(type_: str) -> Path:
     return Path(__file__).resolve().parent.parent / "templates" / "indexes" / f"{type_}.md"
 
 
-def ensure_index(repo_root: Path | str, type_: str, today: str) -> bool:
-    """Create `<dir>/_index.md` from `templates/indexes/<type>.md` when missing.
+def write_empty_index(idx: Path, tmpl: Path, today: str) -> bool:
+    """Materialise an empty `_index.md` at `idx` from index template `tmpl` when missing.
 
-    The canonical index-bootstrap, shared by `artifact new` (lazy, first-use) and `init`
-    (front-loaded). Yields a clean *empty* index: summary counts zeroed, data-table headers
-    kept (so `append_index_row` works), template sample rows/headings dropped (real content
-    never carries `{{ }}`). Idempotent: never clobbers an existing index. Returns True iff
-    it created the file."""
-    idx = Path(repo_root) / sdlc_md.ARTIFACT_TYPES[type_][0] / "_index.md"
+    The single index-writer both bootstrap paths share - `ensure_index` (pipeline types) and
+    `artifact._ensure_meta_index` (retro/review/handoff) - so the render is identical for
+    every index. Yields a clean *empty* index: template comment stripped, `last_updated`
+    stamped, summary counts zeroed, data-table headers kept (so `append_index_row` works),
+    template sample rows/headings dropped (real content never carries `{{ }}`), and any double
+    blank a dropped mid-body sample row would leave collapsed to one (MD012). Idempotent:
+    never clobbers an existing index, and a no-op when the template is missing. Returns True
+    iff it created the file."""
     if idx.exists():
         return False
-    tmpl = index_template_path(type_)
     if not tmpl.exists():
         return False
     text = tmpl.read_text(encoding="utf-8")
@@ -76,6 +77,18 @@ def ensure_index(repo_root: Path | str, type_: str, today: str) -> bool:
     idx.parent.mkdir(parents=True, exist_ok=True)
     idx.write_text("\n".join(collapsed).rstrip() + "\n", encoding="utf-8")
     return True
+
+
+def ensure_index(repo_root: Path | str, type_: str, today: str) -> bool:
+    """Create `<dir>/_index.md` from `templates/indexes/<type>.md` when missing.
+
+    The canonical pipeline-index bootstrap, shared by `artifact new` (lazy, first-use) and
+    `init` (front-loaded). Delegates the render to `write_empty_index` (also used by
+    `artifact._ensure_meta_index`), so every fresh index - pipeline or meta - is written the
+    same way. Idempotent: never clobbers an existing index. Returns True iff it created the
+    file."""
+    idx = Path(repo_root) / sdlc_md.ARTIFACT_TYPES[type_][0] / "_index.md"
+    return write_empty_index(idx, index_template_path(type_), today)
 
 
 def _slug(title: str) -> str:

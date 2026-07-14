@@ -173,6 +173,24 @@ python3 .claude/skills/sdlc-studio/scripts/gate.py --root . || {
 Any runner that can execute a shell command can run the gate; nothing here is
 GitHub-specific.
 
+### Opt-in commit-msg nudge (engagement floor)
+
+A separate, opt-in `commit-msg` hook warns when a commit subject names more than
+one work-item id (US/BG/CR) without a `Refs: <id>` trailer disambiguating them.
+The trailer lets the engagement floor attribute a shared commit's files per id
+(otherwise such a commit is skipped and an understated `Affects` goes uncaught).
+It warns and does not block by default; export `SDLC_ENGAGEMENT_STRICT=1` to make
+it block instead. Wire it into any project's own commit-msg hook:
+
+```bash
+# .git/hooks/commit-msg  ($1 is the message file git passes in)
+python3 .claude/skills/sdlc-studio/scripts/engagement_floor.py check-commit-msg "$1"
+```
+
+It degrades honestly: with no git, no script, or an unparseable message it exits
+without blocking. See `reference-config.md` (Engagement Floor) for the trailer
+grammar and the strict opt-in.
+
 ## See also
 
 - `reference-scripts.md` - the script catalogue
