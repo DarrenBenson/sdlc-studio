@@ -5,6 +5,7 @@
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
+> **Affects:** .claude/skills/sdlc-studio/scripts/review_prep.py
 
 ## Summary
 
