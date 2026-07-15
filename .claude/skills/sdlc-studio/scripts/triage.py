@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from datetime import date
 from pathlib import Path
 
 try:
@@ -32,16 +33,13 @@ except ImportError:  # invoked from inside scripts/
     from lib import sdlc_md
 
 import artifact
+import persona_resolve
 
 
 # The status an Issue moves to once it is triaged and being delivered via its bugs. It reaches its
 # TERMINAL status (Resolved) only by derivation (G2), when the bugs are all resolved - this is just
 # the "now being worked" signal, the analogue of refine moving a CR to In Progress.
 _WORKING_STATUS = "Triaged"
-
-# The review seats a triage consult surfaces open questions to - the Three Amigos, by role. QA
-# leads a triage (is it reproducible? what is the real defect?), so the order puts qa first.
-_AMIGO_ROLES = ("qa", "engineering", "product")
 
 
 def parse_bug_spec(spec: str) -> tuple[str, int, str, str | None]:
@@ -138,7 +136,8 @@ def _decompose(root: Path, iid: str, ipath: Path,
 
 def triage(repo_root: Path | str, issue_id: str,
            bugs: list[tuple[str, int, str, str | None]],
-           questions: list[str] | None = None, dry_run: bool = False) -> dict:
+           questions: list[str] | None = None, dry_run: bool = False,
+           skip_personas: bool = False) -> dict:
     """Triage `issue_id` into `bugs` (title, points, severity, affects?). Writes the bidirectional
     links and moves the Issue to its working state.
 
@@ -177,9 +176,15 @@ def triage(repo_root: Path | str, issue_id: str,
     iid = sdlc_md.extract_record_id(ipath.stem) or issue_id
     total = sum(p for _, p, _, _ in bugs)
     open_questions = [q for q in (questions or []) if q.strip()]
+    # Resolve the Three-Amigos panel UP FRONT (read-only), QA-LED: a triage is where "is this
+    # reproducible? what is the real defect?" get answered BY the seats, so a broken project seat
+    # card fails before anything is minted (triage's fail-empty discipline). `--skip-personas`
+    # bypasses resolution entirely (byte-equivalent, no framing).
+    amigo_consult = persona_resolve.consult(root, persona_resolve.TRIAGE_PANEL, open_questions,
+                                            skip_personas=skip_personas)
     if dry_run:
         return {"issue": iid, "bugs": [t for t, _, _, _ in bugs], "points": total,
-                "open_questions": open_questions, "dry_run": True}
+                "open_questions": open_questions, "consult": amigo_consult, "dry_run": True}
 
     bug_ids = _decompose(root, iid, ipath, bugs)
     # close the loop on the Issue's status: it is now being DELIVERED via its bugs, so it moves to
@@ -196,8 +201,15 @@ def triage(repo_root: Path | str, issue_id: str,
             moved_to = _WORKING_STATUS
         except (ValueError, FileNotFoundError):
             pass
+    # Record the consult on the Issue itself (audit trail): which seats were consulted and the open
+    # questions. Best-effort - the triage stands even if the record write fails.
+    if amigo_consult.get("questions"):
+        try:
+            persona_resolve.record_consult(ipath, amigo_consult, date.today().isoformat())
+        except (OSError, ValueError):
+            pass
     return {"issue": iid, "bugs": bug_ids, "points": total, "status": moved_to,
-            "open_questions": open_questions, "amigo_roles": list(_AMIGO_ROLES),
+            "open_questions": open_questions, "consult": amigo_consult,
             "dry_run": False}
 
 
@@ -225,8 +237,9 @@ def cmd_show(args: argparse.Namespace) -> int:
 def cmd_apply(args: argparse.Namespace) -> int:
     try:
         bugs = [parse_bug_spec(b) for b in (args.bug or [])]
-        result = triage(args.root, args.issue, bugs, questions=args.question, dry_run=args.dry_run)
-    except (ValueError, FileNotFoundError) as exc:
+        result = triage(args.root, args.issue, bugs, questions=args.question, dry_run=args.dry_run,
+                        skip_personas=getattr(args, "skip_personas", False))
+    except (ValueError, FileNotFoundError, persona_resolve.RenderError) as exc:
         print(f"triage refused: {exc}", file=sys.stderr)
         return 2
     if args.format == "json":
@@ -239,9 +252,12 @@ def cmd_apply(args: argparse.Namespace) -> int:
         print(f"  {result['issue']} moved to {result['status']} - it reaches Resolved only by "
               f"derivation, when its bugs are all resolved")
     if result.get("open_questions"):
-        roles = ", ".join(result.get("amigo_roles", []))
+        consult = result.get("consult") or {}
+        panel = ", ".join(f"{p['seat']} ({p['role']})" for p in consult.get("panel", []))
+        lead = consult.get("lead")
+        lead_note = f"{lead} leads; " if lead else ""
         print(f"  {len(result['open_questions'])} open question(s) for the Three-Amigos consult "
-              f"({roles}) - settle before building:")
+              f"({lead_note}{panel}) - settle before building:")
         for q in result["open_questions"]:
             print(f"    - {q}")
     return 0
@@ -256,8 +272,10 @@ def build_parser() -> argparse.ArgumentParser:
                    help="a bug in the triage: 'title|points', '|severity', '|severity|affects'. "
                         "Repeatable. Points must be on the Fibonacci scale.")
     a.add_argument("--question", action="append", metavar="TEXT",
-                   help="an open question for the Three-Amigos consult, surfaced at apply time. "
-                        "Repeatable.")
+                   help="an open question for the Three-Amigos consult, surfaced at apply time and "
+                        "directed at the resolved seats (QA-led). Repeatable.")
+    a.add_argument("--skip-personas", action="store_true",
+                   help="force the generic path: resolve no amigo seats, no framing (byte-equivalent)")
     a.add_argument("--dry-run", action="store_true", help="validate and report; mint nothing")
     a.add_argument("--root", default=".")
     sdlc_md.add_format_arg(a)

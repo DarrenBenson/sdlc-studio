@@ -58,6 +58,12 @@ Ids and index rows are **tool-allocated** - never hand-author `IS0001-...md` or 
 - **Won't Fix / Closed / Superseded** - abandonment terminals; an Issue that is not a real defect,
   a duplicate, or superseded. These close WITHOUT children, because they assert no delivery.
 
+## The triage consult
+
+When you triage with `--question`, the Three Amigos are consulted - QA-led, resolved to the actual
+named seats (yours, or the shipped defaults), with the questions and seats recorded on the Issue as
+an audit trail. See `help/triage.md`.
+
 ## When it is really a change, not a defect
 
 If triage reveals the report is a feature/behaviour change rather than a bug, do NOT force it into

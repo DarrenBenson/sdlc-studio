@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from datetime import date
 from pathlib import Path
 
 try:
@@ -27,6 +28,7 @@ except ImportError:  # invoked from inside scripts/
     from lib import sdlc_md
 
 import artifact
+import persona_resolve
 
 
 # The T-shirt Size an epic is born with, from the story-point total it decomposes into. A coarse
@@ -100,13 +102,9 @@ def parse_story_spec(spec: str) -> tuple[str, int, str | None]:
 # the "now being worked" signal. A request already terminal or without a working state is left be.
 _WORKING_STATUS = {"cr": "In Progress", "rfc": "In Review"}
 
-# The review seats a refine consult surfaces open questions to - the Three Amigos, by role.
-_AMIGO_ROLES = ("engineering", "product", "qa")
-
-
 def refine(repo_root: Path | str, request_id: str, epic_title: str,
            stories: list[tuple[str, int, str | None]], questions: list[str] | None = None,
-           dry_run: bool = False) -> dict:
+           dry_run: bool = False, skip_personas: bool = False) -> dict:
     """Decompose `request_id` into an epic titled `epic_title` holding `stories`
     (title, points, affects?). Writes the bidirectional links and rolls the epic's point total.
 
@@ -135,10 +133,16 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str,
     rid = sdlc_md.extract_record_id(rpath.stem) or request_id
     total = sum(p for _, p, _ in stories)
     open_questions = [q for q in (questions or []) if q.strip()]
+    # Resolve the Three-Amigos panel UP FRONT (read-only), engineering-led: a refine is where the
+    # request's open questions get answered BY the seats, so a broken project seat card is a
+    # refine-blocking problem, caught before anything is minted (refine's fail-empty discipline).
+    # `--skip-personas` bypasses resolution entirely (byte-equivalent, no framing), the escape hatch.
+    amigo_consult = persona_resolve.consult(root, persona_resolve.REFINE_PANEL, open_questions,
+                                            skip_personas=skip_personas)
     if dry_run:
         return {"request": rid, "epic": "(dry-run)", "epic_size": _tshirt_for(total),
                 "stories": [t for t, _, _ in stories], "points": total,
-                "open_questions": open_questions, "dry_run": True}
+                "open_questions": open_questions, "consult": amigo_consult, "dry_run": True}
 
     epic_id, story_ids = _decompose(root, rid, rpath, epic_title, stories, total,
                                     existing_children=[])
@@ -157,9 +161,16 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str,
             moved_to = working
         except (ValueError, FileNotFoundError):
             pass
+    # Record the consult on the request itself (audit trail): which seats were consulted and the
+    # open questions. Best-effort - the decomposition stands even if the record write fails.
+    if amigo_consult.get("questions"):
+        try:
+            persona_resolve.record_consult(rpath, amigo_consult, date.today().isoformat())
+        except (OSError, ValueError):
+            pass
     return {"request": rid, "epic": epic_id, "epic_size": _tshirt_for(total),
             "stories": story_ids, "points": total, "status": moved_to,
-            "open_questions": open_questions, "amigo_roles": list(_AMIGO_ROLES),
+            "open_questions": open_questions, "consult": amigo_consult,
             "dry_run": False}
 
 
@@ -286,8 +297,9 @@ def cmd_apply(args: argparse.Namespace) -> int:
     try:
         stories = [parse_story_spec(s) for s in (args.story or [])]
         result = refine(args.root, args.request, args.epic_title, stories,
-                        questions=args.question, dry_run=args.dry_run)
-    except (ValueError, FileNotFoundError) as exc:
+                        questions=args.question, dry_run=args.dry_run,
+                        skip_personas=getattr(args, "skip_personas", False))
+    except (ValueError, FileNotFoundError, persona_resolve.RenderError) as exc:
         print(f"refine refused: {exc}", file=sys.stderr)
         return 2
     if args.format == "json":
@@ -301,9 +313,12 @@ def cmd_apply(args: argparse.Namespace) -> int:
         print(f"  {result['request']} moved to {result['status']} - it reaches terminal only by "
               f"derivation, when its children are done")
     if result.get("open_questions"):
-        roles = ", ".join(result.get("amigo_roles", []))
+        consult = result.get("consult") or {}
+        panel = ", ".join(f"{p['seat']} ({p['role']})" for p in consult.get("panel", []))
+        lead = consult.get("lead")
+        lead_note = f"{lead} leads; " if lead else ""
         print(f"  {len(result['open_questions'])} open question(s) for the Three-Amigos consult "
-              f"({roles}) - settle before building:")
+              f"({lead_note}{panel}) - settle before building:")
         for q in result["open_questions"]:
             print(f"    - {q}")
     return 0
@@ -339,8 +354,10 @@ def build_parser() -> argparse.ArgumentParser:
                    help="a story in the breakdown: 'title|points' or 'title|points|affects'. "
                         "Repeatable. Points must be on the Fibonacci scale.")
     a.add_argument("--question", action="append", metavar="TEXT",
-                   help="an open question for the Three-Amigos consult, surfaced at apply time. "
-                        "Repeatable.")
+                   help="an open question for the Three-Amigos consult, surfaced at apply time "
+                        "and directed at the resolved seats (engineering-led). Repeatable.")
+    a.add_argument("--skip-personas", action="store_true",
+                   help="force the generic path: resolve no amigo seats, no framing (byte-equivalent)")
     a.add_argument("--dry-run", action="store_true", help="validate and report; mint nothing")
     a.add_argument("--root", default=".")   # de-duped by add_global_root; enables `apply --root`
     sdlc_md.add_format_arg(a)

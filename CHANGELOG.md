@@ -21,6 +21,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The Three Amigos are baked into refine and triage (EP0040, RFC0039).** The consult machinery
+  (`resolve_consult`/`frame`) existed but was unwired - refine and triage only printed bare role
+  strings. Now a `--question` resolves the panel to the actual **named seats** (the project's own
+  seat cards, else the shipped defaults Dani Okafor / Lena Marsh / Sam Eriksson), frames each with
+  its review render, and surfaces the questions to that panel - **engineering-led** for refine (a
+  request is largely a build breakdown), **QA-led** for triage (is it reproducible? what is the real
+  defect?). The consult is recorded on the request/Issue as an audit trail: a `> **Consulted:**`
+  metadata line and an idempotent `## Amigo Consult` section listing the questions. `--skip-personas`
+  forces the generic path (no seats, no framing, byte-equivalent), and a project seat card that
+  claims a role but lacks its review render is a hard error caught **before** anything is minted (the
+  ceremony fails empty, never half-decomposes). New shared library in `persona_resolve.py`
+  (`consult`, `amigo_panel`, `seat_name`, `record_consult`) plus a `panel --ceremony refine|triage`
+  CLI. The panel resolution and the independence floor (a seat never signs off its own work) are the
+  same ones the author≠reviewer critic gate holds.
+
 - **The discovery track gains a defect side: the `issue` type and the `triage` ceremony (EP0038,
   RFC0039).** An **Issue** is the raw defect report - a symptom in the Discovery backlog, not yet
   reproduced or scoped - carrying a Severity and a T-shirt Size but no points (it is not a delivery

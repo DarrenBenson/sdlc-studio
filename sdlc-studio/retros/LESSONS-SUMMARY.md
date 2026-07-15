@@ -2,6 +2,8 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0053: Wiring dormant machinery is a real deliverable.**
+- **L-0052: Text written into a structurally-delimited section must be sanitised against the delimiter.**
 - **L-0051: Extract a shared definition before the second caller: the `Parent:`/`Decomposed-into:` link writers moved to `lib.sdlc_md`...**
 - **L-0050: A dry-run pre-flight is only a safety net if it takes the SAME branch as the real mint on every configuration the real mint branches on.**
 - **L-0049: A migration must report what it cannot convert, never guess.**

@@ -63,10 +63,30 @@ the PVD review) is needed once several repos form one product and a PVD coordina
 | Story Create | After AC defined | **Always** | Three Amigos (PO: completeness, Eng: TRD alignment, QA: testability) | HIGH |
 | Story Plan | After plan created | **Always** | Three Amigos (PO: scope, Eng: approach, QA: test strategy) | HIGH |
 | Story Review | On status change | Optional (prompt) | Three Amigos | MEDIUM |
+| Refine (request → epic + stories) | On `--question` | **Always** (engineering-led) | Three Amigos, resolved to named seats; recorded on the request | HIGH |
+| Triage (Issue → bugs) | On `--question` | **Always** (QA-led) | Three Amigos, resolved to named seats; recorded on the Issue | HIGH |
 | Bug Fix | After root cause analysis | **Always** | Three Amigos (PO: impact, Eng: root cause, QA: regression) | HIGH |
 | Bug Verify | After fix complete | Optional (prompt) | QA Lead | MEDIUM |
 | Spec Review | Before implementation | Off | Engineering team | MEDIUM |
 | Test Strategy | After TSD draft | Off | QA team | LOW |
+
+### Refine and triage: the baked-in consult
+
+`refine` and `triage` are the decomposition ceremonies where a Discovery item's open questions get
+answered, so the Three Amigos are baked into them rather than left as an informal step. When an
+`--question` is passed, the ceremony resolves the panel to the actual **named seats** (via the same
+declared-role chain a delegated worker uses - project seat, else the shipped default), attaches each
+seat's review-render framing, and surfaces the questions to that panel. The lead differs by
+ceremony: `refine` is **engineering-led** (a request is largely a build breakdown), `triage` is
+**QA-led** (is it reproducible? what is the real defect?).
+
+The consult leaves an audit trail: the request/Issue gets a `> **Consulted:**` metadata line (the
+named seats + date) and an `## Amigo Consult` section listing the questions, written idempotently.
+`--skip-personas` forces the generic path - no seats resolved, no framing, byte-equivalent - and a
+project seat card that claims a role but lacks its review render is a hard error, caught **before**
+anything is minted (the ceremony fails empty rather than half-decomposing). The panel resolution and
+the independence floor (a seat never signs off its own work) are the same ones the author≠reviewer
+critic gate holds. Resolve a panel directly with `persona_resolve.py panel --ceremony refine|triage`.
 
 ---
 

@@ -225,7 +225,13 @@ from the point total, `Parent:` the request) and each story under it, writes the
 (a CR to In Progress, an RFC to In Review - it reaches its terminal status only by derivation when
 its children are done), and surfaces `--question` items for a Three-Amigos consult. Stories are
 created as stubs (title + points); their `Affects` and executable ACs are added at design/plan time.
-`refine add --request <id> --epic-title "..." --story ...` appends a FURTHER epic to an ALREADY-
+`--question` items are directed at the **Three-Amigos consult**, resolved to the actual named seats
+(engineering-led for refine), framed with each seat's review render, and recorded on the request (a
+`> **Consulted:**` line + an `## Amigo Consult` section) as an audit trail; `--skip-personas` forces
+the generic path (no seats, no framing), and a project seat card missing its review render fails the
+refine before anything is minted. The consult runs on the first `refine apply` (the request-level
+clarification); `refine add` (a later slice) does NOT re-run it - the request's consult is recorded
+once. `refine add --request <id> --epic-title "..." --story ...` appends a FURTHER epic to an ALREADY-
 decomposed request - for a large request delivered in slices, one epic per sprint; the append is
 de-duped and order-preserving so an earlier slice is never lost (`apply` mints the first epic, `add`
 each later one).
@@ -243,8 +249,11 @@ including a dry-run pre-flight of every bug through the grooming gate, so a bug 
 not resolve fails loud and empty rather than leaving an earlier bug half-minted - then creates each
 bug (`Parent:` the Issue), writes the Issue's `Decomposed-into:`, moves the Issue to Triaged (it
 reaches Resolved only by derivation when its bugs are done), and surfaces `--question` items for a
-Three-Amigos consult (QA-led). An Issue that is really a change, not a defect, is NOT triaged into a
-story here (a story needs an epic parent) - file a CR and `refine` that instead. The `Parent:` /
+Three-Amigos consult (QA-led): `--question` items are directed at the resolved named seats (QA leads
+a triage), framed with each seat's review render, and recorded on the Issue as an audit trail, exactly
+as `refine` does; `--skip-personas` forces the generic path. An Issue that is really a change, not a
+defect, is NOT triaged into a story here (a story needs an epic parent) - file a CR and `refine` that
+instead. The `Parent:` /
 `Decomposed-into:` link writers are shared with `refine` via `lib.sdlc_md.insert_after_status` /
 `write_decomposed`, so both ceremonies wire links identically.
 

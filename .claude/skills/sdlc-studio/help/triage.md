@@ -38,7 +38,14 @@ python3 <skill>/scripts/triage.py apply --issue IS0001 \
 
 Then it creates each bug (`Parent:` the Issue), writes the Issue's `Decomposed-into:`, and moves
 the Issue to **Triaged**. The Issue reaches **Resolved** only by derivation, when its bugs are all
-resolved. `--question` items are surfaced for a Three-Amigos consult (QA-led - QA leads a triage).
+resolved.
+
+`--question` items are directed at the **Three-Amigos consult**, QA-led (QA leads a triage: is it
+reproducible? what is the real defect?). The panel resolves to the actual named seats - the project's
+own, or the shipped defaults (Sam Eriksson qa, Dani Okafor engineering, Lena Marsh product) - and the
+consult is recorded on the Issue (a `> **Consulted:**` line + an `## Amigo Consult` section) so the
+audit trail shows who was asked and what. `--skip-personas` forces the generic path (no seats, no
+framing). Resolve the panel yourself with `persona_resolve.py panel --ceremony triage`.
 
 ## Refusals
 

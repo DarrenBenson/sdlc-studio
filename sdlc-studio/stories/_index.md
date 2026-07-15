@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 141 |
+| Done | 147 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **142** |
+| **Total** | **148** |
 
 ## All Stories
 
@@ -53,6 +53,12 @@
 | [US0140](US0140-triage-gates-reconcile-flags-an-untriaged-issue-and.md) | triage gates: reconcile flags an untriaged Issue and an Issue's terminal status derives from its children | Done | EP0038 | 2026-07-15 | 2026-07-15 |
 | [US0141](US0141-document-the-discovery-track-issue-and-triage-help.md) | Document the discovery track: Issue and triage help, reference and README | Done | EP0038 | 2026-07-15 | 2026-07-15 |
 | [US0142](US0142-refine-show-accepts-an-already-decomposed-request-and.md) | refine show accepts an already-decomposed request and lists its existing epics, staying read-only | Done | EP0039 | 2026-07-15 | 2026-07-15 |
+| [US0143](US0143-shared-amigo-consult-resolver-resolve-open-questions-to.md) | Shared amigo-consult resolver: resolve open questions to named seat cards with the amigo frame | Done | EP0040 | 2026-07-15 | 2026-07-15 |
+| [US0144](US0144-refine-bakes-in-the-consult-questions-routed-to.md) | refine bakes in the consult: questions routed to the resolved seats by lens | Done | EP0040 | 2026-07-15 | 2026-07-15 |
+| [US0145](US0145-triage-bakes-in-the-consult-qa-led.md) | triage bakes in the consult, QA-led | Done | EP0040 | 2026-07-15 | 2026-07-15 |
+| [US0146](US0146-record-the-consult-on-the-artefact-which-seats.md) | Record the consult on the artefact: which seats were consulted and the questions | Done | EP0040 | 2026-07-15 | 2026-07-15 |
+| [US0147](US0147-graceful-degradation-and-author-not-reviewer-independence-for.md) | Graceful degradation and author-not-reviewer independence for the consult | Done | EP0040 | 2026-07-15 | 2026-07-15 |
+| [US0148](US0148-document-the-amigo-consult-in-refine-and-triage.md) | Document the amigo consult in refine and triage | Done | EP0040 | 2026-07-15 | 2026-07-15 |
 
 ## Archived Releases
 

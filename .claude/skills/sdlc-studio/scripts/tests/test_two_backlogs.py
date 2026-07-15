@@ -585,7 +585,10 @@ class RefineTests(unittest.TestCase):
             res = refine.refine(root, "CR0001", "E", [("A", 2, None)],
                                 questions=["schema or config?", ""])   # blank dropped
             self.assertEqual(res["open_questions"], ["schema or config?"])
-            self.assertIn("engineering", res["amigo_roles"])
+            # the consult now names the resolved seats (engineering-led), not bare role strings
+            self.assertEqual([p["role"] for p in res["consult"]["panel"]],
+                             ["engineering", "product", "qa"])
+            self.assertEqual(res["consult"]["panel"][0]["role"], "engineering")
 
     def test_show_surfaces_the_request_content(self) -> None:
         # US0130: refinable() gathers what the operator needs to propose, and refuses the same

@@ -10,8 +10,8 @@
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 39 |
-| **Total** | **39** |
+| Done | 40 |
+| **Total** | **40** |
 
 > Generate-mode note: all epics are **Ready** (spec extracted from the existing
 > implementation, awaiting test validation per `reference-philosophy.md`), not
@@ -60,3 +60,4 @@
 | [EP0037](EP0037-the-migration-pass-bring-an-existing-project-s.md) | The migration pass: bring an existing project's sizing to the new model | Done | -- | -- | 2026-07-15 | 2026-07-15 |
 | [EP0038](EP0038-issue-discovery-type-and-the-triage-ceremony.md) | Issue discovery type and the triage ceremony | Done | -- | -- | 2026-07-15 | 2026-07-15 |
 | [EP0039](EP0039-refine-show-works-on-an-already-decomposed-request.md) | refine show works on an already-decomposed request | Done | -- | -- | 2026-07-15 | 2026-07-15 |
+| [EP0040](EP0040-the-three-amigos-consult-baked-into-refine-and.md) | The Three-Amigos consult, baked into refine and triage | Done | -- | -- | 2026-07-15 | 2026-07-15 |

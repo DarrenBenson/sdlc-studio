@@ -1,4 +1,4 @@
-# Unified Review - 2026-07-15 (close) - the discovery track gains a defect side: Issue + triage
+# Unified Review - 2026-07-15 (close) - the Three Amigos, baked into refine and triage
 
 > **Review type:** Sprint-close review (required by the `--require-review` gate)
 > **Reviewer:** sdlc-studio; agent; v1 (delivery critiqued independently by the Dani Okafor engineering seat)
@@ -7,45 +7,46 @@
 
 ## Headline
 
-**6/6 delivered (EP0038 advancing RFC0039, EP0039 closing CR0275) - 19 points.** The Discovery
-backlog gains its defect side: a new **Issue** artefact type (a raw report, sized S/M/L/XL with a
-Severity, no points) and a **triage** command that decomposes an Issue DIRECTLY into the bugs that
-deliver its fix - the mirror of `refine` turning a request into an epic + stories. A new
-`is_discovery(type_)` predicate (RFC/CR/Issue) is what every backlog-side gate now consults, while
-`is_request` stays the narrow RFC/CR set (refine's domain), so a request is refined and an Issue is
-triaged, never conflated. `refine show` now also works on an already-decomposed request (CR0275).
-Full suite 2404 tests, tools 183, 0 drift, gate PASS.
+**6/6 delivered (EP0040, advancing RFC0039) - 20 points.** The Three-Amigos consult, dormant since
+the seats/amigos convergence, is now wired into the decomposition ceremonies. `refine` and `triage`
+resolve their `--question` items to the actual named seat cards (the project's own, else the shipped
+defaults Dani Okafor / Lena Marsh / Sam Eriksson), framed with each seat's review render -
+**engineering-led** for refine, **QA-led** for triage - and record the consult on the request/Issue
+(a `> **Consulted:**` line + an `## Amigo Consult` section) as an audit trail. `--skip-personas` is
+byte-equivalent; a broken project seat fails the ceremony before anything is minted. Shared
+`persona_resolve` library (`consult`/`amigo_panel`/`seat_name`/`record_consult`) + a `panel` CLI.
+Full suite 2422 tests, tools 183, 0 drift, gate PASS.
 
 ## What went well
 
-- **The independent review caught a real BLOCKER the suite missed.** On schema v3, a Low-severity
-  triaged bug was folded into a finding-consolidation CR, so triage mis-parented that CR as the
-  Issue's child (and could delete a shared CR on rollback). Fixed with a clean
-  `artifact.new(..., consolidate=False)` bypass + a defence-in-depth guard + a v3 regression test;
-  the reviewer re-ran the original v3 repro and confirmed APPROVE for both v2 and v3.
-- **refine's machinery paid off twice.** triage reused refine's atomic mint + rollback; the shared
-  `Parent:`/`Decomposed-into:` link writers moved to `lib.sdlc_md` before triage became the second
-  caller (LL0016 applied prospectively).
+- **Wiring, not building.** `resolve_consult`/`frame` existed and were correct but callerless; the
+  sprint gave them a reason to run, so it was small precisely because the primitive was sound.
+- **The independent review found a real correctness bug the suite missed.** Dani Okafor (author !=
+  reviewer, and the very seat this feature resolves) built a multi-line question that injected a
+  fake `##` heading into the audit section and broke its idempotency; also flagged ~15KB of unused
+  framing in every JSON result. Both fixed (collapse questions to one line; `consult()` returns a
+  lean panel), re-review APPROVE.
 
 ## Backlog rollup (non-terminal)
 
-- **RFC0039** - Issue type + triage (EP0038) and refine (EP0035) done. REMAINING: Three-Amigos
-  persona bake-in to triage/refine, and the command-surface/doc rewrite (CR0272). Stays open;
-  deliver the next slice via `refine add`.
-- **RFC0040 (P1)** - opt-in gate + migration both done; only the 5.0.0 version bump remains (the
-  release cut, freeze-gated). Stays open.
-- **CR0272** command cleanup + help rewrite, **CR0273** velocity metric (reframed); older:
-  CR0254/0255/0256 (RFC0033 audit), CR0264 (filer dedup), RFCs 0035/0036/0037.
+- **RFC0039** - refine (EP0035), refine add (EP0036), Issue+triage (EP0038), and the amigo consult
+  (EP0040) all done. REMAINING: the command-surface / doc rewrite (CR0272, area e). Stays open.
+- **RFC0040 (P1)** - deliverable work done; only the 5.0.0 version bump remains (the release cut,
+  freeze-gated). Stays open.
+- **CR0272** command cleanup + help rewrite, **CR0273** velocity metric; older: CR0254/0255/0256
+  (RFC0033 audit), CR0264 (filer dedup), RFCs 0035/0036/0037.
 
 ## Production state
 
 v4.1.0 released. Freeze holds until ~2026-07-21. All work on `main` under `[Unreleased]`. The next
-release is the breaking, semver-major 5.0.0 cut. The Issue type + triage are additive and behind the
-same `two_backlog.enforce` opt-in as the rest of the two-backlog workflow.
+release is the breaking, semver-major 5.0.0 cut. The amigo consult is additive and behind the same
+`two_backlog.enforce` opt-in path as the ceremonies it enriches; `--skip-personas` is the escape
+hatch for a project with no seats that wants the generic path.
 
 ## For a fresh session
 
-Start here, then `AGENTS.md`. This repo enforces the two-backlog workflow. A defect now enters as an
-**Issue** (Discovery) and is **triaged** into bugs (Delivery); a request is **refined** into stories.
-`is_discovery` (RFC/CR/Issue) is the backlog-side predicate; `is_request` (RFC/CR) is refine's. Do
-NOT read a tokens-per-point rate from RETRO0029-0034 - all interactive, UNMEASURED.
+Start here, then `AGENTS.md`. This repo enforces the two-backlog workflow. A defect enters as an
+**Issue** (Discovery), is **triaged** into bugs; a request is **refined** into stories. Both
+ceremonies now run the **Three-Amigos consult** on `--question` - resolved to named seats, recorded
+on the artefact. Do NOT read a tokens-per-point rate from RETRO0029-0035 - all interactive,
+UNMEASURED.

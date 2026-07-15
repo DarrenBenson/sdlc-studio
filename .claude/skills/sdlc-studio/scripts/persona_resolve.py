@@ -173,6 +173,66 @@ def resolve_consult(root: Path | str, role: str) -> Path | None:
     return default_card(role) or generic_schema()
 
 
+# The Three-Amigos panel per ceremony. The ORDER encodes who leads: `refine` is engineering-led
+# (a request is largely a build breakdown), `triage` is QA-led (is it reproducible? what is the
+# real defect?). The whole panel weighs in; the lead is named first. One definition, so refine and
+# triage resolve the same seats the same way.
+REFINE_PANEL = ("engineering", "product", "qa")
+TRIAGE_PANEL = ("qa", "engineering", "product")
+
+
+def seat_name(card: Path | None, role: str) -> str:
+    """The human name of a seat from its card H1 (`# Dani Okafor - Engineering amigo` -> 'Dani
+    Okafor'), or the capitalised role when there is no card (the `--skip-personas` / generic path),
+    so a consult always has a name to attribute a question to."""
+    if card is not None:
+        try:
+            in_fence = False
+            for ln in card.read_text(encoding="utf-8").splitlines():
+                if ln.lstrip().startswith("```"):   # skip fenced code: a `# x` inside it is not the H1
+                    in_fence = not in_fence
+                    continue
+                if not in_fence and ln.startswith("# "):
+                    return ln[2:].split(" - ", 1)[0].strip() or role.capitalize()
+        except OSError:
+            pass
+    return role.capitalize()
+
+
+def amigo_panel(root: Path | str, roles, *, skip_personas: bool = False,
+                render: str = "review") -> list[dict]:
+    """Resolve each role in `roles` to its named amigo seat for a consult, IN ORDER (the first is
+    the lead). Returns `[{role, seat, card_path, framing}]`. `skip_personas` yields `card=None` and
+    empty framing throughout - a byte-equivalent, unframed panel - so the flag is honoured the same
+    way `frame` already honours it. A matched PROJECT seat missing its review render raises
+    RenderError (never a silent generic fallback), exactly as `resolve_consult` does."""
+    panel: list[dict] = []
+    for role in roles:
+        card = None if skip_personas else resolve_consult(root, role)
+        panel.append({"role": role, "seat": seat_name(card, role),
+                      "card_path": str(card) if card else None,
+                      "framing": frame(card, role, render)})
+    return panel
+
+
+def consult(root: Path | str, roles, questions, *, skip_personas: bool = False) -> dict:
+    """A structured Three-Amigos consult over a set of open questions: the resolved `panel` (named
+    seats, lead first) and the `questions` to take to it. The questions go to the WHOLE panel -
+    each amigo weighs in by their lens - rather than auto-assigning a question to one seat, a guess
+    the tool has no basis to make. Blank questions are dropped. An empty question list still
+    resolves the panel, so a caller can name who WOULD be consulted. Returns
+    `{panel, questions, seats, lead}`; `lead` is the first seat (the ceremony's leading lens)."""
+    qs = [q for q in (questions or []) if str(q).strip()]
+    full = amigo_panel(root, roles, skip_personas=skip_personas)
+    # A consult SUMMARY names the seats; it does NOT carry each seat's full charter body (the
+    # multi-KB `framing`). refine/triage store and record only the names, so dumping the framing
+    # into their `--format json` was dead weight. An agent that actually RUNS the consult resolves
+    # the framing itself via `amigo_panel` / `resolve-consult`. So the summary drops it here.
+    p = [{k: v for k, v in x.items() if k != "framing"} for x in full]
+    return {"panel": p, "questions": qs, "seats": [x["seat"] for x in p],
+            "lead": p[0]["seat"] if p else None}
+
+
 def frame(card: Path | None, seat: str, render: str) -> str:
     """The framing text to append after the caller's concrete contract. Empty string for
     the generic path, so `--skip-personas` yields a byte-equivalent contract."""
@@ -209,6 +269,72 @@ def cmd_resolve(args: argparse.Namespace) -> int:
     return 0
 
 
+_CONSULT_LINE_RE = re.compile(r"(?m)^>?\s*\*\*Consulted:\*\*.*$")
+_CONSULT_SECTION_RE = re.compile(r"(?ms)^## Amigo Consult\b.*?(?=^## |\Z)")
+
+
+def record_consult(path: Path | str, result: dict, today: str) -> bool:
+    """Record on the artefact WHICH amigo seats were consulted and the open questions, so a consult
+    leaves an audit trail on the request/Issue itself, not only in stdout. Writes a machine-readable
+    `> **Consulted:**` metadata line (named seats + date) and an idempotent `## Amigo Consult`
+    section listing the questions and the panel (lead named first). Both are UPDATED IN PLACE on a
+    re-run, never duplicated. A no-op (returns False) when there were no open questions - a consult
+    with nothing to settle leaves no trace. Uses `lib.sdlc_md` writers, so it honours the same
+    atomic-write and Status-anchoring the link writers do."""
+    from lib import sdlc_md as _md
+    p = Path(path)
+    questions = [q for q in (result.get("questions") or []) if str(q).strip()]
+    panel = result.get("panel") or []
+    if not questions or not panel:
+        return False
+    # Collapse each question to a single line before rendering: a question carrying an embedded
+    # newline + `## ` would otherwise inject a fake heading into the section, which the
+    # section-bounded-by-`^## ` regex then splits on - duplicating the injected block on every
+    # re-run and breaking idempotency. A question is one line by contract, so this only ever
+    # normalises a malformed one.
+    questions = [" ".join(str(q).split()) for q in questions]
+    seats = ", ".join(x["seat"] for x in panel)
+    lead = result.get("lead")
+    line = f"> **Consulted:** {seats} ({today})"
+    text = p.read_text(encoding="utf-8")
+    text = (_CONSULT_LINE_RE.sub(line, text, count=1) if _CONSULT_LINE_RE.search(text)
+            else None)
+    if text is None:                       # no line yet: anchor it after Status
+        _md.insert_after_status(p, line)
+        text = p.read_text(encoding="utf-8")
+    roster = ", ".join(f"{x['seat']} ({x['role']}{', lead' if x['seat'] == lead else ''})"
+                       for x in panel)
+    section = (f"## Amigo Consult\n\n"
+               f"_Consulted {today}: {roster}. Settle before building._\n\n"
+               + "".join(f"- {q}\n" for q in questions))
+    if _CONSULT_SECTION_RE.search(text):
+        text = _CONSULT_SECTION_RE.sub(section + "\n", text, count=1)
+    else:
+        text = text.rstrip("\n") + "\n\n" + section + "\n"
+    _md.atomic_write(p, text if text.endswith("\n") else text + "\n")
+    return True
+
+
+def cmd_panel(args: argparse.Namespace) -> int:
+    roles = {"refine": REFINE_PANEL, "triage": TRIAGE_PANEL}[args.ceremony]
+    try:
+        result = consult(args.root, roles, args.question or [], skip_personas=args.skip_personas)
+    except RenderError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps(result, indent=2))
+        return 0
+    named = ", ".join(f"{p['seat']} ({p['role']})" for p in result["panel"])
+    lead = result["lead"]
+    print(f"{args.ceremony} amigo panel ({lead} leads): {named}")
+    if result["questions"]:
+        print(f"take these {len(result['questions'])} question(s) to the panel:")
+        for q in result["questions"]:
+            print(f"  - {q}")
+    return 0
+
+
 def cmd_resolve_consult(args: argparse.Namespace) -> int:
     try:
         card = resolve_consult(args.root, args.role.lower())
@@ -239,6 +365,16 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--root", default=".", help="project root")
     c.add_argument("--path-only", action="store_true", help="print the resolved card path, not its body")
     c.set_defaults(func=cmd_resolve_consult)
+    pn = sub.add_parser("panel",
+                        help="Resolve the Three-Amigos panel for a ceremony (refine/triage) and "
+                             "the seats questions go to (lead named first).")
+    pn.add_argument("--ceremony", required=True, choices=("refine", "triage"))
+    pn.add_argument("--question", action="append", metavar="TEXT",
+                    help="an open question for the panel. Repeatable.")
+    pn.add_argument("--root", default=".", help="project root")
+    pn.add_argument("--skip-personas", action="store_true", help="force the generic path (no framing)")
+    sdlc_md.add_format_arg(pn)
+    pn.set_defaults(func=cmd_panel)
     args = parser.parse_args(argv)
     return args.func(args)
 
