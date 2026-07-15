@@ -311,6 +311,38 @@ class CompositeRiskTests(unittest.TestCase):
             self.assertEqual(rel["risk_band"], "high")
             self.assertEqual(ab["risk_band"], "high")
 
+    def test_assess_carries_churn_risk_for_a_docs_file(self) -> None:
+        # BG0145: a docs file produces no scored function, so code difficulty is `unknown` - but
+        # its CHURN is still derivable and must drive the risk band. Code and risk were wrongly
+        # made to go missing together for a non-code change.
+        import subprocess
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
+                   "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t", "HOME": d}
+            run = lambda *a: subprocess.run(["git", "-C", str(root), *a], env={**env},
+                                            capture_output=True)
+            run("init")
+            f = root / "hot.md"
+            for i in range(20):   # a constantly-churning doc
+                f.write_text(f"# Doc\n\nrev {i}\n", encoding="utf-8")
+                run("add", "hot.md")
+                run("commit", "-m", f"c{i}")
+            r = cx.assess(root, ["hot.md"])
+            self.assertFalse(r["applicable"])          # no scored function - code signal absent
+            self.assertEqual(r["difficulty"], "unknown")
+            self.assertEqual(r["risk_band"], "high")   # churn alone still drives the risk band
+
+    def test_assess_quiet_docs_file_is_low_risk(self) -> None:
+        # the flip side: a docs file with no churn history is genuinely low risk, not spuriously
+        # elevated - the fold only picks up churn that is actually there.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "q.md").write_text("# Quiet\n", encoding="utf-8")
+            r = cx.assess(root, ["q.md"])   # not a git repo -> no churn
+            self.assertFalse(r["applicable"])
+            self.assertEqual(r["risk_band"], "low")
+
 
 if __name__ == "__main__":
     unittest.main()

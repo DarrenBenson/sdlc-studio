@@ -17,6 +17,13 @@ from pathlib import Path
 DIR = Path(__file__).resolve().parent.parent
 
 
+def _affect(root: Path, rel: str) -> None:
+    """Make a fixture's declared Affects path real on disk so the BG0144 grooming gate resolves it."""
+    p = root / rel
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("", encoding="utf-8")
+
+
 def _load(name, rel):
     spec = importlib.util.spec_from_file_location(name, DIR / rel)
     mod = importlib.util.module_from_spec(spec)
@@ -50,6 +57,9 @@ def _repo(root: Path, cap: int = 20, v3: bool = True, low_consolidation: bool = 
         (d / "_index.md").write_text(
             f"# Index\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n{summary}\n"
             f"| **Total** | **0** |\n\n## All\n\n{header}\n{sep}\n", encoding="utf-8")
+    # Every fixture below files a finding whose declared Affects is `src/thing.py` (see `_bug`).
+    # BG0144's grooming gate refuses a unit whose Affects paths all fail to resolve, so make it real.
+    _affect(root, "src/thing.py")
     return root
 
 

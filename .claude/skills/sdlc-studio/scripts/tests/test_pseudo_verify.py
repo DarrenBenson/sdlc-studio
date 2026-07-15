@@ -54,6 +54,8 @@ CR_FIELDS = {"priority": "P3", "ctype": "Improvement", "summary": "s",
 def _seed_cr_index(root: Path) -> Path:
     d = root / "sdlc-studio" / "change-requests"
     d.mkdir(parents=True, exist_ok=True)
+    (root / "scripts").mkdir(parents=True, exist_ok=True)
+    (root / "scripts" / "sprint.py").write_text("", encoding="utf-8")  # BG0144: Affects must resolve
     header = "| ID | Title | Status | Priority | Type | Date | Linked Epics |"
     sep = "|" + " --- |" * (header.count("|") - 1)
     (d / "_index.md").write_text(

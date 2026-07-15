@@ -383,6 +383,8 @@ class AdoptForwardOnlyTests(unittest.TestCase):
             with contextlib.redirect_stdout(io.StringIO()):
                 migrate_v3.main(["adopt", "--confirm", "--root", str(root)])
             artifact = _load("artifact")
+            (root / "src").mkdir(parents=True, exist_ok=True)
+            (root / "src" / "thing.py").write_text("", encoding="utf-8")  # BG0144: Affects must resolve
             res = artifact.new(root, "bug", "a fresh v3 bug",
                                {"severity": "Medium", "priority": "Medium",
                                 "affects": "src/thing.py", "points": 3})

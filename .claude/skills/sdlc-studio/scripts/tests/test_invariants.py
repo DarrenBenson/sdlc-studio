@@ -79,6 +79,8 @@ class CascadeInvariants(unittest.TestCase):
             with tempfile.TemporaryDirectory() as d:
                 repo = Path(d)
                 _index(repo, type_, header)
+                (repo / "src").mkdir(parents=True, exist_ok=True)
+                (repo / "src" / "thing.py").write_text("", encoding="utf-8")  # BG0144: Affects must resolve
                 # a delivery unit (bug) is sized in points; a request (cr) in a T-shirt Size
                 groom = ({"affects": "src/thing.py", "points": 3} if type_ == "bug"
                          else {"affects": "src/thing.py", "size": "M"} if type_ == "cr"

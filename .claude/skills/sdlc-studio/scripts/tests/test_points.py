@@ -57,6 +57,15 @@ sdlc_md = ff.sdlc_md
 OFF_SCALE = ("7", "4", "6", "0", "9", "21", "100", "5.5", "-5", "S", "M", "L", "unknown", "")
 
 
+def _affect(root: Path, rel: str) -> None:
+    """Make a declared `Affects` path real on disk so the grooming gate (BG0144) resolves it.
+    The gate refuses to create a unit whose declared paths all fail to resolve; a fixture that
+    EXPECTS to be created must first give its path an on-disk target."""
+    p = root / rel
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("", encoding="utf-8")
+
+
 def _seed_index(root: Path, type_: str) -> Path:
     """A minimal valid index for a type (summary + empty data table)."""
     dirs = {"bug": ("bugs", "| ID | Title | Status | Severity | Created | Updated |",
@@ -92,12 +101,14 @@ def _run(main, argv: list[str]) -> tuple[int, str]:
 
 
 def _file_bug(root: Path, *extra: str) -> tuple[int, str]:
+    _affect(root, "src/thing.py")
     return _run(ff.main, ["file", "--type", "bug", "--title", "the parser drops a dash",
                           "--severity", "High", "--summary", "s", "--steps", "x", "--fix", "y",
                           "--affects", "src/thing.py", "--root", str(root), *extra])
 
 
 def _file_cr(root: Path, *extra: str) -> tuple[int, str]:
+    _affect(root, "src/thing.py")
     return _run(ff.main, ["file", "--type", "cr", "--title", "size the unit honestly",
                           "--priority", "High", "--ctype", "Improvement", "--summary", "s",
                           "--impact", "i", "--ac", "a criterion",
@@ -105,6 +116,7 @@ def _file_cr(root: Path, *extra: str) -> tuple[int, str]:
 
 
 def _new(root: Path, type_: str, *extra: str) -> tuple[int, str]:
+    _affect(root, "src/thing.py")
     argv = ["new", "--type", type_, "--title", "a unit of work", "--summary", "s",
             "--affects", "src/thing.py", "--root", str(root), *extra]
     if type_ == "bug":
@@ -203,6 +215,8 @@ class PointsAreDemanded(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _seed_index(root, "bug")
+            _affect(root, "src/a.py")   # item 1's path resolves, so the abort is item 2's bad SIZE
+            _affect(root, "src/b.py")
             spec = root / "batch.json"
             spec.write_text(json.dumps([
                 {"title": "first", "severity": "High", "summary": "s", "steps": "x", "fix": "y",

@@ -1,9 +1,11 @@
 # BG0144: The grooming gate accepts an Affects naming files that do not exist, and silently sizes the unit from nothing
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** High
 > **Effort:** S
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/sprint.py
+> **Points:** 3
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -32,8 +34,18 @@ This is not hypothetical and it is not rare. TWO bug reports filed in a single d
 
 The grooming predicate must require that at least one declared `Affects` path RESOLVES to a real file, and it must live in the one shared definition (sprint.breakdown) that BG0136 already made both the filer and the planner call - so the filer refuses a fictional path at the moment the author can still fix it, and the planner refuses one that has since been deleted or renamed. Be careful about the honest exceptions and state them: a path to a file the unit will CREATE cannot resolve yet and is legitimate, so a unit whose paths ALL fail to resolve is the error, not one where some do. Report the unresolvable paths by name either way - a typo the author can see is a typo the author will fix.
 
+## Acceptance Criteria
+
+### AC1: a unit whose declared Affects paths ALL fail to resolve is refused, naming them
+
+- **Given** a unit declaring only `Affects` paths that do not exist on disk (a fictional/typo list)
+- **When** the shared grooming definition (`sprint.breakdown`) scores it
+- **Then** it is `ungroomed`, and the unresolvable paths are named so the author can fix the typo; a unit with at least one resolving path (plus a greenfield file it will create) still grooms
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_bug_regressions.py::AffectsResolveGroomingTests
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-14 | sdlc-studio | Filed |
+| 2026-07-15 | sdlc-studio | Fixed: grooming requires at least one Affects path to resolve; all-unresolvable is refused and named. Fixture ripple migrated (real files created in test fixtures). |

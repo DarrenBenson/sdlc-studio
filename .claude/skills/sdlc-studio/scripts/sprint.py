@@ -305,8 +305,6 @@ def sample_class(retro_id: str | None, constants: dict | None,
     row immediately, instead of leaving it quoted as validation for a model it helped fit.
     """
     rid = (retro_id or "").strip().upper()
-    if rid and rid in {r.upper() for r in CALIBRATION_FIT_RETROS}:
-        return SAMPLE_IN
     if constants == SAMPLE_MIXED:
         return SAMPLE_MIXED
     if not isinstance(constants, dict) or not constants:
@@ -316,7 +314,17 @@ def sample_class(retro_id: str | None, constants: dict | None,
                    for k, v in forecast_constants(repo_root).items())
     except (TypeError, ValueError):
         return SAMPLE_NONE
-    return SAMPLE_OUT if same else SAMPLE_STALE
+    # IN-SAMPLE (training error) requires BOTH that this sprint's actuals are in the current fit
+    # AND that the constants which MADE its forecast are the current ones. A row forecast by an
+    # OLDER estimator, whose actuals were LATER folded into the current fit, is a GENUINE
+    # out-of-sample falsification of the estimator that made it - not training error.
+    # Gating the fit-membership check on `same` is what stops a recalibration from relabelling the
+    # very falsifications that justified it: RETRO0025/0026 (forecast by the retired base/tpc
+    # estimator) judge THAT estimator, so they read stale-constants, never in-sample.
+    if same:
+        in_fit = bool(rid) and rid in {r.upper() for r in CALIBRATION_FIT_RETROS}
+        return SAMPLE_IN if in_fit else SAMPLE_OUT
+    return SAMPLE_STALE
 
 
 # ---------------------------------------------------------------------------
@@ -1129,6 +1137,12 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
             sdlc_md.debug("sprint.breakdown", exc)
             continue
         declared = _affects_files(text)
+        # BG0144: a declared `Affects` must name at least one file that RESOLVES on disk. A unit
+        # whose declared paths ALL fail to resolve is sized against a fictional list - a typo, or a
+        # stale rename - and every downstream consumer then treats a guess wearing a path as a
+        # sized unit. A path to a file the unit will CREATE cannot resolve yet, so SOME unresolved
+        # paths are legitimate; ALL of them is the error. Unresolvable paths are named either way.
+        unresolvable = [p for p in declared if _resolve(root, p) is None]
         points = _declared_size(text)
         files_by_unit[it["id"]] = sorted({_affect_key(root, p) for p in declared})
         # The size demanded depends on WHAT the unit is. A story/bug is groomed by `Points`; a
@@ -1142,9 +1156,13 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
             sized = points is not None
             size_field = "Points"
         missing = ([] if declared else ["Affects"]) + ([] if sized else [size_field])
+        # All declared paths unresolvable = a fictional Affects. Named so the author can
+        # fix the typo. Not applied when Affects is absent (that is the plainer "Affects" miss).
+        if declared and len(unresolvable) == len(declared):
+            missing = missing + [f"Affects (no declared path resolves: {', '.join(unresolvable)})"]
         if missing:
             ungroomed.append({"id": it["id"], "type": it["type"], "path": it["path"],
-                              "missing": missing})
+                              "missing": missing, "unresolvable": unresolvable})
         elif points is not None and points > ceiling:
             # Only a POINTED unit can be over the split ceiling; a T-shirt Size has no number to
             # be above it. A legacy CR carrying points is judged by the same ceiling it always was.

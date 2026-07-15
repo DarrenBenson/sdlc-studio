@@ -97,6 +97,13 @@ def _workspace(root: Path, era: str) -> None:
     if era == "v3":
         (root / "sdlc-studio" / ".config.yaml").write_text(
             "schema_version: 3\n", encoding="utf-8")
+    # The creation-time grooming gate (BG0144) refuses a bug/CR/story whose declared `Affects`
+    # paths ALL fail to resolve on disk. Every groomed fixture in this file declares one of the
+    # paths below, so materialise them as empty files at the repo root - the SUPERSET of every
+    # groomed Affects path - so a groomed unit resolves and can be minted.
+    for rel in ("src/thing.py", "src/skeleton.py", "src/id_parser.py", "src/ids.py"):
+        (root / rel).parent.mkdir(parents=True, exist_ok=True)
+        (root / rel).write_text("", encoding="utf-8")
 
 
 def _errors(root: Path, path: Path, type_: str) -> list[dict]:

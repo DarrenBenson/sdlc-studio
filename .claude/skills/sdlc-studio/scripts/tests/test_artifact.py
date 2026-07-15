@@ -33,8 +33,27 @@ GROOM_CLI = ["--affects", "src/thing.py", "--points", "3"]
 GROOM_REQUEST = {"affects": "src/thing.py", "size": "M"}
 GROOM_REQUEST_CLI = ["--affects", "src/thing.py", "--size", "M"]
 
+# BG0144: the grooming gate now REFUSES a bug/CR whose declared `Affects` paths all fail to
+# resolve on disk. Every groomed fixture that EXPECTS to be created must therefore have its
+# declared path exist. Materialise the superset of paths any groomed fixture declares
+# (GROOM* -> src/thing.py, the inline plannable fixtures -> src/a.py, src/b.py, src/gate.py) at
+# each success site; deliberate-refusal fixtures declare no path (or a broken one) and are left alone.
+_GROOM_PATHS = ("src/thing.py", "src/a.py", "src/b.py", "src/gate.py")
+
+
+def _affect(root: Path, rel: str) -> None:
+    p = root / rel
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("", encoding="utf-8")
+
+
+def _groom_stubs(root: Path) -> None:
+    for rel in _GROOM_PATHS:
+        _affect(root, rel)
+
 
 def _index(repo: Path, type_: str, header: str) -> None:
+    _groom_stubs(repo)  # BG0144: make declared Affects paths real so groomed creates resolve
     d = repo / sdlc_md.ARTIFACT_TYPES[type_][0]
     d.mkdir(parents=True, exist_ok=True)
     ncols = header.count("|") - 1
@@ -172,6 +191,7 @@ class NewTests(unittest.TestCase):
             with tempfile.TemporaryDirectory() as d:
                 repo = Path(d)
                 (repo / "sdlc-studio").mkdir(parents=True)
+                _groom_stubs(repo)  # BG0144: groomed types (bug/cr) need their Affects path real
                 if t == "story":
                     _epic(repo)  # a story needs an existing parent epic (BG0022)
                 fields = {"epic": "EP0001"} if t == "story" else {}
@@ -226,6 +246,7 @@ class NewTests(unittest.TestCase):
         # re-issued (file census alone would re-use it).
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
+            _groom_stubs(repo)  # BG0144: GROOM_REQUEST declares src/thing.py
             sd = repo / "sdlc-studio" / "change-requests"; sd.mkdir(parents=True)
             (sd / "_index.md").write_text(
                 "# Index\n\n## All\n\n| ID | Title | Status | Priority | Type | Date | Linked Epics |\n"
@@ -252,6 +273,7 @@ class NewTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             (repo / "sdlc-studio").mkdir(parents=True)
+            _groom_stubs(repo)  # BG0144: GROOM declares src/thing.py
             r = artifact.new(repo, "bug", "no index here", dict(GROOM))
             self.assertTrue(r["index_created"])
             self.assertTrue(r["indexed"])
@@ -493,6 +515,7 @@ class SubsectionPreservationTests(unittest.TestCase):
     def test_fix_keeps_files_modified_and_tests_added_prompts(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
+            _groom_stubs(repo)  # BG0144: GROOM declares src/thing.py
             r = artifact.new(repo, "bug", "dropped subsection",
                              {**GROOM, "template": "full", "fix": "swap the greedy regex"})
             text = Path(r["path"]).read_text(encoding="utf-8")
@@ -522,6 +545,7 @@ class ProjectTemplateTests(unittest.TestCase):
 
     def _repo(self, d, declare=True, write_template=True):
         repo = Path(d)
+        _groom_stubs(repo)  # BG0144: GROOM declares src/thing.py
         (repo / "sdlc-studio" / "templates").mkdir(parents=True)
         if write_template:
             (repo / "sdlc-studio" / "templates" / "bug.md").write_text(

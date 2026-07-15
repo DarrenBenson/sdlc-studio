@@ -2002,9 +2002,11 @@ class DeadRowLinkTests(unittest.TestCase):
             self.assertIn("| **Total** | **0** |", text)   # summary follows the rows
             self.assertEqual(self._detect(root), [])
 
-    def test_archived_row_resolves_against_the_type_dir(self) -> None:
-        # archive.py moves the ROW to `<type>/archive/<release>/` and leaves the FILE in
-        # the type dir, so the archived row's bare filename still resolves - not a phantom.
+    def test_archived_row_resolves_file_relative(self) -> None:
+        # archive.py moves the ROW to `<type>/archive/<release>/` and leaves the FILE in the type
+        # dir, so the archived row carries a `../../`-relative link back to it (BG0137). It
+        # resolves file-relative to the sub-index - not a phantom. (BG0142 removed the old type-dir
+        # fallback that tolerated a bare-name link; the correct form is the relative one.)
         with tempfile.TemporaryDirectory() as d:
             root = self._repo(d, "")
             cd = root / "sdlc-studio" / "change-requests"
@@ -2013,7 +2015,8 @@ class DeadRowLinkTests(unittest.TestCase):
             arch = cd / "archive" / "v1.0.0"
             arch.mkdir(parents=True)
             (arch / "cr.md").write_text(
-                "| ID | Status |\n| --- | --- |\n| [CR-0100](CR0100-shipped.md) | Complete |\n",
+                "| ID | Status |\n| --- | --- |\n"
+                "| [CR-0100](../../CR0100-shipped.md) | Complete |\n",
                 encoding="utf-8")
             self.assertNotIn("dead-row-link", {x["kind"] for x in self._detect(root)})
 
@@ -2134,6 +2137,44 @@ class EpicDerivedPointTotalTests(unittest.TestCase):
             report = json.loads(buf.getvalue())
             kinds = {x["kind"] for x in report["drift"]}
             self.assertIn("epic-points-stale", kinds)
+
+
+class ArchiveLinkFallbackTests(unittest.TestCase):
+    """BG0142: `_link_exists` resolves a row's link ONLY file-relative to the index that carries
+    it - no type-dir fallback. An archived row carries a `../../`-relative link and resolves; a
+    regressed BARE-name archive link (the old wrong-depth form the fallback used to tolerate) is
+    now reported as a dead link, agreeing with `check_links`."""
+
+    def _fixture(self, repo: Path) -> None:
+        sd = repo / "sdlc-studio" / "stories"
+        (sd / "archive" / "v1").mkdir(parents=True)
+        # two real files live in the type dir (archive moves the ROW, not the FILE)
+        (sd / "US0001-good.md").write_text("# US0001: g\n\n> **Status:** Done\n", encoding="utf-8")
+        (sd / "US0002-bare.md").write_text("# US0002: b\n\n> **Status:** Done\n", encoding="utf-8")
+        (sd / "_index.md").write_text(
+            "# Stories\n\n| Status | Count |\n|---|---|\n| Done | 2 |\n", encoding="utf-8")
+
+    def test_correct_relative_archive_link_resolves(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            self._fixture(repo)
+            (repo / "sdlc-studio" / "stories" / "archive" / "v1" / "story.md").write_text(
+                "# Archived\n\n| ID | Title | Status |\n|---|---|---|\n"
+                "| [US0001](../../US0001-good.md) | g | Done |\n", encoding="utf-8")
+            dead = [x["id"] for x in reconcile._dead_row_links("story", repo)]
+            self.assertNotIn("US0001", dead)   # ../../ resolves file-relative
+
+    def test_bare_name_archive_link_is_now_reported_dead(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            self._fixture(repo)
+            # the regressed form: a bare filename. The file exists in the TYPE DIR, so the old
+            # type-dir fallback tolerated it; file-relative from archive/v1 it does not resolve.
+            (repo / "sdlc-studio" / "stories" / "archive" / "v1" / "story.md").write_text(
+                "# Archived\n\n| ID | Title | Status |\n|---|---|---|\n"
+                "| [US0002](US0002-bare.md) | b | Done |\n", encoding="utf-8")
+            dead = [x["id"] for x in reconcile._dead_row_links("story", repo)]
+            self.assertIn("US0002", dead)      # no fallback: the regression is caught
 
 
 class DriftKindVocabularyTests(unittest.TestCase):

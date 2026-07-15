@@ -315,6 +315,7 @@ class CreatorAgreementTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             (root / "sdlc-studio").mkdir(parents=True)
+            _write(root / "src" / "x.py", "")  # BG0144: the Affects path must resolve on disk
             r = artifact.new(root, "cr", "c", {"affects": "src/x.py", "size": "M", "impact": "x"})
             text = Path(r["path"]).read_text()
             self.assertEqual(sdlc_md.read_size(text), "M")
@@ -325,6 +326,8 @@ class CreatorAgreementTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             (root / "sdlc-studio").mkdir(parents=True)
+            _write(root / "src" / "x.py", "")  # BG0144: the Affects path must resolve on disk
+            _write(root / "src" / "y.py", "")
             a = artifact.new(root, "cr", "via new",
                              {"affects": "src/x.py", "size": "L", "impact": "x"})
             b = file_finding.file_finding(

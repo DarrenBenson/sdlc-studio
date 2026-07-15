@@ -185,6 +185,8 @@ class ConcurrentAllocationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+            (repo / "src").mkdir(parents=True, exist_ok=True)
+            (repo / "src" / "thing.py").write_text("", encoding="utf-8")  # BG0144: Affects must resolve
             ids: list[str] = []
             errors: list[Exception] = []
             lock = threading.Lock()
@@ -214,6 +216,8 @@ class ConcurrentAllocationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+            (repo / "src").mkdir(parents=True, exist_ok=True)
+            (repo / "src" / "thing.py").write_text("", encoding="utf-8")  # BG0144: Affects must resolve
             ids: list[str] = []
             errors: list[Exception] = []
             lock = threading.Lock()

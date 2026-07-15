@@ -1,9 +1,11 @@
 # BG0142: reconcile carries the same archive-link accommodation that check_links just shed, so a regressed row could hide there
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Low
 > **Effort:** S
 > **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py
+> **Points:** 2
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -24,8 +26,18 @@ Found by the BG0137 agent and reported rather than fixed, because it was outside
 
 Delete the type-dir fallback from `reconcile._link_exists`, so a row link is resolved only relative to the file it sits in - which is what a readers click actually does, and what `check_links` now enforces. The two guards must agree on what a valid link is. Guard it with a test that regresses an archive row link and asserts reconcile detect reports a dead-row-link, which it currently would not.
 
+## Acceptance Criteria
+
+### AC1: a regressed bare-name archive link is reported as a dead link
+
+- **Given** an archive sub-index carrying a bare-name link (`US0002-bare.md`) whose file lives in the type dir - the old wrong-depth form the type-dir fallback used to tolerate
+- **When** `reconcile` detects dead row links
+- **Then** it reports the row as `dead-row-link` (no fallback), agreeing with `check_links`; a correct `../../`-relative archive link still resolves
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchiveLinkFallbackTests
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-14 | sdlc-studio | Filed |
+| 2026-07-15 | sdlc-studio | Fixed: removed the type-dir fallback in `_link_exists`; regression test added |

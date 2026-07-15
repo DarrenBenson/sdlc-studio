@@ -1,9 +1,11 @@
 # BG0146: A recalibration relabels past falsifications as training error, erasing the evidence that caused it
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** High
 > **Effort:** M
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/retro.py
+> **Points:** 5
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -31,8 +33,18 @@ Both are true. The current label states (b) and silently destroys (a).
 
 Class a row on TWO independent axes and print both, because they answer different questions. FORECAST ERA: was this row forecast by the constants now in force (out-of-sample), by an estimator since replaced (stale-constants), or by constants fitted to its own actuals (in-sample)? That axis governs what the RATIO means. FIT MEMBERSHIP: are this row actuals in the CURRENT model training set? That axis governs whether the row can VALIDATE the current model, and it must NOT overwrite the ratio meaning. RETRO0025 and RETRO0026 are stale-constants AND fitted: their 0.39x and 0.55x remain honest evidence about the estimator that produced them, and they cannot validate the estimator that replaced it. Guard it with a test that pins the ratio meaning of a past sprint across a constants change - the label of a recorded falsification must not move when the model is refitted.
 
+## Acceptance Criteria
+
+### AC1: a fit-set row forecast by a retired estimator reads stale, never in-sample
+
+- **Given** a velocity row whose retro is in `CALIBRATION_FIT_RETROS` but whose forecast was MADE by different (older, now-retired) constants
+- **When** `sprint.sample_class` classifies it
+- **Then** it returns `stale-constants` (it judges the estimator that made it, out-of-sample), NOT `in-sample`; a fit-set row forecast by the CURRENT constants is `in-sample`, and a non-fit row by current constants is `out-of-sample`
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_bug_regressions.py::SampleClassProvenanceTests
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-14 | sdlc-studio | Filed |
+| 2026-07-15 | sdlc-studio | Fixed: IN-SAMPLE now requires the row's forecast constants to match the current fit, so a recalibration cannot relabel the out-of-sample falsifications that justified it |

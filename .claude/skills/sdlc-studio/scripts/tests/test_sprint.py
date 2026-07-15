@@ -34,10 +34,21 @@ def _load():
 FIXTURE_POINTS = 2
 
 
+def _affect(root, rel):
+    """Create the file an Affects line names, so a groomed fixture's path RESOLVES (BG0144:
+    grooming refuses a unit whose declared paths all fail to resolve)."""
+    p = root / rel
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("", encoding="utf-8")
+
+
 def _bug(root, num, status="Open", severity="Medium", groomed=True, points=FIXTURE_POINTS):
     d = root / "sdlc-studio" / "bugs"
     d.mkdir(parents=True, exist_ok=True)
-    meta = (f"> **Affects:** src/bg{num:04d}.py\n> **Points:** {points}\n" if groomed else "")
+    meta = ""
+    if groomed:
+        _affect(root, f"src/bg{num:04d}.py")
+        meta = f"> **Affects:** src/bg{num:04d}.py\n> **Points:** {points}\n"
     (d / f"BG{num:04d}-x.md").write_text(
         f"# BG{num:04d}: b\n\n> **Status:** {status}\n> **Severity:** {severity}\n{meta}",
         encoding="utf-8")
@@ -46,7 +57,10 @@ def _bug(root, num, status="Open", severity="Medium", groomed=True, points=FIXTU
 def _cr(root, num, status="Proposed", priority="Medium", groomed=True, points=FIXTURE_POINTS):
     d = root / "sdlc-studio" / "change-requests"
     d.mkdir(parents=True, exist_ok=True)
-    meta = (f"> **Affects:** src/cr{num:04d}.py\n> **Points:** {points}\n" if groomed else "")
+    meta = ""
+    if groomed:
+        _affect(root, f"src/cr{num:04d}.py")
+        meta = f"> **Affects:** src/cr{num:04d}.py\n> **Points:** {points}\n"
     (d / f"CR{num:04d}-x.md").write_text(
         f"# CR-{num:04d}: c\n\n> **Status:** {status}\n> **Priority:** {priority}\n{meta}",
         encoding="utf-8")
@@ -142,6 +156,7 @@ class NoDepsHintTests(unittest.TestCase):
         dep = f"> **Depends on:** {depends}\n" if depends else ""
         # groomed (own file, declared points): the missing-`Depends on` hint is the subject
         # here, and the breakdown gate would otherwise refuse the batch before it is reached.
+        _affect(root, f"src/us{num:04d}.py")  # BG0144: the Affects path must resolve on disk
         (d / f"US{num:04d}-x.md").write_text(
             f"# US{num:04d}: s\n\n> **Status:** {status}\n{dep}"
             f"> **Affects:** src/us{num:04d}.py\n> **Points:** 3\n", encoding="utf-8")
@@ -665,6 +680,7 @@ class MixedBatchTests(unittest.TestCase):
             _bug(root, 1)
             sd = root / "sdlc-studio" / "stories"
             sd.mkdir(parents=True, exist_ok=True)
+            _affect(root, "src/us0002.py")  # BG0144: the Affects path must resolve on disk
             (sd / "US0002-x.md").write_text(
                 "# US0002: s\n\n> **Status:** Draft\n"
                 "> **Affects:** src/us0002.py\n> **Points:** 2\n", encoding="utf-8")
@@ -987,6 +1003,7 @@ class PreflightSurvivesAllOrdersTests(unittest.TestCase):
     def _seed_bug(self, work):
         bgd = work / "sdlc-studio" / "bugs"
         bgd.mkdir(parents=True, exist_ok=True)
+        _affect(work, "src/bg0002.py")  # BG0144: the Affects path must resolve on disk
         (bgd / "BG0002-local.md").write_text(
             "# BG0002: local\n\n> **Status:** Open\n> **Severity:** Medium\n"
             "> **Affects:** src/bg0002.py\n> **Points:** 2\n",   # groomed: the gate is not the subject here

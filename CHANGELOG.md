@@ -316,6 +316,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Four integrity fixes cleared the delivery backlog (BG0142, BG0144, BG0145, BG0146).**
+  - **BG0142:** `reconcile._link_exists` dropped the type-dir fallback for an archive row link - it
+    now resolves only file-relative, agreeing with `check_links` (BG0137). Two guards no longer
+    disagree about what a valid link is, and a regressed archive link can no longer hide in reconcile.
+  - **BG0144:** the grooming gate refuses a unit whose declared `Affects` paths ALL fail to resolve
+    on disk (a fictional/typo list sized from nothing), naming the unresolvable paths; a file the
+    unit will create (greenfield) is tolerated as long as some path resolves. Gates both creation and
+    planning, from the one shared definition.
+  - **BG0145:** `complexity.assess` keeps the churn-based risk for a docs/config unit even when code
+    complexity is inapplicable - a constantly-churning doc is no longer invisible to the router just
+    because it carries no cognitive score. Code `difficulty` stays `unknown`; only the churn risk
+    band picks it up. (The bug's part (1), the `--seed-source` CLI restriction, was already removed by
+    RFC0038 - declined.)
+  - **BG0146:** `sample_class` now labels a velocity row IN-SAMPLE only when the constants that MADE
+    its forecast are the ones its actuals were fitted to. A row forecast by a retired estimator, whose
+    actuals were later refit, reads `stale-constants`, not training error - so a recalibration can no
+    longer relabel the out-of-sample falsifications that justified it (RETRO0025 0.55x, RETRO0026
+    0.39x).
+
 - **The canonical creator now writes the RIGHT sizing field per type (BG0148, BG0149).** `artifact.py
   new` gains `--size` and writes a T-shirt `Size` for a cr/rfc/epic and `Points` for a story/bug, from
   the same `sdlc_md` definition the finding filer uses - so the two creation paths can no longer disagree

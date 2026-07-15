@@ -484,14 +484,19 @@ def _index_files(type_: str, repo_root: Path) -> list[Path]:
     return files
 
 
-def _link_exists(index_path: Path, type_dir: Path, target: str) -> bool:
-    """Does a row's link target resolve to a real file? Read file-relative, and - for a
-    row that lives in an `archive/` sub-index - also against the type directory, because
-    `archive` moves the ROW but leaves the FILE in the type dir, so the archived row
-    carries the live index's bare filename."""
-    if (index_path.parent / target).exists():
-        return True
-    return "archive" in index_path.relative_to(type_dir).parts and (type_dir / target).exists()
+def _link_exists(index_path: Path, target: str) -> bool:
+    """Does a row's link target resolve to a real file, read RELATIVE to the index that carries
+    it? An archived row lives in an `archive/<release>/` sub-index and carries a `../../`-relative
+    link back to the file in the type dir, so the one file-relative resolution is correct for both
+    the live index and an archive sub-index.
+
+    No type-dir fallback: it was an accommodation for the old wrong-depth archive links
+    (a bare filename resolved against the type dir), all fixed by BG0137. Kept standing, it was the
+    second place a regressed link could HIDE - `check_links` (which shed the same fallback) would
+    cry a dead link while reconcile silently tolerated it, the LL0016 class of two guards
+    disagreeing about what a valid link is. The rows all resolve file-relative now, so the fallback
+    only ever masked a regression."""
+    return (index_path.parent / target).exists()
 
 
 def _dead_row_links(type_: str, repo_root: Path) -> list[dict]:
@@ -499,13 +504,12 @@ def _dead_row_links(type_: str, repo_root: Path) -> list[dict]:
     file census can never see (it walks files, and this file is gone). Status-blind on
     purpose: a `Proposed` row that links a file is claiming that file, so deleting it
     leaves drift exactly as a `Done` row would."""
-    type_dir = repo_root / sdlc_md.ARTIFACT_TYPES[type_][0]
     out: list[dict] = []
     for index_path in _index_files(type_, repo_root):
         rel = index_path.relative_to(repo_root).as_posix()
         for lineno, disp, target in index_row_links(
                 index_path.read_text(encoding="utf-8")):
-            if _link_exists(index_path, type_dir, target):
+            if _link_exists(index_path, target):
                 continue
             out.append({"type": type_, "id": disp, "kind": "dead-row-link",
                         "file_status": None, "index_status": None,

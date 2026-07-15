@@ -340,6 +340,22 @@ def assess(repo_root: Path | str, files, threshold: int | None = None) -> dict:
         b, s = composite_risk(t.get("cognitive") or 0, t.get("churn") or 0, root)
         if s > risk_score:
             risk_band, risk_score = b, s
+    # A docs / config file produces no scored function, so it never enters `touched` - but its
+    # CHURN is still derivable (how often it changes is a property of the FILE, not its functions).
+    # Fold each unscored touched file's churn-only risk in, so a constantly-churning doc is not
+    # invisible to the router just because it carries no cognitive score. Code `difficulty` stays
+    # `unknown` for a non-code change (that signal really is inapplicable); only the churn-driven
+    # `risk_band` picks it up - they were wrongly made to go missing together.
+    scored_file_set = {t["file"] for t in touched}
+    for f in files:
+        if f in scored_file_set:
+            continue
+        ch = ch_map.get(_rel_key(f), ch_map.get(f, 0))
+        if not ch:
+            continue
+        b, s = composite_risk(0, ch, root)
+        if s > risk_score:
+            risk_band, risk_score = b, s
     return {"threshold": threshold, "touched_functions": len(touched),
             "max_cognitive": max_cog, "total_cognitive": sum(cogs),
             # `applicable` is False when NOTHING the change touches can carry a code-complexity

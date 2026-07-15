@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0042: A bug's stated scope can be overtaken by an earlier change: BG0145 part (1) named a CLI restriction that RFC0038 had already removed.**
+- **L-0041: A gate on the canonical creation path ripples into every test that used the old creation shortcut as a fixture (the Affects-resolve gate...**
+- **L-0040: The migration story for a breaking model change is part of the change, not an afterthought.**
 - **L-0039: Decomposition makes the estimate accurate (LL0038 again): a single-shot CR sized 8 decomposed to 14, the same 1.75x the prior experiment...**
 - **L-0038: A gate that changes the canonical creation path ripples into every test that used the old path as a generic fixture.**
 - **L-0037: A worked-around symptom is a bug you have not found yet.**

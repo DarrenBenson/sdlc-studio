@@ -77,6 +77,8 @@ def _run(main, argv: list[str]) -> tuple[int, str]:
 
 
 def _file_cr(root: Path, *extra: str) -> tuple[int, str]:
+    (root / "scripts").mkdir(parents=True, exist_ok=True)
+    (root / "scripts" / "sprint.py").write_text("", encoding="utf-8")  # BG0144: Affects must resolve
     return _run(ff.main, ["file", "--type", "cr", "--title", "tighten the gate",
                           "--priority", "High", "--ctype", "Improvement", "--summary", "s",
                           "--impact", "the gate lets bad units through", "--ac", "a criterion",
@@ -93,6 +95,8 @@ def _write_story(root: Path, points_line: str) -> Path:
     """A minimal groomed story on disk: it names its files and (usually) its points."""
     d = root / "sdlc-studio" / "stories"
     d.mkdir(parents=True, exist_ok=True)
+    (root / "src").mkdir(parents=True, exist_ok=True)
+    (root / "src" / "x.py").write_text("", encoding="utf-8")  # BG0144: Affects must resolve
     p = d / "US0001-a-delivery-unit.md"
     p.write_text(
         "# US0001: a delivery unit\n\n"
@@ -109,6 +113,8 @@ def _write_legacy_cr(root: Path) -> Path:
     invalidate the backlog already on disk."""
     d = root / "sdlc-studio" / "change-requests"
     d.mkdir(parents=True, exist_ok=True)
+    (root / "scripts").mkdir(parents=True, exist_ok=True)
+    (root / "scripts" / "sprint.py").write_text("", encoding="utf-8")  # BG0144: Affects must resolve
     p = d / "CR0001-a-legacy-request.md"
     p.write_text(
         "# CR-0001: a legacy request\n\n"

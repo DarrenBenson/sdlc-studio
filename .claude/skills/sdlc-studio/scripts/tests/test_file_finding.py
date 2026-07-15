@@ -42,6 +42,20 @@ sdlc_md = ff.sdlc_md
 GROOM = {"affects": "src/thing.py", "points": 3, "size": "M"}
 BUG = {"severity": "high", "summary": "s", "steps": "r", "fix": "f", **GROOM}
 
+# BG0144: the grooming gate now REFUSES a bug/CR whose declared `Affects` paths ALL fail to
+# resolve on disk. Every groomed fixture below declares a path from this superset, so the shared
+# setup makes each one REAL at the repo root. Deliberate-refusal fixtures (missing/bad Affects,
+# multi-line fields, unknown type) declare no path from here - or none at all - so they stay
+# refused for the reason under test.
+_STUB_AFFECTS = ("src/thing.py", "src/other.py", "src/x.py", "src/gate.py")
+
+
+def _affect(root: Path, rel: str) -> None:
+    """Make a declared `Affects` path real on disk so the grooming gate can resolve it."""
+    p = root / rel
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("", encoding="utf-8")
+
 
 def _seed_index(root: Path, type_: str) -> Path:
     """A minimal valid index for a type (summary + empty data table)."""
@@ -59,6 +73,8 @@ def _seed_index(root: Path, type_: str) -> Path:
     (d / "_index.md").write_text(
         f"# Index\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n{summary}\n"
         f"| **Total** | **0** |\n\n## All\n\n{header}\n{sep}\n", encoding="utf-8")
+    for rel in _STUB_AFFECTS:
+        _affect(root, rel)
     return d / "_index.md"
 
 
@@ -201,6 +217,7 @@ class FileTests(unittest.TestCase):
             (cd / "_index.md").write_text(
                 "# Index\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n"
                 "| Proposed | 0 |\n| **Total** | **0** |\n", encoding="utf-8")
+            _affect(root, "src/x.py")
             res = ff.file_finding(root, "cr", "x", {"priority": "Low", "ctype": "Bug",
                                                     "summary": "s", "acs": ["y"],
                                                     "impact": "i", "size": "M",
