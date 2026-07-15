@@ -1,6 +1,7 @@
 # CR-0277: reconcile apply should create a missing index from the template, not just detect it
 
-> **Status:** Proposed
+> **Status:** Complete
+> **Decomposed-into:** EP0043
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

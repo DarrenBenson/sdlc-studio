@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 1 |
+| Open | 0 |
 | In Progress | 0 |
-| Fixed | 68 |
+| Fixed | 69 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -117,7 +117,7 @@
 | [BG0148](BG0148-the-two-creators-disagree-on-a-cr-size.md) | The two creators disagree on a CR size: file_finding writes a T-shirt Size, artifact.py has no --size flag and writes Points | Fixed | Medium | 2026-07-15 | 2026-07-15 |
 | [BG0149](BG0149-artifact-py-silently-drops-points-on-a-story.md) | artifact.py silently drops --points on a story, so the canonical creator makes a story the grooming gate always rejects | Fixed | major | 2026-07-15 | 2026-07-15 |
 | [BG0150](BG0150-project-upgrade-does-not-stamp-the-project-version.md) | project upgrade does not stamp the project version and skips open RFCs/CRs/epics/stories | Fixed | Medium | 2026-07-15 | 2026-07-15 |
-| [BG0151](BG0151-discovery-awaiting-and-migrate-falsely-flag-old-flow.md) | discovery_awaiting and migrate falsely flag old-flow CRs as un-refined - children_of ignores the legacy Change Request / Linked Epics linking | Open | High | 2026-07-15 | 2026-07-15 |
+| [BG0151](BG0151-discovery-awaiting-and-migrate-falsely-flag-old-flow.md) | discovery_awaiting and migrate falsely flag old-flow CRs as un-refined - children_of ignores the legacy Change Request / Linked Epics linking | Fixed | High | 2026-07-15 | 2026-07-15 |
 
 ## Archived Releases
 

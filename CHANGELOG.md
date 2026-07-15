@@ -21,6 +21,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`reconcile apply` creates a missing index from its template (EP0043, CR0277).** A
+  `missing-index` drift used to be detect-only - an operator had to hand-author the index. Now
+  `reconcile apply` materialises a missing pipeline or meta index (reviews/retros) from
+  `templates/indexes/<type>.md` via `write_empty_index` and appends the census rows; dry-run reports
+  would-create. Surfaced dogfooding the homelab audit.
+
+- **An audit cost estimate + pre-flight gate (EP0044, CR0276).** New `audit_cost.py` estimates a
+  run's agents/tokens/wall-time from the lens count and flags it large or small (calibrated to the
+  measured reference run: 7 lenses -> ~190 agents / ~6.8M tokens). `reference-audit.md` documents a
+  pre-flight gate: present the estimate and confirm above a threshold before the fan-out, so a
+  multi-million-token adversarial run is not sprung on the operator; a small scoped audit runs
+  without ceremony.
+
+- **Interactive sprints get a real tokens-per-point (EP0045, CR0278).** The retro doctrine treated an
+  interactive sprint's tokens as UNMEASURED, conflating "the runner telemetry did not capture it"
+  with "unmeasurable". The harness tracks the token count deterministically. `retro.py accuracy --id
+  RETRO --tokens N` now records the harness-tracked sprint total and computes a real tokens-per-point
+  over the delivered (terminal) units' Points. The template, `retro.py` and `reference-retro` reword
+  "UNMEASURED (interactive)" to "not-yet-captured"; the descriptive-never-a-target guard is kept.
+
+- **Fixed: old-flow CRs no longer false-flagged as un-refined (BG0151).** `children_of` read only the
+  two-backlog `Parent:`/`Epic:` links, so a CR decomposed the legacy `cr action` way (its epics carry
+  `> **Change Request:** CR-XXXX`, not `Parent:`) looked childless - making `status`/`hint`
+  `discovery_awaiting` and `migrate` report already-decomposed CRs as awaiting refinement. False
+  positives on every old-flow project. `child_parent` now recognises the legacy `Change Request:`
+  epic->CR link. Found dogfooding ../homelab (24 false "awaiting" -> 16, 12 false migrate -> 4).
+
 - **`migrate` - one command that reviews every artefact and upgrades where safe (EP0042, RFC0041).**
   An operator upgrading a consuming project had to know to run `project upgrade`, `migrate_v3
   sizing`, and `reconcile` separately, and even then no pass reviewed the open RFCs/CRs/epics/stories.

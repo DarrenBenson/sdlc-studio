@@ -125,6 +125,26 @@ The skill-profile run cost ~6M tokens / 221 agents; the project run ~245 agents.
 narrow. Run on demand, not in CI. Always `log()` what a cap dropped so partial coverage
 is not read as complete.
 
+### Pre-flight cost gate (confirm before a large fan-out) {#audit-preflight}
+
+An audit can spend millions of tokens across hundreds of agents, and the harness only flags a
+"Large workflow" AFTER it has launched. So **before invoking the fan-out, present the estimate and,
+above a threshold, get the operator's go-ahead** - never surprise them mid-run. The steps:
+
+1. Scope the run (lenses, rounds, refute votes) - narrower with `--scope`.
+2. Estimate the cost: `scripts/audit_cost.py --lenses <n> [--rounds N --votes N]`. It reports
+   `~agents · ~tokens · ~minutes` and a **large / small** verdict, calibrated to the measured
+   reference run (order of magnitude, not a promise - the finder and candidate counts are known
+   only once it runs).
+3. **If the estimate is `large`** (>= ~50 agents or >= ~1M tokens): show the operator the estimate
+   and the scope, and wait for an explicit go-ahead before launching the Workflow. A **small**
+   scoped audit (a couple of lenses, one round) runs **without ceremony** - the gate is for the
+   expensive runs, not every audit.
+4. When the run finishes, report actuals against the estimate.
+
+This is a confirmation gate, not a cap - `--budget` and the round limit above still bound the run
+itself.
+
 ## Proven Runs {#audit-proven}
 
 - **Skill profile (2026-06-20):** 4 lenses, loop-until-dry -> 69 candidates in 3

@@ -174,6 +174,30 @@ class LinkPrimitiveTests(unittest.TestCase):
             self.assertIsNone(sdlc_md.parent_ref(story))
             self.assertEqual(sdlc_md.child_parent(story), "EP0100")
 
+    def test_child_parent_reads_the_legacy_change_request_link(self) -> None:
+        # BG0151: an old-flow epic links its CR the `cr action` way (`Change Request:`), not the
+        # two-backlog `Parent:`. child_parent must resolve it, or children_of misses it.
+        epic = ("# EP0002: X\n\n> **Status:** Draft\n"
+                "> **Change Request:** [CR-0001](../change-requests/CR0001-x.md)\n")
+        self.assertIsNone(sdlc_md.parent_ref(epic))            # no new-style link
+        self.assertEqual(sdlc_md.change_request_ref(epic), "CR-0001")
+        self.assertEqual(sdlc_md.child_parent(epic), "CR-0001")
+        # a Parent: link still wins when both are present
+        both = epic + "> **Parent:** CR0009\n"
+        self.assertEqual(sdlc_md.child_parent(both), "CR0009")
+
+    def test_children_of_and_awaiting_see_a_legacy_decomposed_cr(self) -> None:
+        # the false-positive BG0151 fixes end to end: a CR decomposed the OLD way (its epics carry
+        # Change Request:, not Parent:) is NOT reported as awaiting refinement.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root / "sdlc-studio" / "change-requests" / "CR0001-x.md",
+                   "# CR-0001: X\n\n> **Status:** Approved\n> **Size:** M\n")
+            _write(root / "sdlc-studio" / "epics" / "EP0002-e.md",
+                   "# EP0002: E\n\n> **Status:** Draft\n> **Change Request:** CR-0001\n> **Size:** M\n")
+            self.assertEqual(sdlc_md.children_of(root, "CR0001"), [("EP0002", "epic")])
+            self.assertEqual(status.discovery_awaiting(root)["ids"], [])   # not awaiting - decomposed
+
     def test_decomposed_ids(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

@@ -27,6 +27,12 @@ next sprint plan prints the still-valid lessons, unasked, in the plan the agent 
 The last line is the whole point. A lesson that does not reach the next plan has not been
 learned by anything except the person who wrote it, and they were not the one who needed it.
 
+For an INTERACTIVE sprint (no runner, so no per-unit telemetry), supply the harness-tracked token
+total: `retro.py accuracy --id RETROxxxx --tokens N --write`. That yields a real, descriptive sprint
+tokens-per-point over the delivered points - the token count is deterministic, so report it as
+not-yet-captured until you supply it, never as if it were unknowable. It stays descriptive,
+never a target.
+
 ## What the close gate checks
 
 `gate --require-retro RETROxxxx` delegates to `retro.py validate`, which reads the

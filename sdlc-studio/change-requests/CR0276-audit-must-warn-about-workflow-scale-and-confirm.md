@@ -1,6 +1,7 @@
 # CR-0276: audit must warn about workflow scale and confirm before launching a large adversarial fan-out
 
-> **Status:** Proposed
+> **Status:** Complete
+> **Decomposed-into:** EP0044
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

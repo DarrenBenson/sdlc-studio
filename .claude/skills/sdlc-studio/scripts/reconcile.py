@@ -753,13 +753,21 @@ def apply_meta(repo_root: Path | str, dry_run: bool = False) -> dict:
     index stay report-only - deleting history or fabricating a whole index is a judgement
     call, never mechanical. Returns {appended, missing_unapplied}."""
     root = Path(repo_root)
-    result: dict = {"appended": [], "missing_unapplied": []}
+    result: dict = {"appended": [], "missing_unapplied": [], "created": []}
     for type_ in _META_INDEX:
         rel, prefix = _META_INDEX[type_]
         index_path = root / rel / "_index.md"
-        if not index_path.exists():
-            continue
         census = meta_census(type_, root)
+        if not index_path.exists():
+            # CR0277: create a missing meta index (reviews/, retros/) from its template, then fall
+            # through to append the census rows. No-op when there are no files to seed.
+            made = _create_missing_index(root, type_, rel, dry_run) if census else None
+            if made == "would-create":
+                result["created"].append(f"{rel}/_index.md (would create)")
+                continue
+            if made != "created":
+                continue
+            result["created"].append(f"{rel}/_index.md")
         lines = index_path.read_text(encoding="utf-8").splitlines()
         rows = set(_meta_index_row_ids("\n".join(lines), prefix))
         missing = [(norm, disp) for norm, disp in sorted(census.items()) if norm not in rows]
@@ -1192,7 +1200,7 @@ def cmd_detect(args: argparse.Namespace) -> int:
 
     if getattr(args, "blocker_sweep", False):
         # advisory lane: report stale-blocked / now-unblocked units. Never affects drift or the
-        # exit code - reconcile still succeeds/fails on its own census checks (US0050).
+        # exit code - reconcile still succeeds/fails on its own census checks.
         import blocker_sweep
         try:
             sw = blocker_sweep.sweep(repo_root)
@@ -1631,6 +1639,44 @@ def _prune_dead_rows(type_: str, root: Path, index_path: Path, lines: list, voca
     return pruned, elsewhere, rows
 
 
+def _create_missing_index(repo_root: Path, type_: str, rel: str, dry_run: bool) -> str | None:
+    """Create a missing `_index.md` at `rel` from its template - the same
+    `write_empty_index` path `artifact.py` uses, so the created index matches the house style
+    (headers, zeroed counts). Returns 'created' / 'would-create' / None (no template to seed from).
+    Shared by the pipeline (`apply_type`) and meta (`apply_meta`) apply paths. Lazy import of
+    `file_finding` avoids a module-load cycle (file_finding imports reconcile)."""
+    import file_finding
+    from datetime import date as _date
+    idx = Path(repo_root) / rel / "_index.md"
+    if idx.exists():
+        return None
+    tmpl = file_finding.index_template_path(type_)
+    if not tmpl.exists():
+        return None
+    if dry_run:
+        return "would-create"
+    file_finding.write_empty_index(idx, tmpl, _date.today().isoformat())
+    return "created"
+
+
+def _seed_missing_index(root: Path, type_: str, result: dict, dry_run: bool) -> bool:
+    """Handle a missing pipeline index for `apply_type`: create it from the template when
+    there are census files to seed, recording the outcome on `result`. Returns True to PROCEED (the
+    index now exists - fall through to append rows + recompute counts), False to BAIL (nothing to
+    seed, no template, or a dry-run that only reports it would create). Kept out of `apply_type` so
+    that function stays under the cognitive-complexity guard."""
+    if not file_census(type_, root):
+        return False
+    made = _create_missing_index(root, type_, sdlc_md.ARTIFACT_TYPES[type_][0], dry_run)
+    if made == "would-create":
+        result["would_create_index"] = True
+        return False
+    if made != "created":
+        return False
+    result["created_index"] = True
+    return True
+
+
 def apply_type(type_: str, repo_root: Path, dry_run: bool = False,
                prune_orphans: bool = False) -> dict:
     """Apply the mechanical index fixes for one type: rewrite each drifted data
@@ -1660,7 +1706,10 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False,
     index_path = root / sdlc_md.ARTIFACT_TYPES[type_][0] / "_index.md"
     result: dict = {"changes": [], "unapplied": [], "counts_updated": False,
                     "appended": [], "missing_unapplied": []}
-    if not index_path.exists():
+    # CR0277: a missing index is now a MECHANICAL fix - `_seed_missing_index` creates it from the
+    # template (recording the outcome on `result`); we bail only when it cannot/should not seed,
+    # else fall through so the census rows are appended and counts recomputed.
+    if not index_path.exists() and not _seed_missing_index(root, type_, result, dry_run):
         return result
     index = parse_index(type_, root)
     diagnosis = index.get("degenerate")
@@ -1740,7 +1789,7 @@ def index_derived_issues(repo_root: Path | str, types=None) -> list[str]:
 # The index displays per-row fields the FILE owns - Title and Points. `detect`/`apply`
 # above sync only Status + counts, so these drift and must be hand-copied (the audited
 # story-points read-back). Project them from the file too, so the index is fully derived
-# (LL0001). Persona is deferred: it has no single canonical field in a story (it lives in
+#. Persona is deferred: it has no single canonical field in a story (it lives in
 # prose), so projecting it would risk the value-clobber class.
 _POINTS_RE = re.compile(r"\*\*(?:Story )?Points:\*\*\s*([0-9]+)", re.IGNORECASE)
 _TITLE_RE = re.compile(r"^#\s+[A-Za-z]+-?\d+:\s*(.+?)\s*$", re.MULTILINE)
@@ -1879,6 +1928,12 @@ def cmd_apply(args: argparse.Namespace) -> int:
                   f"{dr['file']}, which does not exist - {remedy}", file=sys.stderr)
         # Only when the operator ASKED to prune is an unprunable row an unapplied action.
         unapplied += len(res.get("prune_unapplied", []))
+        if res.get("created_index"):
+            print(f"created {type_} index (from template)")
+            n += 1
+        elif res.get("would_create_index"):
+            print(f"WOULD create {type_} index (from template)")
+            n += 1
         for a in res.get("appended", []):
             print(f"{'WOULD add' if args.dry_run else 'added'} missing {type_} row {a}")
             n += 1
@@ -1916,6 +1971,9 @@ def cmd_apply(args: argparse.Namespace) -> int:
             n += 1
     if do_meta:
         m = apply_meta(repo_root, dry_run=args.dry_run)
+        for c in m.get("created", []):
+            print(f"{'WOULD create' if args.dry_run else 'created'} meta index {c}")
+            n += 1
         for a in m["appended"]:
             print(f"{'WOULD add' if args.dry_run else 'added'} missing meta row {a}")
             n += 1

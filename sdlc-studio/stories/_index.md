@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 156 |
+| Done | 161 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **157** |
+| **Total** | **162** |
 
 ## All Stories
 
@@ -68,6 +68,11 @@
 | [US0155](US0155-the-artefact-review-sweep-report-per-artefact-what.md) | The artefact-review sweep: report per-artefact what needs refine, triage or resize | Done | EP0042 | 2026-07-15 | 2026-07-15 |
 | [US0156](US0156-unified-deterministic-vs-needs-human-report-and-apply.md) | Unified deterministic-vs-needs-human report, and apply the safe set only | Done | EP0042 | 2026-07-15 | 2026-07-15 |
 | [US0157](US0157-document-migrate-in-reference-upgrade-help-and-the.md) | Document migrate in reference-upgrade, help and the CHANGELOG | Done | EP0042 | 2026-07-15 | 2026-07-15 |
+| [US0158](US0158-reconcile-apply-materialises-a-missing-pipeline-or-meta.md) | reconcile apply materialises a missing pipeline or meta index from its template, clearing missing-index drift | Done | EP0043 | 2026-07-15 | 2026-07-15 |
+| [US0159](US0159-a-cost-estimate-helper-agents-tokens-and-wall.md) | A cost-estimate helper: agents, tokens and wall-time for a scoped audit run | Done | EP0044 | 2026-07-15 | 2026-07-15 |
+| [US0160](US0160-reference-audit-pre-flight-gate-present-the-estimate.md) | reference-audit pre-flight gate: present the estimate and confirm above a threshold before the fan-out | Done | EP0044 | 2026-07-15 | 2026-07-15 |
+| [US0161](US0161-retro-py-records-an-actual-token-count-and.md) | retro.py records an actual token count and computes tokens-per-point for an interactive sprint | Done | EP0045 | 2026-07-15 | 2026-07-15 |
+| [US0162](US0162-drop-the-interactive-equals-unmeasured-language-for-not.md) | Drop the interactive-equals-UNMEASURED language for not-yet-captured, preserving CR0273 guards | Done | EP0045 | 2026-07-15 | 2026-07-15 |
 
 ## Archived Releases
 

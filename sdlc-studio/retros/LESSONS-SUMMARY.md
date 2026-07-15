@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0061: A mandated ceremony with no mechanical enforcement is a silent control - it fires only when someone remembers, which under delivery...**
+- **L-0060: A silence in one measurement path is not proof the quantity is unmeasurable.**
+- **L-0059: A false negative in a test suite is a fixture-coverage gap, not proof of correctness: BG0151 shipped because every fixture used the NEW...**
 - **L-0058: Orchestrate existing, tested primitives before building new ones.**
 - **L-0057: Monkeypatch through the module under test, not a re-import.**
 - **L-0056: Compute-once, read-many on a hot path: the hint recomputed a full-repo scan the dashboard had already done.**

@@ -415,6 +415,81 @@ class AccuracyBase(unittest.TestCase):
         return next(u for u in res["units"] if u["id"] == uid)
 
 
+class SprintTokenActualTests(unittest.TestCase):
+    """CR0278 / US0161: an interactive sprint (no per-unit telemetry) still gets a real
+    tokens-per-point when the harness-tracked sprint total is supplied via `--tokens`."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        (self.root / "sdlc-studio" / "retros").mkdir(parents=True)
+        (self.root / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (self.root / "sdlc-studio" / "retros" / "RETRO9001-t.md").write_text(
+            BATCH_RETRO.replace("BG0001, CR0001, CR0002", "BG0001, BG0002")
+                       .replace("RETRO-9000", "RETRO-9001"), encoding="utf-8")
+        # two delivered bugs carrying real Points (3 + 5 = 8), and NO telemetry (interactive)
+        for num, pts in (("0001", 3), ("0002", 5)):
+            (self.root / "sdlc-studio" / "bugs" / f"BG{num}-a.md").write_text(
+                f"# BG{num}: a bug\n\n> **Status:** Fixed\n> **Severity:** Low\n"
+                f"> **Points:** {pts}\n", encoding="utf-8")
+        self.addCleanup(self.tmp.cleanup)
+
+    def test_sprint_tokens_gives_a_real_rate_over_delivered_points(self) -> None:
+        res = retro.accuracy(str(self.root), "RETRO9001", sprint_tokens=800_000)
+        b = res["batch"]
+        self.assertEqual(b["delivered_points"], 8)                 # 3 + 5, read from artefacts
+        self.assertEqual(b["sprint_actual_tokens"], 800_000)
+        self.assertEqual(b["sprint_tokens_per_point"], 100_000)    # 800k / 8
+        # per-unit stays honestly UNMEASURED (no telemetry) - the sprint figure is batch-level
+        self.assertEqual(res["n_measured"], 0)
+
+    def test_no_tokens_no_sprint_rate(self) -> None:
+        b = retro.accuracy(str(self.root), "RETRO9001")["batch"]
+        self.assertIsNone(b["sprint_actual_tokens"])
+        self.assertIsNone(b["sprint_tokens_per_point"])
+        self.assertEqual(b["delivered_points"], 8)                 # points known even without tokens
+
+    def test_non_delivered_units_are_not_counted(self) -> None:
+        # a batch unit that slipped (still In Progress) must NOT inflate the delivered points -
+        # the over-claim a sprint about honest measurement must not make.
+        (self.root / "sdlc-studio" / "bugs" / "BG0003-c.md").write_text(
+            "# BG0003: slipped\n\n> **Status:** In Progress\n> **Severity:** Low\n"
+            "> **Points:** 8\n", encoding="utf-8")
+        (self.root / "sdlc-studio" / "retros" / "RETRO9001-t.md").write_text(
+            BATCH_RETRO.replace("BG0001, CR0001, CR0002", "BG0001, BG0002, BG0003")
+                       .replace("RETRO-9000", "RETRO-9001"), encoding="utf-8")
+        b = retro.accuracy(str(self.root), "RETRO9001", sprint_tokens=800_000)["batch"]
+        self.assertEqual(b["delivered_points"], 8)         # 3 + 5, NOT + 8 (BG0003 not delivered)
+        self.assertEqual(b["sprint_tokens_per_point"], 100_000)
+
+    def test_tokens_supplied_but_no_pointed_units_notes_it(self) -> None:
+        import argparse
+        # a batch of an epic (no Points) with tokens supplied - no denominator, must say so
+        (self.root / "sdlc-studio" / "epics").mkdir(exist_ok=True)
+        (self.root / "sdlc-studio" / "epics" / "EP0001-e.md").write_text(
+            "# EP0001: e\n\n> **Status:** Done\n> **Size:** M\n", encoding="utf-8")
+        (self.root / "sdlc-studio" / "retros" / "RETRO9001-t.md").write_text(
+            BATCH_RETRO.replace("BG0001, CR0001, CR0002", "EP0001")
+                       .replace("RETRO-9000", "RETRO-9001"), encoding="utf-8")
+        args = argparse.Namespace(root=str(self.root), id="RETRO9001", tokens=900_000,
+                                  write=False, format="text")
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            retro.cmd_accuracy(args)
+        self.assertIn("no rate", buf.getvalue())
+
+    def test_printed_report_shows_the_sprint_rate(self) -> None:
+        import argparse
+        args = argparse.Namespace(root=str(self.root), id="RETRO9001", tokens=800_000,
+                                  write=False, format="text")
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            retro.cmd_accuracy(args)
+        out = buf.getvalue()
+        self.assertIn("Sprint tokens/point: 100,000", out)
+        self.assertIn("not UNMEASURED", out)
+
+
 class TheBatchIsMeasuredAgainstThePlan(AccuracyBase):
     def test_the_batch_field_names_the_units(self) -> None:
         self.assertEqual(retro.batch_ids(BATCH_RETRO), ["BG0001", "CR0001", "CR0002"])

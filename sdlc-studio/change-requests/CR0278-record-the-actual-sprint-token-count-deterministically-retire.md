@@ -1,6 +1,7 @@
 # CR-0278: Record the actual sprint token count deterministically; retire the interactive-equals-UNMEASURED doctrine
 
-> **Status:** Proposed
+> **Status:** Complete
+> **Decomposed-into:** EP0045
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

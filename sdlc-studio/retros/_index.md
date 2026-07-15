@@ -47,3 +47,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0035](RETRO0035-the-three-amigos-baked-into-refine-and-triage.md) | The Three Amigos, baked into refine and triage - unwired machinery finally wired | 2026-07-15 | -- | -- |
 | [RETRO-0036](RETRO0036-command-surface-audit-and-the-two-backlogs-made.md) | Command-surface audit and the two backlogs made first-class (CR0272 slice 1) | 2026-07-15 | -- | -- |
 | [RETRO-0037](RETRO0037-the-migrate-orchestrator-one-pass-over-everything-plus.md) | The migrate orchestrator: one pass over everything, plus the version-stamp fix (RFC0041) | 2026-07-15 | -- | -- |
+| [RETRO-0038](RETRO0038-honest-and-complete-tooling-bg0151-reconcile-creates-index.md) | Honest and complete tooling: BG0151 + reconcile-creates-index + audit cost gate + interactive token measurement | 2026-07-15 | -- | -- |

@@ -10,8 +10,8 @@
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 42 |
-| **Total** | **42** |
+| Done | 45 |
+| **Total** | **45** |
 
 > Generate-mode note: all epics are **Ready** (spec extracted from the existing
 > implementation, awaiting test validation per `reference-philosophy.md`), not
@@ -63,3 +63,6 @@
 | [EP0040](EP0040-the-three-amigos-consult-baked-into-refine-and.md) | The Three-Amigos consult, baked into refine and triage | Done | -- | -- | 2026-07-15 | 2026-07-15 |
 | [EP0041](EP0041-command-surface-audit-and-surfacing-the-two-backlogs.md) | Command-surface audit and surfacing the two backlogs | Done | -- | -- | 2026-07-15 | 2026-07-15 |
 | [EP0042](EP0042-the-migrate-orchestrator-review-every-artefact-and-upgrade.md) | The migrate orchestrator: review every artefact and upgrade where safe | Done | -- | -- | 2026-07-15 | 2026-07-15 |
+| [EP0043](EP0043-reconcile-apply-creates-a-missing-index-from-the.md) | reconcile apply creates a missing index from the template | Done | -- | -- | 2026-07-15 | 2026-07-15 |
+| [EP0044](EP0044-audit-warns-and-confirms-before-a-large-adversarial.md) | audit warns and confirms before a large adversarial fan-out | Done | -- | -- | 2026-07-15 | 2026-07-15 |
+| [EP0045](EP0045-record-the-actual-sprint-token-count-retire-interactive.md) | Record the actual sprint token count; retire interactive-equals-UNMEASURED | Done | -- | -- | 2026-07-15 | 2026-07-15 |

@@ -199,6 +199,59 @@ class RefactorGuardTests(unittest.TestCase):
         self.assertLess(cx.cognitive_complexity(fn), 15)
 
 
+class MissingIndexCreationTests(unittest.TestCase):
+    """CR0277 / US0158: reconcile apply CREATES a missing index from the template."""
+
+    def _bug(self, root: Path) -> None:
+        p = root / "sdlc-studio" / "bugs" / "BG0001-x.md"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("# BG0001: x\n\n> **Status:** Open\n> **Severity:** Low\n", encoding="utf-8")
+
+    def test_dry_run_reports_would_create_and_writes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root)
+            res = reconcile.apply_type("bug", root, dry_run=True)
+            self.assertTrue(res.get("would_create_index"))
+            self.assertFalse((root / "sdlc-studio" / "bugs" / "_index.md").exists())
+
+    def test_apply_creates_the_index_populates_it_and_clears_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root)
+            # missing-index drift present before
+            self.assertIn("missing-index",
+                          {x["kind"] for x in reconcile.detect_type("bug", root)["drift"]})
+            res = reconcile.apply_type("bug", root)
+            self.assertTrue(res.get("created_index"))
+            idx = root / "sdlc-studio" / "bugs" / "_index.md"
+            self.assertTrue(idx.exists())
+            self.assertIn("BG0001", idx.read_text())              # census row appended
+            # drift cleared, and a subsequent apply is idempotent (no re-create)
+            self.assertEqual(reconcile.detect_type("bug", root)["drift"], [])
+            self.assertFalse(reconcile.apply_type("bug", root).get("created_index"))
+
+    def test_meta_index_created_from_template(self) -> None:
+        # the homelab case: a first dated review file, no reviews/_index.md
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rv = root / "sdlc-studio" / "reviews" / "RV0001-unified.md"
+            rv.parent.mkdir(parents=True, exist_ok=True)
+            rv.write_text("# RV0001 - Unified Review\n\n> **Date:** 2026-07-15\n", encoding="utf-8")
+            res = reconcile.apply_meta(root)
+            self.assertTrue(res.get("created"))
+            self.assertTrue((root / "sdlc-studio" / "reviews" / "_index.md").exists())
+
+    def test_no_census_no_creation(self) -> None:
+        # an empty type (no files) is not seeded a phantom index
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+            res = reconcile.apply_type("bug", root)
+            self.assertFalse(res.get("created_index"))
+            self.assertFalse((root / "sdlc-studio" / "bugs" / "_index.md").exists())
+
+
 class ApplyTests(unittest.TestCase):
     def test_apply_fixes_status_and_counts_idempotent(self) -> None:
         with tempfile.TemporaryDirectory() as d:

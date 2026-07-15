@@ -32,11 +32,15 @@ an artefact (`CR0123` / `BG0045`) or DECLINED WITH A REASON. Declining is a firs
 answer and is equally green, so honesty costs exactly what noise costs and there is
 nothing to game. What does not pass is silence: a finding written down and left to rot.
 
-The measurement rule (the same rule, applied to numbers). A unit with no telemetry record
-is reported UNMEASURED and is excluded from every ratio. It is never skipped and never
-counted as accurate: a silent skip would let a batch of ten units with two measurements
-report as a clean forecast. Silence is not a measurement, and the report says how many of
-the batch it is actually speaking for.
+The measurement rule (the same rule, applied to numbers). A unit with no PER-UNIT telemetry
+record has its per-unit ratio reported UNMEASURED and excluded from every ratio - never skipped,
+never counted as accurate: a silent skip would let a batch of ten units with two measurements
+report as a clean forecast. Silence is not a measurement, and the report says how many of the
+batch it is actually speaking for. But UNMEASURED means NOT-YET-CAPTURED, not unmeasurable: the
+harness tracks the token count deterministically. An interactive sprint (no runner) records no
+per-unit actual, so its sprint total is supplied with `accuracy --tokens N` to yield a real,
+DESCRIPTIVE sprint tokens-per-point over the delivered points - the number the velocity loop needs.
+Never call an interactive sprint's tokens unknowable.
 
 The velocity rule. VELOCITY IS POINTS DELIVERED PER SPRINT, and the tokens-per-point rate is
 DERIVED from that history - actual tokens over points delivered, recomputed on every read.
@@ -447,8 +451,40 @@ def _rate(tokens: int | float, points: int | float):
     return round(tokens / points) if points else None
 
 
-def accuracy(root, retro_id: str) -> dict:
+def _delivered_points(root, unit_ids) -> int:
+    """Summed `Points` of the DELIVERED units, read from their ARTEFACTS. The descriptive-velocity
+    denominator - available even when no plan-time forecast was recorded (an interactive sprint
+    reports UNFORECAST), unlike the forecast telemetry the estimate-vs-actual ratio reads. Only a
+    unit in a TERMINAL state counts: a batch may name a unit that slipped (still In Progress), and
+    counting its points as delivered would inflate the denominator and understate the real rate -
+    the exact over-claim a sprint about honest measurement must not make."""
+    total = 0
+    for uid in unit_ids:
+        hit = sdlc_md.find_by_id(root, uid)
+        if not hit:
+            continue
+        path, type_ = hit
+        text = path.read_text(encoding="utf-8")
+        status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"),
+                                          sdlc_md.status_vocab(type_, root))
+        if not sdlc_md.is_terminal_status(type_, status or ""):
+            continue   # not delivered - do not count it toward the delivered points
+        pts = sdlc_md.read_points(text)
+        if isinstance(pts, int) and pts > 0:
+            total += pts
+    return total
+
+
+def accuracy(root, retro_id: str, sprint_tokens: int | None = None) -> dict:
     """Estimate vs actual for every unit in the retro's batch - IN POINTS, and in tokens.
+
+    `sprint_tokens` is the SPRINT-level actual token spend: the harness tracks the token
+    count deterministically, but the runner-only telemetry captures a per-unit `actual` only for a
+    runner-driven sprint, so an INTERACTIVE sprint's per-unit rows stay UNMEASURED. Supplying the
+    sprint total (from the harness / operator) lets the batch report a real
+    tokens-per-point - `sprint_tokens / points delivered` - instead of nothing. It does NOT invent
+    per-unit actuals (those honestly stay unmeasured); it records the batch-level figure the
+    velocity loop needs. A batch-level count, so it is not attributed to any single unit.
 
     The estimate is the forecast the planner RECORDED when it planned the sprint
     (`telemetry.forecasts`), read back verbatim. It is never re-derived from the constants in
@@ -522,6 +558,14 @@ def accuracy(root, retro_id: str) -> dict:
         units.append(u)
 
     rated = [u for u in units if u["state"] == "measured"]
+    # The sprint's DELIVERED points: the points of the units this batch delivered, read from their
+    # ARTEFACTS - the denominator for a sprint-level tokens-per-point when `sprint_tokens` is
+    # supplied. Deliberately NOT the forecast telemetry: an interactive sprint records no plan-time
+    # forecast (it reports UNFORECAST), but the delivered stories/bugs carry real Points. This is a
+    # DESCRIPTIVE velocity number about what shipped, distinct from the forecast-vs-actual ratio
+    # above (which must stay on the plan-time recorded points, never the artefact's revisable size).
+    delivered_points = _delivered_points(root, [u["id"] for u in units])
+    sprint_tokens = int(sprint_tokens) if isinstance(sprint_tokens, (int, float)) and sprint_tokens > 0 else None
     est_sum = sum(u["estimate"] for u in rated)
     act_sum = sum(u["actual_tokens"] for u in rated)
     walls = [u["wall_time_s"] for u in rated if isinstance(u["wall_time_s"], (int, float))]
@@ -585,6 +629,13 @@ def accuracy(root, retro_id: str) -> dict:
             "points": pts_sum,
             "tokens_per_point": None if mixed else _rate(act_sum, pts_sum),
             "tokens_per_point_within": None if mixed else rate_within,
+            # CR0278: the sprint-level actual (harness-tracked) and the tokens-per-point it implies
+            # over the DELIVERED points - the honest figure for an interactive sprint that has no
+            # per-unit actuals. None until the sprint total is supplied (not unmeasurable, just
+            # not-yet-captured).
+            "sprint_actual_tokens": sprint_tokens,
+            "delivered_points": delivered_points,
+            "sprint_tokens_per_point": _rate(sprint_tokens, delivered_points) if sprint_tokens else None,
             "split_above": sdlc_md.POINTS_SPLIT_ABOVE,
             "oversized": [{"id": u["id"], "points": u["points"],
                            "tokens_per_point": u["tokens_per_point"],
@@ -680,6 +731,21 @@ def _points_lines(res: dict) -> list[str]:
     """
     b = res["batch"]
     out: list[str] = []
+    # CR0278: the SPRINT-level tokens-per-point (harness-tracked actual over the delivered points).
+    # Printed first and unconditionally when supplied, so an INTERACTIVE sprint - which has no
+    # per-unit actuals and would otherwise fall into the "no velocity" branch below - still gets a
+    # real, deterministic velocity number. Descriptive, never a target.
+    if b.get("sprint_tokens_per_point"):
+        out.append(
+            f"**Sprint tokens/point: {b['sprint_tokens_per_point']:,}** "
+            f"({b['sprint_actual_tokens']:,} tokens over {b['delivered_points']} delivered points, "
+            f"harness-tracked). The token count is deterministic (supply it with `accuracy "
+            f"--tokens N`) - not UNMEASURED. A descriptive velocity, never a target.")
+    elif b.get("sprint_actual_tokens") and not b.get("delivered_points"):
+        out.append(
+            f"**{b['sprint_actual_tokens']:,} tokens supplied, but no rate:** the batch has no "
+            f"delivered unit carrying Points, so there is no denominator. Size the delivered "
+            f"stories/bugs, or the rate stays uncomputable.")
     if not b["points"]:
         if res["n_measured"]:
             out.append(
@@ -1438,7 +1504,7 @@ def cmd_estimator(args) -> int:
 
 
 def cmd_accuracy(args) -> int:
-    res = accuracy(args.root, args.id)
+    res = accuracy(args.root, args.id, sprint_tokens=getattr(args, "tokens", None))
     if not res["ok"]:
         print(f"retro {args.id}: {res['errors'][0]}", file=sys.stderr)
         return 1
@@ -1745,6 +1811,10 @@ def main() -> int:
             p.add_argument("--write", action="store_true",
                            help="record the report in the retro and append the sprint's row "
                                 "to the velocity history (default: read-only)")
+            p.add_argument("--tokens", type=int, default=None, metavar="N",
+                           help="the sprint's ACTUAL token spend (harness-tracked). Supply it for "
+                                "an interactive sprint - which records no per-unit actual - to get "
+                                "a real tokens-per-point over the delivered points")
         p.set_defaults(func=fn)
 
     args = ap.parse_args()

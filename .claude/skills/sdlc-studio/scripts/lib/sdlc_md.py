@@ -27,7 +27,7 @@ T = TypeVar("T")
 # First `# Heading` of a document.
 H1_RE = re.compile(r"^#\s+(.+)$", re.M)
 # Artifact ID prefix at the start of a filename stem. CR/RFC display with a
-# dash (CR-0001); the others do not (US0001). The optional dash matches both.
+# dash (CR-0001); the others do not. The optional dash matches both.
 # Case-insensitive: some repos name files lowercase (`cr0001.md`) while indexes
 # use uppercase (`CR-0001`) — both must parse to the same ID.
 # Two id eras coexist (schema v3): the v2 sequential form (`US0001`, `CR-0007`)
@@ -376,7 +376,7 @@ def check_size(value) -> str:
 def size_for_points(points: int) -> str:
     """The T-shirt Size a container/request takes from a story-point total - the ONE point->size
     band, shared by `refine` (sizing an epic from its stories) and the sizing migration (sizing a
-    legacy pointed CR). Kept here so the two paths cannot drift (LL0016): the band edges mirror the
+    legacy pointed CR). Kept here so the two paths cannot drift: the band edges mirror the
     Fibonacci scale - S up to 3, M up to 8, L up to 20, XL beyond. A coarse read-off, never a
     measurement (the real size of an epic is its derived point total)."""
     return ("S" if points <= 3 else "M" if points <= 8 else "L" if points <= 20 else "XL")
@@ -748,7 +748,7 @@ def default_terminal_status(type_: str) -> str:
     return next((s for s in STATUS_VOCAB.get(type_, []) if s in absorbing), "")
 
 
-# Findings (bug/cr/rfc) gain an `inbox` triage lane under schema v3 (EP0014): an
+# Findings (bug/cr/rfc) gain an `inbox` triage lane under schema v3: an
 # agent-filed finding lands in `inbox`, and a *different* seat triages it into the
 # workflow proper. The triaged target is the first accepted-into-workflow state per
 # type - `Proposed` (cr) / `Draft` (rfc) are pre-workflow proposal states an agent
@@ -1263,6 +1263,23 @@ def story_epic(source) -> str | None:
 PARENT_FIELD = "Parent"
 DECOMPOSED_FIELD = "Decomposed-into"
 _PARENT_FIELD_RE = re.compile(r"(?m)^>?[^\S\n]*\*\*Parent:\*\*[^\S\n]*(.*)$")
+# The LEGACY upward link an epic carries before the two-backlog `Parent:` convention: the
+# `cr action` workflow stamps `> **Change Request:** [CR-0001](...)` on each epic it creates.
+_CHANGE_REQUEST_FIELD_RE = re.compile(r"(?m)^>?[^\S\n]*\*\*Change Request:\*\*[^\S\n]*(.*)$")
+
+
+def change_request_ref(source) -> str | None:
+    """The originating CR an epic declares the LEGACY way - `> **Change Request:** CR-0001` (the
+    `cr action` convention that predates the two-backlog `Parent:` link) - or None. `child_parent`
+    falls back to it so a CR decomposed the OLD way is correctly seen as having children: without
+    it, `children_of` reads only `Parent:`/`Epic:`, so `discovery_awaiting`, `migrate` and
+    `undecomposed_drift` false-flag an already-decomposed old-flow CR as un-refined."""
+    text = source.read_text(encoding="utf-8") if isinstance(source, Path) else source
+    m = _CHANGE_REQUEST_FIELD_RE.search(text)
+    if not m:
+        return None
+    mid = ID_SEARCH_RE.search(m.group(1))
+    return mid.group(0) if mid else None
 
 
 def parent_ref(source) -> str | None:
@@ -1281,9 +1298,12 @@ def parent_ref(source) -> str | None:
 
 
 def child_parent(source) -> str | None:
-    """The parent id a child declares, by EITHER `Parent:` (generic) or a story's `Epic:`
-    (specialisation), or None. The one reader every consumer of the upward link shares, so a
-    story-under-epic and an epic-under-CR are resolved the same way."""
+    """The parent id a child declares, most-specific-first: the two-backlog `Parent:` (generic),
+    else a story's `Epic:`, else the LEGACY `Change Request:` an old-flow epic carries, or
+    None. The one reader every consumer of the upward link shares, so a story-under-epic, an
+    epic-under-CR (new link), and an epic-under-CR (old `cr action` link) all resolve the same way -
+    which is what keeps `children_of` correct on a project that has NOT adopted the two-backlog
+    workflow (its CRs are decomposed via `Change Request:`, not `Parent:`)."""
     text = source.read_text(encoding="utf-8") if isinstance(source, Path) else source
     par = parent_ref(text)
     if par:
@@ -1292,7 +1312,7 @@ def child_parent(source) -> str | None:
     if epic:
         m = ID_SEARCH_RE.search(epic)
         return m.group(0) if m else None
-    return None
+    return change_request_ref(text)
 
 
 _PAREN_RUN_RE = re.compile(r"\([^)]*\)")
@@ -1449,7 +1469,7 @@ def parse_cutoff(value) -> int | None:
         return n
     raise ValueError(
         f"adopt_after cutoff is not a number or id: {value!r} - "
-        "use a bare integer (103) or a prefixed id (US0103)")
+        "use a bare integer (103) or a prefixed id")
 
 
 def affects_files(text: str) -> list[str]:
