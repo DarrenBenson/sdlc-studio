@@ -1,4 +1,4 @@
-# CR-0273: Track points-per-worker-hour as a descriptive velocity metric, runner-only, never a target
+# CR-0273: Track sprint velocity (points per elapsed sprint), ceremony included, as a descriptive planning metric
 
 > **Status:** Proposed
 > **Priority:** P2
@@ -11,21 +11,32 @@
 
 ## Summary
 
-The estimator measures tokens-per-point (cost); it does not track WALL-CLOCK throughput. Add a points-per-worker-hour figure - a human-legible planning read ('a runner sprint of N points takes about H hours of worker time') - derived from the run-state timestamps and the per-unit worker time the runner already measures. It complements tokens-per-point on a different axis: cost vs throughput.
+The estimator measures tokens-per-point (cost); it does not track VELOCITY - points delivered per sprint. Add a **points-per-sprint / points-per-elapsed-hour** figure as the PRIMARY, human-legible planning read ("a session delivers about N points"; "a sprint of N points takes about H hours"), derived from the run-state start and close timestamps. Ceremony is INCLUDED by design - planning, review, retro and verification are part of the sprint, not overhead to strip out - exactly as real Scrum velocity is points-per-timebox, never coding time. A SECONDARY points-per-WORKER-hour (the runner's worker time, ceremony removed) is reported to tune the tool, but it is explicitly NOT the planning number.
 
 ## Impact
 
-Belongs in the estimator/velocity workstream (RFC0038 lineage). TWO hard constraints, both learned from the token estimator: (1) RUNNER-ONLY. An interactively-driven sprint's wall-clock is confounded by human typing, agent thinking and background review round-trips - it is the session's conversational PACE, not the tool's throughput - exactly why this session's token cost is UNMEASURED. So points-per-worker-hour is measured ONLY from autosprint runner sprints (worker time, no human-in-loop latency); an interactive sprint is reported UNMEASURED, never counted. (2) DESCRIPTIVE, NEVER A TARGET. A tracked velocity becomes a target, and a velocity target corrupts point honesty (Goodhart) - the very thing this project guards with relative sizing, refuse-above-8, decomposition and record-never-auto-refit. So it goes in the retro accuracy block + VELOCITY.md as a trend a human reads, and is kept OUT of the capacity/appetite planning inputs (which already use wall-clock only as a breaker CEILING, not a throughput estimate). Who this affects: the operator gets an honest 'how long does a runner sprint take' number without a metric that can be gamed.
+Belongs in the estimator/velocity workstream (RFC0038 lineage). The reframe (from an earlier draft that made worker-time the primary): the number an operator plans around is the END-TO-END one - points per elapsed sprint, ceremony and all - because that is what predicts what a session delivers. Stripping the ceremony measured the tool, not the delivery.
+
+FOUR constraints:
+
+1. PRIMARY = ELAPSED, CEREMONY INCLUDED. Points delivered / elapsed sprint time (run-state open -> close). Planning, review round-trips, retro and the verification/suite runs are counted - they ARE the sprint.
+2. FIXED CEREMONY COST -> IT IS "POINTS PER SESSION". The ceremony floor (one review pass, a couple of suite runs, one retro) is roughly fixed per sprint, not per point. So the figure holds for similar-sized single-session sprints (the ~5-20 point envelope observed) and must NOT be read as a linear per-point rate to extrapolate to a 1-point or a 100-point sprint - the same way a team's velocity predicts the next sprint but not a half-day or a month.
+3. SECONDARY = WORKER TIME (runner only). Points per runner worker-hour, ceremony removed, for tuning the tool. Clearly labelled distinct from the planning velocity. An interactive sprint has no clean worker-time, so this secondary reads UNMEASURED there.
+4. DESCRIPTIVE, NEVER A TARGET. A tracked velocity becomes a target, and a velocity target corrupts point honesty (Goodhart) - the very thing this project guards with relative sizing, refuse-above-8, decomposition and record-never-auto-refit. Both figures go in the retro + VELOCITY.md as a trend a human reads, and are kept OUT of capacity/appetite and any planning gate (capacity already uses wall-clock only as a breaker CEILING, not a throughput estimate).
+
+Honesty note on elapsed time: the runner gives a clean elapsed (open -> close, no external gaps). An interactively-driven sprint's elapsed time includes stretches where the operator is away, so the PRIMARY figure for an interactive sprint is either flagged with that caveat or reported UNMEASURED - the number must not silently count idle time as sprint time.
 
 ## Acceptance Criteria
 
-- [ ] The retro accuracy block and VELOCITY.md carry a points-per-worker-hour figure derived from run-state timestamps + measured per-unit worker time, for a runner-driven sprint
-- [ ] An interactively-driven sprint (no runner worker-time record) is reported UNMEASURED for wall-clock velocity, never counted - the same discipline as the token cost
-- [ ] The figure is descriptive only: it does NOT feed capacity.minutes / appetite or any planning gate, and nothing is auto-refitted from it
-- [ ] A test pins that an interactive sprint reads UNMEASURED and a runner sprint computes the figure from its worker-time records
+- [ ] The retro accuracy block and VELOCITY.md carry a PRIMARY points-per-sprint velocity (points delivered / elapsed sprint hours from the run-state open->close timestamps), with ceremony included, matching how Scrum velocity is defined
+- [ ] A SECONDARY points-per-worker-hour (runner worker time, ceremony removed) is reported for tool tuning, clearly labelled as distinct from the planning velocity, and reads UNMEASURED for an interactive sprint
+- [ ] The primary figure is labelled "points per session/sprint" and carries the fixed-ceremony caveat (holds within the single-session envelope; not a linear per-point rate); an interactive sprint whose elapsed time is confounded by operator-away gaps is flagged or UNMEASURED, never counted as clean
+- [ ] Both figures are DESCRIPTIVE only: neither feeds capacity.minutes / appetite or any planning gate, and nothing is auto-refitted from either
+- [ ] A test pins the elapsed-velocity computation from run-state timestamps and the descriptive-only guarantee (no capacity/gate coupling)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-15 | sdlc-studio | Raised |
+| 2026-07-15 | sdlc-studio | Reframed: the PRIMARY metric is points-per-elapsed-sprint (ceremony INCLUDED), the operator's planning number; points-per-worker-hour demoted to a secondary tool-tuning figure. Ceremony is the sprint, not overhead - real Scrum velocity is points-per-timebox. |
