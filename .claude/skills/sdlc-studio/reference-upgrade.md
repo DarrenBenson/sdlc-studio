@@ -42,6 +42,33 @@ The schema `upgrade` is one part of what `project upgrade` covers - see
 
 ---
 
+## Two-backlog model migration {#two-backlog-migration}
+
+A separate, **opt-in** upgrade: the two-backlog workflow (Discovery vs Delivery) and the Fibonacci
+sizing model (a T-shirt `Size` on a request/container, `Points` on a delivery unit). It is a
+breaking change, so it ships in a semver-major release - but the hard gates are **off by default**,
+so an existing project keeps its old flow (plan a CR, complete it whole, size a CR in points) until
+it turns the workflow on. Upgrade with zero disruption; adopt when ready.
+
+Three steps:
+
+1. **Convert the sizing.** `migrate_v3.py sizing` (dry-run report) then `migrate_v3.py sizing
+   --confirm` (write). Deterministic and idempotent: a cr/rfc/epic with a legacy `Effort:` (S/M/L)
+   or `Points:` gets a `Size:`. What it **cannot** convert safely it **reports, never guesses**: a
+   story/bug carrying `Effort` gets no automatic `Points` (there is no honest `Effort -> Points`
+   map - re-size it in points), and an accepted childless request is flagged to refine.
+2. **Refine your accepted requests.** `refine show --request <id>`, then `refine apply --request
+   <id> --epic-title "..." --story "title|points" ...` (or `refine add` for a later slice) wires the
+   `Parent:` / `Decomposed-into:` links. A request then reaches its terminal status only by
+   derivation, when its children are done.
+3. **Turn it on.** Add `two_backlog:\n  enforce: true` to `sdlc-studio/.config.yaml`. Leave it off
+   (or absent) to keep the old flow.
+
+Reversible: the sizing migration only ADDS a `Size:` line (never removes `Effort`/`Points`), and the
+workflow is one config line - unset `enforce` to return to the old flow.
+
+---
+
 ## Version Check (hint and status only)
 
 Version checks run on `/sdlc-studio hint` and `/sdlc-studio status` commands only. See `help/hint.md` and `help/status.md` for the pre-flight workflow.

@@ -1,4 +1,4 @@
-# Unified Review - 2026-07-15 (close) - refine builds refine: the tool decomposed its own next feature
+# Unified Review - 2026-07-15 (close) - the migration pass: RFC0040 advanced via refine add
 
 > **Review type:** Sprint-close review (required by the `--require-review` gate, CR0253)
 > **Reviewer:** sdlc-studio; agent; v1 (delivery critiqued independently by the Dani Okafor engineering seat)
@@ -7,43 +7,40 @@
 
 ## Headline
 
-**2/2 delivered (EP0036), and this sprint dogfooded `refine` for the first time.** `refine apply`
-decomposed CR0274 into EP0036 (0 drift, symmetric links, CR0274 -> In Progress), then US0132/US0133
-built `refine add` - the incremental-decomposition mode CR0274 asked for. CR0274 then closed by its
-own G2 gate (EP0036 Done -> CR0274 Complete). The independent review found **no defects** - the first
-clean refine review this arc, because `_decompose`/`_write_decomposed` reuse the core the two prior
-reviews hardened. Full suite 2370 tests, 0 drift, gate PASS.
+**3/3 delivered (EP0037), advancing the P1 (RFC0040) via `refine add`.** `migrate_v3.py sizing`
+brings an existing project to the sizing model - converting a cr/rfc/epic's legacy `Effort:`/`Points:`
+to a `Size:` deterministically, and REPORTING what it cannot convert safely (a delivery unit's Effort
+needs human re-sizing; an accepted childless request needs `refine`). The upgrade guide documents the
+three-step path (migrate, refine, enforce). The review approved; its two non-blocking findings were
+fixed the same sprint (point-band unified into `sdlc_md.size_for_points`; a Status-less artefact now
+reports `needs_manual`). Full suite 2378 tests, 0 drift, gate PASS.
 
 ## What went well
 
-- `refine add` appends a further epic to an already-decomposed request, de-duped and append-only
-  (an earlier slice is never lost), sharing `apply`'s up-front validation + rollback - so it
-  inherited the fixes rather than re-introducing the bugs.
-- The friction the last retro logged (RETRO0031: refine refuses re-refining) was filed as CR0274 and
-  DELIVERED this sprint - the loop from finding to fix closed in one sprint.
-- The self-inflicted `import re` slip was caught by the RefineTests before any commit.
+- `refine add` did its intended job for the first time: it appended EP0037 to the already-decomposed
+  RFC0040 (preserving EP0034). The finding->fix->use loop closed across three sprints.
+- The migration is honest about its limits - it converts the sound mappings and flags the rest, never
+  inventing an Effort->Points number the estimator would then be judged on. Dogfooded dry-run: 46
+  convertible, 26 needing re-size, 0 needing refine.
+- LL0016 self-caught: the point-band was duplicated, now shared.
 
 ## Backlog rollup (non-terminal)
 
-The Discovery backlog holds the forward plan; `refine add` now unblocks the incremental slices:
-
-- **RFC0040 (P1)** - opt-in gate (EP0034) delivered; REMAINING: the migration pass, docs, 5.0.0.
-  Now wireable with `refine add`. Still gates the release.
-- **RFC0039** - refine (EP0035) + `refine add` (EP0036) delivered; REMAINING: Issue type, `triage`,
-  deeper persona integration.
-- **CR0272** - command-surface cleanup + help rewrite (now also: surface Discovery/Delivery in
-  `hint` and the `status` dashboard).
-- **CR0273** - points-per-worker-hour velocity metric (runner-only, descriptive).
-- Older: CR0254/0255/0256 (RFC0033 audit), CR0264 (filer dedup), RFCs 0035/0036/0037.
+- **RFC0040 (P1)** - opt-in gate (EP0034) AND migration + docs (EP0037) both Done. REMAINING: only
+  the 5.0.0 version bump, which IS the release cut (gated by the freeze). RFC0040 stays open until then.
+- **RFC0039** - refine (EP0035) + refine add (EP0036) done; REMAINING: Issue type, `triage`, personas.
+- **CR0272** command cleanup, **CR0273** velocity metric, **CR0275** refine-show-on-decomposed;
+  older: CR0254/0255/0256 (RFC0033 audit), CR0264 (filer dedup), RFCs 0035/0036/0037.
 
 ## Production state
 
 v4.1.0 released. Freeze holds until ~2026-07-21. All work on `main` under `[Unreleased]`. The next
-release is a breaking, semver-major (5.0.0) cut, gated on RFC0040's remaining work (migration + docs).
+release is the breaking, semver-major 5.0.0 cut - and with the opt-in gate, migration and upgrade
+guide all shipped, RFC0040's deliverable work is DONE; only the version bump remains, at the cut.
 
 ## For a fresh session
 
-Start here, then `AGENTS.md`. This repo enforces the two-backlog workflow (`two_backlog.enforce:
-true`). Decompose a request with `refine apply` (first epic) or `refine add` (later slices) - no more
-hand-wiring. Read RFC0040 before planning a release. Do NOT read a tokens-per-point rate from
-RETRO0029-0032 - all four were delivered interactively and are UNMEASURED.
+Start here, then `AGENTS.md`. This repo enforces the two-backlog workflow. Upgrade path for a
+consuming project: `migrate_v3.py sizing` -> `refine` the flagged requests -> set
+`two_backlog.enforce` (see `reference-upgrade.md#two-backlog-migration`). Do NOT read a
+tokens-per-point rate from RETRO0029-0033 - all interactive, UNMEASURED.

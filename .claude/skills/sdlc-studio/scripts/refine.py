@@ -34,13 +34,7 @@ import artifact
 # read-off, never a measurement: the epic's real size is its `Derived Point Total`, which reconcile
 # keeps equal to the sum of its stories' points. The band edges mirror the Fibonacci scale.
 def _tshirt_for(total: int) -> str:
-    if total <= 3:
-        return "S"
-    if total <= 8:
-        return "M"
-    if total <= 20:
-        return "L"
-    return "XL"
+    return sdlc_md.size_for_points(total)   # the ONE point->size band (shared with the migration)
 
 
 def _insert_after_status(path: Path, line: str) -> None:

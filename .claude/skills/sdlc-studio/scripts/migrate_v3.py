@@ -263,9 +263,86 @@ def migrate(repo_root: Path | str, dry_run: bool = True) -> dict:
     return summary
 
 
+# --- Sizing migration: bring an existing project's artefacts to the RFC0038 sizing model --------
+# The RFC0038 model: a request/container (cr/rfc/epic) carries a T-shirt `Size`; a delivery unit
+# (story/bug) carries `Points`. An older project carries the retired `Effort:` (S/M/L) and/or a
+# CR sized in `Points`. This migration converts what it can DETERMINISTICALLY and reports what
+# needs a human, never guessing.
+
+_SIZED_TYPES = ("cr", "rfc", "epic")          # carry a T-shirt Size
+_EFFORT_TO_SIZE = {"S": "S", "M": "M", "L": "L", "XL": "XL"}
+
+
+def _add_size_after_status(path: Path, size: str) -> bool:
+    """Insert a `> **Size:** X` metadata line after the artefact's `Status:` line. Returns whether
+    it wrote - False for a file with no `Status:` line to anchor to, so a Status-less artefact is
+    never counted as converted when nothing was actually written."""
+    text = path.read_text(encoding="utf-8")
+    out, done = [], False
+    for ln in text.splitlines():
+        out.append(ln)
+        if not done and ln.lstrip().startswith("> **Status:**"):
+            out.append(f"> **Size:** {size}")
+            done = True
+    if done:
+        sdlc_md.atomic_write(path, "\n".join(out) + ("\n" if text.endswith("\n") else ""))
+    return done
+
+
+def migrate_sizing(repo_root: Path | str, dry_run: bool = True) -> dict:
+    """Bring an existing project's sizing to the RFC0038 model. DETERMINISTIC conversions are
+    applied (a cr/rfc/epic with a legacy `Effort:` S/M/L gets the matching `Size:`; a pointed
+    cr/rfc/epic gets a `Size:` from its point band). What cannot be converted safely is REPORTED,
+    never guessed: a story/bug carrying `Effort` but no `Points` needs re-sizing by a human (Effort
+    predicts cost far worse than points - RFC0038 - so there is no honest Effort->Points map), and
+    an accepted childless request needs `refine`. Idempotent: an artefact already carrying its
+    right sizing field is skipped."""
+    import reconcile   # reuse the ONE definition of an accepted-childless request
+    root = Path(repo_root)
+    converted: list[dict] = []
+    needs_resize: list[dict] = []
+    needs_manual: list[dict] = []
+    for type_ in _SIZED_TYPES:
+        for p in sdlc_md.artifact_files(type_, root):
+            text = p.read_text(encoding="utf-8")
+            if sdlc_md.read_size(text) is not None:
+                continue                                   # already sized - idempotent
+            rid = sdlc_md.extract_record_id(p.stem) or p.stem
+            eff_raw = (sdlc_md.extract_field(text, "Effort") or "").strip().strip("*`_ ").upper()
+            eff = eff_raw.split()[0] if eff_raw else ""
+            size = _EFFORT_TO_SIZE.get(eff)
+            frm = f"Effort {eff}" if size else None
+            if not size:
+                pts = sdlc_md.read_points(text)
+                if pts is not None:
+                    size, frm = sdlc_md.size_for_points(pts), f"Points {pts}"
+            if not size:
+                continue
+            # A Size can only be wired after a `Status:` line. A convertible artefact WITHOUT one is
+            # malformed (a validate error already); report it as needs_manual rather than count it
+            # as converted while the write silently no-ops.
+            if sdlc_md.extract_field(text, "Status") is None:
+                needs_manual.append({"id": rid, "type": type_, "size": size, "from": frm,
+                                     "why": "no Status line to anchor the Size"})
+                continue
+            converted.append({"id": rid, "type": type_, "size": size, "from": frm})
+            if not dry_run:
+                _add_size_after_status(p, size)
+    for type_ in ("story", "bug"):
+        for p in sdlc_md.artifact_files(type_, root):
+            text = p.read_text(encoding="utf-8")
+            if sdlc_md.read_points(text) is None and \
+                    (sdlc_md.extract_field(text, "Effort") or "").strip():
+                needs_resize.append({"id": sdlc_md.extract_record_id(p.stem) or p.stem,
+                                     "type": type_})
+    needs_refine = [{"id": x["id"], "type": x["type"]} for x in reconcile.undecomposed_drift(root)]
+    return {"converted": converted, "needs_resize": needs_resize, "needs_refine": needs_refine,
+            "needs_manual": needs_manual, "dry_run": dry_run}
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="migrate_v3.py", description="Migrate a workspace v2 -> v3 (ULID ids).")
-    p.add_argument("cmd", choices=["plan", "apply", "adopt"])
+    p.add_argument("cmd", choices=["plan", "apply", "adopt", "sizing"])
     p.add_argument("--root", default=".")
     p.add_argument("--confirm", action="store_true",
                    help="required for apply/adopt: switching the numbering scheme is an "
@@ -286,6 +363,36 @@ def main(argv: list[str] | None = None) -> int:
               "the project root (or `init` first); refusing to stamp a config into an "
               "unrelated directory", file=sys.stderr)
         return 2
+    if args.cmd == "sizing":
+        # Dry by default (report), writes only with --confirm - a mechanical, reversible edit, but
+        # still an operator decision. Deterministic conversions apply; the rest is reported.
+        res = migrate_sizing(args.root, dry_run=not args.confirm)
+        if args.format == "json":
+            print(json.dumps(res, indent=2))
+        else:
+            verb = "would convert" if res["dry_run"] else "converted"
+            print(f"sizing migration: {verb} {len(res['converted'])} request/container(s) to a "
+                  f"T-shirt Size" + ("" if res["dry_run"] else " (written)"))
+            for c in res["converted"]:
+                print(f"  {c['id']} ({c['type']}): {c['from']} -> Size {c['size']}")
+            if res["needs_resize"]:
+                print(f"\nNEEDS A HUMAN - {len(res['needs_resize'])} delivery unit(s) carry Effort "
+                      f"but no Points (Effort has no honest Points map - re-size in points):")
+                for n in res["needs_resize"]:
+                    print(f"  {n['id']} ({n['type']})")
+            if res["needs_refine"]:
+                print(f"\nNEEDS A HUMAN - {len(res['needs_refine'])} accepted childless request(s) "
+                      f"- decompose with `refine apply`:")
+                for n in res["needs_refine"]:
+                    print(f"  {n['id']} ({n['type']})")
+            if res.get("needs_manual"):
+                print(f"\nNEEDS A HUMAN - {len(res['needs_manual'])} artefact(s) convertible but "
+                      f"malformed (no Status line to anchor a Size) - fix the artefact first:")
+                for n in res["needs_manual"]:
+                    print(f"  {n['id']} ({n['type']}): would be Size {n['size']}")
+            if res["dry_run"] and res["converted"]:
+                print("\nRe-run with --confirm to write the Size lines.")
+        return 0
     if args.cmd == "adopt":
         # Forward-only era switch: stamp schema_version: 3 and touch NOTHING else. The two id
         # eras coexist by design (parsers, allocator, reconcile), so existing sequential ids

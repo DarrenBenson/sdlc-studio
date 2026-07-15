@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 6 |
+| Proposed | 7 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 262 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 6 |
 | Blocked | 0 |
-| **Total** | **274** |
+| **Total** | **275** |
 
 ## All Changes
 
@@ -96,6 +96,7 @@
 | [CR-0272](CR0272-audit-and-clean-up-the-skill-command-surface.md) | Audit and clean up the skill command surface, then rewrite the help files around the core process | Proposed | P2 | Improvement | 2026-07-15 | -- |
 | [CR-0273](CR0273-track-points-per-worker-hour-as-a-descriptive.md) | Track points-per-worker-hour as a descriptive velocity metric, runner-only, never a target | Proposed | P2 | Improvement | 2026-07-15 | -- |
 | [CR-0274](CR0274-refine-add-append-an-epic-to-an-already.md) | refine --add: append an epic to an already-decomposed request, for incremental slices | Complete | P1 | Improvement | 2026-07-15 | -- |
+| [CR-0275](CR0275-refine-show-should-work-on-an-already-decomposed.md) | refine show should work on an already-decomposed request, to inform a refine add | Proposed | P3 | Improvement | 2026-07-15 | -- |
 
 ## Archived Releases
 

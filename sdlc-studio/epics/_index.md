@@ -10,8 +10,8 @@
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 36 |
-| **Total** | **36** |
+| Done | 37 |
+| **Total** | **37** |
 
 > Generate-mode note: all epics are **Ready** (spec extracted from the existing
 > implementation, awaiting test validation per `reference-philosophy.md`), not
@@ -57,3 +57,4 @@
 | [EP0034](EP0034-the-schema-v4-opt-in-gate-the-two.md) | The schema-v4 opt-in gate: the two-backlog workflow becomes enforce-on-request, upgrade-safe | Done | -- | -- | 2026-07-15 | 2026-07-15 |
 | [EP0035](EP0035-the-refine-command-a-request-becomes-an-epic.md) | The refine command: a request becomes an epic and stories, links wired, ready to sprint | Done | -- | -- | 2026-07-15 | 2026-07-15 |
 | [EP0036](EP0036-refine-add-incremental-decomposition-of-a-request-into.md) | refine --add: incremental decomposition of a request into further epics | Done | -- | -- | 2026-07-15 | 2026-07-15 |
+| [EP0037](EP0037-the-migration-pass-bring-an-existing-project-s.md) | The migration pass: bring an existing project's sizing to the new model | Done | -- | -- | 2026-07-15 | 2026-07-15 |

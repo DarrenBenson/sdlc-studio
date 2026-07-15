@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 132 |
+| Done | 135 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **133** |
+| **Total** | **136** |
 
 ## All Stories
 
@@ -44,6 +44,9 @@
 | [US0131](US0131-refine-closes-the-loop-request-status-amigo-consult.md) | refine closes the loop: request status + amigo consult for open questions | Done | EP0035 | 2026-07-15 | 2026-07-15 |
 | [US0132](US0132-refine-add-core-append-a-new-epic-and.md) | refine add core: append a new epic and stories to an already-decomposed request, Decomposed-into append-only | Done | EP0036 | 2026-07-15 | 2026-07-15 |
 | [US0133](US0133-refine-add-safety-require-an-already-decomposed-request.md) | refine add safety: require an already-decomposed request, de-duped append, atomic with rollback, reconcile-clean | Done | EP0036 | 2026-07-15 | 2026-07-15 |
+| [US0134](US0134-migrate-requests-containers-legacy-effort-to-size-s.md) | migrate requests/containers: legacy Effort to Size (S/M/L direct), a pointed cr/rfc/epic gets Size from the point band, idempotent with dry-run | Done | EP0037 | 2026-07-15 | 2026-07-15 |
+| [US0135](US0135-migrate-reports-what-needs-a-human-story-bug.md) | migrate reports what needs a human: story/bug Effort has no clean Points mapping so flag for re-size, and childless-accepted requests flag for refine | Done | EP0037 | 2026-07-15 | 2026-07-15 |
+| [US0136](US0136-the-upgrade-guide-reference-doc-plus-a-changelog.md) | the upgrade guide reference doc plus a CHANGELOG breaking-change section for the 5.0.0 cut | Done | EP0037 | 2026-07-15 | 2026-07-15 |
 
 ## Archived Releases
 

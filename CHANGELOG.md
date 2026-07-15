@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking (opt-in; the next release is semver-major 5.0.0)
+
+- **The two-backlog workflow and the Fibonacci sizing model are a breaking change - but opt-in
+  (EP0037, RFC0040).** The hard gates (plan refuses a request, terminal status derived from
+  children, `undecomposed` drift, CR-creation Size demand) are OFF by default, so an existing
+  project upgrades with zero disruption and keeps its old flow until it sets `two_backlog.enforce:
+  true`. The upgrade path is three steps - `migrate_v3.py sizing` (convert requests/containers to a
+  T-shirt Size deterministically; report the delivery units that need re-sizing and the accepted
+  requests that need refining), `refine` the accepted requests, then turn `enforce` on - documented
+  in `reference-upgrade.md#two-backlog-migration`. The sizing migration only ADDS a `Size:` line and
+  the workflow is one config line, so the upgrade is reversible.
+
 ### Added
 
 - **`refine add`: a large request grows its next epic with the tool, not by hand (EP0036, CR0274).**

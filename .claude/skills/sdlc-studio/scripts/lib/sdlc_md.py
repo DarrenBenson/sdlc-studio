@@ -373,6 +373,15 @@ def check_size(value) -> str:
         f"which is measured against actuals. A container is not measured; it is decomposed.")
 
 
+def size_for_points(points: int) -> str:
+    """The T-shirt Size a container/request takes from a story-point total - the ONE point->size
+    band, shared by `refine` (sizing an epic from its stories) and the sizing migration (sizing a
+    legacy pointed CR). Kept here so the two paths cannot drift (LL0016): the band edges mirror the
+    Fibonacci scale - S up to 3, M up to 8, L up to 20, XL beyond. A coarse read-off, never a
+    measurement (the real size of an epic is its derived point total)."""
+    return ("S" if points <= 3 else "M" if points <= 8 else "L" if points <= 20 else "XL")
+
+
 def read_size(text: str) -> str | None:
     """The T-shirt size declared on a container/request artefact (`Size:` of S/M/L/XL), or None.
 
