@@ -9,6 +9,7 @@ Related: help/cr.md, reference-cr.md
 > **Status:** {{status}}
 > **Priority:** {{priority}}
 > **Type:** {{type}}
+> **Size:** {{size}}
 > **Requester:** {{requester}}
 > **Estimated-by:** {{who made the size call - so the report can tell you your own hit rate}}
 > **Delivered-by:** {{the model that delivered it - written at close, not at filing}}
@@ -18,11 +19,13 @@ Related: help/cr.md, reference-cr.md
 > **GitHub Issue:** {{github_issue}}
 
 <!--
-The CR's own `**Points:**` sits under Impact Assessment below: a RELATIVE size on the modified
-Fibonacci scale (1, 2, 3, 5, 8, 13, 20), sized against units already delivered rather than
-predicted in hours. The gaps widen deliberately, because uncertainty grows with size - a value
-off the scale is REFUSED, never rounded, because the scale IS the estimate. Above 8, split the
-CR: estimator consistency collapses beyond it.
+A CR carries a T-shirt `**Size:**` (S / M / L / XL), NOT story points. A CR is a REQUEST - it is
+not a unit of work until someone decomposes it into stories, and pointing it is guessing at a
+shape that does not exist yet. A T-shirt size is coarse ON PURPOSE: it says "roughly this big"
+before the stories are known. Story points (the modified Fibonacci scale) belong on the DELIVERY
+unit - a story or a bug - which is measured against actuals. A value off the size scale is
+REFUSED, never rounded. The answer to a CR that feels too big is to DECOMPOSE it, not to size it
+harder.
 -->
 
 ## Summary
@@ -39,9 +42,9 @@ CR: estimator consistency collapses beyond it.
 
 ### Item 1: {{item_1_title}}
 
-<!-- `Item points`, not `Points`: `Points` is the CR's own job size, read by the planner from
-the FIRST match in the document. A per-item field spelled the same way shadows it, and the CR
-plans as unsized. -->
+<!-- `Item points`, never `Points`: story points belong on the stories this CR decomposes into,
+and a per-item field spelled `Points` would be mis-read as a CR-level size (the CR is sized by
+its T-shirt `Size` above, not by points). Keep the per-item estimate spelled `Item points`. -->
 
 **Item priority:** {{item_1_priority}}
 **Item points:** {{item_1_points}}
@@ -56,7 +59,8 @@ plans as unsized. -->
 
 ## Impact Assessment
 
-**Points:** {{1|2|3|5|8|13|20 - the CR's own job size, read by the planner}}
+<!-- The CR's own size is the T-shirt `**Size:**` in the metadata block above (S/M/L/XL), not
+points. A CR is a request, sized before it is decomposed; story points belong on the stories. -->
 
 ### Existing Functionality
 

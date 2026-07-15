@@ -37,12 +37,14 @@ TYPES = {
     "bug": {"dir": "bugs", "prefix": "BG", "disp": "BG{n:04d}",
             "status": sdlc_md.create_status("bug"),
             "required": ("severity", "summary", "steps", "fix")},
-    # A CR carries an impact statement and a size: the validator demands both of any CR, so the
-    # filer demands both of its caller rather than minting one that fails. The size is `Points`
-    # on the modified Fibonacci scale - the ONE size vocabulary (`sdlc_md.POINTS_SCALE`).
+    # A CR carries an impact statement and a size. Its size is a T-shirt `Size` (S/M/L/XL), not
+    # points: a CR is a REQUEST, sized coarsely before it is decomposed into stories, and story
+    # points belong on the delivery unit that is measured. `Size` is demanded by the grooming
+    # gate (`check_groomed`), not listed here - exactly as a bug's `Points` is - so the refusal
+    # names the flag and explains the scale rather than emitting a bare "missing field".
     "cr": {"dir": "change-requests", "prefix": "CR", "disp": "CR-{n:04d}",
            "status": sdlc_md.create_status("cr"),
-           "required": ("priority", "ctype", "summary", "acs", "impact", "points")},
+           "required": ("priority", "ctype", "summary", "acs", "impact")},
     "rfc": {"dir": "rfcs", "prefix": "RFC", "disp": "RFC-{n:04d}",
             "status": sdlc_md.create_status("rfc"),
             "required": ("summary", "options")},
@@ -173,12 +175,16 @@ def check_prose_acs(type_: str, fields: dict) -> None:
 # is out of this fix's scope - `--affects` is accepted on it and written when supplied.
 GROOMED_TYPES = ("bug", "cr")
 
-# What to hand the author for each gap the gate can name. Keyed by the gate's own token.
+# What to hand the author for each gap the gate can name. Keyed by the gate's own token, so a
+# bug/story missing its `Points` and a CR/RFC missing its `Size` each get the flag that fills it.
 _GROOM_FLAG = {
     "Affects": '--affects "path/to/file.py, path/to/other.py"  (the files this will touch)',
-    "size": (f"--points {'|'.join(str(p) for p in sdlc_md.POINTS_SCALE)}  (the job SIZE of the "
-             f"work, RELATIVE to units you have already delivered - a bug's Severity is its "
-             f"urgency, a different axis)"),
+    "Points": (f"--points {'|'.join(str(p) for p in sdlc_md.POINTS_SCALE)}  (the job SIZE of the "
+               f"work, RELATIVE to units you have already delivered - a bug's Severity is its "
+               f"urgency, a different axis)"),
+    "Size": (f"--size {'|'.join(sdlc_md.SIZE_SCALE)}  (the T-shirt size of this REQUEST, sized "
+             f"coarsely before it is decomposed into stories - story points belong on the "
+             f"delivery unit, not on the request)"),
 }
 
 
@@ -229,7 +235,8 @@ def check_groomed(repo_root: Path | str, type_: str, text: str) -> None:
         f"number.\n"
         f"  Supply:\n"
         + "".join(f"    {_GROOM_FLAG.get(m, m)}\n" for m in missing) +
-        f"  e.g. --affects \"scripts/sprint.py, scripts/file_finding.py\" --points 5\n"
+        f"  e.g. --affects \"scripts/sprint.py, scripts/file_finding.py\" "
+        + ("--size M" if type_ == "cr" else "--points 5") + "\n"
         f"  You know which files this touches NOW. Nobody knows it better at plan time - and "
         f"an `Affects` the parser cannot read as a path (a prose phrase, a bare word) counts "
         f"as no `Affects` at all.\n"
@@ -381,6 +388,15 @@ def _affects_line(f: dict) -> str:
     return f"> **Affects:** {val}\n" if val else ""
 
 
+def _size_line(f: dict) -> str:
+    """The `Size` metadata line: the T-shirt size (S/M/L/XL) a CR/RFC carries in place of points.
+    Canonicalised through `sdlc_md.check_size` (a `--size m` becomes `M`) and written only when
+    declared - a preview render for the grooming gate leaves it absent so the gate can see it is
+    missing, exactly as `_affects_line` does."""
+    val = str(f.get("size") or "").strip()
+    return f"> **Size:** {sdlc_md.check_size(val)}\n" if val else ""
+
+
 def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
             status: str | None = None) -> str:
     """A structured artifact body (required sections populated). `status` overrides the
@@ -413,17 +429,16 @@ def _render(type_: str, disp_id: str, title: str, today: str, f: dict,
         acs = "\n".join(f"- [ ] {a}" for a in stripped)
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** {status or 'Proposed'}\n> **Priority:** {f['priority']}\n"
-                f"> **Type:** {f['ctype']}\n{_affects_line(f)}"
+                f"> **Type:** {f['ctype']}\n{_size_line(f)}{_affects_line(f)}"
                 f"> **Date:** {today}\n{_stamp(f)}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
                 f"## Impact\n\n{f['impact']}\n\n"
-                f"**Points:** {f['points']}\n\n"
                 f"## Acceptance Criteria\n\n{acs}\n\n"
                 f"## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
                 f"{rev_row(today, f, 'Raised')}\n")
     options = "\n".join(f"- **{o}**" for o in f["options"])
     return (f"# {disp_id}: {title}\n\n"
-            f"> **Status:** {status or 'Draft'}\n{_affects_line(f)}"
+            f"> **Status:** {status or 'Draft'}\n{_size_line(f)}{_affects_line(f)}"
             f"> **Date:** {today}\n{_stamp(f)}\n"
             f"## Summary\n\n{f['summary']}\n\n"
             f"## Design Options\n\n{options}\n\n"
@@ -555,7 +570,8 @@ def _file_finding_locked(root: Path, type_: str, spec: dict, title: str, fields:
 def cmd_file(args: argparse.Namespace) -> int:
     fields = {"severity": args.severity, "priority": args.priority, "ctype": args.ctype,
               "summary": args.summary, "steps": args.steps, "fix": args.fix,
-              "impact": args.impact, "points": args.points, "affects": args.affects,
+              "impact": args.impact, "points": args.points, "size": args.size,
+              "affects": args.affects,
               "author": args.author, "recommendation": args.recommendation}
     fields = {k: v for k, v in fields.items() if v is not None}
     if args.ac:
@@ -592,12 +608,22 @@ def build_parser() -> argparse.ArgumentParser:
     # choice", and the whole point of refusing a 7 is to explain WHY the scale has no 7. The
     # value is checked by `sdlc_md.check_points` - the one definition both creators share.
     f.add_argument("--points",
-                   help="job SIZE of the work, on the modified Fibonacci scale "
+                   help="job SIZE of a DELIVERY unit (a bug), on the modified Fibonacci scale "
                         f"({', '.join(str(p) for p in sdlc_md.POINTS_SCALE)}) - RELATIVE to "
                         "units already delivered, not a prediction of time. A bug's Severity is "
-                        "its urgency, a different axis. Required for a bug and a cr: `sprint "
-                        "plan` refuses a unit nobody sized. A value off the scale is refused, "
-                        "never rounded; above 8, split the unit.")
+                        "its urgency, a different axis. Required for a bug: `sprint plan` refuses "
+                        "a unit nobody sized. A value off the scale is refused, never rounded; "
+                        "above 8, split the unit. A CR is a REQUEST - it takes --size, not --points.")
+    # A CR/RFC is a container/request, sized coarsely BEFORE decomposition: a T-shirt Size, not
+    # story points (which belong on the measured delivery unit). Not an argparse `choices` list,
+    # for the same reason --points is not: a bare "invalid choice" teaches nothing, and the value
+    # is checked by `sdlc_md.check_size` so the refusal can explain why a request is not pointed.
+    f.add_argument("--size",
+                   help="T-shirt size of a REQUEST/container (a cr, or optionally an rfc): "
+                        f"{' | '.join(sdlc_md.SIZE_SCALE)}. Sized coarsely before the request is "
+                        "decomposed into stories - a CR is not a unit of work until it is broken "
+                        "down. Required for a cr: `sprint plan` refuses a request nobody sized. "
+                        "Story points belong on the delivery unit (a story/bug), not on the request.")
     f.add_argument("--affects",
                    help="comma-separated files this unit will touch, written as the `Affects` "
                         "metadata line. Required for a bug and a cr: `sprint plan` refuses a "

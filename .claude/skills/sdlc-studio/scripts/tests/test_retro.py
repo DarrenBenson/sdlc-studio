@@ -668,6 +668,22 @@ class VelocityIsMeasuredInPoints(AccuracyBase):
                           "a rate pooled across two models describes neither of them")
         self.assertTrue(rate["refused"])
 
+    def test_the_rate_is_tagged_with_the_project_its_cell_belongs_to(self) -> None:
+        """CR0270: the rate is a per-(project, model) quantity. A single VELOCITY.md is one
+        project, resolved from the repo and stamped on the result and every cell, so a figure
+        lifted out of here is never mistaken for a different project's."""
+        import telemetry as tel
+        self.forecast("BG0001", "CR0001", points={"BG0001": 2, "CR0001": 3})
+        self.telemetry(
+            {"id": "BG0001", "type": "bug", "tokens": 50_000, "model": "m1"},
+            {"id": "CR0001", "type": "cr", "tokens": 75_000, "model": "m1"},
+        )
+        retro.record_velocity(str(self.root), self.accuracy())
+        rate = retro.measured_rate(str(self.root))
+        project = tel.project_name(str(self.root))
+        self.assertEqual(rate["project"], project)
+        self.assertEqual(rate["by_model"]["m1"]["project"], project)
+
     def test_an_old_row_survives_the_points_columns(self) -> None:
         """LL0028: the migration is ATTACKED, not re-read. A VELOCITY.md written before points
         existed must keep every number it recorded when a new row is appended beside it."""
@@ -1066,6 +1082,98 @@ class TrainingErrorIsNotEvidence(unittest.TestCase):
         cal = sprint.calibration(self.root)
         self.assertEqual(cal["sprints"], 0)
         self.assertEqual(cal["unforecast"], 1)
+
+
+class CollateRateAcrossProjects(unittest.TestCase):
+    """CR0270: the multi-project tuning read. Evidence is pooled from several project dirs and the
+    tokens-per-point rate is computed WITHIN each (project, model) cell, never summed across two.
+    The cell is read off the RECORD's own project - the whole reason it is stamped on the row."""
+
+    def _seed(self, root, actuals, forecasts):
+        import telemetry as tel
+        ap = tel.actuals_path(str(root), "0000-migrated")
+        ap.parent.mkdir(parents=True, exist_ok=True)
+        ap.write_text("".join(json.dumps(r) + "\n" for r in actuals), encoding="utf-8")
+        fp = tel.forecasts_path(str(root), "0000-migrated")
+        fp.write_text("".join(json.dumps(r) + "\n" for r in forecasts), encoding="utf-8")
+
+    def test_one_project_one_model_is_one_cell_with_the_right_rate(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self._seed(
+                Path(d),
+                [{"id": "US0001", "type": "story", "tokens": 50_000, "model": "m1",
+                  "project": "alpha"},
+                 {"id": "US0002", "type": "story", "tokens": 100_000, "model": "m1",
+                  "project": "alpha"}],
+                [{"id": "US0001", "tokens": 40_000, "points": 2, "project": "alpha",
+                  "constants": {}},
+                 {"id": "US0002", "tokens": 80_000, "points": 3, "project": "alpha",
+                  "constants": {}}])
+            rep = retro.collate_rate([d])
+            self.assertEqual(len(rep["cells"]), 1)
+            c = rep["cells"][0]
+            self.assertEqual((c["project"], c["model"]), ("alpha", "m1"))
+            self.assertEqual(c["points"], 5)
+            self.assertEqual(c["actual_tokens"], 150_000)
+            self.assertEqual(c["tokens_per_point"], 30_000)
+            self.assertIsNone(rep["refused"])
+
+    def test_a_rate_across_two_projects_is_segmented_and_refused_never_averaged(self) -> None:
+        """THE LOAD-BEARING TEST. Two projects, same model, wildly different cost per point. A
+        pooled average (72,500/pt) describes neither - so no cell ever holds it, each project's
+        rate stands alone, and the pooled figure is refused."""
+        with tempfile.TemporaryDirectory() as d1, tempfile.TemporaryDirectory() as d2:
+            self._seed(
+                Path(d1),
+                [{"id": "US0001", "type": "story", "tokens": 50_000, "model": "m1",
+                  "project": "alpha"}],
+                [{"id": "US0001", "tokens": 40_000, "points": 2, "project": "alpha",
+                  "constants": {}}])
+            self._seed(
+                Path(d2),
+                [{"id": "US0001", "type": "story", "tokens": 300_000, "model": "m1",
+                  "project": "beta"}],
+                [{"id": "US0001", "tokens": 250_000, "points": 2, "project": "beta",
+                  "constants": {}}])
+            rep = retro.collate_rate([d1, d2])
+            self.assertEqual(rep["projects"], ["alpha", "beta"])
+            self.assertEqual(len(rep["cells"]), 2)
+            self.assertTrue(rep["refused"], "a rate spanning two projects must be refused")
+            rates = {c["project"]: c["tokens_per_point"] for c in rep["cells"]}
+            self.assertEqual(rates["alpha"], 25_000)
+            self.assertEqual(rates["beta"], 150_000)
+            self.assertNotIn(72_500, [c["tokens_per_point"] for c in rep["cells"]],
+                             "the naive pooled average must appear nowhere")
+
+    def test_two_models_in_one_project_are_two_cells_and_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self._seed(
+                Path(d),
+                [{"id": "US0001", "type": "story", "tokens": 40_000, "model": "small",
+                  "project": "alpha"},
+                 {"id": "US0002", "type": "story", "tokens": 200_000, "model": "large",
+                  "project": "alpha"}],
+                [{"id": "US0001", "tokens": 40_000, "points": 2, "project": "alpha",
+                  "constants": {}},
+                 {"id": "US0002", "tokens": 200_000, "points": 2, "project": "alpha",
+                  "constants": {}}])
+            rep = retro.collate_rate([d])
+            self.assertEqual(len(rep["cells"]), 2)
+            self.assertEqual(rep["models"], ["large", "small"])
+            self.assertTrue(rep["refused"])
+
+    def test_a_record_with_no_project_reads_as_its_own_unknown_cell(self) -> None:
+        """Additive tolerance: an old record predating the project field is not invalidated, and
+        it is never folded into a named project - it is its own `unknown` cell."""
+        import telemetry as tel
+        with tempfile.TemporaryDirectory() as d:
+            self._seed(
+                Path(d),
+                [{"id": "US0001", "type": "story", "tokens": 50_000, "model": "m1"}],  # no project
+                [{"id": "US0001", "tokens": 40_000, "points": 2, "constants": {}}])
+            rep = retro.collate_rate([d])
+            self.assertEqual(rep["cells"][0]["project"], tel.PROJECT_UNKNOWN)
+            self.assertEqual(rep["cells"][0]["tokens_per_point"], 25_000)
 
 
 if __name__ == "__main__":

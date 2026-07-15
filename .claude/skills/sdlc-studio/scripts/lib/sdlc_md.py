@@ -235,7 +235,7 @@ _LINE_BREAK_RE = re.compile("[" + "".join(re.escape(c) for c in _LINE_BREAK_NAME
 # one line is the point.
 SINGLE_LINE_FIELDS: tuple[str, ...] = (
     "title", "author", "epic", "persona", "tranche", "priority", "ctype", "severity",
-    "points", "affects", "provenance", "date", "theme", "note",
+    "points", "size", "affects", "provenance", "date", "theme", "note",
 )
 # List fields whose every item renders as ONE bullet. An `acs` item is the sharpest of them: a
 # break in it injects a sibling `- **Verify:** <command>` line into the AC block, which the
@@ -333,6 +333,64 @@ def read_points(text: str) -> int | None:
         return None
 
 
+# -----------------------------------------------------------------------------
+# The T-shirt size: what a CONTAINER or a REQUEST carries, sized before decomposition
+# -----------------------------------------------------------------------------
+#
+# SIZE BY WHAT A THING IS. Story points belong on the thing that is DELIVERED and MEASURED - a
+# story or a bug, sized relative to units already delivered and checkable against actuals. A
+# T-shirt size belongs on the CONTAINER that must be decomposed first: an epic (a container of
+# stories), a CR (a REQUEST that becomes work only once it is broken down), an RFC (a design
+# exploration). A request is not a unit of work until someone decomposes it, and pointing it is
+# guessing at a shape that does not yet exist - so it is sized coarsely, on purpose. A coarse
+# scale (S/M/L/XL) says "roughly this big" without pretending to a precision nobody has before
+# the stories are known. A T-shirt size is NEVER a measurement: it is never summed into a
+# velocity figure or a token forecast, both of which count delivered STORY points only.
+SIZE_FIELD = "Size"
+SIZE_SCALE: tuple[str, ...] = ("S", "M", "L", "XL")
+_SIZE_SCALE_TEXT = ", ".join(SIZE_SCALE)
+
+
+def check_size(value) -> str:
+    """`value` as a canonical T-shirt size (S / M / L / XL), or ValueError naming the scale.
+
+    The ONE definition of a legal container/request size, called from `check_creator_fields` -
+    so every creation path inherits it. A lower-case `m` is accepted and canonicalised to `M`
+    (a T-shirt size is a closed four-value set, not free text); anything else is refused, never
+    coerced, because a container is sized coarsely and a value off the scale is a category error
+    (story points on a request), not a typo to round away.
+    """
+    raw = str(value).strip().strip("*`_ ").upper()
+    if raw in SIZE_SCALE:
+        return raw
+    raise ValueError(
+        f"Size value {str(value)!r} is not a T-shirt size - refused. "
+        f"Nothing was allocated, nothing was written.\n"
+        f"  The scale is: {_SIZE_SCALE_TEXT}. A T-shirt size, NOT story points - because a CR "
+        f"and an RFC are REQUESTS and an epic is a CONTAINER, each sized coarsely BEFORE it is "
+        f"broken down.\n"
+        f"  Story points ({_POINTS_SCALE_TEXT}) belong on the DELIVERY unit - a story or a bug - "
+        f"which is measured against actuals. A container is not measured; it is decomposed.")
+
+
+def read_size(text: str) -> str | None:
+    """The T-shirt size declared on a container/request artefact (`Size:` of S/M/L/XL), or None.
+
+    THE reader every consumer of a container's size shares. Anchored on `extract_field`, so a
+    CR/RFC `> **Size:** M` (metadata block) and an epic's `**Size:** M` (its Sizing section) are
+    the same field, and a `**Size:**` mentioned in prose is not. A value the scale does not carry
+    reads as no size at all, exactly as the creators refuse to write one. Returns the canonical
+    upper-case form."""
+    raw = extract_field(text, SIZE_FIELD)
+    if not raw or not raw.strip():
+        return None
+    tok = raw.strip().split()[0].strip("*_`:,;.()")
+    try:
+        return check_size(tok)
+    except ValueError:
+        return None
+
+
 def require_single_line(field: str, value: str) -> str:
     """`value` unchanged, or ValueError naming the field and the character that breaks it.
 
@@ -384,6 +442,10 @@ def check_creator_fields(fields: dict) -> None:
         warn = points_split_warning(check_points(fields["points"]))
         if warn:
             print(warn, file=sys.stderr)
+    # A T-shirt Size is the other closed-vocabulary field: a container/request carries it in
+    # place of points, and the same one-choke-point refusal keeps the scale from drifting.
+    if fields.get("size") is not None:
+        check_size(fields["size"])
 
 
 def join_row(cells: list[str]) -> str:
@@ -735,6 +797,7 @@ REMEDIATION: dict[str, dict[str, str]] = {
         "index-status-column": "the index table's Status column is mis-named or absent, so rows cannot be compared - fix the `_index.md` header row (name the column `Status`) and re-run reconcile",
         "breakdown-unticked": "an epic breakdown checkbox is unticked over a terminal unit - run `reconcile apply` to sync every breakdown box to its unit's status (both directions)",
         "breakdown-ticked-early": "an epic breakdown checkbox is ticked over a still-live unit (masks unfinished work) - run `reconcile apply` to untick it, or finish the unit",
+        "epic-points-stale": "an epic's derived point total no longer equals the sum of its stories' points - run `reconcile apply` to recompute it (the total is DERIVED, never hand-set; the epic's own coarse estimate is its T-shirt `Size`, not points)",
     },
 }
 

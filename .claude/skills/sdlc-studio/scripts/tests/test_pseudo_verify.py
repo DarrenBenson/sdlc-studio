@@ -43,9 +43,12 @@ FALSE_RED = "The env var is documented. Verify: `rg -q 'REQUIRE_CHECKSUM' README
 HONEST = ("sprint.py reads the CR Effort field and sizes the unit by it, rather than falling "
           "back to the flat default")
 
+# Sized for BOTH creators: a T-shirt `size` (the CR filer's field - a CR is a request) and a
+# legacy `points` (the low-level `artifact new` path still writes points onto a CR, tolerated).
+# Each creator reads the field it owns; these tests assert AC/validator behaviour, not the size.
 CR_FIELDS = {"priority": "P3", "ctype": "Improvement", "summary": "s",
-             "impact": "every sprint plan", "points": 5, "affects": "scripts/sprint.py",
-             "date": "2026-07-14"}
+             "impact": "every sprint plan", "size": "M", "points": 5,
+             "affects": "scripts/sprint.py", "date": "2026-07-14"}
 
 
 def _seed_cr_index(root: Path) -> Path:

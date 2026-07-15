@@ -1,13 +1,15 @@
 # CR-0269: RFC0038 U5: size by what a thing IS - T-shirt on containers, points on delivery units, and a CR must decompose before it can be planned
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** P1
 > **Type:** Improvement
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/templates/core/cr.md, .claude/skills/sdlc-studio/scripts/file_finding.py
+> **Verification depth:** functional - attacked through the public CLI: a CR filed with `--size M` writes `Size: M` and grooms; a story with `Points: 5` grooms and is demanded points-not-size; a legacy CR carrying Points still reads and grooms; and a bug filed with `--size` is REFUSED because a bug is a delivery unit that carries points (the gate caught its own author using the wrong vocabulary one command after ship). A CR's T-shirt Size is never summed into velocity.
 > **Depends on:** CR0270
 > **Date:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

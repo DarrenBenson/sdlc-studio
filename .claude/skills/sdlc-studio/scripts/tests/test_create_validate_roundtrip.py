@@ -211,6 +211,12 @@ class ContentRoundTripTests(unittest.TestCase):
             _workspace(root, era)
             file_finding.ensure_index(root, type_, "2026-07-13")
             fields = dict(CONTENT[type_])
+            # The CR filer sizes a CR by its T-shirt `Size` (a CR is a request, decomposed before
+            # delivery), not by story points. CONTENT["cr"] carries points for the low-level
+            # `artifact new` path (legacy-tolerated); the filer path swaps it for a Size.
+            if type_ == "cr":
+                fields.pop("points", None)
+                fields["size"] = "M"
             res = file_finding.file_finding(root, type_, f"a {type_}", fields)
             errs = _errors(root, Path(res["path"]), type_)
             self.assertEqual(errs, [], f"file/{type_}/{era}: {_fmt(errs)}")

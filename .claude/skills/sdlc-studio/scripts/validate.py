@@ -192,8 +192,9 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
                 "reproduction steps")
         elif type_ == "cr" and not _cr_has_evidence(text):
             add("error", "evidence-present",
-                "CR needs both an impact statement and a size - `**Points:** <"
-                + "|".join(str(p) for p in sdlc_md.POINTS_SCALE) + ">")
+                "CR needs both an impact statement and a size - `> **Size:** <"
+                + "|".join(sdlc_md.SIZE_SCALE) + ">` (a T-shirt size: a CR is a request, "
+                "sized before it is decomposed; story points belong on the delivery unit)")
 
     _check_placeholders(text, add)
     return out
@@ -251,17 +252,22 @@ def _bug_has_evidence(text: str) -> bool:
 def _cr_has_evidence(text: str) -> bool:
     """A CR carries an impact statement AND a size.
 
-    The size is `Points` on the modified Fibonacci scale - the ONE size vocabulary the creators
-    now write and the planner reads (`sdlc_md.read_points`). The retired `Effort` S/M/L is still
-    ACCEPTED here, and only here: this is a read over artefacts already on disk, and a validator
-    that turned every CR filed before the vocabulary changed into an error would be reporting a
-    fact about history, not a defect anyone can fix. Nothing WRITES an Effort any more, so the
-    tolerance drains as the backlog is re-estimated rather than living on as a second vocabulary.
+    A CR is sized by a T-shirt `Size` (S/M/L/XL) - a CR is a REQUEST, sized coarsely before it is
+    decomposed, and story points belong on the delivery unit it becomes. TWO legacy shapes are
+    still ACCEPTED here, and only here: a `Points` value (CRs filed under the earlier gate that
+    forced points onto the request) and an `Effort` S/M/L (older still). This is a read over
+    artefacts already on disk, and a validator that turned every CR filed before a vocabulary
+    change into an error would be reporting a fact about history, not a defect anyone can fix.
+    Nothing WRITES a Points or an Effort onto a CR any more, so the tolerance drains as the
+    backlog is re-estimated rather than living on as a second vocabulary.
     """
     has_impact = _section_has_content(text, "Impact", "Impact Assessment", "Motivation")
     legacy_effort = bool(re.search(r"effort", text, re.I)) and bool(
         re.search(r"\b[SML]\b|small|medium|large", text, re.I))
-    return has_impact and (sdlc_md.read_points(text) is not None or legacy_effort)
+    has_size = (sdlc_md.read_size(text) is not None            # the current shape: a T-shirt Size
+                or sdlc_md.read_points(text) is not None       # legacy: points on a request
+                or legacy_effort)                              # legacy: Effort S/M/L
+    return has_impact and has_size
 
 
 def _check_placeholders(text: str, add) -> None:

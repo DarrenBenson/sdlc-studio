@@ -1,12 +1,14 @@
 # CR-0270: RFC0038 U7: stamp project and points on every evidence record, so cross-project data is collatable and never blindly pooled
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** P1
 > **Type:** Improvement
 > **Affects:** .claude/skills/sdlc-studio/scripts/telemetry.py, .claude/skills/sdlc-studio/scripts/sprint.py
+> **Verification depth:** functional - attacked through the public path: a freshly recorded actual carries `project` stamped automatically from the git remote (no argument passed); all 26 measured actuals backfilled value-for-value with velocity numbers unchanged; and `collate_rate` across two projects at 25k/pt and 150k/pt REFUSES a pooled figure and segments per (project, model) cell.
 > **Date:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

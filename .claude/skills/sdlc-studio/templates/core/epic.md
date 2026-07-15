@@ -117,8 +117,15 @@ Related: help/epic.md, reference-epic.md
 
 ## Sizing
 
-**Story Points:** {{story_points}}
+**Size:** {{size}}
+
+_A T-shirt size (S / M / L / XL) - the epic's own coarse estimate, made before decomposition. An epic is never sized in story points; STORY points belong on stories._
+
 **Estimated Story Count:** {{story_count}}
+
+**Derived Point Total:** {{derived_points}}
+
+_DERIVED, not estimated: the sum of this epic's stories' points. `reconcile` recomputes it, so it can never drift from the stories beneath it - do not hand-edit it._
 
 **Complexity Factors:**
 

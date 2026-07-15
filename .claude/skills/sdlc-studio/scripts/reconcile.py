@@ -64,6 +64,7 @@ DRIFT_KINDS = (
     "count-mismatch",
     "breakdown-unticked",
     "breakdown-ticked-early",
+    "epic-points-stale",
 )
 
 # Statuses that do NOT imply a backing file yet. An UNLINKED index row in one of
@@ -879,6 +880,111 @@ def apply_breakdown(repo_root: Path | str, dry_run: bool = False) -> dict:
     return {"synced": synced}
 
 
+# -----------------------------------------------------------------------------
+# Epic derived point total (the roll-up)
+#
+# An epic is T-shirt sized (a `Size:` of S/M/L/XL) - its OWN coarse estimate, made before its
+# stories exist. Its POINT total is a different thing entirely: the sum of the points of the
+# stories beneath it, which exists only AFTER decomposition and is DERIVED, never estimated.
+# Derived means checkable, and checkable means it cannot silently drift: reconcile recomputes it
+# from the stories every run (LL0034 - a number that can be true in the record and false in
+# reality must be computed, not stamped), exactly as the summary counts are recomputed one level
+# down. Only an epic that DECLARES the field is reconciled; an epic without it asserts no roll-up
+# (the same rule status-mismatch uses for a file with no Status), so this never fabricates drift
+# on a legacy epic. A T-shirt `Size` is never read here - only STORY points are summed, so an
+# epic's own coarse size can never leak into a points figure.
+# -----------------------------------------------------------------------------
+EPIC_DERIVED_FIELD = "Derived Point Total"
+_EPIC_DERIVED_LINE_RE = re.compile(
+    r"^(\s*\*\*" + re.escape(EPIC_DERIVED_FIELD) + r":\*\*[^\S\n]*)(.*)$")
+
+
+def _parse_leading_int(raw: str | None) -> int | None:
+    """The leading integer of a field value (`10`, `10 (derived)`), or None when it carries
+    none - an absent field, or an unfilled `{{derived_points}}` placeholder, both of which
+    reconcile treats as drift and fills."""
+    if not raw or not raw.strip():
+        return None
+    tok = raw.strip().split()[0].strip("*_`")
+    return int(tok) if tok.isdigit() else None
+
+
+def _epic_story_point_totals(repo_root: Path | str) -> dict[str, int]:
+    """{normalised epic id -> sum of its stories' points}. A story counts toward an epic when it
+    names that epic (`> **Epic:**`) AND carries a size on the Fibonacci scale; a story with no
+    epic, or no points, contributes nothing. Reads STORY points only - never an epic's own Size -
+    so a T-shirt size can never be summed into the roll-up."""
+    root = Path(repo_root)
+    totals: dict[str, int] = {}
+    for spath in sdlc_md.artifact_files("story", root):
+        text = spath.read_text(encoding="utf-8")
+        epic_ref = sdlc_md.story_epic(text)
+        if not epic_ref:
+            continue
+        pts = sdlc_md.read_points(text)
+        if pts is None:
+            continue
+        m = sdlc_md.ID_SEARCH_RE.search(epic_ref)
+        if not m:
+            continue
+        key = _norm_id(m.group(0))
+        totals[key] = totals.get(key, 0) + pts
+    return totals
+
+
+def epic_points_drift(repo_root: Path | str) -> list[dict]:
+    """An epic whose declared `Derived Point Total` does not equal the sum of its stories'
+    points. Only epics that CARRY the field are checked - a legacy epic without it asserts no
+    roll-up to reconcile, exactly as a file with no Status field cannot status-drift."""
+    root = Path(repo_root)
+    totals = _epic_story_point_totals(root)
+    drift: list[dict] = []
+    for epath in sdlc_md.artifact_files("epic", root):
+        text = epath.read_text(encoding="utf-8")
+        raw = sdlc_md.extract_field(text, EPIC_DERIVED_FIELD)
+        if raw is None:
+            continue
+        eid = sdlc_md.extract_record_id(epath.stem) or epath.stem
+        computed = totals.get(_norm_id(eid), 0)
+        if _parse_leading_int(raw) != computed:
+            drift.append({"type": "epic", "id": eid, "kind": "epic-points-stale",
+                          "file_status": None, "index_status": None,
+                          "fix": f"recompute {eid} {EPIC_DERIVED_FIELD} to {computed} "
+                                 f"(the sum of its stories' points; declared {raw.strip()!r})"})
+    return drift
+
+
+def apply_epic_points(repo_root: Path | str, dry_run: bool = False) -> dict:
+    """Write each declaring epic's `Derived Point Total` to the sum of its stories' points - the
+    same recompute discipline as the summary counts, one level up. Rewrites only the value on the
+    field's own line, so the surrounding note survives; idempotent. Returns {synced: [ids]}."""
+    root = Path(repo_root)
+    totals = _epic_story_point_totals(root)
+    synced: list[str] = []
+    for epath in sdlc_md.artifact_files("epic", root):
+        original = epath.read_text(encoding="utf-8")
+        if sdlc_md.extract_field(original, EPIC_DERIVED_FIELD) is None:
+            continue
+        eid = sdlc_md.extract_record_id(epath.stem) or epath.stem
+        computed = totals.get(_norm_id(eid), 0)
+        lines = original.splitlines()
+        changed = False
+        for i, ln in enumerate(lines):
+            m = _EPIC_DERIVED_LINE_RE.match(ln)
+            if not m:
+                continue
+            if _parse_leading_int(m.group(2)) != computed:
+                lines[i] = f"{m.group(1)}{computed}"
+                changed = True
+            break
+        if changed:
+            synced.append(eid)
+            if not dry_run:
+                sdlc_md.atomic_write(
+                    epath, "\n".join(lines) + ("\n" if original.endswith("\n") else ""))
+    return {"synced": synced}
+
+
 def era_divergence_advisory(repo_root: Path | str) -> str | None:
     """Warn when this clone's config and the workspace's ids tell different era stories: config
     says schema v2 (sequential ids) but v3 ULID-form ids exist - another user or machine is
@@ -920,6 +1026,7 @@ def cmd_detect(args: argparse.Namespace) -> int:
     # the epic files even though the drifting unit may be a bug or CR).
     if args.scope in (None, "epics"):
         all_drift.extend(epic_breakdown_drift(repo_root))
+        all_drift.extend(epic_points_drift(repo_root))
 
     by_kind: dict[str, int] = {}
     for d in all_drift:
@@ -1604,8 +1711,10 @@ def cmd_apply(args: argparse.Namespace) -> int:
             by_type["meta"] = apply_meta(repo_root, dry_run=args.dry_run)
         if do_breakdown:
             by_type["breakdown"] = apply_breakdown(repo_root, dry_run=args.dry_run)
+            by_type["epic_points"] = apply_epic_points(repo_root, dry_run=args.dry_run)
         applied = sum(len(r.get("changes", [])) + len(r.get("appended", []))
-                      + len(r.get("pruned", [])) for r in by_type.values())
+                      + len(r.get("pruned", [])) + len(r.get("synced", []))
+                      for r in by_type.values())
         blocked = sum(len(r.get("unapplied", [])) + len(r.get("missing_unapplied", []))
                       + len(r.get("prune_unapplied", []))
                       + (1 if r.get("refused") else 0) for r in by_type.values())
@@ -1667,6 +1776,11 @@ def cmd_apply(args: argparse.Namespace) -> int:
         b = apply_breakdown(repo_root, dry_run=args.dry_run)
         for uid in b["synced"]:
             print(f"{'WOULD sync' if args.dry_run else 'synced'} breakdown checkbox for {uid}")
+            n += 1
+        ep = apply_epic_points(repo_root, dry_run=args.dry_run)
+        for eid in ep["synced"]:
+            print(f"{'WOULD recompute' if args.dry_run else 'recomputed'} "
+                  f"derived point total for {eid}")
             n += 1
     if do_meta:
         m = apply_meta(repo_root, dry_run=args.dry_run)

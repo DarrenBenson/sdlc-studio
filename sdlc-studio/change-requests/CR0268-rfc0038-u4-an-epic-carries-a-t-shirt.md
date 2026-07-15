@@ -1,12 +1,14 @@
 # CR-0268: RFC0038 U4: an epic carries a T-shirt size, not story points - and its point total is DERIVED, not estimated
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** P2
 > **Type:** Improvement
 > **Affects:** .claude/skills/sdlc-studio/templates/core/epic.md, .claude/skills/sdlc-studio/scripts/reconcile.py
+> **Verification depth:** functional - reconcile derives the epic roll-up from story points, attacked through the public CLI: a 3+5+2 epic recomputes to 10, bumping a story to 8 recomputes to 15, the DERIVED note survives, and a Size-only epic never drifts and its T-shirt is never summed.
 > **Date:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

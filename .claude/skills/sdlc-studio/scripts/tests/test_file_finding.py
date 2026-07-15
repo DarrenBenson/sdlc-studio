@@ -35,8 +35,11 @@ sdlc_md = ff.sdlc_md
 
 # Every bug/CR fixture below is GROOMED - it names the files it will touch and its job size -
 # because both creators now REFUSE a finding `sprint plan` could not plan (BG0136). The ungroomed
-# shape is the subject of GroomingGateTests, never an accident in a fixture.
-GROOM = {"affects": "src/thing.py", "points": 3}
+# shape is the subject of GroomingGateTests, never an accident in a fixture. Size by what a thing
+# IS: a bug carries `points` (a measured delivery unit), a CR carries a T-shirt `size` (a request,
+# sized before decomposition). This fixture carries both so it grooms whichever type uses it - the
+# bug renderer reads `points`, the CR renderer reads `size`, and neither writes the other's field.
+GROOM = {"affects": "src/thing.py", "points": 3, "size": "M"}
 BUG = {"severity": "high", "summary": "s", "steps": "r", "fix": "f", **GROOM}
 
 
@@ -89,7 +92,7 @@ class FileTests(unittest.TestCase):
             res = ff.file_finding(root, "cr", "Tighten the gate",
                                   {"priority": "High", "ctype": "Improvement",
                                    "summary": "It is loose.", "acs": ["it is tight", "tested"],
-                                   "impact": "the gate lets bad units through", "points": 5,
+                                   "impact": "the gate lets bad units through", "size": "M",
                                    "affects": "src/gate.py", "date": "2026-06-20"})
             self.assertEqual(res["id"], "CR-0001")
             body = Path(res["path"]).read_text(encoding="utf-8")
@@ -112,7 +115,7 @@ class FileTests(unittest.TestCase):
                                    "summary": "s",
                                    "acs": ["- [ ] already boxed", "-[x] ticked variant",
                                            "bare text"],
-                                   "impact": "i", "points": 3, "affects": "src/x.py",
+                                   "impact": "i", "size": "M", "affects": "src/x.py",
                                    "date": "2026-07-04"})
             body = Path(res["path"]).read_text(encoding="utf-8")
             self.assertIn("- [ ] already boxed", body)
@@ -166,7 +169,7 @@ class FileTests(unittest.TestCase):
             _seed_index(root, "cr")
             ff.file_finding(root, "cr", "a clean finding",
                             {"priority": "High", "ctype": "Improvement",
-                             "summary": "s", "acs": ["x"], "impact": "i", "points": 3,
+                             "summary": "s", "acs": ["x"], "impact": "i", "size": "M",
                              "affects": "src/x.py", "date": "2026-06-20"})
             drift = rc.detect_type("cr", root)["drift"]
             self.assertEqual(drift, [], f"expected 0 drift, got {drift}")
@@ -183,7 +186,7 @@ class FileTests(unittest.TestCase):
             _seed_index(root, "cr")
             res = ff.file_finding(root, "cr", "handle `a | b` inputs",
                                   {"priority": "Low", "ctype": "Bug", "summary": "s",
-                                   "acs": ["y"], "impact": "i", "points": 3,
+                                   "acs": ["y"], "impact": "i", "size": "M",
                                    "affects": "src/x.py", "date": "2026-06-20"})
             self.assertEqual(res["indexed"], True)
             self.assertEqual(rc.detect_type("cr", root)["drift"], [])  # escaped, parses
@@ -200,7 +203,7 @@ class FileTests(unittest.TestCase):
                 "| Proposed | 0 |\n| **Total** | **0** |\n", encoding="utf-8")
             res = ff.file_finding(root, "cr", "x", {"priority": "Low", "ctype": "Bug",
                                                     "summary": "s", "acs": ["y"],
-                                                    "impact": "i", "points": 3,
+                                                    "impact": "i", "size": "M",
                                                     "affects": "src/x.py"})
             self.assertFalse(res["indexed"])  # no data table -> not appended
             self.assertNotIn("[CR-0001]", (cd / "_index.md").read_text(encoding="utf-8"))
@@ -414,7 +417,7 @@ class RevisionAuthorTests(unittest.TestCase):
 
     FIELDS = {"bug": {"severity": "High", "summary": "s", "steps": "x", "fix": "y", **GROOM},
               "cr": {"priority": "High", "ctype": "Improvement", "summary": "s",
-                     "acs": ["a"], "impact": "i", "points": 5, "affects": "src/x.py"},
+                     "acs": ["a"], "impact": "i", "size": "M", "affects": "src/x.py"},
               "rfc": {"summary": "s", "options": ["Option A"]}}
 
     def _file(self, root: Path, type_: str, **extra) -> str:
@@ -549,7 +552,7 @@ class MetadataInjectionRefusalTests(unittest.TestCase):
             with self.assertRaises(ValueError) as cm:
                 ff.file_finding(root, "cr", "t",
                                 {"priority": "High", "ctype": "Improvement", "summary": "s",
-                                 "impact": "i", "points": 3, "affects": "src/x.py",
+                                 "impact": "i", "size": "M", "affects": "src/x.py",
                                  "acs": ["ok", "do it\n- [ ] and this"]})
             self.assertIn("acs", str(cm.exception))
 

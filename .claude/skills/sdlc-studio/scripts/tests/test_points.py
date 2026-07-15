@@ -228,18 +228,24 @@ class TheRoundTripFiledThenPlannable(unittest.TestCase):
                              "the planner refused an artefact the filer sized")
             self.assertTrue(bd["ok"])
 
-    def test_a_cr_carries_its_points_where_the_parser_finds_them(self) -> None:
+    def test_a_cr_carries_its_tshirt_size_where_the_parser_finds_it(self) -> None:
+        # A CR is a REQUEST, sized by a T-shirt Size (not story points), and that Size must be a
+        # Size the PLANNER reads back as groomed - the two-ends-of-one-pipeline contract, in the
+        # container vocabulary this time.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _seed_index(root, "cr")
-            rc, _ = _file_cr(root, "--points", "8")
+            rc, _ = _file_cr(root, "--size", "M")
             self.assertEqual(rc, 0)
             filed = _artifacts(root, "cr")[0]
             text = filed.read_text(encoding="utf-8")
-            self.assertEqual(sdlc_md.read_points(text), 8)
+            self.assertEqual(sdlc_md.read_size(text), "M")
+            self.assertIsNone(sdlc_md.read_points(text),
+                              "a CR is a container - it carries a T-shirt Size, never points")
             bd = sprint.breakdown(root, [{"id": filed.stem.split("-")[0], "type": "cr",
                                           "path": str(filed)}], skip_personas=True)
             self.assertEqual(bd["ungroomed"], [])
+            self.assertTrue(bd["ok"])
 
 
 class EffortIsRetired(unittest.TestCase):
@@ -247,11 +253,13 @@ class EffortIsRetired(unittest.TestCase):
     second vocabulary is a second answer to the same question, and the two drift."""
 
     def test_a_filed_artefact_carries_no_effort_field(self) -> None:
-        for type_, filer in (("bug", _file_bug), ("cr", _file_cr)):
+        # Sized by what it IS: a bug is a delivery unit (points), a CR is a request (T-shirt Size).
+        for type_, filer, size_arg in (("bug", _file_bug, ("--points", "3")),
+                                       ("cr", _file_cr, ("--size", "M"))):
             with self.subTest(type=type_), tempfile.TemporaryDirectory() as d:
                 root = Path(d)
                 _seed_index(root, type_)
-                rc, _ = filer(root, "--points", "3")
+                rc, _ = filer(root, *size_arg)
                 self.assertEqual(rc, 0)
                 text = _artifacts(root, type_)[0].read_text(encoding="utf-8")
                 self.assertIsNone(sdlc_md.extract_field(text, "Effort"),

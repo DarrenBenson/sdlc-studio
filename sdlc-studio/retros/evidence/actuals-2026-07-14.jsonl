@@ -1,21 +1,25 @@
-{"id": "BG0137", "type": "bug", "iterations": 1, "wall_time_s": 528, "critic_verdict": "approve", "tokens": 80982, "model": "claude-opus-4-8"}
-{"id": "BG0137", "type": "bug"}
-{"id": "BG0140", "type": "bug", "iterations": 1, "wall_time_s": 963, "critic_verdict": "approve", "tokens": 150139, "model": "claude-opus-4-8"}
-{"id": "BG0140", "type": "bug"}
-{"id": "BG0138", "type": "bug", "iterations": 1, "wall_time_s": 378, "critic_verdict": "approve", "tokens": 77762, "model": "claude-opus-4-8"}
-{"id": "BG0138", "type": "bug"}
-{"id": "BG0143", "type": "bug"}
-{"id": "CR0262", "type": "cr", "iterations": 1, "wall_time_s": 1540, "critic_verdict": "approve", "tokens": 223308, "model": "claude-opus-4-8"}
-{"id": "CR0262", "type": "cr"}
-{"id": "CR0263", "type": "cr", "iterations": 1, "wall_time_s": 1633, "critic_verdict": "approve", "tokens": 257400, "model": "claude-opus-4-8"}
-{"id": "CR0263", "type": "cr"}
-{"id": "CR0261", "type": "cr"}
-{"id": "BG0141", "type": "bug"}
-{"id": "RFC0038", "type": "rfc"}
-{"id": "CR0265", "type": "cr", "iterations": 1, "wall_time_s": 1227, "critic_verdict": "approve", "tokens": 182905, "model": "claude-opus-4-8"}
-{"id": "CR0265", "type": "cr"}
-{"id": "CR0266", "type": "cr", "iterations": 1, "wall_time_s": 2324, "critic_verdict": "approve", "tokens": 270252, "model": "claude-opus-4-8"}
-{"id": "CR0267", "type": "cr", "iterations": 1, "wall_time_s": 2381, "critic_verdict": "approve", "tokens": 280635, "model": "claude-opus-4-8"}
-{"id": "CR0266", "type": "cr"}
-{"id": "CR0267", "type": "cr"}
-{"id": "BG0147", "type": "bug"}
+{"id": "BG0137", "type": "bug", "iterations": 1, "wall_time_s": 528, "critic_verdict": "approve", "tokens": 80982, "model": "claude-opus-4-8", "project": "sdlc-studio"}
+{"id": "BG0137", "type": "bug", "project": "sdlc-studio"}
+{"id": "BG0140", "type": "bug", "iterations": 1, "wall_time_s": 963, "critic_verdict": "approve", "tokens": 150139, "model": "claude-opus-4-8", "project": "sdlc-studio"}
+{"id": "BG0140", "type": "bug", "project": "sdlc-studio"}
+{"id": "BG0138", "type": "bug", "iterations": 1, "wall_time_s": 378, "critic_verdict": "approve", "tokens": 77762, "model": "claude-opus-4-8", "project": "sdlc-studio"}
+{"id": "BG0138", "type": "bug", "project": "sdlc-studio"}
+{"id": "BG0143", "type": "bug", "project": "sdlc-studio"}
+{"id": "CR0262", "type": "cr", "iterations": 1, "wall_time_s": 1540, "critic_verdict": "approve", "tokens": 223308, "model": "claude-opus-4-8", "project": "sdlc-studio"}
+{"id": "CR0262", "type": "cr", "project": "sdlc-studio"}
+{"id": "CR0263", "type": "cr", "iterations": 1, "wall_time_s": 1633, "critic_verdict": "approve", "tokens": 257400, "model": "claude-opus-4-8", "project": "sdlc-studio"}
+{"id": "CR0263", "type": "cr", "project": "sdlc-studio"}
+{"id": "CR0261", "type": "cr", "project": "sdlc-studio"}
+{"id": "BG0141", "type": "bug", "project": "sdlc-studio"}
+{"id": "RFC0038", "type": "rfc", "project": "sdlc-studio"}
+{"id": "CR0265", "type": "cr", "iterations": 1, "wall_time_s": 1227, "critic_verdict": "approve", "tokens": 182905, "model": "claude-opus-4-8", "project": "sdlc-studio"}
+{"id": "CR0265", "type": "cr", "project": "sdlc-studio"}
+{"id": "CR0266", "type": "cr", "iterations": 1, "wall_time_s": 2324, "critic_verdict": "approve", "tokens": 270252, "model": "claude-opus-4-8", "project": "sdlc-studio"}
+{"id": "CR0267", "type": "cr", "iterations": 1, "wall_time_s": 2381, "critic_verdict": "approve", "tokens": 280635, "model": "claude-opus-4-8", "project": "sdlc-studio"}
+{"id": "CR0266", "type": "cr", "project": "sdlc-studio"}
+{"id": "CR0267", "type": "cr", "project": "sdlc-studio"}
+{"id": "BG0147", "type": "bug", "project": "sdlc-studio"}
+{"id": "CR0268", "type": "cr", "iterations": 1, "wall_time_s": 750, "critic_verdict": "approve", "tokens": 153912, "model": "claude-opus-4-8", "project": "sdlc-studio"}
+{"id": "CR0268", "type": "cr", "project": "sdlc-studio"}
+{"id": "CR0270", "type": "cr", "iterations": 1, "wall_time_s": 1315, "critic_verdict": "approve", "tokens": 185935, "model": "claude-opus-4-8", "project": "sdlc-studio"}
+{"id": "CR0270", "type": "cr", "project": "sdlc-studio"}

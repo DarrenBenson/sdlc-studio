@@ -2049,6 +2049,93 @@ class DeadRowLinkTests(unittest.TestCase):
             self.assertIn("orphan-row", {x["kind"] for x in self._detect(root)})
 
 
+class EpicDerivedPointTotalTests(unittest.TestCase):
+    """CR0268: an epic's point total is DERIVED - the sum of its stories' points, recomputed by
+    reconcile so it can never drift from the stories beneath it. An epic is T-shirt sized (Size),
+    never pointed, and a Size is never summed into the roll-up."""
+
+    @staticmethod
+    def _fixture(root: Path, declared: str = "0", points=(3, 5, 2)) -> Path:
+        ed = root / "sdlc-studio" / "epics"
+        ed.mkdir(parents=True, exist_ok=True)
+        (ed / "EP0001-alpha.md").write_text(
+            "# EP0001: Alpha\n\n> **Status:** In Progress\n\n## Sizing\n\n"
+            "**Size:** L\n\n"
+            "_T-shirt estimate, made before decomposition._\n\n"
+            f"**Derived Point Total:** {declared}\n\n"
+            "_DERIVED - recomputed by reconcile._\n", encoding="utf-8")
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True, exist_ok=True)
+        for i, p in enumerate(points, 1):
+            (sd / f"US000{i}-s{i}.md").write_text(
+                f"# US000{i}: Story {i}\n\n> **Status:** Draft\n"
+                f"> **Epic:** EP0001\n> **Points:** {p}\n", encoding="utf-8")
+        return root
+
+    def test_roll_up_is_the_sum_of_story_points(self) -> None:
+        # Three stories of 3+5+2 have a DERIVED total of 10; a stale declared 0 is drift, and
+        # apply writes the computed 10. The load-bearing behaviour.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(Path(d), declared="0")
+            self.assertEqual([(x["id"], x["kind"]) for x in reconcile.epic_points_drift(root)],
+                             [("EP0001", "epic-points-stale")])
+            reconcile.apply_epic_points(root)
+            text = (root / "sdlc-studio" / "epics" / "EP0001-alpha.md").read_text(encoding="utf-8")
+            self.assertIn("**Derived Point Total:** 10", text)
+            self.assertIn("_DERIVED - recomputed by reconcile._", text)  # the note survives
+            self.assertEqual(reconcile.epic_points_drift(root), [])          # now clean
+            self.assertEqual(reconcile.apply_epic_points(root)["synced"], [])  # idempotent
+
+    def test_changing_a_story_updates_the_epic_total(self) -> None:
+        # In sync at 10, then a story goes 3 -> 8: the roll-up must follow to 15.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(Path(d), declared="10")
+            self.assertEqual(reconcile.epic_points_drift(root), [])
+            s1 = root / "sdlc-studio" / "stories" / "US0001-s1.md"
+            s1.write_text(s1.read_text(encoding="utf-8").replace(
+                "**Points:** 3", "**Points:** 8"), encoding="utf-8")
+            self.assertEqual([x["kind"] for x in reconcile.epic_points_drift(root)],
+                             ["epic-points-stale"])
+            reconcile.apply_epic_points(root)
+            text = (root / "sdlc-studio" / "epics" / "EP0001-alpha.md").read_text(encoding="utf-8")
+            self.assertIn("**Derived Point Total:** 15", text)
+
+    def test_a_size_is_never_summed_and_a_legacy_epic_never_drifts(self) -> None:
+        # An epic that declares only a T-shirt Size (no Derived Point Total field) asserts no
+        # roll-up: it is never flagged, and its Size is never read as a number to sum.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            ed = root / "sdlc-studio" / "epics"
+            ed.mkdir(parents=True)
+            (ed / "EP0002-beta.md").write_text(
+                "# EP0002: Beta\n\n> **Status:** In Progress\n\n## Sizing\n\n**Size:** XL\n",
+                encoding="utf-8")
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "US0009-x.md").write_text(
+                "# US0009: X\n\n> **Status:** Draft\n> **Epic:** EP0002\n> **Points:** 8\n",
+                encoding="utf-8")
+            self.assertEqual(reconcile.epic_points_drift(root), [])
+            self.assertEqual(reconcile.apply_epic_points(root)["synced"], [])
+
+    def test_detect_surfaces_the_roll_up_on_the_epics_scope(self) -> None:
+        # The public path: `detect --scope epics` must carry the stale roll-up in its drift list.
+        import argparse
+        import io
+        import json
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = self._fixture(Path(d), declared="4")  # declared 4, stories sum to 10
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                reconcile.cmd_detect(argparse.Namespace(
+                    root=str(root), scope="epics", format="json",
+                    write_report=False, blocker_sweep=False))
+            report = json.loads(buf.getvalue())
+            kinds = {x["kind"] for x in report["drift"]}
+            self.assertIn("epic-points-stale", kinds)
+
+
 class DriftKindVocabularyTests(unittest.TestCase):
     """DRIFT_KINDS must be the true emission vocabulary, not a restated answer key.
 

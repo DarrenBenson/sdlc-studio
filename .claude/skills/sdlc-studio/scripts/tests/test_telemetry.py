@@ -35,8 +35,10 @@ class RecordTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             rec = tel.record(d, {"id": "US0001", "type": "story", "iterations": 3,
                                  "wall_time_s": None, "tokens": None})
-            self.assertEqual(rec, {"id": "US0001", "type": "story", "iterations": 3})
+            self.assertEqual({k: v for k, v in rec.items() if k != "project"},
+                             {"id": "US0001", "type": "story", "iterations": 3})
             self.assertNotIn("tokens", rec)
+            self.assertIn("project", rec)  # every record is stamped with its project
 
     def test_appends_not_overwrites(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -73,7 +75,8 @@ class RecordTests(unittest.TestCase):
     def test_unknown_field_dropped(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             rec = tel.record(d, {"id": "U1", "secret": "hunter2", "cwd": "/x"})
-            self.assertEqual(rec, {"id": "U1"})  # only whitelisted FIELDS are written
+            # only whitelisted FIELDS are written (plus the stamped project)
+            self.assertEqual({k: v for k, v in rec.items() if k != "project"}, {"id": "U1"})
             self.assertNotIn("hunter2", tel.actuals_path(d).read_text(encoding="utf-8"))
 
     def test_read_all_skips_malformed_lines(self) -> None:
@@ -448,6 +451,116 @@ class MigrationLosesNothing(unittest.TestCase):
     def test_migrate_with_nothing_to_move_is_a_no_op(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             self.assertEqual(tel.migrate(d)["moved"], [])
+
+
+class ProjectStampTests(unittest.TestCase):
+    """CR0270: every evidence record carries the project it was produced in, stamped at write
+    time from the repo, so records pooled from several projects stay attributable. A measurement
+    is taken once and cannot be backfilled, and neither can its attribution - so it lands when the
+    record is written, not when it is later read."""
+
+    def _repo(self, d, name):
+        from gitutil import git
+        git(["init", "-q"], cwd=d)
+        git(["remote", "add", "origin", f"git@github.com:acme/{name}.git"], cwd=d)
+
+    def test_project_resolves_from_the_git_remote(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self._repo(d, "widget")
+            self.assertEqual(tel.project_name(d), "widget",
+                             "the canonical name survives a directory rename or a different clone "
+                             "path on another machine")
+
+    def test_project_falls_back_to_the_directory_name_without_a_remote(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            # not a git repo at all - the resolved root directory's own name is the answer
+            self.assertEqual(tel.project_name(d), Path(d).resolve().name)
+
+    def test_a_forecast_and_an_actual_written_today_carry_the_resolved_project(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self._repo(d, "widget")
+            tel.record(d, {"id": "US0001", "type": "story", "tokens": 1_000, "model": "m1"})
+            tel.record_forecasts(d, [{"id": "US0001", "tokens": 1_200, "points": 3,
+                                      "constants": {"TOKENS_PER_POINT": 400}}])
+            self.assertEqual(tel.actuals(d)["US0001"]["project"], "widget")
+            self.assertEqual(tel.forecasts(d)["US0001"]["project"], "widget")
+
+    def test_the_write_time_stamp_ignores_any_project_the_caller_passes(self) -> None:
+        """The stamp is the repo's, always - a forecast cannot claim to belong to a project it
+        was not recorded in."""
+        with tempfile.TemporaryDirectory() as d:
+            self._repo(d, "widget")
+            tel.record_forecasts(d, [{"id": "US0001", "tokens": 1_200, "points": 3,
+                                      "project": "somewhere-else", "constants": {}}])
+            self.assertEqual(tel.forecasts(d)["US0001"]["project"], "widget")
+
+    def test_an_old_record_with_no_project_still_reads_and_is_never_invented(self) -> None:
+        """Additive: a record written before the field existed must still read, so history is not
+        invalidated - the same tolerance the size_gate rename used."""
+        with tempfile.TemporaryDirectory() as d:
+            p = tel.actuals_path(d)
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text('{"id": "OLD", "type": "bug", "tokens": 5}\n', encoding="utf-8")
+            got = tel.actuals(d)["OLD"]
+            self.assertEqual(got["tokens"], 5)
+            self.assertIsNone(got.get("project"), "an absent project is absent, never guessed")
+
+
+class BackfillProjectTests(unittest.TestCase):
+    """CR0270: evidence recorded before the project field has a KNOWN project - the repo it lives
+    in - so it can be stamped now. The stamp is attacked, not assumed (LL0028): every record must
+    survive value-for-value, or the write is refused."""
+
+    ACTUALS = [{"id": "BG0001", "type": "bug", "tokens": 46_792, "wall_time_s": 272,
+                "model": "m-1"},
+               {"id": "CR0001", "type": "cr", "tokens": 98_513, "model": "m-1"}]
+    FORECASTS = [{"id": "BG0001", "tokens": 245_000, "points": 5,
+                  "constants": {"TOKENS_PER_POINT": 40_000}, "planned_at": "2026-07-14"}]
+
+    def _seed(self, d):
+        ap = tel.actuals_path(d, "0000-migrated")
+        ap.parent.mkdir(parents=True, exist_ok=True)
+        ap.write_text("".join(json.dumps(r) + "\n" for r in self.ACTUALS), encoding="utf-8")
+        tel.forecasts_path(d, "0000-migrated").write_text(
+            "".join(json.dumps(r) + "\n" for r in self.FORECASTS), encoding="utf-8")
+
+    @staticmethod
+    def _strip(recs):
+        return [{k: v for k, v in r.items() if k != "project"} for r in recs]
+
+    def test_backfill_stamps_the_project_and_changes_no_other_value(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self._seed(d)
+            before_a, before_f = tel.read_all(d), tel.read_forecasts(d)
+            res = tel.backfill_project(d, project="legacy-proj")
+            after_a, after_f = tel.read_all(d), tel.read_forecasts(d)
+            # every record survives value-for-value once the added project is set aside
+            self.assertEqual(self._strip(after_a), self._strip(before_a),
+                             "an actual's measured value changed under backfill")
+            self.assertEqual(self._strip(after_f), self._strip(before_f),
+                             "a forecast changed under backfill")
+            self.assertTrue(all(r["project"] == "legacy-proj" for r in after_a))
+            self.assertTrue(all(r["project"] == "legacy-proj" for r in after_f))
+            self.assertEqual(res["stamped"], len(self.ACTUALS) + len(self.FORECASTS))
+
+    def test_backfill_is_idempotent(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self._seed(d)
+            tel.backfill_project(d, project="p")
+            snap_a, snap_f = tel.read_all(d), tel.read_forecasts(d)
+            res = tel.backfill_project(d, project="p")
+            self.assertEqual(res["stamped"], 0, "a second run has nothing left to stamp")
+            self.assertEqual(tel.read_all(d), snap_a)
+            self.assertEqual(tel.read_forecasts(d), snap_f)
+
+    def test_backfill_leaves_a_record_that_already_names_a_project_untouched(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            ap = tel.actuals_path(d, "0000-migrated")
+            ap.parent.mkdir(parents=True, exist_ok=True)
+            ap.write_text('{"id": "US0001", "type": "story", "tokens": 9, "project": "keep"}\n',
+                          encoding="utf-8")
+            tel.backfill_project(d, project="new")
+            self.assertEqual(tel.actuals(d)["US0001"]["project"], "keep")
 
 
 if __name__ == "__main__":

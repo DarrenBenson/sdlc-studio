@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Size by what a thing IS: T-shirts on requests, points on delivery units (CR0268, CR0269).** A CR and
+  an RFC are REQUESTS - sized before they are broken down - so they carry a T-shirt `Size` (S/M/L/XL),
+  not points. A story and a bug are delivered directly and carry `Points`. An epic carries a T-shirt
+  Size AND a `Derived Point Total` that `reconcile` recomputes from its stories, so the roll-up can
+  never silently drift (an estimated total can be checked against nothing; a derived one is a fact
+  reconcile keeps true). The grooming gate is now type-aware - it demands the right size for the type -
+  and velocity counts story points only; a T-shirt is never summed, because it is not a measurement. A
+  CR still carrying legacy `Points` reads and grooms, so the transition breaks nothing.
+
+- **Evidence records carry the project, so cross-project data is collatable and never blindly pooled
+  (CR0270).** Every forecast and actual is stamped at write time with the project, resolved from the git
+  remote (stable across a rename or a different clone). The 400+ existing records were backfilled
+  value-for-value. `retro collate` reads several projects' evidence and computes tokens-per-point WITHIN
+  each `(project, model)` cell, and REFUSES any figure pooled across cells - the LL0035 cohort confound
+  made structurally impossible. This is the precondition for tuning the rate from several projects: a
+  measurement without its project can never be attributed after the fact.
+
 - **Sizing is now Fibonacci story points, validated by blind experiment (RFC0038, CR0265-CR0267).** A
   blind re-estimation of 21 delivered units - recovered as filed, sized in modified Fibonacci by three
   independent estimators with no access to outcomes - found points predict cost at **r = +0.68 pooled,

@@ -12,6 +12,7 @@ itself get actioned into epics.
 
 > **Status:** {{status}}
 > **Priority:** {{priority}}
+> **Size:** {{size}}  <!-- T-shirt size (S / M / L / XL): an RFC is a REQUEST, sized coarsely before it is decomposed into CRs. Never story points - those belong on the delivery unit. -->
 > **Author:** {{author}}
 > **Date:** {{date}}
 > **Spans:** {{repos_and_components}}  <!-- e.g. backend-api (providers, adapters) + web-client (UI) -->

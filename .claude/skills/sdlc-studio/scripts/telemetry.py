@@ -52,12 +52,25 @@ Subcommands:
   forecast  Append one plan-time forecast record (what the planner predicted, and with what).
   show      Print the recorded records (count + the JSON); `--forecasts` for the forecast log.
   migrate   Move a pre-existing `.local/` log into the committed evidence dir, without loss.
+  backfill  Stamp the `project` on every record that predates the field, so evidence recorded
+            before projects were attributed is not lost the moment it is pooled with another.
+
+WHY EVERY RECORD CARRIES ITS PROJECT
+------------------------------------
+The evidence from several projects is pooled to tune the tokens-per-point rate. The instant two
+projects land in one place, a unit from this repo is indistinguishable from a unit from another
+unless the record itself says which project produced it. So the project is STAMPED ON THE RECORD
+at write time, resolved from the repo (not passed per call), and it travels with the row wherever
+the row is copied. A measurement is taken once and cannot be backfilled - so is its attribution,
+which is why the stamp lands when the record is written, not when it is later read. An older
+record with no `project` still reads: it is reported as `unknown`, never invented.
 """
 from __future__ import annotations
 
 import argparse
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -86,6 +99,60 @@ MIGRATED_SHARD = "0000-migrated"
 FIELDS = ("id", "type", "iterations", "wall_time_s", "stages", "critic_verdict",
           "complexity", "churn", "reopened", "tokens",
           "tier_recommended", "tier_delivered", "model", "escalated")
+
+# ---------------------------------------------------------------------------
+# The project, resolved from the repo and stamped on every record.
+# ---------------------------------------------------------------------------
+#: What a record whose project could not be resolved, or that predates the field, reports as.
+#: Never a guess at which project it was - a pooled row that cannot be attributed says so.
+PROJECT_UNKNOWN = "unknown"
+
+
+def _git(repo_root: Path | str, *args: str) -> str:
+    """`git -C <root> <args>` stdout, or "" when git is absent, times out, or the command fails.
+    Read-only and best-effort: resolving the project must never break the recording path."""
+    try:
+        r = subprocess.run(["git", "-C", str(repo_root), *args],
+                           capture_output=True, text=True, check=False, timeout=10)
+        return r.stdout.strip() if r.returncode == 0 else ""
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        return ""
+
+
+def _repo_from_url(url: str) -> str:
+    """The repository name out of a git remote URL, for every URL shape git accepts:
+    `git@host:owner/repo.git`, `https://host/owner/repo.git`, `ssh://.../repo`, a local path.
+    The trailing `.git` and any trailing slash are stripped; the last path component is the name."""
+    url = (url or "").strip().rstrip("/")
+    if not url:
+        return ""
+    tail = url.replace(":", "/").rsplit("/", 1)[-1]
+    if tail.endswith(".git"):
+        tail = tail[:-4]
+    return tail.strip()
+
+
+def project_name(repo_root: Path | str) -> str:
+    """The project a record produced in `repo_root` belongs to. Stable for a given repo, needs no
+    per-call argument, and resolved from the repo itself in this order:
+
+      1. the git remote `origin`'s repository name - canonical, and it survives the working
+         directory being renamed or the clone living at a different path on another machine;
+      2. else the repository's top-level directory name (`git rev-parse --show-toplevel`) - the
+         answer when the repo has no `origin` yet (a fresh `git init`);
+      3. else the resolved root directory's own name - the answer when the tree is not a git repo
+         at all. Only when even that is empty does it fall back to `unknown`.
+
+    There is no config-file option: the directory name is always available, so a `project.name`
+    setting would be an unreachable fourth branch and one more surface to keep in sync."""
+    root = Path(repo_root).resolve()
+    name = _repo_from_url(_git(root, "remote", "get-url", "origin"))
+    if name:
+        return name
+    top = _git(root, "rev-parse", "--show-toplevel")
+    if top:
+        return Path(top).name
+    return root.name or PROJECT_UNKNOWN
 
 
 def shard_id() -> str:
@@ -214,6 +281,7 @@ def record(repo_root: Path | str, fields: dict) -> dict:
     on the unit itself. Best-effort: a write failure is swallowed (telemetry must never break
     the loop)."""
     rec = {k: fields[k] for k in FIELDS if fields.get(k) is not None}
+    rec["project"] = project_name(repo_root)   # stamped at write time, from the repo itself
     try:
         _append(_path(repo_root), [rec])
     except Exception as exc:  # noqa: BLE001 - telemetry is advisory; never raise into the loop
@@ -246,7 +314,7 @@ def record_plan_review(repo_root: Path | str, unit: str, verdict: str,
         independent = bool(a) and r != a
     rec = {"event": "plan-review", "phase": "plan-review", "id": str(unit),
            "verdict": (verdict or "").upper(), "reviewer": reviewer, "author": author,
-           "independent": independent}
+           "independent": independent, "project": project_name(repo_root)}
     try:
         _append(_path(repo_root), [rec])
     except Exception as exc:  # noqa: BLE001 - telemetry is advisory; never raise into the loop
@@ -260,9 +328,10 @@ def read_all(repo_root: Path | str) -> list[dict]:
     return _read_jsonl(_shards(repo_root, ACTUALS_PREFIX, LEGACY_ACTUALS))
 
 
-#: The per-unit fields an actual is made of. `type` and `model` are context, not
-#: measurements; the rest are what a run actually cost.
-ACTUAL_FIELDS = ("type", "model", "tokens", "wall_time_s", "iterations", "complexity",
+#: The per-unit fields an actual is made of. `type`, `model` and `project` are context, not
+#: measurements; the rest are what a run actually cost. `project` rides through so a pooled read
+#: keeps each unit's project - the whole point of stamping it on the record.
+ACTUAL_FIELDS = ("type", "model", "project", "tokens", "wall_time_s", "iterations", "complexity",
                  "churn", "critic_verdict")
 
 
@@ -387,6 +456,7 @@ def record_forecasts(repo_root: Path | str, records: list[dict]) -> dict:
     have = read_forecasts(repo_root)
     seen = {(sdlc_md.norm_id(str(r.get("id"))), r.get("tokens"),
              json.dumps(r.get("constants"), sort_keys=True)) for r in have}
+    proj = project_name(repo_root)   # resolved once; every fresh row is stamped with the repo's
     fresh: list[dict] = []
     already: list[str] = []
     for rec in records:
@@ -403,6 +473,7 @@ def record_forecasts(repo_root: Path | str, records: list[dict]) -> dict:
             rec["size_gate"] = rec[LEGACY_GATE_FIELD]   # the rename, absorbed - never dropped
         row = {k: rec[k] for k in FORECAST_FIELDS if rec.get(k) is not None}
         row["id"] = rid
+        row["project"] = proj      # stamped at write time - it is never taken from the caller
         fresh.append(row)
     if fresh:
         _append(_forecast_path(repo_root), fresh)
@@ -451,6 +522,62 @@ def migrate(repo_root: Path | str) -> dict:
             src.unlink()
         report["moved"].append({"from": str(legacy), "to": str(dst.relative_to(root)),
                                 "records": len(lines)})
+    return report
+
+
+# ---------------------------------------------------------------------------
+# Backfill: stamp the project on records that predate the field.
+# ---------------------------------------------------------------------------
+
+def backfill_project(repo_root: Path | str, project: str | None = None) -> dict:
+    """Stamp `project` on every record in this repo's evidence shards that has none yet.
+
+    Evidence recorded before the field existed has a KNOWN project - it is this repo - so the
+    attribution can be stamped now without inventing anything (unlike a measurement, which cannot
+    be reconstructed). The project defaults to the one resolved from the repo.
+
+    Loss-proof by construction, and then CHECKED. Each line is parsed, the key is added only when
+    absent (idempotent, and a record that already names a project is left exactly as it is), and
+    the row is rewritten with every other value untouched. After writing, the shard is re-read and
+    every original record must be present with all of its non-project values unchanged, or the
+    write is refused: a backfill that corrupted the only evidence base the project has would be
+    unrecoverable.
+    """
+    root = Path(repo_root)
+    proj = project or project_name(root)
+    d = root / EVIDENCE
+    report: dict = {"project": proj, "files": [], "stamped": 0, "already": 0}
+    if not d.is_dir():
+        return report
+    for path in sorted(d.glob("*.jsonl")):
+        raw = path.read_text(encoding="utf-8")
+        before = [json.loads(ln) for ln in raw.splitlines() if ln.strip()]
+        out_lines: list[str] = []
+        stamped = already = 0
+        for rec in before:
+            if isinstance(rec, dict) and "project" not in rec:
+                rec = {**rec, "project": proj}
+                stamped += 1
+            elif isinstance(rec, dict):
+                already += 1
+            out_lines.append(json.dumps(rec))
+        if not stamped:
+            report["already"] += already
+            continue
+        new_text = "\n".join(out_lines) + ("\n" if raw.endswith("\n") or out_lines else "")
+        # Verify BEFORE replacing the file: every original record must survive value-for-value.
+        check = [json.loads(ln) for ln in new_text.splitlines() if ln.strip()]
+        if len(check) != len(before):
+            raise RuntimeError(f"refusing to write {path}: record count changed "
+                               f"({len(before)} -> {len(check)})")
+        strip = lambda r: {k: v for k, v in r.items() if k != "project"}
+        for old, got in zip(before, check):
+            if strip(old) != strip(got):
+                raise RuntimeError(f"refusing to write {path}: a record's values changed")
+        sdlc_md.atomic_write(path, new_text)
+        report["files"].append({"file": path.name, "stamped": stamped, "already": already})
+        report["stamped"] += stamped
+        report["already"] += already
     return report
 
 
@@ -599,6 +726,21 @@ def cmd_migrate(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_backfill(args: argparse.Namespace) -> int:
+    res = backfill_project(args.root, args.project)
+    if args.format == "json":
+        print(json.dumps(res, indent=2))
+        return 0
+    if not res["stamped"]:
+        print(f"nothing to backfill - every record already names a project ({res['project']})")
+        return 0
+    for f in res["files"]:
+        print(f"stamped {f['stamped']} record(s) in {f['file']} ({f['already']} already named)")
+    print(f"project '{res['project']}' stamped on {res['stamped']} record(s) - git add the "
+          f"evidence dir; a pooled row is now attributable")
+    return 0
+
+
 def cmd_show(args: argparse.Namespace) -> int:
     if getattr(args, "forecasts", False):
         recs = read_forecasts(args.root)
@@ -690,6 +832,13 @@ def build_parser() -> argparse.ArgumentParser:
     m.add_argument("--root", default=".")
     m.add_argument("--format", choices=("text", "json"), default="text")
     m.set_defaults(func=cmd_migrate)
+    b = sub.add_parser("backfill", help="stamp `project` on records that predate the field "
+                                        "(no loss; verified). The project is resolved from the "
+                                        "repo unless --project overrides it")
+    b.add_argument("--project", help="the project to stamp (default: resolved from the repo)")
+    b.add_argument("--root", default=".")
+    b.add_argument("--format", choices=("text", "json"), default="text")
+    b.set_defaults(func=cmd_backfill)
     sdlc_md.add_global_root(p)
     return p
 

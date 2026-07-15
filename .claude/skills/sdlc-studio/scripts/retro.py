@@ -927,15 +927,20 @@ def measured_rate(root) -> dict:
     an unvalidated number nobody dares touch - which is the fate of both estimators this project
     has already had to delete.
 
-    SEGMENTED PER MODEL, and REFUSED across them, by the same rule the ratio already obeys: a
-    rate averaged over a sprint delivered by a smaller model and one delivered by a larger
-    describes neither, and a plan that forecast with it would be pricing work in a currency no
-    run ever paid in.
+    The rate is a per-(PROJECT, MODEL) quantity. This reads ONE project's committed VELOCITY.md,
+    so the project is constant across its rows and resolved once from the repo; it is stamped on
+    the result and on every cell, so a figure lifted out of here is never mistaken for a different
+    project's. SEGMENTED PER MODEL, and REFUSED across them, by the same rule the ratio already
+    obeys: a rate averaged over a sprint delivered by a smaller model and one delivered by a
+    larger describes neither, and a plan that forecast with it would be pricing work in a currency
+    no run ever paid in. The CROSS-project pooling, and its refusal, lives in `collate_rate`,
+    which reads the project off each record rather than off the repo it is reading.
 
     With no sprint that recorded points, there is NO rate - `None`, and the caller must say so.
     A project's first sprint cannot forecast from its own history, and the honest answer to that
     is to say it has none, not to hand back a number borrowed from somebody else's project.
     """
+    project = telemetry.project_name(root)
     rows = [r for r in velocity_history(root)
             if r.get("points") and isinstance(r.get("actual_tokens"), (int, float))]
     by_model: dict[str, dict] = {}
@@ -966,8 +971,11 @@ def measured_rate(root) -> dict:
         why.append(f"{', '.join(mixed)} was delivered by more than one model, so its tokens "
                    f"were paid by two payers and it carries no rate at all")
     refused = f"REFUSED: {'; and '.join(why)}." if why else None
+    for b in by_model.values():
+        b["project"] = project           # the cell is (project, model), not model alone
     only = next(iter(by_model.values())) if len(by_model) == 1 else None
     return {
+        "project": project,
         "tokens_per_point": only["tokens_per_point"] if only else None,
         "model": next(iter(by_model)) if only else None,
         "points": only["points"] if only else None,
@@ -979,7 +987,83 @@ def measured_rate(root) -> dict:
         "refused": refused,
         "basis": "actual tokens over points delivered, across the sprints in VELOCITY.md that "
                  "recorded both. Derived from the record every time it is read; never stored, "
-                 "never fitted, and never assumed from a project that is not this one",
+                 "never fitted, and never assumed from a project that is not this one. It is a "
+                 "rate for ONE (project, model) cell; pooling across projects is refused in "
+                 "collate_rate, not here",
+    }
+
+
+def collate_rate(roots) -> dict:
+    """THE CROSS-PROJECT TOKENS-PER-POINT RATE, per (PROJECT, MODEL) CELL. Never a pooled figure.
+
+    This is the reader for the multi-project tuning run: the operator forward-ports the skill onto
+    several repos, each stamps its own project on every record, and their evidence is pooled here.
+    The cell is read off the RECORD's own `project` and `model` - never off the directory it was
+    read from - so records physically copied into one place stay attributable, which is the whole
+    reason the project is stamped on the row and not inferred at read time.
+
+    SEGMENT OR REFUSE, never silently average - the same rule `measured_rate` and the accuracy
+    ratio already obey, now on the project axis too. A rate is computed WITHIN each (project,
+    model) cell; NO number is ever summed across two cells. A points-vs-cost figure pooled across
+    a fast project and a slow one, or across two models, describes neither - this project has twice
+    withdrawn a finding to exactly that confound (a field that flipped sign between cohorts, and a
+    field whose mere presence became a calendar artefact). So the pooled total is REFUSED and the
+    per-cell rows are handed back instead. A record with no project reads as `unknown`; it is its
+    own cell, never folded into a named project.
+
+    A unit is rated only with BOTH a plan-time forecast carrying points AND a measured actual
+    carrying tokens - the same bar every other rate obeys. Everything else is excluded, not
+    invented.
+    """
+    if isinstance(roots, (str, Path)):
+        roots = [roots]
+    cells: dict[tuple, dict] = {}
+    for root in roots:
+        forecasts = telemetry.forecasts(root)
+        actuals = telemetry.actuals(root)
+        for uid, fc in forecasts.items():
+            rec = actuals.get(uid, {})
+            points = fc.get("points")
+            tokens = rec.get("tokens")
+            if not (isinstance(points, int) and points > 0
+                    and isinstance(tokens, (int, float)) and tokens > 0):
+                continue
+            # The project and model are the RECORD's own - the actual's if it carries them, else
+            # the forecast's - never the directory's. `unknown`/`unrecorded` are their own cells.
+            project = rec.get("project") or fc.get("project") or telemetry.PROJECT_UNKNOWN
+            model = rec.get("model") or "unrecorded"
+            cell = cells.setdefault((project, model),
+                                    {"project": project, "model": model, "units": [],
+                                     "points": 0, "actual_tokens": 0})
+            cell["units"].append(uid)
+            cell["points"] += points
+            cell["actual_tokens"] += tokens
+    out = []
+    for (project, model), c in sorted(cells.items()):
+        c["n"] = len(c["units"])
+        c["tokens_per_point"] = _rate(c["actual_tokens"], c["points"])
+        out.append(c)
+    projects = sorted({c["project"] for c in out})
+    models = sorted({c["model"] for c in out})
+    refused = None
+    if len(out) > 1:
+        why = []
+        if len(projects) > 1:
+            why.append(f"{len(projects)} projects ({', '.join(projects)})")
+        if len(models) > 1:
+            why.append(f"{len(models)} models ({', '.join(models)})")
+        refused = (f"REFUSED: the pooled evidence spans {' and '.join(why) or 'more than one cell'}. "
+                   f"A tokens-per-point rate across two cells describes neither - read the "
+                   f"per-(project, model) rows. Pooling them is the cohort confound this project "
+                   f"has twice withdrawn a finding to.")
+    return {
+        "cells": out,
+        "projects": projects,
+        "models": models,
+        "refused": refused,
+        "basis": "actual tokens over points delivered, WITHIN each (project, model) cell, read "
+                 "from the record's own project and model. Never summed across cells; a record "
+                 "with no project is its own `unknown` cell, never folded into a named one",
     }
 
 
@@ -1497,6 +1581,30 @@ def cmd_velocity(args) -> int:
     return 0
 
 
+def cmd_collate(args) -> int:
+    """The multi-project rate reader: the tokens-per-point rate per (project, model) cell, pooled
+    across several project evidence directories and never summed across cells."""
+    roots = args.roots or [args.root]
+    rep = collate_rate(roots)
+    if args.format == "json":
+        print(json.dumps(rep, indent=2))
+        return 0
+    if not rep["cells"]:
+        print("no rated units across those projects - a unit needs both a plan-time forecast "
+              "with points and a measured actual")
+        return 0
+    if rep["refused"]:
+        print(rep["refused"])
+        print()
+    for c in rep["cells"]:
+        print(f"  {c['project']:20} {c['model']:20} {c['n']:>3} unit(s)  "
+              f"{c['points']:>4} pt  {c['actual_tokens']:>10,} tok  -> "
+              f"{_fmt(c['tokens_per_point'])}/pt")
+    print("\nEach row is one (project, model) cell. No rate is pooled across cells - a figure "
+          "spanning two projects or two models describes neither.")
+    return 0
+
+
 def cmd_validate(args) -> int:
     res = validate(args.root, args.id)
     if args.format == "json":
@@ -1618,10 +1726,18 @@ def main() -> int:
         ("estimator", cmd_estimator, "measure the ESTIMATOR: per-estimator and per-model accuracy "
                                      "of the recorded Points, the classes each systematically "
                                      "under- or over-calls, and the coercion check"),
+        ("collate", cmd_collate, "the tokens-per-point rate per (project, model) cell, pooled "
+                                 "across several project evidence dirs and never summed across "
+                                 "cells - the multi-project tuning read"),
     ):
         p = sub.add_parser(name, help=helptext)
-        if name not in ("velocity", "estimator"):  # these span sprints; they are not about one
+        if name not in ("velocity", "estimator", "collate"):  # these span sprints, not one
             p.add_argument("--id", required=True, help="retro id, e.g. RETRO0022")
+        if name == "collate":
+            p.add_argument("--roots", nargs="+", metavar="DIR",
+                           help="the project evidence roots to pool (default: --root). Each "
+                                "record names its own project, so they may be separate dirs or "
+                                "one pooled dir")
         p.add_argument("--format", choices=("text", "json"), default="text")
         if name == "extract":
             p.add_argument("--dry-run", action="store_true")

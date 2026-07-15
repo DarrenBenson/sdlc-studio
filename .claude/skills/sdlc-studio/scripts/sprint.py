@@ -1028,6 +1028,20 @@ def _declared_size(text: str) -> int | None:
     return sdlc_md.read_points(text)
 
 
+# SIZE BY WHAT A THING IS. A delivery unit (story, bug) is MEASURED, so it carries story points.
+# A container/request (CR, RFC, epic) is DECOMPOSED before it is delivered, so it carries a coarse
+# T-shirt Size instead - a request is not a unit of work until it is broken down, and pointing it
+# is guessing at a shape that does not exist yet. The grooming gate therefore demands the RIGHT
+# size per type: `Points` for a story or bug, a T-shirt `Size` for a CR or RFC.
+TSHIRT_SIZED_TYPES = frozenset({"cr", "rfc", "epic"})
+
+
+def _declared_tshirt(text: str) -> str | None:
+    """The T-shirt Size (S/M/L/XL) a container/request declares, or None. `lib/sdlc_md` owns the
+    scale and the parser, exactly as it does for points - one vocabulary, one reader."""
+    return sdlc_md.read_size(text)
+
+
 def _shared_file_clusters(files_by_unit: dict[str, list[str]]) -> list[dict]:
     """Units that touch the SAME FILE are ONE cluster, not independent parallel work.
 
@@ -1086,12 +1100,14 @@ def _ids_cited_by_stories(root: Path) -> set:
 def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = False) -> dict:
     """Is this batch GROOMED enough to plan? The census the gate refuses on.
 
-    A unit is plannable when it declares the files it will touch (`Affects`), carries `Points`,
-    and those points are AT OR BELOW the split ceiling. The third condition is the new one, and
-    it is a triage rule, not an estimation one: above the ceiling the estimate is not worth
-    having (the 13s in the blind re-estimation were over-estimated by 1.9x per point, and all
-    three estimators said so unprompted), and the answer is to DECOMPOSE the unit rather than to
-    estimate it harder.
+    A unit is plannable when it declares the files it will touch (`Affects`) and carries the
+    size its TYPE is sized by - `Points` for a story or bug (the delivery units), a T-shirt
+    `Size` for a CR or RFC (the requests/containers). A pointed unit is additionally refused when
+    its points are ABOVE the split ceiling: a triage rule, not an estimation one - above the
+    ceiling the estimate is not worth having (the 13s in the blind re-estimation were
+    over-estimated by 1.9x per point, and all three estimators said so unprompted), and the
+    answer is to DECOMPOSE the unit rather than estimate it harder. A T-shirt Size has no number
+    and no ceiling; a container's answer to "too big" is always decomposition.
 
     `ungroomed` and `oversized` are counted separately because they are different failures with
     different fixes: one unit was never sized, the other was sized honestly and is too big.
@@ -1115,11 +1131,23 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
         declared = _affects_files(text)
         points = _declared_size(text)
         files_by_unit[it["id"]] = sorted({_affect_key(root, p) for p in declared})
-        missing = ([] if declared else ["Affects"]) + ([] if points else ["Points"])
+        # The size demanded depends on WHAT the unit is. A story/bug is groomed by `Points`; a
+        # CR/RFC by a T-shirt `Size`. LEGACY TOLERANCE: a CR filed before this rule carries
+        # `Points` and no `Size` (the earlier gate forced it) - it still counts as sized, so the
+        # transition never invalidates the backlog. A T-shirt `Size` is never read as a number.
+        if it["type"] in TSHIRT_SIZED_TYPES:
+            sized = _declared_tshirt(text) is not None or points is not None
+            size_field = "Size"
+        else:
+            sized = points is not None
+            size_field = "Points"
+        missing = ([] if declared else ["Affects"]) + ([] if sized else [size_field])
         if missing:
             ungroomed.append({"id": it["id"], "type": it["type"], "path": it["path"],
                               "missing": missing})
-        elif points > ceiling:
+        elif points is not None and points > ceiling:
+            # Only a POINTED unit can be over the split ceiling; a T-shirt Size has no number to
+            # be above it. A legacy CR carrying points is judged by the same ceiling it always was.
             oversized.append({"id": it["id"], "type": it["type"], "path": it["path"],
                               "points": points, "ceiling": ceiling})
         else:
