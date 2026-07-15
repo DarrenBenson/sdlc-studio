@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 6 |
+| Proposed | 5 |
 | Approved | 0 |
-| In Progress | 0 |
+| In Progress | 1 |
 | Complete | 263 |
 | Rejected | 0 |
 | Deferred | 0 |
@@ -93,7 +93,7 @@
 | [CR-0269](CR0269-rfc0038-u5-size-by-what-a-thing-is.md) | RFC0038 U5: size by what a thing IS - T-shirt on containers, points on delivery units, and a CR must decompose before it can be planned | Complete | P1 | Improvement | 2026-07-14 | -- |
 | [CR-0270](CR0270-rfc0038-u7-stamp-project-and-points-on-every.md) | RFC0038 U7: stamp project and points on every evidence record, so cross-project data is collatable and never blindly pooled | Complete | P1 | Improvement | 2026-07-14 | -- |
 | [CR-0271](CR0271-rfc0038-u6-two-backlogs-rfcs-and-crs-are.md) | RFC0038 U6: two backlogs - RFCs and CRs are requests, gated so they cannot reach Done without becoming work | Complete | P1 | Improvement | 2026-07-14 | -- |
-| [CR-0272](CR0272-audit-and-clean-up-the-skill-command-surface.md) | Audit and clean up the skill command surface, then rewrite the help files around the core process | Proposed | P2 | Improvement | 2026-07-15 | -- |
+| [CR-0272](CR0272-audit-and-clean-up-the-skill-command-surface.md) | Audit and clean up the skill command surface, then rewrite the help files around the core process | In Progress | P2 | Improvement | 2026-07-15 | -- |
 | [CR-0273](CR0273-track-points-per-worker-hour-as-a-descriptive.md) | Track points-per-worker-hour as a descriptive velocity metric, runner-only, never a target | Proposed | P2 | Improvement | 2026-07-15 | -- |
 | [CR-0274](CR0274-refine-add-append-an-epic-to-an-already.md) | refine --add: append an epic to an already-decomposed request, for incremental slices | Complete | P1 | Improvement | 2026-07-15 | -- |
 | [CR-0275](CR0275-refine-show-should-work-on-an-already-decomposed.md) | refine show should work on an already-decomposed request, to inform a refine add | Complete | P3 | Improvement | 2026-07-15 | -- |

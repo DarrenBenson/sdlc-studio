@@ -1,6 +1,7 @@
 # CR-0272: Audit and clean up the skill command surface, then rewrite the help files around the core process
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0041
 > **Priority:** P2
 > **Type:** Improvement
 > **Size:** XL

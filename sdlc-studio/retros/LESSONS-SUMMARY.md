@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0056: Compute-once, read-many on a hot path: the hint recomputed a full-repo scan the dashboard had already done.**
+- **L-0055: A generated artefact must only assert what it verified.**
+- **L-0054: A predicate that looks like an existing one may need DIFFERENT exemptions - do not copy the exemption set.**
 - **L-0053: Wiring dormant machinery is a real deliverable.**
 - **L-0052: Text written into a structurally-delimited section must be sanitised against the delimiter.**
 - **L-0051: Extract a shared definition before the second caller: the `Parent:`/`Decomposed-into:` link writers moved to `lib.sdlc_md`...**

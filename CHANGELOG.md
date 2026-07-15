@@ -21,6 +21,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **A command-surface audit and the two backlogs surfaced at `hint` and `status` (EP0041, CR0272
+  slice 1).** New `command_audit.py` enumerates every command deterministically - the SKILL Type
+  Reference, the `help/help.md` catalogue, and `scripts/` - and dispositions each **keep** or
+  **review** from three structural signals: the process-spine category it serves, catalogue drift
+  (a command in one place but not the other), and tooling health (`--check-tools` runs each backing
+  script's `--help`). `--write` produces `sdlc-studio/reviews/command-audit.md` with a per-spine
+  table and recommended actions - the evidence a later cleanup slice acts on (this run flagged 5
+  help-only commands to promote/retire and confirmed all 61 tools run). And the dual-track is now
+  visible from the first commands an operator reaches for: `hint` names how many Discovery items
+  await refinement/triage, and the main `status` dashboard shows the Discovery/Delivery split (not
+  only `status backlog`). CR0272's remaining scope (retiring/folding the flagged commands and
+  rewriting the help around the spine) is a later slice this audit informs.
+
 - **The Three Amigos are baked into refine and triage (EP0040, RFC0039).** The consult machinery
   (`resolve_consult`/`frame`) existed but was unwired - refine and triage only printed bare role
   strings. Now a `--question` resolves the panel to the actual **named seats** (the project's own

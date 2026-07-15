@@ -307,6 +307,90 @@ class TwoBacklogStatusTests(unittest.TestCase):
             self.assertEqual(j["backlogs"]["delivery"]["count"], 2)
 
 
+class DiscoverySurfacingTests(unittest.TestCase):
+    """CR0272 slice 1 (US0151/US0152): the two backlogs are surfaced at `hint` and the main
+    `status` dashboard, not only in `status backlog`."""
+
+    def _make(self, root: Path) -> None:
+        # two undecomposed discovery items (a childless CR + Issue) and one already-decomposed CR
+        _write(root / "sdlc-studio" / "change-requests" / "CR0500-x.md",
+               "# CR-0500: X\n\n> **Status:** Proposed\n> **Size:** M\n")
+        _write(root / "sdlc-studio" / "issues" / "IS0500-x.md",
+               "# IS0500: X\n\n> **Status:** Open\n> **Severity:** Low\n> **Size:** S\n")
+        _write(root / "sdlc-studio" / "change-requests" / "CR0501-y.md",
+               "# CR-0501: Y\n\n> **Status:** In Progress\n> **Size:** M\n"
+               "> **Decomposed-into:** EP0500\n")
+        _write(root / "sdlc-studio" / "epics" / "EP0500-e.md",
+               "# EP0500: E\n\n> **Status:** In Progress\n> **Parent:** CR0501\n> **Size:** M\n")
+
+    def test_discovery_awaiting_excludes_decomposed_and_terminal(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make(root)
+            aw = status.discovery_awaiting(root)
+            self.assertEqual(aw["count"], 2)                       # CR0500 + IS0500
+            self.assertEqual(aw["ids"], ["CR0500", "IS0500"])      # CR0501 is decomposed, excluded
+
+    def test_discovery_awaiting_excludes_parked_items(self) -> None:
+        # a deliberately parked (Deferred/Blocked) childless request must NOT be nudged - it cannot
+        # be refined now, so counting it is a false prompt.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root / "sdlc-studio" / "change-requests" / "CR0600-x.md",
+                   "# CR-0600: X\n\n> **Status:** Deferred\n> **Size:** M\n")
+            _write(root / "sdlc-studio" / "change-requests" / "CR0601-y.md",
+                   "# CR-0601: Y\n\n> **Status:** Blocked\n> **Size:** M\n")
+            _write(root / "sdlc-studio" / "change-requests" / "CR0602-z.md",
+                   "# CR-0602: Z\n\n> **Status:** Proposed\n> **Size:** M\n")   # intake - counted
+            aw = status.discovery_awaiting(root)
+            self.assertEqual(aw["ids"], ["CR0602"])   # only the live intake item awaits refinement
+
+    def test_discovery_awaiting_excludes_an_item_with_a_dropped_child(self) -> None:
+        # a request whose only child was dropped (Won't Implement) has been decomposed; it is not
+        # re-surfaced as awaiting (documenting the current behaviour - see the retro note).
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root / "sdlc-studio" / "change-requests" / "CR0700-x.md",
+                   "# CR-0700: X\n\n> **Status:** In Progress\n> **Size:** M\n"
+                   "> **Decomposed-into:** US0700\n")
+            _write(root / "sdlc-studio" / "stories" / "US0700-x.md",
+                   "# US0700: X\n\n> **Status:** Won't Implement\n> **Parent:** CR0700\n"
+                   "> **Points:** 2\n")
+            self.assertEqual(status.discovery_awaiting(root)["ids"], [])
+
+    def test_hint_carries_discovery_and_prints_it(self) -> None:
+        import io
+        import contextlib
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make(root)
+            (root / "sdlc-studio" / "prd.md").write_text("# PRD\n", encoding="utf-8")
+            hint = status.compute_hint(status.gather(root), root)
+            self.assertEqual(hint["discovery"]["count"], 2)        # additive field on the hint
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                status.main(["hint", "--root", str(root)])
+            out = buf.getvalue()
+            self.assertIn("discovery: 2 item(s) await refinement/triage", out)
+
+    def test_dashboard_shows_the_two_backlog_split(self) -> None:
+        import io
+        import contextlib
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._make(root)
+            data = status.gather(root)
+            self.assertEqual(data["backlogs"]["awaiting"]["count"], 2)
+            self.assertIn("issue", data["backlogs"]["discovery"]["types"])
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                status.main(["pillars", "--root", str(root)])
+            out = buf.getvalue()
+            self.assertIn("Backlogs:", out)
+            self.assertIn("Discovery=", out)
+            self.assertIn("awaiting refine/triage", out)
+
+
 class DerivedStatusTests(unittest.TestCase):
     """G2 (US0122): a request's SUCCESSFUL terminal is derived from its children. Uses
     dry_run=True, which runs the pre-write gate then returns without writing - so the gate is

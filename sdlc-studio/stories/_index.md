@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 147 |
+| Done | 152 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **148** |
+| **Total** | **153** |
 
 ## All Stories
 
@@ -59,6 +59,11 @@
 | [US0146](US0146-record-the-consult-on-the-artefact-which-seats.md) | Record the consult on the artefact: which seats were consulted and the questions | Done | EP0040 | 2026-07-15 | 2026-07-15 |
 | [US0147](US0147-graceful-degradation-and-author-not-reviewer-independence-for.md) | Graceful degradation and author-not-reviewer independence for the consult | Done | EP0040 | 2026-07-15 | 2026-07-15 |
 | [US0148](US0148-document-the-amigo-consult-in-refine-and-triage.md) | Document the amigo consult in refine and triage | Done | EP0040 | 2026-07-15 | 2026-07-15 |
+| [US0149](US0149-command-audit-py-enumerate-every-command-and-route.md) | command_audit.py: enumerate every command and route with a keep/fold/retire disposition mapped to the process spine | Done | EP0041 | 2026-07-15 | 2026-07-15 |
+| [US0150](US0150-dead-route-check-confirm-the-tooling-behind-every.md) | Dead-route check: confirm the tooling behind every kept command runs | Done | EP0041 | 2026-07-15 | 2026-07-15 |
+| [US0151](US0151-hint-surfaces-the-discovery-backlog-how-many-items.md) | hint surfaces the Discovery backlog: how many items await refinement or triage | Done | EP0041 | 2026-07-15 | 2026-07-15 |
+| [US0152](US0152-the-main-status-dashboard-shows-the-discovery-and.md) | The main status dashboard shows the Discovery and Delivery split | Done | EP0041 | 2026-07-15 | 2026-07-15 |
+| [US0153](US0153-record-the-command-dispositions-and-document-the-audit.md) | Record the command dispositions and document the audit tool | Done | EP0041 | 2026-07-15 | 2026-07-15 |
 
 ## Archived Releases
 

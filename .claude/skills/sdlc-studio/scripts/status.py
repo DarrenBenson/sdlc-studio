@@ -157,6 +157,38 @@ def _two_backlog_summary(data: dict) -> dict:
     return {"discovery": group(True), "delivery": group(False)}
 
 
+# Statuses a Discovery item can sit in without awaiting refinement: parked on purpose (Deferred /
+# Blocked on an external dependency / Paused). A Blocked item cannot be refined until unblocked and
+# a Deferred one was parked deliberately, so nudging either is a false prompt. NOT terminal (those
+# are excluded separately) and NOT the intake states (a Proposed CR / Draft RFC / Open Issue DOES
+# await refinement - that is the whole point).
+_PARKED_STATUSES = frozenset({"Blocked", "Deferred", "Paused"})
+
+
+def discovery_awaiting(repo_root: Path | str) -> dict:
+    """The Discovery-backlog items still awaiting decomposition: a live, non-parked RFC/CR/Issue
+    with NO children yet. This is the depth of the options funnel that is not yet deliverable work
+    - a request awaiting `refine`, an Issue awaiting `triage`. Surfaced at the hint so the
+    dual-track is visible from the first command an operator reaches for, not only in
+    `status backlog`. Returns `{count, ids}` (ids sorted). Excluded: an item already decomposed (In
+    Progress, delivered via its children), a terminal item, and a deliberately PARKED item
+    (Deferred/Blocked/Paused) - nudging the parked ones is a false prompt."""
+    root = Path(repo_root)
+    ids: list[str] = []
+    for type_ in sdlc_md.DISCOVERY_TYPES:
+        vocab = sdlc_md.status_vocab(type_, root)
+        for p in sdlc_md.artifact_files(type_, root):
+            text = p.read_text(encoding="utf-8")
+            status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab)
+            if (not status or sdlc_md.is_terminal_status(type_, status)
+                    or status in _PARKED_STATUSES):
+                continue
+            rid = sdlc_md.extract_record_id(p.stem) or p.stem
+            if not sdlc_md.children_of(root, rid):
+                ids.append(rid)
+    return {"count": len(ids), "ids": sorted(ids)}
+
+
 def cmd_backlog(args: argparse.Namespace) -> int:
     """List the non-terminal artefacts, split into the request backlog (intake) and the product
     backlog (deliverable), each grouped by type and status (the deterministic backlog answer)."""
@@ -254,6 +286,11 @@ def gather(repo_root: Path) -> dict:
             "review_files": len(review_files),
             "latest": (base / "reviews" / "LATEST.md").exists(),
         },
+        # The two-backlog split (dual-track), surfaced on the main dashboard - not only in
+        # `status backlog` - so the Discovery vs Delivery divide is visible from the first command
+        # an operator reaches for. `awaiting` is the Discovery depth not yet decomposed.
+        "backlogs": {**_two_backlog_summary(backlog(repo_root)),
+                     "awaiting": discovery_awaiting(repo_root)},
     }
 
 
@@ -276,6 +313,14 @@ def cmd_pillars(args: argparse.Namespace) -> int:
     print(f"Workflows:    total={data['workflows']['total']}")
     print(f"Reviews:      files={data['reviews']['review_files']} "
           f"latest={'yes' if data['reviews']['latest'] else 'no'}")
+    bl = data["backlogs"]
+    disc, deliv = bl["discovery"], bl["delivery"]
+    awaiting = bl["awaiting"]["count"]
+    disc_types = f" ({', '.join(disc['types'])})" if disc["types"] else ""
+    deliv_types = f" ({', '.join(deliv['types'])})" if deliv["types"] else ""
+    print(f"Backlogs:     Discovery={disc['count']}{disc_types}"
+          f"{f', {awaiting} awaiting refine/triage' if awaiting else ''} · "
+          f"Delivery={deliv['count']}{deliv_types}")
     adv = workspace_advisory(Path(args.root))
     if adv:
         print(f"advisory: {adv}")
@@ -311,7 +356,17 @@ def team_offer_advisory(repo_root: Path | str) -> str | None:
 
 
 def compute_hint(data: dict, repo_root: Path) -> dict:
-    """Mechanical next-step ladder. Judgment branches are left to Claude."""
+    """Mechanical next-step ladder. Judgment branches are left to Claude. The result also carries a
+    `discovery` summary (how many Discovery items await refinement/triage) - additive, so the
+    dual-track shows up at the hint without changing which rung the ladder picks. It REUSES the
+    value `gather` already computed (a full-repo scan): `cmd_hint` runs both, so recomputing here
+    would double the cost of the most-run command."""
+    awaiting = (data.get("backlogs") or {}).get("awaiting")
+    return {**_compute_hint_rung(data, repo_root),
+            "discovery": awaiting if awaiting is not None else discovery_awaiting(repo_root)}
+
+
+def _compute_hint_rung(data: dict, repo_root: Path) -> dict:
     req = data["requirements"]
     base = repo_root / "sdlc-studio"
     has_code = any((repo_root / d).exists() for d in ("src", "lib", "app", "cmd"))
@@ -348,6 +403,11 @@ def cmd_hint(args: argparse.Namespace) -> int:
         print(json.dumps(hint, indent=2))
     else:
         print(f"/sdlc-studio {hint['next_command']}  ({hint['reason']})")
+        disc = hint.get("discovery") or {}
+        if disc.get("count"):
+            shown = ", ".join(disc["ids"][:5]) + ("..." if disc["count"] > 5 else "")
+            print(f"discovery: {disc['count']} item(s) await refinement/triage ({shown}) - "
+                  f"`refine` a request into stories, `triage` an Issue into bugs")
         _print_update_notice(args.root)
     adv = workspace_advisory(Path(args.root))
     if adv and args.format != "json":
