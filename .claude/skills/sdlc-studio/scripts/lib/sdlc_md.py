@@ -595,6 +595,26 @@ ARTIFACT_TYPES: dict[str, tuple[str, str]] = {
     "workflow": ("sdlc-studio/workflows", "WF"),
 }
 
+# The two backlogs (dual-track: discovery feeds delivery). A REQUEST (an RFC design exploration,
+# a CR change request) sits in the DISCOVERY backlog - the options funnel: it records something
+# someone wants, and it is not committed work until it is decomposed into the units that deliver
+# it. A PRODUCT unit (an epic container, a story, a bug) is the DELIVERY backlog - the work
+# itself, sized, planned, and closed on executable acceptance. The distinction is load-bearing: a
+# request must never be planned as a sprint unit (it has no executable ACs to close on), and its
+# terminal status is DERIVED from the units it produced, never asserted. One definition of "which
+# side of the line is this type on", so the planner, the transition gate, status and reconcile
+# all agree. (`plan`, `test-spec` and `workflow` are process artefacts on neither backlog.)
+REQUEST_TYPES: tuple[str, ...] = ("rfc", "cr")
+PRODUCT_TYPES: tuple[str, ...] = ("epic", "story", "bug")
+
+
+def is_request(type_: str) -> bool:
+    """True when `type_` is a REQUEST (RFC/CR) - a Discovery-backlog item that must be decomposed
+    before it is committed work. The one predicate the planner, transition, status and reconcile
+    share, so none hard-codes its own list of what may not be sprinted."""
+    return type_ in REQUEST_TYPES
+
+
 # Allowed Status values per artifact type. A status outside this set is a
 # validation error (it breaks dashboard/reconcile counting).
 STATUS_VOCAB: dict[str, list[str]] = {
@@ -798,6 +818,8 @@ REMEDIATION: dict[str, dict[str, str]] = {
         "breakdown-unticked": "an epic breakdown checkbox is unticked over a terminal unit - run `reconcile apply` to sync every breakdown box to its unit's status (both directions)",
         "breakdown-ticked-early": "an epic breakdown checkbox is ticked over a still-live unit (masks unfinished work) - run `reconcile apply` to untick it, or finish the unit",
         "epic-points-stale": "an epic's derived point total no longer equals the sum of its stories' points - run `reconcile apply` to recompute it (the total is DERIVED, never hand-set; the epic's own coarse estimate is its T-shirt `Size`, not points)",
+        "link-asymmetry": "a request/child link is declared on one side only - add the missing half (the child's `Parent:` or the request's `Decomposed-into:`) so it resolves both ways, or fix the id that resolves to nothing; a decomposition writes BOTH sides",
+        "undecomposed": "a request accepted into the workflow has no children - decompose it into the epics/stories/bugs that deliver it (a request is intake, not work, until it is broken down), or close it if it is not going ahead; a still-Proposed/Draft request is pre-triage intake and is not flagged",
     },
 }
 
@@ -1173,6 +1195,97 @@ def story_epic(source) -> str | None:
         return None
     val = m.group(1).strip()
     return None if val in ("", "-", "--") else val
+
+
+# -----------------------------------------------------------------------------
+# The request -> product link: the primitive the two-backlog gates share
+# -----------------------------------------------------------------------------
+#
+# A child names its parent UP; a request names its children DOWN. Both directions are recorded so
+# reconcile can verify each link resolves both ways (a link asserted on one side only is drift).
+# A story's parent is its `Epic:` (the pre-existing specialisation, kept); every other child - an
+# epic under a CR, a CR under an RFC - names its parent with the generic `Parent:` field. A
+# request lists the units it was decomposed into with `Decomposed-into:`.
+PARENT_FIELD = "Parent"
+DECOMPOSED_FIELD = "Decomposed-into"
+_PARENT_FIELD_RE = re.compile(r"(?m)^>?[^\S\n]*\*\*Parent:\*\*[^\S\n]*(.*)$")
+
+
+def parent_ref(source) -> str | None:
+    """The parent id a child names with `> **Parent:** CR0271`, or None when it has none
+    (`-`/`--`/absent). Accepts the child text or a `Path`. The generic upward link; a story ALSO
+    carries `Epic:` (read by `story_epic`), so use `child_parent` to get either uniformly."""
+    text = source.read_text(encoding="utf-8") if isinstance(source, Path) else source
+    m = _PARENT_FIELD_RE.search(text)
+    if not m:
+        return None
+    val = m.group(1).strip()
+    if val in ("", "-", "--"):
+        return None
+    mm = ID_SEARCH_RE.search(val)
+    return mm.group(0) if mm else None
+
+
+def child_parent(source) -> str | None:
+    """The parent id a child declares, by EITHER `Parent:` (generic) or a story's `Epic:`
+    (specialisation), or None. The one reader every consumer of the upward link shares, so a
+    story-under-epic and an epic-under-CR are resolved the same way."""
+    text = source.read_text(encoding="utf-8") if isinstance(source, Path) else source
+    par = parent_ref(text)
+    if par:
+        return par
+    epic = story_epic(text)
+    if epic:
+        m = ID_SEARCH_RE.search(epic)
+        return m.group(0) if m else None
+    return None
+
+
+_PAREN_RUN_RE = re.compile(r"\([^)]*\)")
+
+
+def decomposed_ids(text: str) -> list[str]:
+    """The DIRECT child ids a request lists in `Decomposed-into:`, in order, de-duplicated. []
+    when the field is absent or names none.
+
+    A parenthetical is an ANNOTATION, not a child: `Decomposed-into: EP0033 (US0120, US0121)`
+    means the request produced the epic EP0033, and the parenthetical merely shows what that epic
+    in turn holds - those stories are the EPIC's children (they carry `Epic:`, not `Parent:` this
+    request), never the request's. So parenthetical runs are stripped before ids are read; without
+    that, the down-link back-check would demand a grandchild name the request as its Parent and
+    falsely report `link-asymmetry` on a correctly-linked chain. The downward link reconcile
+    verifies against each direct child's upward `Parent:`."""
+    raw = extract_field(text, DECOMPOSED_FIELD)
+    if not raw:
+        return []
+    raw = _PAREN_RUN_RE.sub(" ", raw)
+    out: list[str] = []
+    seen: set[str] = set()
+    for m in ID_SEARCH_RE.finditer(raw):
+        key = norm_id(m.group(0))
+        if key not in seen:
+            seen.add(key)
+            out.append(m.group(0))
+    return out
+
+
+def children_of(repo_root, parent_id: str) -> list[tuple[str, str]]:
+    """Every artefact that names `parent_id` as its parent (via `Parent:` or a story's `Epic:`),
+    as `[(child_id, child_type)]` in type/id order. The census-based primitive the derived-status
+    gate (a request is terminal only when its children are), the two-backlog status view, and the
+    UNDECOMPOSED drift check all share - so "what did this request produce" has ONE answer."""
+    root = Path(repo_root)
+    target = norm_id(parent_id)
+    out: list[tuple[str, str]] = []
+    for type_ in ARTIFACT_TYPES:
+        for p in artifact_files(type_, root):
+            cid = extract_record_id(p.stem)
+            if not cid:
+                continue
+            par = child_parent(p)
+            if par and norm_id(par) == target:
+                out.append((cid, type_))
+    return out
 
 
 def new_ulid() -> str:

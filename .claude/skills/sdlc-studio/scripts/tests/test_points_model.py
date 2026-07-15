@@ -260,6 +260,14 @@ class TheOldModelWouldHaveFailedThisSuite(unittest.TestCase):
             f"# CR-{num:04d}: c\n\n> **Status:** Proposed\n> **Priority:** Medium\n"
             f"> **Affects:** src{num}.py\n> **Points:** {points}\n", encoding="utf-8")
 
+    def _bug(self, root: Path, num: int, points: int) -> None:
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        (root / f"src{num}.py").write_text("def f():\n    return 1\n", encoding="utf-8")
+        (d / f"BG{num:04d}-x.md").write_text(
+            f"# BG{num:04d}: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
+            f"> **Affects:** src{num}.py\n> **Points:** {points}\n", encoding="utf-8")
+
     def test_a_small_unit_and_a_big_one_no_longer_forecast_the_same_number(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
@@ -274,10 +282,10 @@ class TheOldModelWouldHaveFailedThisSuite(unittest.TestCase):
         project has burned that trust twice."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            self._cr(root, 1, 3)
+            self._bug(root, 1, 3)
             out = io.StringIO()
             with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
-                rc = sprint.main(["plan", "--crs", "Proposed", "--root", str(root),
+                rc = sprint.main(["plan", "--bugs", "Open", "--root", str(root),
                                   "--no-fetch", "--skip-personas"])
             self.assertEqual(rc, 0)
             text = out.getvalue()

@@ -760,10 +760,10 @@ class AUnitAboveTheSplitThresholdIsFlagged(AccuracyBase):
 PLANNED_RETRO = """# RETRO-9100: a planned sprint
 
 > **Date:** 2026-07-15
-> **Batch:** CR0101, CR0102
+> **Batch:** BG0101, BG0102
 
 ## Delivered
-- CR0101 - shipped
+- BG0101 - shipped
 ## What went well
 - it was planned and measured
 ## What was hard / what stalled
@@ -793,10 +793,10 @@ COMPLEX_SRC = """def f(a, b, c):
     return b
 """
 
-GROOMED_CR = """# CR-{num}: a unit
+GROOMED_BUG = """# BG{num}: a unit
 
-> **Status:** Proposed
-> **Priority:** Medium
+> **Status:** Open
+> **Severity:** Medium
 > **Affects:** src/{name}.py
 > **Points:** 3
 
@@ -821,14 +821,14 @@ class TheEstimateIsTheOneThatWasPredicted(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         (self.root / "sdlc-studio" / "retros").mkdir(parents=True)
         (self.root / "sdlc-studio" / ".local").mkdir(parents=True)
-        crs = self.root / "sdlc-studio" / "change-requests"
-        crs.mkdir(parents=True)
+        bugs = self.root / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True)
         src = self.root / "src"
         src.mkdir()
         for num, name in (("0101", "a"), ("0102", "b")):
             (src / f"{name}.py").write_text(COMPLEX_SRC, encoding="utf-8")
-            (crs / f"CR{num}-x.md").write_text(
-                GROOMED_CR.format(num=num, name=name), encoding="utf-8")
+            (bugs / f"BG{num}-x.md").write_text(
+                GROOMED_BUG.format(num=num, name=name), encoding="utf-8")
         (self.root / "sdlc-studio" / "retros" / "RETRO9100-t.md").write_text(
             PLANNED_RETRO, encoding="utf-8")
 
@@ -837,7 +837,7 @@ class TheEstimateIsTheOneThatWasPredicted(unittest.TestCase):
         import sprint
         out, err = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            rc = sprint.main(["plan", "--crs", "Proposed", "--root", str(self.root),
+            rc = sprint.main(["plan", "--bugs", "Open", "--root", str(self.root),
                               "--order", "wsjf", "--no-fetch", "--skip-personas"])
         self.assertEqual(rc, 0, err.getvalue())
         return rc
@@ -845,9 +845,9 @@ class TheEstimateIsTheOneThatWasPredicted(unittest.TestCase):
     def measure(self) -> None:
         path = self.root / "sdlc-studio" / ".local" / "telemetry.jsonl"
         path.write_text(
-            json.dumps({"id": "CR0101", "type": "cr", "tokens": 90_000, "wall_time_s": 300})
+            json.dumps({"id": "BG0101", "type": "bug", "tokens": 90_000, "wall_time_s": 300})
             + "\n"
-            + json.dumps({"id": "CR0102", "type": "cr", "tokens": 60_000, "wall_time_s": 200})
+            + json.dumps({"id": "BG0102", "type": "bug", "tokens": 60_000, "wall_time_s": 200})
             + "\n", encoding="utf-8")
 
     def accuracy(self) -> dict:
@@ -871,7 +871,7 @@ class TheEstimateIsTheOneThatWasPredicted(unittest.TestCase):
                          "the recorded plan-time forecast moved when the constants changed - "
                          "the report is re-deriving the estimate, so it can never falsify it")
         self.assertEqual(after["batch"]["ratio"], before["batch"]["ratio"])
-        for uid in ("CR0101", "CR0102"):
+        for uid in ("BG0101", "BG0102"):
             a = next(u for u in after["units"] if u["id"] == uid)
             b = next(u for u in before["units"] if u["id"] == uid)
             self.assertEqual(a["estimate"], b["estimate"])
@@ -883,7 +883,7 @@ class TheEstimateIsTheOneThatWasPredicted(unittest.TestCase):
         import sprint
         out = io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
-            sprint.main(["plan", "--crs", "Proposed", "--root", str(self.root),
+            sprint.main(["plan", "--bugs", "Open", "--root", str(self.root),
                          "--order", "wsjf", "--no-fetch", "--skip-personas",
                          "--format", "json"])
         planned = json.loads(out.getvalue())["token_forecast"]["per_unit"]
@@ -905,7 +905,7 @@ class TheEstimateIsTheOneThatWasPredicted(unittest.TestCase):
         self.assertTrue(recorded.exists(),
                         "sprint plan must record its forecast whenever a plan is made")
         self.assertNotIn(".local", recorded.parts)
-        self.assertEqual(set(tel.forecasts(self.root)), {"CR0101", "CR0102"})
+        self.assertEqual(set(tel.forecasts(self.root)), {"BG0101", "BG0102"})
         self.assertFalse((self.root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
 
     def test_a_replan_after_the_fact_cannot_rewrite_what_was_predicted(self) -> None:

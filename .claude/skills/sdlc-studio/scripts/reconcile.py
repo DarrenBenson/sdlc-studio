@@ -65,6 +65,8 @@ DRIFT_KINDS = (
     "breakdown-unticked",
     "breakdown-ticked-early",
     "epic-points-stale",
+    "link-asymmetry",
+    "undecomposed",
 )
 
 # Statuses that do NOT imply a backing file yet. An UNLINKED index row in one of
@@ -985,6 +987,118 @@ def apply_epic_points(repo_root: Path | str, dry_run: bool = False) -> dict:
     return {"synced": synced}
 
 
+def _artefact_index(repo_root: Path) -> dict[str, tuple[str, str, str]]:
+    """{normalised id -> (display id, type, text)} across every artefact type - the one census
+    the link checks read, so a child and its parent are looked up the same way whatever their
+    types."""
+    index: dict[str, tuple[str, str, str]] = {}
+    for type_ in sdlc_md.ARTIFACT_TYPES:
+        for p in sdlc_md.artifact_files(type_, repo_root):
+            cid = sdlc_md.extract_record_id(p.stem)
+            if cid:
+                index[_norm_id(cid)] = (cid, type_, p.read_text(encoding="utf-8"))
+    return index
+
+
+def link_asymmetry_drift(repo_root: Path | str) -> list[dict]:
+    """A declared request<->child link that does not resolve BOTH ways (G3). A decomposition
+    writes the link on both sides - the child's `Parent:` and the request's `Decomposed-into:` -
+    so a link asserted on one side only, or pointing at an id that resolves to no artefact, is
+    drift. The story's `Epic:` link is out of scope here: an epic's Story Breakdown already
+    round-trips it (`epic_breakdown_drift`), so this checks the generic `Parent:`/`Decomposed-into:`
+    pairing that carries the request layer. Detect-only: which side is authoritative is a
+    judgement (was the child mis-parented, or the parent's list stale?), so it is reported for a
+    human, never auto-rewritten."""
+    root = Path(repo_root)
+    index = _artefact_index(root)
+    drift: list[dict] = []
+    seen: set[tuple[str, str]] = set()
+
+    def emit(child_id: str, child_type: str, why: str, parent_id: str) -> None:
+        key = (_norm_id(child_id), _norm_id(parent_id))
+        if key in seen:
+            return
+        seen.add(key)
+        drift.append({"type": child_type, "id": child_id, "kind": "link-asymmetry",
+                      "file_status": None, "index_status": None, "fix": why})
+
+    # child -> parent: every `Parent:` must resolve, and the parent must name the child back.
+    for cnorm, (cid, ctype, ctext) in index.items():
+        par = sdlc_md.parent_ref(ctext)
+        if not par:
+            continue
+        pnorm = _norm_id(par)
+        if pnorm not in index:
+            emit(cid, ctype, f"{cid} names Parent {par}, which resolves to no artefact", par)
+            continue
+        pid, ptype, ptext = index[pnorm]
+        back = {_norm_id(x) for x in sdlc_md.decomposed_ids(ptext)}
+        if cnorm not in back:
+            emit(cid, ctype, f"{cid} names Parent {pid}, but {pid} does not list {cid} in its "
+                             f"{sdlc_md.DECOMPOSED_FIELD}", pid)
+
+    # request -> child: every `Decomposed-into:` entry must resolve and name the request back.
+    for rnorm, (rid, rtype, rtext) in index.items():
+        for child in sdlc_md.decomposed_ids(rtext):
+            cnorm = _norm_id(child)
+            if cnorm not in index:
+                emit(child, rtype, f"{rid} lists child {child} in its "
+                                   f"{sdlc_md.DECOMPOSED_FIELD}, which resolves to no artefact", rid)
+                continue
+            cid, ctype, ctext = index[cnorm]
+            if _norm_id(sdlc_md.parent_ref(ctext) or "") != rnorm:
+                emit(cid, ctype, f"{rid} lists {cid} as a child, but {cid} does not name {rid} "
+                                 f"as its {sdlc_md.PARENT_FIELD}", rid)
+    return drift
+
+
+def _requires_children(type_: str, status: str) -> bool:
+    """True when a request of this type+status has been ACCEPTED into the workflow and so must
+    have been decomposed. A request is intake until someone accepts it: `Proposed` (cr) / `Draft`
+    (rfc) is the pre-triage create state, and `inbox`/`Deferred`/`Blocked`/`Planned` are parked -
+    none is expected to carry children yet. A terminal request is closed. Only a live, accepted,
+    non-parked request is expected to have produced work; a childless one there is the graveyard
+    G5 guards against. Keeping the normal intake states exempt is what keeps `reconcile detect`
+    clean on a healthy backlog (the exit-code contract CI relies on)."""
+    if not sdlc_md.is_request(type_):
+        return False
+    if sdlc_md.is_terminal_status(type_, status):
+        return False
+    # exempt the pre-triage intake state (Proposed for cr, Draft for rfc), the inbox lane, and the
+    # parked states - none is expected to carry children yet. (No "Planned": that is a story
+    # status, unreachable here where type_ is always a request.)
+    if status in (sdlc_md.create_status(type_), sdlc_md.INBOX_STATUS, "Deferred", "Blocked"):
+        return False
+    return True
+
+
+def undecomposed_drift(repo_root: Path | str) -> list[dict]:
+    """A request accepted into the workflow (an Approved/In-Progress CR, an In-Review RFC) that
+    has NO children (G5). A request is intake, not work, until it is decomposed into the units
+    that deliver it; one that was accepted and never broken down is the intake queue rotting into
+    a graveyard. A still-Proposed/Draft request is pre-triage intake and is deliberately NOT
+    flagged, so a healthy backlog leaves `reconcile detect` clean."""
+    root = Path(repo_root)
+    drift: list[dict] = []
+    for type_ in sdlc_md.REQUEST_TYPES:
+        for p in sdlc_md.artifact_files(type_, root):
+            text = p.read_text(encoding="utf-8")
+            vocab = sdlc_md.status_vocab(type_, root)
+            status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab)
+            if not status or not _requires_children(type_, status):
+                continue
+            rid = sdlc_md.extract_record_id(p.stem) or p.stem
+            if sdlc_md.children_of(root, rid):
+                continue
+            drift.append({"type": type_, "id": rid, "kind": "undecomposed",
+                          "file_status": status, "index_status": None,
+                          "fix": f"{rid} is {status} but has no children - decompose it into the "
+                                 f"stories/epics that deliver it (write each child's `Parent:` and "
+                                 f"this request's `Decomposed-into:`), or close it if it is not "
+                                 f"going ahead"})
+    return drift
+
+
 def era_divergence_advisory(repo_root: Path | str) -> str | None:
     """Warn when this clone's config and the workspace's ids tell different era stories: config
     says schema v2 (sequential ids) but v3 ULID-form ids exist - another user or machine is
@@ -1027,6 +1141,12 @@ def cmd_detect(args: argparse.Namespace) -> int:
     if args.scope in (None, "epics"):
         all_drift.extend(epic_breakdown_drift(repo_root))
         all_drift.extend(epic_points_drift(repo_root))
+    # The request<->child link check and the undecomposed check are cross-type (a CR under an RFC,
+    # an epic under a CR), so they run on the default full sweep like the meta indexes, not under a
+    # single pipeline scope.
+    if args.scope is None:
+        all_drift.extend(link_asymmetry_drift(repo_root))
+        all_drift.extend(undecomposed_drift(repo_root))
 
     by_kind: dict[str, int] = {}
     for d in all_drift:

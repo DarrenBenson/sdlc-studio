@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Two backlogs: a request must become work before it can be delivered (CR0271, EP0033 - in progress).**
+  Dual-track (discovery feeds delivery): RFCs and CRs are the DISCOVERY backlog (the options funnel);
+  epics, stories and bugs are the DELIVERY backlog (sized work). A request enters the delivery backlog
+  only by being decomposed. `sdlc_md` now owns the primitive the gates share: `is_request(type_)` names
+  which side of the line a type is on, `children_of(root, id)` answers "what did this request produce"
+  from a file census (a child names its parent with `Parent:`, a story with its existing `Epic:`; a
+  request lists its children with `Decomposed-into:`), and `reconcile` verifies every declared link
+  resolves BOTH ways - a `link-asymmetry` drift kind flags a link asserted on one side only, or pointing
+  at an id that resolves to nothing (US0120). `reconcile` also flags an accepted-but-childless request as
+  `undecomposed` (US0124), `status backlog` splits the Discovery and Delivery backlogs (US0123), and
+  `transition` derives a request's successful terminal from its children - a CR is Complete only when its
+  stories/epics are resolved, never by assertion (US0122). The last gate (plan refuses a request) lands
+  under the same epic.
+
 - **Size by what a thing IS: T-shirts on requests, points on delivery units (CR0268, CR0269).** A CR and
   an RFC are REQUESTS - sized before they are broken down - so they carry a T-shirt `Size` (S/M/L/XL),
   not points. A story and a bug are delivered directly and carry `Points`. An epic carries a T-shirt
@@ -301,6 +315,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   added, removed or renamed.
 
 ### Fixed
+
+- **The canonical creator now writes the RIGHT sizing field per type (BG0148, BG0149).** `artifact.py
+  new` gains `--size` and writes a T-shirt `Size` for a cr/rfc/epic and `Points` for a story/bug, from
+  the same `sdlc_md` definition the finding filer uses - so the two creation paths can no longer disagree
+  on what a type is sized by (LL0016). Two silent drops are closed: a story's `--points` used to vanish
+  (the template had no Points line), and a CR was written with `Points` where the model wants `Size`. The
+  wrong sizing flag for a type (a CR's `--points`, a story's `--size`) is now WARNED, never silently
+  dropped.
 
 - **The forecast is now RECORDED when it is made, so the estimator can be falsified (BG0133).**
   `retro.py accuracy` used to re-derive each estimate at retro time from the LIVE constants, so

@@ -1,2 +1,11 @@
 {"id": "CR0269", "type": "cr", "iterations": 1, "wall_time_s": 1775, "critic_verdict": "approve", "tokens": 224219, "model": "claude-opus-4-8", "project": "sdlc-studio"}
 {"id": "CR0269", "type": "cr", "project": "sdlc-studio"}
+{"id": "US0120", "type": "story", "project": "sdlc-studio"}
+{"id": "US0124", "type": "story", "project": "sdlc-studio"}
+{"id": "US0122", "type": "story", "project": "sdlc-studio"}
+{"id": "US0123", "type": "story", "project": "sdlc-studio"}
+{"id": "US0121", "type": "story", "project": "sdlc-studio"}
+{"id": "BG0149", "type": "bug", "project": "sdlc-studio"}
+{"id": "BG0148", "type": "bug", "project": "sdlc-studio"}
+{"id": "EP0033", "type": "epic", "project": "sdlc-studio"}
+{"id": "CR0271", "type": "cr", "project": "sdlc-studio"}

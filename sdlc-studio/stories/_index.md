@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 118 |
+| Done | 123 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **119** |
+| **Total** | **124** |
 
 ## All Stories
 
@@ -30,6 +30,11 @@
 | [US0117](US0117-installers-copy-then-swap-so-a-failed-install.md) | Installers copy-then-swap so a failed install cannot destroy the previous one | Done | EP0027 | 2026-07-10 | 2026-07-10 |
 | [US0118](US0118-github-sync-push-adopts-an-existing-issue-by.md) | github_sync push adopts an existing issue by title instead of blind create | Done | EP0027 | 2026-07-10 | 2026-07-10 |
 | [US0119](US0119-reliability-debt-batch-atomic-write-perms-atomic-local.md) | Reliability debt batch: atomic-write perms, atomic .local state, sync/scale hardening | Done | EP0027 | 2026-07-10 | 2026-07-10 |
+| [US0120](US0120-g3-request-child-link-primitive-resolve-parent-child.md) | G3 request-child link primitive: resolve parent<->child both ways, write links on both sides, reconcile verifies | Done | EP0033 | 2026-07-15 | 2026-07-15 |
+| [US0121](US0121-g1-plan-refuses-an-rfc-or-cr-as.md) | G1 plan refuses an RFC or CR as a sprint unit and names the decompose command | Done | EP0033 | 2026-07-15 | 2026-07-15 |
+| [US0122](US0122-g2-terminal-request-status-is-derived-from-children.md) | G2 terminal request status is derived from children, never asserted | Done | EP0033 | 2026-07-15 | 2026-07-15 |
+| [US0123](US0123-g4-status-reports-the-request-backlog-and-the.md) | G4 status reports the request backlog and the product backlog separately | Done | EP0033 | 2026-07-15 | 2026-07-15 |
+| [US0124](US0124-g5-reconcile-reports-a-childless-non-terminal-request.md) | G5 reconcile reports a childless non-terminal request as UNDECOMPOSED | Done | EP0033 | 2026-07-15 | 2026-07-15 |
 
 ## Archived Releases
 

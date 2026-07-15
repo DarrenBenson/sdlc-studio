@@ -156,6 +156,49 @@ def _done_verify_gate(root: Path, path: Path, text: str) -> str | None:
     return None
 
 
+def _request_terminal_gate(root: Path, type_: str, artifact_id: str,
+                           target_canon: str | None) -> str | None:
+    """A REQUEST (CR/RFC) may not reach its SUCCESSFUL terminal by assertion (G2). A CR is
+    Complete only when every story and epic it produced is resolved (in a terminal state); an RFC
+    is Accepted only when every CR it produced is resolved. "Resolved" is terminal, not strictly
+    Done: a child legitimately dropped (a Won't-Implement story, a Rejected child CR) does not
+    force the parent onto --force. A childless request cannot be successfully terminal - it
+    produced nothing, so it delivered nothing.
+
+    Scoped to the successful terminal (Complete for a CR, Accepted for an RFC): a request the
+    team decides NOT to build is still closable as Rejected / Superseded / Withdrawn without
+    children, because that closure asserts no delivery. Returns a block reason, or None to allow.
+    Overridable with --force, like the other close gates, but the sanctioned path is to finish or
+    close the children first."""
+    if not sdlc_md.is_request(type_):
+        return None
+    if target_canon != sdlc_md.default_terminal_status(type_):
+        return None  # Rejected / Superseded / Withdrawn: closing without a delivery claim
+    children = sdlc_md.children_of(root, artifact_id)
+    if not children:
+        return (f"{artifact_id} has no children - a request delivers nothing until it is "
+                f"decomposed. Break it into the stories/epics that deliver it (write each "
+                f"child's `Parent:` and this request's `Decomposed-into:`), or close it as "
+                f"Rejected/Superseded if it is not going ahead")
+    unfinished: list[str] = []
+    for cid, ctype in children:
+        hit = sdlc_md.find_by_id(root, cid)
+        if not hit:
+            unfinished.append(f"{cid} (unresolvable)")
+            continue
+        cpath, real_type = hit
+        cvocab = sdlc_md.status_vocab(real_type, root)
+        cstatus = sdlc_md.canonical_status(
+            sdlc_md.extract_field(cpath.read_text(encoding="utf-8"), "Status"), cvocab)
+        if not sdlc_md.is_terminal_status(real_type, cstatus or ""):
+            unfinished.append(f"{cid} ({cstatus or 'no status'})")
+    if unfinished:
+        return (f"{artifact_id} cannot be {target_canon}: its status is DERIVED from its "
+                f"children, and {len(unfinished)} is/are not yet resolved: "
+                f"{', '.join(unfinished)}. Finish or close them first")
+    return None
+
+
 def _find(repo_root: Path, artifact_id: str):
     """(path, type) of the artifact with this id, or (None, None). Delegates to the shared
     alias-aware `sdlc_md.find_by_id`; normalises its None to the (None, None) this call site
@@ -379,6 +422,13 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
         block = _tier_gate(root, text, type_)
         if block:
             blocks.append(f"{artifact_id} is not ready for {new_status}: {block}")
+    # A request's successful terminal is DERIVED from its children, never asserted (G2): a CR is
+    # Complete only when its stories/epics are resolved, an RFC Accepted only when its CRs are.
+    # Overridable with --force, like the other close gates.
+    if not force:
+        block = _request_terminal_gate(root, type_, artifact_id, target_canon)
+        if block:
+            blocks.append(f"{block}. Override with --force")
     # The triage gate fires on any exit from `inbox` for a v3 finding, dry-run included: an
     # honest preflight must surface the same refusal a real run would (never a false green).
     block = _triage_gate(root, type_, text, from_canon, target_canon, triaged_by)

@@ -1,6 +1,7 @@
 # BG0148: The two creators disagree on a CR size: file_finding writes a T-shirt Size, artifact.py has no --size flag and writes Points
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py

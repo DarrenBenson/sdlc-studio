@@ -1,8 +1,10 @@
 # CR-0271: RFC0038 U6: two backlogs - RFCs and CRs are requests, gated so they cannot reach Done without becoming work
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** P1
 > **Type:** Improvement
+> **Size:** L
+> **Decomposed-into:** EP0033 (which holds US0120-US0124)
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/status.py
 > **Date:** 2026-07-14
 > **Created-by:** sdlc-studio file
@@ -28,7 +30,7 @@ G5. reconcile reports a non-terminal request with no children as UNDECOMPOSED - 
 
 The whole delivery workflow, and it closes the oldest gap in the project: only stories are gated on executable ACs, and we have never produced one from a CR. Every CR marked Complete to date was Done by assertion.
 
-**Points:** 8
+**Size:** L (decomposed into EP0033 = 14 story points; the 8 was a single-shot guess, 1.75x low - the exact under-sizing LL0038 measured)
 
 ## Acceptance Criteria
 

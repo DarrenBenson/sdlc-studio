@@ -182,6 +182,25 @@ def _story_acs(f: dict) -> str:
 _POINTS_SLOT = "{{" + "|".join(str(p) for p in sdlc_md.POINTS_SCALE) + "}}"
 
 
+def _sizing_line(type_: str, f: dict) -> str:
+    """The sizing metadata line for a type, from `--size` or `--points`. A REQUEST or CONTAINER
+    (cr/rfc/epic) carries a T-shirt `Size`; a DELIVERY unit (story/bug) carries `Points`. Written
+    by the SAME writers the finding filer uses (`file_finding._size_line`), so the two creation
+    paths cannot disagree on what a type is sized by (LL0016 - the bug this closes was the two
+    creators writing different shapes for the same type). The wrong sizing flag for the type is
+    WARNED, never silently dropped (LL0008/BG0149 - a story's `--points` used to vanish)."""
+    delivery = type_ in ("story", "bug")
+    wrong = f.get("points") if not delivery else f.get("size")
+    if str(wrong or "").strip():
+        want, got = (("--size", "--points") if not delivery else ("--points", "--size"))
+        carries = ("a T-shirt Size" if not delivery else "Points")
+        print(f"warning: a {type_} carries {carries}, so {got} was ignored - pass {want}. "
+              f"Nothing was sized.", file=sys.stderr)
+    if delivery:
+        return f"> **Points:** {f['points']}\n" if str(f.get("points") or "").strip() else ""
+    return file_finding._size_line(f)
+
+
 def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
     st = f.get("_status") or SPEC[type_]["status"]
     # Provenance stamp - marks this artifact as tool-created (deterministic path). Raised-by is
@@ -212,28 +231,29 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
         # The Persona line is written only when a persona is named: an absent optional field is
         # honestly absent, never an unresolved placeholder in the metadata block.
         persona = f"> **Persona:** {f['persona']}\n" if str(f.get("persona") or "").strip() else ""
-        return (head + f"> **Epic:** {f.get('epic') or '-'}\n" + persona +
+        return (head + f"> **Epic:** {f.get('epic') or '-'}\n" + _sizing_line("story", f) + persona +
                 "\n## User Story\n\n**As a** {{role}}\n**I want** {{capability}}\n"
                 "**So that** {{benefit}}\n\n## Acceptance Criteria\n\n" + _story_acs(f) + rev)
     if type_ == "epic":
         acs = _list(f, "acs")
         ac_body = ("\n## Acceptance Criteria\n\n" + "".join(f"- [ ] {a}\n" for a in acs)) if acs else ""
-        return (head + "\n## Summary\n\n" + _text(f, "summary", "{{what this epic groups}}") +
+        return (head + _sizing_line("epic", f) + "\n## Summary\n\n" +
+                _text(f, "summary", "{{what this epic groups}}") +
                 "\n\n## Story Breakdown\n\n_No stories yet._\n" + ac_body + rev)
     if type_ == "cr":
         acs = _list(f, "acs")
         ac_body = "".join(f"- [ ] {a}\n" for a in acs) if acs else "- [ ] {{criterion}}\n"
         return (head + f"> **Priority:** {f.get('priority', 'Medium')}\n"
-                f"> **Type:** {f.get('ctype', 'Feature')}\n\n"
+                f"> **Type:** {f.get('ctype', 'Feature')}\n" + _sizing_line("cr", f) + "\n"
                 "## Summary\n\n" + _text(f, "summary", "{{what changes and why}}") +
                 "\n\n## Impact\n\n" + _text(f, "impact", "{{who this affects and what breaks}}") +
-                f"\n\n**Points:** {f.get('points') or _POINTS_SLOT}\n\n"
-                "## Acceptance Criteria\n\n" + ac_body + rev)
+                "\n\n## Acceptance Criteria\n\n" + ac_body + rev)
     if type_ == "rfc":
         options = _list(f, "options")
         opt_body = ("".join(f"- **{o}**\n" for o in options) if options
                     else "- **Option A** {{...}}\n")
-        return (head + "\n## Summary\n\n" + _text(f, "summary", "{{the unsettled design}}") +
+        return (head + _sizing_line("rfc", f) + "\n## Summary\n\n" +
+                _text(f, "summary", "{{the unsettled design}}") +
                 "\n\n## Design Options\n\n" + opt_body +
                 "\n## Recommendation\n\n" + _text(f, "recommendation", "TBD") +
                 "\n\n## Open Decisions\n\n"
@@ -241,9 +261,8 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
     if type_ == "bug":
         # Points are the job SIZE of the fix; Severity is its urgency. Two axes, and the planner
         # sizes on the first: a bug created without one is a unit `sprint plan` refuses.
-        points = f"> **Points:** {f['points']}\n" if str(f.get("points") or "").strip() else ""
-        return (head + f"> **Severity:** {f.get('severity', 'Medium')}\n" + points + "\n"
-                "## Summary\n\n" + _text(f, "summary", "{{symptom}}") +
+        return (head + f"> **Severity:** {f.get('severity', 'Medium')}\n" + _sizing_line("bug", f) +
+                "\n## Summary\n\n" + _text(f, "summary", "{{symptom}}") +
                 "\n\n## Steps to Reproduce\n\n" + _text(f, "steps", "{{steps}}") +
                 "\n\n## Proposed Fix\n\n" + _text(f, "fix", "{{fix}}") + "\n" + rev)
     return head + "\n## Overview\n\n" + _text(f, "summary", "{{purpose}}") + "\n" + rev
@@ -290,8 +309,8 @@ def _fill_impact(body: str, type_: str, f: dict) -> str:
     block = ""
     if str(f.get("impact") or "").strip():
         block += f"\n\n{file_finding._prose_safe(f['impact'])}"
-    if str(f.get("points") or "").strip():
-        block += f"\n\n**Points:** {f['points']}"
+    # A CR is a REQUEST - it carries a T-shirt Size, not points (the Size line is in the metadata
+    # head, written by _sizing_line; nothing points-shaped belongs in the CR body now).
     m = _IMPACT_HEAD_RE.search(body)
     if not block or not m:
         return body
@@ -912,6 +931,7 @@ def cmd_new(args: argparse.Namespace) -> int:
                            "template": args.template, "persona": args.persona,
                            "summary": args.summary, "steps": args.steps, "fix": args.fix,
                            "impact": args.impact, "points": args.points,
+                           "size": args.size,
                            "affects": args.affects,
                            "acs": args.ac, "verify": args.verify, "target": args.target,
                            "options": args.option,
@@ -1033,11 +1053,17 @@ def build_parser() -> argparse.ArgumentParser:
     # has no 7 is the whole lesson. `sdlc_md.check_points` - shared with the finding filer - is
     # what refuses it, with the scale in the message.
     n.add_argument("--points",
-                   help="the job SIZE of the work on the modified Fibonacci scale "
-                        f"({', '.join(str(p) for p in sdlc_md.POINTS_SCALE)}) - RELATIVE to "
-                        "units already delivered, not its urgency and not a time prediction. "
-                        "Required for a bug and a cr: `sprint plan` refuses to plan a unit "
-                        "nobody sized. A value off the scale is refused, never rounded")
+                   help="the job SIZE of a DELIVERY unit (a story or a bug) on the modified "
+                        f"Fibonacci scale ({', '.join(str(p) for p in sdlc_md.POINTS_SCALE)}) - "
+                        "RELATIVE to units already delivered, not its urgency and not a time "
+                        "prediction. `sprint plan` refuses to plan a delivery unit nobody sized. "
+                        "A value off the scale is refused, never rounded. A cr/rfc/epic takes "
+                        "--size, not --points")
+    n.add_argument("--size",
+                   help="the T-shirt SIZE of a REQUEST or CONTAINER (a cr, rfc or epic) - "
+                        f"{' / '.join(sdlc_md.SIZE_SCALE)} - sized coarsely before it is "
+                        "decomposed into the delivery units that carry story points. A story or "
+                        "bug takes --points, not --size")
     n.add_argument("--affects",
                    help="comma-separated files this unit will touch, written as the `Affects` "
                         "metadata line the planner reads. Required for a bug and a cr: "

@@ -318,11 +318,11 @@ class CliTests(unittest.TestCase):
     def test_plan_json(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _cr(root, 1, priority="High")
+            _bug(root, 1, severity="High")
             mod = _load()
-            rc = mod.main(["plan", "--crs", "Proposed", "--root", str(root), "--format", "json"])
+            rc = mod.main(["plan", "--bugs", "Open", "--root", str(root), "--format", "json"])
             self.assertEqual(rc, 0)
-            data = mod.build_plan(root, "cr", "Proposed", "priority")
+            data = mod.build_plan(root, "bug", "Open", "priority")
             self.assertIn("batch", data)
             self.assertEqual(data["count"], 1)
 
@@ -435,8 +435,8 @@ class AuthoringPlanTests(unittest.TestCase):
     def test_plan_write_persists_artifact(self) -> None:  # CR0091
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _cr(root, 1, status="Proposed")
-            rc = _load().main(["plan", "--crs", "Proposed", "--write", "--root", str(root)])
+            _bug(root, 1, status="Open")
+            rc = _load().main(["plan", "--bugs", "Open", "--write", "--root", str(root)])
             self.assertEqual(rc, 0)
             self.assertTrue((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
 
@@ -557,15 +557,15 @@ class ReconcileBeforePlanTests(unittest.TestCase):
     def test_strict_refuses_on_drift(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _cr(root, 1, status="Proposed")   # a CR file but no _index.md -> missing-index drift
-            rc = _load().main(["plan", "--crs", "Proposed", "--strict", "--root", str(root)])
+            _bug(root, 1, status="Open")   # a bug file but no _index.md -> missing-index drift
+            rc = _load().main(["plan", "--bugs", "Open", "--strict", "--root", str(root)])
             self.assertEqual(rc, 2)            # refused
 
     def test_warns_but_proceeds_without_strict(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _cr(root, 1, status="Proposed")
-            rc = _load().main(["plan", "--crs", "Proposed", "--root", str(root)])
+            _bug(root, 1, status="Open")
+            rc = _load().main(["plan", "--bugs", "Open", "--root", str(root)])
             self.assertEqual(rc, 0)            # warns, still plans
 
 
@@ -663,8 +663,12 @@ class MixedBatchTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _bug(root, 1)
-            _cr(root, 2)
-            rc = _load().main(["plan", "--bugs", "Open", "--crs", "Proposed",
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True, exist_ok=True)
+            (sd / "US0002-x.md").write_text(
+                "# US0002: s\n\n> **Status:** Draft\n"
+                "> **Affects:** src/us0002.py\n> **Points:** 2\n", encoding="utf-8")
+            rc = _load().main(["plan", "--bugs", "Open", "--stories", "Draft",
                                "--root", str(root)])
             self.assertEqual(rc, 0)
 
@@ -980,18 +984,18 @@ class PreflightSurvivesAllOrdersTests(unittest.TestCase):
     """BG0085: waves=None (manual order, empty batch) killed the preflight via a swallowed
     TypeError - the --strict refusal must fire for EVERY order on a behind-origin clone."""
 
-    def _seed_cr(self, work):
-        crd = work / "sdlc-studio" / "change-requests"
-        crd.mkdir(parents=True, exist_ok=True)
-        (crd / "CR0002-local.md").write_text(
-            "# CR-0002: local\n\n> **Status:** Proposed\n> **Priority:** Medium\n"
-            "> **Affects:** src/cr0002.py\n> **Points:** 2\n",   # groomed: the gate is not the subject here
+    def _seed_bug(self, work):
+        bgd = work / "sdlc-studio" / "bugs"
+        bgd.mkdir(parents=True, exist_ok=True)
+        (bgd / "BG0002-local.md").write_text(
+            "# BG0002: local\n\n> **Status:** Open\n> **Severity:** Medium\n"
+            "> **Affects:** src/bg0002.py\n> **Points:** 2\n",   # groomed: the gate is not the subject here
             encoding="utf-8")
-        (crd / "_index.md").write_text(
-            "# CRs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Proposed | 1 |\n"
-            "| **Total** | **1** |\n\n## All\n\n| ID | Title | Status | Priority | Type | Date | Linked Epics |\n"
-            "| --- | --- | --- | --- | --- | --- | --- |\n"
-            "| [CR-0002](CR0002-local.md) | local | Proposed | Medium | X | 2026-07-10 | -- |\n",
+        (bgd / "_index.md").write_text(
+            "# Bugs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Open | 1 |\n"
+            "| **Total** | **1** |\n\n## All\n\n| ID | Title | Status | Severity | Created | Updated |\n"
+            "| --- | --- | --- | --- | --- | --- |\n"
+            "| [BG0002](BG0002-local.md) | local | Open | Medium | 2026-07-10 | 2026-07-10 |\n",
             encoding="utf-8")
 
     def test_manual_order_strict_refuses_when_behind(self):
@@ -999,10 +1003,10 @@ class PreflightSurvivesAllOrdersTests(unittest.TestCase):
         from contextlib import redirect_stderr, redirect_stdout
         with tempfile.TemporaryDirectory() as d:
             work = _behind_repo(d)
-            self._seed_cr(work)
+            self._seed_bug(work)
             out, err = io.StringIO(), io.StringIO()
             with redirect_stdout(out), redirect_stderr(err):
-                rc = sprint.main(["plan", "--crs", "Proposed", "--order", "manual",
+                rc = sprint.main(["plan", "--bugs", "Open", "--order", "manual",
                                   "--strict", "--root", str(work)])
             self.assertEqual(rc, 2, err.getvalue() + out.getvalue())
             self.assertIn("behind", err.getvalue())
@@ -1014,7 +1018,7 @@ class PreflightSurvivesAllOrdersTests(unittest.TestCase):
             work = _behind_repo(d)  # no plannable units in work at all
             out, err = io.StringIO(), io.StringIO()
             with redirect_stdout(out), redirect_stderr(err):
-                rc = sprint.main(["plan", "--crs", "Proposed", "--order", "priority",
+                rc = sprint.main(["plan", "--bugs", "Open", "--order", "priority",
                                   "--strict", "--root", str(work)])
             self.assertEqual(rc, 2, err.getvalue() + out.getvalue())
 
@@ -1028,7 +1032,7 @@ class PlanLessonsDigestTests(unittest.TestCase):
            "## L-0001: Closed one\n\n- **Status:** Closed - obsolete\n")
 
     def _seed(self, root: Path) -> None:
-        _cr(root, 1, status="Proposed")
+        _bug(root, 1, status="Open")
         p = root / "sdlc-studio" / ".local" / "lessons.md"
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(self.LOG, encoding="utf-8")
@@ -1037,7 +1041,7 @@ class PlanLessonsDigestTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._seed(root)
-            plan = _load().build_plan(root, "cr", "Proposed")
+            plan = _load().build_plan(root, "bug", "Open")
             ids = [x["id"] for x in plan["lessons"]["lessons"]]
             self.assertEqual(ids, ["L-0002"])  # the closed one is not in force
 
@@ -1049,7 +1053,7 @@ class PlanLessonsDigestTests(unittest.TestCase):
             self._seed(root)
             out = io.StringIO()
             with redirect_stdout(out):
-                rc = _load().main(["plan", "--crs", "Proposed", "--root", str(root),
+                rc = _load().main(["plan", "--bugs", "Open", "--root", str(root),
                                    "--no-fetch"])
             self.assertEqual(rc, 0)
             text = out.getvalue()
@@ -1095,6 +1099,23 @@ def _drift_free_crs(root: Path, n: int) -> None:
         f"| **Total** | **{n}** |\n\n## All\n\n"
         "| ID | Title | Status | Priority | Type | Date | Linked Epics |\n"
         "| --- | --- | --- | --- | --- | --- | --- |\n" + "\n".join(rows) + "\n",
+        encoding="utf-8")
+
+
+def _drift_free_bugs(root: Path, n: int) -> None:
+    """n Open bugs plus the matching index, so `--strict` has nothing else to refuse on."""
+    bgd = root / "sdlc-studio" / "bugs"
+    bgd.mkdir(parents=True, exist_ok=True)
+    rows = []
+    for i in range(1, n + 1):
+        _bug(root, i)
+        rows.append(f"| [BG{i:04d}](BG{i:04d}-x.md) | b | Open | Medium "
+                    f"| 2026-07-14 | 2026-07-14 |")
+    (bgd / "_index.md").write_text(
+        f"# Bugs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Open | {n} |\n"
+        f"| **Total** | **{n}** |\n\n## All\n\n"
+        "| ID | Title | Status | Severity | Created | Updated |\n"
+        "| --- | --- | --- | --- | --- | --- |\n" + "\n".join(rows) + "\n",
         encoding="utf-8")
 
 
@@ -1156,11 +1177,11 @@ class CapacityBudgetTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _config(root, "capacity:\n  tokens: 1\n  units: 1\n")
-            _drift_free_crs(root, 2)          # nothing else can refuse: the census is clean
+            _drift_free_bugs(root, 2)          # nothing else can refuse: the census is clean
             sp = _load()
-            data = sp.build_plan(root, "cr", "Proposed")
+            data = sp.build_plan(root, "bug", "Open")
             self.assertEqual(sorted(data["capacity"]["over"]), ["tokens", "units"])
-            rc = sp.main(["plan", "--crs", "Proposed", "--root", str(root),
+            rc = sp.main(["plan", "--bugs", "Open", "--root", str(root),
                           "--no-fetch", "--strict"])
             self.assertEqual(rc, 0)
 
@@ -1171,11 +1192,11 @@ class CapacityBudgetTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _config(root, "capacity:\n  units: 1\n")
-            _cr(root, 1)
-            _cr(root, 2)
+            _bug(root, 1)
+            _bug(root, 2)
             out, err = io.StringIO(), io.StringIO()
             with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                _load().main(["plan", "--crs", "Proposed", "--root", str(root), "--no-fetch"])
+                _load().main(["plan", "--bugs", "Open", "--root", str(root), "--no-fetch"])
             printed = out.getvalue() + err.getvalue()
             self.assertIn("OVER BUDGET", printed)
             self.assertIn("units 2/1", printed)          # the numbers, not just a label
@@ -1305,12 +1326,12 @@ class CapacityFeedsTheAppetiteTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _config(root, "capacity:\n  units: 1\n")
-            _cr(root, 1)
-            _cr(root, 2)
+            _bug(root, 1)
+            _bug(root, 2)
             sp = _load()
-            data = sp.build_plan(root, "cr", "Proposed")
+            data = sp.build_plan(root, "bug", "Open")
             self.assertIn("units", data["capacity"]["over"])          # flagged at PLAN time
-            rc = sp.main(["plan", "--crs", "Proposed", "--root", str(root),
+            rc = sp.main(["plan", "--bugs", "Open", "--root", str(root),
                           "--no-fetch", "--write"])
             self.assertEqual(rc, 0)
 
@@ -1322,8 +1343,8 @@ class CapacityFeedsTheAppetiteTests(unittest.TestCase):
             self.assertEqual(minutes, float(sp.DEFAULT_CAPACITY["minutes"]))
 
             # ...and it FIRES there: one unit terminal is the whole appetite.
-            (root / "sdlc-studio" / "change-requests" / "CR0001-x.md").write_text(
-                "# CR-0001: c\n\n> **Status:** Complete\n> **Priority:** Medium\n",
+            (root / "sdlc-studio" / "bugs" / "BG0001-x.md").write_text(
+                "# BG0001: b\n\n> **Status:** Fixed\n> **Severity:** Medium\n",
                 encoding="utf-8")
             rc = guard.main(["budget", "--root", str(root)])
             self.assertEqual(rc, guard.BUDGET_EXIT)
@@ -1365,6 +1386,16 @@ def _groomed_cr(root: Path, num: int, affects: str, points: int = 3,
         f"> **Affects:** {affects}\n> **Points:** {points}\n", encoding="utf-8")
 
 
+def _groomed_bug(root: Path, num: int, affects: str, points: int = 3,
+                 status: str = "Open", severity: str = "Medium") -> None:
+    """A bug a planner can actually plan: it names the files it touches and its Points."""
+    d = root / "sdlc-studio" / "bugs"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f"BG{num:04d}-x.md").write_text(
+        f"# BG{num:04d}: b\n\n> **Status:** {status}\n> **Severity:** {severity}\n"
+        f"> **Affects:** {affects}\n> **Points:** {points}\n", encoding="utf-8")
+
+
 def _src(root: Path, rel: str) -> str:
     """A real source file the Affects paths can resolve against."""
     p = root / rel
@@ -1385,18 +1416,18 @@ class BreakdownGateTests(unittest.TestCase):
     def _plan(self, root: Path, *extra: str) -> tuple[int, str, str]:
         out, err = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            rc = _load().main(["plan", "--crs", "Proposed", "--root", str(root),
+            rc = _load().main(["plan", "--bugs", "Open", "--root", str(root),
                                "--no-fetch", "--skip-personas", *extra])
         return rc, out.getvalue(), err.getvalue()
 
     def test_a_batch_with_one_ungroomed_unit_fails_plan(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _groomed_cr(root, 1, _src(root, "src/a.py"))
-            _cr(root, 2, groomed=False)
+            _groomed_bug(root, 1, _src(root, "src/a.py"))
+            _bug(root, 2, groomed=False)
             rc, out, err = self._plan(root)
             self.assertNotEqual(rc, 0)
-            self.assertIn("CR0002", err)
+            self.assertIn("BG0002", err)
             self.assertIn("Affects", err)
             # NO PLAN AT ALL - not the batch header, not the waves, not the forecast
             self.assertNotIn("batch:", out)
@@ -1406,8 +1437,8 @@ class BreakdownGateTests(unittest.TestCase):
     def test_the_same_batch_passes_once_groomed(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _groomed_cr(root, 1, _src(root, "src/a.py"))
-            _groomed_cr(root, 2, _src(root, "src/b.py"))
+            _groomed_bug(root, 1, _src(root, "src/a.py"))
+            _groomed_bug(root, 2, _src(root, "src/b.py"))
             rc, out, _ = self._plan(root)
             self.assertEqual(rc, 0)
             self.assertIn("batch: 2 unit(s)", out)
@@ -1415,14 +1446,14 @@ class BreakdownGateTests(unittest.TestCase):
     def test_a_unit_naming_files_but_no_size_is_still_refused(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _groomed_cr(root, 1, _src(root, "src/a.py"))
-            d2 = root / "sdlc-studio" / "change-requests"
-            (d2 / "CR0002-x.md").write_text(
-                "# CR-0002: c\n\n> **Status:** Proposed\n> **Priority:** Medium\n"
+            _groomed_bug(root, 1, _src(root, "src/a.py"))
+            d2 = root / "sdlc-studio" / "bugs"
+            (d2 / "BG0002-x.md").write_text(
+                "# BG0002: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
                 "> **Affects:** src/a.py\n", encoding="utf-8")
             rc, out, err = self._plan(root)
             self.assertNotEqual(rc, 0)
-            self.assertIn("CR0002", err)
+            self.assertIn("BG0002", err)
             self.assertIn("size", err)
             self.assertNotIn("batch:", out)
 
@@ -1430,7 +1461,7 @@ class BreakdownGateTests(unittest.TestCase):
         """The refusal must not leave a half-authoritative artefact behind."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _cr(root, 1, groomed=False)
+            _bug(root, 1, groomed=False)
             rc, _, _ = self._plan(root, "--write")
             self.assertNotEqual(rc, 0)
             self.assertFalse((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
@@ -1439,9 +1470,9 @@ class BreakdownGateTests(unittest.TestCase):
     def test_the_refusal_names_the_unit_what_it_lacks_and_the_fix(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _cr(root, 7, groomed=False)
+            _bug(root, 7, groomed=False)
             _, _, err = self._plan(root)
-            self.assertIn("CR0007", err)                 # which unit
+            self.assertIn("BG0007", err)                 # which unit
             self.assertIn("Affects", err)                # what it lacks
             self.assertIn("Points", err)                 # ...and the other half
             self.assertIn("breakdown", err)              # the command that fixes it
@@ -1452,18 +1483,18 @@ class BreakdownGateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _config(root, "sprint:\n  breakdown: judgement\n")
-            _cr(root, 1, groomed=False)
+            _bug(root, 1, groomed=False)
             rc, out, err = self._plan(root)
             self.assertEqual(rc, 0)
             self.assertIn("batch: 1 unit(s)", out)       # the plan IS printed
-            self.assertIn("CR0001", err)                 # ...and the lane still reports
+            self.assertIn("BG0001", err)                 # ...and the lane still reports
 
     @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
     def test_an_unknown_mode_is_not_an_escape(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _config(root, "sprint:\n  breakdown: whatever\n")
-            _cr(root, 1, groomed=False)
+            _bug(root, 1, groomed=False)
             rc, out, _ = self._plan(root)
             self.assertNotEqual(rc, 0)
             self.assertNotIn("batch:", out)
@@ -1472,7 +1503,7 @@ class BreakdownGateTests(unittest.TestCase):
         """No config file at all must BLOCK. Only a recorded decision opts out."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _cr(root, 1, groomed=False)
+            _bug(root, 1, groomed=False)
             self.assertFalse((root / "sdlc-studio" / ".config.yaml").exists())
             rc, out, _ = self._plan(root)
             self.assertNotEqual(rc, 0)
@@ -1508,17 +1539,17 @@ class SharedFileClusterTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             shared = _src(root, "src/shared.py")
-            _groomed_cr(root, 1, shared)
-            _groomed_cr(root, 2, shared)
+            _groomed_bug(root, 1, shared)
+            _groomed_bug(root, 2, shared)
             out, err = io.StringIO(), io.StringIO()
             with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = _load().main(["plan", "--crs", "Proposed", "--root", str(root),
+                rc = _load().main(["plan", "--bugs", "Open", "--root", str(root),
                                    "--no-fetch", "--skip-personas"])
             self.assertEqual(rc, 0)
             self.assertIn("(parallel)", out.getvalue())   # the DAG still says parallel...
             self.assertIn("NOT safely parallel", err.getvalue())  # ...and the planner says no
-            self.assertIn("CR0001", err.getvalue())
-            self.assertIn("CR0002", err.getvalue())
+            self.assertIn("BG0001", err.getvalue())
+            self.assertIn("BG0002", err.getvalue())
 
     def test_independent_units_raise_no_cluster(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -1541,6 +1572,18 @@ def _pointed_cr(root: Path, num: int, points, affects: str = None, priority: str
         f"> **Affects:** {aff}\n{pts}", encoding="utf-8")
 
 
+def _pointed_bug(root: Path, num: int, points, affects: str = None, severity: str = "Medium",
+                 status: str = "Open") -> None:
+    """A bug carrying a Points estimate (and, by default, a resolvable Affects)."""
+    d = root / "sdlc-studio" / "bugs"
+    d.mkdir(parents=True, exist_ok=True)
+    aff = affects if affects is not None else _src(root, f"src/bg{num:04d}.py")
+    pts = f"> **Points:** {points}\n" if points is not None else ""
+    (d / f"BG{num:04d}-x.md").write_text(
+        f"# BG{num:04d}: b\n\n> **Status:** {status}\n> **Severity:** {severity}\n"
+        f"> **Affects:** {aff}\n{pts}", encoding="utf-8")
+
+
 class SplitGateTests(unittest.TestCase):
     """THE GATE REFUSES ABOVE 8 POINTS - the rule that makes the cost model work.
 
@@ -1556,25 +1599,25 @@ class SplitGateTests(unittest.TestCase):
     def _plan(self, root: Path, *extra: str) -> tuple[int, str, str]:
         out, err = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            rc = _load().main(["plan", "--crs", "Proposed", "--root", str(root),
+            rc = _load().main(["plan", "--bugs", "Open", "--root", str(root),
                                "--no-fetch", "--skip-personas", *extra])
         return rc, out.getvalue(), err.getvalue()
 
     def test_a_thirteen_point_unit_is_refused_and_the_same_batch_at_eight_plans(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _pointed_cr(root, 1, 3)
-            _pointed_cr(root, 2, 13)          # over the ceiling
+            _pointed_bug(root, 1, 3)
+            _pointed_bug(root, 2, 13)          # over the ceiling
             rc, out, err = self._plan(root)
             self.assertNotEqual(rc, 0)
-            self.assertIn("CR0002", err)                    # named
+            self.assertIn("BG0002", err)                    # named
             self.assertIn("13", err)                        # with its estimate
             self.assertIn("split", err.lower())             # and told what to do
             self.assertNotIn("batch:", out)                 # NO PLAN AT ALL
             self.assertNotIn("token forecast", out)
-            self.assertNotIn("CR0001", out)
+            self.assertNotIn("BG0001", out)
             # the ONLY change: that unit is re-sized to 8. The same batch now plans.
-            _pointed_cr(root, 2, 8)
+            _pointed_bug(root, 2, 8)
             rc, out, _ = self._plan(root)
             self.assertEqual(rc, 0)
             self.assertIn("batch: 2 unit(s)", out)
@@ -1582,17 +1625,17 @@ class SplitGateTests(unittest.TestCase):
     def test_a_twenty_is_refused_too_and_an_eight_is_not(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _pointed_cr(root, 1, 20)
+            _pointed_bug(root, 1, 20)
             self.assertNotEqual(self._plan(root)[0], 0)
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _pointed_cr(root, 1, 8)          # right on the line - the data says 8s are stable
+            _pointed_bug(root, 1, 8)          # right on the line - the data says 8s are stable
             self.assertEqual(self._plan(root)[0], 0)
 
     def test_a_refused_batch_writes_no_plan_and_opens_no_run(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _pointed_cr(root, 1, 13)
+            _pointed_bug(root, 1, 13)
             rc, _, _ = self._plan(root, "--write")
             self.assertNotEqual(rc, 0)
             self.assertFalse((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
@@ -1603,32 +1646,32 @@ class SplitGateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _config(root, "sprint:\n  points_split_above: 5\n")
-            _pointed_cr(root, 1, 8)          # legal by default, too chunky for THIS project
+            _pointed_bug(root, 1, 8)          # legal by default, too chunky for THIS project
             rc, out, err = self._plan(root)
             self.assertNotEqual(rc, 0)
-            self.assertIn("CR0001", err)
+            self.assertIn("BG0001", err)
             self.assertIn("5", err)
             self.assertNotIn("batch:", out)
-            _pointed_cr(root, 1, 5)
+            _pointed_bug(root, 1, 5)
             self.assertEqual(self._plan(root)[0], 0)
 
     def test_a_unit_with_no_points_is_still_refused(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _pointed_cr(root, 1, None)       # Affects, but nobody sized it
+            _pointed_bug(root, 1, None)       # Affects, but nobody sized it
             rc, out, err = self._plan(root)
             self.assertNotEqual(rc, 0)
-            self.assertIn("CR0001", err)
+            self.assertIn("BG0001", err)
             self.assertIn("Points", err)
             self.assertNotIn("batch:", out)
 
     def test_a_unit_with_no_affects_is_still_refused(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _pointed_cr(root, 1, 3, affects="")
+            _pointed_bug(root, 1, 3, affects="")
             rc, out, err = self._plan(root)
             self.assertNotEqual(rc, 0)
-            self.assertIn("CR0001", err)
+            self.assertIn("BG0001", err)
             self.assertIn("Affects", err)
             self.assertNotIn("batch:", out)
 
@@ -1719,10 +1762,10 @@ class PointsForecastTests(unittest.TestCase):
     def test_the_plan_states_the_rate_and_where_it_came_from(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _pointed_cr(root, 1, 3)
+            _pointed_bug(root, 1, 3)
             out, err = io.StringIO(), io.StringIO()
             with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = _load().main(["plan", "--crs", "Proposed", "--root", str(root),
+                rc = _load().main(["plan", "--bugs", "Open", "--root", str(root),
                                    "--no-fetch", "--skip-personas"])
             self.assertEqual(rc, 0)
             text = out.getvalue()
@@ -1736,14 +1779,14 @@ class PointsForecastTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             sp = _load()
-            _pointed_cr(root, 1, 5)
+            _pointed_bug(root, 1, 5)
             with contextlib.redirect_stdout(io.StringIO()), \
                     contextlib.redirect_stderr(io.StringIO()):
-                sp.main(["plan", "--crs", "Proposed", "--root", str(root), "--no-fetch",
+                sp.main(["plan", "--bugs", "Open", "--root", str(root), "--no-fetch",
                          "--skip-personas"])
             sys.path.insert(0, str(SCRIPT.parent))
             import telemetry
-            rec = telemetry.forecasts(root)["CR0001"]
+            rec = telemetry.forecasts(root)["BG0001"]
             self.assertEqual(rec["points"], 5)
             self.assertEqual(rec["tokens"], 5 * sp.POINTS_RATE_SEED)
 

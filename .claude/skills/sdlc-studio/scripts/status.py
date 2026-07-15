@@ -143,26 +143,53 @@ def backlog(repo_root: Path, types: tuple[str, ...] | None = None) -> dict:
     return result
 
 
+def _two_backlog_summary(data: dict) -> dict:
+    """Partition the per-type backlog into the two backlogs (G4): the DISCOVERY backlog (the
+    options funnel - RFCs and CRs, requests not yet committed as work) and the DELIVERY backlog
+    (epics, stories, bugs - sized work ready to deliver). This is dual-track agile / upstream
+    Kanban: discovery feeds delivery. Driven by the shared `sdlc_md.is_request`, so status and the
+    planner agree on what a request is. Additive: the per-type keys are unchanged; this is a
+    summary beside them."""
+    def group(is_req: bool) -> dict:
+        present = {t: v for t, v in data.items()
+                   if sdlc_md.is_request(t) == is_req and v.get("count")}
+        return {"count": sum(v["count"] for v in present.values()), "types": sorted(present)}
+    return {"discovery": group(True), "delivery": group(False)}
+
+
 def cmd_backlog(args: argparse.Namespace) -> int:
-    """List the non-terminal artefacts per type and status (the deterministic backlog answer)."""
+    """List the non-terminal artefacts, split into the request backlog (intake) and the product
+    backlog (deliverable), each grouped by type and status (the deterministic backlog answer)."""
     root = Path(args.root)
     types = (args.type,) if args.type else BACKLOG_TYPES
     data = backlog(root, types)
     if args.format == "json":
-        print(json.dumps(data, indent=2))
+        out = dict(data)
+        out["backlogs"] = _two_backlog_summary(data)  # additive; per-type keys unchanged
+        print(json.dumps(out, indent=2))
         return 0
     total = sum(v["count"] for v in data.values())
     if total == 0:
         print("backlog: empty - no non-terminal artefacts.")
         return 0
     print(f"Backlog: {total} non-terminal artefact(s)")
-    for t in types:
-        v = data.get(t) or {"count": 0, "by_status": {}}
-        if v["count"] == 0:
+    # Two backlogs (dual-track): the DISCOVERY backlog is the options funnel - a request is not
+    # committed work until it is decomposed; counting it as backlog overstates what is ready to
+    # deliver. The DELIVERY backlog is the sized work. Split so the two are never conflated.
+    for label, hint, is_req in (
+            ("Discovery backlog", "options - decompose into stories/epics before it is work", True),
+            ("Delivery backlog", "sized work, ready to deliver", False)):
+        present = [t for t in types
+                   if sdlc_md.is_request(t) == is_req and (data.get(t) or {}).get("count")]
+        if not present:
             continue
-        print(f"  {t}: {v['count']}")
-        for st, ids in sorted(v["by_status"].items()):
-            print(f"    {st}: {', '.join(ids)}")
+        subtotal = sum(data[t]["count"] for t in present)
+        print(f"\n{label} ({hint}): {subtotal}")
+        for t in present:
+            v = data[t]
+            print(f"  {t}: {v['count']}")
+            for st, ids in sorted(v["by_status"].items()):
+                print(f"    {st}: {', '.join(ids)}")
     return 0
 
 

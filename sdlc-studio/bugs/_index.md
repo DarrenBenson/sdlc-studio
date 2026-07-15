@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 5 |
+| Open | 4 |
 | In Progress | 0 |
-| Fixed | 61 |
+| Fixed | 63 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **148** |
+| **Total** | **149** |
 
 ## All Bugs
 
@@ -114,7 +114,8 @@
 | [BG0145](BG0145-telemetry-cli-rejects-the-new-rate-seed-source.md) | telemetry CLI rejects the new rate seed-source, and complexity drops derivable churn risk for a docs unit | Open | Low | 2026-07-14 | 2026-07-14 |
 | [BG0146](BG0146-a-recalibration-relabels-past-falsifications-as-training-error.md) | A recalibration relabels past falsifications as training error, erasing the evidence that caused it | Open | High | 2026-07-14 | 2026-07-14 |
 | [BG0147](BG0147-the-dead-complexity-signal-still-orders-the-batch.md) | The dead complexity signal still orders the batch: CR0262 removed it from the forecast and left it as the WSJF tie-breaker | Fixed | Medium | 2026-07-14 | 2026-07-14 |
-| [BG0148](BG0148-the-two-creators-disagree-on-a-cr-size.md) | The two creators disagree on a CR size: file_finding writes a T-shirt Size, artifact.py has no --size flag and writes Points | Open | Medium | 2026-07-15 | 2026-07-15 |
+| [BG0148](BG0148-the-two-creators-disagree-on-a-cr-size.md) | The two creators disagree on a CR size: file_finding writes a T-shirt Size, artifact.py has no --size flag and writes Points | Fixed | Medium | 2026-07-15 | 2026-07-15 |
+| [BG0149](BG0149-artifact-py-silently-drops-points-on-a-story.md) | artifact.py silently drops --points on a story, so the canonical creator makes a story the grooming gate always rejects | Fixed | major | 2026-07-15 | 2026-07-15 |
 
 ## Archived Releases
 

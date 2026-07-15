@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 3 |
+| Draft | 4 |
 | In Review | 0 |
 | Accepted | 32 |
 | Superseded | 0 |
 | Withdrawn | 3 |
-| **Total** | **38** |
+| **Total** | **39** |
 
 ## All RFCs
 
@@ -55,3 +55,4 @@
 | [RFC-0036](RFC0036-running-several-sprints-unattended-a-rolling-policy-not.md) | Running several sprints unattended: a rolling policy, not a queue of frozen plans | Medium | Draft | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0037](RFC0037-backlog-triage-as-a-first-class-ceremony-keep.md) | Backlog triage as a first-class ceremony: keep the backlog clean and actionable BEFORE planning | Medium | Draft | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0038](RFC0038-simplify-to-fibonacci-story-points-and-real-wsjf.md) | Simplify to Fibonacci story points and real WSJF, and test it by blind re-estimation of past sprints | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
+| [RFC-0039](RFC0039-the-discovery-track-issue-refine-and-triage-a.md) | The discovery track: Issue, refine and triage - a discovery backlog feeding delivery, worked in parallel | P2 | Draft | sdlc-studio | 2026-07-15 | -- |

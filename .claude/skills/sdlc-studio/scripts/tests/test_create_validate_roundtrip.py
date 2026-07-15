@@ -78,7 +78,7 @@ CONTENT: dict[str, dict] = {
            "summary": "carry the size estimate in the skeleton",
            "acs": ["the skeleton carries an impact statement"],
            "impact": "every CR filed today fails its own validator on first check",
-           "points": 3, "affects": "src/skeleton.py"},
+           "size": "M", "affects": "src/skeleton.py"},
     "rfc": {"summary": "how ids should be minted",
             "options": ["A - stay sequential", "B - mint a ULID"],
             "recommendation": "B, once the aliases are in place"},
@@ -212,11 +212,7 @@ class ContentRoundTripTests(unittest.TestCase):
             file_finding.ensure_index(root, type_, "2026-07-13")
             fields = dict(CONTENT[type_])
             # The CR filer sizes a CR by its T-shirt `Size` (a CR is a request, decomposed before
-            # delivery), not by story points. CONTENT["cr"] carries points for the low-level
-            # `artifact new` path (legacy-tolerated); the filer path swaps it for a Size.
-            if type_ == "cr":
-                fields.pop("points", None)
-                fields["size"] = "M"
+            # delivery), not by story points - CONTENT["cr"] carries that Size directly (BG0148).
             res = file_finding.file_finding(root, type_, f"a {type_}", fields)
             errs = _errors(root, Path(res["path"]), type_)
             self.assertEqual(errs, [], f"file/{type_}/{era}: {_fmt(errs)}")
@@ -240,6 +236,8 @@ class ContentRoundTripTests(unittest.TestCase):
 # defer the two fields that decide whether the unit can be planned at all - the author knows
 # which files they are about to touch, and nobody knows it better at plan time.
 GROOM = {"affects": "src/thing.py", "points": 3}
+# A CR/RFC/epic is a REQUEST: it grooms with a T-shirt Size (S/M/L/XL), never Points (BG0148).
+GROOM_REQUEST = {"affects": "src/thing.py", "size": "M"}
 
 
 class ScaffoldRoundTripTests(unittest.TestCase):
@@ -254,8 +252,10 @@ class ScaffoldRoundTripTests(unittest.TestCase):
                         _workspace(root, era)
                         fields = ({"epic": artifact.new(root, "epic", "parent")["id"]}
                                   if type_ == "story" else {})
-                        if type_ in ("bug", "cr"):
-                            fields.update(GROOM)  # prose may be deferred; grooming may not
+                        if type_ == "bug":
+                            fields.update(GROOM)  # a delivery unit grooms with Points
+                        elif type_ == "cr":
+                            fields.update(GROOM_REQUEST)  # a request grooms with a T-shirt Size
                         res = artifact.new(root, type_, f"a bare {type_}", fields)
                         owned = [v for v in _errors(root, Path(res["path"]), type_)
                                  if v["rule"] in CREATOR_RULES]

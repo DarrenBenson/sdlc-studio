@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0039: Decomposition makes the estimate accurate (LL0038 again): a single-shot CR sized 8 decomposed to 14, the same 1.75x the prior experiment...**
+- **L-0038: A gate that changes the canonical creation path ripples into every test that used the old path as a generic fixture.**
+- **L-0037: A worked-around symptom is a bug you have not found yet.**
 - **L-0036: A cross-cohort figure must be refused, not pooled - now enforced in code (`collate` refuses a rate across `(project, model)` cells), so the...**
 - **L-0035: A single-estimator one-shot size read off an artefact is a weak input.**
 - **L-0034: Decomposition makes the estimate accurate, not only the Done checkable.**

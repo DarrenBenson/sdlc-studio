@@ -1599,6 +1599,29 @@ def _refuse_oversized(bd: dict, count: int) -> None:
     print(SPLIT_FIX.format(ceiling=ceiling), file=sys.stderr)
 
 
+def _refuse_requests(requests: list[dict]) -> None:
+    """The G1 refusal. A sprint plans the DELIVERY backlog; an RFC/CR is a DISCOVERY-backlog
+    request with no executable ACs to close on. Naming the decompose path is the point - the
+    refusal is only useful if it says how to turn the request into plannable work."""
+    n = len(requests)
+    print(f"sprint plan REFUSED: {n} unit(s) are REQUESTS, not deliverable work. "
+          f"NO PLAN WAS PRINTED.\n", file=sys.stderr)
+    print("  An RFC or a CR is a DISCOVERY-backlog item - a request, not a unit of work. It has\n"
+          "  no executable acceptance criteria to close on, so it can be neither sprinted nor\n"
+          "  verified Done. A sprint plans the DELIVERY backlog: stories and bugs.\n",
+          file=sys.stderr)
+    print("  requests:", file=sys.stderr)
+    for it in requests:
+        print(f"    {it['id']:8} {it['type']:4} {it['path']}", file=sys.stderr)
+    print("\n  decompose each into the stories/epics that deliver it, then plan THOSE:\n"
+          "    artifact.py new --type epic --title ... (link it: the epic's `Parent:` = the CR,\n"
+          "      and the request's `Decomposed-into:` = the epic)\n"
+          "    artifact.py new --type story --epic <EPxxxx> --points <n> ...\n"
+          "  the request's own status then becomes terminal by DERIVATION when its children are\n"
+          "  resolved (transition refuses to assert it). See `status backlog` for the two backlogs.",
+          file=sys.stderr)
+
+
 def _report_oversized(bd: dict, count: int) -> None:
     """The recorded opt-out still REPORTS an oversized unit; it just does not block."""
     print(f"breakdown: {len(bd['oversized'])} of {count} unit(s) are above "
@@ -1930,6 +1953,14 @@ def cmd_plan(args: argparse.Namespace) -> int:
                           appetite_units=getattr(args, "appetite_units", None))
     except ValueError as exc:  # dependency cycle / bad status / unknown worklist id
         print(f"cannot order the batch: {exc}", file=sys.stderr)
+        return 2
+    # THE REQUEST GATE (G1). A sprint plans the DELIVERY backlog - stories and bugs. An RFC or CR
+    # is a DISCOVERY-backlog request: it has no executable ACs to close on, so it can neither be
+    # sprinted nor verified Done. Refused ahead of the grooming gate (a request cannot be groomed
+    # as a sprint unit anyway), blocking and no plan at all.
+    requests = [it for it in data["batch"] if sdlc_md.is_request(it["type"])]
+    if requests:
+        _refuse_requests(requests)
         return 2
     # THE BREAKDOWN GATE. Before anything is printed, written, or opened: is this batch groomed
     # enough to plan, and is any unit too big to have been estimated at all? Either failure is

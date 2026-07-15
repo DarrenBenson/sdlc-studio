@@ -79,8 +79,10 @@ class CascadeInvariants(unittest.TestCase):
             with tempfile.TemporaryDirectory() as d:
                 repo = Path(d)
                 _index(repo, type_, header)
-                groom = ({"affects": "src/thing.py", "points": 3}
-                         if type_ in ("bug", "cr") else {})   # a unit must be plannable
+                # a delivery unit (bug) is sized in points; a request (cr) in a T-shirt Size
+                groom = ({"affects": "src/thing.py", "points": 3} if type_ == "bug"
+                         else {"affects": "src/thing.py", "size": "M"} if type_ == "cr"
+                         else {})   # a unit must be plannable
                 artifact.new(repo, type_, f"a {type_}", groom)
                 self.assertEqual(reconcile.detect_type(type_, repo)["drift"], [],
                                  f"{type_}: new-then-reconcile drifted")

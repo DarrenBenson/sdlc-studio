@@ -173,23 +173,30 @@ class PointsAreDemanded(unittest.TestCase):
             self.assertEqual(rc, 1)
             self.assertEqual(_artifacts(root, "cr"), [])
 
-    def test_artifact_new_demands_points_too(self) -> None:
-        # The two creation paths answer to ONE definition of a sized artefact - otherwise the
-        # second is simply the way round the first.
-        for type_ in ("bug", "cr"):
-            with self.subTest(type=type_), tempfile.TemporaryDirectory() as d:
-                root = Path(d)
-                _seed_index(root, type_)
-                rc, _ = _new(root, type_)
-                self.assertEqual(rc, 1)
-                self.assertEqual(_artifacts(root, type_), [])
-                rc, _ = _new(root, type_, "--points", "7")   # ... and to ONE scale
-                self.assertEqual(rc, 1)
-                self.assertEqual(_artifacts(root, type_), [])
-                rc, _ = _new(root, type_, "--points", "5")
-                self.assertEqual(rc, 0)
-                body = _artifacts(root, type_)[0].read_text(encoding="utf-8")
-                self.assertEqual(sdlc_md.read_points(body), 5)
+    def test_artifact_new_demands_the_right_size_field_per_type(self) -> None:
+        # The two creation paths answer to ONE definition of a sized artefact - but a DELIVERY
+        # unit (a bug) is sized in Points and a REQUEST (a cr) in a T-shirt Size (BG0148). Neither
+        # may be born unsized; each demands its OWN sizing field, on its own scale.
+        # bug: Points on the Fibonacci scale
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            self.assertEqual(_new(root, "bug")[0], 1)                    # unsized: refused
+            self.assertEqual(_artifacts(root, "bug"), [])
+            self.assertEqual(_new(root, "bug", "--points", "7")[0], 1)   # off-scale: refused
+            self.assertEqual(_artifacts(root, "bug"), [])
+            self.assertEqual(_new(root, "bug", "--points", "5")[0], 0)
+            self.assertEqual(sdlc_md.read_points(_artifacts(root, "bug")[0].read_text()), 5)
+        # cr: a T-shirt Size, never points
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "cr")
+            self.assertEqual(_new(root, "cr")[0], 1)                     # unsized: refused
+            self.assertEqual(_artifacts(root, "cr"), [])
+            self.assertEqual(_new(root, "cr", "--size", "XXL")[0], 1)    # off-scale: refused
+            self.assertEqual(_artifacts(root, "cr"), [])
+            self.assertEqual(_new(root, "cr", "--size", "M")[0], 0)
+            self.assertEqual(sdlc_md.read_size(_artifacts(root, "cr")[0].read_text()), "M")
 
     def test_a_batch_carrying_one_off_scale_item_writes_nothing(self) -> None:
         # All-or-nothing: item 2's bad size must abort before item 1 is on disk.

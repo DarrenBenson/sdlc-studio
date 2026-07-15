@@ -9,12 +9,12 @@
 | Proposed | 5 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 260 |
+| Complete | 261 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 6 |
 | Blocked | 0 |
-| **Total** | **271** |
+| **Total** | **272** |
 
 ## All Changes
 
@@ -92,7 +92,8 @@
 | [CR-0268](CR0268-rfc0038-u4-an-epic-carries-a-t-shirt.md) | RFC0038 U4: an epic carries a T-shirt size, not story points - and its point total is DERIVED, not estimated | Complete | P2 | Improvement | 2026-07-14 | -- |
 | [CR-0269](CR0269-rfc0038-u5-size-by-what-a-thing-is.md) | RFC0038 U5: size by what a thing IS - T-shirt on containers, points on delivery units, and a CR must decompose before it can be planned | Complete | P1 | Improvement | 2026-07-14 | -- |
 | [CR-0270](CR0270-rfc0038-u7-stamp-project-and-points-on-every.md) | RFC0038 U7: stamp project and points on every evidence record, so cross-project data is collatable and never blindly pooled | Complete | P1 | Improvement | 2026-07-14 | -- |
-| [CR-0271](CR0271-rfc0038-u6-two-backlogs-rfcs-and-crs-are.md) | RFC0038 U6: two backlogs - RFCs and CRs are requests, gated so they cannot reach Done without becoming work | Proposed | P1 | Improvement | 2026-07-14 | -- |
+| [CR-0271](CR0271-rfc0038-u6-two-backlogs-rfcs-and-crs-are.md) | RFC0038 U6: two backlogs - RFCs and CRs are requests, gated so they cannot reach Done without becoming work | Complete | P1 | Improvement | 2026-07-14 | -- |
+| [CR-0272](CR0272-audit-and-clean-up-the-skill-command-surface.md) | Audit and clean up the skill command surface, then rewrite the help files around the core process | Proposed | P2 | Improvement | 2026-07-15 | -- |
 
 ## Archived Releases
 

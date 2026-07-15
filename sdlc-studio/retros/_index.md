@@ -38,3 +38,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0026](RETRO0026-the-integrity-sprint-the-loop-can-now-be.md) | The integrity sprint: the loop can now be falsified, and it falsified the estimator again | 2026-07-14 | -- | -- |
 | [RETRO-0027](RETRO0027-the-axis-sprint-the-estimator-was-not-mis.md) | The axis sprint: the estimator was not mis-tuned, it was measuring nothing | 2026-07-14 | -- | -- |
 | [RETRO-0028](RETRO0028-the-sizing-completion-sprint-the-model-works-the.md) | The sizing-completion sprint: the model works, the input was under-sized, and we proved it | 2026-07-15 | -- | -- |
+| [RETRO-0029](RETRO0029-the-two-backlog-finale-cr0271-decomposed-delivered-and.md) | The two-backlog finale: CR0271 decomposed, delivered, and closed by its own gate | 2026-07-15 | -- | -- |

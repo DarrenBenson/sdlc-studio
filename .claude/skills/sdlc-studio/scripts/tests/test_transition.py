@@ -631,11 +631,20 @@ class HonestSyncTests(unittest.TestCase):
             root = Path(d)
             cd = root / "sdlc-studio" / "change-requests"
             cd.mkdir(parents=True)
-            (cd / "CR0001-x.md").write_text("# CR-0001: c\n\n> **Status:** Proposed\n", encoding="utf-8")
+            (cd / "CR0001-x.md").write_text(
+                "# CR-0001: c\n\n> **Status:** Proposed\n> **Decomposed-into:** EP0001\n",
+                encoding="utf-8")
             (cd / "_index.md").write_text(
                 "# CRs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Proposed | 1 |\n"
                 "| Complete | 0 |\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
                 "| [CR-0001](CR0001-x.md) | c | Proposed |\n", encoding="utf-8")
+            # G2 (US0122): a CR reaches Complete only when its children are resolved. Give it a
+            # Done child epic so the completion is legitimate - this test is about the non-story
+            # cascade/sync, not the derived-status gate.
+            ed = root / "sdlc-studio" / "epics"
+            ed.mkdir(parents=True)
+            (ed / "EP0001-c.md").write_text(
+                "# EP0001: c\n\n> **Status:** Done\n> **Parent:** CR0001\n", encoding="utf-8")
             res = tr.transition(root, "CR0001", "Complete")
             self.assertTrue(res["index_synced"])
             self.assertIsNone(res["epic"])

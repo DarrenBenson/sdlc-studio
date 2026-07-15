@@ -10,8 +10,8 @@
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 32 |
-| **Total** | **32** |
+| Done | 33 |
+| **Total** | **33** |
 
 > Generate-mode note: all epics are **Ready** (spec extracted from the existing
 > implementation, awaiting test validation per `reference-philosophy.md`), not
@@ -53,3 +53,4 @@
 | [EP0030](EP0030-the-generated-team-project-native-seats-stakeholders-and.md) | the generated team: project-native seats, stakeholders and Cooper personas that arbitrate | Done | -- | -- | 2026-07-10 | 2026-07-10 |
 | [EP0031](EP0031-v4-1-release-integrity-the-gates-that-make.md) | v4.1 release integrity: the gates that make the tag trustworthy | Done | -- | -- | 2026-07-13 | 2026-07-13 |
 | [EP0032](EP0032-v4-1-run-close-and-agent-dx.md) | v4.1 run-close and agent DX | Done | -- | -- | 2026-07-13 | 2026-07-13 |
+| [EP0033](EP0033-the-two-backlog-gates-decompose-cr0271-into-the.md) | The two-backlog gates: decompose CR0271 into the delivery units that build it | Done | -- | -- | 2026-07-15 | 2026-07-15 |

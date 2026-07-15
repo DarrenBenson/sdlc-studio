@@ -29,6 +29,9 @@ artifact = _load()
 # still be deferred to whoever fills it in; the grooming may not.
 GROOM = {"affects": "src/thing.py", "points": 3}
 GROOM_CLI = ["--affects", "src/thing.py", "--points", "3"]
+# A CR/RFC/epic is a REQUEST: it carries a T-shirt Size (S/M/L/XL), never delivery Points (BG0148).
+GROOM_REQUEST = {"affects": "src/thing.py", "size": "M"}
+GROOM_REQUEST_CLI = ["--affects", "src/thing.py", "--size", "M"]
 
 
 def _index(repo: Path, type_: str, header: str) -> None:
@@ -85,7 +88,7 @@ class SchemaV3AllocationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
-            r = artifact.new(repo, "cr", "change", dict(GROOM))
+            r = artifact.new(repo, "cr", "change", dict(GROOM_REQUEST))
             self.assertEqual(r["id"], "CR-0001")   # no .config.yaml -> v2 sequential
 
     def test_v3_findings_file_into_inbox(self) -> None:
@@ -159,7 +162,7 @@ class NewTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
-            r = artifact.new(repo, "cr", "change something", dict(GROOM))
+            r = artifact.new(repo, "cr", "change something", dict(GROOM_REQUEST))
             self.assertTrue(r["id"].startswith("CR-"))   # dash form
             self.assertTrue(r["file_id"].startswith("CR") and "-" not in r["file_id"])
             self.assertTrue(r["indexed"])
@@ -172,8 +175,10 @@ class NewTests(unittest.TestCase):
                 if t == "story":
                     _epic(repo)  # a story needs an existing parent epic (BG0022)
                 fields = {"epic": "EP0001"} if t == "story" else {}
-                if t in ("bug", "cr"):
-                    fields.update(GROOM)  # a scaffold may defer its prose, never its grooming
+                if t == "bug":
+                    fields.update(GROOM)  # a delivery unit is groomed with Points
+                elif t == "cr":
+                    fields.update(GROOM_REQUEST)  # a request is groomed with a T-shirt Size
                 r = artifact.new(repo, t, f"a {t}", fields)
                 p = Path(r["path"])
                 errs = [v for v in validate.validate_file(p, t, repo)
@@ -190,7 +195,7 @@ class NewTests(unittest.TestCase):
             repo = Path(d)
             hdr = "| ID | Title | Status | Priority | Type | Date | Linked Epics |"
             _index(repo, "cr", hdr)
-            artifact.new(repo, "cr", "widthcheck", dict(GROOM))
+            artifact.new(repo, "cr", "widthcheck", dict(GROOM_REQUEST))
             idx = (repo / "sdlc-studio" / "change-requests" / "_index.md").read_text()
             row = next(l for l in idx.splitlines() if l.strip().startswith("| [CR-"))
             self.assertEqual(len(reconcile._table_cells(row)), hdr.count("|") - 1)
@@ -227,14 +232,14 @@ class NewTests(unittest.TestCase):
                 "| --- | --- | --- | --- | --- | --- | --- |\n"
                 "| [CR-0005](CR0005-x.md) | gone | Done | Medium | Feature | 2026-01-01 | - |\n",
                 encoding="utf-8")  # row present, file absent
-            r = artifact.new(repo, "cr", "fresh", dict(GROOM))
+            r = artifact.new(repo, "cr", "fresh", dict(GROOM_REQUEST))
             self.assertEqual(r["file_id"], "CR0006")  # above the lingering CR0005 row, not CR0001
 
     def test_pipe_in_title_escaped_in_row(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
-            artifact.new(repo, "cr", "a | b piped", dict(GROOM))
+            artifact.new(repo, "cr", "a | b piped", dict(GROOM_REQUEST))
             idx = (repo / "sdlc-studio" / "change-requests" / "_index.md").read_text()
             row = next(l for l in idx.splitlines() if l.strip().startswith("| [CR-"))
             cells = reconcile._table_cells(row)
@@ -319,7 +324,7 @@ class NewTests(unittest.TestCase):
             _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
             idx = repo / "sdlc-studio" / "change-requests" / "_index.md"
             before = idx.read_text()
-            r = artifact.new(repo, "cr", "preview", dict(GROOM), dry_run=True)
+            r = artifact.new(repo, "cr", "preview", dict(GROOM_REQUEST), dry_run=True)
             self.assertTrue(r["dry_run"])
             self.assertFalse(Path(r["path"]).exists())
             self.assertEqual(idx.read_text(), before)
@@ -796,7 +801,7 @@ class ProvenanceStampTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
-            r = artifact.new(repo, "cr", "from an issue", {**GROOM, "provenance": "external"})
+            r = artifact.new(repo, "cr", "from an issue", {**GROOM_REQUEST, "provenance": "external"})
             body = Path(r["path"]).read_text(encoding="utf-8")
             self.assertIn("> **Provenance:** external", body)
             self.assertEqual(sdlc_md.extract_field(body, "Provenance"), "external")
@@ -805,7 +810,7 @@ class ProvenanceStampTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
-            r = artifact.new(repo, "cr", "home grown", dict(GROOM))
+            r = artifact.new(repo, "cr", "home grown", dict(GROOM_REQUEST))
             self.assertNotIn("**Provenance:**", Path(r["path"]).read_text(encoding="utf-8"))
 
     def test_externally_stamped_story_blocks_shell_verifiers(self) -> None:
@@ -885,7 +890,7 @@ class RevisionAuthorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
-            r = artifact.new(repo, "cr", "authored", {**GROOM, "author": "Dani Okafor"})
+            r = artifact.new(repo, "cr", "authored", {**GROOM_REQUEST, "author": "Dani Okafor"})
             self.assertIn("| Dani Okafor |",
                           self._rev_row(Path(r["path"]).read_text(encoding="utf-8")))
 
@@ -893,7 +898,7 @@ class RevisionAuthorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
-            r = artifact.new(repo, "cr", "authored", {**GROOM, "author": "Claude (Fable 5); agent; v5"})
+            r = artifact.new(repo, "cr", "authored", {**GROOM_REQUEST, "author": "Claude (Fable 5); agent; v5"})
             body = Path(r["path"]).read_text(encoding="utf-8")
             self.assertIn("> **Raised-by:** Claude (Fable 5); agent; v5", body)
             row = self._rev_row(body)
@@ -908,7 +913,7 @@ class RevisionAuthorTests(unittest.TestCase):
             prev = os.environ.get("SDLC_AUTHOR")
             os.environ["SDLC_AUTHOR"] = "Sprint Driver; agent; v1"
             try:
-                r = artifact.new(repo, "cr", "unattributed", dict(GROOM))
+                r = artifact.new(repo, "cr", "unattributed", dict(GROOM_REQUEST))
             finally:
                 os.environ.pop("SDLC_AUTHOR")
                 if prev is not None:
@@ -1249,7 +1254,7 @@ class GroomingDemandTests(unittest.TestCase):
                        "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
                 r = artifact.new(repo, "cr", "tighten the gate",
                                  {"priority": "High", "ctype": "Improvement", "impact": "i",
-                                  "affects": "src/gate.py", "points": 8,
+                                  "affects": "src/gate.py", "size": "L",
                                   "template": template})
                 path = Path(r["path"])
                 self.assertEqual(self._plan_verdict(repo, path, "cr")["ungroomed"], [],
