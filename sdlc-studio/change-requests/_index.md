@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 5 |
+| Proposed | 7 |
 | Approved | 0 |
 | In Progress | 1 |
 | Complete | 263 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 6 |
 | Blocked | 0 |
-| **Total** | **275** |
+| **Total** | **277** |
 
 ## All Changes
 
@@ -97,6 +97,8 @@
 | [CR-0273](CR0273-track-points-per-worker-hour-as-a-descriptive.md) | Track points-per-worker-hour as a descriptive velocity metric, runner-only, never a target | Proposed | P2 | Improvement | 2026-07-15 | -- |
 | [CR-0274](CR0274-refine-add-append-an-epic-to-an-already.md) | refine --add: append an epic to an already-decomposed request, for incremental slices | Complete | P1 | Improvement | 2026-07-15 | -- |
 | [CR-0275](CR0275-refine-show-should-work-on-an-already-decomposed.md) | refine show should work on an already-decomposed request, to inform a refine add | Complete | P3 | Improvement | 2026-07-15 | -- |
+| [CR-0276](CR0276-audit-must-warn-about-workflow-scale-and-confirm.md) | audit must warn about workflow scale and confirm before launching a large adversarial fan-out | Proposed | High | Improvement | 2026-07-15 | -- |
+| [CR-0277](CR0277-reconcile-apply-should-create-a-missing-index-from.md) | reconcile apply should create a missing index from the template, not just detect it | Proposed | Medium | Improvement | 2026-07-15 | -- |
 
 ## Archived Releases
 
