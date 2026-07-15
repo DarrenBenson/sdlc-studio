@@ -83,6 +83,7 @@ catalogue and worked workflows below cover every tool.
 | `/sdlc-studio mutation` | Executable mutation-check gate: prove the tests can FAIL (killed vs survived per mutation) |
 | `/sdlc-studio skill-update` | Upgrade the **installed skill** to a newer SDLC Studio release (one of three "upgrade" surfaces - see `reference-upgrade.md#three-upgrades`) |
 | `/sdlc-studio project upgrade` | Upgrade a **consuming project's artefacts and conventions** to the new skill (dry-run; `--apply` for the safe set; reports the judgement items) |
+| `/sdlc-studio migrate` | Review EVERY artefact and upgrade where safe: orchestrates project upgrade (conventions + version) + `migrate_v3` sizing + the artefact-review sweep into ONE report - deterministic upgrades applied, judgement items (refine/triage/resize) reported with the command. Dry-run; `--apply` writes the safe set |
 
 ### Deterministic Artifact Tooling
 

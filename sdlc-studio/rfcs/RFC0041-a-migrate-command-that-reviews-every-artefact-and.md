@@ -1,6 +1,7 @@
 # RFC-0041: A migrate command that reviews every artefact and upgrades where necessary
 
-> **Status:** Draft
+> **Status:** Accepted
+> **Decomposed-into:** EP0042
 > **Size:** L
 > **Date:** 2026-07-15
 > **Created-by:** sdlc-studio file
@@ -18,16 +19,25 @@ project upgrade refreshes some conventions (it added personas) but does not swee
 
 ## Recommendation
 
-TBD - pending decision.
+**Option C - a `migrate` orchestrator.** `project_upgrade` (conventions + version) and `migrate_v3`
+(ids + sizing, with its `needs_refine`/`needs_triage`/`needs_resize`/`needs_manual` buckets) already
+exist and are tested; `reconcile.undecomposed_drift` already finds accepted childless items. Option A
+risks duplicating that; option B buries a real command inside `project upgrade`, against the operator's
+ask for "an actual migrate command". C reuses the pieces: `migrate` runs them in order, adds the
+artefact-review sweep, and emits ONE report split into what it upgraded deterministically vs what needs
+a human. It auto-applies only the deterministic, reversible set (version stamp, config, container
+sizing) and REPORTS the judgement items (a request's `refine`, an Issue's `triage`, a delivery unit's
+re-size) with the exact command - never guessing a number the estimator would then be judged on.
 
 ## Open Decisions
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Act on this finding or keep status quo | Open |
+| D1 | Command shape: new command / extend project upgrade / orchestrator | Resolved: option C (orchestrator) |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-15 | sdlc-studio | Filed |
+| 2026-07-15 | sdlc-studio | Resolved D1 = option C (a migrate orchestrator over project_upgrade + migrate_v3, plus an artefact-review sweep and a deterministic-vs-needs-human report) |

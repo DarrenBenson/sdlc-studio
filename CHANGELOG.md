@@ -21,6 +21,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`migrate` - one command that reviews every artefact and upgrades where safe (EP0042, RFC0041).**
+  An operator upgrading a consuming project had to know to run `project upgrade`, `migrate_v3
+  sizing`, and `reconcile` separately, and even then no pass reviewed the open RFCs/CRs/epics/stories.
+  `migrate` is the orchestrator (RFC0041 option C): it runs those pieces in order, adds an
+  artefact-review sweep, and emits ONE report split into **deterministic** (what it auto-applied -
+  version stamp, config, a container's Effort/Points -> `Size` conversion) and **needs a human**
+  (each item with the exact command - an accepted childless request -> `refine`, a childless Issue
+  -> `triage`, a delivery unit sized in legacy Effort -> a re-size). It auto-applies only the
+  deterministic, reversible set and never guesses a judgement (there is no honest Effort->Points
+  map). Dry-run by default; `--apply` writes the safe set. Reuses the existing tools rather than
+  duplicating them.
+
+- **Fixed: `project upgrade` no longer stamps a bogus `skill_version: "unknown"` (BG0150).** When the
+  installed skill's `SKILL.md` carried no parseable `version:` (a partial install), `apply()` fell
+  back to `"unknown"` and wrote it into `sdlc-studio/.version` - which read as "the version is
+  missing" and corrupted the metadata skill-update/migrate compare against. It now warns loudly and
+  SKIPS the stamp instead of fabricating a value; the normal path is unchanged.
+
 - **A command-surface audit and the two backlogs surfaced at `hint` and `status` (EP0041, CR0272
   slice 1).** New `command_audit.py` enumerates every command deterministically - the SKILL Type
   Reference, the `help/help.md` catalogue, and `scripts/` - and dispositions each **keep** or

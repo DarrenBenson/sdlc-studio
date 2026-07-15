@@ -34,6 +34,19 @@ snooze. Drives the `skill-update` action via `scope`.
 
 Action workflow: `reference-skill-update.md`.
 
+### `migrate.py`
+
+The upgrade ORCHESTRATOR: one command that reviews every artefact and upgrades
+where it safely can. Runs `project_upgrade` (conventions + version) and `migrate_v3 sizing`
+(container Effort/Points -> a T-shirt `Size`) in order, then the artefact-review sweep, and emits ONE
+report split into **deterministic** (what it auto-applied - version, config, sizing conversions) and
+**needs a human** (each item with the exact command: an accepted childless request -> `refine`, a
+childless Issue -> `triage`, a delivery unit sized in legacy Effort -> a re-size). The honesty rule:
+it auto-applies only the deterministic, reversible set and never guesses a judgement (there is no
+honest Effort->Points map). Dry-run by default; `--apply` writes the deterministic set only. Reuses
+`project_upgrade`, `migrate_v3` and `reconcile` - it adds the aggregation and the sweep, not a
+parallel implementation.
+
 ### `migrate_v3.py`
 
 One-shot schema v2 -> v3 migration (sequential ids -> type-prefixed short ULIDs):

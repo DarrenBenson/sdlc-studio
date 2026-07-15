@@ -52,3 +52,10 @@
 {"id": "US0152", "type": "story", "project": "sdlc-studio"}
 {"id": "US0153", "type": "story", "project": "sdlc-studio"}
 {"id": "EP0041", "type": "epic", "project": "sdlc-studio"}
+{"id": "US0154", "type": "story", "project": "sdlc-studio"}
+{"id": "US0155", "type": "story", "project": "sdlc-studio"}
+{"id": "US0156", "type": "story", "project": "sdlc-studio"}
+{"id": "US0157", "type": "story", "project": "sdlc-studio"}
+{"id": "BG0150", "type": "bug", "project": "sdlc-studio"}
+{"id": "EP0042", "type": "epic", "project": "sdlc-studio"}
+{"id": "RFC0041", "type": "rfc", "project": "sdlc-studio"}

@@ -234,6 +234,7 @@ approach decisions. The full index is in `help/references.md`.
 | `handoff` | The run-close handoff guide: what remains, per item, with its pointer and a copilot-tail / judgement tag |
 | `plan` | Claude Code plan-file lifecycle (list, archive) |
 | `decisions` | Project decisions log (the project spine + delegated-agent handoff): `add` / `list` / `promote` |
+| `migrate` | Review every artefact and upgrade where safe: orchestrates conventions + version + sizing, reports what needs a human |
 | `reconcile` | Detect and fix status drift across all artifacts |
 | `gate` | Portable, ecosystem-neutral CI quality gate over the deterministic checks |
 | `deploy` | Orchestrate-only deploy last-mile: gate, verify, record (operator-triggered, never autonomous) |

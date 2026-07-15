@@ -2,6 +2,8 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0058: Orchestrate existing, tested primitives before building new ones.**
+- **L-0057: Monkeypatch through the module under test, not a re-import.**
 - **L-0056: Compute-once, read-many on a hot path: the hint recomputed a full-repo scan the dashboard had already done.**
 - **L-0055: A generated artefact must only assert what it verified.**
 - **L-0054: A predicate that looks like an existing one may need DIFFERENT exemptions - do not copy the exemption set.**

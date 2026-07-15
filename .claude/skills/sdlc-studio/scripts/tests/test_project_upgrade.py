@@ -119,6 +119,67 @@ class ApplyTests(unittest.TestCase):
             self.assertIn(f'skill_version: "{INSTALLED}"', (Path(d) / "sdlc-studio" / ".version").read_text())
             self.assertTrue(any("updated" in a and ".version" in a for a in actions))
 
+    def test_unresolvable_skill_version_warns_and_does_not_stamp_unknown(self):
+        # BG0150: when the installed SKILL.md carries no parseable version, apply must NOT write a
+        # bogus skill_version: "unknown" (which reads as "the version is missing" and corrupts the
+        # metadata skill-update/migrate compare against) - it warns and skips the stamp.
+        # patch the version_check object `pu` actually holds (via `import version_check`), not a
+        # separately-imported one - under the full suite another test's importlib load can make
+        # them different module instances.
+        vc = pu.version_check
+        orig = vc.installed_version
+        vc.installed_version = lambda *a, **k: None
+        try:
+            with tempfile.TemporaryDirectory() as d:
+                _project(d)   # no .version yet
+                actions = pu.apply(d)
+                ver = Path(d) / "sdlc-studio" / ".version"
+                self.assertFalse(ver.exists())                         # nothing bogus written
+                self.assertTrue(any("NOT stamped" in a for a in actions))
+                self.assertFalse(any("unknown" in a for a in actions))
+        finally:
+            vc.installed_version = orig
+
+    def test_unresolvable_version_with_existing_dotversion_leaves_it_and_warns(self):
+        # BG0150, the bump/repair branch: an existing .version + a newly-unreadable install must be
+        # LEFT as-is (not rewritten to "unknown"), with a warning.
+        vc = pu.version_check
+        orig = vc.installed_version
+        vc.installed_version = lambda *a, **k: None
+        try:
+            with tempfile.TemporaryDirectory() as d:
+                _project(d, version=(pu.CURRENT_SCHEMA, "1.0.0"))
+                before = (Path(d) / "sdlc-studio" / ".version").read_text()
+                actions = pu.apply(d)
+                after = (Path(d) / "sdlc-studio" / ".version").read_text()
+                self.assertEqual(before, after)                    # untouched, not "unknown"
+                self.assertTrue(any("NOT stamped" in a for a in actions))
+        finally:
+            vc.installed_version = orig
+
+    def test_audit_reports_unreadable_version_as_manual_not_auto(self):
+        # BG0150: the dry-run preview must not PROMISE a version stamp apply will skip.
+        vc = pu.version_check
+        orig = vc.installed_version
+        vc.installed_version = lambda *a, **k: None
+        try:
+            with tempfile.TemporaryDirectory() as d:
+                _project(d)   # no .version
+                a = pu.audit(d)
+                self.assertNotIn("missing-version", {x["kind"] for x in a["auto"]})
+                self.assertIn("version-unresolvable", {x["kind"] for x in a["manual"]})
+        finally:
+            vc.installed_version = orig
+
+    def test_real_version_still_stamps_after_the_guard(self):
+        # the guard must not regress the normal path
+        with tempfile.TemporaryDirectory() as d:
+            _project(d)
+            pu.apply(d)
+            text = (Path(d) / "sdlc-studio" / ".version").read_text()
+            self.assertIn(f'skill_version: "{INSTALLED}"', text)
+            self.assertNotIn("unknown", text)
+
     def test_dry_run_writes_nothing(self):
         with tempfile.TemporaryDirectory() as d:
             _project(d)

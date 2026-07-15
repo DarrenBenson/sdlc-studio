@@ -264,7 +264,17 @@ def audit(root: Path | str) -> dict:
     pv_schema, pv_skill = _read_version(root)
     installed = version_check.installed_version(version_check.skill_root())
     if not (sd / ".version").exists():
-        auto.append({"kind": "missing-version", "detail": "no sdlc-studio/.version (records the skill/schema version)"})
+        if installed is None:
+            # BG0150: apply() cannot stamp a version it cannot read, and must not fabricate
+            # "unknown". So audit must NOT advertise `missing-version` as an auto-fix here - it is a
+            # needs-human blocker (fix the skill install), matching what apply actually does. This
+            # keeps the dry-run preview honest: it never promises a stamp apply will skip.
+            manual.append({"kind": "version-unresolvable",
+                           "detail": "cannot read the installed skill version from its SKILL.md "
+                                     "(frontmatter `version:` missing) - sdlc-studio/.version "
+                                     "cannot be stamped; fix the skill install, then re-run"})
+        else:
+            auto.append({"kind": "missing-version", "detail": "no sdlc-studio/.version (records the skill/schema version)"})
     elif (installed and pv_skill != installed) or (pv_schema or 0) < CURRENT_SCHEMA:
         # present but stale - apply() bumps it, so the dry-run must report it too
         auto.append({"kind": "stale-version",
@@ -344,8 +354,17 @@ def apply(root: Path | str, with_reconcile: bool = False, today: str | None = No
         actions.append(f"created sdlc-studio/.config.yaml (provenance.adopt_after: {cutoff})")
     ver = sd / ".version"
     prev_schema, prev_skill = _read_version(root)
-    installed = version_check.installed_version(version_check.skill_root()) or "unknown"
-    if not ver.exists():
+    # The installed skill version comes from the skill's own SKILL.md frontmatter. When that cannot
+    # be read (a malformed or partial install - no `version:` line), DO NOT stamp a bogus "unknown"
+    # into `.version`: that silently corrupts the metadata skill-update/migrate compare against, and
+    # reads to an operator as "the version is missing". Warn loudly and SKIP the stamp
+    # instead - an honest gap the operator can fix, not a fabricated value.
+    installed = version_check.installed_version(version_check.skill_root())
+    if installed is None:
+        actions.append("WARNING: could not read the installed skill version from its SKILL.md "
+                       "(frontmatter `version:` missing or unparseable) - sdlc-studio/.version was "
+                       "NOT stamped. Check the skill install, then re-run `project upgrade --apply`.")
+    elif not ver.exists():
         # Stamp the project's ACTUAL schema (from .config.yaml), not CURRENT_SCHEMA - a fresh v3
         # project must not have its .version mirror written as 2, which would diverge the metadata
         # from behaviour and make a spurious migration walk sticky.

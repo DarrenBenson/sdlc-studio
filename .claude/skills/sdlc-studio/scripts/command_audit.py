@@ -52,8 +52,8 @@ SPINE: dict[str, str] = {
     "decisions": "support", "lessons": "support", "audit": "support",
     # UTILITY / lifecycle - legitimate, off the delivery spine
     "init": "utility", "help": "utility", "skill-update": "utility", "upgrade": "utility",
-    "project": "utility", "repo": "utility", "plan": "utility", "code": "utility",
-    "test-spec": "utility", "test-automation": "utility", "test-env": "utility",
+    "migrate": "utility", "project": "utility", "repo": "utility", "plan": "utility",
+    "code": "utility", "test-spec": "utility", "test-automation": "utility", "test-env": "utility",
     "deploy": "utility", "mutation": "utility", "retro": "utility",
 }
 

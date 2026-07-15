@@ -17,21 +17,40 @@
 
 Workflows for upgrading projects between schema versions and detecting version mismatches.
 
-## Three things called "upgrade" {#three-upgrades}
+## The commands called "upgrade" {#three-upgrades}
 
-Three distinct operations all carry the word "upgrade". This table is the single place that names
-what each one changes and when to reach for it - each command's help links here.
+Several operations carry the word "upgrade". This table is the single place that names what each one
+changes and when to reach for it - each command's help links here.
 
 | Command | Upgrades | When |
 | --- | --- | --- |
+| `/sdlc-studio migrate` | **everything, in one pass** - orchestrates the below plus the artefact-review sweep, into one report | you just want "bring this project up to date"; the front door |
 | `/sdlc-studio skill-update` | the **installed skill** (the tool itself) to the latest published release | a newer release exists; the startup notice prompts it |
 | `/sdlc-studio project upgrade` | a **consuming project's artefacts and conventions** to what the new skill expects (config, provenance cutoff, personas, AGENTS.md, index drift) | a long-lived project has fallen behind the skill; `skill-update` offers it after a bump |
 | `/sdlc-studio upgrade` | a single project's **artifact document shape** (the v1 -> v2 schema transform) | the project is on schema v1 and you want the modular v2 layout |
 
-Order when a project is far behind: run `skill-update` first (get the new tool), then `upgrade` if
-the project is schema v1 (fix the doc shape), then `project upgrade` for the remaining conventions.
-The schema `upgrade` is one part of what `project upgrade` covers - see
-[project upgrade](#project-upgrade-workflow).
+Order when a project is far behind: run `skill-update` first (get the new tool), then `migrate` -
+it orchestrates the rest (`upgrade` for schema-v1 doc shape, `project upgrade` for conventions +
+version, `migrate_v3 sizing` for the sizing model) and reports the artefacts that need a human.
+
+## migrate - one pass over everything {#migrate}
+
+`migrate` is the front door for "bring this project up to date". It orchestrates the pieces
+rather than making you run and read each one:
+
+1. **project upgrade** - conventions + the version stamp.
+2. **migrate_v3 sizing** - a container's legacy Effort/Points converted to a T-shirt `Size`.
+3. **the artefact-review sweep** - every open artefact reviewed: an accepted childless request is
+   flagged for `refine`, a childless Issue for `triage`, a delivery unit sized in legacy Effort for
+   a re-size.
+
+It emits ONE report, split into **deterministic** (what it upgraded automatically - version,
+config, sizing conversions) and **needs a human** (each item with the exact command). The honesty
+rule: it auto-applies only the deterministic, reversible set; it never guesses a judgement (a
+breakdown, a triage, a re-size - there is no honest Effort->Points map, so a legacy Effort is
+reported, never auto-converted to points). Dry-run by default; `--apply` writes the deterministic
+set. See [the two-backlog migration](#two-backlog-migration) for the sizing/refine detail migrate
+surfaces.
 
 ## Schema Versions
 

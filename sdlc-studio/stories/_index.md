@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 152 |
+| Done | 156 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **153** |
+| **Total** | **157** |
 
 ## All Stories
 
@@ -64,6 +64,10 @@
 | [US0151](US0151-hint-surfaces-the-discovery-backlog-how-many-items.md) | hint surfaces the Discovery backlog: how many items await refinement or triage | Done | EP0041 | 2026-07-15 | 2026-07-15 |
 | [US0152](US0152-the-main-status-dashboard-shows-the-discovery-and.md) | The main status dashboard shows the Discovery and Delivery split | Done | EP0041 | 2026-07-15 | 2026-07-15 |
 | [US0153](US0153-record-the-command-dispositions-and-document-the-audit.md) | Record the command dispositions and document the audit tool | Done | EP0041 | 2026-07-15 | 2026-07-15 |
+| [US0154](US0154-migrate-command-orchestrate-project-upgrade-and-migrate-v3.md) | migrate command: orchestrate project_upgrade and migrate_v3 sizing into one dry-run pass | Done | EP0042 | 2026-07-15 | 2026-07-15 |
+| [US0155](US0155-the-artefact-review-sweep-report-per-artefact-what.md) | The artefact-review sweep: report per-artefact what needs refine, triage or resize | Done | EP0042 | 2026-07-15 | 2026-07-15 |
+| [US0156](US0156-unified-deterministic-vs-needs-human-report-and-apply.md) | Unified deterministic-vs-needs-human report, and apply the safe set only | Done | EP0042 | 2026-07-15 | 2026-07-15 |
+| [US0157](US0157-document-migrate-in-reference-upgrade-help-and-the.md) | Document migrate in reference-upgrade, help and the CHANGELOG | Done | EP0042 | 2026-07-15 | 2026-07-15 |
 
 ## Archived Releases
 
