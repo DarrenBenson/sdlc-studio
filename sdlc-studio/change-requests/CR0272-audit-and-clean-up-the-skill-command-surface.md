@@ -23,9 +23,11 @@ The process the skill should foreground: raise a bug or CR -> break it down into
 - [ ] The tooling behind every KEPT command is exercised and confirmed working (no help entry for a command whose script path is dead)
 - [ ] Retired/folded commands are removed or redirected, with the change recorded
 - [ ] The help files are rewritten around the process spine, not the accreted surface, and `check_links` + `validate_skill` pass
+- [ ] The Discovery and Delivery backlogs are surfaced in the `hint` ladder and the main `status` dashboard, not only in `status backlog`: the hint names how many Discovery items await refinement, and the dashboard shows the two-backlog split, so the dual-track split is visible from the commands an operator reaches for first
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-15 | sdlc-studio | Raised |
+| 2026-07-15 | sdlc-studio | Added scope: surface the Discovery/Delivery backlogs in `hint` and the main `status` dashboard (they exist in `status backlog` since US0123 but not the first-reach commands) |
