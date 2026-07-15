@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0036: A cross-cohort figure must be refused, not pooled - now enforced in code (`collate` refuses a rate across `(project, model)` cells), so the...**
+- **L-0035: A single-estimator one-shot size read off an artefact is a weak input.**
+- **L-0034: Decomposition makes the estimate accurate, not only the Done checkable.**
 - **L-0033: Counting is not a worse estimator than modelling; it is the honest one when no signal exists.**
 - **L-0032: Merging units to dodge a file collision destroys per-unit measurement.**
 - **L-0031: Setting the bar BEFORE measuring is what makes a negative result possible.**
