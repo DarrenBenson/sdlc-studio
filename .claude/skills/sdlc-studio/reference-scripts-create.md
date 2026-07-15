@@ -230,6 +230,24 @@ decomposed request - for a large request delivered in slices, one epic per sprin
 de-duped and order-preserving so an earlier slice is never lost (`apply` mints the first epic, `add`
 each later one).
 
+### `triage.py`
+
+Decompose an Issue (a raw defect report, the defect-side Discovery item) into the bugs that deliver
+its fix, with the two-backlog links wired - the defect-side mirror of `refine`. Where a request
+becomes an epic + stories (two levels), an Issue becomes bugs DIRECTLY (one level): a bug is already
+the concrete delivery unit, so no container is minted. `triage show --issue <id>` surfaces the
+Issue's Report / Observed sections and confirms it is triageable (a non-issue or an already-triaged
+Issue is refused - `show` and `apply` share one definition). `triage apply --issue <id> --bug
+"title|points[|severity[|affects]]" ...` validates the whole breakdown BEFORE minting anything -
+including a dry-run pre-flight of every bug through the grooming gate, so a bug whose `Affects` does
+not resolve fails loud and empty rather than leaving an earlier bug half-minted - then creates each
+bug (`Parent:` the Issue), writes the Issue's `Decomposed-into:`, moves the Issue to Triaged (it
+reaches Resolved only by derivation when its bugs are done), and surfaces `--question` items for a
+Three-Amigos consult (QA-led). An Issue that is really a change, not a defect, is NOT triaged into a
+story here (a story needs an epic parent) - file a CR and `refine` that instead. The `Parent:` /
+`Decomposed-into:` link writers are shared with `refine` via `lib.sdlc_md.insert_after_status` /
+`write_decomposed`, so both ceremonies wire links identically.
+
 ### `file_finding.py`
 
 Deterministic Bug/CR/RFC filer for audit findings. Allocates a

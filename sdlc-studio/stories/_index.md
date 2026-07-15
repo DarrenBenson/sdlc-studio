@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 135 |
+| Done | 141 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **136** |
+| **Total** | **142** |
 
 ## All Stories
 
@@ -47,6 +47,12 @@
 | [US0134](US0134-migrate-requests-containers-legacy-effort-to-size-s.md) | migrate requests/containers: legacy Effort to Size (S/M/L direct), a pointed cr/rfc/epic gets Size from the point band, idempotent with dry-run | Done | EP0037 | 2026-07-15 | 2026-07-15 |
 | [US0135](US0135-migrate-reports-what-needs-a-human-story-bug.md) | migrate reports what needs a human: story/bug Effort has no clean Points mapping so flag for re-size, and childless-accepted requests flag for refine | Done | EP0037 | 2026-07-15 | 2026-07-15 |
 | [US0136](US0136-the-upgrade-guide-reference-doc-plus-a-changelog.md) | the upgrade guide reference doc plus a CHANGELOG breaking-change section for the 5.0.0 cut | Done | EP0037 | 2026-07-15 | 2026-07-15 |
+| [US0137](US0137-issue-joins-the-discovery-vocab-is-discovery-plan.md) | Issue joins the discovery vocab: is_discovery, plan and status treat it as discovery | Done | EP0038 | 2026-07-15 | 2026-07-15 |
+| [US0138](US0138-issue-artefact-type-issues-dir-index-id-prefix.md) | Issue artefact type: issues dir, index, id prefix, artifact new --type issue | Done | EP0038 | 2026-07-15 | 2026-07-15 |
+| [US0139](US0139-triage-command-an-issue-triaged-into-bugs-atomically.md) | triage command: an Issue triaged into bugs, atomically wired | Done | EP0038 | 2026-07-15 | 2026-07-15 |
+| [US0140](US0140-triage-gates-reconcile-flags-an-untriaged-issue-and.md) | triage gates: reconcile flags an untriaged Issue and an Issue's terminal status derives from its children | Done | EP0038 | 2026-07-15 | 2026-07-15 |
+| [US0141](US0141-document-the-discovery-track-issue-and-triage-help.md) | Document the discovery track: Issue and triage help, reference and README | Done | EP0038 | 2026-07-15 | 2026-07-15 |
+| [US0142](US0142-refine-show-accepts-an-already-decomposed-request-and.md) | refine show accepts an already-decomposed request and lists its existing epics, staying read-only | Done | EP0039 | 2026-07-15 | 2026-07-15 |
 
 ## Archived Releases
 

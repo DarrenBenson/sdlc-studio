@@ -158,19 +158,20 @@ def _done_verify_gate(root: Path, path: Path, text: str) -> str | None:
 
 def _request_terminal_gate(root: Path, type_: str, artifact_id: str,
                            target_canon: str | None) -> str | None:
-    """A REQUEST (CR/RFC) may not reach its SUCCESSFUL terminal by assertion (G2). A CR is
-    Complete only when every story and epic it produced is resolved (in a terminal state); an RFC
-    is Accepted only when every CR it produced is resolved. "Resolved" is terminal, not strictly
-    Done: a child legitimately dropped (a Won't-Implement story, a Rejected child CR) does not
-    force the parent onto --force. A childless request cannot be successfully terminal - it
+    """A DISCOVERY item (CR/RFC/Issue) may not reach its SUCCESSFUL terminal by assertion (G2). A
+    CR is Complete only when every story and epic it produced is resolved (in a terminal state);
+    an RFC is Accepted only when every CR it produced is resolved; an Issue is Resolved only when
+    every bug it was triaged into is resolved. "Resolved" is terminal, not strictly Done: a child
+    legitimately dropped (a Won't-Implement story, a Won't-Fix bug, a Rejected child CR) does not
+    force the parent onto --force. A childless discovery item cannot be successfully terminal - it
     produced nothing, so it delivered nothing.
 
-    Scoped to the successful terminal (Complete for a CR, Accepted for an RFC): a request the
-    team decides NOT to build is still closable as Rejected / Superseded / Withdrawn without
-    children, because that closure asserts no delivery. Returns a block reason, or None to allow.
-    Overridable with --force, like the other close gates, but the sanctioned path is to finish or
-    close the children first."""
-    if not sdlc_md.is_request(type_):
+    Scoped to the successful terminal (Complete for a CR, Accepted for an RFC, Resolved for an
+    Issue): a discovery item the team decides NOT to build is still closable as Rejected /
+    Superseded / Withdrawn / Won't Fix / Closed without children, because that closure asserts no
+    delivery. Returns a block reason, or None to allow. Overridable with --force, like the other
+    close gates, but the sanctioned path is to finish or close the children first."""
+    if not sdlc_md.is_discovery(type_):
         return None
     if target_canon != sdlc_md.default_terminal_status(type_):
         return None  # Rejected / Superseded / Withdrawn: closing without a delivery claim

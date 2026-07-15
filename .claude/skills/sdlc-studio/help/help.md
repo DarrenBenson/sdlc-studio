@@ -220,6 +220,21 @@ The tooling sprint uses to create and close artifacts the same way every time (t
 | `/sdlc-studio rfc accept --rfc RFC-0001` | Record the decision + spawn/link the workstream CRs |
 | `/sdlc-studio rfc close --rfc RFC-0001` | Supersede or withdraw an RFC |
 
+### Discovery Track (Issue, refine, triage)
+
+The Discovery backlog (RFCs, CRs, Issues) is decomposed into the Delivery backlog: a request is
+**refined** into an epic + stories; an Issue is **triaged** into bugs. Under `two_backlog.enforce`,
+`sprint plan` refuses a Discovery item and its terminal status derives from its children.
+
+| Command | Description |
+| --- | --- |
+| `/sdlc-studio issue create` | File a defect-side Discovery item (raw report; Severity + Size, no points) |
+| `/sdlc-studio refine show --request CR-0001` | Show a request's content and confirm it is refinable (accepts an already-decomposed one, to inform an `add`) |
+| `/sdlc-studio refine apply --request CR-0001` | Decompose a request into an epic + stories, links wired |
+| `/sdlc-studio refine add --request CR-0001` | Append a further epic to an already-decomposed request (a later slice) |
+| `/sdlc-studio triage show --issue IS0001` | Show an Issue's report and confirm it is triageable |
+| `/sdlc-studio triage apply --issue IS0001` | Decompose an Issue into the bugs that deliver its fix |
+
 ### Development Pipeline
 
 | Command | Description |

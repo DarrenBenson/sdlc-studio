@@ -36,6 +36,7 @@ _DASH = {
     "bug": False,
     "cr": True,
     "rfc": True,
+    "issue": False,
 }
 
 # Per-type create status, terminal (close) status, and disp-id form. The two statuses are
@@ -278,6 +279,15 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
                 "\n## Summary\n\n" + _text(f, "summary", "{{symptom}}") +
                 "\n\n## Steps to Reproduce\n\n" + _text(f, "steps", "{{steps}}") +
                 "\n\n## Proposed Fix\n\n" + _text(f, "fix", "{{fix}}") + "\n" + rev)
+    if type_ == "issue":
+        # An Issue is a DISCOVERY item - a raw report/symptom, not yet reproduced or scoped. It
+        # carries a T-shirt Size (the discovery estimate) and a Severity (the urgency a triager
+        # prioritises on), but NO Points - it is not a delivery unit; `triage` turns it into the
+        # bugs that are. It has no ACs and no fix: those belong to the bugs it produces.
+        return (head + f"> **Severity:** {f.get('severity', 'Medium')}\n" + _sizing_line("issue", f) +
+                "\n## Report\n\n" + _text(f, "summary", "{{the raw report or symptom}}") +
+                "\n\n## Observed\n\n" + _text(f, "observed", "{{what was seen, where, environment}}") +
+                "\n" + rev)
     return head + "\n## Overview\n\n" + _text(f, "summary", "{{purpose}}") + "\n" + rev
 
 
@@ -623,7 +633,14 @@ def meta_new(repo_root: Path | str, type_: str, title: str, fields: dict | None 
 
 
 def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = None,
-        dry_run: bool = False) -> dict:
+        dry_run: bool = False, consolidate: bool = True) -> dict:
+    """Create one artefact. `consolidate` (default True) governs the v3 finding-noise controls: a
+    Low-severity finding is normally folded into a themed consolidation CR and a session cap
+    refuses a flood. A DELIBERATE decomposition unit (a bug minted by `triage`) is not agent
+    finding-noise, so it passes `consolidate=False` to mint an individual bug regardless of
+    severity - otherwise a Low-severity triaged bug would silently become a CR on a v3 project, and
+    the caller (expecting a bug) would wire that CR as the Issue's child. Dormant on v2, where the
+    controls are off, so the flag only matters under schema v3."""
     if type_ not in SPEC:
         raise ValueError(f"unknown type {type_!r} (expected one of {', '.join(SPEC)})")
     root = Path(repo_root)
@@ -669,7 +686,7 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
         # into a themed consolidation CR; the session cap refuses a flood loudly. Routed here too
         # so `artifact new` is not a bypass of the file_finding path.
         sev = f.get("severity") or f.get("priority")
-        if type_ in sdlc_md.FINDING_TYPES and triage_noise.should_consolidate(root, sev):
+        if consolidate and type_ in sdlc_md.FINDING_TYPES and triage_noise.should_consolidate(root, sev):
             if dry_run:
                 return {"id": None, "file_id": None, "path": None,
                         "consolidated": True, "dry_run": True}
@@ -684,7 +701,7 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
                     "would_create_index": would_create_index,
                     "epic_linked": (type_ == "story" and bool(f.get("epic"))) or None,
                     "dry_run": True}
-        if type_ in sdlc_md.FINDING_TYPES:
+        if consolidate and type_ in sdlc_md.FINDING_TYPES:
             triage_noise.enforce_session_cap(root)  # refuse the N+1th finding loudly (v3)
         f["_status"] = _create_status(type_, root)  # era-aware: findings file into inbox under v3
         f["_raised_by"] = sdlc_md.authorship_value(f.get("author"), root)
@@ -701,7 +718,7 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
             body = re.sub(r"(^> \*\*Created-by:\*\*.*$)",
                           rf"\1\n> **Provenance:** {prov}", body, count=1, flags=re.MULTILINE)
         sdlc_md.atomic_write(path, body)
-        if type_ in sdlc_md.FINDING_TYPES:
+        if consolidate and type_ in sdlc_md.FINDING_TYPES:
             triage_noise.record_creation(root)  # count this minted finding (session budget)
         index_created = _ensure_index(root, type_, f["date"])  # greenfield first run
         header = _header_cells(root, type_)

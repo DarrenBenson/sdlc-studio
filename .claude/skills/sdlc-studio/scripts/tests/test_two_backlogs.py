@@ -636,10 +636,10 @@ class PlanRefusesRequestTests(unittest.TestCase):
             self._cr(root, 2)
             rc, err = self._plan(root, "--crs", "Proposed")
             self.assertEqual(rc, 2)
-            self.assertIn("REQUESTS", err)
+            self.assertIn("DISCOVERY items", err)
             self.assertIn("CR0001", err)
             self.assertIn("decompose", err.lower())      # names the fix
-            self.assertIn("Decomposed-into", err)         # names the link to write
+            self.assertIn("refine.py", err)               # names the ceremony a request needs
 
     def test_plan_refuses_a_mixed_batch_that_includes_a_request(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -649,7 +649,7 @@ class PlanRefusesRequestTests(unittest.TestCase):
             self._cr(root, 2)
             rc, err = self._plan(root, "--bugs", "Open", "--crs", "Proposed")
             self.assertEqual(rc, 2)
-            self.assertIn("REQUESTS", err)
+            self.assertIn("DISCOVERY items", err)
             self.assertIn("CR0002", err)
 
     def test_an_unenforced_project_plans_a_cr_as_before(self) -> None:
@@ -660,16 +660,16 @@ class PlanRefusesRequestTests(unittest.TestCase):
             (root / "src" / "cr0001.py").write_text("", encoding="utf-8")   # Affects resolves
             self._cr(root, 1)
             rc, err = self._plan(root, "--crs", "Proposed")
-            self.assertNotIn("are REQUESTS", err)   # not refused for being a request
+            self.assertNotIn("DISCOVERY items", err)   # not refused for being a discovery item
 
     def test_a_pure_product_batch_is_not_refused_for_being_a_request(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._bug(root, 1)
             rc, err = self._plan(root, "--bugs", "Open")
-            # it must NOT hit the request gate; a groomed bug plans (rc 0) - and certainly the
+            # it must NOT hit the discovery gate; a groomed bug plans (rc 0) - and certainly the
             # refusal message never appears for a delivery-only batch
-            self.assertNotIn("are REQUESTS", err)
+            self.assertNotIn("DISCOVERY items", err)
 
 
 class UndecomposedDriftTests(unittest.TestCase):

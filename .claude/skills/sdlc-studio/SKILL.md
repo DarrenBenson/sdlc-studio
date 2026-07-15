@@ -226,6 +226,9 @@ approach decisions. The full index is in `help/references.md`.
 | `bug` | Bug tracking and traceability |
 | `cr` | Change requests (post-PRD change proposals) |
 | `rfc` | Request For Comments – design exploration of an unsettled space, pre-CR |
+| `issue` | Defect-side Discovery intake: a raw report, `triage`d into bugs |
+| `refine` | Decompose a request (RFC/CR) into an epic and stories, links wired |
+| `triage` | Decompose an Issue into the bugs that deliver its fix (mirror of `refine`) |
 | `project` | Project-level orchestration across all epics |
 | `sprint` | Goal-Driven Development loop: a prioritised batch driven along the goal ladder `triage -> plan -> design -> done` |
 | `handoff` | The run-close handoff guide: what remains, per item, with its pointer and a copilot-tail / judgement tag |

@@ -335,9 +335,14 @@ def migrate_sizing(repo_root: Path | str, dry_run: bool = True) -> dict:
                     (sdlc_md.extract_field(text, "Effort") or "").strip():
                 needs_resize.append({"id": sdlc_md.extract_record_id(p.stem) or p.stem,
                                      "type": type_})
-    needs_refine = [{"id": x["id"], "type": x["type"]} for x in reconcile.undecomposed_drift(root)]
+    # An accepted, childless discovery item needs decomposing - but by the RIGHT ceremony: a
+    # request (RFC/CR) is refined, an Issue is triaged. Split them so the report names the ceremony
+    # rather than steering an Issue to `refine` (which refuses it).
+    undecomposed = reconcile.undecomposed_drift(root)
+    needs_refine = [{"id": x["id"], "type": x["type"]} for x in undecomposed if x["type"] != "issue"]
+    needs_triage = [{"id": x["id"], "type": x["type"]} for x in undecomposed if x["type"] == "issue"]
     return {"converted": converted, "needs_resize": needs_resize, "needs_refine": needs_refine,
-            "needs_manual": needs_manual, "dry_run": dry_run}
+            "needs_triage": needs_triage, "needs_manual": needs_manual, "dry_run": dry_run}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -384,6 +389,11 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"\nNEEDS A HUMAN - {len(res['needs_refine'])} accepted childless request(s) "
                       f"- decompose with `refine apply`:")
                 for n in res["needs_refine"]:
+                    print(f"  {n['id']} ({n['type']})")
+            if res.get("needs_triage"):
+                print(f"\nNEEDS A HUMAN - {len(res['needs_triage'])} accepted childless Issue(s) "
+                      f"- decompose with `triage apply`:")
+                for n in res["needs_triage"]:
                     print(f"  {n['id']} ({n['type']})")
             if res.get("needs_manual"):
                 print(f"\nNEEDS A HUMAN - {len(res['needs_manual'])} artefact(s) convertible but "

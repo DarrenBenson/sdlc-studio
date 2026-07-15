@@ -1618,25 +1618,25 @@ def _refuse_oversized(bd: dict, count: int) -> None:
 
 
 def _refuse_requests(requests: list[dict]) -> None:
-    """The G1 refusal. A sprint plans the DELIVERY backlog; an RFC/CR is a DISCOVERY-backlog
-    request with no executable ACs to close on. Naming the decompose path is the point - the
-    refusal is only useful if it says how to turn the request into plannable work."""
+    """The G1 refusal. A sprint plans the DELIVERY backlog; an RFC/CR/Issue is a DISCOVERY-backlog
+    item with no executable ACs to close on. Naming the decompose path is the point - the refusal
+    is only useful if it says how to turn the discovery item into plannable work (a request is
+    refined, an Issue triaged)."""
     n = len(requests)
-    print(f"sprint plan REFUSED: {n} unit(s) are REQUESTS, not deliverable work. "
+    print(f"sprint plan REFUSED: {n} unit(s) are DISCOVERY items, not deliverable work. "
           f"NO PLAN WAS PRINTED.\n", file=sys.stderr)
-    print("  An RFC or a CR is a DISCOVERY-backlog item - a request, not a unit of work. It has\n"
+    print("  An RFC, a CR or an Issue is a DISCOVERY-backlog item, not a unit of work. It has\n"
           "  no executable acceptance criteria to close on, so it can be neither sprinted nor\n"
           "  verified Done. A sprint plans the DELIVERY backlog: stories and bugs.\n",
           file=sys.stderr)
-    print("  requests:", file=sys.stderr)
+    print("  discovery items:", file=sys.stderr)
     for it in requests:
-        print(f"    {it['id']:8} {it['type']:4} {it['path']}", file=sys.stderr)
-    print("\n  decompose each into the stories/epics that deliver it, then plan THOSE:\n"
-          "    artifact.py new --type epic --title ... (link it: the epic's `Parent:` = the CR,\n"
-          "      and the request's `Decomposed-into:` = the epic)\n"
-          "    artifact.py new --type story --epic <EPxxxx> --points <n> ...\n"
-          "  the request's own status then becomes terminal by DERIVATION when its children are\n"
-          "  resolved (transition refuses to assert it). See `status backlog` for the two backlogs.",
+        print(f"    {it['id']:8} {it['type']:5} {it['path']}", file=sys.stderr)
+    print("\n  decompose each into the delivery units it produces, then plan THOSE:\n"
+          "    a request (RFC/CR):  refine.py apply --request <id> --epic-title ... --story ...\n"
+          "    an Issue:            triage.py apply --issue <ISxxxx> --bug 'title|points|severity'\n"
+          "  the discovery item's own status then becomes terminal by DERIVATION when its children\n"
+          "  are resolved (transition refuses to assert it). See `status backlog` for both backlogs.",
           file=sys.stderr)
 
 
@@ -1972,12 +1972,14 @@ def cmd_plan(args: argparse.Namespace) -> int:
     except ValueError as exc:  # dependency cycle / bad status / unknown worklist id
         print(f"cannot order the batch: {exc}", file=sys.stderr)
         return 2
-    # THE REQUEST GATE (G1). A sprint plans the DELIVERY backlog - stories and bugs. An RFC or CR
-    # is a DISCOVERY-backlog request: it has no executable ACs to close on, so it can neither be
-    # sprinted nor verified Done. Refused ahead of the grooming gate (a request cannot be groomed
-    # as a sprint unit anyway), blocking and no plan at all. Fires ONLY when the project enforces
-    # the two-backlog workflow - an existing project that has not opted in plans a CR as before.
-    requests = ([it for it in data["batch"] if sdlc_md.is_request(it["type"])]
+    # THE DISCOVERY GATE (G1). A sprint plans the DELIVERY backlog - stories and bugs. An RFC, CR
+    # or Issue is a DISCOVERY-backlog item: it has no executable ACs to close on, so it can neither
+    # be sprinted nor verified Done (a request is refined into stories, an Issue triaged into
+    # bugs, and those are what a sprint plans). Refused ahead of the grooming gate (a discovery
+    # item cannot be groomed as a sprint unit anyway), blocking and no plan at all. Fires ONLY when
+    # the project enforces the two-backlog workflow - an existing project that has not opted in
+    # plans a CR as before.
+    requests = ([it for it in data["batch"] if sdlc_md.is_discovery(it["type"])]
                 if sdlc_md.two_backlog_enforced(args.root) else [])
     if requests:
         _refuse_requests(requests)

@@ -157,6 +157,8 @@ You drive the whole lifecycle in plain language - the AI works out what you mean
 "plan the next sprint"                               →  /sdlc-studio sprint --crs Proposed --goal plan
 "build the proposed change requests"                 →  /sdlc-studio sprint --crs Proposed --goal done
 "create a change request to delete archived records" →  /sdlc-studio cr create
+"log an issue: checkout 500s intermittently"         →  /sdlc-studio issue create
+"triage that issue into bugs"                        →  /sdlc-studio triage apply --issue IS0001
 "what should I work on next?"                        →  /sdlc-studio hint
 "where is the project up to?"                        →  /sdlc-studio status
 ```

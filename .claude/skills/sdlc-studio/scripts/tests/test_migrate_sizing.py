@@ -124,6 +124,16 @@ class SizingReportTests(unittest.TestCase):
             self.assertIn("CR0010", refine_ids)
             self.assertNotIn("CR0011", refine_ids)
 
+    def test_accepted_childless_issue_needs_triage_not_refine(self) -> None:
+        # An Issue is triaged, not refined: the report must steer it to the right ceremony.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _w(root, "issues/IS0001-x.md",
+               "# IS0001: X\n\n> **Status:** Triaging\n> **Size:** M\n")   # accepted, childless
+            res = migrate_v3.migrate_sizing(root, dry_run=False)
+            self.assertIn("IS0001", [n["id"] for n in res["needs_triage"]])
+            self.assertNotIn("IS0001", [n["id"] for n in res["needs_refine"]])
+
 
 if __name__ == "__main__":
     unittest.main()

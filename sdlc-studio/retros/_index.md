@@ -43,3 +43,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0031](RETRO0031-the-v5-spine-opt-in-gate-makes-it.md) | The v5 spine: opt-in gate makes it upgrade-safe, refine makes it a command | 2026-07-15 | -- | -- |
 | [RETRO-0032](RETRO0032-refine-builds-refine-using-the-tool-to-add.md) | refine builds refine: using the tool to add its own incremental-decomposition mode | 2026-07-15 | -- | -- |
 | [RETRO-0033](RETRO0033-the-migration-pass-rfc0040-advanced-via-refine-add.md) | The migration pass: RFC0040 advanced via refine add, and the point-band unified | 2026-07-15 | -- | -- |
+| [RETRO-0034](RETRO0034-the-discovery-track-gains-a-defect-side-issue.md) | The discovery track gains a defect side: Issue + triage, and a v3 blocker caught in review | 2026-07-15 | -- | -- |

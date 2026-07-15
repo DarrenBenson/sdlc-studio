@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 from pathlib import Path
 
@@ -37,48 +36,12 @@ def _tshirt_for(total: int) -> str:
     return sdlc_md.size_for_points(total)   # the ONE point->size band (shared with the migration)
 
 
-def _insert_after_status(path: Path, line: str) -> None:
-    """Insert a `> **Field:** value` metadata line immediately after the `> **Status:**` line -
-    the one field every artefact carries, so the insertion point is universal. Raises if the file
-    has no Status line: writing nothing there would leave a ONE-SIDED link (a link the two-backlog
-    gates would then flag as asymmetry), so a missing Status is a loud failure, never a silent
-    no-op."""
-    text = path.read_text(encoding="utf-8")
-    out: list[str] = []
-    done = False
-    for ln in text.splitlines():
-        out.append(ln)
-        if not done and ln.lstrip().startswith("> **Status:**"):
-            out.append(line)
-            done = True
-    if not done:
-        raise ValueError(f"{path.name} has no `> **Status:**` line to anchor the link after")
-    sdlc_md.atomic_write(path, "\n".join(out) + ("\n" if text.endswith("\n") else ""))
-
-
-_DECOMPOSED_LINE_RE = re.compile(r"(?m)^(>?\s*\*\*Decomposed-into:\*\*)\s*.*$")
-
-
-def _write_decomposed(path: Path, ids: list[str]) -> None:
-    """Set the request's `Decomposed-into:` to `ids` - de-duplicated (by normalised id) and
-    order-preserving, so an incremental `add` APPENDS a new epic without ever losing or duplicating
-    an earlier one. Updates the existing line in place when there is one (the `add` path), else
-    inserts one after `Status:` (the first `apply`). This is the append-only guarantee the earlier
-    slices depend on."""
-    seen: set[str] = set()
-    ordered: list[str] = []
-    for i in ids:
-        k = sdlc_md.norm_id(i)
-        if k and k not in seen:
-            seen.add(k)
-            ordered.append(i)
-    line = f"> **Decomposed-into:** {', '.join(ordered)}"
-    text = path.read_text(encoding="utf-8")
-    if _DECOMPOSED_LINE_RE.search(text):
-        new = _DECOMPOSED_LINE_RE.sub(lambda m: line, text, count=1)
-        sdlc_md.atomic_write(path, new)
-    else:
-        _insert_after_status(path, line)
+# The Parent / Decomposed-into link writers moved to `lib.sdlc_md` (beside the link READERS
+# `parent_ref` / `decomposed_ids`) when `triage` became the second caller - LL0016: extract the
+# shared definition BEFORE the second caller, not after. These thin aliases keep the module-local
+# names (and refine's tests) working; both ceremonies now write links through one authority.
+_insert_after_status = sdlc_md.insert_after_status
+_write_decomposed = sdlc_md.write_decomposed
 
 
 def _decompose(repo_root, rid: str, rpath: Path, epic_title: str,
@@ -255,11 +218,17 @@ def _section(text: str, heading: str) -> str:
     return "\n".join(out).strip()
 
 
-def refinable(repo_root: Path | str, request_id: str) -> dict:
+def refinable(repo_root: Path | str, request_id: str, allow_decomposed: bool = False) -> dict:
     """Validate that `request_id` can be refined and gather what an operator needs to propose the
-    breakdown: its type, summary, impact/design, and any open decisions. Raises the SAME refusals
-    `refine` does (non-request, already-decomposed), so `show` and `apply` agree on what refinable
-    means - a request that `show` accepts is one `apply` will."""
+    breakdown: its type, summary, impact/design, any open decisions, and its existing epics. Raises
+    the SAME refusals `refine` does (non-request, already-decomposed), so `apply` and `show` agree
+    on what refinable means - a request that `apply` accepts is one it will refine.
+
+    `allow_decomposed` relaxes ONLY the already-decomposed refusal, for `show`: once `refine add`
+    exists, an operator planning the NEXT slice of a request needs to see its content AND its
+    current epics, which `show` is the natural home for. The returned `decomposed_into` lists the
+    existing epics either way (empty when none), so a caller can tell a first `apply` from an `add`.
+    `apply` keeps the strict precondition (default False); `show` passes True and stays read-only."""
     root = Path(repo_root)
     hit = sdlc_md.find_by_id(root, request_id)
     if not hit:
@@ -269,18 +238,22 @@ def refinable(repo_root: Path | str, request_id: str) -> dict:
         raise ValueError(f"refine takes a REQUEST (RFC/CR); {request_id} is a {rtype}.")
     text = rpath.read_text(encoding="utf-8")
     existing = sdlc_md.decomposed_ids(text)
-    if existing:
+    if existing and not allow_decomposed:
         raise ValueError(f"{request_id} is already decomposed into {', '.join(existing)}.")
     return {"id": sdlc_md.extract_record_id(rpath.stem) or request_id, "type": rtype,
             "title": sdlc_md.extract_h1_title(text) or "",
             "summary": _section(text, "Summary"),
             "detail": _section(text, "Impact") or _section(text, "Design Options"),
-            "open_decisions": _section(text, "Open Decisions")}
+            "open_decisions": _section(text, "Open Decisions"),
+            "decomposed_into": existing}
 
 
 def cmd_show(args: argparse.Namespace) -> int:
     try:
-        info = refinable(args.root, args.request)
+        # show is READ-ONLY and accepts an already-decomposed request: it exists to inform a
+        # breakdown, including the NEXT slice of a request already part-refined (an `add`). It
+        # refuses only a non-request or an unresolvable id.
+        info = refinable(args.root, args.request, allow_decomposed=True)
     except (ValueError, FileNotFoundError) as exc:
         print(f"not refinable: {exc}", file=sys.stderr)
         return 2
@@ -294,9 +267,18 @@ def cmd_show(args: argparse.Namespace) -> int:
         print(f"Impact / design:\n{info['detail']}\n")
     if info["open_decisions"]:
         print(f"Open decisions (resolve with the amigos before refining):\n{info['open_decisions']}\n")
-    print("Propose the breakdown, then:\n"
-          f"  refine apply --request {info['id']} --epic-title \"...\" "
-          "--story \"title|points\" --story \"title|points|affects\" ...")
+    existing = info.get("decomposed_into") or []
+    if existing:
+        # Already part-refined: name its epics and steer to `add` (which APPENDS a slice), not
+        # `apply` (which is the first decomposition and would refuse a decomposed request).
+        print(f"Already decomposed into: {', '.join(existing)}\n")
+        print("Add the NEXT slice (appends a further epic):\n"
+              f"  refine add --request {info['id']} --epic-title \"...\" "
+              "--story \"title|points\" --story \"title|points|affects\" ...")
+    else:
+        print("Propose the breakdown, then:\n"
+              f"  refine apply --request {info['id']} --epic-title \"...\" "
+              "--story \"title|points\" --story \"title|points|affects\" ...")
     return 0
 
 

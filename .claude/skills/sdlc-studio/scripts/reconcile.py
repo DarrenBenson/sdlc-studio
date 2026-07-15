@@ -1057,34 +1057,37 @@ def link_asymmetry_drift(repo_root: Path | str) -> list[dict]:
 
 
 def _requires_children(type_: str, status: str) -> bool:
-    """True when a request of this type+status has been ACCEPTED into the workflow and so must
-    have been decomposed. A request is intake until someone accepts it: `Proposed` (cr) / `Draft`
-    (rfc) is the pre-triage create state, and `inbox`/`Deferred`/`Blocked`/`Planned` are parked -
-    none is expected to carry children yet. A terminal request is closed. Only a live, accepted,
-    non-parked request is expected to have produced work; a childless one there is the graveyard
-    G5 guards against. Keeping the normal intake states exempt is what keeps `reconcile detect`
-    clean on a healthy backlog (the exit-code contract CI relies on)."""
-    if not sdlc_md.is_request(type_):
+    """True when a discovery item of this type+status has been ACCEPTED into the workflow and so
+    must have been decomposed. A discovery item is intake until someone accepts it: the create
+    state (`Proposed` cr / `Draft` rfc / `Open` issue) is pre-triage intake, and
+    `inbox`/`Deferred`/`Blocked` are parked - none is expected to carry children yet. A terminal
+    item is closed. Only a live, accepted, non-parked item is expected to have produced work; a
+    childless one there is the graveyard G5 guards against (an accepted CR/RFC never refined, an
+    Issue never triaged). Keeping the intake states exempt is what keeps `reconcile detect` clean
+    on a healthy backlog (the exit-code contract CI relies on)."""
+    if not sdlc_md.is_discovery(type_):
         return False
     if sdlc_md.is_terminal_status(type_, status):
         return False
-    # exempt the pre-triage intake state (Proposed for cr, Draft for rfc), the inbox lane, and the
+    # exempt the pre-triage intake state (the type's create status), the inbox lane, and the
     # parked states - none is expected to carry children yet. (No "Planned": that is a story
-    # status, unreachable here where type_ is always a request.)
+    # status, unreachable here where type_ is always a discovery item.)
     if status in (sdlc_md.create_status(type_), sdlc_md.INBOX_STATUS, "Deferred", "Blocked"):
         return False
     return True
 
 
 def undecomposed_drift(repo_root: Path | str) -> list[dict]:
-    """A request accepted into the workflow (an Approved/In-Progress CR, an In-Review RFC) that
-    has NO children (G5). A request is intake, not work, until it is decomposed into the units
-    that deliver it; one that was accepted and never broken down is the intake queue rotting into
-    a graveyard. A still-Proposed/Draft request is pre-triage intake and is deliberately NOT
-    flagged, so a healthy backlog leaves `reconcile detect` clean."""
+    """A discovery item accepted into the workflow (an Approved/In-Progress CR, an In-Review RFC,
+    a Triaging Issue) that has NO children (G5). A discovery item is intake, not work, until it is
+    decomposed into the units that deliver it; one accepted and never broken down is the intake
+    queue rotting into a graveyard. A still-Proposed/Draft/Open item is pre-triage intake and is
+    deliberately NOT flagged, so a healthy backlog leaves `reconcile detect` clean. An Issue is
+    triaged into bugs; a request is refined into stories/epics - the fix names the right ceremony
+    per type."""
     root = Path(repo_root)
     drift: list[dict] = []
-    for type_ in sdlc_md.REQUEST_TYPES:
+    for type_ in sdlc_md.DISCOVERY_TYPES:
         for p in sdlc_md.artifact_files(type_, root):
             text = p.read_text(encoding="utf-8")
             vocab = sdlc_md.status_vocab(type_, root)
@@ -1094,12 +1097,14 @@ def undecomposed_drift(repo_root: Path | str) -> list[dict]:
             rid = sdlc_md.extract_record_id(p.stem) or p.stem
             if sdlc_md.children_of(root, rid):
                 continue
+            how = ("triage it into the bugs that deliver its fix (write each bug's `Parent:` and "
+                   "this Issue's `Decomposed-into:`)" if type_ == "issue" else
+                   "decompose it into the stories/epics that deliver it (write each child's "
+                   "`Parent:` and this request's `Decomposed-into:`)")
             drift.append({"type": type_, "id": rid, "kind": "undecomposed",
                           "file_status": status, "index_status": None,
-                          "fix": f"{rid} is {status} but has no children - decompose it into the "
-                                 f"stories/epics that deliver it (write each child's `Parent:` and "
-                                 f"this request's `Decomposed-into:`), or close it if it is not "
-                                 f"going ahead"})
+                          "fix": f"{rid} is {status} but has no children - {how}, or close it if "
+                                 f"it is not going ahead"})
     return drift
 
 

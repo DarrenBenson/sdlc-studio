@@ -36,11 +36,11 @@ H1_RE = re.compile(r"^#\s+(.+)$", re.M)
 # case-SENSITIVELY (`(?-i:...)`) so it stops at the lowercase `-slug`, never swallowing it.
 _V3_SUFFIX = r"(?-i:-[0-9A-HJKMNP-TV-Z]{8,})"
 ID_RE = re.compile(
-    r"^((?:EP|US|PL|BG|TS|WF|RFC|CR)(?:-?\d{4}|" + _V3_SUFFIX + r"))", re.IGNORECASE)
+    r"^((?:EP|US|PL|BG|TS|WF|RFC|CR|IS)(?:-?\d{4}|" + _V3_SUFFIX + r"))", re.IGNORECASE)
 # Same, unanchored - finds an ID anywhere (e.g. inside an index table cell
 # `[US0001](US0001-login.md)`). RFC before CR so `RFC-0001` is not read as `CR`.
 ID_SEARCH_RE = re.compile(
-    r"(?<![A-Za-z])(?:EP|US|PL|BG|TS|WF|RFC|CR)(?:-?\d{4}|" + _V3_SUFFIX + r")", re.IGNORECASE)
+    r"(?<![A-Za-z])(?:EP|US|PL|BG|TS|WF|RFC|CR|IS)(?:-?\d{4}|" + _V3_SUFFIX + r")", re.IGNORECASE)
 # Acceptance-criterion heading: `### AC1: Title`.
 AC_HEADING_RE = re.compile(r"^###\s+(AC\d+)(?::\s*(.*))?$")
 # Acceptance-criterion bold bullet: `- **AC1:** text` / `* **AC1** text` / a
@@ -600,28 +600,48 @@ ARTIFACT_TYPES: dict[str, tuple[str, str]] = {
     "bug": ("sdlc-studio/bugs", "BG"),
     "cr": ("sdlc-studio/change-requests", "CR"),
     "rfc": ("sdlc-studio/rfcs", "RFC"),
+    "issue": ("sdlc-studio/issues", "IS"),
     "test-spec": ("sdlc-studio/test-specs", "TS"),
     "workflow": ("sdlc-studio/workflows", "WF"),
 }
 
-# The two backlogs (dual-track: discovery feeds delivery). A REQUEST (an RFC design exploration,
-# a CR change request) sits in the DISCOVERY backlog - the options funnel: it records something
-# someone wants, and it is not committed work until it is decomposed into the units that deliver
-# it. A PRODUCT unit (an epic container, a story, a bug) is the DELIVERY backlog - the work
-# itself, sized, planned, and closed on executable acceptance. The distinction is load-bearing: a
-# request must never be planned as a sprint unit (it has no executable ACs to close on), and its
-# terminal status is DERIVED from the units it produced, never asserted. One definition of "which
-# side of the line is this type on", so the planner, the transition gate, status and reconcile
-# all agree. (`plan`, `test-spec` and `workflow` are process artefacts on neither backlog.)
+# The two backlogs (dual-track: discovery feeds delivery). A DISCOVERY item - an RFC design
+# exploration, a CR change request, or an Issue (a raw defect report / symptom) - sits in the
+# DISCOVERY backlog: the options funnel. It records something someone wants or has observed, and
+# it is not committed work until it is decomposed into the units that deliver it (a request is
+# `refine`d into epics/stories; an Issue is `triage`d into bugs). A PRODUCT unit (an epic
+# container, a story, a bug) is the DELIVERY backlog - the work itself, sized, planned, and closed
+# on executable acceptance. The distinction is load-bearing: a discovery item must never be
+# planned as a sprint unit (it has no executable ACs to close on), and its terminal status is
+# DERIVED from the units it produced, never asserted. One definition of "which side of the line is
+# this type on", so the planner, the transition gate, status and reconcile all agree. (`plan`,
+# `test-spec` and `workflow` are process artefacts on neither backlog.)
+#
+# Two predicates, deliberately distinct: `is_request` is the narrow RFC/CR set (`refine`'s
+# domain - a request becomes an epic + stories); `is_discovery` is the whole Discovery backlog
+# (RFC/CR AND Issue), the predicate every backlog-side gate consults (plan-refuse, status
+# bucketing, terminal-derivation, the undecomposed check). An Issue is discovery but NOT a
+# request: it is triaged, not refined, so the two must not be conflated.
 REQUEST_TYPES: tuple[str, ...] = ("rfc", "cr")
+DISCOVERY_TYPES: tuple[str, ...] = ("rfc", "cr", "issue")
 PRODUCT_TYPES: tuple[str, ...] = ("epic", "story", "bug")
 
 
 def is_request(type_: str) -> bool:
-    """True when `type_` is a REQUEST (RFC/CR) - a Discovery-backlog item that must be decomposed
-    before it is committed work. The one predicate the planner, transition, status and reconcile
-    share, so none hard-codes its own list of what may not be sprinted."""
+    """True when `type_` is a REQUEST (RFC/CR) - `refine`'s domain, a Discovery item decomposed
+    into an epic + stories. Narrower than `is_discovery`: an Issue is a Discovery item but is
+    triaged into bugs, not refined, so it is NOT a request. Used where the RFC/CR shape
+    specifically matters (refine, the CR-legacy sizing tolerance)."""
     return type_ in REQUEST_TYPES
+
+
+def is_discovery(type_: str) -> bool:
+    """True when `type_` is a DISCOVERY-backlog item (RFC/CR/Issue) - one that must be decomposed
+    before it is committed work. The one predicate the planner (G1 refuse), transition (G2
+    terminal derivation), status (backlog bucketing) and reconcile (undecomposed) share, so none
+    hard-codes its own list of what may not be sprinted. Broader than `is_request`: it includes
+    the Issue, which is triaged rather than refined but is equally not a sprint unit."""
+    return type_ in DISCOVERY_TYPES
 
 
 def two_backlog_enforced(repo_root) -> bool:
@@ -653,6 +673,12 @@ STATUS_VOCAB: dict[str, list[str]] = {
     "bug": ["Open", "In Progress", "Fixed", "Verified", "Closed", "Won't Fix", "Superseded"],
     "cr": ["Proposed", "Approved", "In Progress", "Complete", "Rejected", "Deferred", "Superseded", "Blocked"],
     "rfc": ["Draft", "In Review", "Accepted", "Superseded", "Withdrawn"],
+    # An Issue is Discovery intake: Open (raw report) -> Triaging (being worked) -> Triaged
+    # (decomposed into bugs, being delivered) -> Resolved (children all resolved; the DERIVED
+    # successful terminal, G2). Closed/Won't Fix/Superseded are the abandonment terminals - an
+    # Issue triaged to nothing, a non-issue, a duplicate. Resolved precedes them so it is the
+    # `default_terminal_status` a bare close derives.
+    "issue": ["Open", "Triaging", "Triaged", "Resolved", "Closed", "Won't Fix", "Superseded"],
     "test-spec": ["Draft", "Ready", "In Progress", "Complete", "Superseded"],
     "workflow": [
         "Created", "Planning", "Testing", "Implementing", "Verifying",
@@ -672,6 +698,7 @@ TERMINAL_STATUS: dict[str, set[str]] = {
     "bug": {"Fixed", "Verified", "Closed", "Won't Fix", "Superseded"},
     "cr": {"Complete", "Rejected", "Superseded"},
     "rfc": {"Accepted", "Superseded", "Withdrawn"},
+    "issue": {"Resolved", "Closed", "Won't Fix", "Superseded"},
     "test-spec": {"Complete", "Superseded"},
     "workflow": {"Done", "Superseded"},
 }
@@ -697,6 +724,7 @@ CREATE_STATUS: dict[str, str] = {
     "bug": "Open",
     "cr": "Proposed",
     "rfc": "Draft",
+    "issue": "Open",
     "test-spec": "Draft",
     "workflow": "Created",
 }
@@ -845,7 +873,7 @@ REMEDIATION: dict[str, dict[str, str]] = {
         "breakdown-ticked-early": "an epic breakdown checkbox is ticked over a still-live unit (masks unfinished work) - run `reconcile apply` to untick it, or finish the unit",
         "epic-points-stale": "an epic's derived point total no longer equals the sum of its stories' points - run `reconcile apply` to recompute it (the total is DERIVED, never hand-set; the epic's own coarse estimate is its T-shirt `Size`, not points)",
         "link-asymmetry": "a request/child link is declared on one side only - add the missing half (the child's `Parent:` or the request's `Decomposed-into:`) so it resolves both ways, or fix the id that resolves to nothing; a decomposition writes BOTH sides",
-        "undecomposed": "a request accepted into the workflow has no children - decompose it into the epics/stories/bugs that deliver it (a request is intake, not work, until it is broken down), or close it if it is not going ahead; a still-Proposed/Draft request is pre-triage intake and is not flagged",
+        "undecomposed": "a discovery item accepted into the workflow has no children - decompose it into the units that deliver it (refine a request into epics/stories; triage an Issue into bugs), or close it if it is not going ahead; a still-Proposed/Draft/Open item is pre-triage intake and is not flagged",
     },
 }
 
@@ -1293,6 +1321,54 @@ def decomposed_ids(text: str) -> list[str]:
             seen.add(key)
             out.append(m.group(0))
     return out
+
+
+def insert_after_status(path, line: str) -> None:
+    """Insert a `> **Field:** value` metadata line immediately after the `> **Status:**` line -
+    the one field every artefact carries, so the insertion point is universal. Raises if the file
+    has no Status line: writing nothing there would leave a ONE-SIDED link (a link the two-backlog
+    gates would then flag as asymmetry), so a missing Status is a loud failure, never a silent
+    no-op. The shared link-writer both decomposition ceremonies use - `refine` (request -> epic)
+    and `triage` (issue -> bugs) - so the Parent/Decomposed-into wiring is written identically by
+    each, beside the link READERS (`parent_ref`, `decomposed_ids`) that verify it."""
+    p = Path(path)
+    text = p.read_text(encoding="utf-8")
+    out: list[str] = []
+    done = False
+    for ln in text.splitlines():
+        out.append(ln)
+        if not done and ln.lstrip().startswith("> **Status:**"):
+            out.append(line)
+            done = True
+    if not done:
+        raise ValueError(f"{p.name} has no `> **Status:**` line to anchor the link after")
+    atomic_write(p, "\n".join(out) + ("\n" if text.endswith("\n") else ""))
+
+
+_DECOMPOSED_LINE_RE = re.compile(r"(?m)^(>?\s*\*\*Decomposed-into:\*\*)\s*.*$")
+
+
+def write_decomposed(path, ids: list[str]) -> None:
+    """Set a discovery item's `Decomposed-into:` to `ids` - de-duplicated (by normalised id) and
+    order-preserving, so an incremental `add` APPENDS a new child without ever losing or
+    duplicating an earlier one. Updates the existing line in place when there is one (the `add`
+    path), else inserts one after `Status:` (the first decomposition). The append-only guarantee
+    the incremental slices depend on; shared by `refine` and `triage`."""
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for i in ids:
+        k = norm_id(i)
+        if k and k not in seen:
+            seen.add(k)
+            ordered.append(i)
+    line = f"> **{DECOMPOSED_FIELD}:** {', '.join(ordered)}"
+    p = Path(path)
+    text = p.read_text(encoding="utf-8")
+    if _DECOMPOSED_LINE_RE.search(text):
+        new = _DECOMPOSED_LINE_RE.sub(lambda m: line, text, count=1)
+        atomic_write(p, new)
+    else:
+        insert_after_status(p, line)
 
 
 def children_of(repo_root, parent_id: str) -> list[tuple[str, str]]:

@@ -1,6 +1,7 @@
 # CR-0275: refine show should work on an already-decomposed request, to inform a refine add
 
-> **Status:** Proposed
+> **Status:** Complete
+> **Decomposed-into:** EP0039
 > **Priority:** P3
 > **Type:** Improvement
 > **Size:** S

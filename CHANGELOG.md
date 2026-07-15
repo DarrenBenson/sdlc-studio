@@ -21,6 +21,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The discovery track gains a defect side: the `issue` type and the `triage` ceremony (EP0038,
+  RFC0039).** An **Issue** is the raw defect report - a symptom in the Discovery backlog, not yet
+  reproduced or scoped - carrying a Severity and a T-shirt Size but no points (it is not a delivery
+  unit). `triage.py apply --issue <id> --bug "title|points[|severity[|affects]]" ...` decomposes it
+  DIRECTLY into the bugs that deliver its fix (one level - a bug is already the delivery unit - the
+  mirror of `refine` turning a request into an epic + stories), wiring each bug's `Parent:` and the
+  Issue's `Decomposed-into:`; `triage show` surfaces the report and confirms it is triageable. The
+  whole breakdown is validated up front, including a dry-run pre-flight of every bug through the
+  grooming gate, so a bad bug fails loud and empty rather than leaving an earlier one half-minted. A
+  triaged bug is minted as an individual bug (`artifact.new(..., consolidate=False)`), so on a
+  schema-v3 project a Low-severity triaged bug is a bug, never folded into a finding-consolidation CR.
+  The new `is_discovery(type_)` predicate (RFC/CR/Issue) is the one every backlog-side gate now
+  consults: `plan` refuses an Issue (G1), `status backlog` buckets it under Discovery, `reconcile`
+  flags an accepted childless Issue as `undecomposed` (needs triage), and an Issue reaches Resolved
+  only by derivation from its bugs (G2). `is_request` stays the narrow RFC/CR set (`refine`'s
+  domain), so a request is refined and an Issue is triaged - never conflated. An Issue that is
+  really a change is filed as a CR and refined, not smuggled in as a story. New help: `help/issue.md`,
+  `help/triage.md`. The `Parent:`/`Decomposed-into:` link writers moved to `lib.sdlc_md` (shared by
+  both ceremonies) before triage became the second caller.
+
+- **`refine show` works on an already-decomposed request, to inform a `refine add` (CR0275).** Once a
+  request is delivered in slices, planning the next slice needs to see its content AND its existing
+  epics; `refine show` now accepts a decomposed request and lists its `Decomposed-into:` epics
+  (steering to `add`), staying read-only. `refine apply` keeps its strict not-yet-decomposed
+  precondition - `show` and `apply` still agree on a first decomposition, they differ only on whether
+  seeing an already-refined request is allowed.
+
 - **`refine add`: a large request grows its next epic with the tool, not by hand (EP0036, CR0274).**
   `refine apply` decomposes a request once; `refine add --request <id> --epic-title "..." --story ...`
   appends a FURTHER epic + stories to an already-decomposed request, for a request delivered in slices
