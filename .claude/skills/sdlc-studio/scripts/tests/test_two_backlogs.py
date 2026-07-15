@@ -507,6 +507,47 @@ class RefineTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 refine.refine(root, "CR0001", "empty", [])
 
+    def test_refine_add_appends_a_second_epic_without_losing_the_first(self) -> None:
+        # US0132: refine add appends a further epic to an already-decomposed request; the
+        # Decomposed-into is append-only (the first epic is preserved), and both resolve.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root)
+            first = refine.refine(root, "CR0001", "First slice", [("A", 3, None)])
+            res = refine.refine_add(root, "CR0001", "Second slice", [("B", 5, None)])
+            self.assertEqual(res["all_epics"], [first["epic"], res["epic"]])
+            # both epics are children; the CR's Decomposed-into lists both; links resolve
+            kids = {e for e, _ in sdlc_md.children_of(root, "CR0001")}
+            self.assertEqual(kids, {first["epic"], res["epic"]})
+            self.assertEqual(reconcile.link_asymmetry_drift(root), [])
+
+    def test_refine_add_refuses_an_undecomposed_request(self) -> None:
+        # US0133: add requires the request already be decomposed (apply is for the first epic).
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root)
+            with self.assertRaises(ValueError):
+                refine.refine_add(root, "CR0001", "nope", [("A", 2, None)])
+
+    def test_refine_add_dedupes_and_is_atomic(self) -> None:
+        # US0133: the append de-dupes by normalised id (no duplicate child), and a bad title on
+        # the add path mints nothing (the first slice's epic/stories survive untouched).
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root)
+            first = refine.refine(root, "CR0001", "First", [("A", 3, None)])
+            before = {p.name for p in (root / "sdlc-studio" / "epics").glob("EP*.md")}
+            with self.assertRaises(ValueError):
+                refine.refine_add(root, "CR0001", "Second", [("Bad\ntitle", 5, None)])
+            after = {p.name for p in (root / "sdlc-studio" / "epics").glob("EP*.md")}
+            self.assertEqual(before, after)                       # no new epic minted
+            self.assertEqual(sdlc_md.decomposed_ids(
+                sdlc_md.find_by_id(root, "CR0001")[0].read_text()), [first["epic"]])
+            # de-dupe: _write_decomposed collapses a repeated id
+            rpath = sdlc_md.find_by_id(root, "CR0001")[0]
+            refine._write_decomposed(rpath, [first["epic"], first["epic"], "EP9999"])
+            self.assertEqual(sdlc_md.decomposed_ids(rpath.read_text()), [first["epic"], "EP9999"])
+
     def test_a_bad_title_mints_nothing_atomicity(self) -> None:
         # review finding: a story title with a newline used to raise INSIDE artifact.new mid-loop,
         # after the epic + first story were already on disk (orphaned). Titles are now validated

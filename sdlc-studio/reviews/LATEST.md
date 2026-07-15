@@ -1,4 +1,4 @@
-# Unified Review - 2026-07-15 (close) - the v5 spine: opt-in gate + refine, and two bugs the reviewer caught
+# Unified Review - 2026-07-15 (close) - refine builds refine: the tool decomposed its own next feature
 
 > **Review type:** Sprint-close review (required by the `--require-review` gate, CR0253)
 > **Reviewer:** sdlc-studio; agent; v1 (delivery critiqued independently by the Dani Okafor engineering seat)
@@ -7,54 +7,43 @@
 
 ## Headline
 
-**All 7 stories delivered across two epics.** EP0034 (the schema-v4/config opt-in gate) makes the
-whole two-backlog + sizing model enforce-on-request, default OFF, so an existing project can upgrade
-without its CR workflow breaking - the precondition RFC0040 named for a safe release. EP0035 (the
-`refine` command) turns the hand-decomposition (CR0271 -> EP0033) into a command, and doubles as the
-migration tool. Full suite 2367 tests, 0 drift, gate PASS.
-
-## The one thing a fresh session must carry
-
-**The independence gate caught TWO real bugs this sprint, both invisible to the author.** In Epic A,
-`new_batch` never threaded the target root, so a batch create read enforcement from the CWD, not
-`--root`. In Epic B, `refine` was not atomic: a bad story title left an orphan epic on disk that
-reconcile could not see in the unenforced projects refine migrates - while the CLI printed "refused".
-Both fixed and re-approved. Keep running author != reviewer on every delivery; it is the discipline
-that pays.
+**2/2 delivered (EP0036), and this sprint dogfooded `refine` for the first time.** `refine apply`
+decomposed CR0274 into EP0036 (0 drift, symmetric links, CR0274 -> In Progress), then US0132/US0133
+built `refine add` - the incremental-decomposition mode CR0274 asked for. CR0274 then closed by its
+own G2 gate (EP0036 Done -> CR0274 Complete). The independent review found **no defects** - the first
+clean refine review this arc, because `_decompose`/`_write_decomposed` reuse the core the two prior
+reviews hardened. Full suite 2370 tests, 0 drift, gate PASS.
 
 ## What went well
 
-- The opt-in gate is default-off via `project_override` (own file only), so no defaults-merge can
-  flip it on globally - existing projects stay on their old flow until they opt in.
-- `refine` validates ALL input up front (refinable + points + every title + the request's Status
-  line) and rolls back on a residual IO error, so a bad breakdown mints nothing.
-- The happy path is clean: refine produces symmetric `Parent:`/`Decomposed-into:` links, a matching
-  `Derived Point Total`, and a request moved to its working status; reconcile stays 0-drift.
+- `refine add` appends a further epic to an already-decomposed request, de-duped and append-only
+  (an earlier slice is never lost), sharing `apply`'s up-front validation + rollback - so it
+  inherited the fixes rather than re-introducing the bugs.
+- The friction the last retro logged (RETRO0031: refine refuses re-refining) was filed as CR0274 and
+  DELIVERED this sprint - the loop from finding to fix closed in one sprint.
+- The self-inflicted `import re` slip was caught by the RefineTests before any commit.
 
 ## Backlog rollup (non-terminal)
 
-The Discovery backlog holds the forward plan; each item now has its first slice DELIVERED or is
-untouched:
+The Discovery backlog holds the forward plan; `refine add` now unblocks the incremental slices:
 
-- **RFC0040 (P1)** - opt-in gate delivered (EP0034); REMAINING: the migration pass (Effort->Points/
-  Size, old childless CRs), the docs, and the 5.0.0 bump. Still gates the release.
-- **RFC0039** - refine delivered (EP0035); REMAINING: the Issue type, `triage`, deeper persona
-  integration.
-- **CR0272** - command-surface cleanup + help rewrite (untouched).
-- Older: CR0254/0255/0256 (RFC0033 audit), CR0264, RFCs 0035/0036/0037.
-
-Note: `refine` refuses re-refining an already-decomposed request, so RFC0039/RFC0040's next slices
-need a `refine --add` mode or manual wiring (RETRO0031 action).
+- **RFC0040 (P1)** - opt-in gate (EP0034) delivered; REMAINING: the migration pass, docs, 5.0.0.
+  Now wireable with `refine add`. Still gates the release.
+- **RFC0039** - refine (EP0035) + `refine add` (EP0036) delivered; REMAINING: Issue type, `triage`,
+  deeper persona integration.
+- **CR0272** - command-surface cleanup + help rewrite (now also: surface Discovery/Delivery in
+  `hint` and the `status` dashboard).
+- **CR0273** - points-per-worker-hour velocity metric (runner-only, descriptive).
+- Older: CR0254/0255/0256 (RFC0033 audit), CR0264 (filer dedup), RFCs 0035/0036/0037.
 
 ## Production state
 
 v4.1.0 released. Freeze holds until ~2026-07-21. All work on `main` under `[Unreleased]`. The next
-release is a breaking, semver-major (5.0.0) cut and is gated on RFC0040's remaining work (migration +
-docs). The opt-in gate shipped this sprint is what makes that release safe.
+release is a breaking, semver-major (5.0.0) cut, gated on RFC0040's remaining work (migration + docs).
 
 ## For a fresh session
 
-Start here, then `AGENTS.md`. This repo has `two_backlog.enforce: true`, so its gates are on; a bare
-project defaults off. Use `refine show`/`refine apply` to decompose a request (no more hand-wiring).
-Read RFC0040 before planning a release. Do NOT read a tokens-per-point rate from RETRO0029/0030/0031 -
-all three were delivered interactively and are UNMEASURED.
+Start here, then `AGENTS.md`. This repo enforces the two-backlog workflow (`two_backlog.enforce:
+true`). Decompose a request with `refine apply` (first epic) or `refine add` (later slices) - no more
+hand-wiring. Read RFC0040 before planning a release. Do NOT read a tokens-per-point rate from
+RETRO0029-0032 - all four were delivered interactively and are UNMEASURED.

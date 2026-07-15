@@ -22,3 +22,7 @@
 {"id": "US0131", "type": "story", "project": "sdlc-studio"}
 {"id": "EP0034", "type": "epic", "project": "sdlc-studio"}
 {"id": "EP0035", "type": "epic", "project": "sdlc-studio"}
+{"id": "US0132", "type": "story", "project": "sdlc-studio"}
+{"id": "US0133", "type": "story", "project": "sdlc-studio"}
+{"id": "EP0036", "type": "epic", "project": "sdlc-studio"}
+{"id": "CR0274", "type": "cr", "project": "sdlc-studio"}

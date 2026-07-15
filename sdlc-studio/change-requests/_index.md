@@ -9,12 +9,12 @@
 | Proposed | 6 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 261 |
+| Complete | 262 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 6 |
 | Blocked | 0 |
-| **Total** | **273** |
+| **Total** | **274** |
 
 ## All Changes
 
@@ -95,6 +95,7 @@
 | [CR-0271](CR0271-rfc0038-u6-two-backlogs-rfcs-and-crs-are.md) | RFC0038 U6: two backlogs - RFCs and CRs are requests, gated so they cannot reach Done without becoming work | Complete | P1 | Improvement | 2026-07-14 | -- |
 | [CR-0272](CR0272-audit-and-clean-up-the-skill-command-surface.md) | Audit and clean up the skill command surface, then rewrite the help files around the core process | Proposed | P2 | Improvement | 2026-07-15 | -- |
 | [CR-0273](CR0273-track-points-per-worker-hour-as-a-descriptive.md) | Track points-per-worker-hour as a descriptive velocity metric, runner-only, never a target | Proposed | P2 | Improvement | 2026-07-15 | -- |
+| [CR-0274](CR0274-refine-add-append-an-epic-to-an-already.md) | refine --add: append an epic to an already-decomposed request, for incremental slices | Complete | P1 | Improvement | 2026-07-15 | -- |
 
 ## Archived Releases
 

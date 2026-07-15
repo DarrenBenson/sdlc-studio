@@ -225,6 +225,10 @@ from the point total, `Parent:` the request) and each story under it, writes the
 (a CR to In Progress, an RFC to In Review - it reaches its terminal status only by derivation when
 its children are done), and surfaces `--question` items for a Three-Amigos consult. Stories are
 created as stubs (title + points); their `Affects` and executable ACs are added at design/plan time.
+`refine add --request <id> --epic-title "..." --story ...` appends a FURTHER epic to an ALREADY-
+decomposed request - for a large request delivered in slices, one epic per sprint; the append is
+de-duped and order-preserving so an earlier slice is never lost (`apply` mints the first epic, `add`
+each later one).
 
 ### `file_finding.py`
 

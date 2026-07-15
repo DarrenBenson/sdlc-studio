@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`refine add`: a large request grows its next epic with the tool, not by hand (EP0036, CR0274).**
+  `refine apply` decomposes a request once; `refine add --request <id> --epic-title "..." --story ...`
+  appends a FURTHER epic + stories to an already-decomposed request, for a request delivered in slices
+  (one epic per sprint - RFC0039, RFC0040). The append to `Decomposed-into:` is de-duped and
+  order-preserving, so an earlier slice is never lost, and it shares `apply`'s up-front validation and
+  atomic mint (a bad breakdown or a mid-create failure mints nothing). Dogfooded: `refine apply`
+  decomposed CR0274 into the epic that then built `add`.
+
 - **The two-backlog workflow is now enforce-on-request, so an upgrade is safe (EP0034, RFC0040).**
   `sdlc_md.two_backlog_enforced(root)` reads `two_backlog.enforce` from the project's `.config.yaml`,
   defaulting OFF. The HARD gates consult it - `plan` refuses a request (G1), a request's terminal

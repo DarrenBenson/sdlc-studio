@@ -2,6 +2,8 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0047: Fix the friction the last retro logged, and log the new friction you hit.**
+- **L-0046: Reusing a hardened core is how a new feature inherits fixes instead of re-introducing bugs.**
 - **L-0045: The independence gate earns its cost on exactly the bugs the author cannot see: both this sprint's blocking bugs were invisible to the...**
 - **L-0044: A multi-step create is atomic only if EVERY input is validated before the first write.**
 - **L-0043: A gate on a live workflow must default OFF for existing projects and be opt-in, or an upgrade breaks them.**

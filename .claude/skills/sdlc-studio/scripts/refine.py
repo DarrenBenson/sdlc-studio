@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -59,6 +60,69 @@ def _insert_after_status(path: Path, line: str) -> None:
     if not done:
         raise ValueError(f"{path.name} has no `> **Status:**` line to anchor the link after")
     sdlc_md.atomic_write(path, "\n".join(out) + ("\n" if text.endswith("\n") else ""))
+
+
+_DECOMPOSED_LINE_RE = re.compile(r"(?m)^(>?\s*\*\*Decomposed-into:\*\*)\s*.*$")
+
+
+def _write_decomposed(path: Path, ids: list[str]) -> None:
+    """Set the request's `Decomposed-into:` to `ids` - de-duplicated (by normalised id) and
+    order-preserving, so an incremental `add` APPENDS a new epic without ever losing or duplicating
+    an earlier one. Updates the existing line in place when there is one (the `add` path), else
+    inserts one after `Status:` (the first `apply`). This is the append-only guarantee the earlier
+    slices depend on."""
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for i in ids:
+        k = sdlc_md.norm_id(i)
+        if k and k not in seen:
+            seen.add(k)
+            ordered.append(i)
+    line = f"> **Decomposed-into:** {', '.join(ordered)}"
+    text = path.read_text(encoding="utf-8")
+    if _DECOMPOSED_LINE_RE.search(text):
+        new = _DECOMPOSED_LINE_RE.sub(lambda m: line, text, count=1)
+        sdlc_md.atomic_write(path, new)
+    else:
+        _insert_after_status(path, line)
+
+
+def _decompose(repo_root, rid: str, rpath: Path, epic_title: str,
+               stories: list[tuple[str, int, str | None]], total: int,
+               existing_children: list[str]) -> tuple[str, list[str]]:
+    """Mint the epic + its stories and wire everything under ONE rollback guard, then set the
+    request's `Decomposed-into:` to `existing_children` + the new epic (append-only). The shared
+    core of `apply` (existing_children=[]) and `add` (existing_children=the request's current
+    epics): a single atomic mint, so a mid-create failure leaves the backlog untouched. Returns
+    (epic_id, story_ids)."""
+    root = Path(repo_root)
+    minted: list[Path] = []
+    try:
+        ep = artifact.new(root, "epic", epic_title,
+                          {"size": _tshirt_for(total),
+                           "summary": f"Decomposed from {rid}. Delivers the work {rid} requested."})
+        epic_id = ep["id"]
+        epic_path = Path(ep["path"])
+        minted.append(epic_path)
+        story_ids: list[str] = []
+        for title, points, affects in stories:
+            fields = {"epic": epic_id, "points": points}
+            if affects:
+                fields["affects"] = affects
+            s = artifact.new(root, "story", title, fields)
+            minted.append(Path(s["path"]))
+            story_ids.append(s["id"])
+        _insert_after_status(epic_path, f"> **Parent:** {rid}")
+        _insert_after_status(epic_path, f"> **Derived Point Total:** {total}")
+        _write_decomposed(rpath, [*existing_children, epic_id])
+    except BaseException:
+        for p in minted:
+            try:
+                p.unlink()
+            except OSError:
+                pass
+        raise
+    return epic_id, story_ids
 
 
 def parse_story_spec(spec: str) -> tuple[str, int, str | None]:
@@ -119,39 +183,8 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str,
                 "stories": [t for t, _, _ in stories], "points": total,
                 "open_questions": open_questions, "dry_run": True}
 
-    # Mint under a rollback guard: input is fully validated above, so the only failures left here
-    # are rare IO errors mid-create. If one strikes, delete the files written so far - better a
-    # clean backlog (with detectable orphan-row drift at worst) than a silent orphan epic the
-    # UNDECOMPOSED check cannot see in the unenforced projects this tool migrates.
-    minted: list[Path] = []
-    try:
-        # 1. the epic, sized by its point total, parented to the request
-        ep = artifact.new(root, "epic", epic_title,
-                          {"size": _tshirt_for(total),
-                           "summary": f"Decomposed from {rid}. Delivers the work {rid} requested."})
-        epic_id = ep["id"]
-        epic_path = Path(ep["path"])
-        minted.append(epic_path)
-        # 2. the stories, under the epic
-        story_ids: list[str] = []
-        for title, points, affects in stories:
-            fields = {"epic": epic_id, "points": points}
-            if affects:
-                fields["affects"] = affects
-            s = artifact.new(root, "story", title, fields)
-            minted.append(Path(s["path"]))
-            story_ids.append(s["id"])
-        # 3. wire the links BOTH ways + roll the epic total (what reconcile would compute)
-        _insert_after_status(epic_path, f"> **Parent:** {rid}")
-        _insert_after_status(epic_path, f"> **Derived Point Total:** {total}")
-        _insert_after_status(rpath, f"> **Decomposed-into:** {epic_id}")
-    except BaseException:
-        for p in minted:
-            try:
-                p.unlink()
-            except OSError:
-                pass
-        raise
+    epic_id, story_ids = _decompose(root, rid, rpath, epic_title, stories, total,
+                                    existing_children=[])
     # 4. close the loop on the request's status: it is now being DELIVERED via its children, so it
     # moves to its working state (it reaches terminal only by derivation, G2). Best-effort - if a
     # gate we do not force past declines the move, the decomposition still stands.
@@ -171,6 +204,44 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str,
             "stories": story_ids, "points": total, "status": moved_to,
             "open_questions": open_questions, "amigo_roles": list(_AMIGO_ROLES),
             "dry_run": False}
+
+
+def refine_add(repo_root: Path | str, request_id: str, epic_title: str,
+               stories: list[tuple[str, int, str | None]], dry_run: bool = False) -> dict:
+    """Append a FURTHER epic + stories to an ALREADY-decomposed request.
+
+    The inverse precondition of `refine` (apply): a request delivered in slices - one epic per
+    sprint - grows its Decomposed-into over several refines, so `add` requires the request to be
+    decomposed already and APPENDS (never clobbers) the new epic to its existing children. Shares
+    apply's up-front validation and atomic mint (`_decompose`), so a bad breakdown or a mid-create
+    failure mints nothing. Does NOT re-move the request status - it is already working."""
+    root = Path(repo_root)
+    hit = sdlc_md.find_by_id(root, request_id)
+    if not hit:
+        raise ValueError(f"no artefact found for id {request_id!r}")
+    rpath, rtype = hit
+    if not sdlc_md.is_request(rtype):
+        raise ValueError(f"refine takes a REQUEST (RFC/CR); {request_id} is a {rtype}.")
+    existing = sdlc_md.decomposed_ids(rpath.read_text(encoding="utf-8"))
+    if not existing:
+        raise ValueError(f"{request_id} is not decomposed yet - use `refine apply` for its first "
+                         f"epic; `refine add` appends a further one to an already-decomposed request.")
+    if not stories:
+        raise ValueError("refine add needs at least one --story.")
+    sdlc_md.require_single_line("epic title", epic_title)
+    for title, _, _ in stories:
+        sdlc_md.require_single_line("story title", title)
+    rid = sdlc_md.extract_record_id(rpath.stem) or request_id
+    total = sum(p for _, p, _ in stories)
+    if dry_run:
+        return {"request": rid, "epic": "(dry-run)", "epic_size": _tshirt_for(total),
+                "stories": [t for t, _, _ in stories], "points": total,
+                "existing_epics": existing, "dry_run": True}
+    epic_id, story_ids = _decompose(root, rid, rpath, epic_title, stories, total,
+                                    existing_children=existing)
+    return {"request": rid, "epic": epic_id, "epic_size": _tshirt_for(total),
+            "stories": story_ids, "points": total, "existing_epics": existing,
+            "all_epics": [*existing, epic_id], "dry_run": False}
 
 
 def _section(text: str, heading: str) -> str:
@@ -262,6 +333,25 @@ def cmd_apply(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_add(args: argparse.Namespace) -> int:
+    try:
+        stories = [parse_story_spec(s) for s in (args.story or [])]
+        result = refine_add(args.root, args.request, args.epic_title, stories, dry_run=args.dry_run)
+    except (ValueError, FileNotFoundError) as exc:
+        print(f"refine add refused: {exc}", file=sys.stderr)
+        return 2
+    if args.format == "json":
+        print(json.dumps(result, indent=2))
+        return 0
+    verb = "would add" if result["dry_run"] else "added"
+    print(f"{verb} {result['epic']} ({result['epic_size']}, {result['points']} pts, "
+          f"{len(result['stories'])} story(ies): {', '.join(result['stories'])}) to "
+          f"{result['request']}")
+    if not result["dry_run"]:
+        print(f"  {result['request']} now decomposed into {', '.join(result['all_epics'])}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="refine", description=__doc__)
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -279,6 +369,19 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--root", default=".")   # de-duped by add_global_root; enables `apply --root`
     sdlc_md.add_format_arg(a)
     a.set_defaults(func=cmd_apply)
+
+    ad = sub.add_parser("add", help="Append a FURTHER epic + stories to an already-decomposed "
+                                    "request (a later slice of a large request)")
+    ad.add_argument("--request", required=True, help="the already-decomposed RFC/CR to add to")
+    ad.add_argument("--epic-title", dest="epic_title", required=True,
+                    help="title for the new epic to append")
+    ad.add_argument("--story", action="append", metavar="TITLE|POINTS[|AFFECTS]",
+                    help="a story in the new epic: 'title|points' or 'title|points|affects'. "
+                         "Repeatable. Points must be on the Fibonacci scale.")
+    ad.add_argument("--dry-run", action="store_true", help="validate and report; mint nothing")
+    ad.add_argument("--root", default=".")
+    sdlc_md.add_format_arg(ad)
+    ad.set_defaults(func=cmd_add)
 
     s = sub.add_parser("show", help="Show a request's content to inform the breakdown, and "
                                     "confirm it is refinable")
