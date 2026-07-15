@@ -40,3 +40,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0028](RETRO0028-the-sizing-completion-sprint-the-model-works-the.md) | The sizing-completion sprint: the model works, the input was under-sized, and we proved it | 2026-07-15 | -- | -- |
 | [RETRO-0029](RETRO0029-the-two-backlog-finale-cr0271-decomposed-delivered-and.md) | The two-backlog finale: CR0271 decomposed, delivered, and closed by its own gate | 2026-07-15 | -- | -- |
 | [RETRO-0030](RETRO0030-the-bug-clearing-sprint-four-integrity-fixes-and.md) | The bug-clearing sprint: four integrity fixes, and a migration gap surfaced | 2026-07-15 | -- | -- |
+| [RETRO-0031](RETRO0031-the-v5-spine-opt-in-gate-makes-it.md) | The v5 spine: opt-in gate makes it upgrade-safe, refine makes it a command | 2026-07-15 | -- | -- |

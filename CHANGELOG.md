@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The two-backlog workflow is now enforce-on-request, so an upgrade is safe (EP0034, RFC0040).**
+  `sdlc_md.two_backlog_enforced(root)` reads `two_backlog.enforce` from the project's `.config.yaml`,
+  defaulting OFF. The HARD gates consult it - `plan` refuses a request (G1), a request's terminal
+  status is derived from its children (G2), `reconcile` flags an accepted childless request as
+  `undecomposed`, and CR creation demands a T-shirt Size - so an existing project pulling this skill
+  keeps its old flow (plan a CR, complete it whole, size a CR with points) until it opts in with one
+  line of config. The soft, always-on parts (the sizing vocabulary itself, `link-asymmetry` which
+  only fires on links a project chose to write) are not gated. This repo dogfoods it on. The
+  precondition for a safe, breaking, semver-major release.
+
+- **`refine`: a request becomes an epic and stories, with the links wired (EP0035, RFC0039).** The
+  hand-decomposition the two-backlog gates otherwise ask an operator to do (CR0271 -> EP0033), made a
+  command - and the migration path for an upgrading project (an old childless CR becomes stories).
+  `refine show --request <id>` surfaces the request's content and confirms it is refinable; `refine
+  apply --request <id> --epic-title "..." --story "title|points[|affects]" ...` validates the whole
+  breakdown up front (a non-request, an already-decomposed request, an off-scale point, or a
+  malformed title is refused and NOTHING is written - a mid-create IO error rolls back), then creates
+  the epic (T-shirt sized from the point total, `Parent:` the request) and its stories, writes the
+  request's `Decomposed-into:`, rolls the epic's `Derived Point Total`, moves the request to its
+  working status, and surfaces `--question` items for a Three-Amigos consult.
+
 - **Two backlogs: a request must become work before it can be delivered (CR0271, EP0033 - in progress).**
   Dual-track (discovery feeds delivery): RFCs and CRs are the DISCOVERY backlog (the options funnel);
   epics, stories and bugs are the DELIVERY backlog (sized work). A request enters the delivery backlog

@@ -190,14 +190,27 @@ def _sizing_line(type_: str, f: dict) -> str:
     creators writing different shapes for the same type). The wrong sizing flag for the type is
     WARNED, never silently dropped (LL0008/BG0149 - a story's `--points` used to vanish)."""
     delivery = type_ in ("story", "bug")
+    # UPGRADE PATH (US0128): a project that has NOT opted into the two-backlog workflow keeps the
+    # pre-two-backlog sizing flow - a CR created with legacy `--points` (and no `--size`) writes
+    # `Points`, which the grooming gate still tolerates, rather than being warned-and-dropped into
+    # an unsized state that creation would then refuse. Scoped to a CR: the CR is the request an
+    # existing project routinely created with points; an epic's points are DERIVED (a hand-set
+    # Points line would later read as `epic-points` drift) and an RFC never carried points, so
+    # neither takes the legacy tolerance. Only an ENFORCED project holds the strict per-type rule.
+    has_size, has_points = str(f.get("size") or "").strip(), str(f.get("points") or "").strip()
+    if type_ == "cr" and has_points and not has_size \
+            and not sdlc_md.two_backlog_enforced(f.get("_root", ".")):
+        return f"> **Points:** {f['points']}\n"
     wrong = f.get("points") if not delivery else f.get("size")
     if str(wrong or "").strip():
         want, got = (("--size", "--points") if not delivery else ("--points", "--size"))
         carries = ("a T-shirt Size" if not delivery else "Points")
-        print(f"warning: a {type_} carries {carries}, so {got} was ignored - pass {want}. "
+        noun = "RFC" if type_ == "rfc" else type_
+        article = "an" if noun[0].lower() in "aeiou" else "a"
+        print(f"warning: {article} {noun} carries {carries}, so {got} was ignored - pass {want}. "
               f"Nothing was sized.", file=sys.stderr)
     if delivery:
-        return f"> **Points:** {f['points']}\n" if str(f.get("points") or "").strip() else ""
+        return f"> **Points:** {f['points']}\n" if has_points else ""
     return file_finding._size_line(f)
 
 
@@ -624,6 +637,7 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
     # CR/bug acceptance criterion means (nothing executes it - only a story's Verify line runs).
     file_finding.check_prose_acs(type_, f)
     f["date"] = f.get("date") or date.today().isoformat()
+    f["_root"] = str(root)   # so the renderer can read the project's enforcement (US0128)
     # A bug or a CR created here is a unit `sprint plan` will be asked to plan, and this is a
     # documented create path - not a side door. So it answers to the SAME grooming demand as the
     # finding filer, from the same authority: the body about to be written is judged by the
@@ -728,7 +742,8 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
             file_finding.check_prose_acs(type_, it)  # ... as does a pseudo-`Verify:` criterion
             if groom_preview is not None:  # ... as does a bug/CR the planner would refuse to plan
                 file_finding.check_groomed(root, type_, groom_preview(
-                    type_, "PREVIEW", str(it.get("title") or ""), today, {**it, "date": today}))
+                    type_, "PREVIEW", str(it.get("title") or ""), today,
+                    {**it, "date": today, "_root": str(root)}))
         except ValueError as exc:
             raise ValueError(f"batch item {i}: {exc}") from exc
     if type_ == "story":
@@ -782,6 +797,7 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
             it = p["item"]
             f = dict(it)
             f["date"] = today
+            f["_root"] = str(root)   # so the renderer reads the TARGET's enforcement, not the CWD
             f["_status"] = create_status
             f["_raised_by"] = sdlc_md.authorship_value(f.get("author"), root)
             f["author"] = sdlc_md.authorship_name(f["_raised_by"])  # index cell: the name

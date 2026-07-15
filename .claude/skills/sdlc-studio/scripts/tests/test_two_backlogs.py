@@ -43,11 +43,18 @@ status = _load("status", "status.py")
 sprint = _load("sprint", "sprint.py")
 artifact = _load("artifact", "artifact.py")
 file_finding = _load("file_finding", "file_finding.py")
+refine = _load("refine", "refine.py")
 
 
 def _write(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
+
+
+def _enforce(root: Path) -> None:
+    """Opt the temp project into the two-backlog workflow (US0125), so the hard gates - which
+    default OFF for upgrade-safety - are ON for a test that exercises the enforced behaviour."""
+    _write(root / "sdlc-studio" / ".config.yaml", "two_backlog:\n  enforce: true\n")
 
 
 def build_chain(root: Path, *, cr_children: str = "EP0100",
@@ -69,6 +76,79 @@ def build_chain(root: Path, *, cr_children: str = "EP0100",
         _write(base / "stories" / f"{sid}-a-story.md",
                f"# {sid}: A story\n\n> **Status:** {status}\n> **Epic:** EP0100\n"
                "> **Points:** 2\n")
+
+
+class EnforcementGateTests(unittest.TestCase):
+    """US0125: the two-backlog workflow is enforce-on-request. `two_backlog_enforced` defaults OFF
+    (upgrade-safe for an existing project) and turns on with one line of config."""
+
+    def test_default_off_and_opt_in_on(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            self.assertFalse(sdlc_md.two_backlog_enforced(root))   # no config -> off
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "two_backlog:\n  enforce: true\n", encoding="utf-8")
+            self.assertTrue(sdlc_md.two_backlog_enforced(root))    # opted in -> on
+
+    def test_explicit_false_stays_off(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "two_backlog:\n  enforce: false\n", encoding="utf-8")
+            self.assertFalse(sdlc_md.two_backlog_enforced(root))
+
+    def test_unenforced_cr_creation_keeps_the_legacy_points_flow(self) -> None:
+        # US0128: an unenforced project creates a CR with legacy --points (grooms on points);
+        # an enforced project holds the strict Size demand and refuses it.
+        for enforce, expect_created in ((False, True), (True, False)):
+            with self.subTest(enforce=enforce), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                (root / "sdlc-studio").mkdir(parents=True)
+                (root / "src").mkdir()
+                (root / "src" / "x.py").write_text("", encoding="utf-8")
+                if enforce:
+                    _enforce(root)
+                fields = {"affects": "src/x.py", "points": 5, "impact": "i"}
+                if expect_created:
+                    r = artifact.new(root, "cr", "legacy cr", fields)
+                    self.assertEqual(sdlc_md.read_points(Path(r["path"]).read_text()), 5)
+                else:
+                    with self.assertRaises(ValueError):
+                        artifact.new(root, "cr", "strict cr", fields)
+
+    def test_batch_create_reads_the_target_enforcement_not_the_cwd(self) -> None:
+        # US0128 (review finding): new_batch must thread the TARGET root into the renderer, so a
+        # batch create against an unenforced target keeps the legacy points flow regardless of the
+        # CWD's enforcement. The bug read enforcement from the CWD and refused a legacy CR.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)   # unenforced target
+            (root / "src").mkdir()
+            (root / "src" / "x.py").write_text("", encoding="utf-8")
+            r = artifact.new_batch(root, "cr", [{"title": "legacy batch cr",
+                                                 "affects": "src/x.py", "points": 5, "impact": "i"}])
+            text = Path(r["created"][0]["path"]).read_text()
+            self.assertEqual(sdlc_md.read_points(text), 5)   # legacy points honoured
+            self.assertIsNone(sdlc_md.read_size(text))
+
+    def test_undecomposed_drift_only_surfaces_when_enforced(self) -> None:
+        # US0128: an accepted childless CR is undecomposed drift ONLY in an enforced project;
+        # an unenforced project is not told its childless CRs are drift.
+        import io
+        import contextlib
+        for enforce, expect_flag in ((False, False), (True, True)):
+            with self.subTest(enforce=enforce), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _write(root / "sdlc-studio" / "change-requests" / "CR0500-x.md",
+                       "# CR-0500: X\n\n> **Status:** Approved\n> **Size:** M\n")
+                if enforce:
+                    _enforce(root)
+                buf = io.StringIO()
+                with contextlib.redirect_stdout(buf):
+                    reconcile.main(["detect", "--root", str(root)])
+                self.assertEqual("undecomposed" in buf.getvalue(), expect_flag)
 
 
 class TaxonomyTests(unittest.TestCase):
@@ -233,6 +313,7 @@ class DerivedStatusTests(unittest.TestCase):
     tested without a full index fixture."""
 
     def _cr(self, root: Path, cid: str, status: str, decomposed: str = "") -> None:
+        _enforce(root)   # G2 is enforce-on-request (US0127); these tests exercise the enforced gate
         extra = f"> **Decomposed-into:** {decomposed}\n" if decomposed else ""
         _write(root / "sdlc-studio" / "change-requests" / f"{cid}-x.md",
                f"# CR-{cid[2:]}: X\n\n> **Status:** {status}\n> **Size:** M\n{extra}")
@@ -240,6 +321,16 @@ class DerivedStatusTests(unittest.TestCase):
     def _epic(self, root: Path, eid: str, status: str, parent: str) -> None:
         _write(root / "sdlc-studio" / "epics" / f"{eid}-x.md",
                f"# {eid}: X\n\n> **Status:** {status}\n> **Size:** M\n> **Parent:** {parent}\n")
+
+    def test_unenforced_project_completes_a_childless_cr_by_assertion(self) -> None:
+        # US0127: the G2 derived-status gate is gated - an unenforced project closes a CR the old
+        # way, no children required.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root / "sdlc-studio" / "change-requests" / "CR0350-x.md",
+                   "# CR-0350: X\n\n> **Status:** Approved\n> **Size:** M\n")   # no _enforce
+            res = transition.transition(root, "CR0350", "Complete", dry_run=True)
+            self.assertEqual(res["to"], "Complete")
 
     def test_cr_blocked_while_child_unfinished(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -351,6 +442,130 @@ class CreatorAgreementTests(unittest.TestCase):
             self.assertIsNone(sdlc_md.read_size(text))        # the wrong flag was not written
 
 
+class RefineTests(unittest.TestCase):
+    """US0129: `refine` decomposes a request into an epic + stories, wiring the bidirectional
+    links the two-backlog gates verify."""
+
+    def _cr(self, root: Path, cid: str = "CR0001", status: str = "Approved") -> None:
+        _write(root / "sdlc-studio" / "change-requests" / f"{cid}-x.md",
+               f"# CR-{cid[2:]}: X\n\n> **Status:** {status}\n> **Priority:** P1\n"
+               f"> **Type:** Improvement\n> **Size:** L\n\n## Summary\n\ns\n\n## Impact\n\ni\n")
+
+    def test_refine_creates_epic_and_stories_with_links(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root)
+            res = refine.refine(root, "CR0001", "The epic",
+                                [("First", 3, None), ("Second", 5, "src/x.py")])
+            self.assertEqual(res["points"], 8)
+            self.assertEqual(res["epic_size"], "M")           # 8 pts -> M
+            # children_of resolves the request -> epic -> stories chain
+            self.assertEqual(sdlc_md.children_of(root, "CR0001"), [(res["epic"], "epic")])
+            self.assertEqual(len(sdlc_md.children_of(root, res["epic"])), 2)
+            # the links resolve BOTH ways - no asymmetry, and the CR is no longer undecomposed
+            self.assertEqual(reconcile.link_asymmetry_drift(root), [])
+            self.assertEqual(reconcile.undecomposed_drift(root), [])
+
+    def test_refine_rolls_the_epic_point_total(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root)
+            res = refine.refine(root, "CR0001", "The epic", [("A", 2, None), ("B", 3, None)])
+            epic_text = sdlc_md.find_by_id(root, res["epic"])[0].read_text()
+            self.assertEqual(sdlc_md.extract_field(epic_text, "Derived Point Total"), "5")
+
+    def test_refine_refuses_a_non_request(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root / "sdlc-studio" / "bugs" / "BG0001-x.md",
+                   "# BG0001: b\n\n> **Status:** Open\n> **Points:** 2\n")
+            with self.assertRaises(ValueError):
+                refine.refine(root, "BG0001", "nope", [("x", 2, None)])
+
+    def test_refine_refuses_an_already_decomposed_request(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root)
+            refine.refine(root, "CR0001", "The epic", [("A", 2, None)])
+            with self.assertRaises(ValueError):
+                refine.refine(root, "CR0001", "again", [("B", 2, None)])
+
+    def test_refine_refuses_an_off_scale_point_and_mints_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root)
+            with self.assertRaises(ValueError):
+                refine.parse_story_spec("bad|7")   # 7 is off the Fibonacci scale
+            # nothing minted: the CR is still undecomposed
+            self.assertEqual(sdlc_md.decomposed_ids(
+                sdlc_md.find_by_id(root, "CR0001")[0].read_text()), [])
+
+    def test_refine_refuses_an_empty_breakdown(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root)
+            with self.assertRaises(ValueError):
+                refine.refine(root, "CR0001", "empty", [])
+
+    def test_a_bad_title_mints_nothing_atomicity(self) -> None:
+        # review finding: a story title with a newline used to raise INSIDE artifact.new mid-loop,
+        # after the epic + first story were already on disk (orphaned). Titles are now validated
+        # up front, so a bad breakdown leaves the backlog untouched.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root)
+            with self.assertRaises(ValueError):
+                refine.refine(root, "CR0001", "E", [("Good", 3, None), ("Bad\ntitle", 5, None)])
+            self.assertEqual(list((root / "sdlc-studio" / "epics").glob("EP*.md"))
+                             if (root / "sdlc-studio" / "epics").exists() else [], [])
+            self.assertEqual(list((root / "sdlc-studio" / "stories").glob("US*.md"))
+                             if (root / "sdlc-studio" / "stories").exists() else [], [])
+            self.assertEqual(sdlc_md.decomposed_ids(
+                sdlc_md.find_by_id(root, "CR0001")[0].read_text()), [])
+
+    def test_refine_moves_the_request_to_its_working_status(self) -> None:
+        # US0131: a decomposed CR is now being delivered via its children, so it moves to In
+        # Progress (it reaches terminal only by derivation, G2).
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root, status="Approved")
+            res = refine.refine(root, "CR0001", "E", [("A", 3, None)])
+            self.assertEqual(res["status"], "In Progress")
+            crtext = sdlc_md.find_by_id(root, "CR0001")[0].read_text()
+            self.assertEqual(
+                sdlc_md.canonical_status(sdlc_md.extract_field(crtext, "Status"),
+                                         sdlc_md.status_vocab("cr", root)),
+                "In Progress")
+
+    def test_refine_surfaces_open_questions_for_the_amigos(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root)
+            res = refine.refine(root, "CR0001", "E", [("A", 2, None)],
+                                questions=["schema or config?", ""])   # blank dropped
+            self.assertEqual(res["open_questions"], ["schema or config?"])
+            self.assertIn("engineering", res["amigo_roles"])
+
+    def test_show_surfaces_the_request_content(self) -> None:
+        # US0130: refinable() gathers what the operator needs to propose, and refuses the same
+        # cases apply does - so a request show accepts is one apply will.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root)
+            info = refine.refinable(root, "CR0001")
+            self.assertEqual(info["type"], "cr")
+            self.assertEqual(info["summary"], "s")   # the Summary section body
+            self.assertEqual(info["detail"], "i")    # the Impact section body
+            # refuses a non-request and an already-decomposed request, like apply
+            _write(root / "sdlc-studio" / "bugs" / "BG0001-x.md",
+                   "# BG0001: b\n\n> **Status:** Open\n> **Points:** 2\n")
+            with self.assertRaises(ValueError):
+                refine.refinable(root, "BG0001")
+            refine.refine(root, "CR0001", "e", [("A", 2, None)])
+            with self.assertRaises(ValueError):
+                refine.refinable(root, "CR0001")   # now decomposed
+
+
 class PlanRefusesRequestTests(unittest.TestCase):
     """G1 (US0121): `sprint plan` refuses an RFC or CR - the Delivery backlog is stories and bugs."""
 
@@ -375,6 +590,7 @@ class PlanRefusesRequestTests(unittest.TestCase):
     def test_plan_refuses_a_cr_batch_and_names_the_decompose_path(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
+            _enforce(root)
             self._cr(root, 1)
             self._cr(root, 2)
             rc, err = self._plan(root, "--crs", "Proposed")
@@ -387,12 +603,23 @@ class PlanRefusesRequestTests(unittest.TestCase):
     def test_plan_refuses_a_mixed_batch_that_includes_a_request(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
+            _enforce(root)
             self._bug(root, 1)
             self._cr(root, 2)
             rc, err = self._plan(root, "--bugs", "Open", "--crs", "Proposed")
             self.assertEqual(rc, 2)
             self.assertIn("REQUESTS", err)
             self.assertIn("CR0002", err)
+
+    def test_an_unenforced_project_plans_a_cr_as_before(self) -> None:
+        # US0126: the G1 refusal is gated - a project that has NOT opted in keeps its old flow.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "src").mkdir(parents=True)
+            (root / "src" / "cr0001.py").write_text("", encoding="utf-8")   # Affects resolves
+            self._cr(root, 1)
+            rc, err = self._plan(root, "--crs", "Proposed")
+            self.assertNotIn("are REQUESTS", err)   # not refused for being a request
 
     def test_a_pure_product_batch_is_not_refused_for_being_a_request(self) -> None:
         with tempfile.TemporaryDirectory() as d:

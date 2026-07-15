@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 123 |
+| Done | 130 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **124** |
+| **Total** | **131** |
 
 ## All Stories
 
@@ -35,6 +35,13 @@
 | [US0122](US0122-g2-terminal-request-status-is-derived-from-children.md) | G2 terminal request status is derived from children, never asserted | Done | EP0033 | 2026-07-15 | 2026-07-15 |
 | [US0123](US0123-g4-status-reports-the-request-backlog-and-the.md) | G4 status reports the request backlog and the product backlog separately | Done | EP0033 | 2026-07-15 | 2026-07-15 |
 | [US0124](US0124-g5-reconcile-reports-a-childless-non-terminal-request.md) | G5 reconcile reports a childless non-terminal request as UNDECOMPOSED | Done | EP0033 | 2026-07-15 | 2026-07-15 |
+| [US0125](US0125-two-backlog-enforced-predicate-this-repo-opts-in.md) | two_backlog_enforced predicate + this repo opts in | Done | EP0034 | 2026-07-15 | 2026-07-15 |
+| [US0126](US0126-g1-plan-refusal-fires-only-when-enforced.md) | G1 plan-refusal fires only when enforced | Done | EP0034 | 2026-07-15 | 2026-07-15 |
+| [US0127](US0127-g2-derived-terminal-gate-fires-only-when-enforced.md) | G2 derived-terminal gate fires only when enforced | Done | EP0034 | 2026-07-15 | 2026-07-15 |
+| [US0128](US0128-undecomposed-drift-cr-creation-size-demand-respect-the.md) | undecomposed drift + CR-creation Size demand respect the gate | Done | EP0034 | 2026-07-15 | 2026-07-15 |
+| [US0129](US0129-refine-core-create-an-epic-and-stories-from.md) | refine core: create an epic and stories from a request with links wired | Done | EP0035 | 2026-07-15 | 2026-07-15 |
+| [US0130](US0130-refine-proposal-validate-refinable-and-scaffold-the-breakdown.md) | refine proposal: validate refinable and scaffold the breakdown | Done | EP0035 | 2026-07-15 | 2026-07-15 |
+| [US0131](US0131-refine-closes-the-loop-request-status-amigo-consult.md) | refine closes the loop: request status + amigo consult for open questions | Done | EP0035 | 2026-07-15 | 2026-07-15 |
 
 ## Archived Releases
 

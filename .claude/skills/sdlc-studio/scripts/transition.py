@@ -424,8 +424,9 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
             blocks.append(f"{artifact_id} is not ready for {new_status}: {block}")
     # A request's successful terminal is DERIVED from its children, never asserted (G2): a CR is
     # Complete only when its stories/epics are resolved, an RFC Accepted only when its CRs are.
-    # Overridable with --force, like the other close gates.
-    if not force:
+    # Overridable with --force, like the other close gates. Fires only when the project enforces
+    # the two-backlog workflow - an unenforced project completes a CR by assertion, as before.
+    if not force and sdlc_md.two_backlog_enforced(root):
         block = _request_terminal_gate(root, type_, artifact_id, target_canon)
         if block:
             blocks.append(f"{block}. Override with --force")

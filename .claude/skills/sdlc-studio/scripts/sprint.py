@@ -1975,8 +1975,10 @@ def cmd_plan(args: argparse.Namespace) -> int:
     # THE REQUEST GATE (G1). A sprint plans the DELIVERY backlog - stories and bugs. An RFC or CR
     # is a DISCOVERY-backlog request: it has no executable ACs to close on, so it can neither be
     # sprinted nor verified Done. Refused ahead of the grooming gate (a request cannot be groomed
-    # as a sprint unit anyway), blocking and no plan at all.
-    requests = [it for it in data["batch"] if sdlc_md.is_request(it["type"])]
+    # as a sprint unit anyway), blocking and no plan at all. Fires ONLY when the project enforces
+    # the two-backlog workflow - an existing project that has not opted in plans a CR as before.
+    requests = ([it for it in data["batch"] if sdlc_md.is_request(it["type"])]
+                if sdlc_md.two_backlog_enforced(args.root) else [])
     if requests:
         _refuse_requests(requests)
         return 2

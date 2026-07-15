@@ -615,6 +615,23 @@ def is_request(type_: str) -> bool:
     return type_ in REQUEST_TYPES
 
 
+def two_backlog_enforced(repo_root) -> bool:
+    """True when this project ENFORCES the two-backlog workflow - the HARD gates that change an
+    existing project's habits: `plan` refuses a request (G1), a request's terminal status is
+    derived from its children (G2), `reconcile` flags an accepted childless request as
+    undecomposed, and creating a CR demands a T-shirt Size. Read from `two_backlog.enforce` in the
+    project's own `.config.yaml`, default False.
+
+    Default OFF is deliberate and load-bearing for UPGRADES: an existing project pulling a newer
+    skill keeps its old flow (plan a CR, complete it whole, size with points) until it opts in, so
+    the release does not break it. A project turns the workflow on with one line of config; this
+    repo dogfoods it on. The soft, always-on parts of the model (the sizing vocabulary itself,
+    link-asymmetry which only fires on links a project chose to write) are NOT gated here - only
+    the rules that would refuse an unprepared project's existing workflow. The one predicate every
+    hard gate consults, so none hard-codes the enforcement decision."""
+    return bool(project_override(repo_root, "two_backlog.enforce", False))
+
+
 # Allowed Status values per artifact type. A status outside this set is a
 # validation error (it breaks dashboard/reconcile counting).
 STATUS_VOCAB: dict[str, list[str]] = {

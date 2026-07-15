@@ -210,6 +210,22 @@ the archive sub-indexes so the census stays correct. Explicit, idempotent per re
 
 Convention: `reference-outputs.md#index-archival`.
 
+### `refine.py`
+
+Decompose a request (RFC/CR) into an epic and stories, with the two-backlog links wired - the
+automation of the hand-decomposition the gates otherwise ask an operator to do, and the migration
+path for an upgrading project (an old childless CR becomes stories). `refine show --request <id>`
+surfaces the request's Summary / Impact / Open-Decisions and confirms it is refinable (a
+non-request or an already-decomposed request is refused - `show` and `apply` share one definition
+of refinable). `refine apply --request <id> --epic-title "..." --story "title|points[|affects]" ...`
+validates the whole breakdown BEFORE minting anything (an off-scale story point, a non-request or an
+already-decomposed request is refused and nothing is written), then creates the epic (T-shirt sized
+from the point total, `Parent:` the request) and each story under it, writes the request's
+`Decomposed-into:`, rolls the epic's `Derived Point Total`, moves the request to its working status
+(a CR to In Progress, an RFC to In Review - it reaches its terminal status only by derivation when
+its children are done), and surfaces `--question` items for a Three-Amigos consult. Stories are
+created as stubs (title + points); their `Affects` and executable ACs are added at design/plan time.
+
 ### `file_finding.py`
 
 Deterministic Bug/CR/RFC filer for audit findings. Allocates a

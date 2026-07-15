@@ -1147,10 +1147,13 @@ def cmd_detect(args: argparse.Namespace) -> int:
         all_drift.extend(epic_points_drift(repo_root))
     # The request<->child link check and the undecomposed check are cross-type (a CR under an RFC,
     # an epic under a CR), so they run on the default full sweep like the meta indexes, not under a
-    # single pipeline scope.
+    # single pipeline scope. link-asymmetry is always on (it only fires on links a project chose to
+    # write); undecomposed is a HARD workflow rule, so it fires only when the project enforces the
+    # two-backlog workflow - an unenforced project is not told its childless CRs are drift.
     if args.scope is None:
         all_drift.extend(link_asymmetry_drift(repo_root))
-        all_drift.extend(undecomposed_drift(repo_root))
+        if sdlc_md.two_backlog_enforced(repo_root):
+            all_drift.extend(undecomposed_drift(repo_root))
 
     by_kind: dict[str, int] = {}
     for d in all_drift:

@@ -68,3 +68,6 @@ capacity:
   tokens: 1000000
   minutes: 240
   units: 8
+
+two_backlog:
+  enforce: true  # this repo dogfoods the two-backlog workflow; keep the gates on

@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0045: The independence gate earns its cost on exactly the bugs the author cannot see: both this sprint's blocking bugs were invisible to the...**
+- **L-0044: A multi-step create is atomic only if EVERY input is validated before the first write.**
+- **L-0043: A gate on a live workflow must default OFF for existing projects and be opt-in, or an upgrade breaks them.**
 - **L-0042: A bug's stated scope can be overtaken by an earlier change: BG0145 part (1) named a CLI restriction that RFC0038 had already removed.**
 - **L-0041: A gate on the canonical creation path ripples into every test that used the old creation shortcut as a fixture (the Affects-resolve gate...**
 - **L-0040: The migration story for a breaking model change is part of the change, not an afterthought.**

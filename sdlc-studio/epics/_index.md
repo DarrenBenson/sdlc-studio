@@ -10,8 +10,8 @@
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 33 |
-| **Total** | **33** |
+| Done | 35 |
+| **Total** | **35** |
 
 > Generate-mode note: all epics are **Ready** (spec extracted from the existing
 > implementation, awaiting test validation per `reference-philosophy.md`), not
@@ -54,3 +54,5 @@
 | [EP0031](EP0031-v4-1-release-integrity-the-gates-that-make.md) | v4.1 release integrity: the gates that make the tag trustworthy | Done | -- | -- | 2026-07-13 | 2026-07-13 |
 | [EP0032](EP0032-v4-1-run-close-and-agent-dx.md) | v4.1 run-close and agent DX | Done | -- | -- | 2026-07-13 | 2026-07-13 |
 | [EP0033](EP0033-the-two-backlog-gates-decompose-cr0271-into-the.md) | The two-backlog gates: decompose CR0271 into the delivery units that build it | Done | -- | -- | 2026-07-15 | 2026-07-15 |
+| [EP0034](EP0034-the-schema-v4-opt-in-gate-the-two.md) | The schema-v4 opt-in gate: the two-backlog workflow becomes enforce-on-request, upgrade-safe | Done | -- | -- | 2026-07-15 | 2026-07-15 |
+| [EP0035](EP0035-the-refine-command-a-request-becomes-an-epic.md) | The refine command: a request becomes an epic and stories, links wired, ready to sprint | Done | -- | -- | 2026-07-15 | 2026-07-15 |
