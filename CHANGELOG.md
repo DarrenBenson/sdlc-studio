@@ -21,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Deterministic flow metrics - the zero-token schedule instrument (CR0310, EP0052).** New
+  `scripts/flow.py compute` reports per-unit cycle time (Created -> delivered, resolved from git
+  history anchored on the status header line, with a revision-row fallback), weekly throughput
+  (delivered statuses only - a Superseded unit is closed, not delivered), and work-item age for
+  every non-terminal unit. A unit whose dates cannot be resolved is NAMED unmeasurable, never
+  guessed. Advisory only, feeds no gate; the cost instrument (points x measured rate) is a
+  separate axis.
 - **The sprint report: what a sprint delivered, cost, and velocity (EP0048, RFC0035, absorbing
   CR0273).** New `sprint_report.py show --id RETROxxxx` composes - deterministically, at no model-token
   cost - the delivered points, the actual spend, the estimate-vs-actual, the velocity, the lessons and

@@ -171,6 +171,11 @@ lists every script with a one-line summary; open the linked page for the full en
 - `repo_map.py` - Pure-Python repository indexer. Produces
 - `complexity.py` - Cognitive (SonarSource) + cyclomatic complexity per function from Python's
 - `provenance.py` - Artifact provenance. Makes deterministic creation the *checkable* path: `new`
+- `flow.py` - Deterministic flow metrics, the zero-token SCHEDULE instrument (cost is
+  points x measured rate, a different axis). `compute` reports per-unit cycle time
+  (Created -> delivered, git history with a revision-row fallback), weekly throughput
+  (delivered statuses only), and work-item age for every non-terminal unit; a unit whose
+  dates cannot be resolved is NAMED unmeasurable, never guessed. Advisory; feeds no gate
 - `telemetry.py` - Run telemetry recorder. `record` appends a per-unit run outcome
 - `pvd.py` - PVD projection + drift. `sync` projects the one writable master
 - `blocker_sweep.py` - The inverse of `audit`'s `unmet-deps`: finds units whose blockers have **cleared**. `sweep`

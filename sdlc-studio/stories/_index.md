@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 6 |
+| Draft | 4 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 0 |
+| In Progress | 1 |
 | Review | 0 |
-| Done | 178 |
+| Done | 179 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -90,10 +90,10 @@
 | [US0177](US0177-rewire-story-create-generate-prerequisites-and-persona-selection.md) | Rewire story create/generate prerequisites and persona selection to the personas/ registry with legacy fallback | Done | EP0049 | 2026-07-16 | 2026-07-16 |
 | [US0178](US0178-migrate-the-amigo-cast-to-personas-seats-and.md) | Migrate the amigo cast to personas/seats/ and ground each card in this repo and its Primary | Done | EP0050 | 2026-07-16 | 2026-07-16 |
 | [US0179](US0179-check-personas-emits-a-layout-advisory-and-a.md) | check_personas emits a layout advisory and a light structural check for personas.md-only projects | Done | EP0051 | 2026-07-16 | 2026-07-16 |
-| [US0180](US0180-flow-compute-per-unit-cycle-time-weekly-throughput.md) | flow compute: per-unit cycle time, weekly throughput and work-item age from census + git log | Draft | EP0052 | 2026-07-16 | 2026-07-16 |
+| [US0180](US0180-flow-compute-per-unit-cycle-time-weekly-throughput.md) | flow compute: per-unit cycle time, weekly throughput and work-item age from census + git log | Done | EP0052 | 2026-07-16 | 2026-07-16 |
 | [US0181](US0181-blocked-age-and-ageing-threshold-flags-surfaced-in.md) | Blocked-age and ageing-threshold flags surfaced in status | Draft | EP0052 | 2026-07-16 | 2026-07-16 |
 | [US0182](US0182-monte-carlo-completion-forecast-seeded-minimum-sample-refusal.md) | Monte Carlo completion forecast (seeded, minimum-sample refusal) surfaced in sprint report, schedule-vs-cost doc | Draft | EP0052 | 2026-07-16 | 2026-07-16 |
-| [US0183](US0183-record-an-operator-sprint-goal-on-plan-and.md) | Record an operator Sprint Goal on plan and run-state; closing review verdict and sprint report display it | Draft | EP0053 | 2026-07-16 | 2026-07-16 |
+| [US0183](US0183-record-an-operator-sprint-goal-on-plan-and.md) | Record an operator Sprint Goal on plan and run-state; closing review verdict and sprint report display it | In Progress | EP0053 | 2026-07-16 | 2026-07-16 |
 | [US0184](US0184-deploy-metrics-computes-the-four-keys-from-ledger.md) | deploy metrics computes the four keys from ledger + git + bug dates, refusing absent sources, not-applicable without a ledger | Draft | EP0054 | 2026-07-16 | 2026-07-16 |
 | [US0185](US0185-gate-lane-measures-a-delivered-unit-s-diff.md) | gate lane measures a delivered unit's diff size vs configured thresholds, warn-only, default off | Draft | EP0055 | 2026-07-16 | 2026-07-16 |
 

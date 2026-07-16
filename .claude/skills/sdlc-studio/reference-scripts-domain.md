@@ -42,6 +42,17 @@ preservingly backfills the stamp into un-stamped artifacts (idempotent, dry-run-
 stamp-only - never re-lays-out content). Standalone + advisory by design (not wired into
 the gate); adopting it is a project choice.
 
+### `flow.py`
+
+Deterministic flow metrics - the zero-token SCHEDULE instrument (the cost instrument,
+points x a measured tokens-per-point rate, is a different axis). `compute` reports per-unit
+cycle time (Created -> delivered, resolved from git history anchored on the status header
+line, with a revision-history-row fallback at day precision), weekly throughput counting
+DELIVERED terminal statuses only (a Superseded unit closed without delivering - no metric),
+and work-item age for every non-terminal unit. Honesty contract: a unit whose dates cannot
+be resolved is NAMED unmeasurable with the reason, never guessed or silently skipped.
+Advisory only; nothing here feeds a gate.
+
 ### `telemetry.py`
 
 Run telemetry recorder. `record` appends a per-unit run outcome
