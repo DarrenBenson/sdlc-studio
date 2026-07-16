@@ -4,6 +4,7 @@
 > **Batch:** US0186, US0187, US0188, US0189, US0190, US0191, US0192, BG0177 (EP0056-EP0062, from CR0307/0308/0309/0315/0316/0317/0327 + BG0177)
 > **Goal:** done (run RUN-01KXPA4N; Sprint Goal: "Make the ceremony seams tool-carried: the discipline's paperwork costs zero improvisation" - judged ACHIEVED via goal-verdict)
 > **Delivered:** 8 / 8   **Blocked:** 0
+> **Reviewer of record:** Darren Benson (operator) - signed off 2026-07-16 against the embedded decision brief (deliveries, critic REJECTs + repairs, gate/mutation/cost evidence - the CR0318 rule, honoured manually pending CR0323); adversarial passes by the Dani Okafor and Sam Eriksson seats (11 reviews)
 
 ## Delivered
 
@@ -106,3 +107,4 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 | --- | --- | --- |
 | 2026-07-16 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-16 | Claude Fable 5 | Sprint close: 8/8 delivered, Sprint Goal achieved, lessons + dispositions recorded |
+| 2026-07-16 | Darren Benson (operator) | Reviewer-of-record sign-off against the decision brief; operator's ~160k figure identified as the context meter, not spend - harness cumulative total still awaited (CR0278) |
