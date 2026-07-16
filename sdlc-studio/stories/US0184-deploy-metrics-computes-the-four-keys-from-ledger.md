@@ -1,10 +1,10 @@
 # US0184: deploy metrics computes the four keys from ledger + git + bug dates, refusing absent sources, not-applicable without a ledger
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/deploy.py, .claude/skills/sdlc-studio/scripts/tests/test_deploy.py, .claude/skills/sdlc-studio/reference-deploy-readiness.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/deploy.py, .claude/skills/sdlc-studio/scripts/flow.py, .claude/skills/sdlc-studio/scripts/tests/test_deploy.py, .claude/skills/sdlc-studio/scripts/tests/test_flow.py, .claude/skills/sdlc-studio/reference-deploy-readiness.md
 > **Epic:** EP0054
 > **Points:** 3
 
@@ -22,6 +22,7 @@
 - **When** deploy metrics runs
 - **Then** deployment frequency, lead time for changes, change failure rate and MTTR are computed with their measurement windows stated
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_deploy.py -k DoraKeys
+- **Verified:** yes (2026-07-16)
 
 ### AC2: Absent sources are refused, not guessed
 
@@ -29,6 +30,7 @@
 - **When** deploy metrics runs
 - **Then** the affected key is reported unmeasurable by name; the others still compute
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_deploy.py -k DoraRefus
+- **Verified:** yes (2026-07-16)
 
 ### AC3: Not-applicable without a ledger
 
@@ -36,6 +38,7 @@
 - **When** deploy metrics runs
 - **Then** it reports not-applicable cleanly and nothing nags a non-deploying project
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_deploy.py -k DoraNotApplicable
+- **Verified:** yes (2026-07-16)
 
 ## Revision History
 

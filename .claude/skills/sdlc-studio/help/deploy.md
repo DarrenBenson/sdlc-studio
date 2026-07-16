@@ -27,6 +27,7 @@ harness around a deploy you run yourself.
 | `/sdlc-studio deploy` | Run the workflow: preflight (gate) -> operator hand-off -> smoke/soak verify -> surface rollback on failure -> record outcome |
 | `deploy.py preflight` | Gate + readiness verdict + the operator hand-off (no deploy). Exit 0 if ready |
 | `deploy.py record --status <s> --detail "..."` | Append an outcome (`rolled-out`/`verified`/`rolled-back`/`failed`) to `sdlc-studio/deploy-log.md` |
+| `deploy.py metrics` | The DORA four keys from records already kept: deployment frequency + change failure rate (the ledger), lead time (git author times between deploy events), MTTR (High/Critical bugs Created -> Fixed). Advisory - no key feeds a gate; an absent source is named UNMEASURABLE; no ledger = not applicable, never a nag |
 
 ## Prerequisites
 

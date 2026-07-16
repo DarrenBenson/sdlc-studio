@@ -160,6 +160,23 @@ This pairs with the verification-depth `soak` tier and the `staged-rollout` rele
 
 ---
 
+## Delivery Performance - the DORA Four Keys {#dora-four-keys}
+
+Once a project deploys, `deploy.py metrics` computes the four evidence-backed delivery
+measures from records the workflow already keeps - zero tokens, definitions printed with
+every figure because each is a choice:
+
+| Key | Source | Definition used |
+| --- | --- | --- |
+| Deployment frequency | `deploy-log.md` | `rolled-out` + `verified` rows per week over the ledger window |
+| Lead time for changes | git + ledger | median (deploy-event time - commit author time), commits since the previous event |
+| Change failure rate | `deploy-log.md` | `failed` + `rolled-back` rows over all rows |
+| MTTR | bug artefacts | mean Created -> Fixed/Closed for High/Critical severity |
+
+Advisory by design: **no key feeds a gate** (a targeted measure stops measuring - the same
+Goodhart rule as velocity). A key whose source is absent is reported UNMEASURABLE by name;
+a workspace with no deploy ledger reads "not applicable" and is never nagged to adopt one.
+
 ## See Also
 
 - `reference-test-best-practices.md#verification-depth-tiers` – the tier vocabulary; smoke is functional-tier evidence

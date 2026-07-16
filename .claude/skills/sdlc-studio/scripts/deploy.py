@@ -88,6 +88,141 @@ def record(root: Path | str, status: str, detail: str = "",
     return row
 
 
+def _ledger_rows(root: Path) -> list[tuple[datetime, str, str]] | None:
+    """Parsed deploy-log rows, or None when no ledger exists (not-applicable)."""
+    import re
+    log = Path(root) / "sdlc-studio" / _LOG
+    if not log.is_file():
+        return None
+    rows = []
+    pat = re.compile(r"^\|\s*(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\s*\|\s*(\S+)\s*\|\s*(.*?)\s*\|\s*$")
+    for line in log.read_text(encoding="utf-8").splitlines():
+        m = pat.match(line)
+        if m and m.group(2) in _STATUSES:
+            rows.append((datetime.strptime(m.group(1), "%Y-%m-%d %H:%M"),
+                         m.group(2), m.group(3)))
+    return rows
+
+
+def metrics(root: Path | str) -> dict:
+    """The DORA four keys from records the project already keeps. Advisory only -
+    no key feeds a gate (a targeted measure stops measuring: the velocity rule).
+
+    Definitions, stated because each is a choice: deployment events = `rolled-out` +
+    `verified` rows; change failures = `failed` + `rolled-back` rows over ALL rows;
+    lead time = deploy-event time minus author time of each commit landed since the
+    previous deploy event (median); MTTR = mean Created -> delivered for High/Critical
+    severity bugs. A key whose source is absent is UNMEASURABLE by name, never guessed;
+    a workspace with no deploy ledger is not-applicable, never nagged."""
+    root = Path(root)
+    rows = _ledger_rows(root)
+    if rows is None:
+        return {"applicable": False,
+                "detail": f"no deploy ledger (sdlc-studio/{_LOG}) - not applicable"}
+    events = [(when, s) for when, s, _ in rows if s in ("rolled-out", "verified")]
+    failures = sum(1 for _, s, _ in rows if s in ("failed", "rolled-back"))
+    out: dict = {"applicable": True}
+    if events:
+        span_days = max(1, (max(w for w, _ in events) - min(w for w, _ in events)).days)
+        out["deployment_frequency"] = {
+            "events": len(events), "per_week": round(len(events) / (span_days / 7), 2),
+            "window": {"from": min(w for w, _ in events).date().isoformat(),
+                       "to": max(w for w, _ in events).date().isoformat()},
+            "definition": "rolled-out + verified ledger rows"}
+    else:
+        out["deployment_frequency"] = {"unmeasurable": "no rolled-out/verified rows in the ledger"}
+    if rows:
+        out["change_failure_rate"] = {
+            "rate": round(failures / len(rows), 2),
+            "failures": failures, "total_rows": len(rows),
+            "definition": "failed + rolled-back rows over all ledger rows"}
+    else:
+        out["change_failure_rate"] = {"unmeasurable": "ledger exists but no parseable rows"}
+    # lead time for changes: commits landed between consecutive deploy events. The
+    # measurement lives in flow (deploy NEVER shells out - the module's safety contract);
+    # this module only composes the ledger's event times with flow's git read.
+    try:
+        import flow as _flow
+    except ImportError:  # pragma: no cover
+        _flow = None
+    leads = (_flow.lead_times(root, [w for w, _ in events])
+             if (_flow is not None and events) else [])
+    git_ok = leads is not None
+    leads = leads or []
+    if git_ok and leads:
+        leads.sort()
+        n = len(leads)
+        med = leads[n // 2] if n % 2 else (leads[n // 2 - 1] + leads[n // 2]) / 2
+        out["lead_time_days"] = {"median": round(med, 2), "commits": n,
+                                 "definition": "deploy-event time minus commit author time, "
+                                               "commits since the previous deploy event"}
+    elif not git_ok:
+        out["lead_time_days"] = {"unmeasurable": "no readable git history"}
+    elif not events:
+        out["lead_time_days"] = {"unmeasurable": "no deploy events to anchor lead time to"}
+    else:
+        out["lead_time_days"] = {"unmeasurable": "no commits found between deploy events"}
+    # MTTR: High/Critical bugs, Created -> delivered
+    flow = _flow
+    repairs: list[int] = []
+    if flow is not None:
+        for path, text in sdlc_md.iter_artifact_files("bug", root):
+            if text is None:
+                continue
+            sev = (sdlc_md.extract_field(text, "Severity") or "").strip().lower()
+            status = sdlc_md.extract_field(text, "Status") or ""
+            if sev not in ("high", "critical") or status not in ("Fixed", "Closed"):
+                continue
+            created_raw = sdlc_md.extract_field(text, "Created") or sdlc_md.extract_field(text, "Date")
+            if not created_raw:
+                continue
+            try:
+                created = datetime.strptime(created_raw.strip()[:10], "%Y-%m-%d").date()
+            except ValueError:
+                continue
+            when, _src = flow.terminal_date(root, path, "bug", status)
+            if when is not None:
+                repairs.append((when.date() - created).days)
+    if repairs:
+        out["mttr_days"] = {"mean": round(sum(repairs) / len(repairs), 2), "bugs": len(repairs),
+                            "definition": "mean Created -> Fixed/Closed, High/Critical severity"}
+    else:
+        out["mttr_days"] = {"unmeasurable": "no resolved High/Critical-severity bugs with "
+                                            "resolvable dates"}
+    return out
+
+
+def cmd_metrics(args: argparse.Namespace) -> int:
+    m = metrics(args.root)
+    if getattr(args, "format", "text") == "json":
+        print(json.dumps(m, indent=2))
+        return 0
+    if not m["applicable"]:
+        print(f"DORA metrics: not applicable - {m['detail']}")
+        return 0
+    lines = ["DORA four keys (advisory - no key feeds a gate):"]
+    df = m["deployment_frequency"]
+    lines.append(f"  deployment frequency: "
+                 + (f"{df['per_week']}/week ({df['events']} events, {df['window']['from']}"
+                    f"..{df['window']['to']}) [{df['definition']}]"
+                    if "events" in df else f"UNMEASURABLE - {df['unmeasurable']}"))
+    lt = m["lead_time_days"]
+    lines.append(f"  lead time for changes: "
+                 + (f"median {lt['median']}d over {lt['commits']} commit(s) [{lt['definition']}]"
+                    if "median" in lt else f"UNMEASURABLE - {lt['unmeasurable']}"))
+    cf = m["change_failure_rate"]
+    lines.append("  change failure rate: "
+                 + (f"{cf['rate']} ({cf['failures']} of {cf['total_rows']} rows) "
+                    f"[{cf['definition']}]"
+                    if "rate" in cf else f"UNMEASURABLE - {cf['unmeasurable']}"))
+    mt = m["mttr_days"]
+    lines.append(f"  MTTR: "
+                 + (f"mean {mt['mean']}d over {mt['bugs']} bug(s) [{mt['definition']}]"
+                    if "mean" in mt else f"UNMEASURABLE - {mt['unmeasurable']}"))
+    print("\n".join(lines))
+    return 0
+
+
 def cmd_preflight(args: argparse.Namespace) -> int:
     r = preflight(args.root)
     if args.format == "json":
@@ -121,6 +256,12 @@ def build_parser() -> argparse.ArgumentParser:
     pf.add_argument("--format", choices=("text", "json"), default="text")
     pf.add_argument("--root", default=".", help="Repo root (default: .)")
     pf.set_defaults(func=cmd_preflight)
+    met = sub.add_parser("metrics", help="the DORA four keys from the deploy ledger + git + "
+                                         "bug dates (advisory; not-applicable without a ledger)")
+    met.add_argument("--format", choices=("text", "json"), default="text")
+    met.add_argument("--root", default=".", help="Repo root (default: .)")
+    met.set_defaults(func=cmd_metrics)
+
     rec = sub.add_parser("record", help="append a deploy outcome to the deploy log")
     rec.add_argument("--status", required=True, choices=_STATUSES)
     rec.add_argument("--detail", default="")

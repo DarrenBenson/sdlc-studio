@@ -95,6 +95,50 @@ def terminal_date(root: Path, path: Path, type_: str, status: str):
     return None, None
 
 
+def commit_author_times(root: Path) -> list[dt.datetime] | None:
+    """Every commit's author time, newest first - or None when git is unreadable.
+    One call; callers bucket in Python (git's --since/--until filter on COMMITTER
+    date, a trap for histories with backdated author times). Times are compared as
+    naive wall-clock (offsets stripped) against naive ledger stamps - a bounded
+    <=1-day skew on a days-scale metric across mixed-offset histories.
+
+    Refuses (None) when `root` is not itself a git work-tree root: git walks UP from
+    cwd, so a non-repo workspace would silently read the ENCLOSING repo's history -
+    wrong-repo lead times presented as real."""
+    try:
+        top = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=root,
+                             capture_output=True, text=True, timeout=30)
+        if top.returncode != 0 or not top.stdout.strip():
+            return None
+        if Path(top.stdout.strip()).resolve() != Path(root).resolve():
+            return None
+        out = subprocess.run(["git", "log", "--format=%aI"], cwd=root,
+                             capture_output=True, text=True, timeout=30)
+        if out.returncode != 0:
+            return None
+        return [dt.datetime.fromisoformat(s).replace(tzinfo=None)
+                for s in out.stdout.split()]
+    except (OSError, subprocess.TimeoutExpired, ValueError):
+        return None
+
+
+def lead_times(root: Path, event_times: list[dt.datetime]) -> list[float] | None:
+    """Lead-time-for-changes samples in days: for each event (sorted), every commit
+    authored since the previous event and at-or-before it contributes
+    `event - commit`. None = no readable git history (the caller names it)."""
+    commits = commit_author_times(Path(root))
+    if commits is None:
+        return None
+    leads: list[float] = []
+    prev = None
+    for when in sorted(event_times):
+        for c in commits:
+            if c <= when and (prev is None or c > prev):
+                leads.append((when - c).total_seconds() / 86400)
+        prev = when
+    return leads
+
+
 def weekly_throughput(dates) -> dict[str, int]:
     """Delivered-date counts keyed by ISO week (`2026-W28`)."""
     weekly: dict[str, int] = {}

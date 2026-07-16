@@ -141,6 +141,40 @@ class ThroughputTests(unittest.TestCase):
                          {"2026-W28": 1, "2026-W29": 1})
 
 
+class LeadTimeTests(unittest.TestCase):
+    """flow.lead_times bucketing (used by deploy metrics): a commit exactly AT an event
+    time belongs to that event and is never double-counted into the next."""
+
+    def test_boundary_commit_counted_once(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            _git(root, "init", "-q")
+            _git(root, "config", "user.email", "t@t")
+            _git(root, "config", "user.name", "t")
+            (root / "a.txt").write_text("1", encoding="utf-8")
+            _git(root, "add", "-A")
+            _git(root, "commit", "-q", "-m", "c1", "--date", "2026-07-05T10:00:00")
+            events = [dt.datetime(2026, 7, 5, 10, 0), dt.datetime(2026, 7, 10, 10, 0)]
+            leads = flow.lead_times(root, events)
+            self.assertEqual(leads, [0.0])  # first event only; mutants (<, >=) break this
+
+    def test_non_repo_root_refuses_rather_than_reading_enclosing_repo(self):
+        # a plain subdirectory INSIDE a git repo must not inherit the enclosing
+        # repo's history (git walks up from cwd - wrong-repo lead times look real)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            _git(root, "init", "-q")
+            _git(root, "config", "user.email", "t@t")
+            _git(root, "config", "user.name", "t")
+            (root / "a.txt").write_text("1", encoding="utf-8")
+            _git(root, "add", "-A")
+            _git(root, "commit", "-q", "-m", "c1")
+            sub = root / "workspace"
+            sub.mkdir()
+            self.assertIsNone(flow.commit_author_times(sub))
+            self.assertEqual(len(flow.commit_author_times(root)), 1)
+
+
 class AgeTests(unittest.TestCase):
     def test_non_terminal_unit_reports_age(self):
         with tempfile.TemporaryDirectory() as tmp:

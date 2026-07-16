@@ -14,7 +14,7 @@ Decomposed from CR0312. Delivers the work CR0312 requested.
 
 ## Story Breakdown
 
-- [ ] [US0184: deploy metrics computes the four keys from ledger + git + bug dates, refusing absent sources, not-applicable without a ledger](../stories/US0184-deploy-metrics-computes-the-four-keys-from-ledger.md)
+- [x] [US0184: deploy metrics computes the four keys from ledger + git + bug dates, refusing absent sources, not-applicable without a ledger](../stories/US0184-deploy-metrics-computes-the-four-keys-from-ledger.md)
 
 ## Revision History
 

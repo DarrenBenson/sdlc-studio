@@ -35,6 +35,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   achieved|partial|missed --note "..."` (refused when no goal was set), and the sprint report
   displays the goal and verdict beside delivered points and cost - guarded by the same
   batch-must-name-this-sprint's-units rule as the elapsed read, so a stale run state says nothing.
+- **DORA four keys, deterministically (CR0312, EP0054).** `deploy.py metrics` computes
+  deployment frequency and change failure rate from the deploy ledger, lead time for changes
+  from git author times between deploy events (the git read lives in `flow.py` - deploy keeps
+  its never-shells-out safety contract), and MTTR from High/Critical bug dates. Advisory, with
+  each definition printed; an absent source is UNMEASURABLE by name; a workspace with no ledger
+  reads not-applicable and is never nagged.
 - **The sprint report: what a sprint delivered, cost, and velocity (EP0048, RFC0035, absorbing
   CR0273).** New `sprint_report.py show --id RETROxxxx` composes - deterministically, at no model-token
   cost - the delivered points, the actual spend, the estimate-vs-actual, the velocity, the lessons and

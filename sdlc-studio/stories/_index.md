@@ -10,9 +10,9 @@
 | Draft | 2 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 2 |
+| In Progress | 1 |
 | Review | 0 |
-| Done | 180 |
+| Done | 181 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -94,7 +94,7 @@
 | [US0181](US0181-blocked-age-and-ageing-threshold-flags-surfaced-in.md) | Blocked-age and ageing-threshold flags surfaced in status | Draft | EP0052 | 2026-07-16 | 2026-07-16 |
 | [US0182](US0182-monte-carlo-completion-forecast-seeded-minimum-sample-refusal.md) | Monte Carlo completion forecast (seeded, minimum-sample refusal) surfaced in sprint report, schedule-vs-cost doc | Draft | EP0052 | 2026-07-16 | 2026-07-16 |
 | [US0183](US0183-record-an-operator-sprint-goal-on-plan-and.md) | Record an operator Sprint Goal on plan and run-state; closing review verdict and sprint report display it | Done | EP0053 | 2026-07-16 | 2026-07-16 |
-| [US0184](US0184-deploy-metrics-computes-the-four-keys-from-ledger.md) | deploy metrics computes the four keys from ledger + git + bug dates, refusing absent sources, not-applicable without a ledger | In Progress | EP0054 | 2026-07-16 | 2026-07-16 |
+| [US0184](US0184-deploy-metrics-computes-the-four-keys-from-ledger.md) | deploy metrics computes the four keys from ledger + git + bug dates, refusing absent sources, not-applicable without a ledger | Done | EP0054 | 2026-07-16 | 2026-07-16 |
 | [US0185](US0185-gate-lane-measures-a-delivered-unit-s-diff.md) | gate lane measures a delivered unit's diff size vs configured thresholds, warn-only, default off | In Progress | EP0055 | 2026-07-16 | 2026-07-16 |
 
 ## Archived Releases

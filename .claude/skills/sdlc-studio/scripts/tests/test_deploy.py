@@ -117,5 +117,136 @@ class SafetyGuardTests(unittest.TestCase):
                 self.assertEqual(deploy.cmd_preflight(ns), 1)
 
 
+import datetime as dt  # noqa: E402
+import subprocess  # noqa: E402
+
+
+def _git(cwd, *args):
+    subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
+
+
+def _ledger(root: Path, rows) -> None:
+    sd = root / "sdlc-studio"
+    sd.mkdir(parents=True, exist_ok=True)
+    body = ("# Deploy Log\n\nAppend-only record of deploy outcomes.\n\n"
+            "| When | Status | Detail |\n| --- | --- | --- |\n")
+    body += "".join(f"| {when} | {status} | {detail} |\n" for when, status, detail in rows)
+    (sd / "deploy-log.md").write_text(body, encoding="utf-8")
+
+
+def _high_bug(root: Path, num: int, created: str, fixed_rev: str | None) -> Path:
+    d = root / "sdlc-studio" / "bugs"
+    d.mkdir(parents=True, exist_ok=True)
+    rev = ""
+    if fixed_rev:
+        rev = ("\n## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
+               f"| {created} | t | Raised |\n| {fixed_rev} | t | Fixed |\n")
+    p = d / f"BG{num:04d}-x.md"
+    p.write_text(f"# BG{num:04d}: b\n\n> **Status:** Fixed\n> **Severity:** High\n"
+                 f"> **Created:** {created}\n> **Points:** 2\n{rev}", encoding="utf-8")
+    return p
+
+
+# ASYMMETRIC by design: 3 deploy events, 1 failure, 4 rows. A symmetric fixture
+# (2 events = 2 failures) let a failures-numerator-swap mutant pass green - the
+# QA critic ran that mutant; this shape makes the classifier itself falsifiable.
+LEDGER_ROWS = [("2026-07-01 10:00", "verified", "v4.0"),
+               ("2026-07-05 10:00", "rolled-out", "v4.1"),
+               ("2026-07-08 10:00", "failed", "v4.2 attempt"),
+               ("2026-07-10 10:00", "verified", "v4.2 retry ok")]
+
+
+class DoraKeysTests(unittest.TestCase):
+    def test_four_keys_computed_with_windows_stated(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _git(root, "init", "-q")
+            _git(root, "config", "user.email", "t@t")
+            _git(root, "config", "user.name", "t")
+            (root / "a.txt").write_text("1", encoding="utf-8")
+            _git(root, "add", "-A")
+            _git(root, "commit", "-q", "-m", "c1", "--date", "2026-07-03T10:00:00")
+            (root / "a.txt").write_text("2", encoding="utf-8")
+            _git(root, "add", "-A")
+            _git(root, "commit", "-q", "-m", "c2", "--date", "2026-07-04T10:00:00")
+            _ledger(root, LEDGER_ROWS)
+            _high_bug(root, 1, "2026-07-01", "2026-07-03")
+            m = deploy.metrics(root)
+            self.assertTrue(m["applicable"])
+            self.assertEqual(m["deployment_frequency"]["events"], 3)  # verified x2 + rolled-out
+            self.assertIn("window", m["deployment_frequency"])
+            self.assertEqual(m["change_failure_rate"]["rate"], 0.25)  # exactly 1 failed of 4
+            self.assertEqual(m["change_failure_rate"]["failures"], 1)
+            # commits c1/c2 precede the 07-05 rolled-out: leads 2d and 1d -> median 1.5
+            self.assertEqual(m["lead_time_days"]["median"], 1.5)
+            self.assertEqual(m["mttr_days"]["mean"], 2)               # 07-01 -> 07-03
+
+    def test_cli_parser_accepts_root_after_subcommand(self):
+        # the family convention: --root valid before OR after the subcommand
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            _ledger(Path(d), LEDGER_ROWS)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = deploy.main(["metrics", "--root", d, "--format", "json"])
+            self.assertEqual(rc, 0)
+            import json as _j
+            self.assertTrue(_j.loads(buf.getvalue())["applicable"])
+
+
+class DoraRefusalTests(unittest.TestCase):
+    def test_lead_time_refused_without_git_others_still_compute(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _ledger(root, LEDGER_ROWS)
+            _high_bug(root, 1, "2026-07-01", "2026-07-03")
+            m = deploy.metrics(root)
+            self.assertTrue(m["applicable"])
+            self.assertIn("unmeasurable", m["lead_time_days"])
+            self.assertEqual(m["deployment_frequency"]["events"], 3)
+            self.assertEqual(m["change_failure_rate"]["rate"], 0.25)
+            self.assertEqual(m["mttr_days"]["mean"], 2)
+
+    def test_cfr_unmeasurable_on_ledger_with_no_parseable_rows(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio"
+            sd.mkdir(parents=True)
+            (sd / "deploy-log.md").write_text("# Deploy Log\n\nprose only, no rows\n",
+                                              encoding="utf-8")
+            m = deploy.metrics(root)
+            self.assertTrue(m["applicable"])
+            self.assertIn("unmeasurable", m["change_failure_rate"])
+
+    def test_mttr_refused_without_resolved_high_bugs(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _ledger(root, LEDGER_ROWS)
+            m = deploy.metrics(root)
+            self.assertIn("unmeasurable", m["mttr_days"])
+            self.assertIn("High", m["mttr_days"]["unmeasurable"])
+
+
+class DoraNotApplicableTests(unittest.TestCase):
+    def test_no_ledger_is_cleanly_not_applicable(self):
+        with tempfile.TemporaryDirectory() as d:
+            m = deploy.metrics(Path(d))
+            self.assertFalse(m["applicable"])
+
+    def test_cli_not_applicable_exits_zero_without_nagging(self):
+        import argparse
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            ns = argparse.Namespace(root=str(d), format="text")
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = deploy.cmd_metrics(ns)
+            self.assertEqual(rc, 0)
+            self.assertIn("not applicable", buf.getvalue().lower())
+            self.assertNotIn("adopt", buf.getvalue().lower())
+
+
 if __name__ == "__main__":
     unittest.main()
