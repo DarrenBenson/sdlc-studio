@@ -14,7 +14,7 @@ Decomposed from CR0308. Delivers the work CR0308 requested.
 
 ## Story Breakdown
 
-- [ ] [US0192: verify_ac run --story resolves an id-shaped value as an id; a value that is neither path nor id fails naming both](../stories/US0192-verify-ac-run-story-resolves-an-id-shaped.md)
+- [x] [US0192: verify_ac run --story resolves an id-shaped value as an id; a value that is neither path nor id fails naming both](../stories/US0192-verify-ac-run-story-resolves-an-id-shaped.md)
 
 ## Revision History
 

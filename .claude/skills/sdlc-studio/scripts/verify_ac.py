@@ -752,11 +752,25 @@ def cmd_run(args: argparse.Namespace) -> int:
     if args.story:
         paths = [Path(args.story)]
         if not paths[0].exists():
-            # An explicitly-named story that does not exist is an ERROR (exit 2), never a
-            # silent skip that returns 0 - a typo'd --story path read as "all ACs green" to a
-            # gate. Mirrors the --id branch below.
-            print(f"no story file at {args.story}", file=sys.stderr)
-            return 2
+            # The natural first invocation passes a story ID here (the flag is named
+            # --story, its sibling commands take --id): an id-shaped value that is not
+            # a real path resolves as an id before erroring. A value that is neither
+            # is an ERROR (exit 2) naming BOTH failed lookups, never a silent skip -
+            # a typo'd --story read as "all ACs green" to a gate.
+            rec = sdlc_md.extract_record_id(args.story)
+            if rec and args.story == rec:
+                target = sdlc_md.norm_id(rec)
+                matches = [p for p in walk_stories(_under_root(repo_root, args.dir))
+                           if sdlc_md.norm_id(sdlc_md.extract_record_id(p.stem) or "") == target]
+                if matches:
+                    paths = matches[:1]
+                else:
+                    print(f"no story file at {args.story}, and no story with that id "
+                          f"under {args.dir}", file=sys.stderr)
+                    return 2
+            else:
+                print(f"no story file at {args.story}", file=sys.stderr)
+                return 2
     elif getattr(args, "id", None):  # resolve --id USNNNN under --dir (case-insensitive)
         target = sdlc_md.norm_id(args.id)
         matches = [p for p in walk_stories(_under_root(repo_root, args.dir))
@@ -1063,7 +1077,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     r = sub.add_parser("run", help="Run verifiers and update story files")
     r.add_argument("--dir", default="sdlc-studio/stories", help="Stories directory")
-    r.add_argument("--story", "--file", dest="story", help="Single story file (overrides --dir)")
+    r.add_argument("--story", "--file", dest="story",
+                   help="Single story file - or a story ID (an id-shaped value that is "
+                        "not a real path resolves under --dir)")
     r.add_argument("--id", help="Single story by id, e.g. US0001 (resolved under --dir)")
     r.add_argument("--dry-run", action="store_true", help="Do not modify story files")
     r.add_argument("--fresh", action="store_true",

@@ -1257,5 +1257,46 @@ class RunFileAliasTests(unittest.TestCase):
             self.assertEqual(rc, 0)
 
 
+class StoryIdTests(unittest.TestCase):
+    """US0192: `run --story` accepts a story ID where a story is meant - the natural
+    first invocation must work, and a value that is neither fails naming both."""
+
+    def setUp(self) -> None:
+        self.fixture = FixtureRoot()
+
+    def tearDown(self) -> None:
+        self.fixture.cleanup()
+
+    def _run(self, story_value: str) -> tuple[int, str]:
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            rc = _quiet_main(["run", "--story", story_value, "--dry-run",
+                              "--repo-root", str(self.fixture.tmp),
+                              "--dir", str(self.fixture.tmp / "sdlc-studio/stories"),
+                              "--report",
+                              str(self.fixture.tmp / ".local/verify-report.json")])
+        return rc, err.getvalue()
+
+    def test_story_id_resolves_when_no_such_path_exists(self) -> None:
+        rc, err = self._run("US0001")
+        self.assertEqual(rc, 0, err)
+
+    def test_existing_path_behaviour_unchanged(self) -> None:
+        rc, _ = self._run(str(self.fixture.tmp / "sdlc-studio/stories/US0001-login.md"))
+        self.assertEqual(rc, 0)
+
+    def test_story_id_neither_path_nor_id_fails_naming_both(self) -> None:
+        rc, err = self._run("US9999")
+        self.assertEqual(rc, 2)
+        self.assertIn("no story file at", err)   # the path lookup failed
+        self.assertIn("US9999", err)
+        self.assertIn("id", err.lower())         # ...and the id resolution failed
+
+    def test_non_id_missing_path_still_plain_error(self) -> None:
+        rc, err = self._run("does/not/exist.md")
+        self.assertEqual(rc, 2)
+        self.assertIn("no story file at", err)
+
+
 if __name__ == "__main__":
     unittest.main()
