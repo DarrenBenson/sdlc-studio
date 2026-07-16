@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 6 |
+| Draft | 5 |
 | In Review | 0 |
-| Accepted | 35 |
+| Accepted | 36 |
 | Superseded | 0 |
 | Withdrawn | 3 |
 | **Total** | **44** |
@@ -55,7 +55,7 @@
 | [RFC-0036](RFC0036-running-several-sprints-unattended-a-rolling-policy-not.md) | Running several sprints unattended: a rolling policy, not a queue of frozen plans | Medium | Draft | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0037](RFC0037-backlog-triage-as-a-first-class-ceremony-keep.md) | Backlog triage as a first-class ceremony: keep the backlog clean and actionable BEFORE planning | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0038](RFC0038-simplify-to-fibonacci-story-points-and-real-wsjf.md) | Simplify to Fibonacci story points and real WSJF, and test it by blind re-estimation of past sprints | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
-| [RFC-0039](RFC0039-the-discovery-track-issue-refine-and-triage-a.md) | The discovery track: Issue, refine and triage - a discovery backlog feeding delivery, worked in parallel | P2 | Draft | sdlc-studio | 2026-07-15 | -- |
+| [RFC-0039](RFC0039-the-discovery-track-issue-refine-and-triage-a.md) | The discovery track: Issue, refine and triage - a discovery backlog feeding delivery, worked in parallel | P2 | Accepted | sdlc-studio | 2026-07-15 | -- |
 | [RFC-0040](RFC0040-upgrade-and-migration-path-for-the-sizing-and.md) | Upgrade and migration path for the sizing and two-backlog model, before release | P1 | Draft | sdlc-studio | 2026-07-15 | -- |
 | [RFC-0041](RFC0041-a-migrate-command-that-reviews-every-artefact-and.md) | A migrate command that reviews every artefact and upgrades where necessary | Medium | Accepted | sdlc-studio | 2026-07-15 | -- |
 | [RFC-0042](RFC0042-make-the-sprint-close-down-un-skippable-enforce.md) | Make the sprint close-down un-skippable: enforce the retro/close-gate mechanically, not just by doctrine | Medium | Accepted | sdlc-studio | 2026-07-15 | -- |

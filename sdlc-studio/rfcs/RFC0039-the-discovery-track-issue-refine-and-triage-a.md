@@ -1,6 +1,6 @@
 # RFC-0039: The discovery track: Issue, refine and triage - a discovery backlog feeding delivery, worked in parallel
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Decomposed-into:** EP0035, EP0038, EP0040
 > **Size:** XL
 > **Date:** 2026-07-15
