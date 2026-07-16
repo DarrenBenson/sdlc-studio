@@ -6,15 +6,15 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 4 |
+| Proposed | 31 |
 | Approved | 0 |
 | In Progress | 1 |
-| Complete | 266 |
+| Complete | 269 |
 | Rejected | 0 |
 | Deferred | 0 |
-| Superseded | 7 |
+| Superseded | 8 |
 | Blocked | 0 |
-| **Total** | **278** |
+| **Total** | **309** |
 
 ## All Changes
 
@@ -94,12 +94,43 @@
 | [CR-0270](CR0270-rfc0038-u7-stamp-project-and-points-on-every.md) | RFC0038 U7: stamp project and points on every evidence record, so cross-project data is collatable and never blindly pooled | Complete | P1 | Improvement | 2026-07-14 | -- |
 | [CR-0271](CR0271-rfc0038-u6-two-backlogs-rfcs-and-crs-are.md) | RFC0038 U6: two backlogs - RFCs and CRs are requests, gated so they cannot reach Done without becoming work | Complete | P1 | Improvement | 2026-07-14 | -- |
 | [CR-0272](CR0272-audit-and-clean-up-the-skill-command-surface.md) | Audit and clean up the skill command surface, then rewrite the help files around the core process | In Progress | P2 | Improvement | 2026-07-15 | -- |
-| [CR-0273](CR0273-track-points-per-worker-hour-as-a-descriptive.md) | Track points-per-worker-hour as a descriptive velocity metric, runner-only, never a target | Proposed | P2 | Improvement | 2026-07-15 | -- |
+| [CR-0273](CR0273-track-points-per-worker-hour-as-a-descriptive.md) | Track points-per-worker-hour as a descriptive velocity metric, runner-only, never a target | Superseded | P2 | Improvement | 2026-07-15 | -- |
 | [CR-0274](CR0274-refine-add-append-an-epic-to-an-already.md) | refine --add: append an epic to an already-decomposed request, for incremental slices | Complete | P1 | Improvement | 2026-07-15 | -- |
 | [CR-0275](CR0275-refine-show-should-work-on-an-already-decomposed.md) | refine show should work on an already-decomposed request, to inform a refine add | Complete | P3 | Improvement | 2026-07-15 | -- |
 | [CR-0276](CR0276-audit-must-warn-about-workflow-scale-and-confirm.md) | audit must warn about workflow scale and confirm before launching a large adversarial fan-out | Complete | High | Improvement | 2026-07-15 | -- |
 | [CR-0277](CR0277-reconcile-apply-should-create-a-missing-index-from.md) | reconcile apply should create a missing index from the template, not just detect it | Complete | Medium | Improvement | 2026-07-15 | -- |
 | [CR-0278](CR0278-record-the-actual-sprint-token-count-deterministically-retire.md) | Record the actual sprint token count deterministically; retire the interactive-equals-UNMEASURED doctrine | Complete | Medium | Improvement | 2026-07-15 | -- |
+| [CR-0279](CR0279-sweep-the-remaining-direct-artefact-body-read-text.md) | Sweep the remaining direct artefact-body read_text calls through read_text_safe | Proposed | Low | Improvement | 2026-07-16 | -- |
+| [CR-0280](CR0280-prd-and-trd-document-the-retired-effort-complexity.md) | PRD and TRD document the retired Effort/complexity estimator as current, keep its answered questions open, and gate recalibration on two already-fixed defects | Proposed | High | docs | 2026-07-16 | -- |
+| [CR-0281](CR0281-prd-coverage-clause-promises-exhaustive-unreleased-marking-but.md) | PRD coverage clause promises exhaustive [Unreleased] marking but roughly 14 committed Done epics of shipped features are absent from the feature tables | Proposed | High | docs | 2026-07-16 | -- |
+| [CR-0282](CR0282-prd-security-nfr-and-trd-script-contract-rule.md) | PRD security NFR and TRD script-contract rule 6/threat model deny the shipped network surface: a default-on GitHub phone-home via urllib and sprint plan's git fetch | Proposed | High | docs | 2026-07-16 | -- |
+| [CR-0283](CR0283-story-workflows-read-only-the-legacy-personas-md.md) | Story workflows read only the legacy personas.md; the Cooper design registry (personas/) with the declared Primary is unreachable from story generation | Complete | High | Improvement | 2026-07-16 | -- |
+| [CR-0284](CR0284-the-velocity-record-died-at-retro0028-sprints-close.md) | The velocity record died at RETRO0028: sprints close 'not-yet-captured', the enforced close-down never checks the accuracy/velocity write, and plans still quote the 25k seed whose only out-of-sample test failed at 0.44x | Proposed | High | process | 2026-07-16 | -- |
+| [CR-0285](CR0285-prd-section-9-configuration-reference-is-wrong-on.md) | PRD Section 9 configuration reference is wrong on four counts: gate defaults inverted, a retired env var documented as live, four live env vars omitted, and two_backlog.enforce undocumented everywhere | Proposed | High | docs | 2026-07-16 | -- |
+| [CR-0286](CR0286-trd-adr-008-sells-the-ulid-id-scheme.md) | TRD ADR-008 sells the ULID id scheme as absolutely collision-proof; the implementation is 2 random chars (~1/1024) in a ~17-minute timestamp bucket with the cross-machine case unguarded | Proposed | Medium | docs | 2026-07-16 | -- |
+| [CR-0287](CR0287-tsd-denies-the-blocking-ci-gates-that-exist.md) | TSD denies the blocking CI gates that exist: coverage ('not wired into CI' vs a blocking 80% gate) and security ('no dedicated scanner' vs a blocking bandit step) | Proposed | Medium | docs | 2026-07-16 | -- |
+| [CR-0288](CR0288-rfc0034-and-rfc0038-are-both-accepted-with-opposite.md) | RFC0034 and RFC0038 are both Accepted with opposite canonical sizing decisions - no supersession marking, no cross-reference | Proposed | Medium | docs | 2026-07-16 | -- |
+| [CR-0289](CR0289-trd-lists-critic-among-read-only-helpers-that.md) | TRD lists critic among read-only helpers that 'never mutate the workspace'; critic record writes two committed verdict logs via a bare non-atomic append that silently drops torn rows | Proposed | Medium | docs | 2026-07-16 | -- |
+| [CR-0290](CR0290-trd-6-data-architecture-is-a-workflow-behind.md) | TRD §6 data architecture is a workflow behind committed main: no issue type, no story Blocked status, no inbox triage lane, no two-backlog model - inside its own declared coverage | Proposed | Medium | docs | 2026-07-16 | -- |
+| [CR-0291](CR0291-the-test-noise-gate-leg-does-not-run.md) | The 'test-noise' gate leg does not run in CI (hook-only, path-conditional) and its leak detector matches only one diagnostic shape | Proposed | Medium | process | 2026-07-16 | -- |
+| [CR-0292](CR0292-the-dogfood-amigo-cast-is-the-uncustomised-shipped.md) | The dogfood amigo cast is the uncustomised shipped default - grounded in a fictional shopping-list project and a nonexistent Primary - sitting in the retired personas/amigos/ home the repo's own migrator warns about | Complete | Medium | process | 2026-07-16 | -- |
+| [CR-0293](CR0293-us0166-ac3-s-verify-checks-one-cosmetic-string.md) | US0166 AC3's Verify checks one cosmetic string in one of the two required files, and is a mis-written DSL line that passes only by flag-reinterpretation accident | Proposed | Medium | process | 2026-07-16 | -- |
+| [CR-0294](CR0294-per-ac-verified-yes-stamps-ride-on-non.md) | Per-AC 'Verified: yes' stamps ride on non-discriminating Verify selectors: US0172/US0173 share a byte-identical command, US0163/US0166 run one whole-file command for two ACs | Proposed | Medium | process | 2026-07-16 | -- |
+| [CR-0295](CR0295-enforce-the-rfc-accept-gate-mechanically-and-stop.md) | Enforce the RFC accept gate mechanically and stop file_finding.py manufacturing the content-free 'Act on this finding or keep status quo' Open row - the whole 2026-07-14 tranche is Accepted with boilerplate Open decisions | Proposed | Medium | Improvement | 2026-07-16 | -- |
+| [CR-0296](CR0296-trd-5-rule-5-s-enumerated-write-surface.md) | TRD §5 rule 5's enumerated write surface omits at least five shipped committed-workspace writers, one of which (persona_gen.py) the TRD's own ADR-009 describes writing files | Proposed | Medium | docs | 2026-07-16 | -- |
+| [CR-0297](CR0297-validate-s-persona-gate-checks-only-the-personas.md) | validate's persona gate checks only the personas/ registry and gives a silent clean pass to the personas.md-only layout the story pipeline hard-gates on | Complete | Medium | Improvement | 2026-07-16 | -- |
+| [CR-0298](CR0298-ep0048-is-done-but-its-deliverable-the-sprint.md) | EP0048 is Done but its deliverable, the sprint report, is reachable from no command surface or ceremony - an orphaned command | Proposed | Medium | Improvement | 2026-07-16 | -- |
+| [CR-0299](CR0299-the-release-required-strict-version-gate-check-versions.md) | The release-required strict version gate (check_versions.py --strict, the CHANGELOG home) is invoked by nothing executable; gate.py --release does not run it | Proposed | Medium | process | 2026-07-16 | -- |
+| [CR-0300](CR0300-tsd-s-integration-target-every-script-with-side.md) | TSD's integration target 'every script with side effects has a write-confinement snapshot test' [HIGH] is backed by a suite that snapshots exactly one writer, with no sweep forcing new writers in | Proposed | Medium | process | 2026-07-16 | -- |
+| [CR-0301](CR0301-report-enabled-false-gates-only-the-text-page.md) | report.enabled=false gates only the text page - --format json bypasses the switch undocumented and untested, and the notice claims rendering is disabled outright | Proposed | Low | Improvement | 2026-07-16 | -- |
+| [CR-0302](CR0302-trd-s-pinned-census-counts-have-rotted-again.md) | TRD's pinned census counts have rotted again; the changelog's 'freshness guard' claim overstates what the guard checks (fixed 2026-07-06 strings plus a lenient script-count floor) | Proposed | Low | docs | 2026-07-16 | -- |
+| [CR-0303](CR0303-the-cr-index-s-linked-epics-column-is.md) | The CR index's Linked Epics column is dead: '--' on every row while at least seven CR files carry a Decomposed-into epic link | Proposed | Low | Improvement | 2026-07-16 | -- |
+| [CR-0304](CR0304-trd-migrations-section-claims-schema-migration-is-not.md) | TRD Migrations section claims schema migration is 'not by the script layer' while committed main ships a three-script migration surface the TRD itself lists elsewhere | Proposed | Low | docs | 2026-07-16 | -- |
+| [CR-0305](CR0305-audit-cost-py-estimates-from-one-frozen-reference.md) | audit_cost.py estimates from one frozen reference run and never records actuals - give the audit the record-forecast/record-actual loop the skill preaches for sprints | Proposed | Medium | Improvement | 2026-07-16 | -- |
+| [CR-0306](CR0306-candidates-dropped-by-the-verification-cap-vanish-into.md) | Candidates dropped by the verification cap vanish into the workflow journal - persist the overflow as a carry-over worklist a scoped follow-up can verify | Proposed | Medium | Improvement | 2026-07-16 | -- |
+| [CR-0307](CR0307-a-deterministic-review-close-helper-mint-the-dated.md) | A deterministic review-close helper: mint the dated RV, stamp review-state.json, and derive LATEST.md - a review record should never live only in the overwritable anchor | Proposed | High | Improvement | 2026-07-16 | -- |
+| [CR-0308](CR0308-verify-ac-run-story-should-accept-a-story.md) | verify_ac run --story should accept a story id (it silently means --file): the natural first call 'run --story US0177' fails with 'no story file' | Proposed | Low | Improvement | 2026-07-16 | -- |
+| [CR-0309](CR0309-refine-seeds-each-minted-story-s-acs-from.md) | refine seeds each minted story's ACs from the request's acceptance criteria instead of leaving {{placeholder}} scaffolds | Proposed | Medium | Improvement | 2026-07-16 | -- |
 
 ## Archived Releases
 

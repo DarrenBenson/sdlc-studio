@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 0 |
+| Open | 25 |
 | In Progress | 0 |
 | Fixed | 69 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **151** |
+| **Total** | **176** |
 
 ## All Bugs
 
@@ -118,6 +118,31 @@
 | [BG0149](BG0149-artifact-py-silently-drops-points-on-a-story.md) | artifact.py silently drops --points on a story, so the canonical creator makes a story the grooming gate always rejects | Fixed | major | 2026-07-15 | 2026-07-15 |
 | [BG0150](BG0150-project-upgrade-does-not-stamp-the-project-version.md) | project upgrade does not stamp the project version and skips open RFCs/CRs/epics/stories | Fixed | Medium | 2026-07-15 | 2026-07-15 |
 | [BG0151](BG0151-discovery-awaiting-and-migrate-falsely-flag-old-flow.md) | discovery_awaiting and migrate falsely flag old-flow CRs as un-refined - children_of ignores the legacy Change Request / Linked Epics linking | Fixed | High | 2026-07-15 | 2026-07-15 |
+| [BG0152](BG0152-per-attempt-telemetry-has-no-production-writer-neither.md) | Per-attempt telemetry has no production writer: neither the record CLI nor the transition close can produce an attempts list | Open | High | 2026-07-16 | 2026-07-16 |
+| [BG0153](BG0153-latest-actuals-last-non-null-merge-garbles-multi.md) | latest_actuals' last-non-null merge garbles multi-record cost: a reopen-reclose second record overwrites the first cycle's tokens, and a merged flat+attempts bucket makes accuracy() and unit_cost() disagree | Open | High | 2026-07-16 | 2026-07-16 |
+| [BG0154](BG0154-decisions-py-rewrites-the-committed-decisions-ledger-with.md) | decisions.py rewrites the committed decisions ledger with no allocation lock and no atomic write, violating both halves of the TRD's shared-file guarantee | Open | High | 2026-07-16 | 2026-07-16 |
+| [BG0155](BG0155-a-corrupt-close-owed-baseline-json-silently-disarms.md) | A corrupt .close-owed-baseline.json silently disarms the entire 'un-skippable' close-down and every surface then invites re-stamping a baseline that forgives the owed debt | Open | High | 2026-07-16 | 2026-07-16 |
+| [BG0156](BG0156-prd-data-architecture-places-telemetry-jsonl-in-gitignored.md) | PRD data architecture places telemetry.jsonl in gitignored .local and calls VELOCITY.md 'the one piece of measurement state deliberately committed'; committed main moved the evidence ledger to committed retros/evidence/ | Open | Medium | 2026-07-16 | 2026-07-16 |
+| [BG0157](BG0157-breakdown-gate-ac-in-prd-and-trd-enumerates.md) | Breakdown-gate AC in PRD and TRD enumerates size vocabularies the gate does not accept (Effort S/M/L, review-seat score) | Open | Medium | 2026-07-16 | 2026-07-16 |
+| [BG0158](BG0158-velocity-trusts-any-closed-run-state-sharing-one.md) | Velocity trusts any closed run-state sharing ONE unit with the retro: a carried-over unit attributes a previous run's elapsed to this sprint, even overriding an explicit --elapsed-hours | Open | Medium | 2026-07-16 | 2026-07-16 |
+| [BG0159](BG0159-the-advertised-pricing-config-key-is-silently-unreachable.md) | The advertised pricing config key is silently unreachable: Claude models honour only pricing.<family> (not the hinted pricing.<model>), and any dotted model id is destroyed by config.get's dot-splitting | Open | Medium | 2026-07-16 | 2026-07-16 |
+| [BG0160](BG0160-config-get-crashes-with-an-uncaught-parsererror-on.md) | config.get() crashes with an uncaught ParserError on a malformed .config.yaml despite BG0093's warn-and-default contract - yaml.YAMLError is missing from the catch tuple | Open | Medium | 2026-07-16 | 2026-07-16 |
+| [BG0161](BG0161-accepted-and-delivered-rfcs-0018-0022-and-0023.md) | Accepted-and-delivered RFCs 0018, 0022 and 0023 still list every design decision as Open, with leanings contradicting the recorded outcomes and no Decision sections | Open | Medium | 2026-07-16 | 2026-07-16 |
+| [BG0162](BG0162-tsd-s-per-script-test-module-gate-is.md) | TSD's per-script test-module gate is a phantom: no conformance sweep exists, and the invariant it claims to enforce is already violated by six modules | Open | Medium | 2026-07-16 | 2026-07-16 |
+| [BG0163](BG0163-sprint-plan-s-triage-integration-discards-the-skipped.md) | sprint plan's triage integration discards the skipped/unreadable count - a dropped backlog file is silent in the ceremony whose story title promises 'drops logged' | Open | Medium | 2026-07-16 | 2026-07-16 |
+| [BG0164](BG0164-an-attempts-only-telemetry-record-never-stamps-delivered.md) | An attempts-only telemetry record never stamps Delivered-by on the artefact - the escalation case loses the audit attribution the stamp exists for | Open | Medium | 2026-07-16 | 2026-07-16 |
+| [BG0165](BG0165-escalated-units-evade-the-mixed-model-refusal-and.md) | Escalated units evade the mixed-model refusal and pollute per-model calibration: summed multi-model attempt tokens are attributed wholly to the last attempt's model | Open | Medium | 2026-07-16 | 2026-07-16 |
+| [BG0166](BG0166-adr-010-s-documented-opt-out-lessons-loop.md) | ADR-010's documented opt-out lessons.loop: judgement disarms only one of the three close lanes it claims to make advisory - lessons-summary and lessons-validity block regardless | Open | Medium | 2026-07-16 | 2026-07-16 |
+| [BG0167](BG0167-the-eval-gate-s-an-ungraded-blocking-behaviour.md) | The eval gate's 'an ungraded blocking behaviour fails the gate' only sees scenarios someone started grading - a wholly-ungraded scenario is invisible and the run prints 'gate pass' | Open | Medium | 2026-07-16 | 2026-07-16 |
+| [BG0168](BG0168-prd-says-extracted-specs-are-tracked-ready-awaiting.md) | PRD says extracted specs are tracked 'Ready (awaiting test validation)' and the epic index's note says 'all epics are Ready' directly above 48 Done rows | Open | Low | 2026-07-16 | 2026-07-16 |
+| [BG0169](BG0169-cr0273-marked-superseded-with-no-successor-pointer-anywhere.md) | CR0273 marked Superseded with no successor pointer anywhere in the artefact graph | Open | Low | 2026-07-16 | 2026-07-16 |
+| [BG0170](BG0170-tsd-gate-lane-tables-diverge-from-gate-py.md) | TSD gate lane tables diverge from gate.py: doc-freshness and hook-enabled marked Blocking=Yes (both hard-coded advisory), and the shipped close-owed and review-legs lanes are missing entirely | Open | Low | 2026-07-16 | 2026-07-16 |
+| [BG0171](BG0171-gate-py-require-close-help-text-claims-the.md) | gate.py --require-close help text claims the close-owed lane 'WARNS on every gate by default'; the plain gate never runs it | Open | Low | 2026-07-16 | 2026-07-16 |
+| [BG0172](BG0172-test-specs-index-md-s-epics-without-specs.md) | test-specs/_index.md's 'Epics without specs' section is blank while 46 of 48 epics have no spec, and its Coverage/By-Test-Type tables are empty header-only shells | Open | Low | 2026-07-16 | 2026-07-16 |
+| [BG0173](BG0173-refute-panel-verdicts-silently-count-failed-skeptic-votes.md) | Refute-panel verdicts silently count failed skeptic votes as refutations - an outage mid-panel mass-refutes candidates and the audit reports the wrong survivor set as complete | Open | High | 2026-07-16 | 2026-07-16 |
+| [BG0174](BG0174-audit-has-no-help-file-and-no-type.md) | audit has no help file and no Type Reference row - the universal '{type} help' contract 404s for the one command with a mandatory pre-flight gate | Open | Low | 2026-07-16 | 2026-07-16 |
+| [BG0175](BG0175-artifact-py-s-review-handoff-scaffold-path-drops.md) | artifact.py's review/handoff scaffold path drops --author: literal {{author}} in the revision row and no Raised-by stamp, unlike every other type | Open | Low | 2026-07-16 | 2026-07-16 |
+| [BG0176](BG0176-migrate-s-needs-human-list-advises-re-sizing.md) | migrate's needs-human list advises re-sizing terminal units: 14+ Closed/Fixed legacy-Effort bugs each get 'set its Points by judgement', work nobody should do | Open | Medium | 2026-07-16 | 2026-07-16 |
 
 ## Archived Releases
 
