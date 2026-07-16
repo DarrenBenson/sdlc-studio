@@ -70,8 +70,9 @@
 287k-1,305k). Interactive sprint: per-unit actuals unrecorded; the harness-tracked total is
 awaited from the operator (`retro.py accuracy --id RETRO0043 --tokens N --write`) - reported as
 **not-yet-captured**, never unknowable. Subagent spend alone (11 seat reviews across 8 units,
-including 5 REJECT-repair cycles) measured ~650k tokens, already above the point forecast - the
-review-heavy shape repeats RETRO0042's pattern and the +/-50% honesty band held only at its top.
+including 5 REJECT-repair cycles) measured 820,944 tokens - summed exactly from the harness's
+per-subagent usage reports, and already 1.43x the point forecast before the unmeasured main-loop
+share. The review-heavy shape repeats RETRO0042's pattern and blew the +/-50% honesty band.
 
 ## Actions raised
 
@@ -93,7 +94,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 
 ## Metrics
 
-- Tokens: not-yet-captured (subagent share ~650k measured; operator to supply the harness total) · Duration: single interactive session 2026-07-16 night · Critic rejects: 4 REJECT->APPROVE cycles (one twice-rejected) + 3 APPROVE-with-blocking-grade-findings-fixed; 7 of 8 units repaired under review · Mutation: changelog 23/25, critic 21/25, rfc 21/25 killed (scoped per module)
+- Tokens: not-yet-captured in full (subagent share 820,944 measured exactly from per-task usage reports; the main-loop share is invisible from inside the session - CR0278's case - so the harness total awaits the operator) · Duration: single interactive session 2026-07-16 night · Critic rejects: 4 REJECT->APPROVE cycles (one twice-rejected) + 3 APPROVE-with-blocking-grade-findings-fixed; 7 of 8 units repaired under review · Mutation: changelog 23/25, critic 21/25, rfc 21/25 killed (scoped per module)
 
 ## Handoff
 
