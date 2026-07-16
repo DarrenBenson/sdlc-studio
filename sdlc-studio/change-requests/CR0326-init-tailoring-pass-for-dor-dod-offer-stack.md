@@ -1,6 +1,7 @@
 # CR-0326: init tailoring pass for DoR/DoD: offer stack/profile-derived criteria at project init (RFC0043 slice 3)
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0067
 > **Parent:** RFC0043
 > **Priority:** Low
 > **Type:** Improvement

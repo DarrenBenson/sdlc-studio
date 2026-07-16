@@ -1,6 +1,7 @@
 # CR-0328: sprint close orchestrator: the twelve-step close ceremony as one deterministic command ending in the decision brief
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0068
 > **Priority:** High
 > **Type:** Feature
 > **Size:** M

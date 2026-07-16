@@ -1,6 +1,7 @@
 # CR-0323: Build the two-role review gate: adversarial evidence + non-author principal sign-off with named-delegate chain (RFC0044 D1+D3, integrates CR0318)
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0064
 > **Parent:** RFC0044
 > **Priority:** High
 > **Type:** Feature

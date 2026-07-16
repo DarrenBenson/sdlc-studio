@@ -1,6 +1,7 @@
 # CR-0324: DoR/DoD artefacts + check-id registry: the two editable documents with a tagged machine-checkable subset (RFC0043 slice 1)
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0065
 > **Parent:** RFC0043
 > **Priority:** Medium
 > **Type:** Feature

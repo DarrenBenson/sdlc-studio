@@ -1,6 +1,7 @@
 # CR-0330: tools/forward-port.sh: the dev-repo rsync to the installed copy as a guarded one-liner
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0070
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** S
