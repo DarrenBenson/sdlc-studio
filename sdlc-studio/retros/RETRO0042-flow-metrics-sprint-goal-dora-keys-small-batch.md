@@ -4,6 +4,7 @@
 > **Batch:** US0180, US0181, US0182, US0183, US0184, US0185 (EP0052-EP0055, from CR0310-CR0313)
 > **Goal:** done (run RUN-01KXGPBN, planned at --goal plan, driven to done on operator go)
 > **Delivered:** 6 / 6   **Blocked:** 0
+> **Reviewer of record:** Darren Benson (operator) - signed off 2026-07-16; adversarial passes by the Dani Okafor and Sam Eriksson seats (subagents, RFC0044)
 
 ## Delivered
 
@@ -107,3 +108,4 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 | --- | --- | --- |
 | 2026-07-16 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-16 | Claude Fable 5 | Sprint close: 6/6 delivered, lessons + dispositions recorded |
+| 2026-07-16 | Darren Benson (operator) | Reviewer-of-record sign-off (AskUserQuestion); token actual left not-yet-captured |
