@@ -1,10 +1,10 @@
 # US0187: refine copies the request's acceptance criteria into minted stories as AC scaffolds with Verify placeholders, --no-seed-acs opt-out
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/tests/test_two_backlogs.py
 > **Epic:** EP0057
 > **Points:** 3
 
@@ -21,21 +21,24 @@
 - **Given** a request with '- [ ]' acceptance criteria
 - **When** refine apply mints its stories
 - **Then** each criterion becomes an AC block (title from the text, Given/When/Then to author, Verify left as an explicit placeholder)
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_refine.py -k SeedAcs
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_two_backlogs.py -k test_seed_acs_copies_request_criteria_into_the_story
+- **Verified:** yes (2026-07-16)
 
 ### AC2: Seeding never fakes readiness
 
 - **Given** a story with seeded Verify placeholders
 - **When** validate/critic inspect it
 - **Then** the placeholder is still flagged until made executable - seeding transcribes, it does not green
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_refine.py -k SeedNotReady
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_two_backlogs.py -k test_seed_not_ready_placeholders_still_flagged
+- **Verified:** yes (2026-07-16)
 
 ### AC3: Opt-out preserved
 
 - **Given** refine apply --no-seed-acs
 - **When** stories are minted
 - **Then** the bare scaffold behaviour is byte-identical to today
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_refine.py -k SeedOptOut
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_two_backlogs.py -k test_seed_opt_out_restores_bare_scaffold
+- **Verified:** yes (2026-07-16)
 
 ## Revision History
 

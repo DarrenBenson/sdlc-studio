@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from datetime import date
 from pathlib import Path
@@ -46,9 +47,43 @@ _insert_after_status = sdlc_md.insert_after_status
 _write_decomposed = sdlc_md.write_decomposed
 
 
+_CRITERION_RE = re.compile(r"^-\s*\[\s?\]\s+(.+?)\s*$", re.M)
+
+
+def _request_criteria(text: str) -> list[str]:
+    """The request's own `- [ ]` acceptance criteria, in order."""
+    return _CRITERION_RE.findall(_section(text, "Acceptance Criteria"))
+
+
+def _seed_acs(story_path: Path, criteria: list[str], redistribute_note: bool) -> None:
+    """Replace the story's placeholder AC scaffold with one AC block per request
+    criterion: the criterion is the title and the Then; Given/When and the Verify
+    stay explicit placeholders - seeding TRANSCRIBES what the request already
+    states, it never fabricates executability (validate keeps flagging the
+    placeholders until the author fills them)."""
+    text = story_path.read_text(encoding="utf-8")
+    blocks = []
+    if redistribute_note:
+        blocks.append("> Seeded from the request's full criteria list - redistribute "
+                      "across this epic's stories as you groom them.\n")
+    for i, criterion in enumerate(criteria, 1):
+        title = criterion if len(criterion) <= 100 else criterion[:97] + "..."
+        blocks.append(f"### AC{i}: {title}\n\n"
+                      f"- **Given** {{{{context}}}}\n- **When** {{{{action}}}}\n"
+                      f"- **Then** {criterion}\n- **Verify:** {{{{executable check}}}}\n")
+    seeded = "## Acceptance Criteria\n\n" + "\n".join(blocks) + "\n"
+    # callable replacement: criterion text is DATA, never a regex template - a
+    # criterion containing \1 or C:\temp must land verbatim, not crash the mint
+    # or corrupt the story via escape expansion
+    new = re.sub(r"## Acceptance Criteria\n.*?(?=## Revision History)", lambda m: seeded,
+                 text, count=1, flags=re.S)
+    sdlc_md.atomic_write(story_path, new)
+
+
 def _decompose(repo_root, rid: str, rpath: Path, epic_title: str,
                stories: list[tuple[str, int, str | None]], total: int,
-               existing_children: list[str]) -> tuple[str, list[str]]:
+               existing_children: list[str],
+               seed_criteria: list[str] | None = None) -> tuple[str, list[str]]:
     """Mint the epic + its stories and wire everything under ONE rollback guard, then set the
     request's `Decomposed-into:` to `existing_children` + the new epic (append-only). The shared
     core of `apply` (existing_children=[]) and `add` (existing_children=the request's current
@@ -64,13 +99,19 @@ def _decompose(repo_root, rid: str, rpath: Path, epic_title: str,
         epic_path = Path(ep["path"])
         minted.append(epic_path)
         story_ids: list[str] = []
-        for title, points, affects in stories:
+        for idx, (title, points, affects) in enumerate(stories):
             fields = {"epic": epic_id, "points": points}
             if affects:
                 fields["affects"] = affects
             s = artifact.new(root, "story", title, fields)
             minted.append(Path(s["path"]))
             story_ids.append(s["id"])
+            # seed the FIRST story with the request's criteria (all of them - a
+            # multi-story breakdown redistributes during grooming); later stories
+            # keep the bare scaffold
+            if idx == 0 and seed_criteria:
+                _seed_acs(Path(s["path"]), seed_criteria,
+                          redistribute_note=len(stories) > 1)
         _insert_after_status(epic_path, f"> **Parent:** {rid}")
         _insert_after_status(epic_path, f"> **Derived Point Total:** {total}")
         _write_decomposed(rpath, [*existing_children, epic_id])
@@ -104,7 +145,8 @@ _WORKING_STATUS = {"cr": "In Progress", "rfc": "In Review"}
 
 def refine(repo_root: Path | str, request_id: str, epic_title: str,
            stories: list[tuple[str, int, str | None]], questions: list[str] | None = None,
-           dry_run: bool = False, skip_personas: bool = False) -> dict:
+           dry_run: bool = False, skip_personas: bool = False,
+           seed_acs: bool = True) -> dict:
     """Decompose `request_id` into an epic titled `epic_title` holding `stories`
     (title, points, affects?). Writes the bidirectional links and rolls the epic's point total.
 
@@ -144,8 +186,10 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str,
                 "stories": [t for t, _, _ in stories], "points": total,
                 "open_questions": open_questions, "consult": amigo_consult, "dry_run": True}
 
+    seed_criteria = (_request_criteria(rpath.read_text(encoding="utf-8"))
+                     if seed_acs else None)
     epic_id, story_ids = _decompose(root, rid, rpath, epic_title, stories, total,
-                                    existing_children=[])
+                                    existing_children=[], seed_criteria=seed_criteria)
     # 4. close the loop on the request's status: it is now being DELIVERED via its children, so it
     # moves to its working state (it reaches terminal only by derivation, G2). Best-effort - if a
     # gate we do not force past declines the move, the decomposition still stands.
@@ -298,7 +342,8 @@ def cmd_apply(args: argparse.Namespace) -> int:
         stories = [parse_story_spec(s) for s in (args.story or [])]
         result = refine(args.root, args.request, args.epic_title, stories,
                         questions=args.question, dry_run=args.dry_run,
-                        skip_personas=getattr(args, "skip_personas", False))
+                        skip_personas=getattr(args, "skip_personas", False),
+                        seed_acs=getattr(args, "seed_acs", True))
     except (ValueError, FileNotFoundError, persona_resolve.RenderError) as exc:
         print(f"refine refused: {exc}", file=sys.stderr)
         return 2
@@ -356,6 +401,9 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--question", action="append", metavar="TEXT",
                    help="an open question for the Three-Amigos consult, surfaced at apply time "
                         "and directed at the resolved seats (engineering-led). Repeatable.")
+    a.add_argument("--no-seed-acs", action="store_false", dest="seed_acs", default=True,
+                   help="mint bare AC scaffolds instead of seeding from the request's "
+                        "acceptance criteria")
     a.add_argument("--skip-personas", action="store_true",
                    help="force the generic path: resolve no amigo seats, no framing (byte-equivalent)")
     a.add_argument("--dry-run", action="store_true", help="validate and report; mint nothing")

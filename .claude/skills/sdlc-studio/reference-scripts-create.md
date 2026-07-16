@@ -223,8 +223,13 @@ already-decomposed request is refused and nothing is written), then creates the 
 from the point total, `Parent:` the request) and each story under it, writes the request's
 `Decomposed-into:`, rolls the epic's `Derived Point Total`, moves the request to its working status
 (a CR to In Progress, an RFC to In Review - it reaches its terminal status only by derivation when
-its children are done), and surfaces `--question` items for a Three-Amigos consult. Stories are
-created as stubs (title + points); their `Affects` and executable ACs are added at design/plan time.
+its children are done), and surfaces `--question` items for a Three-Amigos consult. The FIRST
+minted story is **seeded from the request's own `- [ ]` acceptance criteria** (each unchecked
+criterion becomes an AC block - the criterion is the title and the Then; Given/When and the
+Verify stay explicit placeholders, so validate keeps flagging until the author makes them
+executable; a multi-story breakdown gets a redistribute note). `--no-seed-acs` restores the
+bare scaffold; `refine add` never seeds (the request's criteria were distributed at the first
+decomposition). `Affects` and the executable Verify lines remain design/plan-time work.
 `--question` items are directed at the **Three-Amigos consult**, resolved to the actual named seats
 (engineering-led for refine), framed with each seat's review render, and recorded on the request (a
 `> **Consulted:**` line + an `## Amigo Consult` section) as an audit trail; `--skip-personas` forces
@@ -351,4 +356,12 @@ The append-only per-tranche decisions ledger. `record` appends a decision + rati
 
 ### `rfc.py`
 
-RFC helpers - the `rfc decide` multi-RFC decision digest (per-draft open-decision + workstream counts + ready flag) and RFC index/table helpers (escaped-pipe-aware via sdlc_md).
+RFC helpers. `decide` is the multi-RFC decision digest: per Draft/In-Review RFC the
+open-decision count, the workstream count from its LINKED CHILDREN (the same
+Decomposed-into/Parent authority the derivation gate uses; a Workstream table is the
+fallback), a ready flag, and DECIDED for an RFC whose every decision row is resolved
+(awaiting delivery - never re-invited for deciding). `resolve --rfc X --decision D2
+--resolution "..." [--refs CR0320]` marks exactly that row Resolved with the operator's
+text and appends a revision row, every other row byte-identical - the triage ceremony's
+table surgery, tool-carried. Spawn children with the creators' `--parent RFCxxxx` (both
+link directions wired at mint). Index/table helpers are escaped-pipe-aware via sdlc_md.

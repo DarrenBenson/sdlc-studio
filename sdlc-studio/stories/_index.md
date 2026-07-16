@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 2 |
+| Draft | 0 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 1 |
 | Review | 0 |
-| Done | 188 |
+| Done | 190 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -96,12 +96,12 @@
 | [US0183](US0183-record-an-operator-sprint-goal-on-plan-and.md) | Record an operator Sprint Goal on plan and run-state; closing review verdict and sprint report display it | Done | EP0053 | 2026-07-16 | 2026-07-16 |
 | [US0184](US0184-deploy-metrics-computes-the-four-keys-from-ledger.md) | deploy metrics computes the four keys from ledger + git + bug dates, refusing absent sources, not-applicable without a ledger | Done | EP0054 | 2026-07-16 | 2026-07-16 |
 | [US0185](US0185-gate-lane-measures-a-delivered-unit-s-diff.md) | gate lane measures a delivered unit's diff size vs configured thresholds, warn-only, default off | Done | EP0055 | 2026-07-16 | 2026-07-16 |
-| [US0186](US0186-review-close-helper-mint-dated-rv-stamp-review.md) | review close helper: mint dated RV, stamp review-state.json, derive LATEST.md, refuse anchor overwrite without a record | Draft | EP0056 | 2026-07-16 | 2026-07-16 |
-| [US0187](US0187-refine-copies-the-request-s-acceptance-criteria-into.md) | refine copies the request's acceptance criteria into minted stories as AC scaffolds with Verify placeholders, --no-seed-acs opt-out | In Progress | EP0057 | 2026-07-16 | 2026-07-16 |
+| [US0186](US0186-review-close-helper-mint-dated-rv-stamp-review.md) | review close helper: mint dated RV, stamp review-state.json, derive LATEST.md, refuse anchor overwrite without a record | Done | EP0056 | 2026-07-16 | 2026-07-16 |
+| [US0187](US0187-refine-copies-the-request-s-acceptance-criteria-into.md) | refine copies the request's acceptance criteria into minted stories as AC scaffolds with Verify placeholders, --no-seed-acs opt-out | Done | EP0057 | 2026-07-16 | 2026-07-16 |
 | [US0188](US0188-changelog-fragments-per-unit-files-in-changelog-d.md) | changelog fragments: per-unit files in changelog.d, deterministic compose into [Unreleased], release gate refuses stray fragments | Done | EP0058 | 2026-07-16 | 2026-07-16 |
 | [US0189](US0189-critic-brief-assembles-the-seat-review-prompt-critic.md) | critic brief assembles the seat-review prompt; critic record --from-verdict parses the returned block, refusing malformed input | Done | EP0059 | 2026-07-16 | 2026-07-16 |
 | [US0190](US0190-load-script-shared-helper-in-scripts-tests-exemplar.md) | load_script shared helper in scripts/tests; exemplar adoption + docstring guidance | Done | EP0060 | 2026-07-16 | 2026-07-16 |
-| [US0191](US0191-parent-aware-minting-parent-wires-both-link-directions.md) | parent-aware minting (--parent wires both link directions atomically) and rfc resolve for decision-row surgery | Draft | EP0061 | 2026-07-16 | 2026-07-16 |
+| [US0191](US0191-parent-aware-minting-parent-wires-both-link-directions.md) | parent-aware minting (--parent wires both link directions atomically) and rfc resolve for decision-row surgery | In Progress | EP0061 | 2026-07-16 | 2026-07-16 |
 | [US0192](US0192-verify-ac-run-story-resolves-an-id-shaped.md) | verify_ac run --story resolves an id-shaped value as an id; a value that is neither path nor id fails naming both | Done | EP0062 | 2026-07-16 | 2026-07-16 |
 
 ## Archived Releases

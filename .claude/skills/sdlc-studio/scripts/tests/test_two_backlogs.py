@@ -842,5 +842,116 @@ class UndecomposedDriftTests(unittest.TestCase):
             self.assertEqual(reconcile.undecomposed_drift(root), [])
 
 
+class SeedAcsTests(unittest.TestCase):
+    """US0187: refine copies the request's acceptance criteria into the minted story
+    as AC scaffolds - the exact checkable criteria the request states stop being
+    re-typed by hand."""
+
+    def _cr_with_acs(self, root: Path) -> None:
+        _write(root / "sdlc-studio" / "change-requests" / "CR0001-x.md",
+               "# CR-0001: X\n\n> **Status:** Approved\n> **Priority:** P1\n"
+               "> **Type:** Improvement\n> **Size:** M\n\n## Summary\n\ns\n\n## Impact\n\ni\n\n"
+               "## Acceptance Criteria\n\n"
+               "- [ ] the first checkable criterion\n"
+               "- [ ] the second criterion with detail\n")
+
+    def _story_text(self, root: Path, res) -> str:
+        sid = sdlc_md.children_of(root, res["epic"])[0][0]
+        return sdlc_md.find_by_id(root, sid)[0].read_text(encoding="utf-8")
+
+    def test_seed_acs_copies_request_criteria_into_the_story(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr_with_acs(root)
+            res = refine.refine(root, "CR0001", "The epic", [("Only story", 3, None)])
+            text = self._story_text(root, res)
+            self.assertIn("### AC1: the first checkable criterion", text)
+            self.assertIn("### AC2: the second criterion with detail", text)
+            self.assertIn("- **Then** the first checkable criterion", text)
+            self.assertIn("{{executable check}}", text)    # Verify stays the author's job
+            self.assertNotIn("### AC1: {{define}}", text)  # scaffold replaced
+
+    def test_seed_acs_multi_story_seeds_first_with_note(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr_with_acs(root)
+            res = refine.refine(root, "CR0001", "The epic",
+                                [("First", 2, None), ("Second", 2, None)])
+            first = self._story_text(root, res)
+            self.assertIn("### AC1: the first checkable criterion", first)
+            self.assertIn("redistribute", first.lower())
+            second_id = sdlc_md.children_of(root, res["epic"])[1][0]
+            second = sdlc_md.find_by_id(root, second_id)[0].read_text(encoding="utf-8")
+            self.assertIn("### AC1: {{define}}", second)   # untouched scaffold
+
+    def test_seed_not_ready_placeholders_still_flagged(self) -> None:
+        # seeding transcribes, it never greens: validate still errors on the
+        # unresolved placeholders until the author fills them
+        validate = _load("validate", "validate.py")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr_with_acs(root)
+            res = refine.refine(root, "CR0001", "The epic", [("Only story", 3, None)])
+            sid = sdlc_md.children_of(root, res["epic"])[0][0]
+            spath = sdlc_md.find_by_id(root, sid)[0]
+            rules = [v["rule"] for v in validate.validate_file(spath, "story")]
+            self.assertIn("placeholder", rules)
+
+    def test_criterion_with_backslashes_lands_verbatim(self) -> None:
+        # the critic's blocking catch: criterion text is data, not a regex template -
+        # a \\1 must not crash the mint, C:\\temp must not become a TAB
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root / "sdlc-studio" / "change-requests" / "CR0001-x.md",
+                   "# CR-0001: X\n\n> **Status:** Approved\n> **Priority:** P1\n"
+                   "> **Type:** Improvement\n> **Size:** M\n\n## Summary\n\ns\n\n## Impact\n\ni\n\n"
+                   "## Acceptance Criteria\n\n"
+                   "- [ ] the path C:\\temp\\out and the group \\1 survive verbatim\n")
+            res = refine.refine(root, "CR0001", "The epic", [("Only story", 3, None)])
+            text = self._story_text(root, res)
+            self.assertIn("C:\\temp\\out and the group \\1 survive verbatim", text)
+            self.assertNotIn("\t", text.split("## Acceptance Criteria")[1])
+
+    def test_checked_criteria_are_not_seeded(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root / "sdlc-studio" / "change-requests" / "CR0001-x.md",
+                   "# CR-0001: X\n\n> **Status:** Approved\n> **Priority:** P1\n"
+                   "> **Type:** Improvement\n> **Size:** M\n\n## Summary\n\ns\n\n## Impact\n\ni\n\n"
+                   "## Acceptance Criteria\n\n"
+                   "- [x] already delivered elsewhere\n"
+                   "- [ ] the live criterion\n")
+            res = refine.refine(root, "CR0001", "The epic", [("Only story", 3, None)])
+            text = self._story_text(root, res)
+            self.assertIn("### AC1: the live criterion", text)
+            self.assertNotIn("already delivered elsewhere", text)
+
+    def test_single_story_has_no_redistribute_note(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr_with_acs(root)
+            res = refine.refine(root, "CR0001", "The epic", [("Only story", 3, None)])
+            self.assertNotIn("redistribute", self._story_text(root, res).lower())
+
+    def test_seed_opt_out_restores_bare_scaffold(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr_with_acs(root)
+            res = refine.refine(root, "CR0001", "The epic", [("Only story", 3, None)],
+                                seed_acs=False)
+            text = self._story_text(root, res)
+            self.assertIn("### AC1: {{define}}", text)
+            self.assertNotIn("the first checkable criterion", text)
+
+    def test_request_without_acs_leaves_scaffold_untouched(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root / "sdlc-studio" / "change-requests" / "CR0001-x.md",
+                   "# CR-0001: X\n\n> **Status:** Approved\n> **Priority:** P1\n"
+                   "> **Type:** Improvement\n> **Size:** M\n\n## Summary\n\ns\n\n## Impact\n\ni\n")
+            res = refine.refine(root, "CR0001", "The epic", [("Only story", 3, None)])
+            self.assertIn("### AC1: {{define}}", self._story_text(root, res))
+
+
 if __name__ == "__main__":
     unittest.main()
