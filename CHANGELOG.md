@@ -47,6 +47,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   never blocks - on an outlier, naming the unit, points, measured size and thresholds. The AI
   batch-size failure mode (DORA 2024/25: agents amplify batch size; undisciplined growth degrades
   throughput and stability) made visible at review time. Off by default.
+- **Blocked-age and ageing flags (CR0310 slice 2, EP0052).** `flow compute` reports a Blocked
+  unit's blocked-age distinctly from its total age (unresolvable transitions named, never
+  guessed), and `status` gains an opt-in ageing advisory: with `flow.ageing_days` set, each
+  In Progress unit older than the threshold and every stuck Blocked unit is named inline.
+  Absent config = silent (a flag appearing uninvited on a live workflow is a break).
 - **The sprint report: what a sprint delivered, cost, and velocity (EP0048, RFC0035, absorbing
   CR0273).** New `sprint_report.py show --id RETROxxxx` composes - deterministically, at no model-token
   cost - the delivered points, the actual spend, the estimate-vs-actual, the velocity, the lessons and

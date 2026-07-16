@@ -1,6 +1,6 @@
 # US0181: Blocked-age and ageing-threshold flags surfaced in status
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -23,6 +23,7 @@
 - **When** flow compute runs
 - **Then** its blocked-age (days since the Blocked transition) is reported distinctly from its total age
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_flow.py -k BlockedAge
+- **Verified:** yes (2026-07-16)
 
 ### AC2: Ageing threshold flags in status
 
@@ -30,6 +31,7 @@
 - **When** status runs
 - **Then** the unit is flagged with its age; under the threshold, or with no config, nothing is flagged
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_flow.py -k AgeingFlag
+- **Verified:** yes (2026-07-16)
 
 ## Revision History
 

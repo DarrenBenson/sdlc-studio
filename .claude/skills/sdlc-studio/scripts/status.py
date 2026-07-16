@@ -343,8 +343,30 @@ def cmd_pillars(args: argparse.Namespace) -> int:
     tri = backlog_triage_advisory(Path(args.root))
     if tri:
         print(f"advisory: {tri}")
+    age = ageing_advisory(Path(args.root))
+    if age:
+        print(f"advisory: {age}")
     _print_update_notice(args.root)
     return 0
+
+
+def ageing_advisory(repo_root: Path | str, *, today=None) -> str | None:
+    """One line naming aged In Progress and stuck Blocked units - only when the
+    project opted in via `flow.ageing_days` (absent = silent, the feature is off)."""
+    import flow  # lazy sibling: the measurement lives in flow, status only surfaces it
+    rep = flow.ageing_report(repo_root, today=today)
+    if not rep or not (rep["flagged"] or rep["blocked"]):
+        return None
+    bits = []
+    if rep["flagged"]:
+        bits.append("in progress > " + f"{rep['days']}d: "
+                    + ", ".join(f"{rid} ({age}d)" for rid, _s, age in rep["flagged"][:5])
+                    + (f" +{len(rep['flagged']) - 5} more" if len(rep["flagged"]) > 5 else ""))
+    if rep["blocked"]:
+        bits.append("blocked: " + ", ".join(
+            f"{rid} ({bd}d stuck)" if bd is not None else f"{rid} (blocked-age unresolvable)"
+            for rid, bd, _a in rep["blocked"][:5]))
+    return "work-item ageing - " + "; ".join(bits) + " (flow.py compute for the full read)"
 
 
 def team_offer_advisory(repo_root: Path | str) -> str | None:

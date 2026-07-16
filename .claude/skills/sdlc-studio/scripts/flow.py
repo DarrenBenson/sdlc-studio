@@ -66,13 +66,16 @@ def _revision_dates(text: str) -> list[dt.date]:
     return out
 
 
-def terminal_date(root: Path, path: Path, type_: str, status: str):
+def terminal_date(root: Path, path: Path, type_: str, status: str,
+                  allow_revision_fallback: bool = True):
     """When `path` reached `status`: `(datetime, source)` or `(None, None)`.
 
     git history is the precise source (the newest commit that changed the
     occurrence count of the status line). Fallback: the LAST revision-history
-    row's date (day precision). Neither resolving is an honest (None, None) -
-    the caller names the unit unmeasurable.
+    row's date (day precision) - sound for a TERMINAL status (the last row IS
+    the close), wrong for a transient one like Blocked (a post-block edit
+    masquerades as the transition), so those callers pass
+    allow_revision_fallback=False and get an honest (None, None) instead.
     """
     rel = path.resolve().relative_to(Path(root).resolve())
     # -G on the anchored HEADER line, not -S on the bare literal: a pickaxe over the
@@ -88,10 +91,11 @@ def terminal_date(root: Path, path: Path, type_: str, status: str):
             return dt.datetime.fromisoformat(stamp), "git"
     except (OSError, subprocess.TimeoutExpired, ValueError):
         pass
-    text = sdlc_md.read_text_safe(path)
-    rows = _revision_dates(text)
-    if rows:
-        return dt.datetime.combine(rows[-1], dt.time(12, 0)), "revision"
+    if allow_revision_fallback:
+        text = sdlc_md.read_text_safe(path)
+        rows = _revision_dates(text)
+        if rows:
+            return dt.datetime.combine(rows[-1], dt.time(12, 0)), "revision"
     return None, None
 
 
@@ -196,6 +200,16 @@ def compute(root, types=("story", "bug"), today: dt.date | None = None) -> dict:
                     units[rec] = unit
                     continue
                 unit["age_days"] = (today - created).days
+                if status == "Blocked":
+                    # blocked-age, distinct from total age: how long has it been STUCK
+                    when, source = terminal_date(root, path, type_, "Blocked",
+                                                 allow_revision_fallback=False)
+                    if when is not None:
+                        unit["blocked_days"] = (today - when.date()).days
+                        unit["blocked_source"] = source
+                    else:
+                        unit["blocked_age"] = ("unmeasurable (no resolvable Blocked "
+                                               "transition in git or revision history)")
             units[rec] = unit
 
     window = {}
@@ -211,6 +225,45 @@ def compute(root, types=("story", "bug"), today: dt.date | None = None) -> dict:
         "unmeasurable": unmeasurable,
         "throughput": {"weekly": weekly_throughput(delivered_dates), "window": window},
     }
+
+
+def ageing_report(root, *, today: dt.date | None = None) -> dict | None:
+    """The ageing flags status surfaces: None when `flow.ageing_days` is unset (the
+    feature is opt-in - a gate appearing on a live workflow uninvited breaks it).
+    Cheap by design: ages need no git (today - Created); blocked-age is read only for
+    Blocked units (few). Returns {"days", "flagged": [(id, status, age)],
+    "blocked": [(id, blocked_days_or_None, age)]}."""
+    days = sdlc_md.project_override(root, "flow.ageing_days", None)
+    if not days:
+        return None
+    days = int(days)
+    root = Path(root)
+    today = today or dt.date.today()
+    flagged: list[tuple[str, str, int]] = []
+    blocked: list[tuple[str, int | None, int]] = []
+    for type_ in ("story", "bug"):
+        for path, text in sdlc_md.iter_artifact_files(type_, root):
+            if text is None:
+                continue
+            status = sdlc_md.extract_field(text, "Status") or ""
+            if sdlc_md.is_terminal_status(type_, status):
+                continue
+            rec = sdlc_md.extract_record_id(path.stem)
+            created_raw = sdlc_md.extract_field(text, "Created") or sdlc_md.extract_field(text, "Date")
+            if not (rec and created_raw):
+                continue
+            try:
+                age = (today - dt.date.fromisoformat(created_raw.strip()[:10])).days
+            except ValueError:
+                continue
+            rec = sdlc_md.norm_id(rec)
+            if status == "Blocked":
+                when, _src = terminal_date(root, path, type_, "Blocked",
+                                           allow_revision_fallback=False)
+                blocked.append((rec, (today - when.date()).days if when else None, age))
+            elif status == "In Progress" and age > days:
+                flagged.append((rec, status, age))
+    return {"days": days, "flagged": flagged, "blocked": blocked}
 
 
 def _render(report: dict) -> str:
@@ -236,7 +289,9 @@ def _render(report: dict) -> str:
     if ages:
         lines.append(f"work-item age: {len(ages)} non-terminal unit(s), oldest first:")
         for age, rid, status in ages[:15]:
-            lines.append(f"  {rid} ({status}): {age}d")
+            b = units[rid].get("blocked_days")
+            lines.append(f"  {rid} ({status}): {age}d"
+                         + (f" (blocked {b}d)" if b is not None else ""))
         if len(ages) > 15:
             lines.append(f"  (+{len(ages) - 15} more)")
     if report["unmeasurable"]:

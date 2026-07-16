@@ -286,3 +286,10 @@ sprint:
 # suits a fast-moving codebase where a lesson rots quickly; a longer one suits a stable domain.
 lessons:
   validity_days: 90  # days a project lesson holds before re-validation is due
+
+# Flow-metrics ageing flags (US-level, advisory). Unset = the status ageing advisory is OFF
+# (a flag appearing uninvited on a live workflow is a break, not a feature - opt in). When
+# set, `status` names each In Progress unit older than this many days and every Blocked
+# unit with how long it has been stuck. `flow.py compute` is the full read, always available.
+# flow:
+#   ageing_days: 14
