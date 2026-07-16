@@ -335,3 +335,8 @@
 | US0185 | APPROVE | Dani Okafor engineering seat (subagent a6dccc71a) | Claude Fable 5; agent | 2026-07-16 | full adversarial tier; APPROVE with named non-blocking defects, fixed before Done: Refs grep end-anchored (prefix-id attribution killed by new negative test), None-threshold display, skipped-unit count surfaced; advisory contract verified in every path incl. uncaught-exception |
 | US0181 | APPROVE | Sam Eriksson QA seat (subagent a351bf899) | Claude Fable 5; agent | 2026-07-16 | full adversarial tier; APPROVE with named non-blocking gaps, fixed before Done: strict-gt boundary test added; revision fallback refused for the transient Blocked status (post-block edit can no longer masquerade as the transition, tested); blocked-age mislabel in status advisory corrected |
 | US0182 | APPROVE | Dani Okafor engineering seat (subagent a4ba2dec6) | Claude Fable 5; agent | 2026-07-16 | full adversarial tier; initial REJECT (MC\_WEEK\_CAP truncation reported as real confidence dates - the reporting-honesty class) repaired: horizon refusal pinned by test, seed-liveness + glue zero-fill tests added, shared \_median, named garnish failures; residual doc clause fixed before Done |
+| US0172 | APPROVE | Darren Benson (operator, reviewer of record) | sdlc-studio; agent; v1 | 2026-07-16 | - |
+| US0173 | APPROVE | Darren Benson (operator, reviewer of record) | sdlc-studio; agent; v1 | 2026-07-16 | - |
+| US0174 | APPROVE | Darren Benson (operator, reviewer of record) | sdlc-studio; agent; v1 | 2026-07-16 | - |
+| US0175 | APPROVE | Darren Benson (operator, reviewer of record) | sdlc-studio; agent; v1 | 2026-07-16 | - |
+| US0176 | APPROVE | Darren Benson (operator, reviewer of record) | sdlc-studio; agent; v1 | 2026-07-16 | - |
