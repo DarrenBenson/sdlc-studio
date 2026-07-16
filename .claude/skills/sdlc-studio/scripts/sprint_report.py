@@ -1,0 +1,178 @@
+#!/usr/bin/env python3
+"""The sprint report: what a sprint delivered, what it cost, and whether the estimate held.
+
+Almost all of it is COMPOSITION, not new measurement - the retro holds Delivered, the lessons and
+the tickets raised; `retro.accuracy` holds the honest estimate-vs-actual and the velocity;
+`telemetry` holds model, tokens and per-attempt cost. This module reads those and lays them out as
+one end-of-sprint page. Built as a deterministic SCRIPT, so it costs no model tokens - only an agent
+writing narrative prose would.
+
+Two honesty rules it will not bend:
+
+  ACTUAL SPEND is a MEASUREMENT: tokens x the configured/estimated model rate, summed over every
+  ATTEMPT (rework included), priced offline from the repo's `pricing.*` config. A model with no
+  price is UNPRICED - its tokens are still counted, its dollars are not; the report never invents a
+  number. No avoided-cost / savings headline: "the cheap model saved X" asks what a model that never
+  ran would have cost, which is a model, not a measurement, and this project has been burned by
+  exactly that confusion. If a saving is ever shown it is a labelled estimate against a named
+  baseline, never summed into a total beside a measured figure.
+
+  RENDERING is switchable (`report.enabled: false` for a token-conscious project); RECORDING is NOT.
+  The switch controls only whether this page is drawn - telemetry keeps recording regardless, because
+  a report not generated can be generated later, but a measurement not taken is gone forever (and
+  turning telemetry off is how the estimator became unfalsifiable the last time).
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from lib import sdlc_md  # noqa: E402
+import retro  # noqa: E402
+import telemetry  # noqa: E402
+
+
+def _spend(root: Path, unit_ids: list[str]) -> dict:
+    """True spend over the batch, summed per ATTEMPT so rework is counted. Returns
+    `{tokens, cost, unpriced, priced_units, models}`. `unpriced` names any model no price covered
+    (its tokens are still in the token total), so the dollar figure never silently drops spend."""
+    actuals = telemetry.latest_actuals(telemetry.read_all(root))
+    want = {sdlc_md.norm_id(u) for u in unit_ids}
+    tokens, cost, unpriced, measured_units, models = 0, 0.0, [], 0, []
+    for uid, rec in actuals.items():
+        if sdlc_md.norm_id(uid) not in want:
+            continue
+        c = telemetry.unit_cost(root, rec)
+        if c["tokens"] <= 0:
+            continue   # a record with no TOKEN telemetry (interactive) is not a measured spend
+        tokens += c["tokens"]
+        cost += c["cost"]
+        measured_units += 1
+        for m in c["unpriced"]:
+            if m not in unpriced:
+                unpriced.append(m)
+        for a in telemetry.attempts_of(rec):
+            if a.get("model") and a["model"] not in models:
+                models.append(a["model"])
+    return {"tokens": tokens, "cost": round(cost, 4), "unpriced": unpriced,
+            "measured_units": measured_units, "models": sorted(models)}
+
+
+def report(root: Path, retro_id: str, *, sprint_tokens: int | None = None,
+           elapsed_hours: float | None = None) -> dict:
+    """Compose the sprint report from the retro, the accuracy pass, and telemetry. Read-only."""
+    acc = retro.accuracy(root, retro_id, sprint_tokens=sprint_tokens, elapsed_hours=elapsed_hours)
+    if not acc.get("ok"):
+        return {"ok": False, "id": retro_id, "errors": acc.get("errors") or ["retro not found"]}
+    unit_ids = [u["id"] for u in acc["units"]]
+    val = retro.validate(root, retro_id)  # lessons + dispositioned findings (tickets raised)
+    b = acc["batch"]
+    return {
+        "ok": True, "id": retro_id, "date": acc.get("date", ""),
+        "units": unit_ids,
+        "delivered_points": b.get("delivered_points"),
+        "spend": _spend(root, unit_ids),
+        "sprint_actual_tokens": b.get("sprint_actual_tokens"),
+        "velocity": {
+            "points_per_elapsed_hour": b.get("points_per_elapsed_hour"),
+            "elapsed_hours": b.get("sprint_elapsed_hours"),
+            "elapsed_source": b.get("elapsed_source"),
+            "points_per_worker_hour": b.get("points_per_worker_hour"),
+            "tokens_per_point": b.get("tokens_per_point"),
+            "sprint_tokens_per_point": b.get("sprint_tokens_per_point"),
+        },
+        "accuracy": {"ratio": b.get("ratio"), "refused": b.get("refused"),
+                     "n_measured": acc.get("n_measured"), "models": acc.get("models")},
+        "lessons": [ln if isinstance(ln, str) else (ln.get("title") or ln.get("gist") or "")
+                    for ln in val.get("lessons", [])],
+        "tickets": val.get("filed", []),
+        "declined": val.get("declined", []),
+    }
+
+
+def _spend_line(sp: dict, sprint_tokens: int | None) -> str:
+    if not sp["measured_units"]:
+        supplied = (f" Sprint total supplied: {sprint_tokens:,} tokens (harness-tracked)."
+                    if sprint_tokens else "")
+        return ("Cost: no per-unit token telemetry for this batch (interactive sprint)." + supplied
+                + " Supply the sprint total with `--tokens N` for a token figure.")
+    dollars = f"~${sp['cost']:,.2f} at configured/estimated rates" if sp["cost"] else "no priced models"
+    unpriced = (f"; {len(sp['unpriced'])} unpriced model(s) counted in tokens but not dollars: "
+                f"{', '.join(sp['unpriced'])}" if sp["unpriced"] else "")
+    return (f"Cost (rework included): {sp['tokens']:,} tokens over {sp['measured_units']} unit(s), "
+            f"{dollars}{unpriced}. Set `pricing.<model>` in .config.yaml for your contract rate.")
+
+
+def render(rep: dict) -> str:
+    if not rep.get("ok"):
+        return f"sprint report {rep['id']}: unavailable ({'; '.join(rep.get('errors', []))})"
+    v = rep["velocity"]
+    lines = [f"# Sprint report - {rep['id']} ({rep['date']})", ""]
+    lines.append(f"Delivered: {len(rep['units'])} unit(s), {rep['delivered_points']} points.")
+    lines.append(_spend_line(rep["spend"], rep.get("sprint_actual_tokens")))
+    if v["points_per_elapsed_hour"]:
+        lines.append(f"Velocity: {v['points_per_elapsed_hour']} points/elapsed-hour "
+                     f"({v['elapsed_hours']}h, {v['elapsed_source']}, ceremony included) - "
+                     f"descriptive, never a target.")
+    else:
+        lines.append("Velocity (points/elapsed-hour): UNMEASURED - supply `--elapsed-hours H`.")
+    if v["sprint_tokens_per_point"]:
+        lines.append(f"Tokens/point: {v['sprint_tokens_per_point']:,} (sprint total over delivered "
+                     f"points, harness-tracked).")
+    elif v["tokens_per_point"]:
+        lines.append(f"Tokens/point: {v['tokens_per_point']:,} (over rated units).")
+    acc = rep["accuracy"]
+    if acc["refused"]:
+        lines.append(f"Estimate vs actual: {acc['refused']}")
+    elif acc["ratio"]:
+        lines.append(f"Estimate vs actual: {acc['ratio']}x (>1 = over-forecast), over "
+                     f"{acc['n_measured']} measured unit(s).")
+    if acc["models"]:
+        lines.append(f"Models: {', '.join(acc['models'])}.")
+    lines.append(f"Tickets raised: {', '.join(rep['tickets']) if rep['tickets'] else 'none'}.")
+    lines.append(f"Lessons: {len(rep['lessons'])} recorded.")
+    return "\n".join(lines)
+
+
+def rendering_enabled(root: Path) -> bool:
+    """Whether the report PAGE is drawn. Rendering only - measurement is never gated by this."""
+    import config
+    val = config.get(root, "report.enabled", True)
+    return not (val is False or str(val).strip().lower() in ("false", "0", "no", "off"))
+
+
+def cmd_show(args: argparse.Namespace) -> int:
+    root = Path(args.root)
+    if not rendering_enabled(root) and args.format != "json":
+        print("sprint report: rendering disabled (report.enabled=false). Telemetry is unaffected - "
+              "measurement keeps recording; re-enable to draw the report.")
+        return 0
+    rep = report(root, args.id, sprint_tokens=args.tokens, elapsed_hours=args.elapsed_hours)
+    print(json.dumps(rep, indent=2) if args.format == "json" else render(rep))
+    return 0 if rep.get("ok") else 1
+
+
+def build_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(description="The end-of-sprint report: delivered, cost, velocity.")
+    p.add_argument("--root", default=".")
+    sub = p.add_subparsers(dest="cmd", required=True)
+    s = sub.add_parser("show", help="Compose and print the sprint report for a retro.")
+    s.add_argument("--id", required=True, metavar="RETROxxxx")
+    s.add_argument("--tokens", type=int, default=None, help="sprint actual token total (interactive)")
+    s.add_argument("--elapsed-hours", dest="elapsed_hours", type=float, default=None,
+                   help="sprint elapsed hours for the primary velocity (interactive)")
+    s.add_argument("--format", choices=["text", "json"], default="text")
+    s.set_defaults(func=cmd_show)
+    return p
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

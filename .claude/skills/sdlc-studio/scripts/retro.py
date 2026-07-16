@@ -464,7 +464,7 @@ def _delivered_points(root, unit_ids) -> int:
         if not hit:
             continue
         path, type_ = hit
-        text = path.read_text(encoding="utf-8")
+        text = sdlc_md.read_text_safe(path)  # a bad artefact must not crash the velocity read
         status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"),
                                           sdlc_md.status_vocab(type_, root))
         if not sdlc_md.is_terminal_status(type_, status or ""):
@@ -475,7 +475,64 @@ def _delivered_points(root, unit_ids) -> int:
     return total
 
 
-def accuracy(root, retro_id: str, sprint_tokens: int | None = None) -> dict:
+def _worker_hours(root, unit_ids) -> float | None:
+    """Summed runner worker-time (`wall_time_s`) over the batch's measured units, in hours - the
+    SECONDARY velocity's denominator. None when NO unit carries a wall-time record: an interactive
+    sprint has no runner worker time, so points-per-worker-hour honestly reads UNMEASURED rather
+    than dividing by a fabricated zero. Ceremony is EXCLUDED here (this is worker time, for tuning
+    the tool), which is exactly why it is not the planning number."""
+    import telemetry
+    actuals = telemetry.latest_actuals(telemetry.read_all(root))
+    want = {sdlc_md.norm_id(u) for u in unit_ids}
+    secs, seen = 0.0, False
+    for uid, rec in actuals.items():
+        if sdlc_md.norm_id(uid) in want and isinstance(rec.get("wall_time_s"), (int, float)):
+            secs += rec["wall_time_s"]
+            seen = True
+    return round(secs / 3600, 3) if seen else None
+
+
+def _elapsed_hours(root, unit_ids) -> tuple[float | None, str | None]:
+    """Wall-clock hours the run was OPEN - the PRIMARY velocity's denominator, ceremony included -
+    read from the run-state (`started_at` -> `ended_at`, or now if still open). Returns
+    `(hours, source)`.
+
+    Trusted ONLY when the run-state's batch is THIS sprint's - it must name at least one of the
+    retro's units. A stale run-state left open by a DIFFERENT run would otherwise report its own age
+    (observed live: 43h from an old runner run) as this sprint's elapsed - the exact confounding
+    CR0273 warns about. When it does not match, or no run was opened (an interactive sprint, whose
+    wall-clock would count operator-away gaps as sprint time), this returns None and the primary
+    reads UNMEASURED unless the operator supplies a real figure with `--elapsed-hours`."""
+    from datetime import datetime, timezone
+    try:
+        from lib import run_state
+        st = run_state.read(root)
+    except Exception:  # noqa: BLE001 - a velocity read must never break the retro
+        return None, None
+    run_batch = {sdlc_md.norm_id(x) for x in (st.get("batch") or [])}
+    if not run_batch & {sdlc_md.norm_id(u) for u in unit_ids}:
+        return None, None  # the open run is not this sprint's - its elapsed is not our elapsed
+
+    def _parse(s):
+        try:
+            return datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+        except (TypeError, ValueError):
+            return None
+
+    start = _parse(st.get("started_at"))
+    end = _parse(st.get("ended_at"))
+    if start is None or end is None:
+        # An OPEN run (no `ended_at`) has no measured elapsed: extending it to `now` would report
+        # its own age - including any operator-away gap since it opened - as sprint time, the
+        # confounder CR0273 warns about. Only a CLOSED run gives a clean start->end elapsed; an open
+        # one reads UNMEASURED until the operator supplies a real figure.
+        return None, None
+    hours = (end - start).total_seconds() / 3600
+    return (round(hours, 3), "run-state") if hours > 0 else (None, None)
+
+
+def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
+             elapsed_hours: float | None = None) -> dict:
     """Estimate vs actual for every unit in the retro's batch - IN POINTS, and in tokens.
 
     `sprint_tokens` is the SPRINT-level actual token spend: the harness tracks the token
@@ -526,7 +583,16 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None) -> dict:
         fc = forecast_by_id.get(uid) or {}
         rec = measured_by_id.get(uid, {})
         est = fc.get("tokens")
+        # Actual tokens reconcile with the SPEND report: a per-attempt record (an escalation) may
+        # carry no flat `tokens`, only an `attempts` list. Reading flat-only would report that unit
+        # UNMEASURED here while the report priced its summed tokens - the two honest subsystems
+        # contradicting. So fall back to the summed attempts (and the delivering model = the last
+        # attempt), exactly the tokens `unit_cost` prices. A legacy record keeps its flat value.
+        _attempts = telemetry.attempts_of(rec)
         tokens = rec.get("tokens")
+        if tokens is None and _attempts:
+            tokens = sum(a.get("tokens") or 0 for a in _attempts) or None
+        _model = rec.get("model") or (_attempts[-1].get("model") if _attempts else None)
         points = fc.get("points")
         points = points if isinstance(points, int) and points > 0 else None
         has_est = isinstance(est, (int, float)) and est > 0
@@ -539,7 +605,7 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None) -> dict:
              # the record, never inferred: an unrecorded model is `None` and reports as
              # unrecorded, not as "presumably the one we use now".
              "estimator": fc.get("estimator"), "points": points,
-             "model": rec.get("model"),
+             "model": _model,
              "actual_tokens": tokens if has_act else None,
              "wall_time_s": rec.get("wall_time_s"), "ratio": None,
              "tokens_per_point": None,
@@ -598,6 +664,18 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None) -> dict:
     refused = (f"REFUSED: this batch was delivered by more than one model "
                f"({', '.join(models)}). One ratio across two models describes neither of them - "
                f"read the per-model rows instead." if mixed else None)
+    # VELOCITY: the PRIMARY planning read is points delivered / elapsed sprint hours,
+    # CEREMONY INCLUDED - what a session actually delivers. Elapsed comes from the run-state; an
+    # interactive sprint has none (and its wall-clock counts operator-away gaps), so it reads
+    # UNMEASURED unless the operator supplies a real figure. The SECONDARY is points-per-worker-hour
+    # (runner wall-time, ceremony removed) for tuning the tool, UNMEASURED interactive. Both are
+    # DESCRIPTIVE ONLY - fed to no gate, never auto-refitted (see the module doctrine).
+    elapsed, elapsed_source = _elapsed_hours(root, [u["id"] for u in units])
+    if elapsed is None and isinstance(elapsed_hours, (int, float)) and elapsed_hours > 0:
+        elapsed, elapsed_source = round(float(elapsed_hours), 3), "supplied"
+    worker_hours = _worker_hours(root, [u["id"] for u in units])
+    ppeh = round(delivered_points / elapsed, 2) if elapsed and delivered_points else None
+    ppwh = round(delivered_points / worker_hours, 2) if worker_hours and delivered_points else None
     return {
         "ok": True,
         "id": retro_id,
@@ -636,6 +714,14 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None) -> dict:
             "sprint_actual_tokens": sprint_tokens,
             "delivered_points": delivered_points,
             "sprint_tokens_per_point": _rate(sprint_tokens, delivered_points) if sprint_tokens else None,
+            # Velocity: PRIMARY = points/elapsed-hour (ceremony included, the planning
+            # number); SECONDARY = points/worker-hour (runner time, tool-tuning). Both descriptive,
+            # never a target, fed to no gate. None reads as UNMEASURED (interactive sprint).
+            "sprint_elapsed_hours": elapsed,
+            "elapsed_source": elapsed_source,
+            "points_per_elapsed_hour": ppeh,
+            "worker_hours": worker_hours,
+            "points_per_worker_hour": ppwh,
             "split_above": sdlc_md.POINTS_SPLIT_ABOVE,
             "oversized": [{"id": u["id"], "points": u["points"],
                            "tokens_per_point": u["tokens_per_point"],
@@ -746,6 +832,32 @@ def _points_lines(res: dict) -> list[str]:
             f"**{b['sprint_actual_tokens']:,} tokens supplied, but no rate:** the batch has no "
             f"delivered unit carrying Points, so there is no denominator. Size the delivered "
             f"stories/bugs, or the rate stays uncomputable.")
+    # VELOCITY: the PRIMARY planning read - points delivered / elapsed sprint hours,
+    # ceremony INCLUDED - and the SECONDARY worker-time figure. Both DESCRIPTIVE, never a target.
+    dp = b.get("delivered_points")
+    if dp:
+        if b.get("points_per_elapsed_hour"):
+            src = "run-state" if b.get("elapsed_source") == "run-state" else "operator-supplied"
+            out.append(
+                f"**Velocity: {b['points_per_elapsed_hour']} points/elapsed-hour** "
+                f"({dp} points over {b['sprint_elapsed_hours']}h, {src}, ceremony included). This is "
+                f"the planning number - points per SESSION within the observed single-session "
+                f"envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or "
+                f"100-point sprint, and it is descriptive, never a target.")
+        else:
+            out.append(
+                f"**Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this "
+                f"sprint (an interactive sprint's wall-clock would count operator-away gaps as "
+                f"sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it "
+                f"- descriptive, never a target.")
+        if b.get("points_per_worker_hour"):
+            out.append(
+                f"  secondary (tool-tuning): {b['points_per_worker_hour']} points/worker-hour over "
+                f"{b['worker_hours']}h of runner worker time, ceremony removed - NOT the planning "
+                f"number, distinct from the elapsed velocity above.")
+        else:
+            out.append("  secondary (points/worker-hour): UNMEASURED - no runner worker-time "
+                       "records (an interactive sprint has none).")
     if not b["points"]:
         if res["n_measured"]:
             out.append(
@@ -1504,7 +1616,8 @@ def cmd_estimator(args) -> int:
 
 
 def cmd_accuracy(args) -> int:
-    res = accuracy(args.root, args.id, sprint_tokens=getattr(args, "tokens", None))
+    res = accuracy(args.root, args.id, sprint_tokens=getattr(args, "tokens", None),
+                   elapsed_hours=getattr(args, "elapsed_hours", None))
     if not res["ok"]:
         print(f"retro {args.id}: {res['errors'][0]}", file=sys.stderr)
         return 1
@@ -1815,6 +1928,12 @@ def main() -> int:
                            help="the sprint's ACTUAL token spend (harness-tracked). Supply it for "
                                 "an interactive sprint - which records no per-unit actual - to get "
                                 "a real tokens-per-point over the delivered points")
+            p.add_argument("--elapsed-hours", dest="elapsed_hours", type=float, default=None,
+                           metavar="H",
+                           help="the sprint's real elapsed hours (start to close), for the PRIMARY "
+                                "points-per-elapsed-hour velocity. Supply it for an interactive "
+                                "sprint whose run-state has no clean elapsed; descriptive, never a "
+                                "target")
         p.set_defaults(func=fn)
 
     args = ap.parse_args()

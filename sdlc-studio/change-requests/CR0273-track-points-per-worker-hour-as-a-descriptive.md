@@ -1,6 +1,6 @@
 # CR-0273: Track sprint velocity (points per elapsed sprint), ceremony included, as a descriptive planning metric
 
-> **Status:** Proposed
+> **Status:** Superseded
 > **Priority:** P2
 > **Type:** Improvement
 > **Size:** M

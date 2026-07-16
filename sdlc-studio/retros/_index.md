@@ -50,3 +50,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0038](RETRO0038-honest-and-complete-tooling-bg0151-reconcile-creates-index.md) | Honest and complete tooling: BG0151 + reconcile-creates-index + audit cost gate + interactive token measurement | 2026-07-15 | -- | -- |
 | [RETRO-0039](RETRO0039-the-un-skippable-sprint-close-down-detect-nudge-enforce.md) | The un-skippable sprint close-down: detect, nudge, enforce | 2026-07-16 | -- | -- |
 | [RETRO-0040](RETRO0040-backlog-triage-as-a-ceremony-inside-plan.md) | Backlog triage as a ceremony inside plan | 2026-07-16 | -- | -- |
+| [RETRO-0041](RETRO0041-the-sprint-report-cost-and-velocity.md) | The sprint report: what a sprint delivered, cost, and velocity | 2026-07-16 | -- | -- |

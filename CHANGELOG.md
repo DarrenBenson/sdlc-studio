@@ -21,6 +21,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The sprint report: what a sprint delivered, cost, and velocity (EP0048, RFC0035, absorbing
+  CR0273).** New `sprint_report.py show --id RETROxxxx` composes - deterministically, at no model-token
+  cost - the delivered points, the actual spend, the estimate-vs-actual, the velocity, the lessons and
+  the tickets raised. Supporting changes to the estimator core, all additive and honesty-guarded:
+  - **Per-attempt telemetry** - a record can carry an `attempts` list of `{model, tokens}`, so an
+    escalation (cheap model rejected, re-run on a dearer one) is visible and priceable. Non-destructive:
+    a legacy record reads as one implicit attempt (`attempts_of`), so the existing evidence needs no
+    migration.
+  - **True cost with rework** - `telemetry.unit_cost` sums cost over every attempt, priced OFFLINE from
+    a `pricing.<model>` config table (rough estimate defaults, editable per project). An unpriced model
+    is UNPRICED - its tokens counted, its dollars never guessed. No avoided-cost / savings headline (a
+    counterfactual is a model, not a measurement).
+  - **Points-per-elapsed-sprint velocity** (from CR0273) - the PRIMARY planning read (ceremony
+    included, from the run-state's own batch); a SECONDARY points-per-worker-hour for tuning. Both
+    DESCRIPTIVE, fed to no gate, and honest: a stale run-state from a different run is ignored (it must
+    name this sprint's units), and an interactive sprint reads UNMEASURED unless `--elapsed-hours` is
+    supplied.
+  - **Rendering gated by `report.enabled`; recording never gated** - a token-conscious project can turn
+    the report page off, but telemetry keeps recording (a report can be drawn later; a measurement not
+    taken is gone). Also hardened: `sdlc_md.iter_artifact_files` and one more artefact-body read now
+    tolerate a non-UTF-8 file. RFC0035 Accepted (children Done); it ABSORBS CR0273 (Superseded).
+
 - **Backlog triage as a ceremony inside `plan` (EP0047, RFC0037, absorbing CR0264).** Breakdown asks
   whether a UNIT is plannable; triage asks whether the BACKLOG is worth planning FROM. New
   `backlog_triage.py` runs deterministic lenses - DUPLICATE/SUBSUMED (open artefacts with overlapping

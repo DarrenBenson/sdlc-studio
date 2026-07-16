@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0071: Dogfooding a measurement feature on real project data finds confounders a fixture never will: the stale-run-state elapsed (43h from an...**
+- **L-0070: A configured number is an input, not a fact: a price from config must be range-checked (a negative price subtracts, a zero is...**
+- **L-0069: When two subsystems each claim to be the honest one (here: the estimate-vs-actual ratio and the spend report), they must read the SAME...**
 - **L-0068: A "last-touched" date read as `max(every date in the file)` is defeated by any future or prose date (a deadline in the summary).**
 - **L-0067: A grandfather/coherence check that resolves ids against a PARTIAL set (only the triage-type, non-terminal backlog) will false-flag anything...**
 - **L-0066: But fixing ONE enumerator is not fixing the invariant: sibling code paths (`reconcile.file_census` and a dozen direct `read_text` calls)...**

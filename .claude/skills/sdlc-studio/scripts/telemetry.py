@@ -98,7 +98,14 @@ MIGRATED_SHARD = "0000-migrated"
 # so per-tier escape/escalation rates become measurable - the routing calibration loop.
 FIELDS = ("id", "type", "iterations", "wall_time_s", "stages", "critic_verdict",
           "complexity", "churn", "reopened", "tokens",
-          "tier_recommended", "tier_delivered", "model", "escalated")
+          "tier_recommended", "tier_delivered", "model", "escalated", "attempts")
+
+# `attempts` is a list of `{model, tokens}` - ONE entry per model invocation on a unit, in order.
+# It makes an escalation visible AND priceable: a unit rejected on a cheap model and re-run on a
+# dearer one carries `[{model: haiku, tokens: N1}, {model: opus, tokens: N2}]`, whose SUMMED cost is
+# the true cost - a cheap-first choice that escalated is not cheap. Additive and non-destructive: a
+# legacy record has no `attempts` and reads as a SINGLE attempt via `attempts_of`, so the 361
+# existing per-unit records need no migration and keep meaning exactly what they meant.
 
 # ---------------------------------------------------------------------------
 # The project, resolved from the repo and stamped on every record.
@@ -296,7 +303,7 @@ def record(repo_root: Path | str, fields: dict) -> dict:
 
 def record_plan_review(repo_root: Path | str, unit: str, verdict: str,
                        reviewer: str, author: str) -> dict:
-    """Append a plan-review outcome event (US0091) so the gate's value is measurable over
+    """Append a plan-review outcome event so the gate's value is measurable over
     time: how often plan-review runs, its verdict mix, and that it was independent. Best-effort
     (a write failure never breaks the recording path). Carries an `event: "plan-review"` marker
     AND a `phase` field; `summarise` reads it as a distinct block, never as a unit-close type.
@@ -322,6 +329,89 @@ def record_plan_review(repo_root: Path | str, unit: str, verdict: str,
     return rec
 
 
+def attempts_of(rec: dict) -> list[dict]:
+    """The per-attempt breakdown of a unit record as `[{model, tokens}, ...]`, in order.
+
+    The compatibility shim between the per-attempt schema and every record that predates it: a
+    record carrying a real `attempts` list yields it (dropping empty entries); a legacy record with
+    only the flat `model`/`tokens` reads as ONE implicit attempt. So an escalation is summed
+    correctly AND a legacy single-model unit is unchanged - one reader, both shapes, no migration.
+    A record with neither yields an empty list (nothing was measured), never a fabricated attempt."""
+    raw = rec.get("attempts")
+    if isinstance(raw, list) and raw:
+        out = []
+        for a in raw:
+            if isinstance(a, dict) and (a.get("model") is not None or a.get("tokens") is not None):
+                out.append({"model": a.get("model"), "tokens": a.get("tokens")})
+        if out:
+            return out
+    if rec.get("model") is not None or rec.get("tokens") is not None:
+        return [{"model": rec.get("model"), "tokens": rec.get("tokens")}]
+    return []
+
+
+# --- Pricing: offline, config-driven, honest about what it cannot price -------------------
+# Rough ESTIMATE defaults in US dollars per 1,000,000 tokens - a starting point, NOT a quote, and
+# deliberately round so no one mistakes them for a contract rate. Set `pricing.<family>` in
+# `.config.yaml` to your actual rate. A model that is neither here nor in config is reported
+# UNPRICED (its tokens are counted, its dollars are not) - never priced by a guess. Offline: no
+# network, no live price feed, because a report a CAB reads must be reproducible from the repo alone.
+DEFAULT_PRICES: dict[str, float] = {"opus": 30.0, "sonnet": 6.0, "haiku": 1.0}
+
+
+def _model_family(model: str | None) -> str:
+    """The pricing key for a model id. The estimate defaults are CLAUDE rates, so a family default
+    is applied only to a Claude model (`claude-opus-4-8` -> `opus`) or the bare family name - never
+    to a FOREIGN model whose name merely contains a family string (`gpt-opus-mini` must NOT be
+    priced as opus). Anything else keys by its own normalised name, so an operator can still price it
+    explicitly with `pricing.<that-name>`; unset, it is unpriced."""
+    m = (model or "").strip().lower()
+    if "claude" in m or m in DEFAULT_PRICES:
+        for fam in DEFAULT_PRICES:
+            if fam in m:
+                return fam
+    return m
+
+
+def model_price(repo_root: Path | str, model: str | None) -> float | None:
+    """US dollars per 1,000,000 tokens for a model: the config `pricing.<family>` if set, else the
+    estimate default, else None (unpriced - the caller must say so, never substitute a number).
+
+    A non-POSITIVE configured price is refused (returns None -> UNPRICED), not honoured: a negative
+    price would SUBTRACT from the batch total - a flattering figure, the exact class this subsystem
+    exists to prevent - and a zero price is indistinguishable from 'could not price it'."""
+    import config  # lazy: telemetry is a leaf
+    fam = _model_family(model)
+    cfg = config.get(repo_root, f"pricing.{fam}")
+    if cfg is not None:
+        try:
+            price = float(cfg)
+        except (TypeError, ValueError):
+            return None
+        return price if price > 0 else None
+    return DEFAULT_PRICES.get(fam)
+
+
+def unit_cost(repo_root: Path | str, rec: dict) -> dict:
+    """The TRUE cost of a unit, summed over its attempts so rework is included: a unit rejected on a
+    cheap model and re-run on a dearer one costs the SUM, not the last line. Returns
+    `{tokens, cost, unpriced}` - `cost` is US dollars at configured/estimated rates over the PRICED
+    attempts; `unpriced` lists any attempt model with no price (its tokens are still counted, so the
+    figure never silently drops spend - it says which models it could not put a number on)."""
+    tokens, cost, unpriced = 0, 0.0, []
+    for a in attempts_of(rec):
+        tk = a.get("tokens") or 0
+        tokens += tk
+        price = model_price(repo_root, a.get("model"))
+        if price is None:
+            label = a.get("model") or "unrecorded"   # a tokens-only attempt has no model to name
+            if label not in unpriced:
+                unpriced.append(label)
+        else:
+            cost += (tk / 1_000_000) * price
+    return {"tokens": tokens, "cost": round(cost, 4), "unpriced": unpriced}
+
+
 def read_all(repo_root: Path | str) -> list[dict]:
     """Every actuals record across the shards, oldest first. Malformed lines are skipped (a
     corrupt line never breaks a read)."""
@@ -332,7 +422,7 @@ def read_all(repo_root: Path | str) -> list[dict]:
 #: measurements; the rest are what a run actually cost. `project` rides through so a pooled read
 #: keeps each unit's project - the whole point of stamping it on the record.
 ACTUAL_FIELDS = ("type", "model", "project", "tokens", "wall_time_s", "iterations", "complexity",
-                 "churn", "critic_verdict")
+                 "churn", "critic_verdict", "attempts")
 
 
 def latest_actuals(records: list[dict]) -> dict[str, dict]:
@@ -609,7 +699,7 @@ def summarise(records: list[dict]) -> dict:
     Event records (those carrying an `event` key, e.g. plan-review) are NOT unit-close
     records and are excluded from the per-type/per-tier aggregates - pooling them would inflate
     a phantom `unknown` type. Plan-review events are summarised in their own `plan_review` block
-    (US0091): count, verdict mix, and the independent-review rate."""
+   : count, verdict mix, and the independent-review rate."""
     unit_recs = [r for r in records if not r.get("event")]
     out: dict = {}
     for rec in unit_recs:

@@ -57,6 +57,25 @@ never raised into the loop); only whitelisted non-None fields are written; `read
 skip malformed lines. `migrate` moves a pre-existing `.local/` log into the evidence dir
 without loss (a project that upgrades keeps its history; the old log is read until it does).
 
+A record can carry an `attempts` list of `{model, tokens}` - one entry per model invocation on a
+unit, in order - so an escalation is visible AND priceable (`attempts_of` reads it; a legacy record
+with only the flat `model`/`tokens` reads as ONE implicit attempt, so no migration is needed).
+`unit_cost` sums the TRUE cost over the attempts (rework included) using `model_price`, which reads
+`pricing.<family>` from `.config.yaml` (offline, no network) or a rough ESTIMATE default, and reports
+a model with no price as UNPRICED - its tokens counted, its dollars never guessed.
+
+### `sprint_report.py`
+
+The end-of-sprint report: what a sprint delivered, what it cost, and whether the estimate held.
+Mostly COMPOSITION - the retro holds Delivered, lessons and tickets; `retro.accuracy` holds the
+estimate-vs-actual and the velocity; `telemetry` holds cost. `show --id RETROxxxx [--tokens N]
+[--elapsed-hours H]` lays them out as one deterministic page (a script, so it costs no model tokens).
+Actual spend is a MEASUREMENT priced from `pricing.*` with rework summed over attempts; there is no
+avoided-cost / savings headline (a counterfactual is a model, not a measurement - the confusion this
+project has been burned by). RENDERING is gated by `report.enabled` (a token-conscious project turns
+the page off), but RECORDING is never gated - telemetry keeps recording, because a report not drawn
+can be drawn later while a measurement not taken is gone.
+
 ### `pvd.py`
 
 PVD projection + drift. `sync` projects the one writable master

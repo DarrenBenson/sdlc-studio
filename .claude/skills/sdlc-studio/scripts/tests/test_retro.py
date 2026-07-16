@@ -415,6 +415,102 @@ class AccuracyBase(unittest.TestCase):
         return next(u for u in res["units"] if u["id"] == uid)
 
 
+class VelocityTests(unittest.TestCase):
+    """CR0273/US0175: points-per-elapsed-sprint velocity (ceremony included) as the PRIMARY read;
+    points-per-worker-hour secondary; descriptive-only, and honest about a stale run-state."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        for d in ("retros", "bugs", ".local"):
+            (self.root / "sdlc-studio" / d).mkdir(parents=True, exist_ok=True)
+        (self.root / "sdlc-studio" / "retros" / "RETRO9002-t.md").write_text(
+            BATCH_RETRO.replace("BG0001, CR0001, CR0002", "BG0001, BG0002")
+                       .replace("RETRO-9000", "RETRO-9002"), encoding="utf-8")
+        for num, pts in (("0001", 3), ("0002", 5)):   # 8 delivered points
+            (self.root / "sdlc-studio" / "bugs" / f"BG{num}-a.md").write_text(
+                f"# BG{num}: a bug\n\n> **Status:** Fixed\n> **Severity:** Low\n"
+                f"> **Points:** {pts}\n", encoding="utf-8")
+        self.addCleanup(self.tmp.cleanup)
+
+    def _run_state(self, batch, started, ended=None) -> None:
+        import json
+        st = {"schema": 1, "run_id": "r1", "started_at": started, "ended_at": ended,
+              "outcome": None, "goal": None, "batch": batch}
+        (self.root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps(st))
+
+    def test_operator_supplied_elapsed_gives_primary_velocity(self) -> None:
+        b = retro.accuracy(str(self.root), "RETRO9002", elapsed_hours=2.0)["batch"]
+        self.assertEqual(b["delivered_points"], 8)
+        self.assertEqual(b["points_per_elapsed_hour"], 4.0)      # 8 / 2h
+        self.assertEqual(b["elapsed_source"], "supplied")
+
+    def test_no_elapsed_and_no_matching_run_state_is_unmeasured(self) -> None:
+        b = retro.accuracy(str(self.root), "RETRO9002")["batch"]
+        self.assertIsNone(b["points_per_elapsed_hour"])
+        self.assertIsNone(b["sprint_elapsed_hours"])
+        self.assertEqual(b["delivered_points"], 8)               # points known regardless
+
+    def test_stale_run_state_for_a_different_batch_is_ignored(self) -> None:
+        # the confounding CR0273 warns about: an old run left open, whose batch is not this sprint's
+        self._run_state(["US9999"], "2020-01-01T00:00:00Z")
+        b = retro.accuracy(str(self.root), "RETRO9002")["batch"]
+        self.assertIsNone(b["points_per_elapsed_hour"])          # not this sprint's elapsed
+
+    def test_matching_run_state_supplies_elapsed(self) -> None:
+        self._run_state(["BG0001", "BG0002"], "2026-07-16T00:00:00Z", "2026-07-16T02:00:00Z")
+        b = retro.accuracy(str(self.root), "RETRO9002")["batch"]
+        self.assertEqual(b["elapsed_source"], "run-state")
+        self.assertEqual(b["sprint_elapsed_hours"], 2.0)
+        self.assertEqual(b["points_per_elapsed_hour"], 4.0)
+
+    def test_worker_hours_secondary_from_wall_time(self) -> None:
+        import telemetry as tel
+        tel.record(str(self.root), {"id": "BG0001", "type": "bug", "wall_time_s": 3600, "model": "m"})
+        tel.record(str(self.root), {"id": "BG0002", "type": "bug", "wall_time_s": 3600, "model": "m"})
+        b = retro.accuracy(str(self.root), "RETRO9002")["batch"]
+        self.assertEqual(b["worker_hours"], 2.0)                 # 7200s
+        self.assertEqual(b["points_per_worker_hour"], 4.0)       # 8 / 2h
+
+    def test_worker_hours_unmeasured_without_telemetry(self) -> None:
+        b = retro.accuracy(str(self.root), "RETRO9002")["batch"]
+        self.assertIsNone(b["worker_hours"])
+        self.assertIsNone(b["points_per_worker_hour"])
+
+    def test_open_run_state_no_ended_at_is_unmeasured(self) -> None:
+        # MINOR-2: an OPEN run (no ended_at) matching this batch must NOT report now-started as
+        # clean elapsed - that would count operator-away gaps as sprint time.
+        self._run_state(["BG0001", "BG0002"], "2026-07-16T00:00:00Z", ended=None)
+        b = retro.accuracy(str(self.root), "RETRO9002")["batch"]
+        self.assertIsNone(b["points_per_elapsed_hour"])
+        self.assertIsNone(b["sprint_elapsed_hours"])
+
+    def test_supplied_elapsed_wins_only_when_run_state_absent(self) -> None:
+        # a real closed run-state is preferred; supplied is the interactive fallback
+        self._run_state(["BG0001", "BG0002"], "2026-07-16T00:00:00Z", "2026-07-16T04:00:00Z")
+        b = retro.accuracy(str(self.root), "RETRO9002", elapsed_hours=1.0)["batch"]
+        self.assertEqual(b["elapsed_source"], "run-state")   # not overridden by supplied
+        self.assertEqual(b["sprint_elapsed_hours"], 4.0)
+
+
+class AttemptsReconcileTests(AccuracyBase):
+    """MAJOR-3: an attempts-only record (an escalation, no flat tokens) must read MEASURED in the
+    estimate-vs-actual ratio with the SUMMED tokens - the same tokens the spend report prices - not
+    UNMEASURED-here-but-priced-there."""
+
+    def test_attempts_only_unit_is_measured_with_summed_tokens(self) -> None:
+        import telemetry as tel
+        self.forecast("BG0001", tokens=300000, points={"BG0001": 3})
+        # the fixture BG0001 has a real Points via UNIT template; record an attempts-only actual
+        tel.record(str(self.root), {"id": "BG0001", "type": "bug",
+                                    "attempts": [{"model": "claude-haiku-4-5", "tokens": 50000},
+                                                 {"model": "claude-opus-4-8", "tokens": 200000}]})
+        u = next(u for u in retro.accuracy(str(self.root), "RETRO9000")["units"] if u["id"] == "BG0001")
+        self.assertEqual(u["state"], "measured")
+        self.assertEqual(u["actual_tokens"], 250000)     # summed, matching unit_cost
+        self.assertEqual(u["model"], "claude-opus-4-8")  # the delivering (last) attempt
+
+
 class SprintTokenActualTests(unittest.TestCase):
     """CR0278 / US0161: an interactive sprint (no per-unit telemetry) still gets a real
     tokens-per-point when the harness-tracked sprint total is supplied via `--tokens`."""

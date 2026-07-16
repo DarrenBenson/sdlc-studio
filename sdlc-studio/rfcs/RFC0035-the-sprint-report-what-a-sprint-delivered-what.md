@@ -1,6 +1,7 @@
 # RFC-0035: The sprint report: what a sprint delivered, what it cost, and whether the model choice was right
 
-> **Status:** Draft
+> **Status:** Accepted
+> **Decomposed-into:** EP0048
 > **Affects:** .claude/skills/sdlc-studio/scripts/telemetry.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/route.py
 > **Date:** 2026-07-14
 > **Created-by:** sdlc-studio file

@@ -563,5 +563,87 @@ class BackfillProjectTests(unittest.TestCase):
             self.assertEqual(tel.actuals(d)["US0001"]["project"], "keep")
 
 
+class AttemptsAndCostTests(unittest.TestCase):
+    """US0172/US0173: per-attempt telemetry (non-destructive) + true cost summed over attempts."""
+
+    def test_legacy_record_reads_as_one_attempt(self) -> None:
+        self.assertEqual(tel.attempts_of({"model": "opus", "tokens": 100}),
+                         [{"model": "opus", "tokens": 100}])
+
+    def test_attempts_list_is_preserved_in_order(self) -> None:
+        rec = {"attempts": [{"model": "haiku", "tokens": 50}, {"model": "opus", "tokens": 200}]}
+        self.assertEqual([a["model"] for a in tel.attempts_of(rec)], ["haiku", "opus"])
+
+    def test_empty_attempts_falls_back_to_flat_fields(self) -> None:
+        self.assertEqual(tel.attempts_of({"attempts": [], "model": "sonnet", "tokens": 80}),
+                         [{"model": "sonnet", "tokens": 80}])
+
+    def test_no_measurement_yields_no_fabricated_attempt(self) -> None:
+        self.assertEqual(tel.attempts_of({"id": "US0001"}), [])
+
+    def test_true_cost_sums_over_attempts_including_rework(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            rec = {"attempts": [{"model": "claude-haiku-4-5", "tokens": 50000},
+                                {"model": "claude-opus-4-8", "tokens": 200000}]}
+            c = tel.unit_cost(d, rec)  # 50k*1 + 200k*30 per 1e6 = 0.05 + 6.0
+            self.assertEqual(c["tokens"], 250000)
+            self.assertAlmostEqual(c["cost"], 6.05, places=4)
+            self.assertEqual(c["unpriced"], [])
+
+    def test_unpriced_model_is_named_not_guessed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            c = tel.unit_cost(d, {"model": "some-other-model", "tokens": 100000})
+            self.assertEqual(c["cost"], 0.0)          # no dollars invented
+            self.assertEqual(c["tokens"], 100000)      # tokens still counted
+            self.assertEqual(c["unpriced"], ["some-other-model"])
+
+    def test_config_price_overrides_the_default(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "sdlc-studio").mkdir(parents=True)
+            (Path(d) / "sdlc-studio" / ".config.yaml").write_text("pricing:\n  opus: 15.0\n")
+            c = tel.unit_cost(d, {"model": "claude-opus-4-8", "tokens": 1000000})
+            self.assertAlmostEqual(c["cost"], 15.0, places=4)
+
+    def test_record_persists_an_attempts_list(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            tel.record(d, {"id": "US0001", "type": "story",
+                           "attempts": [{"model": "haiku", "tokens": 10}]})
+            rec = tel.read_all(d)[0]
+            self.assertEqual(rec["attempts"], [{"model": "haiku", "tokens": 10}])
+
+
+    def test_model_less_attempt_is_unpriced_unrecorded_not_a_crash(self) -> None:
+        # MAJOR-1: a tokens-only attempt has no model to name; it must price as UNPRICED "unrecorded",
+        # never leave a None in the unpriced list that a join() downstream would crash on.
+        with tempfile.TemporaryDirectory() as d:
+            c = tel.unit_cost(d, {"attempts": [{"tokens": 50000}]})
+            self.assertEqual(c["tokens"], 50000)
+            self.assertEqual(c["unpriced"], ["unrecorded"])
+            self.assertNotIn(None, c["unpriced"])
+
+    def test_negative_configured_price_is_refused(self) -> None:
+        # MAJOR-2: a negative price would SUBTRACT from the total - a flattering figure. Refuse it.
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "sdlc-studio").mkdir(parents=True)
+            (Path(d) / "sdlc-studio" / ".config.yaml").write_text("pricing:\n  opus: -6\n")
+            c = tel.unit_cost(d, {"model": "claude-opus-4-8", "tokens": 1000000})
+            self.assertEqual(c["cost"], 0.0)
+            self.assertIn("claude-opus-4-8", c["unpriced"])
+
+    def test_zero_configured_price_reads_as_unpriced(self) -> None:
+        # MINOR-3: $0 is indistinguishable from "could not price"; treat it as UNPRICED.
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "sdlc-studio").mkdir(parents=True)
+            (Path(d) / "sdlc-studio" / ".config.yaml").write_text("pricing:\n  opus: 0\n")
+            self.assertIsNone(tel.model_price(d, "claude-opus-4-8"))
+
+    def test_foreign_model_containing_a_family_string_is_not_mispriced(self) -> None:
+        # MINOR-1: the defaults are Claude rates; a non-Claude model must not inherit one by substring.
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(tel._model_family("gpt-opus-mini"), "gpt-opus-mini")
+            self.assertIsNone(tel.model_price(d, "gpt-opus-mini"))
+            self.assertEqual(tel._model_family("claude-opus-4-8"), "opus")  # a real Claude model still keys
+
+
 if __name__ == "__main__":
     unittest.main()
