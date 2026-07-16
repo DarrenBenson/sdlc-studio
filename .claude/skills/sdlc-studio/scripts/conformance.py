@@ -81,7 +81,8 @@ def _ac_signals(text: str) -> tuple[bool, bool, list[str]]:
     return has_ac, has_verify, verified_states
 
 
-def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok) -> tuple:
+def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
+                 two_role_cutoff=None) -> tuple:
     """The four Done-only conformance stages (verified, reconciled, critiqued, documented)."""
     verified = bool(verified_states) and all(v in ("yes", "manual") for v in verified_states)
     reconciled = (not no_index) and sdlc_md.norm_id(rid) not in drift_ids
@@ -92,6 +93,18 @@ def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok) -> tup
     # under the prior risk-scaled policy) are grandfathered; the gate applies to all new work.
     critiqued = (bool(verdict) and verdict["verdict"] == critic.APPROVE
                  and (critic.is_independent(verdict) or critic.is_pre_gate(verdict)))
+    # Two-role review gate: with `review.two_role_after` set, a Done
+    # unit PAST the cutoff additionally needs the adversarial pass recorded as EVIDENCE
+    # and an independent reviewer-of-record SIGN-OFF (principal != author and not an
+    # authoring-session subagent - re-checked here as the backstop to record_signoff's
+    # write-time refusal). Forward-only: pre-cutoff units and projects without the
+    # config keep today's behaviour byte-for-byte.
+    if critiqued and two_role_cutoff is not None:
+        rid_num = sdlc_md.id_number(rid)
+        if rid_num is not None and rid_num > two_role_cutoff:
+            signoff = critic.signoff_for(root, rid)
+            critiqued = (bool(critic.evidence_for(root, rid))
+                         and critic.is_independent_signoff(root, rid, signoff))
     return verified, reconciled, critiqued, doc_ok
 
 
@@ -110,6 +123,9 @@ def detect_conformance(repo_root: Path | str) -> dict:
     # forward, not retroactively. parse_cutoff accepts both spellings and raises loud on a
     # typo rather than silently dropping the cutoff.
     cutoff_num = sdlc_md.parse_cutoff(sdlc_md.project_override(root, "conformance.adopt_after"))
+    # The two-role review gate's own forward-only cutoff: units past it need
+    # evidence + independent sign-off to clear `critiqued`. Unset = old rule everywhere.
+    two_role_cutoff = sdlc_md.parse_cutoff(sdlc_md.project_override(root, "review.two_role_after"))
     # A story is "reconciled" only if its index row matches and exists: a drifted
     # status (status-mismatch) or a story absent from the index (missing-row) both
     # fail it, and a missing index file fails every story.
@@ -130,7 +146,8 @@ def detect_conformance(repo_root: Path | str) -> dict:
         verified = reconciled = critiqued = documented = promoted = None
         if status == "Done":
             verified, reconciled, critiqued, documented = _done_stages(
-                root, rid, verified_states, _no_index, drift_ids, _doc_ok)
+                root, rid, verified_states, _no_index, drift_ids, _doc_ok,
+                two_role_cutoff=two_role_cutoff)
             # The backstop to the transition gate. That gate guards the tool path; a
             # hand-edited `Status: Done` walks round it, and the story is then Done without
             # the sections the tier deferred. Same doubling the AC-verify gate already has

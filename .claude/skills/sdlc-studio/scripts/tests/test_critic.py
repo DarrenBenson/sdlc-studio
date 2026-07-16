@@ -429,6 +429,226 @@ class FromVerdictTests(unittest.TestCase):
             self.assertIn("mutually exclusive", err.getvalue())
 
 
+class EvidenceTests(unittest.TestCase):
+    """CR0323 / RFC0044 D1: the seat subagent's adversarial pass is recorded as
+    EVIDENCE (findings, reviewer seat, author) in its own log, distinct from the
+    verdict record - the finder's output is input to the sign-off, never the sign-off."""
+
+    def test_record_and_lookup_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_evidence(root, "US0001", reviewer="qa-seat", author="builder",
+                                findings="two probes executed; none blocking")
+            ev = mod.evidence_for(root, "US0001")
+            self.assertIsNotNone(ev)
+            self.assertEqual(ev["reviewer"], "qa-seat")
+            self.assertEqual(ev["author"], "builder")
+            self.assertIn("probes", ev["findings"])
+            self.assertIsNone(mod.evidence_for(root, "US9999"))
+            # distinct from the verdict log: recording evidence never mints a verdict
+            self.assertIsNone(mod.verdict_for(root, "US0001"))
+            self.assertNotEqual(mod.evidence_path(root), mod.verdicts_path(root))
+
+    def test_evidence_refuses_empty_findings(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            mod = _load()
+            with self.assertRaises(ValueError):
+                mod.record_evidence(d, "US0001", reviewer="qa", author="b", findings="  ")
+
+    def test_evidence_cli_from_verdict_block(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            f = root / "v.txt"
+            f.write_text("VERDICT: REJECT\nISSUES: off-by-one at flow.py:10\nBLOCKING: the off-by-one\n",
+                         encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = mod.main(["evidence", "--unit", "US0001", "--reviewer", "qa-seat",
+                               "--author", "builder", "--from-verdict", str(f),
+                               "--root", str(root)])
+            self.assertEqual(rc, 0)
+            ev = mod.evidence_for(root, "US0001")
+            self.assertIn("REJECT", ev["findings"])
+            self.assertIn("off-by-one", ev["findings"])
+
+    def test_evidence_cli_refuses_malformed_block(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            f = root / "v.txt"
+            f.write_text("no contract here\n", encoding="utf-8")
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = mod.main(["evidence", "--unit", "US0001", "--reviewer", "qa",
+                               "--author", "b", "--from-verdict", str(f), "--root", str(root)])
+            self.assertNotEqual(rc, 0)
+            self.assertIsNone(mod.evidence_for(root, "US0001"))
+
+
+class SignoffDelegateTests(unittest.TestCase):
+    """CR0323 / RFC0044 D3: the reviewer-of-record sign-off. The principal must be
+    one the author does not control: not the author, and not an authoring-session
+    subagent (any reviewer id recorded on the unit's evidence/verdict rows)."""
+
+    def test_direct_signoff_recorded(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_signoff(root, "US0001", principal="Darren Benson (operator)",
+                               author="builder")
+            so = mod.signoff_for(root, "US0001")
+            self.assertIsNotNone(so)
+            self.assertIn("operator", so["principal"])
+            self.assertEqual(so["chain"], "-")
+
+    def test_self_signoff_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            mod = _load()
+            with self.assertRaises(ValueError):
+                mod.record_signoff(d, "US0001", principal="builder", author="builder")
+
+    def test_delegate_chain_recorded(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_signoff(root, "US0001", principal="Darren Benson (operator)",
+                               author="builder", delegate="ci-reviewer",
+                               boundary="CI job on main")
+            so = mod.signoff_for(root, "US0001")
+            self.assertEqual(so["principal"], "ci-reviewer")   # the delegate signs
+            self.assertIn("->", so["chain"])                   # chain recorded
+            self.assertIn("CI job", so["chain"])               # trust boundary named
+
+    def test_delegate_requires_boundary(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            mod = _load()
+            with self.assertRaises(ValueError):
+                mod.record_signoff(d, "US0001", principal="operator", author="builder",
+                                   delegate="ci-reviewer")
+
+    def test_authoring_session_subagent_refused_as_delegate(self) -> None:
+        # The seat subagent that reviewed for this unit is the author's own spawn -
+        # naming it the delegate would hollow out the self-approval guard.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_evidence(root, "US0001", reviewer="qa-seat", author="builder",
+                                findings="pass done")
+            with self.assertRaises(ValueError):
+                mod.record_signoff(root, "US0001", principal="operator", author="builder",
+                                   delegate="qa-seat", boundary="another session")
+
+    def test_verdict_reviewer_refused_as_delegate(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_verdict(root, "US0001", "approve", reviewer="Sam seat", author="builder")
+            with self.assertRaises(ValueError):
+                mod.record_signoff(root, "US0001", principal="operator", author="builder",
+                                   delegate="Sam seat", boundary="another session")
+
+    def test_plan_review_phase_reviewer_refused_as_delegate(self) -> None:
+        # The authoring-session set spans BOTH verdict phases: a subagent that only
+        # reviewed the unit's plan (plan-review phase) is still the author's spawn.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_verdict(root, "US0001", "approve", reviewer="plan-seat",
+                               author="builder", phase="plan-review")
+            with self.assertRaises(ValueError):
+                mod.record_signoff(root, "US0001", principal="operator", author="builder",
+                                   delegate="plan-seat", boundary="another session")
+
+    def test_direct_principal_in_session_refused(self) -> None:
+        # The write-time refusal covers the DIRECT path too, not only delegates:
+        # a principal who is a recorded session reviewer is the author's own spawn.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_evidence(root, "US0001", reviewer="qa-seat", author="builder",
+                                findings="pass done")
+            with self.assertRaises(ValueError):
+                mod.record_signoff(root, "US0001", principal="qa-seat", author="builder")
+
+    def test_author_refused_as_delegate(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            mod = _load()
+            with self.assertRaises(ValueError):
+                mod.record_signoff(d, "US0001", principal="operator", author="builder",
+                                   delegate="builder", boundary="another session")
+
+    def test_cli_signoff_and_refusal_exit_codes(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = mod.main(["signoff", "--unit", "US0001",
+                               "--principal", "Darren Benson (operator)",
+                               "--author", "builder", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = mod.main(["signoff", "--unit", "US0002", "--principal", "b",
+                               "--author", "b", "--root", str(root)])
+            self.assertEqual(rc, 2)
+            self.assertIsNone(mod.signoff_for(root, "US0002"))
+
+
+class SignoffBriefTests(unittest.TestCase):
+    """CR0323 AC3 / CR0318: the sign-off request embeds the decision brief -
+    deliveries, per-unit verdict + REJECT history, gate/cost evidence, and the
+    approve/hold/delegate paths. Absent evidence is named absent, never invented."""
+
+    def _workspace(self, root: Path) -> None:
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True)
+        (d / "US0101-widget.md").write_text(
+            "# US0101: widget frobnicates\n\n> **Status:** Review\n> **Points:** 5\n"
+            "> **Epic:** EP0001\n\n## Acceptance Criteria\n\n### AC1: works\n"
+            "- **Verify:** shell echo ok\n", encoding="utf-8")
+
+    def test_brief_carries_deliveries_history_and_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._workspace(root)
+            mod = _load()
+            mod.record_verdict(root, "US0101", "reject", reviewer="qa-seat",
+                               author="builder", issues="vacuous killing test")
+            mod.record_verdict(root, "US0101", "approve", reviewer="qa-seat", author="builder")
+            mod.record_evidence(root, "US0101", reviewer="qa-seat", author="builder",
+                                findings="mutants re-run; kill confirmed")
+            text = mod.signoff_brief(root, ["US0101"], gate_note="gate: PASS",
+                                     cost_note="forecast 125k / measured 110k")
+            self.assertIn("US0101", text)
+            self.assertIn("widget frobnicates", text)      # delivery title
+            self.assertIn("5", text)                       # points
+            self.assertIn("REJECT", text)                  # reject history quoted
+            self.assertIn("vacuous killing test", text)
+            self.assertIn("gate: PASS", text)              # gate evidence inline
+            self.assertIn("125k", text)                    # cost evidence inline
+            for path in ("approve", "hold", "delegate"):
+                self.assertIn(path, text.lower())
+
+    def test_brief_names_absent_evidence_never_invents(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._workspace(root)
+            mod = _load()
+            text = mod.signoff_brief(root, ["US0101"])
+            self.assertIn("no critic verdict recorded", text.lower())
+            self.assertIn("no adversarial evidence recorded", text.lower())
+            self.assertIn("not provided", text.lower())    # gate/cost notes absent, named
+
+    def test_brief_refuses_unknown_unit(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._workspace(root)
+            mod = _load()
+            with self.assertRaises(ValueError):
+                mod.signoff_brief(root, ["US9999"])
+
+
 if __name__ == "__main__":
     unittest.main()
 

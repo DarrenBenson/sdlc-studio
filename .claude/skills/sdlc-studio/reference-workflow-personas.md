@@ -32,7 +32,33 @@ Personas can be consulted at key decision points throughout the SDLC pipeline. T
 > `persona_resolve`; the QA amigo is the default): the card's Lens and
 > Pushes-Back-When list are the critic's attack angles, and the verdict is
 > recorded under the seat's name so `critic-verdicts.md` reads as the seat's
-> sign-off. `critic.py record` warns when a reviewer matches no declared seat.
+> verdict. `critic.py record` warns when a reviewer matches no declared seat.
+
+### Two roles: adversarial reviewer vs reviewer of record
+
+A seat subagent gives a genuine adversarial pass - a fresh context that did not write
+the code - but it cannot be the reviewer OF RECORD: the author spawns, prompts and can
+re-run it, so recording its own APPROVE is self-review by automation. The review model
+therefore names two distinct roles:
+
+- **Adversarial reviewer** (the seat subagent): always runs; its pass is recorded as
+  **evidence** - findings, reviewer seat, author - with `critic.py evidence` (or
+  `--from-verdict` to capture the returned block). Evidence is input to the sign-off,
+  never the sign-off.
+- **Reviewer of record** (an independent principal): the operator by default, or a
+  **named delegate in a separate trust boundary** (another session, CI, another human)
+  recorded with `critic.py signoff` - a delegated sign-off carries the chain
+  (delegator -> delegate, boundary named), and a delegate drawn from the authoring
+  session's own subagents is refused loudly. The sign-off request embeds the decision
+  brief (`critic.py signoff-brief`): deliveries, verdict + REJECT history, gate/cost
+  evidence, with approve/hold/delegate paths - an uninformed signature is approval
+  theatre.
+
+With `review.two_role_after: <id>` set in `.config.yaml`, the conformance `critiqued`
+stage requires BOTH records (evidence + an independent sign-off) for units past the
+cutoff - forward-only, so existing projects keep today's behaviour until they adopt.
+Under it, Done means signed off: units hold at Review until the reviewer of record
+signs, then transition. Under pressure cut scope, never this bar.
 
 ### Document-owner seats
 

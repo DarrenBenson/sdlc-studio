@@ -134,6 +134,222 @@ def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery"):
     return latest
 
 
+# --- Two-role review gate ------------------------------------------------------------
+# The seat subagent's adversarial pass is EVIDENCE (findings, reviewer seat, author) in
+# its own log; the reviewer-of-record SIGN-OFF is a separate record whose principal the
+# author does not control - the operator by default, or a named delegate in a separate
+# trust boundary, with the delegation chain recorded. Neither substitutes for the other.
+_EVIDENCE_FILE = "critic-evidence.md"
+_SIGNOFF_FILE = "signoff-record.md"
+_EVIDENCE_HEADER = (
+    "# Critic Evidence\n\n"
+    "> Append-only. The adversarial reviewer's pass per unit - findings, reviewer seat,\n"
+    "> author. Evidence is INPUT to the sign-off, never the sign-off itself.\n\n"
+    "| Unit | Reviewer | Author | Date | Findings |\n"
+    "| --- | --- | --- | --- | --- |\n")
+_SIGNOFF_HEADER = (
+    "# Reviewer-of-Record Sign-offs\n\n"
+    "> Append-only. The independent principal's sign-off per unit. The principal is\n"
+    "> never the author nor an authoring-session subagent; a delegated sign-off\n"
+    "> records the chain (delegator -> delegate, trust boundary named).\n\n"
+    "| Unit | Principal | Chain | Author | Date | Note |\n"
+    "| --- | --- | --- | --- | --- | --- |\n")
+_EVIDENCE_COLS = ("unit", "reviewer", "author", "date", "findings")
+_SIGNOFF_COLS = ("unit", "principal", "chain", "author", "date", "note")
+
+
+def evidence_path(repo_root: Path | str) -> Path:
+    return Path(repo_root) / "sdlc-studio" / "reviews" / _EVIDENCE_FILE
+
+
+def signoff_path(repo_root: Path | str) -> Path:
+    return Path(repo_root) / "sdlc-studio" / "reviews" / _SIGNOFF_FILE
+
+
+def _append_row(path: Path, header: str, cells: tuple[str, ...]) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not path.exists():
+        path.write_text(header, encoding="utf-8")
+    with path.open("a", encoding="utf-8") as fh:  # append-only
+        fh.write("| " + " | ".join(cells) + " |\n")
+    return path
+
+
+def _read_rows(path: Path, cols: tuple[str, ...]) -> list[dict]:
+    if not path.exists():
+        return []
+    out: list[dict] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        cells = sdlc_md.table_cells(line)  # escaped-pipe-aware
+        if not cells or cells[0] in ("Unit",):
+            continue
+        if len(cells) == len(cols):
+            out.append(dict(zip(cols, cells)))
+    return out
+
+
+def _latest_for(rows: list[dict], unit: str):
+    target = sdlc_md.norm_id(unit)
+    latest = None
+    for r in rows:
+        if sdlc_md.norm_id(r["unit"]) == target:
+            latest = r
+    return latest
+
+
+def record_evidence(repo_root: Path | str, unit: str, reviewer: str, author: str,
+                    findings: str) -> Path:
+    """Append the adversarial pass as evidence. Findings must have substance -
+    an empty evidence row would certify a pass that cannot be shown to have run."""
+    if not (findings or "").strip():
+        raise ValueError("evidence needs findings text - an empty adversarial pass "
+                         "is not evidence (record what was probed, even 'none blocking')")
+    if not (reviewer or "").strip() or not (author or "").strip():
+        raise ValueError("evidence needs both --reviewer (the seat) and --author")
+    return _append_row(evidence_path(repo_root), _EVIDENCE_HEADER,
+                       (sdlc_md.norm_id(unit), _clean(reviewer), _clean(author),
+                        sdlc_md.now_date(), _clean(findings)))
+
+
+def evidence_for(repo_root: Path | str, unit: str):
+    """The latest evidence row for a unit, or None."""
+    return _latest_for(_read_rows(evidence_path(repo_root), _EVIDENCE_COLS), unit)
+
+
+def _session_reviewer_ids(repo_root: Path | str, unit: str) -> set[str]:
+    """Every reviewer id recorded on the unit's evidence and verdict rows - the
+    authoring session's subagents. A delegate or principal drawn from this set is
+    the author signing via a proxy it controls, and is refused."""
+    ids: set[str] = set()
+    for r in _read_rows(evidence_path(repo_root), _EVIDENCE_COLS):
+        if sdlc_md.norm_id(r["unit"]) == sdlc_md.norm_id(unit):
+            ids.add(_id(r["reviewer"]))
+    for phase in PHASES:  # BOTH verdict phases - a plan-review seat is still the author's spawn
+        for v in read_verdicts(repo_root, phase):
+            if sdlc_md.norm_id(v["unit"]) == sdlc_md.norm_id(unit):
+                ids.add(_id(v["reviewer"]))
+    ids.discard("")
+    return ids
+
+
+def record_signoff(repo_root: Path | str, unit: str, principal: str, author: str,
+                   delegate: str | None = None, boundary: str | None = None,
+                   note: str = "") -> Path:
+    """Append the reviewer-of-record sign-off for a unit.
+
+    Direct form: `principal` (the operator by default) signs; chain is `-`.
+    Delegated form: `delegate` signs on the principal's behalf - `boundary` (the
+    separate trust boundary it runs in) is mandatory and the chain is recorded.
+    Refusals, all loud: a principal or delegate equal to the author; a delegate
+    (or effective principal) that matches any reviewer id already recorded on the
+    unit's evidence/verdict rows - those are the authoring session's own subagents.
+    """
+    if not (principal or "").strip():
+        raise ValueError("sign-off needs a --principal (the reviewer of record)")
+    if not (author or "").strip():
+        raise ValueError("sign-off needs the --author it is independent of")
+    session_ids = _session_reviewer_ids(repo_root, unit)
+    chain = "-"
+    effective = principal
+    if delegate is not None:
+        if not (boundary or "").strip():
+            raise ValueError("a delegated sign-off needs --boundary - the separate "
+                             "trust boundary the delegate runs in (another session, "
+                             "CI, another human)")
+        if _id(delegate) == _id(author):
+            raise ValueError(f"delegate {delegate!r} is the author - refused")
+        if _id(delegate) in session_ids:
+            raise ValueError(
+                f"delegate {delegate!r} is an authoring-session subagent (it is a "
+                "recorded reviewer on this unit's evidence/verdict rows) - a delegate "
+                "the author controls hollows out the self-approval guard; refused")
+        chain = f"{principal} -> {delegate} (boundary: {boundary})"
+        effective = delegate
+    if _id(effective) == _id(author):
+        raise ValueError(f"principal {effective!r} is the author - a self-sign-off "
+                         "never clears the gate")
+    if _id(effective) in session_ids:
+        raise ValueError(
+            f"principal {effective!r} is an authoring-session subagent (a recorded "
+            "reviewer on this unit) - the reviewer of record must sit outside the "
+            "author's control; refused")
+    return _append_row(signoff_path(repo_root), _SIGNOFF_HEADER,
+                       (sdlc_md.norm_id(unit), _clean(effective), _clean(chain),
+                        _clean(author), sdlc_md.now_date(), _clean(note) or "-"))
+
+
+def signoff_for(repo_root: Path | str, unit: str):
+    """The latest sign-off row for a unit, or None."""
+    return _latest_for(_read_rows(signoff_path(repo_root), _SIGNOFF_COLS), unit)
+
+
+def is_independent_signoff(repo_root: Path | str, unit: str, signoff: dict | None) -> bool:
+    """Backstop re-check of a recorded sign-off (record_signoff refuses at write time,
+    but a hand-appended row walks round the tool): the principal must be non-empty,
+    differ from the recorded author, and not be an authoring-session reviewer id."""
+    if not signoff:
+        return False
+    principal = _id(signoff.get("principal", ""))
+    author = _id(signoff.get("author", ""))
+    if not principal or not author or principal == author:
+        return False
+    return principal not in _session_reviewer_ids(repo_root, unit)
+
+
+def signoff_brief(repo_root: Path | str, units: list[str], gate_note: str | None = None,
+                  cost_note: str | None = None) -> str:
+    """The sign-off request with the decision brief inline - per-unit deliveries,
+    each unit's verdict + REJECT history, the adversarial evidence, and the gate/cost
+    evidence - so the principal judges content, not counts. Absent evidence is named
+    absent, never invented. Refuses an unknown unit loudly."""
+    root = Path(repo_root)
+    lines = ["# Reviewer-of-record sign-off request", "",
+             "You are asked to sign off the units below as the independent principal.",
+             "The brief is composed from the committed records - judge it, then reply.", ""]
+    for unit in units:
+        found = sdlc_md.find_by_id(root, unit)
+        if not found:
+            raise ValueError(f"no artefact with id {unit!r} - the brief only covers real units")
+        path, _type = found
+        text = sdlc_md.read_text_safe(path)
+        uid = sdlc_md.norm_id(sdlc_md.extract_record_id(path.stem) or unit)
+        title = sdlc_md.extract_h1_title(text) or uid
+        points = sdlc_md.extract_field(text, "Points") or "?"
+        status = sdlc_md.extract_field(text, "Status") or "?"
+        lines.append(f"## {uid} ({points} pts, {status}) - {title}")
+        history = [v for v in read_verdicts(root)
+                   if sdlc_md.norm_id(v["unit"]) == uid]
+        if history:
+            for v in history:
+                marker = f"- verdict {v['verdict']} by {v['reviewer']} ({v['date']})"
+                if v["verdict"] != APPROVE or (v.get("issues") or "-") != "-":
+                    marker += f": {v['issues']}"
+                lines.append(marker)
+        else:
+            lines.append("- (no critic verdict recorded)")
+        ev = evidence_for(root, uid)
+        if ev:
+            lines.append(f"- evidence: adversarial pass by {ev['reviewer']} "
+                         f"({ev['date']}): {ev['findings']}")
+        else:
+            lines.append("- (no adversarial evidence recorded)")
+        lines.append("")
+    lines.append("## Gate evidence")
+    lines.append(gate_note or "(not provided - run gate.py and pass --gate-note)")
+    lines.append("")
+    lines.append("## Cost evidence")
+    lines.append(cost_note or "(not provided - pass --cost-note with forecast vs measured)")
+    lines.append("")
+    lines.append("## Your paths")
+    lines.append("- APPROVE: record with `critic.py signoff --unit <id> --principal "
+                 "\"<you>\" --author <author-id>` per unit")
+    lines.append("- HOLD: name what must change; nothing is recorded")
+    lines.append("- DELEGATE: name a principal in a separate trust boundary: "
+                 "`critic.py signoff ... --delegate <name> --boundary <where>` - "
+                 "the chain is recorded; the authoring session's subagents are refused")
+    return "\n".join(lines)
+
+
 def _id(value: str) -> str:
     """Normalise an author/reviewer id for comparison: case-folded, stripped, with the
     markdown escaping that `_clean` adds on write removed, so `Dani\\_Okafor` and
@@ -357,6 +573,57 @@ def cmd_record(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_evidence(args: argparse.Namespace) -> int:
+    findings = args.findings
+    if getattr(args, "from_verdict", None):
+        if findings:
+            print("evidence refused: --from-verdict and --findings are mutually "
+                  "exclusive - one source of truth per record", file=sys.stderr)
+            return 2
+        src = args.from_verdict
+        try:
+            raw = (sys.stdin.read() if src == "-"
+                   else Path(src).read_text(encoding="utf-8"))
+            verdict, issues = parse_verdict_block(raw)
+        except (OSError, ValueError) as exc:
+            print(f"evidence refused: {exc}", file=sys.stderr)
+            return 2
+        findings = f"{verdict}: {issues or 'none'}"
+    try:
+        path = record_evidence(args.root, args.unit, args.reviewer, args.author, findings or "")
+    except ValueError as exc:
+        print(f"evidence refused: {exc}", file=sys.stderr)
+        return 2
+    print(f"evidence recorded for {sdlc_md.norm_id(args.unit)} -> {path}")
+    return 0
+
+
+def cmd_signoff(args: argparse.Namespace) -> int:
+    try:
+        path = record_signoff(args.root, args.unit, args.principal, args.author,
+                              delegate=args.delegate, boundary=args.boundary,
+                              note=args.note)
+    except ValueError as exc:
+        print(f"signoff refused: {exc}", file=sys.stderr)
+        return 2
+    print(f"sign-off recorded for {sdlc_md.norm_id(args.unit)} -> {path}")
+    return 0
+
+
+def cmd_signoff_brief(args: argparse.Namespace) -> int:
+    units = [u.strip() for u in args.units.split(",") if u.strip()]
+    if not units:
+        print("signoff-brief refused: --units needs at least one unit id", file=sys.stderr)
+        return 2
+    try:
+        print(signoff_brief(args.root, units, gate_note=args.gate_note,
+                            cost_note=args.cost_note))
+    except ValueError as exc:
+        print(f"signoff-brief refused: {exc}", file=sys.stderr)
+        return 2
+    return 0
+
+
 def cmd_show(args: argparse.Namespace) -> int:
     if getattr(args, "format", "text") == "json":
         if args.unit:
@@ -399,6 +666,37 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--tier", choices=("full", "light"), default="full")
     b.add_argument("--root", default=".")
     b.set_defaults(func=cmd_brief)
+    e = sub.add_parser("evidence", help="Record the adversarial pass as evidence "
+                                        "(findings, reviewer seat, author) - distinct from the verdict.")
+    e.add_argument("--unit", required=True)
+    e.add_argument("--reviewer", required=True, help="the seat that ran the adversarial pass")
+    e.add_argument("--author", required=True)
+    e.add_argument("--findings", default="",
+                   help="what was probed and found; or use --from-verdict")
+    e.add_argument("--from-verdict", dest="from_verdict", metavar="FILE|-",
+                   help="record the returned VERDICT/ISSUES/BLOCKING block as the findings")
+    e.add_argument("--root", default=".")
+    e.set_defaults(func=cmd_evidence)
+    so = sub.add_parser("signoff", help="Record the reviewer-of-record sign-off "
+                                        "(independent principal; optional named delegate with chain).")
+    so.add_argument("--unit", required=True)
+    so.add_argument("--principal", required=True,
+                    help="the reviewer of record (the operator by default)")
+    so.add_argument("--author", required=True)
+    so.add_argument("--delegate", default=None,
+                    help="a named delegate signing on the principal's behalf")
+    so.add_argument("--boundary", default=None,
+                    help="the delegate's separate trust boundary (required with --delegate)")
+    so.add_argument("--note", default="")
+    so.add_argument("--root", default=".")
+    so.set_defaults(func=cmd_signoff)
+    sb = sub.add_parser("signoff-brief", help="Print the sign-off request with the "
+                                              "decision brief inline (deliveries, verdict history, evidence).")
+    sb.add_argument("--units", required=True, help="comma-separated unit ids")
+    sb.add_argument("--gate-note", dest="gate_note", default=None)
+    sb.add_argument("--cost-note", dest="cost_note", default=None)
+    sb.add_argument("--root", default=".")
+    sb.set_defaults(func=cmd_signoff_brief)
     s = sub.add_parser("show", help="Show the latest verdict for a unit (or all).")
     s.add_argument("--unit", default=None)
     s.add_argument("--phase", choices=PHASES, default="delivery")

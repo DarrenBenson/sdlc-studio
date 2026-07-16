@@ -22,6 +22,13 @@ conformance:
   # it are held to the full standard.
   adopt_after: 82
 
+review:
+  # Two-role review gate (RFC0044/CR0323), forward-only from the sprint that built it:
+  # units past US0192 clear `critiqued` only with the adversarial pass recorded as
+  # evidence AND an independent reviewer-of-record sign-off (critic.py evidence/signoff).
+  # Under it, Done means signed off - units hold at Review until the close ceremony.
+  two_role_after: 192
+
 engagement_floor:
   # The mechanical engagement floor is grandfathered forward-only, like conformance/provenance.
   # This repo's early bugs/CRs shipped multi-file fixes with no per-unit AC (the delivery gate

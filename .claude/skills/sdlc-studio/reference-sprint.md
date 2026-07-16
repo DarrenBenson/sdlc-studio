@@ -119,6 +119,14 @@ independent critic plus the gate - the check's output states this scoping.
      operator's setup allows it, run the critic seat on a different model or agent runtime
      for high-stakes units. Prompt-level independence catches self-favouritism; cross-model
      independence also catches shared misreadings.
+     **Two-role gate (opt-in via `review.two_role_after`):** the seat's pass is additionally
+     recorded as **evidence** (`critic.py evidence --from-verdict`), and Done further requires a
+     **reviewer-of-record sign-off** (`critic.py signoff`) from a principal the author does not
+     control - the operator, or a named delegate in a separate trust boundary with the chain
+     recorded; authoring-session subagents are refused as delegates. The sign-off request embeds
+     the decision brief (`critic.py signoff-brief`). Units hold at **Review** until the sign-off
+     lands (normally at the close ceremony), then transition Done - see
+     `reference-workflow-personas.md`.
    - `conformance check` - the deterministic gate (`scripts/conformance.py`):
      decomposed -> AC -> tested -> verified -> **reconciled** (no index drift) ->
      **critiqued** (a committed critic APPROVE) -> **documented** (the doc-coverage floor:

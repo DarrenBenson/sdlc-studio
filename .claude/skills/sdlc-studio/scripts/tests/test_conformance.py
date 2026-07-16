@@ -332,5 +332,129 @@ class AdoptCutoffTests(unittest.TestCase):
                 _load().detect_conformance(root)
 
 
+def _critic_mod():
+    spec = importlib.util.spec_from_file_location("critic", SCRIPT.parent / "critic.py")
+    m = importlib.util.module_from_spec(spec)
+    sys.modules["critic"] = m
+    spec.loader.exec_module(m)
+    return m
+
+
+@unittest.skipUnless(HAS_YAML, "review.two_role_after reads .config.yaml (needs PyYAML)")
+class TwoRoleCritiquedTests(unittest.TestCase):
+    """CR0323 / RFC0044: with review.two_role_after set, a Done unit past the cutoff
+    clears `critiqued` only with adversarial EVIDENCE plus an independent SIGN-OFF -
+    forward-only, so existing projects and pre-cutoff units keep today's behaviour."""
+
+    def _config(self, root: Path) -> None:
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "review:\n  two_role_after: US0100\n", encoding="utf-8")
+
+    def test_verdict_alone_no_longer_clears_critiqued(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._config(root)
+            _story(root, 101, status="Done")
+            _record_verdict(root, "US0101")           # independent APPROVE, old-style
+            u = _units(root)["US0101"]
+            self.assertFalse(u["stages"]["critiqued"])
+            self.assertIn("critiqued", u["missing"])
+
+    def test_evidence_plus_signoff_clears_critiqued(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._config(root)
+            _story(root, 101, status="Done")
+            _record_verdict(root, "US0101")
+            c = _critic_mod()
+            c.record_evidence(root, "US0101", reviewer="qa-seat", author="builder",
+                              findings="adversarial pass done")
+            c.record_signoff(root, "US0101", principal="Darren Benson (operator)",
+                             author="builder")
+            u = _units(root)["US0101"]
+            self.assertTrue(u["stages"]["critiqued"])
+
+    def test_hand_edited_self_signoff_is_backstopped(self) -> None:
+        # record_signoff refuses a self-sign-off; a hand-appended row walks round the
+        # tool, so conformance re-checks independence from the recorded rows.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._config(root)
+            _story(root, 101, status="Done")
+            _record_verdict(root, "US0101")
+            c = _critic_mod()
+            c.record_evidence(root, "US0101", reviewer="qa-seat", author="builder",
+                              findings="adversarial pass done")
+            path = c.signoff_path(root)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            c.record_signoff(root, "US0101", principal="operator", author="builder")
+            text = path.read_text(encoding="utf-8").replace("| operator |", "| builder |")
+            path.write_text(text, encoding="utf-8")   # hand-edit: principal == author
+            u = _units(root)["US0101"]
+            self.assertFalse(u["stages"]["critiqued"])
+
+    def test_signoff_by_session_subagent_is_backstopped(self) -> None:
+        # A sign-off whose principal is a recorded authoring-session reviewer id
+        # (the seat subagent) must not clear the gate even if hand-recorded.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._config(root)
+            _story(root, 101, status="Done")
+            _record_verdict(root, "US0101", reviewer="qa-seat")
+            c = _critic_mod()
+            c.record_evidence(root, "US0101", reviewer="qa-seat", author="builder",
+                              findings="adversarial pass done")
+            c.record_signoff(root, "US0101", principal="operator", author="builder")
+            path = c.signoff_path(root)
+            text = path.read_text(encoding="utf-8").replace("| operator |", "| qa-seat |")
+            path.write_text(text, encoding="utf-8")
+            u = _units(root)["US0101"]
+            self.assertFalse(u["stages"]["critiqued"])
+
+    def test_signoff_without_evidence_not_critiqued(self) -> None:
+        # "critiqued requires BOTH": an independent sign-off with no adversarial
+        # evidence row must not clear the stage (kills the drop-evidence mutant).
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._config(root)
+            _story(root, 101, status="Done")
+            _record_verdict(root, "US0101")
+            c = _critic_mod()
+            c.record_signoff(root, "US0101", principal="Darren Benson (operator)",
+                             author="builder")
+            u = _units(root)["US0101"]
+            self.assertFalse(u["stages"]["critiqued"])
+            self.assertIn("critiqued", u["missing"])
+
+    def test_cutoff_boundary_unit_keeps_old_rule(self) -> None:
+        # The cutoff id itself is grandfathered (<= exempt, > judged) - a `>` -> `>=`
+        # regression would retroactively gate the boundary unit.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._config(root)
+            _story(root, 100, status="Done")          # == US0100 cutoff
+            _record_verdict(root, "US0100")           # verdict alone suffices
+            u = _units(root)["US0100"]
+            self.assertTrue(u["stages"]["critiqued"])
+
+    def test_pre_cutoff_done_unit_keeps_old_rule(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._config(root)
+            _story(root, 99, status="Done")           # <= US0100 cutoff
+            _record_verdict(root, "US0099")           # verdict alone suffices
+            u = _units(root)["US0099"]
+            self.assertTrue(u["stages"]["critiqued"])
+
+    def test_no_config_keeps_old_rule_everywhere(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 101, status="Done")
+            _record_verdict(root, "US0101")
+            u = _units(root)["US0101"]
+            self.assertTrue(u["stages"]["critiqued"])
+
+
 if __name__ == "__main__":
     unittest.main()

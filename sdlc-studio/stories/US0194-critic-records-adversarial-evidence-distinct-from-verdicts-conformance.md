@@ -1,6 +1,6 @@
 # US0194: critic records adversarial evidence distinct from verdicts; conformance critiqued requires evidence plus a non-author sign-off with recorded delegate chain and the embedded decision brief
 
-> **Status:** Ready
+> **Status:** Review
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** critic.py records the adversarial pass and conformance evaluates the critiqued stage
 - **Then** critic.py records the adversarial pass as evidence distinct from the verdict; conformance critiqued requires evidence + a sign-off whose principal differs from the author AND from the authoring session's subagents
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_critic.py -k Evidence
+- **Verified:** yes (2026-07-16)
 
 ### AC2: a delegated sign-off carries its chain; a self-controlled delegate is refused
 
@@ -29,6 +30,7 @@
 - **When** the delegated verdict is recorded
 - **Then** Delegated sign-off carries the recorded chain (operator -> delegate, trust boundary named); an authoring-session subagent as delegate is refused loudly
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_critic.py -k Delegate
+- **Verified:** yes (2026-07-16)
 
 ### AC3: the sign-off request embeds the decision brief
 
@@ -36,6 +38,7 @@
 - **When** the sign-off request is composed
 - **Then** The sign-off request embeds the CR0318 decision brief (deliveries, critic REJECTs + repairs, gate/cost evidence) with approve/hold/delegate paths
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_critic.py -k SignoffBrief
+- **Verified:** yes (2026-07-16)
 
 ## Revision History
 
