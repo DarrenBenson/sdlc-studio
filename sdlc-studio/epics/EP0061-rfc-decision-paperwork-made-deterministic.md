@@ -14,7 +14,7 @@ Decomposed from CR0327. Delivers the work CR0327 requested.
 
 ## Story Breakdown
 
-- [ ] [US0191: parent-aware minting (--parent wires both link directions atomically) and rfc resolve for decision-row surgery](../stories/US0191-parent-aware-minting-parent-wires-both-link-directions.md)
+- [x] [US0191: parent-aware minting (--parent wires both link directions atomically) and rfc resolve for decision-row surgery](../stories/US0191-parent-aware-minting-parent-wires-both-link-directions.md)
 
 ## Revision History
 

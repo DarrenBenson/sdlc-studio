@@ -119,6 +119,85 @@ def cmd_decide(args: argparse.Namespace) -> int:
     return 0
 
 
+def resolve(repo_root: Path | str, rfc_id: str, decision: str, resolution: str,
+            refs: list[str] | None = None) -> Path:
+    """Mark ONE decision row Resolved with the operator's text (+ spawned-CR refs) and
+    append a revision row. The judgement is the operator's; only the table surgery is
+    tool-carried - every other row stays byte-identical. Refuses an unknown RFC or
+    decision id loudly, before any write."""
+    root = Path(repo_root)
+    found = sdlc_md.find_by_id(root, rfc_id)
+    if not found or found[1] != "rfc":
+        raise ValueError(f"no RFC with id {rfc_id!r}")
+    path = found[0]
+    text = path.read_text(encoding="utf-8")
+    lines = text.splitlines(keepends=True)
+    target = decision.strip()
+    # scope the search to the Open Decisions SECTION: a body table elsewhere whose
+    # first cell happens to be "D2" must never be edited (the critic's live probe)
+    start = end = None
+    for i, line in enumerate(lines):
+        if line.startswith("## "):
+            if start is not None:
+                end = i
+                break
+            if "open decisions" in line.lower():
+                start = i
+    if start is None:
+        raise ValueError(f"{rfc_id} has no '## Open Decisions' section")
+    end = end if end is not None else len(lines)
+    hit = None
+    for i in range(start, end):
+        cells = sdlc_md.table_cells(lines[i])
+        if cells and cells[0] == target and len(cells) >= 3:
+            hit = i
+            break
+    if hit is None:
+        raise ValueError(f"{rfc_id} has no decision row {target!r} in its Open Decisions "
+                         f"table - nothing was changed")
+    cells = sdlc_md.table_cells(lines[hit])
+    status = f"Resolved: {resolution.strip()}"
+    if refs:
+        status += " -> " + ", ".join(sdlc_md.norm_id(r) for r in refs)
+    cells[-1] = status
+    lines[hit] = sdlc_md.join_row(cells) + "\n"
+    new_text = "".join(lines)
+    row = (f"| {sdlc_md.now_date()} | rfc resolve (operator decision) | "
+           f"resolve: {target} - {resolution.strip().replace('|', '/')} |\n")
+    if "## Revision History" not in new_text:
+        new_text = (new_text.rstrip("\n")
+                    + "\n\n## Revision History\n\n| Date | Author | Change |\n"
+                      "| --- | --- | --- |\n" + row)
+    else:
+        # insert after the LAST row of the Revision History table (the section may
+        # not be the file's final section - appending at EOF would strand the row)
+        out = new_text.splitlines(keepends=True)
+        sec = next(i for i, ln in enumerate(out)
+                   if ln.startswith("## ") and "revision history" in ln.lower())
+        j = sec + 1
+        last_row = None
+        while j < len(out) and not out[j].startswith("## "):
+            if out[j].lstrip().startswith("|"):
+                last_row = j
+            j += 1
+        insert_at = (last_row + 1) if last_row is not None else j
+        out.insert(insert_at, row)
+        new_text = "".join(out)
+    sdlc_md.atomic_write(path, new_text)
+    return path
+
+
+def cmd_resolve(args: argparse.Namespace) -> int:
+    try:
+        path = resolve(args.root, args.rfc, args.decision, args.resolution,
+                       refs=[r.strip() for r in (args.refs or "").split(",") if r.strip()])
+    except ValueError as exc:
+        print(f"resolve refused: {exc}", file=sys.stderr)
+        return 2
+    print(f"resolved {args.decision} on {args.rfc} -> {path}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="SDLC Studio RFC decision-readiness digest.")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -127,6 +206,14 @@ def build_parser() -> argparse.ArgumentParser:
     d.add_argument("--root", default=".", help="Repo root (default: .)")
     d.add_argument("--format", choices=("text", "json"), default="text")
     d.set_defaults(func=cmd_decide)
+    r = sub.add_parser("resolve", help="Mark one decision row Resolved with the operator's "
+                                       "text (+ spawned-CR refs); other rows byte-identical.")
+    r.add_argument("--rfc", required=True)
+    r.add_argument("--decision", required=True, metavar="D2")
+    r.add_argument("--resolution", required=True, help="the operator's decision, one line")
+    r.add_argument("--refs", help="comma-separated spawned workstream ids")
+    r.add_argument("--root", default=".", help="Repo root (default: .)")
+    r.set_defaults(func=cmd_resolve)
     sdlc_md.add_global_root(parser)
     return parser
 

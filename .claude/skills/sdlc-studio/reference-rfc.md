@@ -73,9 +73,16 @@ several RFCs have accumulated and need triaging together.
 3. **Decide (operator)** - present the briefs together; per RFC choose **accept**
    (optionally scoped to a subset of workstreams), **defer** (stays Draft; record
    the trigger that would revisit it), or **withdraw/supersede**.
-4. **Route** - accept → run `accept` below (resolving/deferring each Open Decision
-   as part of it; a scoped accept spawns only the chosen workstreams' CRs); defer →
-   leave Draft, note the trigger in the Revision History; withdraw → `close`.
+4. **Record + spawn (tool-carried)** - each decision the operator makes is written
+   with `scripts/rfc.py resolve --rfc RFCxxxx --decision D2 --resolution "..."
+   [--refs CR0320]` (exactly that row becomes Resolved, a revision row is appended,
+   every other row stays byte-identical); each spawned workstream CR is minted with
+   `--parent RFCxxxx` so BOTH link directions are wired at creation and a
+   link-asymmetry is impossible. The ceremony is decide → resolve → spawn.
+5. **Route** - accept → run `accept` below (a scoped accept spawns only the chosen
+   workstreams' CRs); defer → leave Draft, note the trigger in the Revision
+   History; withdraw → `close`. An RFC whose decisions are all resolved reads
+   DECIDED in the digest (Accepted derives when its workstreams resolve).
 
 Accepting grows the CR backlog (the workstreams), so a decision session is the
 moment to choose how much delivery to take on - not a rubber stamp.

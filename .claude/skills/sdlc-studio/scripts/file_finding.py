@@ -539,6 +539,18 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     # written is judged by `sprint.breakdown` itself. A preview id is enough - the grooming
     # fields the gate reads are in the metadata block, which does not depend on the id.
     check_groomed(root, type_, _render(type_, "PREVIEW", title, today, fields))
+    # Parent link (spawning a child under an RFC/CR): the parent must RESOLVE before
+    # anything is minted - a child born pointing at nothing is the asymmetry class the
+    # bidirectional wiring exists to abolish.
+    parent = (fields.get("parent") or "").strip()
+    parent_path = None
+    if parent:
+        found = sdlc_md.find_by_id(root, parent)
+        if not found:
+            raise ValueError(f"--parent {parent} does not resolve to any artefact - "
+                             f"a child is never minted against a missing parent")
+        parent_path = found[0]
+        parent = sdlc_md.norm_id(parent)
     # The cheapest triage lens, run BEFORE the id is minted: does this finding overlap an artefact
     # already open? A warning attached to the result, never a refusal.
     warnings = duplicate_candidates(root, title, fields)
@@ -550,6 +562,15 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
         # shared index row. Best-effort - a no-op on non-POSIX, exactly like `artifact new`.
         with sdlc_md.allocation_lock(root):
             result = _file_finding_locked(root, type_, spec, title, fields, today, dry_run=False)
+            if parent_path is not None and result.get("path"):
+                # wire BOTH directions inside the same lock as the mint, so two
+                # concurrent same-parent spawns cannot lose an update on the
+                # parent's Decomposed-into read-modify-write
+                sdlc_md.insert_after_status(Path(result["path"]), f"> **Parent:** {parent}")
+                existing = sdlc_md.decomposed_ids(parent_path.read_text(encoding="utf-8"))
+                child_id = sdlc_md.norm_id(result["id"])
+                if child_id not in existing:
+                    sdlc_md.write_decomposed(parent_path, [*existing, child_id])
     if warnings:
         result["duplicate_warnings"] = warnings
     return result
@@ -616,13 +637,20 @@ def cmd_file(args: argparse.Namespace) -> int:
               "summary": args.summary, "steps": args.steps, "fix": args.fix,
               "impact": args.impact, "points": args.points, "size": args.size,
               "affects": args.affects,
-              "author": args.author, "recommendation": args.recommendation}
+              "author": args.author, "recommendation": args.recommendation,
+              "parent": getattr(args, "parent", None)}
     fields = {k: v for k, v in fields.items() if v is not None}
     if args.ac:
         fields["acs"] = args.ac
     if args.option:
         fields["options"] = args.option
-    result = file_finding(args.root, args.type, args.title, fields, dry_run=args.dry_run)
+    try:
+        result = file_finding(args.root, args.type, args.title, fields, dry_run=args.dry_run)
+    except (ValueError, FileExistsError) as exc:
+        # a refusal is a message, not a traceback - the reason and the fix, on stderr
+        # (exit 1: the same code the top-level guard has always given refusals)
+        print(f"file refused: {exc}", file=sys.stderr)
+        return 1
     verb = "would file" if result.get("dry_run") else "filed"
     if args.format == "json":
         print(json.dumps(result, indent=2))
@@ -682,6 +710,7 @@ def build_parser() -> argparse.ArgumentParser:
     f.add_argument("--ac", action="append", help="cr acceptance criterion (repeatable)")
     f.add_argument("--option", action="append", help="rfc design option (repeatable)")
     f.add_argument("--recommendation", help="rfc recommendation")
+    f.add_argument("--parent", help="spawn this finding as a child of an existing RFC/CR: the parent must resolve, and BOTH link directions are wired at mint")
     f.add_argument("--author",
                    help="authorship of record, stamped as `Raised-by`: 'Name; type; version' "
                         "(type is human|persona|agent) or a bare name; defaults to the "

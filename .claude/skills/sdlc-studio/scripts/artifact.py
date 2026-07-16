@@ -645,6 +645,17 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
         raise ValueError(f"unknown type {type_!r} (expected one of {', '.join(SPEC)})")
     root = Path(repo_root)
     f = dict(fields or {})
+    # Parent link (spawning under an RFC/CR): validate BEFORE minting, wire both
+    # directions after - the same contract as file_finding's --parent.
+    _parent = (f.pop("parent", "") or "").strip()
+    _parent_path = None
+    if _parent:
+        _found = sdlc_md.find_by_id(root, _parent)
+        if not _found:
+            raise ValueError(f"--parent {_parent} does not resolve to any artefact - "
+                             f"a child is never minted against a missing parent")
+        _parent_path = _found[0]
+        _parent = sdlc_md.norm_id(_parent)
     # Refuse a field that would break out of its metadata line, index cell or bullet BEFORE
     # anything is allocated or written - a half-created artefact carrying injected lines is
     # worse than no artefact. One guard, every field, at the top of the one create path.
@@ -687,6 +698,14 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
         # so `artifact new` is not a bypass of the file_finding path.
         sev = f.get("severity") or f.get("priority")
         if consolidate and type_ in sdlc_md.FINDING_TYPES and triage_noise.should_consolidate(root, sev):
+            if _parent_path is not None:
+                # a consolidated finding merges into a THEMED CR, not the requested
+                # child - silently dropping the validated parent link would be the
+                # asymmetry class; refuse and let the caller mint deliberately
+                raise ValueError("--parent cannot combine with Low-severity consolidation "
+                                 "(the finding would merge into a themed CR, not the "
+                                 "parent's child) - pass consolidate=False / raise severity, "
+                                 "or drop --parent")
             if dry_run:
                 return {"id": None, "file_id": None, "path": None,
                         "consolidated": True, "dry_run": True}
@@ -729,6 +748,13 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
             indexed = file_finding.append_index_row(root, type_, row)
         linked = _wire_story_to_epic(root, f["epic"], disp, title, file_id, slug) \
             if (type_ == "story" and f.get("epic")) else None
+        if _parent_path is not None:
+            # wire BOTH directions inside the same lock as the mint (two concurrent
+            # same-parent spawns must not lose an update on Decomposed-into)
+            sdlc_md.insert_after_status(path, f"> **Parent:** {_parent}")
+            _existing = sdlc_md.decomposed_ids(_parent_path.read_text(encoding="utf-8"))
+            if sdlc_md.norm_id(disp) not in _existing:
+                sdlc_md.write_decomposed(_parent_path, [*_existing, sdlc_md.norm_id(disp)])
     return {"id": disp, "file_id": file_id, "path": str(path),
             "indexed": indexed, "index_created": index_created,
             "epic_linked": linked, "dry_run": False}
@@ -969,7 +995,8 @@ def cmd_new(args: argparse.Namespace) -> int:
                            "acs": args.ac, "verify": args.verify, "target": args.target,
                            "options": args.option,
                            "recommendation": args.recommendation,
-                           "provenance": getattr(args, "provenance", None)}.items() if v}
+                           "provenance": getattr(args, "provenance", None),
+                           "parent": getattr(args, "parent", None)}.items() if v}
     try:
         if args.type in META:
             r = meta_new(args.root, args.type, args.title, f, dry_run=args.dry_run)
@@ -1064,6 +1091,7 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--type", required=True, choices=tuple(SPEC) + META)
     n.add_argument("--title", required=True)
     n.add_argument("--epic", help="parent epic (required for a story)")
+    n.add_argument("--parent", help="spawn as a child of an existing RFC/CR: the parent must resolve, and both link directions are wired at mint")
     n.add_argument("--priority")
     n.add_argument("--ctype", help="cr type")
     n.add_argument("--severity", help="bug severity")

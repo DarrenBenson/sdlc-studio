@@ -1,6 +1,6 @@
 # US0191: parent-aware minting (--parent wires both link directions atomically) and rfc resolve for decision-row surgery
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -23,6 +23,7 @@
 - **When** the child is created
 - **Then** the child carries Parent and the parent's Decomposed-into gains the child, validated before any write; reconcile shows no asymmetry
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_rfc.py -k ParentMint
+- **Verified:** yes (2026-07-16)
 
 ### AC2: rfc resolve edits exactly one row
 
@@ -30,6 +31,7 @@
 - **When** rfc resolve --rfc X --decision D2 --resolution '...' --refs CRxxxx runs
 - **Then** that row becomes Resolved with text+refs, a revision row is appended, other rows are byte-identical; unknown RFC/decision refused
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_rfc.py -k Resolve
+- **Verified:** yes (2026-07-16)
 
 ### AC3: Triage ceremony documented
 
@@ -37,6 +39,7 @@
 - **When** they run a triage
 - **Then** reference-rfc.md documents decide -> resolve -> spawn
 - **Verify:** grep "resolve" .claude/skills/sdlc-studio/reference-rfc.md
+- **Verified:** yes (2026-07-16)
 
 ## Revision History
 
