@@ -4,19 +4,17 @@ The instrument must be honest (LL0008): a unit whose dates cannot be resolved is
 NAMED unmeasurable, never guessed; a pass never means "found nothing to measure".
 """
 import datetime as dt
-import importlib.util
 import pathlib
 import subprocess
 import sys
 import tempfile
 import unittest
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import loader  # noqa: E402 - the canonical way to import a script under test (CR0317)
+
 SCRIPT_PATH = pathlib.Path(__file__).resolve().parent.parent / "flow.py"
-_spec = importlib.util.spec_from_file_location("flow", SCRIPT_PATH)
-assert _spec and _spec.loader
-flow = importlib.util.module_from_spec(_spec)
-sys.modules["flow"] = flow
-_spec.loader.exec_module(flow)
+flow = loader.load_script("flow")
 
 
 def _git(cwd, *args):
