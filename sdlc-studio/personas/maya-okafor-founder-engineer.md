@@ -48,6 +48,8 @@ a real lifecycle she can trust to run without her watching every step.
 - Agents that vibe-code: plausible output, wrong target, no trace of what changed or why
 - Status that goes stale the moment she looks away - she cannot tell what is really done
 - Heavyweight process tools built for big teams: forms, boards, and ceremony she has no time for
+- A sprint that ships but cannot say what it cost - tokens burned, estimate held or blown - so
+  she cannot tell whether the process is earning its keep or quietly eating her budget
 
 ## Scenario
 
@@ -57,7 +59,8 @@ Maya has a backlog of accepted change requests and a free afternoon. She runs an
 the proposed CRs with the goal set to "done", approves the triage plan it shows her, then steps
 away. The loop drives each unit - decompose, test, verify, an independent review, a green commit -
 and pauses once to ask a real scoping question. She comes back to a finished tranche, a reconcile
-showing zero drift, and a short report of what shipped. Nothing drifted; nothing surprised her.
+showing zero drift, and a sprint report of what shipped, what it actually cost (rework included,
+priced from her own rates), and whether the estimate held. Nothing drifted; nothing surprised her.
 
 ---
 
