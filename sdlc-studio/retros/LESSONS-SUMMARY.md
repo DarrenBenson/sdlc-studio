@@ -2,6 +2,7 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0079: Backticks in shell-quoted artifact text are command substitutions**
 - **L-0078: A CLI flag is only shipped when a test exercises the CLI path: API-level tests stayed green while `--parent` was silently dropped at the...**
 - **L-0077: Text that flows into `re.sub` is data, never a template: the same replacement-expansion class surfaced twice in one sprint (AC seeding, and...**
 - **L-0076: A reviewer must execute the mutant, not admire the test: two "killing tests" in one unit were proven vacuous by running the actual mutants...**

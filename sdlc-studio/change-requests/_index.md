@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 38 |
+| Proposed | 41 |
 | Approved | 0 |
 | In Progress | 1 |
 | Complete | 280 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 8 |
 | Blocked | 0 |
-| **Total** | **327** |
+| **Total** | **330** |
 
 ## All Changes
 
@@ -149,6 +149,9 @@
 | [CR-0325](CR0325-wire-the-gates-to-the-dor-dod-documents.md) | Wire the gates to the DoR/DoD documents: grooming reads the ready bar, Done/close/release read the done bar (RFC0043 slice 2) | Proposed | Medium | Feature | 2026-07-16 | -- |
 | [CR-0326](CR0326-init-tailoring-pass-for-dor-dod-offer-stack.md) | init tailoring pass for DoR/DoD: offer stack/profile-derived criteria at project init (RFC0043 slice 3) | Proposed | Low | Improvement | 2026-07-16 | -- |
 | [CR-0327](CR0327-deterministic-rfc-decision-paperwork-rfc-resolve-edits-a.md) | Deterministic RFC decision paperwork: rfc resolve edits a decision row, and parent-aware CR filing wires both link directions at mint | Complete | Medium | Improvement | 2026-07-16 | -- |
+| [CR-0328](CR0328-sprint-close-orchestrator-the-twelve-step-close-ceremony.md) | sprint close orchestrator: the twelve-step close ceremony as one deterministic command ending in the decision brief | Proposed | High | Feature | 2026-07-16 | -- |
+| [CR-0329](CR0329-critic-brief-rejoinder-the-re-verdict-loop-s.md) | critic brief --rejoinder: the re-verdict loop's scaffolding emitted deterministically from the prior verdict | Proposed | Medium | Improvement | 2026-07-16 | -- |
+| [CR-0330](CR0330-tools-forward-port-sh-the-dev-repo-rsync.md) | tools/forward-port.sh: the dev-repo rsync to the installed copy as a guarded one-liner | Proposed | Low | Improvement | 2026-07-16 | -- |
 
 ## Archived Releases
 
