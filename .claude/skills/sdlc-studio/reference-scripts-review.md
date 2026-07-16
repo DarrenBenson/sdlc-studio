@@ -108,6 +108,8 @@ Audits the skill command surface against the process spine (raise -> break down 
 
 The independent-critic verdict ledger. `record` writes a committed verdict to `sdlc-studio/reviews/critic-verdicts.md` stamping both the **reviewer and the author** (the authoring seat / delegation id); `verdict_for` reads it. `is_independent` proves `reviewer != author`; `is_pre_gate` flags units closed before the gate (the visible `pre-gate` marker, grandfathered). Conformance's `critiqued` stage requires a committed APPROVE that is independent or pre-gate.
 
+The ceremony's scaffolding is deterministic too: `brief --unit USxxxx --seat qa [--tier full|light]` assembles the seat-review prompt (charter reference, the unit's canonical ACs, the Affects-derived diff scope, the review depth, and the exact VERDICT/ISSUES/BLOCKING return contract) - pipe it to the reviewing subagent verbatim; unknown unit or seat refused naming the alternatives. `record --from-verdict FILE|-` parses the returned block (a missing or non-APPROVE/REJECT verdict is refused loudly, BLOCKING content folded into the issues), so a verdict is never hand-transcribed into the ledger. The judgement stays with the seat; only the plumbing is mechanical.
+
 ### `persona_resolve.py`
 
 Resolves the worker amigo for a delegated sub-agent, most-specific-first: a project-authored practitioner amigo (`sdlc-studio/personas/amigos/<seat>.md`), else the skill default (Dani / Sam / Lena), else generic. `resolve` prints the framing the orchestrator appends *after* the contract; `--skip-personas` emits nothing (byte-equivalent generic). The stance never overrides the concrete contract, and the worker is always a separate instance from its reviewer.

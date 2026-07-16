@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -216,7 +217,135 @@ def _seat_drift_warning(repo_root: Path | str, reviewer: str) -> str | None:
             f"reference-workflow-personas.md")
 
 
+_RETURN_CONTRACT = """Return EXACTLY (raw data, no wrapper):
+VERDICT: APPROVE or REJECT
+ISSUES: <semicolon-separated findings with file:line evidence, or 'none'>
+BLOCKING: <the subset that must be fixed before Done, or 'none'>"""
+
+
+def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full") -> str:
+    """The seat-review prompt, assembled deterministically.
+
+    The judgement stays with the seat; this is only the scaffolding every review
+    needs - charter, unit ACs, diff scope, tier, and the exact return contract -
+    so no reviewer starts from a hand-typed, drift-prone brief. Refuses an
+    unknown unit or seat loudly."""
+    root = Path(repo_root)
+    found = sdlc_md.find_by_id(root, unit)
+    if not found:
+        raise ValueError(f"no artefact with id {unit!r} - brief needs a real unit")
+    path, _type = found
+    text = sdlc_md.read_text_safe(path)
+    seats_dir = root / "sdlc-studio" / "personas" / "seats"
+    card = seats_dir / f"{seat}.md"
+    if not card.is_file():
+        available = ", ".join(sorted(p.stem for p in seats_dir.glob("*.md"))) or "none"
+        raise ValueError(f"no seat card at {card} - available seats: {available}")
+    m = re.search(r"^## Acceptance Criteria\n(.*?)(?=^## |\Z)", text, re.M | re.S)
+    acs = (m.group(1).strip() if m else "(no Acceptance Criteria section - judge the diff "
+                                        "against the unit's stated intent)")
+    affects = sdlc_md.affects_files(text)
+    scope = (", ".join(affects) if affects
+             else "(no Affects declared - derive the scope from git status)")
+    depth = ("Full adversarial pass: try to make each test FAIL (mutations), probe "
+             "boundaries and silent-failure paths, verify claims by EXECUTION, not reading."
+             if tier == "full" else
+             "Lighter independent pass (mechanical/doc-tier unit): check the change does "
+             "what its ACs say and nothing else; run the named suite once.")
+    unit_id = sdlc_md.norm_id(sdlc_md.extract_record_id(path.stem) or unit)
+    title = sdlc_md.extract_h1_title(text) or unit_id
+    return f"""You are the {seat} review seat. Read and adopt the charter at
+{card} (the review render). You did NOT author this diff; your job is
+independent judgement of it against the ACs below - they are law, your stance never
+overrides them.
+
+Repo root: {root.resolve()}
+
+Unit under review: {unit_id} - {title}
+Artefact: {path}
+
+Diff scope (the unit's declared Affects - inspect with git diff/status on these paths):
+{scope}
+
+Acceptance criteria (canonical - judge against THESE, not a paraphrase):
+{acs}
+
+Review depth: {depth}
+
+{_RETURN_CONTRACT}"""
+
+
+_VERDICT_LINE = re.compile(r"^\s*VERDICT:\s*(\S+)\s*$", re.M | re.I)
+_BLOCK_TOKENS = ("VERDICT", "ISSUES", "BLOCKING")
+
+
+def _block_field(text: str, token: str) -> str:
+    """The token's content: from `TOKEN:` to the next KNOWN token line or EOF.
+    Case-insensitive both ways, and bounded only by the contract's own tokens -
+    a wrapped continuation line starting `NOTE:` (or any other ALL-CAPS word)
+    belongs to the field, not to a phantom next one."""
+    boundary = "|".join(_BLOCK_TOKENS)
+    m = re.search(rf"^\s*{token}:\s*(.*?)(?=^\s*(?:{boundary}):\s|\Z)",
+                  text, re.M | re.S | re.I)
+    return m.group(1).strip() if m else ""
+
+
+def parse_verdict_block(text: str) -> tuple[str, str]:
+    """(verdict, issues) from a returned VERDICT/ISSUES/BLOCKING block.
+
+    Refuses (ValueError) a missing VERDICT line, a value outside APPROVE/REJECT,
+    or MORE THAN ONE verdict line - an ambiguous block must never be recorded as
+    a clean approval. An echoed copy of the return contract ("VERDICT: APPROVE or
+    REJECT") never matches the single-token verdict line; ISSUES/BLOCKING are read
+    from AFTER the verdict line, so an echo above it cannot leak placeholder text
+    into the record."""
+    matches = list(_VERDICT_LINE.finditer(text))
+    if not matches:
+        raise ValueError("no 'VERDICT:' line found in the block - the reviewer must "
+                         "return the VERDICT/ISSUES/BLOCKING contract")
+    if len(matches) > 1:
+        raise ValueError(f"{len(matches)} VERDICT lines found - an ambiguous block is "
+                         "refused, never resolved in the author's favour")
+    m = matches[0]
+    verdict = m.group(1).strip().upper()
+    if verdict not in ("APPROVE", "REJECT"):
+        raise ValueError(f"unknown verdict {verdict!r} - APPROVE or REJECT only")
+    after = text[m.end():]
+    issues = _block_field(after, "ISSUES")
+    blocking = _block_field(after, "BLOCKING")
+    if blocking and blocking.lower() != "none":
+        issues = (issues + "; " if issues else "") + f"BLOCKING: {blocking}"
+    return verdict, issues
+
+
+def cmd_brief(args: argparse.Namespace) -> int:
+    try:
+        print(brief(args.root, args.unit, args.seat, args.tier))
+    except ValueError as exc:
+        print(f"brief refused: {exc}", file=sys.stderr)
+        return 2
+    return 0
+
+
 def cmd_record(args: argparse.Namespace) -> int:
+    if getattr(args, "from_verdict", None):
+        if args.verdict or args.issues:
+            print("record refused: --from-verdict and an explicit --verdict/--issues are "
+                  "mutually exclusive - one source of truth per record", file=sys.stderr)
+            return 2
+        src = args.from_verdict
+        try:
+            raw = (sys.stdin.read() if src == "-"
+                   else Path(src).read_text(encoding="utf-8"))
+            verdict, issues = parse_verdict_block(raw)
+        except (OSError, ValueError) as exc:
+            print(f"record refused: {exc}", file=sys.stderr)
+            return 2
+        args.verdict, args.issues = verdict, issues
+    elif not args.verdict:
+        print("record refused: give --verdict, or --from-verdict FILE|- with the "
+              "reviewer's returned block", file=sys.stderr)
+        return 2
     path = record_verdict(args.root, args.unit, args.verdict, args.reviewer,
                           args.author, args.issues, args.phase)
     note = "" if _id(args.author) != _id(args.reviewer) else "  (WARNING: self-review - blocked at the gate)"
@@ -250,7 +379,10 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("record", help="Record a critic verdict for a unit.")
     r.add_argument("--unit", required=True)
-    r.add_argument("--verdict", required=True, choices=("approve", "reject", "APPROVE", "REJECT"))
+    r.add_argument("--verdict", choices=("approve", "reject", "APPROVE", "REJECT"),
+                   help="the verdict; or use --from-verdict to parse the reviewer's block")
+    r.add_argument("--from-verdict", dest="from_verdict", metavar="FILE|-",
+                   help="parse VERDICT/ISSUES/BLOCKING from a file (or stdin with -), refusing a malformed block")
     r.add_argument("--reviewer", default="independent-critic")
     r.add_argument("--author", required=True,
                    help="Authoring seat / delegation id that produced the diff (must differ from --reviewer).")
@@ -260,6 +392,13 @@ def build_parser() -> argparse.ArgumentParser:
                         "(the pre-implementation AC-vs-spec check); each has its own log")
     r.add_argument("--root", default=".")
     r.set_defaults(func=cmd_record)
+    b = sub.add_parser("brief", help="Print the assembled seat-review prompt for a unit "
+                                     "(charter + ACs + scope + return contract).")
+    b.add_argument("--unit", required=True)
+    b.add_argument("--seat", required=True, help="a card under sdlc-studio/personas/seats/")
+    b.add_argument("--tier", choices=("full", "light"), default="full")
+    b.add_argument("--root", default=".")
+    b.set_defaults(func=cmd_brief)
     s = sub.add_parser("show", help="Show the latest verdict for a unit (or all).")
     s.add_argument("--unit", default=None)
     s.add_argument("--phase", choices=PHASES, default="delivery")

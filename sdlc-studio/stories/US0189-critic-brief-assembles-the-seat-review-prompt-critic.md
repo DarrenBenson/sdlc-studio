@@ -1,6 +1,6 @@
 # US0189: critic brief assembles the seat-review prompt; critic record --from-verdict parses the returned block, refusing malformed input
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** critic.py brief --unit USxxxx --seat qa runs
 - **Then** the printed brief carries the seat charter reference, the ACs, the Affects-derived diff scope and the exact VERDICT/ISSUES/BLOCKING return contract; unknown unit or seat refused
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_critic.py -k Brief
+- **Verified:** yes (2026-07-16)
 
 ### AC2: record parses the verdict block
 
@@ -29,6 +30,7 @@
 - **When** critic.py record --from-verdict runs
 - **Then** the verdict is recorded with reviewer/author/tier; a malformed or verdict-less block is refused loudly
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_critic.py -k FromVerdict
+- **Verified:** yes (2026-07-16)
 
 ## Revision History
 

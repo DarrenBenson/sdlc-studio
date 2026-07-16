@@ -14,7 +14,7 @@ Decomposed from CR0316. Delivers the work CR0316 requested.
 
 ## Story Breakdown
 
-- [ ] [US0189: critic brief assembles the seat-review prompt; critic record --from-verdict parses the returned block, refusing malformed input](../stories/US0189-critic-brief-assembles-the-seat-review-prompt-critic.md)
+- [x] [US0189: critic brief assembles the seat-review prompt; critic record --from-verdict parses the returned block, refusing malformed input](../stories/US0189-critic-brief-assembles-the-seat-review-prompt-critic.md)
 
 ## Revision History
 
