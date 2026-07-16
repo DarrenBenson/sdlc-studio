@@ -1,6 +1,7 @@
 # CR-0253: The sprint-close review is not gated - make review currency a hard gate like the retro
 
 > **Status:** Complete
+> **Size:** M
 > **Priority:** P1
 > **Type:** Improvement
 > **Date:** 2026-07-14

@@ -1,6 +1,7 @@
 # CR-0224: cross-repo `Depends on:` resolution in audit and sprint plan
 
 > **Status:** Complete
+> **Size:** S
 > **Target:** v4.1
 > **Priority:** Medium
 > **Type:** Feature

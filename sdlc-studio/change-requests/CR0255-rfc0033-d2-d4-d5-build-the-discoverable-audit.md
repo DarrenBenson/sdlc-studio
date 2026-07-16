@@ -1,6 +1,7 @@
 # CR-0255: RFC0033 D2/D4/D5: build the discoverable audit command (RFC0002's accepted, unshipped command)
 
 > **Status:** Proposed
+> **Size:** L
 > **Priority:** P2
 > **Type:** Feature
 > **Date:** 2026-07-14

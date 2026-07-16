@@ -1,6 +1,7 @@
 # CR-0185: Add a cross-script invariant test tier over the cascade seams
 
 > **Status:** Complete
+> **Size:** M
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic (v4 breakdown):** [EP0013](../epics/EP0013-structured-authorship-and-policy-enforcement.md)

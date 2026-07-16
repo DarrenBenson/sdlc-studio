@@ -1,6 +1,7 @@
 # CR-0264: The filer has no duplicate detection: three overlapping pairs accumulated in one backlog of eleven
 
 > **Status:** Superseded
+> **Size:** M
 > **Priority:** P2
 > **Type:** Feature
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/sprint.py

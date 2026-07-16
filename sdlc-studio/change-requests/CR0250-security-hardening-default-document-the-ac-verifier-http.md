@@ -1,6 +1,7 @@
 # CR-0250: Security hardening: default-document the AC-verifier http host allowlist and the rolling-install checksum
 
 > **Status:** Complete
+> **Size:** S
 > **Priority:** P3
 > **Type:** Improvement
 > **Date:** 2026-07-14

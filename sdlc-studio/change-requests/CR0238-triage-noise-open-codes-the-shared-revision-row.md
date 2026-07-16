@@ -1,6 +1,7 @@
 # CR-0238: triage_noise open-codes the shared revision-row writer instead of calling it
 
 > **Status:** Complete
+> **Size:** S
 > **Target:** v4.1
 > **Priority:** Low
 > **Type:** Improvement

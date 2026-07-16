@@ -1,6 +1,7 @@
 # CR-0239: Commit-id convention for per-id file attribution in the engagement floor
 
 > **Status:** Complete
+> **Size:** M
 > **Priority:** Medium
 > **Type:** Improvement
 > **Date:** 2026-07-13

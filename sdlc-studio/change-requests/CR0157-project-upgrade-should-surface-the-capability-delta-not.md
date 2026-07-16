@@ -1,6 +1,7 @@
 # CR-0157: project upgrade should surface the capability delta, not just file corrections
 
 > **Status:** Complete
+> **Size:** S
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium

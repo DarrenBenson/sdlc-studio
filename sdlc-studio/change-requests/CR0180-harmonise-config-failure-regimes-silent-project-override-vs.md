@@ -1,6 +1,7 @@
 # CR-0180: Harmonise config failure regimes: silent project_override vs fail-loud cutoff vs PyYAML crash
 
 > **Status:** Complete
+> **Size:** M
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic (v4 breakdown):** [EP0018](../epics/EP0018-tooling-hardening-and-review-debt.md)

@@ -1,6 +1,7 @@
 # CR-0241: A passing test suite must be silent: capture tool stdout in the validator's own tests
 
 > **Status:** Complete
+> **Size:** S
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

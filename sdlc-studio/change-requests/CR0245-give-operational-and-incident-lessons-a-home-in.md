@@ -1,6 +1,7 @@
 # CR-0245: Give operational and incident lessons a home, in the shape teams actually write them
 
 > **Status:** Complete
+> **Size:** M
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio new
 > **Provenance:** RFC0032 consequences

@@ -1,6 +1,7 @@
 # CR-0248: Consolidate the two divergent archive writers into one
 
 > **Status:** Complete
+> **Size:** M
 > **Priority:** P2
 > **Type:** Improvement
 > **Date:** 2026-07-14

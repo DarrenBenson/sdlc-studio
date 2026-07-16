@@ -1,6 +1,7 @@
 # CR-0225: appetite-bounded unattended runs: a budget circuit-breaker for epic-level execution
 
 > **Status:** Complete
+> **Size:** M
 > **Target:** v4.1
 > **Priority:** Medium
 > **Type:** Feature

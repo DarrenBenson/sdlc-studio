@@ -1,6 +1,7 @@
 # CR-0269: RFC0038 U5: size by what a thing IS - T-shirt on containers, points on delivery units, and a CR must decompose before it can be planned
 
 > **Status:** Complete
+> **Size:** M
 > **Priority:** P1
 > **Type:** Improvement
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/templates/core/cr.md, .claude/skills/sdlc-studio/scripts/file_finding.py

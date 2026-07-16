@@ -1,6 +1,7 @@
 # CR-0246: The learning loop is doctrine with a config opt-out, and the claim goes in the benchmark
 
 > **Status:** Complete
+> **Size:** S
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio new
 > **Provenance:** RFC0032 D5

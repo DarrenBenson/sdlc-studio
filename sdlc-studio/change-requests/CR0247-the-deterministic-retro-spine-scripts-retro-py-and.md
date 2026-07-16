@@ -1,6 +1,7 @@
 # CR-0247: The deterministic retro spine: scripts/retro.py, and ranking computed not asserted
 
 > **Status:** Complete
+> **Size:** L
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio new
 > **Provenance:** RFC0032 - operator steer

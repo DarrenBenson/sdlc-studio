@@ -1,6 +1,7 @@
 # CR-0261: Record which model delivered each unit, on the artefact and in the committed history
 
 > **Status:** Complete
+> **Size:** S
 > **Priority:** P2
 > **Type:** Feature
 > **Affects:** .claude/skills/sdlc-studio/scripts/telemetry.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/templates/core/bug.md, .claude/skills/sdlc-studio/templates/core/story.md

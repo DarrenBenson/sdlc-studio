@@ -1,6 +1,7 @@
 # CR-0183: Passive concurrency safety: atomic index writes and an advisory allocation lock
 
 > **Status:** Complete
+> **Size:** M
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic (v4 breakdown):** [EP0015](../epics/EP0015-passive-concurrency-and-write-path-safety.md)

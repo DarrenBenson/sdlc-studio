@@ -1,6 +1,7 @@
 # CR-0184: Refresh the TRD: the v2.0.0 blueprint misdescribes the v3.5.0 script layer, write contract and state files
 
 > **Status:** Complete
+> **Size:** M
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Epic (v4 breakdown):** [EP0012](../epics/EP0012-distributed-artefact-identity-schema-v3.md)

@@ -1,6 +1,7 @@
 # CR-0268: RFC0038 U4: an epic carries a T-shirt size, not story points - and its point total is DERIVED, not estimated
 
 > **Status:** Complete
+> **Size:** S
 > **Priority:** P2
 > **Type:** Improvement
 > **Affects:** .claude/skills/sdlc-studio/templates/core/epic.md, .claude/skills/sdlc-studio/scripts/reconcile.py

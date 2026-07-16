@@ -1,6 +1,7 @@
 # CR-0249: Derive per-type status vocab from the single source instead of triplicating it
 
 > **Status:** Complete
+> **Size:** S
 > **Priority:** P3
 > **Type:** Improvement
 > **Date:** 2026-07-14

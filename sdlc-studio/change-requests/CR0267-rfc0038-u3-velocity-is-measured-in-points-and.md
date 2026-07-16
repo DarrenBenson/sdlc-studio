@@ -1,6 +1,7 @@
 # CR-0267: RFC0038 U3: velocity is measured in points, and the docs stop describing a model that no longer exists
 
 > **Status:** Complete
+> **Size:** M
 > **Priority:** P2
 > **Type:** Improvement
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/reference-config.md

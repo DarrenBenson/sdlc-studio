@@ -2,6 +2,7 @@
 
 > **Provenance:** RFC0034 (estimate-side workstream)
 > **Status:** Complete
+> **Size:** M
 > **Priority:** P3
 > **Type:** Improvement
 > **Date:** 2026-07-14

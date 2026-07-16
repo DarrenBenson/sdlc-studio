@@ -1,6 +1,7 @@
 # CR-0259: RFC0034 D3: a sprint capacity budget in tokens/wall-clock, wired to CR0225 appetite
 
 > **Status:** Complete
+> **Size:** M
 > **Priority:** P3
 > **Type:** Feature
 > **Date:** 2026-07-14

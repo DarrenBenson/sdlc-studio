@@ -1,6 +1,7 @@
 # CR-0270: RFC0038 U7: stamp project and points on every evidence record, so cross-project data is collatable and never blindly pooled
 
 > **Status:** Complete
+> **Size:** S
 > **Priority:** P1
 > **Type:** Improvement
 > **Affects:** .claude/skills/sdlc-studio/scripts/telemetry.py, .claude/skills/sdlc-studio/scripts/sprint.py

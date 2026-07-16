@@ -1,6 +1,7 @@
 # CR-0266: RFC0038 U2: sprint.py speaks points - the gate refuses above 8, WSJF is CoD/points, and the dead machinery is deleted
 
 > **Status:** Complete
+> **Size:** L
 > **Priority:** P1
 > **Type:** Improvement
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py

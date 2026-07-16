@@ -1,6 +1,7 @@
 # CR-0265: RFC0038 U1: Points (modified Fibonacci) become the one size vocabulary, replacing Effort S/M/L
 
 > **Status:** Complete
+> **Size:** M
 > **Priority:** P1
 > **Type:** Improvement
 > **Affects:** .claude/skills/sdlc-studio/templates/core/bug.md, .claude/skills/sdlc-studio/templates/core/cr.md, .claude/skills/sdlc-studio/templates/core/story.md, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/artifact.py

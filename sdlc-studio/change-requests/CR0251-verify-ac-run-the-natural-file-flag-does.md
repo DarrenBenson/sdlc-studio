@@ -1,6 +1,7 @@
 # CR-0251: verify_ac run: the natural --file flag does not exist (friction: it is --story)
 
 > **Status:** Complete
+> **Size:** S
 > **Priority:** P4
 > **Type:** Improvement
 > **Date:** 2026-07-14

@@ -1,6 +1,7 @@
 # CR-0263: Measure the estimator, per estimator - and give "unknown" a first-class value
 
 > **Status:** Complete
+> **Size:** M
 > **Priority:** P2
 > **Type:** Feature
 > **Affects:** .claude/skills/sdlc-studio/scripts/telemetry.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint.py
