@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 35 |
+| Proposed | 36 |
 | Approved | 0 |
 | In Progress | 1 |
 | Complete | 273 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 8 |
 | Blocked | 0 |
-| **Total** | **317** |
+| **Total** | **318** |
 
 ## All Changes
 
@@ -139,6 +139,7 @@
 | [CR-0315](CR0315-per-unit-changelog-fragments-composed-at-release-kill.md) | Per-unit CHANGELOG fragments composed at release: kill the shared-file hold-back trick that per-unit commits currently force | Proposed | High | Improvement | 2026-07-16 | -- |
 | [CR-0316](CR0316-critic-py-brief-emit-the-seat-review-prompt.md) | critic.py brief: emit the seat-review prompt deterministically and parse the returned verdict block - the critic ceremony is re-derived by hand every unit | Proposed | Medium | Improvement | 2026-07-16 | -- |
 | [CR-0317](CR0317-a-shared-test-module-loader-for-scripts-tests.md) | A shared test-module loader for scripts/tests: forty files duplicate the importlib spec dance and every new module re-trips on it | Proposed | Low | Improvement | 2026-07-16 | -- |
+| [CR-0318](CR0318-the-reviewer-of-record-sign-off-must-carry.md) | The reviewer-of-record sign-off must carry a decision brief: what shipped, what the critics rejected, gate and cost evidence - inline in the prompt, with hold and delegate paths | Proposed | High | process | 2026-07-16 | -- |
 
 ## Archived Releases
 

@@ -2,6 +2,7 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0075: A sign-off request must carry the evidence it asks the principal to judge**
 - **L-0074: A shared measurement helper (`flow.terminal_date`) grown for one status class (terminal) needs its assumptions re-checked per caller: the...**
 - **L-0073: A reporting cap is a refusal in disguise: any bounded simulation/measurement that can hit its bound must refuse or flag at the bound, never...**
 - **L-0072: Calibrate an instrument's units to the measured process, not the literature's default: the MC forecast shipped with ISO-week buckets from...**
