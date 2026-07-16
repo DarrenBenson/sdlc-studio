@@ -6,15 +6,15 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 31 |
+| Proposed | 32 |
 | Approved | 0 |
-| In Progress | 5 |
-| Complete | 269 |
+| In Progress | 1 |
+| Complete | 273 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 8 |
 | Blocked | 0 |
-| **Total** | **313** |
+| **Total** | **314** |
 
 ## All Changes
 
@@ -131,10 +131,11 @@
 | [CR-0307](CR0307-a-deterministic-review-close-helper-mint-the-dated.md) | A deterministic review-close helper: mint the dated RV, stamp review-state.json, and derive LATEST.md - a review record should never live only in the overwritable anchor | Proposed | High | Improvement | 2026-07-16 | -- |
 | [CR-0308](CR0308-verify-ac-run-story-should-accept-a-story.md) | verify_ac run --story should accept a story id (it silently means --file): the natural first call 'run --story US0177' fails with 'no story file' | Proposed | Low | Improvement | 2026-07-16 | -- |
 | [CR-0309](CR0309-refine-seeds-each-minted-story-s-acs-from.md) | refine seeds each minted story's ACs from the request's acceptance criteria instead of leaving {{placeholder}} scaffolds | Proposed | Medium | Improvement | 2026-07-16 | -- |
-| [CR-0310](CR0310-deterministic-flow-metrics-and-monte-carlo-forecasting-cycle.md) | Deterministic flow metrics and Monte Carlo forecasting: cycle time, throughput, WIP age, blocked age from the census + git log - zero-token measurement | In Progress | High | Feature | 2026-07-16 | -- |
-| [CR-0311](CR0311-sprint-goal-a-product-outcome-goal-on-the.md) | Sprint Goal: a product-outcome goal on the sprint plan, judged at the closing review - the --goal flag is a pipeline stage, not a goal | In Progress | Medium | Improvement | 2026-07-16 | -- |
-| [CR-0312](CR0312-dora-four-keys-deterministically-deployment-frequency-lead-time.md) | DORA four keys, deterministically: deployment frequency, lead time, change failure rate, MTTR from git history + the deploy ledger | In Progress | Medium | Feature | 2026-07-16 | -- |
-| [CR-0313](CR0313-small-batch-guard-an-advisory-diff-size-lane.md) | Small-batch guard: an advisory diff-size lane flags a delivered unit whose change exceeds a batch threshold - the AI batch-size failure mode, caught deterministically | In Progress | Medium | Improvement | 2026-07-16 | -- |
+| [CR-0310](CR0310-deterministic-flow-metrics-and-monte-carlo-forecasting-cycle.md) | Deterministic flow metrics and Monte Carlo forecasting: cycle time, throughput, WIP age, blocked age from the census + git log - zero-token measurement | Complete | High | Feature | 2026-07-16 | -- |
+| [CR-0311](CR0311-sprint-goal-a-product-outcome-goal-on-the.md) | Sprint Goal: a product-outcome goal on the sprint plan, judged at the closing review - the --goal flag is a pipeline stage, not a goal | Complete | Medium | Improvement | 2026-07-16 | -- |
+| [CR-0312](CR0312-dora-four-keys-deterministically-deployment-frequency-lead-time.md) | DORA four keys, deterministically: deployment frequency, lead time, change failure rate, MTTR from git history + the deploy ledger | Complete | Medium | Feature | 2026-07-16 | -- |
+| [CR-0313](CR0313-small-batch-guard-an-advisory-diff-size-lane.md) | Small-batch guard: an advisory diff-size lane flags a delivered unit whose change exceeds a batch threshold - the AI batch-size failure mode, caught deterministically | Complete | Medium | Improvement | 2026-07-16 | -- |
+| [CR-0314](CR0314-forecast-in-sprints-and-hours-not-iso-weeks.md) | Forecast in sprints and hours, not ISO weeks: AI-speed delivery needs sprint-session buckets with days as the calendar floor | Proposed | High | Improvement | 2026-07-16 | -- |
 
 ## Archived Releases
 

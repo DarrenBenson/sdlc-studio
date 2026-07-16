@@ -1,6 +1,6 @@
 # EP0052: Flow metrics and Monte Carlo schedule forecasting
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 10
 > **Parent:** CR0310
 > **Created:** 2026-07-16

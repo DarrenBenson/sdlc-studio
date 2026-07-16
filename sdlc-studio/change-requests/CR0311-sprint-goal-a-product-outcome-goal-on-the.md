@@ -1,6 +1,6 @@
 # CR-0311: Sprint Goal: a product-outcome goal on the sprint plan, judged at the closing review - the --goal flag is a pipeline stage, not a goal
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0053
 > **Priority:** Medium
 > **Type:** Improvement

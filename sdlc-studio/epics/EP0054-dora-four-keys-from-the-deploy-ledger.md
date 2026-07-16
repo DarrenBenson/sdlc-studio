@@ -1,6 +1,6 @@
 # EP0054: DORA four keys from the deploy ledger
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 3
 > **Parent:** CR0312
 > **Created:** 2026-07-16

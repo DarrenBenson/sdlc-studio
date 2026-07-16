@@ -13,3 +13,4 @@ next `sprint plan --worklist` reads back.
 
 | ID | Title | Date |
 | --- | --- | --- |
+| [HO-0001](HO0001-agile-gap-tranche-delivered-cr0314-sprint-hour-forecast.md) | Agile-gap tranche delivered - CR0314 (sprint/hour forecast buckets) is the next batch's seed | 2026-07-16 |

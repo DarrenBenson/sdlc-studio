@@ -1,6 +1,6 @@
 # CR-0312: DORA four keys, deterministically: deployment frequency, lead time, change failure rate, MTTR from git history + the deploy ledger
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0054
 > **Priority:** Medium
 > **Type:** Feature

@@ -51,3 +51,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0039](RETRO0039-the-un-skippable-sprint-close-down-detect-nudge-enforce.md) | The un-skippable sprint close-down: detect, nudge, enforce | 2026-07-16 | -- | -- |
 | [RETRO-0040](RETRO0040-backlog-triage-as-a-ceremony-inside-plan.md) | Backlog triage as a ceremony inside plan | 2026-07-16 | -- | -- |
 | [RETRO-0041](RETRO0041-the-sprint-report-cost-and-velocity.md) | The sprint report: what a sprint delivered, cost, and velocity | 2026-07-16 | -- | -- |
+| [RETRO-0042](RETRO0042-flow-metrics-sprint-goal-dora-keys-small-batch.md) | Flow metrics, Sprint Goal, DORA keys, small-batch guard - the agile-gap tranche | 2026-07-16 | -- | -- |

@@ -1,6 +1,6 @@
 # CR-0313: Small-batch guard: an advisory diff-size lane flags a delivered unit whose change exceeds a batch threshold - the AI batch-size failure mode, caught deterministically
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0055
 > **Priority:** Medium
 > **Type:** Improvement

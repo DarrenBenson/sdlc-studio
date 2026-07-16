@@ -1,6 +1,6 @@
 # EP0055: Advisory small-batch gate lane
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 3
 > **Parent:** CR0313
 > **Created:** 2026-07-16

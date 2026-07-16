@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 4 |
+| Draft | 0 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 51 |
+| Done | 55 |
 | **Total** | **55** |
 
 > Generate-mode note: all epics are **Ready** (spec extracted from the existing
@@ -72,7 +72,7 @@
 | [EP0049](EP0049-story-workflows-resolve-personas-registry-first.md) | Story workflows resolve personas registry-first | Done | -- | -- | 2026-07-16 | 2026-07-16 |
 | [EP0050](EP0050-dogfood-seat-cast-migrated-to-seats-and-grounded.md) | Dogfood seat cast migrated to seats/ and grounded in this project | Done | -- | -- | 2026-07-16 | 2026-07-16 |
 | [EP0051](EP0051-validate-covers-the-legacy-personas-md-layout.md) | validate covers the legacy personas.md layout | Done | -- | -- | 2026-07-16 | 2026-07-16 |
-| [EP0052](EP0052-flow-metrics-and-monte-carlo-schedule-forecasting.md) | Flow metrics and Monte Carlo schedule forecasting | Draft | -- | -- | 2026-07-16 | 2026-07-16 |
-| [EP0053](EP0053-sprint-goal-on-the-plan-judged-at-close.md) | Sprint Goal on the plan, judged at close | Draft | -- | -- | 2026-07-16 | 2026-07-16 |
-| [EP0054](EP0054-dora-four-keys-from-the-deploy-ledger.md) | DORA four keys from the deploy ledger | Draft | -- | -- | 2026-07-16 | 2026-07-16 |
-| [EP0055](EP0055-advisory-small-batch-gate-lane.md) | Advisory small-batch gate lane | Draft | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0052](EP0052-flow-metrics-and-monte-carlo-schedule-forecasting.md) | Flow metrics and Monte Carlo schedule forecasting | Done | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0053](EP0053-sprint-goal-on-the-plan-judged-at-close.md) | Sprint Goal on the plan, judged at close | Done | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0054](EP0054-dora-four-keys-from-the-deploy-ledger.md) | DORA four keys from the deploy ledger | Done | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0055](EP0055-advisory-small-batch-gate-lane.md) | Advisory small-batch gate lane | Done | -- | -- | 2026-07-16 | 2026-07-16 |

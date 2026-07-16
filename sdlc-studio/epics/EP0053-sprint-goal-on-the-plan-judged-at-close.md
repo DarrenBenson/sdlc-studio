@@ -1,6 +1,6 @@
 # EP0053: Sprint Goal on the plan, judged at close
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 3
 > **Parent:** CR0311
 > **Created:** 2026-07-16
