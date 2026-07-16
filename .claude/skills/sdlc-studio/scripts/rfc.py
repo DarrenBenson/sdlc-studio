@@ -64,11 +64,19 @@ def digest(repo_root: Path | str, decidable_only: bool = True) -> dict:
         rid = sdlc_md.extract_record_id(path.stem) or path.stem
         decision_rows = _table_data_rows(_section(text, "Open Decisions"))
         open_count = sum(1 for r in decision_rows if any(c == "Open" for c in r))
-        workstreams = len(_table_data_rows(_section(text, "Workstream")) or
-                          _table_data_rows(_section(text, "Phased Plan")))
+        # Workstreams = the RFC's REAL children (the Decomposed-into/Parent links the
+        # derivation gate and reconcile already use - one authority, LL0016), falling
+        # back to a Workstream/Phased Plan table only when no children are linked yet.
+        children = sdlc_md.children_of(root, sdlc_md.norm_id(rid))
+        workstreams = len(children) or len(
+            _table_data_rows(_section(text, "Workstream")) or
+            _table_data_rows(_section(text, "Phased Plan")))
         rec = "\n".join(_section(text, "Recommendation")).strip()
         has_rec = bool(rec) and rec.upper() != "TBD"
-        ready = status in DECIDABLE and has_rec and open_count == 0
+        # Decided-awaiting-delivery (every decision row resolved) must never read
+        # READY-for-decision: the digest would invite re-deciding settled questions.
+        decided = bool(decision_rows) and open_count == 0
+        ready = status in DECIDABLE and has_rec and open_count == 0 and not decided
         rfcs.append({
             "id": rid,
             "title": sdlc_md.extract_h1_title(text) or rid,
@@ -77,6 +85,7 @@ def digest(repo_root: Path | str, decidable_only: bool = True) -> dict:
             "open_count": open_count,
             "workstreams": workstreams,
             "has_recommendation": has_rec,
+            "decided": decided,
             "ready_for_decision": ready,
         })
     rfcs.sort(key=lambda r: r["id"])
@@ -97,10 +106,15 @@ def cmd_decide(args: argparse.Namespace) -> int:
         s = data["summary"]
         print(f"rfc decide: {s['ready']}/{s['total']} ready for decision")
         for r in data["rfcs"]:
-            flag = "READY" if r["ready_for_decision"] else "    -"
-            note = "" if r["ready_for_decision"] else (
-                f" ({r['open_count']} open decision(s))" if r["open_count"]
-                else " (no recommendation)")
+            if r["ready_for_decision"]:
+                flag, note = "READY", ""
+            elif r.get("decided"):
+                flag = "DECIDED"
+                note = " (awaiting delivery of its workstreams)"
+            else:
+                flag = "    -"
+                note = (f" ({r['open_count']} open decision(s))" if r["open_count"]
+                        else " (no recommendation)")
             print(f"  {flag} {r['id']} [{r['status']}] ws={r['workstreams']}{note}")
     return 0
 

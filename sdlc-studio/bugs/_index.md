@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 26 |
+| Open | 25 |
 | In Progress | 0 |
-| Fixed | 69 |
+| Fixed | 70 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -143,7 +143,7 @@
 | [BG0174](BG0174-audit-has-no-help-file-and-no-type.md) | audit has no help file and no Type Reference row - the universal '{type} help' contract 404s for the one command with a mandatory pre-flight gate | Open | Low | 2026-07-16 | 2026-07-16 |
 | [BG0175](BG0175-artifact-py-s-review-handoff-scaffold-path-drops.md) | artifact.py's review/handoff scaffold path drops --author: literal {{author}} in the revision row and no Raised-by stamp, unlike every other type | Open | Low | 2026-07-16 | 2026-07-16 |
 | [BG0176](BG0176-migrate-s-needs-human-list-advises-re-sizing.md) | migrate's needs-human list advises re-sizing terminal units: 14+ Closed/Fixed legacy-Effort bugs each get 'set its Points by judgement', work nobody should do | Open | Medium | 2026-07-16 | 2026-07-16 |
-| [BG0177](BG0177-rfc-decide-misreports-the-drafts-ws-counts-a.md) | rfc decide misreports the drafts: ws counts a Workstream section no RFC has (never the Decomposed-into children), and decided RFCs still read READY for decision | Open | Medium | 2026-07-16 | 2026-07-16 |
+| [BG0177](BG0177-rfc-decide-misreports-the-drafts-ws-counts-a.md) | rfc decide misreports the drafts: ws counts a Workstream section no RFC has (never the Decomposed-into children), and decided RFCs still read READY for decision | Fixed | Medium | 2026-07-16 | 2026-07-16 |
 
 ## Archived Releases
 

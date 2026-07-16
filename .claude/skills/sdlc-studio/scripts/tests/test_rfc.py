@@ -44,15 +44,25 @@ def _by_id(root):
 
 
 class DigestTests(unittest.TestCase):
-    def test_ready_when_recommendation_and_no_open(self) -> None:
+    def test_all_resolved_rows_read_decided_not_ready(self) -> None:
+        # BG0177: decided-awaiting-delivery must never read READY-for-decision -
+        # the digest was inviting the operator to re-decide settled questions
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _rfc(root, 1, n_decisions=2, n_open=0, n_workstreams=3)  # all resolved
             r = _by_id(root)["RFC0001"]
             self.assertEqual(r["open_count"], 0)
-            self.assertEqual(r["open_decisions"], 2)
             self.assertEqual(r["workstreams"], 3)
-            self.assertTrue(r["has_recommendation"])
+            self.assertTrue(r["decided"])
+            self.assertFalse(r["ready_for_decision"])
+
+    def test_ready_when_recommendation_and_no_decision_rows(self) -> None:
+        # nothing decided yet + a recommendation = genuinely ready for the session
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rfc(root, 1)  # no decisions table at all
+            r = _by_id(root)["RFC0001"]
+            self.assertFalse(r["decided"])
             self.assertTrue(r["ready_for_decision"])
 
     def test_not_ready_with_open_decisions(self) -> None:
@@ -134,6 +144,49 @@ class EscapedPipeTests(unittest.TestCase):
         rows = rfc._table_data_rows(lines)
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0], ["WS1", "match `All|Crew` fields", "CR (TBD)"])
+
+
+class DecideChildrenTests(unittest.TestCase):
+    """BG0177: ws counts the RFC's real children (the Decomposed-into/Parent links every
+    other tool uses), falling back to the Workstream table only when no children exist."""
+
+    def _child_cr(self, root, num, parent):
+        d = root / "sdlc-studio" / "change-requests"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"CR{num:04d}-x.md").write_text(
+            f"# CR-{num:04d}: c\n\n> **Status:** Proposed\n> **Parent:** {parent}\n",
+            encoding="utf-8")
+
+    def test_ws_counts_linked_children(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rfc(root, 1, n_decisions=1, n_open=1)
+            self._child_cr(root, 10, "RFC0001")
+            self._child_cr(root, 11, "RFC0001")
+            r = _by_id(root)["RFC0001"]
+            self.assertEqual(r["workstreams"], 2)
+
+    def test_ws_falls_back_to_table_without_children(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rfc(root, 1, n_workstreams=3)
+            self.assertEqual(_by_id(root)["RFC0001"]["workstreams"], 3)
+
+    def test_decided_line_printed_as_decided(self) -> None:
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rfc(root, 1, n_decisions=2, n_open=0)
+            self._child_cr(root, 10, "RFC0001")
+            mod = _load()
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                mod.main(["decide", "--root", str(root)])
+            out = buf.getvalue()
+            self.assertIn("DECIDED", out)
+            self.assertNotIn("READY RFC0001", out)
+            self.assertIn("ws=1", out)
 
 
 if __name__ == "__main__":

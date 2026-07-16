@@ -1,6 +1,7 @@
 # BG0177: rfc decide misreports the drafts: ws counts a Workstream section no RFC has (never the Decomposed-into children), and decided RFCs still read READY for decision
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (12-test suite incl. DecideChildrenTests + live workspace dogfood: four triaged RFCs read DECIDED ws=2/3/2/1)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/rfc.py, .claude/skills/sdlc-studio/scripts/tests/test_rfc.py
