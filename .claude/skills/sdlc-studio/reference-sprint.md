@@ -444,6 +444,28 @@ drop a unit, or declare itself done early:
 Without `--autonomous` the same guardrails apply as model-instructed policy - the
 portable Phase-1 path for tools without the scripts.
 
+## The Two Instruments: Schedule and Cost {#schedule-and-cost}
+
+The loop carries two measurement axes, and neither feeds a gate (a targeted measure
+stops measuring):
+
+- **Cost** is points x a measured tokens-per-point rate - the plan's token forecast,
+  judged by the retro against the recorded prediction. It answers "what will this batch
+  burn", never "when will it land".
+- **Schedule** is the flow instrument (`flow.py`): measured cycle time, weekly
+  throughput and work-item age, and a **seeded Monte Carlo completion forecast**
+  (`flow.py forecast --units N`) sampling the measured weekly throughput - zero-delivery
+  weeks included - to give 50/85/95% confidence dates. Probabilistic by design: a
+  single-date schedule promise is the false precision the estimator lessons killed.
+  It refuses under four weeks of history, an all-zero window, a non-positive batch,
+  or when the 95% rank hits the simulation horizon; a refusal names the reason,
+  never guesses a date.
+
+The sprint report shows both axes side by side; `deploy.py metrics` (the DORA four
+keys) is the delivery-performance read once a project ships. Points stay the COST
+vocabulary; flow stays the SCHEDULE vocabulary; velocity remains descriptive and is
+never a target.
+
 ## Appetite (the run-level circuit breaker) {#appetite}
 
 A per-unit quarantine bounds one unit; it does not bound the RUN. An unattended run

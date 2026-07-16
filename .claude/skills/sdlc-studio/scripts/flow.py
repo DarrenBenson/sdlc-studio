@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import random
 import re
 import subprocess
 import sys
@@ -227,6 +228,79 @@ def compute(root, types=("story", "bug"), today: dt.date | None = None) -> dict:
     }
 
 
+MC_MIN_WEEKS = 4
+MC_SIMS = 10_000
+MC_WEEK_CAP = 520  # simulation horizon; a percentile AT the cap is refused, never reported
+
+
+def _median(vals: list) -> float:
+    n = len(vals)
+    return vals[n // 2] if n % 2 else (vals[n // 2 - 1] + vals[n // 2]) / 2
+
+
+def monte_carlo_forecast(weekly_samples: list[int], n_units: int, *,
+                         seed: int = 0, sims: int = MC_SIMS,
+                         min_weeks: int = MC_MIN_WEEKS,
+                         today: dt.date | None = None) -> dict:
+    """Probabilistic completion forecast: sample measured weekly throughput (zero
+    weeks included - dropping them is silent optimism) with replacement until the
+    batch is covered, `sims` times; report the 50/85/95% completion dates. Seeded
+    and reproducible by construction (a forecast that changes between runs cannot
+    be judged later). Refuses - never guesses - under `min_weeks` of history, on an
+    all-zero history, on a non-positive batch, and when the reported confidence
+    rank hits the simulation horizon (a capped week count reported as a date would
+    be a truncation dressed as a forecast)."""
+    today = today or dt.date.today()
+    if n_units <= 0:
+        return {"refused": f"a batch of {n_units} unit(s) is not forecastable"}
+    if len(weekly_samples) < min_weeks:
+        return {"refused": f"only {len(weekly_samples)} week(s) of throughput history - "
+                           f"minimum {min_weeks}; a forecast from less is a guess"}
+    if not any(weekly_samples):
+        return {"refused": "throughput history is all zero - nothing has been delivered "
+                           "in the window, so no completion date is honest"}
+    rng = random.Random(seed)
+    weeks_needed: list[int] = []
+    for _ in range(sims):
+        done = 0
+        weeks = 0
+        while done < n_units and weeks < MC_WEEK_CAP:
+            done += rng.choice(weekly_samples)
+            weeks += 1
+        weeks_needed.append(weeks)
+    weeks_needed.sort()
+    def rank(p: float) -> int:
+        return weeks_needed[min(len(weeks_needed) - 1, int(len(weeks_needed) * p))]
+    if rank(0.95) >= MC_WEEK_CAP:
+        return {"refused": f"at the measured throughput the batch does not complete "
+                           f"within the simulation horizon ({MC_WEEK_CAP} weeks) at 95% "
+                           f"confidence - a capped date would be a truncation, not a forecast"}
+    return {"units": n_units, "sims": sims, "seed": seed,
+            "history_weeks": len(weekly_samples),
+            "confidence": {p: (today + dt.timedelta(weeks=rank(float(p) / 100))).isoformat()
+                           for p in ("50", "85", "95")}}
+
+
+def forecast(root, n_units: int, *, seed: int = 0,
+             today: dt.date | None = None) -> dict:
+    """Workspace glue: measured weekly throughput (every ISO week in the delivered
+    window, zeros included) -> monte_carlo_forecast."""
+    report = compute(root, today=today)
+    window = report["throughput"]["window"]
+    if not window:
+        return {"refused": "no delivered units at all - there is no throughput to sample"}
+    weekly = report["throughput"]["weekly"]
+    start = dt.date.fromisoformat(window["from"])
+    end = dt.date.fromisoformat(window["to"])
+    samples: list[int] = []
+    monday = start - dt.timedelta(days=start.isocalendar()[2] - 1)
+    while monday <= end:
+        y, w, _ = monday.isocalendar()
+        samples.append(weekly.get(f"{y}-W{w:02d}", 0))
+        monday += dt.timedelta(days=7)
+    return monte_carlo_forecast(samples, n_units, seed=seed, today=today)
+
+
 def ageing_report(root, *, today: dt.date | None = None) -> dict | None:
     """The ageing flags status surfaces: None when `flow.ageing_days` is unset (the
     feature is opt-in - a gate appearing on a live workflow uninvited breaks it).
@@ -272,9 +346,7 @@ def _render(report: dict) -> str:
     cycles = sorted((u["cycle_days"], rid) for rid, u in units.items() if "cycle_days" in u)
     if cycles:
         vals = [c for c, _ in cycles]
-        n = len(vals)
-        mid = vals[n // 2] if n % 2 else (vals[n // 2 - 1] + vals[n // 2]) / 2
-        lines.append(f"cycle time: {n} delivered unit(s), median {mid:g}d, "
+        lines.append(f"cycle time: {len(vals)} delivered unit(s), median {_median(vals):g}d, "
                      f"range {vals[0]}-{vals[-1]}d")
     weekly = report["throughput"]["weekly"]
     if weekly:
@@ -313,7 +385,29 @@ def main(argv=None) -> int:
     c.add_argument("--type", default="story,bug",
                    help="comma-separated unit types (default: story,bug)")
     sdlc_md.add_format_arg(c)
+    f = sub.add_parser("forecast", help="Seeded Monte Carlo completion forecast for N "
+                                        "units from measured weekly throughput "
+                                        "(refuses under 4 weeks of history).")
+    f.add_argument("--units", type=int, required=True,
+                   help="how many delivery units the batch holds")
+    f.add_argument("--seed", type=int, default=0,
+                   help="simulation seed (default 0 - reproducible by design)")
+    sdlc_md.add_format_arg(f)
     args = ap.parse_args(argv)
+    if args.cmd == "forecast":
+        result = forecast(Path(args.root), args.units, seed=args.seed)
+        if args.format == "json":
+            print(json.dumps(result, indent=2))
+        elif "refused" in result:
+            print(f"forecast refused: {result['refused']}")
+        else:
+            c50, c85, c95 = (result["confidence"][k] for k in ("50", "85", "95"))
+            print(f"forecast for {result['units']} unit(s) over {result['history_weeks']} "
+                  f"measured week(s) ({result['sims']} sims, seed {result['seed']}):\n"
+                  f"  50% by {c50}   85% by {c85}   95% by {c95}\n"
+                  f"  probabilistic schedule read - the cost instrument (points x rate) "
+                  f"is a different axis; neither feeds a gate")
+        return 0
     types = tuple(t.strip() for t in args.type.split(",") if t.strip())
     report = compute(Path(args.root), types=types)
     if args.format == "json":

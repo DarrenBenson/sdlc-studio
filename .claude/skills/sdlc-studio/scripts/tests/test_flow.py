@@ -235,6 +235,110 @@ class AgeingFlagTests(unittest.TestCase):
             self.assertIsNone(flow.ageing_report(root, today=dt.date(2026, 7, 16)))
 
 
+class MonteCarloTests(unittest.TestCase):
+    """US0182: seeded, reproducible probabilistic completion forecast over measured
+    weekly throughput. Zero-weeks INSIDE the window are real samples - dropping them
+    is silent optimism."""
+
+    SAMPLES = [2, 0, 3, 1, 0, 2, 4, 1]  # 8 measured weeks, mean ~1.6/week
+
+    def test_monte_carlo_is_seeded_and_reproducible(self):
+        a = flow.monte_carlo_forecast(self.SAMPLES, 10, seed=7,
+                                      today=dt.date(2026, 7, 16))
+        b = flow.monte_carlo_forecast(self.SAMPLES, 10, seed=7,
+                                      today=dt.date(2026, 7, 16))
+        self.assertEqual(a, b)
+        self.assertEqual(set(a["confidence"]), {"50", "85", "95"})
+
+    def test_monte_carlo_percentiles_are_ordered_dates(self):
+        f = flow.monte_carlo_forecast(self.SAMPLES, 10, seed=7,
+                                      today=dt.date(2026, 7, 16))
+        d50 = dt.date.fromisoformat(f["confidence"]["50"])
+        d85 = dt.date.fromisoformat(f["confidence"]["85"])
+        d95 = dt.date.fromisoformat(f["confidence"]["95"])
+        self.assertLessEqual(d50, d85)
+        self.assertLessEqual(d85, d95)
+        self.assertGreater(d50, dt.date(2026, 7, 16))
+
+    def test_monte_carlo_zero_weeks_push_dates_out(self):
+        # the same totals WITHOUT the zero weeks must forecast earlier - proving the
+        # zero samples are genuinely in the distribution
+        with_zeros = flow.monte_carlo_forecast(self.SAMPLES, 12, seed=7,
+                                               today=dt.date(2026, 7, 16))
+        without = flow.monte_carlo_forecast([s for s in self.SAMPLES if s], 12, seed=7,
+                                            today=dt.date(2026, 7, 16))
+        self.assertGreater(with_zeros["confidence"]["85"], without["confidence"]["85"])
+
+
+class MinimumSampleTests(unittest.TestCase):
+    """US0182: too little history is REFUSED with the sample size named - never a
+    guessed date."""
+
+    def test_refuses_under_minimum_weeks(self):
+        f = flow.monte_carlo_forecast([2, 3], 10, seed=1, today=dt.date(2026, 7, 16))
+        self.assertIn("refused", f)
+        self.assertIn("2 week(s)", f["refused"])
+        self.assertNotIn("confidence", f)
+
+    def test_refuses_when_confidence_rank_hits_the_horizon(self):
+        # a batch the measured throughput cannot finish inside the simulation horizon
+        # must REFUSE - a capped week count reported as a date is a truncation
+        f = flow.monte_carlo_forecast([2, 0, 3, 1, 0, 2, 4, 1], 5000, seed=7,
+                                      today=dt.date(2026, 7, 16))
+        self.assertIn("refused", f)
+        self.assertIn("horizon", f["refused"])
+        self.assertNotIn("confidence", f)
+
+    def test_refuses_non_positive_batch(self):
+        f = flow.monte_carlo_forecast([2, 0, 3, 1, 0], 0, seed=1,
+                                      today=dt.date(2026, 7, 16))
+        self.assertIn("refused", f)
+
+    def test_seed_parameter_is_live(self):
+        # deterministic given the algorithm: two seeds must yield different dates
+        # (a mutant hardwiring Random(0) collapses them to equal)
+        a = flow.monte_carlo_forecast([9, 0, 0, 0, 1], 25, seed=1, sims=200,
+                                      today=dt.date(2026, 7, 16))
+        b = flow.monte_carlo_forecast([9, 0, 0, 0, 1], 25, seed=99, sims=200,
+                                      today=dt.date(2026, 7, 16))
+        self.assertNotEqual(a["confidence"], b["confidence"])
+
+    def test_refuses_zero_throughput_history(self):
+        f = flow.monte_carlo_forecast([0, 0, 0, 0, 0], 5, seed=1,
+                                      today=dt.date(2026, 7, 16))
+        self.assertIn("refused", f)
+        self.assertIn("zero", f["refused"].lower())
+
+    def test_workspace_glue_refuses_short_window(self):
+        # one delivered unit = a 1-week window < the 4-week minimum
+        with tempfile.TemporaryDirectory() as tmp:
+            root, _ = _repo_with_story(tmp, ["Draft", "Done"])
+            f = flow.forecast(root, 5, seed=1)
+            self.assertIn("refused", f)
+            self.assertIn("1 week(s)", f["refused"])
+
+    def test_workspace_glue_fills_zero_weeks_in_the_window(self):
+        # two deliveries ~6 ISO weeks apart: the sample set must span every week in
+        # the window (gap weeks as zeros), not just the weeks with data - a
+        # values-only mutant reports history_weeks 2 and forecasts optimistically
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            _git(root, "init", "-q")
+            _git(root, "config", "user.email", "t@t")
+            _git(root, "config", "user.name", "t")
+            d = root / "sdlc-studio" / "stories"
+            d.mkdir(parents=True)
+            for sid, day in (("US0001", "2026-06-01"), ("US0002", "2026-07-10")):
+                (d / f"{sid}-x.md").write_text(
+                    f"# {sid}: x\n\n> **Status:** Done\n> **Created:** 2026-05-20\n"
+                    f"> **Points:** 2\n", encoding="utf-8")
+                _git(root, "add", "-A")
+                _git(root, "commit", "-q", "-m", f"done {sid}",
+                     "--date", f"{day}T12:00:00")
+            f = flow.forecast(root, 3, seed=1, today=dt.date(2026, 7, 16))
+            self.assertEqual(f["history_weeks"], 6)  # W23..W28 inclusive, zeros filled
+
+
 class LeadTimeTests(unittest.TestCase):
     """flow.lead_times bucketing (used by deploy metrics): a commit exactly AT an event
     time belongs to that event and is never double-counted into the next."""

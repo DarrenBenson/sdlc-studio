@@ -52,6 +52,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   guessed), and `status` gains an opt-in ageing advisory: with `flow.ageing_days` set, each
   In Progress unit older than the threshold and every stuck Blocked unit is named inline.
   Absent config = silent (a flag appearing uninvited on a live workflow is a break).
+- **Monte Carlo completion forecasting - the probabilistic schedule read (CR0310 finale,
+  EP0052).** `flow.py forecast --units N` samples measured weekly throughput (zero-delivery
+  weeks included - dropping them is silent optimism) in a seeded, reproducible simulation and
+  reports 50/85/95% confidence completion dates. Refuses under four weeks of history or an
+  all-zero window, naming the sample size - never a guessed date. The sprint report now shows
+  the flow axis (median cycle, throughput) beside cost, and
+  `reference-sprint.md#schedule-and-cost` fixes the vocabulary: points = cost, flow = schedule,
+  velocity descriptive, nothing feeds a gate.
 - **The sprint report: what a sprint delivered, cost, and velocity (EP0048, RFC0035, absorbing
   CR0273).** New `sprint_report.py show --id RETROxxxx` composes - deterministically, at no model-token
   cost - the delivered points, the actual spend, the estimate-vs-actual, the velocity, the lessons and

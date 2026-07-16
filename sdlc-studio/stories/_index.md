@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 1 |
+| Draft | 0 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 183 |
+| Done | 184 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -92,7 +92,7 @@
 | [US0179](US0179-check-personas-emits-a-layout-advisory-and-a.md) | check_personas emits a layout advisory and a light structural check for personas.md-only projects | Done | EP0051 | 2026-07-16 | 2026-07-16 |
 | [US0180](US0180-flow-compute-per-unit-cycle-time-weekly-throughput.md) | flow compute: per-unit cycle time, weekly throughput and work-item age from census + git log | Done | EP0052 | 2026-07-16 | 2026-07-16 |
 | [US0181](US0181-blocked-age-and-ageing-threshold-flags-surfaced-in.md) | Blocked-age and ageing-threshold flags surfaced in status | Done | EP0052 | 2026-07-16 | 2026-07-16 |
-| [US0182](US0182-monte-carlo-completion-forecast-seeded-minimum-sample-refusal.md) | Monte Carlo completion forecast (seeded, minimum-sample refusal) surfaced in sprint report, schedule-vs-cost doc | Draft | EP0052 | 2026-07-16 | 2026-07-16 |
+| [US0182](US0182-monte-carlo-completion-forecast-seeded-minimum-sample-refusal.md) | Monte Carlo completion forecast (seeded, minimum-sample refusal) surfaced in sprint report, schedule-vs-cost doc | Done | EP0052 | 2026-07-16 | 2026-07-16 |
 | [US0183](US0183-record-an-operator-sprint-goal-on-plan-and.md) | Record an operator Sprint Goal on plan and run-state; closing review verdict and sprint report display it | Done | EP0053 | 2026-07-16 | 2026-07-16 |
 | [US0184](US0184-deploy-metrics-computes-the-four-keys-from-ledger.md) | deploy metrics computes the four keys from ledger + git + bug dates, refusing absent sources, not-applicable without a ledger | Done | EP0054 | 2026-07-16 | 2026-07-16 |
 | [US0185](US0185-gate-lane-measures-a-delivered-unit-s-diff.md) | gate lane measures a delivered unit's diff size vs configured thresholds, warn-only, default off | Done | EP0055 | 2026-07-16 | 2026-07-16 |

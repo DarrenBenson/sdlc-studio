@@ -1,6 +1,6 @@
 # US0182: Monte Carlo completion forecast (seeded, minimum-sample refusal) surfaced in sprint report, schedule-vs-cost doc
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -23,6 +23,7 @@
 - **When** forecast runs for a named batch
 - **Then** 50/85/95% completion dates are produced from a seeded, reproducible simulation
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_flow.py -k MonteCarlo
+- **Verified:** yes (2026-07-16)
 
 ### AC2: Refuses under minimum sample size
 
@@ -30,6 +31,7 @@
 - **When** forecast runs
 - **Then** it refuses with the sample size named - never a guessed date
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_flow.py -k MinimumSample
+- **Verified:** yes (2026-07-16)
 
 ### AC3: Sprint report and doc separation of instruments
 
@@ -37,6 +39,7 @@
 - **When** the report shows flow numbers
 - **Then** documentation states flow answers schedule, points x rate answers cost, and neither feeds a gate
 - **Verify:** grep "schedule" .claude/skills/sdlc-studio/reference-sprint.md
+- **Verified:** yes (2026-07-16)
 
 ## Revision History
 

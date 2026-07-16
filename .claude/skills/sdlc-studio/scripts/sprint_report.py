@@ -34,6 +34,24 @@ from lib import run_state, sdlc_md  # noqa: E402
 import retro  # noqa: E402
 
 
+def _flow_summary(root: Path) -> dict | None:
+    """The schedule axis beside the cost axis: median cycle time and weekly throughput
+    from flow.compute. None (line omitted) when nothing is measurable or flow errors -
+    the report never fails on its garnish."""
+    try:
+        import flow
+        rep = flow.compute(root)
+        cycles = sorted(u["cycle_days"] for u in rep["units"].values() if "cycle_days" in u)
+        w = rep["throughput"]["window"]
+        if not cycles or not w:
+            return None
+        return {"median_cycle_days": round(flow._median(cycles), 1), "weeks": w["weeks"],
+                "per_week": round(sum(rep["throughput"]["weekly"].values()) / max(1, w["weeks"]), 1)}
+    except Exception as exc:  # noqa: BLE001 - advisory garnish, never breaks the report
+        print(f"note: flow summary unavailable ({type(exc).__name__}: {exc})", file=sys.stderr)
+        return None
+
+
 def _sprint_goal(root: Path, unit_ids: list[str]) -> tuple[str | None, dict | None]:
     """The run state's Sprint Goal + verdict - ONLY when its batch names this sprint's
     units. A run state from a different run says nothing about this report (the same
@@ -90,6 +108,7 @@ def report(root: Path, retro_id: str, *, sprint_tokens: int | None = None,
     return {
         "ok": True, "id": retro_id, "date": acc.get("date", ""),
         "sprint_goal": goal, "sprint_goal_verdict": goal_verdict,
+        "flow": _flow_summary(Path(root)),
         "units": unit_ids,
         "delivered_points": b.get("delivered_points"),
         "spend": _spend(root, unit_ids),
@@ -157,6 +176,11 @@ def render(rep: dict) -> str:
         lines.append(f"Models: {', '.join(acc['models'])}.")
     lines.append(f"Tickets raised: {', '.join(rep['tickets']) if rep['tickets'] else 'none'}.")
     lines.append(f"Lessons: {len(rep['lessons'])} recorded.")
+    fl = rep.get("flow")
+    if fl:
+        lines.append(f"Flow (schedule axis - measured, feeds no gate): median cycle "
+                     f"{fl['median_cycle_days']}d, throughput ~{fl['per_week']}/week "
+                     f"over {fl['weeks']} week(s).")
     return "\n".join(lines)
 
 
