@@ -1,6 +1,6 @@
 # EP0061: RFC decision paperwork made deterministic
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 3
 > **Parent:** CR0327
 > **Created:** 2026-07-16

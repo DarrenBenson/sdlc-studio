@@ -1,6 +1,6 @@
 # CR-0316: critic.py brief: emit the seat-review prompt deterministically and parse the returned verdict block - the critic ceremony is re-derived by hand every unit
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0059
 > **Priority:** Medium
 > **Type:** Improvement

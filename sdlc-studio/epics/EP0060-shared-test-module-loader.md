@@ -1,6 +1,6 @@
 # EP0060: Shared test-module loader
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 1
 > **Parent:** CR0317
 > **Created:** 2026-07-16

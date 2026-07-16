@@ -1,6 +1,6 @@
 # CR-0315: Per-unit CHANGELOG fragments composed at release: kill the shared-file hold-back trick that per-unit commits currently force
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0058
 > **Priority:** High
 > **Type:** Improvement

@@ -1,6 +1,6 @@
 # EP0062: verify_ac accepts a story id where a story is meant
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 1
 > **Parent:** CR0308
 > **Created:** 2026-07-16

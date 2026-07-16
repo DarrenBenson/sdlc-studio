@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 38 |
 | Approved | 0 |
-| In Progress | 8 |
-| Complete | 273 |
+| In Progress | 1 |
+| Complete | 280 |
 | Rejected | 0 |
 | Deferred | 0 |
 | Superseded | 8 |
@@ -128,17 +128,17 @@
 | [CR-0304](CR0304-trd-migrations-section-claims-schema-migration-is-not.md) | TRD Migrations section claims schema migration is 'not by the script layer' while committed main ships a three-script migration surface the TRD itself lists elsewhere | Proposed | Low | docs | 2026-07-16 | -- |
 | [CR-0305](CR0305-audit-cost-py-estimates-from-one-frozen-reference.md) | audit_cost.py estimates from one frozen reference run and never records actuals - give the audit the record-forecast/record-actual loop the skill preaches for sprints | Proposed | Medium | Improvement | 2026-07-16 | -- |
 | [CR-0306](CR0306-candidates-dropped-by-the-verification-cap-vanish-into.md) | Candidates dropped by the verification cap vanish into the workflow journal - persist the overflow as a carry-over worklist a scoped follow-up can verify | Proposed | Medium | Improvement | 2026-07-16 | -- |
-| [CR-0307](CR0307-a-deterministic-review-close-helper-mint-the-dated.md) | A deterministic review-close helper: mint the dated RV, stamp review-state.json, and derive LATEST.md - a review record should never live only in the overwritable anchor | In Progress | High | Improvement | 2026-07-16 | -- |
-| [CR-0308](CR0308-verify-ac-run-story-should-accept-a-story.md) | verify_ac run --story should accept a story id (it silently means --file): the natural first call 'run --story US0177' fails with 'no story file' | In Progress | Low | Improvement | 2026-07-16 | -- |
-| [CR-0309](CR0309-refine-seeds-each-minted-story-s-acs-from.md) | refine seeds each minted story's ACs from the request's acceptance criteria instead of leaving {{placeholder}} scaffolds | In Progress | Medium | Improvement | 2026-07-16 | -- |
+| [CR-0307](CR0307-a-deterministic-review-close-helper-mint-the-dated.md) | A deterministic review-close helper: mint the dated RV, stamp review-state.json, and derive LATEST.md - a review record should never live only in the overwritable anchor | Complete | High | Improvement | 2026-07-16 | -- |
+| [CR-0308](CR0308-verify-ac-run-story-should-accept-a-story.md) | verify_ac run --story should accept a story id (it silently means --file): the natural first call 'run --story US0177' fails with 'no story file' | Complete | Low | Improvement | 2026-07-16 | -- |
+| [CR-0309](CR0309-refine-seeds-each-minted-story-s-acs-from.md) | refine seeds each minted story's ACs from the request's acceptance criteria instead of leaving {{placeholder}} scaffolds | Complete | Medium | Improvement | 2026-07-16 | -- |
 | [CR-0310](CR0310-deterministic-flow-metrics-and-monte-carlo-forecasting-cycle.md) | Deterministic flow metrics and Monte Carlo forecasting: cycle time, throughput, WIP age, blocked age from the census + git log - zero-token measurement | Complete | High | Feature | 2026-07-16 | -- |
 | [CR-0311](CR0311-sprint-goal-a-product-outcome-goal-on-the.md) | Sprint Goal: a product-outcome goal on the sprint plan, judged at the closing review - the --goal flag is a pipeline stage, not a goal | Complete | Medium | Improvement | 2026-07-16 | -- |
 | [CR-0312](CR0312-dora-four-keys-deterministically-deployment-frequency-lead-time.md) | DORA four keys, deterministically: deployment frequency, lead time, change failure rate, MTTR from git history + the deploy ledger | Complete | Medium | Feature | 2026-07-16 | -- |
 | [CR-0313](CR0313-small-batch-guard-an-advisory-diff-size-lane.md) | Small-batch guard: an advisory diff-size lane flags a delivered unit whose change exceeds a batch threshold - the AI batch-size failure mode, caught deterministically | Complete | Medium | Improvement | 2026-07-16 | -- |
 | [CR-0314](CR0314-forecast-in-sprints-and-hours-not-iso-weeks.md) | Forecast in sprints and hours, not ISO weeks: AI-speed delivery needs sprint-session buckets with days as the calendar floor | Proposed | High | Improvement | 2026-07-16 | -- |
-| [CR-0315](CR0315-per-unit-changelog-fragments-composed-at-release-kill.md) | Per-unit CHANGELOG fragments composed at release: kill the shared-file hold-back trick that per-unit commits currently force | In Progress | High | Improvement | 2026-07-16 | -- |
-| [CR-0316](CR0316-critic-py-brief-emit-the-seat-review-prompt.md) | critic.py brief: emit the seat-review prompt deterministically and parse the returned verdict block - the critic ceremony is re-derived by hand every unit | In Progress | Medium | Improvement | 2026-07-16 | -- |
-| [CR-0317](CR0317-a-shared-test-module-loader-for-scripts-tests.md) | A shared test-module loader for scripts/tests: forty files duplicate the importlib spec dance and every new module re-trips on it | In Progress | Low | Improvement | 2026-07-16 | -- |
+| [CR-0315](CR0315-per-unit-changelog-fragments-composed-at-release-kill.md) | Per-unit CHANGELOG fragments composed at release: kill the shared-file hold-back trick that per-unit commits currently force | Complete | High | Improvement | 2026-07-16 | -- |
+| [CR-0316](CR0316-critic-py-brief-emit-the-seat-review-prompt.md) | critic.py brief: emit the seat-review prompt deterministically and parse the returned verdict block - the critic ceremony is re-derived by hand every unit | Complete | Medium | Improvement | 2026-07-16 | -- |
+| [CR-0317](CR0317-a-shared-test-module-loader-for-scripts-tests.md) | A shared test-module loader for scripts/tests: forty files duplicate the importlib spec dance and every new module re-trips on it | Complete | Low | Improvement | 2026-07-16 | -- |
 | [CR-0318](CR0318-the-reviewer-of-record-sign-off-must-carry.md) | The reviewer-of-record sign-off must carry a decision brief: what shipped, what the critics rejected, gate and cost evidence - inline in the prompt, with hold and delegate paths | Proposed | High | process | 2026-07-16 | -- |
 | [CR-0319](CR0319-cut-5-0-0-the-release-dod-for.md) | Cut 5.0.0: the release DoD for the sizing + two-backlog model (RFC0040 close-out) | Proposed | High | process | 2026-07-16 | -- |
 | [CR-0320](CR0320-rolling-multi-sprint-policy-run-n-sprint-cycles.md) | Rolling multi-sprint policy: run N sprint cycles unattended under a standing policy, plan regenerated at each boundary (RFC0036 D1) | Proposed | Medium | Feature | 2026-07-16 | -- |
@@ -148,7 +148,7 @@
 | [CR-0324](CR0324-dor-dod-artefacts-check-id-registry-the-two.md) | DoR/DoD artefacts + check-id registry: the two editable documents with a tagged machine-checkable subset (RFC0043 slice 1) | Proposed | Medium | Feature | 2026-07-16 | -- |
 | [CR-0325](CR0325-wire-the-gates-to-the-dor-dod-documents.md) | Wire the gates to the DoR/DoD documents: grooming reads the ready bar, Done/close/release read the done bar (RFC0043 slice 2) | Proposed | Medium | Feature | 2026-07-16 | -- |
 | [CR-0326](CR0326-init-tailoring-pass-for-dor-dod-offer-stack.md) | init tailoring pass for DoR/DoD: offer stack/profile-derived criteria at project init (RFC0043 slice 3) | Proposed | Low | Improvement | 2026-07-16 | -- |
-| [CR-0327](CR0327-deterministic-rfc-decision-paperwork-rfc-resolve-edits-a.md) | Deterministic RFC decision paperwork: rfc resolve edits a decision row, and parent-aware CR filing wires both link directions at mint | In Progress | Medium | Improvement | 2026-07-16 | -- |
+| [CR-0327](CR0327-deterministic-rfc-decision-paperwork-rfc-resolve-edits-a.md) | Deterministic RFC decision paperwork: rfc resolve edits a decision row, and parent-aware CR filing wires both link directions at mint | Complete | Medium | Improvement | 2026-07-16 | -- |
 
 ## Archived Releases
 

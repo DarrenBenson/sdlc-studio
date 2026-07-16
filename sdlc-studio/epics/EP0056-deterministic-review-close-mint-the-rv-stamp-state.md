@@ -1,6 +1,6 @@
 # EP0056: Deterministic review-close: mint the RV, stamp state, derive LATEST
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 5
 > **Parent:** CR0307
 > **Created:** 2026-07-16

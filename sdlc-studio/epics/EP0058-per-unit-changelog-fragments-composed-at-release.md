@@ -1,6 +1,6 @@
 # EP0058: Per-unit CHANGELOG fragments composed at release
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 5
 > **Parent:** CR0315
 > **Created:** 2026-07-16

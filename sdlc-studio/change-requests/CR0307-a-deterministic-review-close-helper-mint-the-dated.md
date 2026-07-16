@@ -1,6 +1,6 @@
 # CR-0307: A deterministic review-close helper: mint the dated RV, stamp review-state.json, and derive LATEST.md - a review record should never live only in the overwritable anchor
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0056
 > **Priority:** High
 > **Type:** Improvement

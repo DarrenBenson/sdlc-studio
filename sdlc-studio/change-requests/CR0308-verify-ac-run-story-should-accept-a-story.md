@@ -1,6 +1,6 @@
 # CR-0308: verify_ac run --story should accept a story id (it silently means --file): the natural first call 'run --story US0177' fails with 'no story file'
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0062
 > **Priority:** Low
 > **Type:** Improvement

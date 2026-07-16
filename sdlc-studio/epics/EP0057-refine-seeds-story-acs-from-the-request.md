@@ -1,6 +1,6 @@
 # EP0057: refine seeds story ACs from the request
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 3
 > **Parent:** CR0309
 > **Created:** 2026-07-16

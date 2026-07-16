@@ -1,6 +1,6 @@
 # EP0059: critic brief: the deterministic seat-review ceremony
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 3
 > **Parent:** CR0316
 > **Created:** 2026-07-16
