@@ -1,6 +1,7 @@
 # CR-0310: Deterministic flow metrics and Monte Carlo forecasting: cycle time, throughput, WIP age, blocked age from the census + git log - zero-token measurement
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0052
 > **Priority:** High
 > **Type:** Feature
 > **Size:** M
