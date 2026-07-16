@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 161 |
+| Done | 165 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **162** |
+| **Total** | **166** |
 
 ## All Stories
 
@@ -73,6 +73,10 @@
 | [US0160](US0160-reference-audit-pre-flight-gate-present-the-estimate.md) | reference-audit pre-flight gate: present the estimate and confirm above a threshold before the fan-out | Done | EP0044 | 2026-07-15 | 2026-07-15 |
 | [US0161](US0161-retro-py-records-an-actual-token-count-and.md) | retro.py records an actual token count and computes tokens-per-point for an interactive sprint | Done | EP0045 | 2026-07-15 | 2026-07-15 |
 | [US0162](US0162-drop-the-interactive-equals-unmeasured-language-for-not.md) | Drop the interactive-equals-UNMEASURED language for not-yet-captured, preserving CR0273 guards | Done | EP0045 | 2026-07-15 | 2026-07-15 |
+| [US0163](US0163-close-owed-detector-terminal-delivery-units-since-the.md) | Close-owed detector: terminal delivery units since the last retro no retro Batch names | Done | EP0046 | 2026-07-16 | 2026-07-16 |
+| [US0164](US0164-surface-a-close-owed-nudge-in-status-and.md) | Surface a close-owed nudge in status and hint | Done | EP0046 | 2026-07-16 | 2026-07-16 |
+| [US0165](US0165-gate-grows-an-auto-detecting-close-owed-lane.md) | Gate grows an auto-detecting close-owed lane, warn by default and block under --require-close | Done | EP0046 | 2026-07-16 | 2026-07-16 |
+| [US0166](US0166-ship-a-stop-hook-installer-and-redefine-sprint.md) | Ship a Stop-hook installer and redefine sprint-done as close-gate-green | Done | EP0046 | 2026-07-16 | 2026-07-16 |
 
 ## Archived Releases
 

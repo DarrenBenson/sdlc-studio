@@ -38,6 +38,14 @@ summarise" could be defeated with one `rm`. The summary is the tracked half and 
 claim, so the contradiction is refused (restore the log, or run `lessons summary` to clear the
 digest).
 
+`--require-close` is the **push/release close guard**: it binds a blocking `close-owed` lane that
+fails when any delivery unit reached a terminal state since the close-owed baseline with no retro
+accounting for it - a skipped close-down. Unlike the standard checks it is **not** in the plain
+gate: a normal gate makes no claim about close-ownership, so it never wears one. The soft,
+discoverable half of the same signal is on `status`/`hint` (an advisory line); this is the hard
+half that lands where shipping happens. Deselecting the bound `close-owed` lane under it is refused,
+as every bound lane is. Backed by `close_owed.py`.
+
 Deselecting a **bound** lane (`--skip lessons-summary`, or an `--only` that omits it) is refused,
 not honoured, in every mode: no verdict is printed over the lane that defines it.
 
@@ -73,6 +81,33 @@ run - a shell-backed verb on a story stamped `Provenance: external` - is reporte
 unproven**, never red, since an unrun verifier is not evidence about the code; it still fails the
 lane, and `--allow-external` runs it once the content is trusted. `--verify-batch` runs jest once
 and resolves jest verifiers from the cached result rather than a cold start per AC.
+
+### `close_owed.py`
+
+The deterministic answer to "is a sprint close owed right now?" - the detector behind the
+`status`/`hint` nudge and the gate's `--require-close` lane. A delivery unit (epic / story / bug)
+that is terminal is **covered** when some retro's `> **Batch:**` names it; an uncovered terminal
+unit is a candidate for an owed close. Because a project that adopts this mid-life carries a large
+tail of historically-closed units that predate story-level retro batches, the detector
+**baselines**: `close_owed.py baseline` snapshots the exact **set** of ids terminal at adoption into
+a committed `.close-owed-baseline.json`, and from then on only a unit that reaches terminal **later**
+(one not in that set) can owe a close. A set, not a per-prefix id cutoff: a highest-id cutoff would
+silently forgive any unit that was in flight at adoption and closes later - the precise false "none
+owed" this feature exists to kill - and breaks entirely on non-numeric (ULID / schema-v3) ids. The
+pre-adoption tail is recorded and forgiven, never enforced retroactively, and until a baseline is
+stamped the detector reports every uncovered unit and both `detect` and the `status`/`hint` advisory
+nudge you to stamp one, rather than enforcing nothing in silence.
+
+- `detect [--format json]` - report the owed units; exits non-zero only when baselined AND a close
+  is genuinely owed, so a gate or hook can branch on the exit code. Unbaselined is a soft state
+  (exit 0), not a failure.
+- `baseline [--date] [--note]` - stamp the grandfather set once, at adoption.
+
+`hooks/close_guard.py` is the optional **Stop hook** built on it: wired into a project's
+`.claude/settings.json` under `hooks.Stop`, it reminds the agent of an owed close at the moment a
+turn would end (the Definition of Done's close clause, enforced by the harness rather than recall).
+It is default-allow on any doubt - malformed input, unbaselined project, or detector error all let
+the turn end - and never hard-locks. See `help/gate.md`.
 
 ### `verify_ac.py`
 

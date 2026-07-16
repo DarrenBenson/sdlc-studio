@@ -405,5 +405,54 @@ class HookWarningTests(unittest.TestCase):
                 status.main(["pillars", "--root", str(root)])
             self.assertIn("enable-hooks.sh", buf.getvalue())
 
+
+class CloseOwedAdvisoryTests(unittest.TestCase):
+    """The status/hint nudge (US0164): silent until a close is genuinely owed."""
+
+    def _story(self, root: Path, sid: str, st: str) -> None:
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{sid}-x.md").write_text(f"# {sid}\n\n> **Status:** {st}\n> **Points:** 2\n",
+                                       encoding="utf-8")
+
+    def test_nudges_to_baseline_when_unbaselined_with_terminal_units(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "retros").mkdir(parents=True)
+            self._story(root, "US0001", "Done")
+            adv = status.close_owed_advisory(root)  # the prerequisite must not be invisible
+            self.assertIsNotNone(adv)
+            self.assertIn("baseline", adv)
+
+    def test_silent_when_unbaselined_and_nothing_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "retros").mkdir(parents=True)
+            self._story(root, "US0001", "In Progress")  # nothing terminal to baseline yet
+            self.assertIsNone(status.close_owed_advisory(root))
+
+    def test_fires_when_a_close_is_owed(self) -> None:
+        import close_owed
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "retros").mkdir(parents=True)
+            self._story(root, "US0001", "Done")
+            close_owed.stamp_baseline(root, date="2026-01-01")
+            self._story(root, "US0005", "Done")
+            adv = status.close_owed_advisory(root)
+            self.assertIsNotNone(adv)
+            self.assertIn("US0005", adv)
+            self.assertIn("close is owed", adv)
+
+    def test_silent_when_all_owed_work_is_grandfathered(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "retros").mkdir(parents=True)
+            self._story(root, "US0001", "Done")
+            import close_owed
+            close_owed.stamp_baseline(root, date="2026-01-01")
+            self.assertIsNone(status.close_owed_advisory(root))
+
+
 if __name__ == "__main__":
     unittest.main()

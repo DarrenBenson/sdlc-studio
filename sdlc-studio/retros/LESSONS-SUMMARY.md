@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0064: When an external contract is ambiguous (the Stop hook's `stop_hook_active` / exit codes), write to the intersection of the plausible...**
+- **L-0063: A test suite that passes is evidence only about the cases it runs.**
+- **L-0062: A grandfather baseline for "work done before adoption" must be the **set** of ids that existed, not a highest-id/date cutoff.**
 - **L-0061: A mandated ceremony with no mechanical enforcement is a silent control - it fires only when someone remembers, which under delivery...**
 - **L-0060: A silence in one measurement path is not proof the quantity is unmeasurable.**
 - **L-0059: A false negative in a test suite is a fixture-coverage gap, not proof of correctness: BG0151 shipped because every fixture used the NEW...**

@@ -312,3 +312,7 @@
 | US0160 | APPROVE | Dani Okafor; agent; v1 | sdlc-studio; agent; v1 | 2026-07-15 | v1 APPROVE-WITH-NITS; fixed 3 (non-delivered points counted; cost-gate over-warned vs docs; tokens-without-points silent) + doc-coverage; re-review APPROVE |
 | US0161 | APPROVE | Dani Okafor; agent; v1 | sdlc-studio; agent; v1 | 2026-07-15 | v1 APPROVE-WITH-NITS; fixed 3 (non-delivered points counted; cost-gate over-warned vs docs; tokens-without-points silent) + doc-coverage; re-review APPROVE |
 | US0162 | APPROVE | Dani Okafor; agent; v1 | sdlc-studio; agent; v1 | 2026-07-15 | v1 APPROVE-WITH-NITS; fixed 3 (non-delivered points counted; cost-gate over-warned vs docs; tokens-without-points silent) + doc-coverage; re-review APPROVE |
+| US0163 | APPROVE | Dani Okafor (engineering seat) | sdlc-studio; agent; v1 | 2026-07-16 | - |
+| US0164 | APPROVE | Dani Okafor (engineering seat) | sdlc-studio; agent; v1 | 2026-07-16 | - |
+| US0165 | APPROVE | Dani Okafor (engineering seat) | sdlc-studio; agent; v1 | 2026-07-16 | - |
+| US0166 | APPROVE | Dani Okafor (engineering seat) | sdlc-studio; agent; v1 | 2026-07-16 | - |

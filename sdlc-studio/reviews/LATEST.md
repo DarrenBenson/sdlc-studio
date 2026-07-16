@@ -1,37 +1,46 @@
-# Unified Review - 2026-07-15 (close) - honest & complete tooling (the homelab dogfood sprint)
+# Unified Review - 2026-07-16 (close) - the un-skippable sprint close-down (RFC0042 -> EP0046)
 
 > **Review type:** Sprint-close review (required by the `--require-review` gate)
 > **Reviewer:** sdlc-studio; agent; v1 (delivery critiqued independently by the Dani Okafor engineering seat)
-> **Date:** 2026-07-15
+> **Date:** 2026-07-16
 > **Project version:** 4.1.0 released; unreleased work on `main` under a freeze until ~2026-07-21
 
 ## Headline
 
-**6/6 delivered (22 points).** Everything traces to this session's real-project dogfooding or a
-correction: **BG0151** (`children_of` learns the legacy `Change Request:` link, so old-flow CRs stop
-being false-flagged as un-refined by `hint`/`status`/`migrate` - proven on ../homelab, 24->16 and
-12->4), **US0158** (`reconcile apply` creates a missing index from template, not just detects it),
-**US0159/US0160** (an `audit_cost.py` estimator + a pre-flight cost gate so a large fan-out is
-confirmed, not sprung - from the ~6.9M-token homelab audit), and **US0161/US0162** (`accuracy
---tokens N` gives an interactive sprint a real, deterministic tokens-per-point; the doctrine drops
-"interactive = UNMEASURED" for "not-yet-captured"). Full suite 2468, tools 183, 0 drift, gate PASS.
+**4/4 delivered (18 points).** RFC0042 built and Accepted (by derivation): the sprint close-down is
+now **mechanically detectable and enforceable**, not doctrine an agent has to remember. `close_owed.py`
+answers "is a close owed right now?" deterministically - a delivery unit terminal since a one-time
+grandfather **baseline** (the SET of ids terminal at adoption) with no retro's `Batch` naming it. It
+surfaces three ways: a soft `advisory:` on `status`/`hint` (**US0164**), a blocking
+`gate --require-close` lane for push/release (**US0165**, bound-only), and an optional
+`hooks/close_guard.py` Stop hook that reminds the agent before a turn ends (**US0166**, default-allow,
+never a hard-lock). The detector (**US0163**) caught its own sprint - EP0046 + US0163-0166 showed as
+owing a close until this retro named them. Full suite 2492, tools 183, 0 drift, style clean.
 
 ## What went well
 
-- **Dogfooding on homelab found a real bug in shipped work** (BG0151) that every fixture had missed
-  because they all used new-style links; a real project had old-style links.
-- **The honest-split design contained BG0151's blast radius** - `migrate --apply` never acts on
-  needs-refine, so the false positives were reporting-only.
-- **The review, again on-theme:** caught `_delivered_points` counting non-delivered units as
-  "delivered" in a sprint about honest measurement. Fixed; re-review APPROVE.
+- **The feature caught its own close.** A live end-to-end proof: the four Done stories + their epic
+  registered as an owed close, cleared only by RETRO0039 naming them.
+- **The bound-lane invariants kept the design honest.** An early attempt to make `close-owed` a
+  warn-by-default gate check tripped two existing invariant tests (a bound lane must not sit in the
+  plain gate; must block on crash). They were right - the soft nudge belongs on status/hint, the gate
+  carries only the blocking lane.
+
+## What the independent review caught
+
+- **A real BLOCKER in the baseline model.** The first cut baselined a per-prefix **highest id**, which
+  silently grandfathered a lower-id unit that was in flight at adoption and closed later - the exact
+  false "none owed" this sprint exists to kill - and broke entirely on non-numeric v3/ULID ids. Fixed
+  at root: baseline the **set** of terminal ids. Two regression tests lock it (in-flight-lower-id +
+  ULID). Re-review APPROVE. Plus four MINOR/NIT (an un-nudged unbaselined prerequisite; two tests that
+  passed by avoiding their own claim; a title over-claim) - all fixed.
 
 ## Backlog rollup (non-terminal)
 
-- **NEW, captured, not built:** **RFC0042** (make the sprint close-down un-skippable - the homelab
-  agent shipped without a retro because `gate --require-retro` is opt-in) and a **DoR/DoD RFC** to
-  raise next (editable per-project Definition of Ready / Done artefacts + gates).
-- **CR0272 slice 2** (command-surface cleanup) - evidenced by `command-audit.md`. **RFC0040** - the
-  5.0.0 bump. Older: CR0254/0255/0256, CR0264, CR0273, RFCs 0035/0036/0037.
+- **RFC0043** (DoR/DoD as editable per-project artefacts) - filed, Accepted-pending; this sprint
+  delivered the sprint-DoD's **close clause** it depends on. XL, decompose next.
+- Buildable-now discovery backlog: RFC0035/0036/0037, CR0264/0273, RFC0039 close-out. Release-gated
+  (5.0.0, after the freeze): RFC0040, CR0254/0255/0256, CR0272 retire/promote half.
 
 ## Production state
 
@@ -39,7 +48,6 @@ v4.1.0 released. Freeze holds until ~2026-07-21. All work on `main` under `[Unre
 
 ## For a fresh session
 
-Start here, then `AGENTS.md`. Upgrade front door: `migrate`. `reconcile apply` now self-heals a
-missing index. An interactive sprint's tokens are NOT unmeasurable - supply `accuracy --tokens N`.
-The close-down (retro/close-gate) is MANDATED - run `gate --require-retro RETROxxxx`; RFC0042 tracks
-making that un-skippable.
+Start here, then `AGENTS.md`. The close-down is now enforceable: `close_owed.py baseline` once at
+adoption, then `close_owed.py detect` / `gate --require-close` / the `status` advisory tell you when a
+close is owed. A sprint is complete only when the close gate is green and shown, never at "deployed".

@@ -256,6 +256,31 @@ def _hook_enabled(root: str) -> dict:
             "detail": gap or "hook enabled (or no tracked hook in this tree)"}
 
 
+def _close_owed(root: str) -> dict:
+    """The push/release close-owed guard (bound only, under --require-close): delivery units that
+    reached terminal since the baseline with no retro accounting for them - a skipped close-down.
+    Like every close/release lane it is a BOUND lane, added by its mode and never part of the plain
+    gate: a standard gate makes no claim about close-ownership, so it cannot wear one. The SOFT nudge
+    (discoverability) lives on status/hint; this is the blocking half that lands where shipping
+    happens. An unbaselined project reports zero - stamping the baseline is the operator's one-time
+    acknowledgement of the pre-adoption tail, not a gate's job.
+
+    This is the machine half of RFC0042: a mandated ceremony with no mechanical detector is a silent
+    control that fires only when someone remembers. Now the release gate can see a skipped close."""
+    import close_owed  # crash contained by BLOCKING_ON_ERROR: an unproven bound guard must fail loud
+    report = close_owed.owed(Path(root))
+    owed = report["owed"]
+    if not owed:
+        state = "no baseline stamped yet" if not report["baselined"] else "none owed"
+        return {"count": 0, "blocking": True,
+                "detail": f"no sprint close owed ({state}; {report['covered']} accounted for)"}
+    ids = ", ".join(cid for cid, _ in owed[:8]) + (f", +{len(owed) - 8} more" if len(owed) > 8 else "")
+    return {"count": len(owed), "blocking": True,
+            "detail": (f"a sprint close is owed - {len(owed)} delivery unit(s) reached terminal "
+                       f"with no retro ({ids}); run the retro then "
+                       f"`gate --require-retro RETROxxxx` before you push/release")}
+
+
 # Lanes whose FAILURES block must also block when they CRASH: a raised exception in
 # (say) validate or reconcile means the gate proved nothing about that lane, and a
 # green gate over an unproven blocking lane is the false-assurance class (LL0008).
@@ -265,7 +290,7 @@ BLOCKING_ON_ERROR = {
     "conformance", "reconcile", "index-derived", "validate",
     "integrity", "duplicate-id", "doc-coverage", "retro", "verify",
     "lessons-summary", "lessons-validity", "handoff", "review-legs",
-    "engagement-floor", "review-current",
+    "engagement-floor", "review-current", "close-owed",
 }
 
 DEFAULT_CHECKS = {
@@ -557,6 +582,7 @@ BOUND_LANE_SUBJECT = {
     "lessons-validity": "the sprint close's learning loop",
     "handoff": "the remaining-work handoff",
     "review-current": "the sprint close's review currency",
+    "close-owed": "whether a sprint close is owed",
 }
 
 
@@ -565,7 +591,7 @@ def run_gate(root: str = ".", only: list[str] | None = None,
              require_retro: str | None = None, release: bool = False,
              allow_external: bool = False, verify_batch: bool = False,
              require_lessons: bool = False, require_handoff: str | None = None,
-             require_review: bool = False) -> dict:
+             require_review: bool = False, require_close: bool = False) -> dict:
     """Run the selected checks and report. `ok` is False only when a BLOCKING check
     fails; a non-blocking failure is reported but does not fail the gate. `require_retro`
     is the SPRINT-CLOSE gate: it binds a blocking check that the named batch retro exists,
@@ -598,6 +624,9 @@ def run_gate(root: str = ".", only: list[str] | None = None,
     if require_review:  # close-gate review leg: LATEST.md must be current with the artefacts
         registry["review-current"] = _review_current
         bound.append("review-current")
+    if require_close:  # push/release guard: no delivery unit may owe a close (bound, blocking)
+        registry["close-owed"] = _close_owed
+        bound.append("close-owed")
     if release:  # pre-tag: the executing AC-verify lane joins the standard gate...
         registry["verify"] = (lambda r, _x=allow_external, _b=verify_batch:
                               _verify_acs(r, allow_external=_x, batch=_b))
@@ -669,7 +698,8 @@ def cmd_gate(args: argparse.Namespace) -> int:
                       verify_batch=getattr(args, "verify_batch", False),
                       require_lessons=getattr(args, "require_lessons", False),
                       require_handoff=getattr(args, "require_handoff", None),
-                      require_review=getattr(args, "require_review", False))
+                      require_review=getattr(args, "require_review", False),
+                      require_close=getattr(args, "require_close", False))
     if args.format == "json":
         print(json.dumps(report, indent=2))
     else:
@@ -713,6 +743,11 @@ def build_parser() -> argparse.ArgumentParser:
                    help="The review half of the sprint close: fail unless reviews/LATEST.md is at "
                         "least as new as every artefact (run `review` to refresh it). Currency, "
                         "not presence - a stale review anchor is a fresh session's first read")
+    p.add_argument("--require-close", dest="require_close", action="store_true",
+                   help="Push/release guard: fail if any delivery unit reached terminal since the "
+                        "close-owed baseline with no retro accounting for it (a skipped close-down). "
+                        "The `close-owed` lane WARNS on every gate by default; this makes it block. "
+                        "Deselecting the bound `close-owed` lane under it is refused")
     p.add_argument("--release", action="store_true",
                    help="Pre-tag gate: also EXECUTE every story's Verify: expression and fail "
                         "on any red or unproven AC (read-only - no Verified: back-annotation, "

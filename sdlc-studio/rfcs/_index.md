@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 7 |
+| Draft | 6 |
 | In Review | 0 |
-| Accepted | 33 |
+| Accepted | 34 |
 | Superseded | 0 |
 | Withdrawn | 3 |
 | **Total** | **43** |
@@ -58,5 +58,5 @@
 | [RFC-0039](RFC0039-the-discovery-track-issue-refine-and-triage-a.md) | The discovery track: Issue, refine and triage - a discovery backlog feeding delivery, worked in parallel | P2 | Draft | sdlc-studio | 2026-07-15 | -- |
 | [RFC-0040](RFC0040-upgrade-and-migration-path-for-the-sizing-and.md) | Upgrade and migration path for the sizing and two-backlog model, before release | P1 | Draft | sdlc-studio | 2026-07-15 | -- |
 | [RFC-0041](RFC0041-a-migrate-command-that-reviews-every-artefact-and.md) | A migrate command that reviews every artefact and upgrades where necessary | Medium | Accepted | sdlc-studio | 2026-07-15 | -- |
-| [RFC-0042](RFC0042-make-the-sprint-close-down-un-skippable-enforce.md) | Make the sprint close-down un-skippable: enforce the retro/close-gate mechanically, not just by doctrine | Medium | Draft | sdlc-studio | 2026-07-15 | -- |
+| [RFC-0042](RFC0042-make-the-sprint-close-down-un-skippable-enforce.md) | Make the sprint close-down un-skippable: enforce the retro/close-gate mechanically, not just by doctrine | Medium | Accepted | sdlc-studio | 2026-07-15 | -- |
 | [RFC-0043](RFC0043-definition-of-ready-and-definition-of-done-as.md) | Definition of Ready and Definition of Done as editable per-project artefacts, enforced by the existing gates | Medium | Draft | sdlc-studio | 2026-07-15 | -- |

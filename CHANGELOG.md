@@ -21,6 +21,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The sprint close-down is now mechanically detectable and enforceable (EP0046, RFC0042).** The
+  close (retro + lessons + close gate) was mandated but only ran when someone invoked
+  `--require-retro` - a silent control that lapsed under pressure and stopped the lessons
+  compounding. New `close_owed.py` answers "is a close owed right now?" deterministically: a
+  delivery unit that reached terminal since a one-time grandfather baseline
+  (`.close-owed-baseline.json`) with no retro's `Batch` accounting for it. It surfaces three ways -
+  a soft `advisory:` line on `status`/`hint`, a blocking `gate --require-close` lane for the
+  push/release moment (bound like the other close lanes, never in the plain gate), and an optional
+  `hooks/close_guard.py` Stop hook that reminds the agent of an owed close before a turn ends
+  (default-allow on any doubt, never a hard-lock). A sprint is complete only when the close gate is
+  green and shown, never at "deployed". The historical tail is grandfathered at adoption, never
+  enforced retroactively.
+
 - **`reconcile apply` creates a missing index from its template (EP0043, CR0277).** A
   `missing-index` drift used to be detect-only - an operator had to hand-author the index. Now
   `reconcile apply` materialises a missing pipeline or meta index (reviews/retros) from

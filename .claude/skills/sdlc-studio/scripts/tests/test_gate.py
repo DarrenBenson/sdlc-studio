@@ -1338,6 +1338,7 @@ class BoundLaneRegistryTests(unittest.TestCase):
         ("require_lessons", ["lessons-summary", "lessons-validity"]),
         ("require_handoff", ["handoff"]),
         ("release", ["verify", "review-legs"]),
+        ("require_close", ["close-owed"]),
     ]
 
     def test_every_bound_lane_names_its_subject(self) -> None:
@@ -1361,7 +1362,7 @@ class BoundLaneRegistryTests(unittest.TestCase):
         for mode, lanes in self.MODES:
             for lane in lanes:
                 with self.subTest(mode=mode, lane=lane):
-                    kw = {mode: True if mode == "release" or mode == "require_lessons"
+                    kw = {mode: True if mode in ("release", "require_lessons", "require_close")
                           else ("RETRO0001" if mode == "require_retro" else "HO0001")}
                     r = gate.run_gate(".", checks={"a": _fake(0)}, skip=[lane], **kw)
                     self.assertFalse(r["ok"])
@@ -1417,6 +1418,48 @@ class ReviewCurrencyGateTests(unittest.TestCase):
             os.utime(lat, (time.time() + 100, time.time() + 100))   # LATEST newest
             leg = self._leg(root)
             self.assertEqual(leg["status"], "pass", leg["detail"])
+
+
+class CloseOwedGateLaneTests(unittest.TestCase):
+    """The --require-close guard (US0165): a bound, blocking lane that refuses a push/release
+    while a sprint close is owed. The soft nudge is on status/hint; this is the hard half."""
+
+    def _story(self, root: Path, sid: str, st: str) -> None:
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{sid}-s.md").write_text(f"# {sid}: s\n\n> **Status:** {st}\n> **Points:** 2\n",
+                                       encoding="utf-8")
+
+    def _owed_project(self, root: Path) -> None:
+        import close_owed
+        (root / "sdlc-studio" / "retros").mkdir(parents=True, exist_ok=True)
+        self._story(root, "US0001", "Done")
+        close_owed.stamp_baseline(root, date="2026-01-01")
+        self._story(root, "US0005", "Done")  # later work, no retro -> owed
+
+    def test_require_close_fails_when_a_close_is_owed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._owed_project(root)
+            report = gate.run_gate(str(root), only=["close-owed"], require_close=True)
+            self.assertFalse(report["ok"])
+
+    def test_require_close_passes_once_a_retro_accounts_for_it(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._owed_project(root)
+            (root / "sdlc-studio" / "retros" / "RETRO0002-r.md").write_text(
+                "# RETRO-0002: s\n\n> **Batch:** US0005\n\n## Delivered\n- shipped\n",
+                encoding="utf-8")
+            report = gate.run_gate(str(root), only=["close-owed"], require_close=True)
+            self.assertTrue(report["ok"])
+
+    def test_close_owed_absent_from_the_plain_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._owed_project(root)
+            report = gate.run_gate(str(root))  # no --require-close
+            self.assertNotIn("close-owed", [c["check"] for c in report["checks"]])
 
 
 if __name__ == "__main__":

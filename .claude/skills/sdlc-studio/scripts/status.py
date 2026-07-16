@@ -337,6 +337,9 @@ def cmd_pillars(args: argparse.Namespace) -> int:
     gap = gate.hook_enablement_gap(args.root)
     if gap:
         print(f"advisory: {gap}")
+    owed = close_owed_advisory(Path(args.root))
+    if owed:
+        print(f"advisory: {owed}")
     _print_update_notice(args.root)
     return 0
 
@@ -416,9 +419,39 @@ def cmd_hint(args: argparse.Namespace) -> int:
         offer = team_offer_advisory(Path(args.root))
         if offer:
             print(f"advisory: {offer}")
+        owed = close_owed_advisory(Path(args.root))
+        if owed:
+            print(f"advisory: {owed}")
         for line in index_bloat_advisories(Path(args.root)):
             print(f"advisory: {line}")
     return 0
+
+
+def close_owed_advisory(repo_root: Path | str) -> str | None:
+    """One line when a sprint close is owed: delivery units reached terminal since the baseline
+    with no retro accounting for them. Surfaced on hint and status so a skipped close-down is
+    SEEN where operators look, not discovered sprints later when the lessons stopped compounding.
+    An unbaselined project (no cutoff stamped) is silent here - it is a soft state, not a nag."""
+    try:
+        import close_owed  # lazy sibling: no cost when the surface is unused
+        report = close_owed.owed(Path(repo_root))
+    except Exception:  # noqa: BLE001 - an advisory must never break the hint
+        return None
+    if not report["baselined"]:
+        # The prerequisite is itself skippable and, unnudged, invisible: a project with closed work
+        # but no baseline enforces nothing. Nudge it ONCE it has terminal units to judge, so the
+        # "un-skippable" close-down does not hinge on an un-surfaced setup step.
+        if report["owed"]:
+            return (f"close-owed tracking is not initialised: {len(report['owed'])} terminal "
+                    f"delivery unit(s) exist with no baseline - run `close_owed.py baseline` once "
+                    f"to grandfather them, then a later skipped close is caught")
+        return None
+    if not report["owed"]:
+        return None
+    ids = [cid for cid, _ in report["owed"]]
+    shown = ", ".join(ids[:5]) + ("..." if len(ids) > 5 else "")
+    return (f"a sprint close is owed: {len(ids)} delivery unit(s) reached terminal with no retro "
+            f"({shown}) - run the retro, then `gate --require-retro RETROxxxx`")
 
 
 def index_bloat_advisories(repo_root: Path) -> list[str]:

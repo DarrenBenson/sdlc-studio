@@ -49,6 +49,14 @@ never a target.
 A gate that checks a file exists is satisfied by `touch`, and the one gate worth having is
 the one an agent cannot satisfy without doing the work. Existence is not evidence.
 
+**A close is a Definition-of-Done clause, not an optional extra.** `--require-retro` only fires
+when someone runs it, so a close could silently lapse - the ceremony was mandated but had no
+detector. `close_owed.py` closes that: a delivery unit that reached terminal since the one-time
+close-owed baseline with no retro's `Batch` naming it is an **owed close**, surfaced as an
+`advisory:` line on `status`/`hint`, enforced as `gate --require-close` at the push/release moment,
+and optionally reinforced by the `hooks/close_guard.py` Stop hook. A sprint is complete only when
+the close gate is green and shown, **never at "deployed"**. See `help/gate.md`.
+
 ## The disposition rule
 
 A finding is dispositioned when it is **either**:
