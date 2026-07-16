@@ -14,7 +14,7 @@ Decomposed from CR0315. Delivers the work CR0315 requested.
 
 ## Story Breakdown
 
-- [ ] [US0188: changelog fragments: per-unit files in changelog.d, deterministic compose into [Unreleased], release gate refuses stray fragments](../stories/US0188-changelog-fragments-per-unit-files-in-changelog-d.md)
+- [x] [US0188: changelog fragments: per-unit files in changelog.d, deterministic compose into [Unreleased], release gate refuses stray fragments](../stories/US0188-changelog-fragments-per-unit-files-in-changelog-d.md)
 
 ## Revision History
 

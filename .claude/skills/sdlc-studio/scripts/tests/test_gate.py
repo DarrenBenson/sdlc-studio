@@ -459,7 +459,7 @@ class ReleaseGateTests(unittest.TestCase):
             self._story(root, "shell exit 1")
             with contextlib.redirect_stdout(io.StringIO()):
                 rc = gate.main(["--root", str(root), "--release", "--format", "json",
-                                "--only", "verify,review-legs"])
+                                "--only", "verify,review-legs,changelog-fragments"])
             self.assertEqual(rc, 1)
 
     def test_verify_lane_blocks_on_error(self) -> None:
@@ -509,7 +509,7 @@ class ReleaseSelectionGuardTests(ReleaseGateTests):
             root = Path(t)
             self._story(root, "shell true")
             r = gate.run_gate(str(root), checks={}, release=True,
-                              only=["verify", "review-legs"])
+                              only=["verify", "review-legs", "changelog-fragments"])
             self.assertTrue(r["ok"], r["checks"])
 
 
@@ -574,7 +574,7 @@ class ReleaseBlockedVerifierTests(ReleaseGateTests):
             self._external_story(root, "shell true")
             with contextlib.redirect_stdout(io.StringIO()):
                 rc = gate.main(["--root", str(root), "--release", "--allow-external",
-                                "--only", "verify,review-legs"])
+                                "--only", "verify,review-legs,changelog-fragments"])
             self.assertEqual(rc, 0)
 
 

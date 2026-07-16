@@ -293,6 +293,20 @@ BLOCKING_ON_ERROR = {
     "engagement-floor", "review-current", "close-owed",
 }
 
+def _changelog_fragments(root: str) -> dict:
+    """Release-bound lane: a stray (uncomposed) changelog fragment fails the cut -
+    an entry silently missing from a release is the LL0004 hole fragments exist to
+    close. Runs only under --release; the standard gate never nags about fragments
+    (they are the normal between-releases state)."""
+    import changelog
+    strays = changelog.check(root)
+    detail = ("no stray fragments" if not strays else
+              f"{len(strays)} uncomposed fragment(s): "
+              + ", ".join(p.name for p in strays)
+              + " - run changelog.py compose before tagging")
+    return {"count": len(strays), "blocking": True, "detail": detail}
+
+
 def _batch_size(root: str) -> dict:
     """Advisory small-batch lane: flags a delivered unit whose CHANGE is an outlier for
     its size - the AI batch-size failure mode (agents produce larger diffs faster; DORA
@@ -709,6 +723,9 @@ def run_gate(root: str = ".", only: list[str] | None = None,
         # silently-missing required artefact is the BG0110 hole this refuses to leave open.
         registry["review-legs"] = _review_legs
         bound.append("review-legs")
+        # ...and no changelog fragment may be left uncomposed at a cut
+        registry["changelog-fragments"] = _changelog_fragments
+        bound.append("changelog-fragments")
     # A wrong/typo'd --only/--skip (or a renamed check) must FAIL, not silently select
     # nothing and report a vacuous PASS - the false-assurance class LL0008 warns against.
     unknown = sorted({n for n in (list(only or []) + list(skip or [])) if n not in registry})

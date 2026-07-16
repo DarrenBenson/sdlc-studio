@@ -44,6 +44,11 @@ def _scripts(skill_dir: Path) -> list[str]:
 
 
 def _changelog_unreleased_empty(repo_root: Path) -> bool | None:
+    # A pending fragment IS the entry (the changelog.d convention): work whose
+    # entry awaits compose is documented, not missing.
+    frag_dir = Path(repo_root) / "changelog.d"
+    if frag_dir.is_dir() and any(frag_dir.glob("*.md")):
+        return False
     p = Path(repo_root) / "CHANGELOG.md"
     try:
         text = p.read_text(encoding="utf-8")

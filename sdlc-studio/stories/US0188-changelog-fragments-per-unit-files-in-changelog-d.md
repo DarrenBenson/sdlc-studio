@@ -1,6 +1,6 @@
 # US0188: changelog fragments: per-unit files in changelog.d, deterministic compose into [Unreleased], release gate refuses stray fragments
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** changelog.py compose runs
 - **Then** entries fold into CHANGELOG.md's [Unreleased] under Added/Changed/Fixed, idempotently (a second run changes nothing)
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_changelog.py -k Compose
+- **Verified:** yes (2026-07-16)
 
 ### AC2: A release refuses stray fragments
 
@@ -29,6 +30,7 @@
 - **When** the release gate runs
 - **Then** it fails naming the fragment - no entry is silently dropped from a cut
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_changelog.py -k StrayFragment
+- **Verified:** yes (2026-07-16)
 
 ### AC3: doc-coverage accepts a fragment as the entry
 
@@ -36,6 +38,7 @@
 - **When** the changelog-empty check runs
 - **Then** the fragment satisfies it; an empty [Unreleased] with no fragments still fails
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_changelog.py -k FragmentCoverage
+- **Verified:** yes (2026-07-16)
 
 ### AC4: Convention documented
 
@@ -43,6 +46,7 @@
 - **When** they look up changelog practice
 - **Then** reference-outputs.md documents fragments; direct editing stays valid for non-adopters
 - **Verify:** grep "changelog.d" .claude/skills/sdlc-studio/reference-outputs.md
+- **Verified:** yes (2026-07-16)
 
 ## Revision History
 

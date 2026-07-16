@@ -171,6 +171,9 @@ lists every script with a one-line summary; open the linked page for the full en
 - `repo_map.py` - Pure-Python repository indexer. Produces
 - `complexity.py` - Cognitive (SonarSource) + cyclomatic complexity per function from Python's
 - `provenance.py` - Artifact provenance. Makes deterministic creation the *checkable* path: `new`
+- `changelog.py` - Per-unit CHANGELOG fragments (`changelog.d/`), composed deterministically
+  into `[Unreleased]` and consumed; the release gate fails on a stray fragment. Kills the
+  shared-file contention the same-commit paperwork rule otherwise forces
 - `flow.py` - Deterministic flow metrics, the zero-token SCHEDULE instrument (cost is
   points x measured rate, a different axis). `compute` reports per-unit cycle time
   (Created -> delivered, git history with a revision-row fallback), weekly throughput

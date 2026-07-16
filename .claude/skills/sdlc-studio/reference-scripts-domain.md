@@ -42,6 +42,16 @@ preservingly backfills the stamp into un-stamped artifacts (idempotent, dry-run-
 stamp-only - never re-lays-out content). Standalone + advisory by design (not wired into
 the gate); adopting it is a project choice.
 
+### `changelog.py`
+
+Per-unit CHANGELOG fragments (the towncrier pattern, stdlib). A unit's entry lives in
+`changelog.d/<unit>.md` (first line `<!-- section: Added -->`, then the entry), committed
+with the unit - no shared-file contention. `compose` folds all fragments into
+`## [Unreleased]` under their sections and consumes them (idempotent by consumption;
+all fragments validate before any write, so a malformed one refuses the whole run by
+name). `check` lists strays; the release gate's `changelog-fragments` lane fails a cut
+while any exist. Direct CHANGELOG editing remains valid for non-adopters.
+
 ### `flow.py`
 
 Deterministic flow metrics - the zero-token SCHEDULE instrument (the cost instrument,

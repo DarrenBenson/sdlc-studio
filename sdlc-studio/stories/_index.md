@@ -10,9 +10,9 @@
 | Draft | 2 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 2 |
+| In Progress | 1 |
 | Review | 0 |
-| Done | 187 |
+| Done | 188 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -98,7 +98,7 @@
 | [US0185](US0185-gate-lane-measures-a-delivered-unit-s-diff.md) | gate lane measures a delivered unit's diff size vs configured thresholds, warn-only, default off | Done | EP0055 | 2026-07-16 | 2026-07-16 |
 | [US0186](US0186-review-close-helper-mint-dated-rv-stamp-review.md) | review close helper: mint dated RV, stamp review-state.json, derive LATEST.md, refuse anchor overwrite without a record | Draft | EP0056 | 2026-07-16 | 2026-07-16 |
 | [US0187](US0187-refine-copies-the-request-s-acceptance-criteria-into.md) | refine copies the request's acceptance criteria into minted stories as AC scaffolds with Verify placeholders, --no-seed-acs opt-out | In Progress | EP0057 | 2026-07-16 | 2026-07-16 |
-| [US0188](US0188-changelog-fragments-per-unit-files-in-changelog-d.md) | changelog fragments: per-unit files in changelog.d, deterministic compose into [Unreleased], release gate refuses stray fragments | In Progress | EP0058 | 2026-07-16 | 2026-07-16 |
+| [US0188](US0188-changelog-fragments-per-unit-files-in-changelog-d.md) | changelog fragments: per-unit files in changelog.d, deterministic compose into [Unreleased], release gate refuses stray fragments | Done | EP0058 | 2026-07-16 | 2026-07-16 |
 | [US0189](US0189-critic-brief-assembles-the-seat-review-prompt-critic.md) | critic brief assembles the seat-review prompt; critic record --from-verdict parses the returned block, refusing malformed input | Done | EP0059 | 2026-07-16 | 2026-07-16 |
 | [US0190](US0190-load-script-shared-helper-in-scripts-tests-exemplar.md) | load_script shared helper in scripts/tests; exemplar adoption + docstring guidance | Done | EP0060 | 2026-07-16 | 2026-07-16 |
 | [US0191](US0191-parent-aware-minting-parent-wires-both-link-directions.md) | parent-aware minting (--parent wires both link directions atomically) and rfc resolve for decision-row surgery | Draft | EP0061 | 2026-07-16 | 2026-07-16 |

@@ -766,6 +766,25 @@ When an epic is marked Done (user confirmed), all related artifacts MUST be upda
 
 ---
 
+## Changelog Fragments {#changelog-fragments}
+
+The same-commit paperwork rule (a unit's CHANGELOG entry ships with its code) collides
+with one shared file when several units land in one sprint. The fragment convention
+resolves it: each unit writes its own file under `changelog.d/` -
+
+```markdown
+<!-- section: Added -->
+- **The thing (USxxxx).** What shipped, in CHANGELOG voice.
+```
+
+- committed with the unit, zero contention. `changelog.py compose` folds every fragment
+into `## [Unreleased]` under its declared section (Breaking/Added/Changed/Deprecated/
+Removed/Fixed/Security) and consumes it; a malformed fragment refuses the whole compose
+before anything is written. The release gate (`gate --release`) fails while a stray
+fragment exists, so an entry can never be silently dropped from a cut, and the
+doc-coverage changelog check accepts a pending fragment as the entry. Direct editing of
+CHANGELOG.md stays valid - fragments are the escape from contention, not a mandate.
+
 ## Version Schema {#version-schema}
 
 The `.version` file tracks project schema version for upgrade compatibility.
