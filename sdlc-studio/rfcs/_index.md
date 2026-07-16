@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 5 |
+| Draft | 6 |
 | In Review | 0 |
 | Accepted | 35 |
 | Superseded | 0 |
 | Withdrawn | 3 |
-| **Total** | **43** |
+| **Total** | **44** |
 
 ## All RFCs
 
@@ -60,3 +60,4 @@
 | [RFC-0041](RFC0041-a-migrate-command-that-reviews-every-artefact-and.md) | A migrate command that reviews every artefact and upgrades where necessary | Medium | Accepted | sdlc-studio | 2026-07-15 | -- |
 | [RFC-0042](RFC0042-make-the-sprint-close-down-un-skippable-enforce.md) | Make the sprint close-down un-skippable: enforce the retro/close-gate mechanically, not just by doctrine | Medium | Accepted | sdlc-studio | 2026-07-15 | -- |
 | [RFC-0043](RFC0043-definition-of-ready-and-definition-of-done-as.md) | Definition of Ready and Definition of Done as editable per-project artefacts, enforced by the existing gates | Medium | Draft | sdlc-studio | 2026-07-15 | -- |
+| [RFC-0044](RFC0044-adversarial-reviewer-vs-reviewer-of-record-an-amigo.md) | Adversarial reviewer vs reviewer of record: an amigo subagent finds issues, an independent principal signs off | Medium | Draft | sdlc-studio | 2026-07-16 | -- |
