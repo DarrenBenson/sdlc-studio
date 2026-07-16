@@ -436,6 +436,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Story workflows resolve personas registry-first (CR0283, EP0049).** `reference-story.md`'s
+  create and generate prerequisites now read the `sdlc-studio/personas/` registry (index.md +
+  per-persona cards) as the primary source, with the flat `personas.md` as a documented legacy
+  fallback - a registry-only project is no longer STOPped on a file it never created. Step 3's
+  persona selection defaults to the declared **Primary** from `personas/index.md`, and a
+  **Negative** persona is never a story target. `help/story.md` prerequisites and validation
+  tables updated to match.
+- **validate covers the legacy personas.md layout (CR0297, EP0051).** `check_personas` no longer
+  gives a vacuous clean pass to a personas.md-only project: the legacy flat file (the one the
+  story pipeline falls back to) now gets a `persona-layout` advisory plus a light structural
+  check (`persona-legacy`: unfilled `{{...}}` boilerplate, no persona sections) - including when
+  `personas/` holds only seats/stakeholders and story generation would fall back to it. Advisory
+  severity only; a registry with design cards behaves exactly as before.
 - **The per-unit token forecast is DROPPED. No plan-time predictor cleared the bar (CR0262).** The seed
   the forecast was built on - `max_cognitive`, the cognitive complexity of the files a unit touches -
   carries no signal: r = +0.03 against measured cost across 18 units. Both past recalibrations (5,000,

@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 170 |
+| Done | 178 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **171** |
+| **Total** | **179** |
 
 ## All Stories
 
@@ -82,6 +82,14 @@
 | [US0169](US0169-filing-time-duplicate-detection-warn-when-a-new.md) | Filing-time duplicate detection: warn when a new finding overlaps an open artefact | Done | EP0047 | 2026-07-16 | 2026-07-16 |
 | [US0170](US0170-triage-pass-inside-sprint-plan-oversized-blocks-judgement.md) | Triage pass inside sprint plan: oversized blocks, judgement lenses report, drops logged | Done | EP0047 | 2026-07-16 | 2026-07-16 |
 | [US0171](US0171-surface-the-triage-summary-on-status.md) | Surface the triage summary on status | Done | EP0047 | 2026-07-16 | 2026-07-16 |
+| [US0172](US0172-per-attempt-telemetry-records-carry-an-attempts-list.md) | Per-attempt telemetry: records carry an attempts list of model and tokens, a legacy record reads as one attempt | Done | EP0048 | 2026-07-16 | 2026-07-16 |
+| [US0173](US0173-true-cost-with-rework-unit-cost-sums-priced.md) | True cost with rework: unit cost sums priced tokens over every attempt, from an offline model price table | Done | EP0048 | 2026-07-16 | 2026-07-16 |
+| [US0174](US0174-the-sprint-report-deterministic-composition-of-delivered-actual.md) | The sprint report: deterministic composition of delivered, actual spend, accuracy, lessons, tickets, models | Done | EP0048 | 2026-07-16 | 2026-07-16 |
+| [US0175](US0175-points-per-elapsed-sprint-velocity-ceremony-included-descriptive.md) | Points-per-elapsed-sprint velocity, ceremony included, descriptive-only and fed to no gate | Done | EP0048 | 2026-07-16 | 2026-07-16 |
+| [US0176](US0176-report-rendering-gated-by-config-while-measurement-is.md) | Report rendering gated by config while measurement is always recorded | Done | EP0048 | 2026-07-16 | 2026-07-16 |
+| [US0177](US0177-rewire-story-create-generate-prerequisites-and-persona-selection.md) | Rewire story create/generate prerequisites and persona selection to the personas/ registry with legacy fallback | Done | EP0049 | 2026-07-16 | 2026-07-16 |
+| [US0178](US0178-migrate-the-amigo-cast-to-personas-seats-and.md) | Migrate the amigo cast to personas/seats/ and ground each card in this repo and its Primary | Done | EP0050 | 2026-07-16 | 2026-07-16 |
+| [US0179](US0179-check-personas-emits-a-layout-advisory-and-a.md) | check_personas emits a layout advisory and a light structural check for personas.md-only projects | Done | EP0051 | 2026-07-16 | 2026-07-16 |
 
 ## Archived Releases
 

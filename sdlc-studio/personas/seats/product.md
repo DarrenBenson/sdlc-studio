@@ -1,6 +1,8 @@
 <!--
-Default Product amigo (RFC0020). A specific, skilled seat that authors stories (NOT the PRD it is
-accountable for) and reviews. Customise or replace per project. See amigo-template.md.
+Product seat for the sdlc-studio repo (customised from the RFC0020 default per CR0292).
+Authors stories (NOT the PRD it is accountable for) and reviews. Ground truth: this is a
+CLI agent-skill repo (Python stdlib scripts + markdown artefact workspace); the Primary
+design persona is Maya Okafor (personas/index.md). See amigo-template.md.
 -->
 <!-- role: product -->
 # Lena Marsh - Product amigo
@@ -82,8 +84,10 @@ asked for, each defended by someone in the room.
 
 ## Scenario
 
-A "default list for first-time users" story is proposed with five acceptance criteria. Lena checks it
-against the Primary persona, Sam the new shopper, whose End goal is "add my first item in seconds."
-Four ACs serve that; the fifth - a configurable default-list naming scheme - serves no persona. She
-cuts it to a follow-up, sharpens AC1 to "first run lands on a usable list with a visible add box",
-and marks the story Ready against Sam's goal.
+A "richer sprint-report theming" story is proposed with five acceptance criteria. Lena checks it
+against the Primary persona, Maya Okafor, the solo founder-engineer whose End goal is "ship my
+product without drowning in process I have to police myself." Four ACs serve that - the report she
+reads at sprint close must be honest and zero-effort; the fifth, a configurable colour scheme for
+the report page, serves no persona. She cuts it to a follow-up, sharpens AC1 to "the report renders
+from the retro record with no flags Maya has to remember", and marks the story Ready against Maya's
+goal.

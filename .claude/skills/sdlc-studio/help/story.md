@@ -47,7 +47,8 @@ See `reference-philosophy.md` for the complete philosophy.
 ## Prerequisites
 
 - Epics must exist in `sdlc-studio/epics/`
-- Personas must exist at `sdlc-studio/personas.md`
+- Personas must exist: the `sdlc-studio/personas/` registry (index.md +
+  per-persona cards, the Primary declared) or legacy `sdlc-studio/personas.md`
 - Run `/sdlc-studio epic` and `/sdlc-studio persona` first if missing
 
 ## Actions
@@ -123,7 +124,7 @@ Review Story status based on codebase implementation.
 
 - `sdlc-studio/stories/US{NNNN}-{slug}.md` per Story
 - `sdlc-studio/stories/_index.md` registry
-- `sdlc-studio/personas.md` (created if missing)
+- `sdlc-studio/personas.md` (created if missing AND no `personas/` registry exists)
 
 **Status values:** Proposed | Draft | Ready | Planned | In Progress | Review | Done | Won't Implement | Deferred | Superseded
 
@@ -231,7 +232,7 @@ A story can be marked **Ready** when:
 | ----------- | ------- |
 | AC format | All AC in Given/When/Then with concrete values |
 | No placeholders | No TBD or placeholder text in AC |
-| Persona valid | Referenced persona exists in personas.md |
+| Persona valid | Referenced persona exists in the personas/ registry (or legacy personas.md) and is not a Negative persona |
 | Edge cases | Minimum 8 for API stories, 5 for others |
 | No ambiguity | No "should", "might", "handles errors" language |
 | Open Questions | All critical questions resolved |

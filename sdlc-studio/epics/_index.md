@@ -10,8 +10,8 @@
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 47 |
-| **Total** | **47** |
+| Done | 51 |
+| **Total** | **51** |
 
 > Generate-mode note: all epics are **Ready** (spec extracted from the existing
 > implementation, awaiting test validation per `reference-philosophy.md`), not
@@ -68,3 +68,7 @@
 | [EP0045](EP0045-record-the-actual-sprint-token-count-retire-interactive.md) | Record the actual sprint token count; retire interactive-equals-UNMEASURED | Done | -- | -- | 2026-07-15 | 2026-07-15 |
 | [EP0046](EP0046-the-un-skippable-sprint-close-down.md) | The un-skippable sprint close-down | Done | -- | -- | 2026-07-16 | 2026-07-16 |
 | [EP0047](EP0047-backlog-triage-as-a-ceremony-inside-plan.md) | Backlog triage as a ceremony inside plan | Done | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0048](EP0048-the-sprint-report-what-a-sprint-delivered-cost.md) | The sprint report: what a sprint delivered, cost, and velocity | Done | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0049](EP0049-story-workflows-resolve-personas-registry-first.md) | Story workflows resolve personas registry-first | Done | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0050](EP0050-dogfood-seat-cast-migrated-to-seats-and-grounded.md) | Dogfood seat cast migrated to seats/ and grounded in this project | Done | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0051](EP0051-validate-covers-the-legacy-personas-md-layout.md) | validate covers the legacy personas.md layout | Done | -- | -- | 2026-07-16 | 2026-07-16 |

@@ -497,14 +497,19 @@ def check_personas(root: Path) -> list[dict]:
     persona (primary/secondary/supplemental) wants Who They Are, End Goals, Experience Goals,
     Behaviours & Context, Frustrations, Scenario; a **Negative** persona swaps Experience Goals
     for a Why-not (and keeps a Scenario/how-to-handle); Customer/Served make Experience + Scenario
-    optional. No-op for a repo with no personas dir. When the flat glob inspects nothing but
+    optional. When the flat glob inspects nothing but
     persona-shaped files sit nested in subdirs, emit a `persona-layout` advisory rather than a
-    clean pass on an empty inspection (LL0008).
+    clean pass on an empty inspection (LL0008). The same rationale covers the legacy flat
+    layout: a project whose only personas live in `sdlc-studio/personas.md` (the file the
+    story workflow reads when no registry cards exist) gets a `persona-layout` advisory plus
+    a light structural check (`persona-legacy`: unfilled boilerplate, no persona sections) -
+    never a vacuous clean pass on the one persona file actually consumed. No-op only when
+    neither layout holds any personas.
     """
     out: list[dict] = []
     pdir = Path(root) / "sdlc-studio" / "personas"
     if not pdir.is_dir():
-        return out
+        return _check_legacy_personas_md(Path(root))
     inspected = 0
     primaries: list[tuple[Path, str | None]] = []
     for p in sorted(pdir.glob("*.md")):
@@ -609,6 +614,42 @@ def check_personas(root: Path) -> list[dict]:
             out.append({"severity": "warning", "rule": "persona-layout", "file": str(pdir),
                         "message": f"personas present but not in the flat Cooper layout "
                                    f"({len(nested)} nested files found); not validated"})
+        # no design cards in the registry - the story pipeline falls back to the legacy
+        # flat personas.md, so that file must not escape unexamined (LL0008)
+        out.extend(_check_legacy_personas_md(Path(root)))
+    return out
+
+
+def _check_legacy_personas_md(root: Path) -> list[dict]:
+    """Light structural check for the legacy flat `sdlc-studio/personas.md` - the file the
+    story workflow reads when the personas/ registry holds no design cards. Advisory only
+    (a looser schema than the registry cards): its use gets a `persona-layout` advisory,
+    and an unfilled or persona-less file gets a `persona-legacy` flag. Returns [] when the
+    file is absent - a project with no personas at all is the prerequisite checks' problem,
+    not a validation finding."""
+    flat = root / "sdlc-studio" / "personas.md"
+    if not flat.is_file():
+        return []
+    out = [{"severity": "warning", "rule": "persona-layout", "file": str(flat),
+            "message": "legacy flat personas.md in use (no personas/ registry design cards) "
+                       "- story generation reads this file and only a light structural check "
+                       "applies here; consider migrating to the personas/ registry "
+                       "(reference-persona.md)"}]
+    try:
+        text = flat.read_text(encoding="utf-8")
+    except OSError as exc:
+        out.append({"severity": "warning", "rule": "persona-legacy", "file": str(flat),
+                    "message": f"personas.md exists but cannot be read ({exc})"})
+        return out
+    if "{{" in text:
+        out.append({"severity": "warning", "rule": "persona-legacy", "file": str(flat),
+                    "message": "unfilled template placeholders ({{...}}) remain - "
+                               "personas.md is boilerplate, not a populated persona set"})
+    sections = [h for h in re.findall(r"^##\s+(.+)$", text, re.M) if "{{" not in h]
+    if not sections:
+        out.append({"severity": "warning", "rule": "persona-legacy", "file": str(flat),
+                    "message": "no persona sections (## <name>) found - the file the story "
+                               "workflow reads is empty of personas"})
     return out
 
 

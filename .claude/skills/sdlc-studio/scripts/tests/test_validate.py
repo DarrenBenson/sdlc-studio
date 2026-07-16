@@ -592,6 +592,66 @@ class PersonaWellFormedTests(unittest.TestCase):
             self.assertEqual(validate.check_personas(repo), [])
 
 
+class LegacyPersonasMdTests(unittest.TestCase):
+    """The personas.md-only layout (the legacy flat file the story pipeline reads) must
+    get a layout advisory plus a light structural check, never a vacuous clean pass."""
+
+    POPULATED = ("# User Personas\n\nPersonas for this project.\n\n---\n\n"
+                 "## Alex Dev\n\n**Role:** developer\n**Primary Goal:** ship\n\n"
+                 "### Background\n\nA real background.\n")
+
+    def _flat(self, repo, body):
+        d = repo / "sdlc-studio"; d.mkdir(parents=True, exist_ok=True)
+        (d / "personas.md").write_text(body, encoding="utf-8")
+
+    def test_personas_md_only_emits_layout_advisory(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d); self._flat(repo, self.POPULATED)
+            found = validate.check_personas(repo)
+            self.assertEqual([v["rule"] for v in found], ["persona-layout"])
+            self.assertEqual(found[0]["severity"], "warning")
+            self.assertIn("legacy", found[0]["message"])
+
+    def test_boilerplate_personas_md_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            self._flat(repo, "# User Personas\n\n## {{persona_name}}\n\n"
+                             "**Role:** {{role}}\n")
+            rules = [v["rule"] for v in validate.check_personas(repo)]
+            self.assertIn("persona-legacy", rules)
+
+    def test_empty_personas_md_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d); self._flat(repo, "# User Personas\n\nNothing yet.\n")
+            found = [v for v in validate.check_personas(repo) if v["rule"] == "persona-legacy"]
+            self.assertEqual(len(found), 1)
+            self.assertIn("empty", found[0]["message"])
+
+    def test_registry_present_no_legacy_advisory(self):
+        # a registry with design cards is the checked source; personas.md alongside is not flagged
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d); self._flat(repo, self.POPULATED)
+            pd = repo / "sdlc-studio" / "personas"; pd.mkdir(parents=True)
+            body = ("# Maya\n\n## Quick Reference\n\n| Attribute | Value |\n| --- | --- |\n"
+                    "| **Cast role** | Primary |\n\n")
+            body += "".join(f"## {s}\n\nx\n\n" for s in PersonaWellFormedTests.STD)
+            (pd / "maya.md").write_text(body, encoding="utf-8")
+            self.assertEqual(validate.check_personas(repo), [])
+
+    def test_seats_only_registry_falls_back_to_legacy_check(self):
+        # personas/ holding only seats/ has no design cards - the story pipeline falls
+        # back to personas.md, so the legacy advisory must still fire (LL0008)
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d); self._flat(repo, self.POPULATED)
+            seats = repo / "sdlc-studio" / "personas" / "seats"; seats.mkdir(parents=True)
+            (seats / "engineer.md").write_text("# Engineer seat\n\ncharter\n", encoding="utf-8")
+            self.assertIn("persona-layout", [v["rule"] for v in validate.check_personas(repo)])
+
+    def test_no_personas_anywhere_no_findings(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(validate.check_personas(pathlib.Path(d)), [])
+
+
 class NotAnArtifactSweepTests(unittest.TestCase):
     """An id-named file the census excludes (no artifact header) must be NAMED,
     never silently invisible - the operator either fixes the header or declares

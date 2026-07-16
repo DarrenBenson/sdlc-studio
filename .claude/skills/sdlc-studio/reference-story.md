@@ -24,15 +24,23 @@ file is ~1000 lines and a whole-file read is never required for one workflow.
 ## /sdlc-studio story - Step by Step {#story-workflow}
 
 1. **Check Prerequisites**
-   - Check sdlc-studio/personas.md exists
-     - If missing: create from template, ask user to populate, STOP
+   - Resolve personas, registry first:
+     - If sdlc-studio/personas/ contains persona cards: use the registry
+       (index.md names the Primary; per-persona cards carry the goals)
+     - Else if sdlc-studio/personas.md exists: use it (legacy flat layout,
+       still supported)
+     - Else: create personas.md from template OR suggest
+       `/sdlc-studio persona create`, ask user to populate, STOP
    - Check sdlc-studio/epics/ has epic files
      - If empty: prompt to run `/sdlc-studio epic` first, STOP
    - Create sdlc-studio/stories/ if needed
    - Scan for existing stories to determine next ID
 
 2. **Parse Inputs**
-   - Read personas (name, role, goals, pain points)
+   - Read personas from the resolved source (name, role, goals, pain points).
+     Registry layout: personas/index.md declares each persona's standing -
+     **Primary** (the design target), Secondary, **Negative** (deliberately
+     not designed for - never a story target, a signal to decline scope)
    - Read Epic(s) to process
    - For each Epic, extract:
      - Acceptance criteria
@@ -48,7 +56,9 @@ file is ~1000 lines and a whole-file read is never required for one workflow.
      - Completable in one sprint
      - Split by persona when relevant
    - For each story:
-     a. Select most relevant persona
+     a. Select most relevant persona - default to the declared **Primary**
+        from personas/index.md; pick another only when the story genuinely
+        serves a different defined persona (never a Negative one)
      b. Write "As a... I want... So that..."
      c. Generate 3-5 Given/When/Then criteria
      d. Identify edge cases
@@ -332,7 +342,8 @@ Cohesion review results are stored as part of the review findings system:
 **See `reference-philosophy.md` for the full philosophy on Create vs Generate modes.**
 
 1. **Check Prerequisites**
-   - Check sdlc-studio/personas.md exists
+   - Resolve personas: sdlc-studio/personas/ registry first (index.md +
+     cards), sdlc-studio/personas.md as the legacy fallback
    - Check sdlc-studio/epics/ has epic files for scope
    - Create sdlc-studio/stories/ if needed
    - Scan for existing stories to determine next ID
