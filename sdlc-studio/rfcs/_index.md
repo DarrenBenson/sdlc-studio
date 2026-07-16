@@ -8,10 +8,10 @@
 | --- | --- |
 | Draft | 5 |
 | In Review | 0 |
-| Accepted | 36 |
+| Accepted | 37 |
 | Superseded | 0 |
 | Withdrawn | 3 |
-| **Total** | **44** |
+| **Total** | **45** |
 
 ## All RFCs
 
@@ -51,7 +51,7 @@
 | [RFC-0032](RFC0032-close-the-learning-loop-retros-and-lessons-must.md) | Close the learning loop: retros and lessons must drive review, audit and the backlog | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0033](RFC0033-one-weakness-hunt-one-name-reconcile-review-generate.md) | One weakness-hunt, one name: reconcile review generate, the adversarial audit, and the audit collision | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0034](RFC0034-sprint-sizing-velocity-and-estimate-calibration-close-the.md) | Sprint sizing, velocity and estimate calibration: close the estimate -> deliver -> recalibrate loop | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
-| [RFC-0035](RFC0035-the-sprint-report-what-a-sprint-delivered-what.md) | The sprint report: what a sprint delivered, what it cost, and whether the model choice was right | Medium | Draft | sdlc-studio | 2026-07-14 | -- |
+| [RFC-0035](RFC0035-the-sprint-report-what-a-sprint-delivered-what.md) | The sprint report: what a sprint delivered, what it cost, and whether the model choice was right | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0036](RFC0036-running-several-sprints-unattended-a-rolling-policy-not.md) | Running several sprints unattended: a rolling policy, not a queue of frozen plans | Medium | Draft | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0037](RFC0037-backlog-triage-as-a-first-class-ceremony-keep.md) | Backlog triage as a first-class ceremony: keep the backlog clean and actionable BEFORE planning | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0038](RFC0038-simplify-to-fibonacci-story-points-and-real-wsjf.md) | Simplify to Fibonacci story points and real WSJF, and test it by blind re-estimation of past sprints | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
@@ -61,3 +61,4 @@
 | [RFC-0042](RFC0042-make-the-sprint-close-down-un-skippable-enforce.md) | Make the sprint close-down un-skippable: enforce the retro/close-gate mechanically, not just by doctrine | Medium | Accepted | sdlc-studio | 2026-07-15 | -- |
 | [RFC-0043](RFC0043-definition-of-ready-and-definition-of-done-as.md) | Definition of Ready and Definition of Done as editable per-project artefacts, enforced by the existing gates | Medium | Draft | sdlc-studio | 2026-07-15 | -- |
 | [RFC-0044](RFC0044-adversarial-reviewer-vs-reviewer-of-record-an-amigo.md) | Adversarial reviewer vs reviewer of record: an amigo subagent finds issues, an independent principal signs off | Medium | Draft | sdlc-studio | 2026-07-16 | -- |
+| [RFC-0045](RFC0045-micro-requests-and-the-one-story-epic-should.md) | Micro-requests and the one-story epic: should a small CR decompose to a story without a container epic? | Medium | Draft | Claude Fable 5 | 2026-07-16 | -- |
