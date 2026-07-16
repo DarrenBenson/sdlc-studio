@@ -454,5 +454,37 @@ class CloseOwedAdvisoryTests(unittest.TestCase):
             self.assertIsNone(status.close_owed_advisory(root))
 
 
+
+
+class BacklogTriageAdvisoryTests(unittest.TestCase):
+    """US0171: status surfaces a backlog-triage summary; silent on a coherent backlog."""
+
+    def _bug(self, root: Path, num: int, title: str, summary: str, affects: str) -> None:
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"BG{num:04d}-x.md").write_text(
+            f"# BG{num:04d}: {title}\n\n> **Status:** Open\n> **Affects:** {affects}\n"
+            f"> **Points:** 3\n> **Date:** 2026-07-16\n\n## Summary\n\n{summary}\n",
+            encoding="utf-8")
+
+    def test_fires_on_a_duplicate_pair(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root, 1, "check_links misses an anchor link defect",
+                      "check_links does not catch a broken anchor link defect", "tools/x.py")
+            self._bug(root, 2, "anchor link defect not caught by check_links",
+                      "a broken anchor link defect is not caught by check_links", "tools/x.py")
+            adv = status.backlog_triage_advisory(root)
+            self.assertIsNotNone(adv)
+            self.assertIn("duplicate", adv)
+
+    def test_silent_on_a_coherent_backlog(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root, 1, "colour the output", "render green", "tools/a.py")
+            self._bug(root, 2, "fix a crash", "divide by zero", "tools/b.py")
+            self.assertIsNone(status.backlog_triage_advisory(root))
+
+
 if __name__ == "__main__":
     unittest.main()

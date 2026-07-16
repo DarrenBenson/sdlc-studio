@@ -1182,7 +1182,25 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
             "ceiling": ceiling,
             "clusters": _shared_file_clusters(files_by_unit),
             "decompose": decompose,
+            "triage": _batch_triage(root, [it["id"] for it in batch]),
             "ok": not ungroomed and not oversized}
+
+
+def _batch_triage(root: Path, batch_ids: list[str]) -> list[dict]:
+    """The JUDGEMENT triage lenses (duplicate/subsumed, stale, orphaned-dependency) that touch a
+    unit in this batch - surfaced in the plan the operator already reads. Reporting-only: a
+    duplicate is a judgement call the human makes, unlike an ungroomed unit. OVERSIZED is excluded
+    here because the breakdown gate above already owns it (and blocks on it). Best-effort - a
+    triage error must never break planning."""
+    try:
+        import backlog_triage
+        findings = backlog_triage.triage(root)["findings"]
+    except Exception as exc:  # noqa: BLE001 - the plan must survive a triage hiccup
+        sdlc_md.debug("sprint._batch_triage", exc)
+        return []
+    want = {sdlc_md.norm_id(b) for b in batch_ids}
+    return [f for f in findings if f["lens"] != "oversized"
+            and want & {sdlc_md.norm_id(u) for u in f["units"]}]
 
 
 DEFAULT_SEAT_STALE_DAYS = 7  # advisory window; seat judgement does not rot on a clock
@@ -1670,6 +1688,20 @@ PLAN_DIGEST_MAX = 50
 CROSS_DIGEST_MAX = 12
 
 
+def _render_triage(data: dict) -> None:
+    """The judgement triage lenses, printed with the plan so a dirty backlog is seen BEFORE it is
+    planned FROM. Reporting-only - the human decides whether a suspected duplicate is really one -
+    so it prints its findings and does not refuse. Silence here means the batch is coherent."""
+    bd = data.get("breakdown") or {}
+    findings = bd.get("triage") or []
+    if not findings:
+        return
+    print(f"  backlog triage: {len(findings)} item(s) to resolve before planning FROM this batch "
+          f"(judgement calls - not a refusal):")
+    for f in findings:
+        print(f"    [{f['lens']}] {f['detail']}")
+
+
 def _render_lessons(data: dict) -> None:
     """The still-valid lessons, printed IN the plan. The sprint-start read was doctrine -
     a prose instruction to open a file - so it was skipped; here it arrives unasked, in the
@@ -1806,6 +1838,7 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     _render_seat_provenance(data)
     _render_waves(data)
     _render_clusters(data)
+    _render_triage(data)
     _render_decompose(data)
     _render_token_forecast(data)
     _render_capacity(data)

@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 6 |
+| Draft | 5 |
 | In Review | 0 |
-| Accepted | 34 |
+| Accepted | 35 |
 | Superseded | 0 |
 | Withdrawn | 3 |
 | **Total** | **43** |
@@ -53,7 +53,7 @@
 | [RFC-0034](RFC0034-sprint-sizing-velocity-and-estimate-calibration-close-the.md) | Sprint sizing, velocity and estimate calibration: close the estimate -> deliver -> recalibrate loop | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0035](RFC0035-the-sprint-report-what-a-sprint-delivered-what.md) | The sprint report: what a sprint delivered, what it cost, and whether the model choice was right | Medium | Draft | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0036](RFC0036-running-several-sprints-unattended-a-rolling-policy-not.md) | Running several sprints unattended: a rolling policy, not a queue of frozen plans | Medium | Draft | sdlc-studio | 2026-07-14 | -- |
-| [RFC-0037](RFC0037-backlog-triage-as-a-first-class-ceremony-keep.md) | Backlog triage as a first-class ceremony: keep the backlog clean and actionable BEFORE planning | Medium | Draft | sdlc-studio | 2026-07-14 | -- |
+| [RFC-0037](RFC0037-backlog-triage-as-a-first-class-ceremony-keep.md) | Backlog triage as a first-class ceremony: keep the backlog clean and actionable BEFORE planning | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0038](RFC0038-simplify-to-fibonacci-story-points-and-real-wsjf.md) | Simplify to Fibonacci story points and real WSJF, and test it by blind re-estimation of past sprints | Medium | Accepted | sdlc-studio | 2026-07-14 | -- |
 | [RFC-0039](RFC0039-the-discovery-track-issue-refine-and-triage-a.md) | The discovery track: Issue, refine and triage - a discovery backlog feeding delivery, worked in parallel | P2 | Draft | sdlc-studio | 2026-07-15 | -- |
 | [RFC-0040](RFC0040-upgrade-and-migration-path-for-the-sizing-and.md) | Upgrade and migration path for the sizing and two-backlog model, before release | P1 | Draft | sdlc-studio | 2026-07-15 | -- |

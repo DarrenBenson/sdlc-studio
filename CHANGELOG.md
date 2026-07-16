@@ -21,6 +21,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backlog triage as a ceremony inside `plan` (EP0047, RFC0037, absorbing CR0264).** Breakdown asks
+  whether a UNIT is plannable; triage asks whether the BACKLOG is worth planning FROM. New
+  `backlog_triage.py` runs deterministic lenses - DUPLICATE/SUBSUMED (open artefacts with overlapping
+  `Affects` and similar wording), OVERSIZED (a delivery unit above the 8-point ceiling - blocks,
+  decompose it), STALE (open, untouched for months, nothing depends on it), ORPHANED DEPENDENCY (a
+  `Depends on:` naming a terminal or absent artefact). The judgement lenses are surfaced in the plan
+  the operator already reads (reporting-only) and as a `status`/`hint` advisory; the mechanical
+  oversized lens blocks. `file_finding` runs the cheapest lens at FILING - a new finding overlapping
+  an open artefact is warned with the candidate named, before the id is minted (never a refusal),
+  the same overlap primitives so the filing-time and plan-time lenses agree. One day of dogfooding
+  had produced three duplicate pairs in a backlog of eleven, all caught by a human rather than tooling.
+
 - **The sprint close-down is now mechanically detectable and enforceable (EP0046, RFC0042).** The
   close (retro + lessons + close gate) was mandated but only ran when someone invoked
   `--require-retro` - a silent control that lapsed under pressure and stopped the lessons

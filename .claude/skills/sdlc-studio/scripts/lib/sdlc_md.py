@@ -63,6 +63,19 @@ _SLUG_RE = re.compile(r"[^a-z0-9]+")
 # -----------------------------------------------------------------------------
 
 
+def read_text_safe(path, default: str = "") -> str:
+    """Read a file as UTF-8, returning `default` when it is unreadable OR not valid UTF-8 (a
+    half-written or binary-corrupted artefact from a crashed session). One bad file must never
+    crash a scanner that walks the tree - it is NAMED by whatever consumes the default (a
+    status-less census entry, an empty body), not allowed to abort the whole pass. The read/parse
+    counterpart to `iter_artifact_files`, for the direct `read_text` sites that do not go through
+    the enumerator."""
+    try:
+        return Path(path).read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return default
+
+
 def now_iso8601() -> str:
     """Current UTC time as an ISO-8601 Z string (YYYY-MM-DDTHH:MM:SSZ)."""
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -945,8 +958,11 @@ def iter_artifact_files(type_: str, repo_root: Path, trust_names=frozenset()):
             continue
         try:
             text = p.read_text(encoding="utf-8")
-        except OSError:
-            yield p, None  # unreadable: keep it visible so a checker names it
+        except (OSError, UnicodeDecodeError):
+            # Unreadable OR not valid UTF-8 (a half-written or binary-corrupted artefact from a
+            # crashed session): keep it visible so a checker NAMES it, never let one bad file crash
+            # every scanner that walks the tree.
+            yield p, None
             continue
         if conventions.is_artifact(text):
             yield p, text

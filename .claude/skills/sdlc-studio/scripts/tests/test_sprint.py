@@ -1421,6 +1421,50 @@ def _src(root: Path, rel: str) -> str:
     return rel
 
 
+class TriageInPlanTests(unittest.TestCase):
+    """US0170: the judgement triage lenses (duplicate/subsumed, stale, orphaned) are surfaced IN the
+    plan the operator reads - reporting-only, never a refusal. Behaviour: run the public plan path."""
+
+    def _plan(self, root: Path):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = _load().main(["plan", "--bugs", "Open", "--root", str(root),
+                               "--no-fetch", "--skip-personas"])
+        return rc, out.getvalue(), err.getvalue()
+
+    def _dupbug(self, root: Path, num: int, title: str, summary: str, affects: str) -> None:
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"BG{num:04d}-x.md").write_text(
+            f"# BG{num:04d}: {title}\n\n> **Status:** Open\n> **Severity:** Medium\n"
+            f"> **Affects:** {affects}\n> **Points:** 3\n\n## Summary\n\n{summary}\n",
+            encoding="utf-8")
+
+    def test_a_duplicate_pair_is_surfaced_in_the_plan_not_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _src(root, "src/a.py")
+            self._dupbug(root, 1, "check_links misses an anchor link defect",
+                         "check_links does not catch a broken anchor link defect", "src/a.py")
+            self._dupbug(root, 2, "anchor link defect not caught by check_links",
+                         "a broken anchor link defect is not caught by check_links", "src/a.py")
+            rc, out, _ = self._plan(root)
+            self.assertEqual(rc, 0)               # reporting, never a refusal
+            self.assertIn("batch:", out)          # the plan still prints
+            self.assertIn("backlog triage", out)  # and names the duplicate
+            self.assertIn("duplicate", out)
+
+    def test_a_coherent_batch_prints_no_triage_section(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _src(root, "src/a.py"); _src(root, "src/b.py")
+            self._dupbug(root, 1, "colour the status output", "render green and amber", "src/a.py")
+            self._dupbug(root, 2, "parser drops a field", "the last column is lost", "src/b.py")
+            rc, out, _ = self._plan(root)
+            self.assertEqual(rc, 0)
+            self.assertNotIn("backlog triage", out)
+
+
 class BreakdownGateTests(unittest.TestCase):
     """The breakdown gate: `sprint plan` REFUSES an ungroomed batch.
 

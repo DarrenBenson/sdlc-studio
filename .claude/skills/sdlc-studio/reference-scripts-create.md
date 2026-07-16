@@ -267,6 +267,11 @@ and recomputes the index counts (reusing reconcile's pass).
 - `file --type bug|cr|rfc --title ... <fields>`: write one artifact
 - `rebuild --type <t>`: recompute a type's index summary counts
 
+At filing it runs the cheapest triage lens (`backlog_triage`): a finding whose `Affects` and
+wording overlap an OPEN artefact is surfaced with the candidate named (`duplicate_warnings` on the
+result, printed by the CLI) - a warning before the id is minted, never a refusal, since a genuine
+near-miss is common and only the author can tell them apart.
+
 Required fields per type are the ones the validator demands of a filed artefact, plus the
 grooming the PLANNER demands of a unit: a bug carries its evidence
 (`--severity --summary --steps --fix`) and its grooming (`--affects --points`), a CR

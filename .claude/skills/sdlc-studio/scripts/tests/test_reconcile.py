@@ -48,6 +48,32 @@ class CensusTests(unittest.TestCase):
             )
 
 
+class UnreadableArtefactTests(unittest.TestCase):
+    """A non-UTF-8 / corrupted artefact (a half-written file from a crashed session) must be NAMED
+    (censused Unknown), never crash the census or the drift gate that run on every commit."""
+
+    def test_census_survives_a_non_utf8_artefact(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            b = root / "sdlc-studio" / "bugs"
+            b.mkdir(parents=True)
+            (b / "BG0001-x.md").write_bytes(b"# BG0001: x\n\xff\xfe not utf-8\n")
+            census = reconcile.file_census("bug", root)   # must not raise
+            self.assertEqual(census.get("BG0001"), ("BG0001", "Unknown"))
+
+    def test_detect_type_survives_a_non_utf8_artefact(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            b = root / "sdlc-studio" / "bugs"
+            b.mkdir(parents=True)
+            (b / "BG0001-x.md").write_bytes(b"# BG0001: x\n\xff\xfe\n")
+            (b / "_index.md").write_text(
+                "# Index\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Open | 0 |\n"
+                "| **Total** | **0** |\n\n## All\n\n| ID | Title | Status | Severity | Created | "
+                "Updated |\n| --- | --- | --- | --- | --- | --- |\n", encoding="utf-8")
+            self.assertIsInstance(reconcile.detect_type("bug", root), dict)  # the drift gate survives
+
+
 class IndexParseTests(unittest.TestCase):
     def test_parse_index_rows_and_summary(self) -> None:
         with tempfile.TemporaryDirectory() as d:

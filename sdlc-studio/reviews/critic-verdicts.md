@@ -316,3 +316,8 @@
 | US0164 | APPROVE | Dani Okafor (engineering seat) | sdlc-studio; agent; v1 | 2026-07-16 | - |
 | US0165 | APPROVE | Dani Okafor (engineering seat) | sdlc-studio; agent; v1 | 2026-07-16 | - |
 | US0166 | APPROVE | Dani Okafor (engineering seat) | sdlc-studio; agent; v1 | 2026-07-16 | - |
+| US0167 | APPROVE | Darren Benson (operator, reviewer of record) | sdlc-studio; agent; v1 | 2026-07-16 | - |
+| US0168 | APPROVE | Darren Benson (operator, reviewer of record) | sdlc-studio; agent; v1 | 2026-07-16 | - |
+| US0169 | APPROVE | Darren Benson (operator, reviewer of record) | sdlc-studio; agent; v1 | 2026-07-16 | - |
+| US0170 | APPROVE | Darren Benson (operator, reviewer of record) | sdlc-studio; agent; v1 | 2026-07-16 | - |
+| US0171 | APPROVE | Darren Benson (operator, reviewer of record) | sdlc-studio; agent; v1 | 2026-07-16 | - |

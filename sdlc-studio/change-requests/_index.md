@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 5 |
+| Proposed | 4 |
 | Approved | 0 |
 | In Progress | 1 |
 | Complete | 266 |
 | Rejected | 0 |
 | Deferred | 0 |
-| Superseded | 6 |
+| Superseded | 7 |
 | Blocked | 0 |
 | **Total** | **278** |
 
@@ -85,7 +85,7 @@
 | [CR-0261](CR0261-record-which-model-delivered-each-unit-on-the.md) | Record which model delivered each unit, on the artefact and in the committed history | Complete | P2 | Feature | 2026-07-14 | -- |
 | [CR-0262](CR0262-the-forecast-seed-is-inert-max-cognitive-predicts.md) | The forecast seed is inert: max_cognitive predicts neither cost nor work (r = 0.00). Change the axis, not the coefficient | Complete | P1 | Improvement | 2026-07-14 | -- |
 | [CR-0263](CR0263-measure-the-estimator-per-estimator-and-give-unknown.md) | Measure the estimator, per estimator - and give "unknown" a first-class value | Complete | P2 | Feature | 2026-07-14 | -- |
-| [CR-0264](CR0264-the-filer-has-no-duplicate-detection-three-overlapping.md) | The filer has no duplicate detection: three overlapping pairs accumulated in one backlog of eleven | Proposed | P2 | Feature | 2026-07-14 | -- |
+| [CR-0264](CR0264-the-filer-has-no-duplicate-detection-three-overlapping.md) | The filer has no duplicate detection: three overlapping pairs accumulated in one backlog of eleven | Superseded | P2 | Feature | 2026-07-14 | -- |
 | [CR-0265](CR0265-rfc0038-u1-points-modified-fibonacci-become-the-one.md) | RFC0038 U1: Points (modified Fibonacci) become the one size vocabulary, replacing Effort S/M/L | Complete | P1 | Improvement | 2026-07-14 | -- |
 | [CR-0266](CR0266-rfc0038-u2-sprint-py-speaks-points-the-gate.md) | RFC0038 U2: sprint.py speaks points - the gate refuses above 8, WSJF is CoD/points, and the dead machinery is deleted | Complete | P1 | Improvement | 2026-07-14 | -- |
 | [CR-0267](CR0267-rfc0038-u3-velocity-is-measured-in-points-and.md) | RFC0038 U3: velocity is measured in points, and the docs stop describing a model that no longer exists | Complete | P2 | Improvement | 2026-07-14 | -- |

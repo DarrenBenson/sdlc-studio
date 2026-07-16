@@ -478,10 +478,47 @@ def append_index_row(repo_root: Path | str, type_: str, row_line: str) -> bool:
     return True
 
 
+def duplicate_candidates(repo_root: Path | str, title: str, fields: dict, *, sim: float = 0.5) -> list[dict]:
+    """Open artefacts a NEW finding substantially overlaps: a shared Affects file AND similar
+    wording (title + summary). The cheapest triage lens - a duplicate is cheapest to catch at
+    filing, where the author has the most context. It WARNS with the candidate named; it never
+    refuses, because a genuine near-miss is common and only the author can tell them apart. Empty
+    when the finding declares no Affects (nothing structural to compare) - it states what it reads.
+
+    Reuses the backlog-triage overlap primitives, so the filing-time lens and the plan-time lens
+    agree by construction."""
+    # Advisory-only: it must NEVER break the filer. Any failure (a missing sibling, an unreadable
+    # or non-UTF-8 artefact anywhere in the backlog) degrades to "no warning", exactly as the two
+    # other consumers of the full-backlog scan (sprint._batch_triage, status advisory) do.
+    try:
+        import backlog_triage as bt
+        root = Path(repo_root)
+        affects_line = f"> **Affects:** {fields.get('affects') or ''}"
+        new_affects = {a for a in (bt._affect_key(root, a)
+                                   for a in sdlc_md.affects_files(affects_line)) if a}
+        if not new_affects:
+            return []
+        new_tokens = bt._tokens(title, str(fields.get("summary") or ""))
+        out: list[dict] = []
+        for u in bt.load_backlog(root):
+            shared = u["affects"] & new_affects
+            if not shared:
+                continue
+            j = bt._jaccard(u["tokens"], new_tokens)
+            if j >= sim:
+                out.append({"id": u["id"], "type": u["type"], "shared": sorted(shared),
+                            "similarity": round(j, 2)})
+        return sorted(out, key=lambda c: (-c["similarity"], c["id"]))
+    except Exception as exc:  # noqa: BLE001 - a duplicate warning must never fail a filing
+        sdlc_md.debug("file_finding.duplicate_candidates", exc)
+        return []
+
+
 def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
                  dry_run: bool = False) -> dict:
     """Allocate an ID, write a structured artifact, append its index row, recompute
-    counts. Returns {id, path}. Raises ValueError on a missing required field."""
+    counts. Returns {id, path}, plus `duplicate_warnings` naming any open artefact the finding
+    overlaps (a warning, never a refusal). Raises ValueError on a missing required field."""
     if type_ not in TYPES:
         raise ValueError(f"unknown type {type_!r} (expected bug|cr|rfc)")
     spec = TYPES[type_]
@@ -502,13 +539,20 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     # written is judged by `sprint.breakdown` itself. A preview id is enough - the grooming
     # fields the gate reads are in the metadata block, which does not depend on the id.
     check_groomed(root, type_, _render(type_, "PREVIEW", title, today, fields))
+    # The cheapest triage lens, run BEFORE the id is minted: does this finding overlap an artefact
+    # already open? A warning attached to the result, never a refusal.
+    warnings = duplicate_candidates(root, title, fields)
     if dry_run:
-        return _file_finding_locked(root, type_, spec, title, fields, today, dry_run=True)
-    # CR0183/BG0076: allocate id + write file + append row under the advisory cross-process
-    # lock, so concurrent filers (multi-agent waves) cannot mint the same v2 id or clobber a
-    # shared index row. Best-effort - a no-op on non-POSIX, exactly like `artifact new`.
-    with sdlc_md.allocation_lock(root):
-        return _file_finding_locked(root, type_, spec, title, fields, today, dry_run=False)
+        result = _file_finding_locked(root, type_, spec, title, fields, today, dry_run=True)
+    else:
+        # CR0183/BG0076: allocate id + write file + append row under the advisory cross-process
+        # lock, so concurrent filers (multi-agent waves) cannot mint the same v2 id or clobber a
+        # shared index row. Best-effort - a no-op on non-POSIX, exactly like `artifact new`.
+        with sdlc_md.allocation_lock(root):
+            result = _file_finding_locked(root, type_, spec, title, fields, today, dry_run=False)
+    if warnings:
+        result["duplicate_warnings"] = warnings
+    return result
 
 
 def _file_finding_locked(root: Path, type_: str, spec: dict, title: str, fields: dict,
@@ -580,8 +624,14 @@ def cmd_file(args: argparse.Namespace) -> int:
         fields["options"] = args.option
     result = file_finding(args.root, args.type, args.title, fields, dry_run=args.dry_run)
     verb = "would file" if result.get("dry_run") else "filed"
-    print(json.dumps(result, indent=2) if args.format == "json"
-          else f"{verb} {result['id']} -> {result['path']}")
+    if args.format == "json":
+        print(json.dumps(result, indent=2))
+    else:
+        print(f"{verb} {result['id']} -> {result['path']}")
+        for c in result.get("duplicate_warnings", []):
+            print(f"  warning: possible duplicate of {c['id']} ({c['type']}): shares "
+                  f"{', '.join(c['shared'])}, {int(c['similarity'] * 100)}% similar wording - "
+                  f"merge or confirm they are distinct")
     return 0
 
 

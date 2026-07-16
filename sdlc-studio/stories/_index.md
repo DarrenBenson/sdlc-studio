@@ -12,11 +12,11 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 165 |
+| Done | 170 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **166** |
+| **Total** | **171** |
 
 ## All Stories
 
@@ -77,6 +77,11 @@
 | [US0164](US0164-surface-a-close-owed-nudge-in-status-and.md) | Surface a close-owed nudge in status and hint | Done | EP0046 | 2026-07-16 | 2026-07-16 |
 | [US0165](US0165-gate-grows-an-auto-detecting-close-owed-lane.md) | Gate grows an auto-detecting close-owed lane, warn by default and block under --require-close | Done | EP0046 | 2026-07-16 | 2026-07-16 |
 | [US0166](US0166-ship-a-stop-hook-installer-and-redefine-sprint.md) | Ship a Stop-hook installer and redefine sprint-done as close-gate-green | Done | EP0046 | 2026-07-16 | 2026-07-16 |
+| [US0167](US0167-backlog-triage-lens-engine-duplicate-subsumed-and-superseded.md) | Backlog-triage lens engine: duplicate/subsumed and superseded via Affects-overlap and title/summary similarity | Done | EP0047 | 2026-07-16 | 2026-07-16 |
+| [US0168](US0168-backlog-triage-lenses-oversized-block-stale-and-orphaned.md) | Backlog-triage lenses: oversized (block), stale, and orphaned-dependency | Done | EP0047 | 2026-07-16 | 2026-07-16 |
+| [US0169](US0169-filing-time-duplicate-detection-warn-when-a-new.md) | Filing-time duplicate detection: warn when a new finding overlaps an open artefact | Done | EP0047 | 2026-07-16 | 2026-07-16 |
+| [US0170](US0170-triage-pass-inside-sprint-plan-oversized-blocks-judgement.md) | Triage pass inside sprint plan: oversized blocks, judgement lenses report, drops logged | Done | EP0047 | 2026-07-16 | 2026-07-16 |
+| [US0171](US0171-surface-the-triage-summary-on-status.md) | Surface the triage summary on status | Done | EP0047 | 2026-07-16 | 2026-07-16 |
 
 ## Archived Releases
 

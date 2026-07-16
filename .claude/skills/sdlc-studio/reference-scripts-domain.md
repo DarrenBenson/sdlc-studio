@@ -188,6 +188,27 @@ The Goal-Driven Development loop's planner. `plan <query> --order priority|wsjf`
 
 `plan` **REFUSES an ungroomed batch** (the breakdown gate): a unit must declare `Affects:` and a size (`Effort:` / `Points:` / a seat score), or `plan` names it, says what it lacks, and exits non-zero **printing no plan** - a plan over unsized units cannot be sized or safely parallelised and looks authoritative anyway. The recorded opt-out is `sprint.breakdown: judgement` (the lane then reports); omission is not an escape. From the same `Affects` the plan derives **shared-file clusters** - units touching one file are not parallel, however the declared `Depends on:` graph waves them - and flags a large CR no story yet cites for decomposition (`cr action`), since only a story's Done is gated on executable ACs. `breakdown <query>` reports the same census read-only (never blocks, never writes).
 
+### `backlog_triage.py`
+
+The backlog-coherence ceremony behind `plan`'s triage pass and the `status`/`hint` triage advisory
+(distinct from `triage.py`, which triages an Issue into bugs - this asks whether the BACKLOG is
+worth planning FROM). Breakdown asks if a UNIT is plannable; triage asks if the items are DISTINCT,
+correctly sized, current, and still wanted. Deterministic lenses, each stating what it compares:
+
+- **DUPLICATE / SUBSUMED** (report) - two open artefacts whose `Affects` overlap AND whose
+  title+summary are similar (token Jaccard): likely one unit filed twice. SUBSUMED is the strong
+  form (one's files a proper subset of the other's). Names the candidate; never auto-refuses.
+- **OVERSIZED** (block) - a delivery unit above the 8-point ceiling nobody can size reliably: a
+  triage failure whose answer is to decompose. (The `plan` breakdown gate owns this one; the plan's
+  triage pass shows only the judgement lenses to avoid double-reporting.)
+- **STALE** (report) - open, untouched for months, nothing depends on it: still wanted?
+- **ORPHANED DEPENDENCY** (report) - a `Depends on:` naming a terminal or absent artefact.
+
+`check [--stale-days N] [--format json]` runs every lens over the backlog and exits non-zero if any
+lens blocks. Judgement lenses report (the human decides); the mechanical OVERSIZED lens blocks. The
+same overlap primitives back `file_finding`'s filing-time duplicate warning, so the cheap
+filing-time lens and the plan-time lens agree by construction.
+
 ### `autosprint.py`
 
 Deprecated re-exporting alias for `sprint.py` (the old name); prefer `sprint`.

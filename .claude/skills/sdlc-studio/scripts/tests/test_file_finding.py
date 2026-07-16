@@ -767,5 +767,68 @@ class GroomingOptOutTests(unittest.TestCase):
                                 {"severity": "High", "summary": "s", "steps": "x", "fix": "y"})
 
 
+class FilerSurvivesUnreadableSiblingTests(unittest.TestCase):
+    """M1 end-to-end (from review): filing a NEW, unrelated finding must not raise and must leave a
+    consistent index even when a sibling artefact on disk is non-UTF-8 - the crash the earlier fix
+    relocated into reconcile.file_census (past the write) rather than removing."""
+
+    def test_file_finding_survives_a_non_utf8_sibling_and_leaves_no_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            idx = _seed_index(root, "bug")
+            # a corrupted sibling from a crashed session
+            (root / "sdlc-studio" / "bugs" / "BG0001-x.md").write_bytes(b"# BG0001: x\n\xff\xfe\n")
+            # filing an unrelated new bug must complete, not raise
+            res = ff.file_finding(root, "bug", "an unrelated new defect", dict(BUG))
+            self.assertIn("id", res)
+            self.assertTrue(Path(res["path"]).exists())
+            # and the index must be consistent: the new id appears, no crash mid-recompute
+            import reconcile
+            drift = reconcile.detect_type("bug", root)
+            new_id = res["file_id"]
+            self.assertNotIn(new_id, [x.get("id") for x in drift.get("missing_rows", [])])
+
+
+class FilingTimeDuplicateTests(unittest.TestCase):
+    """CR0264: at filing, a finding overlapping an OPEN artefact (shared Affects + similar wording)
+    is surfaced with the candidate named, before the id is minted - a warning, never a refusal."""
+
+    def test_near_duplicate_is_warned_not_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            ff.file_finding(root, "bug", "check_links misses an anchor link defect",
+                            {"severity": "high", "affects": "src/thing.py", "points": 3,
+                             "steps": "r", "fix": "f",
+                             "summary": "check_links does not catch a broken anchor link defect"})
+            res = ff.file_finding(root, "bug", "anchor link defect not caught by check_links",
+                                  {"severity": "high", "affects": "src/thing.py", "points": 3,
+                                   "steps": "r", "fix": "f",
+                                   "summary": "a broken anchor link defect is not caught by check_links"})
+            self.assertIn("id", res)  # it still filed - a warning, never a refusal
+            warns = res.get("duplicate_warnings", [])
+            self.assertTrue(warns, "expected a duplicate warning")
+            self.assertEqual(warns[0]["shared"], ["src/thing.py"])
+
+    def test_distinct_finding_has_no_warning(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            ff.file_finding(root, "bug", "colour the status output",
+                            {"severity": "high", "affects": "src/thing.py", "points": 3,
+                             "steps": "r", "fix": "f", "summary": "status should render green"})
+            res = ff.file_finding(root, "bug", "parser drops a trailing field",
+                                  {"severity": "high", "affects": "src/other.py", "points": 3,
+                                   "steps": "r", "fix": "f", "summary": "the parser loses the last column"})
+            self.assertNotIn("duplicate_warnings", res)  # different file, different words
+
+    def test_no_affects_no_candidates(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _seed_index(root, "bug")
+            # a finding with no declared Affects has nothing structural to compare
+            self.assertEqual(ff.duplicate_candidates(root, "some title", {"summary": "x"}), [])
+
+
 if __name__ == "__main__":
     unittest.main()

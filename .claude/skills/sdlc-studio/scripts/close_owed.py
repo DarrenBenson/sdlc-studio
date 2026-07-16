@@ -51,7 +51,7 @@ def covered_ids(root: Path) -> set[str]:
     if not retros_dir.is_dir():
         return covered
     for p in sorted(retros_dir.glob("RETRO*.md")):
-        for rid in retro.batch_ids(p.read_text(encoding="utf-8")):
+        for rid in retro.batch_ids(sdlc_md.read_text_safe(p)):  # a bad retro must not crash the scan
             covered.add(rid)
     return covered
 
@@ -66,7 +66,7 @@ def terminal_delivery_units(root: Path) -> list[tuple[str, str]]:
             if not cid:
                 continue
             status = sdlc_md.canonical_status(
-                sdlc_md.extract_field(p.read_text(encoding="utf-8"), "Status"), vocab)
+                sdlc_md.extract_field(sdlc_md.read_text_safe(p), "Status"), vocab)
             if status and sdlc_md.is_terminal_status(type_, status):
                 out.append((cid, type_))
     return out

@@ -98,7 +98,10 @@ def file_census(type_: str, repo_root: Path) -> dict[str, tuple[str, str]]:
         rec = sdlc_md.extract_record_id(path.stem)
         if not rec:
             continue
-        status = sdlc_md.extract_field(path.read_text(encoding="utf-8"), "Status") or "Unknown"
+        # Safe read: a non-UTF-8 / unreadable artefact censuses as "Unknown" (named by validate),
+        # never crashes the census - which is on the filer's post-write count recompute AND the
+        # pre-commit `reconcile detect` drift gate. One bad file must not abort either.
+        status = sdlc_md.extract_field(sdlc_md.read_text_safe(path), "Status") or "Unknown"
         key = _norm_id(rec)
         prev = census.get(key)
         # A file with a recognised status wins over a status-less namesake
@@ -351,7 +354,7 @@ def _merge_archive_rows(type_: str, repo_root: Path, rows: dict, vocab: list,
     archive_dir = repo_root / sdlc_md.ARTIFACT_TYPES[type_][0] / "archive"
     if archive_dir.is_dir():
         for af in sorted(archive_dir.rglob("*.md")):
-            arows, _ = _index_rows_and_summary(af.read_text(encoding="utf-8"), vocab, aliases)
+            arows, _ = _index_rows_and_summary(sdlc_md.read_text_safe(af), vocab, aliases)
             for k, v in arows.items():
                 if k not in rows:
                     rows[k] = v
@@ -735,7 +738,7 @@ def meta_index_drift(repo_root: Path | str) -> list[dict]:
 def _meta_row_fields(path: Path) -> tuple[str, str]:
     """(title, date) for a meta index append: title from the file's H1 (leading id/prefix
     stripped), date from a `> **Date:**` field or the first ISO date in the stem, else '--'."""
-    text = path.read_text(encoding="utf-8") if path.exists() else ""
+    text = sdlc_md.read_text_safe(path) if path.exists() else ""
     title = path.stem
     m = re.search(r"^#\s+(.+)$", text, re.M)
     if m:
@@ -840,7 +843,7 @@ def _breakdown_units(root: Path, text: str):
         if not hit:
             continue  # placeholder stub - no backing file, nothing to compare
         upath, utype = hit
-        raw = (sdlc_md.extract_field(upath.read_text(encoding="utf-8"), "Status") or "").strip()
+        raw = (sdlc_md.extract_field(sdlc_md.read_text_safe(upath), "Status") or "").strip()
         if not raw:
             continue  # no Status field: the unit asserts nothing to compare against
         canon = _canonical_status(raw, sdlc_md.STATUS_VOCAB.get(utype, [])) or raw
@@ -854,7 +857,7 @@ def epic_breakdown_drift(repo_root: Path | str) -> list[dict]:
     root = Path(repo_root)
     drift: list[dict] = []
     for epath in sdlc_md.artifact_files("epic", root):
-        text = epath.read_text(encoding="utf-8")
+        text = sdlc_md.read_text_safe(epath)
         eid = sdlc_md.extract_record_id(epath.stem) or epath.stem
         for _ln, ticked, uid, utype, canon in _breakdown_units(root, text):
             if canon == "Deferred":
@@ -878,7 +881,7 @@ def apply_breakdown(repo_root: Path | str, dry_run: bool = False) -> dict:
     root = Path(repo_root)
     synced: list[str] = []
     for epath in sdlc_md.artifact_files("epic", root):
-        text = epath.read_text(encoding="utf-8")
+        text = sdlc_md.read_text_safe(epath)
         lines = text.splitlines()
         changed = False
         for i, ticked, uid, utype, canon in _breakdown_units(root, text):
@@ -931,7 +934,7 @@ def _epic_story_point_totals(repo_root: Path | str) -> dict[str, int]:
     root = Path(repo_root)
     totals: dict[str, int] = {}
     for spath in sdlc_md.artifact_files("story", root):
-        text = spath.read_text(encoding="utf-8")
+        text = sdlc_md.read_text_safe(spath)
         epic_ref = sdlc_md.story_epic(text)
         if not epic_ref:
             continue
@@ -954,7 +957,7 @@ def epic_points_drift(repo_root: Path | str) -> list[dict]:
     totals = _epic_story_point_totals(root)
     drift: list[dict] = []
     for epath in sdlc_md.artifact_files("epic", root):
-        text = epath.read_text(encoding="utf-8")
+        text = sdlc_md.read_text_safe(epath)
         raw = sdlc_md.extract_field(text, EPIC_DERIVED_FIELD)
         if raw is None:
             continue
@@ -976,7 +979,7 @@ def apply_epic_points(repo_root: Path | str, dry_run: bool = False) -> dict:
     totals = _epic_story_point_totals(root)
     synced: list[str] = []
     for epath in sdlc_md.artifact_files("epic", root):
-        original = epath.read_text(encoding="utf-8")
+        original = sdlc_md.read_text_safe(epath)
         if sdlc_md.extract_field(original, EPIC_DERIVED_FIELD) is None:
             continue
         eid = sdlc_md.extract_record_id(epath.stem) or epath.stem
@@ -1008,7 +1011,7 @@ def _artefact_index(repo_root: Path) -> dict[str, tuple[str, str, str]]:
         for p in sdlc_md.artifact_files(type_, repo_root):
             cid = sdlc_md.extract_record_id(p.stem)
             if cid:
-                index[_norm_id(cid)] = (cid, type_, p.read_text(encoding="utf-8"))
+                index[_norm_id(cid)] = (cid, type_, sdlc_md.read_text_safe(p))
     return index
 
 
@@ -1097,7 +1100,7 @@ def undecomposed_drift(repo_root: Path | str) -> list[dict]:
     drift: list[dict] = []
     for type_ in sdlc_md.DISCOVERY_TYPES:
         for p in sdlc_md.artifact_files(type_, root):
-            text = p.read_text(encoding="utf-8")
+            text = sdlc_md.read_text_safe(p)
             vocab = sdlc_md.status_vocab(type_, root)
             status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab)
             if not status or not _requires_children(type_, status):
@@ -1586,9 +1589,8 @@ def _insert_missing_data_rows(lines: list, hdr: tuple, to_append: list,
         title = disp
         if fname:
             try:
-                fv = _file_field_values(
-                    (root / sdlc_md.ARTIFACT_TYPES[type_][0] / fname)
-                    .read_text(encoding="utf-8"))
+                fv = _file_field_values(sdlc_md.read_text_safe(
+                    root / sdlc_md.ARTIFACT_TYPES[type_][0] / fname))
                 title = fv["title"] or disp
             except OSError:
                 pass
@@ -1820,7 +1822,7 @@ def project_fields(repo_root: Path | str, type_: str = "story", dry_run: bool = 
     for path in sdlc_md.artifact_files(type_, root):
         rec = sdlc_md.extract_record_id(path.stem)
         if rec:
-            fvals[_norm_id(rec)] = _file_field_values(path.read_text(encoding="utf-8"))
+            fvals[_norm_id(rec)] = _file_field_values(sdlc_md.read_text_safe(path))
     original = index_path.read_text(encoding="utf-8")
     lines = original.splitlines()
     cols: dict = {}

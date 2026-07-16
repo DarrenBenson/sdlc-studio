@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0068: A "last-touched" date read as `max(every date in the file)` is defeated by any future or prose date (a deadline in the summary).**
+- **L-0067: A grandfather/coherence check that resolves ids against a PARTIAL set (only the triage-type, non-terminal backlog) will false-flag anything...**
+- **L-0066: But fixing ONE enumerator is not fixing the invariant: sibling code paths (`reconcile.file_census` and a dozen direct `read_text` calls)...**
+- **L-0065: A crash inside a shared file-walk (`iter_artifact_files`) is not a local bug in the feature that tripped it - it is a latent fault in every...**
 - **L-0064: When an external contract is ambiguous (the Stop hook's `stop_hook_active` / exit codes), write to the intersection of the plausible...**
 - **L-0063: A test suite that passes is evidence only about the cases it runs.**
 - **L-0062: A grandfather baseline for "work done before adoption" must be the **set** of ids that existed, not a highest-id/date cutoff.**

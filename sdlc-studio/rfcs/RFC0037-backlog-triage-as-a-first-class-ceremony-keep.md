@@ -1,6 +1,7 @@
 # RFC-0037: Backlog triage as a first-class ceremony: keep the backlog clean and actionable BEFORE planning
 
-> **Status:** Draft
+> **Status:** Accepted
+> **Decomposed-into:** EP0047
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/status.py
 > **Date:** 2026-07-14
 > **Created-by:** sdlc-studio file

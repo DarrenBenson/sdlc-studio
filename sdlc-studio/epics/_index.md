@@ -10,8 +10,8 @@
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 46 |
-| **Total** | **46** |
+| Done | 47 |
+| **Total** | **47** |
 
 > Generate-mode note: all epics are **Ready** (spec extracted from the existing
 > implementation, awaiting test validation per `reference-philosophy.md`), not
@@ -67,3 +67,4 @@
 | [EP0044](EP0044-audit-warns-and-confirms-before-a-large-adversarial.md) | audit warns and confirms before a large adversarial fan-out | Done | -- | -- | 2026-07-15 | 2026-07-15 |
 | [EP0045](EP0045-record-the-actual-sprint-token-count-retire-interactive.md) | Record the actual sprint token count; retire interactive-equals-UNMEASURED | Done | -- | -- | 2026-07-15 | 2026-07-15 |
 | [EP0046](EP0046-the-un-skippable-sprint-close-down.md) | The un-skippable sprint close-down | Done | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0047](EP0047-backlog-triage-as-a-ceremony-inside-plan.md) | Backlog triage as a ceremony inside plan | Done | -- | -- | 2026-07-16 | 2026-07-16 |

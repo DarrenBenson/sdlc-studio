@@ -340,6 +340,9 @@ def cmd_pillars(args: argparse.Namespace) -> int:
     owed = close_owed_advisory(Path(args.root))
     if owed:
         print(f"advisory: {owed}")
+    tri = backlog_triage_advisory(Path(args.root))
+    if tri:
+        print(f"advisory: {tri}")
     _print_update_notice(args.root)
     return 0
 
@@ -422,6 +425,9 @@ def cmd_hint(args: argparse.Namespace) -> int:
         owed = close_owed_advisory(Path(args.root))
         if owed:
             print(f"advisory: {owed}")
+        tri = backlog_triage_advisory(Path(args.root))
+        if tri:
+            print(f"advisory: {tri}")
         for line in index_bloat_advisories(Path(args.root)):
             print(f"advisory: {line}")
     return 0
@@ -452,6 +458,33 @@ def close_owed_advisory(repo_root: Path | str) -> str | None:
     shown = ", ".join(ids[:5]) + ("..." if len(ids) > 5 else "")
     return (f"a sprint close is owed: {len(ids)} delivery unit(s) reached terminal with no retro "
             f"({shown}) - run the retro, then `gate --require-retro RETROxxxx`")
+
+
+def backlog_triage_advisory(repo_root: Path | str) -> str | None:
+    """One line when the backlog carries triage findings (duplicates, oversized, stale, orphaned
+    dependencies) - so a dirty backlog is seen on status, not discovered only when `plan` reads it.
+    Names the counts by lens; the detail lives in `backlog_triage.py check` and in the plan."""
+    try:
+        import backlog_triage  # lazy sibling: no cost when unused
+        report = backlog_triage.triage(Path(repo_root))
+    except Exception:  # noqa: BLE001 - an advisory must never break the hint
+        return None
+    findings = report.get("findings") or []
+    skipped = report.get("skipped", 0)
+    if not findings:
+        # Do not imply a clean backlog if some artefacts could not be read - name the gap.
+        if skipped:
+            return (f"backlog triage: {skipped} artefact(s) unreadable - could not be checked "
+                    f"(`backlog_triage.py check`)")
+        return None
+    by_lens: dict[str, int] = {}
+    for f in findings:
+        by_lens[f["lens"]] = by_lens.get(f["lens"], 0) + 1
+    parts = ", ".join(f"{n} {lens}" for lens, n in sorted(by_lens.items()))
+    tail = " (blocks planning)" if report.get("blocked") else ""
+    unread = f", {skipped} unreadable" if skipped else ""
+    return (f"backlog triage: {len(findings)} item(s) - {parts}{tail}{unread} - "
+            f"`backlog_triage.py check` for detail, resolve before planning")
 
 
 def index_bloat_advisories(repo_root: Path) -> list[str]:
