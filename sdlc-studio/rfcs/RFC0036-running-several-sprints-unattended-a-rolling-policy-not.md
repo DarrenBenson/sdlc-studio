@@ -1,6 +1,7 @@
 # RFC-0036: Running several sprints unattended: a rolling policy, not a queue of frozen plans
 
 > **Status:** Draft
+> **Decomposed-into:** CR0320, CR0321
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/loop_guard.py
 > **Date:** 2026-07-14
 > **Created-by:** sdlc-studio file
@@ -36,10 +37,12 @@ Rolling policy, with lane partitioning by shared-file cluster as a separate, ind
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Act on this finding or keep status quo | Open |
+| D1 | Queue model | Resolved: rolling policy - fix the policy, regenerate the plan at each boundary (operator, 2026-07-17) -> CR0320 |
+| D2 | Lane partitioning scope | Resolved: separate follow-up CR, after the rolling policy -> CR0321 |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-14 | sdlc-studio | Filed |
+| 2026-07-17 | Darren Benson (operator) / Claude Fable 5 | Decisions resolved at the RFC triage session; workstream CRs spawned (Accepted derives when they resolve) |

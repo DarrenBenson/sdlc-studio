@@ -1,7 +1,7 @@
 # RFC-0040: Upgrade and migration path for the sizing and two-backlog model, before release
 
-> **Status:** Draft
-> **Decomposed-into:** EP0034, EP0037
+> **Status:** Accepted
+> **Decomposed-into:** EP0034, EP0037, CR0319
 > **Size:** L
 > **Affects:** .claude/skills/sdlc-studio/scripts/migrate_v3.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/transition.py
 > **Date:** 2026-07-15
@@ -25,10 +25,11 @@ Option 1. Decompose into CRs: (a) migration pass in `migrate_v3.py` for the sizi
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Act on this finding or keep status quo | Open |
+| D1 | Ship universal or migrate | Resolved: Option 1 confirmed (migration + opt-in gates + grace + 5.0.0) - machinery largely delivered via EP0034/EP0037; the release cut is the remaining workstream (operator, 2026-07-17) -> CR0319 |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-15 | sdlc-studio | Filed |
+| 2026-07-17 | Darren Benson (operator) / Claude Fable 5 | Decisions resolved at the RFC triage session; workstream CRs spawned; Accepted |

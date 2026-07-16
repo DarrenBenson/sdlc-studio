@@ -1,6 +1,7 @@
 # RFC-0043: Definition of Ready and Definition of Done as editable per-project artefacts, enforced by the existing gates
 
 > **Status:** Draft
+> **Decomposed-into:** CR0324, CR0325, CR0326
 > **Size:** XL
 > **Date:** 2026-07-15
 > **Created-by:** sdlc-studio file
@@ -43,11 +44,12 @@ artefacts, and SUBSUMES RFC0042: the sprint-level DoD's close clause is the un-s
 | # | Decision | Status |
 | --- | --- | --- |
 | D1 | Artefact shape (editable docs vs config vs hybrid) | Resolved: the hybrid - editable documents carrying a tagged machine-checkable subset |
-| D2 | How a criterion tags to an enforceable check (a stable check-id vocabulary the gates resolve) | Open - the core mechanism |
-| D3 | Ship defaults, or generate a DoR/DoD from the project's profile/stack at init | Open |
+| D2 | How a criterion tags to an enforceable check | Resolved: check-id registry - [check: <id>] tags resolving through one registered vocabulary; unknown id = loud error; untagged = human-judged (operator, 2026-07-17) -> CR0324 |
+| D3 | Defaults vs generated | Resolved: shipped defaults + an init tailoring OFFER derived from the detected stack; the static documents stay the source of truth (operator, 2026-07-17) -> CR0326 |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-15 | sdlc-studio | Filed |
+| 2026-07-17 | Darren Benson (operator) / Claude Fable 5 | Decisions resolved at the RFC triage session; workstream CRs spawned (Accepted derives when they resolve) |

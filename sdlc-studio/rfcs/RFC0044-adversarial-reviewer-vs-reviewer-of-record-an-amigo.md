@@ -1,6 +1,7 @@
 # RFC-0044: Adversarial reviewer vs reviewer of record: an amigo subagent finds issues, an independent principal signs off
 
 > **Status:** Draft
+> **Decomposed-into:** CR0318, CR0323
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/reference-workflow-personas.md
 > **Date:** 2026-07-16
 > **Created-by:** sdlc-studio file
@@ -25,13 +26,14 @@ The hybrid: keep the amigo/seat subagent as the always-run adversarial reviewer 
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Build the two-role model (adversarial seat finds, independent principal signs) into the close ceremony as a hard gate, or keep it doctrine-only | Open |
+| D1 | Build vs doctrine-only | Resolved: BUILD - conformance critiqued requires adversarial evidence + independent sign-off (operator, 2026-07-17) -> CR0323 |
 | D2 | The sign-off prompt must carry a decision brief (per-unit deliveries, critic REJECTs + repairs, gate/cost evidence) - an uninformed signature is approval theatre | Resolved: yes - operator feedback at the RUN-01KXGPBN close (the prompt showed counts, not content); delivery tracked as CR0318 |
-| D3 | Delegated sign-off: may the operator name a persona/independent principal to review and sign on their behalf - and what makes the delegation valid (independence from the authoring session, recording of the delegation chain on the retro, revocability)? The author's own seat subagents must be refusable as delegates or the self-approval guard is hollowed out | Open |
+| D3 | Delegated sign-off: may the operator name a persona/independent principal to review and sign on their behalf - and what makes the delegation valid (independence from the authoring session, recording of the delegation chain on the retro, revocability)? The author's own seat subagents must be refusable as delegates or the self-approval guard is hollowed out | Resolved: named delegate in a separate trust boundary, delegation chain recorded on the retro, authoring-session subagents refused (operator, 2026-07-17) -> CR0323 |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-16 | sdlc-studio | Filed |
+| 2026-07-17 | Darren Benson (operator) / Claude Fable 5 | Decisions resolved at the RFC triage session; workstream CRs spawned (Accepted derives when they resolve) |
 | 2026-07-16 | Darren Benson (operator) / Claude Fable 5 | Boilerplate D1 replaced with the real decisions; D2 resolved from close feedback (CR0318); D3 delegation added |

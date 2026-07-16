@@ -1,6 +1,7 @@
 # RFC-0045: Micro-requests and the one-story epic: should a small CR decompose to a story without a container epic?
 
 > **Status:** Draft
+> **Decomposed-into:** CR0322
 > **Affects:** .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/reconcile.py
 > **Date:** 2026-07-16
 > **Created-by:** sdlc-studio file
@@ -24,10 +25,11 @@ Option 3 preserves every existing invariant (epics still the only story parents,
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Act on this finding or keep status quo | Open |
+| D1 | Decomposition shape for small requests | Resolved: batch epic (refine --into EPxxxx); direct story-children rejected for blast radius; status quo rejected for index accretion (operator, 2026-07-17) -> CR0322 |
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-16 | Claude Fable 5 | Filed |
+| 2026-07-17 | Darren Benson (operator) / Claude Fable 5 | Decisions resolved at the RFC triage session; workstream CRs spawned (Accepted derives when they resolve) |

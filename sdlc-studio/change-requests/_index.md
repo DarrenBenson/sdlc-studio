@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 36 |
+| Proposed | 44 |
 | Approved | 0 |
 | In Progress | 1 |
 | Complete | 273 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 8 |
 | Blocked | 0 |
-| **Total** | **318** |
+| **Total** | **326** |
 
 ## All Changes
 
@@ -140,6 +140,14 @@
 | [CR-0316](CR0316-critic-py-brief-emit-the-seat-review-prompt.md) | critic.py brief: emit the seat-review prompt deterministically and parse the returned verdict block - the critic ceremony is re-derived by hand every unit | Proposed | Medium | Improvement | 2026-07-16 | -- |
 | [CR-0317](CR0317-a-shared-test-module-loader-for-scripts-tests.md) | A shared test-module loader for scripts/tests: forty files duplicate the importlib spec dance and every new module re-trips on it | Proposed | Low | Improvement | 2026-07-16 | -- |
 | [CR-0318](CR0318-the-reviewer-of-record-sign-off-must-carry.md) | The reviewer-of-record sign-off must carry a decision brief: what shipped, what the critics rejected, gate and cost evidence - inline in the prompt, with hold and delegate paths | Proposed | High | process | 2026-07-16 | -- |
+| [CR-0319](CR0319-cut-5-0-0-the-release-dod-for.md) | Cut 5.0.0: the release DoD for the sizing + two-backlog model (RFC0040 close-out) | Proposed | High | process | 2026-07-16 | -- |
+| [CR-0320](CR0320-rolling-multi-sprint-policy-run-n-sprint-cycles.md) | Rolling multi-sprint policy: run N sprint cycles unattended under a standing policy, plan regenerated at each boundary (RFC0036 D1) | Proposed | Medium | Feature | 2026-07-16 | -- |
+| [CR-0321](CR0321-lane-partitioning-allocate-backlog-lanes-by-shared-file.md) | Lane partitioning: allocate backlog lanes by shared-file cluster for multi-team delivery (RFC0036 follow-up) | Proposed | Low | Feature | 2026-07-16 | -- |
+| [CR-0322](CR0322-refine-into-epxxxx-small-requests-decompose-into-a.md) | refine --into EPxxxx: small requests decompose into a shared batch epic instead of minting singletons (RFC0045 D1) | Proposed | Medium | Improvement | 2026-07-16 | -- |
+| [CR-0323](CR0323-build-the-two-role-review-gate-adversarial-evidence.md) | Build the two-role review gate: adversarial evidence + non-author principal sign-off with named-delegate chain (RFC0044 D1+D3, integrates CR0318) | Proposed | High | Feature | 2026-07-16 | -- |
+| [CR-0324](CR0324-dor-dod-artefacts-check-id-registry-the-two.md) | DoR/DoD artefacts + check-id registry: the two editable documents with a tagged machine-checkable subset (RFC0043 slice 1) | Proposed | Medium | Feature | 2026-07-16 | -- |
+| [CR-0325](CR0325-wire-the-gates-to-the-dor-dod-documents.md) | Wire the gates to the DoR/DoD documents: grooming reads the ready bar, Done/close/release read the done bar (RFC0043 slice 2) | Proposed | Medium | Feature | 2026-07-16 | -- |
+| [CR-0326](CR0326-init-tailoring-pass-for-dor-dod-offer-stack.md) | init tailoring pass for DoR/DoD: offer stack/profile-derived criteria at project init (RFC0043 slice 3) | Proposed | Low | Improvement | 2026-07-16 | -- |
 
 ## Archived Releases
 

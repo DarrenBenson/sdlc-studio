@@ -1,6 +1,7 @@
 # CR-0318: The reviewer-of-record sign-off must carry a decision brief: what shipped, what the critics rejected, gate and cost evidence - inline in the prompt, with hold and delegate paths
 
 > **Status:** Proposed
+> **Parent:** RFC0044
 > **Priority:** High
 > **Type:** process
 > **Size:** S
