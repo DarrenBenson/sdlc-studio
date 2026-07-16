@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 32 |
+| Proposed | 35 |
 | Approved | 0 |
 | In Progress | 1 |
 | Complete | 273 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 8 |
 | Blocked | 0 |
-| **Total** | **314** |
+| **Total** | **317** |
 
 ## All Changes
 
@@ -136,6 +136,9 @@
 | [CR-0312](CR0312-dora-four-keys-deterministically-deployment-frequency-lead-time.md) | DORA four keys, deterministically: deployment frequency, lead time, change failure rate, MTTR from git history + the deploy ledger | Complete | Medium | Feature | 2026-07-16 | -- |
 | [CR-0313](CR0313-small-batch-guard-an-advisory-diff-size-lane.md) | Small-batch guard: an advisory diff-size lane flags a delivered unit whose change exceeds a batch threshold - the AI batch-size failure mode, caught deterministically | Complete | Medium | Improvement | 2026-07-16 | -- |
 | [CR-0314](CR0314-forecast-in-sprints-and-hours-not-iso-weeks.md) | Forecast in sprints and hours, not ISO weeks: AI-speed delivery needs sprint-session buckets with days as the calendar floor | Proposed | High | Improvement | 2026-07-16 | -- |
+| [CR-0315](CR0315-per-unit-changelog-fragments-composed-at-release-kill.md) | Per-unit CHANGELOG fragments composed at release: kill the shared-file hold-back trick that per-unit commits currently force | Proposed | High | Improvement | 2026-07-16 | -- |
+| [CR-0316](CR0316-critic-py-brief-emit-the-seat-review-prompt.md) | critic.py brief: emit the seat-review prompt deterministically and parse the returned verdict block - the critic ceremony is re-derived by hand every unit | Proposed | Medium | Improvement | 2026-07-16 | -- |
+| [CR-0317](CR0317-a-shared-test-module-loader-for-scripts-tests.md) | A shared test-module loader for scripts/tests: forty files duplicate the importlib spec dance and every new module re-trips on it | Proposed | Low | Improvement | 2026-07-16 | -- |
 
 ## Archived Releases
 
