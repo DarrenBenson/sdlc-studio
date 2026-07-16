@@ -293,6 +293,79 @@ BLOCKING_ON_ERROR = {
     "engagement-floor", "review-current", "close-owed",
 }
 
+def _batch_size(root: str) -> dict:
+    """Advisory small-batch lane: flags a delivered unit whose CHANGE is an outlier for
+    its size - the AI batch-size failure mode (agents produce larger diffs faster; DORA
+    2024/25 ties undisciplined batch growth to degraded throughput and stability). The
+    sizing rule bounds the ESTIMATE (points <= 8); this lane bounds the DIFF.
+
+    Deliberately never blocking: a legitimate mechanical sweep (a rename, a migration) is
+    large and fine - the lane's job is visibility at review time, not a gate. Off until the
+    project sets thresholds (`batch_size.max_lines` / `batch_size.max_files`); measures the
+    OPEN RUN's batch units via their Refs-trailed / subject-named commits."""
+    from lib import run_state as _rs
+    max_lines = sdlc_md.project_override(root, "batch_size.max_lines", None)
+    max_files = sdlc_md.project_override(root, "batch_size.max_files", None)
+    if not max_lines and not max_files:
+        return {"count": 0, "blocking": False,
+                "detail": "off - set batch_size.max_lines / batch_size.max_files to enable "
+                          "(advisory diff-size visibility per delivered unit)"}
+    try:
+        state = _rs.read(root) or {}
+    except _rs.RunStateError:
+        return {"count": 0, "blocking": False,
+                "detail": "run state unreadable - nothing measured (the close gate owns that failure)"}
+    batch = state.get("batch") or []
+    if not batch:
+        return {"count": 0, "blocking": False, "detail": "no open run - nothing to measure"}
+    import subprocess
+    offenders: list[str] = []
+    measured = 0
+    for uid in batch:
+        uid = sdlc_md.norm_id(uid)
+        try:
+            # end-anchored trailer + literal parenthesised subject form (BRE: parens are
+            # literal), so US0001 never prefix-matches a Refs: US00013 trailer
+            shas = subprocess.run(
+                ["git", "log", "--format=%H", "--grep", f"Refs: {uid}$",
+                 "--grep", f"({uid})"],
+                cwd=root, capture_output=True, text=True, timeout=30).stdout.split()
+        except (OSError, subprocess.TimeoutExpired):
+            return {"count": 0, "blocking": False, "detail": "no readable git history"}
+        if not shas:
+            continue
+        lines = 0
+        files: set[str] = set()
+        for sha in shas:
+            out = subprocess.run(["git", "show", "--numstat", "--format=", sha],
+                                 cwd=root, capture_output=True, text=True, timeout=30).stdout
+            for row in out.splitlines():
+                parts = row.split("\t")
+                if len(parts) == 3:
+                    add, rem, name = parts
+                    if add.isdigit():
+                        lines += int(add)
+                    if rem.isdigit():
+                        lines += int(rem)
+                    files.add(name)
+        measured += 1
+        over = ((max_lines and lines > int(max_lines))
+                or (max_files and len(files) > int(max_files)))
+        if over:
+            found = sdlc_md.find_by_id(root, uid)
+            pts = sdlc_md.read_points(sdlc_md.read_text_safe(found[0])) if found else None
+            offenders.append(f"{uid} ({pts or '?'}pt): {lines} lines / {len(files)} file(s) "
+                             f"vs max {max_lines or '-'} lines / {max_files or '-'} file(s)")
+    skipped = len(batch) - measured
+    tail = f" ({measured} measured, {skipped} with no identifiable commits)" if skipped else ""
+    if offenders:
+        return {"count": len(offenders), "blocking": False,
+                "detail": "advisory - never blocks; outlier diff for its size: "
+                          + "; ".join(offenders) + tail}
+    return {"count": 0, "blocking": False,
+            "detail": f"{measured} measured unit(s) within batch thresholds{tail}"}
+
+
 DEFAULT_CHECKS = {
     "conformance": _conformance,
     "reconcile": _reconcile,
@@ -308,6 +381,7 @@ DEFAULT_CHECKS = {
     "doc-freshness": _doc_freshness,
     "mutation": _mutation,
     "hook-enabled": _hook_enabled,
+    "batch-size": _batch_size,
 }
 
 

@@ -179,6 +179,18 @@ Worktree tests passing doesn't guarantee merged code works. Each worktree has it
 
 ---
 
+### Small batches survive AI speed only if something watches the diff {#small-batch-guard}
+
+The evidence (DORA 2024/25): AI-assisted work amplifies batch size - agents produce larger
+changes faster, and where small-batch discipline is absent that correlates with degraded
+system throughput and stability even as individual speed rises. The sizing rule bounds the
+ESTIMATE (points <= 8, split above); nothing bounded the DIFF until the `batch-size` gate
+lane. Set `batch_size.max_lines` / `batch_size.max_files` in `.config.yaml` and the gate
+WARNS - never blocks - when a delivered unit in the open run's batch is an outlier for its
+size, naming the unit, its points, the measured lines/files and the thresholds. Advisory
+by design: a legitimate mechanical sweep (a rename, a migration) is large and fine; the
+lane's job is visibility at review time, not a gate. Off until thresholds are set.
+
 ## Commits and Pacing
 
 ### Per-epic commits are the sweet spot

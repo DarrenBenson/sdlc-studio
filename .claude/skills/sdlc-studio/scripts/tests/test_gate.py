@@ -129,7 +129,7 @@ class GateRealWrapperTests(unittest.TestCase):
         self.assertEqual(set(gate.DEFAULT_CHECKS),
                          {"conformance", "reconcile", "index-derived", "validate", "constitution",
                           "integrity", "duplicate-id", "provenance", "doc-coverage", "engagement-floor",
-                          "disclosure", "doc-freshness", "mutation", "hook-enabled"})
+                          "disclosure", "doc-freshness", "mutation", "hook-enabled", "batch-size"})
 
     def test_real_wrappers_run_and_shape(self) -> None:
         # Exercises the real checks end-to-end against this repo; asserts structure,
@@ -139,7 +139,7 @@ class GateRealWrapperTests(unittest.TestCase):
                           "root (running from an installed copy)")
         r = gate.run_gate(str(REPO))
         self.assertIsInstance(r["ok"], bool)
-        self.assertEqual(len(r["checks"]), 14)
+        self.assertEqual(len(r["checks"]), 15)
         for c in r["checks"]:
             self.assertEqual(set(c), {"check", "count", "blocking", "status", "detail"})
 
@@ -1460,6 +1460,104 @@ class CloseOwedGateLaneTests(unittest.TestCase):
             self._owed_project(root)
             report = gate.run_gate(str(root))  # no --require-close
             self.assertNotIn("close-owed", [c["check"] for c in report["checks"]])
+
+
+import json as _json  # noqa: E402
+import subprocess  # noqa: E402
+
+
+def _git(cwd, *args):
+    subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
+
+
+def _batch_repo(tmp, *, config=True, lines=30):
+    """A git repo with one Done 2-point story delivered by one Refs-trailed commit
+    changing `lines` lines, its id named in the open run-state batch."""
+    root = Path(tmp)
+    _git(root, "init", "-q")
+    _git(root, "config", "user.email", "t@t")
+    _git(root, "config", "user.name", "t")
+    d = root / "sdlc-studio" / "stories"
+    d.mkdir(parents=True)
+    (d / "US0001-x.md").write_text(
+        "# US0001: x\n\n> **Status:** Done\n> **Points:** 2\n", encoding="utf-8")
+    (root / "src.py").write_text("\n".join(f"line {i}" for i in range(lines)) + "\n",
+                                 encoding="utf-8")
+    _git(root, "add", "-A")
+    _git(root, "commit", "-q", "-m", "feat: deliver x (US0001)\n\nRefs: US0001")
+    local = root / "sdlc-studio" / ".local"
+    local.mkdir(parents=True)
+    (local / "run-state.json").write_text(_json.dumps(
+        {"schema": 1, "run_id": "RUN-T", "started_at": "2026-07-16T10:00:00",
+         "ended_at": None, "outcome": "running", "goal": "done",
+         "batch": ["US0001"], "plan": None, "handoff": None}), encoding="utf-8")
+    if config:
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "batch_size:\n  max_lines: 10\n  max_files: 5\n", encoding="utf-8")
+    return root
+
+
+class BatchSizeTests(unittest.TestCase):
+    """US0185: the advisory small-batch lane - the AI batch-size failure mode made
+    visible at review time, never a hard fail."""
+
+    def test_batch_size_lane_off_without_thresholds(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = _batch_repo(d, config=False)
+            r = gate.DEFAULT_CHECKS["batch-size"](str(root))
+            self.assertEqual(r["count"], 0)
+            self.assertFalse(r["blocking"])
+            self.assertIn("off", r["detail"])
+            self.assertIn("batch_size.max_lines", r["detail"])
+
+    def test_batch_size_flags_over_threshold_unit(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = _batch_repo(d, lines=30)  # 31 lines added > max_lines 10
+            r = gate.DEFAULT_CHECKS["batch-size"](str(root))
+            self.assertEqual(r["count"], 1)
+
+    def test_batch_size_under_threshold_is_quiet(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = _batch_repo(d, lines=3)  # story file + 4 lines src < 10... measure asserts
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "batch_size:\n  max_lines: 500\n  max_files: 50\n", encoding="utf-8")
+            r = gate.DEFAULT_CHECKS["batch-size"](str(root))
+            self.assertEqual(r["count"], 0)
+
+    def test_prefix_id_commit_never_attributed(self):
+        # "Refs: US00013" must NOT count as US0001's commit (the anchored-trailer rule);
+        # also kills the over-broad bare-uid grep mutant the critic ran.
+        with tempfile.TemporaryDirectory() as d:
+            root = _batch_repo(d, lines=30)
+            _git(root, "commit", "-q", "--amend", "-m",
+                 "feat: other unit entirely\n\nRefs: US00013")
+            r = gate.DEFAULT_CHECKS["batch-size"](str(root))
+            self.assertEqual(r["count"], 0)
+            self.assertIn("no identifiable commits", r["detail"])
+
+    def test_batch_size_no_open_run_measures_nothing(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = _batch_repo(d)
+            (root / "sdlc-studio" / ".local" / "run-state.json").unlink()
+            r = gate.DEFAULT_CHECKS["batch-size"](str(root))
+            self.assertEqual(r["count"], 0)
+            self.assertIn("no open run", r["detail"])
+
+
+class BatchWarnTests(unittest.TestCase):
+    def test_batch_warning_names_unit_points_size_threshold_and_is_advisory(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = _batch_repo(d, lines=30)
+            r = gate.DEFAULT_CHECKS["batch-size"](str(root))
+            self.assertFalse(r["blocking"])  # NEVER hard-fails
+            for needle in ("US0001", "2pt", "lines", "10", "advisory"):
+                self.assertIn(needle, r["detail"])
+
+    def test_gate_stays_green_with_batch_warning(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = _batch_repo(d, lines=30)
+            report = gate.run_gate(str(root), only=["batch-size"])
+            self.assertTrue(report["ok"])  # advisory: the gate never fails on it
 
 
 if __name__ == "__main__":

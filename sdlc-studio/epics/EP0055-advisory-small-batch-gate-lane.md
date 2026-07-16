@@ -14,7 +14,7 @@ Decomposed from CR0313. Delivers the work CR0313 requested.
 
 ## Story Breakdown
 
-- [ ] [US0185: gate lane measures a delivered unit's diff size vs configured thresholds, warn-only, default off](../stories/US0185-gate-lane-measures-a-delivered-unit-s-diff.md)
+- [x] [US0185: gate lane measures a delivered unit's diff size vs configured thresholds, warn-only, default off](../stories/US0185-gate-lane-measures-a-delivered-unit-s-diff.md)
 
 ## Revision History
 

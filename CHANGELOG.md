@@ -41,6 +41,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its never-shells-out safety contract), and MTTR from High/Critical bug dates. Advisory, with
   each definition printed; an absent source is UNMEASURABLE by name; a workspace with no ledger
   reads not-applicable and is never nagged.
+- **The small-batch guard - an advisory diff-size gate lane (CR0313, EP0055).** With
+  `batch_size.max_lines` / `batch_size.max_files` configured, the `batch-size` lane measures each
+  open-run batch unit's delivered diff (via its Refs-trailed / subject-named commits) and WARNS -
+  never blocks - on an outlier, naming the unit, points, measured size and thresholds. The AI
+  batch-size failure mode (DORA 2024/25: agents amplify batch size; undisciplined growth degrades
+  throughput and stability) made visible at review time. Off by default.
 - **The sprint report: what a sprint delivered, cost, and velocity (EP0048, RFC0035, absorbing
   CR0273).** New `sprint_report.py show --id RETROxxxx` composes - deterministically, at no model-token
   cost - the delivered points, the actual spend, the estimate-vs-actual, the velocity, the lessons and

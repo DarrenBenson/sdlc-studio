@@ -1,6 +1,6 @@
 # US0185: gate lane measures a delivered unit's diff size vs configured thresholds, warn-only, default off
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** the gate lane runs
 - **Then** lines-changed and files-touched are measured and compared to the thresholds; the lane is off until thresholds are set
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_gate.py -k BatchSize
+- **Verified:** yes (2026-07-16)
 
 ### AC2: Warn-only, fully named
 
@@ -29,6 +30,7 @@
 - **When** the lane fires
 - **Then** the warning names the unit, its points, the measured size and the threshold, and states it is advisory - the gate never hard-fails on it
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_gate.py -k BatchWarn
+- **Verified:** yes (2026-07-16)
 
 ### AC3: Rationale documented
 
@@ -36,6 +38,7 @@
 - **When** they look up the lane
 - **Then** the AI batch-size amplification evidence and the never-hard-fails contract are recorded
 - **Verify:** grep "batch" .claude/skills/sdlc-studio/reference-agentic-lessons.md
+- **Verified:** yes (2026-07-16)
 
 ## Revision History
 
