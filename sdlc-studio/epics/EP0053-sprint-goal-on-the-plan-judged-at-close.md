@@ -14,7 +14,7 @@ Decomposed from CR0311. Delivers the work CR0311 requested.
 
 ## Story Breakdown
 
-- [ ] [US0183: Record an operator Sprint Goal on plan and run-state; closing review verdict and sprint report display it](../stories/US0183-record-an-operator-sprint-goal-on-plan-and.md)
+- [x] [US0183: Record an operator Sprint Goal on plan and run-state; closing review verdict and sprint report display it](../stories/US0183-record-an-operator-sprint-goal-on-plan-and.md)
 
 ## Revision History
 

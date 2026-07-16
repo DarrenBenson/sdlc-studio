@@ -145,6 +145,11 @@ independent critic plus the gate - the check's output states this scoping.
    `reconcile` (fix any drift) + `review` (the unified PRD/TRD/TSD/persona plus CODE
    review), **regardless of `--goal`**. The review is the sprint review; it produces the
    conformance `reviewed` signal.
+   **The Sprint Goal is judged here.** When the plan recorded one (`--sprint-goal`, a
+   product outcome, not a pipeline rung), the review's verdict says whether the increment
+   achieved it - recorded with `sprint.py goal-verdict --verdict achieved|partial|missed
+   --note "..."` and displayed on the sprint report. A run whose plan set no goal is
+   judged as a batch, honestly: `goal-verdict` refuses to invent alignment after the fact.
    **Mutation evidence first (mechanical, `--goal done` only):** before the retro gate, run
    a bounded `mutation.py run --since <sprint base ref> --test "<the suite>"` (ceiling from
    `quality.mutation_max`) so `sdlc-studio/.local/mutation-report.json` exists for THIS

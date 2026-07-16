@@ -1,6 +1,6 @@
 # US0183: Record an operator Sprint Goal on plan and run-state; closing review verdict and sprint report display it
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** they supply --sprint-goal (or are prompted interactively)
 - **Then** the goal sentence is recorded on the plan and run-state; absent, it records none - never invented
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_sprint.py -k SprintGoal
+- **Verified:** yes (2026-07-16)
 
 ### AC2: Closing review judges the goal
 
@@ -29,6 +30,7 @@
 - **When** the mandatory closing review runs
 - **Then** its verdict includes achieved/partial/missed with one line of judgement
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_sprint.py -k GoalVerdict
+- **Verified:** yes (2026-07-16)
 
 ### AC3: Sprint report displays goal and verdict
 
@@ -36,6 +38,7 @@
 - **When** sprint_report.py show renders
 - **Then** the goal and the review's goal verdict appear beside delivered points and cost
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_sprint_report.py -k Goal
+- **Verified:** yes (2026-07-16)
 
 ## Revision History
 

@@ -30,8 +30,24 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import sdlc_md  # noqa: E402
+from lib import run_state, sdlc_md  # noqa: E402
 import retro  # noqa: E402
+
+
+def _sprint_goal(root: Path, unit_ids: list[str]) -> tuple[str | None, dict | None]:
+    """The run state's Sprint Goal + verdict - ONLY when its batch names this sprint's
+    units. A run state from a different run says nothing about this report (the same
+    stale-confounder guard the elapsed read learned the hard way)."""
+    try:
+        state = run_state.read(root) or {}
+    except run_state.RunStateError:
+        return None, None  # the report stays renderable; the close gate owns that failure
+    if not state.get("sprint_goal"):
+        return None, None
+    batch = {sdlc_md.norm_id(u) for u in (state.get("batch") or [])}
+    if not batch & {sdlc_md.norm_id(u) for u in unit_ids}:
+        return None, None
+    return state["sprint_goal"], state.get("sprint_goal_verdict")
 import telemetry  # noqa: E402
 
 
@@ -70,8 +86,10 @@ def report(root: Path, retro_id: str, *, sprint_tokens: int | None = None,
     unit_ids = [u["id"] for u in acc["units"]]
     val = retro.validate(root, retro_id)  # lessons + dispositioned findings (tickets raised)
     b = acc["batch"]
+    goal, goal_verdict = _sprint_goal(Path(root), unit_ids)
     return {
         "ok": True, "id": retro_id, "date": acc.get("date", ""),
+        "sprint_goal": goal, "sprint_goal_verdict": goal_verdict,
         "units": unit_ids,
         "delivered_points": b.get("delivered_points"),
         "spend": _spend(root, unit_ids),
@@ -111,6 +129,11 @@ def render(rep: dict) -> str:
         return f"sprint report {rep['id']}: unavailable ({'; '.join(rep.get('errors', []))})"
     v = rep["velocity"]
     lines = [f"# Sprint report - {rep['id']} ({rep['date']})", ""]
+    if rep.get("sprint_goal"):
+        gv = rep.get("sprint_goal_verdict")
+        judged = (f"{gv['verdict']}" + (f" - {gv['note']}" if gv.get("note") else "")
+                  if gv else "not judged (record with `sprint goal-verdict`)")
+        lines.append(f"Sprint Goal: {rep['sprint_goal']} [{judged}]")
     lines.append(f"Delivered: {len(rep['units'])} unit(s), {rep['delivered_points']} points.")
     lines.append(_spend_line(rep["spend"], rep.get("sprint_actual_tokens")))
     if v["points_per_elapsed_hour"]:

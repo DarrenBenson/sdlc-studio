@@ -9,6 +9,7 @@ import json
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the shared gitutil helper
@@ -1999,6 +2000,144 @@ class BreakdownReportTests(unittest.TestCase):
                 "# US0001: s\n\n> **Status:** Ready\n\nActions CR0001.\n", encoding="utf-8")
             bd = _load().build_plan(root, "cr", "Proposed", skip_personas=True)["breakdown"]
             self.assertEqual(bd["decompose"], [])
+
+
+class SprintGoalTests(unittest.TestCase):
+    """US0183: an operator-supplied Sprint Goal is recorded at plan time - a product
+    outcome, distinct from the --goal ladder rung. Absent = recorded as none, never invented."""
+
+    def _plan(self, root, *extra):
+        # stdin is ISOLATED: under a real terminal the goal prompt would otherwise block
+        # the suite silently (redirect_stdout swallows the prompt) - the critic's repro.
+        mod = _load()
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
+                unittest.mock.patch.object(sys, "stdin", io.StringIO("")):
+            rc = mod.main(["plan", "--bugs", "Open", "--no-fetch", "--root", str(root), *extra])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_sprint_goal_recorded_on_plan_and_run_state(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            rc, _, _ = self._plan(root, "--write", "--sprint-goal", "make the estimator honest")
+            self.assertEqual(rc, 0)
+            plan = json.loads((root / "sdlc-studio" / ".local" / "sprint-plan.json").read_text())
+            self.assertEqual(plan["sprint_goal"], "make the estimator honest")
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            self.assertEqual(state["sprint_goal"], "make the estimator honest")
+
+    def test_absent_goal_recorded_as_none_never_invented(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            rc, _, _ = self._plan(root, "--write")
+            self.assertEqual(rc, 0)
+            plan = json.loads((root / "sdlc-studio" / ".local" / "sprint-plan.json").read_text())
+            self.assertIsNone(plan["sprint_goal"])
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            self.assertIsNone(state.get("sprint_goal"))
+
+    def test_replan_without_flag_preserves_recorded_goal(self):
+        # A mid-run re-cut (blocker sweep, re-plan) must not erase the goal the operator
+        # set: like open_run's rung goal, absent preserves, only a stated value writes.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            rc, _, _ = self._plan(root, "--write", "--sprint-goal", "make it honest")
+            self.assertEqual(rc, 0)
+            rc, _, _ = self._plan(root, "--write")  # re-cut, no flag
+            self.assertEqual(rc, 0)
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            self.assertEqual(state["sprint_goal"], "make it honest")
+
+    def test_interactive_prompt_reaches_plan_and_run_state(self):
+        # AC1's prompted path: a tty operator with no flag is asked once; the answer
+        # lands in BOTH records from one variable (LL0016).
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            mod = _load()
+            tty = unittest.mock.Mock()
+            tty.isatty.return_value = True
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
+                    unittest.mock.patch.object(sys, "stdin", tty), \
+                    unittest.mock.patch("builtins.input", return_value="a prompted goal"):
+                rc = mod.main(["plan", "--bugs", "Open", "--no-fetch", "--write",
+                               "--root", str(root)])
+            self.assertEqual(rc, 0)
+            plan = json.loads((root / "sdlc-studio" / ".local" / "sprint-plan.json").read_text())
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            self.assertEqual((plan["sprint_goal"], state["sprint_goal"]),
+                             ("a prompted goal", "a prompted goal"))
+
+    def test_explicit_empty_flag_means_none_and_never_prompts(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            mod = _load()
+            tty = unittest.mock.Mock()
+            tty.isatty.return_value = True
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
+                    unittest.mock.patch.object(sys, "stdin", tty), \
+                    unittest.mock.patch("builtins.input",
+                                        side_effect=AssertionError("must not prompt")):
+                rc = mod.main(["plan", "--bugs", "Open", "--no-fetch", "--write",
+                               "--sprint-goal", "", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            plan = json.loads((root / "sdlc-studio" / ".local" / "sprint-plan.json").read_text())
+            self.assertIsNone(plan["sprint_goal"])
+
+
+class GoalVerdictTests(unittest.TestCase):
+    """US0183: the closing review judges the increment against the recorded goal."""
+
+    def _open_run_with_goal(self, root, goal="make it honest"):
+        mod = _load()
+        out, err = io.StringIO(), io.StringIO()
+        _bug(root, 1)
+        args = ["plan", "--bugs", "Open", "--no-fetch", "--write", "--root", str(root)]
+        if goal is not None:
+            args += ["--sprint-goal", goal]
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
+                unittest.mock.patch.object(sys, "stdin", io.StringIO("")):
+            rc = mod.main(args)
+        assert rc == 0, err.getvalue()
+        return mod
+
+    def test_goal_verdict_recorded_on_run_state(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._open_run_with_goal(root)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["goal-verdict", "--verdict", "achieved",
+                               "--note", "shipped the honest path", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            self.assertEqual(state["sprint_goal_verdict"],
+                             {"verdict": "achieved", "note": "shipped the honest path"})
+
+    def test_goal_verdict_refused_when_no_goal_recorded(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._open_run_with_goal(root, goal=None)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["goal-verdict", "--verdict", "achieved",
+                               "--note", "x", "--root", str(root)])
+            self.assertNotEqual(rc, 0)
+            self.assertIn("no sprint goal", err.getvalue().lower())
+
+    def test_goal_verdict_rejects_unknown_verdict(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._open_run_with_goal(root)
+            with self.assertRaises(SystemExit), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                mod.main(["goal-verdict", "--verdict", "smashed-it", "--root", str(root)])
 
 
 if __name__ == "__main__":

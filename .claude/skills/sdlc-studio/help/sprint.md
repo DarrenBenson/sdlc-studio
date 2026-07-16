@@ -51,6 +51,7 @@ next sprint" resolves to `--goal design` (the goals are cumulative stop-points).
 | --- | --- | --- |
 | `<batch>` | status queries (`--bugs`/`--crs`/`--stories <status>` - **combinable** into one mixed tranche), `--worklist <file>` (ids one per line), `--epic EPxxxx`, or a **PRD path** (greenfield authoring) | required |
 | `--goal` | `triage` (plan) / `plan` (sprint plan) / `design` (Ready, estimated backlog) / `done` (delivered) | `done` |
+| `--sprint-goal TEXT` | the Sprint Goal - one product-outcome sentence unifying the batch, judged at the closing review (`sprint goal-verdict --verdict achieved|partial|missed --note "..."`) and shown on the sprint report. Prompted interactively when absent; never invented | none |
 | `--order` | `priority` / `wsjf` (priority over complexity) / `manual` | `priority` |
 | `--epic EPxxxx` | (with `--stories`, repeatable) scope a story plan to one or more epics, not the whole status class | all epics |
 | `--write` | (with `plan`) persist the sprint plan to `.local/sprint-plan.json` | off |

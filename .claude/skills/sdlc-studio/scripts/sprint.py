@@ -1957,6 +1957,28 @@ def cmd_breakdown(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_goal_verdict(args: argparse.Namespace) -> int:
+    """The closing review's Sprint Goal judgement, recorded beside the goal it judges.
+
+    Refused when no goal was recorded: a verdict on an absent goal is invented
+    alignment - the review's honest statement there is that no goal was set."""
+    try:
+        state = run_state.read(args.root)
+    except run_state.RunStateError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if not (state or {}).get("sprint_goal"):
+        print("goal-verdict refused: no sprint goal recorded on this run - the plan set none, "
+              "so there is nothing to judge (set one at plan time with --sprint-goal)",
+              file=sys.stderr)
+        return 2
+    run_state.update(args.root, sprint_goal_verdict={"verdict": args.verdict,
+                                                     "note": args.note})
+    print(f"sprint goal verdict recorded: {args.verdict}"
+          + (f" - {args.note}" if args.note else ""))
+    return 0
+
+
 def cmd_plan(args: argparse.Namespace) -> int:
     """Print the ordered batch the operator approves before a run."""
     if getattr(args, "prd", None):  # greenfield authoring - the batch is a PRD
@@ -2040,6 +2062,21 @@ def cmd_plan(args: argparse.Namespace) -> int:
     rc = _origin_drift_preflight(args, data)
     if rc is not None:
         return rc
+    # THE SPRINT GOAL - the product outcome this batch serves, judged at the closing
+    # review (goal-verdict). One line of ceremony, never invented: absent + non-interactive
+    # records none. Recorded on the plan unconditionally (like the forecast: the intent is
+    # part of the prediction), and on the run state with --write.
+    raw_goal = getattr(args, "sprint_goal", None)
+    if raw_goal is not None:
+        sprint_goal = raw_goal.strip() or None  # explicit "" = explicitly none: never prompt
+    elif getattr(args, "write", False) and sys.stdin.isatty():
+        try:
+            sprint_goal = input("Sprint Goal (one product-outcome line, blank for none): ").strip() or None
+        except (EOFError, KeyboardInterrupt):
+            sprint_goal = None
+    else:
+        sprint_goal = None
+    data["sprint_goal"] = sprint_goal
     # RECORD THE FORECAST. Here, unconditionally, because here is where the prediction is MADE.
     # Not under --write: a forecast that depends on a flag is one the next retro will find
     # missing, and it will then have to re-derive an "estimate" from the constants it is
@@ -2069,6 +2106,10 @@ def cmd_plan(args: argparse.Namespace) -> int:
         resolved = data["capacity"]["appetite"]
         appetite = {"minutes": resolved["minutes"], "units": resolved["units"]}
         extra: dict = {"appetite": appetite}
+        # Never erase a recorded goal on a mid-run re-cut: like open_run's rung goal,
+        # an absent value preserves, only a stated one writes (run_state never-discard).
+        if data.get("sprint_goal") is not None:
+            extra["sprint_goal"] = data["sprint_goal"]
         if data.get("token_forecast"):
             extra["token_forecast"] = data["token_forecast"]["tokens"]
         state = run_state.update(args.root, **extra)
@@ -2100,6 +2141,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--goal", choices=GOALS,
                    help="the goal rung this run is driven to; recorded on the run state "
                         "(with --write) so the close can say what the run aimed at")
+    p.add_argument("--sprint-goal", dest="sprint_goal", metavar="TEXT",
+                   help="the Sprint Goal - ONE product-outcome sentence unifying this batch "
+                        "(what the increment is judged against at the closing review). Distinct "
+                        "from --goal, which is a pipeline rung. Optional: prompted when "
+                        "interactive; absent is recorded as none, never invented")
     p.add_argument("--write", action="store_true",
                    help="persist the sprint plan to sdlc-studio/.local/sprint-plan.json AND "
                         "open the run (id, start time, approved batch, goal) in "
@@ -2137,6 +2183,16 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--root", default=".", help="Repo root (default: .)")
     b.add_argument("--format", choices=("text", "json"), default="text")
     b.set_defaults(func=cmd_breakdown)
+
+    g = sub.add_parser("goal-verdict",
+                       help="Record the closing review's judgement of the Sprint Goal "
+                            "(achieved / partial / missed) on the run state.")
+    g.add_argument("--verdict", required=True, choices=("achieved", "partial", "missed"))
+    g.add_argument("--note", required=True,
+                   help="one line of judgement - why the verdict holds (required: a bare "
+                        "verdict is an assertion, not a review)")
+    g.add_argument("--root", default=".", help="Repo root (default: .)")
+    g.set_defaults(func=cmd_goal_verdict)
 
     sdlc_md.add_global_root(parser)
     return parser

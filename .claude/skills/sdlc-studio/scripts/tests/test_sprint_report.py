@@ -129,5 +129,42 @@ class ConfigGateTests(ReportBase):
         self.assertTrue(sr.rendering_enabled(self.root))
 
 
+class GoalTests(ReportBase):
+    """US0183: the report shows the Sprint Goal and the review's goal verdict when the
+    open/last run's batch names this sprint's units - a stale foreign run is ignored."""
+
+    def _run_state(self, batch, goal="make it honest", verdict=None):
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+        from lib import run_state
+        run_state.open_run(self.root, batch=batch, goal="done")
+        extra = {"sprint_goal": goal}
+        if verdict:
+            extra["sprint_goal_verdict"] = verdict
+        run_state.update(self.root, **extra)
+
+    def test_goal_and_verdict_displayed_when_batch_matches(self) -> None:
+        self._run_state(["US0001", "US0002"],
+                        verdict={"verdict": "achieved", "note": "shipped"})
+        rep = sr.report(self.root, "RETRO9100")
+        self.assertEqual(rep["sprint_goal"], "make it honest")
+        text = sr.render(rep)
+        self.assertIn("Sprint Goal: make it honest", text)
+        self.assertIn("achieved", text)
+        self.assertIn("shipped", text)
+
+    def test_goal_without_verdict_reads_not_judged(self) -> None:
+        self._run_state(["US0001", "US0002"])
+        text = sr.render(sr.report(self.root, "RETRO9100"))
+        self.assertIn("Sprint Goal: make it honest", text)
+        self.assertIn("not judged", text)
+
+    def test_foreign_run_state_goal_is_ignored(self) -> None:
+        # the elapsed-confounder lesson: a run-state naming OTHER units says nothing here
+        self._run_state(["US0900"], verdict={"verdict": "achieved", "note": "x"})
+        rep = sr.report(self.root, "RETRO9100")
+        self.assertIsNone(rep.get("sprint_goal"))
+        self.assertNotIn("Sprint Goal", sr.render(rep))
+
+
 if __name__ == "__main__":
     unittest.main()
