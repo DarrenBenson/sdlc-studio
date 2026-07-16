@@ -65,8 +65,12 @@ Rules (all era-gated to schema v3, so a v2 project reports nothing): `authorship
 `id-format`, `index-derived`. These same rules are enforced in the blocking `gate` via
 `validate` and the `index-derived` check; `audit_check.py` is the focused, stable-id view.
 
-### `review_prep.py` (read-only)
+### `review_prep.py` (read-only, except `close`)
 
+- `close --rv RVxxxx [--latest-body FILE|-]`: the review close, tool-carried - stamps
+  `review-state.json` for every present leg and derives `reviews/LATEST.md` from the
+  supplied anchor body. Refuses when the dated RV record does not exist, and refuses an
+  anchor that never cites the RV id: the anchor derives from a record or not at all
 - `prep`: deterministic inputs for the five-leg review (artifact staleness,
   persona definition-vs-PRD usage, count and AC-verification inputs, and `required_legs` -
   for each of the four required document legs, `{present, path, waiver}` so an absent leg is

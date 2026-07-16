@@ -176,5 +176,90 @@ class PersonaIndexNotCountedTests(unittest.TestCase):
             self.assertEqual(review_prep.persona_usage(Path(d))["defined"], ["Sam Rivera"])
 
 
+import json  # noqa: E402
+
+
+def _review_workspace(root: Path, *, with_rv: bool = True) -> None:
+    sd = root / "sdlc-studio"
+    for doc in ("prd.md", "trd.md", "tsd.md"):
+        (sd / doc).parent.mkdir(parents=True, exist_ok=True)
+        (sd / doc).write_text(f"# {doc}\n", encoding="utf-8")
+    (sd / "personas").mkdir(exist_ok=True)
+    (sd / "personas" / "maya.md").write_text("# Maya\n", encoding="utf-8")
+    if with_rv:
+        rv = sd / "reviews"
+        rv.mkdir(exist_ok=True)
+        (rv / "RV0042-unified-review.md").write_text(
+            "# RV-0042: Unified Review\n\n> **Status:** N/A\n> **Date:** 2026-07-17\n",
+            encoding="utf-8")
+
+
+class CloseStampTests(unittest.TestCase):
+    """US0186: `close` stamps review-state.json deterministically - the CRITICAL
+    hand-step the workflow spelled out and nobody performed until 2026-07-16."""
+
+    def test_close_stamps_state_for_every_leg(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _review_workspace(root)
+            rc = review_prep.close(root, "RV0042")
+            self.assertEqual(rc["stamped"], ["persona", "prd", "trd", "tsd"])
+            state = json.loads(
+                (root / "sdlc-studio" / ".local" / "review-state.json").read_text())
+            for leg in ("prd", "trd", "tsd", "persona"):
+                self.assertEqual(state["artifacts"][leg]["review_findings_ref"], "RV0042")
+                self.assertTrue(state["artifacts"][leg]["last_reviewed"])
+            self.assertIn("RV0042", state["reviews"])
+            self.assertIn("RV0042-unified-review.md",
+                          state["reviews"]["RV0042"]["findings_file"])
+
+    def test_close_preserves_foreign_state_keys(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _review_workspace(root)
+            local = root / "sdlc-studio" / ".local"
+            local.mkdir(parents=True)
+            (local / "review-state.json").write_text(
+                json.dumps({"version": 1, "artifacts": {"custom": {"x": 1}},
+                            "reviews": {"RV0001": {"artifact": "old"}}}), encoding="utf-8")
+            review_prep.close(root, "RV0042")
+            state = json.loads((local / "review-state.json").read_text())
+            self.assertEqual(state["artifacts"]["custom"], {"x": 1})
+            self.assertIn("RV0001", state["reviews"])
+
+
+class AnchorRefusalTests(unittest.TestCase):
+    """US0186: the anchor is derived from a record or not at all."""
+
+    def test_close_refuses_without_the_dated_rv(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _review_workspace(root, with_rv=False)
+            with self.assertRaises(ValueError) as ctx:
+                review_prep.close(root, "RV0042")
+            self.assertIn("RV0042", str(ctx.exception))
+            self.assertFalse(
+                (root / "sdlc-studio" / ".local" / "review-state.json").exists())
+
+    def test_latest_write_requires_rv_reference_in_body(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _review_workspace(root)
+            body = "# Unified Review anchor\n\nno reference to the record here\n"
+            with self.assertRaises(ValueError) as ctx:
+                review_prep.close(root, "RV0042", latest_body=body)
+            self.assertIn("RV0042", str(ctx.exception))
+            self.assertFalse((root / "sdlc-studio" / "reviews" / "LATEST.md").exists())
+
+    def test_latest_written_when_body_references_the_record(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _review_workspace(root)
+            body = "# RV0042 - Unified Review anchor\n\ncontent\n"
+            review_prep.close(root, "RV0042", latest_body=body)
+            latest = (root / "sdlc-studio" / "reviews" / "LATEST.md").read_text()
+            self.assertEqual(latest, body)
+
+
 if __name__ == "__main__":
     unittest.main()

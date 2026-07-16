@@ -221,6 +221,81 @@ def inputs(repo_root: Path) -> dict:
 LESSON_LENS_MAX = 12  # ranked, so the cap drops the least-biting, not an arbitrary tail
 
 
+def close(repo_root: Path | str, rv_id: str, latest_body: str | None = None,
+          legs: tuple[str, ...] = ("prd", "trd", "tsd", "personas")) -> dict:
+    """The review close, tool-carried: stamp review-state.json for every present leg
+    and (optionally) write the LATEST.md anchor - REFUSING both when the dated RV
+    record does not exist, and refusing an anchor body that never references the
+    record it claims to derive from. The near-loss this closes: a review that lived
+    ONLY in the overwritable anchor, one rewrite from destruction, and a CRITICAL
+    state stamp the workflow spelled out but nothing performed."""
+    root = Path(repo_root)
+    norm = sdlc_md.norm_id(rv_id)
+    # match the stem directly (extract_record_id does not know the RV prefix):
+    # RV0042 matches RV0042-anything.md but never RV00421-*.md (the boundary check)
+    def _is_rv(stem: str) -> bool:
+        s = stem.upper().replace("RV-", "RV")
+        return s == norm or s.startswith(norm + "-")
+    reviews_dir = root / "sdlc-studio" / "reviews"
+    rv_files = ([p for p in reviews_dir.glob("*.md") if _is_rv(p.stem)]
+                if reviews_dir.is_dir() else [])
+    if not rv_files:
+        raise ValueError(f"no dated review record for {rv_id} under sdlc-studio/reviews/ - "
+                         f"the close stamps nothing and derives no anchor from a record "
+                         f"that does not exist; write the RV file first (artifact.py new "
+                         f"--type review)")
+    rv_path = rv_files[0]
+    if latest_body is not None and norm not in latest_body.replace("-", ""):
+        raise ValueError(f"the anchor body never references {rv_id} - LATEST.md is a "
+                         f"pointer to the dated record, not a record itself; cite the RV "
+                         f"id in the body")
+    now = sdlc_md.now_iso8601()
+    present = required_legs(root)
+    base = root / "sdlc-studio"
+    state_path = base / ".local" / "review-state.json"
+    state = sdlc_md.read_json(state_path, {}) or {}
+    state.setdefault("version", 1)
+    artifacts = state.setdefault("artifacts", {})
+    stamped: list[str] = []
+    for leg in legs:
+        info = present.get(leg) or {}
+        if not info.get("present"):
+            continue
+        key = "persona" if leg == "personas" else leg
+        path = Path(info["path"]) if info.get("path") else base / f"{leg}.md"
+        modified, _method = _modified_iso(root / path if not Path(path).is_absolute()
+                                          else Path(path), root)
+        entry = artifacts.setdefault(key, {})
+        entry.update({"type": key, "path": str(path), "last_reviewed": now,
+                      "last_modified": modified, "review_findings_ref": norm})
+        stamped.append(key)
+    state.setdefault("reviews", {})[norm] = {
+        "artifact": "+".join(stamped), "timestamp": now,
+        "findings_file": str(rv_path.relative_to(root)),
+    }
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    sdlc_md.atomic_write(state_path, json.dumps(state, indent=2))
+    if latest_body is not None:
+        sdlc_md.atomic_write(base / "reviews" / "LATEST.md", latest_body)
+    return {"stamped": sorted(stamped), "rv": norm,
+            "latest_written": latest_body is not None, "state": str(state_path)}
+
+
+def cmd_close(args: argparse.Namespace) -> int:
+    body = None
+    if args.latest_body:
+        body = (sys.stdin.read() if args.latest_body == "-"
+                else Path(args.latest_body).read_text(encoding="utf-8"))
+    try:
+        r = close(args.root, args.rv, latest_body=body)
+    except (ValueError, OSError) as exc:
+        print(f"close refused: {exc}", file=sys.stderr)
+        return 2
+    print(f"review close stamped {', '.join(r['stamped'])} -> {r['state']}"
+          + ("; LATEST.md derived from the record" if r["latest_written"] else ""))
+    return 0
+
+
 def cmd_prep(args: argparse.Namespace) -> int:
     """Emit the review inputs."""
     repo_root = Path(args.root).resolve()
@@ -293,6 +368,16 @@ def build_parser() -> argparse.ArgumentParser:
     pr.add_argument("--root", default=".", help="Repo root (default: .)")
     pr.add_argument("--format", choices=("text", "json"), default="text")
     pr.set_defaults(func=cmd_prep)
+    cl = sub.add_parser("close", help="Stamp review-state.json for the review just written "
+                                      "(and optionally derive LATEST.md) - refuses without "
+                                      "the dated RV record.")
+    cl.add_argument("--rv", required=True, metavar="RVxxxx",
+                    help="the dated review record this close stamps")
+    cl.add_argument("--latest-body", metavar="FILE|-", dest="latest_body",
+                    help="anchor content to write to reviews/LATEST.md (stdin with -); "
+                         "must reference the RV id - the anchor derives from the record")
+    cl.add_argument("--root", default=".", help="Repo root (default: .)")
+    cl.set_defaults(func=cmd_close)
     sdlc_md.add_global_root(p)
     return p
 

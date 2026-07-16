@@ -265,27 +265,29 @@ After detecting findings, automatically apply fixes that are purely mechanical (
 
 To skip auto-fix: `--no-fix` flag.
 
-### 4. Update Review State and Metadata
+### 4. Close the Review (tool-carried)
 
-**CRITICAL:** After generating findings, update `sdlc-studio/.local/review-state.json` to track the review. This ensures the status dashboard recognises reviews have been conducted.
+**CRITICAL - and one command, not hand-steps:** the close is
+`review_prep.py close --rv RV{NNNN} [--latest-body FILE|-]`. It stamps
+`sdlc-studio/.local/review-state.json` for every present leg (last_reviewed,
+last_modified from git, review_findings_ref, the reviews.{RV} entry) and, when the
+anchor content is supplied, writes `sdlc-studio/reviews/LATEST.md` - **refusing both
+when the dated RV record does not exist**, and refusing an anchor body that never
+cites the RV id. A review may never live only in the overwritable anchor: mint the
+dated record first (`artifact.py new --type review`), write its content, then close.
 
 ```text
-1. Create sdlc-studio/.local/ directory if it doesn't exist
-2. Load existing review-state.json (or create empty structure)
-3. For each reviewed document (prd, trd, tsd, persona):
-   a) Set artifacts.{doc}.last_reviewed = current ISO timestamp
-   b) Set artifacts.{doc}.last_modified = file's git log timestamp
-      (for persona, take max(mtime) across personas/ directory)
-   c) Set artifacts.{doc}.review_findings_ref = RV{NNNN} ID
-4. Add review entry to reviews.{RV_ID} with timestamp and findings summary
-5. Write updated review-state.json
-6. For each reviewed document that was modified (status updates, AC checkboxes, auto-fixes):
-   a) Update `**Last Updated:**` date in the document header to today's date
-   b) Add a changelog/revision history entry summarising the review changes
-   c) Format: `| {date} | Claude | {type} review: {summary of changes} |`
-7. Write updated review-state.json
-8. Write `sdlc-studio/reviews/LATEST.md` -- the unified anchor for the review just generated. Render via `templates/reviews/unified-anchor.md`. Overwrites any previous LATEST.md. This is the canonical "most recent review" pointer; the agent-instructions file and fresh-conversation orientation should read this rather than searching the directory. The dated `RV{NNNN}-unified-review-*.md` file remains the historical record; LATEST.md is purely a stable filename pointing at the most recent unified anchor.
+1. Mint + write the dated RV{NNNN} record (the historical copy; artifact.py allocates it)
+2. Compose the anchor from templates/reviews/unified-anchor.md, citing the RV id
+3. review_prep.py close --rv RV{NNNN} --latest-body <anchor-file>
+   (stamps review-state.json + derives LATEST.md from the record, atomically)
+4. For each reviewed document that was modified (status updates, AC checkboxes,
+   auto-fixes): update its `**Last Updated:**` date and add a revision-history row
+   `| {date} | Claude | {type} review: {summary of changes} |`
 ```
+
+LATEST.md is the canonical "most recent review" pointer for fresh-conversation
+orientation; the dated `RV{NNNN}-unified-review-*.md` remains the record.
 
 **review-state.json schema:** See `reference-outputs.md#review-state-json`.
 

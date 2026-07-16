@@ -14,7 +14,7 @@ Decomposed from CR0307. Delivers the work CR0307 requested.
 
 ## Story Breakdown
 
-- [ ] [US0186: review close helper: mint dated RV, stamp review-state.json, derive LATEST.md, refuse anchor overwrite without a record](../stories/US0186-review-close-helper-mint-dated-rv-stamp-review.md)
+- [x] [US0186: review close helper: mint dated RV, stamp review-state.json, derive LATEST.md, refuse anchor overwrite without a record](../stories/US0186-review-close-helper-mint-dated-rv-stamp-review.md)
 
 ## Revision History
 
