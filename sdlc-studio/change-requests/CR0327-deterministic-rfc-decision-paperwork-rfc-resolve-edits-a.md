@@ -1,6 +1,7 @@
 # CR-0327: Deterministic RFC decision paperwork: rfc resolve edits a decision row, and parent-aware CR filing wires both link directions at mint
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0061
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

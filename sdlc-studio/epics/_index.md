@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 0 |
+| Draft | 7 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 55 |
-| **Total** | **55** |
+| **Total** | **62** |
 
 > Generate-mode note: all epics are **Ready** (spec extracted from the existing
 > implementation, awaiting test validation per `reference-philosophy.md`), not
@@ -76,3 +76,10 @@
 | [EP0053](EP0053-sprint-goal-on-the-plan-judged-at-close.md) | Sprint Goal on the plan, judged at close | Done | -- | -- | 2026-07-16 | 2026-07-16 |
 | [EP0054](EP0054-dora-four-keys-from-the-deploy-ledger.md) | DORA four keys from the deploy ledger | Done | -- | -- | 2026-07-16 | 2026-07-16 |
 | [EP0055](EP0055-advisory-small-batch-gate-lane.md) | Advisory small-batch gate lane | Done | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0056](EP0056-deterministic-review-close-mint-the-rv-stamp-state.md) | Deterministic review-close: mint the RV, stamp state, derive LATEST | Draft | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0057](EP0057-refine-seeds-story-acs-from-the-request.md) | refine seeds story ACs from the request | Draft | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0058](EP0058-per-unit-changelog-fragments-composed-at-release.md) | Per-unit CHANGELOG fragments composed at release | Draft | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0059](EP0059-critic-brief-the-deterministic-seat-review-ceremony.md) | critic brief: the deterministic seat-review ceremony | Draft | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0060](EP0060-shared-test-module-loader.md) | Shared test-module loader | Draft | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0061](EP0061-rfc-decision-paperwork-made-deterministic.md) | RFC decision paperwork made deterministic | Draft | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0062](EP0062-verify-ac-accepts-a-story-id-where-a.md) | verify_ac accepts a story id where a story is meant | Draft | -- | -- | 2026-07-16 | 2026-07-16 |

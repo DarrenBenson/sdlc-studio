@@ -1,6 +1,7 @@
 # CR-0317: A shared test-module loader for scripts/tests: forty files duplicate the importlib spec dance and every new module re-trips on it
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0060
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** S

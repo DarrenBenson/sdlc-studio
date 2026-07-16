@@ -1,6 +1,7 @@
 # CR-0309: refine seeds each minted story's ACs from the request's acceptance criteria instead of leaving {{placeholder}} scaffolds
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0057
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S
