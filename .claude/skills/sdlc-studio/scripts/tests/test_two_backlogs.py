@@ -640,6 +640,23 @@ class RefineTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 refine.refine(root, "CR0001", None, [("B", 3, None)], into_epic="EP9999")
 
+    def test_each_story_records_its_originating_request(self) -> None:
+        # CR0322: in a SHARED batch epic, which story delivers which request must be
+        # machine-resolvable, not only in the title. Every refined story carries `Delivers: <req>`.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root, "CR0001")
+            self._cr(root, "CR0002")
+            lead = refine.refine(root, "CR0001", "Batch epic", [("A", 2, None)])
+            epic = lead["epic"]
+            refine.refine(root, "CR0002", None, [("B", 3, None)], into_epic=epic)
+            a = sdlc_md.find_by_id(root, lead["stories"][0])[0].read_text()
+            self.assertEqual(sdlc_md.extract_field(a, "Delivers"), "CR0001")
+            # the joining request's story records ITS request, not the epic's original owner
+            b_id = [s for s, _ in sdlc_md.children_of(root, epic) if s != lead["stories"][0]][0]
+            b = sdlc_md.find_by_id(root, b_id)[0].read_text()
+            self.assertEqual(sdlc_md.extract_field(b, "Delivers"), "CR0002")
+
     def test_refine_refuses_an_already_decomposed_request(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

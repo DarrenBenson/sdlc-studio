@@ -117,6 +117,11 @@ def _decompose(repo_root, rid: str, rpath: Path, epic_title: str,
             s = artifact.new(root, "story", title, fields)
             minted.append(Path(s["path"]))
             story_ids.append(s["id"])
+            # Record the ORIGINATING request on the story: in a shared batch epic (refine --into)
+            # the epic's stories deliver different requests, so which story delivers which request
+            # must be machine-resolvable, not only in the title. A secondary traceability link -
+            # the story's Parent stays the epic, so derivation and the link gates are untouched.
+            _insert_after_status(Path(s["path"]), f"> **Delivers:** {rid}")
             # seed the FIRST story with the request's criteria (all of them - a
             # multi-story breakdown redistributes during grooming); later stories
             # keep the bare scaffold
@@ -172,6 +177,7 @@ def _decompose_into(repo_root, rid: str, rpath: Path, epic_id: str,
             s = artifact.new(root, "story", title, fields)
             minted.append(Path(s["path"]))
             story_ids.append(s["id"])
+            _insert_after_status(Path(s["path"]), f"> **Delivers:** {rid}")  # originating request
             if idx == 0 and seed_criteria:
                 _seed_acs(Path(s["path"]), seed_criteria, redistribute_note=len(stories) > 1)
         # Back-link: the shared epic names THIS request as a parent too (it already names the one

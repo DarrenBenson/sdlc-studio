@@ -1,6 +1,7 @@
 # US0257: build refine --into with multi-parent link support (children_of, asymmetry gate, back-links) and docs
 
 > **Status:** Review
+> **Delivers:** CR0322
 > **Verification depth:** functional
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
@@ -32,6 +33,14 @@
 - **When** `children_of` and the link-asymmetry gate resolve it
 - **Then** every parent resolves both ways and the epic reads as decomposed from each request, with no link-asymmetry or undecomposed drift
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_two_backlogs.py -k refine_into_adds_stories
+- **Verified:** yes (2026-07-17)
+
+### AC3: each refined story records its originating request, so the request-to-story mapping is machine-resolvable in a shared epic
+
+- **Given** a shared batch epic delivering more than one request
+- **When** its stories are minted
+- **Then** each story carries a `> **Delivers:** <request>` field naming the request it came from (not only the story title), while its Parent stays the epic so derivation and the link gates are untouched
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_two_backlogs.py -k each_story_records_its_originating_request
 - **Verified:** yes (2026-07-17)
 
 ## Revision History

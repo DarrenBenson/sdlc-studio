@@ -29,7 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unknown `--into` target is refused with nothing minted. `--epic-title` and `--into` are mutually
   exclusive. The link core (`children_of`, the link-asymmetry gate) now resolves multiple parents,
   so a batch epic delivering several requests satisfies the two-backlog symmetry and derivation
-  gates unchanged.
+  gates unchanged. Every refined story records its originating request in a `> **Delivers:**
+  <request>` field, so in a shared batch epic (whose stories deliver different requests) the
+  request-to-story mapping is machine-resolvable, not only in the title; the story's `Parent:`
+  stays the epic, so derivation is untouched.
 - **Deterministic flow metrics - the zero-token schedule instrument (CR0310, EP0052).** New
   `scripts/flow.py compute` reports per-unit cycle time (Created -> delivered, resolved from git
   history anchored on the status header line, with a revision-row fallback), weekly throughput
