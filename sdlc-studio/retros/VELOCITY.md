@@ -52,3 +52,4 @@ about no run that ever happened.
 | RETRO0027 | 2026-07-14 | 7 | 5 | 7 | - | 349,000 | 789,591 | 0.44x | - | - | 5,042 | base=50000 tpc=600 | stale-constants | claude-opus-4-8 |
 | RETRO0028 | 2026-07-15 | 3 | 3 | 3 | 10 | 250,000 | 564,066 | 0.44x | 56,407 | 0 | 3,840 | TOKENS_PER_POINT=25000 | out-of-sample | claude-opus-4-8 |
 | RETRO0044 | 2026-07-17 | 13 | 0 | 8 | - | 0 | 0 | - | - | 0 | - | - | unforecast | - |
+| RETRO0045 | 2026-07-17 | 29 | 0 | 29 | - | 0 | 0 | - | - | 0 | - | - | unforecast | - |

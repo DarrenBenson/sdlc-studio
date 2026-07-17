@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 0 |
+| Open | 1 |
 | In Progress | 0 |
 | Fixed | 99 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **181** |
+| **Total** | **182** |
 
 ## All Bugs
 
@@ -148,6 +148,7 @@
 | [BG0179](BG0179-handoff-generate-titles-the-artefact-from-the-goal.md) | handoff generate titles the artefact from the goal sentence verbatim and fails MD026 | Fixed | Low | 2026-07-17 | 2026-07-17 |
 | [BG0180](BG0180-mutation-py-runs-all-mutants-and-exits-0.md) | mutation.py runs all mutants and exits 0 after a red baseline | Fixed | Medium | 2026-07-17 | 2026-07-17 |
 | [BG0181](BG0181-retro-accuracy-reads-parenthetical-ids-in-the-batch.md) | retro accuracy reads parenthetical ids in the Batch line as rateable units | Fixed | Low | 2026-07-17 | 2026-07-17 |
+| [BG0182](BG0182-help-mutation-md-drifts-from-the-bg0180-red.md) | help/mutation.md drifts from the BG0180 red-baseline-refuse fix | Open | Low | 2026-07-17 | 2026-07-17 |
 
 ## Archived Releases
 

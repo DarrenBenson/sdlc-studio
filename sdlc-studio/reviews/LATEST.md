@@ -1,38 +1,41 @@
 # Reviews - LATEST (anchor)
 
-> Derived from the dated record **RV0011** (sprint-close review, RUN-01KXPJG9,
+> Derived from the dated record **RV0012** (sprint-close review, RUN-01KXQH64,
 > 2026-07-17). The standing unified document picture remains **RV0010**
-> (2026-07-16) - nothing this sprint changed the PRD/TRD/TSD verdicts there.
+> (2026-07-16), materially reduced by this sprint's spec-rot fixes.
 
 ## Where the pipeline is (2026-07-17)
 
-The ceremony-becomes-machinery sprint closed 8/8 (EP0063-EP0070, 30 pts,
-CR0314/0323-0326/0328-0330; RFC0043 all slices + RFC0044 build): the two-role
-review gate (evidence + reviewer-of-record sign-off, `review.two_role_after: 192`
-adopted here - Done now means signed off), `sprint close` as one deterministic
-chain, day/sprint-session forecasting, the DoR/DoD documents with the gates
-reading them, `critic brief --rejoinder`, init tailoring, and the guarded
-`tools/forward-port.sh`. Sprint Goal judged ACHIEVED; retro RETRO0044.
+The 2026-07-16 adversarial-audit backlog is cleared: **29/29 bugs delivered**
+(BG0152-BG0181, RUN-01KXQH64), delivery backlog now 0 open. Cluster A - the
+cost/measurement machinery (telemetry/retro/config) - was author-driven and
+test-first; clusters B (gate + PRD/TRD), C (TSD) and the loose bugs ran as three
+parallel isolated-worktree subagents and merged conflict-free. Sprint Goal
+judged ACHIEVED; retro RETRO0045.
 
-## CODE leg (RV0011)
+## CODE leg (RV0012)
 
-Closing full-diff adversarial pass: one REJECT-repair round (a stranded live
-mutant from a killed mutation run; a cross-unit two-role/DoD silent disarm; the
-close brief laundering a red-baseline mutation report) - repaired test-first,
-re-verified by the same critic re-executing its probes, then APPROVE. Mutation at
-close: baseline pass, 22/25 killed, 0 errors, survivors inspected benign. Gate
-PASS end-to-end.
+Closing full-diff adversarial pass (independent worktree critic, refute framing,
+a run reproduction per claim): one MAJOR regression caught that the fixing unit's
+own test was too narrow to see - BG0181's first fix truncated the batch line at
+the first parenthesis and silently dropped delivery units after an inline
+parenthetical (repro: RETRO0006 -> 3 of 8). Repaired test-first, re-verified
+against the reviewer's exact reproduction (8/8), APPROVE. One minor mixed-model
+reconciliation note accepted by design. Gate PASS end-to-end. Mutation evidence
+recorded but uninformative (low ceiling sampled peripheral helpers) - the
+assurance is the TDD-red-first tests and the adversarial pass.
 
 ## Document legs
 
-Unchanged this sprint; RV0010's synthesis debt (the audit backlog BG0152-BG0174,
-CR0280-CR0306) remains the open documents-of-record work. New this sprint as
-documents of record: `definition-of-ready.md` / `definition-of-done.md`
-(templates shipped; `reference-decisions.md#dor-dod` is the authority).
+This sprint corrected the spec-rot half of the audit: PRD (BG0156/0157/0168),
+TRD (BG0154/0157), TSD (BG0162/0170) now match shipped behaviour, and
+`help/audit.md` catalogues the previously-undocumented `audit` command. The
+residual RV0010 synthesis debt is the audit CRs (CR0280-CR0306) not in this bug
+batch.
 
 ## Next steps
 
-- Execute the open audit backlog (RV0010) when the operator schedules it.
-- Follow-ups filed this sprint: CR0331 (terminal-epic cross-epic-ac), CR0332
-  (near-miss check tags), BG0178 (refine MD026 headings).
+- Execute the residual audit CR backlog (CR0280-CR0306) when the operator schedules it.
+- Follow-ups filed this sprint: BG0182 (help/mutation.md drift), CR0336 (gate
+  mutation lane refused-state), CR0337 (autosprint/xrepo test coverage).
 - Release freeze holds until ~2026-07-21; everything lands unreleased on main.

@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0086: A bounded mutation run with a low ceiling on a large multi-function file samples early-file lines (peripheral helpers), not the diff -...**
+- **L-0085: A worktree subagent branches from a base SHA, so `git diff main..branch` shows the other side "reverted" and misleads; a three-way merge is...**
+- **L-0084: The `documented` conformance stage is a GLOBAL floor: one uncatalogued command fails it for every unit.**
+- **L-0083: A fix's test must exercise the failure mode the fix could *introduce*, not only the one it removes: BG0181's fix passed its...**
 - **L-0082: A composed evidence line must carry its source report's failure state (baseline/errors/truncation), not only its successes - otherwise the...**
 - **L-0081: When a gate's requirement has independently-downgradable halves, compose them independently and test the partial-tag matrix, not just...**
 - **L-0080: Never run two tree-mutating verifiers concurrently: a mutation harness owns the working tree while it runs, a kill mid-mutant strands a...**
