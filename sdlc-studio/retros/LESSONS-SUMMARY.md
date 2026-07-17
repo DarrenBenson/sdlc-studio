@@ -2,6 +2,10 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0090: **A create-only `Affects` is a real grooming gap, not a gate bug.** Name at least one existing file the unit also touches (here...**
+- **L-0089: **Machine-guard every vocabulary a self-describing contract claims to cover.** The v3 `inbox` lane shipped as prose the guard did not check...**
+- **L-0088: **A public contract's version stamp must anchor to what new consumers actually meet.** Tying the masthead to the fallback file made the...**
+- **L-0087: **Verify which file a "default" actually comes from before documenting it as the default.** New projects are seeded from...**
 - **L-0086: A bounded mutation run with a low ceiling on a large multi-function file samples early-file lines (peripheral helpers), not the diff -...**
 - **L-0085: A worktree subagent branches from a base SHA, so `git diff main..branch` shows the other side "reverted" and misleads; a three-way merge is...**
 - **L-0084: The `documented` conformance stage is a GLOBAL floor: one uncatalogued command fails it for every unit.**

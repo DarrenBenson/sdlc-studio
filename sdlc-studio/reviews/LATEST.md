@@ -1,45 +1,46 @@
 # Reviews - LATEST (anchor)
 
-> Derived from the sprint-close review of **RUN-01KXR6XS** (the spec-truth refresh
-> sprint, 2026-07-17, RETRO0046). Supersedes the RV0012 picture.
+> Derived from the sprint-close review of **RUN-01KXRMQT** (the artefact-schema
+> contract sprint, 2026-07-17, RETRO0047). Supersedes the RETRO0046 picture.
 
 ## Where the pipeline is (2026-07-17)
 
-The **spec-truth refresh sprint** (RUN-01KXR6XS) is delivered: **EP0071 (12 stories,
-US0201-US0212) Done and every AC verified, plus the 5 open bugs BG0182-BG0186 Fixed**
-(17 units, 42 points, Sprint Goal judged ACHIEVED, RETRO0046). This closes the
-RV0010/RV0012 residual spec-rot: PRD/TRD/TSD/RFC0034 now match shipped `main` on the
-cost model (Fibonacci points, forecast = sum(Points) x measured rate, r=+0.68), the
-three network paths, the real config defaults (`require_ac_verification: false` was
-wrongly documented as on), the ULID guarantee, the two-backlog model, rule 5's writer
-set, the migration surface, and RFC0034's partial supersession by RFC0038. BG0184
-(the batch's own unblocker) fixed the cross-epic-ac false-block; US0208 also hardened
-`critic.py` `read_verdicts`.
+The **artefact-schema contract sprint** (RUN-01KXRMQT) is delivered: **EP0084 (US0258-US0260,
+3 stories, 11 points) Done and every AC verified**, Sprint Goal judged ACHIEVED (RETRO0047).
+This delivers **RFC0047 option B**: the `sdlc-studio/` artefact tree is now a versioned,
+drift-guarded public contract rather than an undeclared de facto interface. `reference-schema.md`
+documents the six on-disk surfaces (id grammar, directory layout, per-type header fields, status
+vocabulary and transition gates, the Verify-line DSL, the derived index format); `schema_version`
+is the contract stamp (current version **3** - new projects ship v3 via `init` ->
+`templates/config.yaml`; v2 is the legacy era; `config-defaults.yaml`'s 2 is the fallback for
+un-stamped projects); and `scripts/tests/test_schema_contract.py` (11 tests) fails the suite when
+the documented vocabularies or version stamp diverge from the code constants.
 
 ## CODE leg
 
-Closing full-diff adversarial pass (independent instance, refute framing, a repro per
-claim): the full suite + guards were green (2817 tests, drift 0), and two findings
-survived and were fixed test-first - a MAJOR (US0211 left six stale "2151 tests"/"76
-modules" pins so the TRD self-contradicted; swept to bands) and a MINOR (the BG0185
-near-miss detector false-positived on bracketed prose; tightened with a shape test).
-The reviewer refuted nothing else and positively confirmed the cost-model, network,
-ULID, config-default and TSD-gate claims against shipped source. APPROVE.
+Closing full-diff adversarial pass (independent instance, refute framing, a repro per claim), run
+twice. **Round 1 REJECT (BLOCKING):** the contract asserted new projects are/stay schema v2 until
+migration, but shipped `init.py` stamps `schema_version: 3` into every new project (proven by
+running it); decision D0033's mechanism was factually false. **Round 2 APPROVE:** the fix declares
+the contract at schema v3 (current; v2 legacy), anchors the guard to the new-project seed
+(`templates/config.yaml`), and adds a fallback-never-leads test; the reviewer re-ran the mutation
+checks (status / masthead / v3-inbox drift all go red, revert green), confirmed all three verifiers
+and lint clean, and both MINORs were closed (the v3 `inbox` lane is now a guarded table;
+`CURRENT_SCHEMA=2` is BG0189). Reviewer-of-record sign-off recorded. Full suite 2828 green, drift 0.
 
 ## Document legs
 
-PRD/TRD/TSD and RFC0034/RFC0038 are the documents this sprint corrected - they now
-match shipped behaviour. Every doc-truth story closed on an executable `grep`/`pytest`
-Verify line.
+`reference-schema.md` (new), `reference-config.md`, `help/references.md`, `config-defaults.yaml`
+and `templates/config.yaml` are the surfaces this sprint touched; each is consistent with the
+shipped code, enforced by the drift guard. Decision D0034 (supersedes D0033) records the
+current-version resolution.
 
 ## Next steps
 
-- Follow-up filed this sprint: **BG0187** (TRD §9 threat model still calls `plan.py
-  archive` the sole write exception, contradicting the enriched §5 rule 5).
-- Standing: **CR0278** (interactive-sprint token capture) - reconfirmed; per-unit token
-  actuals were not captured this run, so est/actual is uncomputable.
-- **Un-owned `RFC0047`** appeared in the working tree mid-run (created via `new`, not by
-  this sprint - likely a parallel session on the shared repo); left untracked for its
-  author, flagged at sign-off.
-- Residual audit CRs (CR0280-CR0306) remain for a future scheduled batch.
+- Follow-ups filed this sprint: **BG0188** (`sprint plan --write` accumulates a new batch into a
+  prior run left `outcome=running`, reusing its id and clobbering its verdict) and **BG0189**
+  (`project_upgrade.CURRENT_SCHEMA=2` contradicts `init` seeding new projects at schema_version 3).
+- Standing: **CR0278** (interactive-sprint token capture) - per-unit token actuals were not
+  captured this run, so est/actual is uncomputable.
+- Residual audit CRs (CR0280-CR0306) and BG0187 remain for a future scheduled batch.
 - Release freeze holds until ~2026-07-21; everything lands unreleased on `main`.
