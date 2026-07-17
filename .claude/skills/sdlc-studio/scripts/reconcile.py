@@ -912,8 +912,10 @@ def apply_breakdown(repo_root: Path | str, dry_run: bool = False) -> dict:
 # epic's own coarse size can never leak into a points figure.
 # -----------------------------------------------------------------------------
 EPIC_DERIVED_FIELD = "Derived Point Total"
+# Tolerate an optional leading `>` (the blockquote metadata form refine mints), not only a bare
+# line - otherwise a wrong BLOCKQUOTE total is drift `apply` cannot clear.
 _EPIC_DERIVED_LINE_RE = re.compile(
-    r"^(\s*\*\*" + re.escape(EPIC_DERIVED_FIELD) + r":\*\*[^\S\n]*)(.*)$")
+    r"^(\s*>?[^\S\n]*\*\*" + re.escape(EPIC_DERIVED_FIELD) + r":\*\*[^\S\n]*)(.*)$")
 
 
 def _parse_leading_int(raw: str | None) -> int | None:

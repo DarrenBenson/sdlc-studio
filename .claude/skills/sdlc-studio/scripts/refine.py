@@ -141,16 +141,23 @@ def _decompose(repo_root, rid: str, rpath: Path, epic_title: str,
     return epic_id, story_ids
 
 
+#: The `Derived Point Total` field's leading integer, WHEREVER the field sits - blockquote or not,
+#: on its own line or inline - and preserving any annotation after it. `_roll_point_total` bumps the
+#: same line `extract_field` reads, so the presence check and the increment can never disagree (the
+#: strict own-line-blockquote-only regex before this duplicated or silently no-op'd an annotated or
+#: non-blockquote total - CR0322 review finding 1).
+_DERIVED_TOTAL_INT_RE = re.compile(r"(?i)(\*\*Derived Point Total:\*\*[^\S\n]*)(\d+)")
+
+
 def _roll_point_total(epic_path: Path, add: int) -> None:
     """Roll the epic's `Derived Point Total` up by `add` (the stories a further request added via
-    `--into`). Absent, it is inserted; present, it is incremented in place. The T-shirt Size is a
-    read-off of this total and is re-derived by reconcile, so only the number is written here."""
+    `--into`). Absent, it is inserted; present, its leading integer is incremented IN PLACE
+    (whatever the line's shape or annotation). The T-shirt Size is a read-off of this total and is
+    re-derived by reconcile, so only the number is written here."""
     text = epic_path.read_text(encoding="utf-8")
-    cur = sdlc_md.extract_field(text, "Derived Point Total")
-    if cur is not None and str(cur).strip().isdigit():
-        new_total = int(str(cur).strip()) + add
-        new = re.sub(r"(?im)^(\s*>\s*\*\*Derived Point Total:\*\*\s*)\d+\s*$",
-                     lambda m: f"{m.group(1)}{new_total}", text, count=1)
+    if _DERIVED_TOTAL_INT_RE.search(text):
+        new = _DERIVED_TOTAL_INT_RE.sub(
+            lambda m: f"{m.group(1)}{int(m.group(2)) + add}", text, count=1)
         sdlc_md.atomic_write(epic_path, new)
     else:
         _insert_after_status(epic_path, f"> **Derived Point Total:** {add}")

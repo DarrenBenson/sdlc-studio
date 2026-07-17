@@ -640,6 +640,26 @@ class RefineTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 refine.refine(root, "CR0001", None, [("B", 3, None)], into_epic="EP9999")
 
+    def test_roll_point_total_bumps_an_annotated_total_in_place(self) -> None:
+        # CR0322 review finding 1: a non-bare Derived Point Total (annotated, or non-blockquote)
+        # must be incremented IN PLACE - not duplicated (the annotated case), not silently no-op'd
+        # (the non-blockquote case). And reconcile can fix a wrong blockquote total.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root, "CR0001")
+            self._cr(root, "CR0002")
+            epic = refine.refine(root, "CR0001", "Batch epic", [("A", 2, None)])["epic"]
+            ep_path = sdlc_md.find_by_id(root, epic)[0]
+            ep_path.write_text(ep_path.read_text().replace(
+                "**Derived Point Total:** 2", "**Derived Point Total:** 2 (derived)"),
+                encoding="utf-8")
+            refine.refine(root, "CR0002", None, [("B", 3, None)], into_epic=epic)
+            text = ep_path.read_text()
+            self.assertEqual(text.count("Derived Point Total:"), 1, "not duplicated")
+            self.assertTrue(sdlc_md.extract_field(text, "Derived Point Total").startswith("5"),
+                            "incremented in place to 2+3, annotation preserved")
+            self.assertEqual(reconcile.epic_points_drift(root), [], "no residual points drift")
+
     def test_each_story_records_its_originating_request(self) -> None:
         # CR0322: in a SHARED batch epic, which story delivers which request must be
         # machine-resolvable, not only in the title. Every refined story carries `Delivers: <req>`.
