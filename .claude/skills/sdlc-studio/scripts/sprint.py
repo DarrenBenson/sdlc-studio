@@ -2106,7 +2106,9 @@ _CLOSE_CHAIN = ("retro-validate", "retro-extract", "lessons-summary",
 
 
 def _mutation_note(root) -> str:
-    """The mutation lane's evidence for the brief - read, never invented."""
+    """The mutation lane's evidence for the brief - read, never invented, and never
+    laundered: a red baseline or an errored run is named as worthless, not rendered
+    as a neutral killed/survived line."""
     p = Path(root) / "sdlc-studio" / ".local" / "mutation-report.json"
     if not p.is_file():
         return ("mutation: no mutation report - run `mutation.py run --since <base ref> "
@@ -2116,8 +2118,16 @@ def _mutation_note(root) -> str:
     except (OSError, json.JSONDecodeError):
         return "mutation: report unreadable - re-run mutation.py"
     s = rep.get("summary", {})
-    return (f"mutation: {s.get('killed', '?')} killed / {s.get('survived', '?')} survived "
+    if rep.get("baseline") not in (None, "pass"):
+        return (f"mutation: report is WORTHLESS - baseline {rep.get('baseline')!r} "
+                "(tests fail on unmutated code); re-run mutation.py on a clean tree")
+    note = (f"mutation: {s.get('killed', '?')} killed / {s.get('survived', '?')} survived "
             f"of {s.get('applied', '?')} applied (report at rev {rep.get('git_rev', '?')[:9]})")
+    if s.get("errors"):
+        note += f"; {s['errors']} errored - inspect before trusting the kill rate"
+    if s.get("truncated"):
+        note += f"; {s['truncated']} enumerated mutant(s) beyond the cost ceiling not run"
+    return note
 
 
 def _cost_note(root, state) -> str:

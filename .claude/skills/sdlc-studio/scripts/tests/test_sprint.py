@@ -2353,6 +2353,43 @@ class CloseBriefTests(unittest.TestCase):
             self.assertIn("not measured, not zero", out.getvalue())
             self.assertNotIn("tokens measured across", out.getvalue())
 
+    def test_red_baseline_mutation_report_named_worthless(self) -> None:
+        # A report whose baseline is red proves nothing; the brief must say so,
+        # never render it as a neutral killed/survived line (closing-critic finding).
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            rep = {"generated_at": "x", "git_rev": "abc1234", "baseline": "fail",
+                   "summary": {"applied": 25, "killed": 0, "survived": 0, "errors": 25}}
+            p = root / "sdlc-studio" / ".local" / "mutation-report.json"
+            p.write_text(json.dumps(rep), encoding="utf-8")
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with _patch_close_steps(mod), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
+            self.assertEqual(rc, 0, err.getvalue())
+            self.assertIn("WORTHLESS", out.getvalue())
+            self.assertNotIn("0 killed / 0 survived", out.getvalue())
+
+    def test_mutation_errors_and_truncation_surface(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            rep = {"generated_at": "x", "git_rev": "abc1234", "baseline": "pass",
+                   "summary": {"applied": 25, "killed": 20, "survived": 2,
+                               "errors": 3, "truncated": 65}}
+            p = root / "sdlc-studio" / ".local" / "mutation-report.json"
+            p.write_text(json.dumps(rep), encoding="utf-8")
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with _patch_close_steps(mod), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
+            self.assertEqual(rc, 0, err.getvalue())
+            self.assertIn("3 errored", out.getvalue())
+            self.assertIn("65", out.getvalue())   # the truncation, not silent
+
     def test_brief_includes_mutation_summary_when_report_exists(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

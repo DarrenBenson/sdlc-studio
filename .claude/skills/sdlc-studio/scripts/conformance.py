@@ -82,23 +82,30 @@ def _ac_signals(text: str) -> tuple[bool, bool, list[str]]:
 
 
 def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
-                 two_role_cutoff=None) -> tuple:
-    """The four Done-only conformance stages (verified, reconciled, critiqued, documented)."""
+                 two_role_cutoff=None, critic_required=True) -> tuple:
+    """The four Done-only conformance stages (verified, reconciled, critiqued, documented).
+
+    The critiqued stage composes its two halves independently, so a story DoD that
+    downgrades ONE of them never disarms the other: the verdict half (independent
+    APPROVE) applies while `critic_required`; the two-role half (evidence + an
+    independent reviewer-of-record sign-off) applies for units past `two_role_cutoff`.
+    """
     verified = bool(verified_states) and all(v in ("yes", "manual") for v in verified_states)
     reconciled = (not no_index) and sdlc_md.norm_id(rid) not in drift_ids
     verdict = critic.verdict_for(root, rid)
-    # The critic stage requires an APPROVE AND proven author != reviewer independence - a
+    # The verdict half: an APPROVE AND proven author != reviewer independence - a
     # self-review (or a verdict with no recorded author) never clears the Done gate. The floor
     # holds for generic workers too. Units closed before the gate (the visible PRE_GATE marker,
     # under the prior risk-scaled policy) are grandfathered; the gate applies to all new work.
-    critiqued = (bool(verdict) and verdict["verdict"] == critic.APPROVE
-                 and (critic.is_independent(verdict) or critic.is_pre_gate(verdict)))
-    # Two-role review gate: with `review.two_role_after` set, a Done
-    # unit PAST the cutoff additionally needs the adversarial pass recorded as EVIDENCE
-    # and an independent reviewer-of-record SIGN-OFF (principal != author and not an
-    # authoring-session subagent - re-checked here as the backstop to record_signoff's
-    # write-time refusal). Forward-only: pre-cutoff units and projects without the
-    # config keep today's behaviour byte-for-byte.
+    verdict_ok = (bool(verdict) and verdict["verdict"] == critic.APPROVE
+                  and (critic.is_independent(verdict) or critic.is_pre_gate(verdict)))
+    critiqued = verdict_ok if critic_required else True
+    # The two-role half: with `review.two_role_after` set, a Done unit PAST the cutoff
+    # additionally needs the adversarial pass recorded as EVIDENCE and an independent
+    # reviewer-of-record SIGN-OFF (principal != author and not an authoring-session
+    # subagent - re-checked here as the backstop to record_signoff's write-time
+    # refusal). Forward-only: pre-cutoff units and projects without the config keep
+    # today's behaviour byte-for-byte.
     if critiqued and two_role_cutoff is not None:
         rid_num = sdlc_md.id_number(rid)
         if rid_num is not None and rid_num > two_role_cutoff:
@@ -157,7 +164,7 @@ def detect_conformance(repo_root: Path | str) -> dict:
         if status == "Done":
             verified, reconciled, critiqued, documented = _done_stages(
                 root, rid, verified_states, _no_index, drift_ids, _doc_ok,
-                two_role_cutoff=two_role_cutoff)
+                two_role_cutoff=two_role_cutoff, critic_required=critic_required)
             # The backstop to the transition gate. That gate guards the tool path; a
             # hand-edited `Status: Done` walks round it, and the story is then Done without
             # the sections the tier deferred. Same doubling the AC-verify gate already has
@@ -182,7 +189,13 @@ def detect_conformance(repo_root: Path | str) -> dict:
         required = list(ALWAYS_STAGES)
         if status == "Done":
             required += list(DONE_STAGES)
-            if not critic_required:
+            # `critiqued` stays required while EITHER half applies: the two-role
+            # requirement (an armed cutoff) survives a critic-approve downgrade -
+            # dropping one tag must never disarm both.
+            rid_num_ = sdlc_md.id_number(rid)
+            two_role_applies = (two_role_cutoff is not None and rid_num_ is not None
+                                and rid_num_ > two_role_cutoff)
+            if not critic_required and not two_role_applies:
                 required.remove("critiqued")
         rid_num = sdlc_md.id_number(rid)
         exempt = cutoff_num is not None and rid_num is not None and rid_num <= cutoff_num

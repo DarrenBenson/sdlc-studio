@@ -281,6 +281,37 @@ class GateResolveTests(unittest.TestCase):
             self.assertNotIn("critiqued", units["US0001"]["missing"])  # downgraded
             self.assertIn("review.critic-approve", units["US0001"].get("downgraded", []))
 
+    def test_two_role_tag_alone_still_enforces(self):
+        # Cross-unit hole (closing critic, RUN-01KXPJG9): a story DoD tagging
+        # review.two-role but NOT review.critic-approve must keep the two-role
+        # requirement armed - dropping the critic tag must never disarm BOTH.
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest("two_role_after reads .config.yaml (needs PyYAML)")
+        conformance = loader.load_script("conformance")
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "review:\n  two_role_after: US0100\n", encoding="utf-8")
+            _write_doc(root, "done",
+                       "# DoD\n\n## Story\n\n- [ ] signed [check: review.two-role]\n")
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir()
+            (sd / "US0101-s.md").write_text(
+                "# US0101: s\n\n> **Status:** Done\n> **Epic:** EP0001\n\n"
+                "## Acceptance Criteria\n\n### AC1: works\n- **Given** x\n"
+                "- **Verify:** shell echo ok\n- **Verified:** yes (2026-01-01)\n",
+                encoding="utf-8")
+            units = {u["id"]: u for u in conformance.detect_conformance(root)["units"]}
+            u = units["US0101"]
+            # no evidence and no sign-off recorded: the two-role tag must BLOCK
+            self.assertIn("critiqued", u["missing"])
+            self.assertFalse(u["conformant"])
+            # and only the critic-approve criterion reads as downgraded
+            self.assertEqual(u["downgraded"], ["review.critic-approve"])
+
     def test_close_gate_reads_the_sprint_dod(self):
         gate = loader.load_script("gate")
         ok = lambda r: (0, "fine")  # noqa: E731
