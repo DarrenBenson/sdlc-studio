@@ -1,6 +1,6 @@
 # US0198: sprint close orchestrates goal-verdict, retro validate and extract, close gate, handoff and reconcile with fail-loud stops and idempotent resume, printing the decision brief
 
-> **Status:** Ready
+> **Status:** Review
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** `sprint close --retro RETROxxxx` runs, and re-runs after the repair
 - **Then** sprint close runs the chain in order and STOPS loudly at the first failing gate, naming the remedy; a re-run after repair resumes idempotently
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_sprint.py -k CloseChain
+- **Verified:** yes (2026-07-16)
 
 ### AC2: the decision brief is composed, not hand-written
 
@@ -29,6 +30,7 @@
 - **When** the close chain reaches its final step
 - **Then** The printed decision brief carries per-unit deliveries, each unit's verdict + reject history from critic-verdicts.md, gate and mutation results, and forecast vs measured subagent spend - the CR0318 content, composed not hand-written
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_sprint.py -k CloseBrief
+- **Verified:** yes (2026-07-16)
 
 ### AC3: absent judgement inputs are refusals, never defaults
 
@@ -36,6 +38,7 @@
 - **When** `sprint close` runs
 - **Then** Nothing is invented: absent retro content, an unset goal, or an unjudged goal-verdict are refusals with the command to run, never defaults
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_sprint.py -k CloseRefus
+- **Verified:** yes (2026-07-16)
 
 ## Revision History
 

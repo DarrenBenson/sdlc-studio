@@ -1979,6 +1979,199 @@ def cmd_goal_verdict(args: argparse.Namespace) -> int:
     return 0
 
 
+# --- sprint close: the close ceremony as one deterministic chain --------------------
+# The close was the last big hand-carried ceremony (~12 sequenced steps, each a skippable
+# seam under a less careful run). This orchestrates the deterministic chain - goal-verdict,
+# retro validate + extract, lessons summary, the close gate, handoff, reconcile - stopping
+# LOUDLY at the first failing gate with the remedy named, and ends by PRINTING the sign-off
+# decision brief composed from the committed records. Judgement stays outside: the retro's
+# content, the goal-verdict's note, and the signature itself remain human/agent work - the
+# chain sequences and refuses, never invents.
+
+
+def _run_cli(module_main, argv: list[str]) -> tuple[int, str]:
+    """Run a sibling script's main() in-process, capturing its combined output.
+
+    Not every sibling main() takes argv (retro.py's parses sys.argv directly), so the
+    argv is passed when the signature accepts it and patched into sys.argv otherwise -
+    a signature mismatch must not crash the chain."""
+    import contextlib as _ctx
+    import inspect as _inspect
+    import io as _io
+    buf = _io.StringIO()
+    takes_argv = bool(_inspect.signature(module_main).parameters)
+    with _ctx.redirect_stdout(buf), _ctx.redirect_stderr(buf):
+        try:
+            if takes_argv:
+                rc = module_main(argv)
+            else:
+                old = sys.argv
+                sys.argv = [old[0], *argv]
+                try:
+                    rc = module_main()
+                finally:
+                    sys.argv = old
+        except SystemExit as exc:  # argparse errors surface as SystemExit
+            rc = exc.code if isinstance(exc.code, int) else (0 if exc.code is None else 1)
+    return rc, buf.getvalue().strip()
+
+
+def _close_retro_validate(root, retro_id, state):
+    import retro  # noqa: PLC0415 - deferred, like the planner's retro import
+    rc, out = _run_cli(retro.main, ["--root", str(root), "validate", "--id", retro_id])
+    if rc != 0:
+        return False, out, (f"fix the retro's content ({retro_id}) - `retro.py validate "
+                            f"--id {retro_id}` names each gap; absent, create it with "
+                            "`artifact.py new --type retro --title ...` and write it")
+    return True, f"{retro_id} valid", ""
+
+
+def _close_retro_extract(root, retro_id, state):
+    import retro  # noqa: PLC0415
+    rc, out = _run_cli(retro.main, ["--root", str(root), "extract", "--id", retro_id])
+    if rc != 0:
+        return False, out, f"`retro.py extract --id {retro_id}` must succeed - see its output"
+    return True, "lessons lifted into the project log (idempotent by content)", ""
+
+
+def _close_lessons_summary(root, retro_id, state):
+    rc, out = _run_cli(lessons.main, ["--root", str(root), "summary"])
+    if rc != 0:
+        return False, out, "`lessons.py summary` must regenerate the committed digest"
+    return True, "lessons summary regenerated", ""
+
+
+def _close_gate(root, retro_id, state):
+    import gate  # noqa: PLC0415 - deferred so `plan` never pays for the gate import graph
+    rc, out = _run_cli(gate.main, ["--root", str(root), "--require-retro", retro_id,
+                                   "--require-review"])
+    if rc != 0:
+        return False, out, ("address each failing lane the gate names (reconcile drift -> "
+                            "`reconcile.py apply`; stale review -> run `review`; lesson "
+                            "horizons -> `lessons.py revalidate`), then re-run sprint close")
+    return True, f"gate --require-retro {retro_id} --require-review: PASS", ""
+
+
+def _close_handoff(root, retro_id, state):
+    if state.get("handoff") and state.get("outcome") in run_state.CLOSED:
+        return True, f"already generated ({state['handoff']}) - skipped", ""
+    import handoff  # noqa: PLC0415
+    title = state.get("sprint_goal") or state.get("run_id") or "sprint close"
+    # The outcome is DERIVED from the recorded goal-verdict, never defaulted: only an
+    # achieved goal closes as goal-reached; partial/missed close as the honest `stopped`.
+    verdict = (state.get("sprint_goal_verdict") or {}).get("verdict")
+    outcome = run_state.GOAL_REACHED if verdict == "achieved" else run_state.STOPPED
+    rc, out = _run_cli(handoff.main, ["generate", "--title", title,
+                                      "--outcome", outcome,
+                                      "--retro", retro_id, "--root", str(root)])
+    if rc != 0:
+        return False, out, "`handoff.py generate` must close the run - see its output"
+    return True, f"handoff generated; run state closed ({outcome}, from the {verdict} verdict)", ""
+
+
+def _close_reconcile(root, retro_id, state):
+    rc, out = _run_cli(reconcile.main, ["detect", "--root", str(root)])
+    if rc != 0:
+        return False, out, "`reconcile.py apply` clears mechanical drift, then re-run"
+    return True, "no index drift", ""
+
+
+# Chain order is the ceremony's order; cmd_close resolves each step through globals() at
+# call time so a test can patch one step without rebuilding the table.
+_CLOSE_CHAIN = ("retro-validate", "retro-extract", "lessons-summary",
+                "gate", "handoff", "reconcile")
+
+
+def _mutation_note(root) -> str:
+    """The mutation lane's evidence for the brief - read, never invented."""
+    p = Path(root) / "sdlc-studio" / ".local" / "mutation-report.json"
+    if not p.is_file():
+        return ("mutation: no mutation report - run `mutation.py run --since <base ref> "
+                "--test \"<suite>\"` before the close")
+    try:
+        rep = json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return "mutation: report unreadable - re-run mutation.py"
+    s = rep.get("summary", {})
+    return (f"mutation: {s.get('killed', '?')} killed / {s.get('survived', '?')} survived "
+            f"of {s.get('applied', '?')} applied (report at rev {rep.get('git_rev', '?')[:9]})")
+
+
+def _cost_note(root, state) -> str:
+    """Forecast vs measured subagent spend, from the recorded plan forecast and the
+    telemetry actuals for the batch. Unmeasured units are counted, not glossed."""
+    forecast = state.get("token_forecast")
+    fc = f"{forecast:,} tokens forecast at plan time" if forecast else "no forecast recorded"
+    batch = state.get("batch") or []
+    seen = telemetry.actuals(root)
+    rows = [seen[u] for u in batch if u in seen and seen[u].get("tokens")]
+    if rows:
+        spent = sum(int(r["tokens"]) for r in rows)
+        measured = (f"{spent:,} tokens measured across {len(rows)}/{len(batch)} "
+                    "batch unit(s) (telemetry actuals)")
+    else:
+        measured = f"0/{len(batch)} batch unit(s) have measured tokens - not measured, not zero"
+    return f"{fc}; {measured}"
+
+
+def cmd_close(args: argparse.Namespace) -> int:
+    """The sprint close ceremony as one deterministic, resumable chain."""
+    root = args.root
+    try:
+        state = run_state.read(root)
+    except run_state.RunStateError as exc:
+        print(f"close refused: {exc}", file=sys.stderr)
+        return 2
+    if not state:
+        print("close refused: no run state - `sprint plan --write` opens the run this "
+              "close would end", file=sys.stderr)
+        return 2
+    if not state.get("sprint_goal"):
+        print("close refused: no sprint goal recorded on this run - set one at plan time "
+              "with --sprint-goal; a close cannot invent what the run aimed at",
+              file=sys.stderr)
+        return 2
+    # Goal-verdict: record it here when given, reuse it when already judged, refuse when
+    # neither - a defaulted verdict would be invented alignment.
+    if args.goal_verdict:
+        if not args.note:
+            print("close refused: --goal-verdict needs --note - a bare verdict is an "
+                  "assertion, not a review", file=sys.stderr)
+            return 2
+        run_state.update(root, sprint_goal_verdict={"verdict": args.goal_verdict,
+                                                    "note": args.note})
+        state = run_state.read(root)
+        print(f"close: goal-verdict recorded ({args.goal_verdict})")
+    elif state.get("sprint_goal_verdict"):
+        print(f"close: goal-verdict already judged "
+              f"({state['sprint_goal_verdict'].get('verdict')}) - reused")
+    else:
+        print("close STOPPED at goal-verdict: the Sprint Goal is unjudged - run "
+              "`sprint.py goal-verdict --verdict achieved|partial|missed --note \"...\"` "
+              "(or pass --goal-verdict/--note here), then re-run close", file=sys.stderr)
+        return 1
+    module = sys.modules[__name__]
+    for i, name in enumerate(_CLOSE_CHAIN, start=1):
+        step = getattr(module, "_close_" + name.replace("-", "_"))
+        ok, detail, remedy = step(root, args.retro, state)
+        if not ok:
+            print(f"close STOPPED at {name} [{i}/{len(_CLOSE_CHAIN)}]:\n{detail}",
+                  file=sys.stderr)
+            print(f"remedy: {remedy}\nthen re-run: sprint.py close --retro {args.retro} "
+                  "(completed steps are idempotent)", file=sys.stderr)
+            return 1
+        print(f"close [{i}/{len(_CLOSE_CHAIN)}] {name}: ok - {detail.splitlines()[-1] if detail else 'ok'}")
+        if name == "handoff":
+            state = run_state.read(root) or state  # the handoff closes the run object
+    import critic  # noqa: PLC0415 - the brief composer
+    gate_note = f"gate --require-retro {args.retro} --require-review: PASS; {_mutation_note(root)}"
+    batch = state.get("batch") or []
+    print()
+    print(critic.signoff_brief(root, batch, gate_note=gate_note,
+                               cost_note=_cost_note(root, state)))
+    return 0
+
+
 def cmd_plan(args: argparse.Namespace) -> int:
     """Print the ordered batch the operator approves before a run."""
     if getattr(args, "prd", None):  # greenfield authoring - the batch is a PRD
@@ -2184,6 +2377,18 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--format", choices=("text", "json"), default="text")
     b.set_defaults(func=cmd_breakdown)
 
+    cl = sub.add_parser("close", help="Run the close ceremony as one deterministic chain "
+                                      "(goal-verdict, retro, lessons, gate, handoff, reconcile), "
+                                      "then print the sign-off decision brief.")
+    cl.add_argument("--retro", required=True, metavar="RETROxxxx",
+                    help="the batch retro this close validates and gates on")
+    cl.add_argument("--goal-verdict", dest="goal_verdict",
+                    choices=("achieved", "partial", "missed"), default=None,
+                    help="record the Sprint Goal judgement as part of the close")
+    cl.add_argument("--note", default=None,
+                    help="the judgement's one-line rationale (required with --goal-verdict)")
+    cl.add_argument("--root", default=".")
+    cl.set_defaults(func=cmd_close)
     g = sub.add_parser("goal-verdict",
                        help="Record the closing review's judgement of the Sprint Goal "
                             "(achieved / partial / missed) on the run state.")

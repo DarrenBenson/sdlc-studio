@@ -228,6 +228,17 @@ The Goal-Driven Development loop's planner. `plan <query> --order priority|wsjf`
 
 `plan` **REFUSES an ungroomed batch** (the breakdown gate): a unit must declare `Affects:` and a size (`Effort:` / `Points:` / a seat score), or `plan` names it, says what it lacks, and exits non-zero **printing no plan** - a plan over unsized units cannot be sized or safely parallelised and looks authoritative anyway. The recorded opt-out is `sprint.breakdown: judgement` (the lane then reports); omission is not an escape. From the same `Affects` the plan derives **shared-file clusters** - units touching one file are not parallel, however the declared `Depends on:` graph waves them - and flags a large CR no story yet cites for decomposition (`cr action`), since only a story's Done is gated on executable ACs. `breakdown <query>` reports the same census read-only (never blocks, never writes).
 
+`close --retro RETROxxxx [--goal-verdict achieved|partial|missed --note "..."]` runs the close
+ceremony as ONE deterministic chain - goal-verdict (recorded here, reused when already judged,
+refused when unjudged), retro validate + extract, lessons summary, `gate --require-retro
+--require-review`, handoff generate (skipped when the run is already closed), reconcile detect -
+STOPPING loudly at the first failing step with the remedy named; a re-run after repair resumes
+idempotently. It ends by printing the sign-off decision brief composed from the committed
+records (per-unit deliveries, verdict + REJECT history, gate and mutation results, forecast vs
+measured telemetry spend); absent retro content, an unset goal, or an unjudged goal-verdict are
+refusals with the command to run, never defaults. `goal-verdict` records the closing review's
+Sprint Goal judgement on the run state.
+
 ### `backlog_triage.py`
 
 The backlog-coherence ceremony behind `plan`'s triage pass and the `status`/`hint` triage advisory

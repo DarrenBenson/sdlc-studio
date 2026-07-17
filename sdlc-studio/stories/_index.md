@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 7 |
+| Ready | 6 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 1 |
+| Review | 2 |
 | Done | 191 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -108,7 +108,7 @@
 | [US0195](US0195-definition-of-ready-and-definition-of-done-templates.md) | definition-of-ready and definition-of-done templates with tagged machine-checkable criteria resolving through one registry authority; unknown check id is a loud validation error | Ready | EP0065 | 2026-07-16 | 2026-07-16 |
 | [US0196](US0196-grooming-resolves-the-story-dor-transition-done-and.md) | grooming resolves the story DoR; transition Done and the critic gate resolve the story DoD; gate require-retro and release resolve the sprint and release DoD; absent documents stay byte-compatible with today | Ready | EP0066 | 2026-07-16 | 2026-07-16 |
 | [US0197](US0197-init-writes-the-default-dor-dod-documents-and.md) | init writes the default DoR/DoD documents and offers stack-derived tailoring criteria, applied only on acceptance and passing registry validation | Ready | EP0067 | 2026-07-16 | 2026-07-16 |
-| [US0198](US0198-sprint-close-orchestrates-goal-verdict-retro-validate-and.md) | sprint close orchestrates goal-verdict, retro validate and extract, close gate, handoff and reconcile with fail-loud stops and idempotent resume, printing the decision brief | Ready | EP0068 | 2026-07-16 | 2026-07-16 |
+| [US0198](US0198-sprint-close-orchestrates-goal-verdict-retro-validate-and.md) | sprint close orchestrates goal-verdict, retro validate and extract, close gate, handoff and reconcile with fail-loud stops and idempotent resume, printing the decision brief | Review | EP0068 | 2026-07-16 | 2026-07-16 |
 | [US0199](US0199-brief-rejoinder-quotes-the-prior-verdict-verbatim-with.md) | brief --rejoinder quotes the prior verdict verbatim with the re-execute-your-probes instruction and return contract; a malformed prior-verdict file is refused | Ready | EP0069 | 2026-07-16 | 2026-07-16 |
 | [US0200](US0200-tools-forward-port-sh-runs-the-canonical-rsync.md) | tools/forward-port.sh runs the canonical rsync dry-run by default with --yes to apply, refusing a reversed direction or non-dev-repo cwd; AGENTS.md references it | Ready | EP0070 | 2026-07-16 | 2026-07-16 |
 

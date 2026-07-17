@@ -189,6 +189,13 @@ independent critic plus the gate - the check's output states this scoping.
    metrics passed: `--iterations`/`--verdict`/`--wall-time-s`/`--stages`) is appended to
    the committed evidence log `sdlc-studio/retros/evidence/actuals-*.jsonl`. Advisory -
    it never affects the close; it is the measured half of the estimate-vs-actual report.
+   **The whole close is one command:** `sprint.py close --retro RETROxxxx
+   [--goal-verdict ... --note ...]` sequences goal-verdict, retro validate + extract,
+   lessons summary, the close gate, handoff and reconcile with fail-loud stops (each
+   naming its remedy; a re-run resumes idempotently) and ends by printing the sign-off
+   decision brief for the reviewer-of-record ask. Judgement stays outside: the retro's
+   content, the verdict's note and the signature remain human/agent work.
+
 7. **Retro + lessons lifecycle (a hard gate, not doctrine).** The batch retro carries a 'critic loop, observed' section (findings, refutations, survivors of the adversarial pass) so its value stays visible sprint over sprint. The close runs a five-step learning loop. **Every step of it is mechanical:** one command,
    `gate --require-retro RETRO{next} --require-review`, is the whole close gate, and it fails loud
    (non-zero, no success report) on any of the artefacts being absent or stale. The close is

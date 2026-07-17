@@ -2140,5 +2140,286 @@ class GoalVerdictTests(unittest.TestCase):
                 mod.main(["goal-verdict", "--verdict", "smashed-it", "--root", str(root)])
 
 
+def _close_state(root: Path, **over) -> dict:
+    """A legal run-state for close tests, written directly (the plan path is covered
+    elsewhere; close reads the object, not the ceremony that made it)."""
+    state = {
+        "schema": 1, "run_id": "RUN-TEST0001", "started_at": "2026-07-16T00:00:00Z",
+        "ended_at": None, "outcome": "running", "goal": "done",
+        "batch": ["US0101"], "plan": "sdlc-studio/.local/sprint-plan.json",
+        "handoff": None, "appetite": {"minutes": 240.0, "units": 8},
+        "sprint_goal": "make the close honest",
+        "sprint_goal_verdict": {"verdict": "achieved", "note": "chain ran"},
+        "token_forecast": 50000,
+    }
+    state.update(over)
+    p = root / "sdlc-studio" / ".local" / "run-state.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(state), encoding="utf-8")
+    return state
+
+
+def _close_story(root: Path) -> None:
+    d = root / "sdlc-studio" / "stories"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "US0101-widget.md").write_text(
+        "# US0101: widget frobnicates\n\n> **Status:** Review\n> **Points:** 5\n"
+        "> **Epic:** EP0001\n\n## Acceptance Criteria\n\n### AC1: works\n"
+        "- **Verify:** shell echo ok\n", encoding="utf-8")
+
+
+_CLOSE_STEP_NAMES = ("retro-validate", "retro-extract", "lessons-summary",
+                     "gate", "handoff", "reconcile")
+
+
+def _patch_close_steps(mod, fail_at=None, remedy="fix it", record=None):
+    """Patch every chain step to succeed (recording call order), optionally failing
+    at one named step. Returns the contextlib.ExitStack the caller must close."""
+    import contextlib as _ctx
+    stack = _ctx.ExitStack()
+    for name in _CLOSE_STEP_NAMES:
+        attr = "_close_" + name.replace("-", "_")
+
+        def make(nm):
+            def step(*a, **k):
+                if record is not None:
+                    record.append(nm)
+                if nm == fail_at:
+                    return False, f"{nm} broke", remedy
+                return True, f"{nm} ok", ""
+            return step
+        stack.enter_context(unittest.mock.patch.object(mod, attr, make(name)))
+    return stack
+
+
+class CloseChainTests(unittest.TestCase):
+    """US0198: sprint close runs the chain in order, stops loudly at the first
+    failing gate naming the remedy, and a re-run resumes idempotently."""
+
+    def test_runs_steps_in_order_and_stops_at_first_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root)
+            _close_story(root)
+            mod = _load()
+            calls: list[str] = []
+            out, err = io.StringIO(), io.StringIO()
+            with _patch_close_steps(mod, fail_at="lessons-summary", remedy="run lessons summary",
+                                    record=calls), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
+            self.assertNotEqual(rc, 0)
+            self.assertEqual(calls, ["retro-validate", "retro-extract", "lessons-summary"])
+            self.assertIn("STOPPED", err.getvalue())
+            self.assertIn("run lessons summary", err.getvalue())   # the remedy, named
+
+    def test_rerun_after_repair_resumes_and_prints_brief(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, handoff="HO0001", outcome="goal-reached")
+            _close_story(root)
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with _patch_close_steps(mod), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
+            self.assertEqual(rc, 0, err.getvalue())
+            # the recorded goal-verdict is reused, not re-asked, and the brief prints
+            self.assertIn("already judged", out.getvalue().lower())
+            self.assertIn("sign-off request", out.getvalue().lower())
+
+    def test_goal_verdict_recorded_via_close_flag(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, sprint_goal_verdict=None)
+            _close_story(root)
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with _patch_close_steps(mod), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--retro", "RETRO0001",
+                               "--goal-verdict", "achieved", "--note", "chain ran",
+                               "--root", str(root)])
+            self.assertEqual(rc, 0, err.getvalue())
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            self.assertEqual(state["sprint_goal_verdict"]["verdict"], "achieved")
+
+
+class CloseRealChainTests(unittest.TestCase):
+    """The chain's steps run REAL sibling modules - no stubs - so a signature or
+    wiring break in any of them cannot hide behind patched-out steps."""
+
+    def test_real_retro_validate_stop_names_remedy_not_traceback(self) -> None:
+        # A close against a retro that does not exist must STOP at retro-validate
+        # through the real retro module, with the remedy named - never a raw crash.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root)
+            _close_story(root)
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--retro", "RETRO9999", "--root", str(root)])
+            self.assertNotEqual(rc, 0)
+            self.assertIn("STOPPED at retro-validate", err.getvalue())
+            self.assertIn("artifact.py new --type retro", err.getvalue())  # the remedy
+
+    def test_derived_outcome_from_partial_verdict_is_stopped(self) -> None:
+        # AC3: the handoff outcome derives from the recorded verdict, never a default -
+        # a partial goal must not close the run as goal-reached.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, sprint_goal_verdict={"verdict": "partial", "note": "half"})
+            _close_story(root)
+            mod = _load()
+            # run the REAL _close_handoff against a stubbed handoff module so the
+            # derived outcome is observable without a full gate-passing workspace
+            import types
+            calls: dict = {}
+
+            def fake_main(argv):
+                calls["argv"] = argv
+                return 0
+            with unittest.mock.patch.dict(sys.modules, {"handoff": types.SimpleNamespace(main=fake_main)}):
+                ok, detail, _ = mod._close_handoff(root, "RETRO0001",
+                                                   json.loads((root / "sdlc-studio" / ".local" /
+                                                               "run-state.json").read_text()))
+            self.assertTrue(ok)
+            i = calls["argv"].index("--outcome")
+            self.assertEqual(calls["argv"][i + 1], "stopped")   # partial -> stopped, not goal-reached
+
+    def test_run_cli_handles_string_systemexit(self) -> None:
+        mod = _load()
+
+        def exits(argv):
+            raise SystemExit("boom")
+        rc, out = mod._run_cli(exits, [])
+        self.assertEqual(rc, 1)   # a string exit code is a failure, not a crash
+
+
+class CloseBriefTests(unittest.TestCase):
+    """US0198: the decision brief is composed from the committed records - deliveries,
+    verdict + REJECT history, gate and mutation results, forecast vs measured spend."""
+
+    def _fixture(self, root: Path) -> None:
+        _close_state(root)
+        _close_story(root)
+        spec = importlib.util.spec_from_file_location("critic", SCRIPT.parent / "critic.py")
+        c = importlib.util.module_from_spec(spec)
+        sys.modules["critic"] = c
+        spec.loader.exec_module(c)
+        c.record_verdict(root, "US0101", "reject", reviewer="qa-seat", author="builder",
+                         issues="vacuous killing test")
+        c.record_verdict(root, "US0101", "approve", reviewer="qa-seat", author="builder")
+        ev = root / "sdlc-studio" / "retros" / "evidence"
+        ev.mkdir(parents=True, exist_ok=True)
+        (ev / "actuals-2026-07.jsonl").write_text(
+            json.dumps({"id": "US0101", "type": "story", "tokens": 111000,
+                        "model": "m", "project": "p"}) + "\n", encoding="utf-8")
+
+    def test_brief_composed_from_records(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with _patch_close_steps(mod), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
+            self.assertEqual(rc, 0, err.getvalue())
+            text = out.getvalue()
+            self.assertIn("widget frobnicates", text)          # delivery title
+            self.assertIn("REJECT", text)                      # reject history
+            self.assertIn("vacuous killing test", text)
+            self.assertIn("50,000", text)                      # forecast
+            self.assertIn("111,000", text)                     # measured spend
+            self.assertIn("no mutation report", text.lower())  # absent named, not invented
+            for path in ("approve", "hold", "delegate"):
+                self.assertIn(path, text.lower())
+
+    def test_unmeasured_spend_is_named_not_claimed_as_zero(self) -> None:
+        # AC2 honesty: a batch with no telemetry rows must read "not measured, not
+        # zero" - never a zero-spend claim dressed as a measurement.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root)
+            _close_story(root)   # no telemetry actuals written
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with _patch_close_steps(mod), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
+            self.assertEqual(rc, 0, err.getvalue())
+            self.assertIn("not measured, not zero", out.getvalue())
+            self.assertNotIn("tokens measured across", out.getvalue())
+
+    def test_brief_includes_mutation_summary_when_report_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            rep = {"generated_at": "x", "git_rev": "abc1234",
+                   "summary": {"applied": 25, "killed": 21, "survived": 3,
+                               "errors": 0, "unviable": 1}}
+            p = root / "sdlc-studio" / ".local" / "mutation-report.json"
+            p.write_text(json.dumps(rep), encoding="utf-8")
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with _patch_close_steps(mod), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
+            self.assertEqual(rc, 0, err.getvalue())
+            self.assertIn("21", out.getvalue())                # killed
+            self.assertIn("survived", out.getvalue().lower())
+
+
+class CloseRefusalTests(unittest.TestCase):
+    """US0198: absent retro content, an unset goal, or an unjudged goal-verdict are
+    refusals with the command to run - never defaults."""
+
+    def test_refuses_absent_run_state(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
+            self.assertNotEqual(rc, 0)
+            self.assertIn("sprint plan", err.getvalue())       # the command to run
+
+    def test_refuses_unset_sprint_goal(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, sprint_goal=None, sprint_goal_verdict=None)
+            mod = _load()
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
+            self.assertNotEqual(rc, 0)
+            self.assertIn("--sprint-goal", err.getvalue())     # how to set one
+
+    def test_refuses_unjudged_goal_verdict(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, sprint_goal_verdict=None)
+            mod = _load()
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
+            self.assertNotEqual(rc, 0)
+            self.assertIn("goal-verdict", err.getvalue())      # the command to run
+
+    def test_goal_verdict_flag_requires_note(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, sprint_goal_verdict=None)
+            mod = _load()
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--retro", "RETRO0001",
+                               "--goal-verdict", "achieved", "--root", str(root)])
+            self.assertNotEqual(rc, 0)
+            self.assertIn("--note", err.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main()
