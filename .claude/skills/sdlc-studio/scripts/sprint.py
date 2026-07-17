@@ -2160,6 +2160,83 @@ def _cost_note(root, state) -> str:
     return f"{fc}; {measured}"
 
 
+def _retro_path(root, rid: str):
+    """The retro file for an id (e.g. `RETRO0047` or `RETRO-0047`), or None if none exists.
+
+    Matches on the file-id head directly: `RETRO`/`REVIEW`/`HANDOFF` are meta prefixes that
+    the artifact ID_RE (EP/US/BG/... only) does not recognise, so `extract_record_id` cannot
+    be used here. A retro filename is always `<file_id>-<slug>.md` with no dash inside the id."""
+    key = rid.strip().upper().replace("-", "")
+    d = Path(root) / "sdlc-studio" / "retros"
+    if not key or not d.is_dir():
+        return None
+    for p in d.glob("*.md"):
+        if p.name == "_index.md":
+            continue
+        if p.stem.split("-", 1)[0].upper() == key:
+            return p
+    return None
+
+
+def _prefill_retro(path, batch, state) -> None:
+    """Fill the scaffolded retro's objective front-matter (Batch/Goal) from run state - the
+    close already holds them, so the author never re-transcribes what the run recorded. The
+    narrative placeholders (Delivered, Lessons, ...) are left for the author to fill."""
+    p = Path(path)
+    text = p.read_text(encoding="utf-8")
+    text = text.replace("{{batch}}", ", ".join(batch) or "-")
+    text = text.replace("{{goal}}", state.get("sprint_goal") or "-")
+    sdlc_md.atomic_write(p, text)
+
+
+def _resolve_retro(root, args, state) -> int | None:
+    """Ensure the close has a retro to gate on, through the deterministic path.
+
+    - `--retro` omitted: SCAFFOLD one via `artifact.meta_new` (allocated id + rendered template
+      + index row), pre-fill Batch/Goal from run state, print the id, and STOP so the author
+      fills it. This is the forced-scaffold path: a retro is never hand-authored into a missing
+      index row that only the reconcile step would catch. Idempotent: the scaffolded id is
+      stashed on run state, so a second bare close REUSES it rather than minting a duplicate.
+    - `--retro` names an existing retro: proceed, and self-heal a missing index row
+      (`reconcile.apply_meta`) so a retro made any other way still never stalls the close.
+    - `--retro` names a missing retro: refuse (the sequential allocator cannot mint a chosen id).
+
+    Returns an exit code to stop the close, or None to continue (args.retro is then the id)."""
+    import artifact  # noqa: PLC0415 - deferred, like the chain's retro/handoff imports
+    import reconcile  # noqa: PLC0415
+    rid = (args.retro or "").strip()
+    if rid:
+        if _retro_path(root, rid) is None:
+            print(f"close refused: retro {rid} not found. Omit --retro and close will scaffold "
+                  f"one for you (id + index row), or create it with `artifact.py new --type "
+                  f"retro`.", file=sys.stderr)
+            return 2
+        reconcile.apply_meta(root)  # B safety net: add the index row if a prior author skipped it
+        return None
+    # Reuse an already-scaffolded retro for this run if it still exists - a bare close re-run
+    # (or a wrapper that retries on non-zero) must not mint a second empty retro.
+    prior = (state.get("scaffolded_retro") or "").strip()
+    if prior and _retro_path(root, prior) is not None:
+        disp, verb = prior, "already scaffolded"
+    else:
+        title = state.get("sprint_goal") or state.get("run_id") or "sprint retro"
+        res = artifact.meta_new(root, "retro", title)
+        _prefill_retro(res["path"], state.get("batch") or [], state)
+        disp, verb = res["id"], f"scaffolded (indexed={res['indexed']})"
+        run_state.update(root, scaffolded_retro=disp)
+    # Don't silently drop a --goal-verdict passed on the scaffold call: record it now so the
+    # re-run reuses it (the goal-verdict block below runs only once the retro is supplied).
+    if args.goal_verdict and args.note and not state.get("sprint_goal_verdict"):
+        run_state.update(root, sprint_goal_verdict={"verdict": args.goal_verdict,
+                                                    "note": args.note})
+        print(f"close: goal-verdict recorded ({args.goal_verdict}) - reused on the re-run")
+    verdict_hint = ("" if (args.goal_verdict or state.get("sprint_goal_verdict"))
+                    else " --goal-verdict <achieved|partial|missed> --note \"...\"")
+    print(f"close: retro {disp} {verb} -> {_retro_path(root, disp)}")
+    print(f"fill its sections, then re-run: sprint.py close --retro {disp}{verdict_hint}")
+    return 1
+
+
 def cmd_close(args: argparse.Namespace) -> int:
     """The sprint close ceremony as one deterministic, resumable chain."""
     root = args.root
@@ -2177,6 +2254,12 @@ def cmd_close(args: argparse.Namespace) -> int:
               "with --sprint-goal; a close cannot invent what the run aimed at",
               file=sys.stderr)
         return 2
+    # Resolve the retro through the deterministic path: scaffold + stop when omitted,
+    # heal a missing index row when present, refuse a named-but-missing id. Runs BEFORE the
+    # goal-verdict so a first `close` (scaffold) records nothing until the retro is filled.
+    rc = _resolve_retro(root, args, state)
+    if rc is not None:
+        return rc
     # Goal-verdict: record it here when given, reuse it when already judged, refuse when
     # neither - a defaulted verdict would be invented alignment.
     if args.goal_verdict:
@@ -2426,8 +2509,10 @@ def build_parser() -> argparse.ArgumentParser:
     cl = sub.add_parser("close", help="Run the close ceremony as one deterministic chain "
                                       "(goal-verdict, retro, lessons, gate, handoff, reconcile), "
                                       "then print the sign-off decision brief.")
-    cl.add_argument("--retro", required=True, metavar="RETROxxxx",
-                    help="the batch retro this close validates and gates on")
+    cl.add_argument("--retro", default=None, metavar="RETROxxxx",
+                    help="the batch retro this close validates and gates on. Omit it and close "
+                         "SCAFFOLDS one (id + template + index row) via the deterministic path, "
+                         "then stops so you fill it and re-run with the id it prints")
     cl.add_argument("--goal-verdict", dest="goal_verdict",
                     choices=("achieved", "partial", "missed"), default=None,
                     help="record the Sprint Goal judgement as part of the close")

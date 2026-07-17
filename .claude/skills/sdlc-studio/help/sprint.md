@@ -40,7 +40,8 @@ conformance -> review) to it. Add `--autonomous` to run unattended. See
 /sdlc-studio sprint prd.md --goal design             # greenfield: PRD -> epics -> stories
 /sdlc-studio sprint <worklist.md> --order wsjf       # a tranche file, WSJF order
 /sdlc-studio sprint --bugs Open --autonomous         # unattended: deterministic guardrails on
-/sdlc-studio sprint close --retro RETRO0001          # the close ceremony as one command
+/sdlc-studio sprint close                            # scaffolds the retro, then stops for you to fill it
+/sdlc-studio sprint close --retro RETRO0001          # the close ceremony as one command (retro already filled)
 ```
 
 Natural language works too: "do a sprint to deliver all open bugs"; "plan and break down the
@@ -86,10 +87,14 @@ same census read-only. Opt out only as a recorded decision: `sprint.breakdown: j
    is terminal (Done or Blocked). With `routing.enabled` (see below), a failed
    attempt escalates one model tier before the cap quarantines
    (`reference-sprint.md#model-tier-routing`).
-6. **Close** - `sprint close --retro RETROxxxx` runs the close ceremony as one
-   deterministic chain (goal-verdict, retro validate + extract, lessons summary,
-   the close gate, handoff, reconcile), stopping loudly at the first failing step
-   with the remedy named, and prints the sign-off decision brief.
+6. **Close** - `sprint close` runs the close ceremony as one deterministic chain
+   (goal-verdict, retro validate + extract, lessons summary, the close gate, handoff,
+   reconcile), stopping loudly at the first failing step with the remedy named, and
+   prints the sign-off decision brief. Run it with **no `--retro`** the first time and it
+   **scaffolds the retro for you** (allocated id + template + index row, Batch/Goal
+   pre-filled from the run), then stops so you fill it; re-run with the id it prints
+   (`sprint close --retro RETROxxxx`) to finish. Never hand-author the retro - the
+   scaffold is the one path that also wires its index row.
 7. **Sprint review** - every run ends with a mandatory `reconcile` + `review`; the
    CODE leg is the adversarial full-diff critic pass (independent instance, refute
    framing, findings with repros, fixes seen red first, the SAME critic re-runs its

@@ -21,6 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`sprint close` scaffolds the retro through the deterministic path (CR0345).** `--retro`
+  is now optional: run `sprint close` with no retro and it scaffolds one via `artifact.py new
+  --type retro` (allocated id + template + index row, Batch/Goal pre-filled from run-state),
+  then stops so you fill it and re-run with the id it prints. A `--retro` naming an existing
+  retro proceeds as before and self-heals a missing index row (`reconcile.apply_meta`), so a
+  retro made any other way never stalls the close at the reconcile step; a `--retro` naming a
+  non-existent retro is refused (the sequential allocator cannot mint a chosen id). This makes
+  the deterministic scaffold the default path and removes the hand-authored-retro-missing-row
+  friction.
 - **`reference-schema.md`: the artefact format is now a versioned public contract (EP0084,
   RFC0047).** A single self-describing reference documents the six on-disk surfaces external
   tooling reads - id grammar, directory layout, per-type header fields, status vocabulary and

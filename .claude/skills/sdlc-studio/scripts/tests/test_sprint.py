@@ -2186,6 +2186,24 @@ def _close_story(root: Path) -> None:
         "- **Verify:** shell echo ok\n", encoding="utf-8")
 
 
+def _close_retro(root: Path, rid: str = "RETRO0001", with_index: bool = True) -> None:
+    """A retro file (and, by default, its index row) so a `close --retro <rid>` resolves it.
+    With `with_index=False` the row is omitted, exercising the close's index-row self-heal."""
+    d = root / "sdlc-studio" / "retros"
+    d.mkdir(parents=True, exist_ok=True)
+    stem = f"{rid}-widget-sprint"
+    (d / f"{stem}.md").write_text(
+        f"# {rid[:5]}-{rid[5:]}: widget sprint\n\n> **Date:** 2026-07-16\n\n"
+        "## Delivered\n\n- US0101 - shipped\n\n## Lessons\n\n- learned a thing\n",
+        encoding="utf-8")
+    if with_index:
+        disp = f"{rid[:5]}-{rid[5:]}"
+        (d / "_index.md").write_text(
+            "# Retro Registry\n\n**Last Updated:** 2026-07-16\n\n"
+            "| ID | Title | Date |\n| --- | --- | --- |\n"
+            f"| [{disp}]({stem}.md) | widget sprint | 2026-07-16 |\n", encoding="utf-8")
+
+
 _CLOSE_STEP_NAMES = ("retro-validate", "retro-extract", "lessons-summary",
                      "gate", "handoff", "reconcile")
 
@@ -2219,6 +2237,7 @@ class CloseChainTests(unittest.TestCase):
             root = Path(d)
             _close_state(root)
             _close_story(root)
+            _close_retro(root)
             mod = _load()
             calls: list[str] = []
             out, err = io.StringIO(), io.StringIO()
@@ -2236,6 +2255,7 @@ class CloseChainTests(unittest.TestCase):
             root = Path(d)
             _close_state(root, handoff="HO0001", outcome="goal-reached")
             _close_story(root)
+            _close_retro(root)
             mod = _load()
             out, err = io.StringIO(), io.StringIO()
             with _patch_close_steps(mod), \
@@ -2251,6 +2271,7 @@ class CloseChainTests(unittest.TestCase):
             root = Path(d)
             _close_state(root, sprint_goal_verdict=None)
             _close_story(root)
+            _close_retro(root)
             mod = _load()
             out, err = io.StringIO(), io.StringIO()
             with _patch_close_steps(mod), \
@@ -2267,9 +2288,10 @@ class CloseRealChainTests(unittest.TestCase):
     """The chain's steps run REAL sibling modules - no stubs - so a signature or
     wiring break in any of them cannot hide behind patched-out steps."""
 
-    def test_real_retro_validate_stop_names_remedy_not_traceback(self) -> None:
-        # A close against a retro that does not exist must STOP at retro-validate
-        # through the real retro module, with the remedy named - never a raw crash.
+    def test_close_refuses_named_but_missing_retro(self) -> None:
+        # A close naming a retro that does not exist must refuse clearly with the remedy
+        # named (CR0345: a chosen id cannot be minted by the sequential allocator) - never
+        # a raw crash, and never reaching the chain.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _close_state(root)
@@ -2279,7 +2301,7 @@ class CloseRealChainTests(unittest.TestCase):
             with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
                 rc = mod.main(["close", "--retro", "RETRO9999", "--root", str(root)])
             self.assertNotEqual(rc, 0)
-            self.assertIn("STOPPED at retro-validate", err.getvalue())
+            self.assertIn("not found", err.getvalue())
             self.assertIn("artifact.py new --type retro", err.getvalue())  # the remedy
 
     def test_derived_outcome_from_partial_verdict_is_stopped(self) -> None:
@@ -2315,6 +2337,100 @@ class CloseRealChainTests(unittest.TestCase):
         self.assertEqual(rc, 1)   # a string exit code is a failure, not a crash
 
 
+class CloseRetroScaffoldTests(unittest.TestCase):
+    """CR0345: sprint close scaffolds the retro through the deterministic path so it is never
+    hand-authored into a missing index row the reconcile step catches only at the end."""
+
+    def test_scaffolds_and_stops_when_retro_omitted(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, sprint_goal="ship the widget", batch=["US0101", "US0102"])
+            _close_story(root)
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            # No --retro: close must scaffold one and STOP, never run the chain.
+            with _patch_close_steps(mod), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--root", str(root)])
+            self.assertNotEqual(rc, 0)                       # stopped, action needed
+            self.assertIn("scaffolded", out.getvalue().lower())
+            retros = list((root / "sdlc-studio" / "retros").glob("RETRO*-*.md"))
+            self.assertEqual(len(retros), 1, "exactly one retro scaffolded")
+            body = retros[0].read_text(encoding="utf-8")
+            # The index row was created by the deterministic path...
+            idx = (root / "sdlc-studio" / "retros" / "_index.md").read_text(encoding="utf-8")
+            self.assertIn(retros[0].stem.split("-")[0], idx.replace("-", ""))
+            # ...and Batch/Goal were pre-filled from run state, not left as placeholders.
+            self.assertIn("US0101, US0102", body)
+            self.assertIn("ship the widget", body)
+            self.assertNotIn("{{batch}}", body)
+            self.assertNotIn("{{goal}}", body)
+
+    def test_bare_close_rerun_reuses_scaffold_not_a_second_retro(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, sprint_goal="ship it")
+            _close_story(root)
+            mod = _load()
+            for _ in range(2):                               # two bare closes in a row
+                out, err = io.StringIO(), io.StringIO()
+                with _patch_close_steps(mod), \
+                        contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                    rc = mod.main(["close", "--root", str(root)])
+                self.assertNotEqual(rc, 0)
+            retros = list((root / "sdlc-studio" / "retros").glob("RETRO*-*.md"))
+            self.assertEqual(len(retros), 1, "the re-run reused the scaffold, minted no duplicate")
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            self.assertTrue(state.get("scaffolded_retro"), "scaffolded id stashed on run state")
+
+    def test_goal_verdict_on_scaffold_call_is_recorded_not_dropped(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, sprint_goal="ship it", sprint_goal_verdict=None)
+            _close_story(root)
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with _patch_close_steps(mod), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--goal-verdict", "achieved", "--note", "done",
+                               "--root", str(root)])
+            self.assertNotEqual(rc, 0)                        # still scaffolds + stops
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            self.assertEqual(state["sprint_goal_verdict"]["verdict"], "achieved")  # not dropped
+
+    def test_proceeds_when_retro_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root)
+            _close_story(root)
+            _close_retro(root)                               # file + index row present
+            mod = _load()
+            calls: list[str] = []
+            out, err = io.StringIO(), io.StringIO()
+            with _patch_close_steps(mod, record=calls), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
+            self.assertEqual(rc, 0, err.getvalue())
+            self.assertEqual(calls[0], "retro-validate")     # reached and ran the chain
+            self.assertNotIn("scaffolded", out.getvalue().lower())
+
+    def test_heals_missing_index_row_for_existing_retro(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root)
+            _close_story(root)
+            _close_retro(root, with_index=False)             # retro file, NO index row
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with _patch_close_steps(mod), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
+            self.assertEqual(rc, 0, err.getvalue())
+            idx = root / "sdlc-studio" / "retros" / "_index.md"
+            self.assertTrue(idx.is_file(), "index bootstrapped by the self-heal")
+            self.assertIn("RETRO", idx.read_text(encoding="utf-8"))   # the row was added
+
+
 class CloseBriefTests(unittest.TestCase):
     """US0198: the decision brief is composed from the committed records - deliveries,
     verdict + REJECT history, gate and mutation results, forecast vs measured spend."""
@@ -2322,6 +2438,7 @@ class CloseBriefTests(unittest.TestCase):
     def _fixture(self, root: Path) -> None:
         _close_state(root)
         _close_story(root)
+        _close_retro(root)
         spec = importlib.util.spec_from_file_location("critic", SCRIPT.parent / "critic.py")
         c = importlib.util.module_from_spec(spec)
         sys.modules["critic"] = c
@@ -2362,6 +2479,7 @@ class CloseBriefTests(unittest.TestCase):
             root = Path(d)
             _close_state(root)
             _close_story(root)   # no telemetry actuals written
+            _close_retro(root)
             mod = _load()
             out, err = io.StringIO(), io.StringIO()
             with _patch_close_steps(mod), \
@@ -2456,6 +2574,7 @@ class CloseRefusalTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _close_state(root, sprint_goal_verdict=None)
+            _close_retro(root)
             mod = _load()
             err = io.StringIO()
             with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
@@ -2467,6 +2586,7 @@ class CloseRefusalTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _close_state(root, sprint_goal_verdict=None)
+            _close_retro(root)
             mod = _load()
             err = io.StringIO()
             with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):

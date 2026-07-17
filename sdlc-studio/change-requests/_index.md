@@ -9,12 +9,12 @@
 | Proposed | 3 |
 | Approved | 0 |
 | In Progress | 34 |
-| Complete | 289 |
+| Complete | 290 |
 | Rejected | 0 |
 | Deferred | 5 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **344** |
+| **Total** | **345** |
 
 ## All Changes
 
@@ -166,6 +166,7 @@
 | [CR-0342](CR0342-refine-s-draft-story-output-cannot-pass-the.md) | refine's Draft-story output cannot pass the pre-commit gate: validate flags seeded placeholder ACs as errors regardless of status | Proposed | Medium | Improvement | 2026-07-17 | -- |
 | [CR-0343](CR0343-refine-apply-add-should-read-a-breakdown-from.md) | refine apply/add should read a breakdown from a file, not only repeated --story CLI args | Proposed | Low | Improvement | 2026-07-17 | -- |
 | [CR-0344](CR0344-pre-commit-gate-lanes-are-whole-workspace-so.md) | Pre-commit gate lanes are whole-workspace, so pre-existing backlog debt blocks every unrelated commit | Proposed | Low | Improvement | 2026-07-17 | -- |
+| [CR-0345](CR0345-sprint-close-scaffolds-the-retro-via-the-deterministic.md) | sprint close scaffolds the retro via the deterministic path instead of requiring a pre-made one | Complete | Medium | Improvement | 2026-07-17 | -- |
 
 ## Archived Releases
 
