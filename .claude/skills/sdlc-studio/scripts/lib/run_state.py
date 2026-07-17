@@ -149,6 +149,22 @@ def _union(existing, incoming) -> list[str]:
     return out
 
 
+# The close artefacts a finalised run carries. A run holding ANY of them has been judged or
+# closed - it is history - even if its `outcome` string was never moved off `running`: a close
+# chain that records the goal-verdict but stops before the handoff leaves exactly that
+# inconsistent state. `open_run` treats such a run as CLOSED so the next plan mints a fresh run
+# rather than accumulating the new batch onto - and clobbering the verdict of - the judged one.
+_CLOSE_ARTEFACTS = ("sprint_goal_verdict", "ended_at", "handoff")
+
+
+def _is_spent(state: dict) -> bool:
+    """True when the run is finalised: a terminal outcome, or a close artefact recorded while
+    the outcome string still says `running`. A judged run is history regardless of the string."""
+    if state.get("outcome") != RUNNING or not state.get("run_id"):
+        return True
+    return any(state.get(k) for k in _CLOSE_ARTEFACTS)
+
+
 def open_run(repo_root: Path | str, batch: list[str] | None = None, goal: str | None = None,
              plan: str | None = None) -> dict:
     """Open a run, or re-plan the OPEN one.
@@ -156,11 +172,12 @@ def open_run(repo_root: Path | str, batch: list[str] | None = None, goal: str | 
     Re-running `sprint plan --write` must not restart the clock: an already-open run keeps
     its `run_id` and `started_at`, and its batch ACCUMULATES (see the module docstring - a
     narrowing re-cut must not silently discard work the run was approved to do). A run that
-    has been CLOSED is history: the next open mints a fresh run with a fresh batch, so a
-    handoff can never be re-attributed to the run after it.
+    has been CLOSED - or judged but left `running`, an inconsistent state - is history: the
+    next open mints a fresh run with a fresh batch, so a handoff can never be re-attributed
+    to the run after it.
     """
     def apply(state: dict) -> dict:
-        if state.get("outcome") != RUNNING or not state.get("run_id"):
+        if _is_spent(state):
             state = {**_blank(), "run_id": f"RUN-{sdlc_md.short_ulid()}",
                      "started_at": sdlc_md.now_iso8601()}
         if batch is not None:

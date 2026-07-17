@@ -629,6 +629,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`sprint plan --write` no longer accumulates a new batch onto a judged-but-unfinalised run
+  (BG0188).** A close that records the Sprint Goal verdict but stops before the handoff leaves the
+  run `outcome=running` while carrying a close artefact - an inconsistent state `open_run` did not
+  detect, so the next plan reused the old `run_id`/`started_at`, unioned the new units onto the old
+  terminal batch, and stamped the new goal over the already-judged verdict. `open_run` now treats a
+  run carrying any close artefact (`sprint_goal_verdict`, `ended_at`, `handoff`) as spent and mints a
+  fresh run; a genuinely-open run (no close artefact) still re-plans in place and accumulates.
 - **The spec-truth refresh sprint (RUN-01KXR6XS): EP0071 + the open-bug backlog.**
   - **BG0184:** the cross-epic-ac lint (`ac_scope.check`) now exempts a keyword whose sole owning
     epic is *terminal*. A closed epic owns no live scope, so a new extension story reusing its title

@@ -168,6 +168,45 @@ class RunStateTests(unittest.TestCase):
                 with self.assertRaises(run_state.RunStateError):
                     call()
 
+    def test_a_judged_run_left_running_is_treated_as_closed_not_accumulated(self) -> None:
+        """BG0188: a run whose Sprint Goal was JUDGED (verdict recorded) but whose outcome
+        was never finalised to a terminal string stays `running`. The next `open_run` must
+        NOT accumulate the new batch onto that judged run - it would reuse the old id and
+        clobber the recorded verdict. A judged run is history regardless of the outcome
+        string: `open_run` mints a fresh run."""
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            first = run_state.open_run(root, batch=["US0001", "US0002"], goal="done")
+            run_state.update(root, sprint_goal_verdict={"verdict": "achieved", "note": "ok"})
+            fresh = run_state.open_run(root, batch=["US0009"], goal="done")
+            self.assertNotEqual(fresh["run_id"], first["run_id"])
+            self.assertEqual(fresh["batch"], ["US0009"])          # not the union
+            self.assertIsNone(fresh.get("sprint_goal_verdict"))   # the judged verdict did not leak
+
+    def test_a_run_carrying_a_close_artefact_but_running_is_treated_as_closed(self) -> None:
+        """BG0188, the wider guard: `ended_at` or a `handoff` recorded while outcome is still
+        `running` is the same inconsistent state - a close that stamped its artefacts but did
+        not finalise the outcome. Any of them means the run is spent; `open_run` mints fresh."""
+        for artefact in ({"ended_at": "2026-07-17T00:00:00Z"}, {"handoff": "HO-0001"}):
+            with tempfile.TemporaryDirectory() as t:
+                root = Path(t)
+                first = run_state.open_run(root, batch=["US0001"], goal="done")
+                run_state.update(root, **artefact)
+                fresh = run_state.open_run(root, batch=["US0009"], goal="done")
+                self.assertNotEqual(fresh["run_id"], first["run_id"],
+                                    f"a run carrying {artefact} must not be reopened")
+                self.assertEqual(fresh["batch"], ["US0009"])
+
+    def test_a_clean_running_run_still_accumulates(self) -> None:
+        """The guard is narrow: a genuinely-open run (no close artefact) still re-plans in
+        place and accumulates - BG0188 must not break the cumulative-batch invariant."""
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            first = run_state.open_run(root, batch=["US0001"], goal="done")
+            again = run_state.open_run(root, batch=["US0002"], goal="done")
+            self.assertEqual(again["run_id"], first["run_id"])
+            self.assertEqual(again["batch"], ["US0001", "US0002"])
+
     def test_parallel_updates_never_lose_a_key(self) -> None:
         """F3: `update` was an unlocked read-modify-write, and concurrent writers lost keys.
         The appetite breaker's spend counter will be a read-increment-write on this object -

@@ -1,8 +1,9 @@
 # BG0188: sprint plan --write accumulates a new batch into a prior run left outcome=running, reusing its id and clobbering its verdict
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
+> **Verification depth:** functional (unit: a judged run left `outcome=running` is minted fresh, not accumulated; the verdict does not leak; a clean running run still accumulates)
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/sprint.py
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio file
