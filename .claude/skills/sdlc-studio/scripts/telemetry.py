@@ -678,14 +678,45 @@ def _int(v):
         return None
 
 
+def parse_attempts(pairs: list[str] | None, blob: str | None) -> list[dict] | None:
+    """The per-attempt list a writer supplies, as `[{model, tokens}, ...]` in order, or None
+    when neither form was given. Two writer forms, one shape - the escalation the loop records is
+    a cheap-first attempt re-run on a dearer model, and `attempts_of`/`unit_cost` read exactly this.
+
+      --attempt haiku:1000  (repeatable, MODEL:TOKENS, order preserved)
+      --attempts '[{"model": "haiku", "tokens": 1000}, ...]'  (JSON, for a structured caller)
+
+    Refuses a malformed entry loudly (ValueError) rather than dropping it: a silently discarded
+    attempt is exactly the true-cost blind spot BG0152 exists to close."""
+    out: list[dict] = []
+    for pair in pairs or []:
+        model, sep, tok = str(pair).rpartition(":")
+        if not sep or not model.strip() or _int(tok) is None:
+            raise ValueError(f"--attempt expects MODEL:TOKENS, got {pair!r}")
+        out.append({"model": model.strip(), "tokens": _int(tok)})
+    if blob:
+        try:
+            loaded = json.loads(blob)
+        except ValueError as exc:
+            raise ValueError(f"--attempts expects a JSON list, got {blob!r}: {exc}") from exc
+        if not isinstance(loaded, list):
+            raise ValueError(f"--attempts expects a JSON list, got {type(loaded).__name__}")
+        for a in loaded:
+            if not isinstance(a, dict) or (a.get("model") is None and a.get("tokens") is None):
+                raise ValueError(f"--attempts entry needs a model and/or tokens, got {a!r}")
+            out.append({"model": a.get("model"), "tokens": _int(a.get("tokens"))})
+    return out or None
+
+
 def cmd_record(args: argparse.Namespace) -> int:
+    attempts = parse_attempts(getattr(args, "attempt", None), getattr(args, "attempts", None))
     fields = {"id": args.id, "type": args.type, "iterations": _int(args.iterations),
               "wall_time_s": _int(args.wall_time_s), "stages": args.stages,
               "critic_verdict": args.verdict, "complexity": _int(args.complexity),
               "churn": _int(args.churn), "reopened": args.reopened, "tokens": _int(args.tokens),
               "tier_recommended": args.tier_recommended,
               "tier_delivered": args.tier_delivered,
-              "model": args.model, "escalated": args.escalated}
+              "model": args.model, "escalated": args.escalated, "attempts": attempts}
     rec = record(args.root, fields)
     print(json.dumps(rec) if args.format == "json" else f"recorded {rec.get('id', '?')}")
     return 0
@@ -888,6 +919,13 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--tier-recommended", dest="tier_recommended")
     r.add_argument("--tier-delivered", dest="tier_delivered")
     r.add_argument("--model"); r.add_argument("--escalated")
+    r.add_argument("--attempt", action="append", metavar="MODEL:TOKENS",
+                   help="one model invocation on this unit, e.g. haiku:1000. Repeatable and "
+                        "ORDER-PRESERVING: a cheap-first unit that escalated records both "
+                        "attempts, and the true cost is their SUM (unit_cost), not the last line")
+    r.add_argument("--attempts", metavar="JSON",
+                   help="the per-attempt list as a JSON array of {model, tokens} - the "
+                        "structured form of --attempt for a caller that already holds the list")
     r.add_argument("--root", default="."); r.add_argument("--format", choices=("text", "json"), default="text")
     r.set_defaults(func=cmd_record)
     f = sub.add_parser("forecast", help="Record one plan-time token forecast (the estimate side "

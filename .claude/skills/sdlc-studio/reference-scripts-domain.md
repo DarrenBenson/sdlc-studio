@@ -93,6 +93,16 @@ with only the flat `model`/`tokens` reads as ONE implicit attempt, so no migrati
 `pricing.<family>` from `.config.yaml` (offline, no network) or a rough ESTIMATE default, and reports
 a model with no price as UNPRICED - its tokens counted, its dollars never guessed.
 
+**Recording an escalation (the writer side).** An attempts list is WRITTEN by two paths, both
+order-preserving. Directly: `record --attempt haiku:1000 --attempt opus:5000` (repeatable
+`MODEL:TOKENS`) or `record --attempts '[{"model": "haiku", "tokens": 1000}, ...]'` (the JSON form for
+a caller that already holds the list; a malformed entry is refused, never dropped). Through the close
+path, so the loop's own unit close records the escalation it just ran: `transition set --status
+Closed --attempt haiku:1000 --attempt opus:5000` threads the list (plus `--tokens`/`--model`) onto the
+same terminal-close telemetry event. A cheap-first unit that escalated therefore records both models
+and `unit_cost` sums them - a flat `--tokens` cannot express that the cheap-first choice was not
+cheap.
+
 ### `sprint_report.py`
 
 The end-of-sprint report: what a sprint delivered, what it cost, and whether the estimate held.

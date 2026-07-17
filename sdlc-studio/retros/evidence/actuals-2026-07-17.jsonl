@@ -25,3 +25,4 @@
 {"id": "RFC0043", "type": "rfc", "project": "sdlc-studio"}
 {"id": "CR0318", "type": "cr", "project": "sdlc-studio"}
 {"id": "RFC0044", "type": "rfc", "project": "sdlc-studio"}
+{"id": "BG0152", "type": "bug", "model": "claude-opus-4-8", "project": "sdlc-studio"}

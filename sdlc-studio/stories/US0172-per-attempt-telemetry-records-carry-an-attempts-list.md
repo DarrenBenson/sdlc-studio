@@ -24,8 +24,17 @@
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_telemetry.py -k AttemptsAndCost
 - **Verified:** yes (2026-07-16)
 
+### AC2: the writer path exists and records an escalation (not only the reader)
+
+- **Given** the record CLI and the `transition set` close path
+- **When** an escalation is recorded via `record --attempt MODEL:TOKENS` / `--attempts JSON`, or threaded through a terminal close
+- **Then** the resulting record carries the ordered `attempts` list and `unit_cost` sums the true cost - so the reader is fed by a real writer, not only tests (BG0152)
+- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_telemetry.py -k attempts
+- **Verified:** yes (2026-07-17)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-16 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-17 | sdlc-studio | AC2 added: writer path (record/transition `--attempt`) closes US0172's reader-only gap (BG0152) |

@@ -629,6 +629,16 @@ def cmd_set(args: argparse.Namespace) -> int:
             print("error: reviewer == author - independence is the floor; a self-review "
                   "never clears the critiqued gate, so nothing was written", file=sys.stderr)
             return 2
+    # Parse the per-attempt list ONCE, up front: a malformed --attempt is a usage error, not a
+    # per-id block, so it must fail fast (rc 2) before any id is touched, not be caught and
+    # re-reported once per id inside the loop.
+    import telemetry
+    try:
+        attempts = telemetry.parse_attempts(getattr(args, "attempt", None),
+                                            getattr(args, "attempts", None))
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     results = []
     refused = 0
     for aid in ids:
@@ -648,6 +658,9 @@ def cmd_set(args: argparse.Namespace) -> int:
                 critic.record_verdict(args.root, aid, args.verdict, reviewer, author)
             metrics = {k: v for k, v in {"iterations": _num(args.iterations),
                                          "wall_time_s": _num(args.wall_time_s),
+                                         "tokens": _num(getattr(args, "tokens", None)),
+                                         "model": getattr(args, "model", None),
+                                         "attempts": attempts,
                                          "critic_verdict": args.verdict}.items() if v is not None}
             res = transition(args.root, aid, args.status, dry_run=args.dry_run,
                              force=args.force, metrics=metrics,
@@ -692,6 +705,17 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--root", default=".")
     s.add_argument("--iterations", help="run metric passed to the terminal-close telemetry event")
     s.add_argument("--wall-time-s", dest="wall_time_s", help="run metric for the telemetry event")
+    s.add_argument("--tokens", help="run metric: total tokens the unit cost, on the telemetry event")
+    s.add_argument("--model", help="run metric: the model that delivered the unit (stamped on the "
+                                   "artefact and the telemetry event)")
+    s.add_argument("--attempt", action="append", metavar="MODEL:TOKENS",
+                   help="one model invocation on this unit, e.g. haiku:1000. Repeatable and "
+                        "order-preserving - a close that ESCALATED (cheap model rejected, "
+                        "re-run on a dearer one) records every attempt, so the true cost is "
+                        "their sum, not the final line. Threaded to the telemetry close event")
+    s.add_argument("--attempts", metavar="JSON",
+                   help="the per-attempt list as a JSON array of {model, tokens} - the structured "
+                        "form of --attempt for a caller that already holds the list")
     s.add_argument("--verdict", help="critic verdict recorded on the telemetry event (and, with "
                                      "--reviewer/--author, in the critic log)")
     s.add_argument("--depth", help="one-call close: stamp `Verification depth` with this value "

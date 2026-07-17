@@ -573,6 +573,33 @@ class TelemetryOnCloseTests(unittest.TestCase):
             self.assertEqual(recs[0]["iterations"], 2)
             self.assertEqual(recs[0]["critic_verdict"], "approve")
 
+    def test_close_threads_attempts_to_telemetry(self) -> None:
+        # BG0152: a close that escalated must record every attempt through the SAME close
+        # path, so unit_cost sums the true cost. Before the fix the metrics dict dropped
+        # attempts/tokens/model entirely and every escalation landed as a flat record.
+        import telemetry as tel
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bug(Path(d))
+            rc_ = tr.main(["set", "--id", "BG0001", "--status", "Closed",
+                           "--root", str(root),
+                           "--attempt", "haiku:1000", "--attempt", "opus:5000"])
+            self.assertEqual(rc_, 0)
+            rec = self._records(root)[0]
+            self.assertEqual(rec["attempts"],
+                             [{"model": "haiku", "tokens": 1000},
+                              {"model": "opus", "tokens": 5000}])
+            self.assertEqual(tel.unit_cost(root, rec)["tokens"], 6000)  # summed, not last-line
+
+    def test_malformed_attempt_fails_fast_and_writes_nothing(self) -> None:
+        # A bad --attempt is a usage error (rc 2), refused before any id is touched -
+        # never caught and re-reported once per id, never a partial write.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._bug(Path(d))
+            rc_ = tr.main(["set", "--id", "BG0001", "--status", "Closed",
+                           "--root", str(root), "--attempt", "no-tokens-here"])
+            self.assertEqual(rc_, 2)
+            self.assertEqual(self._records(root), [])
+
 
 class HonestSyncTests(unittest.TestCase):
     """index_synced reflects the real post-transition state (critic CR0042)."""

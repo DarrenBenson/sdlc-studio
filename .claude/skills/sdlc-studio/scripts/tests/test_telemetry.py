@@ -182,6 +182,39 @@ class TierFieldsTests(unittest.TestCase):
             recs = tel.read_all(d)
             self.assertEqual(recs[0]["tier_delivered"], "small")
 
+    def test_cli_record_accepts_attempts_writer(self) -> None:
+        # BG0152: the record CLI must be able to WRITE a per-attempt list, not only the
+        # reader (attempts_of) being able to read one. A cheap-first unit that escalated
+        # carries both attempts, and unit_cost sums them - flat --tokens cannot express it.
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = tel.main(["record", "--id", "US0001", "--type", "story",
+                               "--attempt", "haiku:1000", "--attempt", "opus:5000",
+                               "--root", d])
+            self.assertEqual(rc, 0)
+            rec = tel.read_all(d)[0]
+            self.assertEqual(rec["attempts"],
+                             [{"model": "haiku", "tokens": 1000},
+                              {"model": "opus", "tokens": 5000}])
+            self.assertEqual(tel.attempts_of(rec),
+                             [{"model": "haiku", "tokens": 1000},
+                              {"model": "opus", "tokens": 5000}])
+
+    def test_cli_record_accepts_attempts_json(self) -> None:
+        # BG0152: a JSON form for callers that already hold the structured list.
+        import contextlib, io
+        with tempfile.TemporaryDirectory() as d:
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = tel.main(["record", "--id", "US0002", "--type", "story",
+                               "--attempts",
+                               json.dumps([{"model": "sonnet", "tokens": 2000}]),
+                               "--root", d])
+            self.assertEqual(rc, 0)
+            self.assertEqual(tel.read_all(d)[0]["attempts"],
+                             [{"model": "sonnet", "tokens": 2000}])
+
     def test_summary_groups_per_delivered_tier(self) -> None:
         rows = [
             {"id": "A", "type": "story", "critic_verdict": "approve",

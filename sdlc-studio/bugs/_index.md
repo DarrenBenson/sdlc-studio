@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 29 |
+| Open | 28 |
 | In Progress | 0 |
-| Fixed | 70 |
+| Fixed | 71 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -118,7 +118,7 @@
 | [BG0149](BG0149-artifact-py-silently-drops-points-on-a-story.md) | artifact.py silently drops --points on a story, so the canonical creator makes a story the grooming gate always rejects | Fixed | major | 2026-07-15 | 2026-07-15 |
 | [BG0150](BG0150-project-upgrade-does-not-stamp-the-project-version.md) | project upgrade does not stamp the project version and skips open RFCs/CRs/epics/stories | Fixed | Medium | 2026-07-15 | 2026-07-15 |
 | [BG0151](BG0151-discovery-awaiting-and-migrate-falsely-flag-old-flow.md) | discovery_awaiting and migrate falsely flag old-flow CRs as un-refined - children_of ignores the legacy Change Request / Linked Epics linking | Fixed | High | 2026-07-15 | 2026-07-15 |
-| [BG0152](BG0152-per-attempt-telemetry-has-no-production-writer-neither.md) | Per-attempt telemetry has no production writer: neither the record CLI nor the transition close can produce an attempts list | Open | High | 2026-07-16 | 2026-07-16 |
+| [BG0152](BG0152-per-attempt-telemetry-has-no-production-writer-neither.md) | Per-attempt telemetry has no production writer: neither the record CLI nor the transition close can produce an attempts list | Fixed | High | 2026-07-16 | 2026-07-16 |
 | [BG0153](BG0153-latest-actuals-last-non-null-merge-garbles-multi.md) | latest_actuals' last-non-null merge garbles multi-record cost: a reopen-reclose second record overwrites the first cycle's tokens, and a merged flat+attempts bucket makes accuracy() and unit_cost() disagree | Open | High | 2026-07-16 | 2026-07-16 |
 | [BG0154](BG0154-decisions-py-rewrites-the-committed-decisions-ledger-with.md) | decisions.py rewrites the committed decisions ledger with no allocation lock and no atomic write, violating both halves of the TRD's shared-file guarantee | Open | High | 2026-07-16 | 2026-07-16 |
 | [BG0155](BG0155-a-corrupt-close-owed-baseline-json-silently-disarms.md) | A corrupt .close-owed-baseline.json silently disarms the entire 'un-skippable' close-down and every surface then invites re-stamping a baseline that forgives the owed debt | Open | High | 2026-07-16 | 2026-07-16 |

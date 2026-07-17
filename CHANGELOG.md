@@ -556,6 +556,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The 2026-07-16 audit backlog (RUN-01KXQH64, the audit-backlog sprint).**
+  - **BG0152:** per-attempt telemetry now has a production WRITER, not only a reader. `telemetry
+    record` takes `--attempt MODEL:TOKENS` (repeatable, order-preserving) and `--attempts JSON`, and
+    `transition set` threads the same list (plus `--tokens`/`--model`) onto the terminal-close event -
+    so a unit that escalated records every attempt and `unit_cost` sums the true cost, instead of every
+    escalation degenerating to one flat line. A malformed `--attempt` is refused, never dropped.
+    US0172 gains AC2 (the writer path) to close its reader-only verification gap. Documented in
+    `reference-scripts-domain.md`.
+
 - **Four integrity fixes cleared the delivery backlog (BG0142, BG0144, BG0145, BG0146).**
   - **BG0142:** `reconcile._link_exists` dropped the type-dir fallback for an archive row link - it
     now resolves only file-relative, agreeing with `check_links` (BG0137). Two guards no longer
