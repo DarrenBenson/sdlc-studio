@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 3 |
 | Approved | 0 |
 | In Progress | 35 |
 | Complete | 288 |
@@ -14,7 +14,7 @@
 | Deferred | 5 |
 | Superseded | 13 |
 | Blocked | 0 |
-| **Total** | **342** |
+| **Total** | **344** |
 
 ## All Changes
 
@@ -164,6 +164,8 @@
 | [CR-0340](CR0340-gate-track-test-suite-runtime-warn-before-a.md) | Gate: track test-suite runtime, warn before a long run, and skip the unit suite for test-irrelevant changes | In Progress | Medium | Improvement | 2026-07-17 | -- |
 | [CR-0341](CR0341-close-review-current-distinguish-a-freshly-written-but.md) | Close review-current: distinguish a freshly-written-but-uncommitted LATEST.md from a stale one | Superseded | Low | Improvement | 2026-07-17 | -- |
 | [CR-0342](CR0342-refine-s-draft-story-output-cannot-pass-the.md) | refine's Draft-story output cannot pass the pre-commit gate: validate flags seeded placeholder ACs as errors regardless of status | Proposed | Medium | Improvement | 2026-07-17 | -- |
+| [CR-0343](CR0343-refine-apply-add-should-read-a-breakdown-from.md) | refine apply/add should read a breakdown from a file, not only repeated --story CLI args | Proposed | Low | Improvement | 2026-07-17 | -- |
+| [CR-0344](CR0344-pre-commit-gate-lanes-are-whole-workspace-so.md) | Pre-commit gate lanes are whole-workspace, so pre-existing backlog debt blocks every unrelated commit | Proposed | Low | Improvement | 2026-07-17 | -- |
 
 ## Archived Releases
 
