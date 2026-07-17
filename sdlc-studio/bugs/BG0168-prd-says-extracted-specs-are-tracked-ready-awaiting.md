@@ -1,12 +1,14 @@
 # BG0168: PRD says extracted specs are tracked 'Ready (awaiting test validation)' and the epic index's note says 'all epics are Ready' directly above 48 Done rows
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** sdlc-studio/prd.md, sdlc-studio/epics/_index.md
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 adversarial audit; agent; wf_9903a6e6-53a
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

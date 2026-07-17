@@ -1,12 +1,14 @@
 # BG0173: Refute-panel verdicts silently count failed skeptic votes as refutations - an outage mid-panel mass-refutes candidates and the audit reports the wrong survivor set as complete
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/reference-audit.md, .claude/skills/sdlc-studio/templates/automation/audit-refute.md
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5; agent; audit-process-retro wf_9903a6e6-53a
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

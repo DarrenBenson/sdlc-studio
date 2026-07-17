@@ -1,12 +1,14 @@
 # BG0163: sprint plan's triage integration discards the skipped/unreadable count - a dropped backlog file is silent in the ceremony whose story title promises 'drops logged'
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 adversarial audit; agent; wf_9903a6e6-53a
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

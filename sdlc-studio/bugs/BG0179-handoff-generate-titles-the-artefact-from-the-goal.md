@@ -1,12 +1,14 @@
 # BG0179: handoff generate titles the artefact from the goal sentence verbatim and fails MD026
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/handoff.py
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

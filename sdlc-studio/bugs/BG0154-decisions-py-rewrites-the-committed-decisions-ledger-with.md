@@ -1,12 +1,14 @@
 # BG0154: decisions.py rewrites the committed decisions ledger with no allocation lock and no atomic write, violating both halves of the TRD's shared-file guarantee
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/decisions.py, sdlc-studio/trd.md
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 adversarial audit; agent; wf_9903a6e6-53a
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

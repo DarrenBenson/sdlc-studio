@@ -1,12 +1,14 @@
 # BG0167: The eval gate's 'an ungraded blocking behaviour fails the gate' only sees scenarios someone started grading - a wholly-ungraded scenario is invisible and the run prints 'gate pass'
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** tools/eval_run.py, sdlc-studio/tsd.md
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 adversarial audit; agent; wf_9903a6e6-53a
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

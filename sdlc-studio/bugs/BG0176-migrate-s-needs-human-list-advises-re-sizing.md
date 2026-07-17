@@ -1,12 +1,14 @@
 # BG0176: migrate's needs-human list advises re-sizing terminal units: 14+ Closed/Fixed legacy-Effort bugs each get 'set its Points by judgement', work nobody should do
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/migrate.py, .claude/skills/sdlc-studio/scripts/migrate_v3.py
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5; agent; dogfood retro 2026-07-16
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

@@ -1,12 +1,14 @@
 # BG0157: Breakdown-gate AC in PRD and TRD enumerates size vocabularies the gate does not accept (Effort S/M/L, review-seat score)
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** sdlc-studio/prd.md, sdlc-studio/trd.md
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 adversarial audit; agent; wf_9903a6e6-53a
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

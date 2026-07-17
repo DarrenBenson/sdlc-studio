@@ -1,12 +1,14 @@
 # BG0155: A corrupt .close-owed-baseline.json silently disarms the entire 'un-skippable' close-down and every surface then invites re-stamping a baseline that forgives the owed debt
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/close_owed.py, .claude/skills/sdlc-studio/hooks/close_guard.py, .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/status.py
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 adversarial audit; agent; wf_9903a6e6-53a
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

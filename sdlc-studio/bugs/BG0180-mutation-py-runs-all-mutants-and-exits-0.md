@@ -1,12 +1,14 @@
 # BG0180: mutation.py runs all mutants and exits 0 after a red baseline
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

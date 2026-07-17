@@ -590,6 +590,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **BG0181:** retro `accuracy` reads only the delivery units before the batch line's provenance
     parenthetical, so the `(EPxxxx-EPyyyy, from CR.../RFC...)` mentions stop padding the UNFORECAST
     list.
+  - **BG0154:** `decisions.py` ledger writes are atomic and lock-guarded - concurrent `decisions
+    add` no longer mint a duplicate D-id and a crash mid-write no longer truncates the ledger.
+  - **BG0155:** a corrupt close-down baseline is a loud refusal, not a silent disarm - `owed()`
+    reports `corrupt`, the close-owed detect exits non-zero, the close guard blocks, `gate
+    --require-close` fails and the status advisory surfaces it, all directing repair over re-stamp.
+  - **BG0156:** the PRD data model records run telemetry as committed `retros/evidence/` JSONL, not
+    a `.local/telemetry.jsonl` (spec-rot corrected).
+  - **BG0157:** the breakdown-gate AC in the PRD and TRD states the real sizing - a story/bug by
+    `Points:`, a CR/RFC/epic by a T-shirt `Size:` - dropping the retired Effort S/M/L.
+  - **BG0166:** all three retro/lessons close lanes honour `lessons.loop: judgement` through a
+    shared helper, so the opt-out makes the whole set advisory as the docs promised (two were
+    hard-coded blocking).
+  - **BG0168:** the PRD status line and epic index record the verified 2026-07-09 Ready->Done
+    close-out instead of the stale "all epics are Ready" note.
+  - **BG0171:** the `--require-close` help no longer falsely claims the lane WARNS on every gate -
+    it is bound to the flag; the plain gate never runs it.
+  - **BG0162:** the TSD states the real test-coverage contract (a dedicated `test_<name>.py` by
+    convention; named indirect coverage; the currently-untested scripts), not a phantom per-script
+    build gate that never existed.
+  - **BG0167:** the eval gate enumerates every scenario on disk, so a wholly-ungraded scenario
+    fails the gate (UNGRADED) instead of vanishing from `data.items()` and reading as a pass.
+  - **BG0170:** the TSD gate-lane tables match `gate.py` - `doc-freshness`/`hook-enabled` marked
+    advisory, the `--require-close` bound lane and the two-leg `--release` binding recorded.
+  - **BG0161:** RFC0018/0022/0023 record their accepted decision outcomes (per decisions D0002/
+    D0004/D0010) rather than sitting Open with contradicting leanings.
+  - **BG0163:** `sprint` batch-triage reports unreadable backlog artefacts as drops ("N
+    unreadable - not triaged") instead of an unreadable file reading as a clean plan.
+  - **BG0169:** CR0273 carries `Superseded-by: RFC0035` and RFC0035 records that it absorbs it.
+  - **BG0172:** the test-specs index carries real coverage figures and an honest
+    script-suite-is-the-validation-leg note, not a misleading empty shell.
+  - **BG0173:** the audit refute panel has a quorum rule - a dead skeptic vote is never a
+    refutation, an incomplete panel is UNJUDGED, and the report fails loud with an unjudged count.
+  - **BG0174:** the `audit` command has a `help/audit.md`, a SKILL.md Type-Reference row and a
+    `help/help.md` catalogue entry (it was catalogued nowhere; the doc-coverage floor requires
+    both the Type Reference and the help catalogue).
+  - **BG0175:** the review-meta scaffold stamps `Raised-by` and a real revision-row author from
+    `--author` instead of leaving a literal `{{author}}`.
+  - **BG0176:** `migrate` no longer advises re-sizing terminal legacy-Effort units - they become a
+    one-line `terminal_sized` count, not work nobody should do.
+  - **BG0178 / BG0179:** `refine`'s seeded AC headings and `handoff`'s goal-derived H1 strip
+    trailing punctuation (no MD026).
+  - **BG0180:** `mutation` refuses on a red or broken baseline (no mutant applied, `refused` +
+    remedy in the report, non-zero exit) and restores any applied mutant on SIGTERM/atexit, instead
+    of "applying" every mutant against a red baseline and possibly exiting 0.
 
 - **Four integrity fixes cleared the delivery backlog (BG0142, BG0144, BG0145, BG0146).**
   - **BG0142:** `reconcile._link_exists` dropped the type-dir fallback for an archive row link - it

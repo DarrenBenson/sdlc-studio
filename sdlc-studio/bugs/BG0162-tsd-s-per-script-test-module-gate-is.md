@@ -1,12 +1,14 @@
 # BG0162: TSD's per-script test-module gate is a phantom: no conformance sweep exists, and the invariant it claims to enforce is already violated by six modules
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** sdlc-studio/tsd.md, .claude/skills/sdlc-studio/scripts/conformance.py
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 adversarial audit; agent; wf_9903a6e6-53a
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

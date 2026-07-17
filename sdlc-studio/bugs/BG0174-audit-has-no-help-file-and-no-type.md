@@ -1,12 +1,14 @@
 # BG0174: audit has no help file and no Type Reference row - the universal '{type} help' contract 404s for the one command with a mandatory pre-flight gate
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/help/, .claude/skills/sdlc-studio/SKILL.md
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5; agent; audit-process-retro wf_9903a6e6-53a
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

@@ -1,12 +1,14 @@
 # BG0172: test-specs/_index.md's 'Epics without specs' section is blank while 46 of 48 epics have no spec, and its Coverage/By-Test-Type tables are empty header-only shells
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** sdlc-studio/test-specs/_index.md
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 adversarial audit; agent; wf_9903a6e6-53a
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

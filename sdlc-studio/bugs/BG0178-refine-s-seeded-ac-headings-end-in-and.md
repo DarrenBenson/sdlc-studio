@@ -1,12 +1,14 @@
 # BG0178: refine's seeded AC headings end in '...' and fail markdownlint MD026
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/refine.py
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

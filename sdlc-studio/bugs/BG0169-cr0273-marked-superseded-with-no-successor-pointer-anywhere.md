@@ -1,12 +1,14 @@
 # BG0169: CR0273 marked Superseded with no successor pointer anywhere in the artefact graph
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** sdlc-studio/change-requests/CR0273-track-points-per-worker-hour-as-a-descriptive.md, sdlc-studio/rfcs/RFC0035-the-sprint-report-what-a-sprint-delivered-what.md
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 adversarial audit; agent; wf_9903a6e6-53a
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

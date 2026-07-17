@@ -1,12 +1,14 @@
 # BG0166: ADR-010's documented opt-out lessons.loop: judgement disarms only one of the three close lanes it claims to make advisory - lessons-summary and lessons-validity block regardless
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, sdlc-studio/trd.md, sdlc-studio/prd.md, .claude/skills/sdlc-studio/reference-config.md
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 adversarial audit; agent; wf_9903a6e6-53a
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

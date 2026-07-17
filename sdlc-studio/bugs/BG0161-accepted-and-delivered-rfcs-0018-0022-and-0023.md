@@ -1,12 +1,14 @@
 # BG0161: Accepted-and-delivered RFCs 0018, 0022 and 0023 still list every design decision as Open, with leanings contradicting the recorded outcomes and no Decision sections
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** sdlc-studio/rfcs/RFC0018-self-check-candidates-vocabulary-consistency-verb-taxonomy-and.md, sdlc-studio/rfcs/RFC0022-portable-mutation-check-gate-fault-injection-across-languages.md, sdlc-studio/rfcs/RFC0023-a-tolerant-convention-layer-retire-the-exact-string.md
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 adversarial audit; agent; wf_9903a6e6-53a
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

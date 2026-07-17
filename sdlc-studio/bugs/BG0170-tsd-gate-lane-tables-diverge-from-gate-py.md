@@ -1,12 +1,14 @@
 # BG0170: TSD gate lane tables diverge from gate.py: doc-freshness and hook-enabled marked Blocking=Yes (both hard-coded advisory), and the shipped close-owed and review-legs lanes are missing entirely
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** sdlc-studio/tsd.md
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 adversarial audit; agent; wf_9903a6e6-53a
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

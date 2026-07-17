@@ -1,12 +1,14 @@
 # BG0175: artifact.py's review/handoff scaffold path drops --author: literal {{author}} in the revision row and no Raised-by stamp, unlike every other type
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5; agent; dogfood retro 2026-07-16
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 
