@@ -39,6 +39,7 @@ ALLOWLIST = {
     "reference-outputs.md": 781,  # +RFC0012 index-archival + slice-read conventions (CR0041)
     "reference-decisions.md": 724,
     "reference-test-best-practices.md": 706,  # +assertion-integrity + mutation-check section (CR0131)
+    "reference-config.md": 611,  # +two-backlog enforcement key (gate-bearing) documented (US0204)
 }
 
 

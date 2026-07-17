@@ -48,6 +48,33 @@ class RecordTests(unittest.TestCase):
             mod.record_verdict(root, "US0017", "approve", author="builder", issues="a | b")
             self.assertEqual(len(mod.read_verdicts(root)), 1)
 
+    def test_torn_row_surfaces_a_warning_not_silent_drop(self) -> None:
+        # A crash mid-append can leave a truncated row in the append-only log. Such a
+        # row must be REPORTED, not silently swallowed - a dropped verdict a gate then
+        # reads as "no verdict" is a false signal. The well-formed rows still parse.
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            mod = _load()
+            path = mod.verdicts_path(d)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                "# Critic Verdicts\n\n"
+                "| Unit | Verdict | Reviewer | Author | Date | Issues |\n"
+                "| --- | --- | --- | --- | --- | --- |\n"
+                "| US0001 | APPROVE | critic | builder | 2026-01-01 | - |\n"
+                "| US0002 | APPROVE | critic |\n"  # torn: interrupted mid-write, 3 cells
+                "| US0003 | APPROVE | critic | builder | 2026-01-02 | - |\n",
+                encoding="utf-8")
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                rows = mod.read_verdicts(d)
+            self.assertIn("US0002", err.getvalue())  # the torn row is named, not silent
+            self.assertRegex(err.getvalue(), r"(?i)malformed")
+            units = [r["unit"] for r in rows]
+            self.assertIn("US0001", units)  # well-formed rows still parse
+            self.assertIn("US0003", units)
+
 
 class CliTests(unittest.TestCase):
     def test_cli_record(self) -> None:

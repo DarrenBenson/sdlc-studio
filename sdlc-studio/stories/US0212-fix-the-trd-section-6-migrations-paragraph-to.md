@@ -10,25 +10,25 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** engineer reading §6 Migrations
+**I want** the shipped migration script surface named and reconciled with SKILL.md's type table
+**So that** the paragraph stops claiming migration is doc-only when migrate.py/project_upgrade.py/migrate_v3.py exist
 
 ## Acceptance Criteria
 
 ### AC1: §6 Migrations names the shipped script surface (migrate.py orchestrator, `project_upgrade.py`
 
-- **Given** {{context}}
-- **When** {{action}}
+- **Given** §6 Migrations said schema migration is "handled by reference-upgrade.md ... not by the script layer", contradicting the shipped scripts
+- **When** the paragraph names migrate.py (orchestrator), project_upgrade.py (`--apply` safe set) and migrate_v3.py, alongside reference-upgrade.md
 - **Then** §6 Migrations names the shipped script surface (migrate.py orchestrator, `project_upgrade.py` --apply safe set, `migrate_v3.py)` alongside reference-upgrade.md
-- **Verify:** {{executable check}}
+- **Verify:** grep -E "project_upgrade.py. migrates a consuming project" sdlc-studio/trd.md
 
 ### AC2: The upgrade-vs-migrate type naming is reconciled with SKILL.md's type table
 
-- **Given** {{context}}
-- **When** {{action}}
+- **Given** the paragraph blurred `upgrade` (the operator-facing type in SKILL.md's table) with `migrate` (the orchestrator command)
+- **When** it states the operator-facing surface is the `upgrade` type per SKILL.md's table, with migrate.py/project_upgrade.py/migrate_v3.py as the scripts under it
 - **Then** The upgrade-vs-migrate type naming is reconciled with SKILL.md's type table
-- **Verify:** {{executable check}}
+- **Verify:** grep -E "operator-facing surface is the .upgrade. type" sdlc-studio/trd.md
 
 ## Revision History
 

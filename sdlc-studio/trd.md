@@ -60,8 +60,10 @@ each project's TRD).
   from model judgement; escapes are recorded, and an absent config blocks rather
   than disarms. (ADR-006, and its four v4 instances: ADR-007 the engagement floor,
   ADR-010 the learning loop, ADR-011 the breakdown gate)
-- Artefact identity is distributed: collision-free ULID ids let uncoordinated
-  writers file concurrently, with the sequential era kept valid forever. (ADR-008)
+- Artefact identity is distributed: collision-resistant short-ULID ids let
+  uncoordinated writers file concurrently, with the sequential era kept valid
+  forever. The entropy tail makes a same-window clash improbable, not impossible;
+  a merge-time detector is the cross-machine backstop. (ADR-008)
 - The engineering team is generated per project rather than shipped as a fixed
   cast. (ADR-009)
 
@@ -119,14 +121,14 @@ ADR-002.
 | Component | Responsibility | Technology |
 | --- | --- | --- |
 | `SKILL.md` router | Always-loaded entry point: philosophy gates, type table, Progressive Loading Guide, the Deterministic Entry Points card, pointers. ~260 lines (CI-budgeted under 500), the only file paid for every invocation. | Markdown + YAML frontmatter |
-| `help/*.md` (41 files) | Type-specific command help, prerequisites, output, examples; loaded on demand per `[type]`. | Markdown |
-| `reference-*.md` (52 files) | Step-by-step workflow detail per domain; loaded only for multi-step workflows. Each is line-budgeted. | Markdown |
-| `templates/` (78 files) | Document and code templates with `{{placeholder}}` syntax; loaded only when creating artifacts. Includes the persona/seat and stakeholder card schemas. | Markdown / text |
-| `best-practices/` (20 files) | Quality guidelines consulted before producing artifacts. | Markdown |
+| `help/*.md` (40+ files) | Type-specific command help, prerequisites, output, examples; loaded on demand per `[type]`. | Markdown |
+| `reference-*.md` (50+ files) | Step-by-step workflow detail per domain; loaded only for multi-step workflows. Each is line-budgeted. | Markdown |
+| `templates/` (80+ files) | Document and code templates with `{{placeholder}}` syntax; loaded only when creating artifacts. Includes the persona/seat and stakeholder card schemas. | Markdown / text |
+| `best-practices/` (~20 files) | Quality guidelines consulted before producing artifacts. | Markdown |
 | `lessons/` | Cross-project lessons registry (`_index.md`, `LL{NNNN}-*.md`), ranked and printed into every sprint plan (ADR-010). | Markdown |
-| `scripts/` (58 scripts) | Deterministic Python helpers emitting JSON. The read path is read-only; a bounded, tested set writes artefacts, indexes and gate state (see §5 rule 5). | Python 3.10+ stdlib |
+| `scripts/` (60+ scripts) | Deterministic Python helpers emitting JSON. The read path is read-only; a bounded, tested set writes artefacts, indexes and gate state (see §5 rule 5). | Python 3.10+ stdlib |
 | `scripts/lib/` (6 modules) | Shared library. `sdlc_md.py` is the parsing core and the single source of truth for markdown conventions; `conventions.py`, `xrepo.py` and the rest carry per-domain shared logic. | Python 3.10+ stdlib |
-| `scripts/tests/` (76 modules) | Unit tests for the script layer; 2151 tests at the time of writing. The repo-only `tools/` checkers have their own suite under `tools/tests/`. | `unittest` |
+| `scripts/tests/` (90+ modules) | Unit tests for the script layer; well over 2,500 tests at the time of writing. Exact figures are counted, not pinned here; the freshness guard checks the enumerated count only in `reviews/LATEST.md`. The repo-only `tools/` checkers have their own suite under `tools/tests/`. | `unittest` |
 | `tools/` | Repo CI guards (style, links, skill frontmatter, versions, budgets, neutrality, action pins) plus the eval runner. Not part of the shipped payload. | Python / Bash |
 | `install.sh` / `install.ps1` | Cross-harness installers for six targets. | Bash / PowerShell |
 
@@ -152,12 +154,14 @@ scaling property of the design.
 | Python script tier | Determinism: census, parsing, counting, ID allocation, drift detection, AC execution, repo indexing, GitHub sync. | Tested code |
 
 The split rule (`reference-scripts.md`): read-only helpers (`reconcile detect`,
-`status`, `validate`, `next_id`, `review_prep`, `audit`, `critic`, `gate`) emit JSON
-and the agent does the judgement; the authoring and repair helpers (`artifact`,
-`file_finding`, `transition`, `reconcile apply`, `verify_ac`, `repo_map`,
-`github_sync`, `plan`, `lessons`, `retro`, `archive`) perform bounded, tested
-mutations. Everything else (reading files, walking directories, simple transforms)
-stays with the agent's built-in tools.
+`status`, `validate`, `next_id`, `review_prep`, `audit`, `critic brief`/`show`,
+`gate`) emit JSON and the agent does the judgement; the authoring and repair helpers
+(`artifact`, `file_finding`, `transition`, `reconcile apply`, `verify_ac`,
+`repo_map`, `github_sync`, `plan`, `lessons`, `retro`, `archive`, `critic record`)
+perform bounded, tested mutations. `critic` straddles the line: its `brief`/`show`
+path is read-only, but `record`/`evidence`/`signoff` append to the committed verdict
+logs. Everything else (reading files, walking directories, simple transforms) stays
+with the agent's built-in tools.
 
 #### The gate tier
 
@@ -231,17 +235,28 @@ Every script in `scripts/` obeys a fixed contract (`reference-scripts.md`):
 3. `--help` on every subcommand.
 4. Non-zero exit on any failure that should halt the workflow.
 5. Bounded, tested write surface. Read-only helpers (`reconcile detect`, `status`,
-   `validate`, `next_id`, `audit`, `critic`) never mutate the workspace. The
-   deterministic-authoring helpers DO write, each within a tested boundary: `artifact.py`
-   creates artefact files and appends index rows; `file_finding.py` files findings;
-   `reconcile apply` rewrites `_index.md` rows and counts; `transition.py` rewrites an
-   artefact's Status and cascades the epic breakdown; `github_sync.py` writes the
-   `GitHub Issue` metadata line; `verify_ac.py` rewrites the `Verified:` line; `migrate_v3.py`
-   renames files and rewrites ids/links; `plan.py archive` moves plan files; `lessons.py add
-   --global` writes a lesson; `decisions.py` appends to the decisions ledger. Shared-file
-   writes go through `sdlc_md.atomic_write`
-   (temp-then-replace) and id allocation is serialised by `sdlc_md.allocation_lock`, so a
-   crash or a concurrent writer never corrupts a shared file. The scripts are NOT read-only
+   `validate`, `next_id`, `audit`, `critic brief`/`show`) never mutate the workspace.
+   The deterministic-authoring helpers DO write, each within a tested boundary:
+   `artifact.py` creates artefact files and appends index rows; `file_finding.py` files
+   findings; `reconcile apply` rewrites `_index.md` rows and counts; `transition.py`
+   rewrites an artefact's Status and cascades the epic breakdown; `github_sync.py` writes
+   the `GitHub Issue` metadata line; `verify_ac.py` rewrites the `Verified:` line;
+   `migrate_v3.py` renames files and rewrites ids/links; `plan.py archive` moves plan
+   files; `archive.py` relocates a type's terminal index rows into its `archive/`
+   sub-index; `lessons.py add --global` writes a lesson; `decisions.py` appends to the
+   decisions ledger; `retro.py` writes the batch retro artefact and the committed
+   `VELOCITY.md` history row; `handoff.py` writes the handoff artefact, its index and the
+   worklist; `persona_gen.py` writes the generated seat and stakeholder cards with their
+   provenance stamp (ADR-009); `critic record` appends to the committed verdict, evidence
+   and sign-off logs. This list names the load-bearing writers, not all of them -
+   `reference-scripts.md` is the authoritative catalogue of the script write surface.
+   Shared-file writes go through `sdlc_md.atomic_write` (temp-then-replace) and id
+   allocation is serialised by `sdlc_md.allocation_lock`, so a crash or a concurrent
+   writer never corrupts a shared file. The one deliberate exception to atomic-write is
+   the append-only ledgers - `critic`'s verdict/evidence/sign-off logs, `telemetry.jsonl`
+   and `verify-history.jsonl` - each grown by a single `O_APPEND` row write rather than a
+   rewrite, so a torn write costs only its own last row (which `critic.read_verdicts`
+   reports rather than silently drops), never the file. The scripts are NOT read-only
    over the workspace; the guarantee is that every write is tested and bounded.
 6. Network access is limited to three outbound paths, each best-effort and degrading
    silently when offline: the `gh` CLI wrapper in `github_sync.py` (no token handling;
@@ -303,6 +318,7 @@ divergence from the PRD's data-architecture wording. [HIGH]
 | bug | `sdlc-studio/bugs` | `BG` |
 | cr | `sdlc-studio/change-requests` | `CR` |
 | rfc | `sdlc-studio/rfcs` | `RFC` |
+| issue | `sdlc-studio/issues` | `IS` |
 | test-spec | `sdlc-studio/test-specs` | `TS` |
 | workflow | `sdlc-studio/workflows` | `WF` |
 
@@ -319,17 +335,22 @@ others do not (`US0001`). `ID_RE`, `norm_id`, and the globbing tolerate both for
 and mixed case so a file named `cr0001.md` and an index entry `CR-0001` normalise to
 the same record. `id_number` extracts the numeric part.
 
-Under `schema_version: 3` (the v4 default) new artefacts mint a **ULID** id instead:
-`US-01JQK3F8`, a Crockford-base32 timestamp prefix with a real entropy tail. The
-point is that two uncoordinated writers - a human on a laptop and an agent in a
-container, on different git states - cannot mint the same id even in the same
-instant, without any central allocator to coordinate through. The allocator's
-directory-glob retry remains the single-writer backstop and `allocation_lock`
-serialises same-process writers, but the entropy is what makes the scheme safe
-across machines. The two eras **coexist**: `migrate_v3 adopt` is forward-only, so
-existing sequential ids stay valid in tickets, chat and docs, and only new artefacts
-are ULIDs. Every id-consuming regex, the census, and the title parser accept both.
-See ADR-008.
+Under `schema_version: 3` (the v4 default) new artefacts mint a short **ULID** id
+instead: `US-01JQK3F8`, an 8-char Crockford-base32 suffix that is 6 timestamp chars
+plus a 2-char entropy tail (`short_ulid` in `lib/sdlc_md.py`). The truncated
+timestamp prefix keeps ids coarsely creation-ordered - it resolves to roughly a
+17-minute bucket - and the 2 random chars are what stop two uncoordinated writers
+(a human on a laptop, an agent in a container, on different git states) minting the
+same id in the same bucket. The guarantee is probabilistic, not absolute: a same-
+bucket clash is improbable (about 1 in 1024, the 2 base-32 chars) rather than
+certain, and the allocator's directory-glob retry - it re-mints, then extends the
+suffix on a persistent clash - is the single-writer local backstop, while
+`allocation_lock` serialises same-process writers. What that local retry cannot see
+is another machine's not-yet-merged file, so the residual cross-machine case is
+caught at merge (see ADR-008). The two eras **coexist**: `migrate_v3 adopt` is
+forward-only, so existing sequential ids stay valid in tickets, chat and docs, and
+only new artefacts are ULIDs. Every id-consuming regex, the census, and the title
+parser accept both. See ADR-008.
 
 #### Status vocabulary (`STATUS_VOCAB`)
 
@@ -341,13 +362,27 @@ vocabulary token by longest-prefix match.
 | Type | Allowed statuses |
 | --- | --- |
 | epic | Draft, Ready, Approved, In Progress, Done |
-| story | Proposed, Draft, Ready, Planned, In Progress, Review, Done, Won't Implement, Deferred, Superseded |
+| story | Proposed, Draft, Ready, Planned, In Progress, Review, Blocked, Done, Won't Implement, Deferred, Superseded |
 | plan | Draft, In Progress, Complete, Superseded |
 | bug | Open, In Progress, Fixed, Verified, Closed, Won't Fix, Superseded |
 | cr | Proposed, Approved, In Progress, Complete, Rejected, Deferred, Superseded, Blocked |
 | rfc | Draft, In Review, Accepted, Superseded, Withdrawn |
+| issue | Open, Triaging, Triaged, Resolved, Closed, Won't Fix, Superseded |
 | test-spec | Draft, Ready, In Progress, Complete, Superseded |
 | workflow | Created, Planning, Testing, Implementing, Verifying, Reviewing, Checking, Done, Paused, Superseded |
+
+`Blocked` (story, cr) and `Deferred`, `Planned`, `Paused` are re-activatable, not
+absorbing, so `TERMINAL_STATUS` excludes them from the archive-candidate set.
+
+**Inbox triage lane (findings, schema v3).** Under v3 the finding types (`bug`,
+`cr`, `rfc`) gain an `inbox` status prepended to their vocabulary (`INBOX_STATUS`,
+`status_vocab` in `lib/sdlc_md.py`): an agent-filed finding lands in `inbox`, and a
+*different* seat triages it into the workflow proper - `bug` to `Open`, `cr` to
+`Approved`, `rfc` to `In Review` (`TRIAGE_TARGET`), promoting straight past the
+pre-workflow `Proposed`/`Draft` proposal states an agent finding never occupies. The
+lane is dormant under v2. This is distinct from the `issue` type's own intake lane
+(`Open` -> `Triaging` -> `Triaged` -> `Resolved`), where an Issue is triaged into
+delivery bugs.
 
 #### Acceptance criteria
 
@@ -369,6 +404,34 @@ name, and one passed against unrelated prose while the feature it claimed to che
 did not exist. `validate.py` warns on the ones already in a tree. The corollary for
 the pipeline is that an un-decomposed CR reaches Done on prose alone, which is why
 `sprint plan` flags a Large or wide-footprint CR that no story cites (ADR-011).
+
+#### Two backlogs (dual-track: discovery feeds delivery)
+
+Types split across two backlogs, and the split is load-bearing (`lib/sdlc_md.py`).
+The **discovery** backlog is the options funnel - what someone wants or has observed,
+not yet committed work: `DISCOVERY_TYPES` is `rfc`, `cr`, `issue`. Within it,
+`REQUEST_TYPES` (`rfc`, `cr`) is the narrower set that `refine` decomposes into an
+epic plus stories; an `issue` is `triage`d into bugs instead, so it is discovery but
+not a request. The **delivery** backlog is the work itself - sized, planned and
+closed on executable acceptance: `PRODUCT_TYPES` is `epic`, `story`, `bug`. (`plan`,
+`test-spec` and `workflow` are process artefacts on neither.) The predicates
+`is_discovery` / `is_request` are the single authority every backlog-side gate reads.
+
+Enforcement is opt-in per project via `two_backlog.enforce` in `.config.yaml`
+(`two_backlog_enforced`), defaulting OFF so an upgrading project keeps its old flow
+until it opts in. When enforced, two hard gates fire: **G1**, where `sprint plan`
+refuses a discovery item as a sprint unit (it has no executable ACs to close on); and
+**G2**, where a request's terminal status is DERIVED from the state of the units it
+produced, never asserted directly. `reconcile` additionally flags an accepted
+childless request as undecomposed, and creating a CR then demands a T-shirt Size.
+
+Decomposition is wired with two link primitives, written on both sides so the graph
+resolves either way: a child names its origin with `> **Parent:** <id>` (a batch
+epic from `refine --into` carries one `Parent:` line per request it delivers), and a
+request lists what it became with `> **Decomposed-into:** <ids>`. `refine` (request
+-> epic + stories) and `triage` (issue -> bugs) write both halves identically.
+`reconcile`'s `link-asymmetry` drift kind flags a link declared on one side only, so
+a half-written decomposition never certifies clean.
 
 ### Storage Strategy
 
@@ -402,11 +465,22 @@ have earned a change - not a cache, and explicitly not an auto-recalibration inp
 
 ### Migrations
 
-Schema migration between skill versions is handled by `reference-upgrade.md`
-(the `upgrade` type), not by the script layer. Because files are truth and indexes
-are reconciled, most schema drift is repaired by `reconcile` rather than a numbered
-migration. `lib/sdlc_md.py` tolerates legacy forms (optional blockquote, dashed and
-undashed IDs, mixed case) so older artifacts parse without migration. [HIGH]
+The operator-facing surface is the `upgrade` type (`SKILL.md`'s type table points it
+at `reference-upgrade.md`); its walkthrough distinguishes the three things called
+"upgrade" (the skill self-update, a project's convention upgrade, and the schema
+v2 -> v3 id migration). Contrary to an older claim that migration is doc-only, a
+tested script layer performs it: `project_upgrade.py` migrates a consuming project's
+artefacts to current conventions and, with `--apply`, performs only the safe
+deterministic set (scaffold `.config.yaml` and `.version`, then reconcile drift);
+`migrate_v3.py` rewrites sequential ids to short ULIDs (and converts a container's
+legacy Effort/Points to a T-shirt Size under `sizing`); and `migrate.py` is the
+orchestrator over all of them - it runs the pieces in order, adds an artefact-review
+sweep, and emits one report split into what it upgraded deterministically and what
+needs a human, auto-applying only the reversible set. Because files are truth and
+indexes are reconciled, most schema drift is still repaired by `reconcile` rather
+than a numbered migration, and `lib/sdlc_md.py` tolerates legacy forms (optional
+blockquote, dashed and undashed IDs, mixed case) so older artifacts parse without
+migration. [HIGH]
 
 ---
 
@@ -488,9 +562,13 @@ script suite runs 2151 tests in under a minute. The one deliberate exception is
 which is why its gate lane reads a stored report rather than executing, and reports
 STALE on a rev change or an edited target rather than passing.
 
-Distribution scales too, not just context: ULID identity (ADR-008) is what lets
-several uncoordinated writers - human and agent, on different machines and git
-states - file into one workspace without an id allocator to coordinate through.
+Distribution scales too, not just context: short-ULID identity (ADR-008) is what
+lets several uncoordinated writers - human and agent, on different machines and git
+states - file into one workspace without an id allocator to coordinate through. The
+id is a 6+2-char suffix (6 timestamp chars, 2 entropy chars); two writers in the same
+~17-minute bucket collide only if the 2-char tail also collides (about 1 in 1024),
+the allocator's glob-retry is the single-writer local backstop, and the residual
+cross-machine clash is caught at merge (ADR-008).
 
 > **Container Design:** not applicable - the skill ships no containers. The
 > consuming project's `test-env` type handles containerised test environments.
@@ -739,7 +817,7 @@ against the source files the unit's own commit touched.
   backlog wholesale. A cutoff set beyond the current work is refused, because that
   would be a silent disarm wearing a config key's clothes.
 
-### ADR-008: Collision-free ULID artefact ids, with the sequential era kept valid
+### ADR-008: Collision-resistant short-ULID artefact ids, with the sequential era kept valid
 
 **Status:** Accepted
 
@@ -760,11 +838,12 @@ by a real team.
 - *ULID.* Time-ordered prefix, Crockford base32, entropy tail.
 
 **Decision:** Under `schema_version: 3` (the v4 default), new artefacts mint a short
-ULID (`US-01JQK3F8`): a timestamp prefix that keeps ids roughly chronological, plus a
-real entropy tail so two writers in the same instant cannot collide. Existing
-sequential ids stay valid forever - `migrate_v3 adopt` is FORWARD-ONLY, and the two
-eras coexist by design. Every id-consuming regex, the census, and the title parser
-accept both.
+ULID (`US-01JQK3F8`): an 8-char suffix of 6 timestamp chars that keep ids roughly
+chronological plus a 2-char entropy tail, so two writers in the same ~17-minute
+timestamp bucket collide only if that tail also collides - about 1 in 1024, rather
+than certain. Existing sequential ids stay valid forever - `migrate_v3 adopt` is
+FORWARD-ONLY, and the two eras coexist by design. Every id-consuming regex, the
+census, and the title parser accept both.
 
 **Consequences:**
 
@@ -779,6 +858,16 @@ accept both.
 - Negative: two id forms must be parsed forever, and a clone whose config says v2 while
   its ids are v3 is a genuine mixed-mode hazard - reconcile emits an era-divergence
   advisory for exactly that case.
+
+**Residual risk:** the scheme is collision-resistant, not collision-free. Within one
+machine the allocator's directory-glob retry sees an in-flight clash and re-mints
+(extending the suffix on a persistent one), so the single-writer case is closed. It
+cannot see another machine's not-yet-merged file, so the surviving case is two writers
+on separate clones minting inside the same ~17-minute bucket with a colliding 2-char
+tail (about 1 in 1024 per such pair). That surfaces at merge, where `next_id.py
+collisions` is the guard - it flags any normalised id claimed by more than one file and
+exits non-zero, so a cross-machine duplicate is caught deterministically rather than
+riding into history silently.
 
 ### ADR-009: Generate the engineering team from the project, do not ship a cast
 
@@ -803,9 +892,9 @@ named individuals into `personas/seats/`: 3 core roles plus up to 2 signal-earne
 extras, cast capped at 5. `--stakeholders` generates the other side of the table with
 veto lines and a Cooper arbitration rule on every card (a buyer's goal never overrides
 the Primary user's interface). Model judgement inside a deterministic frame:
-`persona_gen.py` owns the provenance stamp and content hash, `validate.py seats` is the
-error-level floor (declared role, review render, demographic denylist, one card per
-role, valid stamps).
+`persona_gen.py` is a §5 rule 5 writer - it writes the cards and owns the provenance
+stamp and content hash - and `validate.py seats` is the error-level floor (declared
+role, review render, demographic denylist, one card per role, valid stamps).
 
 **Consequences:**
 
@@ -976,7 +1065,7 @@ falls back to enforce.
 | Date | Version | Changes |
 | --- | --- | --- |
 | 2026-06-20 | 2.0.0 | Brownfield extraction of TRD from skill source (Generate mode) |
-| 2026-07-06 | 4.0.0 | Refresh to the shipped script layer: corrected the write contract (§5 rule 5 - the script write surface is bounded and tested, not absent), component counts, state-file inventory, and test figures; a freshness guard now prevents the stale claims recurring |
+| 2026-07-06 | 4.0.0 | Refresh to the shipped script layer: corrected the write contract (§5 rule 5 - the script write surface is bounded and tested, not absent), component counts, state-file inventory, and test figures. The `doc-freshness` guard checks only `reviews/LATEST.md`, and only the facts it states there (version, the enumerated `N script tests` count, disclosure count) - it is advisory and does not pin this document's component counts, which is why they are now stated as growth-tolerant bands rather than exact figures |
 | 2026-07-14 | 4.1.0 | The v4 architecture: the gate tier (§3), the two id eras (§6), story-only executable verifiers (§6), the run/appetite and measurement state files (§6), the falsified cost model (§10), and five new ADRs - ADR-007 the engagement floor, ADR-008 ULID identity, ADR-009 the generated team, ADR-010 the learning loop, ADR-011 the breakdown gate. Corrected the component counts, the router's line figure (~195 was stale; it is ~260) and the test count |
 
 ---

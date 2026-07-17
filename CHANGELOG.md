@@ -502,6 +502,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     TSD had asserted neither was wired.
   - **US0207 (RFC0034).** Marked D1/D5 superseded by RFC0038 with cross-links in both RFCs and
     the rfcs index; D2-D4 remain live and underpin the shipped model.
+  - **US0202 (PRD §3).** Populated every `[Unreleased]` row's Epic column and added rows for the
+    EP0033-EP0047 features; where a feature had no owning epic (delivered by a CR/RFC sprint) the
+    governing id is cited, with a preamble note for the exception.
+  - **US0204 (PRD §9 + config).** Corrected `require_ac_verification` (shipped default `false`, the
+    table said `on`); added `quality.done_requires_verified` (the true hard-by-default Done gate)
+    and `two_backlog.enforce` (deliberate default-off) to the PRD table, `config-defaults.yaml` and
+    `reference-config.md`; retired `SDLC_ENGAGEMENT_STRICT`; added `SDLC_AUTHOR`,
+    `SDLC_VERIFY_HTTP_HOSTS`, `SDLC_TRIAGE_SESSION`, `SDLC_DEBUG` to the env-var table.
+  - **US0205 (TRD ADR-008).** States the real ULID guarantee (6+2 chars, ~1-in-1024 per ~17-minute
+    bucket, glob-retry backstop) with a cross-machine residual-risk paragraph naming `next_id.py`'s
+    collision detector; "collision-free" softened to "collision-resistant".
+  - **US0208 (TRD §3/§5 + critic.py).** `critic record` moved to the writer list with the
+    append-only-ledger exception documented; `read_verdicts` now warns on a torn row instead of
+    silently dropping it (red-first test).
+  - **US0209 (TRD §6).** Adds the `issue` type, the `Blocked` story status, the inbox triage lane
+    and a two-backlog subsection to the type registry.
+  - **US0210 (TRD §5).** Rule 5's writer list gains `retro.py`/`handoff.py`/`archive.py`/
+    `persona_gen.py`/`decisions.py`, declared non-exhaustive with a pointer to the script catalogue;
+    ADR-009 no longer contradicts it.
+  - **US0211 (TRD counts).** Drifted exact counts converted to growth-tolerant bands and the 4.0.0
+    changelog line restated to what the freshness guard actually checks.
+  - **US0212 (TRD §6).** Names the shipped migration surface (`migrate.py`, `project_upgrade.py`
+    `--apply`, `migrate_v3.py`) and reconciles the `upgrade`-type-vs-`migrate`-command naming.
 
 - **Story workflows resolve personas registry-first (CR0283, EP0049).** `reference-story.md`'s
   create and generate prerequisites now read the `sdlc-studio/personas/` registry (index.md +

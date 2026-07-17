@@ -120,6 +120,12 @@ def read_verdicts(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
             legacy = dict(zip(("unit", "verdict", "reviewer", "date", "issues"), cells))
             legacy["author"] = ""
             out.append(legacy)
+        else:
+            # A row that is neither current (6 cols) nor legacy (5) - a torn write from a
+            # crash mid-append. Surface it: silently dropping a verdict is a false "no
+            # verdict" signal at the gate. Report and skip, never swallow.
+            print(f"warning: malformed row in {path} ({len(cells)} cells, expected 6 or 5), "
+                  f"skipped: {' | '.join(cells)[:100]}", file=sys.stderr)
     return out
 
 

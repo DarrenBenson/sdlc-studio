@@ -10,32 +10,32 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** engineer reading the write contract
+**I want** `critic record` classed as a writer, the append-only exception documented, and torn rows surfaced
+**So that** the spec matches the shipped critic and a truncated verdict row is never silently lost
 
 ## Acceptance Criteria
 
 ### AC1: trd.md §3/§5 move `critic record` to the writer list (append-only verdict logs), keeping
 
-- **Given** {{context}}
-- **When** {{action}}
+- **Given** §3 and §5 listed `critic` among the read-only helpers, though `record`/`evidence`/`signoff` append to committed logs
+- **When** the read-only entry becomes `critic brief`/`show` and `critic record` joins the authoring writers
 - **Then** trd.md §3/§5 move `critic record` to the writer list (append-only verdict logs), keeping critique/detect read-only
-- **Verify:** {{executable check}}
+- **Verify:** grep -E "critic record. appends to the committed verdict" sdlc-studio/trd.md
 
 ### AC2: Rule 5 documents the append-only exception to the atomic-write guarantee (or the append is
 
-- **Given** {{context}}
-- **When** {{action}}
+- **Given** rule 5 claimed all shared-file writes go through `atomic_write`, but the verdict/telemetry/verify-history logs are append-only
+- **When** rule 5 names the append-only ledgers as the deliberate exception (a single `O_APPEND` row write)
 - **Then** Rule 5 documents the append-only exception to the atomic-write guarantee (or the append is hardened, e.g. single `O_APPEND` write per row)
-- **Verify:** {{executable check}}
+- **Verify:** grep -E "append-only ledgers" sdlc-studio/trd.md
 
 ### AC3: `read_verdicts` surfaces a malformed/torn row as a warning instead of silently dropping it
 
-- **Given** {{context}}
-- **When** {{action}}
+- **Given** `read_verdicts` kept 6-col and 5-col rows and silently dropped any other cell count, so a torn row vanished
+- **When** the parser emits a stderr warning naming the malformed row before skipping it (RED-first test added)
 - **Then** `read_verdicts` surfaces a malformed/torn row as a warning instead of silently dropping it
-- **Verify:** {{executable check}}
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RecordTests::test_torn_row_surfaces_a_warning_not_silent_drop
 
 ## Revision History
 

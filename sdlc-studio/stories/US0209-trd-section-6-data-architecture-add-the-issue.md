@@ -10,39 +10,39 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** engineer reading §6 to learn the data model
+**I want** the `issue` type, story `Blocked`, the inbox triage lane and the two-backlog model documented
+**So that** §6 matches `lib/sdlc_md.py` instead of describing a v3-era-obsolete registry
 
 ## Acceptance Criteria
 
 ### AC1: §6's type registry includes issue with its directory, prefix and status vocabulary
 
-- **Given** {{context}}
-- **When** {{action}}
+- **Given** the §6 registry table omitted `issue`, though `ARTIFACT_TYPES` ships it (`sdlc-studio/issues`, `IS`)
+- **When** an `issue` row is added to the registry table and its own status row to the vocabulary table
 - **Then** §6's type registry includes issue with its directory, prefix and status vocabulary
-- **Verify:** {{executable check}}
+- **Verify:** grep -E "issue .+sdlc-studio/issues.+IS" sdlc-studio/trd.md
 
 ### AC2: The story status vocabulary includes Blocked
 
-- **Given** {{context}}
-- **When** {{action}}
+- **Given** the §6 story vocabulary row lacked `Blocked`, though `STATUS_VOCAB["story"]` includes it
+- **When** `Blocked` is inserted into the story row (after `Review`) and noted as re-activatable, not terminal
 - **Then** The story status vocabulary includes Blocked
-- **Verify:** {{executable check}}
+- **Verify:** grep -E "Review, Blocked, Done" sdlc-studio/trd.md
 
 ### AC3: The inbox triage lane on findings is documented (types, statuses, triage targets)
 
-- **Given** {{context}}
-- **When** {{action}}
+- **Given** §6 never described the v3 `inbox` lane on findings (`bug`/`cr`/`rfc`) nor its `TRIAGE_TARGET` map
+- **When** a subsection documents the lane: types, the prepended `inbox` status, and the per-type triage targets
 - **Then** The inbox triage lane on findings is documented (types, statuses, triage targets)
-- **Verify:** {{executable check}}
+- **Verify:** grep -E "Inbox triage lane .findings, schema v3" sdlc-studio/trd.md
 
 ### AC4: The two-backlog model gets a §6 subsection: request/discovery/product type sets
 
-- **Given** {{context}}
-- **When** {{action}}
+- **Given** §6 documented no two-backlog model, though `DISCOVERY_TYPES`/`REQUEST_TYPES`/`PRODUCT_TYPES` and the G1/G2 gates ship
+- **When** a "Two backlogs" subsection is added: the three type sets, `two_backlog.enforce` with G1/G2, and the Parent:/Decomposed-into: link primitives
 - **Then** The two-backlog model gets a §6 subsection: request/discovery/product type sets, `two_backlog.enforce` and its G1/G2 gates, Parent:/Decomposed-into: primitives and their reconciliation
-- **Verify:** {{executable check}}
+- **Verify:** grep -E "Two backlogs .dual-track: discovery feeds delivery" sdlc-studio/trd.md
 
 ## Revision History
 

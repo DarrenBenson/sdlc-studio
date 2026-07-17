@@ -70,6 +70,16 @@ review:
 # manual: 0 for the whole repository. See reference-verify.md.
 require_ac_verification: false
 
+# Two-backlog workflow enforcement (schema v3). Default OFF, and deliberately so: it is the one
+# gate-bearing key whose absence does NOT block. An existing project pulling a newer skill keeps
+# its old flow (plan a CR, complete it whole, size with points) until it opts in, so the release
+# does not break it. Set enforce: true to turn on the HARD gates - `plan` refuses a request as a
+# sprint unit, a request's terminal status is derived from its children, reconcile flags an
+# accepted childless request as undecomposed, and creating a CR demands a T-shirt Size. This repo
+# dogfoods it on via its own .config.yaml override. See reference-config.md#two-backlog.
+two_backlog:
+  enforce: false
+
 # Project constitution. When `sdlc-studio/constitution.md` exists, its
 # machine-checkable principles are asserted by `constitution check`. Advisory by
 # default - set enforce: true to make a violation fail the check (exit non-zero), the

@@ -15,6 +15,7 @@
 - [Persona Staleness](#personas-staleness-days)
 - [Lessons Validity](#lessons-validity)
 - [Sprint Breakdown Gate](#breakdown)
+- [Two-Backlog Enforcement](#two-backlog)
 - [Sprint Capacity](#capacity)
 - [Run Appetite](#appetite)
 - [Skill Source Repo](#skill-source-repo)
@@ -206,6 +207,16 @@ lessons:
 | --- | --- | --- |
 | `sprint.breakdown` | `enforce` | Default-on, NOT advisory. `enforce`: `sprint plan` REFUSES a batch holding a unit that declares no `Affects` or no `Points:` - and refuses a unit above the split threshold, since above it the estimate is not worth having. It names each ungroomed unit, says what it lacks, and exits non-zero **without printing a plan** - a plan over unsized units is false authority. `judgement`: the lane reports and does not block, the same shape as the engagement floor and the lessons loop. Omission is not an escape - with no config at all the gate BLOCKS, and an unknown mode falls back to `enforce`. `sprint.py breakdown` reports the same census, read-only. See `reference-sprint.md#breakdown` |
 | `sprint.split_above` | `8` | The `Points:` value above which the gate refuses a unit and demands it be split. A point is a stable unit of cost up to here and breaks beyond it, so above it decomposition is a triage decision, not an estimation one. Tighten to `5` for smaller units. |
+
+---
+
+## Two-Backlog Enforcement {#two-backlog}
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| `two_backlog.enforce` | `false` | Deliberately OFF - the one gate-bearing key whose absence does not block, so an upgrading project keeps its old flow (plan a CR, complete it whole) until it opts in with `two_backlog.enforce: true` |
+
+The model separates a **request** backlog (CR/RFC/Issue - what to build) from the **product** backlog (epics/stories/bugs - the sized delivery units). With `enforce: true` the hard gates fire: `sprint plan` refuses a request as a sprint unit and names the decompose command, a request's terminal status derives from its children rather than being asserted, `reconcile` flags an accepted childless request as `undecomposed`, and creating a CR demands a T-shirt `Size`. The soft parts (the sizing vocabulary, the link-asymmetry check) are always on and ungated. Default OFF is deliberate: every other gate-bearing key blocks when absent, but a release must not refuse the workflow of a project that never asked for it.
 
 ---
 
