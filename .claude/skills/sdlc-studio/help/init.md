@@ -63,8 +63,17 @@ Initialises SDLC Studio for a project by:
    - Seed the agent-instructions file if absent (see Onboarding step 2): copy
      `templates/agent-instructions.md` → `AGENTS.md` and
      `templates/agent-instructions.CLAUDE.md` → `CLAUDE.md`, then fill placeholders.
+   - Write the default `definition-of-ready.md` / `definition-of-done.md` (the
+     project's editable ready/done bars - see `reference-decisions.md#dor-dod`)
 
-4. **Report**
+4. **Offer the DoR/DoD tailoring pass** (with `--detect`)
+   - Propose stack-derived criteria (language, test framework, Dockerfile deploy
+     surface) for the documents - a Python CLI's done bar differs from a web service's
+   - Nothing is applied without acceptance: re-run with `--accept-tailoring` (or edit
+     the documents by hand); the static documents remain the source of truth
+   - The tailored result always passes the check-id registry validation
+
+5. **Report**
    - Configuration summary
    - Next steps to start pipeline
 
@@ -155,6 +164,7 @@ sdlc-studio/
 |--------|-------------|---------|
 | `--detect` | Auto-detect all settings | false |
 | `--force` | Overwrite existing config | false |
+| `--accept-tailoring` | Apply the stack-derived DoR/DoD suggestions (with `--detect`); otherwise they are only offered | false |
 
 ## Configuration Priority
 

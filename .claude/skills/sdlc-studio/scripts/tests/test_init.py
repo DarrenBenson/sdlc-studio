@@ -127,5 +127,123 @@ class EraGateRegressionTests(unittest.TestCase):
             self.assertEqual(spec_guard.spec_edits(repo, ["prd.md"]), [])
 
 
+class TailorTests(unittest.TestCase):
+    """CR0326 / RFC0043 slice 3: init writes the default DoR/DoD documents and OFFERS a
+    stack-derived tailoring pass - proposed criteria the operator accepts or edits;
+    nothing is applied without acceptance (the persona team-gen pattern)."""
+
+    def test_init_writes_the_default_documents(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            init.init(repo)
+            for name in ("definition-of-ready.md", "definition-of-done.md"):
+                p = repo / "sdlc-studio" / name
+                self.assertTrue(p.is_file(), f"{name} not written")
+                text = p.read_text(encoding="utf-8")
+                self.assertIn("## Story", text)
+                self.assertEqual(sdlc_md.unknown_check_ids(text), [])
+
+    def test_tailoring_offer_is_printed_never_auto_applied(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            (repo / "pyproject.toml").write_text("[project]\nname='x'\n", encoding="utf-8")
+            r = init.init(repo, detect=True)
+            self.assertTrue(r["tailoring"]["suggestions"])       # stack-derived offers
+            self.assertFalse(r["tailoring"]["applied"])          # nothing applied
+            done = (repo / "sdlc-studio" / "definition-of-done.md").read_text(encoding="utf-8")
+            for s in r["tailoring"]["suggestions"]:
+                self.assertNotIn(s["criterion"], done)           # offer, not an edit
+
+    def test_offer_text_names_the_acceptance_path(self) -> None:
+        import contextlib
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            (repo / "pyproject.toml").write_text("[project]\nname='x'\n", encoding="utf-8")
+            mod = _load()
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                rc = mod.main(["run", "--root", d, "--detect"])
+            self.assertEqual(rc, 0)
+            self.assertIn("tailoring offer", out.getvalue().lower())
+            self.assertIn("--accept-tailoring", out.getvalue())
+            self.assertIn("nothing is applied without acceptance", out.getvalue().lower())
+
+    def test_accept_tailoring_appends_under_the_right_level(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            (repo / "pyproject.toml").write_text("[project]\nname='x'\n", encoding="utf-8")
+            r = init.init(repo, detect=True, accept_tailoring=True)
+            self.assertTrue(r["tailoring"]["applied"])
+            done = (repo / "sdlc-studio" / "definition-of-done.md").read_text(encoding="utf-8")
+            suggestion = next(s for s in r["tailoring"]["suggestions"] if s["kind"] == "done")
+            self.assertIn(suggestion["criterion"], done)
+            # appended INSIDE its level section, not at EOF after another level
+            level_pos = done.index(f"## {suggestion['level']}")
+            next_level = done.find("\n## ", level_pos + 1)
+            criterion_pos = done.index(suggestion["criterion"])
+            self.assertGreater(criterion_pos, level_pos)
+            if next_level != -1:
+                self.assertLess(criterion_pos, next_level)
+
+    def test_repeat_accept_does_not_duplicate(self) -> None:
+        # The offer text itself says "re-run with --accept-tailoring", so a second
+        # accept is a natural flow: it must be idempotent, never duplicating criteria.
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            (repo / "pyproject.toml").write_text("[project]\nname='x'\n", encoding="utf-8")
+            init.init(repo, detect=True, accept_tailoring=True)
+            r2 = init.init(repo, detect=True, accept_tailoring=True)
+            done = (repo / "sdlc-studio" / "definition-of-done.md").read_text(encoding="utf-8")
+            crit = next(s for s in r2["tailoring"]["suggestions"]
+                        if s["kind"] == "done")["criterion"]
+            self.assertEqual(done.count(crit), 1)          # appended once, ever
+            self.assertFalse(r2["tailoring"]["applied"])   # nothing new = not "applied"
+
+    def test_accept_into_document_missing_the_level_appends_a_section(self) -> None:
+        # A user-edited document without the level must still receive the accepted
+        # criterion (a new section) - an accepted edit is never silently dropped.
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            (repo / "Dockerfile").write_text("FROM python:3\n", encoding="utf-8")
+            init.init(repo)   # write defaults first
+            doc = repo / "sdlc-studio" / "definition-of-done.md"
+            doc.write_text("# Definition of Done\n\n## Story\n\n- [ ] human judged\n",
+                           encoding="utf-8")   # user edit: Release level deleted
+            r = init.init(repo, detect=True, accept_tailoring=True)
+            text = doc.read_text(encoding="utf-8")
+            crit = next(s for s in r["tailoring"]["suggestions"]
+                        if s["level"] == "Release")["criterion"]
+            self.assertIn("## Release", text)
+            self.assertIn(crit, text)
+
+    def test_no_stack_no_offer(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            r = init.init(repo, detect=True)   # nothing to detect
+            self.assertEqual(r["tailoring"]["suggestions"], [])
+
+
+class TailorRegistryTests(unittest.TestCase):
+    """CR0326 AC2: the tailored result passes slice 1's registry validation."""
+
+    def test_tailored_documents_pass_registry_validation(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            (repo / "pyproject.toml").write_text("[project]\nname='x'\n", encoding="utf-8")
+            (repo / "Dockerfile").write_text("FROM python:3\n", encoding="utf-8")
+            init.init(repo, detect=True, accept_tailoring=True)
+            for name in ("definition-of-ready.md", "definition-of-done.md"):
+                text = (repo / "sdlc-studio" / name).read_text(encoding="utf-8")
+                self.assertEqual(sdlc_md.unknown_check_ids(text), [], f"{name} fails registry")
+
+    def test_every_suggestion_in_the_table_is_registry_clean(self) -> None:
+        for suggestions in init.TAILOR_SUGGESTIONS.values():
+            for s in suggestions:
+                self.assertEqual(sdlc_md.unknown_check_ids(s["criterion"]), [])
+                self.assertIn(s["kind"], ("ready", "done"))
+                self.assertIn(s["level"], ("Story", "Sprint", "Release"))
+
+
 if __name__ == "__main__":
     unittest.main()

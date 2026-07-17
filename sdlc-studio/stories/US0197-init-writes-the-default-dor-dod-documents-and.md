@@ -1,6 +1,6 @@
 # US0197: init writes the default DoR/DoD documents and offers stack-derived tailoring criteria, applied only on acceptance and passing registry validation
 
-> **Status:** Ready
+> **Status:** Review
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** `init.py` runs
 - **Then** init writes the default documents and prints the tailoring offer with detected-stack-derived suggestions; nothing is applied without acceptance
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_init.py -k Tailor
+- **Verified:** yes (2026-07-17)
 
 ### AC2: an accepted tailoring passes registry validation
 
@@ -29,6 +30,7 @@
 - **When** the tailored documents are validated
 - **Then** The tailored result passes slice 1's registry validation (only registered check ids)
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_init.py -k TailorRegistry
+- **Verified:** yes (2026-07-17)
 
 ## Revision History
 

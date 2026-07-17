@@ -38,6 +38,37 @@ AGENT_FILES = [("agent-instructions.md", "AGENTS.md"),
 DETECT = [("package.json", "typescript/node"), ("pyproject.toml", "python"),
           ("go.mod", "go"), ("Cargo.toml", "rust"), ("pom.xml", "java"),
           ("build.gradle", "java/kotlin")]
+# DoR/DoD tailoring suggestions per detected profile key (language, test framework,
+# deploy surface). OFFERED at init, applied only on --accept-tailoring - never
+# auto-applied. Untagged (human-judged) unless a registered check id fits, so the
+# tailored result always passes the check-id registry validation.
+TAILOR_SUGGESTIONS = {
+    "python": [
+        {"kind": "done", "level": "Story",
+         "criterion": "- [ ] The Python test suite is green for the touched modules"},
+        {"kind": "ready", "level": "Story",
+         "criterion": "- [ ] A Verify line names the exact test command (pytest/unittest selector)"},
+    ],
+    "typescript/node": [
+        {"kind": "done", "level": "Story",
+         "criterion": "- [ ] The JS/TS test suite is green for the touched modules"},
+        {"kind": "done", "level": "Story",
+         "criterion": "- [ ] Type checks pass (tsc/linter) on the touched files"},
+    ],
+    "go": [{"kind": "done", "level": "Story",
+            "criterion": "- [ ] go test ./... is green and go vet reports nothing"}],
+    "rust": [{"kind": "done", "level": "Story",
+              "criterion": "- [ ] cargo test is green and clippy reports nothing new"}],
+    "java": [{"kind": "done", "level": "Story",
+              "criterion": "- [ ] The JVM test suite is green for the touched modules"}],
+    "java/kotlin": [{"kind": "done", "level": "Story",
+                     "criterion": "- [ ] The JVM test suite is green for the touched modules"}],
+    "csharp/dotnet": [{"kind": "done", "level": "Story",
+                       "criterion": "- [ ] dotnet test is green for the touched projects"}],
+    "docker": [{"kind": "done", "level": "Release",
+                "criterion": "- [ ] The container image builds cleanly and the deploy-readiness "
+                             "checks (cold-spawn, smoke, rollback) are satisfied"}],
+}
 
 
 def detect_stack(root: Path) -> str | None:
@@ -47,6 +78,32 @@ def detect_stack(root: Path) -> str | None:
     if list(root.glob("*.csproj")):
         return "csharp/dotnet"
     return None
+
+
+def tailor_suggestions(root: Path, lang: str | None) -> list[dict]:
+    """Stack/profile-derived DoR/DoD criteria to OFFER (language, plus the deploy
+    surface when a Dockerfile is present). Deterministic; the operator accepts or
+    edits - nothing here writes."""
+    out = list(TAILOR_SUGGESTIONS.get(lang or "", []))
+    if (root / "Dockerfile").exists():
+        out += TAILOR_SUGGESTIONS["docker"]
+    return out
+
+
+def _append_to_level(text: str, level: str, criterion: str) -> str:
+    """Insert a criterion at the end of the document's `## <level>` section (word-exact
+    heading match, same rule as the gates' resolver)."""
+    lines = text.splitlines()
+    head_re = re.compile(rf"^##\s+{re.escape(level)}(?:\s|$)", re.IGNORECASE)
+    start = next((i for i, ln in enumerate(lines) if head_re.match(ln)), None)
+    if start is None:  # no such level: append a new section - never drop an accepted edit
+        return text.rstrip("\n") + f"\n\n## {level}\n\n{criterion}\n"
+    end = next((j for j in range(start + 1, len(lines)) if lines[j].startswith("## ")),
+               len(lines))
+    while end > start + 1 and not lines[end - 1].strip():
+        end -= 1  # insert before the section's trailing blank(s)
+    lines.insert(end, criterion)
+    return "\n".join(lines) + "\n"
 
 
 def _strip_comment(text: str) -> str:
@@ -63,7 +120,8 @@ def _fill_known(text: str, fields: dict) -> str:
 
 
 def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
-         force: bool = False, dry_run: bool = False) -> dict:
+         force: bool = False, dry_run: bool = False,
+         accept_tailoring: bool = False) -> dict:
     root = Path(repo_root)
     today = date.today().isoformat()
     lang = detect_stack(root) if detect else None
@@ -128,6 +186,30 @@ def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
     if dec_tmpl.exists():
         _write(f"{SDLC}/decisions.md", _strip_comment(dec_tmpl.read_text(encoding="utf-8")))
 
+    # 5b. the DoR/DoD documents (project infrastructure, like the decisions log): the
+    # shipped defaults ARE the enforced bar, so a new project starts with them named.
+    # The tailoring pass OFFERS stack-derived criteria; only --accept-tailoring writes
+    # them (offer, never auto-apply - the persona team-gen pattern).
+    for kind in ("ready", "done"):
+        tmpl = SKILL / "templates" / "core" / f"definition-of-{kind}.md"
+        if tmpl.exists():
+            _write(f"{SDLC}/definition-of-{kind}.md",
+                   _strip_comment(tmpl.read_text(encoding="utf-8")))
+    suggestions = tailor_suggestions(root, lang) if detect else []
+    written: list[dict] = []
+    if suggestions and accept_tailoring and not dry_run:
+        for s in suggestions:
+            doc = root / SDLC / f"definition-of-{s['kind']}.md"
+            if not doc.is_file():
+                continue
+            text = doc.read_text(encoding="utf-8")
+            if s["criterion"] in text:  # idempotent: a re-accept never duplicates
+                continue
+            doc.write_text(_append_to_level(text, s["level"], s["criterion"]),
+                           encoding="utf-8")
+            written.append(s)
+    applied = bool(written)  # True only when something was actually written
+
     # 6. singleton docs (opt-in)
     if scaffold:
         for name in SINGLETONS:
@@ -137,12 +219,16 @@ def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
                        _fill_known(_strip_comment(st.read_text(encoding="utf-8")), fields))
 
     return {"created": created, "skipped": skipped, "language": lang,
-            "scaffold": scaffold, "dry_run": dry_run}
+            "scaffold": scaffold, "dry_run": dry_run,
+            "tailoring": {"suggestions": suggestions, "applied": applied,
+                          "written": written,
+                          "accepted": bool(accept_tailoring and not dry_run)}}
 
 
 def cmd_run(args: argparse.Namespace) -> int:
     r = init(args.root, detect=args.detect, scaffold=args.scaffold,
-             force=args.force, dry_run=args.dry_run)
+             force=args.force, dry_run=args.dry_run,
+             accept_tailoring=getattr(args, "accept_tailoring", False))
     if args.format == "json":
         print(json.dumps(r, indent=2))
         return 0
@@ -153,6 +239,25 @@ def cmd_run(args: argparse.Namespace) -> int:
         print(f"  + {c}")
     if r["skipped"]:
         print(f"  ({len(r['skipped'])} existing left untouched)")
+    tailoring = r.get("tailoring") or {}
+    if tailoring.get("suggestions"):
+        if tailoring["applied"]:
+            print("tailoring accepted - appended to the DoR/DoD documents "
+                  "(the static documents remain the source of truth; edit them freely):")
+            for s in tailoring["written"]:  # only what was actually written, never a skip
+                print(f"  + definition-of-{s['kind']}.md / {s['level']}: {s['criterion']}")
+            skipped_n = len(tailoring["suggestions"]) - len(tailoring["written"])
+            if skipped_n:
+                print(f"  ({skipped_n} suggestion(s) already present - skipped)")
+        elif tailoring.get("accepted"):
+            print("tailoring: every suggested criterion is already present - "
+                  "nothing to apply")
+        else:
+            print("tailoring offer (derived from the detected stack - nothing is applied "
+                  "without acceptance):")
+            for s in tailoring["suggestions"]:
+                print(f"  ? definition-of-{s['kind']}.md / {s['level']}: {s['criterion']}")
+            print("  accept: re-run with --accept-tailoring; or edit the documents by hand")
     return 0
 
 
@@ -165,6 +270,9 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--scaffold", action="store_true", help="also seed prd/trd/tsd/personas")
     r.add_argument("--force", action="store_true", help="overwrite existing files")
     r.add_argument("--dry-run", action="store_true", dest="dry_run", help="preview; write nothing")
+    r.add_argument("--accept-tailoring", action="store_true", dest="accept_tailoring",
+                   help="apply the stack-derived DoR/DoD tailoring suggestions (with "
+                        "--detect); without this flag they are only offered")
     r.add_argument("--format", choices=("text", "json"), default="text")
     r.set_defaults(func=cmd_run)
     sdlc_md.add_global_root(p)
