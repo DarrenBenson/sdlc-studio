@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 35 |
+| Proposed | 34 |
 | Approved | 0 |
-| In Progress | 9 |
-| Complete | 280 |
+| In Progress | 1 |
+| Complete | 288 |
 | Rejected | 0 |
 | Deferred | 0 |
-| Superseded | 8 |
+| Superseded | 9 |
 | Blocked | 0 |
 | **Total** | **332** |
 
@@ -135,23 +135,23 @@
 | [CR-0311](CR0311-sprint-goal-a-product-outcome-goal-on-the.md) | Sprint Goal: a product-outcome goal on the sprint plan, judged at the closing review - the --goal flag is a pipeline stage, not a goal | Complete | Medium | Improvement | 2026-07-16 | -- |
 | [CR-0312](CR0312-dora-four-keys-deterministically-deployment-frequency-lead-time.md) | DORA four keys, deterministically: deployment frequency, lead time, change failure rate, MTTR from git history + the deploy ledger | Complete | Medium | Feature | 2026-07-16 | -- |
 | [CR-0313](CR0313-small-batch-guard-an-advisory-diff-size-lane.md) | Small-batch guard: an advisory diff-size lane flags a delivered unit whose change exceeds a batch threshold - the AI batch-size failure mode, caught deterministically | Complete | Medium | Improvement | 2026-07-16 | -- |
-| [CR-0314](CR0314-forecast-in-sprints-and-hours-not-iso-weeks.md) | Forecast in sprints and hours, not ISO weeks: AI-speed delivery needs sprint-session buckets with days as the calendar floor | In Progress | High | Improvement | 2026-07-16 | -- |
+| [CR-0314](CR0314-forecast-in-sprints-and-hours-not-iso-weeks.md) | Forecast in sprints and hours, not ISO weeks: AI-speed delivery needs sprint-session buckets with days as the calendar floor | Complete | High | Improvement | 2026-07-16 | -- |
 | [CR-0315](CR0315-per-unit-changelog-fragments-composed-at-release-kill.md) | Per-unit CHANGELOG fragments composed at release: kill the shared-file hold-back trick that per-unit commits currently force | Complete | High | Improvement | 2026-07-16 | -- |
 | [CR-0316](CR0316-critic-py-brief-emit-the-seat-review-prompt.md) | critic.py brief: emit the seat-review prompt deterministically and parse the returned verdict block - the critic ceremony is re-derived by hand every unit | Complete | Medium | Improvement | 2026-07-16 | -- |
 | [CR-0317](CR0317-a-shared-test-module-loader-for-scripts-tests.md) | A shared test-module loader for scripts/tests: forty files duplicate the importlib spec dance and every new module re-trips on it | Complete | Low | Improvement | 2026-07-16 | -- |
-| [CR-0318](CR0318-the-reviewer-of-record-sign-off-must-carry.md) | The reviewer-of-record sign-off must carry a decision brief: what shipped, what the critics rejected, gate and cost evidence - inline in the prompt, with hold and delegate paths | Proposed | High | process | 2026-07-16 | -- |
+| [CR-0318](CR0318-the-reviewer-of-record-sign-off-must-carry.md) | The reviewer-of-record sign-off must carry a decision brief: what shipped, what the critics rejected, gate and cost evidence - inline in the prompt, with hold and delegate paths | Superseded | High | process | 2026-07-16 | -- |
 | [CR-0319](CR0319-cut-5-0-0-the-release-dod-for.md) | Cut 5.0.0: the release DoD for the sizing + two-backlog model (RFC0040 close-out) | Proposed | High | process | 2026-07-16 | -- |
 | [CR-0320](CR0320-rolling-multi-sprint-policy-run-n-sprint-cycles.md) | Rolling multi-sprint policy: run N sprint cycles unattended under a standing policy, plan regenerated at each boundary (RFC0036 D1) | Proposed | Medium | Feature | 2026-07-16 | -- |
 | [CR-0321](CR0321-lane-partitioning-allocate-backlog-lanes-by-shared-file.md) | Lane partitioning: allocate backlog lanes by shared-file cluster for multi-team delivery (RFC0036 follow-up) | Proposed | Low | Feature | 2026-07-16 | -- |
 | [CR-0322](CR0322-refine-into-epxxxx-small-requests-decompose-into-a.md) | refine --into EPxxxx: small requests decompose into a shared batch epic instead of minting singletons (RFC0045 D1) | Proposed | Medium | Improvement | 2026-07-16 | -- |
-| [CR-0323](CR0323-build-the-two-role-review-gate-adversarial-evidence.md) | Build the two-role review gate: adversarial evidence + non-author principal sign-off with named-delegate chain (RFC0044 D1+D3, integrates CR0318) | In Progress | High | Feature | 2026-07-16 | -- |
-| [CR-0324](CR0324-dor-dod-artefacts-check-id-registry-the-two.md) | DoR/DoD artefacts + check-id registry: the two editable documents with a tagged machine-checkable subset (RFC0043 slice 1) | In Progress | Medium | Feature | 2026-07-16 | -- |
-| [CR-0325](CR0325-wire-the-gates-to-the-dor-dod-documents.md) | Wire the gates to the DoR/DoD documents: grooming reads the ready bar, Done/close/release read the done bar (RFC0043 slice 2) | In Progress | Medium | Feature | 2026-07-16 | -- |
-| [CR-0326](CR0326-init-tailoring-pass-for-dor-dod-offer-stack.md) | init tailoring pass for DoR/DoD: offer stack/profile-derived criteria at project init (RFC0043 slice 3) | In Progress | Low | Improvement | 2026-07-16 | -- |
+| [CR-0323](CR0323-build-the-two-role-review-gate-adversarial-evidence.md) | Build the two-role review gate: adversarial evidence + non-author principal sign-off with named-delegate chain (RFC0044 D1+D3, integrates CR0318) | Complete | High | Feature | 2026-07-16 | -- |
+| [CR-0324](CR0324-dor-dod-artefacts-check-id-registry-the-two.md) | DoR/DoD artefacts + check-id registry: the two editable documents with a tagged machine-checkable subset (RFC0043 slice 1) | Complete | Medium | Feature | 2026-07-16 | -- |
+| [CR-0325](CR0325-wire-the-gates-to-the-dor-dod-documents.md) | Wire the gates to the DoR/DoD documents: grooming reads the ready bar, Done/close/release read the done bar (RFC0043 slice 2) | Complete | Medium | Feature | 2026-07-16 | -- |
+| [CR-0326](CR0326-init-tailoring-pass-for-dor-dod-offer-stack.md) | init tailoring pass for DoR/DoD: offer stack/profile-derived criteria at project init (RFC0043 slice 3) | Complete | Low | Improvement | 2026-07-16 | -- |
 | [CR-0327](CR0327-deterministic-rfc-decision-paperwork-rfc-resolve-edits-a.md) | Deterministic RFC decision paperwork: rfc resolve edits a decision row, and parent-aware CR filing wires both link directions at mint | Complete | Medium | Improvement | 2026-07-16 | -- |
-| [CR-0328](CR0328-sprint-close-orchestrator-the-twelve-step-close-ceremony.md) | sprint close orchestrator: the twelve-step close ceremony as one deterministic command ending in the decision brief | In Progress | High | Feature | 2026-07-16 | -- |
-| [CR-0329](CR0329-critic-brief-rejoinder-the-re-verdict-loop-s.md) | critic brief --rejoinder: the re-verdict loop's scaffolding emitted deterministically from the prior verdict | In Progress | Medium | Improvement | 2026-07-16 | -- |
-| [CR-0330](CR0330-tools-forward-port-sh-the-dev-repo-rsync.md) | tools/forward-port.sh: the dev-repo rsync to the installed copy as a guarded one-liner | In Progress | Low | Improvement | 2026-07-16 | -- |
+| [CR-0328](CR0328-sprint-close-orchestrator-the-twelve-step-close-ceremony.md) | sprint close orchestrator: the twelve-step close ceremony as one deterministic command ending in the decision brief | Complete | High | Feature | 2026-07-16 | -- |
+| [CR-0329](CR0329-critic-brief-rejoinder-the-re-verdict-loop-s.md) | critic brief --rejoinder: the re-verdict loop's scaffolding emitted deterministically from the prior verdict | Complete | Medium | Improvement | 2026-07-16 | -- |
+| [CR-0330](CR0330-tools-forward-port-sh-the-dev-repo-rsync.md) | tools/forward-port.sh: the dev-repo rsync to the installed copy as a guarded one-liner | Complete | Low | Improvement | 2026-07-16 | -- |
 | [CR-0331](CR0331-cross-epic-ac-blocks-extension-stories-on-keywords.md) | cross-epic-ac blocks extension stories on keywords owned by a terminal epic | Proposed | Medium | Improvement | 2026-07-16 | -- |
 | [CR-0332](CR0332-dor-dod-near-miss-check-tags-must-error.md) | DoR/DoD near-miss check tags must error, not silently parse as no tag | Proposed | Medium | Improvement | 2026-07-17 | -- |
 

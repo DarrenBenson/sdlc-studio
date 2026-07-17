@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 26 |
+| Open | 27 |
 | In Progress | 0 |
 | Fixed | 70 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **178** |
+| **Total** | **179** |
 
 ## All Bugs
 
@@ -145,6 +145,7 @@
 | [BG0176](BG0176-migrate-s-needs-human-list-advises-re-sizing.md) | migrate's needs-human list advises re-sizing terminal units: 14+ Closed/Fixed legacy-Effort bugs each get 'set its Points by judgement', work nobody should do | Open | Medium | 2026-07-16 | 2026-07-16 |
 | [BG0177](BG0177-rfc-decide-misreports-the-drafts-ws-counts-a.md) | rfc decide misreports the drafts: ws counts a Workstream section no RFC has (never the Decomposed-into children), and decided RFCs still read READY for decision | Fixed | Medium | 2026-07-16 | 2026-07-16 |
 | [BG0178](BG0178-refine-s-seeded-ac-headings-end-in-and.md) | refine's seeded AC headings end in '...' and fail markdownlint MD026 | Open | Low | 2026-07-16 | 2026-07-16 |
+| [BG0179](BG0179-handoff-generate-titles-the-artefact-from-the-goal.md) | handoff generate titles the artefact from the goal sentence verbatim and fails MD026 | Open | Low | 2026-07-17 | 2026-07-17 |
 
 ## Archived Releases
 

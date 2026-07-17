@@ -1,6 +1,6 @@
 # EP0065: DoR/DoD documents with a check-id registry
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 5
 > **Parent:** CR0324
 > **Created:** 2026-07-16
@@ -14,7 +14,7 @@ Decomposed from CR0324. Delivers the work CR0324 requested.
 
 ## Story Breakdown
 
-- [ ] [US0195: definition-of-ready and definition-of-done templates with tagged machine-checkable criteria resolving through one registry authority; unknown check id is a loud validation error](../stories/US0195-definition-of-ready-and-definition-of-done-templates.md)
+- [x] [US0195: definition-of-ready and definition-of-done templates with tagged machine-checkable criteria resolving through one registry authority; unknown check id is a loud validation error](../stories/US0195-definition-of-ready-and-definition-of-done-templates.md)
 
 ## Revision History
 

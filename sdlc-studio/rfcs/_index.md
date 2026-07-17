@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 4 |
+| Draft | 2 |
 | In Review | 0 |
-| Accepted | 38 |
+| Accepted | 40 |
 | Superseded | 0 |
 | Withdrawn | 3 |
 | **Total** | **45** |
@@ -59,6 +59,6 @@
 | [RFC-0040](RFC0040-upgrade-and-migration-path-for-the-sizing-and.md) | Upgrade and migration path for the sizing and two-backlog model, before release | P1 | Accepted | sdlc-studio | 2026-07-15 | -- |
 | [RFC-0041](RFC0041-a-migrate-command-that-reviews-every-artefact-and.md) | A migrate command that reviews every artefact and upgrades where necessary | Medium | Accepted | sdlc-studio | 2026-07-15 | -- |
 | [RFC-0042](RFC0042-make-the-sprint-close-down-un-skippable-enforce.md) | Make the sprint close-down un-skippable: enforce the retro/close-gate mechanically, not just by doctrine | Medium | Accepted | sdlc-studio | 2026-07-15 | -- |
-| [RFC-0043](RFC0043-definition-of-ready-and-definition-of-done-as.md) | Definition of Ready and Definition of Done as editable per-project artefacts, enforced by the existing gates | Medium | Draft | sdlc-studio | 2026-07-15 | -- |
-| [RFC-0044](RFC0044-adversarial-reviewer-vs-reviewer-of-record-an-amigo.md) | Adversarial reviewer vs reviewer of record: an amigo subagent finds issues, an independent principal signs off | Medium | Draft | sdlc-studio | 2026-07-16 | -- |
+| [RFC-0043](RFC0043-definition-of-ready-and-definition-of-done-as.md) | Definition of Ready and Definition of Done as editable per-project artefacts, enforced by the existing gates | Medium | Accepted | sdlc-studio | 2026-07-15 | -- |
+| [RFC-0044](RFC0044-adversarial-reviewer-vs-reviewer-of-record-an-amigo.md) | Adversarial reviewer vs reviewer of record: an amigo subagent finds issues, an independent principal signs off | Medium | Accepted | sdlc-studio | 2026-07-16 | -- |
 | [RFC-0045](RFC0045-micro-requests-and-the-one-story-epic-should.md) | Micro-requests and the one-story epic: should a small CR decompose to a story without a container epic? | Medium | Draft | Claude Fable 5 | 2026-07-16 | -- |

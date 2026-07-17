@@ -1,6 +1,6 @@
 # CR-0325: Wire the gates to the DoR/DoD documents: grooming reads the ready bar, Done/close/release read the done bar (RFC0043 slice 2)
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0066
 > **Parent:** RFC0043
 > **Priority:** Medium

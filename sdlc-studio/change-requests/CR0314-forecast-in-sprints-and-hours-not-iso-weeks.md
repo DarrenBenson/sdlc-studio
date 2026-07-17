@@ -1,6 +1,6 @@
 # CR-0314: Forecast in sprints and hours, not ISO weeks: AI-speed delivery needs sprint-session buckets with days as the calendar floor
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0063
 > **Priority:** High
 > **Type:** Improvement

@@ -1,6 +1,6 @@
 # US0199: brief --rejoinder quotes the prior verdict verbatim with the re-execute-your-probes instruction and return contract; a malformed prior-verdict file is refused
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

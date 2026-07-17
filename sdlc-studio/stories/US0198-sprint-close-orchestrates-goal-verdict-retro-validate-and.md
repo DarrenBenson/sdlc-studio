@@ -1,6 +1,6 @@
 # US0198: sprint close orchestrates goal-verdict, retro validate and extract, close gate, handoff and reconcile with fail-loud stops and idempotent resume, printing the decision brief
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

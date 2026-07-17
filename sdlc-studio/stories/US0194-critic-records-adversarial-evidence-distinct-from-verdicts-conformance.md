@@ -1,6 +1,6 @@
 # US0194: critic records adversarial evidence distinct from verdicts; conformance critiqued requires evidence plus a non-author sign-off with recorded delegate chain and the embedded decision brief
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

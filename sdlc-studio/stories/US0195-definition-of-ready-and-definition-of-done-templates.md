@@ -1,6 +1,6 @@
 # US0195: definition-of-ready and definition-of-done templates with tagged machine-checkable criteria resolving through one registry authority; unknown check id is a loud validation error
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

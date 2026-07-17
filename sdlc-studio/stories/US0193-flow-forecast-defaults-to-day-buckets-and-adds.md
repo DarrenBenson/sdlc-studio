@@ -1,6 +1,6 @@
 # US0193: flow forecast defaults to day buckets and adds a sprint-session denominator sampled from retro evidence, ISO week behind a flag
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

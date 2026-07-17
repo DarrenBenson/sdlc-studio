@@ -1,6 +1,6 @@
 # US0200: tools/forward-port.sh runs the canonical rsync dry-run by default with --yes to apply, refusing a reversed direction or non-dev-repo cwd; AGENTS.md references it
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

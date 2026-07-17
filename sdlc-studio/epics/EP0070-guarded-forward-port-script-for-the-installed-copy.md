@@ -1,6 +1,6 @@
 # EP0070: Guarded forward-port script for the installed copy
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 2
 > **Parent:** CR0330
 > **Created:** 2026-07-16
@@ -14,7 +14,7 @@ Decomposed from CR0330. Delivers the work CR0330 requested.
 
 ## Story Breakdown
 
-- [ ] [US0200: tools/forward-port.sh runs the canonical rsync dry-run by default with --yes to apply, refusing a reversed direction or non-dev-repo cwd; AGENTS.md references it](../stories/US0200-tools-forward-port-sh-runs-the-canonical-rsync.md)
+- [x] [US0200: tools/forward-port.sh runs the canonical rsync dry-run by default with --yes to apply, refusing a reversed direction or non-dev-repo cwd; AGENTS.md references it](../stories/US0200-tools-forward-port-sh-runs-the-canonical-rsync.md)
 
 ## Revision History
 

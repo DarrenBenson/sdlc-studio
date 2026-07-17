@@ -1,6 +1,6 @@
 # US0196: grooming resolves the story DoR; transition Done and the critic gate resolve the story DoD; gate require-retro and release resolve the sprint and release DoD; absent documents stay byte-compatible with today
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

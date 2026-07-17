@@ -1,6 +1,6 @@
 # RFC-0043: Definition of Ready and Definition of Done as editable per-project artefacts, enforced by the existing gates
 
-> **Status:** Draft
+> **Status:** Accepted
 > **Decomposed-into:** CR0324, CR0325, CR0326
 > **Size:** XL
 > **Date:** 2026-07-15

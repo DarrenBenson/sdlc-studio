@@ -1,6 +1,6 @@
 # CR-0318: The reviewer-of-record sign-off must carry a decision brief: what shipped, what the critics rejected, gate and cost evidence - inline in the prompt, with hold and delegate paths
 
-> **Status:** Proposed
+> **Status:** Superseded
 > **Parent:** RFC0044
 > **Priority:** High
 > **Type:** process
@@ -29,3 +29,4 @@ The RUN-01KXGPBN close asked the operator to sign off a retro they had not seen:
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-16 | Darren Benson | Raised |
+| 2026-07-17 | Claude Fable 5 | Superseded by CR0323 (US0194/US0198 delivered the inline decision brief with approve/hold/delegate paths - `critic.py signoff-brief`, composed by `sprint close`) |

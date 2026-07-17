@@ -1,6 +1,6 @@
 # EP0064: The two-role review gate: adversarial evidence plus independent sign-off
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 5
 > **Parent:** CR0323
 > **Created:** 2026-07-16
@@ -14,7 +14,7 @@ Decomposed from CR0323. Delivers the work CR0323 requested.
 
 ## Story Breakdown
 
-- [ ] [US0194: critic records adversarial evidence distinct from verdicts; conformance critiqued requires evidence plus a non-author sign-off with recorded delegate chain and the embedded decision brief](../stories/US0194-critic-records-adversarial-evidence-distinct-from-verdicts-conformance.md)
+- [x] [US0194: critic records adversarial evidence distinct from verdicts; conformance critiqued requires evidence plus a non-author sign-off with recorded delegate chain and the embedded decision brief](../stories/US0194-critic-records-adversarial-evidence-distinct-from-verdicts-conformance.md)
 
 ## Revision History
 

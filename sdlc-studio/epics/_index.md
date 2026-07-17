@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 8 |
+| Draft | 0 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 62 |
+| Done | 70 |
 | **Total** | **70** |
 
 > Generate-mode note: all epics are **Ready** (spec extracted from the existing
@@ -83,11 +83,11 @@
 | [EP0060](EP0060-shared-test-module-loader.md) | Shared test-module loader | Done | -- | -- | 2026-07-16 | 2026-07-16 |
 | [EP0061](EP0061-rfc-decision-paperwork-made-deterministic.md) | RFC decision paperwork made deterministic | Done | -- | -- | 2026-07-16 | 2026-07-16 |
 | [EP0062](EP0062-verify-ac-accepts-a-story-id-where-a.md) | verify_ac accepts a story id where a story is meant | Done | -- | -- | 2026-07-16 | 2026-07-16 |
-| [EP0063](EP0063-forecast-in-sprint-sessions-and-days-not-iso.md) | Forecast in sprint-sessions and days, not ISO weeks | Draft | -- | -- | 2026-07-16 | 2026-07-16 |
-| [EP0064](EP0064-the-two-role-review-gate-adversarial-evidence-plus.md) | The two-role review gate: adversarial evidence plus independent sign-off | Draft | -- | -- | 2026-07-16 | 2026-07-16 |
-| [EP0065](EP0065-dor-dod-documents-with-a-check-id-registry.md) | DoR/DoD documents with a check-id registry | Draft | -- | -- | 2026-07-16 | 2026-07-16 |
-| [EP0066](EP0066-gates-read-the-dor-dod-documents.md) | Gates read the DoR/DoD documents | Draft | -- | -- | 2026-07-16 | 2026-07-16 |
-| [EP0067](EP0067-init-tailoring-pass-for-dor-dod.md) | init tailoring pass for DoR/DoD | Draft | -- | -- | 2026-07-16 | 2026-07-16 |
-| [EP0068](EP0068-sprint-close-the-twelve-step-ceremony-as-one.md) | sprint close: the twelve-step ceremony as one deterministic command | Draft | -- | -- | 2026-07-16 | 2026-07-16 |
-| [EP0069](EP0069-critic-brief-rejoinder-deterministic-re-verdict-scaffolding.md) | critic brief --rejoinder: deterministic re-verdict scaffolding | Draft | -- | -- | 2026-07-16 | 2026-07-16 |
-| [EP0070](EP0070-guarded-forward-port-script-for-the-installed-copy.md) | Guarded forward-port script for the installed copy | Draft | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0063](EP0063-forecast-in-sprint-sessions-and-days-not-iso.md) | Forecast in sprint-sessions and days, not ISO weeks | Done | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0064](EP0064-the-two-role-review-gate-adversarial-evidence-plus.md) | The two-role review gate: adversarial evidence plus independent sign-off | Done | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0065](EP0065-dor-dod-documents-with-a-check-id-registry.md) | DoR/DoD documents with a check-id registry | Done | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0066](EP0066-gates-read-the-dor-dod-documents.md) | Gates read the DoR/DoD documents | Done | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0067](EP0067-init-tailoring-pass-for-dor-dod.md) | init tailoring pass for DoR/DoD | Done | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0068](EP0068-sprint-close-the-twelve-step-ceremony-as-one.md) | sprint close: the twelve-step ceremony as one deterministic command | Done | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0069](EP0069-critic-brief-rejoinder-deterministic-re-verdict-scaffolding.md) | critic brief --rejoinder: deterministic re-verdict scaffolding | Done | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0070](EP0070-guarded-forward-port-script-for-the-installed-copy.md) | Guarded forward-port script for the installed copy | Done | -- | -- | 2026-07-16 | 2026-07-16 |

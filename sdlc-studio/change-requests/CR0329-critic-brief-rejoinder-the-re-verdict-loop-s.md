@@ -1,6 +1,6 @@
 # CR-0329: critic brief --rejoinder: the re-verdict loop's scaffolding emitted deterministically from the prior verdict
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0069
 > **Priority:** Medium
 > **Type:** Improvement

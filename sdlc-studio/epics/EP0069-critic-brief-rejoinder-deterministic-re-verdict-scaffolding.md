@@ -1,6 +1,6 @@
 # EP0069: critic brief --rejoinder: deterministic re-verdict scaffolding
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 2
 > **Parent:** CR0329
 > **Created:** 2026-07-16
@@ -14,7 +14,7 @@ Decomposed from CR0329. Delivers the work CR0329 requested.
 
 ## Story Breakdown
 
-- [ ] [US0199: brief --rejoinder quotes the prior verdict verbatim with the re-execute-your-probes instruction and return contract; a malformed prior-verdict file is refused](../stories/US0199-brief-rejoinder-quotes-the-prior-verdict-verbatim-with.md)
+- [x] [US0199: brief --rejoinder quotes the prior verdict verbatim with the re-execute-your-probes instruction and return contract; a malformed prior-verdict file is refused](../stories/US0199-brief-rejoinder-quotes-the-prior-verdict-verbatim-with.md)
 
 ## Revision History
 

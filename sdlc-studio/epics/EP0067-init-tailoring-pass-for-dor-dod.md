@@ -1,6 +1,6 @@
 # EP0067: init tailoring pass for DoR/DoD
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 3
 > **Parent:** CR0326
 > **Created:** 2026-07-16
@@ -14,7 +14,7 @@ Decomposed from CR0326. Delivers the work CR0326 requested.
 
 ## Story Breakdown
 
-- [ ] [US0197: init writes the default DoR/DoD documents and offers stack-derived tailoring criteria, applied only on acceptance and passing registry validation](../stories/US0197-init-writes-the-default-dor-dod-documents-and.md)
+- [x] [US0197: init writes the default DoR/DoD documents and offers stack-derived tailoring criteria, applied only on acceptance and passing registry validation](../stories/US0197-init-writes-the-default-dor-dod-documents-and.md)
 
 ## Revision History
 
