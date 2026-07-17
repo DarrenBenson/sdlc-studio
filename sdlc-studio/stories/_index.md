@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 6 |
+| Ready | 5 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 2 |
+| Review | 3 |
 | Done | 191 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -103,7 +103,7 @@
 | [US0190](US0190-load-script-shared-helper-in-scripts-tests-exemplar.md) | load_script shared helper in scripts/tests; exemplar adoption + docstring guidance | Done | EP0060 | 2026-07-16 | 2026-07-16 |
 | [US0191](US0191-parent-aware-minting-parent-wires-both-link-directions.md) | parent-aware minting (--parent wires both link directions atomically) and rfc resolve for decision-row surgery | Done | EP0061 | 2026-07-16 | 2026-07-16 |
 | [US0192](US0192-verify-ac-run-story-resolves-an-id-shaped.md) | verify_ac run --story resolves an id-shaped value as an id; a value that is neither path nor id fails naming both | Done | EP0062 | 2026-07-16 | 2026-07-16 |
-| [US0193](US0193-flow-forecast-defaults-to-day-buckets-and-adds.md) | flow forecast defaults to day buckets and adds a sprint-session denominator sampled from retro evidence, ISO week behind a flag | Ready | EP0063 | 2026-07-16 | 2026-07-16 |
+| [US0193](US0193-flow-forecast-defaults-to-day-buckets-and-adds.md) | flow forecast defaults to day buckets and adds a sprint-session denominator sampled from retro evidence, ISO week behind a flag | Review | EP0063 | 2026-07-16 | 2026-07-16 |
 | [US0194](US0194-critic-records-adversarial-evidence-distinct-from-verdicts-conformance.md) | critic records adversarial evidence distinct from verdicts; conformance critiqued requires evidence plus a non-author sign-off with recorded delegate chain and the embedded decision brief | Review | EP0064 | 2026-07-16 | 2026-07-16 |
 | [US0195](US0195-definition-of-ready-and-definition-of-done-templates.md) | definition-of-ready and definition-of-done templates with tagged machine-checkable criteria resolving through one registry authority; unknown check id is a loud validation error | Ready | EP0065 | 2026-07-16 | 2026-07-16 |
 | [US0196](US0196-grooming-resolves-the-story-dor-transition-done-and.md) | grooming resolves the story DoR; transition Done and the critic gate resolve the story DoD; gate require-retro and release resolve the sprint and release DoD; absent documents stay byte-compatible with today | Ready | EP0066 | 2026-07-16 | 2026-07-16 |

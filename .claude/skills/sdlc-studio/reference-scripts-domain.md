@@ -63,6 +63,14 @@ and work-item age for every non-terminal unit. Honesty contract: a unit whose da
 be resolved is NAMED unmeasurable with the reason, never guessed or silently skipped.
 Advisory only; nothing here feeds a gate.
 
+`forecast --units N [--bucket day|week|sprint] [--seed K]` is the seeded Monte Carlo
+completion forecast. **Day** buckets are the default calendar floor (agent-speed delivery;
+`flow.forecast_bucket` or the flag select week for slow-moving projects); **sprint** samples
+the velocity history's measured per-sprint throughput and reports sprints-to-complete plus
+hours at the measured elapsed-hours-per-sprint median (minimum three sprints of history;
+unmeasured hours named, never zeroed). The refusal guards (min-history, all-zero,
+non-positive batch, horizon) hold in every bucket.
+
 ### `telemetry.py`
 
 Run telemetry recorder. `record` appends a per-unit run outcome

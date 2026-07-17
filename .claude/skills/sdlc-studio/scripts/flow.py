@@ -231,6 +231,16 @@ def compute(root, types=("story", "bug"), today: dt.date | None = None) -> dict:
 MC_MIN_WEEKS = 4
 MC_SIMS = 10_000
 MC_WEEK_CAP = 520  # simulation horizon; a percentile AT the cap is refused, never reported
+# Day is the calendar floor and the DEFAULT bucket: on an agent-speed project the median
+# cycle time is 0 days and sprints are sessions measured in hours, so a week bucket
+# quantises the schedule answer to uselessness. The ISO-week bucket stays available via
+# --bucket week or `flow.forecast_bucket: week` for slow-moving projects.
+MC_MIN_DAYS = 7
+MC_DAY_CAP = MC_WEEK_CAP * 7
+MC_MIN_SPRINTS = 3
+MC_SPRINT_CAP = 200
+_BUCKETS = {"day": (MC_MIN_DAYS, MC_DAY_CAP, 1),          # (min history, horizon, days/step)
+            "week": (MC_MIN_WEEKS, MC_WEEK_CAP, 7)}
 
 
 def _median(vals: list) -> float:
@@ -238,57 +248,155 @@ def _median(vals: list) -> float:
     return vals[n // 2] if n % 2 else (vals[n // 2 - 1] + vals[n // 2]) / 2
 
 
+def _mc_ranks(samples: list[int], n_units: int, *, seed: int, sims: int,
+              cap: int, period: str = "period") -> tuple | dict:
+    """The shared Monte Carlo engine: sample measured per-period throughput with
+    replacement until the batch is covered, `sims` times. Returns the rank function,
+    or the refusal dict when a guard fires (all-zero, non-positive, horizon). The
+    guards hold in EVERY bucket - a bucket without them is silent optimism."""
+    if n_units <= 0:
+        return {"refused": f"a batch of {n_units} unit(s) is not forecastable"}
+    if not any(samples):
+        return {"refused": "throughput history is all zero - nothing has been delivered "
+                           "in the window, so no completion date is honest"}
+    rng = random.Random(seed)
+    needed: list[int] = []
+    for _ in range(sims):
+        done = 0
+        periods = 0
+        while done < n_units and periods < cap:
+            done += rng.choice(samples)
+            periods += 1
+        needed.append(periods)
+    needed.sort()
+
+    def rank(p: float) -> int:
+        return needed[min(len(needed) - 1, int(len(needed) * p))]
+    if rank(0.95) >= cap:
+        return {"refused": f"at the measured throughput the batch does not complete "
+                           f"within the simulation horizon ({cap} {period}s) at 95% "
+                           f"confidence - a capped date would be a truncation, not a forecast"}
+    return (rank,)
+
+
+def mc_bucket_forecast(samples: list[int], n_units: int, *, bucket: str = "week",
+                       seed: int = 0, sims: int = MC_SIMS,
+                       min_history: int | None = None,
+                       today: dt.date | None = None) -> dict:
+    """Probabilistic completion forecast over a calendar bucket (day or week):
+    50/85/95% completion dates at the bucket's precision. Seeded and reproducible
+    by construction. Refuses - never guesses - under the bucket's minimum history,
+    on an all-zero history, on a non-positive batch, and at the horizon."""
+    today = today or dt.date.today()
+    min_hist, cap, step_days = _BUCKETS[bucket]
+    if min_history is not None:
+        min_hist = min_history
+    if len(samples) < min_hist and n_units > 0:
+        return {"refused": f"only {len(samples)} {bucket}(s) of throughput history - "
+                           f"minimum {min_hist}; a forecast from less is a guess"}
+    got = _mc_ranks(samples, n_units, seed=seed, sims=sims, cap=cap, period=bucket)
+    if isinstance(got, dict):
+        return got
+    rank = got[0]
+    return {"bucket": bucket, "units": n_units, "sims": sims, "seed": seed,
+            f"history_{bucket}s": len(samples),
+            "confidence": {p: (today + dt.timedelta(days=rank(float(p) / 100) * step_days))
+                           .isoformat() for p in ("50", "85", "95")}}
+
+
 def monte_carlo_forecast(weekly_samples: list[int], n_units: int, *,
                          seed: int = 0, sims: int = MC_SIMS,
                          min_weeks: int = MC_MIN_WEEKS,
                          today: dt.date | None = None) -> dict:
-    """Probabilistic completion forecast: sample measured weekly throughput (zero
-    weeks included - dropping them is silent optimism) with replacement until the
-    batch is covered, `sims` times; report the 50/85/95% completion dates. Seeded
-    and reproducible by construction (a forecast that changes between runs cannot
-    be judged later). Refuses - never guesses - under `min_weeks` of history, on an
-    all-zero history, on a non-positive batch, and when the reported confidence
-    rank hits the simulation horizon (a capped week count reported as a date would
-    be a truncation dressed as a forecast)."""
-    today = today or dt.date.today()
-    if n_units <= 0:
-        return {"refused": f"a batch of {n_units} unit(s) is not forecastable"}
-    if len(weekly_samples) < min_weeks:
-        return {"refused": f"only {len(weekly_samples)} week(s) of throughput history - "
-                           f"minimum {min_weeks}; a forecast from less is a guess"}
-    if not any(weekly_samples):
-        return {"refused": "throughput history is all zero - nothing has been delivered "
-                           "in the window, so no completion date is honest"}
-    rng = random.Random(seed)
-    weeks_needed: list[int] = []
-    for _ in range(sims):
-        done = 0
-        weeks = 0
-        while done < n_units and weeks < MC_WEEK_CAP:
-            done += rng.choice(weekly_samples)
-            weeks += 1
-        weeks_needed.append(weeks)
-    weeks_needed.sort()
-    def rank(p: float) -> int:
-        return weeks_needed[min(len(weeks_needed) - 1, int(len(weeks_needed) * p))]
-    if rank(0.95) >= MC_WEEK_CAP:
-        return {"refused": f"at the measured throughput the batch does not complete "
-                           f"within the simulation horizon ({MC_WEEK_CAP} weeks) at 95% "
-                           f"confidence - a capped date would be a truncation, not a forecast"}
-    return {"units": n_units, "sims": sims, "seed": seed,
-            "history_weeks": len(weekly_samples),
-            "confidence": {p: (today + dt.timedelta(weeks=rank(float(p) / 100))).isoformat()
-                           for p in ("50", "85", "95")}}
+    """The ISO-week forecast (the original instrument, kept as the `week` bucket):
+    see mc_bucket_forecast for the engine and its guards."""
+    out = mc_bucket_forecast(weekly_samples, n_units, bucket="week", seed=seed,
+                             sims=sims, min_history=min_weeks, today=today)
+    if "refused" in out:
+        return out
+    out.pop("bucket")  # the original shape, unchanged for existing readers
+    return out
+
+
+def day_samples(dates: list[dt.date]) -> list[int]:
+    """Per-day delivered counts across the delivered window, ZERO days included -
+    dropping them is silent optimism."""
+    if not dates:
+        return []
+    counts: dict[dt.date, int] = {}
+    for d in dates:
+        counts[d] = counts.get(d, 0) + 1
+    day = min(dates)
+    out: list[int] = []
+    while day <= max(dates):
+        out.append(counts.get(day, 0))
+        day += dt.timedelta(days=1)
+    return out
+
+
+def sprint_forecast(root, n_units: int, *, seed: int = 0, sims: int = MC_SIMS) -> dict:
+    """The sprint-session denominator - the primary read on an agent-speed project:
+    sample measured per-sprint delivered units from the velocity history and report
+    sprints-to-complete, plus hours at the measured elapsed-hours-per-sprint median.
+    Refuses under MC_MIN_SPRINTS of history (named); unmeasured elapsed hours are
+    named unmeasured, never zeroed."""
+    import retro  # noqa: PLC0415 - sibling; deferred so `compute` never pays for it
+    rows = retro.velocity_history(root)
+    samples = [r["measured"] if r.get("measured") is not None else r.get("units")
+               for r in rows]
+    samples = [int(s) for s in samples if s is not None]
+    if len(samples) < MC_MIN_SPRINTS:
+        return {"refused": f"only {len(samples)} sprint(s) of velocity history - "
+                           f"minimum {MC_MIN_SPRINTS}; a forecast from less is a guess"}
+    got = _mc_ranks(samples, n_units, seed=seed, sims=sims, cap=MC_SPRINT_CAP,
+                    period="sprint")
+    if isinstance(got, dict):
+        return got
+    rank = got[0]
+    sprints = {p: rank(float(p) / 100) for p in ("50", "85", "95")}
+    walls = sorted(float(r["wall_time_s"]) for r in rows
+                   if r.get("wall_time_s") is not None)
+    out = {"bucket": "sprint", "units": n_units, "sims": sims, "seed": seed,
+           "history_sprints": len(samples), "confidence_sprints": sprints}
+    if walls:
+        median_h = _median(walls) / 3600
+        out["median_sprint_hours"] = median_h
+        out["confidence_hours"] = {p: k * median_h for p, k in sprints.items()}
+    else:
+        out["median_sprint_hours"] = None
+        out["confidence_hours"] = None
+        out["note"] = ("elapsed hours unmeasured - no sprint in the history recorded a "
+                       "wall time, so sprints-to-complete is the whole honest answer")
+    return out
+
+
+def resolve_bucket(flag: str | None, root) -> str:
+    """The forecast bucket: an explicit flag wins, then `flow.forecast_bucket` in
+    .config.yaml, then the day default. An unknown config value is refused loudly -
+    silently falling through to another bucket would be a guess dressed as config."""
+    if flag:
+        return flag
+    got = str(sdlc_md.project_override(root, "flow.forecast_bucket", "day") or "day")
+    if got not in ("day", "week", "sprint"):
+        raise ValueError(f"flow.forecast_bucket is {got!r} - expected day, week or sprint")
+    return got
 
 
 def forecast(root, n_units: int, *, seed: int = 0,
-             today: dt.date | None = None) -> dict:
-    """Workspace glue: measured weekly throughput (every ISO week in the delivered
-    window, zeros included) -> monte_carlo_forecast."""
+             today: dt.date | None = None, bucket: str = "week") -> dict:
+    """Workspace glue: measured throughput in the requested bucket (every period in
+    the delivered window, zeros included) -> the seeded Monte Carlo engine."""
+    if bucket == "sprint":
+        return sprint_forecast(root, n_units, seed=seed)
     report = compute(root, today=today)
     window = report["throughput"]["window"]
     if not window:
         return {"refused": "no delivered units at all - there is no throughput to sample"}
+    if bucket == "day":
+        dates = sorted(dt.date.fromisoformat(u["delivered"])
+                       for u in report["units"].values() if "delivered" in u)
+        return mc_bucket_forecast(day_samples(dates), n_units, bucket="day",
+                                  seed=seed, today=today)
     weekly = report["throughput"]["weekly"]
     start = dt.date.fromisoformat(window["from"])
     end = dt.date.fromisoformat(window["to"])
@@ -386,24 +494,45 @@ def main(argv=None) -> int:
                    help="comma-separated unit types (default: story,bug)")
     sdlc_md.add_format_arg(c)
     f = sub.add_parser("forecast", help="Seeded Monte Carlo completion forecast for N "
-                                        "units from measured weekly throughput "
-                                        "(refuses under 4 weeks of history).")
+                                        "units from measured throughput. Buckets: day "
+                                        "(default - the agent-speed calendar floor), "
+                                        "week (ISO weeks), sprint (sessions from the "
+                                        "velocity history, with measured hours).")
     f.add_argument("--units", type=int, required=True,
                    help="how many delivery units the batch holds")
     f.add_argument("--seed", type=int, default=0,
                    help="simulation seed (default 0 - reproducible by design)")
+    f.add_argument("--bucket", choices=("day", "week", "sprint"), default=None,
+                   help="throughput denominator (default: flow.forecast_bucket config, "
+                        "else day)")
     sdlc_md.add_format_arg(f)
     args = ap.parse_args(argv)
     if args.cmd == "forecast":
-        result = forecast(Path(args.root), args.units, seed=args.seed)
+        bucket = resolve_bucket(args.bucket, Path(args.root))
+        result = forecast(Path(args.root), args.units, seed=args.seed, bucket=bucket)
         if args.format == "json":
             print(json.dumps(result, indent=2))
         elif "refused" in result:
             print(f"forecast refused: {result['refused']}")
+        elif bucket == "sprint":
+            s = result["confidence_sprints"]
+            line = (f"forecast for {result['units']} unit(s) over "
+                    f"{result['history_sprints']} measured sprint(s) "
+                    f"({result['sims']} sims, seed {result['seed']}):\n"
+                    f"  50% within {s['50']}   85% within {s['85']}   "
+                    f"95% within {s['95']} sprint-session(s)")
+            if result["median_sprint_hours"] is not None:
+                h = result["confidence_hours"]
+                line += (f"\n  ~{h['50']:.1f}h / {h['85']:.1f}h / {h['95']:.1f}h at the "
+                         f"measured {result['median_sprint_hours']:.1f}h-per-sprint median")
+            else:
+                line += f"\n  {result['note']}"
+            print(line)
         else:
             c50, c85, c95 = (result["confidence"][k] for k in ("50", "85", "95"))
-            print(f"forecast for {result['units']} unit(s) over {result['history_weeks']} "
-                  f"measured week(s) ({result['sims']} sims, seed {result['seed']}):\n"
+            history = result.get("history_days", result.get("history_weeks"))
+            print(f"forecast for {result['units']} unit(s) over {history} "
+                  f"measured {bucket}(s) ({result['sims']} sims, seed {result['seed']}):\n"
                   f"  50% by {c50}   85% by {c85}   95% by {c95}\n"
                   f"  probabilistic schedule read - the cost instrument (points x rate) "
                   f"is a different axis; neither feeds a gate")

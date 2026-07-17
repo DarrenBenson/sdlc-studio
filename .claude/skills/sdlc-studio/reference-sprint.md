@@ -467,14 +467,27 @@ stops measuring):
 - **Cost** is points x a measured tokens-per-point rate - the plan's token forecast,
   judged by the retro against the recorded prediction. It answers "what will this batch
   burn", never "when will it land".
-- **Schedule** is the flow instrument (`flow.py`): measured cycle time, weekly
-  throughput and work-item age, and a **seeded Monte Carlo completion forecast**
-  (`flow.py forecast --units N`) sampling the measured weekly throughput - zero-delivery
-  weeks included - to give 50/85/95% confidence dates. Probabilistic by design: a
-  single-date schedule promise is the false precision the estimator lessons killed.
-  It refuses under four weeks of history, an all-zero window, a non-positive batch,
-  or when the 95% rank hits the simulation horizon; a refusal names the reason,
-  never guesses a date.
+- **Schedule** is the flow instrument (`flow.py`): measured cycle time, throughput
+  and work-item age, and a **seeded Monte Carlo completion forecast**
+  (`flow.py forecast --units N [--bucket day|week|sprint]`) sampling measured
+  throughput - zero-delivery periods included - to give 50/85/95% confidence dates.
+  Probabilistic by design: a single-date schedule promise is the false precision the
+  estimator lessons killed. The same refusal guards hold in every bucket (minimum
+  history, all-zero window, non-positive batch, simulation horizon); a refusal names
+  the reason, never guesses a date.
+
+  **Granularity is calibrated to the measured process, not the literature's default.**
+  The ISO-week bucket came from human-team Kanban practice; measured reality on an
+  agent-speed project is a median cycle time of 0 days and sprints that are sessions
+  measured in hours, so a weekly bucket quantises "this afternoon" into "next week".
+  The **day** bucket is therefore the default calendar floor, and the primary read is
+  the **sprint-session denominator** (`--bucket sprint`): sampled from the velocity
+  history's measured per-sprint throughput, reported as sprints-to-complete plus hours
+  at the measured elapsed-hours-per-sprint median (refusing under three sprints of
+  history; unmeasured hours are named, never zeroed). The week bucket stays available
+  via `--bucket week` or `flow.forecast_bucket: week` for slow-moving projects. The
+  operator's man-month-per-hour working heuristic is descriptive context for why day
+  granularity matters - never a target (Goodhart applies).
 
 The sprint report shows both axes side by side; `deploy.py metrics` (the DORA four
 keys) is the delivery-performance read once a project ships. Points stay the COST

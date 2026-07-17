@@ -400,5 +400,161 @@ class AgeTests(unittest.TestCase):
             self.assertNotIn("age_days", report["units"]["US0001"])
 
 
+def _velocity_fixture(root: pathlib.Path, rows: list[str]) -> None:
+    d = root / "sdlc-studio" / "retros"
+    d.mkdir(parents=True, exist_ok=True)
+    header = ("| Retro | Date | Units | Measured | Wall (s) |\n"
+              "| --- | --- | --- | --- | --- |\n")
+    (d / "VELOCITY.md").write_text(header + "\n".join(rows) + "\n", encoding="utf-8")
+
+
+class DayBucketTests(unittest.TestCase):
+    """CR0314: days replace ISO weeks as the calendar floor - an agent-speed project's
+    median cycle time is 0 days, and a week bucket quantises the answer to uselessness."""
+
+    def test_day_samples_include_zero_days(self):
+        dates = [dt.date(2026, 7, 1), dt.date(2026, 7, 1), dt.date(2026, 7, 3)]
+        self.assertEqual(flow.day_samples(dates), [2, 0, 1])
+
+    def test_day_bucket_reports_day_precision_dates(self):
+        samples = [1, 0, 2, 1, 0, 3, 1]  # 7 measured days
+        f = flow.mc_bucket_forecast(samples, 6, bucket="day", seed=7,
+                                    today=dt.date(2026, 7, 16))
+        self.assertEqual(f["bucket"], "day")
+        d50 = dt.date.fromisoformat(f["confidence"]["50"])
+        d95 = dt.date.fromisoformat(f["confidence"]["95"])
+        self.assertGreater(d50, dt.date(2026, 7, 16))
+        self.assertLessEqual(d95, dt.date(2026, 7, 16) + dt.timedelta(days=60))
+        self.assertLessEqual(d50, d95)
+
+    def test_day_is_the_default_bucket_week_stays_available(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            self.assertEqual(flow.resolve_bucket(None, root), "day")
+            self.assertEqual(flow.resolve_bucket("week", root), "week")
+
+    def test_unknown_config_bucket_refused_not_guessed(self):
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest("config override reads .config.yaml (needs PyYAML)")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            (root / "sdlc-studio").mkdir(parents=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "flow:\n  forecast_bucket: fortnight\n", encoding="utf-8")
+            with self.assertRaises(ValueError):
+                flow.resolve_bucket(None, root)
+
+    def test_horizon_refusal_names_the_bucket(self):
+        f = flow.monte_carlo_forecast([2, 0, 3, 1, 0, 2, 4, 1], 5000, seed=7,
+                                      today=dt.date(2026, 7, 16))
+        self.assertIn("weeks", f["refused"])   # not the vague "periods"
+        g = flow.mc_bucket_forecast([0, 0, 0, 0, 0, 0, 1], 100000, bucket="day",
+                                    seed=1, sims=50, today=dt.date(2026, 7, 16))
+        self.assertIn("days", g["refused"])
+
+    def test_config_can_prefer_week(self):
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest("config override reads .config.yaml (needs PyYAML)")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            (root / "sdlc-studio").mkdir(parents=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "flow:\n  forecast_bucket: week\n", encoding="utf-8")
+            self.assertEqual(flow.resolve_bucket(None, root), "week")
+            self.assertEqual(flow.resolve_bucket("day", root), "day")  # flag wins
+
+
+class SprintDenominatorTests(unittest.TestCase):
+    """CR0314: the primary denominator is the SPRINT-SESSION - measured per-sprint
+    throughput from the velocity history, with hours at the measured elapsed median."""
+
+    ROWS = ["| RETRO0001 | 2026-07-01 | 5 | 5 | 3600 |",
+            "| RETRO0002 | 2026-07-02 | 5 | 4 | 7200 |",
+            "| RETRO0003 | 2026-07-03 | 3 | 3 | 5400 |"]
+
+    def test_sprint_forecast_samples_measured_history(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            _velocity_fixture(root, self.ROWS)
+            f = flow.sprint_forecast(root, 8, seed=7)
+            self.assertEqual(f["bucket"], "sprint")
+            self.assertEqual(f["history_sprints"], 3)
+            self.assertGreaterEqual(f["confidence_sprints"]["50"], 2)   # 8 units at 3-5/sprint
+            self.assertLessEqual(f["confidence_sprints"]["95"], 6)
+            # hours = sprints x the measured median elapsed (5400s = 1.5h)
+            self.assertAlmostEqual(f["median_sprint_hours"], 1.5)
+            self.assertAlmostEqual(
+                f["confidence_hours"]["50"], f["confidence_sprints"]["50"] * 1.5)
+
+    def test_sprint_refusal_under_minimum_history_is_named(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            _velocity_fixture(root, self.ROWS[:2])
+            f = flow.sprint_forecast(root, 8, seed=7)
+            self.assertIn("refused", f)
+            self.assertIn("sprint", f["refused"])
+            self.assertIn(str(flow.MC_MIN_SPRINTS), f["refused"])   # the minimum, named
+
+    def test_unmeasured_hours_are_named_not_zeroed(self):
+        rows = ["| RETRO0001 | 2026-07-01 | 5 | 5 | - |",
+                "| RETRO0002 | 2026-07-02 | 5 | 4 | - |",
+                "| RETRO0003 | 2026-07-03 | 3 | 3 | - |"]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            _velocity_fixture(root, rows)
+            f = flow.sprint_forecast(root, 8, seed=7)
+            self.assertIsNone(f["median_sprint_hours"])
+            self.assertIsNone(f["confidence_hours"])
+            self.assertIn("unmeasured", f["note"])
+
+
+class BucketGuardTests(unittest.TestCase):
+    """CR0314: the refusal guards (seeded, min-history, all-zero, non-positive,
+    horizon) hold in EVERY bucket, not only the week one."""
+
+    def test_day_min_history_refused(self):
+        f = flow.mc_bucket_forecast([1, 2], 5, bucket="day", seed=1,
+                                    today=dt.date(2026, 7, 16))
+        self.assertIn("refused", f)
+        self.assertIn(str(flow.MC_MIN_DAYS), f["refused"])
+
+    def test_day_all_zero_refused(self):
+        f = flow.mc_bucket_forecast([0] * 10, 5, bucket="day", seed=1,
+                                    today=dt.date(2026, 7, 16))
+        self.assertIn("refused", f)
+
+    def test_day_non_positive_batch_refused(self):
+        f = flow.mc_bucket_forecast([1, 0, 2, 1, 0, 3, 1], 0, bucket="day", seed=1,
+                                    today=dt.date(2026, 7, 16))
+        self.assertIn("refused", f)
+
+    def test_day_horizon_hit_refused_not_truncated(self):
+        f = flow.mc_bucket_forecast([0, 0, 0, 0, 0, 0, 1], 100000, bucket="day",
+                                    seed=1, sims=50, today=dt.date(2026, 7, 16))
+        self.assertIn("refused", f)
+        self.assertIn("horizon", f["refused"])
+
+    def test_day_bucket_is_seeded_and_reproducible(self):
+        samples = [1, 0, 2, 1, 0, 3, 1]
+        a = flow.mc_bucket_forecast(samples, 6, bucket="day", seed=7,
+                                    today=dt.date(2026, 7, 16))
+        b = flow.mc_bucket_forecast(samples, 6, bucket="day", seed=7,
+                                    today=dt.date(2026, 7, 16))
+        self.assertEqual(a, b)
+
+    def test_sprint_non_positive_and_all_zero_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            _velocity_fixture(root, ["| RETRO0001 | 2026-07-01 | 0 | 0 | 3600 |",
+                                     "| RETRO0002 | 2026-07-02 | 0 | 0 | 3600 |",
+                                     "| RETRO0003 | 2026-07-03 | 0 | 0 | 3600 |"])
+            self.assertIn("refused", flow.sprint_forecast(root, 0, seed=1))
+            self.assertIn("refused", flow.sprint_forecast(root, 8, seed=1))
+
+
 if __name__ == "__main__":
     unittest.main()

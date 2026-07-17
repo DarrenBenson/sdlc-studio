@@ -1,6 +1,6 @@
 # US0193: flow forecast defaults to day buckets and adds a sprint-session denominator sampled from retro evidence, ISO week behind a flag
 
-> **Status:** Ready
+> **Status:** Review
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** `flow.py forecast` runs with no bucket flag
 - **Then** flow forecast defaults to day-bucket sampling (zero days included) and reports 50/85/95% dates at day precision; the ISO-week bucket remains available via flag/config
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_flow.py -k DayBucket
+- **Verified:** yes (2026-07-17)
 
 ### AC2: a sprint-session denominator sampled from retro evidence
 
@@ -29,6 +30,7 @@
 - **When** the sprint-denominated forecast runs
 - **Then** A sprint-denominated forecast samples measured per-sprint throughput from the retro evidence ledger and reports sprints-to-complete plus hours at the measured elapsed-hours-per-sprint median, refusing under a minimum sprint-history (named, never guessed)
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_flow.py -k SprintDenominator
+- **Verified:** yes (2026-07-17)
 
 ### AC3: the granularity rationale is documented
 
@@ -36,6 +38,7 @@
 - **When** a reader opens reference-sprint.md's schedule-and-cost section
 - **Then** reference-sprint.md#schedule-and-cost states the granularity rationale (agent-speed delivery, the man-month-per-hour heuristic as descriptive context, never a target)
 - **Verify:** grep "granularity" .claude/skills/sdlc-studio/reference-sprint.md
+- **Verified:** yes (2026-07-17)
 
 ### AC4: the refusal guards hold in every bucket
 
@@ -43,6 +46,7 @@
 - **When** the forecast runs against each bucket (day, week, sprint)
 - **Then** Existing refusal guards (seeded, min-history, all-zero, non-positive, horizon) hold in every bucket
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_flow.py -k BucketGuard
+- **Verified:** yes (2026-07-17)
 
 ## Revision History
 
