@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 5 |
+| Open | 4 |
 | In Progress | 0 |
-| Fixed | 99 |
+| Fixed | 100 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -150,7 +150,7 @@
 | [BG0181](BG0181-retro-accuracy-reads-parenthetical-ids-in-the-batch.md) | retro accuracy reads parenthetical ids in the Batch line as rateable units | Fixed | Low | 2026-07-17 | 2026-07-17 |
 | [BG0182](BG0182-help-mutation-md-drifts-from-the-bg0180-red.md) | help/mutation.md drifts from the BG0180 red-baseline-refuse fix | Open | Low | 2026-07-17 | 2026-07-17 |
 | [BG0183](BG0183-test-modules-importing-the-tests-gitutil-helper-fail.md) | Test modules importing the tests/gitutil helper fail under single-module unittest invocation | Open | Medium | 2026-07-17 | 2026-07-17 |
-| [BG0184](BG0184-cross-epic-ac-blocks-extension-stories-on-keywords.md) | cross-epic-ac blocks extension stories on keywords owned by a terminal epic | Open | Medium | 2026-07-17 | 2026-07-17 |
+| [BG0184](BG0184-cross-epic-ac-blocks-extension-stories-on-keywords.md) | cross-epic-ac blocks extension stories on keywords owned by a terminal epic | Fixed | Medium | 2026-07-17 | 2026-07-17 |
 | [BG0185](BG0185-dor-dod-near-miss-check-tags-parse-as.md) | DoR/DoD near-miss check tags parse as no-tag instead of erroring | Open | Medium | 2026-07-17 | 2026-07-17 |
 | [BG0186](BG0186-parent-ref-singular-and-parent-refs-plural-disagree.md) | parent_ref (singular) and parent_refs (plural) disagree on a contradictory Parent record | Open | Low | 2026-07-17 | 2026-07-17 |
 

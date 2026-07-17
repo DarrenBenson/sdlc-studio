@@ -7,8 +7,10 @@ criterion that quietly depends on epic F's capability (e.g. an EP0001 auth story
 structurally un-Done-able in its own epic. This flags, advisory and heuristic, any AC that
 mentions a distinctive capability keyword owned by a *different* epic's title - so it can be
 split or re-scoped at authoring time, before it becomes an un-passable AC (the symptom
-the Done-gate catches downstream). Never auto-edits; false positives are expected (it is a keyword
-heuristic) - the operator decides. Pure stdlib.
+the Done-gate catches downstream). A keyword owned only by a *terminal* epic is exempt - a
+closed epic no longer owns live scope, so reusing its keyword in a new extension story is not a
+leak. Never auto-edits; false positives are expected (it is a keyword heuristic) - the operator
+decides. Pure stdlib.
 """
 from __future__ import annotations
 
@@ -58,19 +60,29 @@ def check(repo_root: Path | str) -> list[dict]:
     # epic id -> distinctive keywords (owned by exactly one epic)
     epic_kw: dict[str, set[str]] = {}
     titles: dict[str, str] = {}
+    terminal_epics: set[str] = set()  # closed epics own no live scope
+    epic_vocab = sdlc_md.status_vocab("epic", root)
     for path in sdlc_md.artifact_files("epic", root):
         rec = sdlc_md.extract_record_id(path.stem)
         if not rec:
             continue
-        m = re.search(r"^#\s+\S+:\s*(.+?)\s*$", path.read_text(encoding="utf-8"), re.M)
+        text = path.read_text(encoding="utf-8")
+        m = re.search(r"^#\s+\S+:\s*(.+?)\s*$", text, re.M)
         title = m.group(1) if m else ""
-        titles[sdlc_md.norm_id(rec)] = title
-        epic_kw[sdlc_md.norm_id(rec)] = _keywords(title)
+        eid = sdlc_md.norm_id(rec)
+        titles[eid] = title
+        epic_kw[eid] = _keywords(title)
+        status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), epic_vocab)
+        if status and sdlc_md.is_terminal_status("epic", status):
+            terminal_epics.add(eid)
     owners: dict[str, set[str]] = {}
     for eid, kws in epic_kw.items():
         for kw in kws:
             owners.setdefault(kw, set()).add(eid)
-    distinctive = {kw: next(iter(es)) for kw, es in owners.items() if len(es) == 1}
+    # A keyword whose SOLE owning epic is terminal is exempt: a closed epic no longer owns
+    # live scope, so reusing its keyword in a new extension story is not a cross-epic leak.
+    distinctive = {kw: next(iter(es)) for kw, es in owners.items()
+                   if len(es) == 1 and next(iter(es)) not in terminal_epics}
 
     # First pass: read each story's AC block once, keyed by its own epic.
     stories: list[tuple[str | None, str, str | None]] = []  # (own_eid, ac_block, record_id)

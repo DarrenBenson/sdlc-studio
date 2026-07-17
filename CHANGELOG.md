@@ -568,6 +568,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The spec-truth refresh sprint (RUN-01KXR6XS): EP0071 + the open-bug backlog.**
+  - **BG0184:** the cross-epic-ac lint (`ac_scope.check`) now exempts a keyword whose sole owning
+    epic is *terminal*. A closed epic owns no live scope, so a new extension story reusing its title
+    keyword is not a cross-epic leak - it was being silently blocked NOT-READY at the tranche-audit
+    gate (was CR0331). A live (non-terminal) owner still flags. Terminal-owner and live-owner
+    regression tests added.
+
 - **The 2026-07-16 audit backlog (RUN-01KXQH64, the audit-backlog sprint).**
   - **BG0152:** per-attempt telemetry now has a production WRITER, not only a reader. `telemetry
     record` takes `--attempt MODEL:TOKENS` (repeatable, order-preserving) and `--attempts JSON`, and

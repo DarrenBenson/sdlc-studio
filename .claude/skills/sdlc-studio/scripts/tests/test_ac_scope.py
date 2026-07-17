@@ -22,10 +22,11 @@ def _load(name):
 ac_scope = _load("ac_scope")
 
 
-def _epic(root: Path, disp: str, title: str) -> None:
+def _epic(root: Path, disp: str, title: str, status: str = "Draft") -> None:
     d = root / "sdlc-studio" / "epics"
     d.mkdir(parents=True, exist_ok=True)
-    (d / f"{disp}-x.md").write_text(f"# {disp}: {title}\n\n> **Status:** Draft\n", encoding="utf-8")
+    (d / f"{disp}-x.md").write_text(
+        f"# {disp}: {title}\n\n> **Status:** {status}\n", encoding="utf-8")
 
 
 def _story(root: Path, disp: str, epic: str, ac_body: str) -> None:
@@ -109,6 +110,29 @@ class AcScopeTests(unittest.TestCase):
             self.assertEqual([f for f in findings if f["keyword"] == "list"], [])
             self.assertTrue(any(f["keyword"] == "accounts" and f["owner_epic"] == "EP0006"
                                 for f in findings))
+
+    def test_terminal_owner_epic_exempted(self) -> None:
+        # BG0184: a closed epic owns no live scope. A keyword whose SOLE owning epic is
+        # terminal (Done) must not block a new extension story that reuses it - the
+        # cross-epic-ac heuristic is about live scope leakage, and a closed epic has none.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _epic(root, "EP0006", "Accounts & Cross-Device Sync", status="Done")
+            _story(root, "US0002", "EP0001",
+                   "### AC1\n- **Then** a valid account token resolves a userId\n")
+            self.assertEqual(
+                [f for f in ac_scope.check(root) if f["keyword"] == "accounts"], [])
+
+    def test_live_owner_epic_still_flags(self) -> None:
+        # The exemption is scoped to TERMINAL owners only: a live (non-terminal) owner
+        # still owns scope, so the cross-epic reference is still a real leak and flags.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _epic(root, "EP0006", "Accounts & Cross-Device Sync", status="In Progress")
+            _story(root, "US0002", "EP0001",
+                   "### AC1\n- **Then** a valid account token resolves a userId\n")
+            self.assertTrue(any(f["keyword"] == "accounts" and f["owner_epic"] == "EP0006"
+                                for f in ac_scope.check(root)))
 
     def test_two_distinct_epics_below_threshold_still_flags(self) -> None:
         # Boundary, pinned to the canonical AC ("across stories of MANY epics"): a keyword
