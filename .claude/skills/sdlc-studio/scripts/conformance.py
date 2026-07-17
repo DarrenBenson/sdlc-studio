@@ -36,6 +36,10 @@ _BULLET_VAL = re.compile(r"^\s*[-*]\s+(?:\[[ xX]\]\s+)?(?:\*\*[^*]+\*\*:?\s*)?(.
 # expected key set from this tuple, so registry and check cannot drift out of step. The
 # first three apply to every story; the rest are required only once a story is Done.
 ALWAYS_STAGES = ("decomposed", "specified", "verifiable")
+#: Story statuses BEFORE the Definition-of-Ready bar: an ungroomed story needs only `decomposed`,
+#: not the AC stages (specified/verifiable), so a fresh refine output with placeholder ACs is
+#: conformant until it is groomed to Ready.
+_PRE_GROOMED_STORY_STATUS = ("Proposed", "Draft")
 DONE_STAGES = ("verified", "reconciled", "critiqued", "documented", "promoted")
 STAGES = ALWAYS_STAGES + DONE_STAGES
 
@@ -186,7 +190,14 @@ def detect_conformance(repo_root: Path | str) -> dict:
             "documented": documented,
             "promoted": promoted,
         }
-        required = list(ALWAYS_STAGES)
+        # `decomposed` is required of every story; `specified` + `verifiable` are the
+        # Definition-of-Ready bar, so an ungroomed story (Proposed/Draft - a fresh refine output
+        # whose ACs are still placeholders) is conformant on `decomposed` alone. The AC stages
+        # apply once it is Ready or beyond, so a large refined backlog does not read as
+        # non-conformant before it is groomed.
+        required = ["decomposed"]
+        if status not in _PRE_GROOMED_STORY_STATUS:
+            required += ["specified", "verifiable"]
         if status == "Done":
             required += list(DONE_STAGES)
             # `critiqued` stays required while EITHER half applies: the two-role

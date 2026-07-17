@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 0 |
+| Draft | 12 |
 | Ready | 0 |
 | Approved | 0 |
-| In Progress | 0 |
+| In Progress | 1 |
 | Done | 70 |
-| **Total** | **70** |
+| **Total** | **83** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -93,3 +93,16 @@
 | [EP0068](EP0068-sprint-close-the-twelve-step-ceremony-as-one.md) | sprint close: the twelve-step ceremony as one deterministic command | Done | -- | -- | 2026-07-16 | 2026-07-16 |
 | [EP0069](EP0069-critic-brief-rejoinder-deterministic-re-verdict-scaffolding.md) | critic brief --rejoinder: deterministic re-verdict scaffolding | Done | -- | -- | 2026-07-16 | 2026-07-16 |
 | [EP0070](EP0070-guarded-forward-port-script-for-the-installed-copy.md) | Guarded forward-port script for the installed copy | Done | -- | -- | 2026-07-16 | 2026-07-16 |
+| [EP0071](EP0071-spec-truth-refresh-reconcile-prd-trd-tsd-rfc.md) | Spec-truth refresh: reconcile PRD/TRD/TSD/RFC with shipped main | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
+| [EP0072](EP0072-close-and-gate-ergonomics-the-two-role-close.md) | Close and gate ergonomics: the two-role close-chain friction batch | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
+| [EP0073](EP0073-audit-cost-and-overflow-instrumentation.md) | Audit cost and overflow instrumentation | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
+| [EP0074](EP0074-sprint-report-command-surface.md) | Sprint-report command surface | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
+| [EP0075](EP0075-verify-line-integrity-discriminating-correctly-parsed-executable-acs.md) | Verify-line integrity: discriminating, correctly-parsed executable ACs | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
+| [EP0076](EP0076-rolling-multi-sprint-policy-regenerate-the-plan-at.md) | Rolling multi-sprint policy: regenerate the plan at each boundary | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
+| [EP0077](EP0077-sprint-close-phase-2-fan-the-sign-off.md) | Sprint close phase 2: fan the sign-off into the terminal cascade | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
+| [EP0078](EP0078-one-weakness-hunt-one-name-fold-review-generate.md) | One weakness-hunt, one name: fold review generate into audit --profile repo | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
+| [EP0079](EP0079-enforce-the-rfc-accept-gate-and-fix-the.md) | Enforce the RFC accept gate and fix the finding generator | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
+| [EP0080](EP0080-sprint-level-review-satisfies-the-per-unit-critiqued.md) | Sprint-level review satisfies the per-unit critiqued gate (RFC0046 option B) | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
+| [EP0081](EP0081-command-surface-cleanup-slice-2-the-5-help.md) | Command-surface cleanup slice 2: the 5 help-only commands and the help rewrite around the spine | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
+| [EP0082](EP0082-residual-audit-fixes-independent-small-corrections-from-the.md) | Residual audit fixes: independent small corrections from the 2026-07-16 audit | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
+| [EP0083](EP0083-refine-into-share-a-batch-epic-for-small.md) | refine --into: share a batch epic for small requests | In Progress | -- | -- | 2026-07-17 | 2026-07-17 |

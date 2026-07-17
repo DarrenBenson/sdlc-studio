@@ -1,6 +1,7 @@
 # CR-0299: The release-required strict version gate (check_versions.py --strict, the CHANGELOG home) is invoked by nothing executable; gate.py --release does not run it
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0082
 > **Priority:** Medium
 > **Type:** process
 > **Size:** S

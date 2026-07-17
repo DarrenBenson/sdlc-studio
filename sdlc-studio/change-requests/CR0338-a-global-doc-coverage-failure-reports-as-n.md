@@ -1,6 +1,7 @@
 # CR-0338: A global doc-coverage failure reports as N per-unit 'missing documented', not one global-floor finding
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0072
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

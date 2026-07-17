@@ -283,10 +283,22 @@ class PlaceholderTests(unittest.TestCase):
         return f
 
     def test_placeholder_ac_flagged(self):
-        f = self._story("# US0001: x\n\n> **Status:** Draft\n\n## Acceptance Criteria\n\n"
+        # A GROOMED (Ready+) story with a placeholder AC is an ERROR - a story that claims Ready
+        # must have executable ACs.
+        f = self._story("# US0001: x\n\n> **Status:** Ready\n\n## Acceptance Criteria\n\n"
                         "### AC1: {{define}}\n\n- **Given** {{context}}\n- **Verify:** {{check}}\n")
         rules = [v["rule"] for v in validate.validate_file(f, "story") if v["severity"] == "error"]
         self.assertIn("placeholder", rules)
+
+    def test_draft_story_placeholder_ac_is_a_warning_not_error(self):
+        # CR0342: an ungroomed Draft story's AC placeholders are a WARNING, so the refine commit
+        # that creates the Draft backlog lands; the placeholder still keeps it out of Ready/Done.
+        f = self._story("# US0001: x\n\n> **Status:** Draft\n\n## Acceptance Criteria\n\n"
+                        "### AC1: {{define}}\n\n- **Given** {{context}}\n- **Verify:** {{check}}\n")
+        findings = [v for v in validate.validate_file(f, "story") if v["rule"] == "placeholder"]
+        self.assertTrue(findings, "the placeholder is still reported")
+        self.assertTrue(all(v["severity"] == "warn" for v in findings),
+                        "an ungroomed Draft story's placeholder is a warning, not an error")
 
     def test_placeholder_metadata_flagged(self):
         f = self._story("# US0001: x\n\n> **Status:** {{status}}\n\n## Acceptance Criteria\n\n"

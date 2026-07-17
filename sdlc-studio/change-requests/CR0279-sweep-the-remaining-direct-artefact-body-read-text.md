@@ -1,6 +1,7 @@
 # CR-0279: Sweep the remaining direct artefact-body read_text calls through read_text_safe
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0082
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** S

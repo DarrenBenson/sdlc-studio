@@ -1,6 +1,7 @@
 # CR-0339: Bounded mutation should bias its sample toward changed lines, not the file head
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0072
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

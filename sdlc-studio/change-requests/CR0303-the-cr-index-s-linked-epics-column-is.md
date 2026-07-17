@@ -1,6 +1,7 @@
 # CR-0303: The CR index's Linked Epics column is dead: '--' on every row while at least seven CR files carry a Decomposed-into epic link
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0082
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** S

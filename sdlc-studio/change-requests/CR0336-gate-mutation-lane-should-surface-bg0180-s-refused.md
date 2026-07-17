@@ -1,6 +1,7 @@
 # CR-0336: Gate mutation lane should surface BG0180's refused state
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0072
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

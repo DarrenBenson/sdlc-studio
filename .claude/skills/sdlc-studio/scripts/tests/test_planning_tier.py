@@ -213,15 +213,19 @@ class PlanningValidationTests(unittest.TestCase):
 
     def test_a_contentless_planning_scaffold_still_reports_its_placeholders(self) -> None:
         """The carve-out holds: a scaffold is not a specified story, and the lean tier does
-        not paper over its unfilled slots to look clean."""
+        not paper over its unfilled slots. A freshly-created scaffold is Draft, so its AC
+        placeholders are reported as WARNINGS (CR0342 - the refine/create commit lands while the
+        slot still blocks the story from Ready/Done); they are still REPORTED, never hidden."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             epic = _project(root)
             res = artifact.new(root, "story", "bare", {"epic": epic, "template": "planning"})
-            errs = _errors(root, Path(res["path"]))
-            self.assertTrue([e for e in errs if e["rule"] == "placeholder"],
-                            "an unfilled planning scaffold must still report its slots")
-            owned = [e for e in errs if e["rule"] in
+            findings = validate.validate_file(Path(res["path"]), "story", root)
+            placeholders = [v for v in findings if v["rule"] == "placeholder"]
+            self.assertTrue(placeholders, "an unfilled planning scaffold must still report its slots")
+            self.assertTrue(all(v["severity"] == "warn" for v in placeholders),
+                            "a Draft scaffold's AC placeholders are warnings, not errors")
+            owned = [v for v in findings if v["severity"] == "error" and v["rule"] in
                      {"id-format", "no-title", "no-status", "status-vocab", "template-tier"}]
             self.assertEqual(owned, [], "no CREATOR-owned rule may fire on a scaffold")
 

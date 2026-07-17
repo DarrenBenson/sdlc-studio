@@ -1,6 +1,7 @@
 # CR-0301: report.enabled=false gates only the text page - --format json bypasses the switch undocumented and untested, and the notice claims rendering is disabled outright
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0074
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** S

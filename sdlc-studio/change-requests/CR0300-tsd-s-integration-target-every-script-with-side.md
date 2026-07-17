@@ -1,6 +1,7 @@
 # CR-0300: TSD's integration target 'every script with side effects has a write-confinement snapshot test' [HIGH] is backed by a suite that snapshots exactly one writer, with no sweep forcing new writers in
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0082
 > **Priority:** Medium
 > **Type:** process
 > **Size:** M

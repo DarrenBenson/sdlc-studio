@@ -1,6 +1,7 @@
 # CR-0305: audit_cost.py estimates from one frozen reference run and never records actuals - give the audit the record-forecast/record-actual loop the skill preaches for sprints
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0073
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

@@ -1,6 +1,7 @@
 # CR-0322: refine --into EPxxxx: small requests decompose into a shared batch epic instead of minting singletons (RFC0045 D1)
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0083
 > **Parent:** RFC0045
 > **Priority:** Medium
 > **Type:** Improvement

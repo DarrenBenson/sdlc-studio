@@ -1,13 +1,13 @@
 # CR-0256: RFC0033 D3: retire review generate - fold into audit --profile repo and remove it
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0078
 > **Size:** M
 > **Priority:** P2
 > **Type:** Improvement
 > **Date:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
-> **Depends on:** CR0255
 > **Affects:** .claude/skills/sdlc-studio/scripts/review_generate.py, README.md, docs/why-sdlc-studio.md
 
 ## Summary

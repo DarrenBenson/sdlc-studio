@@ -1,6 +1,7 @@
 # CR-0288: RFC0034 and RFC0038 are both Accepted with opposite canonical sizing decisions - no supersession marking, no cross-reference
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0071
 > **Priority:** Medium
 > **Type:** docs
 > **Size:** S

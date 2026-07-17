@@ -1,6 +1,7 @@
 # CR-0282: PRD security NFR and TRD script-contract rule 6/threat model deny the shipped network surface: a default-on GitHub phone-home via urllib and sprint plan's git fetch
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0071
 > **Priority:** High
 > **Type:** docs
 > **Size:** S

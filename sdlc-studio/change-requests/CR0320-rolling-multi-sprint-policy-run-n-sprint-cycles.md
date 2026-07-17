@@ -1,6 +1,7 @@
 # CR-0320: Rolling multi-sprint policy: run N sprint cycles unattended under a standing policy, plan regenerated at each boundary (RFC0036 D1)
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0076
 > **Parent:** RFC0036
 > **Priority:** Medium
 > **Type:** Feature

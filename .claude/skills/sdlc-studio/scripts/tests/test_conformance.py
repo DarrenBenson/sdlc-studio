@@ -61,6 +61,25 @@ class StageTests(unittest.TestCase):
             self.assertFalse(u["conformant"])
             self.assertIn("decomposed", u["missing"])
 
+    def test_draft_story_is_conformant_on_decomposed_alone(self) -> None:
+        # CR0342: an ungroomed Draft story (a fresh refine output with placeholder ACs) needs only
+        # `decomposed` - specified/verifiable are the Definition-of-Ready bar, required once it is
+        # Ready+. So a large refined backlog does not read as non-conformant before it is groomed.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, status="Draft", ac=False, verify=False)
+            u = _units(root)["US0001"]
+            self.assertTrue(u["conformant"], u["missing"])
+            self.assertEqual(u["missing"], [])
+
+    def test_ready_story_still_requires_specified_and_verifiable(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _story(root, 1, status="Ready", verify=False)
+            u = _units(root)["US0001"]
+            self.assertFalse(u["conformant"])
+            self.assertIn("verifiable", u["missing"])
+
     def test_done_must_be_verified(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

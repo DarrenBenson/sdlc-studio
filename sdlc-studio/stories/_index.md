@@ -7,16 +7,16 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 0 |
+| Draft | 56 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 0 |
+| Review | 1 |
 | Done | 199 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
-| **Total** | **200** |
+| **Total** | **257** |
 
 ## All Stories
 
@@ -111,6 +111,63 @@
 | [US0198](US0198-sprint-close-orchestrates-goal-verdict-retro-validate-and.md) | sprint close orchestrates goal-verdict, retro validate and extract, close gate, handoff and reconcile with fail-loud stops and idempotent resume, printing the decision brief | Done | EP0068 | 2026-07-16 | 2026-07-16 |
 | [US0199](US0199-brief-rejoinder-quotes-the-prior-verdict-verbatim-with.md) | brief --rejoinder quotes the prior verdict verbatim with the re-execute-your-probes instruction and return contract; a malformed prior-verdict file is refused | Done | EP0069 | 2026-07-16 | 2026-07-16 |
 | [US0200](US0200-tools-forward-port-sh-runs-the-canonical-rsync.md) | tools/forward-port.sh runs the canonical rsync dry-run by default with --yes to apply, refusing a reversed direction or non-dev-repo cwd; AGENTS.md references it | Done | EP0070 | 2026-07-16 | 2026-07-16 |
+| [US0201](US0201-prd-sections-3-10-11-to-the-shipped.md) | PRD sections 3/10/11 to the shipped Points model; Effort named only as retired; close BG0133/BG0136 and the plan-time-predictor open question | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0202](US0202-add-the-shipped-done-epics-ep0033-ep0047-to.md) | Add the shipped Done epics EP0033-EP0047 to the PRD feature tables and populate the -- Epic columns | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0203](US0203-document-the-version-check-urllib-and-sprint-plan.md) | Document the version-check urllib and sprint-plan git-fetch network surface in the PRD Security NFR and TRD rule 6/threat table | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0204](US0204-rewrite-prd-section-9-config-env-var-reference.md) | Rewrite PRD section 9 config/env-var reference: require_ac_verification default, two_backlog.enforce, retire SDLC_ENGAGEMENT_STRICT, add missing env vars | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0205](US0205-trd-adr-008-ulid-state-the-real-6.md) | TRD ADR-008 ULID: state the real 6+2-char guarantee and cross-machine residual risk; drop the collision-free absolute | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0206](US0206-tsd-record-the-blocking-80-coverage-gate-and.md) | TSD: record the blocking 80% coverage gate and the bandit step in the coverage/security/quality-gate tables | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0207](US0207-mark-rfc0034-superseded-by-rfc0038-cross-link-both.md) | Mark RFC0034 superseded by RFC0038, cross-link both and update the rfc index | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0208](US0208-trd-move-critic-record-to-writers-and-document.md) | TRD: move critic record to writers and document the append-only atomic-write exception; harden read_verdicts against a torn row | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0209](US0209-trd-section-6-data-architecture-add-the-issue.md) | TRD section 6 data architecture: add the issue type, story Blocked, the inbox triage lane and a two-backlog subsection | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0210](US0210-complete-trd-rule-5-write-surface-retro-handoff.md) | Complete TRD rule 5 write surface (retro/handoff/archive/persona_gen) or restate as non-exhaustive with a census pointer | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0211](US0211-refresh-or-band-the-trd-pinned-census-counts.md) | Refresh or band the TRD pinned census counts and restate the freshness-guard claim | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0212](US0212-fix-the-trd-section-6-migrations-paragraph-to.md) | Fix the TRD section 6 Migrations paragraph to name the shipped migration scripts | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0213](US0213-verify-ac-freshness-fingerprints-the-ac-section-not.md) | verify_ac freshness fingerprints the AC section, not the file mtime | Draft | EP0072 | 2026-07-17 | 2026-07-17 |
+| [US0214](US0214-review-close-ensures-its-rv-index-row-is.md) | review close ensures its RV index row is written | Draft | EP0072 | 2026-07-17 | 2026-07-17 |
+| [US0215](US0215-review-current-distinguishes-an-uncommitted-but-current-latest.md) | review-current distinguishes an uncommitted-but-current LATEST and names the commit remedy (absorbs CR0341) | Draft | EP0072 | 2026-07-17 | 2026-07-17 |
+| [US0216](US0216-gate-mutation-lane-surfaces-the-refused-red-baseline.md) | gate mutation lane surfaces the refused/red-baseline state | Draft | EP0072 | 2026-07-17 | 2026-07-17 |
+| [US0217](US0217-a-global-doc-coverage-failure-is-attributed-once.md) | a global doc-coverage failure is attributed once, not fanned across every unit | Draft | EP0072 | 2026-07-17 | 2026-07-17 |
+| [US0218](US0218-bounded-mutation-biases-its-sample-toward-changed-lines.md) | bounded mutation biases its sample toward changed lines | Draft | EP0072 | 2026-07-17 | 2026-07-17 |
+| [US0219](US0219-gate-tracks-the-test-suite-runtime-and-warns.md) | gate tracks the test-suite runtime and warns before a long run | Draft | EP0072 | 2026-07-17 | 2026-07-17 |
+| [US0220](US0220-gate-skips-the-unit-suite-for-test-irrelevant.md) | gate skips the unit suite for test-irrelevant changes, named not silent | Draft | EP0072 | 2026-07-17 | 2026-07-17 |
+| [US0221](US0221-audit-cost-gains-a-record-subcommand-and-a.md) | audit_cost gains a record subcommand and a committed evidence ledger; estimate from measured medians with a named fallback | Draft | EP0073 | 2026-07-17 | 2026-07-17 |
+| [US0222](US0222-persist-verification-cap-overflow-as-a-durable-carry.md) | persist verification-cap overflow as a durable carry-over worklist a scoped follow-up re-ingests | Draft | EP0073 | 2026-07-17 | 2026-07-17 |
+| [US0223](US0223-add-the-sprint-report-command-route-delegating-to.md) | add the sprint report command route delegating to sprint_report | Draft | EP0074 | 2026-07-17 | 2026-07-17 |
+| [US0224](US0224-draw-the-report-in-the-close-ceremony-when.md) | draw the report in the close ceremony when report.enabled | Draft | EP0074 | 2026-07-17 | 2026-07-17 |
+| [US0225](US0225-resolve-document-the-report-enabled-json-exemption-and.md) | resolve/document the report.enabled json exemption and test the json path | Draft | EP0074 | 2026-07-17 | 2026-07-17 |
+| [US0226](US0226-rewrite-us0166-ac3-as-a-two-file-shell.md) | rewrite US0166 AC3 as a two-file shell Verify with the missing shell prefix | Draft | EP0075 | 2026-07-17 | 2026-07-17 |
+| [US0227](US0227-split-non-discriminating-per-ac-selectors-so-each.md) | split non-discriminating per-AC selectors so each AC fails on its own regression | Draft | EP0075 | 2026-07-17 | 2026-07-17 |
+| [US0228](US0228-harden-the-verify-ac-grep-verb-against-a.md) | harden the verify_ac grep verb against a dash-leading pattern | Draft | EP0075 | 2026-07-17 | 2026-07-17 |
+| [US0229](US0229-record-a-standing-sprint-policy-n-cycles-goal.md) | record a standing sprint policy (N cycles, goal/capacity/order/stop conditions) on run-state | Draft | EP0076 | 2026-07-17 | 2026-07-17 |
+| [US0230](US0230-boundary-close-down-chain-retro-lessons-close-gate.md) | boundary close-down chain (retro + lessons + close gate); halt on a failed gate | Draft | EP0076 | 2026-07-17 | 2026-07-17 |
+| [US0231](US0231-fetch-and-origin-drift-check-at-each-boundary.md) | fetch and origin-drift check at each boundary, refuse under --strict | Draft | EP0076 | 2026-07-17 | 2026-07-17 |
+| [US0232](US0232-regenerate-the-plan-from-the-live-backlog-after.md) | regenerate the plan from the live backlog after the fetch; dry-run preview before continuing | Draft | EP0076 | 2026-07-17 | 2026-07-17 |
+| [US0233](US0233-stop-with-handoff-on-a-refused-or-stale.md) | stop-with-handoff on a refused or stale plan; never execute an ungated plan | Draft | EP0076 | 2026-07-17 | 2026-07-17 |
+| [US0234](US0234-per-cycle-auditability-own-forecast-goal-retro-and.md) | per-cycle auditability: own forecast, goal, retro and run-state per cycle | Draft | EP0076 | 2026-07-17 | 2026-07-17 |
+| [US0235](US0235-reference-sprint-documentation-and-tests-for-the-rolling.md) | reference-sprint documentation and tests for the rolling policy | Draft | EP0076 | 2026-07-17 | 2026-07-17 |
+| [US0236](US0236-sprint-close-apply-signoff-records-per-unit-sign.md) | sprint close --apply-signoff records per-unit sign-off and Done transitions, refusing without an explicit principal | Draft | EP0077 | 2026-07-17 | 2026-07-17 |
+| [US0237](US0237-cascade-parent-epics-crs-rfcs-terminal-write-the.md) | cascade parent epics/CRs/RFCs terminal, write the velocity row, final reconcile | Draft | EP0077 | 2026-07-17 | 2026-07-17 |
+| [US0238](US0238-idempotent-re-run-after-a-mid-cascade-stop.md) | idempotent re-run after a mid-cascade stop | Draft | EP0077 | 2026-07-17 | 2026-07-17 |
+| [US0239](US0239-build-audit-profile-repo-architecture-code-quality-security.md) | build audit --profile repo (architecture/code-quality/security legs) wired to the refute panel | Draft | EP0078 | 2026-07-17 | 2026-07-17 |
+| [US0240](US0240-build-the-code-audit-profile-and-confirm-refute.md) | build the code audit profile and confirm refute wiring across profiles (CR0255 residual) | Draft | EP0078 | 2026-07-17 | 2026-07-17 |
+| [US0241](US0241-remove-review-generate-py-and-the-review-generate.md) | remove review_generate.py and the review generate route; review keeps only the consistency job | Draft | EP0078 | 2026-07-17 | 2026-07-17 |
+| [US0242](US0242-switch-readme-docs-and-the-skill-description-off.md) | switch README, docs and the SKILL description off review generate to audit --profile repo | Draft | EP0078 | 2026-07-17 | 2026-07-17 |
+| [US0243](US0243-update-help-review-help-audit-and-the-catalogue.md) | update help/review, help/audit and the catalogue; check_links and validate_skill green | Draft | EP0078 | 2026-07-17 | 2026-07-17 |
+| [US0244](US0244-gate-rfc-accepted-on-open-decisions-refuse-while.md) | gate RFC -> Accepted on open decisions (refuse while any Open decision stands; recorded-override escape) | Draft | EP0079 | 2026-07-17 | 2026-07-17 |
+| [US0245](US0245-derive-rfc-decision-rows-from-the-finding-s.md) | derive RFC decision rows from the finding's real options, not the content-free boilerplate row | Draft | EP0079 | 2026-07-17 | 2026-07-17 |
+| [US0246](US0246-close-the-accepted-tranche-decision-rows-with-what.md) | close the accepted-tranche decision rows with what actually shipped | Draft | EP0079 | 2026-07-17 | 2026-07-17 |
+| [US0247](US0247-a-recorded-sprint-level-adversarial-full-diff-verdict.md) | a recorded sprint-level adversarial full-diff verdict satisfies the per-unit critiqued gate for the units in its diff range; per-unit REJECT-repairs still recorded | Draft | EP0080 | 2026-07-17 | 2026-07-17 |
+| [US0248](US0248-the-close-sign-off-brief-reads-a-sprint.md) | the close sign-off brief reads a sprint-level verdict as coverage rather than reporting every unit unreviewed; document the model | Draft | EP0080 | 2026-07-17 | 2026-07-17 |
+| [US0249](US0249-decide-and-act-on-the-5-help-only.md) | decide and act on the 5 help-only commands (lessons/repo/retro/review/upgrade): promote spine-serving ones, retire/redirect the rest | Draft | EP0081 | 2026-07-17 | 2026-07-17 |
+| [US0250](US0250-rewrite-the-help-files-around-the-process-spine.md) | rewrite the help files around the process spine (raise -> break down -> sprint+review; PRD/TRD/TSD/personas as levers; reconcile/review/audit as support) | Draft | EP0081 | 2026-07-17 | 2026-07-17 |
+| [US0251](US0251-command-audit-drift-back-to-0-and-check.md) | command_audit drift back to 0 and check_links + validate_skill green | Draft | EP0081 | 2026-07-17 | 2026-07-17 |
+| [US0252](US0252-sweep-the-remaining-bare-artefact-body-read-text.md) | sweep the remaining bare artefact-body read_text calls through read_text_safe, with a regression test | Draft | EP0082 | 2026-07-17 | 2026-07-17 |
+| [US0253](US0253-run-the-test-noise-gate-leg-in-ci.md) | run the test-noise gate leg in CI and broaden the leak detector beyond one shape | Draft | EP0082 | 2026-07-17 | 2026-07-17 |
+| [US0254](US0254-gate-release-runs-check-versions-strict-under-one.md) | gate --release runs check_versions --strict under one exit code; a CHANGELOG mismatch fails | Draft | EP0082 | 2026-07-17 | 2026-07-17 |
+| [US0255](US0255-extend-the-write-confinement-snapshot-suite-across-the.md) | extend the write-confinement snapshot suite across the shipped writers with a roster sweep | Draft | EP0082 | 2026-07-17 | 2026-07-17 |
+| [US0256](US0256-census-the-cr-index-linked-epics-column-from.md) | census the CR-index Linked Epics column from Decomposed-into (or drop the dead column) | Draft | EP0082 | 2026-07-17 | 2026-07-17 |
+| [US0257](US0257-build-refine-into-with-multi-parent-link-support.md) | build refine --into with multi-parent link support (children_of, asymmetry gate, back-links) and docs | Review | EP0083 | 2026-07-17 | 2026-07-17 |
 
 ## Archived Releases
 

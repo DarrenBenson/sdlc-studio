@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 3 |
-| In Review | 0 |
+| Draft | 1 |
+| In Review | 2 |
 | Accepted | 40 |
 | Superseded | 0 |
 | Withdrawn | 3 |
@@ -61,5 +61,5 @@
 | [RFC-0042](RFC0042-make-the-sprint-close-down-un-skippable-enforce.md) | Make the sprint close-down un-skippable: enforce the retro/close-gate mechanically, not just by doctrine | Medium | Accepted | sdlc-studio | 2026-07-15 | -- |
 | [RFC-0043](RFC0043-definition-of-ready-and-definition-of-done-as.md) | Definition of Ready and Definition of Done as editable per-project artefacts, enforced by the existing gates | Medium | Accepted | sdlc-studio | 2026-07-15 | -- |
 | [RFC-0044](RFC0044-adversarial-reviewer-vs-reviewer-of-record-an-amigo.md) | Adversarial reviewer vs reviewer of record: an amigo subagent finds issues, an independent principal signs off | Medium | Accepted | sdlc-studio | 2026-07-16 | -- |
-| [RFC-0045](RFC0045-micro-requests-and-the-one-story-epic-should.md) | Micro-requests and the one-story epic: should a small CR decompose to a story without a container epic? | Medium | Draft | Claude Fable 5 | 2026-07-16 | -- |
-| [RFC-0046](RFC0046-should-a-sprint-level-adversarial-full-diff-review.md) | Should a sprint-level adversarial full-diff review satisfy the per-unit critiqued gate for a large batch? | Medium | Draft | sdlc-studio | 2026-07-17 | -- |
+| [RFC-0045](RFC0045-micro-requests-and-the-one-story-epic-should.md) | Micro-requests and the one-story epic: should a small CR decompose to a story without a container epic? | Medium | In Review | Claude Fable 5 | 2026-07-16 | -- |
+| [RFC-0046](RFC0046-should-a-sprint-level-adversarial-full-diff-review.md) | Should a sprint-level adversarial full-diff review satisfy the per-unit critiqued gate for a large batch? | Medium | In Review | sdlc-studio | 2026-07-17 | -- |

@@ -196,7 +196,12 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None) -> list
                 + "|".join(sdlc_md.SIZE_SCALE) + ">` (a T-shirt size: a CR is a request, "
                 "sized before it is decomposed; story points belong on the delivery unit)")
 
-    _check_placeholders(text, add)
+    # An ungroomed (pre-Ready) story's AC placeholders are a WARNING, not an error: refine seeds
+    # them and validate must not block the refine commit that creates the Draft backlog, while the
+    # placeholder still keeps the story out of Ready/Done. Every other type/status: error.
+    _canon = sdlc_md.canonical_status(status, sdlc_md.status_vocab(type_, repo_root)) if status else None
+    _pre_ready_story = type_ == "story" and _canon in ("Proposed", "Draft")
+    _check_placeholders(text, add, ac_severity="warn" if _pre_ready_story else "error")
     return out
 
 
@@ -270,12 +275,17 @@ def _cr_has_evidence(text: str) -> bool:
     return has_impact and has_size
 
 
-def _check_placeholders(text: str, add) -> None:
+def _check_placeholders(text: str, add, ac_severity: str = "error") -> None:
     """Flag an unresolved `{{...}}` slot left in a metadata line or an acceptance-criteria
     structural line (AC heading, ACn / Given / When / Then / checkbox bullet, Verify) - an
     unfilled scaffold. Flags only a line whose *value* is placeholder-ONLY, so prose
     that legitimately discusses `{{placeholder}}` syntax, and a real AC that merely references
-    a token, are never flagged (consistent with conformance._real)."""
+    a token, are never flagged (consistent with conformance._real).
+
+    Metadata placeholders are always an error. An AC placeholder uses `ac_severity`: the caller
+    passes `warn` for an ungroomed (pre-Ready) story - a fresh refine output whose ACs are still
+    scaffolds - so the refine commit that creates it lands, while the placeholder still
+    blocks the story from reaching Ready/Done (conformance's specified/verifiable bar, unchanged)."""
     in_ac = False
     for line in text.splitlines():
         if line.startswith("## "):
@@ -289,7 +299,7 @@ def _check_placeholders(text: str, add) -> None:
         elif in_ac and (sdlc_md.AC_HEADING_RE.match(line) or sdlc_md.AC_BULLET_RE.match(line)
                         or sdlc_md.VERIFY_RE.match(line) or _GWT.match(line) or _CHECKBOX.match(line)):
             if _unfilled(_ac_value(line)):
-                add("error", "placeholder",
+                add(ac_severity, "placeholder",
                     f"unresolved placeholder in acceptance criteria: {line.strip()}")
 
 

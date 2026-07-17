@@ -1,6 +1,7 @@
 # CR-0334: verify_ac freshness should fingerprint the AC section, not the file mtime
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0072
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

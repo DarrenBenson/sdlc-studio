@@ -1,6 +1,7 @@
 # CR-0281: PRD coverage clause promises exhaustive [Unreleased] marking but roughly 14 committed Done epics of shipped features are absent from the feature tables
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0071
 > **Priority:** High
 > **Type:** docs
 > **Size:** M

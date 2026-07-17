@@ -1,6 +1,6 @@
 # RFC-0045: Micro-requests and the one-story epic: should a small CR decompose to a story without a container epic?
 
-> **Status:** Draft
+> **Status:** In Review
 > **Decomposed-into:** CR0322
 > **Affects:** .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/reconcile.py
 > **Date:** 2026-07-16

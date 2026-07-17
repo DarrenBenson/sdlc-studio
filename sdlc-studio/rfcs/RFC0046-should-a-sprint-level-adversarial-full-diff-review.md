@@ -1,6 +1,7 @@
 # RFC-0046: Should a sprint-level adversarial full-diff review satisfy the per-unit critiqued gate for a large batch?
 
-> **Status:** Draft
+> **Status:** In Review
+> **Decomposed-into:** EP0080
 > **Affects:** .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/conformance.py
 > **Date:** 2026-07-17
 > **Created-by:** sdlc-studio file

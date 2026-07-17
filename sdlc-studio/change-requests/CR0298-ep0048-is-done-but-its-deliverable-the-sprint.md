@@ -1,6 +1,7 @@
 # CR-0298: EP0048 is Done but its deliverable, the sprint report, is reachable from no command surface or ceremony - an orphaned command
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0074
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S
