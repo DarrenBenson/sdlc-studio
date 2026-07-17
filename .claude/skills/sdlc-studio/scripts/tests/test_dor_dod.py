@@ -139,6 +139,17 @@ class CheckTagNearMissTests(unittest.TestCase):
         self.assertEqual(
             sdlc_md.check_tag_near_misses("- [ ] see [checkpoint: 3] later\n"), [])
 
+    def test_bracketed_prose_starting_with_check_is_not_a_near_miss(self):
+        # A checklist line that brackets prose beginning with the word "check" - no colon
+        # and no id-shaped token - is not a mis-written tag and must NOT be flagged.
+        for prose in ("- [ ] [check the deployment logs]\n",
+                      "- [ ] remember to [check with ops before release]\n",
+                      "- [ ] [check that backups ran]\n"):
+            self.assertEqual(sdlc_md.check_tag_near_misses(prose), [], prose)
+        # a colon or an id-shaped token still marks a genuine tag attempt
+        self.assertEqual(sdlc_md.check_tag_near_misses("- [ ] [check story.verify-ac]\n"),
+                         ["[check story.verify-ac]"])
+
     def test_validate_flags_a_near_miss_tag(self):
         validate = loader.load_script("validate")
         with tempfile.TemporaryDirectory() as d:

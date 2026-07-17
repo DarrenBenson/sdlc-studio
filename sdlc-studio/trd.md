@@ -557,7 +557,7 @@ Scaling is about context tokens, not machines. Progressive disclosure keeps the
 always-loaded footprint near-constant (`SKILL.md` ~260 lines, CI-budgeted under 500)
 however large the corpus grows. Agentic waves bound concurrency and the appetite
 breaker bounds an unattended run. Read-only scripts run in well under a second; the
-script suite runs 2151 tests in under a minute. The one deliberate exception is
+script suite runs 2,500+ tests in under a minute. The one deliberate exception is
 `mutation.py`, which re-runs the suite once per mutant and is measured in minutes -
 which is why its gate lane reads a stored report rather than executing, and reports
 STALE on a rev change or an edited target rather than passing.
@@ -604,7 +604,7 @@ cross-machine clash is caught at merge (ADR-008).
 | Metric | Target | Measurement |
 | --- | --- | --- |
 | Always-loaded context | ~260 lines (`SKILL.md`), hard ceiling 500 | Line count of the router, gated by `check_budgets.py` |
-| Script run time | Sub-second on a typical project | `scripts/tests` suite: 2151 tests in under a minute |
+| Script run time | Sub-second on a typical project | `scripts/tests` suite: 2,500+ tests in under a minute |
 | Reconcile / status / gate | Sub-second | Read-only census over the artifact tree |
 | Mutation run | Minutes, by design | One suite run per mutant; not on the fast path |
 | Install | Single fetch-and-copy | `install.sh` / `install.ps1`, no build step |

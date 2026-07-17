@@ -22,13 +22,15 @@
 - **When** a `Complete **[Unreleased]**` row is added per distinct shipped feature, each naming its owning epic id
 - **Then** Section 3 tables carry rows for the features shipped by EP0033-EP0047, each marked [Unreleased] with its owning epic id
 - **Verify:** grep "EP0033, EP0034" sdlc-studio/prd.md
+- **Verified:** yes (2026-07-17)
 
 ### AC2: Existing [Unreleased] rows have their Epic column populated (no '--' against the preamble's mapping
 
 - **Given** five [Unreleased] rows (breakdown gate, sprint capacity, sizing and velocity loop, learning loop, lessons ranking) showed Epic '--', contradicting the preamble's mapping claim
 - **When** each Epic cell is filled with its delivering unit: EP0010 for the learning loop and lessons ranking, and the governing RFC/CR for the sizing-family rows built before the epic decomposition
 - **Then** Existing [Unreleased] rows have their Epic column populated (no '--' against the preamble's mapping claim)
-- **Verify:** grep -E "scripts/lessons.py . EP0010" sdlc-studio/prd.md
+- **Verify:** grep "scripts/lessons.py . EP0010" sdlc-studio/prd.md
+- **Verified:** yes (2026-07-17)
 
 ### AC3: The coverage note's parenthetical list of unreleased workstreams matches what the tables actually
 
@@ -36,6 +38,7 @@
 - **When** the parenthetical is expanded to name the added workstreams (two-backlog, refine and migrate, Issue and triage, sprint close-down)
 - **Then** The coverage note's parenthetical list of unreleased workstreams matches what the tables actually cover
 - **Verify:** grep "the two-backlog workflow, the refine" sdlc-studio/prd.md
+- **Verified:** yes (2026-07-17)
 
 ## Revision History
 

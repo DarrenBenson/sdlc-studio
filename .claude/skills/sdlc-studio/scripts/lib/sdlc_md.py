@@ -1509,6 +1509,10 @@ CHECK_TAG_RE = re.compile(r"\[check:\s*([a-z0-9.-]+)\s*\]")
 # A bracketed token shaped like a check tag (the word `check` on a word boundary, any case)
 # that the strict parser above does NOT accept - a mis-cased or mis-spaced near-miss.
 _CHECK_NEAR_MISS_RE = re.compile(r"\[\s*check\b[^\]]*\]", re.IGNORECASE)
+# A near-miss must ALSO carry a tag SHAPE - a colon, or an id-shaped dotted/hyphenated token
+# (e.g. `grooming.affects`). Bracketed prose that merely starts with "check" (`[check the logs]`)
+# is not a mis-written tag and must not flag.
+_CHECK_TAG_SHAPE_RE = re.compile(r":|[a-z0-9]+[.-][a-z0-9]+", re.IGNORECASE)
 
 
 def check_tags(text: str) -> list[str]:
@@ -1526,6 +1530,8 @@ def check_tag_near_misses(text: str) -> list[str]:
         token = m.group(0)
         if CHECK_TAG_RE.fullmatch(token):
             continue
+        if not _CHECK_TAG_SHAPE_RE.search(token):
+            continue  # bracketed prose, not a mis-written tag
         out.append(token)
     return out
 

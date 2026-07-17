@@ -22,6 +22,7 @@
 - **When** its default is corrected to `false` with the incremental-adoption note and `quality.done_requires_verified` is added as the hard-by-default Done gate
 - **Then** `require_ac_verification` documented default false with the incremental-adoption note; `quality.done_requires_verified` added as the hard-by-default Done gate
 - **Verify:** grep "done_requires_verified" sdlc-studio/prd.md
+- **Verified:** yes (2026-07-17)
 
 ### AC2: The 'default is ON / absent blocks' preamble restated with the deliberate `two_backlog.enforce`
 
@@ -29,6 +30,7 @@
 - **When** the preamble is restated naming the deliberate `two_backlog.enforce` default-off exception and the key is added to all three references
 - **Then** The 'default is ON / absent blocks' preamble restated with the deliberate `two_backlog.enforce` default-off exception; the key documented in the PRD table, config-defaults.yaml and reference-config.md
 - **Verify:** grep "two_backlog" .claude/skills/sdlc-studio/templates/config-defaults.yaml
+- **Verified:** yes (2026-07-17)
 
 ### AC3: `SDLC_ENGAGEMENT_STRICT` row removed or marked retired (blocking is unconditional; --no-verify is
 
@@ -36,6 +38,7 @@
 - **When** its row is removed and a note records it retired, with `git commit --no-verify` as the one escape
 - **Then** `SDLC_ENGAGEMENT_STRICT` row removed or marked retired (blocking is unconditional; --no-verify is the one escape)
 - **Verify:** grep "SDLC_ENGAGEMENT_STRICT. is retired" sdlc-studio/prd.md
+- **Verified:** yes (2026-07-17)
 
 ### AC4: `SDLC_AUTHOR`, `SDLC_VERIFY_HTTP_HOSTS`, `SDLC_TRIAGE_SESSION` and `SDLC_DEBUG` added to the
 
@@ -43,6 +46,7 @@
 - **When** rows are added for `SDLC_AUTHOR`, `SDLC_VERIFY_HTTP_HOSTS`, `SDLC_TRIAGE_SESSION` and `SDLC_DEBUG` (the Security NFR already names `SDLC_VERIFY_HTTP_HOSTS`)
 - **Then** `SDLC_AUTHOR`, `SDLC_VERIFY_HTTP_HOSTS`, `SDLC_TRIAGE_SESSION` and `SDLC_DEBUG` added to the env-var table; `SDLC_VERIFY_HTTP_HOSTS` also named in the Security NFR
 - **Verify:** grep "SDLC_TRIAGE_SESSION" sdlc-studio/prd.md
+- **Verified:** yes (2026-07-17)
 
 ## Revision History
 

@@ -620,7 +620,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **BG0185:** a mis-cased or mis-spaced `[check: ...]` tag now ERRORS loudly instead of parsing as
     no-tag (was CR0332). `sdlc_md.check_tag_near_misses` detects a `[ check ... ]` shape the strict
     parser rejects, and `validate.py` reports it as a `malformed-check-tag` error - closing the silent
-    control where a criterion's bar went unenforced. An unrelated bracketed word does not flag.
+    control where a criterion's bar went unenforced. A near-miss must also carry a tag shape (a colon
+    or an id-shaped dotted token), so bracketed prose like `[check the logs]` and an unrelated
+    bracketed word do not flag.
   - **BG0186:** `parent_ref` (singular) now delegates to `parent_refs` and returns the first
     non-sentinel parent, so it agrees with the plural reader on a malformed record whose first
     `Parent:` line is a `-` sentinel followed by a real id. Inert today (consumers use the plural

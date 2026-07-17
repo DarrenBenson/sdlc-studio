@@ -184,7 +184,7 @@ overstating coverage.
 | Coverage Target | 80% statement, blocking CI gate (`coverage report --fail-under=80`); ~90% aspiration [HIGH] |
 | Framework | Python `unittest` (stdlib) |
 | Execution | `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests` (shipped scripts) and `-s tools/tests` (repo-only checkers); `npm test` runs both |
-| Suite size | 2151 tests across 76 modules at the time of writing, under a minute. Run the discover command for the live count rather than trusting a pinned number - it drifts every sprint |
+| Suite size | 2,500+ tests across 90+ modules at the time of writing, under a minute. Run the discover command for the live count rather than trusting a pinned number - it drifts every sprint |
 | Location | `.claude/skills/sdlc-studio/scripts/tests/test_<script>.py`; `tools/tests/` for the repo-only checkers |
 
 The suite operates on small temporary fixture trees, which is what keeps a
@@ -308,7 +308,7 @@ untested area described under Test Strategy and Philosophy.
 Not gated as a runtime metric. The performance budget is context tokens, addressed
 structurally by progressive disclosure (always-loaded `SKILL.md` held under 500
 lines by `check_budgets.py`), not by a latency assertion. Script runtime is
-observed (2151 tests in under a minute) but not asserted against a threshold. See the
+observed (2,500+ tests in under a minute) but not asserted against a threshold. See the
 quality-gate table for the NFR mapping.
 
 The **token forecast is not a test-strategy instrument and must not be read as one.**
@@ -342,7 +342,7 @@ not-gated rationale. This closes the PRD-to-TSD traceability gap.
 
 | NFR (PRD section 5) | Quality gate | Blocking | Confidence |
 | --- | --- | --- | --- |
-| **Performance** - read path sub-second, writes bounded | Indirect: the suite runs 2151 tests in under a minute; a regression that made scripts slow would be visible. No explicit latency threshold is asserted. Treated as observed, not gated. `mutation` is exempt by design (minutes per run). | No | [MEDIUM] |
+| **Performance** - read path sub-second, writes bounded | Indirect: the suite runs 2,500+ tests in under a minute; a regression that made scripts slow would be visible. No explicit latency threshold is asserted. Treated as observed, not gated. `mutation` is exempt by design (minutes per run). | No | [MEDIUM] |
 | **Performance** - always-loaded context minimal | `check_budgets.py`: `SKILL.md` must be < 500 lines, each `reference-*.md` within its declared ceiling. Hard gate via `lint:budgets`. | Yes | [HIGH] |
 | **Security** - no network calls except `gh` and project Verify tools | Enforced by the script contract and the test design: `github_sync.py` tested with `gh` mocked; pure-stdlib (no third-party clients). Not gated by a network-egress scanner, but the script tier is scanned by bandit (below). | Partial (by test design, plus the bandit scan) | [HIGH] |
 | **Security** - static analysis of the shipped script tier | `bandit -r .claude/skills/sdlc-studio/scripts -ll -x '*/tests/*' -q` runs as a CI step; a medium-or-high severity finding fails the build. Covers the shipped scripts only. | Yes | [HIGH] |
@@ -593,7 +593,7 @@ holds only when someone remembers it.
   <script>.py               # 58 shipped helpers
   lib/                      # 6 shared modules; sdlc_md.py is the parsing core
   tests/
-    test_<script>.py        # one module per script; 76 modules, 2151 tests
+    test_<script>.py        # one module per script; 90+ modules, 2,500+ tests
 tools/
   check_links.py            # repo-only CI checkers, themselves unit-tested
   validate_skill.py

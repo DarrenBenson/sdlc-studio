@@ -22,6 +22,7 @@
 - **When** the row is aligned to the shipped RFC0038 points model
 - **Then** prd.md Section 3's sizing row describes the shipped model: Fibonacci Points on stories/bugs, T-shirt Size on CR/RFC/epic, forecast = sum(Points) x the measured tokens-per-point rate; Effort S/M/L named only as retired
 - **Verify:** grep "first cost predictor to clear the pre-registered bar" sdlc-studio/prd.md
+- **Verified:** yes (2026-07-17)
 
 ### AC2: prd.md Section 10 no longer claims the two loop defects are open; it cites BG0133/BG0136 as fixed
 
@@ -29,6 +30,7 @@
 - **When** Section 10 is rewritten to the resolved points model
 - **Then** prd.md Section 10 no longer claims the two loop defects are open; it cites BG0133/BG0136 as fixed with the shipped behaviour (accuracy reads only the recorded forecast; `file_finding` accepts --affects)
 - **Verify:** grep "loop defects this section used to list as open are" sdlc-studio/prd.md
+- **Verified:** yes (2026-07-17)
 
 ### AC3: prd.md Section 11's plan-time-predictor open question is closed citing RFC0038's points model
 
@@ -36,6 +38,7 @@
 - **When** the question is closed citing RFC0038
 - **Then** prd.md Section 11's plan-time-predictor open question is closed citing RFC0038's points model (r=+0.68)
 - **Verify:** grep "per-unit estimate stays, sized on the scale" sdlc-studio/prd.md
+- **Verified:** yes (2026-07-17)
 
 ### AC4: trd.md §10 describes the points x measured-rate forecast with plan-time forecasts recorded to
 
@@ -43,6 +46,7 @@
 - **When** §10, §12 Q4 and §13's Won't-Have are aligned to the shipped points model
 - **Then** trd.md §10 describes the points x measured-rate forecast with plan-time forecasts recorded to telemetry.forecasts stamped with estimator constants; §12 Q4 closed; §13's auto-recalibration Won't-Have restated to match the shipped per-plan rate recomputation
 - **Verify:** grep "telemetry.forecasts" sdlc-studio/trd.md
+- **Verified:** yes (2026-07-17)
 
 ## Revision History
 
