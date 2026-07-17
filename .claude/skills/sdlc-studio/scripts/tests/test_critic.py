@@ -595,6 +595,90 @@ class SignoffDelegateTests(unittest.TestCase):
             self.assertIsNone(mod.signoff_for(root, "US0002"))
 
 
+class RejoinderTests(unittest.TestCase):
+    """CR0329: the re-verdict loop's scaffolding emitted deterministically - the
+    prior verdict quoted verbatim, the refreshed scope, the same return contract."""
+
+    PRIOR = ("VERDICT: REJECT\n"
+             "ISSUES: vacuous killing test at test_x.py:10; docstring overclaims\n"
+             "BLOCKING: the vacuous killing test\n")
+
+    def _workspace(self, root: Path) -> None:
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True)
+        (d / "US0101-widget.md").write_text(
+            "# US0101: widget frobnicates\n\n> **Status:** Review\n> **Points:** 5\n"
+            "> **Affects:** widget.py\n\n## Acceptance Criteria\n\n### AC1: works\n"
+            "- **Verify:** shell echo ok\n", encoding="utf-8")
+        seats = root / "sdlc-studio" / "personas" / "seats"
+        seats.mkdir(parents=True)
+        (seats / "qa.md").write_text("# Sam Eriksson - QA seat\n<!-- role: qa -->\n",
+                                     encoding="utf-8")
+
+    def test_rejoinder_quotes_prior_verdict_verbatim(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._workspace(root)
+            mod = _load()
+            text = mod.rejoinder_brief(root, "US0101", "qa", self.PRIOR)
+            self.assertIn("VERDICT: REJECT", text)                        # quoted
+            self.assertIn("vacuous killing test at test_x.py:10", text)   # verbatim issues
+            self.assertIn("BLOCKING: the vacuous killing test", text)
+            self.assertIn("widget.py", text)                              # refreshed scope
+            self.assertIn("VERDICT: APPROVE or REJECT", text)             # same contract
+
+    def test_malformed_prior_verdict_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._workspace(root)
+            mod = _load()
+            with self.assertRaises(ValueError):
+                mod.rejoinder_brief(root, "US0101", "qa", "no contract here")
+
+    def test_cli_rejoinder_flag(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._workspace(root)
+            mod = _load()
+            f = root / "prior.txt"
+            f.write_text(self.PRIOR, encoding="utf-8")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                rc = mod.main(["brief", "--unit", "US0101", "--seat", "qa",
+                               "--rejoinder", str(f), "--root", str(root)])
+            self.assertEqual(rc, 0)
+            self.assertIn("VERDICT: REJECT", out.getvalue())
+            bad = root / "bad.txt"
+            bad.write_text("nothing here", encoding="utf-8")
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = mod.main(["brief", "--unit", "US0101", "--seat", "qa",
+                               "--rejoinder", str(bad), "--root", str(root)])
+            self.assertEqual(rc, 2)
+
+
+class RejoinderProbeTests(unittest.TestCase):
+    """CR0329: the re-run-your-mutants demand is structural - the lesson from the
+    two vacuous killing tests, in the ceremony, not just the lore."""
+
+    def test_rejoinder_demands_reexecuting_the_named_probes(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            RejoinderTests._workspace(RejoinderTests(), root)
+            mod = _load()
+            text = mod.rejoinder_brief(root, "US0101", "qa", RejoinderTests.PRIOR)
+            low = text.lower()
+            self.assertIn("re-execute", low)
+            self.assertIn("mutant", low)
+            # the demand binds BEFORE approval and forbids trusting the summary -
+            # asserted on the rejoinder's own phrasing, not the base brief's contract
+            self.assertIn("before you may approve", low)
+            self.assertIn("a claim,\nnot evidence", low.replace("\r", ""))
+            # the contract appears TWICE: the base brief's copy AND the rejoinder tail
+            # (dropping the tail restatement must fail here)
+            self.assertEqual(text.count("VERDICT: APPROVE or REJECT"), 2)
+
+
 class SignoffBriefTests(unittest.TestCase):
     """CR0323 AC3 / CR0318: the sign-off request embeds the decision brief -
     deliveries, per-unit verdict + REJECT history, gate/cost evidence, and the

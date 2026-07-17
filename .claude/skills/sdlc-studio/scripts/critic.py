@@ -491,6 +491,36 @@ Review depth: {depth}
 {_RETURN_CONTRACT}"""
 
 
+def rejoinder_brief(repo_root: Path | str, unit: str, seat: str,
+                    prior_verdict_text: str, tier: str = "full") -> str:
+    """The re-review brief after a REJECT's repairs: the prior VERDICT/ISSUES/BLOCKING
+    quoted verbatim, the diff scope refreshed (via the standard brief), the structural
+    demand to RE-EXECUTE the previously named probes and mutants, and the same return
+    contract. A malformed prior-verdict block is refused loudly - a rejoinder against
+    a verdict that cannot be parsed would re-review against a paraphrase. Validation
+    is well-formedness only: an APPROVE prior verdict is accepted too (a legitimate
+    post-approval re-review), not just the REJECT-repair loop this exists for."""
+    parse_verdict_block(prior_verdict_text)  # validation only; ValueError on malformed
+    base = brief(repo_root, unit, seat, tier)
+    return f"""{base}
+
+--- RE-REVIEW (rejoinder) ---
+
+This is a RE-REVIEW after repairs to your prior verdict. Your prior verdict, verbatim:
+
+{prior_verdict_text.strip()}
+
+The author's repairs summary (if any) accompanies this brief separately. It is a CLAIM,
+not evidence: before you may approve, RE-EXECUTE the probes and mutants your prior
+verdict named - re-apply each mutant and watch its killing test FAIL, re-run each live
+probe - and confirm the tree is byte-identical after your mutations. A repair whose
+killing test cannot fail is vacuous; two such tests have shipped before.
+
+Then return the SAME contract as before:
+
+{_RETURN_CONTRACT}"""
+
+
 _VERDICT_LINE = re.compile(r"^\s*VERDICT:\s*(\S+)\s*$", re.M | re.I)
 _BLOCK_TOKENS = ("VERDICT", "ISSUES", "BLOCKING")
 
@@ -536,8 +566,14 @@ def parse_verdict_block(text: str) -> tuple[str, str]:
 
 def cmd_brief(args: argparse.Namespace) -> int:
     try:
-        print(brief(args.root, args.unit, args.seat, args.tier))
-    except ValueError as exc:
+        if getattr(args, "rejoinder", None):
+            src = args.rejoinder
+            prior = (sys.stdin.read() if src == "-"
+                     else Path(src).read_text(encoding="utf-8"))
+            print(rejoinder_brief(args.root, args.unit, args.seat, prior, args.tier))
+        else:
+            print(brief(args.root, args.unit, args.seat, args.tier))
+    except (OSError, ValueError) as exc:
         print(f"brief refused: {exc}", file=sys.stderr)
         return 2
     return 0
@@ -664,6 +700,10 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--unit", required=True)
     b.add_argument("--seat", required=True, help="a card under sdlc-studio/personas/seats/")
     b.add_argument("--tier", choices=("full", "light"), default="full")
+    b.add_argument("--rejoinder", metavar="FILE|-", default=None,
+                   help="emit the RE-REVIEW brief from the prior verdict file (or stdin "
+                        "with -): prior verdict quoted verbatim, re-execute-your-probes "
+                        "demand, same return contract; a malformed block is refused")
     b.add_argument("--root", default=".")
     b.set_defaults(func=cmd_brief)
     e = sub.add_parser("evidence", help="Record the adversarial pass as evidence "
