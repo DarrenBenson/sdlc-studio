@@ -1461,6 +1461,43 @@ def mint_v3_id(root: Path, type_: str) -> str:
     return f"{prefix}-{new_ulid()[:12]}"  # extend the suffix on a persistent clash
 
 
+# --- DoR/DoD check-id registry -------------------------------------------------------
+# The ONE authority for the machine-checkable vocabulary a project's
+# definition-of-ready.md / definition-of-done.md may tag a criterion with
+# (`[check: <id>]`). Each id names an EXISTING gate, so a tagged criterion is a
+# criterion something actually enforces; an unknown id is a loud validation error,
+# never silently unenforced. Untagged criteria are explicitly human-judged.
+DOR_DOD_CHECK_IDS = {
+    "grooming.affects": "Affects declared and resolvable (the sprint plan breakdown gate)",
+    "grooming.points": "Points declared on the modified Fibonacci scale (breakdown gate)",
+    "grooming.split": "at or under the split ceiling - above it, decompose (breakdown gate)",
+    "grooming.acs": "at least one checkable acceptance criterion (tranche audit weak-AC lens)",
+    "grooming.deps": "dependencies delivered or sequenced in-batch (tranche audit unmet-deps)",
+    "story.verify-ac": "the story's executable ACs pass (verify_ac; the transition -> Done gate)",
+    "review.critic-approve": "an independent critic APPROVE is recorded (conformance critiqued)",
+    "review.two-role": "adversarial evidence + reviewer-of-record sign-off (review.two_role_after)",
+    "close.retro": "the batch retro exists and validates (gate --require-retro)",
+    "close.lessons": "open lessons revalidated and the summary current (the gate's lessons lanes)",
+    "close.review": "reviews/LATEST.md at least as new as every artefact (gate --require-review)",
+    "close.reconcile": "no index drift (the gate's reconcile lane)",
+    "release.gate": "the full release gate is green (gate --release)",
+    "release.changelog": "changelog fragments composed, no strays (the release gate's lane)",
+    "release.version": "version strings consistent across the authoritative files",
+}
+CHECK_TAG_RE = re.compile(r"\[check:\s*([a-z0-9.-]+)\s*\]")
+
+
+def check_tags(text: str) -> list[str]:
+    """Every `[check: <id>]` tag in a document, in order."""
+    return CHECK_TAG_RE.findall(text or "")
+
+
+def unknown_check_ids(text: str) -> list[str]:
+    """The tags that resolve to NO registered check - each is human intent that
+    nothing would enforce, so validation must fail loud on any."""
+    return [t for t in check_tags(text) if t not in DOR_DOD_CHECK_IDS]
+
+
 def parse_cutoff(value) -> int | None:
     """The one adoption-cutoff parser shared by every gate (conformance, provenance).
 

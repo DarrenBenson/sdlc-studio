@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 34 |
+| Proposed | 35 |
 | Approved | 0 |
 | In Progress | 9 |
 | Complete | 280 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 8 |
 | Blocked | 0 |
-| **Total** | **331** |
+| **Total** | **332** |
 
 ## All Changes
 
@@ -153,6 +153,7 @@
 | [CR-0329](CR0329-critic-brief-rejoinder-the-re-verdict-loop-s.md) | critic brief --rejoinder: the re-verdict loop's scaffolding emitted deterministically from the prior verdict | In Progress | Medium | Improvement | 2026-07-16 | -- |
 | [CR-0330](CR0330-tools-forward-port-sh-the-dev-repo-rsync.md) | tools/forward-port.sh: the dev-repo rsync to the installed copy as a guarded one-liner | In Progress | Low | Improvement | 2026-07-16 | -- |
 | [CR-0331](CR0331-cross-epic-ac-blocks-extension-stories-on-keywords.md) | cross-epic-ac blocks extension stories on keywords owned by a terminal epic | Proposed | Medium | Improvement | 2026-07-16 | -- |
+| [CR-0332](CR0332-dor-dod-near-miss-check-tags-must-error.md) | DoR/DoD near-miss check tags must error, not silently parse as no tag | Proposed | Medium | Improvement | 2026-07-17 | -- |
 
 ## Archived Releases
 

@@ -353,6 +353,26 @@ def excluded_id_files(repo_root: Path, types=None) -> list[dict]:
     return out
 
 
+def check_dor_dod(root: Path) -> list[dict]:
+    """Validate the project's DoR/DoD documents when present: every `[check: <id>]`
+    tag must resolve through the registered vocabulary. An unknown id is an ERROR -
+    a tag nothing enforces is human intent silently unenforced. Untagged criteria
+    are explicitly human-judged and never flagged."""
+    out: list[dict] = []
+    for name in ("definition-of-ready.md", "definition-of-done.md"):
+        path = root / "sdlc-studio" / name
+        if not path.is_file():
+            continue
+        text = sdlc_md.read_text_safe(path)
+        for bad in sdlc_md.unknown_check_ids(text or ""):
+            known = ", ".join(sorted(sdlc_md.DOR_DOD_CHECK_IDS))
+            out.append({"file": str(path), "severity": "error", "rule": "unknown-check-id",
+                        "message": f"[check: {bad}] resolves to no registered check - "
+                                   f"an unenforced tag is a silently weakened bar; "
+                                   f"registered ids: {known}"})
+    return out
+
+
 def cmd_check(args: argparse.Namespace) -> int:
     """Validate the selected artifacts and report violations."""
     targets = collect_targets(args)
@@ -363,6 +383,7 @@ def cmd_check(args: argparse.Namespace) -> int:
     if not args.file:  # whole-tree (or per-type) runs also sweep the excluded
         violations.extend(excluded_id_files(
             repo_root, [args.type] if args.type else None))
+        violations.extend(check_dor_dod(repo_root))
 
     errors = sum(1 for v in violations if v["severity"] == "error")
     warnings = sum(1 for v in violations if v["severity"] == "warning")

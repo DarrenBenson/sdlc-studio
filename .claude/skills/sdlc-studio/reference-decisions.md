@@ -298,6 +298,24 @@ Epic can proceed to Story generation when:
 - Dependency marked Blocked with no resolution plan
 - Risk without mitigation strategy
 
+## Definition of Ready / Definition of Done {#dor-dod}
+
+A project can name its ready and done bars as two editable documents -
+`sdlc-studio/definition-of-ready.md` and `sdlc-studio/definition-of-done.md`
+(shipped defaults in `templates/core/`), multi-level (story / sprint / release).
+Each criterion is a checklist item; an enforceable one carries a `[check: <id>]`
+tag resolving through the registered check-id vocabulary (one authority:
+`lib/sdlc_md.py`, `DOR_DOD_CHECK_IDS` - grooming, verify-ac, critic, close and
+release checks). `validate check` fails loud on an unknown id - a tag nothing
+enforces would be human intent silently unenforced. An untagged criterion is
+explicitly human-judged. Human intent and enforced rule live in the same file so
+they cannot drift apart.
+
+**The non-negotiable rule: under pressure cut scope, never weaken the bar.** The
+sanctioned response to a sprint running hot is to drop a unit, not to delete a
+criterion; editing the documents is a deliberate, reviewable act, and removing a
+tag downgrades that criterion to human-judged visibly.
+
 ## Story Ready {#story-ready}
 
 > **Deterministic helper.** Run the structural checks with the linter first:

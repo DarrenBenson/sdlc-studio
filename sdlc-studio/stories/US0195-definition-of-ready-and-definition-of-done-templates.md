@@ -1,6 +1,6 @@
 # US0195: definition-of-ready and definition-of-done templates with tagged machine-checkable criteria resolving through one registry authority; unknown check id is a loud validation error
 
-> **Status:** Ready
+> **Status:** Review
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** the definition-of-ready and definition-of-done templates are inspected against the registry
 - **Then** The two templates ship with default criteria per level, each enforceable one tagged with a registered check id; the registry lives in one authority module
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_dor_dod.py -k Registry
+- **Verified:** yes (2026-07-17)
 
 ### AC2: an unknown check id fails loudly
 
@@ -29,6 +30,7 @@
 - **When** validation runs over the document
 - **Then** An unknown check id in either document is a loud validation error, never silently unenforced
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_dor_dod.py -k UnknownCheckId
+- **Verified:** yes (2026-07-17)
 
 ### AC3: the never-weaken rule is documented
 
@@ -36,6 +38,7 @@
 - **When** a reader opens the DoR/DoD guidance
 - **Then** Documentation states the non-negotiable rule: under pressure cut scope, never weaken the bar
 - **Verify:** grep "never weaken the bar" .claude/skills/sdlc-studio/reference-decisions.md
+- **Verified:** yes (2026-07-17)
 
 ## Revision History
 
