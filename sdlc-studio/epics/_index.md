@@ -9,8 +9,8 @@
 | Draft | 12 |
 | Ready | 0 |
 | Approved | 0 |
-| In Progress | 1 |
-| Done | 70 |
+| In Progress | 0 |
+| Done | 71 |
 | **Total** | **83** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -105,4 +105,4 @@
 | [EP0080](EP0080-sprint-level-review-satisfies-the-per-unit-critiqued.md) | Sprint-level review satisfies the per-unit critiqued gate (RFC0046 option B) | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
 | [EP0081](EP0081-command-surface-cleanup-slice-2-the-5-help.md) | Command-surface cleanup slice 2: the 5 help-only commands and the help rewrite around the spine | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
 | [EP0082](EP0082-residual-audit-fixes-independent-small-corrections-from-the.md) | Residual audit fixes: independent small corrections from the 2026-07-16 audit | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
-| [EP0083](EP0083-refine-into-share-a-batch-epic-for-small.md) | refine --into: share a batch epic for small requests | In Progress | -- | -- | 2026-07-17 | 2026-07-17 |
+| [EP0083](EP0083-refine-into-share-a-batch-epic-for-small.md) | refine --into: share a batch epic for small requests | Done | -- | -- | 2026-07-17 | 2026-07-17 |

@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 3 |
 | Approved | 0 |
-| In Progress | 35 |
-| Complete | 288 |
+| In Progress | 34 |
+| Complete | 289 |
 | Rejected | 0 |
 | Deferred | 5 |
 | Superseded | 13 |
@@ -143,7 +143,7 @@
 | [CR-0319](CR0319-cut-5-0-0-the-release-dod-for.md) | Cut 5.0.0: the release DoD for the sizing + two-backlog model (RFC0040 close-out) | Deferred | High | process | 2026-07-16 | -- |
 | [CR-0320](CR0320-rolling-multi-sprint-policy-run-n-sprint-cycles.md) | Rolling multi-sprint policy: run N sprint cycles unattended under a standing policy, plan regenerated at each boundary (RFC0036 D1) | In Progress | Medium | Feature | 2026-07-16 | -- |
 | [CR-0321](CR0321-lane-partitioning-allocate-backlog-lanes-by-shared-file.md) | Lane partitioning: allocate backlog lanes by shared-file cluster for multi-team delivery (RFC0036 follow-up) | Deferred | Low | Feature | 2026-07-16 | -- |
-| [CR-0322](CR0322-refine-into-epxxxx-small-requests-decompose-into-a.md) | refine --into EPxxxx: small requests decompose into a shared batch epic instead of minting singletons (RFC0045 D1) | In Progress | Medium | Improvement | 2026-07-16 | -- |
+| [CR-0322](CR0322-refine-into-epxxxx-small-requests-decompose-into-a.md) | refine --into EPxxxx: small requests decompose into a shared batch epic instead of minting singletons (RFC0045 D1) | Complete | Medium | Improvement | 2026-07-16 | -- |
 | [CR-0323](CR0323-build-the-two-role-review-gate-adversarial-evidence.md) | Build the two-role review gate: adversarial evidence + non-author principal sign-off with named-delegate chain (RFC0044 D1+D3, integrates CR0318) | Complete | High | Feature | 2026-07-16 | -- |
 | [CR-0324](CR0324-dor-dod-artefacts-check-id-registry-the-two.md) | DoR/DoD artefacts + check-id registry: the two editable documents with a tagged machine-checkable subset (RFC0043 slice 1) | Complete | Medium | Feature | 2026-07-16 | -- |
 | [CR-0325](CR0325-wire-the-gates-to-the-dor-dod-documents.md) | Wire the gates to the DoR/DoD documents: grooming reads the ready bar, Done/close/release read the done bar (RFC0043 slice 2) | Complete | Medium | Feature | 2026-07-16 | -- |

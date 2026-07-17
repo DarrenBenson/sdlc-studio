@@ -14,3 +14,4 @@
 | US0198 | Darren Benson (operator) | - | Claude Fable 5; agent | 2026-07-17 | signed against the sprint close decision brief, RUN-01KXPJG9 |
 | US0199 | Darren Benson (operator) | - | Claude Fable 5; agent | 2026-07-17 | signed against the sprint close decision brief, RUN-01KXPJG9 |
 | US0200 | Darren Benson (operator) | - | Claude Fable 5; agent | 2026-07-17 | signed against the sprint close decision brief, RUN-01KXPJG9 |
+| US0257 | Darren (operator, reviewer-of-record) | - | opus-author-session | 2026-07-17 | Operator-authorized sign-off 2026-07-17: CR0322 (refine --into + multi-parent links + Delivers). Adversarial APPROVE after one repair round; matches confirmed design intent (multi-parent epics, whole-epic derivation coupling, per-story Delivers). |

@@ -11,8 +11,8 @@
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 1 |
-| Done | 199 |
+| Review | 0 |
+| Done | 200 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -167,7 +167,7 @@
 | [US0254](US0254-gate-release-runs-check-versions-strict-under-one.md) | gate --release runs check_versions --strict under one exit code; a CHANGELOG mismatch fails | Draft | EP0082 | 2026-07-17 | 2026-07-17 |
 | [US0255](US0255-extend-the-write-confinement-snapshot-suite-across-the.md) | extend the write-confinement snapshot suite across the shipped writers with a roster sweep | Draft | EP0082 | 2026-07-17 | 2026-07-17 |
 | [US0256](US0256-census-the-cr-index-linked-epics-column-from.md) | census the CR-index Linked Epics column from Decomposed-into (or drop the dead column) | Draft | EP0082 | 2026-07-17 | 2026-07-17 |
-| [US0257](US0257-build-refine-into-with-multi-parent-link-support.md) | build refine --into with multi-parent link support (children_of, asymmetry gate, back-links) and docs | Review | EP0083 | 2026-07-17 | 2026-07-17 |
+| [US0257](US0257-build-refine-into-with-multi-parent-link-support.md) | build refine --into with multi-parent link support (children_of, asymmetry gate, back-links) and docs | Done | EP0083 | 2026-07-17 | 2026-07-17 |
 
 ## Archived Releases
 

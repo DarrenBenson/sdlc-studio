@@ -1,6 +1,6 @@
 # US0257: build refine --into with multi-parent link support (children_of, asymmetry gate, back-links) and docs
 
-> **Status:** Review
+> **Status:** Done
 > **Delivers:** CR0322
 > **Verification depth:** functional
 > **Created:** 2026-07-17
