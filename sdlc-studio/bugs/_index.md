@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 1 |
+| Open | 2 |
 | In Progress | 0 |
 | Fixed | 99 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **182** |
+| **Total** | **183** |
 
 ## All Bugs
 
@@ -149,6 +149,7 @@
 | [BG0180](BG0180-mutation-py-runs-all-mutants-and-exits-0.md) | mutation.py runs all mutants and exits 0 after a red baseline | Fixed | Medium | 2026-07-17 | 2026-07-17 |
 | [BG0181](BG0181-retro-accuracy-reads-parenthetical-ids-in-the-batch.md) | retro accuracy reads parenthetical ids in the Batch line as rateable units | Fixed | Low | 2026-07-17 | 2026-07-17 |
 | [BG0182](BG0182-help-mutation-md-drifts-from-the-bg0180-red.md) | help/mutation.md drifts from the BG0180 red-baseline-refuse fix | Open | Low | 2026-07-17 | 2026-07-17 |
+| [BG0183](BG0183-test-modules-importing-the-tests-gitutil-helper-fail.md) | Test modules importing the tests/gitutil helper fail under single-module unittest invocation | Open | Medium | 2026-07-17 | 2026-07-17 |
 
 ## Archived Releases
 

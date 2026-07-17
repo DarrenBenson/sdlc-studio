@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 39 |
+| Proposed | 41 |
 | Approved | 0 |
 | In Progress | 1 |
 | Complete | 288 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 9 |
 | Blocked | 0 |
-| **Total** | **337** |
+| **Total** | **339** |
 
 ## All Changes
 
@@ -159,6 +159,8 @@
 | [CR-0335](CR0335-review-close-should-index-the-rv-it-stamps.md) | review close should index the RV it stamps and name the commit remedy when the anchor is uncommitted | Proposed | Medium | Improvement | 2026-07-17 | -- |
 | [CR-0336](CR0336-gate-mutation-lane-should-surface-bg0180-s-refused.md) | Gate mutation lane should surface BG0180's refused state | Proposed | Medium | Improvement | 2026-07-17 | -- |
 | [CR-0337](CR0337-import-test-coverage-for-autosprint-and-xrepo-bg0162.md) | Import/test coverage for autosprint and xrepo (BG0162 rider) | Proposed | Low | Improvement | 2026-07-17 | -- |
+| [CR-0338](CR0338-a-global-doc-coverage-failure-reports-as-n.md) | A global doc-coverage failure reports as N per-unit 'missing documented', not one global-floor finding | Proposed | Medium | Improvement | 2026-07-17 | -- |
+| [CR-0339](CR0339-bounded-mutation-should-bias-its-sample-toward-changed.md) | Bounded mutation should bias its sample toward changed lines, not the file head | Proposed | Medium | Improvement | 2026-07-17 | -- |
 
 ## Archived Releases
 
