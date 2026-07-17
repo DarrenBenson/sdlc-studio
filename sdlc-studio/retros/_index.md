@@ -56,3 +56,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0044](RETRO0044-the-ceremony-becomes-machinery-sprint-sign-off-close.md) | The ceremony-becomes-machinery sprint: sign-off, close, re-verdict, the bar and the port made refusing machinery | 2026-07-17 | -- | -- |
 | [RETRO-0045](RETRO0045-the-audit-backlog-sprint-29-bugs-cleared-cost.md) | The audit-backlog sprint: 29 bugs cleared, cost/measurement machinery made honest | 2026-07-17 | -- | -- |
 | [RETRO-0046](RETRO0046-the-spec-truth-refresh-sprint-ep0071-plus-the-open-bug-backlog.md) | The spec-truth refresh sprint: EP0071 plus the open-bug backlog | -- | -- | -- |
+| [RETRO-0047](RETRO0047-publish-the-artefact-schema-as-a-versioned-contract.md) | Publish the artefact schema as a versioned contract (EP0084) | -- | -- | -- |

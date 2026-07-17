@@ -17,3 +17,4 @@ next `sprint plan --worklist` reads back.
 | [HO-0002](HO0002-the-seams-sprint-delivered-8-8-next-cr0314.md) | The seams sprint delivered 8/8 - next: CR0314 forecast buckets + CR0323 review gate | 2026-07-16 |
 | [HO-0003](HO0003-every-remaining-hand-carried-quality-ceremony-review-sign.md) | Every remaining hand-carried quality ceremony - review sign-off, sprint close, re-verdict, the ready/done bar, forward-port - becomes deterministic, refusing machinery. | 2026-07-17 |
 | [HO-0004](HO0004-clear-the-2026-07-16-audit-backlog-so.md) | Clear the 2026-07-16 audit backlog so the sprint machinery (telemetry, retro, gate) and the documents of record (PRD/TRD/TSD) match the shipped behaviour | 2026-07-17 |
+| [HO-0005](HO0005-publish-the-artefact-schema-as-a-versioned-drift.md) | Publish the artefact schema as a versioned, drift-guarded public contract | 2026-07-17 |

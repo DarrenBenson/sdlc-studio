@@ -121,6 +121,4 @@ issues found?** Every finding gets a disposition: file it, or decline it with a 
 
 ## Handoff
 
-All 3 units terminal; EP0084 Done. RFC0047 delivered (option B). Residual for a future batch:
-BG0188 and BG0189 (both filed this sprint). Release freeze holds until ~2026-07-21; this lands
-unreleased on `main`.
+- [HO-0005](../handoffs/HO0005-publish-the-artefact-schema-as-a-versioned-drift.md) - 0 remaining item(s): 0 copilot-tail, 0 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
