@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 41 |
+| Draft | 40 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 3 |
+| Review | 4 |
 | Done | 215 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -157,7 +157,7 @@
 | [US0244](US0244-gate-rfc-accepted-on-open-decisions-refuse-while.md) | gate RFC -> Accepted on open decisions (refuse while any Open decision stands; recorded-override escape) | Draft | EP0079 | 2026-07-17 | 2026-07-17 |
 | [US0245](US0245-derive-rfc-decision-rows-from-the-finding-s.md) | derive RFC decision rows from the finding's real options, not the content-free boilerplate row | Draft | EP0079 | 2026-07-17 | 2026-07-17 |
 | [US0246](US0246-close-the-accepted-tranche-decision-rows-with-what.md) | close the accepted-tranche decision rows with what actually shipped | Draft | EP0079 | 2026-07-17 | 2026-07-17 |
-| [US0247](US0247-a-recorded-sprint-level-adversarial-full-diff-verdict.md) | a recorded sprint-level adversarial full-diff verdict satisfies the per-unit critiqued gate for the units in its diff range; per-unit REJECT-repairs still recorded | Draft | EP0080 | 2026-07-17 | 2026-07-17 |
+| [US0247](US0247-a-recorded-sprint-level-adversarial-full-diff-verdict.md) | a recorded sprint-level adversarial full-diff verdict satisfies the per-unit critiqued gate for the units in its diff range; per-unit REJECT-repairs still recorded | Review | EP0080 | 2026-07-17 | 2026-07-17 |
 | [US0248](US0248-the-close-sign-off-brief-reads-a-sprint.md) | the close sign-off brief reads a sprint-level verdict as coverage rather than reporting every unit unreviewed; document the model | Draft | EP0080 | 2026-07-17 | 2026-07-17 |
 | [US0249](US0249-decide-and-act-on-the-5-help-only.md) | decide and act on the 5 help-only commands (lessons/repo/retro/review/upgrade): promote spine-serving ones, retire/redirect the rest | Draft | EP0081 | 2026-07-17 | 2026-07-17 |
 | [US0250](US0250-rewrite-the-help-files-around-the-process-spine.md) | rewrite the help files around the process spine (raise -> break down -> sprint+review; PRD/TRD/TSD/personas as levers; reconcile/review/audit as support) | Draft | EP0081 | 2026-07-17 | 2026-07-17 |

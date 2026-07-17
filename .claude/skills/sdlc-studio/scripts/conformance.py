@@ -97,12 +97,20 @@ def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
     verified = bool(verified_states) and all(v in ("yes", "manual") for v in verified_states)
     reconciled = (not no_index) and sdlc_md.norm_id(rid) not in drift_ids
     verdict = critic.verdict_for(root, rid)
+    # A sprint-level adversarial full-diff review covers every unit in its range at once. It
+    # satisfies `critiqued` for a unit that had no INDIVIDUAL verdict - but never overrides a
+    # per-unit REJECT, which still repairs per unit.
+    sprint_rev = critic.sprint_review_for(root, rid)
+    sprint_covers = critic.sprint_covers_independently(root, rid, sprint_rev)
     # The verdict half: an APPROVE AND proven author != reviewer independence - a
     # self-review (or a verdict with no recorded author) never clears the Done gate. The floor
     # holds for generic workers too. Units closed before the gate (the visible PRE_GATE marker,
     # under the prior risk-scaled policy) are grandfathered; the gate applies to all new work.
-    verdict_ok = (bool(verdict) and verdict["verdict"] == critic.APPROVE
-                  and (critic.is_independent(verdict) or critic.is_pre_gate(verdict)))
+    per_unit_ok = (bool(verdict) and verdict["verdict"] == critic.APPROVE
+                   and (critic.is_independent(verdict) or critic.is_pre_gate(verdict)))
+    # Sprint coverage stands in ONLY when the unit has no per-unit verdict of its own: a recorded
+    # per-unit REJECT is not papered over by a batch-level APPROVE.
+    verdict_ok = per_unit_ok or (verdict is None and sprint_covers)
     critiqued = verdict_ok if critic_required else True
     # The two-role half: with `review.two_role_after` set, a Done unit PAST the cutoff
     # additionally needs the adversarial pass recorded as EVIDENCE and an independent
@@ -114,8 +122,11 @@ def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
         rid_num = sdlc_md.id_number(rid)
         if rid_num is not None and rid_num > two_role_cutoff:
             signoff = critic.signoff_for(root, rid)
-            critiqued = (bool(critic.evidence_for(root, rid))
-                         and critic.is_independent_signoff(root, rid, signoff))
+            # The evidence half is satisfied by a per-unit adversarial pass OR a sprint-level
+            # review covering this unit; the independent reviewer-of-record sign-off is still
+            # required per unit (the sprint pass is evidence, not the principal's sign-off).
+            has_evidence = bool(critic.evidence_for(root, rid)) or sprint_covers
+            critiqued = has_evidence and critic.is_independent_signoff(root, rid, signoff)
     return verified, reconciled, critiqued, doc_ok
 
 

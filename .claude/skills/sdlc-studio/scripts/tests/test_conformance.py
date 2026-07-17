@@ -475,5 +475,71 @@ class TwoRoleCritiquedTests(unittest.TestCase):
             self.assertTrue(u["stages"]["critiqued"])
 
 
+@unittest.skipUnless(HAS_YAML, "review.two_role_after reads .config.yaml (needs PyYAML)")
+class SprintReviewCritiquedTests(unittest.TestCase):
+    """US0247 / RFC0046 option B: a recorded sprint-level adversarial full-diff review satisfies
+    the per-unit `critiqued` gate for the units in its range - both the verdict half (a covered
+    unit needs no individual APPROVE) and the two-role evidence half - while a per-unit REJECT is
+    still repaired per unit and the per-unit sign-off stays required."""
+
+    def _config(self, root: Path) -> None:
+        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "review:\n  two_role_after: US0100\n", encoding="utf-8")
+
+    def test_sprint_review_clears_critiqued_for_covered_unit(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._config(root)
+            _story(root, 101, status="Done")           # NO per-unit verdict
+            c = _critic_mod()
+            c.record_sprint_review(root, ["US0101"], reviewer="qa-seat", author="builder",
+                                   verdict="APPROVE", findings="full-diff pass; none blocking")
+            c.record_signoff(root, "US0101", principal="Darren Benson (operator)", author="builder")
+            u = _units(root)["US0101"]
+            self.assertTrue(u["stages"]["critiqued"])
+
+    def test_SprintReview_does_not_override_a_per_unit_reject(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._config(root)
+            _story(root, 101, status="Done")
+            _record_verdict(root, "US0101", "reject")  # latest per-unit verdict is REJECT
+            c = _critic_mod()
+            c.record_sprint_review(root, ["US0101"], reviewer="qa-seat", author="builder",
+                                   verdict="APPROVE", findings="range looks fine overall")
+            c.record_signoff(root, "US0101", principal="operator", author="builder")
+            u = _units(root)["US0101"]
+            self.assertFalse(u["stages"]["critiqued"])   # REJECT repairs per unit
+            self.assertIn("critiqued", u["missing"])
+
+    def test_SprintReview_still_needs_the_per_unit_signoff(self) -> None:
+        # The sprint pass is EVIDENCE, not the reviewer-of-record sign-off: a covered unit with no
+        # sign-off does not clear the two-role gate.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._config(root)
+            _story(root, 101, status="Done")
+            c = _critic_mod()
+            c.record_sprint_review(root, ["US0101"], reviewer="qa-seat", author="builder",
+                                   verdict="APPROVE", findings="full-diff pass; none blocking")
+            u = _units(root)["US0101"]
+            self.assertFalse(u["stages"]["critiqued"])
+
+    def test_SprintReview_refuses_self_review_and_empty(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            c = _critic_mod()
+            with self.assertRaises(ValueError):        # reviewer == author
+                c.record_sprint_review(root, ["US0101"], reviewer="bob", author="bob",
+                                       verdict="APPROVE", findings="x")
+            with self.assertRaises(ValueError):        # empty findings
+                c.record_sprint_review(root, ["US0101"], reviewer="qa", author="bob",
+                                       verdict="APPROVE", findings="")
+            with self.assertRaises(ValueError):        # no covered units
+                c.record_sprint_review(root, [], reviewer="qa", author="bob",
+                                       verdict="APPROVE", findings="x")
+
+
 if __name__ == "__main__":
     unittest.main()

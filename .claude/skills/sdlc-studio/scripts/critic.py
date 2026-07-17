@@ -302,6 +302,82 @@ def is_independent_signoff(repo_root: Path | str, unit: str, signoff: dict | Non
     return principal not in _session_reviewer_ids(repo_root, unit)
 
 
+# --- Sprint-level review (one full-diff pass covers a batch) ---------------------------
+# The closing adversarial pass reads the WHOLE sprint diff at once, so recording it per unit is
+# false precision - it is one judgement over one range. Recorded here as evidence keyed to the
+# units it covers, so the per-unit `critiqued` gate reads it as coverage for a unit that had no
+# individual verdict. Coverage NEVER overrides a per-unit REJECT: a rejected unit still repairs
+# per unit (a later per-unit APPROVE), because the sprint pass judged the range, not that fix.
+_SPRINT_FILE = "sprint-review-record.md"
+_SPRINT_HEADER = (
+    "# Sprint-level Reviews\n\n"
+    "> Append-only. One adversarial full-diff review covering a batch of units at close -\n"
+    "> verdict, reviewer, author, and the units covered. It is coverage for the per-unit\n"
+    "> critiqued gate; a per-unit REJECT still repairs per unit.\n\n"
+    "| Base | Reviewer | Author | Verdict | Date | Units | Findings |\n"
+    "| --- | --- | --- | --- | --- | --- | --- |\n")
+_SPRINT_COLS = ("base", "reviewer", "author", "verdict", "date", "units", "findings")
+
+
+def sprint_review_path(repo_root: Path | str) -> Path:
+    return Path(repo_root) / "sdlc-studio" / "reviews" / _SPRINT_FILE
+
+
+def record_sprint_review(repo_root: Path | str, units: list[str], reviewer: str, author: str,
+                         verdict: str, findings: str, base: str = "") -> Path:
+    """Record one sprint-level adversarial full-diff review over `units`.
+
+    Independence is PROVEN, not assumed: reviewer and author are both required and must differ.
+    Findings must have substance - an empty adversarial pass is not evidence. The verdict is
+    APPROVE or REJECT; a REJECT is recorded (the range was reviewed and rejected) but never clears
+    a unit's gate."""
+    v = (verdict or "").upper()
+    if v not in (APPROVE, REJECT):
+        raise ValueError(f"sprint review verdict must be {APPROVE} or {REJECT}, got {verdict!r}")
+    if not (reviewer or "").strip() or not (author or "").strip():
+        raise ValueError("a sprint review needs both --reviewer and --author - independence is proven")
+    if _id(reviewer) == _id(author):
+        raise ValueError(f"reviewer {reviewer!r} == author - a sprint-level self-review never "
+                         "clears the critiqued gate")
+    if not (findings or "").strip():
+        raise ValueError("a sprint review needs findings text - an empty adversarial pass is "
+                         "not evidence (record what was probed, even 'none blocking')")
+    ids = [sdlc_md.norm_id(u) for u in units if sdlc_md.norm_id(u)]
+    if not ids:
+        raise ValueError("a sprint review must name the units it covers")
+    return _append_row(sprint_review_path(repo_root), _SPRINT_HEADER,
+                       (_clean(base) or "-", _clean(reviewer), _clean(author), v,
+                        sdlc_md.now_date(), _clean(" ".join(ids)), _clean(findings)))
+
+
+def sprint_reviews(repo_root: Path | str) -> list[dict]:
+    return _read_rows(sprint_review_path(repo_root), _SPRINT_COLS)
+
+
+def _covered_ids(row: dict) -> set[str]:
+    return {sdlc_md.norm_id(u) for u in re.split(r"[,\s]+", row.get("units", "")) if u.strip()}
+
+
+def sprint_review_for(repo_root: Path | str, unit: str):
+    """The latest sprint-level review whose covered-units list includes `unit`, or None."""
+    target = sdlc_md.norm_id(unit)
+    latest = None
+    for r in sprint_reviews(repo_root):
+        if target in _covered_ids(r):
+            latest = r
+    return latest
+
+
+def sprint_covers_independently(repo_root: Path | str, unit: str, review: dict | None) -> bool:
+    """True when a sprint-level review is a valid INDEPENDENT APPROVE covering `unit`: an APPROVE
+    whose reviewer and author are both recorded and distinct. This is the evidence half of the
+    two-role gate satisfied at sprint scope - the per-unit sign-off is still required separately."""
+    if not review or (review.get("verdict") or "").upper() != APPROVE:
+        return False
+    reviewer, author = _id(review.get("reviewer", "")), _id(review.get("author", ""))
+    return bool(reviewer) and bool(author) and reviewer != author
+
+
 def signoff_brief(repo_root: Path | str, units: list[str], gate_note: str | None = None,
                   cost_note: str | None = None) -> str:
     """The sign-off request with the decision brief inline - per-unit deliveries,
@@ -652,6 +728,32 @@ def cmd_signoff(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_sprint_review(args: argparse.Namespace) -> int:
+    units = [u.strip() for u in args.units.split(",") if u.strip()]
+    findings = args.findings
+    if getattr(args, "from_verdict", None):
+        if findings:
+            print("sprint-review refused: --from-verdict and --findings are mutually exclusive",
+                  file=sys.stderr)
+            return 2
+        try:
+            raw = sys.stdin.read() if args.from_verdict == "-" else Path(args.from_verdict).read_text("utf-8")
+            v, issues = parse_verdict_block(raw)
+        except (OSError, ValueError) as exc:
+            print(f"sprint-review refused: {exc}", file=sys.stderr)
+            return 2
+        findings = f"{v}: {issues or 'none'}"
+        args.verdict = args.verdict or v
+    try:
+        path = record_sprint_review(args.root, units, args.reviewer, args.author,
+                                    args.verdict or "", findings or "", base=args.base or "")
+    except ValueError as exc:
+        print(f"sprint-review refused: {exc}", file=sys.stderr)
+        return 2
+    print(f"sprint-level review recorded ({args.verdict}) over {len(units)} unit(s) -> {path}")
+    return 0
+
+
 def cmd_signoff_brief(args: argparse.Namespace) -> int:
     units = [u.strip() for u in args.units.split(",") if u.strip()]
     if not units:
@@ -736,6 +838,20 @@ def build_parser() -> argparse.ArgumentParser:
     so.add_argument("--note", default="")
     so.add_argument("--root", default=".")
     so.set_defaults(func=cmd_signoff)
+    sr = sub.add_parser("sprint-review", help="Record one adversarial full-diff review covering "
+                                              "a batch of units - coverage for the per-unit "
+                                              "critiqued gate.")
+    sr.add_argument("--units", required=True, help="comma-separated unit ids the review covers")
+    sr.add_argument("--reviewer", required=True, help="the independent reviewer (the QA seat)")
+    sr.add_argument("--author", required=True, help="the author the review is independent of")
+    sr.add_argument("--verdict", default=None, choices=("APPROVE", "REJECT"),
+                    help="the review verdict (or read from --from-verdict's block)")
+    sr.add_argument("--findings", default=None, help="what the adversarial pass probed")
+    sr.add_argument("--from-verdict", dest="from_verdict", default=None,
+                    help="read the VERDICT/ISSUES block from a file (or - for stdin)")
+    sr.add_argument("--base", default=None, help="the diff base ref the review covered (advisory)")
+    sr.add_argument("--root", default=".")
+    sr.set_defaults(func=cmd_sprint_review)
     sb = sub.add_parser("signoff-brief", help="Print the sign-off request with the "
                                               "decision brief inline (deliveries, verdict history, evidence).")
     sb.add_argument("--units", required=True, help="comma-separated unit ids")

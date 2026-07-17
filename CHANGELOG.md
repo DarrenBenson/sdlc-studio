@@ -21,6 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **A sprint-level adversarial review satisfies the per-unit `critiqued` gate for the units in its
+  range (EP0080, US0247, RFC0046 option B).** The closing full-diff pass judges the whole sprint
+  diff at once, so `critic sprint-review --units ... --reviewer <seat> --author <id> --verdict
+  APPROVE --findings ...` records one independent verdict covering a batch. Conformance's `critiqued`
+  stage then reads it as coverage for a covered unit that has no individual verdict - both the
+  verdict half and the two-role evidence half - so the close no longer demands a redundant per-unit
+  evidence row for every unit the one pass reviewed. It never overrides a per-unit REJECT (which
+  still repairs per unit), the per-unit reviewer-of-record sign-off is still required, and a
+  self-review (reviewer == author) or an empty pass is refused.
 - **`sprint close --apply-signoff --principal "<you>"` fans a recorded approval into the close
   (EP0077, US0236).** Instead of hand-running `critic signoff` and `transition` for every unit, one
   command records your reviewer-of-record sign-off per story unit and transitions each Done (AC-verify

@@ -93,6 +93,27 @@ class CliTests(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 mod.main(["record", "--unit", "US0017", "--verdict", "approve", "--root", d])
 
+    def test_cli_SprintReview_records_and_covers(self) -> None:
+        # US0247: the sprint-review CLI records a batch verdict readable as coverage per unit.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            rc = mod.main(["sprint-review", "--units", "US0017,US0018", "--reviewer", "qa-seat",
+                           "--author", "builder", "--verdict", "APPROVE",
+                           "--findings", "full-diff pass", "--root", str(root)])
+            self.assertEqual(rc, 0)
+            rev = mod.sprint_review_for(root, "US0018")
+            self.assertIsNotNone(rev)
+            self.assertTrue(mod.sprint_covers_independently(root, "US0018", rev))
+
+    def test_cli_SprintReview_refuses_self_review(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            mod = _load()
+            rc = mod.main(["sprint-review", "--units", "US0017", "--reviewer", "bob",
+                           "--author", "bob", "--verdict", "APPROVE", "--findings", "x",
+                           "--root", d])
+            self.assertNotEqual(rc, 0)
+
     def test_underscores_escaped_to_avoid_md037(self):
         # BG0023: underscored identifiers in the issues text must be escaped so they cannot
         # pair into markdown emphasis (markdownlint MD037).
