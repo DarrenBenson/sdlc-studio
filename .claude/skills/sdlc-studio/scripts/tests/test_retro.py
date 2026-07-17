@@ -627,6 +627,18 @@ class TheBatchIsMeasuredAgainstThePlan(AccuracyBase):
                 "CR0314/0323; RFC0043 all three slices + RFC0044 build)\n")
         self.assertEqual(retro.batch_ids(line), ["US0193", "US0194"])
 
+    def test_delivery_units_after_a_mid_line_parenthetical_are_kept(self) -> None:
+        # BG0181 regression guard: a Batch line carries INLINE provenance parentheticals with
+        # delivery units after them - `BG0045, BG0046, CR0132 (absorbing CR0139), CR0133, ...`.
+        # Truncating at the first `(` silently dropped every unit after it (a worse failure than
+        # the over-reporting BG0181 fixed). Each `(...)` must be stripped in place, not the line
+        # truncated: the provenance ids inside are dropped, the delivery units around them kept.
+        line = ("> **Batch:** BG0045, BG0046, CR0132 (absorbing CR0139), CR0133, "
+                "CR0135, CR0136, CR0138, CR0134 (RFC-first)\n")
+        self.assertEqual(retro.batch_ids(line),
+                         ["BG0045", "BG0046", "CR0132", "CR0133", "CR0135",
+                          "CR0136", "CR0138", "CR0134"])
+
     def test_escalated_unit_marks_the_batch_mixed_and_is_not_pooled(self) -> None:
         # BG0165: a per-attempt record whose attempts span more than one model (a haiku->opus
         # escalation) is ITSELF a mixed-model unit. accuracy summed its tokens across the models

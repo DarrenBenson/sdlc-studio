@@ -587,9 +587,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     MODEL_MIXED, marks the batch mixed (refusing the pooled ratio), and keeps it out of the
     per-model rows, so a haiku->opus escalation can no longer hide as a single-model batch or book
     its cheap-attempt tokens into the dear model's calibration.
-  - **BG0181:** retro `accuracy` reads only the delivery units before the batch line's provenance
-    parenthetical, so the `(EPxxxx-EPyyyy, from CR.../RFC...)` mentions stop padding the UNFORECAST
-    list.
+  - **BG0181:** retro `accuracy` strips each `(...)` provenance parenthetical from the batch line
+    IN PLACE (dropping the `(EPxxxx-EPyyyy, from CR.../RFC...)` / `(absorbing CRxxxx)` mentions that
+    padded the UNFORECAST list) while keeping every delivery unit around it - the closing review
+    caught that truncating at the first `(` silently dropped units listed after an inline
+    parenthetical.
   - **BG0154:** `decisions.py` ledger writes are atomic and lock-guarded - concurrent `decisions
     add` no longer mint a duplicate D-id and a crash mid-write no longer truncates the ledger.
   - **BG0155:** a corrupt close-down baseline is a loud refusal, not a silent disarm - `owed()`

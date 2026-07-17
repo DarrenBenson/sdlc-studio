@@ -415,12 +415,14 @@ def batch_ids(text: str) -> list[str]:
     if not m:
         return []
     line = PLACEHOLDER_RE.sub("", m.group(1))
-    # The batch line names the delivery units, then a `(EPxxxx-EPyyyy, from CR.../RFC...)`
-    # provenance parenthetical - which epic decomposed them, which request they came from. Those
-    # are context, NOT delivery units, and only the delivery units carry a plan-time forecast, so
-    # counting the parenthetical's ids padded the UNFORECAST list with permanent noise.
-    # Read only up to the first parenthetical; a batch with none is unaffected.
-    line = line.split("(", 1)[0]
+    # The batch line names delivery units interleaved with `(...)` provenance parentheticals -
+    # `(EPxxxx-EPyyyy, from CR.../RFC...)`, `(absorbing CR0139)`, `(RFC-first)` - which epic
+    # decomposed them or which request they came from. Those ids are context, NOT delivery units,
+    # and only delivery units carry a plan-time forecast, so counting them padded the UNFORECAST
+    # list with noise. Strip each parenthetical IN PLACE (not truncate at the first `(`, which
+    # would silently drop every real unit listed AFTER an inline parenthetical); a line with none
+    # is unaffected.
+    line = re.sub(r"\([^)]*\)", "", line)
     out: list[str] = []
     for hit in ARTEFACT_ID_RE.finditer(line):
         rid = sdlc_md.norm_id(hit.group(1))
