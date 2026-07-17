@@ -53,3 +53,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0041](RETRO0041-the-sprint-report-cost-and-velocity.md) | The sprint report: what a sprint delivered, cost, and velocity | 2026-07-16 | -- | -- |
 | [RETRO-0042](RETRO0042-flow-metrics-sprint-goal-dora-keys-small-batch.md) | Flow metrics, Sprint Goal, DORA keys, small-batch guard - the agile-gap tranche | 2026-07-16 | -- | -- |
 | [RETRO-0043](RETRO0043-the-seams-sprint-the-discipline-s-paperwork-made.md) | The seams sprint: the discipline's paperwork made tool-carried | 2026-07-16 | -- | -- |
+| [RETRO-0044](RETRO0044-the-ceremony-becomes-machinery-sprint-sign-off-close.md) | The ceremony-becomes-machinery sprint: sign-off, close, re-verdict, the bar and the port made refusing machinery | 2026-07-17 | -- | -- |

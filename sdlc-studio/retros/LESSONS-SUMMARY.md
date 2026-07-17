@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0082: A composed evidence line must carry its source report's failure state (baseline/errors/truncation), not only its successes - otherwise the...**
+- **L-0081: When a gate's requirement has independently-downgradable halves, compose them independently and test the partial-tag matrix, not just...**
+- **L-0080: Never run two tree-mutating verifiers concurrently: a mutation harness owns the working tree while it runs, a kill mid-mutant strands a...**
 - **L-0079: Backticks in shell-quoted artifact text are command substitutions**
 - **L-0078: A CLI flag is only shipped when a test exercises the CLI path: API-level tests stayed green while `--parent` was silently dropped at the...**
 - **L-0077: Text that flows into `re.sub` is data, never a template: the same replacement-expansion class surfaced twice in one sprint (AC seeding, and...**
