@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 2 |
+| Open | 1 |
 | In Progress | 0 |
-| Fixed | 105 |
+| Fixed | 106 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -155,7 +155,7 @@
 | [BG0186](BG0186-parent-ref-singular-and-parent-refs-plural-disagree.md) | parent_ref (singular) and parent_refs (plural) disagree on a contradictory Parent record | Fixed | Low | 2026-07-17 | 2026-07-17 |
 | [BG0187](BG0187-trd-9-threat-model-still-calls-plan-py.md) | TRD 9 threat model still calls plan.py archive the sole write exception, contradicting rule 5 | Open | Low | 2026-07-17 | 2026-07-17 |
 | [BG0188](BG0188-sprint-plan-write-accumulates-a-new-batch-into.md) | sprint plan --write accumulates a new batch into a prior run left outcome=running, reusing its id and clobbering its verdict | Fixed | High | 2026-07-17 | 2026-07-17 |
-| [BG0189](BG0189-project-upgrade-current-schema-2-contradicts-init-py.md) | project_upgrade.CURRENT_SCHEMA=2 contradicts init.py seeding new projects at schema_version 3 | Open | Low | 2026-07-17 | 2026-07-17 |
+| [BG0189](BG0189-project-upgrade-current-schema-2-contradicts-init-py.md) | project_upgrade.CURRENT_SCHEMA=2 contradicts init.py seeding new projects at schema_version 3 | Fixed | Low | 2026-07-17 | 2026-07-17 |
 
 ## Archived Releases
 

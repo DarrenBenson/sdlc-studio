@@ -24,6 +24,35 @@ import version_check  # noqa: E402
 INSTALLED = version_check.installed_version(version_check.skill_root()) or "2.3.0"
 
 
+import re  # noqa: E402
+
+
+class CurrentSchemaCoherenceTests(unittest.TestCase):
+    """BG0189: the skill must give ONE answer for 'current schema version'. `init` seeds a new
+    project from templates/config.yaml, so that file's schema_version is the current version; an
+    upgrade computed against a stale `CURRENT_SCHEMA` would move a project to the wrong version.
+    config-defaults.yaml stays the explicitly-named FALLBACK for un-stamped legacy workspaces."""
+
+    def _template_schema(self, name: str) -> int:
+        text = (SCR.parent / "templates" / name).read_text(encoding="utf-8")
+        m = re.search(r"^schema_version:\s*(\d+)", text, re.M)
+        self.assertIsNotNone(m, f"{name} has no schema_version")
+        return int(m.group(1))
+
+    def test_current_schema_equals_the_init_seed_template(self) -> None:
+        """CURRENT_SCHEMA (the upgrade target) == templates/config.yaml (what init copies in)."""
+        self.assertEqual(pu.CURRENT_SCHEMA, self._template_schema("config.yaml"))
+
+    def test_current_schema_is_derived_not_the_fallback(self) -> None:
+        """The seed (config.yaml) leads current; config-defaults.yaml is only the legacy fallback,
+        and the two intentionally differ - so CURRENT_SCHEMA must not be the fallback's value."""
+        self.assertGreater(pu.CURRENT_SCHEMA, self._template_schema("config-defaults.yaml"))
+
+    def test_sdlc_md_current_schema_helper_matches_the_template(self) -> None:
+        from lib import sdlc_md  # noqa: PLC0415
+        self.assertEqual(sdlc_md.current_schema(), self._template_schema("config.yaml"))
+
+
 def _project(d, *, version=None, personas=None, story_id=None):
     """Minimal consuming project under tmp dir `d`. version=(schema, skill) writes .version."""
     sd = Path(d) / "sdlc-studio"

@@ -629,6 +629,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The skill gives one answer for "current schema version" again (BG0189).**
+  `project_upgrade.CURRENT_SCHEMA` was hardcoded `2` while `init` seeds new projects at
+  `schema_version: 3` (from `templates/config.yaml`), so an upgrade computed against it would move a
+  project to the wrong version. `CURRENT_SCHEMA` now derives from the single source of truth via a new
+  `sdlc_md.current_schema()` (reads `templates/config.yaml`, the new-project seed); `config-defaults.yaml`
+  stays the explicitly-named fallback for un-stamped legacy workspaces. The `.version` schema stamp now
+  follows the project's own effective/config schema rather than being forced up to `CURRENT_SCHEMA`, so a
+  project that declines the v2->v3 switch keeps its version. A coherence test asserts
+  `CURRENT_SCHEMA == templates/config.yaml == init`'s seed so the two cannot drift again.
 - **`sprint plan --write` no longer accumulates a new batch onto a judged-but-unfinalised run
   (BG0188).** A close that records the Sprint Goal verdict but stops before the handoff leaves the
   run `outcome=running` while carrying a close artefact - an inconsistent state `open_run` did not

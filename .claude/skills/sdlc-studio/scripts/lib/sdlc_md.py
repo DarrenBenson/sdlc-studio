@@ -1095,6 +1095,29 @@ def is_schema_v3(repo_root) -> bool:
     return schema_version(repo_root) >= 3
 
 
+# The current schema version has ONE source of truth: templates/config.yaml, the file `init`
+# copies into every new project. Everything that needs "what version is current" (the upgrade
+# target, the skill-vs-project drift check) derives it from here, so the seed and the upgrade
+# target cannot disagree. This is DISTINCT from `schema_version`'s default of 2, which is the
+# fallback an UN-STAMPED legacy workspace resolves to (config-defaults.yaml) - a different fact.
+_CURRENT_SCHEMA_FALLBACK = 3  # matches templates/config.yaml; used only if the template is unreadable
+
+
+def current_schema() -> int:
+    """The current artefact schema version - read from templates/config.yaml, the new-project seed.
+
+    The single source of truth for "current". Falls back to `_CURRENT_SCHEMA_FALLBACK` (kept in
+    step with the template) only if the template cannot be read, so a moved/renamed template
+    degrades to a known-current constant rather than silently reporting the legacy fallback."""
+    tmpl = Path(__file__).resolve().parents[2] / "templates" / "config.yaml"
+    try:
+        text = tmpl.read_text(encoding="utf-8")
+    except OSError:
+        return _CURRENT_SCHEMA_FALLBACK
+    m = re.search(r"^schema_version:\s*(\d+)", text, re.M)
+    return int(m.group(1)) if m else _CURRENT_SCHEMA_FALLBACK
+
+
 def profile(repo_root) -> str:
     """The project's pipeline profile (`profile` in `.config.yaml`): `lite` or `full`,
     defaulting to `full`. Lite collapses the pipeline to PRD -> story -> implement (no

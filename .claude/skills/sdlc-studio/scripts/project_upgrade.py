@@ -25,7 +25,11 @@ import reconcile  # noqa: E402
 import validate  # noqa: E402
 import next_id  # noqa: E402
 
-CURRENT_SCHEMA = 2  # templates/config-defaults.yaml schema_version
+# The upgrade target: the CURRENT schema version, derived from the single source of truth
+# (templates/config.yaml, what `init` seeds new projects with) - never the config-defaults.yaml
+# fallback, which is the legacy stamp for un-stamped workspaces. A hardcoded 2 here contradicted
+# init seeding 3 and would move an upgraded project to the wrong version.
+CURRENT_SCHEMA = sdlc_md.current_schema()
 # Dirs newer projects carry; absent ones are advisory (created on first use), not auto-made
 # (empty dirs do not persist in git, and guessing per-type index headers would over-reach).
 STANDARD_DIRS = ("change-requests", "rfcs", "decisions", "retros")
@@ -373,12 +377,18 @@ def apply(root: Path | str, with_reconcile: bool = False, today: str | None = No
                                        today=today, skill=installed), encoding="utf-8")
         actions.append(f"created sdlc-studio/.version (schema {stamp_schema}, skill {installed})")
     elif prev_skill != installed:
-        stamp = max(_effective_schema(root), CURRENT_SCHEMA)  # an upgrade never lowers the stamp
+        # Never lower the stamp, and never force schema UP to CURRENT_SCHEMA: schema advancement is
+        # the explicit v2 -> v3 switch's job (it rewrites `.config.yaml`), not an automatic side
+        # effect of a skill-version bump. The stamp follows the project's own effective/config
+        # schema, so a project that DECLINES the switch stays on its version.
+        stamp = max(_effective_schema(root), sdlc_md.schema_version(root))
         ver.write_text(_bump_version_text(ver.read_text(encoding="utf-8"), installed, prev_skill,
                                           today, schema=stamp), encoding="utf-8")
         actions.append(f"updated sdlc-studio/.version (skill {prev_skill or '?'} -> {installed})")
-    elif (prev_schema or 0) < CURRENT_SCHEMA:
-        stamp = max(_effective_schema(root), CURRENT_SCHEMA)
+    elif (prev_schema or 0) < sdlc_md.schema_version(root):
+        # Repair a `.version` schema that lags the config's schema (the switch rewrote `.config.yaml`
+        # but the stamp was not caught up) - not a blanket bump to CURRENT_SCHEMA.
+        stamp = max(_effective_schema(root), sdlc_md.schema_version(root))
         ver.write_text(_bump_version_text(ver.read_text(encoding="utf-8"), installed, prev_skill,
                                           today, schema=stamp), encoding="utf-8")
         actions.append(f"repaired sdlc-studio/.version (schema -> {stamp})")

@@ -1,8 +1,9 @@
 # BG0189: project_upgrade.CURRENT_SCHEMA=2 contradicts init.py seeding new projects at schema_version 3
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
+> **Verification depth:** functional (unit: CURRENT_SCHEMA == templates/config.yaml == init seed; sdlc_md.current_schema() matches the template; declined v2->v3 switch keeps .version schema 2)
 > **Affects:** .claude/skills/sdlc-studio/scripts/project_upgrade.py, .claude/skills/sdlc-studio/templates/config-defaults.yaml
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio file
