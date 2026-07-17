@@ -1465,6 +1465,24 @@ class TriageInPlanTests(unittest.TestCase):
             self.assertEqual(rc, 0)
             self.assertNotIn("backlog triage", out)
 
+    def test_an_unreadable_backlog_artefact_is_logged_as_a_drop_in_the_plan(self) -> None:
+        # BG0163: a backlog file the triage scan cannot read must be NAMED in the plan's triage
+        # section, not silently truncated into a clean-looking plan (the drop status already
+        # surfaces). The batch itself is one coherent, readable bug.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _src(root, "src/a.py"); _src(root, "src/b.py")
+            self._dupbug(root, 1, "colour the status output", "render green and amber", "src/a.py")
+            # a non-UTF-8 backlog artefact the scan counts as skipped, never swallows (a CR, so it
+            # is off the --bugs batch: the drop is a triage gap, not a selection failure)
+            (root / "sdlc-studio" / "change-requests").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / "change-requests" / "CR0009-bad.md").write_bytes(
+                b"# CR-0009: broken\n\xff\xfe not utf-8\n")
+            rc, out, _ = self._plan(root)
+            self.assertEqual(rc, 0)                       # reporting, never a refusal
+            self.assertIn("unreadable", out)
+            self.assertIn("not triaged", out)
+
 
 class BreakdownGateTests(unittest.TestCase):
     """The breakdown gate: `sprint plan` REFUSES an ungroomed batch.

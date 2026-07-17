@@ -884,6 +884,25 @@ class SeedAcsTests(unittest.TestCase):
             second = sdlc_md.find_by_id(root, second_id)[0].read_text(encoding="utf-8")
             self.assertIn("### AC1: {{define}}", second)   # untouched scaffold
 
+    def test_seeded_ac_heading_from_a_long_criterion_has_no_trailing_punctuation(self) -> None:
+        # BG0178: a long criterion truncated into the AC heading must not end in '...' (MD026),
+        # so a project that markdownlints its workspace is not blocked by the generator's output.
+        long_criterion = ("sprint close runs the chain in order and STOPS loudly at the first "
+                          "failing gate, naming the remedy for the operator to act on next")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root / "sdlc-studio" / "change-requests" / "CR0001-x.md",
+                   "# CR-0001: X\n\n> **Status:** Approved\n> **Priority:** P1\n"
+                   "> **Type:** Improvement\n> **Size:** M\n\n## Summary\n\ns\n\n## Impact\n\ni\n\n"
+                   "## Acceptance Criteria\n\n"
+                   f"- [ ] {long_criterion}\n")
+            res = refine.refine(root, "CR0001", "The epic", [("Only story", 3, None)])
+            text = self._story_text(root, res)
+            heading = next(ln for ln in text.splitlines() if ln.startswith("### AC1:"))
+            self.assertFalse(heading.rstrip().endswith("..."))
+            self.assertFalse(heading.rstrip()[-1] in ".,;:!?…",
+                             f"AC heading ends in punctuation (MD026): {heading!r}")
+
     def test_seed_not_ready_placeholders_still_flagged(self) -> None:
         # seeding transcribes, it never greens: validate still errors on the
         # unresolved placeholders until the author fills them

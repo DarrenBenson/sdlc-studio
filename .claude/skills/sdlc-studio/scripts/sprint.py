@@ -1197,21 +1197,27 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
             "ok": not ungroomed and not oversized}
 
 
-def _batch_triage(root: Path, batch_ids: list[str]) -> list[dict]:
+def _batch_triage(root: Path, batch_ids: list[str]) -> dict:
     """The JUDGEMENT triage lenses (duplicate/subsumed, stale, orphaned-dependency) that touch a
     unit in this batch - surfaced in the plan the operator already reads. Reporting-only: a
     duplicate is a judgement call the human makes, unlike an ungroomed unit. OVERSIZED is excluded
     here because the breakdown gate above already owns it (and blocks on it). Best-effort - a
-    triage error must never break planning."""
+    triage error must never break planning.
+
+    Returns `{findings, skipped}`: `skipped` is the count of backlog artefacts the scan could
+    not read, propagated from `backlog_triage.triage` so an unreadable file is logged in the plan
+    ceremony rather than silently truncating the batch into a clean-looking plan (the module's
+    own contract, which status already honours)."""
     try:
         import backlog_triage
-        findings = backlog_triage.triage(root)["findings"]
+        report = backlog_triage.triage(root)
     except Exception as exc:  # noqa: BLE001 - the plan must survive a triage hiccup
         sdlc_md.debug("sprint._batch_triage", exc)
-        return []
+        return {"findings": [], "skipped": 0}
     want = {sdlc_md.norm_id(b) for b in batch_ids}
-    return [f for f in findings if f["lens"] != "oversized"
-            and want & {sdlc_md.norm_id(u) for u in f["units"]}]
+    findings = [f for f in report["findings"] if f["lens"] != "oversized"
+                and want & {sdlc_md.norm_id(u) for u in f["units"]}]
+    return {"findings": findings, "skipped": report.get("skipped", 0)}
 
 
 DEFAULT_SEAT_STALE_DAYS = 7  # advisory window; seat judgement does not rot on a clock
@@ -1712,15 +1718,22 @@ CROSS_DIGEST_MAX = 12
 def _render_triage(data: dict) -> None:
     """The judgement triage lenses, printed with the plan so a dirty backlog is seen BEFORE it is
     planned FROM. Reporting-only - the human decides whether a suspected duplicate is really one -
-    so it prints its findings and does not refuse. Silence here means the batch is coherent."""
+    so it prints its findings and does not refuse. Silence here means the batch is coherent, EXCEPT
+    when a backlog file could not be read: a drop is logged rather than passed off as clean."""
     bd = data.get("breakdown") or {}
-    findings = bd.get("triage") or []
-    if not findings:
+    triage = bd.get("triage") or {}
+    findings = triage.get("findings") or []
+    skipped = triage.get("skipped") or 0
+    if not findings and not skipped:
         return
-    print(f"  backlog triage: {len(findings)} item(s) to resolve before planning FROM this batch "
-          f"(judgement calls - not a refusal):")
-    for f in findings:
-        print(f"    [{f['lens']}] {f['detail']}")
+    if findings:
+        print(f"  backlog triage: {len(findings)} item(s) to resolve before planning FROM this "
+              f"batch (judgement calls - not a refusal):")
+        for f in findings:
+            print(f"    [{f['lens']}] {f['detail']}")
+    if skipped:
+        print(f"  backlog triage: {skipped} artefact(s) unreadable - not triaged "
+              f"(fix the header, then re-plan)")
 
 
 def _render_lessons(data: dict) -> None:

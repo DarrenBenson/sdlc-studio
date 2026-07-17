@@ -235,6 +235,7 @@ approach decisions. The full index is in `help/references.md`.
 | `plan` | Claude Code plan-file lifecycle (list, archive) |
 | `decisions` | Project decisions log (the project spine + delegated-agent handoff): `add` / `list` / `promote` |
 | `migrate` | Review every artefact and upgrade where safe: orchestrates conventions + version + sizing, reports what needs a human |
+| `audit` | Adversarial pressure-test over the whole artifact graph: refute-panel-verified weakness-hunt, triage-then-approve, cost-gated pre-flight |
 | `reconcile` | Detect and fix status drift across all artifacts |
 | `gate` | Portable, ecosystem-neutral CI quality gate over the deterministic checks |
 | `deploy` | Orchestrate-only deploy last-mile: gate, verify, record (operator-triggered, never autonomous) |

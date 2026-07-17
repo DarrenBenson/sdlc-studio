@@ -72,10 +72,23 @@ variation is a config line, not a fourth CR.
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Config-declared (A) vs normalised (B) vs both behind a shared layer (C) as the primary mechanism | Open |
-| D2 | Do CR0153/54/55 land as point fixes now and refactor onto the layer later, or wait and do them through the layer once? | Open |
-| D3 | Where a relaxation risks a false-positive (the `Dependency Status` scavenge), is the guard per-site or centralised in the layer? | Open |
-| D4 | Does this warrant a diagnostic-first stance generally: when a whole-file/whole-index parse yields nothing, name the convention mismatch (CR0153) rather than emit N per-row findings? | Open |
+| D1 | Config-declared (A) vs normalised (B) vs both behind a shared layer (C) as the primary mechanism | Resolved: C structure, A primary, B where unambiguous |
+| D2 | Do CR0153/54/55 land as point fixes now and refactor onto the layer later, or wait and do them through the layer once? | Resolved: CR0153 point fix now; CR0154/CR0155 through the layer |
+| D3 | Where a relaxation risks a false-positive (the `Dependency Status` scavenge), is the guard per-site or centralised in the layer? | Resolved: per-site (existing exact guards stay) |
+| D4 | Does this warrant a diagnostic-first stance generally: when a whole-file/whole-index parse yields nothing, name the convention mismatch (CR0153) rather than emit N per-row findings? | Resolved: yes (CR0153 degenerate-parse diagnostic) |
+
+## Decision
+
+Accepted (decisions.md D0010; operator at sprint planning, 2026-07-05): build the tolerant
+convention layer - **Option C** structure (one classification layer in `lib/`), **Option A**
+config-declared conventions as the primary policy, **Option B** normalised matching only where
+unambiguous. CR0154 and CR0155 land as thin adoptions through the layer; **CR0153 lands now as a
+diagnostic point fix** because it diagnoses rather than matches. **D3** is resolved **per-site**:
+the existing exact guards (the `Dependency Status` scavenge) stay where a relaxation would misfire,
+rather than being centralised. **D4** is resolved **yes** - the diagnostic-first stance is adopted
+(name the convention mismatch instead of emitting N per-row findings). The build is the sprint
+2026-07-D tranche (decisions.md D0011): the layer in `lib/` read via the shared config reader, with
+CR0154/CR0155 as its adopters.
 
 ## Revision History
 
@@ -84,3 +97,4 @@ variation is a config line, not a fourth CR.
 | 2026-07-04 | Claude (cross-project dogfooding) | Created via `new` (deterministic) |
 | 2026-07-04 | Claude (cross-project dogfooding) | Drafted from three same-session dogfooding gates (CR0153/54/55, +CR0141/44 lineage): propose a shared tolerant convention layer (config + normalised match behind one classifier) to retire the exact-string-gate class. |
 | 2026-07-04 | Claude (cross-project dogfooding) | Added the write-path sibling: `artifact.py new` scaffolds the skill template not the project's, so the scaffold fails CR0155's audit - the tolerant layer must cover template resolution, not just read-time matching. Found executing a sprint (filing BG0143). |
+| 2026-07-16 | sdlc-studio | Wrote the accepted outcome back (per decisions.md D0010/D0011): D1-D4 marked Resolved with their dispositions and a Decision section added - the RFC now records the acceptance instead of four Open rows predating it |

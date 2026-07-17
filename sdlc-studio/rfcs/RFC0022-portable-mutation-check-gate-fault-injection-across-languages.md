@@ -23,12 +23,24 @@ B as the portable core (the floor every project gets), with C as an opt-in per-e
 
 | # | Decision | Status |
 | --- | --- | --- |
-| D1 | Injection mechanism: adopt the recommendation (B core + C opt-in lane + D pre-filter), or another option mix | Open |
-| D2 | Mutation-set v1: are the four declared fault classes (unset-delivered-field, invert-guard, stub-return-null, no-op-mapper) the right bounded floor | Open |
-| D3 | Anchor form for textual mutations: how a mutation names its target (file + pattern + occurrence index?) so the report is stable across unrelated edits | Open |
-| D4 | Surface selection: changed-files-since-ref (git diff) vs the story's Affects field vs both, and which is the release-gate default | Open |
-| D5 | Report home: a `.local/mutation-report.json` beside verify-report, and whether `gate` consumes it as PASS/advisory in v1 | Open |
-| D6 | Cost ceiling: max mutations per run / per file before the gate truncates - and truncation must be REPORTED as un-checked coverage, never silent | Open |
+| D1 | Injection mechanism: adopt the recommendation (B core + C opt-in lane + D pre-filter), or another option mix | Resolved: B core adopted (C/D deferred) |
+| D2 | Mutation-set v1: are the four declared fault classes (unset-delivered-field, invert-guard, stub-return-null, no-op-mapper) the right bounded floor | Resolved: the four classes are the v1 floor |
+| D3 | Anchor form for textual mutations: how a mutation names its target (file + pattern + occurrence index?) so the report is stable across unrelated edits | Resolved: (file, class, occurrence) anchor |
+| D4 | Surface selection: changed-files-since-ref (git diff) vs the story's Affects field vs both, and which is the release-gate default | Resolved: both (`--files` / `--since` / `--story`) |
+| D5 | Report home: a `.local/mutation-report.json` beside verify-report, and whether `gate` consumes it as PASS/advisory in v1 | Resolved: `.local/mutation-report.json`, advisory in v1 |
+| D6 | Cost ceiling: max mutations per run / per file before the gate truncates - and truncation must be REPORTED as un-checked coverage, never silent | Resolved: `--max-mutations` ceiling, truncation reported |
+
+## Decision
+
+Accepted as recommended (decisions.md D0002; operator at sprint-2 triage, 2026-07-04): declared
+textual mutations (Option B) as the portable core, mutation-framework adapters (C) as an opt-in
+lane, and the static assertion scan (D) as a pre-filter. D1-D6 were settled at epic design within
+that direction and are all delivered in `scripts/mutation.py`: the four fault classes are the v1
+floor (D2), a mutation is anchored by (file, class, occurrence) so the report is stable across
+unrelated edits (D3), the surface is `--files` / `--since REF` / `--story` (D4), the report lands
+at `sdlc-studio/.local/mutation-report.json` and the `gate` mutation lane consumes it as advisory in
+v1 (D5), and `--max-mutations` bounds cost with truncation reported as un-checked, never silent (D6).
+The spawning CR0134 was unblocked and built.
 
 ## Spawned By
 
@@ -40,3 +52,4 @@ B as the portable core (the floor every project gets), with C as an opt-in per-e
 | --- | --- | --- |
 | 2026-07-04 | audit | Filed |
 | 2026-07-04 | claude | Open decisions D1-D6 drawn from CR-0134's unsettled-design list; linked the spawning CR |
+| 2026-07-16 | sdlc-studio | Wrote the accepted outcome back: D1-D6 marked Resolved with their dispositions (per decisions.md D0002 / CR0134, shipped in scripts/mutation.py) and a Decision section added - the RFC now shows the recorded outcome instead of six Open rows contradicting it |

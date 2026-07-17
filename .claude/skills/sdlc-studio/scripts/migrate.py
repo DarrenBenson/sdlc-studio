@@ -100,10 +100,14 @@ def migrate(repo_root: Path | str, *, apply: bool = False, with_default_amigos: 
                                 "detail": f"{item['id']} ({item['type']}): {label}{also}",
                                 "command": cmd(item)})
 
+    # Terminal legacy-sized units are NOT needs-human work: a Closed/Fixed unit is never planned,
+    # so re-sizing it changes nothing. Report them as a single historical count, never as an action.
+    terminal_sized = len(sizing.get("terminal_sized", []))
+
     return {"applicable": True, "applied": apply, "deterministic": deterministic,
-            "needs_human": needs_human,
+            "needs_human": needs_human, "terminal_sized": terminal_sized,
             "summary": {"deterministic": len(deterministic), "needs_human": len(needs_human),
-                        "applied": apply}}
+                        "terminal_sized": terminal_sized, "applied": apply}}
 
 
 def render(result: dict) -> str:
@@ -123,6 +127,10 @@ def render(result: dict) -> str:
             out.append(f"  - {h['detail']}")
             if h.get("command"):
                 out.append(f"      -> {h['command']}")
+        out.append("")
+    if result.get("terminal_sized"):
+        out.append(f"{result['terminal_sized']} terminal unit(s) keep legacy sizing "
+                   f"- historical, no action.")
         out.append("")
     if not result["applied"] and result["deterministic"]:
         out.append("Re-run with --apply to write the deterministic set (the needs-human items are "

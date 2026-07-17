@@ -59,6 +59,17 @@ if __name__ == "__main__":
     unittest.main()
 '''
 
+RED_TEST = '''import unittest
+import target
+
+class T(unittest.TestCase):
+    def test_fails(self):
+        self.assertEqual(1, 2)  # a red baseline over unmutated code
+
+if __name__ == "__main__":
+    unittest.main()
+'''
+
 
 def _fixture(d: Path) -> Path:
     (d / "target.py").write_text(TARGET, encoding="utf-8")
@@ -160,14 +171,37 @@ class BridgeTests(unittest.TestCase):
                            "--root", str(root)])
             self.assertNotEqual(rc, 0)
 
-    def test_runner_error_not_a_kill(self) -> None:
+    def test_broken_runner_baseline_refuses_never_a_kill(self) -> None:
+        # BG0180: a baseline that ERRORS (the runner itself broke) proves nothing, so the gate
+        # refuses - no mutant applied, no fake kill - rather than recording per-mutation errors.
         with tempfile.TemporaryDirectory() as d:
             root = _fixture(Path(d))
             r = self._run(root, "definitely-not-a-command-xyz")
-            s = r["summary"]
-            self.assertEqual(s["killed"], 0, r)
-            self.assertGreater(s["errors"], 0)
-            self.assertTrue(all(m["verdict"] == "error" for m in r["mutations"]))
+            self.assertTrue(r["refused"], r)
+            self.assertEqual(r["baseline"], "error")
+            self.assertEqual(r["summary"]["killed"], 0, r)
+            self.assertEqual(r["mutations"], [])       # nothing applied
+            self.assertTrue(r["remedy"])               # remedy named
+
+    def test_red_baseline_refuses_applies_no_mutant_and_exits_nonzero(self) -> None:
+        # BG0180: a red baseline (a failing suite over unmutated code) must refuse immediately -
+        # exit non-zero, apply no mutant, name the remedy - never run all mutants and exit 0.
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            (root / "test_red.py").write_text(RED_TEST, encoding="utf-8")
+            original = (root / "target.py").read_bytes()
+            r = self._run(root, f"{sys.executable} -m unittest test_red")
+            self.assertTrue(r["refused"], r)
+            self.assertEqual(r["baseline"], "fail")
+            self.assertEqual(r["mutations"], [])
+            self.assertEqual(r["summary"]["applied"], 0)
+            self.assertTrue(r["remedy"])
+            self.assertEqual((root / "target.py").read_bytes(), original)  # tree untouched
+            rc = mut.main(["run", "--files", str(root / "target.py"),
+                           "--test", f"{sys.executable} -m unittest test_red",
+                           "--root", str(root)])
+            self.assertNotEqual(rc, 0)                  # never a clean-looking zero
 
 
 class LaneTests(unittest.TestCase):

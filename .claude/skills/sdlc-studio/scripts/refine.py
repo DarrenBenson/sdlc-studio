@@ -50,6 +50,17 @@ _write_decomposed = sdlc_md.write_decomposed
 _CRITERION_RE = re.compile(r"^-\s*\[\s?\]\s+(.+?)\s*$", re.M)
 
 
+def _ac_heading(criterion: str, limit: int = 100) -> str:
+    """The AC heading taken from a request criterion: one line, truncated at a word boundary
+    when long, and never ending in punctuation. A generated heading must pass markdownlint
+    MD026 (no trailing punctuation) in any project that lints its workspace, so no trailing
+    ellipsis or full stop is appended."""
+    text = " ".join(criterion.split())
+    if len(text) > limit:
+        text = text[:limit].rsplit(" ", 1)[0] or text[:limit]
+    return text.rstrip(" .,;:!?…")
+
+
 def _request_criteria(text: str) -> list[str]:
     """The request's own `- [ ]` acceptance criteria, in order."""
     return _CRITERION_RE.findall(_section(text, "Acceptance Criteria"))
@@ -67,7 +78,7 @@ def _seed_acs(story_path: Path, criteria: list[str], redistribute_note: bool) ->
         blocks.append("> Seeded from the request's full criteria list - redistribute "
                       "across this epic's stories as you groom them.\n")
     for i, criterion in enumerate(criteria, 1):
-        title = criterion if len(criterion) <= 100 else criterion[:97] + "..."
+        title = _ac_heading(criterion)
         blocks.append(f"### AC{i}: {title}\n\n"
                       f"- **Given** {{{{context}}}}\n- **When** {{{{action}}}}\n"
                       f"- **Then** {criterion}\n- **Verify:** {{{{executable check}}}}\n")

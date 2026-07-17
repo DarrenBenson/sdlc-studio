@@ -302,6 +302,7 @@ def migrate_sizing(repo_root: Path | str, dry_run: bool = True) -> dict:
     converted: list[dict] = []
     needs_resize: list[dict] = []
     needs_manual: list[dict] = []
+    terminal_sized: list[dict] = []
     for type_ in _SIZED_TYPES:
         for p in sdlc_md.artifact_files(type_, root):
             text = p.read_text(encoding="utf-8")
@@ -329,12 +330,20 @@ def migrate_sizing(repo_root: Path | str, dry_run: bool = True) -> dict:
             if not dry_run:
                 _add_size_after_status(p, size)
     for type_ in ("story", "bug"):
+        vocab = sdlc_md.status_vocab(type_, root)
         for p in sdlc_md.artifact_files(type_, root):
             text = p.read_text(encoding="utf-8")
             if sdlc_md.read_points(text) is None and \
                     (sdlc_md.extract_field(text, "Effort") or "").strip():
-                needs_resize.append({"id": sdlc_md.extract_record_id(p.stem) or p.stem,
-                                     "type": type_})
+                rid = sdlc_md.extract_record_id(p.stem) or p.stem
+                # Points exist to plan and cost DELIVERY, so a TERMINAL unit is never re-sized:
+                # advising it would be work nobody should do, burying the genuinely-open units in
+                # noise. Terminal legacy-sized units are reported as a count, not an action.
+                status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab)
+                if status and sdlc_md.is_terminal_status(type_, status):
+                    terminal_sized.append({"id": rid, "type": type_, "status": status})
+                else:
+                    needs_resize.append({"id": rid, "type": type_})
     # An accepted, childless discovery item needs decomposing - but by the RIGHT ceremony: a
     # request (RFC/CR) is refined, an Issue is triaged. Split them so the report names the ceremony
     # rather than steering an Issue to `refine` (which refuses it).
@@ -342,7 +351,8 @@ def migrate_sizing(repo_root: Path | str, dry_run: bool = True) -> dict:
     needs_refine = [{"id": x["id"], "type": x["type"]} for x in undecomposed if x["type"] != "issue"]
     needs_triage = [{"id": x["id"], "type": x["type"]} for x in undecomposed if x["type"] == "issue"]
     return {"converted": converted, "needs_resize": needs_resize, "needs_refine": needs_refine,
-            "needs_triage": needs_triage, "needs_manual": needs_manual, "dry_run": dry_run}
+            "needs_triage": needs_triage, "needs_manual": needs_manual,
+            "terminal_sized": terminal_sized, "dry_run": dry_run}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -400,6 +410,9 @@ def main(argv: list[str] | None = None) -> int:
                       f"malformed (no Status line to anchor a Size) - fix the artefact first:")
                 for n in res["needs_manual"]:
                     print(f"  {n['id']} ({n['type']}): would be Size {n['size']}")
+            if res.get("terminal_sized"):
+                print(f"\n{len(res['terminal_sized'])} terminal unit(s) keep legacy sizing "
+                      f"- historical, no action.")
             if res["dry_run"] and res["converted"]:
                 print("\nRe-run with --confirm to write the Size lines.")
         return 0

@@ -27,6 +27,8 @@ THE BLOCKER: telemetry writes ONE record per unit, with `iterations` as a bare c
 
 CONFIGURABILITY (operator request): the report must be switchable off for token-conscious projects. The switch controls RENDERING, never RECORDING. A report not generated can be generated later; a measurement not taken is gone forever, and turning telemetry off would make the estimator unfalsifiable again for precisely the reason BG0133 was raised. Note also that a report composed deterministically by a script costs almost no tokens - only an agent writing narrative prose does - so the honest default is to make it mechanical, which makes the switch cheap to leave on.
 
+This RFC absorbs CR0273 (sprint velocity as a descriptive planning metric): the points-per-elapsed-sprint (primary, ceremony included) and points-per-worker-hour (secondary, tool-tuning) figures it proposed are folded into this report's accuracy-and-cost composition, kept descriptive-only and out of any capacity or planning gate. CR0273 is Superseded-by this RFC; its five acceptance criteria are delivered here rather than as a standalone CR.
+
 ## Design Options
 
 - **Per-attempt telemetry (RECOMMENDED). Telemetry records each ATTEMPT with its own model and token count. An escalation shows its true summed cost. Cost: a schema change and a migration for 361 existing per-unit records. Buys: the rework column, a falsifiable router, and cost-per-outcome for the benchmark.**

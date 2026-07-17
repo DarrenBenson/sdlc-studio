@@ -104,6 +104,21 @@ class SizingReportTests(unittest.TestCase):
             self.assertIsNone(sdlc_md.read_size(
                 (root / "sdlc-studio" / "bugs" / "BG0001-b.md").read_text()))
 
+    def test_a_terminal_legacy_sized_bug_is_not_advised_for_re_size(self) -> None:
+        # BG0176: a Closed/Fixed unit carrying legacy Effort is never planned, so it must NOT
+        # appear in the needs-resize (needs-human) bucket; it is a one-line historical count.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _w(root, "bugs/BG0053-old.md",
+               "# BG0053: old\n\n> **Status:** Closed\n> **Effort:** M\n> **Severity:** Low\n")
+            _w(root, "bugs/BG0131-live.md",
+               "# BG0131: live\n\n> **Status:** Open\n> **Effort:** S\n> **Severity:** Low\n")
+            res = migrate_v3.migrate_sizing(root, dry_run=False)
+            resize_ids = [n["id"] for n in res["needs_resize"]]
+            self.assertNotIn("BG0053", resize_ids)        # terminal - no re-size advice
+            self.assertIn("BG0131", resize_ids)           # genuinely open - still advised
+            self.assertIn("BG0053", [n["id"] for n in res["terminal_sized"]])
+
     def test_a_pointed_bug_is_not_flagged(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

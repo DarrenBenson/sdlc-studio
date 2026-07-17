@@ -92,6 +92,26 @@ per-severity thresholds optional). Skeptics default to "refuted=true if uncertai
 the burden is on the finding to survive. Give skeptics distinct lenses (correctness,
 does-it-reproduce, is-it-already-handled) rather than N identical prompts.
 
+### A dead vote is not a refutation {#audit-refute-quorum}
+
+A skeptic agent can **fail to return a verdict** - a session-limit outage, a network drop,
+any terminal agent error. That absence is not evidence against the finding, and must never
+be counted as a refutation. The failure mode is silent and severe: count only the votes that
+arrived against the fixed threshold and an outage that kills all N skeptics scores every
+candidate 0-non-refutations = mass-**refuted**, so the run reports the wrong survivor set as a
+finished verdict (observed live: 95 skeptics died mid-run, 34/46 reported; a re-run of the
+dead votes gave 61/19 - 27 verified findings had been silently mislabelled refuted).
+
+The rule:
+
+- A candidate's verdict is **valid only when all N votes arrived** (or the threshold is scaled
+  to the arrived votes with a minimum quorum - e.g. survive on >=2/3 of *arrived*, refuse a
+  verdict on fewer than 2 arrived).
+- An **incomplete panel marks the candidate `UNJUDGED`**, never refuted and never survived.
+- The run report **must carry an `unjudged` count** alongside survived/refuted, and **fail
+  loud** (or auto-resume the dead votes) when it is non-zero. A survivors/refuted split with a
+  hidden unjudged tail is not a finished audit - it is a truncated one wearing a complete face.
+
 ## Taxonomy & Filing {#audit-taxonomy}
 
 Classify each survivor by the standard rule:
