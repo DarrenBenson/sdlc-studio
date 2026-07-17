@@ -1,6 +1,6 @@
 # US0196: grooming resolves the story DoR; transition Done and the critic gate resolve the story DoD; gate require-retro and release resolve the sprint and release DoD; absent documents stay byte-compatible with today
 
-> **Status:** Ready
+> **Status:** Review
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** sprint plan grooming, transition to Done, the critic gate, gate --require-retro and gate --release each run
 - **Then** Each named gate resolves its level's tagged criteria from the project documents; absent documents = shipped-default behaviour, byte-compatible with today
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_dor_dod.py -k GateResolve
+- **Verified:** yes (2026-07-17)
 
 ### AC2: a document edit changes gate behaviour; removing a tag downgrades visibly
 
@@ -29,6 +30,7 @@
 - **When** the affected gate re-runs
 - **Then** A project edit to a tagged criterion changes gate behaviour without code changes; an edit that removes a tag downgrades that criterion to human-judged visibly in gate output
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_dor_dod.py -k TagEdit
+- **Verified:** yes (2026-07-17)
 
 ### AC3: the close clause restates the close-down enforcement without regression
 
@@ -36,6 +38,7 @@
 - **When** the sprint-DoD close clause replaces the hardcoded close-down check
 - **Then** RFC0042's close-down enforcement is restated as the sprint-DoD close clause with no behavioural regression (existing close tests stay green)
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_close_guard.py
+- **Verified:** yes (2026-07-17)
 
 ## Revision History
 

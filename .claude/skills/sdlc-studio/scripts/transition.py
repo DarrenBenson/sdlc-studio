@@ -121,6 +121,15 @@ def _done_verify_gate(root: Path, path: Path, text: str) -> str | None:
     critic semantic findings stay advisory (handled elsewhere)."""
     if not _story_has_executable_acs(text):
         return None  # nothing executable to verify
+    # The story-level Definition of Done, when the project declares one, decides whether
+    # this check enforces: a DoD whose story level does not tag `story.verify-ac` has
+    # downgraded AC verification to human judgement (a visible edit to the document, and
+    # noted here so the stand-down is never silent). Absent document = today's behaviour.
+    dod = sdlc_md.dor_dod_level_checks(root, "done", "story")
+    if dod is not None and "story.verify-ac" not in dod:
+        print("note: story.verify-ac is downgraded to human-judged by "
+              "definition-of-done.md - the AC-verify Done gate stands down", file=sys.stderr)
+        return None
     report_path = root / _REPORT_REL
     if not report_path.exists():
         return "this story declares executable ACs but they were never verified - run `verify_ac`"

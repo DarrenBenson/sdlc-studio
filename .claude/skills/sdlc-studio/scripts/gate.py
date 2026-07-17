@@ -700,18 +700,38 @@ def run_gate(root: str = ".", only: list[str] | None = None,
                 "detail": f"no SDLC project under {root} (no sdlc-studio/ dir) - wrong --root?"}]}
     registry = dict(checks) if checks is not None else dict(DEFAULT_CHECKS)
     bound: list[str] = []  # lanes a mode bound in: deselecting one is refused, not honoured
+    # The sprint- and release-level Definition of Done, when the project declares one,
+    # decides which close/release criteria the gate binds (the un-skippable close-down
+    # enforcement restated as the sprint-DoD close clause; shipped defaults = today's
+    # lanes, byte-compatible). A criterion whose tag the project removed is downgraded
+    # to human judgement - reported as a visible warn row, never silently unbound.
+    from lib import sdlc_md as _md  # local alias; gate already imports the lib package
+    sprint_dod = _md.dor_dod_level_checks(root, "done", "sprint")
+    release_dod = _md.dor_dod_level_checks(root, "done", "release")
+    def _dod_enforced(dod, check_id: str) -> bool:
+        return dod is None or check_id in dod
+    downgraded: list[str] = []
     if require_retro:  # close-gate: bind the expected retro id into a blocking check
-        registry["retro"] = lambda r, _rid=require_retro: _retro_present(r, _rid)
-        bound.append("retro")
+        if _dod_enforced(sprint_dod, "close.retro"):
+            registry["retro"] = lambda r, _rid=require_retro: _retro_present(r, _rid)
+            bound.append("retro")
+        else:
+            downgraded.append("close.retro")
     if require_retro or require_lessons:  # ...and the rest of the close's learning loop
-        registry.update(LESSONS_CLOSE_CHECKS)
-        bound.extend(LESSONS_CLOSE_CHECKS)
+        if _dod_enforced(sprint_dod, "close.lessons"):
+            registry.update(LESSONS_CLOSE_CHECKS)
+            bound.extend(LESSONS_CLOSE_CHECKS)
+        else:
+            downgraded.append("close.lessons")
     if require_handoff:  # a run that stopped short: the handoff must exist AND be linked
         registry["handoff"] = lambda r, _hid=require_handoff: _handoff_present(r, _hid)
         bound.append("handoff")
     if require_review:  # close-gate review leg: LATEST.md must be current with the artefacts
-        registry["review-current"] = _review_current
-        bound.append("review-current")
+        if _dod_enforced(sprint_dod, "close.review"):
+            registry["review-current"] = _review_current
+            bound.append("review-current")
+        else:
+            downgraded.append("close.review")
     if require_close:  # push/release guard: no delivery unit may owe a close (bound, blocking)
         registry["close-owed"] = _close_owed
         bound.append("close-owed")
@@ -724,8 +744,11 @@ def run_gate(root: str = ".", only: list[str] | None = None,
         registry["review-legs"] = _review_legs
         bound.append("review-legs")
         # ...and no changelog fragment may be left uncomposed at a cut
-        registry["changelog-fragments"] = _changelog_fragments
-        bound.append("changelog-fragments")
+        if _dod_enforced(release_dod, "release.changelog"):
+            registry["changelog-fragments"] = _changelog_fragments
+            bound.append("changelog-fragments")
+        else:
+            downgraded.append("release.changelog")
     # A wrong/typo'd --only/--skip (or a renamed check) must FAIL, not silently select
     # nothing and report a vacuous PASS - the false-assurance class LL0008 warns against.
     unknown = sorted({n for n in (list(only or []) + list(skip or [])) if n not in registry})
@@ -773,6 +796,11 @@ def run_gate(root: str = ".", only: list[str] | None = None,
             blocking = isinstance(exc, ConventionsError) or name in BLOCKING_ON_ERROR
             results.append({"check": name, "count": 1, "blocking": blocking, "status": "error",
                             "detail": f"check raised{'' if blocking else ', skipped'}: {exc}"})
+    if downgraded:  # the document's downgrades, visible in the verdict - never silent
+        results.append({"check": "dod-downgrades", "count": len(downgraded),
+                        "blocking": False, "status": "warn",
+                        "detail": f"downgraded to human-judged by definition-of-done.md "
+                                  f"(tag removed): {', '.join(sorted(downgraded))}"})
     ok = all(r["status"] == "pass" for r in results if r["blocking"])
     return {"ok": ok, "checks": results}
 

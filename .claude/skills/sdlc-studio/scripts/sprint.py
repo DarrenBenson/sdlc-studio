@@ -1125,6 +1125,16 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
     root = Path(repo_root)
     cited = _ids_cited_by_stories(root)
     ceiling = points_split_above(root)
+    # The story-level Definition of Ready, when the project declares one, decides WHICH of
+    # the grooming checks enforce (absent document = shipped defaults, byte-compatible).
+    # A criterion whose tag the project removed is downgraded to human-judged - reported
+    # visibly below, never skipped silently.
+    dor = sdlc_md.dor_dod_level_checks(root, "ready", "story")
+    def _enforced(check_id: str) -> bool:
+        return dor is None or check_id in dor
+    downgraded = [] if dor is None else sorted(
+        c for c in ("grooming.affects", "grooming.points", "grooming.split")
+        if c not in dor)
     ungroomed: list[dict] = []
     oversized: list[dict] = []
     groomed: list[str] = []
@@ -1155,15 +1165,16 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
         else:
             sized = points is not None
             size_field = "Points"
-        missing = ([] if declared else ["Affects"]) + ([] if sized else [size_field])
+        missing = (([] if declared or not _enforced("grooming.affects") else ["Affects"])
+                   + ([] if sized or not _enforced("grooming.points") else [size_field]))
         # All declared paths unresolvable = a fictional Affects. Named so the author can
         # fix the typo. Not applied when Affects is absent (that is the plainer "Affects" miss).
-        if declared and len(unresolvable) == len(declared):
+        if declared and len(unresolvable) == len(declared) and _enforced("grooming.affects"):
             missing = missing + [f"Affects (no declared path resolves: {', '.join(unresolvable)})"]
         if missing:
             ungroomed.append({"id": it["id"], "type": it["type"], "path": it["path"],
                               "missing": missing, "unresolvable": unresolvable})
-        elif points is not None and points > ceiling:
+        elif points is not None and points > ceiling and _enforced("grooming.split"):
             # Only a POINTED unit can be over the split ceiling; a T-shirt Size has no number to
             # be above it. A legacy CR carrying points is judged by the same ceiling it always was.
             oversized.append({"id": it["id"], "type": it["type"], "path": it["path"],
@@ -1179,7 +1190,7 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
     mode = breakdown_mode(root)
     return {"mode": mode, "blocking": mode != "judgement",
             "ungroomed": ungroomed, "oversized": oversized, "groomed": groomed,
-            "ceiling": ceiling,
+            "ceiling": ceiling, "downgraded": downgraded,
             "clusters": _shared_file_clusters(files_by_unit),
             "decompose": decompose,
             "triage": _batch_triage(root, [it["id"] for it in batch]),
@@ -1553,6 +1564,16 @@ def _render_decompose(data: dict) -> None:
         print(f"    {it['id']} ({it['why']}) -> `cr action {it['id']}`")
 
 
+def _render_downgrades(data: dict) -> None:
+    """Grooming checks the project's Definition of Ready downgraded to human judgement.
+    The downgrade is the document's right; doing it INVISIBLY is not - a bar lowered
+    without a trace is the silent-weakening class the documents exist to prevent."""
+    downgraded = (data.get("breakdown") or {}).get("downgraded") or []
+    if downgraded:
+        print(f"  grooming downgraded to human-judged by definition-of-ready.md "
+              f"(tag removed): {', '.join(downgraded)}")
+
+
 def _breakdown_detail(bd: dict) -> list[str]:
     """The ungroomed units, one line each: which unit, what it lacks, where it lives."""
     return [f"    {u['id']:<8} lacks: {', '.join(u['missing']):<15} {u['path']}"
@@ -1840,6 +1861,7 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     _render_clusters(data)
     _render_triage(data)
     _render_decompose(data)
+    _render_downgrades(data)
     _render_token_forecast(data)
     _render_capacity(data)
     _render_lessons(data)
@@ -1954,6 +1976,7 @@ def cmd_breakdown(args: argparse.Namespace) -> int:
         print(SPLIT_FIX.format(ceiling=bd["ceiling"]))
     _render_clusters({"breakdown": bd})
     _render_decompose({"breakdown": bd})
+    _render_downgrades({"breakdown": bd})
     return 0
 
 

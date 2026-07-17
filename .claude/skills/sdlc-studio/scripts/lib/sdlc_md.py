@@ -1498,6 +1498,34 @@ def unknown_check_ids(text: str) -> list[str]:
     return [t for t in check_tags(text) if t not in DOR_DOD_CHECK_IDS]
 
 
+def dor_dod_level_checks(repo_root, kind: str, level: str) -> set[str] | None:
+    """The tagged check ids at one level of the project's DoR/DoD document, or None
+    for shipped-default behaviour (no document, no such level section, or a level
+    heading with no body - only an explicit level WITH criteria redefines its bar).
+    `kind` is "ready" or "done"; `level` is "story", "sprint" or "release". A level
+    whose criteria carry no tags resolves to an empty set: the project downgraded
+    every criterion there to human judgement - the gates report that downgrade
+    visibly, never act on it silently. The heading match is word-exact ("## Story"
+    or "## Story ..." as separate words), so an unrelated heading sharing the
+    prefix cannot redefine a level."""
+    path = Path(repo_root) / "sdlc-studio" / f"definition-of-{kind}.md"
+    if not path.is_file():
+        return None
+    text = read_text_safe(path)
+    if text is None:
+        return None
+    head_re = re.compile(rf"^{re.escape(level)}(?:\s|$)", re.IGNORECASE)
+    section: list[str] = []
+    inside = False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            inside = bool(head_re.match(line[3:].strip()))
+            continue
+        if inside:
+            section.append(line)
+    return set(check_tags("\n".join(section))) if section else None
+
+
 def parse_cutoff(value) -> int | None:
     """The one adoption-cutoff parser shared by every gate (conformance, provenance).
 

@@ -126,6 +126,16 @@ def detect_conformance(repo_root: Path | str) -> dict:
     # The two-role review gate's own forward-only cutoff: units past it need
     # evidence + independent sign-off to clear `critiqued`. Unset = old rule everywhere.
     two_role_cutoff = sdlc_md.parse_cutoff(sdlc_md.project_override(root, "review.two_role_after"))
+    # The story-level Definition of Done, when the project declares one, decides which
+    # review stages are REQUIRED: a DoD without `review.critic-approve` downgrades the
+    # critic stage to human judgement (reported per unit, never silent); one without
+    # `review.two-role` stands the sign-off requirement down even under the cutoff.
+    story_dod = sdlc_md.dor_dod_level_checks(root, "done", "story")
+    critic_required = story_dod is None or "review.critic-approve" in story_dod
+    if story_dod is not None and "review.two-role" not in story_dod:
+        two_role_cutoff = None
+    dod_downgrades = [] if story_dod is None else sorted(
+        c for c in ("review.critic-approve", "review.two-role") if c not in story_dod)
     # A story is "reconciled" only if its index row matches and exists: a drifted
     # status (status-mismatch) or a story absent from the index (missing-row) both
     # fail it, and a missing index file fails every story.
@@ -172,6 +182,8 @@ def detect_conformance(repo_root: Path | str) -> dict:
         required = list(ALWAYS_STAGES)
         if status == "Done":
             required += list(DONE_STAGES)
+            if not critic_required:
+                required.remove("critiqued")
         rid_num = sdlc_md.id_number(rid)
         exempt = cutoff_num is not None and rid_num is not None and rid_num <= cutoff_num
         missing = [] if exempt else [s for s in required if not stages[s]]
@@ -185,6 +197,7 @@ def detect_conformance(repo_root: Path | str) -> dict:
             "exempt": exempt,
             "conformant": conformant,
             "missing": missing,
+            "downgraded": dod_downgrades if status == "Done" else [],
         })
     units.sort(key=lambda u: u["id"])
     total = len(units)
@@ -249,6 +262,11 @@ def cmd_check(args: argparse.Namespace) -> int:
         extra = f", {s['exempt']} exempt (pre-adoption)" if s.get("exempt") else ""
         print(f"conformance: {s['conformant']}/{s['total']} conformant, {s['nonconformant']} not{extra}"
               " (story-scoped: a bug/CR tranche relies on the critic + gate)")
+        downgrades = next((u["downgraded"] for u in result["units"]
+                           if u.get("downgraded")), [])
+        if downgrades:
+            print(f"  downgraded to human-judged by definition-of-done.md (tag removed): "
+                  f"{', '.join(downgrades)}")
         tally: dict[str, int] = {}
         for u in result["units"]:
             if not u["conformant"]:

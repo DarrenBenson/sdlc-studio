@@ -311,6 +311,15 @@ enforces would be human intent silently unenforced. An untagged criterion is
 explicitly human-judged. Human intent and enforced rule live in the same file so
 they cannot drift apart.
 
+**The gates READ the documents** (absent = shipped defaults, byte-compatible):
+`sprint plan` grooming resolves the story DoR (grooming.*); `transition -> Done`
+and conformance's review stages the story DoD (story.verify-ac,
+review.critic-approve, review.two-role); `gate --require-retro`/`--require-review`
+the sprint DoD (close.* - the un-skippable close-down restated as its close
+clause); `gate --release` the release DoD (release.changelog). Editing a tagged
+criterion changes gate behaviour without code changes; a removed tag is reported
+as "downgraded to human-judged" in the gate's own output.
+
 **The non-negotiable rule: under pressure cut scope, never weaken the bar.** The
 sanctioned response to a sprint running hot is to drop a unit, not to delete a
 criterion; editing the documents is a deliberate, reviewable act, and removing a
