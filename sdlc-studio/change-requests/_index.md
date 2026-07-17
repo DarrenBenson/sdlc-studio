@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 41 |
+| Proposed | 43 |
 | Approved | 0 |
 | In Progress | 1 |
 | Complete | 288 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 9 |
 | Blocked | 0 |
-| **Total** | **339** |
+| **Total** | **341** |
 
 ## All Changes
 
@@ -161,6 +161,8 @@
 | [CR-0337](CR0337-import-test-coverage-for-autosprint-and-xrepo-bg0162.md) | Import/test coverage for autosprint and xrepo (BG0162 rider) | Proposed | Low | Improvement | 2026-07-17 | -- |
 | [CR-0338](CR0338-a-global-doc-coverage-failure-reports-as-n.md) | A global doc-coverage failure reports as N per-unit 'missing documented', not one global-floor finding | Proposed | Medium | Improvement | 2026-07-17 | -- |
 | [CR-0339](CR0339-bounded-mutation-should-bias-its-sample-toward-changed.md) | Bounded mutation should bias its sample toward changed lines, not the file head | Proposed | Medium | Improvement | 2026-07-17 | -- |
+| [CR-0340](CR0340-gate-track-test-suite-runtime-warn-before-a.md) | Gate: track test-suite runtime, warn before a long run, and skip the unit suite for test-irrelevant changes | Proposed | Medium | Improvement | 2026-07-17 | -- |
+| [CR-0341](CR0341-close-review-current-distinguish-a-freshly-written-but.md) | Close review-current: distinguish a freshly-written-but-uncommitted LATEST.md from a stale one | Proposed | Low | Improvement | 2026-07-17 | -- |
 
 ## Archived Releases
 
