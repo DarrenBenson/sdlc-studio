@@ -22,3 +22,4 @@ The volatile project-state pointer lives in `LATEST.md` (not a numbered review).
 | [RV-0009](RV0009-sprint-close-review-the-sprint-report-delivered-cost.md) | Sprint-close review - the sprint report: delivered, cost, velocity (RFC0035 -> EP0048) | 2026-07-16 |
 | [RV-0010](RV0010-unified-review-4-1-0-unreleased-main-post.md) | Unified Review - 4.1.0 + unreleased main - post-audit consolidation | 2026-07-16 |
 | [RV-0011](RV0011-sprint-close-review-the-ceremony-becomes-machinery.md) | RV0011 – Sprint-close review – the ceremony-becomes-machinery sprint (RUN-01KXPJG9) | 2026-07-17 |
+| [RV-0012](RV0012-sprint-close-review-the-audit-backlog-sprint.md) | RV0012 – Sprint-close review – the audit-backlog sprint (RUN-01KXQH64) | 2026-07-17 |

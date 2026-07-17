@@ -196,3 +196,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 ## Metrics
 
 - Tokens: harness-tracked (interactive; not captured per-unit) · Duration: one session, 2026-07-17 · Critic rejects: 1 MAJOR (BG0181 regression, repaired)
+
+## Handoff
+
+- [HO-0004](../handoffs/HO0004-clear-the-2026-07-16-audit-backlog-so.md) - 0 remaining item(s): 0 copilot-tail, 0 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
