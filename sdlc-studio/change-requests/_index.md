@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 34 |
+| Proposed | 37 |
 | Approved | 0 |
 | In Progress | 1 |
 | Complete | 288 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 9 |
 | Blocked | 0 |
-| **Total** | **332** |
+| **Total** | **335** |
 
 ## All Changes
 
@@ -154,6 +154,9 @@
 | [CR-0330](CR0330-tools-forward-port-sh-the-dev-repo-rsync.md) | tools/forward-port.sh: the dev-repo rsync to the installed copy as a guarded one-liner | Complete | Low | Improvement | 2026-07-16 | -- |
 | [CR-0331](CR0331-cross-epic-ac-blocks-extension-stories-on-keywords.md) | cross-epic-ac blocks extension stories on keywords owned by a terminal epic | Proposed | Medium | Improvement | 2026-07-16 | -- |
 | [CR-0332](CR0332-dor-dod-near-miss-check-tags-must-error.md) | DoR/DoD near-miss check tags must error, not silently parse as no tag | Proposed | Medium | Improvement | 2026-07-17 | -- |
+| [CR-0333](CR0333-sprint-close-phase-2-fan-the-operator-sign.md) | sprint close phase 2: fan the operator sign-off into the terminal cascade | Proposed | High | Improvement | 2026-07-17 | -- |
+| [CR-0334](CR0334-verify-ac-freshness-should-fingerprint-the-ac-section.md) | verify_ac freshness should fingerprint the AC section, not the file mtime | Proposed | Medium | Improvement | 2026-07-17 | -- |
+| [CR-0335](CR0335-review-close-should-index-the-rv-it-stamps.md) | review close should index the RV it stamps and name the commit remedy when the anchor is uncommitted | Proposed | Medium | Improvement | 2026-07-17 | -- |
 
 ## Archived Releases
 
