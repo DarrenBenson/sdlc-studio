@@ -1,6 +1,6 @@
 # US0211: Refresh or band the TRD pinned census counts and restate the freshness-guard claim
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

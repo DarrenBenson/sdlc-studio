@@ -1,6 +1,6 @@
 # US0212: Fix the TRD section 6 Migrations paragraph to name the shipped migration scripts
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

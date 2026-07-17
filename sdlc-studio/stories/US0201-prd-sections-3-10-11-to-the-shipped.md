@@ -1,6 +1,6 @@
 # US0201: PRD sections 3/10/11 to the shipped Points model; Effort named only as retired; close BG0133/BG0136 and the plan-time-predictor open question
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

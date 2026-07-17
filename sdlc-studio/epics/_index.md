@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 12 |
+| Draft | 11 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 71 |
+| Done | 72 |
 | **Total** | **83** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -93,7 +93,7 @@
 | [EP0068](EP0068-sprint-close-the-twelve-step-ceremony-as-one.md) | sprint close: the twelve-step ceremony as one deterministic command | Done | -- | -- | 2026-07-16 | 2026-07-16 |
 | [EP0069](EP0069-critic-brief-rejoinder-deterministic-re-verdict-scaffolding.md) | critic brief --rejoinder: deterministic re-verdict scaffolding | Done | -- | -- | 2026-07-16 | 2026-07-16 |
 | [EP0070](EP0070-guarded-forward-port-script-for-the-installed-copy.md) | Guarded forward-port script for the installed copy | Done | -- | -- | 2026-07-16 | 2026-07-16 |
-| [EP0071](EP0071-spec-truth-refresh-reconcile-prd-trd-tsd-rfc.md) | Spec-truth refresh: reconcile PRD/TRD/TSD/RFC with shipped main | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
+| [EP0071](EP0071-spec-truth-refresh-reconcile-prd-trd-tsd-rfc.md) | Spec-truth refresh: reconcile PRD/TRD/TSD/RFC with shipped main | Done | -- | -- | 2026-07-17 | 2026-07-17 |
 | [EP0072](EP0072-close-and-gate-ergonomics-the-two-role-close.md) | Close and gate ergonomics: the two-role close-chain friction batch | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
 | [EP0073](EP0073-audit-cost-and-overflow-instrumentation.md) | Audit cost and overflow instrumentation | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
 | [EP0074](EP0074-sprint-report-command-surface.md) | Sprint-report command surface | Draft | -- | -- | 2026-07-17 | 2026-07-17 |

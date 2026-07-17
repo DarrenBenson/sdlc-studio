@@ -1,6 +1,6 @@
 # US0203: Document the version-check urllib and sprint-plan git-fetch network surface in the PRD Security NFR and TRD rule 6/threat table
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

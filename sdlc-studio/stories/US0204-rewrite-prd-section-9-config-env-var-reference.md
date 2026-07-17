@@ -1,6 +1,6 @@
 # US0204: Rewrite PRD section 9 config/env-var reference: require_ac_verification default, two_backlog.enforce, retire SDLC_ENGAGEMENT_STRICT, add missing env vars
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

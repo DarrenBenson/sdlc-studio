@@ -1,6 +1,6 @@
 # US0208: TRD: move critic record to writers and document the append-only atomic-write exception; harden read_verdicts against a torn row
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 0 |
+| Open | 1 |
 | In Progress | 0 |
 | Fixed | 104 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **186** |
+| **Total** | **187** |
 
 ## All Bugs
 
@@ -153,6 +153,7 @@
 | [BG0184](BG0184-cross-epic-ac-blocks-extension-stories-on-keywords.md) | cross-epic-ac blocks extension stories on keywords owned by a terminal epic | Fixed | Medium | 2026-07-17 | 2026-07-17 |
 | [BG0185](BG0185-dor-dod-near-miss-check-tags-parse-as.md) | DoR/DoD near-miss check tags parse as no-tag instead of erroring | Fixed | Medium | 2026-07-17 | 2026-07-17 |
 | [BG0186](BG0186-parent-ref-singular-and-parent-refs-plural-disagree.md) | parent_ref (singular) and parent_refs (plural) disagree on a contradictory Parent record | Fixed | Low | 2026-07-17 | 2026-07-17 |
+| [BG0187](BG0187-trd-9-threat-model-still-calls-plan-py.md) | TRD 9 threat model still calls plan.py archive the sole write exception, contradicting rule 5 | Open | Low | 2026-07-17 | 2026-07-17 |
 
 ## Archived Releases
 

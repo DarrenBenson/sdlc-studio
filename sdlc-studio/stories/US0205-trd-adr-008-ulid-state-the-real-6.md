@@ -1,6 +1,6 @@
 # US0205: TRD ADR-008 ULID: state the real 6+2-char guarantee and cross-machine residual risk; drop the collision-free absolute
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

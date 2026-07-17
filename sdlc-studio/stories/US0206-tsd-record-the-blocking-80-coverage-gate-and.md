@@ -1,6 +1,6 @@
 # US0206: TSD: record the blocking 80% coverage gate and the bandit step in the coverage/security/quality-gate tables
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

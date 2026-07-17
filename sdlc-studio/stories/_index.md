@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 55 |
+| Draft | 44 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 1 |
+| In Progress | 0 |
 | Review | 0 |
-| Done | 200 |
+| Done | 212 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -111,18 +111,18 @@
 | [US0198](US0198-sprint-close-orchestrates-goal-verdict-retro-validate-and.md) | sprint close orchestrates goal-verdict, retro validate and extract, close gate, handoff and reconcile with fail-loud stops and idempotent resume, printing the decision brief | Done | EP0068 | 2026-07-16 | 2026-07-16 |
 | [US0199](US0199-brief-rejoinder-quotes-the-prior-verdict-verbatim-with.md) | brief --rejoinder quotes the prior verdict verbatim with the re-execute-your-probes instruction and return contract; a malformed prior-verdict file is refused | Done | EP0069 | 2026-07-16 | 2026-07-16 |
 | [US0200](US0200-tools-forward-port-sh-runs-the-canonical-rsync.md) | tools/forward-port.sh runs the canonical rsync dry-run by default with --yes to apply, refusing a reversed direction or non-dev-repo cwd; AGENTS.md references it | Done | EP0070 | 2026-07-16 | 2026-07-16 |
-| [US0201](US0201-prd-sections-3-10-11-to-the-shipped.md) | PRD sections 3/10/11 to the shipped Points model; Effort named only as retired; close BG0133/BG0136 and the plan-time-predictor open question | In Progress | EP0071 | 2026-07-17 | 2026-07-17 |
-| [US0202](US0202-add-the-shipped-done-epics-ep0033-ep0047-to.md) | Add the shipped Done epics EP0033-EP0047 to the PRD feature tables and populate the -- Epic columns | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
-| [US0203](US0203-document-the-version-check-urllib-and-sprint-plan.md) | Document the version-check urllib and sprint-plan git-fetch network surface in the PRD Security NFR and TRD rule 6/threat table | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
-| [US0204](US0204-rewrite-prd-section-9-config-env-var-reference.md) | Rewrite PRD section 9 config/env-var reference: require_ac_verification default, two_backlog.enforce, retire SDLC_ENGAGEMENT_STRICT, add missing env vars | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
-| [US0205](US0205-trd-adr-008-ulid-state-the-real-6.md) | TRD ADR-008 ULID: state the real 6+2-char guarantee and cross-machine residual risk; drop the collision-free absolute | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
-| [US0206](US0206-tsd-record-the-blocking-80-coverage-gate-and.md) | TSD: record the blocking 80% coverage gate and the bandit step in the coverage/security/quality-gate tables | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
-| [US0207](US0207-mark-rfc0034-superseded-by-rfc0038-cross-link-both.md) | Mark RFC0034 superseded by RFC0038, cross-link both and update the rfc index | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
-| [US0208](US0208-trd-move-critic-record-to-writers-and-document.md) | TRD: move critic record to writers and document the append-only atomic-write exception; harden read_verdicts against a torn row | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
-| [US0209](US0209-trd-section-6-data-architecture-add-the-issue.md) | TRD section 6 data architecture: add the issue type, story Blocked, the inbox triage lane and a two-backlog subsection | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
-| [US0210](US0210-complete-trd-rule-5-write-surface-retro-handoff.md) | Complete TRD rule 5 write surface (retro/handoff/archive/persona_gen) or restate as non-exhaustive with a census pointer | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
-| [US0211](US0211-refresh-or-band-the-trd-pinned-census-counts.md) | Refresh or band the TRD pinned census counts and restate the freshness-guard claim | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
-| [US0212](US0212-fix-the-trd-section-6-migrations-paragraph-to.md) | Fix the TRD section 6 Migrations paragraph to name the shipped migration scripts | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0201](US0201-prd-sections-3-10-11-to-the-shipped.md) | PRD sections 3/10/11 to the shipped Points model; Effort named only as retired; close BG0133/BG0136 and the plan-time-predictor open question | Done | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0202](US0202-add-the-shipped-done-epics-ep0033-ep0047-to.md) | Add the shipped Done epics EP0033-EP0047 to the PRD feature tables and populate the -- Epic columns | Done | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0203](US0203-document-the-version-check-urllib-and-sprint-plan.md) | Document the version-check urllib and sprint-plan git-fetch network surface in the PRD Security NFR and TRD rule 6/threat table | Done | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0204](US0204-rewrite-prd-section-9-config-env-var-reference.md) | Rewrite PRD section 9 config/env-var reference: require_ac_verification default, two_backlog.enforce, retire SDLC_ENGAGEMENT_STRICT, add missing env vars | Done | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0205](US0205-trd-adr-008-ulid-state-the-real-6.md) | TRD ADR-008 ULID: state the real 6+2-char guarantee and cross-machine residual risk; drop the collision-free absolute | Done | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0206](US0206-tsd-record-the-blocking-80-coverage-gate-and.md) | TSD: record the blocking 80% coverage gate and the bandit step in the coverage/security/quality-gate tables | Done | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0207](US0207-mark-rfc0034-superseded-by-rfc0038-cross-link-both.md) | Mark RFC0034 superseded by RFC0038, cross-link both and update the rfc index | Done | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0208](US0208-trd-move-critic-record-to-writers-and-document.md) | TRD: move critic record to writers and document the append-only atomic-write exception; harden read_verdicts against a torn row | Done | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0209](US0209-trd-section-6-data-architecture-add-the-issue.md) | TRD section 6 data architecture: add the issue type, story Blocked, the inbox triage lane and a two-backlog subsection | Done | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0210](US0210-complete-trd-rule-5-write-surface-retro-handoff.md) | Complete TRD rule 5 write surface (retro/handoff/archive/persona_gen) or restate as non-exhaustive with a census pointer | Done | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0211](US0211-refresh-or-band-the-trd-pinned-census-counts.md) | Refresh or band the TRD pinned census counts and restate the freshness-guard claim | Done | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0212](US0212-fix-the-trd-section-6-migrations-paragraph-to.md) | Fix the TRD section 6 Migrations paragraph to name the shipped migration scripts | Done | EP0071 | 2026-07-17 | 2026-07-17 |
 | [US0213](US0213-verify-ac-freshness-fingerprints-the-ac-section-not.md) | verify_ac freshness fingerprints the AC section, not the file mtime | Draft | EP0072 | 2026-07-17 | 2026-07-17 |
 | [US0214](US0214-review-close-ensures-its-rv-index-row-is.md) | review close ensures its RV index row is written | Draft | EP0072 | 2026-07-17 | 2026-07-17 |
 | [US0215](US0215-review-current-distinguishes-an-uncommitted-but-current-latest.md) | review-current distinguishes an uncommitted-but-current LATEST and names the commit remedy (absorbs CR0341) | Draft | EP0072 | 2026-07-17 | 2026-07-17 |

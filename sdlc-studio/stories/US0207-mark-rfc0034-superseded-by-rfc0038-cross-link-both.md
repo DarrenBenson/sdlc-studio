@@ -1,6 +1,6 @@
 # US0207: Mark RFC0034 superseded by RFC0038, cross-link both and update the rfc index
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
