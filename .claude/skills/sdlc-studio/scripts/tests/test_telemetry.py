@@ -290,6 +290,35 @@ class ActualsTests(unittest.TestCase):
         got = tel.latest_actuals([{"id": "CR0001", "type": "cr", "wall_time_s": 10}])
         self.assertNotIn("tokens", got["CR0001"])
 
+    def test_reopen_reclose_sums_both_cycles_not_overwrites(self) -> None:
+        # BG0153 (1): a reopen-reclose produces a SECOND record. Its cost must SUM with the first
+        # cycle's, not overwrite it - the last-non-null merge silently dropped the first cycle's
+        # tokens and wall-time, understating the true rework-included cost US0173 exists to expose.
+        got = tel.latest_actuals([
+            {"id": "US0001", "type": "story", "tokens": 50000, "model": "haiku", "wall_time_s": 100},
+            {"id": "US0001", "type": "story", "tokens": 80000, "model": "opus", "wall_time_s": 200},
+        ])
+        b = got["US0001"]
+        self.assertEqual(b["tokens"], 130000)           # both cycles summed
+        self.assertEqual(b["wall_time_s"], 300)          # rework-included worker time
+        self.assertEqual([a["model"] for a in tel.attempts_of(b)], ["haiku", "opus"])
+        self.assertEqual(b["model"], "opus")             # delivering model = last attempt
+
+    def test_flat_then_attempts_records_agree_across_readers(self) -> None:
+        # BG0153 (2): a flat record then an attempts re-record must yield ONE cost that accuracy
+        # (attempts-first) and unit_cost read IDENTICALLY - not 50000 (flat-first) vs the attempts
+        # sum. One cross-record semantics: convert each flat record to an implicit attempt and
+        # concatenate, so both readers price the same list.
+        got = tel.latest_actuals([
+            {"id": "US0001", "type": "story", "tokens": 50000, "model": "haiku"},
+            {"id": "US0001", "type": "story", "attempts": [{"model": "opus", "tokens": 200000}]},
+        ])
+        b = got["US0001"]
+        self.assertEqual(b["tokens"], 250000)
+        self.assertEqual([a["model"] for a in tel.attempts_of(b)], ["haiku", "opus"])
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(tel.unit_cost(d, b)["tokens"], 250000)  # same list, same tokens
+
     def test_plan_review_events_are_not_unit_actuals(self) -> None:
         got = tel.latest_actuals([{"event": "plan-review", "id": "CR0001", "verdict": "APPROVE"}])
         self.assertEqual(got, {})
@@ -644,6 +673,21 @@ class AttemptsAndCostTests(unittest.TestCase):
             rec = tel.read_all(d)[0]
             self.assertEqual(rec["attempts"], [{"model": "haiku", "tokens": 10}])
 
+    def test_attempts_only_record_stamps_delivered_by(self) -> None:
+        # BG0164: the escalated unit - the one that MOST needs model attribution - carries an
+        # attempts list with no flat model. The stamp must derive the delivering model from the
+        # last attempt (matching retro's rule), not silently skip because flat model is absent.
+        with tempfile.TemporaryDirectory() as d:
+            sd = Path(d) / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            art = sd / "US0001-x.md"
+            art.write_text("# US0001: a\n\n> **Status:** Done\n", encoding="utf-8")
+            tel.record(d, {"id": "US0001", "type": "story",
+                           "attempts": [{"model": "claude-haiku-4-5", "tokens": 1},
+                                        {"model": "claude-opus-4-8", "tokens": 2}]})
+            self.assertIn("**Delivered-by:** claude-opus-4-8",
+                          art.read_text(encoding="utf-8"))
+
 
     def test_model_less_attempt_is_unpriced_unrecorded_not_a_crash(self) -> None:
         # MAJOR-1: a tokens-only attempt has no model to name; it must price as UNPRICED "unrecorded",
@@ -676,6 +720,29 @@ class AttemptsAndCostTests(unittest.TestCase):
             self.assertEqual(tel._model_family("gpt-opus-mini"), "gpt-opus-mini")
             self.assertIsNone(tel.model_price(d, "gpt-opus-mini"))
             self.assertEqual(tel._model_family("claude-opus-4-8"), "opus")  # a real Claude model still keys
+
+    def test_full_model_id_key_is_honoured(self) -> None:
+        # BG0159 (1): the printed hint and US0173 AC1 both say `pricing.<model>`, so a full model
+        # id must price. Before the fix model_price looked up only pricing.<family>, so
+        # pricing.claude-opus-4-8 was silently ignored and the 30.0 estimate default won.
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "sdlc-studio").mkdir(parents=True)
+            (Path(d) / "sdlc-studio" / ".config.yaml").write_text(
+                "pricing:\n  claude-opus-4-8: 12.0\n")
+            self.assertAlmostEqual(tel.model_price(d, "claude-opus-4-8"), 12.0, places=4)
+
+    def test_dotted_foreign_model_id_is_priced_not_dot_split(self) -> None:
+        # BG0159 (2): config.get splits every '.' as a path separator, so pricing.gpt-4.1 was
+        # sought as pricing->gpt-4->1 and missed. model_price must index the pricing block
+        # directly by the raw id - dotted point-release names are the norm outside Claude.
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "sdlc-studio").mkdir(parents=True)
+            (Path(d) / "sdlc-studio" / ".config.yaml").write_text(
+                'pricing:\n  "gpt-4.1": 5.0\n')
+            self.assertAlmostEqual(tel.model_price(d, "gpt-4.1"), 5.0, places=4)
+            c = tel.unit_cost(d, {"model": "gpt-4.1", "tokens": 1000000})
+            self.assertAlmostEqual(c["cost"], 5.0, places=4)
+            self.assertEqual(c["unpriced"], [])
 
 
 if __name__ == "__main__":

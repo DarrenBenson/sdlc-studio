@@ -1,12 +1,14 @@
 # BG0181: retro accuracy reads parenthetical ids in the Batch line as rateable units
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

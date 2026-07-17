@@ -415,6 +415,12 @@ def batch_ids(text: str) -> list[str]:
     if not m:
         return []
     line = PLACEHOLDER_RE.sub("", m.group(1))
+    # The batch line names the delivery units, then a `(EPxxxx-EPyyyy, from CR.../RFC...)`
+    # provenance parenthetical - which epic decomposed them, which request they came from. Those
+    # are context, NOT delivery units, and only the delivery units carry a plan-time forecast, so
+    # counting the parenthetical's ids padded the UNFORECAST list with permanent noise.
+    # Read only up to the first parenthetical; a batch with none is unaffected.
+    line = line.split("(", 1)[0]
     out: list[str] = []
     for hit in ARTEFACT_ID_RE.finditer(line):
         rid = sdlc_md.norm_id(hit.group(1))
@@ -497,12 +503,16 @@ def _elapsed_hours(root, unit_ids) -> tuple[float | None, str | None]:
     read from the run-state (`started_at` -> `ended_at`, or now if still open). Returns
     `(hours, source)`.
 
-    Trusted ONLY when the run-state's batch is THIS sprint's - it must name at least one of the
-    retro's units. A stale run-state left open by a DIFFERENT run would otherwise report its own age
-    (observed live: 43h from an old runner run) as this sprint's elapsed - the exact confounding
-    CR0273 warns about. When it does not match, or no run was opened (an interactive sprint, whose
-    wall-clock would count operator-away gaps as sprint time), this returns None and the primary
-    reads UNMEASURED unless the operator supplies a real figure with `--elapsed-hours`."""
+    Trusted ONLY when the run-state's batch substantially COVERS this sprint's units - a strict
+    MAJORITY of them, not merely one in common. Run-state batches are cumulative, so a
+    previous runner sprint's closed run-state can share a single carried-over (failed-then-
+    redelivered) unit with this sprint; a one-unit intersection would then report that old run's
+    full age (observed live: 43h) as this sprint's elapsed - the exact confounding CR0273 warns
+    about. The majority rule still accepts a cumulative superset that covers the sprint (the common
+    case: the current run's own state carries earlier ids too). When it does not cover, or no run
+    was opened (an interactive sprint, whose wall-clock would count operator-away gaps as sprint
+    time), this returns None and the primary reads UNMEASURED unless the operator supplies a real
+    figure with `--elapsed-hours`."""
     from datetime import datetime, timezone
     try:
         from lib import run_state
@@ -510,8 +520,13 @@ def _elapsed_hours(root, unit_ids) -> tuple[float | None, str | None]:
     except Exception:  # noqa: BLE001 - a velocity read must never break the retro
         return None, None
     run_batch = {sdlc_md.norm_id(x) for x in (st.get("batch") or [])}
-    if not run_batch & {sdlc_md.norm_id(u) for u in unit_ids}:
-        return None, None  # the open run is not this sprint's - its elapsed is not our elapsed
+    retro_units = {sdlc_md.norm_id(u) for u in unit_ids}
+    overlap = len(run_batch & retro_units)
+    # A strict majority of THIS sprint's units must be in the run-state's batch. `overlap * 2 >
+    # n` is the majority test; a one-unit carried-over intersection fails it for any sprint of two
+    # or more units, while a run-state covering all of them (cumulative or exact) passes.
+    if not retro_units or overlap * 2 <= len(retro_units):
+        return None, None  # the run-state does not cover this sprint - its elapsed is not ours
 
     def _parse(s):
         try:
@@ -589,10 +604,25 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
         # contradicting. So fall back to the summed attempts (and the delivering model = the last
         # attempt), exactly the tokens `unit_cost` prices. A legacy record keeps its flat value.
         _attempts = telemetry.attempts_of(rec)
-        tokens = rec.get("tokens")
-        if tokens is None and _attempts:
-            tokens = sum(a.get("tokens") or 0 for a in _attempts) or None
-        _model = rec.get("model") or (_attempts[-1].get("model") if _attempts else None)
+        # ATTEMPTS-FIRST, matching unit_cost and the spend report - the two must never disagree
+        #. latest_actuals aggregates a unit's records into one attempts list (rework
+        # summed), so reading the attempts here IS reading the whole cost.
+        if _attempts:
+            _token_vals = [a.get("tokens") for a in _attempts if a.get("tokens") is not None]
+            tokens = sum(_token_vals) if _token_vals else None
+        else:
+            tokens = rec.get("tokens")
+        # The unit's model SET across ALL its attempts. A unit delivered across more than one
+        # model is ITSELF mixed: its tokens cannot be booked to a single model's rate, so
+        # it marks the batch mixed and is kept out of the per-model rows. Single-model and legacy
+        # flat records read as exactly one model, unchanged.
+        _unit_models = sorted({a.get("model") for a in _attempts if a.get("model")})
+        if len(_unit_models) == 1:
+            _model = _unit_models[0]
+        elif len(_unit_models) > 1:
+            _model = MODEL_MIXED
+        else:
+            _model = rec.get("model")
         points = fc.get("points")
         points = points if isinstance(points, int) and points > 0 else None
         has_est = isinstance(est, (int, float)) and est > 0
@@ -605,7 +635,7 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
              # the record, never inferred: an unrecorded model is `None` and reports as
              # unrecorded, not as "presumably the one we use now".
              "estimator": fc.get("estimator"), "points": points,
-             "model": _model,
+             "model": _model, "unit_models": _unit_models,
              "actual_tokens": tokens if has_act else None,
              "wall_time_s": rec.get("wall_time_s"), "ratio": None,
              "tokens_per_point": None,
@@ -659,7 +689,11 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
     # would land in one mean, and the mean would describe no run that ever happened. So when the
     # batch is mixed the pooled ratio is REFUSED and the per-model figures are given instead.
     # Refusing to average is not refusing to report.
-    models = sorted({u["model"] for u in rated if u["model"]})
+    # The distinct models across ALL attempts of the rated units - NOT just each unit's last
+    # attempt. A single unit that escalated across models therefore makes the batch mixed,
+    # so the pooled ratio is refused exactly as a two-unit two-model batch is; the escalation can
+    # no longer hide as a single-model 'opus' batch.
+    models = sorted({m for u in rated for m in u.get("unit_models", []) if m})
     mixed = len(models) > 1
     refused = (f"REFUSED: this batch was delivered by more than one model "
                f"({', '.join(models)}). One ratio across two models describes neither of them - "
@@ -670,9 +704,13 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
     # UNMEASURED unless the operator supplies a real figure. The SECONDARY is points-per-worker-hour
     # (runner wall-time, ceremony removed) for tuning the tool, UNMEASURED interactive. Both are
     # DESCRIPTIVE ONLY - fed to no gate, never auto-refitted (see the module doctrine).
-    elapsed, elapsed_source = _elapsed_hours(root, [u["id"] for u in units])
-    if elapsed is None and isinstance(elapsed_hours, (int, float)) and elapsed_hours > 0:
+    # An explicit --elapsed-hours is an operator OVERRIDE and wins outright: a matched
+    # run-state must never silently override the figure the operator supplied. Only when none is
+    # supplied does the run-state provide the elapsed.
+    if isinstance(elapsed_hours, (int, float)) and elapsed_hours > 0:
         elapsed, elapsed_source = round(float(elapsed_hours), 3), "supplied"
+    else:
+        elapsed, elapsed_source = _elapsed_hours(root, [u["id"] for u in units])
     worker_hours = _worker_hours(root, [u["id"] for u in units])
     ppeh = round(delivered_points / elapsed, 2) if elapsed and delivered_points else None
     ppwh = round(delivered_points / worker_hours, 2) if worker_hours and delivered_points else None
@@ -743,6 +781,11 @@ def _by_model(rated: list[dict]) -> dict:
     `unrecorded` - it is not silently merged with the model in use today."""
     out: dict[str, dict] = {}
     for u in rated:
+        # A unit delivered across more than one model belongs to NO single model's row -
+        # booking its summed tokens into one would poison that model's calibration. It is left out
+        # of the per-model breakdown (the batch-level ratio is already refused as mixed).
+        if u["model"] == MODEL_MIXED:
+            continue
         b = out.setdefault(u["model"] or "unrecorded",
                            {"units": [], "estimate": 0, "actual_tokens": 0})
         b["units"].append(u["id"])

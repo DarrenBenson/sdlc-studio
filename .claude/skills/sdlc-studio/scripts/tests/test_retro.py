@@ -485,12 +485,34 @@ class VelocityTests(unittest.TestCase):
         self.assertIsNone(b["points_per_elapsed_hour"])
         self.assertIsNone(b["sprint_elapsed_hours"])
 
-    def test_supplied_elapsed_wins_only_when_run_state_absent(self) -> None:
-        # a real closed run-state is preferred; supplied is the interactive fallback
+    def test_explicit_supplied_elapsed_wins_over_run_state(self) -> None:
+        # BG0158: an explicit --elapsed-hours is an operator OVERRIDE and wins outright; a matched
+        # run-state must never silently override the figure the operator supplied.
         self._run_state(["BG0001", "BG0002"], "2026-07-16T00:00:00Z", "2026-07-16T04:00:00Z")
         b = retro.accuracy(str(self.root), "RETRO9002", elapsed_hours=1.0)["batch"]
-        self.assertEqual(b["elapsed_source"], "run-state")   # not overridden by supplied
-        self.assertEqual(b["sprint_elapsed_hours"], 4.0)
+        self.assertEqual(b["elapsed_source"], "supplied")    # the operator's override wins
+        self.assertEqual(b["sprint_elapsed_hours"], 1.0)
+
+    def test_carried_over_single_unit_run_state_does_not_match(self) -> None:
+        # BG0158: run-state batches are CUMULATIVE, so a previous runner sprint's closed run-state
+        # can share ONE carried-over (failed-then-redelivered) unit with this sprint. A one-unit
+        # intersection must NOT lend that old run's full elapsed - the exact 43h confounder the
+        # US0175 check was meant to prevent but only tested against a fully-disjoint batch.
+        self._run_state(["OLD1", "OLD2", "OLD3", "BG0001"],
+                        "2020-01-01T00:00:00Z", "2020-01-01T09:00:00Z")
+        b = retro.accuracy(str(self.root), "RETRO9002")["batch"]
+        self.assertIsNone(b["points_per_elapsed_hour"])
+        self.assertIsNone(b["sprint_elapsed_hours"])
+        self.assertIsNone(b["elapsed_source"])
+
+    def test_cumulative_run_state_covering_all_units_still_matches(self) -> None:
+        # The strengthened match must still accept a cumulative run-state that COVERS this sprint's
+        # units (the common case: the current run's own state carries earlier ids too).
+        self._run_state(["OLDER", "BG0001", "BG0002"],
+                        "2026-07-16T00:00:00Z", "2026-07-16T02:00:00Z")
+        b = retro.accuracy(str(self.root), "RETRO9002")["batch"]
+        self.assertEqual(b["elapsed_source"], "run-state")
+        self.assertEqual(b["sprint_elapsed_hours"], 2.0)
 
 
 class AttemptsReconcileTests(AccuracyBase):
@@ -508,7 +530,11 @@ class AttemptsReconcileTests(AccuracyBase):
         u = next(u for u in retro.accuracy(str(self.root), "RETRO9000")["units"] if u["id"] == "BG0001")
         self.assertEqual(u["state"], "measured")
         self.assertEqual(u["actual_tokens"], 250000)     # summed, matching unit_cost
-        self.assertEqual(u["model"], "claude-opus-4-8")  # the delivering (last) attempt
+        # BG0165: a unit delivered across TWO models is itself mixed - its tokens cannot be booked
+        # to one model's rate. It is labelled MODEL_MIXED, not the last attempt's model (which
+        # would have let the escalation hide as a single-model batch and pool the haiku tokens).
+        self.assertEqual(u["model"], retro.MODEL_MIXED)
+        self.assertEqual(u["unit_models"], ["claude-haiku-4-5", "claude-opus-4-8"])
 
 
 class SprintTokenActualTests(unittest.TestCase):
@@ -592,6 +618,33 @@ class TheBatchIsMeasuredAgainstThePlan(AccuracyBase):
 
     def test_an_unfilled_batch_placeholder_names_nothing(self) -> None:
         self.assertEqual(retro.batch_ids("> **Batch:** {{batch}}\n"), [])
+
+    def test_parenthetical_provenance_is_not_read_as_units(self) -> None:
+        # BG0181: the batch line names delivery units, then a `(EPxxxx-EPyyyy, from CR.../RFC...)`
+        # provenance parenthetical. Only the ids BEFORE the parenthetical are delivery units;
+        # the epic/CR/RFC mentions inside it are provenance noise that padded UNFORECAST.
+        line = ("> **Batch:** US0193, US0194 (EP0063-EP0070, from "
+                "CR0314/0323; RFC0043 all three slices + RFC0044 build)\n")
+        self.assertEqual(retro.batch_ids(line), ["US0193", "US0194"])
+
+    def test_escalated_unit_marks_the_batch_mixed_and_is_not_pooled(self) -> None:
+        # BG0165: a per-attempt record whose attempts span more than one model (a haiku->opus
+        # escalation) is ITSELF a mixed-model unit. accuracy summed its tokens across the models
+        # but labelled it with only the LAST model, so the mixed-model guard saw a single-model
+        # 'opus' batch: mixed stayed False, the pooled ratio the guard exists to refuse WAS
+        # computed, and by_model booked the haiku tokens into opus's calibration row.
+        self.forecast("BG0001", tokens=100_000, points={"BG0001": 2})
+        self.telemetry({"id": "BG0001", "type": "bug",
+                        "attempts": [{"model": "haiku", "tokens": 40_000},
+                                     {"model": "opus", "tokens": 60_000}]})
+        res = self.accuracy()
+        self.assertTrue(res["mixed_models"], "an escalated unit makes the batch mixed")
+        self.assertIsNone(res["batch"]["ratio"], "the pooled ratio must be refused")
+        self.assertTrue(res["batch"]["refused"])
+        self.assertEqual(sorted(res["models"]), ["haiku", "opus"])
+        # the haiku tokens are NOT booked into an opus per-model row
+        self.assertNotIn("opus", res["by_model"])
+        self.assertEqual(self.unit(res, "BG0001")["actual_tokens"], 100_000)  # cost still summed
 
     def test_per_unit_ratio_is_estimate_over_actual(self) -> None:
         """The estimate is the forecast the PLAN recorded, read back verbatim."""

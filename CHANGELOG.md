@@ -564,6 +564,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     escalation degenerating to one flat line. A malformed `--attempt` is refused, never dropped.
     US0172 gains AC2 (the writer path) to close its reader-only verification gap. Documented in
     `reference-scripts-domain.md`.
+  - **BG0153:** `latest_actuals` now AGGREGATES cost across a unit's records instead of a
+    last-non-null merge that silently dropped all but the final cycle. A reopen-reclose (or any
+    multiple close) sums its tokens and wall-time (rework included), and a flat record followed by
+    an attempts re-record concatenates into one attempts list - so `accuracy` (attempts-first now)
+    and `unit_cost`/the spend report read one identical cost, never 50k vs 200k.
+  - **BG0158:** the velocity elapsed-hours read requires a run-state to cover a strict MAJORITY of
+    this sprint's units, not merely share one. A previous runner sprint's cumulative run-state that
+    carried a single redelivered unit no longer lends its full elapsed (the 43h confounder), and an
+    explicit `--elapsed-hours` is an operator override that now wins outright.
+  - **BG0159:** `model_price` reads the `pricing` block once and indexes it by the raw model id
+    first, then the family - so `pricing.claude-opus-4-8` (the printed hint's form) is honoured and
+    a dotted foreign id like `gpt-4.1` is no longer destroyed by `config.get`'s dot-splitting. The
+    telemetry docstring, the report hint and US0173's AC now agree on the key form.
+  - **BG0160:** `config.get` degrades to the default on a malformed `.config.yaml` (a
+    `yaml.YAMLError`, previously uncaught and tracebacking through every consumer), honouring the
+    BG0093 warn-and-default contract; a malformed-YAML test now holds it.
+  - **BG0164:** an attempts-only telemetry record (the escalation case) stamps `Delivered-by` from
+    the last attempt's model, so the unit that most needs the audit attribution no longer silently
+    goes unstamped.
+  - **BG0165:** a unit delivered across more than one model is itself mixed - `accuracy` labels it
+    MODEL_MIXED, marks the batch mixed (refusing the pooled ratio), and keeps it out of the
+    per-model rows, so a haiku->opus escalation can no longer hide as a single-model batch or book
+    its cheap-attempt tokens into the dear model's calibration.
+  - **BG0181:** retro `accuracy` reads only the delivery units before the batch line's provenance
+    parenthetical, so the `(EPxxxx-EPyyyy, from CR.../RFC...)` mentions stop padding the UNFORECAST
+    list.
 
 - **Four integrity fixes cleared the delivery backlog (BG0142, BG0144, BG0145, BG0146).**
   - **BG0142:** `reconcile._link_exists` dropped the type-dir fallback for an archive row link - it

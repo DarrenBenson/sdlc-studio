@@ -293,9 +293,17 @@ def record(repo_root: Path | str, fields: dict) -> dict:
         _append(_path(repo_root), [rec])
     except Exception as exc:  # noqa: BLE001 - telemetry is advisory; never raise into the loop
         sdlc_md.debug("telemetry.record", exc)
-    if rec.get("id") and rec.get("model"):
+    # The delivering model to stamp: the flat `model` when present, else the LAST attempt's model
+    #. An escalated unit carries an attempts list with no flat model - the very unit that
+    # most needs the audit attribution - so deriving it from `attempts_of[-1]` (retro's own
+    # delivering-model rule) is what keeps the stamp from silently skipping the escalation case.
+    stamp_model = rec.get("model")
+    if stamp_model is None:
+        atts = attempts_of(rec)
+        stamp_model = next((a.get("model") for a in reversed(atts) if a.get("model")), None)
+    if rec.get("id") and stamp_model:
         try:
-            stamp_delivery(repo_root, str(rec["id"]), str(rec["model"]))
+            stamp_delivery(repo_root, str(rec["id"]), str(stamp_model))
         except Exception as exc:  # noqa: BLE001 - a stamp that cannot land never costs the measurement
             sdlc_md.debug("telemetry.stamp_delivery", exc)
     return rec
@@ -352,8 +360,9 @@ def attempts_of(rec: dict) -> list[dict]:
 
 # --- Pricing: offline, config-driven, honest about what it cannot price -------------------
 # Rough ESTIMATE defaults in US dollars per 1,000,000 tokens - a starting point, NOT a quote, and
-# deliberately round so no one mistakes them for a contract rate. Set `pricing.<family>` in
-# `.config.yaml` to your actual rate. A model that is neither here nor in config is reported
+# deliberately round so no one mistakes them for a contract rate. Set `pricing.<model-id>` (the
+# full id) or `pricing.<family>` in `.config.yaml` to your actual rate; the full id wins. A model
+# that is neither here nor in config is reported
 # UNPRICED (its tokens are counted, its dollars are not) - never priced by a guess. Offline: no
 # network, no live price feed, because a report a CAB reads must be reproducible from the repo alone.
 DEFAULT_PRICES: dict[str, float] = {"opus": 30.0, "sonnet": 6.0, "haiku": 1.0}
@@ -374,21 +383,32 @@ def _model_family(model: str | None) -> str:
 
 
 def model_price(repo_root: Path | str, model: str | None) -> float | None:
-    """US dollars per 1,000,000 tokens for a model: the config `pricing.<family>` if set, else the
-    estimate default, else None (unpriced - the caller must say so, never substitute a number).
+    """US dollars per 1,000,000 tokens for a model: a configured `pricing.<model-id>` (the full id,
+    e.g. `claude-opus-4-8` or a dotted foreign id `gpt-4.1`) if set, else `pricing.<family>` (e.g.
+    `opus`), else the estimate default, else None (unpriced - the caller must say so, never
+    substitute a number).
+
+    The pricing BLOCK is fetched once and indexed by the raw id, NOT looked up as a dotted config
+    key: `config.get(root, f"pricing.{model}")` splits every '.' as a path separator, so a
+    point-release id like `gpt-4.1` became `pricing->gpt-4->1` and silently missed. The
+    raw-id key is tried before the family so an operator's `pricing.claude-opus-4-8: 12` overrides
+    the family/estimate, matching the `pricing.<model>` hint the report and US0173 print.
 
     A non-POSITIVE configured price is refused (returns None -> UNPRICED), not honoured: a negative
     price would SUBTRACT from the batch total - a flattering figure, the exact class this subsystem
     exists to prevent - and a zero price is indistinguishable from 'could not price it'."""
     import config  # lazy: telemetry is a leaf
+    block = config.get(repo_root, "pricing", {})   # one whole-block read - no per-key dot-splitting
+    pricing = block if isinstance(block, dict) else {}
     fam = _model_family(model)
-    cfg = config.get(repo_root, f"pricing.{fam}")
-    if cfg is not None:
-        try:
-            price = float(cfg)
-        except (TypeError, ValueError):
-            return None
-        return price if price > 0 else None
+    raw = (model or "").strip()
+    for key in (raw, fam):                          # raw model id first, then the family key
+        if key and key in pricing:
+            try:
+                price = float(pricing[key])
+            except (TypeError, ValueError):
+                return None
+            return price if price > 0 else None
     return DEFAULT_PRICES.get(fam)
 
 
@@ -424,16 +444,29 @@ def read_all(repo_root: Path | str) -> list[dict]:
 ACTUAL_FIELDS = ("type", "model", "project", "tokens", "wall_time_s", "iterations", "complexity",
                  "churn", "critic_verdict", "attempts")
 
+#: CONTEXT fields take the last non-null value seen (the last record that carried one wins). The
+#: COST-bearing fields (tokens/wall_time_s/attempts) do NOT - they aggregate across a unit's
+#: records, so a reopen-reclose second cycle SUMS with the first instead of overwriting.
+_CONTEXT_FIELDS = ("type", "project", "iterations", "complexity", "churn", "critic_verdict")
+
 
 def latest_actuals(records: list[dict]) -> dict[str, dict]:
-    """Per-unit measured actuals, keyed by normalised id: the LAST non-null value seen for
-    each field.
+    """Per-unit measured actuals, keyed by normalised id. Context fields take the LAST non-null
+    value; the COST-bearing fields AGGREGATE across the unit's records.
 
-    Last-non-null, not last-record. The loop appends a second, bare record on close
+    Last-non-null for context, not last-record: the loop appends a second, bare record on close
     (`{"id": "BG0126", "type": "bug"}`), so taking the last record wholesale would erase a
     measurement that was genuinely taken. A field no record ever carried stays ABSENT - it is
     never defaulted to 0, because an unmeasured unit must be reportable as unmeasured rather
     than as a unit that cost nothing.
+
+    Cost AGGREGATES across records. A reopen-reclose, or any unit closed more than once,
+    produces more than one record; the last-non-null merge silently kept only the LAST cycle's
+    tokens/wall-time and dropped the rest, understating the rework-included true cost. So each
+    record becomes its implicit attempt(s) - `attempts_of` reads a flat model/tokens as one
+    attempt - concatenated in order, and wall-time sums. The bucket's `tokens` is the summed
+    attempt tokens and its `model` the delivering (last) attempt's, so a flat reader and the
+    attempts reader (unit_cost, the spend report) can never disagree.
 
     Event records (plan-review) are not unit closes and are excluded.
     """
@@ -445,10 +478,33 @@ def latest_actuals(records: list[dict]) -> dict[str, dict]:
         if not rid:
             continue
         bucket = out.setdefault(rid, {})
-        for field in ACTUAL_FIELDS:
+        for field in _CONTEXT_FIELDS:
             val = rec.get(field)
             if val is not None:
                 bucket[field] = val
+        # the last-non-null model is a context fallback; the delivering model computed below,
+        # from the aggregated attempts, overrides it when there are any.
+        if rec.get("model") is not None:
+            bucket["model"] = rec["model"]
+        atts = attempts_of(rec)
+        if atts:
+            bucket.setdefault("_attempts", []).extend(atts)
+        w = rec.get("wall_time_s")
+        if isinstance(w, (int, float)):
+            bucket["_wall"] = bucket.get("_wall", 0) + w
+    for bucket in out.values():
+        atts = bucket.pop("_attempts", None)
+        if atts:
+            bucket["attempts"] = atts
+            token_vals = [a.get("tokens") for a in atts if a.get("tokens") is not None]
+            if token_vals:  # only fabricate no `tokens` key - an absent measurement stays absent
+                bucket["tokens"] = sum(token_vals)
+            last_model = next((a.get("model") for a in reversed(atts) if a.get("model")), None)
+            if last_model is not None:
+                bucket["model"] = last_model
+        w = bucket.pop("_wall", None)
+        if w is not None:
+            bucket["wall_time_s"] = round(w, 3) if isinstance(w, float) else w
     return out
 
 

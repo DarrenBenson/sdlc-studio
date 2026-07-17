@@ -104,6 +104,19 @@ class GracefulDegradeTests(unittest.TestCase):
                 self.assertEqual(config.get(d, "quality.mutation_max", 25), 25)
                 self.assertIsNone(config.get(d, "routing", None))
 
+    def test_get_degrades_on_malformed_yaml(self) -> None:
+        # BG0160: a syntactically broken override raises yaml.YAMLError (Parser/Scanner),
+        # a subclass of Exception - NOT ValueError - so it was uncaught and tracebacked
+        # through every consumer. The BG0093 contract is warn-and-default; hold it here
+        # against the real malformed condition CR0180's AC demanded and never got.
+        config = _load()
+        with tempfile.TemporaryDirectory() as d:
+            override = Path(d) / "sdlc-studio" / ".config.yaml"
+            override.parent.mkdir(parents=True, exist_ok=True)
+            override.write_text("pricing:\n  opus: [unclosed\n", encoding="utf-8")
+            # must NOT raise - degrade to the supplied default
+            self.assertEqual(config.get(d, "pricing.opus", "DEFAULT"), "DEFAULT")
+
 
 if __name__ == "__main__":
     unittest.main()

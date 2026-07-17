@@ -1,12 +1,14 @@
 # BG0159: The advertised pricing config key is silently unreachable: Claude models honour only pricing.<family> (not the hinted pricing.<model>), and any dotted model id is destroyed by config.get's dot-splitting
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/telemetry.py, .claude/skills/sdlc-studio/scripts/config.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, sdlc-studio/stories/US0173-true-cost-with-rework-unit-cost-sums-priced.md
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Fable 5 adversarial audit; agent; wf_9903a6e6-53a
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 

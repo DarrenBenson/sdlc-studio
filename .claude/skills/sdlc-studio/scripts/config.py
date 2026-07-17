@@ -31,6 +31,21 @@ def _yaml():
     return yaml
 
 
+def _load_errors() -> tuple[type[BaseException], ...]:
+    """The exception types `get` degrades on. BG0160: a malformed `.config.yaml` makes
+    `yaml.safe_load` raise `yaml.YAMLError` (Parser/Scanner errors) - a subclass of Exception,
+    NOT ValueError - so it slipped past the old `(RuntimeError, OSError, ValueError)` catch and
+    tracebacked through every consumer. `yaml.YAMLError` is added when PyYAML is importable (the
+    import is guarded: its absence is already covered by the RuntimeError from `_yaml`)."""
+    errors: tuple[type[BaseException], ...] = (RuntimeError, OSError, ValueError)
+    try:
+        import yaml
+        errors += (yaml.YAMLError,)
+    except ImportError:  # pragma: no cover - PyYAML absence is the RuntimeError path
+        pass
+    return errors
+
+
 def _deep_merge(base: dict, over: dict) -> dict:
     out = dict(base)
     for key, val in over.items():
@@ -64,7 +79,7 @@ def get(repo_root: Path | str, dotted: str, default=None):
     global _DEGRADE_WARNED
     try:
         cur = load_config(repo_root)
-    except (RuntimeError, OSError, ValueError) as exc:
+    except _load_errors() as exc:
         if not _DEGRADE_WARNED:
             _DEGRADE_WARNED = True
             print(f"warning: could not load .config.yaml ({exc}); using built-in defaults "

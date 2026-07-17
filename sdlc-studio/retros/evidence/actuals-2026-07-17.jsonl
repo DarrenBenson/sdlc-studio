@@ -26,3 +26,10 @@
 {"id": "CR0318", "type": "cr", "project": "sdlc-studio"}
 {"id": "RFC0044", "type": "rfc", "project": "sdlc-studio"}
 {"id": "BG0152", "type": "bug", "model": "claude-opus-4-8", "project": "sdlc-studio"}
+{"id": "BG0153", "type": "bug", "model": "claude-opus-4-8", "project": "sdlc-studio"}
+{"id": "BG0158", "type": "bug", "model": "claude-opus-4-8", "project": "sdlc-studio"}
+{"id": "BG0159", "type": "bug", "model": "claude-opus-4-8", "project": "sdlc-studio"}
+{"id": "BG0160", "type": "bug", "model": "claude-opus-4-8", "project": "sdlc-studio"}
+{"id": "BG0164", "type": "bug", "model": "claude-opus-4-8", "project": "sdlc-studio"}
+{"id": "BG0165", "type": "bug", "model": "claude-opus-4-8", "project": "sdlc-studio"}
+{"id": "BG0181", "type": "bug", "model": "claude-opus-4-8", "project": "sdlc-studio"}
