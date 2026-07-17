@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Draft | 1 |
-| In Review | 1 |
+| In Review | 2 |
 | Accepted | 41 |
 | Superseded | 0 |
 | Withdrawn | 3 |
-| **Total** | **46** |
+| **Total** | **47** |
 
 ## All RFCs
 
@@ -63,3 +63,4 @@
 | [RFC-0044](RFC0044-adversarial-reviewer-vs-reviewer-of-record-an-amigo.md) | Adversarial reviewer vs reviewer of record: an amigo subagent finds issues, an independent principal signs off | Medium | Accepted | sdlc-studio | 2026-07-16 | -- |
 | [RFC-0045](RFC0045-micro-requests-and-the-one-story-epic-should.md) | Micro-requests and the one-story epic: should a small CR decompose to a story without a container epic? | Medium | Accepted | Claude Fable 5 | 2026-07-16 | -- |
 | [RFC-0046](RFC0046-should-a-sprint-level-adversarial-full-diff-review.md) | Should a sprint-level adversarial full-diff review satisfy the per-unit critiqued gate for a large batch? | Medium | In Review | sdlc-studio | 2026-07-17 | -- |
+| [RFC-0047](RFC0047-declare-the-workspace-artefact-schema-a-versioned-public.md) | Declare the workspace artefact schema a versioned public contract | High | In Review | sdlc-studio | 2026-07-17 | -- |
