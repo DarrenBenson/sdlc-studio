@@ -8,10 +8,10 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 1 |
+| Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 7 |
+| Review | 8 |
 | Done | 191 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -110,7 +110,7 @@
 | [US0197](US0197-init-writes-the-default-dor-dod-documents-and.md) | init writes the default DoR/DoD documents and offers stack-derived tailoring criteria, applied only on acceptance and passing registry validation | Review | EP0067 | 2026-07-16 | 2026-07-16 |
 | [US0198](US0198-sprint-close-orchestrates-goal-verdict-retro-validate-and.md) | sprint close orchestrates goal-verdict, retro validate and extract, close gate, handoff and reconcile with fail-loud stops and idempotent resume, printing the decision brief | Review | EP0068 | 2026-07-16 | 2026-07-16 |
 | [US0199](US0199-brief-rejoinder-quotes-the-prior-verdict-verbatim-with.md) | brief --rejoinder quotes the prior verdict verbatim with the re-execute-your-probes instruction and return contract; a malformed prior-verdict file is refused | Review | EP0069 | 2026-07-16 | 2026-07-16 |
-| [US0200](US0200-tools-forward-port-sh-runs-the-canonical-rsync.md) | tools/forward-port.sh runs the canonical rsync dry-run by default with --yes to apply, refusing a reversed direction or non-dev-repo cwd; AGENTS.md references it | Ready | EP0070 | 2026-07-16 | 2026-07-16 |
+| [US0200](US0200-tools-forward-port-sh-runs-the-canonical-rsync.md) | tools/forward-port.sh runs the canonical rsync dry-run by default with --yes to apply, refusing a reversed direction or non-dev-repo cwd; AGENTS.md references it | Review | EP0070 | 2026-07-16 | 2026-07-16 |
 
 ## Archived Releases
 

@@ -1,6 +1,6 @@
 # US0200: tools/forward-port.sh runs the canonical rsync dry-run by default with --yes to apply, refusing a reversed direction or non-dev-repo cwd; AGENTS.md references it
 
-> **Status:** Ready
+> **Status:** Review
 > **Created:** 2026-07-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -22,6 +22,7 @@
 - **When** `tools/forward-port.sh` runs with and without `--yes`
 - **Then** The script runs the canonical rsync with the exact exclusions, dry-run by default, --yes to apply; reversed direction or a non-dev-repo cwd is refused
 - **Verify:** shell python3 -m unittest discover -s tools/tests -p test_forward_port.py
+- **Verified:** yes (2026-07-17)
 
 ### AC2: AGENTS.md points at the script
 
@@ -29,6 +30,7 @@
 - **When** the forward-port note is read
 - **Then** AGENTS.md's forward-port note references the script instead of an inline rsync incantation
 - **Verify:** grep "forward-port.sh" AGENTS.md
+- **Verified:** yes (2026-07-17)
 
 ## Revision History
 

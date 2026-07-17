@@ -64,6 +64,18 @@ not drift (progressive disclosure).
 | `.claude/skills/sdlc-studio/best-practices/` | Quality guidelines (19 files) |
 | `tools/` | Repo CI guards (run via `npm run lint`, or directly - see "Testing the Skill"): `lint-style.sh`, `check_links.py`, `validate_skill.py`, `check_versions.py`, `check_budgets.py`, `check_neutrality.py`, plus `style-allowlist.txt` |
 
+## Forward-porting to the installed copy
+
+Never run `install.sh` from the dev repo (its sweep clobbers the git-tracked
+working tree). To mirror the repo's skill tree into the installed copy
+(`~/.claude/skills/sdlc-studio`) use the guarded wrapper - dry-run by default,
+`--yes` to apply, wrong direction or a non-dev-repo cwd refused:
+
+```bash
+bash tools/forward-port.sh          # show the itemised diff
+bash tools/forward-port.sh --yes    # apply (.local and __pycache__ untouched)
+```
+
 ## Soft Dependencies (runtime)
 
 Some features need external tools on PATH:
