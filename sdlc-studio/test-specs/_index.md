@@ -9,16 +9,21 @@
 
 ## Coverage Summary
 
-| Metric | Value |
-| ------ | ----- |
-
-## By Test Type
-
-| Type | Count | Automated |
-| ---- | ----- | --------- |
+| Metric           | Value    |
+| ---------------- | -------- |
+| Epics with specs | 2/70     |
+| Total test cases | 42       |
+| Automated        | 0 (0%)   |
+| Pending          | 42       |
 
 ## Next Steps
 
-**Epics without specs:**
+**Epics without specs:** most epics in this workspace carry no standalone test-spec by
+design. The validation leg here is the shipped **script suite** (`scripts/tests/`, run by
+`npm test` and the pre-commit gate), not a per-epic TS document. TS0001 and TS0002 are the
+two exceptions that warranted a written spec, so the absence of the other epics is
+deliberate, not a coverage gap to close one spec at a time.
 
-**Specs with pending automation:**
+**Specs with pending automation:** TS0001 and TS0002 both read Automated 0. Their acceptance
+criteria are exercised by the script suite rather than by generated `test-automation` code,
+so the Automated column stays 0 by design and the specs sit Ready, not dormant-and-forgotten.

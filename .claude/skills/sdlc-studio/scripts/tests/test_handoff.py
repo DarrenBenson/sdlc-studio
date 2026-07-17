@@ -479,6 +479,20 @@ class GenerateTests(unittest.TestCase):
             index = (root / "sdlc-studio" / "handoffs" / "_index.md").read_text(encoding="utf-8")
             self.assertIn("[HO-0001](HO0001", index)   # the row is tool-appended
 
+    def test_generate_title_from_a_goal_sentence_yields_an_h1_without_trailing_punctuation(self) -> None:
+        # BG0179: the Sprint Goal sentence ends in a full stop; the H1 built from it must not,
+        # or markdownlint MD026 blocks the close commit in the generator's own repo.
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            _handoff_index(root)
+            _story(root, 2, status="In Progress")
+            r = handoff.generate(root, title="Close the run and prove every gate ran.",
+                                 batch=["US0002"], outcome=run_state.BLOCKED)
+            h1 = Path(r["path"]).read_text(encoding="utf-8").splitlines()[0]
+            self.assertTrue(h1.startswith("# HO-0001:"))
+            self.assertFalse(h1.rstrip()[-1] in ".,;:!?…",
+                             f"H1 ends in punctuation (MD026): {h1!r}")
+
     def test_generate_bootstraps_a_missing_index_rather_than_minting_drift(self) -> None:
         """A project's FIRST handoff must not land as reconcile drift the operator then
         clears by hand: the index is created from the shipped template, and the row lands."""

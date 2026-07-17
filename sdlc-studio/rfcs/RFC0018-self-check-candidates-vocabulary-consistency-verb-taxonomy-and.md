@@ -55,12 +55,28 @@ need surfaces; C2 (verb taxonomy) is the lowest priority (polish, breaking).
 
 | # | Decision | Options | Status |
 | --- | --- | --- | --- |
-| D1 | Vocabulary-consistency check (C1) | build (advisory, term-list-driven) / decline / defer **[leaning defer]** | Open |
-| D2 | Verb taxonomy + lint (C2) | guidance-only / lint-new-only / decline **[leaning guidance-only]** | Open |
-| D3 | Telemetry surfacing (C3) | `telemetry show` (read-only) / decline / defer **[leaning defer]** | Open |
+| D1 | Vocabulary-consistency check (C1) | build (advisory, term-list-driven) / decline / defer | Resolved: DECLINED |
+| D2 | Verb taxonomy + lint (C2) | guidance-only / lint-new-only / decline | Resolved: guidance-only (built) |
+| D3 | Telemetry surfacing (C3) | `telemetry show` (read-only) / decline / defer | Resolved: built (`telemetry show --summary`) |
+
+## Decision
+
+Accepted REDUCED (decisions.md D0004; operator, 2026-07-04) - the outcome differed from the
+"defer all three" recommendation once each was pressure-tested against the current tree:
+
+- **D1 (C1 vocabulary-consistency): DECLINED.** Zero repeat incidents in two releases, and
+  `check_neutrality` + `lint-style` already gate the highest-stakes names; if the class recurs its
+  home is a declared `constitution.md` rule, not a new engine.
+- **D2 (C2 verb taxonomy): guidance-only, built.** A verb-taxonomy guidance table landed in
+  `best-practices/script.md`; existing subcommands are not renamed and there is no lint gate.
+- **D3 (C3 telemetry surfacing): built.** `telemetry show --summary` ships the read-only summary
+  over the local log (the raw-dump `telemetry show` predated it; the summary was the gap).
+
+The earlier per-row leanings (defer / guidance-only / defer) are superseded by these dispositions.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-22 | sdlc | Created via `new` (deterministic) |
+| 2026-07-16 | sdlc-studio | Wrote the accepted-reduced outcome back (per decisions.md D0004): D1 DECLINED, D2 guidance-only, D3 built; removed the stale per-row leanings that contradicted the dispositions and added a Decision section |

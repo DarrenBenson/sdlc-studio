@@ -54,6 +54,14 @@ import route  # noqa: E402  (the difficulty band that seeds the suitability tag)
 TYPE = "handoff"
 WORKLIST_REL = Path("sdlc-studio") / ".local" / "handoff-worklist.txt"
 
+
+def _heading_title(title: str) -> str:
+    """A single-line title for the handoff H1, composed from prose (often the Sprint Goal
+    sentence, which ends in a full stop). Trailing punctuation is stripped so the generated
+    heading passes markdownlint MD026 in any project that lints its workspace - the same class
+    of fix the seeded AC headings carry."""
+    return " ".join(str(title).split()).rstrip(" .,;:!?…")
+
 COPILOT_TAIL = "copilot-tail"
 JUDGEMENT = "judgement"
 TAGS = (COPILOT_TAIL, JUDGEMENT)
@@ -639,6 +647,7 @@ def generate(repo_root: Path | str, title: str, batch: list[str] | None = None,
     index row), emit the worklist the next plan reads, link it from the retro, and close the
     run state with its outcome."""
     root = Path(repo_root)
+    title = _heading_title(title)   # strip trailing punctuation so the H1 passes MD026
     report = build(root, batch=batch, outcome=outcome)
     retro_path = _find_retro(root, retro) if retro else None  # refuse before any write
     if dry_run:

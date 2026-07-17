@@ -1,6 +1,7 @@
 # CR-0273: Track sprint velocity (points per elapsed sprint), ceremony included, as a descriptive planning metric
 
 > **Status:** Superseded
+> **Superseded-by:** RFC0035
 > **Priority:** P2
 > **Type:** Improvement
 > **Size:** M
@@ -40,3 +41,4 @@ Honesty note on elapsed time: the runner gives a clean elapsed (open -> close, n
 | --- | --- | --- |
 | 2026-07-15 | sdlc-studio | Raised |
 | 2026-07-15 | sdlc-studio | Reframed: the PRIMARY metric is points-per-elapsed-sprint (ceremony INCLUDED), the operator's planning number; points-per-worker-hour demoted to a secondary tool-tuning figure. Ceremony is the sprint, not overhead - real Scrum velocity is points-per-timebox. |
+| 2026-07-16 | sdlc-studio | Superseded by RFC0035 (the sprint-report workstream), which absorbs these five acceptance criteria; recorded the Superseded-by pointer so the trace can follow where the work went. |

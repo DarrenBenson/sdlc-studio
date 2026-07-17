@@ -551,12 +551,17 @@ def _render_meta(type_: str, disp: str, title: str, today: str, f: dict | None =
             text = text.replace("RETRO-{{retro_id}}", disp)
             text = text.replace("{{sprint_title}}", title).replace("{{date}}", today)
             return text
+    # A review records sign-offs, so its authorship of record must survive the scaffold path:
+    # stamp Raised-by from the resolved --author and write the real name into the revision row
+    # through the SAME writer _render uses, never a literal `{{author}}`.
+    raised_by = f.get("_raised_by") or sdlc_md.DEFAULT_AGENT_AUTHOR
     return (f"# {disp}: {title}\n\n> **Date:** {today}\n"
-            f"> **Created-by:** sdlc-studio new\n\n"
+            f"> **Created-by:** sdlc-studio new\n"
+            f"> **Raised-by:** {raised_by}\n\n"
             f"## Scope\n\n{{{{scope}}}}\n\n## Findings\n\n{{{{findings}}}}\n\n"
             f"## Verdict\n\n{{{{verdict}}}}\n\n"
             f"## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
-            f"| {today} | {{{{author}}}} | Created via `new` (deterministic) |\n")
+            f"{file_finding.rev_row(today, f, 'Created via `new` (deterministic)')}\n")
 
 
 def _ensure_meta_index(root: Path, rel: str, type_: str, today: str) -> bool:
@@ -584,6 +589,9 @@ def meta_new(repo_root: Path | str, type_: str, title: str, fields: dict | None 
     f = dict(fields or {})
     sdlc_md.check_creator_fields({**f, "title": title})  # refuse an injected line before any write
     today = f.get("date") or date.today().isoformat()
+    # Resolve the authorship of record once, the same way `new` does, so the review scaffold can
+    # stamp Raised-by and write the real name into its revision row instead of a literal placeholder.
+    f["_raised_by"] = sdlc_md.authorship_value(f.get("author"), root)
     # Serialise allocate -> collision-check -> write -> index-append against concurrent
     # writers (retro/review/handoff ids are always sequential, the case the lock most
     # matters for), so two waves closing at once never mint the same id or clobber the index.

@@ -186,17 +186,61 @@ def apply_budget(mutations: list[dict], max_mutations: int) -> tuple[list[dict],
     return chosen, len(mutations) - len(chosen)
 
 
+# The mutants currently applied to disk, so a SIGTERM (TaskStop) or an interpreter exit that
+# skips the `finally` below still restores the original bytes - a killed run must never strand a
+# mutant on the working tree (the incident that seeded BG0180's second half).
+_APPLIED: dict[str, bytes] = {}
+_RESTORE_INSTALLED = False
+
+
+def _restore_applied() -> None:
+    """Restore every mutant still on disk to its original bytes. Idempotent."""
+    for p, original in list(_APPLIED.items()):
+        try:
+            Path(p).write_bytes(original)
+        except OSError:
+            pass
+        _APPLIED.pop(p, None)
+
+
+def _install_restore_handlers() -> None:
+    """Register the crash/signal restore ONCE. atexit covers a normal exit and an unhandled
+    exception; a SIGTERM handler covers a kill (TaskStop) that would otherwise skip every
+    `finally`. SIGINT keeps raising KeyboardInterrupt, which the `applied` finally already
+    unwinds. Signals can only be set from the main thread, so a worker-thread call is a no-op."""
+    global _RESTORE_INSTALLED
+    if _RESTORE_INSTALLED:
+        return
+    import atexit
+    import os
+    import signal
+    atexit.register(_restore_applied)
+
+    def _on_sigterm(signum, _frame):
+        _restore_applied()
+        signal.signal(signum, signal.SIG_DFL)
+        os.kill(os.getpid(), signum)   # re-raise so the process still dies
+
+    try:
+        signal.signal(signal.SIGTERM, _on_sigterm)
+    except (ValueError, OSError):
+        pass  # not the main thread - atexit and the `applied` finally still cover normal paths
+    _RESTORE_INSTALLED = True
+
+
 @contextlib.contextmanager
 def applied(mutation: dict):
     """Apply one mutation; ALWAYS restore the original bytes, even when the
     runner raises - the engine must never leave a mutant on disk."""
     path = Path(mutation["file"])
     original = path.read_bytes()
+    _APPLIED[str(path)] = original
     try:
         path.write_text(mutated_text(mutation), encoding="utf-8")
         yield
     finally:
         path.write_bytes(original)
+        _APPLIED.pop(str(path), None)
 
 
 def _viability(path: Path, mutated: str) -> str | None:
@@ -242,19 +286,25 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
              classes: tuple = FAULT_CLASSES, write_report: bool = True) -> dict:
     """The gate: enumerate, apply one at a time, re-run tests, verdict each mutation.
 
-    Baseline first: the tests must be green over UNMUTATED code - a red or broken
-    baseline cannot judge anything, so every enumerated mutation records verdict
-    `error` (reason in the report) rather than a fake kill."""
+    Baseline first: the tests must be green over UNMUTATED code. A red or broken baseline
+    cannot judge anything, so the gate REFUSES immediately - no mutant is applied, the report
+    is marked `refused` with the remedy, and the caller exits non-zero. Running the mutants
+    anyway would only produce a worthless all-`error` report the run could mistake for done."""
     root = Path(repo_root)
     ceiling = max_mutations if max_mutations is not None else DEFAULT_MAX_MUTATIONS
     all_mutations, unchecked = enumerate_mutations(files, classes)
     to_apply, truncated = apply_budget(all_mutations, ceiling)
+    _install_restore_handlers()   # a kill mid-mutant must restore, never strand
     baseline = _run_tests(test_cmd, root)
+    refused = baseline != "pass"
     records: list[dict] = []
-    if baseline != "pass":
-        reason = ("baseline red - tests fail on unmutated code" if baseline == "fail"
-                  else "test command errored on unmutated code")
-        records = [{**m, "verdict": "error", "reason": reason} for m in to_apply]
+    remedy = None
+    if refused:
+        remedy = ("a red baseline proves nothing: clean the working tree (a stranded mutant "
+                  "from a killed run?) or fix the failing suite, then re-run"
+                  if baseline == "fail"
+                  else "the test command errored on unmutated code: fix the command or the "
+                       "environment, then re-run")
     else:
         for m in to_apply:
             mutated = mutated_text(m)
@@ -291,6 +341,8 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
         "test_cmd": test_cmd,
         "targets": [str(Path(f)) for f in files],
         "baseline": baseline,
+        "refused": refused,
+        "remedy": remedy,
         "mutations": records,
         "unchecked": unchecked,
         "summary": summary,
@@ -413,6 +465,15 @@ def cmd_run(args: argparse.Namespace) -> int:
         ceiling = int(config.get(root, "quality.mutation_max", DEFAULT_MAX_MUTATIONS))
     report = run_gate(root, files, args.test, max_mutations=ceiling)
     s = report["summary"]
+    if report.get("refused"):
+        # a red/broken baseline proves nothing: refuse loudly, name the remedy, exit non-zero -
+        # NEVER a clean-looking zero over a report that judged nothing
+        if args.format == "json":
+            print(json.dumps(report, indent=2))
+        else:
+            print(f"mutation: REFUSED - baseline {report['baseline']} (no mutants applied). "
+                  f"{report['remedy']}", file=sys.stderr)
+        return 2
     if args.format == "json":
         print(json.dumps(report, indent=2))
     else:

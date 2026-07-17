@@ -622,6 +622,20 @@ class MetaTypeTests(unittest.TestCase):
             self.assertTrue(res["indexed"])                  # index bootstrapped on first use
             self.assertTrue(Path(res["path"]).exists())
 
+    def test_review_stamps_raised_by_and_the_rev_row_name_from_author(self) -> None:
+        # BG0175: the review scaffold path used to drop --author - no Raised-by line and a
+        # literal {{author}} in the revision row. It must now stamp Raised-by and write the
+        # resolved name, like every other type.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "reviews").mkdir(parents=True)
+            res = artifact.meta_new(root, "review", "Closing review",
+                                    {"author": "Darren Benson; human; v1"})
+            text = Path(res["path"]).read_text(encoding="utf-8")
+            self.assertIn("> **Raised-by:** Darren Benson; human; v1", text)
+            self.assertNotIn("{{author}}", text)
+            self.assertIn("| Darren Benson | Created via `new` (deterministic) |", text)
+
     def test_meta_new_takes_allocation_lock(self) -> None:
         # BG0126: meta_new used to allocate + index-append unguarded, so two concurrent
         # retro/review creates could mint the same sequential id and clobber the index.
