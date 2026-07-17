@@ -2,7 +2,7 @@
 
 > **Project:** SDLC Studio
 > **Version:** 4.1.0
-> **Last Updated:** 2026-07-14
+> **Last Updated:** 2026-07-17
 > **Status:** Generated (brownfield - awaiting validation)
 >
 > Generated in **Generate mode** by reverse-engineering the skill's own test
@@ -165,21 +165,23 @@ overstating coverage.
 
 | Level | Target | Rationale |
 | --- | --- | --- |
-| Unit (scripts) | ~90% statement coverage | Core deterministic logic; the part that can and must be tested as code. [MEDIUM] |
+| Unit (scripts) | 80% statement (blocking CI gate); ~90% aspiration | Core deterministic logic; the part that can and must be tested as code. The 80% floor is the hard gate, enforced by `coverage report --fail-under=80` in CI; the ~90% figure is the density aspiration, not the gate. [HIGH] |
 | Static / lint (markdown) | 100% of `*.md` pass all checkers | House style and structural invariants are binary - any violation fails the gate. [HIGH] |
 | Integration (scripts vs fixtures) | Every script with side effects has at least one fixture-workspace test; write-confinement asserted by a snapshot before/after; a create-then-validate round trip covers every creator, artefact type and schema era | Confirms the write boundary, and that content supplied to a creator actually reaches the artefact. [HIGH] |
 | Mutation (assertion integrity) | Survived mutants are findings, triaged; an un-mutatable surface is reported un-checked, never passed | A passing suite over dead code is the failure this level exists to expose. Advisory lane, not yet blocking. [HIGH] |
 | Eval scenarios (flow conformance) | Every blocking behaviour in every scenario graded; an ungraded blocking behaviour fails the gate - `report` enumerates the scenarios on disk, so a scenario nobody touched fails rather than vanishing | The nearest thing the markdown tier has to a behaviour test. Covers named surfaces, not the whole corpus. [HIGH] |
 | End-to-end | Not applicable | No running application or service to drive. [HIGH] |
 
-> The ~90% unit target is a goal, not a presently measured figure. Coverage is not
-> currently wired into CI; see Coverage Measurement below. [MEDIUM]
+> Coverage IS wired into CI as a **blocking** gate at an **80% floor** (`coverage
+> report --omit='*/tests/*' --fail-under=80`; actual is roughly 82%). The ~90% figure
+> is the aspiration the per-script test density aims at, not the hard gate. See
+> Coverage Measurement below. [HIGH]
 
 ### Unit Testing
 
 | Attribute | Value |
 | --- | --- |
-| Coverage Target | ~90% statement (goal) [MEDIUM] |
+| Coverage Target | 80% statement, blocking CI gate (`coverage report --fail-under=80`); ~90% aspiration [HIGH] |
 | Framework | Python `unittest` (stdlib) |
 | Execution | `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests` (shipped scripts) and `-s tools/tests` (repo-only checkers); `npm test` runs both |
 | Suite size | 2151 tests across 76 modules at the time of writing, under a minute. Run the discover command for the live count rather than trusting a pinned number - it drifts every sprint |
@@ -320,11 +322,16 @@ Silence is not a measurement.
 
 ### Security Testing
 
-No dedicated security scanner is wired. The security posture (TRD section 9) is
-enforced structurally rather than by a scan: the script contract forbids network
-calls except the `gh` wrapper and forbids token handling, the suite mocks `gh`, and
-the pure-stdlib constraint removes third-party supply-chain surface. See the
-quality-gate table for the NFR mapping and the explicit gaps.
+A static security scanner IS wired as a **blocking** CI step. The CI job runs
+`bandit -r .claude/skills/sdlc-studio/scripts -ll -x '*/tests/*' -q`: recursive over
+the shipped script tier, reporting medium-and-high severity findings only (`-ll`),
+excluding the test modules (`-x '*/tests/*'`), quietly (`-q`). A finding fails the
+build. Beyond the scanner, the security posture (TRD section 9) is also enforced
+structurally: the script contract forbids network calls except the `gh` wrapper and
+forbids token handling, the suite mocks `gh`, and the pure-stdlib constraint removes
+third-party supply-chain surface. bandit covers the shipped script tier only; the
+`tools/` CI checkers and the markdown corpus are out of its scope. See the
+quality-gate tables for the NFR mapping and the remaining gaps.
 
 ---
 
@@ -337,8 +344,9 @@ not-gated rationale. This closes the PRD-to-TSD traceability gap.
 | --- | --- | --- | --- |
 | **Performance** - read path sub-second, writes bounded | Indirect: the suite runs 2151 tests in under a minute; a regression that made scripts slow would be visible. No explicit latency threshold is asserted. Treated as observed, not gated. `mutation` is exempt by design (minutes per run). | No | [MEDIUM] |
 | **Performance** - always-loaded context minimal | `check_budgets.py`: `SKILL.md` must be < 500 lines, each `reference-*.md` within its declared ceiling. Hard gate via `lint:budgets`. | Yes | [HIGH] |
-| **Security** - no network calls except `gh` and project Verify tools | Enforced by the script contract and the test design: `github_sync.py` tested with `gh` mocked; pure-stdlib (no third-party clients). Not gated by a network-egress scanner. | Partial (by test design, not a scanner) | [HIGH] |
-| **Security** - no secrets handled by the skill | Not gated by a secret scanner in this repo. Enforced by design (no token handling; `gh` owns auth) and by code review. N/A as an automated gate. | No (design control) | [MEDIUM] |
+| **Security** - no network calls except `gh` and project Verify tools | Enforced by the script contract and the test design: `github_sync.py` tested with `gh` mocked; pure-stdlib (no third-party clients). Not gated by a network-egress scanner, but the script tier is scanned by bandit (below). | Partial (by test design, plus the bandit scan) | [HIGH] |
+| **Security** - static analysis of the shipped script tier | `bandit -r .claude/skills/sdlc-studio/scripts -ll -x '*/tests/*' -q` runs as a CI step; a medium-or-high severity finding fails the build. Covers the shipped scripts only. | Yes | [HIGH] |
+| **Security** - no secrets handled by the skill | Not gated by a dedicated secret scanner. Enforced by design (no token handling; `gh` owns auth) and by code review; bandit would also flag common hardcoded-secret patterns in the script tier. N/A as a dedicated gate. | No (design control) | [MEDIUM] |
 | **Scalability** - progressive disclosure keeps always-loaded context constant | `check_budgets.py` line budgets (as above); new commands add a `help/` file and a guide row, not router bulk. | Yes | [HIGH] |
 | **Scalability** - agentic waves bound concurrency | Not gated. Concurrency bounds are an instruction-level behaviour in `reference-agentic-lessons.md`; no executable test asserts wave sizing. N/A as an automated gate. | No | [MEDIUM] |
 | **Availability** - offline-capable; sync aborts cleanly when `gh`/remotes absent | Offline capability comes from the core pipeline scripts, which make no network calls (verified by the no-network contract and stdlib-only design). `github_sync.py` does not soft no-op: with `gh` absent it aborts with a clear error (exit 127), asserted by `test_github_sync.py`. So the NFR is met for the offline pipeline, but `github_sync` does not degrade gracefully - callers must handle the non-zero exit. | Partial (unit) | [MEDIUM] |
@@ -353,6 +361,8 @@ Additional gates that back the NFRs but sit outside the four PRD headings:
 | Skill frontmatter | `validate_skill.py`: valid against Agent Skills standard | Yes |
 | Version consistency | `check_versions.py`: all homes agree (CHANGELOG advisory between releases, required at release) | Yes (release) |
 | Neutrality | `check_neutrality.py`: no private consuming-project name in a tracked file | Yes |
+| Coverage floor | `coverage report --omit='*/tests/*' --fail-under=80`: statement coverage of the script tier at or above the 80% floor (the ~90% figure is an aspiration, not this gate) | Yes |
+| Security scan | `bandit -r .claude/skills/sdlc-studio/scripts -ll -x '*/tests/*' -q`: no medium-or-high severity finding in the shipped script tier | Yes |
 | Instruction hygiene | `validate.py instructions` passes | Manual (recommended; not yet CI-wired - no npm script or workflow invokes it) |
 
 ### The artefact gate (`gate.py`)
@@ -392,14 +402,24 @@ route by which `--skip retro` once silently voided the retro gate:
 
 ## Coverage Measurement
 
-Statement coverage for the script tier is not presently collected in CI; the ~90%
-target is a goal inferred from the per-script test density (every script and every
-shared-library module has a dedicated test module). [MEDIUM] To measure it, run the
-suite under `coverage.py` from the repository root:
+Statement coverage for the script tier IS collected in CI and gated. The CI job runs
+the suite under `coverage.py` scoped to the shipped scripts and fails the build below
+an **80% floor**:
 
 ```bash
-python3 -m coverage run -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests
-python3 -m coverage report -m --include='.claude/skills/sdlc-studio/scripts/*'
+coverage run --source=.claude/skills/sdlc-studio/scripts -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests
+coverage report --omit='*/tests/*' --fail-under=80
+```
+
+The 80% floor is the **hard gate**; the ~90% figure quoted under Coverage Targets is
+an **aspiration** the per-script test density aims at (every script and every
+shared-library module has a dedicated test module), not the threshold the build
+enforces. Measured coverage currently sits at roughly 82%, above the floor and below
+the aspiration. [HIGH] To reproduce the report locally with per-line detail:
+
+```bash
+python3 -m coverage run --source=.claude/skills/sdlc-studio/scripts -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests
+python3 -m coverage report -m --omit='*/tests/*'
 ```
 
 Statement coverage is the weaker of the two questions, and it is worth saying which is
@@ -479,8 +499,9 @@ and none is present in the suite.
    bypass: `git commit --no-verify`). If Node is absent the hook prints a visible SKIP
    for markdownlint and CI still enforces it - so a markdown-mechanics error can pass a
    Node-less machine and fail on push. `npm install` closes that gap.
-2. **PR / push:** the full lint chain plus both unittest suites; a Windows pwsh smoke
-   test for `install.ps1`.
+2. **PR / push:** the full lint chain, both unittest suites, the portable `gate.py`
+   run, the coverage floor (`coverage report --fail-under=80`, blocking) and the
+   bandit security scan (blocking); a Windows pwsh smoke test for `install.ps1`.
 3. **Sprint close:** `gate.py --require-retro RETROxxxx --require-review`. Reconcile
    blocks on drift, the retro is checked on its content, and the review anchor must be
    current - a stale `LATEST.md` once sat claiming "ready to tag" long after that
@@ -509,6 +530,8 @@ running application exists to exercise.
 | Version consistency (`lint:versions`) | All homes agree | Yes (release) |
 | Line budgets (`lint:budgets`) | Within budget | Yes |
 | Neutrality (`lint:neutrality`) | No private project name in a tracked file | Yes |
+| Coverage floor | `coverage report --fail-under=80`: script-tier statement coverage at or above the 80% floor (~90% is the aspiration, not the gate) | Yes |
+| Security scan (bandit) | `bandit -r .claude/skills/sdlc-studio/scripts -ll -x '*/tests/*' -q`: no medium-or-high severity finding | Yes |
 | Artefact gate (`gate.py`) | Every blocking lane PASSes | Yes |
 | Release gate (`gate.py --release`) | Every story `Verify:` expression executes green; no unspecified AC; no unexamined AC layer | Yes (release) |
 
@@ -549,7 +572,8 @@ holds only when someone remembers it.
 | Mutation / assertion integrity | `.claude/skills/sdlc-studio/scripts/mutation.py` |
 | Artefact and release gate | `.claude/skills/sdlc-studio/scripts/gate.py` |
 | Flow conformance (eval scenarios) | `tools/eval_run.py` |
-| Coverage (on demand) | `coverage.py` (not in CI) |
+| Coverage gate (blocking, 80% floor) | `coverage.py` (`coverage report --omit='*/tests/*' --fail-under=80` in CI) |
+| Security scan (blocking) | `bandit` (`bandit -r .claude/skills/sdlc-studio/scripts -ll -x '*/tests/*' -q` in CI) |
 | Markdown lint | markdownlint-cli (devDependency; `npm install` provides it locally) |
 | Prose style guard | `tools/lint-style.sh` |
 | Link checker | `tools/check_links.py` |
@@ -600,6 +624,7 @@ package.json                # lint and test entry points
 | --- | --- | --- |
 | 2026-06-20 | Generate mode (brownfield extraction) | Initial TSD reverse-engineered from the skill's actual test setup |
 | 2026-07-14 | Generate mode (v4 refresh) | Added the mutation gate (assertion integrity), the eval scenarios (flow conformance), the artefact and release gates with their bound lanes, the story-only rule for executable verifiers, verification depth on a terminal bug status, and the enforced pre-commit hook. Corrected the lint chain (six checks was stale; it is eight), the suite size (181 was stale; it is 2151), the script count (10 was stale; it is 58), and the link-check scope |
+| 2026-07-17 | Spec-truth alignment | Recorded the blocking 80% CI coverage gate (`coverage report --fail-under=80`) and reconciled it with the ~90% aspiration - correcting the stale "coverage is not wired into CI" claim in Coverage Targets and Coverage Measurement. Recorded the blocking bandit security scan (`bandit -r ... -ll -x '*/tests/*' -q`) in Security Testing, the NFR mapping, the tools table, and both quality-gate tables - correcting the stale "no dedicated security scanner is wired" claim |
 
 ---
 

@@ -243,8 +243,12 @@ Every script in `scripts/` obeys a fixed contract (`reference-scripts.md`):
    (temp-then-replace) and id allocation is serialised by `sdlc_md.allocation_lock`, so a
    crash or a concurrent writer never corrupts a shared file. The scripts are NOT read-only
    over the workspace; the guarantee is that every write is tested and bounded.
-6. No network access except the `gh` CLI wrapper in `github_sync.py` (no token
-   handling).
+6. Network access is limited to three outbound paths, each best-effort and degrading
+   silently when offline: the `gh` CLI wrapper in `github_sync.py` (no token handling;
+   `gh` owns auth), a direct stdlib HTTPS GET to `api.github.com` in `version_check.py`
+   for the release check (`version_check.enabled` opt-out, 5s timeout), and
+   `git fetch origin` in `sprint.py`'s origin-drift preflight and remote-aware id
+   allocation. No other script opens a socket.
 7. Plain text to stdout by default; `--format json` where machine-parseable output
    matters.
 8. Unit tests under `scripts/tests/test_<script>.py`.
@@ -503,7 +507,7 @@ states - file into one workspace without an id allocator to coordinate through.
 | Token leakage via GitHub integration | L | M | No token handling; all GitHub access via `gh`, which owns auth (ADR-004). |
 | Malformed artifact crashing a script | M | L | `lib/sdlc_md.py` JSON helpers never raise (return a default); parsers tolerate legacy forms. |
 | Supply-chain risk from third-party deps | L | M | Pure stdlib; no third-party packages to compromise. |
-| Network exfiltration | L | H | No network calls except `gh` and the consuming project's own Verify-line tools. |
+| Network exfiltration | L | H | Three outbound paths only, each degrading silently offline: `gh` (GitHub sync, owns auth), a public HTTPS GET to `api.github.com` for the release check (`version_check.enabled` opt-out), and `git fetch origin` (drift preflight, ambient git creds) - plus the consuming project's own Verify-line tools (host-bounded by `SDLC_VERIFY_HTTP_HOSTS`). See §5 rule 6. |
 
 ### Security Controls
 
@@ -512,7 +516,7 @@ states - file into one workspace without an id allocator to coordinate through.
 | Authentication | None at skill level; GitHub sync inherits `gh auth`. |
 | Authorisation | Filesystem permissions of the host; script writes are bounded and tested (see §5 rule 5), not read-only. |
 | Encryption at rest | Not applicable (plain files in the consuming repo). |
-| Encryption in transit | Delegated to `gh` (HTTPS) for the only network path. |
+| Encryption in transit | HTTPS on all three network paths: `gh` (GitHub sync), the `api.github.com` release check, and `git fetch origin` over the remote's transport. |
 | Secret handling | The skill handles no secrets; secret management is the consuming project's concern, documented in its `AGENTS.md`. |
 
 ---
@@ -530,16 +534,18 @@ states - file into one workspace without an id allocator to coordinate through.
 The binding performance budget is context tokens, addressed structurally by
 progressive disclosure rather than by a runtime metric.
 
-**The one cost model that is NOT met.** The sprint planner forecasts a batch's token
-cost from the cognitive complexity of the files a unit declares. The current
-coefficient was fitted to six units (1.09x in-sample) and scored **0.55x
-out-of-sample** on the next sprint, under-forecasting all five units monotonically.
-The predictor, not the coefficient, is at fault: cost correlates with tool-uses
-(r = 0.926) and barely with file complexity, and tool-uses is an output, unknowable
-at plan time. The constants have deliberately not been re-fitted (fitting to eleven
-points would fit noise), the forecast is a batch-level aid quoted with a band, and
-it is **never** a gate - a script cannot observe token spend, so a self-reported
-budget could not be a breaker even if the number were trustworthy. See §12.
+**The cost model, and how it is recorded.** The sprint planner forecasts a batch's
+token cost as `sum(Points) x the measured tokens-per-point rate`. Modified Fibonacci
+points replaced the falsified file-complexity predictor (RFC0038): in a blind
+re-estimation of 20 delivered units they scored **r = +0.682 pooled** (+0.782 on
+units <= 8), clearing a bar fixed before the data was seen. A point measures about
+25,000 tokens, flat across the bands, seeded from that study and replaced by the
+project's own rate once it has enough delivered units. The forecast is **recorded at
+plan time** to `retros/evidence/forecasts-*.jsonl` (`telemetry.forecasts`), stamped
+with the points and the estimator rate constants that produced it, so `retro
+accuracy` judges that recorded number and never re-derives one - the loop can falsify
+itself. It is quoted with a band (about +/-50%) and is **never** a gate: a script
+cannot observe token spend, so tokens warn while minutes and units stop a run. See §12.
 
 ---
 
@@ -914,15 +920,12 @@ falls back to enforce.
 - [ ] **Q:** What is the porting path for the Claude-Code-only agentic wave
   execution to other `AGENTS.md` harnesses?
   **Context:** it is the only non-neutral feature.
-- [ ] **Q:** Is there a plan-time predictor of delivery cost at all?
-  **Context:** the current predictor (cognitive complexity of the declared files) is
-  falsified out-of-sample at 0.55x, and the input that does correlate (tool-uses,
-  r = 0.926) is an output, unknowable when the plan is made. Two answers are open:
-  find an input that carries the signal, or drop the per-unit estimate and keep only
-  the recorded history in `VELOCITY.md`. Re-fitting the constant a third time is not
-  one of them. The precondition for either is recording the forecast when it is MADE
-  rather than re-deriving it at retro time from the live constants, which is what
-  makes the present loop unfalsifiable.
+- [x] **Q:** Is there a plan-time predictor of delivery cost at all? **Resolved
+  (RFC0038).** The file-complexity predictor was falsified out-of-sample (0.55x); its
+  replacement, modified Fibonacci points, cleared a pre-registered bar in a blind
+  re-estimation of 20 delivered units (r = +0.682 pooled, +0.782 on units <= 8). The
+  shipped forecast is `sum(Points) x the measured tokens-per-point rate`, recorded when
+  the plan is made (not re-derived at retro time), so the loop is now falsifiable.
 - [ ] **Q:** Should the meta artefacts (retro, review, handoff) join `ARTIFACT_TYPES`?
   **Context:** they are sequential-only, carry no status block, and need a separate
   reconcile lane precisely because they sit outside the registry. Folding them in
@@ -960,9 +963,11 @@ falls back to enforce.
 - Full agentic-wave parity outside Claude Code.
 - A token budget that gates. A script cannot observe token spend, so a self-reported
   number could never be a breaker; tokens warn, minutes and units stop the run.
-- Auto-recalibration of the forecast constants from the velocity history. Fitting to a
-  handful of sprints fits noise and dresses it as evidence; a human reads the trend and
-  decides.
+- Auto-refitting of the estimator's fitted constants from the velocity history. Curve-
+  fitting a handful of sprints fits noise and dresses it as evidence; a human reads the
+  trend and decides. (This is distinct from what the shipped loop DOES do: once a project
+  has enough delivered units it replaces the seeded tokens-per-point rate with its own
+  measured rate, recomputed per plan - an average of measured points, not a refit.)
 
 ---
 

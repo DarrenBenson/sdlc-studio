@@ -1,9 +1,10 @@
 # RFC-0034: Sprint sizing, velocity and estimate calibration: close the estimate -> deliver -> recalibrate loop
 
-> **Status:** Accepted
+> **Status:** Accepted (partially superseded)
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
+> **Partially superseded by:** [RFC-0038](RFC0038-simplify-to-fibonacci-story-points-and-real-wsjf.md) - decisions **D1** (the canonical size unit) and **D5** (do story points stay?) are overtaken. RFC-0038 makes modified-Fibonacci story points the ONE size vocabulary, deletes Effort S/M/L, and sums points as measured velocity - so tokens are no longer the canonical estimation unit and points are no longer a within-story alias. **D2-D4 remain live:** RFC-0038's model depends on the actual-measurement (D2), capacity (D3) and retro-accuracy (D4) machinery this RFC defines.
 
 ## Summary
 
@@ -67,11 +68,11 @@ token/wall-clock budget wired to CR0225's appetite.
 
 | # | Decision | Resolution | Status |
 | --- | --- | --- | --- |
-| D1 | The canonical size unit. | **Tokens are canonical.** Humans still estimate in Effort S/M/L (stories in points); those map to **calibrated token bands**. Bugs gain an effort field (CR0257). The bands ship **provisional** (a documented S/M/L -> token default) and are **recalibrated from velocity history** once D4 accumulates it. | Decided |
+| D1 | The canonical size unit. | **[Superseded by [RFC-0038](RFC0038-simplify-to-fibonacci-story-points-and-real-wsjf.md).]** Original resolution: **Tokens are canonical.** Humans still estimate in Effort S/M/L (stories in points); those map to **calibrated token bands**. Bugs gain an effort field (CR0257). The bands ship **provisional** (a documented S/M/L -> token default) and are **recalibrated from velocity history** once D4 accumulates it. RFC-0038 replaced this: modified-Fibonacci story points are the one size vocabulary, Effort S/M/L is deleted, and the forecast is points x measured tokens-per-point. | Superseded (RFC-0038) |
 | D2 | How "actual" is measured at close. | **Wall-clock from telemetry; tokens need a supplier (corrected).** `telemetry.py` has the `tokens` and `wall_time_s` FIELDS, but only wall-clock is measurable by the loop - a Python helper cannot observe LLM token spend (`sprint.py` says so in a comment), and in practice **the `tokens` field has never been populated: 330 telemetry records, zero token values**. So the measure half is ~80% built for wall-clock and ~0% for tokens: the field exists, the meter does not. The token actual must be SUPPLIED - the concrete path is to run each unit as an instrumented subagent and record its reported usage into `artifact.py close --tokens` (in CR0258). Wall-clock is the reliable actual until that lands. | Decided |
 | D3 | Capacity target - value, unit, owner. | **An operator-set per-sprint budget in tokens + wall-clock, wired to CR0225's appetite defaults**, so the plan-time "does this fit" and the run-time circuit-breaker are the same number. Provisional default now; recalibrated from velocity. | Decided |
 | D4 | The retro records estimate-vs-actual + accuracy. | **Yes** - `retro.py` + template read telemetry actuals against the plan's estimate, record the ratio, and accumulate a velocity/accuracy history the next plan reads. This is the keystone: it produces the data that calibrates D1's bands and D3's budget. | Decided |
-| D5 | Do story points stay? | **Kept as a within-story human aid that maps to a token band** - not summed for capacity. Points become an alias into the canonical unit, not a fourth vocabulary. | Decided |
+| D5 | Do story points stay? | **[Superseded by [RFC-0038](RFC0038-simplify-to-fibonacci-story-points-and-real-wsjf.md).]** Original resolution: **Kept as a within-story human aid that maps to a token band** - not summed for capacity. Points become an alias into the canonical unit, not a fourth vocabulary. RFC-0038 reversed this: points are no longer an alias but the canonical size unit itself, and they ARE summed - velocity is points delivered per sprint. | Superseded (RFC-0038) |
 
 ## Workstream (spawned on acceptance)
 
@@ -95,10 +96,13 @@ freeze on `main` and ships with v4.2, not this week.
 
 RFC0032 (the learning loop the retro already runs - calibration is a natural sibling), CR0225
 (appetite-bounded runs - the run-breaker units), CR0257 (sizing inputs), CR0253 (the review gate;
-another close-time deterministic signal).
+another close-time deterministic signal),
+[RFC-0038](RFC0038-simplify-to-fibonacci-story-points-and-real-wsjf.md) (supersedes D1 and D5 -
+modified-Fibonacci story points, not tokens, become the canonical size unit; D2-D4 remain live).
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-14 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-17 | sdlc-studio | Partial supersession recorded: D1 and D5 overtaken by RFC-0038 (points, not tokens, are canonical); header note, D1/D5 rows and Related cross-link added; D2-D4 remain live |

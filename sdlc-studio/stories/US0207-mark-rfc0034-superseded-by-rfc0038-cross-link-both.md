@@ -4,7 +4,7 @@
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** sdlc-studio/rfcs/RFC0034-a-modified-fibonacci-points-scale.md, sdlc-studio/rfcs/_index.md
+> **Affects:** sdlc-studio/rfcs/RFC0034-sprint-sizing-velocity-and-estimate-calibration-close-the.md, sdlc-studio/rfcs/_index.md
 > **Epic:** EP0071
 > **Points:** 2
 

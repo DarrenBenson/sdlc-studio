@@ -5,6 +5,7 @@
 > **Date:** 2026-07-14
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
+> **Supersedes (in part):** [RFC-0034](RFC0034-sprint-sizing-velocity-and-estimate-calibration-close-the.md) decisions **D1** (canonical size unit) and **D5** (do story points stay?) - this RFC replaces the tokens-canonical plus Effort S/M/L model with modified-Fibonacci story points as the one size vocabulary. RFC-0034's D2-D4 (actual measurement, capacity, retro accuracy) remain live and underpin this model.
 
 ## Summary
 
@@ -65,6 +66,7 @@ Run the blind re-estimation first, then decide. Set the bar BEFORE measuring (LL
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-14 | sdlc-studio | Filed |
+| 2026-07-17 | sdlc-studio | Recorded that this RFC partially supersedes RFC-0034 (its D1 and D5); cross-link added. No decision or status change |
 
 ## RESULT of the blind re-estimation (2026-07-14)
 

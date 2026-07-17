@@ -7,10 +7,10 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 56 |
+| Draft | 55 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 0 |
+| In Progress | 1 |
 | Review | 0 |
 | Done | 200 |
 | Won't Implement | 0 |
@@ -111,7 +111,7 @@
 | [US0198](US0198-sprint-close-orchestrates-goal-verdict-retro-validate-and.md) | sprint close orchestrates goal-verdict, retro validate and extract, close gate, handoff and reconcile with fail-loud stops and idempotent resume, printing the decision brief | Done | EP0068 | 2026-07-16 | 2026-07-16 |
 | [US0199](US0199-brief-rejoinder-quotes-the-prior-verdict-verbatim-with.md) | brief --rejoinder quotes the prior verdict verbatim with the re-execute-your-probes instruction and return contract; a malformed prior-verdict file is refused | Done | EP0069 | 2026-07-16 | 2026-07-16 |
 | [US0200](US0200-tools-forward-port-sh-runs-the-canonical-rsync.md) | tools/forward-port.sh runs the canonical rsync dry-run by default with --yes to apply, refusing a reversed direction or non-dev-repo cwd; AGENTS.md references it | Done | EP0070 | 2026-07-16 | 2026-07-16 |
-| [US0201](US0201-prd-sections-3-10-11-to-the-shipped.md) | PRD sections 3/10/11 to the shipped Points model; Effort named only as retired; close BG0133/BG0136 and the plan-time-predictor open question | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
+| [US0201](US0201-prd-sections-3-10-11-to-the-shipped.md) | PRD sections 3/10/11 to the shipped Points model; Effort named only as retired; close BG0133/BG0136 and the plan-time-predictor open question | In Progress | EP0071 | 2026-07-17 | 2026-07-17 |
 | [US0202](US0202-add-the-shipped-done-epics-ep0033-ep0047-to.md) | Add the shipped Done epics EP0033-EP0047 to the PRD feature tables and populate the -- Epic columns | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
 | [US0203](US0203-document-the-version-check-urllib-and-sprint-plan.md) | Document the version-check urllib and sprint-plan git-fetch network surface in the PRD Security NFR and TRD rule 6/threat table | Draft | EP0071 | 2026-07-17 | 2026-07-17 |
 | [US0204](US0204-rewrite-prd-section-9-config-env-var-reference.md) | Rewrite PRD section 9 config/env-var reference: require_ac_verification default, two_backlog.enforce, retire SDLC_ENGAGEMENT_STRICT, add missing env vars | Draft | EP0071 | 2026-07-17 | 2026-07-17 |

@@ -208,7 +208,7 @@ Epic column maps each feature to its owning epic (see `sdlc-studio/epics/`).
 | Breakdown gate | `sprint plan` REFUSES an ungroomed batch (a unit must declare `Affects:` and a size). Exits non-zero and prints no plan. `sprint.breakdown: judgement` downgrades it to a report; an absent config BLOCKS | Complete **[Unreleased]** | High | reference-sprint.md#breakdown, scripts/sprint.py | -- |
 | Sprint capacity | `capacity.tokens/minutes/units` - one number feeding both the plan-time fit check and the run-time appetite breaker. Over-budget WARNS, never gates | Complete **[Unreleased]** | Medium | reference-config.md#capacity, scripts/sprint.py, scripts/loop_guard.py | -- |
 | Run appetite / breaker | `--appetite-minutes` / `--appetite-units` bound an unattended run; the breaker stops it cleanly at a unit boundary with its own exit code | Complete | High | reference-sprint.md#appetite, scripts/loop_guard.py | EP0032 |
-| Sizing and velocity loop | `Effort:` (S/M/L) feeds WSJF job size and the token forecast; `retro accuracy` reports estimate against measured actuals; `retros/VELOCITY.md` is a committed history. **The forecast is a falsified hypothesis, not a calibration** (§10) | Complete **[Unreleased]** | Medium | scripts/sprint.py, scripts/retro.py, scripts/telemetry.py | -- |
+| Sizing and velocity loop | Modified Fibonacci **Points** (1, 2, 3, 5, 8, 13, 20) size a story/bug and a T-shirt **Size** sizes a CR/RFC/epic - the one size vocabulary (Effort S/M/L is retired). Forecast = sum(Points) x the measured tokens-per-point rate; WSJF = CoD / Points; `retro accuracy` judges the recorded plan-time forecast against measured actuals; `retros/VELOCITY.md` is a committed history. **Points are the first cost predictor to clear the pre-registered bar** (r = +0.68, §10) | Complete **[Unreleased]** | Medium | scripts/sprint.py, scripts/retro.py, scripts/telemetry.py | -- |
 | Distributed identity (schema v3) | Collision-free ULID ids (`US-01JQK3F8`) so uncoordinated writers - human and agent, across machines and git states - never mint the same id. Sequential ids stay valid; `migrate_v3 adopt` is forward-only and the two eras coexist | Complete | High | reference-upgrade.md, scripts/migrate_v3.py, scripts/lib/sdlc_md.py | EP0012, EP0028 |
 | Generated team (seats) | `persona generate --team` grows fresh named engineering seats from THIS project (PRD/TRD/config/repo map) onto behavioural variables and risk axes, never demographics. 3 core roles + up to 2 signal-earned extras, cast capped at 5. Provenance stamp + content hash keep an operator's edit from being clobbered | Complete | High | reference-persona-generate.md#team-generation, scripts/persona_gen.py | EP0030 |
 | Stakeholder panel | `persona generate --stakeholders` generates the other side of the table (buyer, compliance, ops, served) with veto lines and the Cooper arbitration rule on every card: a buyer goal never overrides the Primary user's interface | Complete | Medium | reference-persona-generate.md, templates/personas/stakeholder-template.md | EP0030 |
@@ -225,6 +225,7 @@ Epic column maps each feature to its owning epic (see `sdlc-studio/epics/`).
 | Repo review / lite on-ramp | `review generate` gives an existing repo a zero-setup taster; the lite profile is the on-ramp | Complete | Medium | scripts/review_generate.py, scripts/lite_profile.py | EP0016 |
 | PVD (multi-repo) | The Product Vision Document above the PRD; cross-repo `Depends on:` resolution through its manifest | Complete | Low | reference-pvd.md, scripts/pvd.py, scripts/lib/xrepo.py | EP0032 |
 | Id allocation | Deterministic next-id (sequential era) and collision-free ULID minting (v3), remote-aware, serialised by an allocation lock | Complete | High | scripts/next_id.py, scripts/artifact.py | EP0008, EP0012 |
+| Skill self-update / version check | `hint`/`status` compare the installed version against the latest GitHub release over a direct HTTPS GET (`api.github.com`); default on, `version_check.enabled` opt-out, 5s timeout, silent when offline; `skill-update` installs a newer release | Complete | Low | help/skill-update.md, reference-skill-update.md, scripts/version_check.py | EP0008 |
 
 ### Feature Details (representative)
 
@@ -367,9 +368,15 @@ re-runs the suite once per mutant and is minutes, not seconds.
 
 ### Security
 
-No network calls except `gh` (GitHub sync) and the tools a project's Verify lines
-invoke. No secrets handled by the skill; secret handling is the consuming
-project's concern (documented in its AGENTS.md).
+Network access is limited to four outbound, optional paths, each degrading silently
+when offline: the `gh` CLI (GitHub sync), a direct HTTPS GET to `api.github.com` for
+the release check (the skill self-update; default on, opt out with
+`version_check.enabled: false`; 5s timeout, any failure treated as offline),
+`git fetch origin` in `sprint plan`'s origin-drift preflight and remote-aware id
+allocation (best-effort, failure ignored), and the tools a project's Verify lines
+invoke - whose reachable hosts a project bounds with `SDLC_VERIFY_HTTP_HOSTS`. No
+secrets handled by the skill; secret handling is the consuming project's concern
+(documented in its AGENTS.md).
 
 ### Scalability
 
@@ -448,15 +455,22 @@ Plain files in the repo (`sdlc-studio/`), user-local runtime state in
 
 ### External Services
 
-GitHub Issues (via `gh` CLI only; no PyGitHub).
+- **GitHub Issues** via the `gh` CLI only (no PyGitHub) - CR/story/epic sync.
+- **GitHub Releases API** (`api.github.com`) via a direct stdlib HTTPS GET for the
+  skill self-update check (`version_check.py`; default on, `version_check.enabled`
+  opt-out, 5s timeout, silent on any failure).
+- **The git remote** (`git fetch origin`) in `sprint plan`'s origin-drift preflight
+  and remote-aware id allocation (best-effort; failure ignored, skipped with no remote).
 
 ### Authentication Methods
 
-Inherited from `gh auth` for sync. None otherwise.
+Inherited from `gh auth` for sync and from the ambient git credentials for `fetch`.
+The release check is an unauthenticated public GET. None otherwise.
 
 ### Third-Party Dependencies
 
-None at the skill level (stdlib Python). Soft runtime tools listed in §1.
+None at the skill level (stdlib Python, `urllib` for the release check). Soft runtime
+tools listed in §1.
 
 ---
 
@@ -514,35 +528,38 @@ eval scenarios (`tools/eval_run.py`) that drive a fixture project through a flow
 record a per-behaviour verdict. This is still the main gap a generated test backlog
 would close.
 
-### The token forecast is a falsified hypothesis
+### The cost model: a falsified predictor, then Fibonacci points
 
 Stated plainly, because the product's own doctrine is that a claim registered as
-evidence must survive being wrong.
+evidence must survive being wrong - and this one was wrong before it was right.
 
-The sprint planner forecasts a batch's token cost from the cognitive complexity of
-the files a unit declares. The coefficient was fitted to six measured units and
-scored **1.09x in-sample**. On the next sprint - the first forecast it had not been
-fitted to - it scored **0.55x out-of-sample**, under-forecasting every one of five
-units and doing so monotonically: the larger the job, the worse the miss. The
-previous coefficient over-forecast by 3.3x. Both were fitted to a single sprint and
-both failed the next one.
+The first sprint planner forecast a batch's token cost from the cognitive complexity
+of the files a unit declares. That predictor was **falsified**: fitted to six units it
+scored 1.09x in-sample, then 0.55x out-of-sample on the next sprint, under-forecasting
+monotonically (a prior coefficient over-forecast by 3.3x). The diagnosis was that the
+*input* carried no plan-time signal - file complexity does not measure the work done
+in a file, and the thing cost actually tracked (tool-uses, r = 0.926) is an output,
+unknowable when planning.
 
-The diagnosis is not that the coefficient is wrong; it is that **the predictor is
-wrong**. Cost correlates with tool-uses (r = 0.926) and barely with the complexity of
-the files touched, because file complexity does not measure the work done in a file.
-Tool-uses is an output, unknowable at plan time, so this is not a better constant
-waiting to be fitted - it is evidence that the input being forecast from does not
-carry the signal.
+RFC0038 replaced it rather than re-fitting it. The bar was set **before** the data
+was seen (pooled r >= 0.50, within-sprint correlations must not flip sign, beat Effort
+0.35 clearly, predict a held-out sprint within 0.75x-1.25x), then 20 delivered units
+across four sprints were re-estimated in modified Fibonacci points blind to outcome.
+Points cleared every clause: **r = +0.682 pooled** (and +0.782 on units <= 8) against
+Effort's 0.35 and file-complexity's 0.03. Points are the first cost predictor this
+project has found that works. The shipped model is `forecast = sum(Points) x the
+measured tokens-per-point rate` - a point measures about 25,000 tokens (flat across
+the 2-, 3-, 5- and 8-point bands), seeded from that blind study and replaced by the
+project's own measured rate once it has enough delivered units. Effort S/M/L is
+retired; a unit too big to size on the scale is decomposed, not estimated.
 
-The constants have deliberately **not** been re-fitted. The forecast ships, and it is
-honest about what it is: a **batch-level** aid with a weak per-unit signal, quoted
-with a band, never a gate. `retro accuracy` and the committed `retros/VELOCITY.md`
-exist so the next miss is visible rather than absorbed. Two defects in the loop
-itself are open and must land before any recalibration decision: the accuracy report
-re-derives estimates from the live constants, so a recalibration silently rewrites
-what every past sprint is deemed to have predicted (a loop that cannot falsify
-itself), and the filer cannot record `Affects:` at all, so every bug it writes is
-born unplannable and is then refused by the project's own planner.
+The two loop defects this section used to list as open are **fixed** (BG0133, BG0136):
+`retro accuracy` now judges only the forecast recorded at plan time and never
+re-derives one from the live constants, so a recalibration can no longer silently
+rewrite what a past sprint is deemed to have predicted; and the finder records
+`Affects:`, so a filed bug is born plannable instead of refused by the project's own
+planner. The forecast ships quoted with a band (honest to about +/-50%), never a gate;
+`retro accuracy` and the committed `retros/VELOCITY.md` keep the next miss visible.
 
 ### Technical Debt
 
@@ -559,10 +576,12 @@ spellings. Each was a rule stated but not enforced; each is now a lane with an e
 code. The live backlog is small and is listed in `reviews/LATEST.md`; `bugs/_index.md`
 is the register of record.
 
-The honest residue: the loop can now measure itself, and the first thing it measured
-came back negative (above). That is the system working, not a defect in it - but it
-means the sizing feature is Complete and **not** trustworthy as a prediction, and the
-document says so rather than rounding it up.
+The honest residue: the loop can now measure itself, and it did - a first predictor was
+falsified and a second (Fibonacci points) cleared a pre-registered bar (above). The
+sizing feature is Complete and, unlike its predecessor, earns a cost claim - held to a
+band, never a gate. What remains open is calibration to THIS project: the ~25,000
+tokens-per-point rate ships as a seed and only becomes the project's own measurement
+once it has enough delivered units, so today's forecasts still lean on the study's rate.
 
 ---
 
@@ -571,10 +590,11 @@ document says so rather than rounding it up.
 - Should the markdown command flows get executable conformance tests, or is the
   scripts' test suite plus reconcile/validate plus the eval scenarios sufficient as
   the oracle?
-- Is there a plan-time predictor of delivery cost at all? File complexity is
-  falsified; tool-uses correlates but is an output. If no forecastable input carries
-  the signal, the honest product answer may be to drop the per-unit estimate and keep
-  only the recorded history.
+- ~~Is there a plan-time predictor of delivery cost at all?~~ **Closed (RFC0038).** File
+  complexity was falsified and tool-uses is an output, but modified Fibonacci points
+  cleared a pre-registered bar (r = +0.68 pooled, +0.78 on units <= 8) in a blind
+  re-estimation of 20 delivered units. The shipped forecast is sum(Points) x the
+  measured tokens-per-point rate; the per-unit estimate stays, sized on the scale.
 - The learning loop is mandated on the engagement floor's *reasoning* and not yet on
   its *evidence*. The claim that closing the loop cuts repeat defects is registered
   as a claim to be measured. What experiment settles it?

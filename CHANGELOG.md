@@ -487,6 +487,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Spec-truth refresh: PRD/TRD/TSD/RFC reconciled with shipped `main` (EP0071, RUN-01KXR6XS).**
+  A batch of documentation-alignment stories corrected specs that had drifted from shipped
+  behaviour:
+  - **US0201/US0203 (PRD + TRD).** PRD §3/§10/§11 and TRD §10/§12/§13 now describe the shipped
+    cost model - modified Fibonacci Points on story/bug, T-shirt Size on CR/RFC/epic, forecast =
+    sum(Points) x the measured tokens-per-point rate (r = +0.68, RFC0038), recorded at plan time
+    to `telemetry.forecasts` - instead of the falsified file-complexity predictor and the two
+    loop defects (BG0133/BG0136), now fixed. The version check and `git fetch origin` are
+    enumerated in the PRD Security NFR / §8, the feature inventory, and TRD rule 6 / §9 as the
+    second and third outbound network paths beside `gh`.
+  - **US0206 (TSD).** Corrected two false claims: the blocking 80% CI coverage gate (reconciled
+    with the ~90% aspiration) and the blocking bandit security scan are now recorded, where the
+    TSD had asserted neither was wired.
+  - **US0207 (RFC0034).** Marked D1/D5 superseded by RFC0038 with cross-links in both RFCs and
+    the rfcs index; D2-D4 remain live and underpin the shipped model.
+
 - **Story workflows resolve personas registry-first (CR0283, EP0049).** `reference-story.md`'s
   create and generate prerequisites now read the `sdlc-studio/personas/` registry (index.md +
   per-persona cards) as the primary source, with the flat `personas.md` as a documented legacy
