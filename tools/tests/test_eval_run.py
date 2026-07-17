@@ -105,6 +105,22 @@ class EvalRunTests(unittest.TestCase):
         self.assertEqual(rc, 1)
         self.assertIn("UNGRADED", out)
 
+    def test_wholly_ungraded_scenario_fails_the_gate(self) -> None:
+        # Two scenarios on disk; grade only the first. The second is graded by
+        # nobody, so it never appears in the results file - its blocking behaviour
+        # must still fail the gate, not vanish because report only iterated the
+        # scenarios someone started grading.
+        self._write(_scenario())            # 99-test, blocking EB1
+        other = _scenario()
+        other["id"] = "98-other"
+        self._write(other)                  # 98-other, blocking EB1, never graded
+        self._main("record", "--scenario", "99-test", "--run", "r1",
+                   "--behaviour", "EB1", "--verdict", "pass", "--evidence", "ok")
+        rc, out, _ = self._main("report", "--run", "r1")
+        self.assertEqual(rc, 1, out)
+        self.assertIn("98-other", out)
+        self.assertIn("UNGRADED", out)
+
     def test_unknown_scenario_errors(self) -> None:
         rc, _, err = self._main("setup", "--scenario", "nope", "--dir", str(self.fx))
         self.assertEqual(rc, 2)

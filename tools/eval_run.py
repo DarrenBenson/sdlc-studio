@@ -103,7 +103,13 @@ def cmd_report(args: argparse.Namespace) -> int:
         return 2
     data = json.loads(path.read_text(encoding="utf-8"))
     blocking_failed = 0
-    for sid, behaviours in sorted(data.items()):
+    # Enumerate every scenario on disk, not only those present in the results file:
+    # a scenario nobody graded never appears in `data`, so iterating `data` alone
+    # would skip all of its blocking behaviours and print a false 'gate pass'. A
+    # wholly-ungraded scenario is not a pass - its blocking behaviours are ungraded.
+    on_disk = {p.stem for p in SCENARIOS.glob("*.json")}
+    for sid in sorted(on_disk | set(data)):
+        behaviours = data.get(sid, {})
         sc = load_scenario(sid)
         expected = {eb["id"] for eb in sc.get("expected_behaviours", [])}
         missing = sorted(expected - set(behaviours))

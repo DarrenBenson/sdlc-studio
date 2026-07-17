@@ -169,7 +169,7 @@ overstating coverage.
 | Static / lint (markdown) | 100% of `*.md` pass all checkers | House style and structural invariants are binary - any violation fails the gate. [HIGH] |
 | Integration (scripts vs fixtures) | Every script with side effects has at least one fixture-workspace test; write-confinement asserted by a snapshot before/after; a create-then-validate round trip covers every creator, artefact type and schema era | Confirms the write boundary, and that content supplied to a creator actually reaches the artefact. [HIGH] |
 | Mutation (assertion integrity) | Survived mutants are findings, triaged; an un-mutatable surface is reported un-checked, never passed | A passing suite over dead code is the failure this level exists to expose. Advisory lane, not yet blocking. [HIGH] |
-| Eval scenarios (flow conformance) | Every blocking behaviour in a scenario graded; an ungraded blocking behaviour fails the gate | The nearest thing the markdown tier has to a behaviour test. Covers named surfaces, not the whole corpus. [HIGH] |
+| Eval scenarios (flow conformance) | Every blocking behaviour in every scenario graded; an ungraded blocking behaviour fails the gate - `report` enumerates the scenarios on disk, so a scenario nobody touched fails rather than vanishing | The nearest thing the markdown tier has to a behaviour test. Covers named surfaces, not the whole corpus. [HIGH] |
 | End-to-end | Not applicable | No running application or service to drive. [HIGH] |
 
 > The ~90% unit target is a goal, not a presently measured figure. Coverage is not
@@ -196,10 +196,15 @@ real one through. A `test-noise` gate leg keeps it that way.
 
 #### Unit coverage map
 
-Every script and every shared-library module has a dedicated test module; the script
-contract (TRD section 5, rule 8) mandates it, and a conformance sweep fails the build
-on a new script that arrives without one. Rather than pin per-module test counts that
-are stale within a sprint, the map below records what each tier is responsible for.
+Most scripts and shared-library modules have a dedicated `test_<name>.py`; the script
+contract (TRD section 5, rule 8) mandates one as a convention. It is a convention held in
+review, not an automated build gate: no sweep enumerates the scripts and fails a build on
+a module that arrives without a test. A handful are exercised indirectly under a
+differently-named module rather than a dedicated one - `refine` and `triage` under the
+triage suites, `lib/run_state` under the loop-guard, handoff and sprint-report suites, and
+`lib/tiers` under the planning-tier and routing suites - and `autosprint` and `lib/xrepo`
+currently have no direct test. Rather than pin per-module test counts that are stale within
+a sprint, the map below records what each tier is responsible for.
 
 | Tier | Representative modules | What the tests hold |
 | --- | --- | --- |
@@ -286,7 +291,7 @@ from a wrong one. Tests that assert a guard fires must drive it the way a caller
 | --- | --- |
 | Scope | A fixture project built from a machine-readable spec, driven through a named flow |
 | Method | `tools/eval_run.py`: build the fixture, run the flow, record a per-behaviour verdict |
-| Gate | Fails on any blocking behaviour that failed **or was left ungraded** - a behaviour nobody graded is not a pass |
+| Gate | Fails on any blocking behaviour that failed **or was left ungraded** - a behaviour nobody graded is not a pass. `report` enumerates `evals/scenarios/*.json`, so a scenario with zero recorded verdicts fails on its blocking behaviours rather than being skipped for its absence from the results file |
 | Coverage | Named v3/v4 surfaces: schema-v3 identity (ULID allocation, ULID-epic wiring, reconcile coverage), the independence gate (author != reviewer, verified depth on a terminal status), team generation on an ambiguous-by-design fixture, persona arbitration. Not the whole markdown corpus |
 
 ### End-to-End Testing
@@ -365,10 +370,10 @@ deterministic checks, read-only and therefore hook-safe.
 | `integrity`, `duplicate-id` | A corrupt or duplicated id | Yes |
 | `doc-coverage` | A shipped command with no help or reference file | Yes |
 | `engagement-floor` | A shipped multi-file unit with no planning pass (see PRD section 3) | Yes |
-| `doc-freshness` | Stale facts in `LATEST.md` | Yes |
+| `doc-freshness` | Stale facts in `LATEST.md` | No (advisory) |
 | `constitution`, `provenance`, `disclosure` | Project-rule and stamping findings | Advisory |
 | `mutation` | Nothing (report only). An absent report reads not-run; a rev change or edited target reads STALE | Advisory |
-| `hook-enabled` | The tracked pre-commit hook not installed | Yes |
+| `hook-enabled` | The tracked pre-commit hook not installed | No (advisory) |
 
 Bound lanes attach to a specific obligation and **cannot be skipped or excluded
 away** - a deselected bound lane is refused rather than honoured, which closes the
@@ -380,7 +385,8 @@ route by which `--skip retro` once silently voided the retro gate:
 | `--require-lessons` | Sprint close | `LESSONS-SUMMARY.md` is the **recomputed** digest of the current lessons log (not a stamp, a count or an mtime - there is nothing to forge), and no open lesson is past its validity horizon |
 | `--require-review` | Sprint close | `reviews/LATEST.md` is at least as new as every artefact. Currency, not presence |
 | `--require-handoff HOxxxx` | A run that stopped short of its goal | The handoff exists and a retro links it |
-| `--release` | The pre-tag gate | EXECUTES every story's `Verify:` expression for real, rather than reading a report that could carry a stale green. Deselecting the verify lane under `--release` is **refused** - no release verdict is printed over an unexamined AC layer. A story with an *unspecified* AC (no `Verify:` line) fails and is named; a story whose ACs are all declared `manual` passes. A story set with no executable verifier at all fails, because a lane with nothing to prove must not read as proof. A verifier blocked by the external-provenance trust boundary reports as **unproven**, never as a red AC |
+| `--require-close` | A push or release close guard | The **close-owed** lane (RFC0042's machine half): no delivery unit that reached a terminal status since the baseline is left with no retro accounting for it - a skipped close-down. An unbaselined project reports zero (stamping the baseline is the operator's one-time acknowledgement of the pre-adoption tail). Blocking |
+| `--release` | The pre-tag gate | Binds two lanes. **verify**: EXECUTES every story's `Verify:` expression for real, rather than reading a report that could carry a stale green. Deselecting the verify lane under `--release` is **refused** - no release verdict is printed over an unexamined AC layer. A story with an *unspecified* AC (no `Verify:` line) fails and is named; a story whose ACs are all declared `manual` passes. A story set with no executable verifier at all fails, because a lane with nothing to prove must not read as proof. A verifier blocked by the external-provenance trust boundary reports as **unproven**, never as a red AC. **review-legs** (the BG0110 fix): every required DOCUMENT leg (PRD/TRD/TSD/Persona) must be present or explicitly waived against a recorded decision id, so a tag over a silently-missing required artefact is refused; the CODE leg is out of scope (D0022) and every verdict states that exclusion |
 
 ---
 
