@@ -2,7 +2,13 @@
 # These are the skill defaults. Projects can override in sdlc-studio/.config.yaml
 # See reference-config.md for documentation
 
-# Schema version for upgrade compatibility
+# Schema version - the FALLBACK default, applied to a project that declares no
+# schema_version of its own (a legacy workspace created before the stamp). New projects are
+# seeded with the current version from templates/config.yaml, not this file. schema_version is
+# the public artefact-format contract stamp documented in reference-schema.md: a consumer reads
+# a project's own value to pin which schema its files are in. `migrate` is what changes it
+# (v2 -> v3 via migrate_v3); hand-editing it migrates nothing. Additive format changes bump the
+# minor version, renames/removals bump the major with a migrate path.
 schema_version: 2
 
 # Coverage targets for test strategy

@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 44 |
-| Ready | 3 |
+| Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 212 |
+| Done | 215 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -168,9 +168,9 @@
 | [US0255](US0255-extend-the-write-confinement-snapshot-suite-across-the.md) | extend the write-confinement snapshot suite across the shipped writers with a roster sweep | Draft | EP0082 | 2026-07-17 | 2026-07-17 |
 | [US0256](US0256-census-the-cr-index-linked-epics-column-from.md) | census the CR-index Linked Epics column from Decomposed-into (or drop the dead column) | Draft | EP0082 | 2026-07-17 | 2026-07-17 |
 | [US0257](US0257-build-refine-into-with-multi-parent-link-support.md) | build refine --into with multi-parent link support (children_of, asymmetry gate, back-links) and docs | Done | EP0083 | 2026-07-17 | 2026-07-17 |
-| [US0258](US0258-author-reference-schema-md-the-self-describing-artefact.md) | Author reference-schema.md: the self-describing artefact schema contract | Ready | EP0084 | 2026-07-17 | 2026-07-17 |
-| [US0259](US0259-schema-version-stamp-as-a-config-key-plus.md) | Schema version stamp as a config key plus the compatibility policy | Ready | EP0084 | 2026-07-17 | 2026-07-17 |
-| [US0260](US0260-drift-guard-schema-doc-vocabularies-must-match-the.md) | Drift guard: schema doc vocabularies must match the enforcing code | Ready | EP0084 | 2026-07-17 | 2026-07-17 |
+| [US0258](US0258-author-reference-schema-md-the-self-describing-artefact.md) | Author reference-schema.md: the self-describing artefact schema contract | Done | EP0084 | 2026-07-17 | 2026-07-17 |
+| [US0259](US0259-schema-version-stamp-as-a-config-key-plus.md) | Schema version stamp as a config key plus the compatibility policy | Done | EP0084 | 2026-07-17 | 2026-07-17 |
+| [US0260](US0260-drift-guard-schema-doc-vocabularies-must-match-the.md) | Drift guard: schema doc vocabularies must match the enforcing code | Done | EP0084 | 2026-07-17 | 2026-07-17 |
 
 ## Archived Releases
 

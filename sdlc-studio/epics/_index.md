@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 12 |
+| Draft | 11 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 72 |
+| Done | 73 |
 | **Total** | **84** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -106,4 +106,4 @@
 | [EP0081](EP0081-command-surface-cleanup-slice-2-the-5-help.md) | Command-surface cleanup slice 2: the 5 help-only commands and the help rewrite around the spine | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
 | [EP0082](EP0082-residual-audit-fixes-independent-small-corrections-from-the.md) | Residual audit fixes: independent small corrections from the 2026-07-16 audit | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
 | [EP0083](EP0083-refine-into-share-a-batch-epic-for-small.md) | refine --into: share a batch epic for small requests | Done | -- | -- | 2026-07-17 | 2026-07-17 |
-| [EP0084](EP0084-publish-the-artefact-schema-as-a-versioned-contract.md) | Publish the artefact schema as a versioned contract | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
+| [EP0084](EP0084-publish-the-artefact-schema-as-a-versioned-contract.md) | Publish the artefact schema as a versioned contract | Done | -- | -- | 2026-07-17 | 2026-07-17 |

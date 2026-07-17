@@ -371,3 +371,6 @@
 | US0210 | APPROVE | qa-adversarial-full-diff-review | claude-opus-4-8 | 2026-07-17 | Spec-truth claim verified against shipped source in the closing adversarial full-diff review; APPROVE after the sprint-level MAJOR/MINOR fixes |
 | US0211 | APPROVE | qa-adversarial-full-diff-review | claude-opus-4-8 | 2026-07-17 | Spec-truth claim verified against shipped source in the closing adversarial full-diff review; APPROVE after the sprint-level MAJOR/MINOR fixes |
 | US0212 | APPROVE | qa-adversarial-full-diff-review | claude-opus-4-8 | 2026-07-17 | Spec-truth claim verified against shipped source in the closing adversarial full-diff review; APPROVE after the sprint-level MAJOR/MINOR fixes |
+| US0258 | APPROVE | independent-critic-a5444324 | sprint-author-fable5-RUN01KXRMQT | 2026-07-17 | v3 inbox lane now machine-guarded (was prose-only); pre-existing CURRENT\_SCHEMA=2 filed BG0189 |
+| US0259 | APPROVE | independent-critic-a5444324 | sprint-author-fable5-RUN01KXRMQT | 2026-07-17 | v3 inbox lane now machine-guarded (was prose-only); pre-existing CURRENT\_SCHEMA=2 filed BG0189 |
+| US0260 | APPROVE | independent-critic-a5444324 | sprint-author-fable5-RUN01KXRMQT | 2026-07-17 | v3 inbox lane now machine-guarded (was prose-only); pre-existing CURRENT\_SCHEMA=2 filed BG0189 |

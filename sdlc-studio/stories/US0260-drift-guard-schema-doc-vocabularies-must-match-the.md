@@ -1,13 +1,14 @@
 # US0260: Drift guard: schema doc vocabularies must match the enforcing code
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** RFC0047
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_schema_contract.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_schema_contract.py, CHANGELOG.md
 > **Epic:** EP0084
 > **Points:** 3
+> **Depends on:** US0258, US0259
 
 ## User Story
 
@@ -27,6 +28,7 @@ The guard parses the contract document's declared vocabularies and compares them
 - **When** the guard test runs
 - **Then** every status the code enforces appears in the doc and the doc lists no status the code does not know - set equality, with a diff in the failure message naming what drifted
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_schema_contract.py::StatusVocabularyContractTests
+- **Verified:** yes (2026-07-17)
 
 ### AC2: Version stamp agreement is a standing gate
 
@@ -34,6 +36,7 @@ The guard parses the contract document's declared vocabularies and compares them
 - **When** the guard test runs
 - **Then** the two values are equal, so a version bump that touches only one surface fails the suite
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_schema_contract.py::VersionStampContractTests
+- **Verified:** yes (2026-07-17)
 
 ### AC3: The guard cannot pass vacuously
 
@@ -41,6 +44,7 @@ The guard parses the contract document's declared vocabularies and compares them
 - **When** the guard test runs
 - **Then** it fails with a message saying the contract surface could not be located - extraction is asserted non-empty before any comparison
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_schema_contract.py::ParserHonestyTests
+- **Verified:** yes (2026-07-17)
 
 ### AC4: The guard runs in the standard suite with the rest of the skill tests
 
@@ -48,6 +52,7 @@ The guard parses the contract document's declared vocabularies and compares them
 - **When** the standard discovery gate runs
 - **Then** the guard is collected and passes as part of the ordinary suite
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p "test_schema_contract.py"
+- **Verified:** yes (2026-07-17)
 
 ### AC5: The change is recorded in the changelog
 
@@ -55,6 +60,7 @@ The guard parses the contract document's declared vocabularies and compares them
 - **When** CHANGELOG.md is read
 - **Then** the [Unreleased] section records the schema-contract drift guard
 - **Verify:** grep "test_schema_contract" CHANGELOG.md
+- **Verified:** yes (2026-07-17)
 
 ## Revision History
 
@@ -62,3 +68,4 @@ The guard parses the contract document's declared vocabularies and compares them
 | --- | --- | --- |
 | 2026-07-17 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-17 | sdlc-studio | ACs groomed: 5 executable ACs; named test classes per AC; vacuous-pass honesty AC |
+| 2026-07-17 | sdlc-studio | Sprint groom: Affects +CHANGELOG.md (AC5); Depends on US0258, US0259 (its guard asserts against both outputs) |

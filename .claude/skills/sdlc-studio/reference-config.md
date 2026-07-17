@@ -530,6 +530,27 @@ created_at: 2026-01-15T09:00:00Z
 | `skill_version` | SDLC Studio version |
 | `created_at` | When project was initialised |
 
+### Schema version stamp {#schema-version}
+
+`schema_version` is also the **public artefact-format contract stamp**, documented as a
+contract in [`reference-schema.md`](reference-schema.md). External tooling that reads the
+artefact tree uses a project's own `schema_version` (in `sdlc-studio/.config.yaml`) to pin
+which schema its files are in, so a format change cannot silently break a consumer. Two skill
+files set the value's provenance:
+
+- **New projects are stamped the current version** (schema 3) from `templates/config.yaml` at
+  init - ULID ids and the v3 enforcement lanes.
+- **A project that declares no `schema_version` falls back to `2`** from `config-defaults.yaml`
+  (the skill defaults) - which is why a legacy workspace created before the stamp reads as v2.
+  A project is never auto-flipped; it moves only when upgraded explicitly.
+
+- **`migrate` is what changes it.** The value moves when a migration runs (`migrate_v3`
+  stamps `schema_version: 3` after converting the tree); the compatibility policy governs the
+  bump (additive = minor, rename/removal = major with a migrate path). See
+  [`reference-schema.md`](reference-schema.md) for the policy and the six contracted surfaces.
+- **Hand-editing it migrates nothing.** Editing the key does not convert any file on disk; it
+  only mislabels the workspace. Change the format with `migrate`, never by editing the stamp.
+
 ### Schema v3 triage lane {#triage-vocab}
 
 Under `schema_version: 3`, findings (bug/cr/rfc) gain an `inbox` triage lane prepended to

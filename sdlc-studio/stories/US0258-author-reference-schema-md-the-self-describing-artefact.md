@@ -1,6 +1,6 @@
 # US0258: Author reference-schema.md: the self-describing artefact schema contract
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** RFC0047
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
@@ -27,6 +27,7 @@ RFC0047 option B. The contract covers exactly six surfaces, each already enforce
 - **When** a consumer opens `.claude/skills/sdlc-studio/reference-schema.md`
 - **Then** the masthead states the current schema version (the same value US0259 puts in config) and that the doc is the public artefact-format contract
 - **Verify:** grep "Schema version" .claude/skills/sdlc-studio/reference-schema.md
+- **Verified:** yes (2026-07-17)
 
 ### AC2: All six contract surfaces are present as fixed section anchors
 
@@ -34,6 +35,7 @@ RFC0047 option B. The contract covers exactly six surfaces, each already enforce
 - **When** its level-two headings are listed
 - **Then** the six surfaces appear with exactly these names: `Id Grammar`, `Directory Layout`, `Header Fields`, `Status Vocabulary`, `Verify DSL`, `Index Format`
 - **Verify:** shell test "$(grep -cE '^## (Id Grammar|Directory Layout|Header Fields|Status Vocabulary|Verify DSL|Index Format)' .claude/skills/sdlc-studio/reference-schema.md)" -eq 6
+- **Verified:** yes (2026-07-17)
 
 ### AC3: The binding rule and the two supporting rules are ratified in the text
 
@@ -41,6 +43,7 @@ RFC0047 option B. The contract covers exactly six surfaces, each already enforce
 - **When** a consumer reads its opening section
 - **Then** it names `validate.py` as the executable definition of the contract, states that health judgements stay upstream (consumers run the skill's conformance tooling, never re-implement it), and states that `_index.md` is derived output whose only write path is the skill's scripts
 - **Verify:** grep "executable definition" .claude/skills/sdlc-studio/reference-schema.md
+- **Verified:** yes (2026-07-17)
 
 ### AC4: .local/ is explicitly uncontracted
 
@@ -48,6 +51,7 @@ RFC0047 option B. The contract covers exactly six surfaces, each already enforce
 - **When** a consumer looks for runtime evidence JSON (sprint plan, verify reports, telemetry)
 - **Then** a scope statement says `.local/` is uncontracted in schema v1 and names a future annex as the path for evidence consumers (RFC0047 D2)
 - **Verify:** grep "uncontracted" .claude/skills/sdlc-studio/reference-schema.md
+- **Verified:** yes (2026-07-17)
 
 ### AC5: The document is catalogued and passes the repo gates
 
@@ -55,6 +59,7 @@ RFC0047 option B. The contract covers exactly six surfaces, each already enforce
 - **When** the repo guards run
 - **Then** `help/references.md` carries its row, the file is within the standard reference line budget, and every link in it resolves
 - **Verify:** shell grep -q "reference-schema.md" .claude/skills/sdlc-studio/help/references.md && python3 tools/check_budgets.py && python3 tools/check_links.py
+- **Verified:** yes (2026-07-17)
 
 ### AC6: The change is recorded in the changelog
 
@@ -62,6 +67,7 @@ RFC0047 option B. The contract covers exactly six surfaces, each already enforce
 - **When** CHANGELOG.md is read
 - **Then** the [Unreleased] section records the new reference-schema.md contract
 - **Verify:** grep "reference-schema" CHANGELOG.md
+- **Verified:** yes (2026-07-17)
 
 ## Revision History
 

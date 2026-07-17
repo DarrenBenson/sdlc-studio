@@ -27,3 +27,6 @@
 | US0210 | Darren Benson (operator) | - | claude-opus-4-8 | 2026-07-17 | - |
 | US0211 | Darren Benson (operator) | - | claude-opus-4-8 | 2026-07-17 | - |
 | US0212 | Darren Benson (operator) | - | claude-opus-4-8 | 2026-07-17 | - |
+| US0258 | Darren (operator) | - | sprint-author-fable5-RUN01KXRMQT | 2026-07-17 | Reviewer of record: signed off via sprint sign-off after the independent adversarial review's round-2 APPROVE (blocking v2/v3 error caught and fixed). EP0084 green. |
+| US0259 | Darren (operator) | - | sprint-author-fable5-RUN01KXRMQT | 2026-07-17 | Reviewer of record: signed off via sprint sign-off after the independent adversarial review's round-2 APPROVE (blocking v2/v3 error caught and fixed). EP0084 green. |
+| US0260 | Darren (operator) | - | sprint-author-fable5-RUN01KXRMQT | 2026-07-17 | Reviewer of record: signed off via sprint sign-off after the independent adversarial review's round-2 APPROVE (blocking v2/v3 error caught and fixed). EP0084 green. |

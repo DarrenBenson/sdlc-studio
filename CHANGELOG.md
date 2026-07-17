@@ -21,6 +21,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`reference-schema.md`: the artefact format is now a versioned public contract (EP0084,
+  RFC0047).** A single self-describing reference documents the six on-disk surfaces external
+  tooling reads - id grammar, directory layout, per-type header fields, status vocabulary and
+  transition gates, the Verify-line DSL, and the derived index format - so a consumer parses the
+  `sdlc-studio/` tree against a promised contract instead of vendoring field knowledge. It names
+  `validate.py` as the executable definition, states that health judgements stay upstream and
+  that `_index.md` is derived output, and marks `.local/` runtime JSON explicitly uncontracted
+  (US0258). The `schema_version` config key is the contract stamp a consumer pins (defaulted in
+  `config-defaults.yaml`, documented in `reference-config.md`), with a compatibility policy -
+  additive changes bump the minor version, renames/removals bump the major with a `migrate` path
+  (US0259). A drift guard (`scripts/tests/test_schema_contract.py`) fails the suite when the
+  documented status vocabulary or the version stamp diverges from what the code enforces, so the
+  published contract cannot rot silently (US0260).
 - **`refine apply --into EPxxxx`: share a batch epic instead of minting singletons (CR0322,
   RFC0045).** A small request can decompose its stories INTO an existing open epic - a shared themed
   container - rather than accreting a one-story epic each. The joining request's `Decomposed-into:`
