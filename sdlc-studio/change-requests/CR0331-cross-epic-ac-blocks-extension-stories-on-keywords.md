@@ -1,6 +1,7 @@
 # CR-0331: cross-epic-ac blocks extension stories on keywords owned by a terminal epic
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Superseded-by:** BG0184 (refiled as a Bug - silent planning-gate failure)
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

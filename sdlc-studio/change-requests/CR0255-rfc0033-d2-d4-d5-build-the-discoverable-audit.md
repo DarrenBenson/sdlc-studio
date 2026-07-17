@@ -1,6 +1,7 @@
 # CR-0255: RFC0033 D2/D4/D5: build the discoverable audit command (RFC0002's accepted, unshipped command)
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Superseded-by:** CR0256 (discoverability shipped via BG0174; residual folded into CR0256)
 > **Size:** L
 > **Priority:** P2
 > **Type:** Feature

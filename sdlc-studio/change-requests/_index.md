@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 43 |
+| Proposed | 34 |
 | Approved | 0 |
 | In Progress | 1 |
 | Complete | 288 |
 | Rejected | 0 |
-| Deferred | 0 |
-| Superseded | 9 |
+| Deferred | 5 |
+| Superseded | 13 |
 | Blocked | 0 |
 | **Total** | **341** |
 
@@ -75,8 +75,8 @@
 | [CR-0251](CR0251-verify-ac-run-the-natural-file-flag-does.md) | verify_ac run: the natural --file flag does not exist (friction: it is --story) | Complete | P4 | Improvement | 2026-07-14 | -- |
 | [CR-0252](CR0252-refresh-prd-trd-tsd-to-the-v4-feature.md) | Refresh PRD/TRD/TSD to the v4 feature set (specs are self-declared v2.0.0 against a v4.1.0 product) | Complete | P1 | Improvement | 2026-07-14 | -- |
 | [CR-0253](CR0253-the-sprint-close-review-is-not-gated-make.md) | The sprint-close review is not gated - make review currency a hard gate like the retro | Complete | P1 | Improvement | 2026-07-14 | -- |
-| [CR-0254](CR0254-rfc0033-d1-rename-the-deterministic-audit-scripts-to.md) | RFC0033 D1: rename the deterministic audit scripts to free the audit stem | Proposed | P2 | Improvement | 2026-07-14 | -- |
-| [CR-0255](CR0255-rfc0033-d2-d4-d5-build-the-discoverable-audit.md) | RFC0033 D2/D4/D5: build the discoverable audit command (RFC0002's accepted, unshipped command) | Proposed | P2 | Feature | 2026-07-14 | -- |
+| [CR-0254](CR0254-rfc0033-d1-rename-the-deterministic-audit-scripts-to.md) | RFC0033 D1: rename the deterministic audit scripts to free the audit stem | Deferred | P2 | Improvement | 2026-07-14 | -- |
+| [CR-0255](CR0255-rfc0033-d2-d4-d5-build-the-discoverable-audit.md) | RFC0033 D2/D4/D5: build the discoverable audit command (RFC0002's accepted, unshipped command) | Superseded | P2 | Feature | 2026-07-14 | -- |
 | [CR-0256](CR0256-rfc0033-d3-retire-review-generate-fold-into-audit.md) | RFC0033 D3: retire review generate - fold into audit --profile repo and remove it | Proposed | P2 | Improvement | 2026-07-14 | -- |
 | [CR-0257](CR0257-sprint-sizing-ignores-the-captured-effort-estimate-and.md) | Sprint sizing ignores the captured Effort estimate, and bugs carry no size at all | Complete | P3 | Improvement | 2026-07-14 | -- |
 | [CR-0258](CR0258-rfc0034-d4-keystone-the-retro-records-estimate-vs.md) | RFC0034 D4 (keystone): the retro records estimate-vs-actual size and accumulates velocity | Complete | P2 | Feature | 2026-07-14 | -- |
@@ -105,7 +105,7 @@
 | [CR-0281](CR0281-prd-coverage-clause-promises-exhaustive-unreleased-marking-but.md) | PRD coverage clause promises exhaustive [Unreleased] marking but roughly 14 committed Done epics of shipped features are absent from the feature tables | Proposed | High | docs | 2026-07-16 | -- |
 | [CR-0282](CR0282-prd-security-nfr-and-trd-script-contract-rule.md) | PRD security NFR and TRD script-contract rule 6/threat model deny the shipped network surface: a default-on GitHub phone-home via urllib and sprint plan's git fetch | Proposed | High | docs | 2026-07-16 | -- |
 | [CR-0283](CR0283-story-workflows-read-only-the-legacy-personas-md.md) | Story workflows read only the legacy personas.md; the Cooper design registry (personas/) with the declared Primary is unreachable from story generation | Complete | High | Improvement | 2026-07-16 | -- |
-| [CR-0284](CR0284-the-velocity-record-died-at-retro0028-sprints-close.md) | The velocity record died at RETRO0028: sprints close 'not-yet-captured', the enforced close-down never checks the accuracy/velocity write, and plans still quote the 25k seed whose only out-of-sample test failed at 0.44x | Proposed | High | process | 2026-07-16 | -- |
+| [CR-0284](CR0284-the-velocity-record-died-at-retro0028-sprints-close.md) | The velocity record died at RETRO0028: sprints close 'not-yet-captured', the enforced close-down never checks the accuracy/velocity write, and plans still quote the 25k seed whose only out-of-sample test failed at 0.44x | Deferred | High | process | 2026-07-16 | -- |
 | [CR-0285](CR0285-prd-section-9-configuration-reference-is-wrong-on.md) | PRD Section 9 configuration reference is wrong on four counts: gate defaults inverted, a retired env var documented as live, four live env vars omitted, and two_backlog.enforce undocumented everywhere | Proposed | High | docs | 2026-07-16 | -- |
 | [CR-0286](CR0286-trd-adr-008-sells-the-ulid-id-scheme.md) | TRD ADR-008 sells the ULID id scheme as absolutely collision-proof; the implementation is 2 random chars (~1/1024) in a ~17-minute timestamp bucket with the cross-machine case unguarded | Proposed | Medium | docs | 2026-07-16 | -- |
 | [CR-0287](CR0287-tsd-denies-the-blocking-ci-gates-that-exist.md) | TSD denies the blocking CI gates that exist: coverage ('not wired into CI' vs a blocking 80% gate) and security ('no dedicated scanner' vs a blocking bandit step) | Proposed | Medium | docs | 2026-07-16 | -- |
@@ -140,9 +140,9 @@
 | [CR-0316](CR0316-critic-py-brief-emit-the-seat-review-prompt.md) | critic.py brief: emit the seat-review prompt deterministically and parse the returned verdict block - the critic ceremony is re-derived by hand every unit | Complete | Medium | Improvement | 2026-07-16 | -- |
 | [CR-0317](CR0317-a-shared-test-module-loader-for-scripts-tests.md) | A shared test-module loader for scripts/tests: forty files duplicate the importlib spec dance and every new module re-trips on it | Complete | Low | Improvement | 2026-07-16 | -- |
 | [CR-0318](CR0318-the-reviewer-of-record-sign-off-must-carry.md) | The reviewer-of-record sign-off must carry a decision brief: what shipped, what the critics rejected, gate and cost evidence - inline in the prompt, with hold and delegate paths | Superseded | High | process | 2026-07-16 | -- |
-| [CR-0319](CR0319-cut-5-0-0-the-release-dod-for.md) | Cut 5.0.0: the release DoD for the sizing + two-backlog model (RFC0040 close-out) | Proposed | High | process | 2026-07-16 | -- |
+| [CR-0319](CR0319-cut-5-0-0-the-release-dod-for.md) | Cut 5.0.0: the release DoD for the sizing + two-backlog model (RFC0040 close-out) | Deferred | High | process | 2026-07-16 | -- |
 | [CR-0320](CR0320-rolling-multi-sprint-policy-run-n-sprint-cycles.md) | Rolling multi-sprint policy: run N sprint cycles unattended under a standing policy, plan regenerated at each boundary (RFC0036 D1) | Proposed | Medium | Feature | 2026-07-16 | -- |
-| [CR-0321](CR0321-lane-partitioning-allocate-backlog-lanes-by-shared-file.md) | Lane partitioning: allocate backlog lanes by shared-file cluster for multi-team delivery (RFC0036 follow-up) | Proposed | Low | Feature | 2026-07-16 | -- |
+| [CR-0321](CR0321-lane-partitioning-allocate-backlog-lanes-by-shared-file.md) | Lane partitioning: allocate backlog lanes by shared-file cluster for multi-team delivery (RFC0036 follow-up) | Deferred | Low | Feature | 2026-07-16 | -- |
 | [CR-0322](CR0322-refine-into-epxxxx-small-requests-decompose-into-a.md) | refine --into EPxxxx: small requests decompose into a shared batch epic instead of minting singletons (RFC0045 D1) | Proposed | Medium | Improvement | 2026-07-16 | -- |
 | [CR-0323](CR0323-build-the-two-role-review-gate-adversarial-evidence.md) | Build the two-role review gate: adversarial evidence + non-author principal sign-off with named-delegate chain (RFC0044 D1+D3, integrates CR0318) | Complete | High | Feature | 2026-07-16 | -- |
 | [CR-0324](CR0324-dor-dod-artefacts-check-id-registry-the-two.md) | DoR/DoD artefacts + check-id registry: the two editable documents with a tagged machine-checkable subset (RFC0043 slice 1) | Complete | Medium | Feature | 2026-07-16 | -- |
@@ -152,17 +152,17 @@
 | [CR-0328](CR0328-sprint-close-orchestrator-the-twelve-step-close-ceremony.md) | sprint close orchestrator: the twelve-step close ceremony as one deterministic command ending in the decision brief | Complete | High | Feature | 2026-07-16 | -- |
 | [CR-0329](CR0329-critic-brief-rejoinder-the-re-verdict-loop-s.md) | critic brief --rejoinder: the re-verdict loop's scaffolding emitted deterministically from the prior verdict | Complete | Medium | Improvement | 2026-07-16 | -- |
 | [CR-0330](CR0330-tools-forward-port-sh-the-dev-repo-rsync.md) | tools/forward-port.sh: the dev-repo rsync to the installed copy as a guarded one-liner | Complete | Low | Improvement | 2026-07-16 | -- |
-| [CR-0331](CR0331-cross-epic-ac-blocks-extension-stories-on-keywords.md) | cross-epic-ac blocks extension stories on keywords owned by a terminal epic | Proposed | Medium | Improvement | 2026-07-16 | -- |
-| [CR-0332](CR0332-dor-dod-near-miss-check-tags-must-error.md) | DoR/DoD near-miss check tags must error, not silently parse as no tag | Proposed | Medium | Improvement | 2026-07-17 | -- |
+| [CR-0331](CR0331-cross-epic-ac-blocks-extension-stories-on-keywords.md) | cross-epic-ac blocks extension stories on keywords owned by a terminal epic | Superseded | Medium | Improvement | 2026-07-16 | -- |
+| [CR-0332](CR0332-dor-dod-near-miss-check-tags-must-error.md) | DoR/DoD near-miss check tags must error, not silently parse as no tag | Superseded | Medium | Improvement | 2026-07-17 | -- |
 | [CR-0333](CR0333-sprint-close-phase-2-fan-the-operator-sign.md) | sprint close phase 2: fan the operator sign-off into the terminal cascade | Proposed | High | Improvement | 2026-07-17 | -- |
 | [CR-0334](CR0334-verify-ac-freshness-should-fingerprint-the-ac-section.md) | verify_ac freshness should fingerprint the AC section, not the file mtime | Proposed | Medium | Improvement | 2026-07-17 | -- |
 | [CR-0335](CR0335-review-close-should-index-the-rv-it-stamps.md) | review close should index the RV it stamps and name the commit remedy when the anchor is uncommitted | Proposed | Medium | Improvement | 2026-07-17 | -- |
 | [CR-0336](CR0336-gate-mutation-lane-should-surface-bg0180-s-refused.md) | Gate mutation lane should surface BG0180's refused state | Proposed | Medium | Improvement | 2026-07-17 | -- |
-| [CR-0337](CR0337-import-test-coverage-for-autosprint-and-xrepo-bg0162.md) | Import/test coverage for autosprint and xrepo (BG0162 rider) | Proposed | Low | Improvement | 2026-07-17 | -- |
+| [CR-0337](CR0337-import-test-coverage-for-autosprint-and-xrepo-bg0162.md) | Import/test coverage for autosprint and xrepo (BG0162 rider) | Deferred | Low | Improvement | 2026-07-17 | -- |
 | [CR-0338](CR0338-a-global-doc-coverage-failure-reports-as-n.md) | A global doc-coverage failure reports as N per-unit 'missing documented', not one global-floor finding | Proposed | Medium | Improvement | 2026-07-17 | -- |
 | [CR-0339](CR0339-bounded-mutation-should-bias-its-sample-toward-changed.md) | Bounded mutation should bias its sample toward changed lines, not the file head | Proposed | Medium | Improvement | 2026-07-17 | -- |
 | [CR-0340](CR0340-gate-track-test-suite-runtime-warn-before-a.md) | Gate: track test-suite runtime, warn before a long run, and skip the unit suite for test-irrelevant changes | Proposed | Medium | Improvement | 2026-07-17 | -- |
-| [CR-0341](CR0341-close-review-current-distinguish-a-freshly-written-but.md) | Close review-current: distinguish a freshly-written-but-uncommitted LATEST.md from a stale one | Proposed | Low | Improvement | 2026-07-17 | -- |
+| [CR-0341](CR0341-close-review-current-distinguish-a-freshly-written-but.md) | Close review-current: distinguish a freshly-written-but-uncommitted LATEST.md from a stale one | Superseded | Low | Improvement | 2026-07-17 | -- |
 
 ## Archived Releases
 

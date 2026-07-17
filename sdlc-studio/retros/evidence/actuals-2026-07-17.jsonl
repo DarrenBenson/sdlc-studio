@@ -54,3 +54,7 @@
 {"id": "BG0178", "type": "bug", "model": "claude-opus-4-8", "project": "sdlc-studio"}
 {"id": "BG0179", "type": "bug", "model": "claude-opus-4-8", "project": "sdlc-studio"}
 {"id": "BG0180", "type": "bug", "model": "claude-opus-4-8", "project": "sdlc-studio"}
+{"id": "CR0341", "type": "cr", "project": "sdlc-studio"}
+{"id": "CR0255", "type": "cr", "project": "sdlc-studio"}
+{"id": "CR0331", "type": "cr", "project": "sdlc-studio"}
+{"id": "CR0332", "type": "cr", "project": "sdlc-studio"}

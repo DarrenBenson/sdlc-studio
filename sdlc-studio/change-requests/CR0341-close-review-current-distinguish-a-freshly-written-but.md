@@ -1,6 +1,7 @@
 # CR-0341: Close review-current: distinguish a freshly-written-but-uncommitted LATEST.md from a stale one
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Superseded-by:** CR0335 (folded in as an AC)
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** S

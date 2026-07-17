@@ -1,6 +1,7 @@
 # CR-0332: DoR/DoD near-miss check tags must error, not silently parse as no tag
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Superseded-by:** BG0185 (refiled as a Bug - silent control failure)
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S
