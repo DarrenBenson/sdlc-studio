@@ -47,7 +47,7 @@ def ensure_log(root: Path | str) -> bool:
     text = re.sub(r"^<!--.*?-->\n+", "", tmpl.read_text(encoding="utf-8"),
                   count=1, flags=re.DOTALL)
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(text, encoding="utf-8")
+    sdlc_md.atomic_write(p, text)
     return True
 
 
@@ -93,32 +93,38 @@ def _flip_to_superseded(lines: list[str], target: str) -> str | None:
 def add(root: Path | str, decision: str, rationale: str, status: str = "accepted",
         supersedes: str = "", today: str | None = None) -> dict:
     root = Path(root)
-    ensure_log(root)
     p = _log_path(root)
-    lines = p.read_text(encoding="utf-8").splitlines()
-    # Supersession is only real if the named decision's own row is flipped to `superseded`
-    # in the same edit - otherwise the log carries two contradictory `accepted` rows.
-    # Fail loud on an unknown id: without this a typo in --supersedes is silently recorded.
-    sup_did = ""
-    if supersedes:
-        sup_did = _norm_did(supersedes)
-        if sup_did is None or _flip_to_superseded(lines, sup_did) is None:
-            raise ValueError(
-                f"--supersedes: no decision {supersedes!r} in the log - refusing to record a "
-                "dangling supersession (a typo would otherwise be silently accepted)")
-    did = _next_id("\n".join(lines))
-    when = today or date.today().isoformat()
-    cells = [did, decision.replace("|", "\\|"), rationale.replace("|", "\\|"),
-             status, sup_did or "--", when]
-    row = "| " + " | ".join(cells) + " |"
-    # insert after the data-table header+separator (the row carrying the ID column)
-    hdr = next((i for i, ln in enumerate(lines)
-                if ln.strip().startswith("| ID |") or ln.strip().startswith("| ID|")), None)
-    if hdr is None:
-        raise ValueError("decisions.md has no decisions table")
-    last = max((i for i in range(hdr + 2, len(lines)) if _ROW.match(lines[i])), default=hdr + 1)
-    lines.insert(last + 1, row)
-    p.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    # Serialise ensure-log -> read -> allocate -> flip-supersedes -> insert -> write against
+    # concurrent `decisions add` calls, so two writers never scan the same table, mint the same
+    # D-id and clobber each other's row; the write itself is atomic, so a crash mid-write leaves
+    # the previous ledger intact rather than a truncated one. This is a load-bearing shared file
+    # (gate/engagement-floor waivers route through it), held to trd.md rule 5 like every other.
+    with sdlc_md.allocation_lock(root):
+        ensure_log(root)
+        lines = p.read_text(encoding="utf-8").splitlines()
+        # Supersession is only real if the named decision's own row is flipped to `superseded`
+        # in the same edit - otherwise the log carries two contradictory `accepted` rows.
+        # Fail loud on an unknown id: without this a typo in --supersedes is silently recorded.
+        sup_did = ""
+        if supersedes:
+            sup_did = _norm_did(supersedes)
+            if sup_did is None or _flip_to_superseded(lines, sup_did) is None:
+                raise ValueError(
+                    f"--supersedes: no decision {supersedes!r} in the log - refusing to record a "
+                    "dangling supersession (a typo would otherwise be silently accepted)")
+        did = _next_id("\n".join(lines))
+        when = today or date.today().isoformat()
+        cells = [did, decision.replace("|", "\\|"), rationale.replace("|", "\\|"),
+                 status, sup_did or "--", when]
+        row = "| " + " | ".join(cells) + " |"
+        # insert after the data-table header+separator (the row carrying the ID column)
+        hdr = next((i for i, ln in enumerate(lines)
+                    if ln.strip().startswith("| ID |") or ln.strip().startswith("| ID|")), None)
+        if hdr is None:
+            raise ValueError("decisions.md has no decisions table")
+        last = max((i for i in range(hdr + 2, len(lines)) if _ROW.match(lines[i])), default=hdr + 1)
+        lines.insert(last + 1, row)
+        sdlc_md.atomic_write(p, "\n".join(lines) + "\n")
     return {"id": did, "status": status, "date": when}
 
 
@@ -177,7 +183,7 @@ def backfill_superseded(root: Path | str) -> int:
                 targets.add(nid)
     changed = sum(1 for t in targets if _flip_to_superseded(lines, t) == "changed")
     if changed:
-        p.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        sdlc_md.atomic_write(p, "\n".join(lines) + "\n")
     return changed
 
 

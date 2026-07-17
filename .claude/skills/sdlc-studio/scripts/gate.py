@@ -269,6 +269,12 @@ def _close_owed(root: str) -> dict:
     control that fires only when someone remembers. Now the release gate can see a skipped close."""
     import close_owed  # crash contained by BLOCKING_ON_ERROR: an unproven bound guard must fail loud
     report = close_owed.owed(Path(root))
+    if report.get("corrupt"):
+        return {"count": 1, "blocking": True,
+                "detail": (f"close-owed baseline is CORRUPT ({report.get('error', 'unreadable')}) - "
+                           f"refusing to pass a close gate over an unreadable baseline that silently "
+                           f"disarms the close-down; repair .close-owed-baseline.json (restore from "
+                           f"git), do NOT re-stamp it")}
     owed = report["owed"]
     if not owed:
         state = "no baseline stamped yet" if not report["baselined"] else "none owed"
@@ -399,6 +405,17 @@ DEFAULT_CHECKS = {
 }
 
 
+def _lessons_loop_blocking(root: str) -> bool:
+    """Whether the bound close lessons/retro lanes BLOCK, or merely report. The documented
+    opt-out `lessons.loop: judgement` makes the whole retro/lessons close set advisory (ADR-010);
+    any other value (default `enforce`) blocks. One derivation for all three lanes - retro,
+    lessons-summary and lessons-validity - so the key covers exactly what the docs say it covers,
+    never a subset an operator has to discover by trial."""
+    import config
+    mode = str(config.get(root, "lessons.loop", "enforce") or "enforce").strip().lower()
+    return mode != "judgement"
+
+
 def _retro_present(root: str, retro_id: str) -> dict:
     """Blocking close-gate check: the batch's retro must exist AND say something before a
     sprint/review close reports success. Fail-loud per LL0008 - 'unconditional' retro is
@@ -411,13 +428,11 @@ def _retro_present(root: str, retro_id: str) -> dict:
     delegated to `retro.py validate`, which interrogates the CONTENT: the required
     sections, at least one real lesson, and a disposition for every finding.
     """
-    import config
     import retro
     # The documented opt-out (`lessons.loop: judgement`), mirroring the engagement floor: the
     # lane still REPORTS, it just does not block. An opt-out that is documented but unread
     # would be the very disease this loop exists to cure.
-    mode = str(config.get(root, "lessons.loop", "enforce") or "enforce").strip().lower()
-    blocking = mode != "judgement"
+    blocking = _lessons_loop_blocking(root)
     res = retro.validate(root, retro_id)
     if res["ok"]:
         n_l, n_f = len(res["lessons"]), len(res["findings"])
@@ -511,13 +526,15 @@ def _lessons_summary(root: str) -> dict:
     to forge; the only way to green is for the file to say what the log implies.
     """
     import lessons
+    blocking = _lessons_loop_blocking(root)
     status = lessons.summary_status(root)
     if not status["applicable"]:
-        return {"count": 0, "blocking": True, "detail": status["reason"]}
+        return {"count": 0, "blocking": blocking, "detail": status["reason"]}
     if not status["stale"]:
-        return {"count": 0, "blocking": True, "detail": status["reason"]}
+        return {"count": 0, "blocking": blocking, "detail": status["reason"]}
     n = len(status["added"]) + len(status["removed"]) or 1
-    return {"count": n, "blocking": True, "detail": status["reason"]}
+    suffix = "" if blocking else " (advisory: lessons.loop is judgement)"
+    return {"count": n, "blocking": blocking, "detail": status["reason"] + suffix}
 
 
 def _lessons_validity(root: str) -> dict:
@@ -528,11 +545,13 @@ def _lessons_validity(root: str) -> dict:
     legacy log vacuously - a check that catches only the total case is not a check.
     """
     import lessons
+    blocking = _lessons_loop_blocking(root)
     status = lessons.validity_status(root)
     if not status["applicable"]:
-        return {"count": 0, "blocking": True, "detail": status["reason"]}
+        return {"count": 0, "blocking": blocking, "detail": status["reason"]}
     n = len(status["expired"]) + len(status["unstamped"])
-    return {"count": n, "blocking": True, "detail": status["reason"]}
+    suffix = "" if blocking or not n else " (advisory: lessons.loop is judgement)"
+    return {"count": n, "blocking": blocking, "detail": status["reason"] + suffix}
 
 
 # The close-gate lanes, bound as one set: the sprint close is a single obligation (write the
@@ -865,7 +884,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--require-close", dest="require_close", action="store_true",
                    help="Push/release guard: fail if any delivery unit reached terminal since the "
                         "close-owed baseline with no retro accounting for it (a skipped close-down). "
-                        "The `close-owed` lane WARNS on every gate by default; this makes it block. "
+                        "The `close-owed` lane is bound to this flag only - the plain gate never "
+                        "runs it; the soft nudge lives on `status`/`hint`. "
                         "Deselecting the bound `close-owed` lane under it is refused")
     p.add_argument("--release", action="store_true",
                    help="Pre-tag gate: also EXECUTE every story's Verify: expression and fail "

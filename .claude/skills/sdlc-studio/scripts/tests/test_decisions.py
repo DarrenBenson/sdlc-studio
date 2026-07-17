@@ -6,11 +6,13 @@ import importlib.util
 import io
 import sys
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 
 SCR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCR))
+from lib import sdlc_md  # noqa: E402
 
 
 def _load(name):
@@ -230,6 +232,80 @@ class WaiverTests(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 with contextlib.redirect_stderr(io.StringIO()):
                     decisions.main(["waive", "--rationale", "x", "--root", d])   # neither given
+
+
+class ConcurrencySafetyTests(unittest.TestCase):
+    """BG0154: the decisions ledger is a load-bearing shared file, so its writes must go
+    through sdlc_md.atomic_write and its id allocation + insert must be serialised by
+    sdlc_md.allocation_lock - the same guarantee trd.md rule 5 makes for every shared file."""
+
+    def test_add_takes_the_allocation_lock(self) -> None:
+        entered = []
+        real_lock = sdlc_md.allocation_lock
+
+        @contextlib.contextmanager
+        def _spy(root, *a, **k):
+            entered.append(root)
+            with real_lock(root, *a, **k):
+                yield
+
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            orig = sdlc_md.allocation_lock
+            sdlc_md.allocation_lock = _spy
+            try:
+                decisions.add(root, "A", "r")
+            finally:
+                sdlc_md.allocation_lock = orig
+        self.assertTrue(entered, "add must take sdlc_md.allocation_lock around allocate+insert")
+
+    def test_add_writes_atomically(self) -> None:
+        # a crash mid-write must leave the previous ledger intact, not a truncated file.
+        wrote = []
+        real_atomic = sdlc_md.atomic_write
+
+        def _spy(path, text, *a, **k):
+            wrote.append(str(path))
+            return real_atomic(path, text, *a, **k)
+
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            decisions.add(root, "A", "r")           # seed the ledger
+            orig = sdlc_md.atomic_write
+            sdlc_md.atomic_write = _spy
+            try:
+                decisions.add(root, "B", "r")
+            finally:
+                sdlc_md.atomic_write = orig
+        self.assertTrue(any(decisions.LOG_REL.split("/")[-1] in w for w in wrote),
+                        "add must route the ledger write through sdlc_md.atomic_write")
+
+    def test_concurrent_add_mints_distinct_ids(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            decisions.ensure_log(root)
+            ids: list[str] = []
+            errors: list[Exception] = []
+            lock = threading.Lock()
+
+            def worker(i: int) -> None:
+                try:
+                    r = decisions.add(root, f"decision {i}", "r")
+                    with lock:
+                        ids.append(r["id"])
+                except Exception as e:  # noqa: BLE001 - collect for the assertion
+                    with lock:
+                        errors.append(e)
+
+            threads = [threading.Thread(target=worker, args=(i,)) for i in range(8)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+            self.assertEqual(errors, [], f"concurrent add raised: {errors}")
+            self.assertEqual(len(set(ids)), 8, f"duplicate D-ids minted: {sorted(ids)}")
+            rows = decisions.list_decisions(root)
+            self.assertEqual(len(rows), 8, "a concurrent write clobbered a row")
 
 
 if __name__ == "__main__":

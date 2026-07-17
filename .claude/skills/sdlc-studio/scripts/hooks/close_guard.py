@@ -78,6 +78,16 @@ def decide(event: dict) -> dict | None:
         report = close_owed.owed(root)
     except Exception:  # noqa: BLE001 - a detector error must never block a turn
         return None
+    if report.get("corrupt"):
+        # A present-but-corrupt baseline is the one case that DOES block: it silently disarms the
+        # close-down, so allowing it would be the exact failure this hook exists to prevent. Direct
+        # a repair, never a re-stamp (re-stamping would forgive the owed units).
+        return {"decision": "block", "reason": (
+            f"The close-owed baseline is corrupt: {report.get('error', 'unreadable baseline')}. "
+            f"A damaged baseline silently disarms the mandated close-down, so this turn is held "
+            f"until it is repaired. Restore .close-owed-baseline.json from git (or fix the JSON). "
+            f"Do NOT run `close_owed.py baseline` - re-stamping would grandfather the very units "
+            f"that owe a close.")}
     if not report.get("baselined") or not report.get("owed"):
         return None
     ids = [cid for cid, _ in report["owed"]]

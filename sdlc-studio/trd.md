@@ -238,7 +238,8 @@ Every script in `scripts/` obeys a fixed contract (`reference-scripts.md`):
    artefact's Status and cascades the epic breakdown; `github_sync.py` writes the
    `GitHub Issue` metadata line; `verify_ac.py` rewrites the `Verified:` line; `migrate_v3.py`
    renames files and rewrites ids/links; `plan.py archive` moves plan files; `lessons.py add
-   --global` writes a lesson. Shared-file writes go through `sdlc_md.atomic_write`
+   --global` writes a lesson; `decisions.py` appends to the decisions ledger. Shared-file
+   writes go through `sdlc_md.atomic_write`
    (temp-then-replace) and id allocation is serialised by `sdlc_md.allocation_lock`, so a
    crash or a concurrent writer never corrupts a shared file. The scripts are NOT read-only
    over the workspace; the guarantee is that every write is tested and bounded.
@@ -875,7 +876,7 @@ exactly like a real plan.
 - *Refuse.*
 
 **Decision:** A unit is **groomed** only when it declares both the files it will touch
-(`Affects:`) and a size (`Effort:` S/M/L, a story's `Points:`, or a review-seat score).
+(`Affects:`) and a size: a story/bug by `Points:`, a CR/RFC/epic by a T-shirt `Size:`.
 With any ungroomed unit in the batch, `sprint plan` exits non-zero and prints **no plan at
 all**, naming each offending unit, what it lacks, and the command that fixes it. The
 planner additionally derives shared-file clusters from the `Affects:` it already parses, so

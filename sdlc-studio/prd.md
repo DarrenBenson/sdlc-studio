@@ -3,7 +3,7 @@
 **Project:** SDLC Studio
 **Version:** 4.1.0
 **Last Updated:** 2026-07-14
-**Status:** Generated (brownfield extraction - awaiting test validation)
+**Status:** Generated (brownfield extraction; epics/stories validated and closed out 2026-07-09, commit 841471e)
 
 > Generated in **Generate mode** by reverse-engineering the skill's own source.
 > This is a migration blueprint: detailed enough to rebuild SDLC Studio on a
@@ -152,12 +152,12 @@ release. Confidence **[HIGH]** unless noted – extracted directly from source. 
 Epic column maps each feature to its owning epic (see `sdlc-studio/epics/`).
 
 > **Complete vs Ready:** these statuses describe the *implementation* - the
-> features ship and work. The generated spec that documents them is tracked
-> separately at epic and story level as **Ready** (awaiting test validation per
-> `reference-philosophy.md`), so a feature can be Complete in code while its
-> extracted spec is not yet Done. **Complete is not the same as calibrated:** the
-> token forecast under "Sizing and velocity" ships and runs, and its prediction is
-> a falsified hypothesis (see §10).
+> features ship and work. The generated spec that documents them was tracked at
+> epic and story level as **Ready** until the test suite validated it against the
+> implementation, at which point the epics and stories were transitioned to **Done**
+> in the verified close-out of 2026-07-09 (commit 841471e). **Complete is not the
+> same as calibrated:** the token forecast under "Sizing and velocity" ships and
+> runs, and its prediction is a falsified hypothesis (see §10).
 >
 > **Location column:** each entry names the reference/help doc and the
 > deterministic script that *backs* the command. The script is the read-only or
@@ -281,7 +281,7 @@ honestly size, so a plan is never false authority over unsized work.
 
 **Acceptance Criteria:**
 
-- [ ] A unit is groomed only when it declares BOTH the files it will touch (`Affects:`) and a size (`Effort:` S/M/L, a story's `Points:`, or a review-seat score).
+- [ ] A unit is groomed only when it declares BOTH the files it will touch (`Affects:`) and a size: a story/bug by `Points:`, a CR/RFC/epic by a T-shirt `Size:`.
 - [ ] With any ungroomed unit in the batch, `sprint plan` exits non-zero and prints NO plan, naming each offending unit, what it lacks, and the command that fixes it.
 - [ ] The planner derives shared-file clusters from `Affects:`, so two units touching the same file are never reported as safely parallel.
 - [ ] `sprint.breakdown: judgement` makes the lane report instead of block; an absent config BLOCKS and an unknown mode falls back to enforce.
@@ -422,10 +422,14 @@ mint ULIDs.
 
 Machine state lives under `sdlc-studio/.local/` (gitignored): `project-state.json`,
 `run-state.json`, `review-state.json`, `review-queue.json`, `status-cache.json`,
-`verify-report.json`, `verify-history.jsonl`, `telemetry.jsonl`, `repo-map.json`,
-`mutation-report.json`, `wsjf-inputs.json`. `retros/VELOCITY.md` is the one piece of
-measurement state that is deliberately **committed**, because it is a history a
-human reads and not a cache.
+`verify-report.json`, `verify-history.jsonl`, `repo-map.json`,
+`mutation-report.json`, `wsjf-inputs.json`. Measurement state is deliberately
+**committed**, because it is evidence the team must read on a fresh clone, not a
+cache: `retros/VELOCITY.md` is the human-read history, and beneath it the per-unit
+run telemetry lives committed under `retros/evidence/` as `actuals-*.jsonl` (what a
+unit actually cost) and `forecasts-*.jsonl` (what the planner predicted). A
+pre-existing `.local` telemetry log is migrated there on first write - evidence only
+one machine can read is not evidence.
 
 ### Relationships and Constraints
 

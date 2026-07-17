@@ -68,6 +68,17 @@ class CloseGuardTests(unittest.TestCase):
         with mock.patch.object(os, "getcwd", return_value=str(self.root)):
             self.assertIsNone(close_guard.decide({}))  # {} -> cwd=self.root (unbaselined) -> allow
 
+    def test_blocks_on_a_corrupt_baseline(self) -> None:
+        # BG0155: a corrupt baseline silently disarms the close-down, so this is the one non-owed
+        # case that must BLOCK - and direct a repair, never a re-stamp.
+        _story(self.root, "US0005", "Done")
+        (self.root / close_owed.BASELINE_FILE).write_text('["US0005"]', encoding="utf-8")
+        decision = close_guard.decide({"cwd": str(self.root)})
+        self.assertIsNotNone(decision)
+        self.assertEqual(decision["decision"], "block")
+        self.assertIn("corrupt", decision["reason"].lower())
+        self.assertIn("restore", decision["reason"].lower())  # directs a repair, not a re-stamp
+
     def test_read_event_tolerates_garbage(self) -> None:
         import io
         from unittest import mock

@@ -72,16 +72,34 @@ def terminal_delivery_units(root: Path) -> list[tuple[str, str]]:
     return out
 
 
+class BaselineCorrupt(Exception):
+    """The baseline file is present but unreadable or mis-shaped - a loud BLOCKING state, never
+    'allow' and never a re-stamp. A corrupt-vs-absent conflation would let one merge-conflict
+    marker in the committed snapshot silently disarm the whole close-down, and the unbaselined
+    path then invites `close_owed baseline`, which would grandfather exactly the units that owe a
+    close. Repair the file (restore it from git, or fix the JSON) - do not re-stamp it."""
+
+
 def load_baseline(root: Path) -> dict | None:
-    """The stamped grandfather set, or None when the project has not baselined yet."""
+    """The stamped grandfather set, or None when the project has not baselined yet.
+
+    A present-but-corrupt file (truncated, merge-conflict markers, a JSON array, a dict whose
+    `grandfathered` is not a list of ids) is NOT None: it raises BaselineCorrupt, so a damaged
+    snapshot is a distinct blocking state rather than indistinguishable from 'never baselined'.
+    """
     fp = root / BASELINE_FILE
     if not fp.exists():
         return None
     try:
         data = json.loads(fp.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return None
-    return data if isinstance(data.get("grandfathered"), list) else None
+    except (OSError, ValueError) as exc:
+        raise BaselineCorrupt(f"{BASELINE_FILE} is present but unparseable ({exc})") from exc
+    if not isinstance(data, dict):
+        raise BaselineCorrupt(f"{BASELINE_FILE} is not a JSON object (found {type(data).__name__})")
+    gf = data.get("grandfathered")
+    if not isinstance(gf, list) or any(not isinstance(x, str) for x in gf):
+        raise BaselineCorrupt(f"{BASELINE_FILE} has no valid 'grandfathered' list of ids")
+    return data
 
 
 def owed(root: Path) -> dict:
@@ -101,13 +119,19 @@ def owed(root: Path) -> dict:
     covered = covered_ids(root)
     terminal = terminal_delivery_units(root)
     uncovered = [(cid, t) for (cid, t) in terminal if sdlc_md.norm_id(cid) not in covered]
-    baseline = load_baseline(root)
+    try:
+        baseline = load_baseline(root)
+    except BaselineCorrupt as exc:
+        # A present-but-corrupt baseline is a loud blocking state: never 'allow', never a
+        # re-stamp nudge. The enforcement halves must fail closed and direct a repair.
+        return {"baselined": False, "corrupt": True, "error": str(exc), "owed": [],
+                "grandfathered": 0, "covered": len(covered), "terminal": len(terminal)}
     if baseline is None:
-        return {"baselined": False, "owed": sorted(uncovered), "grandfathered": 0,
-                "covered": len(covered), "terminal": len(terminal)}
+        return {"baselined": False, "corrupt": False, "owed": sorted(uncovered),
+                "grandfathered": 0, "covered": len(covered), "terminal": len(terminal)}
     forgiven = {sdlc_md.norm_id(x) for x in baseline["grandfathered"]}
     owed_units = [(cid, t) for (cid, t) in uncovered if sdlc_md.norm_id(cid) not in forgiven]
-    return {"baselined": True, "owed": sorted(owed_units),
+    return {"baselined": True, "corrupt": False, "owed": sorted(owed_units),
             "grandfathered": len(uncovered) - len(owed_units),
             "covered": len(covered), "terminal": len(terminal)}
 
@@ -135,6 +159,11 @@ def stamp_baseline(root: Path, date: str | None = None, note: str | None = None,
 
 def render(report: dict) -> str:
     n = len(report["owed"])
+    if report.get("corrupt"):
+        return (f"close owed: BASELINE CORRUPT - {report.get('error', BASELINE_FILE)}. "
+                f"The close-down cannot be judged and is BLOCKED until the file is repaired "
+                f"(restore it from git, or fix the JSON). Do NOT run `close_owed baseline`: "
+                f"re-stamping would forgive the very units that owe a close.")
     if not report["baselined"]:
         head = (f"close owed: UNBASELINED - {n} uncovered terminal unit(s). "
                 f"Run `close_owed baseline` to grandfather the existing tail, "
@@ -161,9 +190,10 @@ def cmd_detect(args: argparse.Namespace) -> int:
         print(json.dumps(report, indent=2))
     else:
         print(render(report))
-    # Non-zero only when a close is genuinely owed (baselined AND owed units exist) - so a gate
-    # or hook can branch on the exit code. An unbaselined project is a soft state, not a failure.
-    return 1 if (report["baselined"] and report["owed"]) else 0
+    # Non-zero when a close is genuinely owed (baselined AND owed units exist) OR when the baseline
+    # is corrupt - so a gate or hook can branch on the exit code. An unbaselined project is a soft
+    # state (exit 0); a corrupt baseline is a loud blocking failure, never a silent pass.
+    return 1 if (report.get("corrupt") or (report["baselined"] and report["owed"])) else 0
 
 
 def cmd_baseline(args: argparse.Namespace) -> int:
