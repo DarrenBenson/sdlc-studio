@@ -26,7 +26,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   command records your reviewer-of-record sign-off per story unit and transitions each Done (AC-verify
   gated, cascading its parent). Story-scoped (bugs are already terminal), and it stops loudly at the
   first refusal - an authoring-session subagent principal, or a unit whose Done gate is red - leaving
-  completed units done. It refuses without an explicit `--principal`.
+  completed units done. It refuses without an explicit `--principal`. After the per-unit fan it runs a
+  close tail (US0237): the run's velocity row is written to `VELOCITY.md` (via `retro accuracy --write`,
+  keyed by retro id so a re-run upserts) and a final reconcile asserts drift 0 - so a closed sprint no
+  longer needs a forgotten manual velocity step. The whole flow is idempotent (US0238): a re-run after a
+  mid-cascade stop resumes, skipping already-done+signed units, with no duplicate velocity row or double
+  telemetry.
 - **`sprint close` scaffolds the retro through the deterministic path (CR0345).** `--retro`
   is now optional: run `sprint close` with no retro and it scaffolds one via `artifact.py new
   --type retro` (allocated id + template + index row, Batch/Goal pre-filled from run-state),

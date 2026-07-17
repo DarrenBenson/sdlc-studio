@@ -2655,6 +2655,80 @@ class ApplySignoffStopsTests(unittest.TestCase):
             self.assertIn("Status:** Review", text)   # Done gate refused; left at Review
 
 
+def _run_apply_signoff(root, mod, principal="Darren"):
+    out, err = io.StringIO(), io.StringIO()
+    with _patch_close_steps(mod), \
+            contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+        rc = mod.main(["close", "--retro", "RETRO0001", "--apply-signoff",
+                       "--principal", principal, "--root", str(root)])
+    return rc, out.getvalue(), err.getvalue()
+
+
+class ApplySignoffTailTests(unittest.TestCase):
+    """US0237: the apply-signoff tail writes the run's velocity row (so a closed sprint no longer
+    needs a forgotten manual `retro accuracy --write`) and runs a final reconcile."""
+
+    def test_ApplySignoffTail_writes_velocity_row(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, scaffolded_retro="RETRO0001")
+            _signoffable_story(root)
+            _close_retro(root)
+            mod = _load()
+            rc, out, err = _run_apply_signoff(root, mod)
+            self.assertEqual(rc, 0, err)
+            vel = root / "sdlc-studio" / "retros" / "VELOCITY.md"
+            self.assertTrue(vel.exists(), "velocity file not written")
+            self.assertIn("RETRO0001", vel.read_text())
+
+    def test_ApplySignoffTail_final_reconcile_drift_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, scaffolded_retro="RETRO0001")
+            _signoffable_story(root)
+            _close_retro(root)
+            # A story index that CLAIMS US0101 is Draft is drift once the fan transitions it Done.
+            idx = root / "sdlc-studio" / "stories" / "_index.md"
+            idx.write_text("# Stories\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                           "| [US0101](US0101-widget.md) | widget frobnicates | Draft |\n"
+                           "| [US0102](US0102-ghost.md) | ghost | Draft |\n", encoding="utf-8")
+            mod = _load()
+            rc, out, err = _run_apply_signoff(root, mod)
+            self.assertNotEqual(rc, 0)
+            self.assertIn("reconcile", (out + err).lower())
+
+
+class ApplySignoffIdempotentTests(unittest.TestCase):
+    """US0238: a re-run after a mid-cascade stop resumes - already-done+signed units are skipped,
+    the velocity row is upserted, and an idempotent re-close records no second terminal telemetry."""
+
+    def test_ApplySignoffIdempotent_rerun_skips_done_units(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, scaffolded_retro="RETRO0001")
+            _signoffable_story(root)
+            _close_retro(root)
+            mod = _load()
+            rc1, out1, err1 = _run_apply_signoff(root, mod)
+            self.assertEqual(rc1, 0, err1)
+            rc2, out2, err2 = _run_apply_signoff(root, mod)   # same command again
+            self.assertEqual(rc2, 0, err2)
+            self.assertIn("1 already complete", out2)          # skipped, not re-done
+            self.assertIn("0 transitioned Done", out2)
+
+    def test_ApplySignoffIdempotent_velocity_row_not_duplicated(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, scaffolded_retro="RETRO0001")
+            _signoffable_story(root)
+            _close_retro(root)
+            mod = _load()
+            _run_apply_signoff(root, mod)
+            _run_apply_signoff(root, mod)
+            vel = (root / "sdlc-studio" / "retros" / "VELOCITY.md").read_text()
+            self.assertEqual(vel.count("| RETRO0001 |"), 1)    # upserted, not appended twice
+
+
 class CloseRefusalTests(unittest.TestCase):
     """US0198: absent retro content, an unset goal, or an unjudged goal-verdict are
     refusals with the command to run - never defaults."""

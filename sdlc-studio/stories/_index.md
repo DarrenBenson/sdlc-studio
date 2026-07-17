@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 43 |
+| Draft | 42 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 1 |
+| Review | 2 |
 | Done | 215 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -147,7 +147,7 @@
 | [US0234](US0234-per-cycle-auditability-own-forecast-goal-retro-and.md) | per-cycle auditability: own forecast, goal, retro and run-state per cycle | Draft | EP0076 | 2026-07-17 | 2026-07-17 |
 | [US0235](US0235-reference-sprint-documentation-and-tests-for-the-rolling.md) | reference-sprint documentation and tests for the rolling policy | Draft | EP0076 | 2026-07-17 | 2026-07-17 |
 | [US0236](US0236-sprint-close-apply-signoff-records-per-unit-sign.md) | sprint close --apply-signoff records per-unit sign-off and Done transitions, refusing without an explicit principal | Review | EP0077 | 2026-07-17 | 2026-07-17 |
-| [US0237](US0237-cascade-parent-epics-crs-rfcs-terminal-write-the.md) | cascade parent epics/CRs/RFCs terminal, write the velocity row, final reconcile | Draft | EP0077 | 2026-07-17 | 2026-07-17 |
+| [US0237](US0237-cascade-parent-epics-crs-rfcs-terminal-write-the.md) | cascade parent epics/CRs/RFCs terminal, write the velocity row, final reconcile | Review | EP0077 | 2026-07-17 | 2026-07-17 |
 | [US0238](US0238-idempotent-re-run-after-a-mid-cascade-stop.md) | idempotent re-run after a mid-cascade stop | Draft | EP0077 | 2026-07-17 | 2026-07-17 |
 | [US0239](US0239-build-audit-profile-repo-architecture-code-quality-security.md) | build audit --profile repo (architecture/code-quality/security legs) wired to the refute panel | Draft | EP0078 | 2026-07-17 | 2026-07-17 |
 | [US0240](US0240-build-the-code-audit-profile-and-confirm-refute.md) | build the code audit profile and confirm refute wiring across profiles (CR0255 residual) | Draft | EP0078 | 2026-07-17 | 2026-07-17 |
