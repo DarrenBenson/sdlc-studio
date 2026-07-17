@@ -112,6 +112,50 @@ class UnknownCheckIdTests(unittest.TestCase):
         self.assertEqual(sdlc_md.unknown_check_ids("- [ ] judged by the operator\n"), [])
 
 
+class CheckTagNearMissTests(unittest.TestCase):
+    """BG0185: a mis-cased/mis-spaced check tag must ERROR loudly, never parse as no-tag.
+
+    A tag the strict parser silently ignores is a criterion the DoR/DoD bar no longer enforces -
+    exactly the silent-control class the tag registry exists to close.
+    """
+
+    def test_near_miss_is_detected(self):
+        # wrong case, wrong spacing, and a missing colon - none parse strictly.
+        for token, text in (
+            ("[Check: grooming.affects]", "- [ ] x [Check: grooming.affects]\n"),
+            ("[check:GROOMING]", "- [ ] x [check:GROOMING]\n"),
+            ("[ check: grooming.affects ]", "- [ ] x [ check: grooming.affects ]\n"),
+            ("[check grooming.affects]", "- [ ] x [check grooming.affects]\n"),
+        ):
+            self.assertIn(token, sdlc_md.check_tag_near_misses(text))
+            self.assertEqual(sdlc_md.check_tags(text), [])   # strict parser sees nothing
+
+    def test_valid_tag_is_not_a_near_miss(self):
+        text = "- [ ] x [check: grooming.affects]\n- [ ] y [check: story.verify-ac]\n"
+        self.assertEqual(sdlc_md.check_tag_near_misses(text), [])
+
+    def test_unrelated_bracket_word_is_not_a_near_miss(self):
+        # "checkpoint" shares a prefix but is not the tag word - no false positive.
+        self.assertEqual(
+            sdlc_md.check_tag_near_misses("- [ ] see [checkpoint: 3] later\n"), [])
+
+    def test_validate_flags_a_near_miss_tag(self):
+        validate = loader.load_script("validate")
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            (root / "sdlc-studio" / "definition-of-done.md").write_text(
+                "# Definition of Done\n\n## Story\n\n"
+                "- [ ] ACs pass [Check: story.verify-ac]\n", encoding="utf-8")
+            args = validate.build_parser().parse_args(["check", "--root", str(root)])
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                rc = args.func(args)
+            self.assertEqual(rc, 1)                      # loud: the run FAILS
+            self.assertIn("ERROR", out.getvalue())
+            self.assertIn("[Check: story.verify-ac]", out.getvalue())
+
+
 def _write_doc(root: pathlib.Path, kind: str, body: str) -> None:
     (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
     (root / "sdlc-studio" / f"definition-of-{kind}.md").write_text(body, encoding="utf-8")

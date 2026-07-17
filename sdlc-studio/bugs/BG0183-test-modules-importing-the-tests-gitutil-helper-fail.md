@@ -1,12 +1,14 @@
 # BG0183: Test modules importing the tests/gitutil helper fail under single-module unittest invocation
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_telemetry.py, .claude/skills/sdlc-studio/scripts/tests/gitutil.py
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
+> **Delivered-by:** claude-opus-4-8
 
 ## Summary
 
@@ -20,8 +22,18 @@ cd .claude/skills/sdlc-studio/scripts && python3 -m unittest `tests.test_telemet
 
 Import the helper package-relatively (from tests.gitutil import git) or add a path shim, so a single test module runs green both ways. Audit other tests for the same tests/-root-only import assumption.
 
+## Resolution
+
+`test_telemetry.py` inserted only the scripts dir on `sys.path`, not the tests dir, so its inline
+`from gitutil import git` resolved under `discover -s tests` (tests/ is the discovery root) but not
+under a single-module run from `scripts/`. Added the same tests-dir path shim every other test
+module already carries. Verified functionally against the exact reproduction: `python3 -m unittest
+tests.test_telemetry.ProjectStampTests` from `scripts/` now passes (was 3 errors), and discover mode
+stays green. Audited the sibling modules - all already carry the shim, so no others needed the fix.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-17 | sdlc-studio | Filed |
+| 2026-07-17 | claude-opus-4-8 | Fixed: added tests/-dir path shim to test_telemetry.py |

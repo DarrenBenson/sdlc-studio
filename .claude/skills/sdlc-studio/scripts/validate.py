@@ -380,6 +380,12 @@ def check_dor_dod(root: Path) -> list[dict]:
                         "message": f"[check: {bad}] resolves to no registered check - "
                                    f"an unenforced tag is a silently weakened bar; "
                                    f"registered ids: {known}"})
+        for nm in sdlc_md.check_tag_near_misses(text or ""):
+            out.append({"file": str(path), "severity": "error", "rule": "malformed-check-tag",
+                        "message": f"{nm} is shaped like a check tag but does not parse "
+                                   f"(wrong case or spacing) - it would read as no tag, leaving "
+                                   f"its criterion silently unenforced; use the exact form "
+                                   f"[check: <id>]"})
     return out
 
 

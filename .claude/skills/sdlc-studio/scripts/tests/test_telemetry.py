@@ -16,6 +16,7 @@ from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parent.parent / "telemetry.py"
 sys.path.insert(0, str(SCRIPT.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the shared gitutil helper
 from lib import sdlc_md  # noqa: E402
 
 

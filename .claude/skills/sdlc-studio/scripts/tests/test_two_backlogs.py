@@ -174,6 +174,21 @@ class LinkPrimitiveTests(unittest.TestCase):
             self.assertIsNone(sdlc_md.parent_ref(story))
             self.assertEqual(sdlc_md.child_parent(story), "EP0100")
 
+    def test_parent_ref_agrees_with_parent_refs_past_a_sentinel_first_line(self) -> None:
+        # BG0186: a malformed record whose FIRST Parent line is a sentinel (`-`) followed by a
+        # real id must not make the singular reader disagree with the plural. parent_ref returns
+        # the first NON-sentinel parent, so parent_ref == parent_refs[0] and child_parent agrees.
+        rec = ("# EP0200: shared batch\n\n> **Status:** Draft\n"
+               "> **Parent:** -\n> **Parent:** CR0200\n")
+        self.assertEqual(sdlc_md.parent_refs(rec), ["CR0200"])
+        self.assertEqual(sdlc_md.parent_ref(rec), "CR0200")   # was None (stopped at the sentinel)
+        self.assertEqual(sdlc_md.child_parent(rec), "CR0200")
+
+    def test_parent_ref_still_none_when_every_parent_line_is_a_sentinel(self) -> None:
+        rec = "# EP0201: x\n\n> **Status:** Draft\n> **Parent:** -\n> **Parent:** --\n"
+        self.assertIsNone(sdlc_md.parent_ref(rec))
+        self.assertEqual(sdlc_md.parent_refs(rec), [])
+
     def test_child_parent_reads_the_legacy_change_request_link(self) -> None:
         # BG0151: an old-flow epic links its CR the `cr action` way (`Change Request:`), not the
         # two-backlog `Parent:`. child_parent must resolve it, or children_of misses it.

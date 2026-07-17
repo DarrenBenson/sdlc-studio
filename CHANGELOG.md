@@ -574,6 +574,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     keyword is not a cross-epic leak - it was being silently blocked NOT-READY at the tranche-audit
     gate (was CR0331). A live (non-terminal) owner still flags. Terminal-owner and live-owner
     regression tests added.
+  - **BG0183:** `test_telemetry.py` now carries the tests-dir `sys.path` shim its siblings already
+    have, so its `gitutil` import resolves under a single-module run (`python3 -m unittest
+    tests.test_telemetry`) as well as under `discover -s tests`. Removes the standing "ignore the 3
+    gitutil failures" workaround that masked real regressions.
+  - **BG0185:** a mis-cased or mis-spaced `[check: ...]` tag now ERRORS loudly instead of parsing as
+    no-tag (was CR0332). `sdlc_md.check_tag_near_misses` detects a `[ check ... ]` shape the strict
+    parser rejects, and `validate.py` reports it as a `malformed-check-tag` error - closing the silent
+    control where a criterion's bar went unenforced. An unrelated bracketed word does not flag.
+  - **BG0186:** `parent_ref` (singular) now delegates to `parent_refs` and returns the first
+    non-sentinel parent, so it agrees with the plural reader on a malformed record whose first
+    `Parent:` line is a `-` sentinel followed by a real id. Inert today (consumers use the plural
+    path) but the two readers no longer diverge for a future caller. Found by the CR0322 review.
+  - **BG0182:** `help/mutation.md` now matches the shipped refuse-on-red-baseline contract
+    (BG0180): a red or broken baseline refuses the run (no mutant applied, `refused`+remedy,
+    non-zero exit) rather than recording a per-mutation error, and the stranded-mutant restore
+    (atexit + SIGTERM) is documented.
 
 - **The 2026-07-16 audit backlog (RUN-01KXQH64, the audit-backlog sprint).**
   - **BG0152:** per-attempt telemetry now has a production WRITER, not only a reader. `telemetry

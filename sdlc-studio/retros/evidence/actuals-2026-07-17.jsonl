@@ -67,3 +67,7 @@
 {"id": "CR0322", "type": "cr", "project": "sdlc-studio"}
 {"id": "RFC0045", "type": "rfc", "project": "sdlc-studio"}
 {"id": "BG0184", "type": "bug", "project": "sdlc-studio"}
+{"id": "BG0183", "type": "bug", "project": "sdlc-studio"}
+{"id": "BG0185", "type": "bug", "project": "sdlc-studio"}
+{"id": "BG0186", "type": "bug", "project": "sdlc-studio"}
+{"id": "BG0182", "type": "bug", "project": "sdlc-studio"}

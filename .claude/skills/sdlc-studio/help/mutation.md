@@ -34,10 +34,13 @@ python3 <skill>/scripts/mutation.py prefilter --tests tests/test_*.py
 1. Enumerates mutations over the surface from the declared fault classes -
    `invert-guard`, `stub-return-null`, `unset-delivered-field`, `no-op-mapper` - using
    per-language pattern profiles (`.py`, `.js`/`.ts`, `.go` invert-guard).
-2. Confirms the baseline is green (a red baseline cannot judge - every mutation records
-   `error`, never a fake kill).
+2. Confirms the baseline is green first. A red or broken baseline cannot judge anything, so
+   the run **refuses** immediately - no mutant is applied, the report is marked `refused` with
+   the remedy, and the exit is non-zero. (Running the mutants over red code would only produce
+   a worthless all-`error` report a run could mistake for done.)
 3. Applies one mutation at a time, re-runs `--test`, restores the original bytes, and
-   verdicts it killed / survived / error.
+   verdicts it killed / survived / error. A kill (`TaskStop`/SIGTERM) or crash mid-mutant
+   still restores via an atexit and SIGTERM handler, so a run never strands a mutant on disk.
 4. Writes `sdlc-studio/.local/mutation-report.json`; the release gate's `mutation` lane
    surfaces it (advisory in v1; absent report reads not-run, never PASS).
 
@@ -49,8 +52,8 @@ python3 <skill>/scripts/mutation.py prefilter --tests tests/test_*.py
 - **survived** - the test stayed green over broken code: a finding. Triage note: a
   code-shaped line inside a docstring can mutate without changing behaviour and
   false-survive on non-Python files; Python string interiors are excluded automatically.
-- **error** - the runner itself broke (missing command, timeout, red baseline); never
-  counted as a kill.
+- **error** - the runner itself broke on a mutant (missing command, timeout); never counted
+  as a kill. (A red baseline does not reach this state - it refuses the whole run up front.)
 - The report records the **git rev** and a **content hash per target**; the gate's
   mutation lane reports STALE on a rev change OR any target edited since the run -
   a dirty tree cannot ride an old green report.

@@ -1301,16 +1301,12 @@ def change_request_ref(source) -> str | None:
 def parent_ref(source) -> str | None:
     """The parent id a child names with `> **Parent:** CR0271`, or None when it has none
     (`-`/`--`/absent). Accepts the child text or a `Path`. The generic upward link; a story ALSO
-    carries `Epic:` (read by `story_epic`), so use `child_parent` to get either uniformly."""
-    text = source.read_text(encoding="utf-8") if isinstance(source, Path) else source
-    m = _PARENT_FIELD_RE.search(text)
-    if not m:
-        return None
-    val = m.group(1).strip()
-    if val in ("", "-", "--"):
-        return None
-    mm = ID_SEARCH_RE.search(val)
-    return mm.group(0) if mm else None
+    carries `Epic:` (read by `story_epic`), so use `child_parent` to get either uniformly.
+
+    Returns the FIRST NON-sentinel parent, so the singular reader agrees with `parent_refs` even
+    when an earlier `Parent:` line is a `-`/`--`/empty sentinel (it delegates to that plural read)."""
+    refs = parent_refs(source)
+    return refs[0] if refs else None
 
 
 def parent_refs(source) -> list[str]:
@@ -1510,11 +1506,28 @@ DOR_DOD_CHECK_IDS = {
     "release.version": "version strings consistent across the authoritative files",
 }
 CHECK_TAG_RE = re.compile(r"\[check:\s*([a-z0-9.-]+)\s*\]")
+# A bracketed token shaped like a check tag (the word `check` on a word boundary, any case)
+# that the strict parser above does NOT accept - a mis-cased or mis-spaced near-miss.
+_CHECK_NEAR_MISS_RE = re.compile(r"\[\s*check\b[^\]]*\]", re.IGNORECASE)
 
 
 def check_tags(text: str) -> list[str]:
     """Every `[check: <id>]` tag in a document, in order."""
     return CHECK_TAG_RE.findall(text or "")
+
+
+def check_tag_near_misses(text: str) -> list[str]:
+    """Bracketed tokens shaped like a check tag (the word `check`, any case) that the strict
+    `CHECK_TAG_RE` does NOT accept - a mis-cased or mis-spaced tag that would otherwise parse as
+    no-tag and silently leave its criterion unenforced. Returned verbatim, in order, for a loud
+    error. A token the strict parser already accepts is not a near-miss."""
+    out: list[str] = []
+    for m in _CHECK_NEAR_MISS_RE.finditer(text or ""):
+        token = m.group(0)
+        if CHECK_TAG_RE.fullmatch(token):
+            continue
+        out.append(token)
+    return out
 
 
 def unknown_check_ids(text: str) -> list[str]:
