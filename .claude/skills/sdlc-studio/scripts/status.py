@@ -465,6 +465,12 @@ def close_owed_advisory(repo_root: Path | str) -> str | None:
         report = close_owed.owed(Path(repo_root))
     except Exception:  # noqa: BLE001 - an advisory must never break the hint
         return None
+    if report.get("corrupt"):
+        # A corrupt baseline silently disarms the close-down: surface it loudly and direct a repair,
+        # never the `baseline` re-stamp, which would forgive the units that owe a close.
+        return (f"close-owed baseline is CORRUPT ({report.get('error', 'unreadable')}): it silently "
+                f"disarms the close-down - repair .close-owed-baseline.json (restore from git); do "
+                f"NOT run `close_owed.py baseline`, which would forgive the owed units")
     if not report["baselined"]:
         # The prerequisite is itself skippable and, unnudged, invisible: a project with closed work
         # but no baseline enforces nothing. Nudge it ONCE it has terminal units to judge, so the

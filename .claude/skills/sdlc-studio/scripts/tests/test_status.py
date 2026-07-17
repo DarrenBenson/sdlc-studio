@@ -453,6 +453,19 @@ class CloseOwedAdvisoryTests(unittest.TestCase):
             close_owed.stamp_baseline(root, date="2026-01-01")
             self.assertIsNone(status.close_owed_advisory(root))
 
+    def test_surfaces_a_corrupt_baseline_and_directs_repair(self) -> None:
+        # BG0155: a corrupt baseline must be surfaced loudly, never re-stamped away.
+        import close_owed
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "retros").mkdir(parents=True)
+            self._story(root, "US0005", "Done")
+            (root / close_owed.BASELINE_FILE).write_text('["US0005"]', encoding="utf-8")
+            adv = status.close_owed_advisory(root)
+            self.assertIsNotNone(adv)
+            self.assertIn("CORRUPT", adv)
+            self.assertIn("do", adv.lower())  # directs repair, not a re-stamp
+
 
 
 

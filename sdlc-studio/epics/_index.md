@@ -1,6 +1,6 @@
 # Epic Index
 
-**Last Updated:** 2026-06-20
+**Last Updated:** 2026-07-16
 
 ## Summary
 
@@ -13,9 +13,11 @@
 | Done | 70 |
 | **Total** | **70** |
 
-> Generate-mode note: all epics are **Ready** (spec extracted from the existing
-> implementation, awaiting test validation per `reference-philosophy.md`), not
-> Done. The features themselves exist and ship at v2.0.0.
+> History: these epics were extracted in Generate mode as **Ready** (spec
+> reverse-engineered from the shipped implementation), then transitioned to **Done**
+> at the verified close-out on 2026-07-09 (commit 841471e), once the test suite
+> validated the specs against the implementation. The Done rows below are that
+> close-out, not a generate-mode placeholder.
 
 ## All Epics
 

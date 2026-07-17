@@ -1321,6 +1321,37 @@ class LessonsCloseGateTests(unittest.TestCase):
             self.assertEqual(r["checks"][0]["check"], "selection")
             self.assertIn("lessons-summary", r["checks"][0]["detail"])
 
+    def _judgement(self, root: Path) -> None:
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "lessons:\n  loop: judgement\n", encoding="utf-8")
+
+    def test_judgement_makes_the_lessons_summary_lane_advisory(self) -> None:
+        # BG0166: the documented opt-out disarmed only the retro lane; it must disarm all three.
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._log(root)  # populated log, no summary -> summary lane would fail
+            self._retro(root)
+            self._judgement(root)
+            report = gate.run_gate(str(root), checks={}, require_retro="RETRO0005")
+            lane = next(c for c in report["checks"] if c["check"] == "lessons-summary")
+            self.assertFalse(lane["blocking"], "the documented opt-out must disarm the summary lane")
+            self.assertGreater(lane["count"], 0, "advisory must still REPORT - silence is not opt-out")
+            self.assertTrue(report["ok"], "no blocking lane fails, so the close gate passes")
+
+    def test_judgement_makes_the_lessons_validity_lane_advisory(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            self._log(root, "# Project Lessons\n\n## L-0001: Old\n\n"
+                            "- **Review-by:** 2000-01-01\n- **Rule:** do X\n")
+            self._regen(root)  # summary current; only the validity lane can fail
+            self._retro(root)
+            self._judgement(root)
+            report = gate.run_gate(str(root), checks={}, require_retro="RETRO0005")
+            lane = next(c for c in report["checks"] if c["check"] == "lessons-validity")
+            self.assertFalse(lane["blocking"], "the documented opt-out must disarm the validity lane")
+            self.assertGreaterEqual(lane["count"], 1, "advisory must still REPORT")
+            self.assertTrue(report["ok"], "no blocking lane fails, so the close gate passes")
+
     def test_lessons_lanes_block_on_error(self) -> None:
         self.assertIn("lessons-summary", gate.BLOCKING_ON_ERROR)
         self.assertIn("lessons-validity", gate.BLOCKING_ON_ERROR)
@@ -1460,6 +1491,25 @@ class CloseOwedGateLaneTests(unittest.TestCase):
             self._owed_project(root)
             report = gate.run_gate(str(root))  # no --require-close
             self.assertNotIn("close-owed", [c["check"] for c in report["checks"]])
+
+    def test_require_close_help_does_not_claim_a_default_warning(self) -> None:
+        # BG0171: the plain gate never runs close-owed, so the help must not say it "WARNS on
+        # every gate by default" - that invites the operator to trust a nudge that never fires.
+        parser = gate.build_parser()
+        action = next(a for a in parser._actions if "--require-close" in a.option_strings)
+        self.assertNotIn("WARNS on every gate", action.help)
+        self.assertIn("plain gate never runs it", action.help)
+
+    def test_require_close_fails_on_a_corrupt_baseline(self) -> None:
+        # BG0155: a corrupt baseline must BLOCK the close gate, not pass as 'no baseline stamped'.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "retros").mkdir(parents=True, exist_ok=True)
+            self._story(root, "US0005", "Done")
+            (root / "sdlc-studio" / ".close-owed-baseline.json").write_text(
+                '["US0005"]', encoding="utf-8")
+            report = gate.run_gate(str(root), only=["close-owed"], require_close=True)
+            self.assertFalse(report["ok"])
 
 
 import json as _json  # noqa: E402

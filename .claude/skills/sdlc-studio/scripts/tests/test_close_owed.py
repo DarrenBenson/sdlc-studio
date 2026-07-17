@@ -135,5 +135,62 @@ class BaselineTests(CloseOwedBase):
         self.assertEqual({cid for cid, _ in report["owed"]}, {"US0002"})
 
 
+class CorruptBaselineTests(CloseOwedBase):
+    """BG0155: a present-but-corrupt .close-owed-baseline.json must be a loud BLOCKING state,
+    distinguishable from 'never baselined' - never a silent pass, never a re-stamp nudge (which
+    would grandfather the very units that owe a close)."""
+
+    def _baseline_path(self) -> Path:
+        return self.root / close_owed.BASELINE_FILE
+
+    def _corrupt(self, text: str) -> None:
+        fp = self._baseline_path()
+        fp.parent.mkdir(parents=True, exist_ok=True)
+        fp.write_text(text, encoding="utf-8")
+
+    def test_truncated_baseline_is_corrupt_not_absent(self) -> None:
+        self._corrupt('{"grandfathered": ["US0001"')  # truncated JSON
+        with self.assertRaises(close_owed.BaselineCorrupt):
+            close_owed.load_baseline(self.root)
+
+    def test_merge_conflict_marker_is_corrupt(self) -> None:
+        self._corrupt('<<<<<<< HEAD\n{"grandfathered": []}\n=======\n{}\n>>>>>>> other\n')
+        with self.assertRaises(close_owed.BaselineCorrupt):
+            close_owed.load_baseline(self.root)
+
+    def test_json_array_baseline_is_corrupt_not_a_crash(self) -> None:
+        # the AttributeError path: a JSON array has no .get - it must be a clean corrupt signal
+        self._corrupt('["US0001", "US0002"]')
+        with self.assertRaises(close_owed.BaselineCorrupt):
+            close_owed.load_baseline(self.root)
+
+    def test_wrong_shape_grandfathered_is_corrupt(self) -> None:
+        self._corrupt('{"grandfathered": "US0001"}')  # a string, not a list
+        with self.assertRaises(close_owed.BaselineCorrupt):
+            close_owed.load_baseline(self.root)
+
+    def test_owed_reports_corrupt_and_owes_nothing_by_default(self) -> None:
+        _story(self.root, "US0001", "Done")
+        self._corrupt('["US0001"]')
+        report = close_owed.owed(self.root)
+        self.assertTrue(report["corrupt"])
+        self.assertFalse(report["baselined"])
+        self.assertEqual(report["owed"], [])  # never enumerates an amnesty target
+
+    def test_detect_exits_nonzero_on_a_corrupt_baseline(self) -> None:
+        self._corrupt('{"grandfathered": ')
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = close_owed.main(["--root", str(self.root), "detect"])
+        self.assertEqual(rc, 1)  # blocking failure, not a soft-state exit 0
+
+    def test_render_directs_repair_not_a_restamp(self) -> None:
+        self._corrupt('["US0001"]')
+        text = close_owed.render(close_owed.owed(self.root))
+        self.assertIn("CORRUPT", text)
+        self.assertIn("repair", text.lower())
+        self.assertNotIn("Run `close_owed baseline`", text)
+
+
 if __name__ == "__main__":
     unittest.main()
