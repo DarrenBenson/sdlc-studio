@@ -2545,6 +2545,116 @@ class CloseBriefTests(unittest.TestCase):
             self.assertIn("survived", out.getvalue().lower())
 
 
+def _critic_mod():
+    spec = importlib.util.spec_from_file_location("critic", SCRIPT.parent / "critic.py")
+    c = importlib.util.module_from_spec(spec)
+    sys.modules["critic"] = c
+    spec.loader.exec_module(c)
+    return c
+
+
+def _signoffable_story(root: Path, verified: bool = True) -> None:
+    """A story at Review with an Epic, a Verify line, a verify-report entry (green by default,
+    red with `verified=False`) and recorded critic evidence + APPROVE by `builder`, so
+    `--apply-signoff` (principal != builder) can sign it and transition it Done."""
+    d = root / "sdlc-studio" / "stories"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "US0101-widget.md").write_text(
+        "# US0101: widget frobnicates\n\n> **Status:** Review\n> **Points:** 5\n"
+        "> **Epic:** EP0001\n\n## Acceptance Criteria\n\n### AC1: works\n"
+        "- **Verify:** shell true\n", encoding="utf-8")
+    rp = root / "sdlc-studio" / ".local" / "verify-report.json"
+    rp.parent.mkdir(parents=True, exist_ok=True)
+    entry = {"failed": 0 if verified else 1, "stale": 0,
+             "failures": [] if verified else [{"ac": "AC1"}],
+             "ac_count": 1, "verified_at": "2099-01-01T00:00:00Z"}
+    rp.write_text(json.dumps({"stories": {"US0101-widget": entry}}), encoding="utf-8")
+    c = _critic_mod()
+    c.record_verdict(root, "US0101", "approve", reviewer="qa-seat", author="builder")
+    c.record_evidence(root, "US0101", reviewer="qa-seat", author="builder",
+                      findings="probed the frob path; none blocking")
+
+
+class ApplySignoffTests(unittest.TestCase):
+    """US0236: `sprint close --apply-signoff` fans a recorded operator approval into per-unit
+    reviewer-of-record sign-offs and Done transitions, refusing without an explicit principal."""
+
+    def test_ApplySignoff_refuses_without_principal(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root)
+            _signoffable_story(root)
+            _close_retro(root)
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with _patch_close_steps(mod), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--retro", "RETRO0001", "--apply-signoff",
+                               "--root", str(root)])
+            self.assertNotEqual(rc, 0)
+            self.assertIn("--principal", err.getvalue())
+            c = _critic_mod()
+            self.assertIsNone(c.signoff_for(root, "US0101"))       # nothing recorded
+
+    def test_ApplySignoff_records_and_dones(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root)
+            _signoffable_story(root)
+            _close_retro(root)
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with _patch_close_steps(mod), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--retro", "RETRO0001", "--apply-signoff",
+                               "--principal", "Darren", "--root", str(root)])
+            self.assertEqual(rc, 0, err.getvalue())
+            c = _critic_mod()
+            so = c.signoff_for(root, "US0101")
+            self.assertTrue(c.is_independent_signoff(root, "US0101", so))
+            text = (root / "sdlc-studio" / "stories" / "US0101-widget.md").read_text()
+            self.assertIn("Status:** Done", text)
+
+
+class ApplySignoffStopsTests(unittest.TestCase):
+    """US0236 AC3: a subagent principal is refused and a red Done gate stops the fan loudly,
+    leaving no partial-silent state."""
+
+    def test_ApplySignoffStops_on_subagent_principal(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root)
+            _signoffable_story(root)          # qa-seat is a recorded reviewer on US0101
+            _close_retro(root)
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with _patch_close_steps(mod), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--retro", "RETRO0001", "--apply-signoff",
+                               "--principal", "qa-seat", "--root", str(root)])
+            self.assertNotEqual(rc, 0)
+            self.assertIn("STOPPED", err.getvalue())
+            text = (root / "sdlc-studio" / "stories" / "US0101-widget.md").read_text()
+            self.assertIn("Status:** Review", text)   # not advanced
+
+    def test_ApplySignoffStops_on_red_done_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root)
+            _signoffable_story(root, verified=False)   # AC-verify red -> Done blocked
+            _close_retro(root)
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with _patch_close_steps(mod), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["close", "--retro", "RETRO0001", "--apply-signoff",
+                               "--principal", "Darren", "--root", str(root)])
+            self.assertNotEqual(rc, 0)
+            self.assertIn("STOPPED", err.getvalue())
+            text = (root / "sdlc-studio" / "stories" / "US0101-widget.md").read_text()
+            self.assertIn("Status:** Review", text)   # Done gate refused; left at Review
+
+
 class CloseRefusalTests(unittest.TestCase):
     """US0198: absent retro content, an unset goal, or an unjudged goal-verdict are
     refusals with the command to run - never defaults."""

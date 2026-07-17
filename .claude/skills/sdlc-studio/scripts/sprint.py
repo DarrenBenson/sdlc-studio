@@ -2237,6 +2237,111 @@ def _resolve_retro(root, args, state) -> int | None:
     return 1
 
 
+def _batch_story_units(root, batch) -> list[str]:
+    """The story units in the batch, in batch order. Sign-off + Done transition is story-scoped
+    (conformance is), so a bug/CR in a mixed batch - already terminal by the time the close runs -
+    is not signed off here."""
+    out = []
+    for uid in batch:
+        hit = sdlc_md.find_by_id(Path(root), uid)
+        if hit and hit[1] == "story":
+            out.append(sdlc_md.norm_id(uid))
+    return out
+
+
+def _signoff_author(root, unit) -> str:
+    """The author id the sign-off must be independent OF - read from the unit's recorded critic
+    verdict, else its evidence row. Empty when neither exists: a sign-off with no author to be
+    independent of cannot clear the two-role gate, so the caller refuses rather than inventing one."""
+    import critic  # noqa: PLC0415
+    for getter in (critic.verdict_for, critic.evidence_for):
+        rec = getter(root, unit)
+        if rec and (rec.get("author") or "").strip() not in ("", "-"):
+            return rec["author"]
+    return ""
+
+
+def _apply_signoff(root, state, principal: str | None, author_default: str | None = None) -> int:
+    """Fan the operator's recorded approval across the batch: per story unit, record the
+    reviewer-of-record sign-off then transition it Done (`artifact.close` - AC-verify gated,
+    cascades the parent, records telemetry), then the close tail (velocity row + final reconcile).
+
+    Story-scoped, idempotent, and stops LOUD at the first refusal (a subagent principal, a unit
+    with no recorded author, a red Done gate) leaving already-done units done - never a partial
+    silent state."""
+    import critic  # noqa: PLC0415
+    import artifact  # noqa: PLC0415
+    if not (principal or "").strip():
+        print("apply-signoff needs an explicit --principal (the reviewer of record) - a sign-off "
+              "with no named principal is not a review", file=sys.stderr)
+        return 2
+    units = _batch_story_units(root, state.get("batch") or [])
+    vocab = sdlc_md.status_vocab("story", root)
+    signed, done, skipped = [], [], []
+    for unit in units:
+        hit = sdlc_md.find_by_id(Path(root), unit)
+        status = sdlc_md.canonical_status(
+            sdlc_md.extract_field(hit[0].read_text(encoding="utf-8"), "Status"), vocab)
+        existing = critic.signoff_for(root, unit)
+        has_signoff = critic.is_independent_signoff(root, unit, existing)
+        # Idempotent: a unit already Done AND independently signed off is complete - skip it, so a
+        # re-run after a mid-cascade stop resumes rather than re-recording and re-transitioning.
+        if status == "Done" and has_signoff:
+            skipped.append(unit)
+            continue
+        if not has_signoff:  # a stop between signoff and Done leaves the signoff; do not duplicate it
+            author = author_default or _signoff_author(root, unit)
+            if not author:
+                print(f"apply-signoff STOPPED at {unit}: no recorded critic author to sign off "
+                      f"independently of - run the per-unit or sprint-level critic first",
+                      file=sys.stderr)
+                return 1
+            try:
+                critic.record_signoff(root, unit, principal=principal, author=author)
+            except ValueError as exc:  # subagent principal, principal == author, ...
+                print(f"apply-signoff STOPPED at {unit}: {exc}", file=sys.stderr)
+                return 1
+            signed.append(unit)
+        try:
+            artifact.close(root, unit)  # Done + cascade + telemetry; AC-verify gated for stories
+        except Exception as exc:  # noqa: BLE001 - a red Done gate must stop the fan loudly
+            print(f"apply-signoff STOPPED at {unit}: Done transition refused - {exc}",
+                  file=sys.stderr)
+            return 1
+        done.append(unit)
+        print(f"apply-signoff: {unit} signed off by {principal} -> Done")
+    rc = _apply_signoff_tail(root, state)
+    print(f"apply-signoff: {len(done)} transitioned Done, {len(signed)} newly signed, "
+          f"{len(skipped)} already complete")
+    return rc
+
+
+def _apply_signoff_tail(root, state) -> int:
+    """The close tail (US0237): write the run's velocity row and run a final reconcile. The parent
+    epic/CR cascade already happened per unit (transition ticks the breakdown and re-derives the
+    parent's terminal status); this records velocity and asserts drift-0. Idempotent: the velocity
+    row is upserted by retro id, and reconcile is read-only detection here."""
+    import reconcile  # noqa: PLC0415
+    import retro  # noqa: PLC0415
+    retro_id = (state.get("scaffolded_retro") or "").strip()
+    if retro_id:
+        # `retro accuracy --write` records the velocity row (record_velocity), keyed by retro id so
+        # a re-run upserts rather than duplicating. Advisory: a mixed-model or unmeasured sprint
+        # refuses the accuracy row, and that refusal never fails the close.
+        rc, out = _run_cli(retro.main,
+                           ["--root", str(root), "accuracy", "--id", retro_id, "--write"])
+        if rc == 0:
+            print(f"apply-signoff: velocity row recorded for {retro_id}")
+        else:
+            print(f"apply-signoff: velocity not recorded ({out.splitlines()[-1] if out else 'see retro'})")
+    rc, _ = _run_cli(reconcile.main, ["detect", "--root", str(root)])
+    if rc != 0:
+        print("apply-signoff: final reconcile reports drift - run `reconcile.py apply`",
+              file=sys.stderr)
+        return 1
+    return 0
+
+
 def cmd_close(args: argparse.Namespace) -> int:
     """The sprint close ceremony as one deterministic, resumable chain."""
     root = args.root
@@ -2292,6 +2397,13 @@ def cmd_close(args: argparse.Namespace) -> int:
         print(f"close [{i}/{len(_CLOSE_CHAIN)}] {name}: ok - {detail.splitlines()[-1] if detail else 'ok'}")
         if name == "handoff":
             state = run_state.read(root) or state  # the handoff closes the run object
+    # `--apply-signoff`: the operator has already reviewed the brief and decided - fan their
+    # recorded approval into per-unit sign-offs + Done transitions, then the tail. Replaces the
+    # brief print (the brief is what you read to DECIDE; here the decision is made).
+    if getattr(args, "apply_signoff", False):
+        print()
+        return _apply_signoff(root, state, getattr(args, "principal", None),
+                              getattr(args, "author", None))
     import critic  # noqa: PLC0415 - the brief composer
     gate_note = f"gate --require-retro {args.retro} --require-review: PASS; {_mutation_note(root)}"
     batch = state.get("batch") or []
@@ -2518,6 +2630,16 @@ def build_parser() -> argparse.ArgumentParser:
                     help="record the Sprint Goal judgement as part of the close")
     cl.add_argument("--note", default=None,
                     help="the judgement's one-line rationale (required with --goal-verdict)")
+    cl.add_argument("--apply-signoff", dest="apply_signoff", action="store_true",
+                    help="fan a recorded operator approval into per-unit reviewer-of-record "
+                         "sign-offs + Done transitions + the velocity/reconcile tail (needs "
+                         "--principal). Story-scoped, idempotent, stops loud at the first refusal")
+    cl.add_argument("--principal", default=None,
+                    help="the reviewer of record whose approval --apply-signoff fans across the "
+                         "batch (an authoring-session subagent is refused, as `critic signoff` refuses one)")
+    cl.add_argument("--author", default=None,
+                    help="(with --apply-signoff) the author id to record independence against when "
+                         "a unit has no recorded critic author; normally read from the unit's verdict")
     cl.add_argument("--root", default=".")
     cl.set_defaults(func=cmd_close)
     g = sub.add_parser("goal-verdict",

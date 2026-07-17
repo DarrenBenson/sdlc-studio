@@ -10,18 +10,25 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator whose apply-signoff stopped mid-cascade
+**I want** re-running it to resume, not double-count
+**So that** a stop (a red unit, an interrupted run) is recovered by simply re-running the same command
 
 ## Acceptance Criteria
 
-### AC1: {{define}}
+### AC1: a re-run skips units already Done and signed off
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+- **Given** `--apply-signoff` stopped partway (some units Done+signed, one refused)
+- **When** the same command is re-run after the refusal is resolved
+- **Then** already-Done+signed units are skipped (no duplicate sign-off row that changes the latest verdict, no re-transition), and the remaining units complete
+- **Verify:** `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k ApplySignoffIdempotent`
+
+### AC2: the tail is idempotent - no duplicate velocity row, no double telemetry
+
+- **Given** a completed `--apply-signoff` re-run against the same run
+- **When** it runs a second time
+- **Then** the velocity row is upserted (one row per retro id) and an idempotent re-close records no second terminal telemetry event
+- **Verify:** `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k ApplySignoffIdempotent`
 
 ## Revision History
 

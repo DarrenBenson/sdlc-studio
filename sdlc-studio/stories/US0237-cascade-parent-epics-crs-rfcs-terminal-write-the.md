@@ -10,18 +10,25 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator closing a sprint
+**I want** the apply-signoff tail to derive parents terminal, write the velocity row, and reconcile
+**So that** a closed sprint leaves its epics/CRs terminal and its velocity recorded without a forgotten manual `retro accuracy --write`
 
 ## Acceptance Criteria
 
-### AC1: {{define}}
+### AC1: the tail writes a velocity row for the run's retro
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{outcome}}
-- **Verify:** {{executable check}}
+- **Given** a batch whose story units were just transitioned Done by `--apply-signoff`
+- **When** the apply-signoff tail runs
+- **Then** a velocity row keyed by the run's retro id is written to `retros/VELOCITY.md` (upserted, not duplicated)
+- **Verify:** `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k ApplySignoffTail`
+
+### AC2: parent epics/CRs whose children are all terminal derive terminal, and a final reconcile leaves drift 0
+
+- **Given** the story units of an epic are all Done after the fan
+- **When** the tail's cascade + final reconcile run
+- **Then** the parent epic derives terminal and `reconcile detect` reports zero drift
+- **Verify:** `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k ApplySignoffTail`
 
 ## Revision History
 

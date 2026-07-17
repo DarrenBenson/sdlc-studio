@@ -1,6 +1,6 @@
 # US0236: sprint close --apply-signoff records per-unit sign-off and Done transitions, refusing without an explicit principal
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -10,34 +10,32 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** operator closing a sprint
+**I want** one command to fan my recorded approval into per-unit sign-offs and Done transitions
+**So that** I approve once as the reviewer of record instead of hand-running `critic.py signoff` and `transition` for every unit in the batch
 
 ## Acceptance Criteria
 
-> Seeded from the request's full criteria list - redistribute across this epic's stories as you groom them.
+### AC1: `--apply-signoff` refuses without an explicit principal
 
-### AC1: One command fans a recorded operator approval into per-unit sign-offs, Done transitions, telemetry
+- **Given** an open run whose close chain has passed
+- **When** `sprint close --retro <id> --apply-signoff` runs with no `--principal`
+- **Then** it exits non-zero, records no sign-off, and names that the reviewer of record must be given explicitly
+- **Verify:** `grep -rq "apply.signoff needs an explicit --principal" .claude/skills/sdlc-studio/scripts/sprint.py`
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** One command fans a recorded operator approval into per-unit sign-offs, Done transitions, telemetry closes, parent derivations and the velocity row, stopping loudly at the first refusal
-- **Verify:** {{executable check}}
+### AC2: with a principal it records a sign-off and transitions each story unit Done
 
-### AC2: It never runs without an explicit principal; authoring-session subagents are refused as principals
+- **Given** a batch of story units held at Review, each with recorded critic evidence and an APPROVE verdict
+- **When** `sprint close --retro <id> --apply-signoff --principal "<name>"` runs
+- **Then** each story unit gets a reviewer-of-record sign-off (author != principal) and is transitioned Done; bugs already terminal are left untouched
+- **Verify:** `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k ApplySignoff`
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** It never runs without an explicit principal; authoring-session subagents are refused as principals exactly as critic signoff refuses them
-- **Verify:** {{executable check}}
+### AC3: a subagent principal is refused, and the fan stops loudly at the first refusal
 
-### AC3: Re-running after a mid-cascade stop is idempotent
-
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** Re-running after a mid-cascade stop is idempotent
-- **Verify:** {{executable check}}
+- **Given** a principal that is an authoring-session subagent (a recorded reviewer on a unit), or a unit whose Done gate is red
+- **When** `--apply-signoff` reaches it
+- **Then** it stops non-zero at that unit naming the refusal, leaving already-signed-and-done units done (no partial-silent state)
+- **Verify:** `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k ApplySignoffStops`
 
 ## Revision History
 

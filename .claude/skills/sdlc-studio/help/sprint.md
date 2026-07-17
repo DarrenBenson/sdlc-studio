@@ -42,7 +42,16 @@ conformance -> review) to it. Add `--autonomous` to run unattended. See
 /sdlc-studio sprint --bugs Open --autonomous         # unattended: deterministic guardrails on
 /sdlc-studio sprint close                            # scaffolds the retro, then stops for you to fill it
 /sdlc-studio sprint close --retro RETRO0001          # the close ceremony as one command (retro already filled)
+/sdlc-studio sprint close --retro RETRO0001 --apply-signoff --principal "You"  # fan your approval into per-unit sign-offs + Done
 ```
+
+**`--apply-signoff --principal "<you>"`** turns the close's decision brief into an action: instead
+of hand-running `critic signoff` and `transition` for every unit, one command records your
+reviewer-of-record sign-off per story unit, transitions each Done (AC-verify gated, cascading its
+parent), then writes the run's velocity row and a final reconcile. Story-scoped (bugs are already
+terminal), idempotent (a re-run resumes, skipping already-done+signed units), and it stops loudly at
+the first refusal - a principal that is an authoring-session subagent, or a unit whose Done gate is
+red - leaving the completed units done. It never runs without an explicit `--principal`.
 
 Natural language works too: "do a sprint to deliver all open bugs"; "plan and break down the
 next sprint" resolves to `--goal design` (the goals are cumulative stop-points).
