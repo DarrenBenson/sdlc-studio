@@ -1,6 +1,6 @@
 # US0238: idempotent re-run after a mid-cascade stop
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
