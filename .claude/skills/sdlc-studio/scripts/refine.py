@@ -136,6 +136,62 @@ def _decompose(repo_root, rid: str, rpath: Path, epic_title: str,
     return epic_id, story_ids
 
 
+def _roll_point_total(epic_path: Path, add: int) -> None:
+    """Roll the epic's `Derived Point Total` up by `add` (the stories a further request added via
+    `--into`). Absent, it is inserted; present, it is incremented in place. The T-shirt Size is a
+    read-off of this total and is re-derived by reconcile, so only the number is written here."""
+    text = epic_path.read_text(encoding="utf-8")
+    cur = sdlc_md.extract_field(text, "Derived Point Total")
+    if cur is not None and str(cur).strip().isdigit():
+        new_total = int(str(cur).strip()) + add
+        new = re.sub(r"(?im)^(\s*>\s*\*\*Derived Point Total:\*\*\s*)\d+\s*$",
+                     lambda m: f"{m.group(1)}{new_total}", text, count=1)
+        sdlc_md.atomic_write(epic_path, new)
+    else:
+        _insert_after_status(epic_path, f"> **Derived Point Total:** {add}")
+
+
+def _decompose_into(repo_root, rid: str, rpath: Path, epic_id: str,
+                    stories: list[tuple[str, int, str | None]], total: int,
+                    existing_children: list[str],
+                    seed_criteria: list[str] | None = None) -> tuple[str, list[str]]:
+    """Mint the request's stories UNDER an existing epic (`--into`), roll that epic's point total,
+    and wire the request's `Decomposed-into:`. The `--into` sibling of `_decompose`: it never mints
+    an epic, so a themed batch epic can hold the stories of several small requests instead of each
+    minting a singleton container. Same atomic-mint/rollback guard - a mid-create failure leaves the
+    backlog untouched. The target epic is validated by the caller BEFORE anything is minted."""
+    root = Path(repo_root)
+    epic_path = sdlc_md.find_by_id(root, epic_id)[0]
+    minted: list[Path] = []
+    try:
+        story_ids: list[str] = []
+        for idx, (title, points, affects) in enumerate(stories):
+            fields = {"epic": epic_id, "points": points}
+            if affects:
+                fields["affects"] = affects
+            s = artifact.new(root, "story", title, fields)
+            minted.append(Path(s["path"]))
+            story_ids.append(s["id"])
+            if idx == 0 and seed_criteria:
+                _seed_acs(Path(s["path"]), seed_criteria, redistribute_note=len(stories) > 1)
+        # Back-link: the shared epic names THIS request as a parent too (it already names the one
+        # it was minted for). A batch epic carries one `Parent:` line per request it delivers, so
+        # the child->parent link resolves both ways for each - the symmetry the link gates check.
+        if sdlc_md.norm_id(rid) not in {sdlc_md.norm_id(x) for x in sdlc_md.parent_refs(
+                epic_path.read_text(encoding="utf-8"))}:
+            _insert_after_status(epic_path, f"> **Parent:** {rid}")
+        _roll_point_total(epic_path, total)
+        _write_decomposed(rpath, [*existing_children, epic_id])
+    except BaseException:
+        for p in minted:
+            try:
+                p.unlink()
+            except OSError:
+                pass
+        raise
+    return epic_id, story_ids
+
+
 def parse_story_spec(spec: str) -> tuple[str, int, str | None]:
     """A `--story` value: `title|points` or `title|points|affects`. Returns (title, points,
     affects|None). Points are validated against the Fibonacci scale here, before anything is
@@ -154,10 +210,28 @@ def parse_story_spec(spec: str) -> tuple[str, int, str | None]:
 # the "now being worked" signal. A request already terminal or without a working state is left be.
 _WORKING_STATUS = {"cr": "In Progress", "rfc": "In Review"}
 
-def refine(repo_root: Path | str, request_id: str, epic_title: str,
+def _validate_into_target(root: Path, into_epic: str) -> None:
+    """Refuse (before anything is minted) an `--into` target that is unknown, not an epic, or
+    terminal - a closed epic cannot take new stories, and only an epic holds stories at all."""
+    hit = sdlc_md.find_by_id(root, into_epic)
+    if not hit:
+        raise ValueError(f"--into target {into_epic} does not exist; nothing minted")
+    epath, etype = hit
+    if etype != "epic":
+        raise ValueError(f"--into target {into_epic} is a {etype}, not an epic; only an epic "
+                         f"holds stories. Nothing minted")
+    estatus = sdlc_md.canonical_status(
+        sdlc_md.extract_field(epath.read_text(encoding="utf-8"), "Status"),
+        sdlc_md.status_vocab("epic", root))
+    if sdlc_md.is_terminal_status("epic", estatus or ""):
+        raise ValueError(f"--into target {into_epic} is terminal ({estatus}); a closed epic "
+                         f"cannot take new stories. Nothing minted")
+
+
+def refine(repo_root: Path | str, request_id: str, epic_title: str | None,
            stories: list[tuple[str, int, str | None]], questions: list[str] | None = None,
            dry_run: bool = False, skip_personas: bool = False,
-           seed_acs: bool = True) -> dict:
+           seed_acs: bool = True, into_epic: str | None = None) -> dict:
     """Decompose `request_id` into an epic titled `epic_title` holding `stories`
     (title, points, affects?). Writes the bidirectional links and rolls the epic's point total.
 
@@ -177,7 +251,15 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str,
     # without this a bad title (a stray newline in an agent-proposed story) would raise only after
     # the epic and earlier stories are already on disk, orphaned. The request must also carry a
     # Status line, or the `Decomposed-into:` write would fail after the children exist.
-    sdlc_md.require_single_line("epic title", epic_title)
+    # Exactly one of a new-epic title or an --into target - a request becomes one epic, whether
+    # freshly minted or the shared batch container it joins.
+    if bool(into_epic) == bool(epic_title):
+        raise ValueError("refine needs EITHER --epic-title (mint a new epic) OR --into EPxxxx "
+                         "(decompose into an existing epic), not both and not neither")
+    if into_epic:
+        _validate_into_target(root, into_epic)   # refuse a bad target BEFORE anything is minted
+    else:
+        sdlc_md.require_single_line("epic title", epic_title)
     for title, _, _ in stories:
         sdlc_md.require_single_line("story title", title)
     if sdlc_md.extract_field(rpath.read_text(encoding="utf-8"), "Status") is None:
@@ -193,14 +275,18 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str,
     amigo_consult = persona_resolve.consult(root, persona_resolve.REFINE_PANEL, open_questions,
                                             skip_personas=skip_personas)
     if dry_run:
-        return {"request": rid, "epic": "(dry-run)", "epic_size": _tshirt_for(total),
+        return {"request": rid, "epic": into_epic or "(dry-run)", "epic_size": _tshirt_for(total),
                 "stories": [t for t, _, _ in stories], "points": total,
                 "open_questions": open_questions, "consult": amigo_consult, "dry_run": True}
 
     seed_criteria = (_request_criteria(rpath.read_text(encoding="utf-8"))
                      if seed_acs else None)
-    epic_id, story_ids = _decompose(root, rid, rpath, epic_title, stories, total,
-                                    existing_children=[], seed_criteria=seed_criteria)
+    if into_epic:
+        epic_id, story_ids = _decompose_into(root, rid, rpath, into_epic, stories, total,
+                                             existing_children=[], seed_criteria=seed_criteria)
+    else:
+        epic_id, story_ids = _decompose(root, rid, rpath, epic_title, stories, total,
+                                        existing_children=[], seed_criteria=seed_criteria)
     # 4. close the loop on the request's status: it is now being DELIVERED via its children, so it
     # moves to its working state (it reaches terminal only by derivation, G2). Best-effort - if a
     # gate we do not force past declines the move, the decomposition still stands.
@@ -354,7 +440,8 @@ def cmd_apply(args: argparse.Namespace) -> int:
         result = refine(args.root, args.request, args.epic_title, stories,
                         questions=args.question, dry_run=args.dry_run,
                         skip_personas=getattr(args, "skip_personas", False),
-                        seed_acs=getattr(args, "seed_acs", True))
+                        seed_acs=getattr(args, "seed_acs", True),
+                        into_epic=getattr(args, "into_epic", None))
     except (ValueError, FileNotFoundError, persona_resolve.RenderError) as exc:
         print(f"refine refused: {exc}", file=sys.stderr)
         return 2
@@ -404,8 +491,13 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="cmd", required=True)
     a = sub.add_parser("apply", help="Decompose a request into an epic + stories, links wired")
     a.add_argument("--request", required=True, help="the RFC/CR to decompose")
-    a.add_argument("--epic-title", dest="epic_title", required=True,
-                   help="title for the epic the request becomes")
+    a.add_argument("--epic-title", dest="epic_title",
+                   help="title for the NEW epic the request becomes (omit when using --into)")
+    a.add_argument("--into", dest="into_epic", metavar="EPxxxx",
+                   help="decompose the request's stories INTO this existing OPEN epic (a shared "
+                        "batch container) instead of minting a new one - the request's "
+                        "Decomposed-into points at it and its point total rolls up. A terminal, "
+                        "non-epic, or unknown target is refused with nothing minted")
     a.add_argument("--story", action="append", metavar="TITLE|POINTS[|AFFECTS]",
                    help="a story in the breakdown: 'title|points' or 'title|points|affects'. "
                         "Repeatable. Points must be on the Fibonacci scale.")

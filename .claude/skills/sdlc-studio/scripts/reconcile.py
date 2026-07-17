@@ -1037,20 +1037,20 @@ def link_asymmetry_drift(repo_root: Path | str) -> list[dict]:
         drift.append({"type": child_type, "id": child_id, "kind": "link-asymmetry",
                       "file_status": None, "index_status": None, "fix": why})
 
-    # child -> parent: every `Parent:` must resolve, and the parent must name the child back.
+    # child -> parent: EVERY `Parent:` must resolve, and each parent must name the child back. A
+    # shared batch epic (refine --into) carries one Parent line per request it delivers, so all of
+    # them are checked, not only the first.
     for cnorm, (cid, ctype, ctext) in index.items():
-        par = sdlc_md.parent_ref(ctext)
-        if not par:
-            continue
-        pnorm = _norm_id(par)
-        if pnorm not in index:
-            emit(cid, ctype, f"{cid} names Parent {par}, which resolves to no artefact", par)
-            continue
-        pid, ptype, ptext = index[pnorm]
-        back = {_norm_id(x) for x in sdlc_md.decomposed_ids(ptext)}
-        if cnorm not in back:
-            emit(cid, ctype, f"{cid} names Parent {pid}, but {pid} does not list {cid} in its "
-                             f"{sdlc_md.DECOMPOSED_FIELD}", pid)
+        for par in sdlc_md.parent_refs(ctext):
+            pnorm = _norm_id(par)
+            if pnorm not in index:
+                emit(cid, ctype, f"{cid} names Parent {par}, which resolves to no artefact", par)
+                continue
+            pid, ptype, ptext = index[pnorm]
+            back = {_norm_id(x) for x in sdlc_md.decomposed_ids(ptext)}
+            if cnorm not in back:
+                emit(cid, ctype, f"{cid} names Parent {pid}, but {pid} does not list {cid} in its "
+                                 f"{sdlc_md.DECOMPOSED_FIELD}", pid)
 
     # request -> child: every `Decomposed-into:` entry must resolve and name the request back.
     for rnorm, (rid, rtype, rtext) in index.items():
@@ -1061,7 +1061,9 @@ def link_asymmetry_drift(repo_root: Path | str) -> list[dict]:
                                    f"{sdlc_md.DECOMPOSED_FIELD}, which resolves to no artefact", rid)
                 continue
             cid, ctype, ctext = index[cnorm]
-            if _norm_id(sdlc_md.parent_ref(ctext) or "") != rnorm:
+            # the child must name this request among its parents - a shared batch epic lists one
+            # `Parent:` per request it delivers, so membership, not equality with the first.
+            if rnorm not in {_norm_id(x) for x in sdlc_md.parent_refs(ctext)}:
                 emit(cid, ctype, f"{rid} lists {cid} as a child, but {cid} does not name {rid} "
                                  f"as its {sdlc_md.PARENT_FIELD}", rid)
     return drift

@@ -228,7 +228,12 @@ minted story is **seeded from the request's own `- [ ]` acceptance criteria** (e
 criterion becomes an AC block - the criterion is the title and the Then; Given/When and the
 Verify stay explicit placeholders, so validate keeps flagging until the author makes them
 executable; a multi-story breakdown gets a redistribute note). `--no-seed-acs` restores the
-bare scaffold; `refine add` never seeds (the request's criteria were distributed at the first
+bare scaffold. `--into EPxxxx` decomposes the request's stories INTO an existing OPEN epic (a shared
+themed container) instead of minting a new one - the joining request's `Decomposed-into:` points at
+that epic, the epic gains one `Parent:` line per request it delivers (so the link resolves both ways
+for each) and its `Derived Point Total` rolls up; a terminal, non-epic, or unknown target is refused
+with nothing minted. Use it so a batch of small requests shares one container instead of accreting a
+singleton epic each; `--epic-title` and `--into` are mutually exclusive (exactly one). `refine add` never seeds (the request's criteria were distributed at the first
 decomposition). `Affects` and the executable Verify lines remain design/plan-time work.
 `--question` items are directed at the **Three-Amigos consult**, resolved to the actual named seats
 (engineering-led for refine), framed with each seat's review render, and recorded on the request (a

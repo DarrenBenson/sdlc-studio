@@ -21,6 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`refine apply --into EPxxxx`: share a batch epic instead of minting singletons (CR0322,
+  RFC0045).** A small request can decompose its stories INTO an existing open epic - a shared themed
+  container - rather than accreting a one-story epic each. The joining request's `Decomposed-into:`
+  points at that epic, the epic carries one `Parent:` line per request it delivers so the link
+  resolves both ways for each, and its `Derived Point Total` rolls up; a terminal, non-epic, or
+  unknown `--into` target is refused with nothing minted. `--epic-title` and `--into` are mutually
+  exclusive. The link core (`children_of`, the link-asymmetry gate) now resolves multiple parents,
+  so a batch epic delivering several requests satisfies the two-backlog symmetry and derivation
+  gates unchanged.
 - **Deterministic flow metrics - the zero-token schedule instrument (CR0310, EP0052).** New
   `scripts/flow.py compute` reports per-unit cycle time (Created -> delivered, resolved from git
   history anchored on the status header line, with a revision-row fallback), weekly throughput

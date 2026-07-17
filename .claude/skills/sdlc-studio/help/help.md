@@ -233,6 +233,7 @@ The Discovery backlog (RFCs, CRs, Issues) is decomposed into the Delivery backlo
 | `/sdlc-studio issue create` | File a defect-side Discovery item (raw report; Severity + Size, no points) |
 | `/sdlc-studio refine show --request CR-0001` | Show a request's content and confirm it is refinable (accepts an already-decomposed one, to inform an `add`) |
 | `/sdlc-studio refine apply --request CR-0001` | Decompose a request into an epic + stories, links wired |
+| `/sdlc-studio refine apply --request CR-0002 --into EP-0009` | Decompose a request INTO an existing open epic (a shared batch container) instead of minting a singleton - point total rolls up, links wired both ways; a terminal/non-epic/unknown target is refused |
 | `/sdlc-studio refine add --request CR-0001` | Append a further epic to an already-decomposed request (a later slice) |
 | `/sdlc-studio triage show --issue IS0001` | Show an Issue's report and confirm it is triageable |
 | `/sdlc-studio triage apply --issue IS0001` | Decompose an Issue into the bugs that deliver its fix |

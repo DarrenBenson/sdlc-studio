@@ -590,6 +590,56 @@ class RefineTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 refine.refine(root, "BG0001", "nope", [("x", 2, None)])
 
+    def test_refine_into_adds_stories_to_an_existing_epic(self) -> None:
+        # CR0322: --into decomposes a request's stories INTO a shared open epic instead of minting
+        # a singleton container. Parent/Decomposed-into wired as usual, the point total rolls up.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root, "CR0001")
+            self._cr(root, "CR0002")
+            lead = refine.refine(root, "CR0001", "Batch epic", [("A", 2, None)])
+            epic = lead["epic"]
+            res = refine.refine(root, "CR0002", None, [("B", 3, "src/y.py")], into_epic=epic)
+            self.assertEqual(res["epic"], epic)                 # no NEW epic minted
+            self.assertEqual(sdlc_md.children_of(root, "CR0002"), [(epic, "epic")])
+            self.assertEqual(len(sdlc_md.children_of(root, epic)), 2)   # A (CR0001) + B (CR0002)
+            epic_text = sdlc_md.find_by_id(root, epic)[0].read_text()
+            self.assertEqual(sdlc_md.extract_field(epic_text, "Derived Point Total"), "5")  # 2+3
+            self.assertEqual(reconcile.link_asymmetry_drift(root), [])
+            self.assertEqual(reconcile.undecomposed_drift(root), [])
+
+    def test_refine_into_refuses_a_terminal_epic_minting_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root, "CR0001")
+            self._cr(root, "CR0002")
+            epic = refine.refine(root, "CR0001", "Batch epic", [("A", 2, None)])["epic"]
+            ep_path = sdlc_md.find_by_id(root, epic)[0]
+            ep_path.write_text(ep_path.read_text().replace("**Status:** Proposed",
+                                                           "**Status:** Done")
+                               .replace("**Status:** Draft", "**Status:** Done"),
+                               encoding="utf-8")
+            with self.assertRaises(ValueError):
+                refine.refine(root, "CR0002", None, [("B", 3, None)], into_epic=epic)
+            # nothing minted for it: CR0002 stays undecomposed
+            self.assertTrue(any(x["id"] == "CR0002"
+                                for x in reconcile.undecomposed_drift(root)))
+
+    def test_refine_into_refuses_a_non_epic_target(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root, "CR0001")
+            self._cr(root, "CR0002")
+            with self.assertRaises(ValueError):
+                refine.refine(root, "CR0002", None, [("B", 3, None)], into_epic="CR0001")
+
+    def test_refine_into_refuses_an_unknown_target(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root, "CR0001")
+            with self.assertRaises(ValueError):
+                refine.refine(root, "CR0001", None, [("B", 3, None)], into_epic="EP9999")
+
     def test_refine_refuses_an_already_decomposed_request(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

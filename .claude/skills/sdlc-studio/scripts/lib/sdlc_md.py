@@ -1313,6 +1313,23 @@ def parent_ref(source) -> str | None:
     return mm.group(0) if mm else None
 
 
+def parent_refs(source) -> list[str]:
+    """EVERY parent id a child declares via `> **Parent:** <id>`, in order, de-duplicated. A shared
+    batch epic (`refine --into`) delivers more than one request and carries one `Parent:` line per
+    request, so the upward link resolves for each of them - `parent_ref` (singular) returns only the
+    first and is kept for the common single-parent read. A `-`/`--`/empty value contributes nothing."""
+    text = source.read_text(encoding="utf-8") if isinstance(source, Path) else source
+    out: list[str] = []
+    for m in _PARENT_FIELD_RE.finditer(text):
+        val = m.group(1).strip()
+        if val in ("", "-", "--"):
+            continue
+        mm = ID_SEARCH_RE.search(val)
+        if mm and mm.group(0) not in out:
+            out.append(mm.group(0))
+    return out
+
+
 def child_parent(source) -> str | None:
     """The parent id a child declares, most-specific-first: the two-backlog `Parent:` (generic),
     else a story's `Epic:`, else the LEGACY `Change Request:` an old-flow epic carries, or
@@ -1420,8 +1437,16 @@ def children_of(repo_root, parent_id: str) -> list[tuple[str, str]]:
             cid = extract_record_id(p.stem)
             if not cid:
                 continue
-            par = child_parent(p)
-            if par and norm_id(par) == target:
+            text = read_text_safe(p)
+            # ALL of a child's parents: every `Parent:` line (a shared batch epic carries one per
+            # request it delivers), plus the most-specific single link (a story's `Epic:`, or the
+            # legacy `Change Request:`) via child_parent - so a multi-parent epic and a story both
+            # resolve here.
+            parents = {norm_id(x) for x in parent_refs(text)}
+            cp = child_parent(text)
+            if cp:
+                parents.add(norm_id(cp))
+            if target in parents:
                 out.append((cid, type_))
     return out
 
