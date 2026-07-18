@@ -1,66 +1,69 @@
 # Reviews - LATEST (anchor)
 
-> Derived from the sprint-close review of **RUN-01KXT0YV** (the gate-and-close-honesty
-> sprint, 2026-07-18, RV-0013 / RETRO-0049). Supersedes the RETRO0048 picture.
+> Derived from the sprint-close review of **RUN-01KXVD74** (the evidence-earns-the-green
+> sprint, 2026-07-19, RV-0014 / RETRO-0050). Supersedes the RETRO0049 picture.
 
-## Where the pipeline is (2026-07-18)
+## Where the pipeline is (2026-07-19)
 
-The **gate-and-close-honesty sprint** (RUN-01KXT0YV) is delivered: **9/9 units, Sprint Goal
-ACHIEVED**. The batch was EP0072 (the close-and-gate ergonomics family from the 2026-07-16 audit
-triage) plus BG0190, the follow-up left by the previous close.
+The **evidence-earns-the-green sprint** (RUN-01KXVD74) is delivered: **10/10 units, Sprint Goal
+ACHIEVED**. The batch was EP0075 (verify-line integrity) plus all seven open bugs, six of which were
+the previous close's own follow-ups.
 
-- **US0216:** the gate's mutation lane names a refused red-baseline run rather than rendering its
-  all-zero summary as `0/0 mutations killed`, and carries the report's own remedy.
-- **US0213:** `verify_ac` records an `ac_fingerprint` (each AC's id, title and Verify command) and
-  the Done gate compares that instead of file mtime, so a status transition, a revision-history row,
-  or the verifier's own `Verified:` stamps no longer invalidate a correct green. Legacy reports
-  without the field still fall back to mtime.
-- **US0218:** `mutation.py --since` spends its ceiling on the changed lines first and reports
-  `diff_mutations` / `diff_applied` / `diff_covered`, so a bounded run is evidence about the diff
-  rather than about whichever lines sorted first.
-- **US0219 / US0220:** the pre-commit gate records each suite's wall-time to a bounded history,
-  announces the expected duration before paying it, and names the docs-only skip instead of taking
-  it silently.
-- **US0217:** a repo-wide conformance failure is attributed once under `globals` rather than charged
-  to every judged unit - one doc gap no longer reads as 118 broken units - with the gate still
-  counting it so reporting better never enforces less.
-- **US0215:** the review-current lane tells an uncommitted-but-current anchor from a stale one and
-  names committing the close paperwork as the remedy.
-- **US0214:** `review_prep close` writes its own RV index row through the shared meta-index helper.
-- **BG0190:** the apply-signoff tail derives a parent epic terminal, scoped to the run's own units
-  and refusing on any child it cannot read.
+- **BG0193:** a verifier that exits 0 having run no tests no longer counts as proof. Decided per
+  runner family from that family's own output: `unittest` and `pytest` print one exclusive summary
+  each; `go` is empty only when every package line says so; `jest`'s "No tests found" yields to
+  another project's PASS.
+- **US0228:** the `grep` verb passes its pattern behind `-e` and its paths behind `--`, on both
+  back-ends, so a dash-leading regex searches for what its author wrote.
+- **US0226:** US0166 AC3 checks the claim it makes. As shipped it read `grep -q "..." <file>`, and
+  the verb takes no flags - `-q` became the PATTERN and the quoted text a PATH, so it searched for
+  the literal string `-q` across a list containing a nonexistent file, found it, and exited 0. It
+  had been green on every run since it shipped.
+- **US0227:** US0172/US0173 and US0163's two ACs shared selectors byte for byte. All four narrowed,
+  plus a `verify_ac lint` naming any Verify command claimed by more than one AC. It reports 17
+  across this workspace; 13 remain as declared pre-existing debt.
+- **BG0194:** the id regexes carry a trailing boundary, so `US01010` no longer reads as `US0101`,
+  and a digit-leading ULID is claimed whole rather than truncated.
+- **BG0191:** the close re-renders its handoff after the sign-off cascade, so the document no longer
+  lists as remaining the units the close just finished.
+- **BG0195:** a retro id resolves dashed or undashed. The velocity row had not recorded for two
+  sprints while the close reported success.
+- **BG0196:** an unmeasured sprint is no longer reported as an unforecast one.
+- **BG0192:** `ac_scope` findings carry a strength; only a multi-keyword hit blocks readiness, and
+  the owning epic no longer counts towards a keyword's spread.
+- **BG0187:** the TRD threat model agrees with its own write contract, guarded so it cannot silently
+  return.
 
 ## CODE leg
 
-One independent adversarial full-diff review over `3376648..HEAD`, recorded as a sprint-level
-verdict. **Two rounds of REJECT**, both blocking, both on `_derive_parent_epics` and both in the
-same direction - claiming completion on incomplete evidence. Round 1: unresolvable and status-less
-children were treated as absent rather than incomplete, so an incrementally-written epic would be
-marked Done off its one delivered story, across every epic in the repo. Round 2: the repair's
-truthiness guard meant an empty units list disabled scoping and restored the full-repo sweep,
-reachable via a bug/CR-only batch. Round 3 APPROVE, after the reviewer re-ran its own reproductions
-and mutation-checked the new guards. Full suite 2,899 green, drift 0, every commit gated.
+One independent adversarial full-diff review over `ba6908e~1..HEAD`, recorded as a sprint-level
+verdict. **Two rounds of REJECT**, four blocking findings. Round 1: a frequency suppression that
+deleted the leaks it was meant to rank, and two unanchored substrings that failed a green
+multi-package go suite. Round 2, both created by the round 1 repair: a blob-wide counter-signature
+that let any co-running tool printing "N passed" **disarm the vacuity gate**, and a comment that
+falsely claimed the retained threshold discounts the owning epic. Round 3 APPROVE, after the
+reviewer re-ran its own reproductions and mutation-checked the new guards. Full suite 2,974 green,
+tools 222 green, drift 0, every commit gated.
 
-The review earned its cost twice: both defects sat in code the author's own tests passed over.
+The sprint about honest evidence twice shipped a claim its own tests passed over. Both times the
+defect was in prose justifying the code as much as in the code.
 
 ## Document legs
 
-`reference-verify.md` (the fingerprint's freshness model and what it deliberately excludes),
-`help/mutation.md` (the diff-biased ceiling), `AGENTS.md` (gate timing expectations), `CHANGELOG.md`,
-and the nine groomed units. Each is consistent with the shipped code and enforced by the gate.
+`CHANGELOG.md`, `sdlc-studio/trd.md` (the 9 threat-model row), and the ten groomed units. Each is
+consistent with the shipped code and enforced by the gate.
 
 ## Next steps
 
-- Follow-ups filed this sprint: **BG0191** (the handoff is snapshotted before the apply-signoff
-  cascade, so units the close just finished report as remaining), **BG0192** (`cross-epic-ac` is a
-  bare keyword match that false-positives on a common English word), **BG0193** (a Verify line whose
-  test filter matches nothing passes vacuously - exit 0, zero tests run), **BG0194**
-  (`ID_SEARCH_RE` lacks a trailing-digit boundary, so a 5-digit id truncates to its 4-digit prefix).
-- **Grooming is not free and was not estimated.** Eight of the nine units arrived as
-  `{{placeholder}}` skeletons, so the 26 points described the code and not the work. Run
-  `--goal design` over a Draft backlog before committing to a `--goal done` batch.
+- Follow-ups filed this sprint: **BG0197** (the mutation gate can report a mutant SURVIVED that
+  never ran, via stale bytecode - a same-length mutant reuses the cached `.pyc`; this silently
+  invalidated the first hour of this sprint's own mutation checks), **BG0198** (`handoff.refresh`
+  re-stamps run identity from ambient run state; not reachable via the shipped close, but it
+  overwrote HO-0007 twice by hand), **BG0199** (two id readers disagree on meta-id width).
+- **13 duplicated Verify selectors** remain across the workspace, now reported by `verify_ac lint`
+  on every run. A batch of its own, deliberately not absorbed here.
 - Standing: **CR0278** (interactive-sprint token capture) - per-unit actuals were not captured this
   run, so est/actual is not-yet-captured; the sprint total can be supplied with `accuracy --tokens`.
-- Residual audit CRs (CR0280-CR0306) and BG0187 remain, plus the eight unstarted refined epics
-  (EP0073-EP0076, EP0078, EP0079, EP0081, EP0082) for a future scheduled batch.
+- Residual audit CRs (CR0280-CR0306) remain, plus the seven unstarted refined epics (EP0073,
+  EP0074, EP0076, EP0078, EP0079, EP0081, EP0082) for a future scheduled batch.
 - Release freeze holds until ~2026-07-21; everything lands unreleased on `main`.

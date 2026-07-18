@@ -2,6 +2,11 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0103: A no-result signal from a per-unit runner (`go` per package, `jest` per project) means "the whole run was empty" only when every unit says...**
+- **L-0102: A frequency threshold over "how widely is this shared" must exclude the owner, or the owner's own correct usage suppresses detection of...**
+- **L-0101: A comment justifying a mechanism is a claim, and it needs the same evidence as the code: two false claims about frequency suppression...**
+- **L-0100: Stale bytecode silently invalidates a mutation check when the mutant is the same byte length: purge `__pycache__` and run `python3 -B`, or...**
+- **L-0099: A guard that unrelated output can switch off is worse than the false alarm it replaced: prefer a narrow false positive to a silent false...**
 - **L-0098: A `-k` test filter that matches nothing exits 0 having run zero tests, so a renamed class silently converts an executable AC into a green...**
 - **L-0097: Monkeypatching a module reached through `sys.modules` leaks across the whole test process; patch and register the undo together...**
 - **L-0096: A truthiness guard on a scope filter (`if wanted and ...`) fails open: an empty scope silently becomes an unbounded one.**
