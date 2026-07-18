@@ -470,5 +470,102 @@ class DocstringExclusionTests(unittest.TestCase):
                             unchecked)
 
 
+class DiffBiasedBudgetTests(unittest.TestCase):
+    """US0218: a bounded run must spend its ceiling on the lines under review.
+
+    Round-robin over (file, class) is fair across the SURFACE but blind to the DIFF: with a
+    low ceiling on a large multi-function file it samples whichever lines sort first -
+    peripheral helpers - and reports a confident kill rate about code nobody edited
+    (L-0086). The evidence has to be about the change."""
+
+    def _muts(self, spec):
+        """spec: [(file, class, line), ...] -> mutation dicts in enumeration order."""
+        return [{"file": f, "class": c, "line": ln, "occurrence": 0} for f, c, ln in spec]
+
+    def test_on_diff_mutants_are_chosen_first(self) -> None:
+        """AC1: the ceiling is spent on changed lines before untouched code."""
+        mut = _load()
+        # 20 mutants on untouched lines, 4 on changed lines, ceiling of 4
+        muts = self._muts([("a.py", "comparison", ln) for ln in range(1, 21)])
+        muts += self._muts([("a.py", "comparison", ln) for ln in range(100, 104)])
+        chosen, truncated = mut.apply_budget(muts, 4, {"a.py": {100, 101, 102, 103}})
+        self.assertEqual(sorted(m["line"] for m in chosen), [100, 101, 102, 103])
+        self.assertEqual(truncated, 20)
+
+    def test_remainder_spreads_over_untouched_code(self) -> None:
+        """AC2: a small diff does not waste the rest of the budget."""
+        mut = _load()
+        muts = self._muts([("a.py", "comparison", ln) for ln in range(1, 21)])
+        muts += self._muts([("a.py", "comparison", 100)])
+        chosen, _ = mut.apply_budget(muts, 5, {"a.py": {100}})
+        lines = sorted(m["line"] for m in chosen)
+        self.assertIn(100, lines)          # the diff is covered...
+        self.assertEqual(len(chosen), 5)   # ...and the remaining 4 went somewhere
+        self.assertEqual(len([n for n in lines if n != 100]), 4)
+
+    def test_report_states_diff_coverage(self) -> None:
+        """AC3: a partially-judged diff must be legible, not inferred from truncation."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            target = root / "a.py"
+            # block-form guards: `invert-guard` needs the colon to end the line
+            body = "def f(x):\n" + "".join(f"    if x > {i}:\n        pass\n" for i in range(12))
+            target.write_text(body, encoding="utf-8")
+            changed = {str(target): set(range(1, 20))}
+            report = mut.run_gate(root, [target], "true", max_mutations=3,
+                                  write_report=False, changed=changed)
+            s = report["summary"]
+            self.assertGreater(s["diff_mutations"], s["diff_applied"])
+            self.assertFalse(s["diff_covered"])
+
+    def test_no_diff_info_keeps_round_robin(self) -> None:
+        """AC4: the unbiased path is untouched when there is no diff to aim at."""
+        mut = _load()
+        muts = self._muts([("a.py", "comparison", ln) for ln in range(1, 11)]
+                          + [("b.py", "comparison", ln) for ln in range(1, 11)])
+        chosen, _ = mut.apply_budget(muts, 4)
+        self.assertEqual(len({m["file"] for m in chosen}), 2)   # both files covered
+        chosen_again, _ = mut.apply_budget(muts, 4)
+        self.assertEqual([m["line"] for m in chosen],
+                         [m["line"] for m in chosen_again])      # deterministic
+
+    def test_empty_changed_map_falls_back(self) -> None:
+        """An empty map (git could not answer) must not starve selection to nothing."""
+        mut = _load()
+        muts = self._muts([("a.py", "comparison", ln) for ln in range(1, 11)])
+        chosen, _ = mut.apply_budget(muts, 3, {})
+        self.assertEqual(len(chosen), 3)
+
+
+class ChangedLinesTests(unittest.TestCase):
+    """US0218 AC5: the changed-line map comes from `git diff -U0`."""
+
+    def test_reports_touched_lines_and_untracked_files(self) -> None:
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gitutil.git(["init", "-q"], root)
+            (root / "a.py").write_text("\n".join(f"x = {i}" for i in range(10)) + "\n",
+                                       encoding="utf-8")
+            gitutil.git(["add", "-A"], root)
+            gitutil.git(["commit", "-qm", "base"], root)
+            # edit line 5 only, and add a wholly new untracked module
+            lines = (root / "a.py").read_text(encoding="utf-8").splitlines()
+            lines[4] = "x = 999"
+            (root / "a.py").write_text("\n".join(lines) + "\n", encoding="utf-8")
+            (root / "b.py").write_text("y = 1\ny = 2\n", encoding="utf-8")
+            changed = mut.changed_lines(root, "HEAD")
+            self.assertIn(5, changed[str(root / "a.py")])
+            self.assertNotIn(1, changed[str(root / "a.py")])
+            self.assertIn(str(root / "b.py"), changed)   # untracked = wholly new
+
+    def test_returns_empty_when_git_cannot_answer(self) -> None:
+        """No repo, no crash - the caller falls back to unbiased sampling."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(mut.changed_lines(Path(d), "HEAD"), {})
+
+
 if __name__ == "__main__":
     unittest.main()

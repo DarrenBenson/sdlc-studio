@@ -160,28 +160,89 @@ def mutated_text(mutation: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-def apply_budget(mutations: list[dict], max_mutations: int) -> tuple[list[dict], int]:
+def changed_lines(repo_root: Path | str, since: str) -> dict:
+    """Map file path -> set of line numbers touched since `since`, from `git diff -U0`.
+
+    Zero context lines, so the hunk headers name exactly the added/modified lines. An
+    untracked file is entirely new, so every line counts. Returns {} when git cannot
+    answer - the caller then falls back to unbiased sampling rather than failing."""
+    root = Path(repo_root)
+    out: dict = {}
+    try:
+        diff = subprocess.run(["git", "diff", "-U0", since], cwd=root,
+                              capture_output=True, text=True, check=True).stdout
+    except (subprocess.CalledProcessError, OSError):
+        return {}
+    current = None
+    for line in diff.splitlines():
+        if line.startswith("+++ b/"):
+            current = str(root / line[6:].strip())
+            out.setdefault(current, set())
+        elif line.startswith("@@") and current:
+            # @@ -old,n +new,m @@ - the `+new,m` span is what this diff touches
+            m = re.search(r"\+(\d+)(?:,(\d+))?", line)
+            if m:
+                start, count = int(m.group(1)), int(m.group(2) or 1)
+                out[current].update(range(start, start + count))
+    try:
+        untracked = subprocess.run(["git", "ls-files", "--others", "--exclude-standard"],
+                                   cwd=root, capture_output=True, text=True, check=True).stdout
+        for name in untracked.splitlines():
+            p = root / name.strip()
+            if p.suffix in PROFILES and p.exists():
+                out[str(p)] = set(range(1, len(p.read_text(encoding="utf-8").splitlines()) + 2))
+    except (subprocess.CalledProcessError, OSError):
+        pass
+    return out
+
+
+def _on_diff(m: dict, changed: dict) -> bool:
+    """True when this mutation sits on a line the diff touched."""
+    return m["line"] in changed.get(str(m["file"]), set())
+
+
+def apply_budget(mutations: list[dict], max_mutations: int,
+                 changed: dict | None = None) -> tuple[list[dict], int]:
     """Distribute the cost ceiling round-robin over (file, fault class) groups -
     never first-N in file order, which clusters all coverage at the top of the
     alphabetically-first file. Deterministic: groups in sorted order, one mutation
     per group per rotation, each group's own line order preserved. Returns
-    (chosen in original enumeration order, truncated count)."""
+    (chosen in original enumeration order, truncated count).
+
+    When `changed` is supplied (file -> touched line numbers), mutations ON those lines
+    are spent first and only the remainder of the ceiling reaches untouched code. Without
+    it a low ceiling on a large file samples whichever lines sort first - peripheral
+    helpers - rather than the change under review, so the run reports high kill rates
+    about code nobody edited (L-0086)."""
     if len(mutations) <= max_mutations:
         return list(mutations), 0
-    groups: dict = {}
-    for m in mutations:
-        groups.setdefault((m["file"], m["class"]), []).append(m)
-    # files are the FAST axis of the rotation (sort by class, then file): with a
-    # small budget every file still gets coverage before any class repeats
-    queues = [groups[k] for k in sorted(groups, key=lambda k: (k[1], k[0]))]
-    chosen: list[dict] = []
-    i = 0
-    while len(chosen) < max_mutations and any(queues):
-        q = queues[i % len(queues)]
-        if q:
-            chosen.append(q.pop(0))
-        i += 1
     order = {id(m): n for n, m in enumerate(mutations)}
+
+    def _rotate(pool: list[dict], budget: int) -> list[dict]:
+        """Round-robin over (file, class) groups within one priority tier."""
+        groups: dict = {}
+        for m in pool:
+            groups.setdefault((m["file"], m["class"]), []).append(m)
+        # files are the FAST axis of the rotation (sort by class, then file): with a
+        # small budget every file still gets coverage before any class repeats
+        queues = [groups[k] for k in sorted(groups, key=lambda k: (k[1], k[0]))]
+        picked: list[dict] = []
+        i = 0
+        while len(picked) < budget and any(queues):
+            q = queues[i % len(queues)]
+            if q:
+                picked.append(q.pop(0))
+            i += 1
+        return picked
+
+    if changed:
+        on = [m for m in mutations if _on_diff(m, changed)]
+        off = [m for m in mutations if not _on_diff(m, changed)]
+        chosen = _rotate(on, max_mutations)
+        if len(chosen) < max_mutations:      # diff fully covered - spend the rest broadly
+            chosen += _rotate(off, max_mutations - len(chosen))
+    else:
+        chosen = _rotate(list(mutations), max_mutations)
     chosen.sort(key=lambda m: order[id(m)])
     return chosen, len(mutations) - len(chosen)
 
@@ -283,7 +344,8 @@ def _run_tests(test_cmd: str, cwd: Path) -> str:
 
 def run_gate(repo_root: Path | str, files, test_cmd: str,
              max_mutations: int | None = None,
-             classes: tuple = FAULT_CLASSES, write_report: bool = True) -> dict:
+             classes: tuple = FAULT_CLASSES, write_report: bool = True,
+             changed: dict | None = None) -> dict:
     """The gate: enumerate, apply one at a time, re-run tests, verdict each mutation.
 
     Baseline first: the tests must be green over UNMUTATED code. A red or broken baseline
@@ -293,7 +355,7 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
     root = Path(repo_root)
     ceiling = max_mutations if max_mutations is not None else DEFAULT_MAX_MUTATIONS
     all_mutations, unchecked = enumerate_mutations(files, classes)
-    to_apply, truncated = apply_budget(all_mutations, ceiling)
+    to_apply, truncated = apply_budget(all_mutations, ceiling, changed)
     _install_restore_handlers()   # a kill mid-mutant must restore, never strand
     baseline = _run_tests(test_cmd, root)
     refused = baseline != "pass"
@@ -327,6 +389,16 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
         "truncated": truncated,
         "enumerated": len(all_mutations),
     }
+    # Diff coverage: of the mutants sitting on changed lines, how many did the ceiling
+    # actually reach? A truncated run that covered the whole diff is far stronger evidence
+    # than one that sampled 8% of it, and the difference must be legible in the report
+    # rather than inferred from `truncated` (L-0073: a bound that can bite must say so).
+    if changed:
+        on_diff_total = sum(1 for m in all_mutations if _on_diff(m, changed))
+        on_diff_applied = sum(1 for r in records if _on_diff(r, changed))
+        summary["diff_mutations"] = on_diff_total
+        summary["diff_applied"] = on_diff_applied
+        summary["diff_covered"] = (on_diff_total == on_diff_applied)
     import hashlib
     target_hashes = {}
     for fp in files:
@@ -463,7 +535,11 @@ def cmd_run(args: argparse.Namespace) -> int:
     if ceiling is None:
         import config  # sibling; soft default when no project override
         ceiling = int(config.get(root, "quality.mutation_max", DEFAULT_MAX_MUTATIONS))
-    report = run_gate(root, files, args.test, max_mutations=ceiling)
+    # With a diff to aim at, spend the ceiling on the changed lines first - otherwise a
+    # low ceiling on a large file samples peripheral helpers and reports a kill rate about
+    # code nobody touched (L-0086).
+    changed = changed_lines(root, args.since) if args.since else None
+    report = run_gate(root, files, args.test, max_mutations=ceiling, changed=changed)
     s = report["summary"]
     if report.get("refused"):
         # a red/broken baseline proves nothing: refuse loudly, name the remedy, exit non-zero -
@@ -489,6 +565,15 @@ def cmd_run(args: argparse.Namespace) -> int:
             print(f"  note: sampled {s['applied']}/{s['enumerated']} enumerated "
                   f"({_pct(s['applied'], s['enumerated'])}) - the "
                   f"{s['truncated']} beyond the ceiling are un-checked, not clean")
+        if "diff_mutations" in s:
+            if s["diff_covered"]:
+                print(f"  diff coverage: {s['diff_applied']}/{s['diff_mutations']} "
+                      f"mutants on changed lines - the diff is fully covered")
+            else:
+                print(f"  WARNING: diff coverage {s['diff_applied']}/{s['diff_mutations']} "
+                      f"({_pct(s['diff_applied'], s['diff_mutations'])}) - the ceiling could "
+                      f"not reach every mutant on the changed lines; raise "
+                      f"--max-mutations to judge the whole diff")
     return 1 if s["survived"] or s["errors"] else 0
 
 

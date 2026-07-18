@@ -65,6 +65,11 @@ python3 <skill>/scripts/mutation.py prefilter --tests tests/test_*.py
   distributes round-robin with files as the fast axis (every file gets coverage before
   any class repeats), and enumerations beyond the ceiling are counted as **truncated** -
   un-checked coverage, not clean.
+- With `--since REF` the ceiling is spent on the **changed lines first**, and only the
+  remainder reaches untouched code - otherwise a low ceiling on a large file samples
+  peripheral helpers and reports a kill rate about code nobody edited. The report carries
+  `diff_mutations` / `diff_applied` / `diff_covered`, and a run that could not reach every
+  mutant on the diff says so rather than leaving it to be inferred from the truncation count.
 - Lines inside docstrings/multi-line strings are not enumerated (they mutate nothing
   and would false-survive); a file the tokeniser cannot parse has that exclusion
   skipped and NOTED in the un-checked list.

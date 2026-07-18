@@ -654,6 +654,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A bounded mutation run spends its ceiling on the changed lines (EP0072, US0218).** With
+  `--since REF`, `mutation.py` now reads `git diff -U0` into a changed-line map and applies mutants
+  on those lines before any untouched code; once the diff is covered the remainder spreads
+  round-robin as before. Previously the rotation was fair across the surface but blind to the diff,
+  so a low ceiling on a large file sampled whichever lines sorted first - peripheral helpers - and
+  reported a confident kill rate about code nobody edited. The report gains `diff_mutations`,
+  `diff_applied` and `diff_covered`, and a run whose ceiling could not reach the whole diff warns
+  with the fraction achieved. Runs without diff information (`--files`, `--story`) are unchanged.
+
 - **A metadata edit no longer invalidates a green AC verification (EP0072, US0213).** The Done
   gate judged freshness on the story file's mtime, so a Status transition, a Revision History row,
   or `verify_ac`'s own `**Verified:**` stamps all reported a correct green as "edited after it was
