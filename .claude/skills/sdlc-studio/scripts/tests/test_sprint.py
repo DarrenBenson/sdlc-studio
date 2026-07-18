@@ -2886,5 +2886,88 @@ class ApplySignoffParentEpicTests(unittest.TestCase):
             self.assertEqual(self._epic_status(root), "Done")
 
 
+class ApplySignoffOverSweepTests(unittest.TestCase):
+    """BG0190 repair: deriving completion is a CLAIM, made only on complete evidence.
+
+    The first implementation evaluated `all(terminal)` over the units
+    `reconcile._breakdown_units` could RESOLVE - and that helper silently skips a breakdown
+    id with no backing file, and a unit file with no Status. An epic decomposed up front
+    whose stories are written incrementally (the ordinary `epic decompose` -> `story create`
+    flow) was therefore marked Done off its one delivered story. It also swept EVERY epic in
+    the repo, writing false completion onto epics the run never touched.
+
+    Found by the independent adversarial review of RUN-01KXT0YV, which REJECTed the sprint.
+    """
+
+    def _epic(self, root, breakdown_lines, status="Draft", eid="EP0001"):
+        d = root / "sdlc-studio" / "epics"
+        d.mkdir(parents=True, exist_ok=True)
+        lines = [f"# {eid}: widgets", "", f"> **Status:** {status}", "",
+                 "## Story Breakdown", ""] + list(breakdown_lines)
+        (d / f"{eid}-widgets.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        idx = d / "_index.md"
+        rows = idx.read_text(encoding="utf-8") if idx.exists() else (
+            "# Epics\n\n| ID | Title | Status |\n| --- | --- | --- |\n")
+        idx.write_text(rows + f"| [{eid}]({eid}-widgets.md) | widgets | {status} |\n",
+                       encoding="utf-8")
+
+    def _status(self, root, eid="EP0001"):
+        text = (root / "sdlc-studio" / "epics" / f"{eid}-widgets.md").read_text(encoding="utf-8")
+        return next(line.split("**Status:**")[1].strip()
+                    for line in text.splitlines() if "**Status:**" in line)
+
+    def test_unresolvable_child_blocks_derivation(self) -> None:
+        """A breakdown id with no backing file is UNKNOWN, not done."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, scaffolded_retro="RETRO0001")
+            _signoffable_story(root)
+            _close_retro(root)
+            self._epic(root, [
+                "- [ ] [US0101: x](../stories/US0101-widget.md)",
+                "- [ ] [US0102: not written yet](../stories/US0102-ghost.md)",
+                "- [ ] [US0103: not written yet](../stories/US0103-ghost.md)",
+            ])
+            mod = _load()
+            rc, out, err = _run_apply_signoff(root, mod)
+            self.assertNotEqual(self._status(root), "Done")
+            self.assertIn("could not be read", err)
+
+    def test_child_without_status_blocks_derivation(self) -> None:
+        """A unit file asserting no Status is UNKNOWN, not done."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, scaffolded_retro="RETRO0001")
+            _signoffable_story(root)
+            _close_retro(root)
+            (root / "sdlc-studio" / "stories" / "US0102-widget.md").write_text(
+                "# US0102: no status field\n\nbody only\n", encoding="utf-8")
+            self._epic(root, [
+                "- [ ] [US0101: x](../stories/US0101-widget.md)",
+                "- [ ] [US0102: y](../stories/US0102-widget.md)",
+            ])
+            mod = _load()
+            _run_apply_signoff(root, mod)
+            self.assertNotEqual(self._status(root), "Done")
+
+    def test_untouched_epic_is_never_derived(self) -> None:
+        """A close must not write completion onto an epic this run never touched."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, scaffolded_retro="RETRO0001")
+            _signoffable_story(root)
+            _close_retro(root)
+            self._epic(root, ["- [ ] [US0101: x](../stories/US0101-widget.md)"])
+            # a SECOND epic, complete on its own terms, but no unit of it is in this run
+            (root / "sdlc-studio" / "stories" / "US0900-other.md").write_text(
+                "# US0900: other\n\n> **Status:** Done\n", encoding="utf-8")
+            self._epic(root, ["- [ ] [US0900: other](../stories/US0900-other.md)"],
+                       eid="EP0002")
+            mod = _load()
+            _run_apply_signoff(root, mod)
+            self.assertEqual(self._status(root, "EP0001"), "Done")     # ours derives
+            self.assertNotEqual(self._status(root, "EP0002"), "Done")  # theirs does not
+
+
 if __name__ == "__main__":
     unittest.main()

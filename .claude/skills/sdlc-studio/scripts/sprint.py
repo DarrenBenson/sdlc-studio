@@ -2311,25 +2311,60 @@ def _apply_signoff(root, state, principal: str | None, author_default: str | Non
             return 1
         done.append(unit)
         print(f"apply-signoff: {unit} signed off by {principal} -> Done")
-    rc = _apply_signoff_tail(root, state)
+    # the run's own units - the derivation must not reach epics this close never touched
+    rc = _apply_signoff_tail(root, state, units=done + skipped)
     print(f"apply-signoff: {len(done)} transitioned Done, {len(signed)} newly signed, "
           f"{len(skipped)} already complete")
     return rc
 
 
-def _derive_parent_epics(root) -> list[str]:
-    """Transition every epic whose breakdown units are all terminal to Done.
+def _declared_breakdown_ids(text: str) -> list[str]:
+    """Every id-bearing checkbox line in the epic's Story Breakdown, resolvable or not.
+
+    `reconcile._breakdown_units` yields only units it can RESOLVE - it skips a breakdown id
+    with no backing file, and a unit file carrying no Status. Those skips are right for drift
+    detection (there is nothing to compare) but wrong for deriving completion: an
+    unresolvable child is unknown, not finished. Counting the declared ids separately is what
+    lets the caller tell "all children terminal" from "the only child I could read is
+    terminal".
+    """
+    import reconcile  # noqa: PLC0415
+    out: list[str] = []
+    in_breakdown = False
+    for ln in text.splitlines():
+        if ln.lstrip().startswith("#"):
+            in_breakdown = bool(reconcile._BREAKDOWN_HEADING_RE.match(ln.strip()))
+            continue
+        if not in_breakdown or not reconcile._BREAKDOWN_BOX_RE.match(ln):
+            continue
+        idm = sdlc_md.ID_SEARCH_RE.search(ln)
+        if idm:
+            out.append(idm.group(0))
+    return out
+
+
+def _derive_parent_epics(root, units=None) -> list[str]:
+    """Transition an epic whose breakdown units are ALL terminal to Done.
 
     The per-unit cascade ticks an epic's breakdown checkbox but never sets the epic's own
     Status, and with `two_backlog.enforce` off (the default) reconcile does not derive it
     either - so after a close transitioned all of an epic's stories Done, the epic sat at
-    Draft and had to be moved by hand. An epic with no breakdown units is skipped:
-    "no children" is not "all children complete". Each transition goes through the gated
-    path, so a parent that should not move still does not.
+    Draft and had to be moved by hand.
+
+    Deriving completion is a claim, so it is made only where the evidence is complete:
+
+    - Scoped to the PARENTS OF THIS RUN'S UNITS (`units`). A close must never write
+      completion onto an epic the run did not touch.
+    - An epic with no breakdown units is skipped: "no children" is not "all children
+      complete".
+    - An epic with any UNRESOLVABLE child - a breakdown id with no backing file, or a unit
+      with no Status - is skipped. Those are unknown, not finished, and treating them as
+      absent would mark an incrementally-written epic Done off its one delivered story.
     """
     import reconcile  # noqa: PLC0415
     import transition  # noqa: PLC0415
     root = Path(root)          # callers pass either; the census helpers need a Path
+    wanted = {sdlc_md.norm_id(u) for u in (units or [])}
     moved: list[str] = []
     for epath in sdlc_md.artifact_files("epic", root):
         text = sdlc_md.read_text_safe(epath)
@@ -2337,11 +2372,19 @@ def _derive_parent_epics(root) -> list[str]:
         if sdlc_md.is_terminal_status("epic", sdlc_md.canonical_status(
                 sdlc_md.extract_field(text, "Status"), sdlc_md.status_vocab("epic", root))):
             continue                                   # already terminal: nothing to derive
-        units = list(reconcile._breakdown_units(root, text))
-        if not units:
+        declared = _declared_breakdown_ids(text)
+        if not declared:
             continue                                   # no children to be complete
+        if wanted and not ({sdlc_md.norm_id(d) for d in declared} & wanted):
+            continue                                   # not this run's epic - not our claim
+        resolved = list(reconcile._breakdown_units(root, text))
+        if len(resolved) != len(declared):
+            print(f"apply-signoff: {eid} not derived - {len(declared) - len(resolved)} of "
+                  f"{len(declared)} breakdown unit(s) could not be read (no file, or no "
+                  f"Status); an unreadable child is unknown, not done", file=sys.stderr)
+            continue
         if not all(sdlc_md.is_terminal_status(utype, canon)
-                   for _ln, _ticked, _uid, utype, canon in units):
+                   for _ln, _ticked, _uid, utype, canon in resolved):
             continue
         try:
             transition.transition(root, eid, "Done")
@@ -2351,15 +2394,16 @@ def _derive_parent_epics(root) -> list[str]:
     return moved
 
 
-def _apply_signoff_tail(root, state) -> int:
+def _apply_signoff_tail(root, state, units=None) -> int:
     """The close tail (US0237): derive parent epics terminal, write the run's velocity row,
     and run a final reconcile. The per-unit cascade ticks each epic's breakdown checkbox but
-    does not set the epic's own Status, so the derivation happens here. Idempotent:
-    an already-terminal epic is skipped, the velocity row is upserted by retro id, and
-    reconcile is read-only detection."""
+    does not set the epic's own Status, so the derivation happens here - scoped to the
+    parents of THIS run's units, never the whole repo. Idempotent: an already-terminal epic
+    is skipped, the velocity row is upserted by retro id, and reconcile is read-only
+    detection."""
     import reconcile  # noqa: PLC0415
     import retro  # noqa: PLC0415
-    derived = _derive_parent_epics(root)
+    derived = _derive_parent_epics(root, units)
     if derived:
         print(f"apply-signoff: derived {', '.join(derived)} Done (all children terminal)")
     retro_id = (state.get("scaffolded_retro") or "").strip()

@@ -304,6 +304,24 @@ pre-flight verifier step before step 10 (index and cascade updates).
 A story that fails the gate stays In Progress with a report pointing
 at the failing ACs.
 
+### Freshness: what invalidates a green result
+
+A green verification is judged fresh by an **AC fingerprint** - a hash of each AC's
+id, title and `Verify:` command - not by the story file's modification time. mtime
+answers "was the file touched", not "did what we verified change": a status
+transition, a revision-history row, or the `- **Verified:**` stamps the verifier
+itself writes all move mtime while leaving every AC and verifier untouched, and
+each used to force a re-run that could only produce the same result.
+
+So a re-verify is demanded when an AC is added, removed, retitled, or its verifier
+re-pointed - and not otherwise. Deliberately outside the fingerprint: **prose inside
+an AC body** (the `Given`/`When`/`Then` narrative). Editing that changes what the AC
+*means* to a reader without changing what the verifier *executes*, so the mechanical
+gate cannot judge it. Semantic drift between an AC's prose and its verifier is the
+reviewer's call, not the fingerprint's - which is one reason the critic pass is a
+separate gate. Reports written before the fingerprint existed carry none and still
+fall back to mtime, so its absence never silently passes a stale green.
+
 ## Troubleshooting {#verify-trouble}
 
 **`kind: invalid, exit_code: 2`**: The verifier expression could not

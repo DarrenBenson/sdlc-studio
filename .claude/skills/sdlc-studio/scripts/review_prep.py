@@ -285,7 +285,11 @@ def close(repo_root: Path | str, rv_id: str, latest_body: str | None = None,
     indexed = False
     try:
         import reconcile  # sibling; imported lazily to keep the module's import graph flat
-        indexed = bool(reconcile.apply_meta(root)["appended"])
+        # scope the report to THIS rv: apply_meta backfills every meta index, so a bare
+        # truthiness check would claim "index row written" because some other artefact
+        # was backfilled.
+        appended = reconcile.apply_meta(root)["appended"]
+        indexed = any(norm in str(a).replace("-", "").upper() for a in appended)
     except Exception as exc:  # noqa: BLE001 - the stamp is the close; indexing is best-effort
         print(f"warning: could not ensure the review index row ({exc}) - "
               f"run `reconcile.py apply` before the close gate", file=sys.stderr)

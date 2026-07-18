@@ -662,7 +662,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   through the gated path. An epic with no breakdown units is skipped ("no children" is not "all
   children complete"), a live child blocks the derivation, and an already-terminal epic is left
   alone so a re-run stays idempotent. US0237's AC2 claimed this behaviour while its Verify line
-  covered only the reconcile-drift half; it now points at the derivation tests.
+  covered only the reconcile-drift half; it now points at the derivation tests. The derivation is
+  scoped to the parents of the run's own units and refuses on any child it cannot read (a breakdown
+  id with no backing file, or a unit with no `Status`) - an unreadable child is unknown, not
+  finished, and the first implementation would have marked an incrementally-written epic Done off
+  its one delivered story, on every epic in the repo.
 
 - **The review close writes its own index row (EP0072, US0214).** `review_prep close` stamped
   review-state and derived the LATEST anchor but left the RV out of `reviews/_index.md`, so the very
