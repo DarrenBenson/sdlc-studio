@@ -1,46 +1,54 @@
 # Reviews - LATEST (anchor)
 
-> Derived from the sprint-close review of **RUN-01KXRMQT** (the artefact-schema
-> contract sprint, 2026-07-17, RETRO0047). Supersedes the RETRO0046 picture.
+> Derived from the sprint-close review of **RUN-01KXS5JY** (the close-chain robustness
+> sprint, 2026-07-18, RETRO0048). Supersedes the RETRO0047 picture.
 
-## Where the pipeline is (2026-07-17)
+## Where the pipeline is (2026-07-18)
 
-The **artefact-schema contract sprint** (RUN-01KXRMQT) is delivered: **EP0084 (US0258-US0260,
-3 stories, 11 points) Done and every AC verified**, Sprint Goal judged ACHIEVED (RETRO0047).
-This delivers **RFC0047 option B**: the `sdlc-studio/` artefact tree is now a versioned,
-drift-guarded public contract rather than an undeclared de facto interface. `reference-schema.md`
-documents the six on-disk surfaces (id grammar, directory layout, per-type header fields, status
-vocabulary and transition gates, the Verify-line DSL, the derived index format); `schema_version`
-is the contract stamp (current version **3** - new projects ship v3 via `init` ->
-`templates/config.yaml`; v2 is the legacy era; `config-defaults.yaml`'s 2 is the fallback for
-un-stamped projects); and `scripts/tests/test_schema_contract.py` (11 tests) fails the suite when
-the documented vocabularies or version stamp diverge from the code constants.
+The **close-chain robustness sprint** (RUN-01KXS5JY) is delivered: **7/7 units, Sprint Goal
+ACHIEVED**. The batch was the close/gate/sprint-tooling family from the 2026-07-16 audit triage:
+two follow-up bugs and two epics.
+
+- **BG0188 (High):** `open_run` now treats a run carrying any close artefact (`sprint_goal_verdict`
+  / `ended_at` / `handoff`) but `outcome=running` as spent and mints a fresh run - closing the
+  hazard where `sprint plan --write` accumulated a new batch onto a judged run and clobbered its
+  verdict. A clean running run still accumulates.
+- **BG0189 (Low):** `project_upgrade.CURRENT_SCHEMA` derives from the single source of truth
+  (`templates/config.yaml` via new `sdlc_md.current_schema()`); the `.version` stamp and `audit()`'s
+  `stale-version` finding follow the project's own effective/config schema, so a legitimately-v2
+  project is neither silently advanced nor left with a permanent false finding.
+- **EP0077 (US0236/US0237/US0238):** `sprint close --apply-signoff --principal "<you>"` fans a
+  recorded operator approval into per-unit sign-offs + Done transitions, then a tail that writes the
+  run's velocity row and a final reconcile. Story-scoped, idempotent, stops loud at the first refusal.
+- **EP0080 (US0247/US0248):** a recorded sprint-level adversarial full-diff verdict
+  (`critic sprint-review`) satisfies the per-unit `critiqued` gate as coverage for the units in its
+  range (never overriding a per-unit REJECT; sign-off still per unit), and the close sign-off brief
+  reads a covered unit as reviewed rather than unreviewed.
 
 ## CODE leg
 
-Closing full-diff adversarial pass (independent instance, refute framing, a repro per claim), run
-twice. **Round 1 REJECT (BLOCKING):** the contract asserted new projects are/stay schema v2 until
-migration, but shipped `init.py` stamps `schema_version: 3` into every new project (proven by
-running it); decision D0033's mechanism was factually false. **Round 2 APPROVE:** the fix declares
-the contract at schema v3 (current; v2 legacy), anchors the guard to the new-project seed
-(`templates/config.yaml`), and adds a fallback-never-leads test; the reviewer re-ran the mutation
-checks (status / masthead / v3-inbox drift all go red, revert green), confirmed all three verifiers
-and lint clean, and both MINORs were closed (the v3 `inbox` lane is now a guarded table;
-`CURRENT_SCHEMA=2` is BG0189). Reviewer-of-record sign-off recorded. Full suite 2828 green, drift 0.
+The close CODE leg was ONE independent adversarial full-diff review over `e53202a..HEAD` (refute
+framing, a repro per claim), recorded as a sprint-level verdict - dogfooding EP0080. **Round 1
+REJECT (BLOCKING):** the review reproduced a regression BG0189 introduced - `audit()` advertised a
+`stale-version` auto-fix (`< CURRENT_SCHEMA`) that `apply()` no longer performs, leaving a v2
+project a permanent uncorrectable finding. It also found the US0247/US0236 composition gap
+(`_signoff_author` did not read the sprint-level review) and a two-role independence observation.
+**Repaired** in commit 39f346a (audit/apply consistency + a v2-stamp regression test; author
+resolved from the sprint review; principal refused when it equals the sprint reviewer), then
+**re-verified** by the same reviewer. The independent review earned its cost: it caught a shipped
+regression the author's own tests missed. Full suite 2858 green, drift 0, every commit gated.
 
 ## Document legs
 
-`reference-schema.md` (new), `reference-config.md`, `help/references.md`, `config-defaults.yaml`
-and `templates/config.yaml` are the surfaces this sprint touched; each is consistent with the
-shipped code, enforced by the drift guard. Decision D0034 (supersedes D0033) records the
-current-version resolution.
+`reference-sprint.md` (the sprint-level coverage model), `help/sprint.md` (`--apply-signoff`),
+`CHANGELOG.md`, and the five groomed stories are the surfaces this sprint touched; each is
+consistent with the shipped code and enforced by the gate.
 
 ## Next steps
 
-- Follow-ups filed this sprint: **BG0188** (`sprint plan --write` accumulates a new batch into a
-  prior run left `outcome=running`, reusing its id and clobbering its verdict) and **BG0189**
-  (`project_upgrade.CURRENT_SCHEMA=2` contradicts `init` seeding new projects at schema_version 3).
-- Standing: **CR0278** (interactive-sprint token capture) - per-unit token actuals were not
-  captured this run, so est/actual is uncomputable.
+- The five EP0077/EP0080 stories reach Done at this run's own close via `--apply-signoff` (dogfood):
+  the sprint-level review is the evidence, the operator sign-off is the reviewer of record.
+- Standing: **CR0278** (interactive-sprint token capture) - per-unit token actuals were not captured
+  this run, so est/actual is uncomputable; the sprint total can be supplied with `accuracy --tokens`.
 - Residual audit CRs (CR0280-CR0306) and BG0187 remain for a future scheduled batch.
 - Release freeze holds until ~2026-07-21; everything lands unreleased on `main`.

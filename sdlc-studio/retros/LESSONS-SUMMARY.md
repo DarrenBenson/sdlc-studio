@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0093: Build a close-ceremony feature by orchestrating the existing tested primitives (sign-off, close, transition, velocity), not a parallel path...**
+- **L-0092: Correcting a wrong constant can activate dead code that only ever "worked" because the constant was wrong.**
+- **L-0091: Verify lines must use the DSL verbs (`grep`/`shell`/`pytest`/`file`/`http`/`eval`), never a backtick-wrapped raw `python3 ...`; the `grep`...**
 - **L-0090: **A create-only `Affects` is a real grooming gap, not a gate bug.** Name at least one existing file the unit also touches (here...**
 - **L-0089: **Machine-guard every vocabulary a self-describing contract claims to cover.** The v3 `inbox` lane shipped as prose the guard did not check...**
 - **L-0088: **A public contract's version stamp must anchor to what new consumers actually meet.** Tying the masthead to the fallback file made the...**

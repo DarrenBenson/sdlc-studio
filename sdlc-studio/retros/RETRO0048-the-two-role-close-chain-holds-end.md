@@ -92,7 +92,10 @@ diff (`e53202a..HEAD`), framed to refute, run by a separate instance that did no
 recorded as a sprint-level verdict (US0247's own mechanism, dogfooded). Findings, refutations and
 the survivors of the pass are recorded here and in `reviews/sprint-review-record.md`.
 
-- {{critic_findings}}
+- **Round 1: REJECT (1 BLOCKING).** The pass reproduced a real regression BG0189 introduced: `audit()` still flagged `stale-version` as auto-correctable for any project below `CURRENT_SCHEMA` (now 3), but `apply()` no longer bumps schema to `CURRENT_SCHEMA` - so a legitimately-v2 project got a permanent, uncorrectable false finding, breaking the dry-run==apply honesty invariant. This was invisible to the author: the new coherence test only checked the constant, not `apply()`'s stamp behaviour.
+- **Also found (MINOR):** US0247 and US0236 did not compose - `_signoff_author` did not read `sprint_review_for`, so a unit covered only by the sprint-level review could not resolve its author for the sign-off. Plus an independence observation: the sign-off principal could equal the sprint-level reviewer (the per-unit path forbids that).
+- **Refuted / survived:** the reviewer mentally reverted each hunk of BG0188 (`_is_spent`), the conformance verdict-half and REJECT-not-overridden guards, and confirmed the new tests catch the reversion (non-vacuous); `_CLOSE_ARTEFACTS` correctly excludes `scaffolded_retro`, so scaffold-then-fill still accumulates.
+- **Round 2:** all three repaired in commit 39f346a with tests (audit/apply consistency on a v2 project; author-from-sprint-review; principal != sprint reviewer); re-verification by the same reviewer recorded in `reviews/sprint-review-record.md`. The independent review earned its cost - it caught a shipped regression the author's own tests missed.
 
 ## Actions raised
 
@@ -110,7 +113,9 @@ not an answer.
 | --- | --- |
 | Verify-line DSL friction (non-DSL forms pass grooming, fail verify_ac) | declined: captured as a lesson; the verify_ac error already names the DSL verbs and the fix is mechanical, not worth a CR |
 | The pre-commit gate runs the full suite per commit (~2.5 min/commit) | declined: the un-skippable full gate is a deliberate trunk-based-CI choice; speeding it is a known trade-off, not a defect |
-| {{critic_finding_disposition}} | {{disposition}} |
+| BG0189 audit/apply stale-version regression (BLOCKING) | declined: no separate ticket - repaired in-sprint before close (commit 39f346a) with a regression test, not deferred |
+| apply-signoff x sprint-review author resolution + principal independence | declined: no separate ticket - repaired in-sprint (commit 39f346a) with tests |
+| The coherence-test gap that let the BLOCKING finding through (no test of apply()'s v2 stamp behaviour) | declined: the repair added exactly that test (`AuditApplyConsistencyTests`), closing the gap |
 
 <!-- file one with: scripts/file_finding.py · check with: scripts/retro.py dispose --id RETROxxxx -->
 
@@ -128,4 +133,4 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 
 ## Metrics
 
-- Tokens: ~650,000 forecast (per-unit actuals not-yet-captured) · Duration: interactive session · Critic rejects: {{rejects}}
+- Tokens: ~650,000 forecast (per-unit actuals not-yet-captured) · Duration: interactive session · Critic rejects: 1 (closing sprint-level review, round 1; repaired and re-verified)
