@@ -21,14 +21,16 @@
 - **Given** a unit with no per-unit verdict, covered by a recorded sprint-level review
 - **When** the sign-off brief is composed
 - **Then** the unit reads "covered by sprint-level review by <reviewer>" for both verdict and evidence, never "(no critic verdict recorded)"
-- **Verify:** `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k SprintReviewBrief`
+- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_critic.SignoffBriefTests.test_SprintReviewBrief_reads_coverage_not_unreviewed
+- **Verified:** yes (2026-07-18)
 
 ### AC2: the coverage model is documented
 
 - **Given** `reference-sprint.md`
 - **When** an agent reads the closing-review section
 - **Then** it documents that one sprint-level review is recorded once and satisfies the per-unit critiqued gate as coverage (sign-off still per unit)
-- **Verify:** `grep -q "recorded once, as coverage" .claude/skills/sdlc-studio/reference-sprint.md`
+- **Verify:** grep "recorded once, as coverage" .claude/skills/sdlc-studio/reference-sprint.md
+- **Verified:** yes (2026-07-18)
 
 ## Revision History
 

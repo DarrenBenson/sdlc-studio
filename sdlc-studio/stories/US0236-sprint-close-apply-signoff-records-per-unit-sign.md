@@ -21,21 +21,24 @@
 - **Given** an open run whose close chain has passed
 - **When** `sprint close --retro <id> --apply-signoff` runs with no `--principal`
 - **Then** it exits non-zero, records no sign-off, and names that the reviewer of record must be given explicitly
-- **Verify:** `grep -rq "apply.signoff needs an explicit --principal" .claude/skills/sdlc-studio/scripts/sprint.py`
+- **Verify:** grep "apply-signoff needs an explicit --principal" .claude/skills/sdlc-studio/scripts/sprint.py
+- **Verified:** yes (2026-07-18)
 
 ### AC2: with a principal it records a sign-off and transitions each story unit Done
 
 - **Given** a batch of story units held at Review, each with recorded critic evidence and an APPROVE verdict
 - **When** `sprint close --retro <id> --apply-signoff --principal "<name>"` runs
 - **Then** each story unit gets a reviewer-of-record sign-off (author != principal) and is transitioned Done; bugs already terminal are left untouched
-- **Verify:** `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k ApplySignoff`
+- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_sprint.ApplySignoffTests
+- **Verified:** yes (2026-07-18)
 
 ### AC3: a subagent principal is refused, and the fan stops loudly at the first refusal
 
 - **Given** a principal that is an authoring-session subagent (a recorded reviewer on a unit), or a unit whose Done gate is red
 - **When** `--apply-signoff` reaches it
 - **Then** it stops non-zero at that unit naming the refusal, leaving already-signed-and-done units done (no partial-silent state)
-- **Verify:** `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k ApplySignoffStops`
+- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_sprint.ApplySignoffStopsTests
+- **Verified:** yes (2026-07-18)
 
 ## Revision History
 

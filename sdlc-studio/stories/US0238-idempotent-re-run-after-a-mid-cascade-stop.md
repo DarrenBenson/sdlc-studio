@@ -21,14 +21,16 @@
 - **Given** `--apply-signoff` stopped partway (some units Done+signed, one refused)
 - **When** the same command is re-run after the refusal is resolved
 - **Then** already-Done+signed units are skipped (no duplicate sign-off row that changes the latest verdict, no re-transition), and the remaining units complete
-- **Verify:** `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k ApplySignoffIdempotent`
+- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_sprint.ApplySignoffIdempotentTests
+- **Verified:** yes (2026-07-18)
 
 ### AC2: the tail is idempotent - no duplicate velocity row, no double telemetry
 
 - **Given** a completed `--apply-signoff` re-run against the same run
 - **When** it runs a second time
 - **Then** the velocity row is upserted (one row per retro id) and an idempotent re-close records no second terminal telemetry event
-- **Verify:** `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -k ApplySignoffIdempotent`
+- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_sprint.ApplySignoffIdempotentTests.test_ApplySignoffIdempotent_velocity_row_not_duplicated
+- **Verified:** yes (2026-07-18)
 
 ## Revision History
 
