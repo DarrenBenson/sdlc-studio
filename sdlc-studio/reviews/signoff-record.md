@@ -43,3 +43,6 @@
 | US0215 | Darren Benson | - | sdlc-studio-author-session | 2026-07-18 | - |
 | US0214 | Darren Benson | - | sdlc-studio-author-session | 2026-07-18 | - |
 | US0218 | Darren Benson | - | sdlc-studio-author-session | 2026-07-18 | - |
+| US0226 | Darren Benson | - | sdlc-studio | 2026-07-18 | - |
+| US0227 | Darren Benson | - | sdlc-studio | 2026-07-18 | - |
+| US0228 | Darren Benson | - | sdlc-studio | 2026-07-18 | - |

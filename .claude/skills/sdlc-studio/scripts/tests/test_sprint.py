@@ -3059,6 +3059,22 @@ class ApplySignoffRefreshesHandoffTests(unittest.TestCase):
             self.assertIn("2026-07-16 | sdlc-studio | Created", text)
             self.assertIn("# HO0001: a run", text)  # id and title, not a new artefact
 
+    def test_the_rewrite_leaves_no_doubled_blank_line(self) -> None:
+        # render_body already terminates its last section, so joining the kept Revision
+        # History onto it produced two blank lines and the markdown gate (MD012) refused the
+        # commit. A generated document must not need hand-fixing after every refresh.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, scaffolded_retro="RETRO0001", handoff="HO0001")
+            _signoffable_story(root)
+            _close_retro(root)
+            path = self._handoff(root)
+            mod = _load()
+            _run_apply_signoff(root, mod)
+            text = path.read_text(encoding="utf-8")
+            self.assertNotIn("\n\n\n", text)
+            self.assertTrue(text.endswith("\n"))
+
     def test_a_missing_handoff_file_is_reported_not_silently_skipped(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

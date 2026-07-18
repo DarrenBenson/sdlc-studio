@@ -684,7 +684,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and the worklist the next `sprint plan --worklist` reads listed as remaining the very units the
   close had just completed. A new `handoff.refresh` re-renders the existing artefact in place -
   same id, same index row, same retro link, revision history preserved - scoped to the closing
-  run's own batch, because `build` otherwise defaults to whichever run happens to be open.
+  run's own batch, because `build` otherwise defaults to whichever run happens to be open. Blank
+  runs are collapsed on the way out: the kept Revision History joined onto an already-terminated
+  body produced a doubled blank line, and a generated document must not need hand-fixing to pass
+  the markdown gate after every refresh.
 
 - **A retro id resolves in either form (BG0195).** `find_retro` prefix-globbed the raw string, but
   files are named `RETRO0049-...` while indexes, run state and prose all write `RETRO-0049`. The

@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -705,6 +706,11 @@ def refresh(repo_root: Path | str, handoff_id: str, batch: list[str] | None = No
     body = f"{head}\n\n{head_block}\n\n{render_body(report)}\n"
     if tail:
         body += f"\n{tail}\n"
+    # `render_body` already terminates its last section, so joining the kept tail onto it
+    # produced two blank lines and the markdown gate (MD012) refused the commit. Collapse any
+    # run of blank lines to one - a generated document must not need hand-fixing after every
+    # refresh.
+    body = re.sub(r"\n{3,}", "\n\n", body)
     sdlc_md.atomic_write(path, body)
     sdlc_md.atomic_write(root / WORKLIST_REL, _worklist_text(report, handoff_id))
     run_state.update(root, handoff_remaining=report["summary"]["remaining"])

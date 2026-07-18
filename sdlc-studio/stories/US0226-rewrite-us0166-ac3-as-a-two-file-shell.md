@@ -1,6 +1,6 @@
 # US0226: rewrite US0166 AC3 as a two-file shell Verify with the missing shell prefix
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

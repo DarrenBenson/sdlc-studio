@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 8 |
+| Draft | 7 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 76 |
+| Done | 77 |
 | **Total** | **84** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -97,7 +97,7 @@
 | [EP0072](EP0072-close-and-gate-ergonomics-the-two-role-close.md) | Close and gate ergonomics: the two-role close-chain friction batch | Done | -- | -- | 2026-07-17 | 2026-07-17 |
 | [EP0073](EP0073-audit-cost-and-overflow-instrumentation.md) | Audit cost and overflow instrumentation | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
 | [EP0074](EP0074-sprint-report-command-surface.md) | Sprint-report command surface | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
-| [EP0075](EP0075-verify-line-integrity-discriminating-correctly-parsed-executable-acs.md) | Verify-line integrity: discriminating, correctly-parsed executable ACs | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
+| [EP0075](EP0075-verify-line-integrity-discriminating-correctly-parsed-executable-acs.md) | Verify-line integrity: discriminating, correctly-parsed executable ACs | Done | -- | -- | 2026-07-17 | 2026-07-17 |
 | [EP0076](EP0076-rolling-multi-sprint-policy-regenerate-the-plan-at.md) | Rolling multi-sprint policy: regenerate the plan at each boundary | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
 | [EP0077](EP0077-sprint-close-phase-2-fan-the-sign-off.md) | Sprint close phase 2: fan the sign-off into the terminal cascade | Done | -- | -- | 2026-07-17 | 2026-07-17 |
 | [EP0078](EP0078-one-weakness-hunt-one-name-fold-review-generate.md) | One weakness-hunt, one name: fold review generate into audit --profile repo | Draft | -- | -- | 2026-07-17 | 2026-07-17 |

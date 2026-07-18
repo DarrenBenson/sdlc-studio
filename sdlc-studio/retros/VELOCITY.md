@@ -55,3 +55,4 @@ about no run that ever happened.
 | RETRO0045 | 2026-07-17 | 29 | 0 | 29 | - | 0 | 0 | - | - | 0 | - | - | unforecast | - |
 | RETRO0048 | 2026-07-18 | 7 | 0 | 7 | - | 0 | 0 | - | - | 0 | - | - | unforecast | - |
 | RETRO0049 | 2026-07-18 | 9 | 0 | 9 | - | 0 | 0 | - | - | 0 | - | - | unforecast | - |
+| RETRO0050 | 2026-07-19 | 10 | 0 | 10 | - | 0 | 0 | - | - | 0 | - | TOKENS_PER_POINT=25000 | out-of-sample | - |

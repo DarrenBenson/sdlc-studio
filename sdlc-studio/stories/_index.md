@@ -11,8 +11,8 @@
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 3 |
-| Done | 228 |
+| Review | 0 |
+| Done | 231 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -136,9 +136,9 @@
 | [US0223](US0223-add-the-sprint-report-command-route-delegating-to.md) | add the sprint report command route delegating to sprint_report | Draft | EP0074 | 2026-07-17 | 2026-07-17 |
 | [US0224](US0224-draw-the-report-in-the-close-ceremony-when.md) | draw the report in the close ceremony when report.enabled | Draft | EP0074 | 2026-07-17 | 2026-07-17 |
 | [US0225](US0225-resolve-document-the-report-enabled-json-exemption-and.md) | resolve/document the report.enabled json exemption and test the json path | Draft | EP0074 | 2026-07-17 | 2026-07-17 |
-| [US0226](US0226-rewrite-us0166-ac3-as-a-two-file-shell.md) | rewrite US0166 AC3 as a two-file shell Verify with the missing shell prefix | Review | EP0075 | 2026-07-17 | 2026-07-17 |
-| [US0227](US0227-split-non-discriminating-per-ac-selectors-so-each.md) | split non-discriminating per-AC selectors so each AC fails on its own regression | Review | EP0075 | 2026-07-17 | 2026-07-17 |
-| [US0228](US0228-harden-the-verify-ac-grep-verb-against-a.md) | harden the verify_ac grep verb against a dash-leading pattern | Review | EP0075 | 2026-07-17 | 2026-07-17 |
+| [US0226](US0226-rewrite-us0166-ac3-as-a-two-file-shell.md) | rewrite US0166 AC3 as a two-file shell Verify with the missing shell prefix | Done | EP0075 | 2026-07-17 | 2026-07-17 |
+| [US0227](US0227-split-non-discriminating-per-ac-selectors-so-each.md) | split non-discriminating per-AC selectors so each AC fails on its own regression | Done | EP0075 | 2026-07-17 | 2026-07-17 |
+| [US0228](US0228-harden-the-verify-ac-grep-verb-against-a.md) | harden the verify_ac grep verb against a dash-leading pattern | Done | EP0075 | 2026-07-17 | 2026-07-17 |
 | [US0229](US0229-record-a-standing-sprint-policy-n-cycles-goal.md) | record a standing sprint policy (N cycles, goal/capacity/order/stop conditions) on run-state | Draft | EP0076 | 2026-07-17 | 2026-07-17 |
 | [US0230](US0230-boundary-close-down-chain-retro-lessons-close-gate.md) | boundary close-down chain (retro + lessons + close gate); halt on a failed gate | Draft | EP0076 | 2026-07-17 | 2026-07-17 |
 | [US0231](US0231-fetch-and-origin-drift-check-at-each-boundary.md) | fetch and origin-drift check at each boundary, refuse under --strict | Draft | EP0076 | 2026-07-17 | 2026-07-17 |

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 3 |
+| Open | 4 |
 | In Progress | 0 |
 | Fixed | 114 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **199** |
+| **Total** | **200** |
 
 ## All Bugs
 
@@ -166,6 +166,7 @@
 | [BG0197](BG0197-mutation-gate-can-report-a-mutant-survived-that.md) | mutation gate can report a mutant SURVIVED that never ran, via stale .pyc | Open | High | 2026-07-18 | 2026-07-18 |
 | [BG0198](BG0198-handoff-refresh-re-stamps-run-identity-from-ambient.md) | handoff.refresh re-stamps run identity from ambient run state, not the run being refreshed | Open | Low | 2026-07-18 | 2026-07-18 |
 | [BG0199](BG0199-two-id-readers-disagree-on-width-stem-id.md) | two id readers disagree on width: _STEM_ID_RE needs 4+ digits, next_id._meta_nums accepts 3 | Open | Low | 2026-07-18 | 2026-07-18 |
+| [BG0200](BG0200-apply-signoff-tail-skips-the-velocity-row-in.md) | apply-signoff tail skips the velocity row in silence when the retro was not scaffolded by the close | Open | Medium | 2026-07-19 | 2026-07-19 |
 
 ## Archived Releases
 
