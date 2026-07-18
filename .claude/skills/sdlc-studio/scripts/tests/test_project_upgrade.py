@@ -90,6 +90,33 @@ class DetectTests(unittest.TestCase):
             self.assertTrue(pu.detect(d)["behind"])
 
 
+class AuditApplyConsistencyTests(unittest.TestCase):
+    """BG0189 regression guard: audit()'s auto-fix list must match what apply() actually does.
+    A stamped v2 project on the current skill declines v3 legitimately - its `.version` is NOT
+    stale, apply() is a no-op on it, and audit must not advertise a stale-version stamp bump apply
+    will never perform (else the finding is permanent and uncorrectable)."""
+
+    def test_v2_project_on_current_skill_has_no_uncorrectable_stale_version(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            _project(d, version=(2, INSTALLED))     # v2, current skill, no .config.yaml (schema 2)
+            kinds = [f["kind"] for f in pu.audit(d)["auto"]]
+            self.assertNotIn("stale-version", kinds)
+            ver = Path(d) / "sdlc-studio" / ".version"
+            before = ver.read_text(encoding="utf-8")
+            pu.apply(Path(d))                       # apply must be a no-op on .version
+            self.assertEqual(ver.read_text(encoding="utf-8"), before)
+            # dry-run matches apply, permanently: re-auditing after apply is still clean
+            self.assertNotIn("stale-version", [f["kind"] for f in pu.audit(d)["auto"]])
+
+    def test_a_genuinely_stale_skill_still_flags_and_apply_clears_it(self) -> None:
+        # The clause must still fire for what apply DOES fix - a lagging skill version.
+        with tempfile.TemporaryDirectory() as d:
+            _project(d, version=(2, "1.0.0"))       # skill behind the installed one
+            self.assertIn("stale-version", [f["kind"] for f in pu.audit(d)["auto"]])
+            pu.apply(Path(d))
+            self.assertNotIn("stale-version", [f["kind"] for f in pu.audit(d)["auto"]])
+
+
 class AuditTests(unittest.TestCase):
     def test_flags_missing_config_and_version(self):
         with tempfile.TemporaryDirectory() as d:

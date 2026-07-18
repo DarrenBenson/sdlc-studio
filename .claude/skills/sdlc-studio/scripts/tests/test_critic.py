@@ -619,6 +619,17 @@ class SignoffDelegateTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 mod.record_signoff(root, "US0001", principal="qa-seat", author="builder")
 
+    def test_SprintReview_reviewer_refused_as_principal(self) -> None:
+        # The reviewer-of-record must differ from the adversarial reviewer at sprint scope too:
+        # a principal equal to a covering sprint-level review's reviewer is refused.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = _load()
+            mod.record_sprint_review(root, ["US0001"], reviewer="qa-seat", author="builder",
+                                     verdict="APPROVE", findings="full-diff pass")
+            with self.assertRaises(ValueError):
+                mod.record_signoff(root, "US0001", principal="qa-seat", author="builder")
+
     def test_author_refused_as_delegate(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             mod = _load()

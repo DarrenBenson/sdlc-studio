@@ -2596,6 +2596,34 @@ class ApplySignoffTests(unittest.TestCase):
             c = _critic_mod()
             self.assertIsNone(c.signoff_for(root, "US0101"))       # nothing recorded
 
+    def test_ApplySignoff_resolves_author_from_a_sprint_level_review(self) -> None:
+        # US0247 x US0236: a unit covered ONLY by a sprint-level review (no per-unit verdict) must
+        # still resolve its author, so `--apply-signoff` works without an explicit --author.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root)
+            # a story with a green verify-report but NO per-unit critic verdict/evidence
+            dd = root / "sdlc-studio" / "stories"
+            dd.mkdir(parents=True, exist_ok=True)
+            (dd / "US0101-widget.md").write_text(
+                "# US0101: widget frobnicates\n\n> **Status:** Review\n> **Points:** 5\n"
+                "> **Epic:** EP0001\n\n## Acceptance Criteria\n\n### AC1: works\n"
+                "- **Verify:** shell true\n", encoding="utf-8")
+            rp = root / "sdlc-studio" / ".local" / "verify-report.json"
+            rp.parent.mkdir(parents=True, exist_ok=True)
+            rp.write_text(json.dumps({"stories": {"US0101-widget": {
+                "failed": 0, "stale": 0, "failures": [], "ac_count": 1,
+                "verified_at": "2099-01-01T00:00:00Z"}}}), encoding="utf-8")
+            c = _critic_mod()
+            c.record_sprint_review(root, ["US0101"], reviewer="qa-seat", author="build-seat",
+                                   verdict="APPROVE", findings="full-diff pass; none blocking")
+            _close_retro(root)
+            mod = _load()
+            rc, out, err = _run_apply_signoff(root, mod, principal="Darren")   # no --author
+            self.assertEqual(rc, 0, err)
+            text = (dd / "US0101-widget.md").read_text()
+            self.assertIn("Status:** Done", text)
+
     def test_ApplySignoff_records_and_dones(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

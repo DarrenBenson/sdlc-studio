@@ -2251,10 +2251,11 @@ def _batch_story_units(root, batch) -> list[str]:
 
 def _signoff_author(root, unit) -> str:
     """The author id the sign-off must be independent OF - read from the unit's recorded critic
-    verdict, else its evidence row. Empty when neither exists: a sign-off with no author to be
-    independent of cannot clear the two-role gate, so the caller refuses rather than inventing one."""
+    verdict, its evidence row, or the sprint-level review that covers it (a unit reviewed only at
+    sprint scope still records its author there). Empty when none exists: a sign-off with no author
+    to be independent of cannot clear the two-role gate, so the caller refuses rather than invent one."""
     import critic  # noqa: PLC0415
-    for getter in (critic.verdict_for, critic.evidence_for):
+    for getter in (critic.verdict_for, critic.evidence_for, critic.sprint_review_for):
         rec = getter(root, unit)
         if rec and (rec.get("author") or "").strip() not in ("", "-"):
             return rec["author"]

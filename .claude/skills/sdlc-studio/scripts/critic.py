@@ -223,17 +223,22 @@ def evidence_for(repo_root: Path | str, unit: str):
 
 
 def _session_reviewer_ids(repo_root: Path | str, unit: str) -> set[str]:
-    """Every reviewer id recorded on the unit's evidence and verdict rows - the
-    authoring session's subagents. A delegate or principal drawn from this set is
-    the author signing via a proxy it controls, and is refused."""
+    """Every reviewer id recorded on the unit's evidence, verdict, and sprint-level-review rows.
+    A delegate or principal drawn from this set is a reviewer signing off its own review (or the
+    author's proxy), and is refused: the reviewer-of-record must differ from BOTH the author and
+    the adversarial reviewer, per-unit or sprint-scope alike."""
+    target = sdlc_md.norm_id(unit)
     ids: set[str] = set()
     for r in _read_rows(evidence_path(repo_root), _EVIDENCE_COLS):
-        if sdlc_md.norm_id(r["unit"]) == sdlc_md.norm_id(unit):
+        if sdlc_md.norm_id(r["unit"]) == target:
             ids.add(_id(r["reviewer"]))
     for phase in PHASES:  # BOTH verdict phases - a plan-review seat is still the author's spawn
         for v in read_verdicts(repo_root, phase):
-            if sdlc_md.norm_id(v["unit"]) == sdlc_md.norm_id(unit):
+            if sdlc_md.norm_id(v["unit"]) == target:
                 ids.add(_id(v["reviewer"]))
+    for sr in sprint_reviews(repo_root):  # a sprint-level review covering this unit
+        if target in _covered_ids(sr):
+            ids.add(_id(sr["reviewer"]))
     ids.discard("")
     return ids
 

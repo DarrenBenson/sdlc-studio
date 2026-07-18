@@ -279,10 +279,23 @@ def audit(root: Path | str) -> dict:
                                      "cannot be stamped; fix the skill install, then re-run"})
         else:
             auto.append({"kind": "missing-version", "detail": "no sdlc-studio/.version (records the skill/schema version)"})
-    elif (installed and pv_skill != installed) or (pv_schema or 0) < CURRENT_SCHEMA:
-        # present but stale - apply() bumps it, so the dry-run must report it too
-        auto.append({"kind": "stale-version",
-                     "detail": f"sdlc-studio/.version records skill {pv_skill or '?'}; bump to {installed or '?'}"})
+    else:
+        # present but stale - flag ONLY what apply() will actually fix, so the dry-run never
+        # promises a stamp apply skips (the BG0150 dry-run==apply invariant). apply() bumps the
+        # skill version, and re-stamps the schema only when `.version` lags the project's OWN config
+        # schema - NOT merely because the project sits below CURRENT_SCHEMA. A project that
+        # legitimately stays on v2 is not stale; advancing it to v3 is the migrate command's
+        # operator decision, not an auto stamp bump that could never be cleared.
+        skill_stale = bool(installed) and pv_skill != installed
+        schema_stale = (pv_schema or 0) < sdlc_md.schema_version(root)
+        if skill_stale or schema_stale:
+            bits = []
+            if skill_stale:
+                bits.append(f"skill {pv_skill or '?'} -> {installed or '?'}")
+            if schema_stale:
+                bits.append(f"schema {pv_schema or '?'} -> {sdlc_md.schema_version(root)}")
+            auto.append({"kind": "stale-version",
+                         "detail": f"sdlc-studio/.version stale ({'; '.join(bits)})"})
     legacy_amigos = _legacy_amigo_cards(root)
     if legacy_amigos:
         auto.append({"kind": "legacy-amigo-home", "names": legacy_amigos,

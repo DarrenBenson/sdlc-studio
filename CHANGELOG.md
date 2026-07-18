@@ -29,7 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   verdict half and the two-role evidence half - so the close no longer demands a redundant per-unit
   evidence row for every unit the one pass reviewed. It never overrides a per-unit REJECT (which
   still repairs per unit), the per-unit reviewer-of-record sign-off is still required, and a
-  self-review (reviewer == author) or an empty pass is refused. The close sign-off brief reads a
+  self-review (reviewer == author) or an empty pass is refused. `--apply-signoff` resolves a covered
+  unit's author from the sprint-level review when it has no per-unit verdict, and the sign-off
+  principal must differ from the sprint-level reviewer too (two-role separation at sprint scope). The
+  close sign-off brief reads a
   covered unit as reviewed by that pass rather than reporting it "(no critic verdict recorded)"
   (US0248), and `reference-sprint.md` documents the coverage model.
 - **`sprint close --apply-signoff --principal "<you>"` fans a recorded approval into the close
@@ -659,7 +662,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stays the explicitly-named fallback for un-stamped legacy workspaces. The `.version` schema stamp now
   follows the project's own effective/config schema rather than being forced up to `CURRENT_SCHEMA`, so a
   project that declines the v2->v3 switch keeps its version. A coherence test asserts
-  `CURRENT_SCHEMA == templates/config.yaml == init`'s seed so the two cannot drift again.
+  `CURRENT_SCHEMA == templates/config.yaml == init`'s seed so the two cannot drift again. `audit()`'s
+  `stale-version` auto-fix now flags only what `apply()` actually stamps (a lagging skill version, or
+  a `.version` schema behind the project's own config schema) - not merely a project below
+  `CURRENT_SCHEMA` - so a legitimately-v2 project no longer carries a permanent, uncorrectable
+  stale-version finding (the dry-run-matches-apply invariant, held).
 - **`sprint plan --write` no longer accumulates a new batch onto a judged-but-unfinalised run
   (BG0188).** A close that records the Sprint Goal verdict but stops before the handoff leaves the
   run `outcome=running` while carrying a close artefact - an inconsistent state `open_run` did not

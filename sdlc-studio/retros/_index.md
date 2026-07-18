@@ -57,3 +57,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0045](RETRO0045-the-audit-backlog-sprint-29-bugs-cleared-cost.md) | The audit-backlog sprint: 29 bugs cleared, cost/measurement machinery made honest | 2026-07-17 | -- | -- |
 | [RETRO-0046](RETRO0046-the-spec-truth-refresh-sprint-ep0071-plus-the-open-bug-backlog.md) | The spec-truth refresh sprint: EP0071 plus the open-bug backlog | -- | -- | -- |
 | [RETRO-0047](RETRO0047-publish-the-artefact-schema-as-a-versioned-contract.md) | Publish the artefact schema as a versioned contract (EP0084) | -- | -- | -- |
+| [RETRO-0048](RETRO0048-the-two-role-close-chain-holds-end.md) | The two-role close chain holds end-to-end: the close ceremony cascades and signs off deterministically, resists the running-run hazard, and a sprint-level review satisfies the per-unit gate | 2026-07-18 | -- | -- |
