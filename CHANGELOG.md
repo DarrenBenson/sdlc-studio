@@ -654,6 +654,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A refused mutation run no longer reads as a clean sweep in the gate (EP0072, US0216).** When
+  `mutation.py` refuses because the baseline is red (a failing suite, or a test command that errored
+  on unmutated code) it applies no mutant, so the report's summary is all zeros. The gate's mutation
+  lane rendered that as `0/0 mutations killed (advisory)` - indistinguishable from a run that mutated
+  nothing because there was nothing to mutate. The lane now reads the report's `refused` flag and
+  prints `mutation REFUSED - baseline <fail|error> (no mutants applied, nothing was proven)` followed
+  by the report's own remedy, and counts as un-met rather than zero-as-clean. An ordinary run's
+  rendering is unchanged.
+
 - **The skill gives one answer for "current schema version" again (BG0189).**
   `project_upgrade.CURRENT_SCHEMA` was hardcoded `2` while `init` seeds new projects at
   `schema_version: 3` (from `templates/config.yaml`), so an upgrade computed against it would move a

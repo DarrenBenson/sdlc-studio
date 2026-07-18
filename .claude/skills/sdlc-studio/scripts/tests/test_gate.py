@@ -793,6 +793,20 @@ class MutationLaneTests(unittest.TestCase):
             self.assertIn("1 survived", lane["detail"])
             self.assertTrue(report["ok"])
 
+    def test_refused_report_is_not_a_clean_sweep(self) -> None:
+        # a refused run applies no mutant, so its summary is all zeros - rendering
+        # that as '0/0 mutations killed' reads as assurance where none was gathered
+        import tempfile
+        with tempfile.TemporaryDirectory() as t:
+            root = self._root(t, {"refused": True, "baseline": "fail",
+                                  "remedy": "a red baseline proves nothing: clean the tree",
+                                  "summary": {"applied": 0, "killed": 0, "survived": 0,
+                                              "errors": 0, "truncated": 0}})
+            report = gate.run_gate(str(root), checks={"mutation": gate._mutation})
+            lane = report["checks"][0]
+            self.assertNotIn("0/0 mutations killed", lane["detail"])
+            self.assertNotEqual(lane["status"], "pass")
+
     def test_absent_report_is_not_run(self) -> None:
         import tempfile
         with tempfile.TemporaryDirectory() as t:
@@ -1608,6 +1622,70 @@ class BatchWarnTests(unittest.TestCase):
             root = _batch_repo(d, lines=30)
             report = gate.run_gate(str(root), only=["batch-size"])
             self.assertTrue(report["ok"])  # advisory: the gate never fails on it
+
+
+class MutationRefusedLaneTests(unittest.TestCase):
+    """US0216: a mutation run refused for a red baseline applies no mutant, so its
+    summary is all zeros. Rendering that as '0/0 mutations killed' turns a refusal -
+    'we learned nothing' - into what reads as a clean sweep. The lane must carry the
+    report's own failure state (L-0082), not only its successes."""
+
+    REFUSED = {
+        "refused": True,
+        "baseline": "fail",
+        "remedy": "a red baseline proves nothing: clean the working tree, then re-run",
+        "summary": {"applied": 0, "killed": 0, "survived": 0, "errors": 0, "truncated": 0},
+    }
+
+    def _lane(self, report_json):
+        root = Path(self.tmp)
+        local = root / "sdlc-studio" / ".local"
+        local.mkdir(parents=True, exist_ok=True)
+        (local / "mutation-report.json").write_text(json.dumps(report_json), encoding="utf-8")
+        return gate._mutation(str(root))
+
+    def setUp(self) -> None:
+        self._td = tempfile.TemporaryDirectory()
+        self.tmp = self._td.name
+        self.addCleanup(self._td.cleanup)
+
+    def test_refused_report_names_the_refusal(self) -> None:
+        """AC1: the detail says REFUSED and names the baseline, never '0/0 killed'."""
+        lane = self._lane(self.REFUSED)
+        self.assertIn("REFUSED", lane["detail"])
+        self.assertIn("baseline fail", lane["detail"])
+        self.assertNotIn("0/0 mutations killed", lane["detail"])
+
+    def test_refused_report_carries_the_remedy(self) -> None:
+        """AC2: the reader learns the fix from the lane, not by opening the report."""
+        lane = self._lane(self.REFUSED)
+        self.assertIn("clean the working tree", lane["detail"])
+
+    def test_refused_report_counts_as_unmet(self) -> None:
+        """AC3a: a refusal is not silently zero-as-clean."""
+        self.assertGreater(self._lane(self.REFUSED)["count"], 0)
+
+    def test_error_baseline_is_also_refused(self) -> None:
+        """A broken test command refuses just as a failing suite does."""
+        lane = self._lane({**self.REFUSED, "baseline": "error",
+                           "remedy": "the test command errored on unmutated code"})
+        self.assertIn("REFUSED", lane["detail"])
+        self.assertIn("baseline error", lane["detail"])
+
+    def test_normal_report_is_unchanged(self) -> None:
+        """AC3b: the refusal branch must not disturb an ordinary run's rendering."""
+        lane = self._lane({"summary": {"applied": 5, "killed": 5, "survived": 0,
+                                       "errors": 0, "truncated": 0}})
+        self.assertEqual(lane["count"], 0)
+        self.assertIn("5/5 mutations killed", lane["detail"])
+        self.assertNotIn("REFUSED", lane["detail"])
+
+    def test_survivors_report_is_unchanged(self) -> None:
+        """A report with survivors keeps its existing detail wording."""
+        lane = self._lane({"summary": {"applied": 5, "killed": 4, "survived": 1,
+                                       "errors": 0, "truncated": 0}})
+        self.assertIn("1 survived", lane["detail"])
+        self.assertNotIn("REFUSED", lane["detail"])
 
 
 if __name__ == "__main__":

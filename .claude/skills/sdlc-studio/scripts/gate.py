@@ -183,6 +183,17 @@ def _mutation(root: str) -> dict:
                 return {"count": 1, "blocking": False,
                         "detail": f"mutation-report is STALE ({Path(fp).name} changed since "
                                   f"the run) - re-run scripts/mutation.py (advisory)"}
+    # a refused run applied no mutant, so its summary is all zeros: rendered as
+    # "0/0 mutations killed" a refusal reads as a clean sweep. Carry the report's
+    # own failure state and remedy instead - silence is not assertion integrity.
+    if data.get("refused"):
+        baseline = data.get("baseline") or "not pass"
+        detail = (f"mutation REFUSED - baseline {baseline} (no mutants applied, "
+                  f"nothing was proven) - advisory")
+        remedy = data.get("remedy")
+        if remedy:
+            detail += f"; {remedy}"
+        return {"count": 1, "blocking": False, "detail": detail}
     n = int(s.get("survived", 0)) + int(s.get("errors", 0))
     detail = (f"{s.get('survived', 0)} survived, {s.get('errors', 0)} error(s) of "
               f"{s.get('applied', 0)} applied ({s.get('truncated', 0)} truncated) - advisory"
