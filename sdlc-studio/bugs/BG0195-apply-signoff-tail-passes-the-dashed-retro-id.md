@@ -1,9 +1,10 @@
 # BG0195: apply-signoff tail passes the dashed retro id to retro accuracy, so the velocity row never records
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py
+> **Verification depth:** functional (unit tests over both id forms and the prefix-collision case; two mutants executed and killed)
+> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py
 > **Created:** 2026-07-18
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -25,3 +26,4 @@ Normalise the id before the accuracy call - `sdlc_md.norm_id(retro_id)` or the s
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-18 | sdlc-studio | Filed |
+| 2026-07-18 | sdlc-studio | Fixed in `retro.find_retro`, not in the caller as filed: `Affects` corrected. The resolver prefix-globbed the raw id, so the dashed form found nothing for a human typing it too, not only for the close tail. It now matches on the normalised leading id of each filename, and a longer id is no longer matched by its prefix |

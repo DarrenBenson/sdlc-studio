@@ -654,6 +654,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The close refreshes its handoff after the sign-off cascade (BG0191).** The chain writes the
+  handoff at step 5 and `--apply-signoff` transitions the run's units at the tail, so the document
+  and the worklist the next `sprint plan --worklist` reads listed as remaining the very units the
+  close had just completed. A new `handoff.refresh` re-renders the existing artefact in place -
+  same id, same index row, same retro link, revision history preserved - scoped to the closing
+  run's own batch, because `build` otherwise defaults to whichever run happens to be open.
+
+- **A retro id resolves in either form (BG0195).** `find_retro` prefix-globbed the raw string, but
+  files are named `RETRO0049-...` while indexes, run state and prose all write `RETRO-0049`. The
+  close tail passed the dashed form, got "no retro file", and the velocity row went unrecorded for
+  two consecutive sprints while the close still reported success. Resolution is now on the
+  normalised leading id, and a 4-digit id no longer matches a longer one by prefix.
+
+- **An unmeasured sprint is no longer reported as an unforecast one (BG0196).** `accuracy` derived
+  the batch's estimator constants from RATED units only - those with both a forecast and a
+  measurement - so a sprint with no token telemetry collected none and printed "no plan-time
+  forecast was recorded" directly beneath its own "9 of 9 forecast at plan time". Constants are now
+  read from every forecast unit. (The bug as filed diagnosed this as `accuracy` being unable to read
+  an aggregate-only forecast; that was wrong, and the record carries the correction.)
+
 - **A verifier that exits 0 having run no tests no longer counts as proof (BG0193).** A filtered
   runner whose pattern matches nothing can exit clean: `unittest` only began returning 5 for "no
   tests ran" in Python 3.12 (the skill supports 3.10+), and `go test -run NoMatch` exits 0 on every

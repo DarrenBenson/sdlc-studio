@@ -1412,5 +1412,86 @@ class CollateRateAcrossProjects(unittest.TestCase):
             self.assertEqual(rep["cells"][0]["tokens_per_point"], 25_000)
 
 
+class RetroIdIsResolvedInEitherForm(RetroBase):
+    """BG0195: files are named `RETRO0049-...`, everything else writes `RETRO-0049`."""
+
+    def test_the_dashed_form_resolves_to_the_undashed_file(self):
+        self.write(FULL, rid="RETRO0049")
+        self.assertIsNotNone(retro.find_retro(str(self.root), "RETRO-0049"))
+
+    def test_the_undashed_form_still_resolves(self):
+        self.write(FULL, rid="RETRO0049")
+        self.assertIsNotNone(retro.find_retro(str(self.root), "RETRO0049"))
+
+    def test_both_forms_resolve_to_the_same_file(self):
+        self.write(FULL, rid="RETRO0049")
+        self.assertEqual(retro.find_retro(str(self.root), "RETRO-0049"),
+                         retro.find_retro(str(self.root), "RETRO0049"))
+
+    def test_a_dashed_file_is_found_by_the_undashed_id(self):
+        self.write(FULL, rid="RETRO-0049")
+        self.assertIsNotNone(retro.find_retro(str(self.root), "RETRO0049"))
+
+    def test_validate_accepts_the_dashed_form(self):
+        # The whole point: the close tail passes this form, and got "no retro file".
+        self.write(FULL, rid="RETRO0049")
+        self.assertTrue(retro.validate(str(self.root), "RETRO-0049")["ok"])
+
+    def test_a_genuinely_absent_retro_is_still_absent(self):
+        self.write(FULL, rid="RETRO0049")
+        self.assertIsNone(retro.find_retro(str(self.root), "RETRO-0050"))
+
+    def test_a_prefix_of_a_longer_id_does_not_match(self):
+        # `RETRO0049` must not resolve to a `RETRO00491` file - the old glob would have.
+        self.write(FULL, rid="RETRO00491")
+        self.assertIsNone(retro.find_retro(str(self.root), "RETRO0049"))
+
+
+class AnUnmeasuredSprintIsNotReportedAsUnforecast(AccuracyBase):
+    """BG0196: constants were read only from RATED units, so a sprint with forecasts but no
+    token telemetry - every interactive sprint - reported that nothing had been forecast."""
+
+    def test_constants_survive_when_nothing_is_measured(self):
+        self.forecast("BG0001", "CR0001", "CR0002")
+        self.telemetry()  # forecast, but no actuals at all
+        res = self.accuracy()
+        self.assertEqual(res["constants"], self.CONSTANTS)
+
+    def test_the_sample_class_is_not_unforecast_when_units_were_forecast(self):
+        self.forecast("BG0001", "CR0001", "CR0002")
+        self.telemetry()
+        res = self.accuracy()
+        self.assertEqual(res["n_measured"], 0)
+        self.assertEqual(res["n_forecast"], res["n_units"])
+        self.assertNotEqual(res["sample"], "unforecast")
+
+    def test_the_report_does_not_contradict_its_own_forecast_count(self):
+        self.forecast("BG0001", "CR0001", "CR0002")
+        self.telemetry()
+        res = self.accuracy()
+        # "N of N forecast at plan time" and "no plan-time forecast was recorded" cannot
+        # both be true of the same sprint.
+        self.assertFalse(res["unforecast"],
+                         "units reported unforecast despite carrying a plan-time forecast")
+
+    def test_a_genuinely_unforecast_sprint_still_reads_unforecast(self):
+        self.telemetry()  # no forecasts recorded at all
+        res = self.accuracy()
+        self.assertIsNone(res["constants"])
+        self.assertEqual(res["sample"], "unforecast")
+
+    def test_mixed_constants_are_still_detected_without_measurement(self):
+        import telemetry as tel
+        tel.record_forecasts(str(self.root), [
+            {"id": "BG0001", "tokens": self.EST, "points": 2, "seed": 0,
+             "seed_source": "none", "constants": dict(self.CONSTANTS),
+             "planned_at": "2026-07-14T09:00:00+00:00"},
+            {"id": "CR0001", "tokens": self.EST, "points": 2, "seed": 0,
+             "seed_source": "none", "constants": {"TOKENS_PER_POINT": 999},
+             "planned_at": "2026-07-14T09:00:00+00:00"}])
+        self.telemetry()
+        self.assertEqual(self.accuracy()["constants"], "mixed-constants")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -119,13 +119,33 @@ DECLINED_RE = re.compile(r"^\s*declined\s*:\s*(.+\S)\s*$", re.IGNORECASE)
 ROW_RE = re.compile(r"^\s*\|(?!\s*[-:]+\s*\|)([^|]+)\|([^|]+)\|\s*$")
 
 
+# The leading id of a retro filename stem: `RETRO0049-slug` / `RETRO-0049-slug`.
+_STEM_ID_RE = re.compile(r"^([A-Za-z]+-?\d{4,})")
+
+
 def find_retro(root, retro_id: str) -> Path | None:
-    """The retro file for an id. One glob, shared, so the gate and this script cannot
-    disagree about which file they are talking about."""
+    """The retro file for an id. One resolver, shared, so the gate and this script cannot
+    disagree about which file they are talking about.
+
+    Matched on the NORMALISED id, not by prefix-globbing the raw string: files are named
+    `RETRO0049-...` while indexes, run state and prose all write `RETRO-0049`, and a literal
+    glob silently found nothing for the dashed form. The close tail passed exactly that, so
+    the velocity row went unrecorded for two consecutive sprints while the close still
+    reported success.
+    """
     d = Path(root) / RETRO_DIR
     if not d.is_dir():
         return None
-    hits = sorted(p for p in d.glob(f"{retro_id}*.md") if p.is_file())
+    want = sdlc_md.norm_id(retro_id)
+    if not want:
+        return None
+    hits = []
+    for p in sorted(d.glob("*.md")):
+        if not p.is_file():
+            continue
+        m = _STEM_ID_RE.match(p.stem)
+        if m and sdlc_md.norm_id(m.group(1)) == want:
+            hits.append(p)
     return hits[0] if hits else None
 
 
@@ -684,7 +704,14 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
                         sum(u["points"] for u in within))
     # The estimator that produced this batch's forecasts. More than one means the batch was
     # planned across a constants change and judges no single model - it is not evidence.
-    seen = {json.dumps(u["constants"], sort_keys=True) for u in rated if u["constants"]}
+    #
+    # Read from every FORECAST unit, not only the rated ones. Which estimator made a forecast is
+    # a property of the forecast, knowable whether or not that unit was ever measured. Sourcing
+    # it from `rated` meant a sprint with no token telemetry - every interactive sprint, until
+    # CR0278 lands - collected nothing, fell through to SAMPLE_NONE, and printed "no plan-time
+    # forecast was recorded" directly beneath its own "9 of 9 forecast at plan time". The
+    # forecasts were on disk and their estimates were printed on every line above it.
+    seen = {json.dumps(u["constants"], sort_keys=True) for u in units if u["constants"]}
     constants = json.loads(seen.pop()) if len(seen) == 1 else ("mixed-constants" if seen else None)
     # THE MODELS THAT DELIVERED THE RATED UNITS. A ratio pooled across two of them is a
     # statement about neither: a sprint half-delivered by a smaller model and half by a larger

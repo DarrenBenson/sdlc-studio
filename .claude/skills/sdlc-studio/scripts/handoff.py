@@ -672,6 +672,45 @@ def generate(repo_root: Path | str, title: str, batch: list[str] | None = None,
             "worklist": str(worklist), "report": report}
 
 
+def refresh(repo_root: Path | str, handoff_id: str, batch: list[str] | None = None) -> dict | None:
+    """Re-render an EXISTING handoff after the close cascade moved units terminal.
+
+    The close chain writes the handoff at step 5, but `--apply-signoff` transitions the run's
+    units to Done at the tail, one step later. The document was therefore a snapshot taken
+    just before the work it describes finished: units the close was about to complete were
+    listed as remaining, and the worklist the next `sprint plan --worklist` reads carried
+    them forward as outstanding work.
+
+    Rewrites the same artefact in place - same id, same index row, same retro link - so the
+    handoff describes the state the close actually left behind. Returns None when the id has
+    no file, so a caller can report the gap instead of assuming a refresh happened.
+    """
+    root = Path(repo_root)
+    norm = sdlc_md.norm_id(handoff_id)
+    path = next((p for p in sorted((root / "sdlc-studio" / "handoffs").glob("*.md"))
+                 if p.is_file() and sdlc_md.norm_id(p.stem.split("-")[0]) == norm), None)
+    if path is None:
+        return None
+    report = build(root, batch=batch)
+    lines = path.read_text(encoding="utf-8").splitlines()
+    # Keep the H1 and the Revision History; regenerate everything the join owns.
+    head = lines[0] if lines and lines[0].startswith("# ") else f"# {handoff_id}"
+    tail_at = next((i for i, ln in enumerate(lines)
+                    if ln.strip().lower().startswith("## revision history")), None)
+    tail = "\n".join(lines[tail_at:]) if tail_at is not None else ""
+    meta = "\n".join(f"> **{k}:** {v}" for k, v in _meta_lines(report))
+    date = next((ln for ln in lines if ln.startswith("> **Date:**")), "")
+    created = next((ln for ln in lines if ln.startswith("> **Created-by:**")), "")
+    head_block = "\n".join(x for x in (date, created, meta) if x)
+    body = f"{head}\n\n{head_block}\n\n{render_body(report)}\n"
+    if tail:
+        body += f"\n{tail}\n"
+    sdlc_md.atomic_write(path, body)
+    sdlc_md.atomic_write(root / WORKLIST_REL, _worklist_text(report, handoff_id))
+    run_state.update(root, handoff_remaining=report["summary"]["remaining"])
+    return report
+
+
 # --------------------------------------------------------------------------- CLI
 def cmd_generate(args: argparse.Namespace) -> int:
     ids = sdlc_md.resolve_ids(args)

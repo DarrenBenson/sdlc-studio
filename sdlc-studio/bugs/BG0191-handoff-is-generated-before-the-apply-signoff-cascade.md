@@ -1,9 +1,10 @@
 # BG0191: handoff is generated before the apply-signoff cascade, so delivered units are reported as remaining
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py
+> **Verification depth:** functional (unit tests over the rewrite, the worklist, the preserved history and the batch scoping; four mutants executed and killed)
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/handoff.py
 > **Created:** 2026-07-18
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -25,3 +26,4 @@ Emit the handoff after the apply-signoff terminal cascade completes, or re-read 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-18 | sdlc-studio | Filed |
+| 2026-07-18 | sdlc-studio | Fixed: new `handoff.refresh` re-renders the EXISTING handoff in place (same id, same index row, same retro link) and the apply-signoff tail calls it after the cascade, scoped to the run's own batch. The scoping is load-bearing and was initially untested: `build` defaults to whichever run is open, so an unscoped refresh rewrites a closed run's handoff with the next sprint's batch - which is exactly what a hand-run smoke test did to HO-0007 during this fix |

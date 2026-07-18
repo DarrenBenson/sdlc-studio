@@ -2412,6 +2412,26 @@ def _apply_signoff_tail(root, state, units=None) -> int:
     derived = _derive_parent_epics(root, units)
     if derived:
         print(f"apply-signoff: derived {', '.join(derived)} Done (all children terminal)")
+    # The chain wrote the handoff one step BEFORE this cascade transitioned anything, so the
+    # document and its worklist described units as remaining that the close then completed.
+    # Re-render it here, against this run's own batch, so the tail reports the state the close
+    # actually left. Scoped explicitly: `build` would otherwise default to whatever run is open.
+    hid = (state.get("handoff") or "").strip()
+    if hid:
+        import handoff  # noqa: PLC0415
+        try:
+            rep = handoff.refresh(root, hid, batch=state.get("batch") or None)
+        except Exception as exc:  # noqa: BLE001 - a stale handoff must not lose the close
+            print(f"apply-signoff: {hid} NOT refreshed ({exc}) - it still describes the "
+                  f"state before this cascade", file=sys.stderr)
+        else:
+            if rep is None:
+                print(f"apply-signoff: {hid} has no file on disk - not refreshed",
+                      file=sys.stderr)
+            else:
+                s = rep["summary"]
+                print(f"apply-signoff: {hid} refreshed - {s['delivered']} delivered, "
+                      f"{s['remaining']} remaining")
     retro_id = (state.get("scaffolded_retro") or "").strip()
     if retro_id:
         # `retro accuracy --write` records the velocity row (record_velocity), keyed by retro id so

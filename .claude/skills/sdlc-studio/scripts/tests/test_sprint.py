@@ -2987,5 +2987,124 @@ class ApplySignoffOverSweepTests(unittest.TestCase):
             self.assertNotEqual(self._status(root, "EP0002"), "Done")
 
 
+class ApplySignoffRefreshesHandoffTests(unittest.TestCase):
+    """BG0191: the chain writes the handoff at step 5, the cascade transitions at the tail, so
+    the document listed as remaining the very units the close had just completed."""
+
+    def _handoff(self, root: Path, hid: str = "HO0001") -> Path:
+        d = root / "sdlc-studio" / "handoffs"
+        d.mkdir(parents=True, exist_ok=True)
+        p = d / f"{hid}-a-run.md"
+        p.write_text(
+            f"# {hid}: a run\n\n> **Date:** 2026-07-16\n> **Created-by:** sdlc-studio new\n"
+            "> **Run:** RUN-TEST0001 (started 2026-07-16T00:00:00Z)\n"
+            "> **Outcome:** goal-reached\n> **Batch source:** run-state.json\n\n"
+            "## Where to pick up\n\n1 of 1 unit(s) remain. Plan them straight back in:\n\n"
+            "## Delivered (0)\n\n_Nothing was delivered in this run._\n\n"
+            "## Remaining (1)\n\n- US0101\n\n## Open decisions\n\n_None._\n\n"
+            "## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
+            "| 2026-07-16 | sdlc-studio | Created |\n", encoding="utf-8")
+        return p
+
+    def test_the_handoff_is_rewritten_after_the_cascade(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, scaffolded_retro="RETRO0001", handoff="HO0001")
+            _signoffable_story(root)
+            _close_retro(root)
+            path = self._handoff(root)
+            mod = _load()
+            rc, out, err = _run_apply_signoff(root, mod)
+            self.assertEqual(rc, 0, err)
+            text = path.read_text(encoding="utf-8")
+            self.assertIn("## Remaining (0)", text)
+            self.assertIn("## Delivered (1)", text)
+
+    def test_the_tail_reports_the_refresh(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, scaffolded_retro="RETRO0001", handoff="HO0001")
+            _signoffable_story(root)
+            _close_retro(root)
+            self._handoff(root)
+            mod = _load()
+            rc, out, err = _run_apply_signoff(root, mod)
+            self.assertEqual(rc, 0, err)
+            self.assertIn("HO0001 refreshed", out)
+
+    def test_the_worklist_no_longer_carries_the_delivered_unit(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, scaffolded_retro="RETRO0001", handoff="HO0001")
+            _signoffable_story(root)
+            _close_retro(root)
+            self._handoff(root)
+            mod = _load()
+            rc, out, err = _run_apply_signoff(root, mod)
+            self.assertEqual(rc, 0, err)
+            wl = root / "sdlc-studio" / ".local" / "handoff-worklist.txt"
+            self.assertNotIn("US0101", wl.read_text(encoding="utf-8"))
+
+    def test_the_revision_history_survives_the_rewrite(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, scaffolded_retro="RETRO0001", handoff="HO0001")
+            _signoffable_story(root)
+            _close_retro(root)
+            path = self._handoff(root)
+            mod = _load()
+            _run_apply_signoff(root, mod)
+            text = path.read_text(encoding="utf-8")
+            self.assertIn("## Revision History", text)
+            self.assertIn("2026-07-16 | sdlc-studio | Created", text)
+            self.assertIn("# HO0001: a run", text)  # id and title, not a new artefact
+
+    def test_a_missing_handoff_file_is_reported_not_silently_skipped(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, scaffolded_retro="RETRO0001", handoff="HO0009")
+            _signoffable_story(root)
+            _close_retro(root)
+            mod = _load()
+            rc, out, err = _run_apply_signoff(root, mod)
+            self.assertEqual(rc, 0, err)  # a stale handoff must not lose the close
+            self.assertIn("HO0009", out + err)
+            self.assertIn("not refreshed", out + err)
+
+    def test_the_refresh_is_scoped_to_the_passed_run_not_whatever_run_is_open(self) -> None:
+        # The handoff belongs to the run being closed. `build` defaults to the run state on
+        # disk, so an unscoped refresh re-renders a CLOSED run's handoff against whichever
+        # run happens to be open - which is how a hand-run refresh overwrote a shipped
+        # handoff with the next sprint's batch.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, scaffolded_retro="RETRO0001", handoff="HO0001",
+                         batch=["US0102"])          # what is OPEN on disk
+            _signoffable_story(root)                # US0101, about to go Done
+            _close_retro(root)
+            path = self._handoff(root)
+            mod = _load()
+            closing_state = dict(_close_state(root, scaffolded_retro="RETRO0001",
+                                              handoff="HO0001", batch=["US0102"]))
+            closing_state["batch"] = ["US0101"]     # the run being CLOSED
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+                mod._apply_signoff_tail(root, closing_state, units=["US0101"])
+            text = path.read_text(encoding="utf-8")
+            self.assertIn("US0101", text)
+            self.assertNotIn("US0102", text)
+
+    def test_a_run_with_no_handoff_recorded_does_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, scaffolded_retro="RETRO0001", handoff=None)
+            _signoffable_story(root)
+            _close_retro(root)
+            mod = _load()
+            rc, out, err = _run_apply_signoff(root, mod)
+            self.assertEqual(rc, 0, err)
+            self.assertNotIn("refreshed", out)
+
+
 if __name__ == "__main__":
     unittest.main()
