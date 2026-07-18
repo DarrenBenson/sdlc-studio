@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 4 |
+| Open | 5 |
 | In Progress | 0 |
 | Fixed | 107 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **193** |
+| **Total** | **194** |
 
 ## All Bugs
 
@@ -160,6 +160,7 @@
 | [BG0191](BG0191-handoff-is-generated-before-the-apply-signoff-cascade.md) | handoff is generated before the apply-signoff cascade, so delivered units are reported as remaining | Open | Medium | 2026-07-18 | 2026-07-18 |
 | [BG0192](BG0192-cross-epic-ac-is-a-bare-keyword-match.md) | cross-epic-ac is a bare keyword match and false-positives on common English words | Open | Low | 2026-07-18 | 2026-07-18 |
 | [BG0193](BG0193-a-verify-line-whose-test-filter-matches-nothing.md) | a Verify line whose test filter matches nothing passes vacuously | Open | Medium | 2026-07-18 | 2026-07-18 |
+| [BG0194](BG0194-id-search-re-has-no-trailing-digit-boundary.md) | ID_SEARCH_RE has no trailing-digit boundary, so a 5-digit id truncates to a 4-digit one | Open | Low | 2026-07-18 | 2026-07-18 |
 
 ## Archived Releases
 
