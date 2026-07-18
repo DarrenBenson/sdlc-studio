@@ -145,6 +145,24 @@ def _done_verify_gate(root: Path, path: Path, text: str) -> str | None:
     # A green entry can still be STALE: the story may have been edited since it was verified
     # (a changed Verify line, or a new AC). A merged report carries the old green forever, so
     # the entry alone is not proof the CURRENT story passes.
+    # Prefer a CONTENT fingerprint over mtime. mtime answers "was the file touched", not
+    # "did what we verified change": a Status transition, a Revision History row, or
+    # verify_ac's own `**Verified:**` stamp all bump mtime while the ACs and their
+    # verifiers are untouched, so a correct green was rejected as stale. Reports written
+    # before the fingerprint existed carry none - those still fall back to mtime rather
+    # than silently passing.
+    recorded_fp = entry.get("ac_fingerprint")
+    if recorded_fp:
+        try:
+            import verify_ac  # sibling; imports only sdlc_md, no cycle
+            current_fp = verify_ac.ac_fingerprint(text)
+        except Exception:  # noqa: BLE001 - a parse hiccup must not mask the gate; fall back to mtime
+            current_fp = None
+        if current_fp is not None:
+            if current_fp != recorded_fp:
+                return ("this story's acceptance criteria changed after it was last verified "
+                        "- re-run `verify_ac` before Done")
+            return None  # ACs are byte-identical to what passed; mtime is noise
     verified_at = _iso_to_epoch(entry.get("verified_at"))
     try:
         story_mtime = path.stat().st_mtime

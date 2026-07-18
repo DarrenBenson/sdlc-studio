@@ -1168,5 +1168,110 @@ class MetadataLineInjectionTests(unittest.TestCase):
             self.assertIn("> **Triage-severity:** low", text)
 
 
+class AcFingerprintFreshnessTests(unittest.TestCase):
+    """US0213: freshness must be judged on what the verifier ran against, not on mtime.
+
+    A Status transition, a Revision History row, and verify_ac's own `**Verified:**` stamps
+    all bump mtime while leaving every AC and verifier untouched - under the mtime rule a
+    correct green was rejected as "edited after it was last verified", forcing a re-run that
+    could only ever produce the same result."""
+
+    STORY = ("# US0001: s\n\n> **Status:** Ready\n\n## Acceptance Criteria\n\n"
+             "### AC1: it works\n- **Verify:** shell true\n")
+
+    def _root(self, d, body=None):
+        root = Path(d)
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True, exist_ok=True)
+        (sd / "US0001-x.md").write_text(body or self.STORY, encoding="utf-8")
+        (sd / "_index.md").write_text(
+            "# Stories\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Ready | 1 |\n"
+            "| Done | 0 |\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            "| [US0001](US0001-x.md) | s | Ready |\n", encoding="utf-8")
+        return root
+
+    def _report(self, root, entry):
+        rp = root / "sdlc-studio" / ".local" / "verify-report.json"
+        rp.parent.mkdir(parents=True, exist_ok=True)
+        rp.write_text(json.dumps({"stories": {"US0001-x": entry}}), encoding="utf-8")
+
+    def _fp(self, text):
+        import verify_ac
+        return verify_ac.ac_fingerprint(text)
+
+    def _green(self, text, **over):
+        return {"failed": 0, "stale": 0, "failures": [],
+                "verified_at": "2000-01-01T00:00:00Z",      # long in the past: mtime WILL be newer
+                "ac_fingerprint": self._fp(text), **over}
+
+    def test_metadata_edit_stays_fresh(self) -> None:
+        """AC1: an edit outside the AC section must not invalidate the green."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            self._report(root, self._green(self.STORY))
+            # touch metadata only - a Revision History row, exactly what closing paperwork adds
+            p = root / "sdlc-studio" / "stories" / "US0001-x.md"
+            p.write_text(self.STORY + "\n## Revision History\n\n| 2026-07-18 | me | edited |\n",
+                         encoding="utf-8")
+            res = tr.transition(root, "US0001", "Done")
+            self.assertEqual(res["to"], "Done")
+
+    def test_ac_edits_invalidate(self) -> None:
+        """AC2: retitling an AC, re-pointing a verifier, or adding an AC each block."""
+        mutations = {
+            "retitled": "### AC1: it works differently\n- **Verify:** shell true\n",
+            "re-pointed": "### AC1: it works\n- **Verify:** shell false\n",
+            "added": "### AC1: it works\n- **Verify:** shell true\n\n"
+                     "### AC2: more\n- **Verify:** shell true\n",
+        }
+        for label, acs in mutations.items():
+            with self.subTest(label), tempfile.TemporaryDirectory() as d:
+                root = self._root(d)
+                self._report(root, self._green(self.STORY))
+                edited = ("# US0001: s\n\n> **Status:** Ready\n\n## Acceptance Criteria\n\n" + acs)
+                (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(edited, encoding="utf-8")
+                with self.assertRaises(ValueError):
+                    tr.transition(root, "US0001", "Done")
+
+    def test_legacy_report_falls_back_to_mtime(self) -> None:
+        """AC3: a pre-fingerprint report must not silently pass - mtime still governs."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            entry = self._green(self.STORY)
+            entry.pop("ac_fingerprint")          # written before the field existed
+            self._report(root, entry)
+            with self.assertRaises(ValueError):  # story mtime is newer than verified_at
+                tr.transition(root, "US0001", "Done")
+
+
+class AcFingerprintTests(unittest.TestCase):
+    """US0213 AC4: the fingerprint covers ACs and verifiers, and nothing else."""
+
+    BASE = ("# US0001: s\n\n> **Status:** Ready\n\n## Acceptance Criteria\n\n"
+            "### AC1: it works\n- **Verify:** shell true\n")
+
+    def _fp(self, text):
+        import verify_ac
+        return verify_ac.ac_fingerprint(text)
+
+    def test_metadata_does_not_change_the_fingerprint(self) -> None:
+        noise = self.BASE.replace("**Status:** Ready", "**Status:** Done") + \
+            "\n## Revision History\n\n| d | a | c |\n"
+        self.assertEqual(self._fp(self.BASE), self._fp(noise))
+
+    def test_verified_stamp_does_not_change_the_fingerprint(self) -> None:
+        stamped = self.BASE + "- **Verified:** yes (2026-07-18)\n"
+        self.assertEqual(self._fp(self.BASE), self._fp(stamped))
+
+    def test_verifier_change_changes_the_fingerprint(self) -> None:
+        self.assertNotEqual(self._fp(self.BASE),
+                            self._fp(self.BASE.replace("shell true", "shell false")))
+
+    def test_ac_count_change_changes_the_fingerprint(self) -> None:
+        self.assertNotEqual(
+            self._fp(self.BASE),
+            self._fp(self.BASE + "\n### AC2: more\n- **Verify:** shell true\n"))
+
+
 if __name__ == "__main__":
     unittest.main()

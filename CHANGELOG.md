@@ -654,6 +654,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A metadata edit no longer invalidates a green AC verification (EP0072, US0213).** The Done
+  gate judged freshness on the story file's mtime, so a Status transition, a Revision History row,
+  or `verify_ac`'s own `**Verified:**` stamps all reported a correct green as "edited after it was
+  last verified" - demanding a re-run that could only produce the same result. `verify_ac` now
+  records an `ac_fingerprint` (sha256 over each AC's id, title and Verify command) and the gate
+  compares that instead: metadata edits are recognised as noise, while a retitled AC, an added or
+  removed AC, or a re-pointed verifier still invalidates. Reports written before the field existed
+  carry no fingerprint and still fall back to mtime, so the new field's absence never silently
+  passes a stale green.
+
 - **A refused mutation run no longer reads as a clean sweep in the gate (EP0072, US0216).** When
   `mutation.py` refuses because the baseline is red (a failing suite, or a test command that errored
   on unmutated code) it applies no mutant, so the report's summary is all zeros. The gate's mutation

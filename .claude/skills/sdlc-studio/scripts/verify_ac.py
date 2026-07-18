@@ -80,6 +80,26 @@ class ACBlock:
     insert_after: int | None = None
 
 
+def ac_fingerprint(text: str) -> str:
+    """Hash what a verification result actually depends on: the ACs and their verifiers.
+
+    File mtime is the wrong staleness signal for a green verify entry - a Status
+    transition, a Revision History row, or this script's own `**Verified:**` stamp all
+    bump mtime without changing a single thing the run judged, so a correct green was
+    reported as "edited after it was last verified". The fingerprint covers each AC's id,
+    title and Verify command and nothing else, so a metadata-only edit leaves it identical
+    while any change to an AC or its verifier (added, removed, retitled, re-pointed)
+    changes it. Prose inside an AC body is deliberately excluded: it cannot change what
+    the verifier executes.
+    """
+    import hashlib
+    parts = [
+        f"{b.ac_id}\x1f{b.title.strip()}\x1f{(b.verifier or '').strip()}"
+        for b in parse_story(text)
+    ]
+    return hashlib.sha256("\x1e".join(parts).encode("utf-8")).hexdigest()
+
+
 def parse_story(text: str) -> list[ACBlock]:
     """Extract AC blocks from story markdown."""
     lines = text.splitlines()
@@ -488,6 +508,9 @@ class StoryReport:
     failures: list[dict] = field(default_factory=list)
     changed: int = 0
     flips: list[dict] = field(default_factory=list)  # pending/applied (ac, old_state, new_state)
+    # sha256 over the ACs and their verifiers as they stood at verification time; the
+    # Done gate compares it to the story's current fingerprint (see `ac_fingerprint`)
+    ac_fingerprint: str = ""
 
 
 def _is_manual(expression: str) -> bool:
@@ -567,7 +590,8 @@ def verify_story(
     text = story_path.read_text(encoding="utf-8")
     lines = text.splitlines()
     blocks = parse_story(text)
-    report = StoryReport(path=str(story_path), ac_count=len(blocks))
+    report = StoryReport(path=str(story_path), ac_count=len(blocks),
+                         ac_fingerprint=ac_fingerprint(text))
     provenance = (sdlc_md.extract_field(text, "Provenance") or "").strip().lower()
     story_allow_shell = allow_shell and (allow_external or provenance != "external")
     pending: list = []  # (block, new_state) - applied bottom-up after the loop
@@ -688,6 +712,9 @@ def write_report(path: Path, stories: list[StoryReport], dry_run: bool = False,
             # when THIS story was verified, so the Done gate can tell a fresh green from a
             # stale one carried forward by the merge.
             "verified_at": stamp,
+            # what was verified: a hash of the ACs and their verifiers. The Done gate
+            # prefers this over mtime, so metadata-only edits do not invalidate a green.
+            "ac_fingerprint": s.ac_fingerprint,
         }
         for s in stories
     }

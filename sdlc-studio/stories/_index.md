@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 38 |
+| Draft | 37 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 1 |
+| Review | 2 |
 | Done | 220 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -123,7 +123,7 @@
 | [US0210](US0210-complete-trd-rule-5-write-surface-retro-handoff.md) | Complete TRD rule 5 write surface (retro/handoff/archive/persona_gen) or restate as non-exhaustive with a census pointer | Done | EP0071 | 2026-07-17 | 2026-07-17 |
 | [US0211](US0211-refresh-or-band-the-trd-pinned-census-counts.md) | Refresh or band the TRD pinned census counts and restate the freshness-guard claim | Done | EP0071 | 2026-07-17 | 2026-07-17 |
 | [US0212](US0212-fix-the-trd-section-6-migrations-paragraph-to.md) | Fix the TRD section 6 Migrations paragraph to name the shipped migration scripts | Done | EP0071 | 2026-07-17 | 2026-07-17 |
-| [US0213](US0213-verify-ac-freshness-fingerprints-the-ac-section-not.md) | verify_ac freshness fingerprints the AC section, not the file mtime | Draft | EP0072 | 2026-07-17 | 2026-07-17 |
+| [US0213](US0213-verify-ac-freshness-fingerprints-the-ac-section-not.md) | verify_ac freshness fingerprints the AC section, not the file mtime | Review | EP0072 | 2026-07-17 | 2026-07-17 |
 | [US0214](US0214-review-close-ensures-its-rv-index-row-is.md) | review close ensures its RV index row is written | Draft | EP0072 | 2026-07-17 | 2026-07-17 |
 | [US0215](US0215-review-current-distinguishes-an-uncommitted-but-current-latest.md) | review-current distinguishes an uncommitted-but-current LATEST and names the commit remedy (absorbs CR0341) | Draft | EP0072 | 2026-07-17 | 2026-07-17 |
 | [US0216](US0216-gate-mutation-lane-surfaces-the-refused-red-baseline.md) | gate mutation lane surfaces the refused/red-baseline state | Review | EP0072 | 2026-07-17 | 2026-07-17 |
