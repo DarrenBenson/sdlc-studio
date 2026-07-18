@@ -167,6 +167,23 @@ def detect_conformance(repo_root: Path | str) -> dict:
                  if d.get("id") and d["kind"] in ("status-mismatch", "missing-row")}
     # Repo-global doc-coverage - the `documented` stage, like `reconciled`.
     _doc_ok = doc_coverage.check(root)["ok"]
+    # The stages whose failure is a property of the REPOSITORY, not of any one unit. Each is
+    # reported once, with its own remedy, instead of being charged to every judged unit.
+    globals_: list[dict] = []
+    if not _doc_ok:
+        globals_.append({
+            "stage": "documented",
+            "reason": "doc-coverage reports at least one undocumented item",
+            "remedy": "run `doc_coverage.py` to name the gap, then catalogue it "
+                      "(a single uncatalogued command fails this stage repo-wide)",
+        })
+    if _no_index:
+        globals_.append({
+            "stage": "reconciled",
+            "reason": "the story index is missing",
+            "remedy": "run `reconcile.py apply` to rebuild the index from the file census",
+        })
+    global_failed = {g["stage"] for g in globals_}
     units: list[dict] = []
     ok = 0
     for path in sdlc_md.artifact_files("story", root):
@@ -221,7 +238,14 @@ def detect_conformance(repo_root: Path | str) -> dict:
                 required.remove("critiqued")
         rid_num = sdlc_md.id_number(rid)
         exempt = cutoff_num is not None and rid_num is not None and rid_num <= cutoff_num
-        missing = [] if exempt else [s for s in required if not stages[s]]
+        all_missing = [] if exempt else [s for s in required if not stages[s]]
+        # A repo-GLOBAL failure is one fact about the repository, not a defect in each unit.
+        # Fanned per unit it reads as "118 broken units" when it is one uncatalogued command,
+        # burying every genuine per-unit finding in the noise. Attribute it once (see
+        # `globals` below) and keep it out of the unit's own ledger.
+        # exempt units are not judged, so a global condition costs them nothing
+        missing_global = [] if exempt else [s for s in all_missing if s in global_failed]
+        missing = [s for s in all_missing if s not in global_failed]
         conformant = not missing
         ok += int(conformant and not exempt)
         units.append({
@@ -232,17 +256,28 @@ def detect_conformance(repo_root: Path | str) -> dict:
             "exempt": exempt,
             "conformant": conformant,
             "missing": missing,
+            "missing_global": missing_global,
             "downgraded": dod_downgrades if status == "Done" else [],
         })
     units.sort(key=lambda u: u["id"])
+    # A repo-wide condition is only a FAILURE if it actually cost a judged unit its
+    # conformance. Reporting one that affects nobody (a missing index in a repo with no Done
+    # stories) would newly fail checks that legitimately passed before - attributing a
+    # failure differently must not invent one.
+    globals_ = [g for g in globals_
+                if any(g["stage"] in u["missing_global"] for u in units)]
     total = len(units)
     exempt_n = sum(1 for u in units if u["exempt"])
     nonconformant = sum(1 for u in units if not u["conformant"])
     return {
         "generated_at": sdlc_md.now_iso8601(),
         "units": units,
+        # Repo-wide failures, listed once. The gate counts these alongside per-unit
+        # non-conformance, so attributing them once REPORTS better without enforcing less.
+        "globals": globals_,
         "summary": {"total": total, "conformant": ok,
-                    "nonconformant": nonconformant, "exempt": exempt_n},
+                    "nonconformant": nonconformant, "exempt": exempt_n,
+                    "global_failures": len(globals_)},
     }
 
 
@@ -276,15 +311,21 @@ def remedy_detail(result: dict) -> str:
     pre-existing unadopted-discipline debt (forward-only) rather than a fresh regression.
     Returns just the count when nothing is non-conformant."""
     n = result["summary"]["nonconformant"]
+    # A repo-global failure is stated once, as itself. Before this, one uncatalogued command
+    # rendered as "N non-conformant unit(s)" across the whole repo - a true count of a
+    # misleading thing, which buried every genuine per-unit finding.
+    gl = "; ".join(f"{g['stage']} (repo-wide): {g['reason']} - {g['remedy']}"
+                   for g in result.get("globals", []))
     if not n:
-        return f"{n} non-conformant unit(s)"
+        return f"{n} non-conformant unit(s)" + (f". Repo-wide: {gl}" if gl else "")
     bulk = _bulk_missed(result)
     if bulk:
         nature = (f"most miss {', '.join(bulk)} - likely unadopted-discipline debt "
                   "(pre-existing, forward-only), not a regression from this change")
     else:
         nature = "scattered per-unit gaps - check whether this change regressed them"
-    return f"{n} non-conformant unit(s): {nature}. Remedies: {REMEDY_CUTOFF}; or {REMEDY_BACKFILL}"
+    base = f"{n} non-conformant unit(s): {nature}. Remedies: {REMEDY_CUTOFF}; or {REMEDY_BACKFILL}"
+    return base + (f". Repo-wide: {gl}" if gl else "")
 
 
 def cmd_check(args: argparse.Namespace) -> int:
@@ -297,6 +338,13 @@ def cmd_check(args: argparse.Namespace) -> int:
         extra = f", {s['exempt']} exempt (pre-adoption)" if s.get("exempt") else ""
         print(f"conformance: {s['conformant']}/{s['total']} conformant, {s['nonconformant']} not{extra}"
               " (story-scoped: a bug/CR tranche relies on the critic + gate)")
+        # Repo-wide failures first, once each, with the count of units they would otherwise
+        # have been charged to - so the operator sees "one doc gap", not "118 broken units".
+        for g in result.get("globals", []):
+            affected = sum(1 for u in result["units"] if g["stage"] in u.get("missing_global", []))
+            print(f"  REPO-WIDE {g['stage']}: {g['reason']} "
+                  f"(would otherwise report against {affected} unit(s))")
+            print(f"    fix: {g['remedy']}")
         downgrades = next((u["downgraded"] for u in result["units"]
                            if u.get("downgraded")), [])
         if downgrades:
@@ -320,7 +368,9 @@ def cmd_check(args: argparse.Namespace) -> int:
             # The two whole-batch levers, named so the operator need not already know them.
             print(f"  remedy: {REMEDY_CUTOFF}")
             print(f"  remedy: {REMEDY_BACKFILL}")
-    return 1 if result["summary"]["nonconformant"] else 0
+    # A repo-wide failure is still a failure: attributing it once must not make it exit clean.
+    return 1 if (result["summary"]["nonconformant"]
+                 or result["summary"].get("global_failures")) else 0
 
 
 def build_parser() -> argparse.ArgumentParser:

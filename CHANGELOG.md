@@ -654,6 +654,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A repo-wide conformance failure is attributed once, not to every unit (EP0072, US0217).** The
+  `documented` stage is a repo-global floor: one uncatalogued command failed it for every Done
+  unit, so a single doc gap rendered as 118 non-conformant units - a true count of a misleading
+  thing, which buried every genuine per-unit finding. Repo-wide conditions (`documented`, and a
+  missing index for `reconciled`) are now listed once under a new `globals` key with the reason and
+  its remedy, and appear per unit as `missing_global` rather than `missing`. Reporting is the only
+  thing that changed: the gate lane counts global failures alongside per-unit ones and
+  `conformance check` still exits non-zero, so attributing a failure differently never enforces
+  less. A condition affecting no judged unit is not reported as a failure at all.
+
 - **The pre-commit gate measures, announces, and skips its long unit run (EP0072, US0219,
   US0220).** The ~2,800-test suite takes around 2.5 minutes, exceeding the 2-minute default of
   common tooling, so a commit looked hung and got killed or bypassed - and a bypassed guard guards

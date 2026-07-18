@@ -271,7 +271,11 @@ class CliTests(unittest.TestCase):
             self.assertEqual(rc, 1)  # US0002 is non-conformant
             data = mod.detect_conformance(root)
             self.assertIn("units", data)
-            self.assertEqual(set(data["summary"]), {"total", "conformant", "nonconformant", "exempt"})
+            # `global_failures` (US0217) counts repo-wide failures attributed once rather
+            # than charged to every unit; the gate adds it to `nonconformant` so that
+            # reporting a failure differently never enforces less.
+            self.assertEqual(set(data["summary"]),
+                             {"total", "conformant", "nonconformant", "exempt", "global_failures"})
 
 
 try:
@@ -539,6 +543,90 @@ class SprintReviewCritiquedTests(unittest.TestCase):
             with self.assertRaises(ValueError):        # no covered units
                 c.record_sprint_review(root, [], reviewer="qa", author="bob",
                                        verdict="APPROVE", findings="x")
+
+
+class GlobalAttributionTests(unittest.TestCase):
+    """US0217: a repo-GLOBAL failure is one fact about the repo, not a defect in each unit.
+
+    The `documented` stage is a repo-wide floor: one uncatalogued command failed it for
+    every Done unit, so a single doc gap rendered as 118 non-conformant units - a true
+    count of a misleading thing, which buried every genuine per-unit finding (L-0084).
+
+    The report must attribute it once WITHOUT enforcing less: the gate still blocks, and
+    the CLI still exits non-zero. Reporting better must never mean gating weaker."""
+
+    def _conformant_done_repo(self, root, n=3, doc_ok=False):
+        """n Done stories that are conformant except for the repo-wide doc floor.
+
+        `doc_coverage` is a shared module object in sys.modules, so stubbing its `check`
+        leaks into every later test in the process unless it is restored - patch and
+        register the undo together so the two can never drift apart.
+        """
+        mod = _load()
+        original = mod.doc_coverage.check
+        self.addCleanup(setattr, mod.doc_coverage, "check", original)
+        rows = []
+        for i in range(1, n + 1):
+            _story(root, i, status="Done", verified="yes")
+            _record_verdict(root, f"US{i:04d}", "approve")
+            rows.append(f"| [US{i:04d}](US{i:04d}-sample.md) | sample | Done |")
+        (root / "sdlc-studio" / "stories" / "_index.md").write_text(
+            "# Stories\n\n| ID | Title | Status |\n|---|---|---|\n" + "\n".join(rows) + "\n",
+            encoding="utf-8")
+        mod.doc_coverage.check = lambda _r: {"ok": doc_ok}
+        return mod
+
+    def test_global_failure_reported_once(self) -> None:
+        """AC1: one entry in `globals`, and no unit charged with it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._conformant_done_repo(root, n=3, doc_ok=False)
+            result = mod.detect_conformance(root)
+            docs = [g for g in result["globals"] if g["stage"] == "documented"]
+            self.assertEqual(len(docs), 1)
+            self.assertTrue(docs[0]["remedy"])
+            for u in result["units"]:
+                self.assertNotIn("documented", u["missing"])
+            self.assertEqual(result["summary"]["nonconformant"], 0)
+
+    def test_unit_records_global_separately(self) -> None:
+        """AC2: nothing is hidden - it moves to `missing_global`."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._conformant_done_repo(root, n=2, doc_ok=False)
+            for u in mod.detect_conformance(root)["units"]:
+                self.assertIn("documented", u["missing_global"])
+                self.assertFalse(u["stages"]["documented"])
+
+    def test_global_failure_still_blocks(self) -> None:
+        """AC3: the gate lane counts it and the CLI exits non-zero."""
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._conformant_done_repo(root, n=3, doc_ok=False)
+            result = mod.detect_conformance(root)
+            self.assertEqual(result["summary"]["global_failures"], 1)
+            # the gate's own arithmetic: per-unit + global, so it still fails
+            self.assertGreater(
+                result["summary"]["nonconformant"] + result["summary"]["global_failures"], 0)
+            with redirect_stdout(io.StringIO()) as buf:
+                rc = mod.main(["check", "--root", str(root)])
+            self.assertEqual(rc, 1)
+            self.assertIn("REPO-WIDE documented", buf.getvalue())
+
+    def test_per_unit_gaps_unaffected(self) -> None:
+        """AC4: with no repo-wide failure, per-unit reporting is exactly as before."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._conformant_done_repo(root, n=1, doc_ok=True)
+            _story(root, 9, status="Done", verified="no")   # a genuine per-unit gap
+            result = mod.detect_conformance(root)
+            self.assertEqual(result["globals"], [])
+            self.assertEqual(result["summary"]["global_failures"], 0)
+            u9 = next(u for u in result["units"] if u["id"] == "US0009")
+            self.assertIn("verified", u9["missing"])
+            self.assertEqual(u9["missing_global"], [])
 
 
 if __name__ == "__main__":

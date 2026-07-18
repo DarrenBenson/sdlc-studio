@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 34 |
+| Draft | 33 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 5 |
+| Review | 6 |
 | Done | 220 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -127,7 +127,7 @@
 | [US0214](US0214-review-close-ensures-its-rv-index-row-is.md) | review close ensures its RV index row is written | Draft | EP0072 | 2026-07-17 | 2026-07-17 |
 | [US0215](US0215-review-current-distinguishes-an-uncommitted-but-current-latest.md) | review-current distinguishes an uncommitted-but-current LATEST and names the commit remedy (absorbs CR0341) | Draft | EP0072 | 2026-07-17 | 2026-07-17 |
 | [US0216](US0216-gate-mutation-lane-surfaces-the-refused-red-baseline.md) | gate mutation lane surfaces the refused/red-baseline state | Review | EP0072 | 2026-07-17 | 2026-07-17 |
-| [US0217](US0217-a-global-doc-coverage-failure-is-attributed-once.md) | a global doc-coverage failure is attributed once, not fanned across every unit | Draft | EP0072 | 2026-07-17 | 2026-07-17 |
+| [US0217](US0217-a-global-doc-coverage-failure-is-attributed-once.md) | a global doc-coverage failure is attributed once, not fanned across every unit | Review | EP0072 | 2026-07-17 | 2026-07-17 |
 | [US0218](US0218-bounded-mutation-biases-its-sample-toward-changed-lines.md) | bounded mutation biases its sample toward changed lines | Review | EP0072 | 2026-07-17 | 2026-07-17 |
 | [US0219](US0219-gate-tracks-the-test-suite-runtime-and-warns.md) | gate tracks the test-suite runtime and warns before a long run | Review | EP0072 | 2026-07-17 | 2026-07-17 |
 | [US0220](US0220-gate-skips-the-unit-suite-for-test-irrelevant.md) | gate skips the unit suite for test-irrelevant changes, named not silent | Review | EP0072 | 2026-07-17 | 2026-07-17 |

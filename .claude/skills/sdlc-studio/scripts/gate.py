@@ -25,7 +25,10 @@ from lib import sdlc_md  # noqa: E402
 def _conformance(root: str) -> dict:
     import conformance
     result = conformance.detect_conformance(root)
-    n = result["summary"]["nonconformant"]
+    # A repo-global failure (one uncatalogued command, a missing index) is attributed ONCE
+    # rather than charged to every judged unit - but it must still block, or improving the
+    # report would quietly weaken the gate. Count it as its own finding.
+    n = result["summary"]["nonconformant"] + result["summary"].get("global_failures", 0)
     # Name the remedies inline (the adopt_after cutoff + the verify_ac backfill) and flag
     # whether the shape reads as pre-existing forward-only debt vs a fresh regression, so a
     # grown-but-accepted count does not read as a new breakage.
