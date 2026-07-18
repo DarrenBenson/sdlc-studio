@@ -2,6 +2,11 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0098: A `-k` test filter that matches nothing exits 0 having run zero tests, so a renamed class silently converts an executable AC into a green...**
+- **L-0097: Monkeypatching a module reached through `sys.modules` leaks across the whole test process; patch and register the undo together...**
+- **L-0096: A truthiness guard on a scope filter (`if wanted and ...`) fails open: an empty scope silently becomes an unbounded one.**
+- **L-0095: Deriving a terminal status is an assertion about work, so it must be scoped to what the run actually touched and must refuse on incomplete...**
+- **L-0094: A helper that SKIPS what it cannot resolve is safe for detection and unsafe for derivation: `_breakdown_units` silently drops an...**
 - **L-0093: Build a close-ceremony feature by orchestrating the existing tested primitives (sign-off, close, transition, velocity), not a parallel path...**
 - **L-0092: Correcting a wrong constant can activate dead code that only ever "worked" because the constant was wrong.**
 - **L-0091: Verify lines must use the DSL verbs (`grep`/`shell`/`pytest`/`file`/`http`/`eval`), never a backtick-wrapped raw `python3 ...`; the `grep`...**
