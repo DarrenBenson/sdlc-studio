@@ -1,8 +1,9 @@
 # BG0194: ID_SEARCH_RE has no trailing-digit boundary, so a 5-digit id truncates to a 4-digit one
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 3
+> **Verification depth:** functional (unit tests over both regexes and id_number, three mutants executed and killed with bytecode purged)
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py
 > **Created:** 2026-07-18
 > **Created-by:** sdlc-studio file
@@ -25,3 +26,4 @@ Add a trailing boundary to `ID_SEARCH_RE` so a 4-digit match cannot be a prefix 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-18 | sdlc-studio | Filed |
+| 2026-07-18 | sdlc-studio | Fixed: the digit run is `\d{4,}` and the v3 alternative is tried first, so a 5-digit id parses whole and a digit-leading ULID is not truncated; `id_number` widened to 4-7 digits so a long sequential id stays visible to the max+1 allocator |

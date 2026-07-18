@@ -35,12 +35,16 @@ H1_RE = re.compile(r"^#\s+(.+)$", re.M)
 # (>= 8 chars, extended on a rare directory clash). The base32 alternative is matched
 # case-SENSITIVELY (`(?-i:...)`) so it stops at the lowercase `-slug`, never swallowing it.
 _V3_SUFFIX = r"(?-i:-[0-9A-HJKMNP-TV-Z]{8,})"
+# The digit run is `\d{4,}`, not `\d{4}`: a fixed four consumed only a prefix, so `US01010`
+# read as `US0101` and any consumer matching ids this way attributed a 5-digit artefact to a
+# different, real 4-digit one. The v3 alternative is tried FIRST so an all-digit ULID suffix
+# (`BG-01234567`) is claimed whole by the v3 branch instead of being truncated by the v2 one.
 ID_RE = re.compile(
-    r"^((?:EP|US|PL|BG|TS|WF|RFC|CR|IS)(?:-?\d{4}|" + _V3_SUFFIX + r"))", re.IGNORECASE)
+    r"^((?:EP|US|PL|BG|TS|WF|RFC|CR|IS)(?:" + _V3_SUFFIX + r"|-?\d{4,}))", re.IGNORECASE)
 # Same, unanchored - finds an ID anywhere (e.g. inside an index table cell
 # `[US0001](US0001-login.md)`). RFC before CR so `RFC-0001` is not read as `CR`.
 ID_SEARCH_RE = re.compile(
-    r"(?<![A-Za-z])(?:EP|US|PL|BG|TS|WF|RFC|CR|IS)(?:-?\d{4}|" + _V3_SUFFIX + r")", re.IGNORECASE)
+    r"(?<![A-Za-z])(?:EP|US|PL|BG|TS|WF|RFC|CR|IS)(?:" + _V3_SUFFIX + r"|-?\d{4,})", re.IGNORECASE)
 # Acceptance-criterion heading: `### AC1: Title`.
 AC_HEADING_RE = re.compile(r"^###\s+(AC\d+)(?::\s*(.*))?$")
 # Acceptance-criterion bold bullet: `- **AC1:** text` / `* **AC1** text` / a
@@ -986,10 +990,13 @@ def id_number(record_id: str) -> int | None:
     """Numeric part of a v2 sequential ID ('US0042' -> 42, 'CR-0007' -> 7). A v3 ULID id
     ('BG-01JQK3F8') has no sequential number - even one whose suffix ends in digits - so this
     returns None for it, keeping ULID ids out of the max+1 numeric allocation path."""
-    # letters, optional dash, then EXACTLY four trailing digits and nothing else. This admits
+    # letters, optional dash, then four to seven trailing digits and nothing else. This admits
     # any sequential prefix (US, CR, and the meta ids LL/RV/RETRO) but never a v3 ULID, whose
-    # 8+-char base32 suffix cannot fullmatch a bare 4-digit tail.
-    m = re.fullmatch(r"[A-Za-z]+-?(\d{4})", record_id)
+    # base32 suffix is 8+ chars and so cannot fullmatch even when it happens to be all digits.
+    # Four is the minted width; the upper bound is what separates a long sequential id from a
+    # ULID, and without accepting 5+ a `US01010` would return None and be invisible to the
+    # max+1 allocator, which would then re-mint an id already in use.
+    m = re.fullmatch(r"[A-Za-z]+-?(\d{4,7})", record_id)
     return int(m.group(1)) if m else None
 
 

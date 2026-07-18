@@ -654,6 +654,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A 4-digit artefact id can no longer be read out of a longer one (BG0194).** `ID_SEARCH_RE` and
+  `ID_RE` matched a fixed `\d{4}` with no trailing boundary, so `US01010` parsed as `US0101` and any
+  consumer matching ids this way attributed a 5-digit artefact to a different, real one. The digit
+  run is now `\d{4,}`, and the v3 ULID alternative is tried before the sequential one so a
+  digit-leading ULID (`BG-0123ABCD`) is claimed whole instead of truncating to `BG-0123`.
+  `id_number` accepts 4 to 7 digits - a long sequential id was previously invisible to the max+1
+  allocator, which would then re-mint an id already in use - while still refusing an 8+-char ULID.
+
 - **The apply-signoff tail derives parent epics terminal (BG0190).** The per-unit cascade ticks an
   epic's Story Breakdown checkbox but never sets the epic's own `Status`, and with
   `two_backlog.enforce` off (the default) reconcile does not derive it either - so a close that

@@ -737,5 +737,52 @@ class SingleLineRefusalTests(unittest.TestCase):
                                       "acs": ["  spaced  "]})
 
 
+class IdBoundaryTests(unittest.TestCase):
+    """A 4-digit id must never be read out of a longer one (BG0194's collision class)."""
+
+    def test_five_digit_id_is_not_truncated_to_its_four_digit_prefix(self):
+        m = sdlc_md.ID_SEARCH_RE.search("US01010")
+        self.assertEqual(m.group(0), "US01010")
+
+    def test_five_digit_id_does_not_normalise_onto_a_real_four_digit_id(self):
+        long_id = sdlc_md.ID_SEARCH_RE.search("US01010").group(0)
+        short_id = sdlc_md.ID_SEARCH_RE.search("US0101").group(0)
+        self.assertNotEqual(sdlc_md.norm_id(long_id), sdlc_md.norm_id(short_id))
+
+    def test_breakdown_line_yields_the_whole_id(self):
+        line = "- [ ] [US01010: a thing](../stories/US01010-a-thing.md)"
+        self.assertEqual({m.group(0) for m in sdlc_md.ID_SEARCH_RE.finditer(line)},
+                         {"US01010"})
+
+    def test_anchored_match_reads_the_whole_id_from_a_filename(self):
+        self.assertEqual(sdlc_md.ID_RE.match("US01010-a-thing.md").group(1), "US01010")
+
+    def test_four_digit_ids_are_unchanged(self):
+        for raw, want in (("US0101", "US0101"), ("CR-0007", "CR-0007"),
+                          ("RFC-0001", "RFC-0001"), ("EP0072", "EP0072")):
+            with self.subTest(raw=raw):
+                self.assertEqual(sdlc_md.ID_SEARCH_RE.search(raw).group(0), want)
+
+    def test_a_digit_leading_v3_suffix_is_claimed_whole_not_truncated(self):
+        # A ULID whose suffix starts with digits and continues into letters is the case
+        # the ordering decides: with the v2 alternative first, `-?\\d{4,}` takes `-0123`
+        # and the id truncates to `BG-0123`. An all-digit suffix does NOT discriminate -
+        # the greedy digit run claims it whole under either order.
+        self.assertEqual(sdlc_md.ID_SEARCH_RE.search("BG-0123ABCD").group(0), "BG-0123ABCD")
+        self.assertIsNone(sdlc_md.id_number("BG-0123ABCD"))
+
+    def test_an_all_digit_v3_suffix_is_not_read_as_a_sequential_number(self):
+        self.assertEqual(sdlc_md.ID_SEARCH_RE.search("BG-01234567").group(0), "BG-01234567")
+        self.assertIsNone(sdlc_md.id_number("BG-01234567"))
+
+    def test_id_number_reads_a_long_sequential_id(self):
+        # Without this the max+1 allocator cannot see US01010 and would re-mint it.
+        self.assertEqual(sdlc_md.id_number("US01010"), 1010)
+        self.assertEqual(sdlc_md.id_number("US0101"), 101)
+
+    def test_id_number_still_refuses_a_v3_ulid(self):
+        self.assertIsNone(sdlc_md.id_number("BG-01JQK3F8"))
+
+
 if __name__ == "__main__":
     unittest.main()

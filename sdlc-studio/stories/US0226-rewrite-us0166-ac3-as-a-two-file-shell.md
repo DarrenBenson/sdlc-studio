@@ -4,7 +4,7 @@
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** sdlc-studio/stories/US0166-store-and-render-the-close-clause.md
+> **Affects:** sdlc-studio/stories/US0166-ship-a-stop-hook-installer-and-redefine-sprint.md
 > **Epic:** EP0075
 > **Points:** 2
 
