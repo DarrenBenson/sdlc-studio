@@ -277,8 +277,21 @@ def close(repo_root: Path | str, rv_id: str, latest_body: str | None = None,
     sdlc_md.atomic_write(state_path, json.dumps(state, indent=2))
     if latest_body is not None:
         sdlc_md.atomic_write(base / "reviews" / "LATEST.md", latest_body)
+    # Ensure the RV's own index row before returning. Without it the close chain's next step
+    # - reconcile - catches the missing row as drift and stops the whole ceremony for a
+    # mechanical fix that `reconcile apply` then performs anyway. The write belongs where the
+    # record is created. Reuses the tested meta-index helper rather than hand-editing
+    # `_index.md`, so the house column order and the create-from-template path are honoured.
+    indexed = False
+    try:
+        import reconcile  # sibling; imported lazily to keep the module's import graph flat
+        indexed = bool(reconcile.apply_meta(root)["appended"])
+    except Exception as exc:  # noqa: BLE001 - the stamp is the close; indexing is best-effort
+        print(f"warning: could not ensure the review index row ({exc}) - "
+              f"run `reconcile.py apply` before the close gate", file=sys.stderr)
     return {"stamped": sorted(stamped), "rv": norm,
-            "latest_written": latest_body is not None, "state": str(state_path)}
+            "latest_written": latest_body is not None, "state": str(state_path),
+            "indexed": indexed}
 
 
 def cmd_close(args: argparse.Namespace) -> int:
@@ -292,7 +305,8 @@ def cmd_close(args: argparse.Namespace) -> int:
         print(f"close refused: {exc}", file=sys.stderr)
         return 2
     print(f"review close stamped {', '.join(r['stamped'])} -> {r['state']}"
-          + ("; LATEST.md derived from the record" if r["latest_written"] else ""))
+          + ("; LATEST.md derived from the record" if r["latest_written"] else "")
+          + ("; index row written" if r.get("indexed") else ""))
     return 0
 
 

@@ -2806,6 +2806,84 @@ class CloseRefusalTests(unittest.TestCase):
                                "--goal-verdict", "achieved", "--root", str(root)])
             self.assertNotEqual(rc, 0)
             self.assertIn("--note", err.getvalue())
+class ApplySignoffParentEpicTests(unittest.TestCase):
+    """BG0190: the tail derives a parent epic terminal once all its children are.
+
+    The per-unit cascade ticks the epic's breakdown checkbox but never sets the epic's own
+    Status, and with `two_backlog.enforce` off (the default) reconcile does not derive it
+    either - so a close that transitioned every story Done left the epic at Draft, to be
+    moved by hand. US0237's AC2 claimed this worked; its Verify line only covered the
+    reconcile-drift half, so the gap passed review (L-0063: a suite is evidence only about
+    the cases it runs).
+    """
+
+    def _epic(self, root, status="Draft", units=("US0101",)):
+        d = root / "sdlc-studio" / "epics"
+        d.mkdir(parents=True, exist_ok=True)
+        lines = [f"# EP0001: widgets", "", f"> **Status:** {status}", "",
+                 "## Story Breakdown", ""]
+        lines += [f"- [ ] [{u}: x](../stories/{u}-widget.md)" for u in units]
+        (d / "EP0001-widgets.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        (d / "_index.md").write_text(
+            "# Epics\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            f"| [EP0001](EP0001-widgets.md) | widgets | {status} |\n", encoding="utf-8")
+
+    def _epic_status(self, root):
+        text = (root / "sdlc-studio" / "epics" / "EP0001-widgets.md").read_text(encoding="utf-8")
+        return next(line.split("**Status:**")[1].strip()
+                    for line in text.splitlines() if "**Status:**" in line)
+
+    def test_parent_epic_derived_done_when_all_children_terminal(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, scaffolded_retro="RETRO0001")
+            _signoffable_story(root)
+            _close_retro(root)
+            self._epic(root)
+            mod = _load()
+            rc, out, err = _run_apply_signoff(root, mod)
+            self.assertEqual(rc, 0, err)
+            self.assertEqual(self._epic_status(root), "Done")
+
+    def test_epic_with_a_live_child_is_not_derived(self) -> None:
+        """A half-finished epic must not be swept terminal by its finished sibling."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, scaffolded_retro="RETRO0001")
+            _signoffable_story(root)
+            _close_retro(root)
+            # a second child that stays live
+            (root / "sdlc-studio" / "stories" / "US0102-widget.md").write_text(
+                "# US0102: later\n\n> **Status:** Draft\n> **Epic:** EP0001\n", encoding="utf-8")
+            self._epic(root, units=("US0101", "US0102"))
+            mod = _load()
+            _run_apply_signoff(root, mod)
+            self.assertNotEqual(self._epic_status(root), "Done")
+
+    def test_epic_with_no_children_is_not_derived(self) -> None:
+        """"No children" is not "all children complete"."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, scaffolded_retro="RETRO0001")
+            _signoffable_story(root)
+            _close_retro(root)
+            self._epic(root, units=())
+            mod = _load()
+            _run_apply_signoff(root, mod)
+            self.assertNotEqual(self._epic_status(root), "Done")
+
+    def test_already_terminal_epic_is_left_alone(self) -> None:
+        """Idempotent: a re-run must not re-transition (nor fail on) a finished epic."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, scaffolded_retro="RETRO0001")
+            _signoffable_story(root)
+            _close_retro(root)
+            self._epic(root, status="Done")
+            mod = _load()
+            rc, out, err = _run_apply_signoff(root, mod)
+            self.assertEqual(rc, 0, err)
+            self.assertEqual(self._epic_status(root), "Done")
 
 
 if __name__ == "__main__":

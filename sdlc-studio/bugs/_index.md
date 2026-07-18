@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 5 |
+| Open | 4 |
 | In Progress | 0 |
-| Fixed | 106 |
+| Fixed | 107 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -156,7 +156,7 @@
 | [BG0187](BG0187-trd-9-threat-model-still-calls-plan-py.md) | TRD 9 threat model still calls plan.py archive the sole write exception, contradicting rule 5 | Open | Low | 2026-07-17 | 2026-07-17 |
 | [BG0188](BG0188-sprint-plan-write-accumulates-a-new-batch-into.md) | sprint plan --write accumulates a new batch into a prior run left outcome=running, reusing its id and clobbering its verdict | Fixed | High | 2026-07-17 | 2026-07-17 |
 | [BG0189](BG0189-project-upgrade-current-schema-2-contradicts-init-py.md) | project_upgrade.CURRENT_SCHEMA=2 contradicts init.py seeding new projects at schema_version 3 | Fixed | Low | 2026-07-17 | 2026-07-17 |
-| [BG0190](BG0190-apply-signoff-tail-does-not-derive-parent-epics.md) | apply-signoff tail does not derive parent epics terminal; US0237 AC2 over-claimed it | Open | Low | 2026-07-18 | 2026-07-18 |
+| [BG0190](BG0190-apply-signoff-tail-does-not-derive-parent-epics.md) | apply-signoff tail does not derive parent epics terminal; US0237 AC2 over-claimed it | Fixed | Low | 2026-07-18 | 2026-07-18 |
 | [BG0191](BG0191-handoff-is-generated-before-the-apply-signoff-cascade.md) | handoff is generated before the apply-signoff cascade, so delivered units are reported as remaining | Open | Medium | 2026-07-18 | 2026-07-18 |
 | [BG0192](BG0192-cross-epic-ac-is-a-bare-keyword-match.md) | cross-epic-ac is a bare keyword match and false-positives on common English words | Open | Low | 2026-07-18 | 2026-07-18 |
 | [BG0193](BG0193-a-verify-line-whose-test-filter-matches-nothing.md) | a Verify line whose test filter matches nothing passes vacuously | Open | Medium | 2026-07-18 | 2026-07-18 |

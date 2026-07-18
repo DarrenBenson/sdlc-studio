@@ -259,6 +259,82 @@ class AnchorRefusalTests(unittest.TestCase):
             review_prep.close(root, "RV0042", latest_body=body)
             latest = (root / "sdlc-studio" / "reviews" / "LATEST.md").read_text()
             self.assertEqual(latest, body)
+class CloseIndexRowTests(unittest.TestCase):
+    """US0214: the close writes the RV's own index row.
+
+    Before this, `close` stamped review-state and derived LATEST but left the RV out of
+    `reviews/_index.md`. The very next step of the close chain - reconcile - then caught
+    the missing row as drift and stopped the ceremony for a mechanical fix that
+    `reconcile apply` performed anyway (CR0335). The write belongs where the record is
+    created.
+    """
+
+    def _rows(self, root):
+        p = root / "sdlc-studio" / "reviews" / "_index.md"
+        return p.read_text(encoding="utf-8") if p.exists() else ""
+
+    def test_close_writes_the_index_row(self) -> None:
+        """AC1: the row exists after the close."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _review_workspace(root)
+            review_prep.close(root, "RV0042")
+            self.assertIn("RV0042", self._rows(root))
+
+    def test_no_missing_row_drift_after_close(self) -> None:
+        """AC2: the close chain's reconcile has nothing to stop for."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _review_workspace(root)
+            review_prep.close(root, "RV0042")
+            import importlib.util
+            spec = importlib.util.spec_from_file_location(
+                "reconcile", Path(review_prep.__file__).parent / "reconcile.py")
+            rec = importlib.util.module_from_spec(spec)
+            sys.modules["reconcile"] = rec
+            spec.loader.exec_module(rec)
+            missing = [x for x in rec.apply_meta(root, dry_run=True)["missing_unapplied"]
+                       if "RV0042" in str(x)]
+            self.assertEqual(missing, [])
+
+    def test_existing_row_is_not_duplicated(self) -> None:
+        """AC3: a re-run appends nothing - the close is idempotent."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _review_workspace(root)
+            review_prep.close(root, "RV0042")
+            first = self._rows(root)
+            r2 = review_prep.close(root, "RV0042")
+            self.assertEqual(self._rows(root), first)
+            self.assertFalse(r2["indexed"])          # nothing new appended
+            self.assertEqual(first.count("RV0042"), 1)
+
+    def test_indexing_failure_still_stamps(self) -> None:
+        """AC4: the stamp is the close; indexing is a convenience on top of it."""
+        import io
+        from contextlib import redirect_stderr
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _review_workspace(root)
+            import importlib.util
+            spec = importlib.util.spec_from_file_location(
+                "reconcile", Path(review_prep.__file__).parent / "reconcile.py")
+            rec = importlib.util.module_from_spec(spec)
+            sys.modules["reconcile"] = rec
+            spec.loader.exec_module(rec)
+            original = rec.apply_meta
+            self.addCleanup(setattr, rec, "apply_meta", original)
+
+            def _boom(*_a, **_k):
+                raise OSError("index is read-only")
+            rec.apply_meta = _boom
+            with redirect_stderr(io.StringIO()) as err:
+                r = review_prep.close(root, "RV0042")
+            self.assertFalse(r["indexed"])
+            self.assertIn("reconcile.py apply", err.getvalue())   # remedy named
+            state = json.loads(
+                (root / "sdlc-studio" / ".local" / "review-state.json").read_text())
+            self.assertIn("RV0042", state["reviews"])             # the close still happened
 
 
 if __name__ == "__main__":

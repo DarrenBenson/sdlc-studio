@@ -1,9 +1,10 @@
 # BG0190: apply-signoff tail does not derive parent epics terminal; US0237 AC2 over-claimed it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Depends on:** US0214
 > **Points:** 2
+> **Verification depth:** functional (unit tests over the derivation, both directions mutation-proven)
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py
 > **Created:** 2026-07-18
 > **Created-by:** sdlc-studio file
@@ -26,3 +27,4 @@ Either have `_apply_signoff_tail` transition a parent whose children are all ter
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-18 | sdlc-studio | Filed |
+| 2026-07-18 | sdlc-studio | Fixed: `_derive_parent_epics` transitions an epic whose breakdown units are all terminal, via the gated path; US0237 AC2's Verify line re-pointed at the derivation tests |

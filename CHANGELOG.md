@@ -654,6 +654,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The apply-signoff tail derives parent epics terminal (BG0190).** The per-unit cascade ticks an
+  epic's Story Breakdown checkbox but never sets the epic's own `Status`, and with
+  `two_backlog.enforce` off (the default) reconcile does not derive it either - so a close that
+  transitioned every one of an epic's stories Done left the epic at Draft, to be moved by hand.
+  `sprint close --apply-signoff` now transitions an epic whose breakdown units are all terminal,
+  through the gated path. An epic with no breakdown units is skipped ("no children" is not "all
+  children complete"), a live child blocks the derivation, and an already-terminal epic is left
+  alone so a re-run stays idempotent. US0237's AC2 claimed this behaviour while its Verify line
+  covered only the reconcile-drift half; it now points at the derivation tests.
+
+- **The review close writes its own index row (EP0072, US0214).** `review_prep close` stamped
+  review-state and derived the LATEST anchor but left the RV out of `reviews/_index.md`, so the very
+  next step of the close chain - reconcile - caught the missing row as drift and halted the ceremony
+  for a mechanical fix `reconcile apply` performed anyway. The close now ensures the row through the
+  shared meta-index helper (house column order honoured, create-from-template path intact),
+  idempotently. An indexing failure warns with the remedy rather than losing the close: the stamp is
+  the close, indexing is a convenience on top of it.
+
+- **An uncommitted-but-current review anchor is told apart from a stale one (EP0072, US0215,
+  absorbing CR0341).** The review-current lane dated `LATEST.md` by its last commit, so a review
+  re-run during the close - derived but not yet committed - read at its previous commit and the gate
+  demanded the operator "run `review`", the exact thing they had just done. The lane now detects the
+  dirty anchor, re-reads it at its working-tree time, and reports it as current but UNCOMMITTED with
+  committing the close paperwork as the remedy. It still blocks (an uncommitted close is not a
+  close), and an anchor that is genuinely older than a changed artefact still reports staleness.
+
 - **A repo-wide conformance failure is attributed once, not to every unit (EP0072, US0217).** The
   `documented` stage is a repo-global floor: one uncatalogued command failed it for every Done
   unit, so a single doc gap rendered as 118 non-conformant units - a true count of a misleading

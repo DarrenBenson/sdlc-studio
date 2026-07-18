@@ -29,7 +29,7 @@
 - **Given** the story units of an epic are all Done after the fan
 - **When** the tail's cascade + final reconcile run
 - **Then** the parent epic derives terminal and `reconcile detect` reports zero drift
-- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_sprint.ApplySignoffTailTests.test_ApplySignoffTail_final_reconcile_drift_fails
+- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_sprint.ApplySignoffParentEpicTests tests.test_sprint.ApplySignoffTailTests.test_ApplySignoffTail_final_reconcile_drift_fails
 - **Verified:** yes (2026-07-18)
 
 ## Revision History
@@ -37,3 +37,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-17 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-07-18 | sdlc-studio | AC2's Verify line covered only the reconcile-drift half, so the un-derived parent epic passed review (BG0190); re-pointed at the derivation tests now that the behaviour exists |

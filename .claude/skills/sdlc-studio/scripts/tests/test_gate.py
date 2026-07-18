@@ -1686,6 +1686,79 @@ class MutationRefusedLaneTests(unittest.TestCase):
                                        "errors": 0, "truncated": 0}})
         self.assertIn("1 survived", lane["detail"])
         self.assertNotIn("REFUSED", lane["detail"])
+class ReviewCurrentDirtyTests(unittest.TestCase):
+    """US0215: an uncommitted-but-current review anchor is not a stale one.
+
+    `_review_current` dates LATEST.md by its last COMMIT, so a review re-run during the
+    close - derived but not yet committed - read at its previous commit and the gate
+    demanded the operator "run `review`", the exact thing they had just done. Two
+    genuinely different states owe two different remedies (CR0335, CR0341).
+    """
+
+    def _repo(self, tmp, *, artefact_first: bool, commit_latest: bool):
+        """A repo with one story and a LATEST.md, ordered to be current or stale."""
+        root = Path(tmp)
+        _git(root, "init", "-q")
+        _git(root, "config", "user.email", "t@t")
+        _git(root, "config", "user.name", "t")
+        stories = root / "sdlc-studio" / "stories"
+        stories.mkdir(parents=True)
+        reviews = root / "sdlc-studio" / "reviews"
+        reviews.mkdir(parents=True)
+        story = stories / "US0001-x.md"
+        latest = reviews / "LATEST.md"
+        story.write_text("# US0001: x\n\n> **Status:** Done\n", encoding="utf-8")
+        latest.write_text("# Reviews - LATEST\n\nanchor\n", encoding="utf-8")
+        _git(root, "add", "-A")
+        _git(root, "commit", "-qm", "base")
+        if artefact_first:
+            # the artefact moves on AFTER the committed review -> genuinely stale
+            story.write_text("# US0001: x\n\n> **Status:** Done\n\nchanged\n", encoding="utf-8")
+            _git(root, "add", "-A")
+            _git(root, "commit", "-qm", "artefact moves")
+        # re-derive the review anchor in the working tree
+        latest.write_text("# Reviews - LATEST\n\nre-derived\n", encoding="utf-8")
+        if commit_latest:
+            _git(root, "add", "-A")
+            _git(root, "commit", "-qm", "close paperwork")
+        return root, latest
+
+    def test_uncommitted_but_current_names_the_commit_remedy(self) -> None:
+        """AC1: the remedy is to commit, not to re-run the review."""
+        with tempfile.TemporaryDirectory() as t:
+            root, _ = self._repo(t, artefact_first=False, commit_latest=False)
+            lane = gate._review_current(str(root))
+            self.assertIn("UNCOMMITTED", lane["detail"])
+            self.assertIn("commit the close paperwork", lane["detail"])
+            self.assertNotIn("run `review` before closing", lane["detail"])
+
+    def test_uncommitted_still_blocks(self) -> None:
+        """AC2: naming the honest remedy must not turn the failure into a pass."""
+        with tempfile.TemporaryDirectory() as t:
+            root, _ = self._repo(t, artefact_first=False, commit_latest=False)
+            lane = gate._review_current(str(root))
+            self.assertTrue(lane["blocking"])
+            self.assertGreater(lane["count"], 0)
+
+    def test_dirty_but_genuinely_stale_still_says_run_review(self) -> None:
+        """AC3: the dirty path must not mask a real staleness."""
+        with tempfile.TemporaryDirectory() as t:
+            root, latest = self._repo(t, artefact_first=True, commit_latest=False)
+            # force the anchor's mtime behind the artefact so it is genuinely stale
+            import os
+            st = (root / "sdlc-studio" / "stories" / "US0001-x.md").stat()
+            os.utime(latest, (st.st_atime - 3600, st.st_mtime - 3600))
+            lane = gate._review_current(str(root))
+            self.assertIn("stale", lane["detail"])
+            self.assertIn("run `review`", lane["detail"])
+
+    def test_committed_and_current_passes(self) -> None:
+        """AC4: the clean path is untouched."""
+        with tempfile.TemporaryDirectory() as t:
+            root, _ = self._repo(t, artefact_first=False, commit_latest=True)
+            lane = gate._review_current(str(root))
+            self.assertEqual(lane["count"], 0)
+            self.assertIn("current with all artefacts", lane["detail"])
 
 
 if __name__ == "__main__":

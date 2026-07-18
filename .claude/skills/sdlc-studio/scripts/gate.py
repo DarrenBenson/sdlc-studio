@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -461,6 +462,23 @@ def _retro_present(root: str, retro_id: str) -> dict:
             "detail": f"batch retro {retro_id} incomplete{suffix} - " + "; ".join(res["errors"])}
 
 
+def _is_dirty(root: Path, path: Path) -> bool:
+    """True when `path` has uncommitted working-tree or staged changes.
+
+    Answers only what it is asked: a git failure, an untracked file, or no repo at all
+    returns False, so the caller falls back to the committed-time reading rather than
+    inventing a dirty state.
+    """
+    try:
+        import subprocess
+        rel = path.relative_to(root)
+        out = subprocess.run(["git", "status", "--porcelain", "--", str(rel)],
+                             cwd=root, capture_output=True, text=True, timeout=10)
+        return bool(out.stdout.strip())
+    except Exception:  # noqa: BLE001 - currency reporting must never break the gate
+        return False
+
+
 def _review_current(root: str) -> dict:
     """Blocking close-gate check: the unified-review anchor (reviews/LATEST.md) must be at least
     as new as every artefact. If any artefact changed since the last review, LATEST.md is stale
@@ -479,6 +497,14 @@ def _review_current(root: str) -> dict:
         return {"count": 1, "blocking": True,
                 "detail": "no reviews/LATEST.md - run `review` before closing the sprint"}
     latest_dt = review_prep._parse_dt(review_prep._modified_iso(latest, rr)[0])
+    # The timestamp above is the last COMMIT time, so a review that has just been re-run but
+    # not yet committed still reads at its previous commit - stale, with a remedy telling the
+    # operator to do the thing they just did. Re-read the dirty anchor at its working-tree
+    # mtime so the two genuinely different states get two different remedies.
+    uncommitted = _is_dirty(rr, latest)
+    if uncommitted:
+        latest_dt = review_prep._parse_dt(
+            datetime.fromtimestamp(latest.stat().st_mtime, timezone.utc).isoformat())
     stale = []
     for key, rec in review_prep.staleness(rr).items():
         m = review_prep._parse_dt(rec.get("last_modified"))
@@ -488,6 +514,12 @@ def _review_current(root: str) -> dict:
         return {"count": len(stale), "blocking": True,
                 "detail": (f"reviews/LATEST.md is stale - {len(stale)} artefact(s) changed since "
                            f"the last review ({_elide(sorted(stale))}); run `review` before closing")}
+    if uncommitted:
+        # Current in content, absent from history. Still blocking - an uncommitted close is
+        # not a close - but the honest remedy is to commit, not to re-run the review.
+        return {"count": 1, "blocking": True,
+                "detail": "reviews/LATEST.md is current with all artefacts but UNCOMMITTED - "
+                          "commit the close paperwork (re-running `review` will not change this)"}
     return {"count": 0, "blocking": True, "detail": "reviews/LATEST.md is current with all artefacts"}
 
 

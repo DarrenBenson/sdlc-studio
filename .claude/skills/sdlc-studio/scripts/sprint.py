@@ -2317,13 +2317,51 @@ def _apply_signoff(root, state, principal: str | None, author_default: str | Non
     return rc
 
 
+def _derive_parent_epics(root) -> list[str]:
+    """Transition every epic whose breakdown units are all terminal to Done.
+
+    The per-unit cascade ticks an epic's breakdown checkbox but never sets the epic's own
+    Status, and with `two_backlog.enforce` off (the default) reconcile does not derive it
+    either - so after a close transitioned all of an epic's stories Done, the epic sat at
+    Draft and had to be moved by hand. An epic with no breakdown units is skipped:
+    "no children" is not "all children complete". Each transition goes through the gated
+    path, so a parent that should not move still does not.
+    """
+    import reconcile  # noqa: PLC0415
+    import transition  # noqa: PLC0415
+    root = Path(root)          # callers pass either; the census helpers need a Path
+    moved: list[str] = []
+    for epath in sdlc_md.artifact_files("epic", root):
+        text = sdlc_md.read_text_safe(epath)
+        eid = sdlc_md.extract_record_id(epath.stem) or epath.stem
+        if sdlc_md.is_terminal_status("epic", sdlc_md.canonical_status(
+                sdlc_md.extract_field(text, "Status"), sdlc_md.status_vocab("epic", root))):
+            continue                                   # already terminal: nothing to derive
+        units = list(reconcile._breakdown_units(root, text))
+        if not units:
+            continue                                   # no children to be complete
+        if not all(sdlc_md.is_terminal_status(utype, canon)
+                   for _ln, _ticked, _uid, utype, canon in units):
+            continue
+        try:
+            transition.transition(root, eid, "Done")
+            moved.append(eid)
+        except (ValueError, OSError) as exc:
+            print(f"apply-signoff: {eid} not derived Done ({exc})", file=sys.stderr)
+    return moved
+
+
 def _apply_signoff_tail(root, state) -> int:
-    """The close tail (US0237): write the run's velocity row and run a final reconcile. The parent
-    epic/CR cascade already happened per unit (transition ticks the breakdown and re-derives the
-    parent's terminal status); this records velocity and asserts drift-0. Idempotent: the velocity
-    row is upserted by retro id, and reconcile is read-only detection here."""
+    """The close tail (US0237): derive parent epics terminal, write the run's velocity row,
+    and run a final reconcile. The per-unit cascade ticks each epic's breakdown checkbox but
+    does not set the epic's own Status, so the derivation happens here. Idempotent:
+    an already-terminal epic is skipped, the velocity row is upserted by retro id, and
+    reconcile is read-only detection."""
     import reconcile  # noqa: PLC0415
     import retro  # noqa: PLC0415
+    derived = _derive_parent_epics(root)
+    if derived:
+        print(f"apply-signoff: derived {', '.join(derived)} Done (all children terminal)")
     retro_id = (state.get("scaffolded_retro") or "").strip()
     if retro_id:
         # `retro accuracy --write` records the velocity row (record_velocity), keyed by retro id so
