@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 4 |
+| Open | 5 |
 | In Progress | 0 |
 | Fixed | 106 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **192** |
+| **Total** | **193** |
 
 ## All Bugs
 
@@ -159,6 +159,7 @@
 | [BG0190](BG0190-apply-signoff-tail-does-not-derive-parent-epics.md) | apply-signoff tail does not derive parent epics terminal; US0237 AC2 over-claimed it | Open | Low | 2026-07-18 | 2026-07-18 |
 | [BG0191](BG0191-handoff-is-generated-before-the-apply-signoff-cascade.md) | handoff is generated before the apply-signoff cascade, so delivered units are reported as remaining | Open | Medium | 2026-07-18 | 2026-07-18 |
 | [BG0192](BG0192-cross-epic-ac-is-a-bare-keyword-match.md) | cross-epic-ac is a bare keyword match and false-positives on common English words | Open | Low | 2026-07-18 | 2026-07-18 |
+| [BG0193](BG0193-a-verify-line-whose-test-filter-matches-nothing.md) | a Verify line whose test filter matches nothing passes vacuously | Open | Medium | 2026-07-18 | 2026-07-18 |
 
 ## Archived Releases
 

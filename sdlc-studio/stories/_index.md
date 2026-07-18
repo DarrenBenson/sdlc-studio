@@ -7,11 +7,11 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 36 |
+| Draft | 34 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 3 |
+| Review | 5 |
 | Done | 220 |
 | Won't Implement | 0 |
 | Deferred | 0 |
@@ -129,8 +129,8 @@
 | [US0216](US0216-gate-mutation-lane-surfaces-the-refused-red-baseline.md) | gate mutation lane surfaces the refused/red-baseline state | Review | EP0072 | 2026-07-17 | 2026-07-17 |
 | [US0217](US0217-a-global-doc-coverage-failure-is-attributed-once.md) | a global doc-coverage failure is attributed once, not fanned across every unit | Draft | EP0072 | 2026-07-17 | 2026-07-17 |
 | [US0218](US0218-bounded-mutation-biases-its-sample-toward-changed-lines.md) | bounded mutation biases its sample toward changed lines | Review | EP0072 | 2026-07-17 | 2026-07-17 |
-| [US0219](US0219-gate-tracks-the-test-suite-runtime-and-warns.md) | gate tracks the test-suite runtime and warns before a long run | Draft | EP0072 | 2026-07-17 | 2026-07-17 |
-| [US0220](US0220-gate-skips-the-unit-suite-for-test-irrelevant.md) | gate skips the unit suite for test-irrelevant changes, named not silent | Draft | EP0072 | 2026-07-17 | 2026-07-17 |
+| [US0219](US0219-gate-tracks-the-test-suite-runtime-and-warns.md) | gate tracks the test-suite runtime and warns before a long run | Review | EP0072 | 2026-07-17 | 2026-07-17 |
+| [US0220](US0220-gate-skips-the-unit-suite-for-test-irrelevant.md) | gate skips the unit suite for test-irrelevant changes, named not silent | Review | EP0072 | 2026-07-17 | 2026-07-17 |
 | [US0221](US0221-audit-cost-gains-a-record-subcommand-and-a.md) | audit_cost gains a record subcommand and a committed evidence ledger; estimate from measured medians with a named fallback | Draft | EP0073 | 2026-07-17 | 2026-07-17 |
 | [US0222](US0222-persist-verification-cap-overflow-as-a-durable-carry.md) | persist verification-cap overflow as a durable carry-over worklist a scoped follow-up re-ingests | Draft | EP0073 | 2026-07-17 | 2026-07-17 |
 | [US0223](US0223-add-the-sprint-report-command-route-delegating-to.md) | add the sprint report command route delegating to sprint_report | Draft | EP0074 | 2026-07-17 | 2026-07-17 |

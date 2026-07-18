@@ -100,6 +100,12 @@ these same checks; skipping them locally is how style, neutrality, budget, and
 link breakage reaches `main`. Each guard below has caught a real breakage that the
 unit tests do not.
 
+**Budget the time.** The unit suites are the one slow guard (~2.5 min), which is longer
+than the 2-minute default of most tooling - give a commit at least a 10-minute timeout.
+The hook prints the expected duration from its own recorded history before it starts, and
+**skips** the unit suites entirely (saying so) for a commit touching no `scripts/`,
+`templates/`, or `tools/` file.
+
 With npm: `npm run lint` (markdown + all guards) and `npm test` (the script suite).
 
 **Without npm (it is not always on PATH):** every check except markdownlint is a

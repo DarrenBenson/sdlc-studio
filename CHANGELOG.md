@@ -654,6 +654,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The pre-commit gate measures, announces, and skips its long unit run (EP0072, US0219,
+  US0220).** The ~2,800-test suite takes around 2.5 minutes, exceeding the 2-minute default of
+  common tooling, so a commit looked hung and got killed or bypassed - and a bypassed guard guards
+  nothing. New `tools/gate_timing.py` records each suite's wall-time to a bounded per-suite history
+  (`sdlc-studio/.local/gate-timings.json`, most recent 10) and estimates the next run from the
+  median, so one cold-cache run does not inflate every later figure; the hook prints the expected
+  duration and a timeout to allow before starting. It degrades to silence rather than to a wrong
+  number - no history, a corrupt file, or a non-numeric entry all print nothing and never fail a
+  commit. The existing docs-only skip is now **named** rather than silent, stating which guards
+  still ran, because a guard that quietly does not run is indistinguishable from one that ran and
+  passed. Any change under `scripts/`, `templates/` or `tools/` still forces the full suite.
+
 - **A bounded mutation run spends its ceiling on the changed lines (EP0072, US0218).** With
   `--since REF`, `mutation.py` now reads `git diff -U0` into a changed-line map and applies mutants
   on those lines before any untouched code; once the diff is covered the remainder spreads

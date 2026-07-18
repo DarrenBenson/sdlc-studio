@@ -1,37 +1,53 @@
 # US0219: gate tracks the test-suite runtime and warns before a long run
 
-> **Status:** Draft
+> **Status:** Review
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py
+> **Affects:** .githooks/pre-commit, tools/gate_timing.py
 > **Epic:** EP0072
 > **Depends on:** US0216
 > **Points:** 3
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As an** engineer committing through the pre-commit gate
+**I want** the long unit run announced before it starts
+**So that** I set a sufficient timeout instead of killing a commit that looked hung
 
 ## Acceptance Criteria
 
-> Seeded from the request's full criteria list - redistribute across this epic's stories as you groom them.
+### AC1: Each run's wall-time is recorded to a bounded history
 
-### AC1: The gate records each run's test-suite wall-time to a local history of recent runs
+- **Given** the gate has run the unit suite
+- **When** the duration is recorded
+- **Then** it is appended to a per-suite history in `sdlc-studio/.local/gate-timings.json`, keeping only the most recent runs so the estimate tracks this machine rather than a long tail spanning hardware changes.
+- **Verify:** shell python3 -m unittest discover -s tools/tests -p test_gate_timing.py -k RecordTests
+- **Verified:** yes (2026-07-18)
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** The gate records each run's test-suite wall-time to a local history of recent runs, bounded to the most recent N.
-- **Verify:** {{executable check}}
+### AC2: A long expected run is announced before it starts
 
-### AC2: Before running the suite the gate estimates duration from that history and prints a warning when it
+- **Given** a recorded history whose median exceeds the warning threshold
+- **When** the gate is about to run the suite
+- **Then** it prints the expected duration and a timeout to allow, so the cost is known in advance rather than discovered as a hang.
+- **Verify:** shell python3 -m unittest discover -s tools/tests -p test_gate_timing.py -k EstimateTests
+- **Verified:** yes (2026-07-18)
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** Before running the suite the gate estimates duration from that history and prints a warning when it exceeds a configurable threshold (e.g. `gate.warn_seconds)`, so a long run is expected, not a surprise timeout.
-- **Verify:** {{executable check}}
+### AC3: The estimate degrades to silence, never to a wrong number
+
+- **Given** no history yet, or a corrupt/unreadable timings file
+- **When** the estimate is requested
+- **Then** nothing is printed and the exit status is success - an advisory measurement must never fail a commit or invent a figure.
+- **Verify:** shell python3 -m unittest discover -s tools/tests -p test_gate_timing.py -k DegradeTests
+- **Verified:** yes (2026-07-18)
+
+### AC4: The median resists one pathological run
+
+- **Given** a history containing one outlier far above the rest
+- **When** the expected duration is computed
+- **Then** it reflects the typical run, so a single cold-cache or loaded-machine run does not inflate every subsequent estimate.
+- **Verify:** shell python3 -m unittest discover -s tools/tests -p test_gate_timing.py -k MedianTests
+- **Verified:** yes (2026-07-18)
 
 ## Revision History
 
