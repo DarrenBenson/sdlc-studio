@@ -33,13 +33,16 @@ _STOP = {"and", "the", "for", "with", "management", "system", "foundation", "pla
 # so it is suppressed - it would otherwise cry wolf on every story that mentions it. CR0113.
 _SHARED_EPIC_THRESHOLD = 3
 
-# A story-count ("document frequency") suppression was tried here and REMOVED. It counted the
+# A story-count ("document frequency") suppression was tried here and REMOVED: it counted the
 # owning epic's own stories, and an epic's backlog is exactly where its title vocabulary
-# appears - so three sibling stories were enough to drop the keyword from `distinctive`
-# entirely, deleting a genuine multi-keyword leak before its strength was ever computed. It
-# also demoted nothing this repo did not already demote: 11 findings before, the same 11
-# after. `_SHARED_EPIC_THRESHOLD` counts DISTINCT EPICS, which discounts the owner, and it is
-# the only frequency signal here for that reason.
+# appears, so a few sibling stories dropped the keyword entirely and deleted a genuine leak
+# before its strength was ever computed. It also demoted nothing already demoted.
+#
+# The epic-count threshold had the SAME flaw and it is fixed here rather than described away:
+# the owning epic's own stories no longer count towards the spread. The question the threshold
+# asks is how widely a word is used OUTSIDE the epic that owns it, and counting the owner meant
+# one owner story plus one unrelated epic could reach the threshold and erase a real
+# cross-epic leak.
 
 # How many DISTINCT owner keywords a story must name before the hit is treated as evidence
 # rather than a coincidence. One shared English word is the false-positive case this heuristic
@@ -113,7 +116,9 @@ def check(repo_root: Path | str) -> list[dict]:
     # A distinctive title keyword spread across many epics is shared domain vocabulary - drop it.
     epics_mentioning: dict[str, set[str | None]] = {}
     for own_eid, block, _ in stories:
-        for kw in distinctive:
+        for kw, owner_eid in distinctive.items():
+            if own_eid == owner_eid:
+                continue  # the owner's own usage is not evidence the word is shared
             if _mentions(block, kw):
                 epics_mentioning.setdefault(kw, set()).add(own_eid)
     distinctive = {kw: owner for kw, owner in distinctive.items()

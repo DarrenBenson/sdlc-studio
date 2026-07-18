@@ -200,20 +200,33 @@ class VerifierResult:
 # on every version. An AC whose test class is renamed or deleted then turns into a green no-op -
 # exit 0 proving nothing ran rather than that anything held.
 #
-# These are anchored to each runner's own summary line, not bare keywords: a loose substring
-# match would fail an honest test whose output happens to discuss test counts, which is the
-# false-positive class that makes a check something people route around.
-_ZERO_TEST_SIGNATURES = (
-    re.compile(r"^Ran 0 tests? in ", re.M),                      # unittest
-    re.compile(r"^NO TESTS RAN$", re.M),                         # unittest >= 3.12
-    re.compile(r"^(?:=+ )?no tests ran\b", re.M | re.I),         # pytest
-    re.compile(r"^(?:=+ )?no tests collected\b", re.M | re.I),   # pytest --collect-only
-    re.compile(r"^testing: warning: no tests to run$", re.M),    # go
-    re.compile(r"\[no tests? to run\]", re.M),                   # go, per-package
-    re.compile(r"\[no test files\]", re.M),                      # go, package with no tests
-    re.compile(r"^No tests found", re.M),                        # jest
-    re.compile(r"^No test files found", re.M),                   # vitest
-)
+# Vacuity is decided PER RUNNER FAMILY, from that family's own output and nothing else. A
+# blob-wide "did anything pass?" veto was tried and removed: `shell` verifiers routinely run
+# `make test` / `npm run check`, and any co-running linter or coverage tool printing "12 passed"
+# then silenced the whole gate. Disarming this check is a worse failure than the false alarm it
+# was added to fix, so nothing outside a family's own summary may speak for it.
+#
+# Only `go` and `jest` need a counter-signature at all, because only they report PER UNIT and
+# can say "nothing here" beside a real result. `unittest` and `pytest` each print exactly one
+# summary, and their empty and non-empty forms are mutually exclusive ("Ran 0 tests" vs
+# "Ran 9 tests"; "no tests ran" vs "3 passed, 90 deselected"), so they are judged on their own
+# line with no veto.
+
+# unittest: one summary line, exclusive.
+_UNITTEST_ZERO = re.compile(r"^Ran 0 tests? in ", re.M)
+# pytest: one summary line, exclusive. `--collect-only` reports "collected".
+_PYTEST_ZERO = re.compile(r"^(?:=+ )?no tests (?:ran|collected)\b", re.M | re.I)
+# go: one line per PACKAGE. `?  pkg [no test files]` and `ok pkg 0.0s [no tests to run]` are
+# normal output of a green `./...` run, so the whole run is empty only when EVERY package line
+# says so.
+_GO_PKG_LINE = re.compile(r"^(?:ok|\?|FAIL)\s+\S+.*$", re.M)
+_GO_PKG_EMPTY = re.compile(r"\[no tests? (?:to run|files)\]")
+# The testing package's own warning, printed inside the test binary when -run matched nothing.
+# It is the fallback when no package summary line is present to judge.
+_GO_WARN = re.compile(r"^testing: warning: no tests to run$", re.M)
+# jest/vitest: one project may report none beside another that passed.
+_JEST_ZERO = re.compile(r"^No tests? (?:found|files found)", re.M)
+_JEST_RAN = re.compile(r"^PASS\b", re.M)
 
 # Only the verbs that RUN a test suite are judged for vacuity. `file`/`grep`/`http` have no
 # concept of a test count, and `grep` in particular could match a signature inside the very
@@ -221,19 +234,19 @@ _ZERO_TEST_SIGNATURES = (
 _TEST_KINDS = {"pytest", "jest", "vitest", "go", "shell", "fallback"}
 
 
-# Evidence that a package or file DID run tests. A multi-package or multi-project run reports
-# per-unit "nothing here" lines alongside real results: `go test ./...` prints
-# `?  pkg  [no test files]` for every package without tests while others pass, and a jest
-# workspace prints `No tests found` for one project while another reports PASS. A no-test
-# signature therefore only means "nothing ran" when NOTHING claims to have run - otherwise a
-# fully green suite would be failed and its author told to re-point a Verify line at tests
-# that demonstrably executed.
-_RAN_SIGNATURES = (
-    re.compile(r"^ok\s+\S+\s+[\d.]+m?s\s*$", re.M),        # go: a package that ran tests
-    re.compile(r"^PASS\b", re.M),                            # jest/vitest: a file passed
-    re.compile(r"^Ran [1-9]\d* tests? in ", re.M),            # unittest: a non-zero count
-    re.compile(r"\b[1-9]\d* passed\b", re.I),                # pytest / jest summary
-)
+def _go_ran_nothing(blob: str) -> bool:
+    """True when go reported package results and every one of them ran no tests."""
+    pkgs = _GO_PKG_LINE.findall(blob)
+    if pkgs:
+        return all(_GO_PKG_EMPTY.search(line) for line in pkgs)
+    # No package summary to weigh: the testing package's warning is on its own unambiguous
+    # evidence that the filter matched nothing.
+    return bool(_GO_WARN.search(blob))
+
+
+def _jest_ran_nothing(blob: str) -> bool:
+    """True when jest/vitest found no tests and no project reported a pass."""
+    return bool(_JEST_ZERO.search(blob)) and not _JEST_RAN.search(blob)
 
 
 def _ran_no_tests(kind: str, stdout: str, stderr: str) -> bool:
@@ -241,9 +254,10 @@ def _ran_no_tests(kind: str, stdout: str, stderr: str) -> bool:
     if kind not in _TEST_KINDS:
         return False
     blob = f"{stdout}\n{stderr}"
-    if not any(sig.search(blob) for sig in _ZERO_TEST_SIGNATURES):
-        return False
-    return not any(sig.search(blob) for sig in _RAN_SIGNATURES)
+    return bool(_UNITTEST_ZERO.search(blob)
+                or _PYTEST_ZERO.search(blob)
+                or _go_ran_nothing(blob)
+                or _jest_ran_nothing(blob))
 
 
 _VACUOUS_MSG = ("verifier exited 0 but ran NO tests - a filter that matches nothing "

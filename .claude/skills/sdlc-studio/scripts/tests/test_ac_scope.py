@@ -217,8 +217,27 @@ class SingleKeywordIsAdvisoryTests(unittest.TestCase):
             self.assertEqual(len(hits), 2, "the leak must survive the owner's own usage")
             self.assertTrue(all(not f["advisory"] for f in hits))
 
+    def test_the_owning_epics_own_stories_do_not_count_towards_the_spread(self):
+        # One owner story plus one unrelated epic used to reach _SHARED_EPIC_THRESHOLD and
+        # erase a real cross-epic leak. The threshold asks how widely a word is used OUTSIDE
+        # the epic that owns it.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _epic(root, "EP0006", "Payment Gateway")
+            _epic(root, "EP0001", "Reporting Dashboard")
+            _epic(root, "EP0009", "Other Area")
+            _story(root, "US0002", "EP0001",           # the leak
+                   "### AC1\n- **Then** a payment via the gateway is refunded\n")
+            _story(root, "US0050", "EP0009",
+                   "### AC1\n- **Then** the payment gateway is mentioned here too\n")
+            _story(root, "US0010", "EP0006",           # the OWNER's own usage
+                   "### AC1\n- **Then** the payment gateway settles\n")
+            hits = [f for f in ac_scope.check(root) if f["story"] == "US0002"]
+            self.assertEqual(len(hits), 2, "the owner's own usage erased the leak")
+            self.assertTrue(all(not f["advisory"] for f in hits))
+
     def test_a_keyword_spread_across_many_distinct_epics_is_still_suppressed(self):
-        # The epic-count threshold discounts the owner and is retained.
+        # Genuinely shared vocabulary - three NON-owning epics use it - is still dropped.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _epic(root, "EP0082", "Residual audit fixes")

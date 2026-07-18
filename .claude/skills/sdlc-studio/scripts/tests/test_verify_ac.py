@@ -1358,6 +1358,30 @@ class VacuousVerifierTests(unittest.TestCase):
             with self.subTest(kind=kind):
                 self.assertFalse(verify_ac._ran_no_tests(kind, signature, ""))
 
+    def test_unrelated_tool_output_cannot_disarm_the_check(self):
+        # A blob-wide "did anything pass?" veto was tried and removed. A `shell` Verify line
+        # is routinely `make test` / `npm run check`, and a co-running linter or coverage tool
+        # printing "N passed" then silenced the gate entirely - a false NEGATIVE, which is a
+        # worse failure than the false positive the veto was added to fix.
+        for noise in ("Coverage: 12 passed", "lint: 0 failed, 1 passed", "eslint 4 passed",
+                      "PASS", "ok  \tex/other\t0.010s"):
+            with self.subTest(noise=noise):
+                self.assertTrue(
+                    verify_ac._ran_no_tests("shell", f"Ran 0 tests in 0.000s\n{noise}\n", ""),
+                    "unrelated output must not speak for the runner under test")
+                self.assertTrue(
+                    verify_ac._ran_no_tests("shell", f"no tests ran in 0.01s\n{noise}\n", ""))
+
+    def test_a_go_filter_matching_nothing_is_vacuous_even_beside_the_binarys_pass_line(self):
+        # `testing: warning: no tests to run` is printed by the test binary, which prints PASS
+        # on the same stream - so a PASS-based veto made this signature dead in every real run.
+        out = ("testing: warning: no tests to run\nPASS\n"
+               "ok  \tex/foo\t0.002s [no tests to run]\n")
+        self.assertTrue(verify_ac._ran_no_tests("go", out, ""))
+
+    def test_a_bare_go_warning_with_no_package_summary_is_still_vacuous(self):
+        self.assertTrue(verify_ac._ran_no_tests("go", "testing: warning: no tests to run\n", ""))
+
     def test_a_multi_package_go_run_with_real_results_is_not_vacuous(self):
         # `go test ./...` prints `[no test files]` per package WITHOUT tests while others
         # pass. Failing that green suite would tell the author to re-point a Verify line at

@@ -660,10 +660,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   shared with an unrelated epic title - "fixes", "residual", "cleanup", "fold", "around" - and the
   only remedies were to reword innocent prose or rescope an AC that was already correctly scoped.
   Findings now carry a `strength` (how many distinct keywords from the SAME owner epic) and only a
-  multi-keyword hit blocks; a single-keyword hit is reported as a note. Frequency suppression stays
-  keyed on DISTINCT EPICS, which discounts the owning epic: a story-count variant was tried and
-  removed, because an epic's own backlog is exactly where its title vocabulary appears and a few
-  sibling stories were enough to delete a genuine leak before its strength was computed.
+  multi-keyword hit blocks; a single-keyword hit is reported as a note. The frequency suppression no
+  longer counts the OWNING epic's own stories towards a keyword's spread - it asks how widely a word
+  is used outside the epic that owns it, and counting the owner meant one owner story plus one
+  unrelated epic could erase a real cross-epic leak. (A story-count variant of the same suppression
+  was tried during this sprint and removed for the same flaw.)
 
 - **Each AC selects its own behaviour, and a shared selector is now visible (US0227).** US0172 and
   US0173 both ran `-k AttemptsAndCost`, and US0163's two ACs both ran the whole `test_close_owed.py`
@@ -707,9 +708,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   anchored to each runner's summary format rather than matched as bare keywords, so an honest test
   that discusses test counts is unaffected, and only test-running verbs are judged - `grep` could
   otherwise match a signature inside the file it is searching. A no-test signature counts only when
-  NOTHING claims to have run: `go test ./...` prints `[no test files]` per package without tests
-  while others pass, and a jest workspace reports `No tests found` for one project beside another's
-  PASS, so a counter-signature keeps a fully green multi-package suite out of the vacuous lane.
+  NOTHING claims to have run, decided PER RUNNER FAMILY from that family's own output: `go test
+  ./...` prints `[no test files]` per package without tests while others pass, so the run is empty
+  only when every package line says so, and a jest workspace's `No tests found` yields to another
+  project's `PASS`. `unittest` and `pytest` print one exclusive summary each and are judged on it
+  alone. A blob-wide "did anything pass?" veto was tried and removed: a `shell` verifier running
+  `make test` beside a linter printing "12 passed" would have had the whole gate switched off.
 
 - **The `grep` verb no longer lets a dash-leading pattern become the tool's flags (US0228).** The
   pattern is passed behind `-e` and the paths behind a `--` terminator, for both the `rg` and the
