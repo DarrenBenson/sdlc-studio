@@ -654,6 +654,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A verifier that exits 0 having run no tests no longer counts as proof (BG0193).** A filtered
+  runner whose pattern matches nothing can exit clean: `unittest` only began returning 5 for "no
+  tests ran" in Python 3.12 (the skill supports 3.10+), and `go test -run NoMatch` exits 0 on every
+  version. A renamed or deleted test class therefore turned an executable AC into a green no-op.
+  `run_verifier` now reads the runner's own summary line and refuses a clean exit that reports zero
+  tests, counting it as `vacuous` on the story report and naming the remedy. The signatures are
+  anchored to each runner's summary format rather than matched as bare keywords, so an honest test
+  that discusses test counts is unaffected, and only test-running verbs are judged - `grep` could
+  otherwise match a signature inside the file it is searching.
+
+- **The `grep` verb no longer lets a dash-leading pattern become the tool's flags (US0228).** The
+  pattern is passed behind `-e` and the paths behind a `--` terminator, for both the `rg` and the
+  `grep -rqE` back-end, so an AC whose regex starts with `-` searches for what its author wrote.
+
+- **US0166 AC3 now checks the claim it makes (US0226).** The line read `grep -q "..." <one file>`,
+  but the `grep` verb takes no flags: `-q` was parsed as the PATTERN and the quoted text as a PATH,
+  so the verifier searched for the literal string `-q` across a list containing a file that does not
+  exist, found it, and exited 0. The AC had been recorded green on every run without once checking
+  its own claim - which happens to be true, which is why nothing surfaced it. It is now an explicit
+  `shell` verb asserting both halves of the claim against both files it names.
+
 - **A 4-digit artefact id can no longer be read out of a longer one (BG0194).** `ID_SEARCH_RE` and
   `ID_RE` matched a fixed `\d{4}` with no trailing boundary, so `US01010` parsed as `US0101` and any
   consumer matching ids this way attributed a 5-digit artefact to a different, real one. The digit

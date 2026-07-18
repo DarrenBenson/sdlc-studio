@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 7 |
+| Open | 6 |
 | In Progress | 0 |
-| Fixed | 108 |
+| Fixed | 109 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
@@ -159,7 +159,7 @@
 | [BG0190](BG0190-apply-signoff-tail-does-not-derive-parent-epics.md) | apply-signoff tail does not derive parent epics terminal; US0237 AC2 over-claimed it | Fixed | Low | 2026-07-18 | 2026-07-18 |
 | [BG0191](BG0191-handoff-is-generated-before-the-apply-signoff-cascade.md) | handoff is generated before the apply-signoff cascade, so delivered units are reported as remaining | Open | Medium | 2026-07-18 | 2026-07-18 |
 | [BG0192](BG0192-cross-epic-ac-is-a-bare-keyword-match.md) | cross-epic-ac is a bare keyword match and false-positives on common English words | Open | Low | 2026-07-18 | 2026-07-18 |
-| [BG0193](BG0193-a-verify-line-whose-test-filter-matches-nothing.md) | a Verify line whose test filter matches nothing passes vacuously | Open | Medium | 2026-07-18 | 2026-07-18 |
+| [BG0193](BG0193-a-verify-line-whose-test-filter-matches-nothing.md) | a Verify line whose test filter matches nothing passes vacuously | Fixed | Medium | 2026-07-18 | 2026-07-18 |
 | [BG0194](BG0194-id-search-re-has-no-trailing-digit-boundary.md) | ID_SEARCH_RE has no trailing-digit boundary, so a 5-digit id truncates to a 4-digit one | Fixed | Low | 2026-07-18 | 2026-07-18 |
 | [BG0195](BG0195-apply-signoff-tail-passes-the-dashed-retro-id.md) | apply-signoff tail passes the dashed retro id to retro accuracy, so the velocity row never records | Open | Medium | 2026-07-18 | 2026-07-18 |
 | [BG0196](BG0196-sprint-plan-claims-the-retro-judges-its-forecast.md) | sprint plan claims the retro judges its forecast, but accuracy cannot read an aggregate-only forecast | Open | Medium | 2026-07-18 | 2026-07-18 |

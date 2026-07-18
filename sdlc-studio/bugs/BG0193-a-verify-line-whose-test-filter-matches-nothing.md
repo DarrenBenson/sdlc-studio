@@ -1,8 +1,9 @@
 # BG0193: a Verify line whose test filter matches nothing passes vacuously
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
+> **Verification depth:** functional (unit tests over every runner signature and the kind guard; five mutants executed and killed with bytecode purged)
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py
 > **Created:** 2026-07-18
 > **Created-by:** sdlc-studio file
@@ -25,3 +26,4 @@ Parse the runner's test count from its output and fail an AC whose verifier ran 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-18 | sdlc-studio | Filed |
+| 2026-07-18 | sdlc-studio | Fixed: `run_verifier` refuses a clean exit whose output carries a runner's own zero-test summary, counted as `vacuous` on the report. NOTE: the filed reproduction does NOT reproduce on this machine - Python 3.14 `unittest` and `pytest` both exit 5 for no-tests. The defect is real on Python 3.10/3.11 (unittest returned 0 before 3.12) and on `go test -run` at any version, so the fix is exit-code-independent rather than a patch to one runner |

@@ -39,7 +39,7 @@
 - **Given** the close-down doctrine
 - **When** `reference-retro.md` and `help/gate.md` are read
 - **Then** both state the Definition-of-Done close clause and the `--require-close` / Stop-hook enforcement
-- **Verify:** grep -q "never at .deployed" .claude/skills/sdlc-studio/help/gate.md
+- **Verify:** shell cd .claude/skills/sdlc-studio && grep -q 'never at .deployed' help/gate.md && grep -q 'never at .deployed' reference-retro.md && grep -q 'require-close' help/gate.md && grep -q 'require-close' reference-retro.md
 - **Verified:** yes (2026-07-16)
 
 ## Revision History

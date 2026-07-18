@@ -1298,5 +1298,193 @@ class StoryIdTests(unittest.TestCase):
         self.assertIn("no story file at", err)
 
 
+class VacuousVerifierTests(unittest.TestCase):
+    """A runner that exits 0 having run nothing must not count as proof (BG0193)."""
+
+    def _run(self, script: str, kind_expr: str | None = None):
+        """Execute a shell verifier that emits `script` on stdout and exits 0."""
+        expr = kind_expr or f"shell printf '%s\\n' {shlex_quote(script)}"
+        return verify_ac.run_verifier(expr, 30, Path.cwd())
+
+    def test_unittest_ran_zero_tests_is_not_a_pass(self):
+        r = self._run("Ran 0 tests in 0.000s")
+        self.assertFalse(r.ok)
+        self.assertTrue(r.vacuous)
+        self.assertEqual(r.exit_code, 0)
+
+    def test_unittest_no_tests_ran_banner_is_not_a_pass(self):
+        self.assertTrue(self._run("NO TESTS RAN").vacuous)
+
+    def test_pytest_no_tests_ran_is_not_a_pass(self):
+        self.assertTrue(self._run("no tests ran in 0.01s").vacuous)
+
+    def test_pytest_no_tests_collected_is_not_a_pass(self):
+        self.assertTrue(self._run("no tests collected (93 deselected) in 0.08s").vacuous)
+
+    def test_go_no_tests_to_run_is_not_a_pass(self):
+        self.assertTrue(self._run("testing: warning: no tests to run").vacuous)
+        self.assertTrue(self._run("ok  \texample.com/pkg\t0.002s [no tests to run]").vacuous)
+
+    def test_jest_and_vitest_no_tests_found_are_not_a_pass(self):
+        self.assertTrue(self._run("No tests found, exiting with code 0").vacuous)
+        self.assertTrue(self._run("No test files found, exiting with code 0").vacuous)
+
+    def test_the_failure_names_the_remedy(self):
+        r = self._run("Ran 0 tests in 0.000s")
+        self.assertIn("ran NO tests", r.stderr)
+        self.assertIn("Re-point the Verify line", r.stderr)
+
+    def test_a_real_passing_run_is_untouched(self):
+        r = self._run("Ran 9 tests in 0.001s\n\nOK")
+        self.assertTrue(r.ok)
+        self.assertFalse(r.vacuous)
+
+    def test_a_nonzero_exit_is_still_a_plain_failure_not_vacuous(self):
+        r = verify_ac.run_verifier("shell printf 'Ran 0 tests in 0.000s\\n'; exit 5",
+                                   30, Path.cwd())
+        self.assertFalse(r.ok)
+        self.assertFalse(r.vacuous)  # it failed on its own account; nothing to attribute
+
+    def test_only_test_running_verbs_are_judged_for_vacuity(self):
+        # The kind guard's own contract. No verb currently SHIPPING emits a runner summary
+        # through a non-test kind (`grep`/`file` run quiet), so this is defence-in-depth
+        # against a future verb, and is asserted directly rather than through a verifier
+        # that cannot reach the branch.
+        signature = "Ran 0 tests in 0.000s"
+        for kind in ("shell", "pytest", "go", "jest", "vitest", "fallback"):
+            with self.subTest(kind=kind):
+                self.assertTrue(verify_ac._ran_no_tests(kind, signature, ""))
+        for kind in ("grep", "file", "http", "eval", "invalid", "blocked"):
+            with self.subTest(kind=kind):
+                self.assertFalse(verify_ac._ran_no_tests(kind, signature, ""))
+
+    def test_the_signature_is_read_from_stderr_too(self):
+        # unittest writes its summary to stderr, pytest to stdout.
+        self.assertTrue(verify_ac._ran_no_tests("shell", "", "Ran 0 tests in 0.000s"))
+
+    def test_a_non_test_verb_is_never_judged_vacuous(self):
+        # `grep` has no test count, and could match a signature inside the file it searches.
+        with tempfile.TemporaryDirectory() as td:
+            f = Path(td) / "notes.md"
+            f.write_text("Ran 0 tests in 0.000s\n", encoding="utf-8")
+            r = verify_ac.run_verifier("grep 'Ran 0 tests' notes.md", 30, Path(td))
+            self.assertTrue(r.ok)
+            self.assertFalse(r.vacuous)
+
+    def test_prose_mentioning_a_count_mid_line_does_not_false_positive(self):
+        # Anchored patterns: an honest test that PRINTS about test counts still passes.
+        r = self._run("checked that we never claim Ran 0 tests in a report")
+        self.assertTrue(r.ok)
+        self.assertFalse(r.vacuous)
+
+    def test_report_counts_and_flags_the_vacuous_ac(self):
+        story = (
+            "# US9001: demo\n\n## Acceptance Criteria\n\n"
+            "### AC1: a filter that matches nothing\n\n"
+            "- **Verify:** shell printf 'Ran 0 tests in 0.000s\\n'\n"
+            "- **Verified:** yes (2026-01-01)\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            sp = root / "story.md"
+            sp.write_text(story, encoding="utf-8")
+            rep = verify_ac.verify_story(sp, True, 30, root)
+            self.assertEqual(rep.failed, 1)
+            self.assertEqual(rep.verified, 0)
+            self.assertEqual(rep.vacuous, 1)
+            self.assertTrue(rep.failures[0]["vacuous"])
+
+
+def shlex_quote(s: str) -> str:
+    import shlex as _s
+    return _s.quote(s)
+
+
+class GrepDashPatternTests(unittest.TestCase):
+    """A dash-leading grep pattern must not be read as the tool's own flags (US0228)."""
+
+    def _build(self, expr: str, with_rg: bool):
+        orig = verify_ac.shutil.which
+        self.addCleanup(setattr, verify_ac.shutil, "which", orig)
+        verify_ac.shutil.which = lambda name: "/usr/bin/rg" if (with_rg and name == "rg") else None
+        return verify_ac._build_command(expr, cwd=Path.cwd())
+
+    def test_dash_leading_pattern_is_passed_behind_dash_e(self):
+        for with_rg in (True, False):
+            with self.subTest(rg=with_rg):
+                _, cmd = self._build("grep -Ran notes.md", with_rg)
+                self.assertIn("-e", cmd)
+                self.assertEqual(cmd[cmd.index("-e") + 1], "-Ran")
+                # and never as a bare positional ahead of -e
+                self.assertLess(cmd.index("-e"), cmd.index("-Ran"))
+
+    def test_paths_sit_behind_a_double_dash_terminator(self):
+        for with_rg in (True, False):
+            with self.subTest(rg=with_rg):
+                _, cmd = self._build("grep pattern notes.md", with_rg)
+                self.assertIn("--", cmd)
+                self.assertTrue(all(cmd.index("--") < cmd.index(p)
+                                    for p in cmd if p.endswith("notes.md")))
+
+    def test_both_backends_are_hardened(self):
+        _, with_rg = self._build("grep -x notes.md", True)
+        _, without = self._build("grep -x notes.md", False)
+        self.assertEqual(with_rg[:4], ["rg", "-q", "-e", "-x"])
+        self.assertEqual(without[:4], ["grep", "-rqE", "-e", "-x"])
+        for cmd in (with_rg, without):
+            self.assertIn("--", cmd)
+
+    def test_ordinary_patterns_are_unaffected(self):
+        # The search still finds what it found before - semantics unchanged, only quoting.
+        with tempfile.TemporaryDirectory() as td:
+            (Path(td) / "notes.md").write_text("hello world\n", encoding="utf-8")
+            self.assertTrue(verify_ac.run_verifier("grep 'hello' notes.md", 30, Path(td)).ok)
+            self.assertFalse(verify_ac.run_verifier("grep 'absent' notes.md", 30, Path(td)).ok)
+
+    def test_a_dash_leading_pattern_actually_matches_end_to_end(self):
+        with tempfile.TemporaryDirectory() as td:
+            (Path(td) / "notes.md").write_text("-Ran the thing\n", encoding="utf-8")
+            r = verify_ac.run_verifier("grep '\\-Ran' notes.md", 30, Path(td))
+            self.assertTrue(r.ok, f"exit={r.exit_code} stderr={r.stderr}")
+
+
+class US0166Ac3Tests(unittest.TestCase):
+    """US0166 AC3's own verifier must check its claim, not misparse into a green (US0226)."""
+
+    STORY = (Path(__file__).resolve().parents[5]
+             / "sdlc-studio/stories/US0166-ship-a-stop-hook-installer-and-redefine-sprint.md")
+
+    def _ac3(self):
+        blocks = verify_ac.parse_story(self.STORY.read_text(encoding="utf-8"))
+        ac3 = next((b for b in blocks if b.ac_id == "AC3"), None)
+        self.assertIsNotNone(ac3, "US0166 AC3 not found")
+        return ac3
+
+    def test_ac3_uses_the_shell_verb(self):
+        # A compound, multi-file check is not the single-pattern `grep` verb.
+        self.assertTrue(self._ac3().verifier.startswith("shell "))
+
+    def test_ac3_no_longer_carries_a_bare_grep_verb_with_a_flag(self):
+        # `grep -q ...` as a DSL verb parses the flag as the PATTERN - the original defect.
+        v = self._ac3().verifier
+        self.assertFalse(v.startswith("grep -"))
+
+    def test_ac3_names_both_files_it_claims(self):
+        v = self._ac3().verifier
+        self.assertIn("help/gate.md", v)
+        self.assertIn("reference-retro.md", v)
+
+    def test_ac3_checks_both_halves_of_its_claim(self):
+        v = self._ac3().verifier
+        self.assertIn("never at .deployed", v)
+        self.assertIn("require-close", v)
+
+    def test_ac3_actually_passes_against_the_live_tree(self):
+        repo_root = self.STORY.resolve().parents[2]
+        r = verify_ac.run_verifier(self._ac3().verifier, 60, repo_root)
+        self.assertTrue(r.ok, f"exit={r.exit_code} stderr={r.stderr[:300]}")
+        self.assertFalse(r.vacuous)
+
+
 if __name__ == "__main__":
     unittest.main()

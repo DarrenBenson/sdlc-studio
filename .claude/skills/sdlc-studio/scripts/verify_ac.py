@@ -192,6 +192,46 @@ class VerifierResult:
     stderr: str
     duration_ms: int
     score: float | None = None  # graded `eval` verifier score, if any
+    vacuous: bool = False  # exited clean having run no tests at all
+
+
+# A filtered runner that matches nothing can exit 0: `unittest` only began returning 5 for
+# "no tests ran" in Python 3.12 (the skill supports 3.10+), and `go test -run NoMatch` exits 0
+# on every version. An AC whose test class is renamed or deleted then turns into a green no-op -
+# exit 0 proving nothing ran rather than that anything held.
+#
+# These are anchored to each runner's own summary line, not bare keywords: a loose substring
+# match would fail an honest test whose output happens to discuss test counts, which is the
+# false-positive class that makes a check something people route around.
+_ZERO_TEST_SIGNATURES = (
+    re.compile(r"^Ran 0 tests? in ", re.M),                      # unittest
+    re.compile(r"^NO TESTS RAN$", re.M),                         # unittest >= 3.12
+    re.compile(r"^(?:=+ )?no tests ran\b", re.M | re.I),         # pytest
+    re.compile(r"^(?:=+ )?no tests collected\b", re.M | re.I),   # pytest --collect-only
+    re.compile(r"^testing: warning: no tests to run$", re.M),    # go
+    re.compile(r"\[no tests? to run\]", re.M),                   # go, per-package
+    re.compile(r"\[no test files\]", re.M),                      # go, package with no tests
+    re.compile(r"^No tests found", re.M),                        # jest
+    re.compile(r"^No test files found", re.M),                   # vitest
+)
+
+# Only the verbs that RUN a test suite are judged for vacuity. `file`/`grep`/`http` have no
+# concept of a test count, and `grep` in particular could match a signature inside the very
+# file it is searching.
+_TEST_KINDS = {"pytest", "jest", "vitest", "go", "shell", "fallback"}
+
+
+def _ran_no_tests(kind: str, stdout: str, stderr: str) -> bool:
+    """True when a clean exit came from a runner that executed nothing."""
+    if kind not in _TEST_KINDS:
+        return False
+    blob = f"{stdout}\n{stderr}"
+    return any(sig.search(blob) for sig in _ZERO_TEST_SIGNATURES)
+
+
+_VACUOUS_MSG = ("verifier exited 0 but ran NO tests - a filter that matches nothing "
+                "(renamed or deleted test, stale -k/-run pattern) proves nothing. "
+                "Re-point the Verify line at a test that exists.")
 
 
 def _run_eval(expr: str, timeout: int, cwd: Path, start: float) -> VerifierResult:
@@ -264,13 +304,16 @@ def run_verifier(expression: str, timeout: int, cwd: Path,
             cwd=str(cwd),
         )
         duration = int((time.time() - start) * 1000)
+        stdout, stderr = result.stdout[-4000:], result.stderr[-4000:]
+        vacuous = result.returncode == 0 and _ran_no_tests(kind, stdout, stderr)
         return VerifierResult(
-            ok=(result.returncode == 0),
+            ok=(result.returncode == 0 and not vacuous),
             kind=kind,
             exit_code=result.returncode,
-            stdout=result.stdout[-4000:],
-            stderr=result.stderr[-4000:],
+            stdout=stdout,
+            stderr=(f"{stderr}\n{_VACUOUS_MSG}".strip() if vacuous else stderr),
             duration_ms=duration,
+            vacuous=vacuous,
         )
     except subprocess.TimeoutExpired:
         duration = int((time.time() - start) * 1000)
@@ -386,9 +429,14 @@ def _build_command(expr: str, allow_fallback: bool = False, cwd=None) -> tuple[s
         # rg (Rust regex) when present, else grep -rqE (POSIX ERE). Different dialects: keep grep
         # patterns POSIX-ERE-portable, or install rg for consistent behaviour - see
         # reference-verify.md.
+        #
+        # `-e <pattern>` and a `--` terminator, never a bare positional: a pattern that starts
+        # with a dash (`-Ran`, `--foo`) was otherwise read by the tool as its own flags, so the
+        # AC silently stopped searching for what it said it searched for - it errored out, or
+        # worse, ran a different search and reported on that.
         if shutil.which("rg"):
-            return "grep", ["rg", "-q", pattern] + paths
-        return "grep", ["grep", "-rqE", pattern] + paths
+            return "grep", ["rg", "-q", "-e", pattern, "--"] + paths
+        return "grep", ["grep", "-rqE", "-e", pattern, "--"] + paths
     if head == "http" and tail:
         return "http", _build_http(tail)
     if head == "shell" and tail:
@@ -503,6 +551,7 @@ class StoryReport:
     failed: int = 0
     stale: int = 0
     manual: int = 0        # AC authored `Verify: manual ...` - a declared human-checked judgement
+    vacuous: int = 0       # AC whose verifier exited 0 having run no tests - counted as failed
     unspecified: int = 0   # AC with NO Verify: line at all - an omission, not a declaration
     passed: list[str] = field(default_factory=list)
     failures: list[dict] = field(default_factory=list)
@@ -637,8 +686,11 @@ def verify_story(
                     "stderr": result.stderr.strip()[:500],
                     "duration_ms": result.duration_ms,
                     "score": result.score,
+                    "vacuous": result.vacuous,
                 }
             )
+            if result.vacuous:
+                report.vacuous += 1
             if block.verified_state == "yes":
                 report.stale += 1
                 report.flips.append({"ac": block.ac_id, "old_state": "yes", "new_state": "no"})
