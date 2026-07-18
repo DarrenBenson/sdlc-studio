@@ -199,17 +199,36 @@ class SingleKeywordIsAdvisoryTests(unittest.TestCase):
                 self.assertEqual(f["strength"], 1)
                 self.assertTrue(f["advisory"])
 
-    def test_a_word_common_across_many_stories_is_suppressed_entirely(self):
+    def test_an_owner_epics_own_stories_never_suppress_its_keywords(self):
+        # A story-count suppression was tried and removed: it counted the OWNER's stories,
+        # and an epic's backlog is exactly where its own title vocabulary appears, so a few
+        # sibling stories deleted a genuine leak before its strength was computed.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _epic(root, "EP0006", "Payment Gateway")
+            _epic(root, "EP0001", "Reporting Dashboard")
+            for n in range(1, 6):   # the owner's OWN stories, using its own vocabulary
+                _story(root, f"US001{n}", "EP0006",
+                       "### AC1\n- **Then** the payment gateway settles\n")
+            _story(root, "US0002", "EP0001",   # the actual cross-epic leak
+                   "### AC1\n- **Then** a payment via the gateway is refunded\n")
+            hits = [f for f in ac_scope.check(root)
+                    if f["story"] == "US0002" and f["owner_epic"] == "EP0006"]
+            self.assertEqual(len(hits), 2, "the leak must survive the owner's own usage")
+            self.assertTrue(all(not f["advisory"] for f in hits))
+
+    def test_a_keyword_spread_across_many_distinct_epics_is_still_suppressed(self):
+        # The epic-count threshold discounts the owner and is retained.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _epic(root, "EP0082", "Residual audit fixes")
-            _epic(root, "EP0001", "Platform Foundation")
-            for n in range(1, 6):   # >= _COMMON_STORY_THRESHOLD stories naming it
-                _story(root, f"US000{n}", "EP0001",
+            for n in range(1, 5):
+                _epic(root, f"EP001{n}", f"Unrelated area {n}")
+                _story(root, f"US001{n}", f"EP001{n}",
                        "### AC1\n- **Then** the residual case is handled\n")
             findings = ac_scope.check(root)
             self.assertFalse([f for f in findings if f["keyword"] == "residual"],
-                             "a word this widespread is vocabulary, not leakage")
+                             "shared across many epics is vocabulary, not leakage")
 
     def test_the_motivating_cross_epic_case_still_reports(self):
         # It becomes advisory rather than silent - the signal is kept, the block is not.

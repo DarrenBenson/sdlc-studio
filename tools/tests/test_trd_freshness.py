@@ -66,11 +66,25 @@ class ThreatModelAgreesWithTheWriteContract(unittest.TestCase):
     def test_the_threat_row_points_at_the_rule_that_enumerates_the_writers(self):
         self.assertRegex(self._threat_row(), r"rule\s*5")
 
+    def _rule_5_block(self) -> str:
+        """Rule 5's own text - NOT the whole TRD. These filenames appear all over the
+        document (9, ADR-009, the revision history), so grepping the file passed even with
+        rule 5 rewritten back to a single writer: the guard passed on the state it exists
+        to catch."""
+        lines = self.text.splitlines()
+        start = next((i for i, ln in enumerate(lines)
+                      if ln.lstrip().startswith("5. Bounded, tested write surface")), None)
+        self.assertIsNotNone(start, "rule 5 has been renamed or removed")
+        end = next((j for j in range(start + 1, len(lines))
+                    if re.match(r"^\s*6\.\s", lines[j])), len(lines))
+        return "\n".join(lines[start:end])
+
     def test_rule_5_still_names_more_than_one_writer(self):
         # The contradiction is only resolved while rule 5 really is a SET. If it ever
         # narrows back to one writer, the threat row's plural wording becomes the wrong half.
         writers = ("artifact.py", "transition.py", "retro.py", "handoff.py", "decisions.py")
-        present = [w for w in writers if w in self.text]
+        block = self._rule_5_block()
+        present = [w for w in writers if w in block]
         self.assertGreater(len(present), 1,
                            f"rule 5 no longer enumerates a writer set: found {present}")
 

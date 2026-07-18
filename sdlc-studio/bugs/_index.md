@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 1 |
+| Open | 3 |
 | In Progress | 0 |
 | Fixed | 114 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **197** |
+| **Total** | **199** |
 
 ## All Bugs
 
@@ -164,6 +164,8 @@
 | [BG0195](BG0195-apply-signoff-tail-passes-the-dashed-retro-id.md) | apply-signoff tail passes the dashed retro id to retro accuracy, so the velocity row never records | Fixed | Medium | 2026-07-18 | 2026-07-18 |
 | [BG0196](BG0196-sprint-plan-claims-the-retro-judges-its-forecast.md) | sprint plan claims the retro judges its forecast, but accuracy cannot read an aggregate-only forecast | Fixed | Medium | 2026-07-18 | 2026-07-18 |
 | [BG0197](BG0197-mutation-gate-can-report-a-mutant-survived-that.md) | mutation gate can report a mutant SURVIVED that never ran, via stale .pyc | Open | High | 2026-07-18 | 2026-07-18 |
+| [BG0198](BG0198-handoff-refresh-re-stamps-run-identity-from-ambient.md) | handoff.refresh re-stamps run identity from ambient run state, not the run being refreshed | Open | Low | 2026-07-18 | 2026-07-18 |
+| [BG0199](BG0199-two-id-readers-disagree-on-width-stem-id.md) | two id readers disagree on width: _STEM_ID_RE needs 4+ digits, next_id._meta_nums accepts 3 | Open | Low | 2026-07-18 | 2026-07-18 |
 
 ## Archived Releases
 

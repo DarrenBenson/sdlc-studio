@@ -221,12 +221,29 @@ _ZERO_TEST_SIGNATURES = (
 _TEST_KINDS = {"pytest", "jest", "vitest", "go", "shell", "fallback"}
 
 
+# Evidence that a package or file DID run tests. A multi-package or multi-project run reports
+# per-unit "nothing here" lines alongside real results: `go test ./...` prints
+# `?  pkg  [no test files]` for every package without tests while others pass, and a jest
+# workspace prints `No tests found` for one project while another reports PASS. A no-test
+# signature therefore only means "nothing ran" when NOTHING claims to have run - otherwise a
+# fully green suite would be failed and its author told to re-point a Verify line at tests
+# that demonstrably executed.
+_RAN_SIGNATURES = (
+    re.compile(r"^ok\s+\S+\s+[\d.]+m?s\s*$", re.M),        # go: a package that ran tests
+    re.compile(r"^PASS\b", re.M),                            # jest/vitest: a file passed
+    re.compile(r"^Ran [1-9]\d* tests? in ", re.M),            # unittest: a non-zero count
+    re.compile(r"\b[1-9]\d* passed\b", re.I),                # pytest / jest summary
+)
+
+
 def _ran_no_tests(kind: str, stdout: str, stderr: str) -> bool:
-    """True when a clean exit came from a runner that executed nothing."""
+    """True when a clean exit came from a runner that executed nothing at all."""
     if kind not in _TEST_KINDS:
         return False
     blob = f"{stdout}\n{stderr}"
-    return any(sig.search(blob) for sig in _ZERO_TEST_SIGNATURES)
+    if not any(sig.search(blob) for sig in _ZERO_TEST_SIGNATURES):
+        return False
+    return not any(sig.search(blob) for sig in _RAN_SIGNATURES)
 
 
 _VACUOUS_MSG = ("verifier exited 0 but ran NO tests - a filter that matches nothing "

@@ -1358,6 +1358,34 @@ class VacuousVerifierTests(unittest.TestCase):
             with self.subTest(kind=kind):
                 self.assertFalse(verify_ac._ran_no_tests(kind, signature, ""))
 
+    def test_a_multi_package_go_run_with_real_results_is_not_vacuous(self):
+        # `go test ./...` prints `[no test files]` per package WITHOUT tests while others
+        # pass. Failing that green suite would tell the author to re-point a Verify line at
+        # tests that demonstrably ran.
+        green = ("ok  \tex/foo\t0.012s\n"
+                 "?   \tex/internal/util\t[no test files]\n"
+                 "ok  \tex/bar\t0.004s\n")
+        self.assertFalse(verify_ac._ran_no_tests("go", green, ""))
+        self.assertFalse(verify_ac._ran_no_tests("shell", green, ""))
+
+    def test_a_go_run_where_no_package_ran_anything_is_vacuous(self):
+        none = "?   \tex/a\t[no test files]\n?   \tex/b\t[no test files]\n"
+        self.assertTrue(verify_ac._ran_no_tests("go", none, ""))
+
+    def test_a_go_run_filter_matching_nothing_is_still_vacuous(self):
+        # The package line carries a bracket suffix, so it is not evidence anything ran.
+        out = "testing: warning: no tests to run\nok  \tex/foo\t0.002s [no tests to run]\n"
+        self.assertTrue(verify_ac._ran_no_tests("go", out, ""))
+
+    def test_a_jest_workspace_with_one_project_empty_is_not_vacuous(self):
+        mixed = "PASS src/a.test.js\nNo tests found, exiting with code 0\n"
+        self.assertFalse(verify_ac._ran_no_tests("jest", mixed, ""))
+        self.assertTrue(verify_ac._ran_no_tests("jest", "No tests found, exiting with code 0\n", ""))
+
+    def test_a_partly_deselected_pytest_run_is_not_vacuous(self):
+        self.assertFalse(verify_ac._ran_no_tests("shell", "3 passed, 90 deselected in 0.08s\n", ""))
+        self.assertTrue(verify_ac._ran_no_tests("shell", "no tests ran in 0.01s\n", ""))
+
     def test_the_signature_is_read_from_stderr_too(self):
         # unittest writes its summary to stderr, pytest to stdout.
         self.assertTrue(verify_ac._ran_no_tests("shell", "", "Ran 0 tests in 0.000s"))

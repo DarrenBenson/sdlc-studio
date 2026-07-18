@@ -33,12 +33,13 @@ _STOP = {"and", "the", "for", "with", "management", "system", "foundation", "pla
 # so it is suppressed - it would otherwise cry wolf on every story that mentions it. CR0113.
 _SHARED_EPIC_THRESHOLD = 3
 
-# The same suppression by STORY count. The epic-level threshold misses a common English word
-# whose mentions happen to cluster in one or two epics: "rolling", "residual", "cleanup",
-# "fold", "around" all owned an epic title here and flagged unrelated prose. Document
-# frequency is the standard demotion for a common term, and a word this widespread is not
-# evidence that a story reached into another epic's scope.
-_COMMON_STORY_THRESHOLD = 4
+# A story-count ("document frequency") suppression was tried here and REMOVED. It counted the
+# owning epic's own stories, and an epic's backlog is exactly where its title vocabulary
+# appears - so three sibling stories were enough to drop the keyword from `distinctive`
+# entirely, deleting a genuine multi-keyword leak before its strength was ever computed. It
+# also demoted nothing this repo did not already demote: 11 findings before, the same 11
+# after. `_SHARED_EPIC_THRESHOLD` counts DISTINCT EPICS, which discounts the owner, and it is
+# the only frequency signal here for that reason.
 
 # How many DISTINCT owner keywords a story must name before the hit is treated as evidence
 # rather than a coincidence. One shared English word is the false-positive case this heuristic
@@ -115,14 +116,8 @@ def check(repo_root: Path | str) -> list[dict]:
         for kw in distinctive:
             if _mentions(block, kw):
                 epics_mentioning.setdefault(kw, set()).add(own_eid)
-    stories_mentioning: dict[str, int] = {}
-    for _, block, _rec in stories:
-        for kw in distinctive:
-            if _mentions(block, kw):
-                stories_mentioning[kw] = stories_mentioning.get(kw, 0) + 1
     distinctive = {kw: owner for kw, owner in distinctive.items()
-                   if len(epics_mentioning.get(kw, set())) < _SHARED_EPIC_THRESHOLD
-                   and stories_mentioning.get(kw, 0) < _COMMON_STORY_THRESHOLD}
+                   if len(epics_mentioning.get(kw, set())) < _SHARED_EPIC_THRESHOLD}
 
     findings: list[dict] = []
     for own_eid, block, rec_id in stories:

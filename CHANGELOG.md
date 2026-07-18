@@ -660,8 +660,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   shared with an unrelated epic title - "fixes", "residual", "cleanup", "fold", "around" - and the
   only remedies were to reword innocent prose or rescope an AC that was already correctly scoped.
   Findings now carry a `strength` (how many distinct keywords from the SAME owner epic) and only a
-  multi-keyword hit blocks; a single-keyword hit is reported as a note. A keyword named by the ACs
-  of many stories is suppressed outright as shared vocabulary.
+  multi-keyword hit blocks; a single-keyword hit is reported as a note. Frequency suppression stays
+  keyed on DISTINCT EPICS, which discounts the owning epic: a story-count variant was tried and
+  removed, because an epic's own backlog is exactly where its title vocabulary appears and a few
+  sibling stories were enough to delete a genuine leak before its strength was computed.
 
 - **Each AC selects its own behaviour, and a shared selector is now visible (US0227).** US0172 and
   US0173 both ran `-k AttemptsAndCost`, and US0163's two ACs both ran the whole `test_close_owed.py`
@@ -704,7 +706,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   tests, counting it as `vacuous` on the story report and naming the remedy. The signatures are
   anchored to each runner's summary format rather than matched as bare keywords, so an honest test
   that discusses test counts is unaffected, and only test-running verbs are judged - `grep` could
-  otherwise match a signature inside the file it is searching.
+  otherwise match a signature inside the file it is searching. A no-test signature counts only when
+  NOTHING claims to have run: `go test ./...` prints `[no test files]` per package without tests
+  while others pass, and a jest workspace reports `No tests found` for one project beside another's
+  PASS, so a counter-signature keeps a fully green multi-package suite out of the vacuous lane.
 
 - **The `grep` verb no longer lets a dash-leading pattern become the tool's flags (US0228).** The
   pattern is passed behind `-e` and the paths behind a `--` terminator, for both the `rg` and the
