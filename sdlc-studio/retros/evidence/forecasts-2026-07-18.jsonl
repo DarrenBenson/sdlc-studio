@@ -1,0 +1,10 @@
+{"id": "US0213", "tokens": 75000, "points": 3, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-18T06:55:04Z", "project": "sdlc-studio"}
+{"id": "US0214", "tokens": 50000, "points": 2, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-18T06:55:04Z", "project": "sdlc-studio"}
+{"id": "US0215", "tokens": 75000, "points": 3, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-18T06:55:04Z", "project": "sdlc-studio"}
+{"id": "US0216", "tokens": 50000, "points": 2, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-18T06:55:04Z", "project": "sdlc-studio"}
+{"id": "US0217", "tokens": 75000, "points": 3, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-18T06:55:04Z", "project": "sdlc-studio"}
+{"id": "US0218", "tokens": 125000, "points": 5, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-18T06:55:04Z", "project": "sdlc-studio"}
+{"id": "US0219", "tokens": 75000, "points": 3, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-18T06:55:04Z", "project": "sdlc-studio"}
+{"id": "US0220", "tokens": 75000, "points": 3, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-18T06:55:04Z", "project": "sdlc-studio"}
+{"id": "BG0187", "tokens": 25000, "points": 1, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-18T06:55:04Z", "project": "sdlc-studio"}
+{"id": "BG0190", "tokens": 50000, "points": 2, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 25000}, "planned_at": "2026-07-18T06:55:04Z", "project": "sdlc-studio"}

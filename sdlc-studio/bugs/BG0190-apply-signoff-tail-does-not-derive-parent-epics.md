@@ -2,6 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Low
+> **Depends on:** US0214
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py
 > **Created:** 2026-07-18

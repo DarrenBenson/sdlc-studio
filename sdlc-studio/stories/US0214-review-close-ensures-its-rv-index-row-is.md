@@ -6,6 +6,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/review_prep.py, .claude/skills/sdlc-studio/scripts/sprint.py
 > **Epic:** EP0072
+> **Depends on:** US0215
 > **Points:** 2
 
 ## User Story

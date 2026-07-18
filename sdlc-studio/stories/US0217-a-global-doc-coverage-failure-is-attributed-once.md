@@ -6,6 +6,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/conformance.py, .claude/skills/sdlc-studio/scripts/gate.py
 > **Epic:** EP0072
+> **Depends on:** US0220
 > **Points:** 3
 
 ## User Story
