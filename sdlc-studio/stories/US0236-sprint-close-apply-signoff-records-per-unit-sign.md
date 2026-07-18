@@ -1,6 +1,6 @@
 # US0236: sprint close --apply-signoff records per-unit sign-off and Done transitions, refusing without an explicit principal
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

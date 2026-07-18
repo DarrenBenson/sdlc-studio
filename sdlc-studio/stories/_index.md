@@ -11,8 +11,8 @@
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 5 |
-| Done | 215 |
+| Review | 0 |
+| Done | 220 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -146,9 +146,9 @@
 | [US0233](US0233-stop-with-handoff-on-a-refused-or-stale.md) | stop-with-handoff on a refused or stale plan; never execute an ungated plan | Draft | EP0076 | 2026-07-17 | 2026-07-17 |
 | [US0234](US0234-per-cycle-auditability-own-forecast-goal-retro-and.md) | per-cycle auditability: own forecast, goal, retro and run-state per cycle | Draft | EP0076 | 2026-07-17 | 2026-07-17 |
 | [US0235](US0235-reference-sprint-documentation-and-tests-for-the-rolling.md) | reference-sprint documentation and tests for the rolling policy | Draft | EP0076 | 2026-07-17 | 2026-07-17 |
-| [US0236](US0236-sprint-close-apply-signoff-records-per-unit-sign.md) | sprint close --apply-signoff records per-unit sign-off and Done transitions, refusing without an explicit principal | Review | EP0077 | 2026-07-17 | 2026-07-17 |
-| [US0237](US0237-cascade-parent-epics-crs-rfcs-terminal-write-the.md) | cascade parent epics/CRs/RFCs terminal, write the velocity row, final reconcile | Review | EP0077 | 2026-07-17 | 2026-07-17 |
-| [US0238](US0238-idempotent-re-run-after-a-mid-cascade-stop.md) | idempotent re-run after a mid-cascade stop | Review | EP0077 | 2026-07-17 | 2026-07-17 |
+| [US0236](US0236-sprint-close-apply-signoff-records-per-unit-sign.md) | sprint close --apply-signoff records per-unit sign-off and Done transitions, refusing without an explicit principal | Done | EP0077 | 2026-07-17 | 2026-07-17 |
+| [US0237](US0237-cascade-parent-epics-crs-rfcs-terminal-write-the.md) | cascade parent epics/CRs/RFCs terminal, write the velocity row, final reconcile | Done | EP0077 | 2026-07-17 | 2026-07-17 |
+| [US0238](US0238-idempotent-re-run-after-a-mid-cascade-stop.md) | idempotent re-run after a mid-cascade stop | Done | EP0077 | 2026-07-17 | 2026-07-17 |
 | [US0239](US0239-build-audit-profile-repo-architecture-code-quality-security.md) | build audit --profile repo (architecture/code-quality/security legs) wired to the refute panel | Draft | EP0078 | 2026-07-17 | 2026-07-17 |
 | [US0240](US0240-build-the-code-audit-profile-and-confirm-refute.md) | build the code audit profile and confirm refute wiring across profiles (CR0255 residual) | Draft | EP0078 | 2026-07-17 | 2026-07-17 |
 | [US0241](US0241-remove-review-generate-py-and-the-review-generate.md) | remove review_generate.py and the review generate route; review keeps only the consistency job | Draft | EP0078 | 2026-07-17 | 2026-07-17 |
@@ -157,8 +157,8 @@
 | [US0244](US0244-gate-rfc-accepted-on-open-decisions-refuse-while.md) | gate RFC -> Accepted on open decisions (refuse while any Open decision stands; recorded-override escape) | Draft | EP0079 | 2026-07-17 | 2026-07-17 |
 | [US0245](US0245-derive-rfc-decision-rows-from-the-finding-s.md) | derive RFC decision rows from the finding's real options, not the content-free boilerplate row | Draft | EP0079 | 2026-07-17 | 2026-07-17 |
 | [US0246](US0246-close-the-accepted-tranche-decision-rows-with-what.md) | close the accepted-tranche decision rows with what actually shipped | Draft | EP0079 | 2026-07-17 | 2026-07-17 |
-| [US0247](US0247-a-recorded-sprint-level-adversarial-full-diff-verdict.md) | a recorded sprint-level adversarial full-diff verdict satisfies the per-unit critiqued gate for the units in its diff range; per-unit REJECT-repairs still recorded | Review | EP0080 | 2026-07-17 | 2026-07-17 |
-| [US0248](US0248-the-close-sign-off-brief-reads-a-sprint.md) | the close sign-off brief reads a sprint-level verdict as coverage rather than reporting every unit unreviewed; document the model | Review | EP0080 | 2026-07-17 | 2026-07-17 |
+| [US0247](US0247-a-recorded-sprint-level-adversarial-full-diff-verdict.md) | a recorded sprint-level adversarial full-diff verdict satisfies the per-unit critiqued gate for the units in its diff range; per-unit REJECT-repairs still recorded | Done | EP0080 | 2026-07-17 | 2026-07-17 |
+| [US0248](US0248-the-close-sign-off-brief-reads-a-sprint.md) | the close sign-off brief reads a sprint-level verdict as coverage rather than reporting every unit unreviewed; document the model | Done | EP0080 | 2026-07-17 | 2026-07-17 |
 | [US0249](US0249-decide-and-act-on-the-5-help-only.md) | decide and act on the 5 help-only commands (lessons/repo/retro/review/upgrade): promote spine-serving ones, retire/redirect the rest | Draft | EP0081 | 2026-07-17 | 2026-07-17 |
 | [US0250](US0250-rewrite-the-help-files-around-the-process-spine.md) | rewrite the help files around the process spine (raise -> break down -> sprint+review; PRD/TRD/TSD/personas as levers; reconcile/review/audit as support) | Draft | EP0081 | 2026-07-17 | 2026-07-17 |
 | [US0251](US0251-command-audit-drift-back-to-0-and-check.md) | command_audit drift back to 0 and check_links + validate_skill green | Draft | EP0081 | 2026-07-17 | 2026-07-17 |

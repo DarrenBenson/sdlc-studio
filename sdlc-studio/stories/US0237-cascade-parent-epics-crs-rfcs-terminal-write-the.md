@@ -1,6 +1,6 @@
 # US0237: cascade parent epics/CRs/RFCs terminal, write the velocity row, final reconcile
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

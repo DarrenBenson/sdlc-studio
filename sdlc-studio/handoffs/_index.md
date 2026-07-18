@@ -18,3 +18,4 @@ next `sprint plan --worklist` reads back.
 | [HO-0003](HO0003-every-remaining-hand-carried-quality-ceremony-review-sign.md) | Every remaining hand-carried quality ceremony - review sign-off, sprint close, re-verdict, the ready/done bar, forward-port - becomes deterministic, refusing machinery. | 2026-07-17 |
 | [HO-0004](HO0004-clear-the-2026-07-16-audit-backlog-so.md) | Clear the 2026-07-16 audit backlog so the sprint machinery (telemetry, retro, gate) and the documents of record (PRD/TRD/TSD) match the shipped behaviour | 2026-07-17 |
 | [HO-0005](HO0005-publish-the-artefact-schema-as-a-versioned-drift.md) | Publish the artefact schema as a versioned, drift-guarded public contract | 2026-07-17 |
+| [HO-0006](HO0006-the-two-role-close-chain-holds-end-to.md) | The two-role close chain holds end-to-end: the close ceremony cascades and signs off deterministically, resists the running-run hazard, and a sprint-level review satisfies the per-unit gate | 2026-07-18 |

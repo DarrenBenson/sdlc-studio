@@ -1,6 +1,6 @@
 # US0248: the close sign-off brief reads a sprint-level verdict as coverage rather than reporting every unit unreviewed; document the model
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

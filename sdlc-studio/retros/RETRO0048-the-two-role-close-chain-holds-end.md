@@ -134,3 +134,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 ## Metrics
 
 - Tokens: ~650,000 forecast (per-unit actuals not-yet-captured) · Duration: interactive session · Critic rejects: 1 (closing sprint-level review, round 1; repaired and re-verified)
+
+## Handoff
+
+- [HO-0006](../handoffs/HO0006-the-two-role-close-chain-holds-end-to.md) - 5 remaining item(s): 0 copilot-tail, 5 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

@@ -1,6 +1,6 @@
 # EP0077: Sprint close phase 2: fan the sign-off into the terminal cascade
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 13
 > **Parent:** CR0333
 > **Created:** 2026-07-17
@@ -14,9 +14,9 @@ Decomposed from CR0333. Delivers the work CR0333 requested.
 
 ## Story Breakdown
 
-- [ ] [US0236: sprint close --apply-signoff records per-unit sign-off and Done transitions, refusing without an explicit principal](../stories/US0236-sprint-close-apply-signoff-records-per-unit-sign.md)
-- [ ] [US0237: cascade parent epics/CRs/RFCs terminal, write the velocity row, final reconcile](../stories/US0237-cascade-parent-epics-crs-rfcs-terminal-write-the.md)
-- [ ] [US0238: idempotent re-run after a mid-cascade stop](../stories/US0238-idempotent-re-run-after-a-mid-cascade-stop.md)
+- [x] [US0236: sprint close --apply-signoff records per-unit sign-off and Done transitions, refusing without an explicit principal](../stories/US0236-sprint-close-apply-signoff-records-per-unit-sign.md)
+- [x] [US0237: cascade parent epics/CRs/RFCs terminal, write the velocity row, final reconcile](../stories/US0237-cascade-parent-epics-crs-rfcs-terminal-write-the.md)
+- [x] [US0238: idempotent re-run after a mid-cascade stop](../stories/US0238-idempotent-re-run-after-a-mid-cascade-stop.md)
 
 ## Revision History
 

@@ -48,6 +48,10 @@ consistent with the shipped code and enforced by the gate.
 
 - The five EP0077/EP0080 stories reach Done at this run's own close via `--apply-signoff` (dogfood):
   the sprint-level review is the evidence, the operator sign-off is the reviewer of record.
+- Follow-up filed this close: **BG0190** (the `--apply-signoff` tail does not derive parent epics
+  terminal - US0237 AC2 over-claimed it; EP0077/EP0080 were transitioned Done by hand at this close).
+  A second nit: the tail passed the dashed retro id to `retro accuracy` so its velocity re-write
+  no-op'd (the row was already written by the earlier `accuracy --write`).
 - Standing: **CR0278** (interactive-sprint token capture) - per-unit token actuals were not captured
   this run, so est/actual is uncomputable; the sprint total can be supplied with `accuracy --tokens`.
 - Residual audit CRs (CR0280-CR0306) and BG0187 remain for a future scheduled batch.

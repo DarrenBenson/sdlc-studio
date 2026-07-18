@@ -1,6 +1,6 @@
 # US0247: a recorded sprint-level adversarial full-diff verdict satisfies the per-unit critiqued gate for the units in its diff range; per-unit REJECT-repairs still recorded
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

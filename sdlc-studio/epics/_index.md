@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 11 |
+| Draft | 9 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 73 |
+| Done | 75 |
 | **Total** | **84** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -99,10 +99,10 @@
 | [EP0074](EP0074-sprint-report-command-surface.md) | Sprint-report command surface | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
 | [EP0075](EP0075-verify-line-integrity-discriminating-correctly-parsed-executable-acs.md) | Verify-line integrity: discriminating, correctly-parsed executable ACs | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
 | [EP0076](EP0076-rolling-multi-sprint-policy-regenerate-the-plan-at.md) | Rolling multi-sprint policy: regenerate the plan at each boundary | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
-| [EP0077](EP0077-sprint-close-phase-2-fan-the-sign-off.md) | Sprint close phase 2: fan the sign-off into the terminal cascade | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
+| [EP0077](EP0077-sprint-close-phase-2-fan-the-sign-off.md) | Sprint close phase 2: fan the sign-off into the terminal cascade | Done | -- | -- | 2026-07-17 | 2026-07-17 |
 | [EP0078](EP0078-one-weakness-hunt-one-name-fold-review-generate.md) | One weakness-hunt, one name: fold review generate into audit --profile repo | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
 | [EP0079](EP0079-enforce-the-rfc-accept-gate-and-fix-the.md) | Enforce the RFC accept gate and fix the finding generator | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
-| [EP0080](EP0080-sprint-level-review-satisfies-the-per-unit-critiqued.md) | Sprint-level review satisfies the per-unit critiqued gate (RFC0046 option B) | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
+| [EP0080](EP0080-sprint-level-review-satisfies-the-per-unit-critiqued.md) | Sprint-level review satisfies the per-unit critiqued gate (RFC0046 option B) | Done | -- | -- | 2026-07-17 | 2026-07-17 |
 | [EP0081](EP0081-command-surface-cleanup-slice-2-the-5-help.md) | Command-surface cleanup slice 2: the 5 help-only commands and the help rewrite around the spine | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
 | [EP0082](EP0082-residual-audit-fixes-independent-small-corrections-from-the.md) | Residual audit fixes: independent small corrections from the 2026-07-16 audit | Draft | -- | -- | 2026-07-17 | 2026-07-17 |
 | [EP0083](EP0083-refine-into-share-a-batch-epic-for-small.md) | refine --into: share a batch epic for small requests | Done | -- | -- | 2026-07-17 | 2026-07-17 |

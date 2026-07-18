@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 1 |
+| Open | 2 |
 | In Progress | 0 |
 | Fixed | 106 |
 | Verified | 0 |
 | Closed | 79 |
 | Won't Fix | 3 |
 | Superseded | 0 |
-| **Total** | **189** |
+| **Total** | **190** |
 
 ## All Bugs
 
@@ -156,6 +156,7 @@
 | [BG0187](BG0187-trd-9-threat-model-still-calls-plan-py.md) | TRD 9 threat model still calls plan.py archive the sole write exception, contradicting rule 5 | Open | Low | 2026-07-17 | 2026-07-17 |
 | [BG0188](BG0188-sprint-plan-write-accumulates-a-new-batch-into.md) | sprint plan --write accumulates a new batch into a prior run left outcome=running, reusing its id and clobbering its verdict | Fixed | High | 2026-07-17 | 2026-07-17 |
 | [BG0189](BG0189-project-upgrade-current-schema-2-contradicts-init-py.md) | project_upgrade.CURRENT_SCHEMA=2 contradicts init.py seeding new projects at schema_version 3 | Fixed | Low | 2026-07-17 | 2026-07-17 |
+| [BG0190](BG0190-apply-signoff-tail-does-not-derive-parent-epics.md) | apply-signoff tail does not derive parent epics terminal; US0237 AC2 over-claimed it | Open | Low | 2026-07-18 | 2026-07-18 |
 
 ## Archived Releases
 
