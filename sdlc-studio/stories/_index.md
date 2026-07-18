@@ -11,8 +11,8 @@
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 8 |
-| Done | 220 |
+| Review | 0 |
+| Done | 228 |
 | Won't Implement | 0 |
 | Deferred | 0 |
 | Superseded | 1 |
@@ -123,14 +123,14 @@
 | [US0210](US0210-complete-trd-rule-5-write-surface-retro-handoff.md) | Complete TRD rule 5 write surface (retro/handoff/archive/persona_gen) or restate as non-exhaustive with a census pointer | Done | EP0071 | 2026-07-17 | 2026-07-17 |
 | [US0211](US0211-refresh-or-band-the-trd-pinned-census-counts.md) | Refresh or band the TRD pinned census counts and restate the freshness-guard claim | Done | EP0071 | 2026-07-17 | 2026-07-17 |
 | [US0212](US0212-fix-the-trd-section-6-migrations-paragraph-to.md) | Fix the TRD section 6 Migrations paragraph to name the shipped migration scripts | Done | EP0071 | 2026-07-17 | 2026-07-17 |
-| [US0213](US0213-verify-ac-freshness-fingerprints-the-ac-section-not.md) | verify_ac freshness fingerprints the AC section, not the file mtime | Review | EP0072 | 2026-07-17 | 2026-07-17 |
-| [US0214](US0214-review-close-ensures-its-rv-index-row-is.md) | review close ensures its RV index row is written | Review | EP0072 | 2026-07-17 | 2026-07-17 |
-| [US0215](US0215-review-current-distinguishes-an-uncommitted-but-current-latest.md) | review-current distinguishes an uncommitted-but-current LATEST and names the commit remedy (absorbs CR0341) | Review | EP0072 | 2026-07-17 | 2026-07-17 |
-| [US0216](US0216-gate-mutation-lane-surfaces-the-refused-red-baseline.md) | gate mutation lane surfaces the refused/red-baseline state | Review | EP0072 | 2026-07-17 | 2026-07-17 |
-| [US0217](US0217-a-global-doc-coverage-failure-is-attributed-once.md) | a global doc-coverage failure is attributed once, not fanned across every unit | Review | EP0072 | 2026-07-17 | 2026-07-17 |
-| [US0218](US0218-bounded-mutation-biases-its-sample-toward-changed-lines.md) | bounded mutation biases its sample toward changed lines | Review | EP0072 | 2026-07-17 | 2026-07-17 |
-| [US0219](US0219-gate-tracks-the-test-suite-runtime-and-warns.md) | gate tracks the test-suite runtime and warns before a long run | Review | EP0072 | 2026-07-17 | 2026-07-17 |
-| [US0220](US0220-gate-skips-the-unit-suite-for-test-irrelevant.md) | gate skips the unit suite for test-irrelevant changes, named not silent | Review | EP0072 | 2026-07-17 | 2026-07-17 |
+| [US0213](US0213-verify-ac-freshness-fingerprints-the-ac-section-not.md) | verify_ac freshness fingerprints the AC section, not the file mtime | Done | EP0072 | 2026-07-17 | 2026-07-17 |
+| [US0214](US0214-review-close-ensures-its-rv-index-row-is.md) | review close ensures its RV index row is written | Done | EP0072 | 2026-07-17 | 2026-07-17 |
+| [US0215](US0215-review-current-distinguishes-an-uncommitted-but-current-latest.md) | review-current distinguishes an uncommitted-but-current LATEST and names the commit remedy (absorbs CR0341) | Done | EP0072 | 2026-07-17 | 2026-07-17 |
+| [US0216](US0216-gate-mutation-lane-surfaces-the-refused-red-baseline.md) | gate mutation lane surfaces the refused/red-baseline state | Done | EP0072 | 2026-07-17 | 2026-07-17 |
+| [US0217](US0217-a-global-doc-coverage-failure-is-attributed-once.md) | a global doc-coverage failure is attributed once, not fanned across every unit | Done | EP0072 | 2026-07-17 | 2026-07-17 |
+| [US0218](US0218-bounded-mutation-biases-its-sample-toward-changed-lines.md) | bounded mutation biases its sample toward changed lines | Done | EP0072 | 2026-07-17 | 2026-07-17 |
+| [US0219](US0219-gate-tracks-the-test-suite-runtime-and-warns.md) | gate tracks the test-suite runtime and warns before a long run | Done | EP0072 | 2026-07-17 | 2026-07-17 |
+| [US0220](US0220-gate-skips-the-unit-suite-for-test-irrelevant.md) | gate skips the unit suite for test-irrelevant changes, named not silent | Done | EP0072 | 2026-07-17 | 2026-07-17 |
 | [US0221](US0221-audit-cost-gains-a-record-subcommand-and-a.md) | audit_cost gains a record subcommand and a committed evidence ledger; estimate from measured medians with a named fallback | Draft | EP0073 | 2026-07-17 | 2026-07-17 |
 | [US0222](US0222-persist-verification-cap-overflow-as-a-durable-carry.md) | persist verification-cap overflow as a durable carry-over worklist a scoped follow-up re-ingests | Draft | EP0073 | 2026-07-17 | 2026-07-17 |
 | [US0223](US0223-add-the-sprint-report-command-route-delegating-to.md) | add the sprint report command route delegating to sprint_report | Draft | EP0074 | 2026-07-17 | 2026-07-17 |

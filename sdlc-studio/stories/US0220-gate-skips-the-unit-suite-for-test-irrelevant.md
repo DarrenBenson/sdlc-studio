@@ -1,6 +1,6 @@
 # US0220: gate skips the unit suite for test-irrelevant changes, named not silent
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

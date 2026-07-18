@@ -1,6 +1,6 @@
 # US0218: bounded mutation biases its sample toward changed lines
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

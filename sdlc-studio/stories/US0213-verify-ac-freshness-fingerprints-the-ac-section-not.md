@@ -1,6 +1,6 @@
 # US0213: verify_ac freshness fingerprints the AC section, not the file mtime
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

@@ -35,3 +35,11 @@
 | US0238 | Darren Benson (operator) | - | sdlc-studio-build | 2026-07-18 | - |
 | US0247 | Darren Benson (operator) | - | sdlc-studio-build | 2026-07-18 | - |
 | US0248 | Darren Benson (operator) | - | sdlc-studio-build | 2026-07-18 | - |
+| US0216 | Darren Benson | - | sdlc-studio-author-session | 2026-07-18 | - |
+| US0213 | Darren Benson | - | sdlc-studio-author-session | 2026-07-18 | - |
+| US0219 | Darren Benson | - | sdlc-studio-author-session | 2026-07-18 | - |
+| US0220 | Darren Benson | - | sdlc-studio-author-session | 2026-07-18 | - |
+| US0217 | Darren Benson | - | sdlc-studio-author-session | 2026-07-18 | - |
+| US0215 | Darren Benson | - | sdlc-studio-author-session | 2026-07-18 | - |
+| US0214 | Darren Benson | - | sdlc-studio-author-session | 2026-07-18 | - |
+| US0218 | Darren Benson | - | sdlc-studio-author-session | 2026-07-18 | - |

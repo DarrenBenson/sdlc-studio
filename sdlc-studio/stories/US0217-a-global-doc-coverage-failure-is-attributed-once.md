@@ -1,6 +1,6 @@
 # US0217: a global doc-coverage failure is attributed once, not fanned across every unit
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

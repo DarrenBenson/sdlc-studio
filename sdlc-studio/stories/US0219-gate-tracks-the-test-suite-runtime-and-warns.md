@@ -1,6 +1,6 @@
 # US0219: gate tracks the test-suite runtime and warns before a long run
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

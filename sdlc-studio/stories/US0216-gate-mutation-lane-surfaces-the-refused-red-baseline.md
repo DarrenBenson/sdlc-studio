@@ -1,6 +1,6 @@
 # US0216: gate mutation lane surfaces the refused/red-baseline state
 
-> **Status:** Review
+> **Status:** Done
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

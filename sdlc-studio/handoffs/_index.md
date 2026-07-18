@@ -19,3 +19,4 @@ next `sprint plan --worklist` reads back.
 | [HO-0004](HO0004-clear-the-2026-07-16-audit-backlog-so.md) | Clear the 2026-07-16 audit backlog so the sprint machinery (telemetry, retro, gate) and the documents of record (PRD/TRD/TSD) match the shipped behaviour | 2026-07-17 |
 | [HO-0005](HO0005-publish-the-artefact-schema-as-a-versioned-drift.md) | Publish the artefact schema as a versioned, drift-guarded public contract | 2026-07-17 |
 | [HO-0006](HO0006-the-two-role-close-chain-holds-end-to.md) | The two-role close chain holds end-to-end: the close ceremony cascades and signs off deterministically, resists the running-run hazard, and a sprint-level review satisfies the per-unit gate | 2026-07-18 |
+| [HO-0007](HO0007-the-gate-and-close-chain-report-their-own.md) | The gate and close chain report their own state honestly: freshness is fingerprinted, refusals and skips are named not silent, and a failure is attributed once to its real cause | 2026-07-18 |
