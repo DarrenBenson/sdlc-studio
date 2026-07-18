@@ -29,7 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   verdict half and the two-role evidence half - so the close no longer demands a redundant per-unit
   evidence row for every unit the one pass reviewed. It never overrides a per-unit REJECT (which
   still repairs per unit), the per-unit reviewer-of-record sign-off is still required, and a
-  self-review (reviewer == author) or an empty pass is refused.
+  self-review (reviewer == author) or an empty pass is refused. The close sign-off brief reads a
+  covered unit as reviewed by that pass rather than reporting it "(no critic verdict recorded)"
+  (US0248), and `reference-sprint.md` documents the coverage model.
 - **`sprint close --apply-signoff --principal "<you>"` fans a recorded approval into the close
   (EP0077, US0236).** Instead of hand-running `critic signoff` and `transition` for every unit, one
   command records your reviewer-of-record sign-off per story unit and transitions each Done (AC-verify

@@ -401,18 +401,29 @@ def signoff_brief(repo_root: Path | str, units: list[str], gate_note: str | None
         lines.append(f"## {uid} ({points} pts, {status}) - {title}")
         history = [v for v in read_verdicts(root)
                    if sdlc_md.norm_id(v["unit"]) == uid]
+        # A sprint-level review covering this unit is coverage, not an absence: the brief reads it
+        # as such rather than reporting the unit unreviewed, so the principal sees what the one
+        # full-diff pass judged instead of a false "(no verdict)" for every unit it covered.
+        sprint_rev = sprint_review_for(root, uid)
+        covered = sprint_covers_independently(root, uid, sprint_rev)
         if history:
             for v in history:
                 marker = f"- verdict {v['verdict']} by {v['reviewer']} ({v['date']})"
                 if v["verdict"] != APPROVE or (v.get("issues") or "-") != "-":
                     marker += f": {v['issues']}"
                 lines.append(marker)
+        elif covered:
+            lines.append(f"- covered by sprint-level review ({sprint_rev['verdict']}) by "
+                         f"{sprint_rev['reviewer']} ({sprint_rev['date']}) - no per-unit verdict needed")
         else:
             lines.append("- (no critic verdict recorded)")
         ev = evidence_for(root, uid)
         if ev:
             lines.append(f"- evidence: adversarial pass by {ev['reviewer']} "
                          f"({ev['date']}): {ev['findings']}")
+        elif covered:
+            lines.append(f"- evidence: sprint-level full-diff pass by {sprint_rev['reviewer']} "
+                         f"({sprint_rev['date']}): {sprint_rev['findings']}")
         else:
             lines.append("- (no adversarial evidence recorded)")
         lines.append("")

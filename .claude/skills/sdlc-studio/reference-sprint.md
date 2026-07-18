@@ -182,7 +182,11 @@ independent critic plus the gate - the check's output states this scoping.
    record` warns when the reviewer names no declared seat - the persona lens
    drifting out of the loop must be visible, never silent. Verdicts are
    recorded per unit (`critic.py record`, author != reviewer), which is what the
-   conformance `critiqued` stage reads. The closing gate also emits the
+   conformance `critiqued` stage reads. **One full-diff pass is recorded once, as coverage:**
+   `critic.py sprint-review` records ONE independent judgement over the batch and `critiqued` reads it
+   as coverage (verdict + two-role evidence) for a covered unit with no individual verdict - never
+   overriding a per-unit REJECT (repaired per unit), the reviewer-of-record **sign-off staying per
+   unit** (`--apply-signoff` fans it), the brief reading it reviewed. The closing gate also emits the
    **final report** (items actioned / rejected with rationale / blocked with blocker /
    assumptions / decisions-ledger reference / anything needing the operator).
    On each unit **close** (`artifact close`), a telemetry event (id, type, plus any run

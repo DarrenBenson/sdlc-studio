@@ -780,6 +780,21 @@ class SignoffBriefTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 mod.signoff_brief(root, ["US9999"])
 
+    def test_SprintReviewBrief_reads_coverage_not_unreviewed(self) -> None:
+        # US0248: a unit with no per-unit verdict but covered by a sprint-level review reads as
+        # reviewed by that pass, never as "(no critic verdict recorded)".
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._workspace(root)
+            mod = _load()
+            mod.record_sprint_review(root, ["US0101"], reviewer="qa-seat", author="builder",
+                                     verdict="APPROVE", findings="full-diff pass; none blocking")
+            text = mod.signoff_brief(root, ["US0101"])
+            self.assertIn("sprint-level review", text.lower())
+            self.assertIn("qa-seat", text)
+            self.assertNotIn("no critic verdict recorded", text.lower())
+            self.assertNotIn("no adversarial evidence recorded", text.lower())
+
 
 if __name__ == "__main__":
     unittest.main()
