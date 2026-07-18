@@ -2364,7 +2364,13 @@ def _derive_parent_epics(root, units=None) -> list[str]:
     import reconcile  # noqa: PLC0415
     import transition  # noqa: PLC0415
     root = Path(root)          # callers pass either; the census helpers need a Path
+    # No units means NOTHING to derive from - never "derive everywhere". A bug/CR-only batch
+    # yields no story units at all (`_batch_story_units` is story-scoped by design), so a
+    # truthiness escape here would silently restore the full-repo sweep on exactly the batch
+    # shape that has no business touching any epic.
     wanted = {sdlc_md.norm_id(u) for u in (units or [])}
+    if not wanted:
+        return []
     moved: list[str] = []
     for epath in sdlc_md.artifact_files("epic", root):
         text = sdlc_md.read_text_safe(epath)
@@ -2375,7 +2381,7 @@ def _derive_parent_epics(root, units=None) -> list[str]:
         declared = _declared_breakdown_ids(text)
         if not declared:
             continue                                   # no children to be complete
-        if wanted and not ({sdlc_md.norm_id(d) for d in declared} & wanted):
+        if not ({sdlc_md.norm_id(d) for d in declared} & wanted):
             continue                                   # not this run's epic - not our claim
         resolved = list(reconcile._breakdown_units(root, text))
         if len(resolved) != len(declared):

@@ -2968,6 +2968,24 @@ class ApplySignoffOverSweepTests(unittest.TestCase):
             self.assertEqual(self._status(root, "EP0001"), "Done")     # ours derives
             self.assertNotEqual(self._status(root, "EP0002"), "Done")  # theirs does not
 
+    def test_empty_units_derives_nothing(self) -> None:
+        """A bug/CR-only batch yields NO story units - that must derive nothing, never
+        everything. `_batch_story_units` is story-scoped by design, so a run closing only
+        bugs reaches the tail with units=[]; a truthiness escape there restored the
+        full-repo sweep on exactly the batch shape with no business touching an epic."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, scaffolded_retro="RETRO0001")
+            (root / "sdlc-studio" / "stories").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / "stories" / "US0900-other.md").write_text(
+                "# US0900: other\n\n> **Status:** Done\n", encoding="utf-8")
+            self._epic(root, ["- [ ] [US0900: other](../stories/US0900-other.md)"],
+                       eid="EP0002")
+            mod = _load()
+            self.assertEqual(mod._derive_parent_epics(root, []), [])
+            self.assertEqual(mod._derive_parent_epics(root, None), [])
+            self.assertNotEqual(self._status(root, "EP0002"), "Done")
+
 
 if __name__ == "__main__":
     unittest.main()
