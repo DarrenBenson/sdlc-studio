@@ -1,8 +1,9 @@
 # BG0187: TRD 9 threat model still calls plan.py archive the sole write exception, contradicting rule 5
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
+> **Verification depth:** functional (a guard in tools/tests/test_trd_freshness.py asserts the Threat Model row claims no sole exception and points at rule 5, and that rule 5 still enumerates a writer SET; two mutants executed and killed)
 > **Affects:** sdlc-studio/trd.md
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio file
@@ -25,3 +26,4 @@ Restate the 9 row to point at the 5 rule 5 writer set, or drop the 'sole excepti
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-17 | sdlc-studio | Filed |
+| 2026-07-18 | sdlc-studio | Fixed: the 9 Threat Model row now points at the 5 rule 5 writer SET rather than naming `plan.py archive` a sole exception |

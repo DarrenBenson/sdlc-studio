@@ -522,13 +522,43 @@ class CR0109AuditChecks(unittest.TestCase):
             self._story(root, 2, verify='jest "US0002 works"')
             self.assertNotIn("weak-verify", _load().audit_unit(root, "US0002")["issues"])
 
-    def test_cross_epic_ac_flagged(self):
+    def test_cross_epic_ac_single_keyword_is_advisory_not_blocking(self):
+        # BG0192: one shared word is a coincidence. `ac_scope` documents itself as an advisory
+        # keyword heuristic, and every finding it produced against this repo was ordinary
+        # English ("fixes", "residual", "around"). It is reported, and it no longer blocks.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             ed = root / "sdlc-studio" / "epics"; ed.mkdir(parents=True)
             (ed / "EP0001-x.md").write_text("# EP0001: authentication\n", encoding="utf-8")
             (ed / "EP0002-x.md").write_text("# EP0002: billing\n", encoding="utf-8")
             self._story(root, 1, ac_text="the billing total updates correctly", epic="EP0001")
+            r = _load().audit_batch(root, ["US0001"])
+            self.assertNotIn("cross-epic-ac", r["units"][0]["issues"])
+            self.assertTrue(any("cross-epic-ac" in n for n in r["units"][0]["info"]))
+
+    def test_a_blocking_hit_is_not_hidden_behind_an_earlier_advisory_one(self):
+        # Findings sort by keyword, so a story with a 1-keyword coincidence that sorts FIRST
+        # and a real 2-keyword leak must still block: the strongest hit per story wins, not
+        # whichever happened to come out of the sort first.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            ed = root / "sdlc-studio" / "epics"; ed.mkdir(parents=True)
+            (ed / "EP0001-x.md").write_text("# EP0001: authentication\n", encoding="utf-8")
+            (ed / "EP0002-x.md").write_text("# EP0002: billing invoices\n", encoding="utf-8")
+            (ed / "EP0003-x.md").write_text("# EP0003: alpha handling\n", encoding="utf-8")
+            self._story(root, 1, epic="EP0001",
+                        ac_text="the alpha path reconciles billing against invoices")
+            r = _load().audit_batch(root, ["US0001"])
+            self.assertIn("cross-epic-ac", r["units"][0]["issues"])
+
+    def test_cross_epic_ac_multi_keyword_still_blocks(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            ed = root / "sdlc-studio" / "epics"; ed.mkdir(parents=True)
+            (ed / "EP0001-x.md").write_text("# EP0001: authentication\n", encoding="utf-8")
+            (ed / "EP0002-x.md").write_text("# EP0002: billing invoices\n", encoding="utf-8")
+            self._story(root, 1, ac_text="the billing total and the invoices reconcile",
+                        epic="EP0001")
             r = _load().audit_batch(root, ["US0001"])
             self.assertIn("cross-epic-ac", r["units"][0]["issues"])
 

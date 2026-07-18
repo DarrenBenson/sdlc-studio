@@ -654,6 +654,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A single shared word no longer blocks a tranche on a keyword coincidence (BG0192).**
+  `ac_scope` is a one-word keyword heuristic that documents itself as advisory, yet `audit` wired
+  it as a hard readiness blocker. Every finding it produced against this repo was ordinary English
+  shared with an unrelated epic title - "fixes", "residual", "cleanup", "fold", "around" - and the
+  only remedies were to reword innocent prose or rescope an AC that was already correctly scoped.
+  Findings now carry a `strength` (how many distinct keywords from the SAME owner epic) and only a
+  multi-keyword hit blocks; a single-keyword hit is reported as a note. A keyword named by the ACs
+  of many stories is suppressed outright as shared vocabulary.
+
+- **Each AC selects its own behaviour, and a shared selector is now visible (US0227).** US0172 and
+  US0173 both ran `-k AttemptsAndCost`, and US0163's two ACs both ran the whole `test_close_owed.py`
+  file byte-identically, so a regression in either behaviour failed both ACs and neither said which.
+  All four are narrowed to the cases they own, and `verify_ac lint` now reports any Verify command
+  appearing under more than one AC, with every AC that claims it. Advisory: two ACs asserting one
+  indivisible behaviour is legitimate. The lint reports 17 such selectors across this workspace -
+  pre-existing debt, now visible rather than silent.
+
+- **The TRD's threat model agrees with its own write contract (BG0187).** 9 called
+  `plan.py archive` the "sole, bounded exception" to confined writes while 5 rule 5 enumerates a
+  dozen committed-file writers. The row now points at that set, guarded by a test so the
+  contradiction cannot silently return.
+
 - **The close refreshes its handoff after the sign-off cascade (BG0191).** The chain writes the
   handoff at step 5 and `--apply-signoff` transitions the run's units at the tail, so the document
   and the worklist the next `sprint plan --worklist` reads listed as remaining the very units the

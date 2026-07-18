@@ -182,7 +182,7 @@ def _missing_regression_test(text: str) -> bool:
 
 
 def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None = None,
-               cross_epic_ids: set[str] | None = None,
+               cross_epic_ids: dict[str, dict] | None = None,
                batch_ids: set[str] | None = None) -> dict:
     """Readiness verdict for a single unit. A dependency that sits in the SAME batch
     (`batch_ids`) is the planner's dependency waves doing their job - reported as
@@ -206,9 +206,20 @@ def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None 
         issues.append("weak-AC")
     if type_ == "story" and _weak_verify(text):  # non-executable Verify line
         issues.append("weak-verify")
-    if cross_epic_ids and sdlc_md.norm_id(rid) in cross_epic_ids:  # cross-epic AC leakage
-        issues.append("cross-epic-ac")
     info: list[str] = []
+    # Cross-epic AC leakage. `cross_epic_ids` maps a story id to its strongest hit; only a
+    # MULTI-keyword hit blocks readiness. `ac_scope` is a single-word keyword heuristic that
+    # documents itself as advisory, and every finding it produced against this repo was an
+    # ordinary English word ("fixes", "residual", "cleanup", "around") shared with an
+    # unrelated epic title. Blocking a tranche on that forced the author either to reword
+    # innocent prose or to rescope an AC that was already correctly scoped.
+    hit = (cross_epic_ids or {}).get(sdlc_md.norm_id(rid)) if cross_epic_ids else None
+    if hit:
+        if hit["advisory"]:
+            info.append(f"cross-epic-ac (advisory, 1 shared keyword {hit['keyword']!r} with "
+                        f"{hit['owner_epic']}) - a single common word is not evidence of scope leakage")
+        else:
+            issues.append("cross-epic-ac")
     unmet, unresolved = _unmet_deps(root, text)
     if unmet and batch_ids:
         # only a PENDING in-batch dep is the planner's sequencing at work; a dead
@@ -239,9 +250,17 @@ def audit_batch(repo_root: Path | str, ids: list[str]) -> dict:
     ierr = {f["id"] for f in integrity.detect_integrity(root)["findings"] if f["severity"] == "error"}
     # cross-epic AC leakage, computed once for the batch (ac_scope is repo-wide)
     try:
-        cross = {sdlc_md.norm_id(f["story"]) for f in ac_scope.check(root) if f.get("story")}
+        cross: dict[str, dict] = {}
+        for f in ac_scope.check(root):
+            if not f.get("story"):
+                continue
+            sid = sdlc_md.norm_id(f["story"])
+            # Keep the STRONGEST hit per story: a blocking one must not be hidden behind an
+            # advisory one that happened to sort first.
+            if sid not in cross or f.get("strength", 1) > cross[sid].get("strength", 1):
+                cross[sid] = f
     except Exception:  # noqa: BLE001 - advisory readiness check, never break the audit
-        cross = set()
+        cross = {}
     batch_ids = {sdlc_md.norm_id(i) for i in ids}
     units = [audit_unit(root, i, ierr, cross, batch_ids=batch_ids) for i in ids]
     ready = sum(1 for u in units if u["ready"])

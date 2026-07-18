@@ -347,6 +347,36 @@ def lint_verifier(expr: str) -> str | None:
     return None
 
 
+def duplicate_verifiers(paths) -> list[dict]:
+    """Verify commands that appear byte-identically under more than one AC.
+
+    Two ACs sharing a selector cannot both be discriminating: a regression in either
+    behaviour fails both, and neither AC tells you which one broke. It is also how a
+    whole-file selector spreads - `discover -p test_x.py` copied onto every AC of a story
+    reads as green evidence for criteria it never separately exercised.
+
+    Reported per duplicated command with every AC that claims it, so the author can see
+    which criteria are leaning on the same run. Advisory: identical commands are legitimate
+    in a few cases (two ACs asserting one indivisible behaviour), and this names them rather
+    than refusing them.
+    """
+    seen: dict[str, list[str]] = {}
+    for p in paths:
+        if not p.exists():
+            continue
+        text = p.read_text(encoding="utf-8")
+        rec = sdlc_md.extract_record_id(p.stem) or p.stem
+        for block in parse_story(text):
+            if not block.verifier:
+                continue
+            expr = " ".join(block.verifier.split())
+            if _is_manual(expr):
+                continue
+            seen.setdefault(expr, []).append(f"{rec} {block.ac_id}")
+    return [{"verifier": expr, "acs": acs}
+            for expr, acs in sorted(seen.items()) if len(acs) > 1]
+
+
 # The runners a Verify verb shells out to, for the advisory availability check.
 # `shell` and `manual` are exempt (sh is always present / nothing runs).
 _RUNNER_BINARIES = {"pytest": ("pytest",), "jest": ("jest",), "vitest": ("vitest",),
@@ -1102,6 +1132,13 @@ def cmd_lint(args: argparse.Namespace) -> int:
             if availability:
                 flagged += 1
                 print(f"{p.name}: {expr!r}\n    -> {availability}")
+    dupes = duplicate_verifiers(paths)
+    for d in dupes:
+        flagged += 1
+        print(f"duplicate verifier across {len(d['acs'])} ACs: {d['verifier']!r}\n"
+              f"    -> {', '.join(d['acs'])}\n"
+              f"    -> two ACs sharing a selector cannot both discriminate - a regression in "
+              f"either fails both, and neither says which")
     print(f"verify-lint: {flagged} suspicious Verify line(s) (advisory)")
     return 0
 

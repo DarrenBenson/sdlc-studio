@@ -1486,5 +1486,78 @@ class US0166Ac3Tests(unittest.TestCase):
         self.assertFalse(r.vacuous)
 
 
+class DuplicateVerifierTests(unittest.TestCase):
+    """US0227: two ACs sharing a selector cannot both discriminate."""
+
+    STORIES = Path(__file__).resolve().parents[5] / "sdlc-studio" / "stories"
+
+    def _verifiers(self, prefix: str) -> list[str]:
+        path = next(p for p in self.STORIES.glob(f"{prefix}-*.md"))
+        return [" ".join(b.verifier.split())
+                for b in verify_ac.parse_story(path.read_text(encoding="utf-8"))
+                if b.verifier]
+
+    def test_the_named_stories_no_longer_share_a_selector(self):
+        a, b = self._verifiers("US0172"), self._verifiers("US0173")
+        self.assertTrue(a and b)
+        self.assertFalse(set(a) & set(b), "US0172 and US0173 still share a Verify command")
+        # and neither leans on the broad class-wide filter that hid the overlap
+        for v in a + b:
+            self.assertNotIn("-k AttemptsAndCost", v)
+
+    def test_us0163_acs_select_different_suites(self):
+        vs = self._verifiers("US0163")
+        self.assertGreaterEqual(len(vs), 2)
+        self.assertEqual(len(set(vs)), len(vs), "US0163's ACs still share a Verify command")
+
+    def test_duplicates_are_reported_with_every_claiming_ac(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "US0001-a.md").write_text(
+                "# US0001: a\n\n## Acceptance Criteria\n\n"
+                "### AC1: one\n- **Verify:** shell run-the-suite\n\n"
+                "### AC2: two\n- **Verify:** shell run-the-suite\n", encoding="utf-8")
+            (root / "US0002-b.md").write_text(
+                "# US0002: b\n\n## Acceptance Criteria\n\n"
+                "### AC1: one\n- **Verify:** shell something-else\n", encoding="utf-8")
+            dupes = verify_ac.duplicate_verifiers(sorted(root.glob("*.md")))
+            self.assertEqual(len(dupes), 1)
+            self.assertEqual(dupes[0]["verifier"], "shell run-the-suite")
+            self.assertEqual(dupes[0]["acs"], ["US0001 AC1", "US0001 AC2"])
+
+    def test_duplicates_are_found_across_different_stories(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            for n in ("0001", "0002"):
+                (root / f"US{n}-x.md").write_text(
+                    f"# US{n}: x\n\n## Acceptance Criteria\n\n"
+                    "### AC1: one\n- **Verify:** shell shared-run\n", encoding="utf-8")
+            dupes = verify_ac.duplicate_verifiers(sorted(root.glob("*.md")))
+            self.assertEqual([d["acs"] for d in dupes], [["US0001 AC1", "US0002 AC1"]])
+
+    def test_whitespace_normalised_and_manual_exempt(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "US0001-a.md").write_text(
+                "# US0001: a\n\n## Acceptance Criteria\n\n"
+                "### AC1: one\n- **Verify:** shell run   the-suite\n\n"
+                "### AC2: two\n- **Verify:** shell run the-suite\n\n"
+                "### AC3: three\n- **Verify:** manual an operator reads it\n\n"
+                "### AC4: four\n- **Verify:** manual an operator reads it\n", encoding="utf-8")
+            dupes = verify_ac.duplicate_verifiers(sorted(root.glob("*.md")))
+            self.assertEqual(len(dupes), 1, "spacing-only difference is the same run")
+            self.assertEqual(dupes[0]["acs"], ["US0001 AC1", "US0001 AC2"])
+            self.assertNotIn("manual", dupes[0]["verifier"])
+
+    def test_a_story_with_no_duplicates_reports_none(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "US0001-a.md").write_text(
+                "# US0001: a\n\n## Acceptance Criteria\n\n"
+                "### AC1: one\n- **Verify:** shell run-a\n\n"
+                "### AC2: two\n- **Verify:** shell run-b\n", encoding="utf-8")
+            self.assertEqual(verify_ac.duplicate_verifiers(sorted(root.glob("*.md"))), [])
+
+
 if __name__ == "__main__":
     unittest.main()

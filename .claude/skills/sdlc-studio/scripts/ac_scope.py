@@ -33,6 +33,18 @@ _STOP = {"and", "the", "for", "with", "management", "system", "foundation", "pla
 # so it is suppressed - it would otherwise cry wolf on every story that mentions it. CR0113.
 _SHARED_EPIC_THRESHOLD = 3
 
+# The same suppression by STORY count. The epic-level threshold misses a common English word
+# whose mentions happen to cluster in one or two epics: "rolling", "residual", "cleanup",
+# "fold", "around" all owned an epic title here and flagged unrelated prose. Document
+# frequency is the standard demotion for a common term, and a word this widespread is not
+# evidence that a story reached into another epic's scope.
+_COMMON_STORY_THRESHOLD = 4
+
+# How many DISTINCT owner keywords a story must name before the hit is treated as evidence
+# rather than a coincidence. One shared English word is the false-positive case this heuristic
+# generates constantly; two or more independent keywords from the same epic title is a pattern.
+_BLOCKING_STRENGTH = 2
+
 
 def _keywords(title: str) -> set[str]:
     return {w for w in re.findall(r"[a-z]+", title.lower()) if len(w) > 3 and w not in _STOP}
@@ -103,8 +115,14 @@ def check(repo_root: Path | str) -> list[dict]:
         for kw in distinctive:
             if _mentions(block, kw):
                 epics_mentioning.setdefault(kw, set()).add(own_eid)
+    stories_mentioning: dict[str, int] = {}
+    for _, block, _rec in stories:
+        for kw in distinctive:
+            if _mentions(block, kw):
+                stories_mentioning[kw] = stories_mentioning.get(kw, 0) + 1
     distinctive = {kw: owner for kw, owner in distinctive.items()
-                   if len(epics_mentioning.get(kw, set())) < _SHARED_EPIC_THRESHOLD}
+                   if len(epics_mentioning.get(kw, set())) < _SHARED_EPIC_THRESHOLD
+                   and stories_mentioning.get(kw, 0) < _COMMON_STORY_THRESHOLD}
 
     findings: list[dict] = []
     for own_eid, block, rec_id in stories:
@@ -114,9 +132,16 @@ def check(repo_root: Path | str) -> list[dict]:
                 continue
             if _mentions(block, kw):
                 hits.add((kw, owner_eid))
+        # Strength is per (story, owner epic): how many independent keywords from the SAME
+        # epic title this story names. One is a word in common; several is a pattern.
+        strength: dict[str, int] = {}
+        for kw, owner_eid in hits:
+            strength[owner_eid] = strength.get(owner_eid, 0) + 1
         for kw, owner_eid in sorted(hits):
+            n = strength[owner_eid]
             findings.append({"story": rec_id, "keyword": kw,
-                             "owner_epic": owner_eid, "owner_title": titles.get(owner_eid, "")})
+                             "owner_epic": owner_eid, "owner_title": titles.get(owner_eid, ""),
+                             "strength": n, "advisory": n < _BLOCKING_STRENGTH})
     return findings
 
 

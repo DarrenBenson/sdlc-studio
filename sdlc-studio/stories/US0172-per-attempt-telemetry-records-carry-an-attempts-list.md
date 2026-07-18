@@ -21,7 +21,7 @@
 - **Given** records with an attempts list, with only flat model/tokens, and with neither
 - **When** `attempts_of` reads them
 - **Then** the list is preserved in order, the legacy record reads as a single attempt, and a record with no measurement yields an empty list (no invented attempt)
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_telemetry.py -k AttemptsAndCost
+- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -B -m unittest tests.test_telemetry.AttemptsAndCostTests.test_legacy_record_reads_as_one_attempt tests.test_telemetry.AttemptsAndCostTests.test_attempts_list_is_preserved_in_order tests.test_telemetry.AttemptsAndCostTests.test_empty_attempts_falls_back_to_flat_fields tests.test_telemetry.AttemptsAndCostTests.test_no_measurement_yields_no_fabricated_attempt
 - **Verified:** yes (2026-07-16)
 
 ### AC2: the writer path exists and records an escalation (not only the reader)
@@ -29,7 +29,7 @@
 - **Given** the record CLI and the `transition set` close path
 - **When** an escalation is recorded via `record --attempt MODEL:TOKENS` / `--attempts JSON`, or threaded through a terminal close
 - **Then** the resulting record carries the ordered `attempts` list and `unit_cost` sums the true cost - so the reader is fed by a real writer, not only tests (BG0152)
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_telemetry.py -k attempts
+- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -B -m unittest tests.test_telemetry.TierFieldsTests.test_cli_record_accepts_attempts_writer tests.test_telemetry.TierFieldsTests.test_cli_record_accepts_attempts_json
 - **Verified:** yes (2026-07-17)
 
 ## Revision History

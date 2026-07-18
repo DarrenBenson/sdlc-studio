@@ -21,7 +21,7 @@
 - **Given** an escalation record (haiku then opus), an unpriced-model record, and a pricing config override
 - **When** `unit_cost` prices them
 - **Then** cost sums over attempts, an unpriced model's tokens are counted but its dollars are not (named in `unpriced`), and a `pricing.<model>` config value overrides the estimate default
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_telemetry.py -k AttemptsAndCost
+- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -B -m unittest tests.test_telemetry.AttemptsAndCostTests.test_true_cost_sums_over_attempts_including_rework tests.test_telemetry.AttemptsAndCostTests.test_unpriced_model_is_named_not_guessed tests.test_telemetry.AttemptsAndCostTests.test_config_price_overrides_the_default
 - **Verified:** yes (2026-07-16)
 
 ## Revision History

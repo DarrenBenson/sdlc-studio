@@ -23,7 +23,7 @@
 - **When** `close_owed.py detect` runs
 - **Then** the unit is reported owed and the command exits non-zero; a unit named by a retro, or
   one below the baseline cutoff, is not owed
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_close_owed.py
+- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -B -m unittest tests.test_close_owed.BaselineTests tests.test_close_owed.CoverageTests
 - **Verified:** yes (2026-07-16)
 
 ### AC2: An unbaselined project reports the tail but never fails
@@ -31,7 +31,7 @@
 - **Given** a project with uncovered terminal units and no baseline stamped
 - **When** `close_owed.py detect` runs
 - **Then** it lists the units and asks the operator to baseline first, exiting 0 (a soft state, not a gate failure)
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_close_owed.py
+- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -B -m unittest tests.test_close_owed.UnbaselinedTests
 - **Verified:** yes (2026-07-16)
 
 ## Revision History

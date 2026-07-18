@@ -581,7 +581,7 @@ cross-machine clash is caught at merge (ADR-008).
 
 | Threat | Likelihood | Impact | Mitigation |
 | --- | --- | --- | --- |
-| Script mutating files outside its remit | L | M | Contract rule 5: writes confined to `.local/` or named files; `plan.py archive` is the sole, bounded exception. Unit-tested. |
+| Script mutating files outside its remit | L | M | Contract rule 5: read-only helpers never mutate the workspace, and every writer is confined to the tested boundary §5 rule 5 names for it. The write surface is a bounded, enumerated SET, not a single exception. Unit-tested, with a write-confinement snapshot suite. |
 | Token leakage via GitHub integration | L | M | No token handling; all GitHub access via `gh`, which owns auth (ADR-004). |
 | Malformed artifact crashing a script | M | L | `lib/sdlc_md.py` JSON helpers never raise (return a default); parsers tolerate legacy forms. |
 | Supply-chain risk from third-party deps | L | M | Pure stdlib; no third-party packages to compromise. |

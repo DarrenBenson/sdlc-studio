@@ -45,5 +45,35 @@ class TrdFreshness(unittest.TestCase):
         self.assertIn("atomic_write", text)  # the real write surface is documented
 
 
+class ThreatModelAgreesWithTheWriteContract(unittest.TestCase):
+    """BG0187: 9's Threat Model called `plan.py archive` the SOLE write exception while
+    5 rule 5 enumerates a dozen committed-file writers. Two sections of one document
+    cannot describe the same contract differently."""
+
+    def setUp(self) -> None:
+        self.text = TRD.read_text(encoding="utf-8")
+
+    def _threat_row(self) -> str:
+        row = next((ln for ln in self.text.splitlines()
+                    if "Script mutating files outside its remit" in ln), None)
+        self.assertIsNotNone(row, "the Threat Model row has been renamed or removed")
+        return row
+
+    def test_the_threat_row_claims_no_sole_exception(self):
+        self.assertNotRegex(self._threat_row(), r"sole,?\s+bounded\s+exception")
+        self.assertNotIn("sole exception", self._threat_row())
+
+    def test_the_threat_row_points_at_the_rule_that_enumerates_the_writers(self):
+        self.assertRegex(self._threat_row(), r"rule\s*5")
+
+    def test_rule_5_still_names_more_than_one_writer(self):
+        # The contradiction is only resolved while rule 5 really is a SET. If it ever
+        # narrows back to one writer, the threat row's plural wording becomes the wrong half.
+        writers = ("artifact.py", "transition.py", "retro.py", "handoff.py", "decisions.py")
+        present = [w for w in writers if w in self.text]
+        self.assertGreater(len(present), 1,
+                           f"rule 5 no longer enumerates a writer set: found {present}")
+
+
 if __name__ == "__main__":
     unittest.main()

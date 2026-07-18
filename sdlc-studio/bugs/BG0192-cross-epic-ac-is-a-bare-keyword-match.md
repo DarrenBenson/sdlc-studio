@@ -1,8 +1,9 @@
 # BG0192: cross-epic-ac is a bare keyword match and false-positives on common English words
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 3
+> **Verification depth:** functional (unit tests over strength, per-owner counting, story-frequency suppression and the audit wiring; five mutants executed and killed)
 > **Affects:** .claude/skills/sdlc-studio/scripts/ac_scope.py
 > **Created:** 2026-07-18
 > **Created-by:** sdlc-studio file
@@ -25,3 +26,4 @@ Require more than a single common-word hit before flagging: match on multi-word 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-18 | sdlc-studio | Filed |
+| 2026-07-18 | sdlc-studio | Fixed: `ac_scope` findings now carry `strength` (distinct keywords from the same owner epic) and `advisory`; `audit` blocks readiness only on a multi-keyword hit and reports a single-keyword one as a note. Adds document-frequency suppression by story count. Every one of the 11 findings this check produced against the repo was an ordinary English word - the check documents itself as advisory and is now wired as such |

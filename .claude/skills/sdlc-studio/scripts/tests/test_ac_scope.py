@@ -156,5 +156,73 @@ class AcScopeTests(unittest.TestCase):
             self.assertTrue(all(f["owner_epic"] == "EP0002" for f in flagged))
 
 
+class SingleKeywordIsAdvisoryTests(unittest.TestCase):
+    """BG0192: one shared English word is a coincidence, not evidence of scope leakage."""
+
+    def test_a_single_keyword_hit_is_advisory(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _epic(root, "EP0076", "Rolling multi-sprint policy")
+            _epic(root, "EP0072", "Close and gate ergonomics")
+            _story(root, "US0219", "EP0072",
+                   "### AC1\n- **Then** the gate keeps a rolling local history of run times\n")
+            findings = ac_scope.check(root)
+            hit = next(f for f in findings if f["keyword"] == "rolling")
+            self.assertEqual(hit["strength"], 1)
+            self.assertTrue(hit["advisory"])
+
+    def test_two_keywords_from_the_same_epic_are_blocking(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _epic(root, "EP0006", "Accounts Sync")
+            _epic(root, "EP0001", "Platform Foundation")
+            _story(root, "US0002", "EP0001",
+                   "### AC1\n- **Then** a valid account token resolves and sync completes\n")
+            findings = [f for f in ac_scope.check(root) if f["owner_epic"] == "EP0006"]
+            self.assertEqual(len(findings), 2)
+            for f in findings:
+                self.assertEqual(f["strength"], 2)
+                self.assertFalse(f["advisory"])
+
+    def test_strength_is_counted_per_owner_epic_not_across_all_hits(self):
+        # One keyword from each of two epics is still two coincidences, not one pattern.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _epic(root, "EP0076", "Rolling policy")
+            _epic(root, "EP0078", "Weakness hunting")
+            _epic(root, "EP0072", "Close ergonomics")
+            _story(root, "US0219", "EP0072",
+                   "### AC1\n- **Then** a rolling history informs the weakness report\n")
+            findings = ac_scope.check(root)
+            self.assertTrue(findings)
+            for f in findings:
+                self.assertEqual(f["strength"], 1)
+                self.assertTrue(f["advisory"])
+
+    def test_a_word_common_across_many_stories_is_suppressed_entirely(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _epic(root, "EP0082", "Residual audit fixes")
+            _epic(root, "EP0001", "Platform Foundation")
+            for n in range(1, 6):   # >= _COMMON_STORY_THRESHOLD stories naming it
+                _story(root, f"US000{n}", "EP0001",
+                       "### AC1\n- **Then** the residual case is handled\n")
+            findings = ac_scope.check(root)
+            self.assertFalse([f for f in findings if f["keyword"] == "residual"],
+                             "a word this widespread is vocabulary, not leakage")
+
+    def test_the_motivating_cross_epic_case_still_reports(self):
+        # It becomes advisory rather than silent - the signal is kept, the block is not.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _epic(root, "EP0001", "Platform Foundation")
+            _epic(root, "EP0006", "Accounts")
+            _story(root, "US0002", "EP0001",
+                   "### AC1\n- **Then** a valid account token resolves a userId\n")
+            findings = ac_scope.check(root)
+            self.assertTrue(any(f["keyword"] == "accounts" and f["owner_epic"] == "EP0006"
+                                for f in findings))
+
+
 if __name__ == "__main__":
     unittest.main()
