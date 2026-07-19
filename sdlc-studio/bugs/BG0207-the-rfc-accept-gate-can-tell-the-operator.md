@@ -1,6 +1,7 @@
 # BG0207: the RFC accept gate can tell the operator one decision is open when two are
 
-> **Status:** Open
+> **Status:** Fixed
+> **Verification depth:** functional (D1-before-fence / D7-after-fence reproduced the incomplete list, then both are named)
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/validate.py

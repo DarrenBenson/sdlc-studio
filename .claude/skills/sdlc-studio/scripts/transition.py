@@ -258,12 +258,19 @@ def _rfc_open_decisions(text: str) -> list[str]:
         # merely mentions the word ('Closed - was open until the 07-19 review') does not.
         if any(status.startswith(word) for word in _UNSETTLED):
             open_rows.append(m.group(1))
-    if fence is not None and not open_rows:
+    if fence is not None:
         # The scan ended inside an unterminated fence, so anything after it was skipped and
-        # this "no open decisions" is an artefact of unparseable markdown, not a reading of
-        # the file. Fail CLOSED by re-reading the document with every structural rule
-        # dropped. A false positive here asks a human to look; a false negative silently
-        # accepts an RFC with open decisions, and that is the failure this gate exists for.
+        # THIS READING IS INCOMPLETE - whether or not it happened to find something first.
+        # Fail CLOSED by re-reading the document with every structural rule dropped. A false
+        # positive here asks a human to look; a false negative silently accepts an RFC with
+        # open decisions, and that is the failure this gate exists for.
+        #
+        # The condition was `fence is not None and not open_rows`, which fired only on an
+        # EMPTY read. With one open row before the broken fence and another after it, the
+        # first was found, the re-scan was skipped, and the caller received a list missing
+        # every row the fence hid - reported to the operator as the complete set.
+        # The unstructured read drops both structural rules, so it is a superset of this one:
+        # re-scanning unconditionally can only add rows, never lose them.
         return _rfc_open_decisions_unstructured(text)
     return open_rows
 

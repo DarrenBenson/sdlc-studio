@@ -941,6 +941,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The RFC accept gate names every open decision, not just the ones before a broken fence
+  (BG0207).** The fail-closed re-scan was guarded by `fence is not None and not open_rows`, so it
+  fired only when the main scan found nothing at all. With one open row before an unterminated
+  fence and another after it, the first was found, the re-scan was skipped, and the caller got a
+  list missing every row the fence hid - reported to the operator as the complete set. Both
+  `transition` and `validate` print that list, so an RFC carrying D1 and D7 was described as
+  carrying one open decision. The re-scan now fires on any unterminated fence; the unstructured
+  read drops both structural rules, so it is a superset and can only add rows. The gate always
+  blocked either way, so this was a false completeness claim rather than a bypass.
 - **The shipped suite passes from an installed copy (BG0209).** Seven tests in `test_verify_ac`
   read the dogfooded workspace by path - real stories, US0163/US0166/US0172/US0173 - so from
   `~/.claude/skills/sdlc-studio` the root walk landed on the home directory and all seven raised

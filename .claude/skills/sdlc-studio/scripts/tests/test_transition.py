@@ -1424,6 +1424,26 @@ class RfcOpenDecisionGateTests(unittest.TestCase):
                 with self.assertRaises(ValueError, msg=f"{name}: gate bypassed"):
                     tr.transition(root, "RFC0001", "Accepted")
 
+    def test_a_fence_hiding_only_some_rows_still_names_every_open_decision(self) -> None:
+        """The fail-closed re-scan must fire on an unterminated fence, not only on an empty read.
+
+        The guard was `fence is not None and not open_rows`, so the fallback ran only when the
+        main scan found NOTHING. With one open row before a broken fence and another after it,
+        the first is found, `not open_rows` is False, the re-scan never fires, and the caller
+        gets an INCOMPLETE list. Both callers print that list, so the operator is told the RFC
+        carries one open decision, D1, when it carries two.
+
+        The gate still blocks and it converges - closing D1 and re-running surfaces D7 - so this
+        costs a round trip rather than correctness. It is still a false completeness claim in
+        operator-facing output (BG0207).
+        """
+        body = ("## Open Decisions\n\n"
+                "| # | Decision | Status |\n| --- | --- | --- |\n"
+                "| D1 | which store | Open |\n\n"
+                "```bash\necho 'never closed'\n\n"
+                "| D7 | which format | Open |\n")
+        self.assertEqual(tr._rfc_open_decisions(body), ["D1", "D7"])
+
     def test_commonmark_fence_matching_is_pinned_independently_of_the_fallback(self) -> None:
         """The CommonMark `(char, length)` rule needs a test the FALLBACK cannot satisfy.
 
