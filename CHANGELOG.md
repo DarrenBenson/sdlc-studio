@@ -21,6 +21,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Repairs from the closing review of RUN-01KXWWM3.** One MAJOR and six MINOR, none a
+  misbehaviour of the shipped code and every one a claim wider than its evidence. The MAJOR: the
+  `type_ != "epic"` guard - the single check keeping the close-owed relaxation from becoming a
+  blanket exemption - was unpinned by the **entire** suite, while the commit claimed all four
+  branches were mutation-killed by their own tests; it now has a test that fails when the guard is
+  removed. Coverage and derivation also disagreed about what a child is (`children_of` versus the
+  declared Story Breakdown), so an epic could be forgiven off a strict subset of the children its
+  own closure derived from; the breakdown parser moves to `reconcile.declared_breakdown_ids` as the
+  single answer and both id sets must now be covered. `refine._ac_heading` kept a private copy of
+  the heading-strip rule while `sdlc_md.heading_title` claimed to be the one definition, so it now
+  routes through it. The epic-criteria fallback for a body with no `## Revision History` emitted two
+  consecutive blank lines (MD012) - a generator writing markdown that blocks the commit carrying it,
+  the same defect fixed elsewhere this sprint. Promoting a run's outcome re-stamped `ended_at`,
+  stretching the archived elapsed span that `retro` reads, so the original end time is put back. And
+  the outcome promotion was reachable only from `--apply-signoff`: `_close_handoff` short-circuits
+  when a handoff already exists, and that skip covered the outcome as well as the artefact, which is
+  exactly how the cited run kept `stopped`; a plain `sprint close` now corrects it too.
+
 - **Close-owed can reach zero again: a derived epic inherits its children's coverage (BG0210).** An
   epic does not reach terminal by being worked - `apply-signoff` derives it once every child is
   terminal, in the close tail, after the retro is written - so no epic is ever named in a retro's
@@ -33,8 +51,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Batch` instead was the obvious alternative and is wrong: `retro accuracy` sums points across the
   batch and an epic's Derived Point Total is the sum of its stories, so it would double-count every
   sprint's velocity. Not a blanket exemption - a childless epic inherits nothing and an epic with one
-  unaccounted child stays owed, both mutation-pinned. On this repo the count falls from **44 to 12**,
-  and every survivor is genuinely uncovered.
+  unaccounted child stays owed, both mutation-pinned. On this repo the rule forgives **35** epics,
+  and every survivor is genuinely uncovered. (An earlier draft of this entry quoted "44 to 12" and
+  "about 38 epics": those compared readings taken from two different trees, so the delta was
+  inflated by the units this sprint itself closed. Measured on one tree the count is 48 to 13.)
 
 - **A completed close records the outcome its verdict earned (BG0208).** The run-state `outcome`
   field was written on every failure path - blocked, budget spent, an operator stop - and forgotten

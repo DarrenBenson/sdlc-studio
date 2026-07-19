@@ -121,6 +121,47 @@ class DerivedEpicCoverageTests(CloseOwedBase):
         self.assertIn("EP0100", ids)
         self.assertIn("US0002", ids)
 
+    def test_only_an_epic_inherits_coverage_from_children(self) -> None:
+        """The `type_ != "epic"` guard was unpinned by the ENTIRE suite.
+
+        Removing it left all 3,180 tests green, so the one check keeping this relaxation
+        from becoming a blanket exemption had no evidence behind it - while the commit
+        claimed every branch was mutation-killed by its own test. A story or bug can carry
+        children too (a story naming a parent epic is the same shape inverted), and nothing
+        asserted they stay owed on their own account.
+        """
+        # The non-epic must actually HAVE children, all covered - otherwise the childless
+        # guard catches it first and the test passes with `type_` removed, which is what
+        # the first version of this test did.
+        _write(self.root / "sdlc-studio" / "bugs" / "BG0002-p.md",
+               "# BG0002: a bug that something calls its parent\n\n"
+               "> **Status:** Fixed\n> **Points:** 2\n")
+        _story_in(self.root, "US0001", "Done", "BG0002")   # names the BUG as its parent
+        _retro(self.root, "RETRO0001", "US0001")           # ...and that child IS covered
+        ids = {cid for cid, _ in close_owed.owed(self.root)["owed"]}
+        self.assertIn("BG0002", ids,
+                      "a bug must be owed on its own account, never by inheriting coverage")
+
+    def test_an_epic_is_owed_when_its_DECLARED_breakdown_holds_an_uncovered_id(self) -> None:
+        """Coverage must read children the way the DERIVATION does, or the two disagree.
+
+        `apply-signoff` derives an epic terminal from its declared Story Breakdown; this
+        rule read `children_of` (anything naming the epic as parent). An id declared in the
+        breakdown but not backed by a file naming that parent was therefore invisible here,
+        so the epic could be forgiven off a strict subset of the children its own closure
+        was derived from. Both id sets must be covered.
+        """
+        _write(self.root / "sdlc-studio" / "epics" / "EP0100-e.md",
+               "# EP0100: An epic\n\n> **Status:** Done\n> **Derived Point Total:** 4\n\n"
+               "## Story Breakdown\n\n- [x] US0001 first\n- [x] US0002 second\n")
+        _story_in(self.root, "US0001", "Done", "EP0100")
+        # US0002 is declared in the breakdown but does not name EP0100 as its parent.
+        _write(self.root / "sdlc-studio" / "stories" / "US0002-s.md",
+               "# US0002: A story\n\n> **Status:** Done\n> **Points:** 2\n")
+        _retro(self.root, "RETRO0001", "US0001")       # US0002 never accounted for
+        ids = {cid for cid, _ in close_owed.owed(self.root)["owed"]}
+        self.assertIn("EP0100", ids)
+
     def test_a_childless_terminal_epic_is_still_owed(self) -> None:
         """No children means nothing derived it, so there is nothing to inherit coverage from.
 

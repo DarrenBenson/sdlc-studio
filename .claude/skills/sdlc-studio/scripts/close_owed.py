@@ -92,10 +92,21 @@ def _derived_from_covered_children(root: Path, cid: str, type_: str, covered: se
     """
     if type_ != "epic":
         return False
-    children = sdlc_md.children_of(root, cid)
-    if not children:
+    import reconcile  # noqa: PLC0415 - lazy, like the chain's other sibling imports
+    path = sdlc_md.find_by_id(root, cid)[0] if sdlc_md.find_by_id(root, cid) else None
+    declared = (reconcile.declared_breakdown_ids(sdlc_md.read_text_safe(path))
+                if path is not None else [])
+    # BOTH id sets, because the two answers to "what is a child" can differ: the derivation
+    # that closed this epic reads its DECLARED Story Breakdown, while `children_of` reads
+    # whatever names the epic as a parent. An id in one but not the other would otherwise be
+    # invisible to this rule, forgiving the epic off a strict subset of the children its own
+    # closure was derived from. Taking the union can only make this stricter, never forgive
+    # more.
+    child_ids = {sdlc_md.norm_id(c) for c, *_ in sdlc_md.children_of(root, cid)}
+    child_ids |= {sdlc_md.norm_id(c) for c in declared}
+    if not child_ids:
         return False
-    return all(sdlc_md.norm_id(child_id) in covered for child_id, *_ in children)
+    return all(c in covered for c in child_ids)
 
 
 class BaselineCorrupt(Exception):

@@ -1000,6 +1000,28 @@ class SeedAcsTests(unittest.TestCase):
                     # the redistribute note existed only to excuse the mis-seeding
                     self.assertNotIn("redistribute", text.lower())
 
+    def test_the_epic_section_is_clean_markdown_without_a_revision_history(self) -> None:
+        """The fallback branch, when the epic body has no `## Revision History` to insert before.
+
+        Unreachable for a minted epic (every one carries the heading) but reachable through
+        `refine apply --into` against a hand-authored epic in a consuming project. The first
+        version appended a section already ending in a blank line to a body, producing two
+        consecutive blank lines - MD012 - so the generator wrote markdown that blocks the
+        commit carrying it. Exactly the defect fixed in the retro H1 this same sprint.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            epic = root / "sdlc-studio" / "epics" / "EP0100-batch.md"
+            epic.parent.mkdir(parents=True, exist_ok=True)
+            epic.write_text("# EP0100: A hand-authored batch epic\n\n> **Status:** Draft\n"
+                            "> **Size:** M\n\n## Summary\n\nHolds several requests.\n",
+                            encoding="utf-8")
+            refine._seed_epic_criteria(epic, ["the first criterion", "the second criterion"])
+            text = epic.read_text(encoding="utf-8")
+            self.assertIn("## Acceptance Criteria (Epic Level)", text)
+            self.assertNotIn("\n\n\n", text, "two consecutive blank lines (MD012)")
+            self.assertTrue(text.endswith("\n") and not text.endswith("\n\n"))
+
     def test_multi_story_seeds_the_epic_with_the_requests_criteria(self) -> None:
         """The criteria must not be LOST while not being mis-assigned.
 

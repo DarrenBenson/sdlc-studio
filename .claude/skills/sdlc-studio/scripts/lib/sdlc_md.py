@@ -398,8 +398,11 @@ def heading_title(title: str) -> str:
     too, and markdownlint MD026 (no trailing punctuation in a heading) then blocks the very
     commit that carries the generated artefact. This lives here because the same defect has
     now been fixed three times in three generators - the handoff H1, the seeded AC heading,
-    and the retro scaffold - each fixing its own copy while the others stayed broken. A
-    generator that builds a heading calls this; it does not keep its own idea of one.
+    and the retro scaffold - each fixing its own copy while the others stayed broken. All
+    three route through here; a generator that builds a heading calls this rather than
+    keeping its own idea of one. `refine._ac_heading` wraps it to add length truncation,
+    and strips again afterwards because cutting at a word boundary can expose punctuation
+    the first pass never saw.
     """
     return " ".join(str(title).split()).rstrip(" .,;:!?…")
 

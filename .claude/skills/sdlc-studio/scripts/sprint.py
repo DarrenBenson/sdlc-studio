@@ -2090,6 +2090,13 @@ def _close_gate(root, retro_id, state):
 
 def _close_handoff(root, retro_id, state):
     if state.get("handoff") and state.get("outcome") in run_state.CLOSED:
+        # The handoff already exists, so it is not regenerated - but this branch used to
+        # return without looking at the OUTCOME, and it is the branch a re-run of a close
+        # takes. A run that stopped earlier and then closed with an achieved verdict kept
+        # `stopped` for exactly this reason: the skip covered the outcome as well as the
+        # artefact. Reconcile the outcome with the verdict here, so a plain `sprint close`
+        # corrects it and not only `--apply-signoff`.
+        _finalise_outcome(root, state)
         return True, f"already generated ({state['handoff']}) - skipped", ""
     import handoff  # noqa: PLC0415
     title = state.get("sprint_goal") or state.get("run_id") or "sprint close"
@@ -2323,28 +2330,13 @@ def _apply_signoff(root, state, principal: str | None, author_default: str | Non
 
 
 def _declared_breakdown_ids(text: str) -> list[str]:
-    """Every id-bearing checkbox line in the epic's Story Breakdown, resolvable or not.
+    """The epic's declared breakdown ids - see `reconcile.declared_breakdown_ids`.
 
-    `reconcile._breakdown_units` yields only units it can RESOLVE - it skips a breakdown id
-    with no backing file, and a unit file carrying no Status. Those skips are right for drift
-    detection (there is nothing to compare) but wrong for deriving completion: an
-    unresolvable child is unknown, not finished. Counting the declared ids separately is what
-    lets the caller tell "all children terminal" from "the only child I could read is
-    terminal".
+    Delegates rather than parsing: the close-owed detector must read a breakdown exactly
+    the way this derivation does, and two private copies of the rule is how they drifted.
     """
     import reconcile  # noqa: PLC0415
-    out: list[str] = []
-    in_breakdown = False
-    for ln in text.splitlines():
-        if ln.lstrip().startswith("#"):
-            in_breakdown = bool(reconcile._BREAKDOWN_HEADING_RE.match(ln.strip()))
-            continue
-        if not in_breakdown or not reconcile._BREAKDOWN_BOX_RE.match(ln):
-            continue
-        idm = sdlc_md.ID_SEARCH_RE.search(ln)
-        if idm:
-            out.append(idm.group(0))
-    return out
+    return reconcile.declared_breakdown_ids(text)
 
 
 def _derive_parent_epics(root, units=None) -> list[str]:
@@ -2481,16 +2473,28 @@ def _finalise_outcome(root, state) -> None:
     a schema change, not a bug fix. `close_run` is documented idempotent and re-stamps the
     outcome, so this is its intended use rather than a blind overwrite.
     """
-    verdict = (state.get("sprint_goal_verdict") or {}).get("verdict")
+    live = run_state.read(root)
+    verdict = ((live.get("sprint_goal_verdict") or state.get("sprint_goal_verdict") or {})
+               .get("verdict"))
     if verdict != "achieved":
         return
+    if live.get("outcome") == run_state.GOAL_REACHED:
+        return                               # already stamped; do not re-stamp `ended_at`
+    # `close_run` re-stamps `ended_at` to now. When the close and a later `--apply-signoff`
+    # are separated in time, that would stretch the archived run's elapsed span, which
+    # `retro` reads - so the original end time is put back. The outcome is the correction;
+    # when the run ENDED is not.
+    ended_at = live.get("ended_at")
     try:
-        run_state.close_run(root, run_state.GOAL_REACHED, handoff=state.get("handoff"))
+        run_state.close_run(root, run_state.GOAL_REACHED, handoff=live.get("handoff"))
+        if ended_at:
+            run_state.update(root, ended_at=ended_at)
+            run_state.archive(root, run_state.read(root))   # keep the archive in step
     except (OSError, ValueError) as exc:   # never lose a completed ceremony to its own bookkeeping
-        print(f"apply-signoff: outcome not stamped goal-reached ({exc}) - the close itself "
-              f"completed; re-stamp with `run_state.close_run`", file=sys.stderr)
+        print(f"outcome not stamped goal-reached ({exc}) - the close itself completed; "
+              f"re-stamp with `run_state.close_run`", file=sys.stderr)
         return
-    print("apply-signoff: run outcome recorded goal-reached")
+    print("close: run outcome recorded goal-reached")
 
 
 def _draw_report(root, retro_id) -> None:

@@ -55,10 +55,11 @@ def _ac_heading(criterion: str, limit: int = 100) -> str:
     when long, and never ending in punctuation. A generated heading must pass markdownlint
     MD026 (no trailing punctuation) in any project that lints its workspace, so no trailing
     ellipsis or full stop is appended."""
-    text = " ".join(criterion.split())
+    text = sdlc_md.heading_title(criterion)
     if len(text) > limit:
-        text = text[:limit].rsplit(" ", 1)[0] or text[:limit]
-    return text.rstrip(" .,;:!?…")
+        # Truncating can expose punctuation the first pass never saw, so strip again.
+        text = sdlc_md.heading_title(text[:limit].rsplit(" ", 1)[0] or text[:limit])
+    return text
 
 
 def _request_criteria(text: str) -> list[str]:
@@ -85,7 +86,7 @@ def _seed_epic_criteria(epic_path: Path, criteria: list[str]) -> None:
     if "## Revision History" in text:
         new = re.sub(r"(?=## Revision History)", lambda m: section, text, count=1)
     else:
-        new = text.rstrip("\n") + "\n\n" + section
+        new = text.rstrip("\n") + "\n\n" + section.rstrip("\n") + "\n"
     sdlc_md.atomic_write(epic_path, new)
 
 

@@ -3009,6 +3009,55 @@ class ApplySignoffTailTests(unittest.TestCase):
                 (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8"))
             self.assertEqual(after["outcome"], "goal-reached")
 
+    def test_promoting_the_outcome_does_not_move_when_the_run_ended(self) -> None:
+        """`close_run` re-stamps `ended_at` to now, and the correction is the OUTCOME only.
+
+        With the close and a later `--apply-signoff` separated in time, re-stamping would
+        stretch the archived run's started->ended span, which `retro` reads as elapsed. The
+        argument for this fix is that the archive is the permanent record, so the fix must
+        not corrupt a different field of it.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            state = _close_state(root, scaffolded_retro="RETRO0001", outcome="stopped",
+                                 ended_at="2026-07-19T09:00:00Z",
+                                 sprint_goal_verdict={"verdict": "achieved", "note": "n"})
+            _signoffable_story(root)
+            _close_retro(root)
+            (root / "sdlc-studio" / "stories" / "_index.md").write_text(
+                "# Stories\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [US0101](US0101-widget.md) | widget frobnicates | Review |\n",
+                encoding="utf-8")
+            mod = _load()
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                mod._apply_signoff_tail(root, state, units=["US0101"], retro_arg="RETRO0001")
+            after = json.loads(
+                (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8"))
+            self.assertEqual(after["outcome"], "goal-reached")
+            self.assertEqual(after["ended_at"], "2026-07-19T09:00:00Z", "ended_at was moved")
+
+    def test_a_plain_close_also_corrects_a_stale_outcome(self) -> None:
+        """The promotion must not be reachable only through `--apply-signoff`.
+
+        `_close_handoff` short-circuits when a handoff already exists AND the outcome is
+        terminal - the branch a re-run takes - and that skip covered the outcome as well as
+        the artefact. That is exactly how the run this bug was filed from kept `stopped`:
+        it had a handoff and a stale terminal outcome, so nothing re-derived it.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            state = _close_state(root, outcome="stopped", handoff="HO0009",
+                                 sprint_goal_verdict={"verdict": "achieved", "note": "n"})
+            mod = _load()
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                ok, _msg, _ = mod._close_handoff(root, "RETRO0001", state)
+            self.assertTrue(ok)
+            after = json.loads(
+                (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8"))
+            self.assertEqual(after["outcome"], "goal-reached")
+
     def test_a_close_whose_goal_was_not_achieved_is_not_promoted(self) -> None:
         """The promotion must follow the VERDICT, not the fact that a close ran.
 

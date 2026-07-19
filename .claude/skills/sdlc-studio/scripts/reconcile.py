@@ -819,6 +819,33 @@ _BREAKDOWN_BOX_RE = re.compile(r"^\s*- \[( |x|X)\]\s")
 _BREAKDOWN_HEADING_RE = re.compile(r"^#{2,3}\s+.*breakdown", re.IGNORECASE)
 
 
+def declared_breakdown_ids(text: str) -> list[str]:
+    """Every id-bearing checkbox line in an epic's Story Breakdown, resolvable or not.
+
+    `_breakdown_units` yields only units it can RESOLVE - it skips a breakdown id with no
+    backing file, and a unit file carrying no Status. Those skips are right for drift
+    detection (there is nothing to compare) and wrong for judging completion: an
+    unresolvable child is unknown, not finished.
+
+    Lives here, beside the regexes, because two subsystems now need the same answer - the
+    close derives an epic terminal from these ids, and the close-owed detector decides
+    whether a retro accounted for them. When those two disagreed about what a child is, an
+    epic could be forgiven off a strict subset of the children its own closure derived from.
+    """
+    out: list[str] = []
+    in_breakdown = False
+    for ln in text.splitlines():
+        if ln.lstrip().startswith("#"):
+            in_breakdown = bool(_BREAKDOWN_HEADING_RE.match(ln.strip()))
+            continue
+        if not in_breakdown or not _BREAKDOWN_BOX_RE.match(ln):
+            continue
+        idm = sdlc_md.ID_SEARCH_RE.search(ln)
+        if idm:
+            out.append(idm.group(0))
+    return out
+
+
 def _breakdown_units(root: Path, text: str):
     """Yield (lineno, ticked, unit_id, unit_type, canonical_status) for each resolvable
     checkbox line INSIDE the epic's Story Breakdown section only. An epic body carries
