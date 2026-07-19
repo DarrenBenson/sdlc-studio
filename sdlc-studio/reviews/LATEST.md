@@ -1,78 +1,99 @@
 # Reviews - LATEST (anchor)
 
-> Derived from the sprint-close review of **RUN-01KXWWM3** (bound the loop, make the close honest,
-> 2026-07-19, RETRO-0052). Supersedes the RETRO-0051 picture.
+> Derived from the sprint-close review of **RUN-01KXX52Z** (clear the debt, make the tooling honest
+> about what it covers, 2026-07-19, RETRO-0055). Supersedes the RETRO-0052 picture.
 
 ## Where the pipeline is (2026-07-19)
 
-**RUN-01KXWWM3 is built, verified and reviewed**: 4/4 units Fixed, 9 points, closing review
-**APPROVED at round 2** (one REJECT, one repair round). The previous run, RUN-01KXVYGR, closed
-goal-reached with 32 units signed off.
+**RUN-01KXX52Z is built, verified and reviewed**: 6/6 units Fixed, 11 points, closing review
+**APPROVED at round 2** (one REJECT, one repair round). Goal judged **achieved**.
 
-The batch was bugs rather than stories, so no two-role sign-off stands between a unit and terminal -
-the goal was reachable by the run itself, unlike RUN-01KXVYGR's.
+The batch was bugs rather than stories, so Fixed is terminal and no two-role sign-off stands
+between a unit and its close - the goal was reachable by the run itself.
+
+**The delivery backlog is empty but for BG0212**, filed by this run. Discovery stands at 62
+(59 CRs, 3 RFCs), 20 of them still awaiting a refine or triage. `close_owed` reports **none**:
+318 units accounted for by retros, 261 grandfathered.
 
 ## What shipped
 
-- **BG0205** - `refine` no longer seeds one story with its siblings' acceptance criteria. A
-  multi-story breakdown seeds none and carries the request's criteria to the epic; a single-story
-  breakdown is unchanged. The batch's unblocker.
-- **BG0204** - a generated H1 has ONE definition, `sdlc_md.heading_title`. Dogfooded at this close:
-  RETRO-0052's H1 comes from a Sprint Goal ending in a full stop and carries none.
-- **BG0208** - a close completing with an `achieved` verdict records `goal-reached`. The cause was
-  not a forgetful success path: `_close_handoff` short-circuits when a handoff exists, and the skip
-  covered the outcome as well as the artefact.
-- **BG0210** - close-owed can reach zero. A derived epic inherits its children's coverage; 35 epics
-  forgiven, 48 to 13 on one tree, every survivor genuinely uncovered.
+A debt phase and a bug phase.
 
-Suite **3,186 green**, tools **236 green**, drift 0, validate 0 errors, every commit gated.
+- **The close-owed debt went 9 to 0**, three causes cleared three ways. **RETRO-0053** reconstructs
+  the persona-layer sprint of 2026-07-16, which shipped in one commit and was never closed.
+  **RETRO-0054** reconstructs the CR0322 sprint of 2026-07-17, which ran a full two-role close -
+  review, repair round, re-verification, operator sign-off - and produced no retro artefact.
+  **BG0201** was added to RETRO-0051's `Batch` line, where its prose had discussed it twice.
+  Both new retros are marked RECONSTRUCTED and contribute nothing to calibration.
+- **BG0202** - the confinement roster sweep reads a write mode wherever the call form puts it.
+  Five modules gained a previously invisible append surface, all covered by another route: the
+  detector was blind, the roster was not wrong. The bug named one.
+- **BG0206** - a test module importing a sibling helper runs under both forms. 154 tests now run
+  under the form that produced one `ModuleNotFoundError`. The guard is the point, not the one-line
+  fix.
+- **BG0209** - the shipped suite passes from an installed copy: 7 errors before, 7 clean skips
+  after, dev repo still running all 144. The dev-repo rule now has one definition.
+- **BG0207** - the RFC accept gate names every open decision, not just those before a broken fence.
+  Inert across all 48 real RFCs; it was a false completeness claim, not a bypass.
+- **BG0203** - the audit profile parser's not-found paths are pinned. **The filed premise was
+  false** and the real defect was better.
+- **BG0211** - a dead breakdown id no longer owes a close no close can give, and the cause is
+  reported rather than silently forgiven.
+
+Suite **3,208 green**, tools 236 green, drift 0, every commit gated.
 
 ## The CODE leg - two rounds
 
 | Round | Findings | Outcome |
 | --- | --- | --- |
-| 1 | 1 MAJOR + 6 MINOR | REJECT |
-| 2 | 5 MINOR | APPROVE |
+| 1 | 1 MAJOR + 3 MINOR | REJECT |
+| 2 | 3 MINOR | APPROVE |
 
-**Not one finding was a misbehaviour of shipped code.** Every one was a claim wider than its
-evidence, in commit messages, docstrings and mutation coverage. The MAJOR: the `type_ != "epic"`
-guard - the single check stopping the close-owed relaxation becoming a blanket exemption - was
-pinned by nothing, while the commit claimed all four branches were mutation-killed by their own
-tests.
+**The MAJOR was in the guard written to prevent that class of defect.** BG0206's new sweep was
+blind to `test_telemetry`, a module in its own directory, on two independent layers: the census
+matched `ast.Import` only, so `from gitutil import git` was invisible; and fixing the census alone
+would not have closed it, because that import sits inside a method and does not run at import time.
 
-**The recurring shape, twice this sprint: a test that passes for an incidental reason.**
-`_ac_heading`'s strip looked covered because every test used a long criterion, where truncation
-removes the punctuation anyway; `close_owed`'s type guard looked covered because every test used
-childless non-epics. Both survived deletion against the full suite. Mutating the guard is the only
-way to find this - reading the test cannot.
+**Every round-2 finding was created by the round-1 repair - the third consecutive run with that
+shape.** Two landed inside the very lines written to fix a round-1 finding: the mode-shape gate's
+`break` lost `open('rt', 'w')`, and **the line that closed the MAJOR was itself deletable with
+3,205 tests green**. The latter is the defect the author had caught in their own BG0209 work one
+commit earlier, recurring inside the fix for it.
 
-Bounding the batch worked: 4 units and 9 points against the previous run's 32 and 89, and two review
-rounds against five.
+**Two of the six bugs were false as filed, and both were worth more once investigated.** BG0203's
+two named survivors are both already pinned; the real defect is that a mutation run scoped below
+its target's coverage manufactures survivors - 10 against one test file, 4 against the module's
+actual tests, same code and same mutants. The author reproduced that error before spotting it.
+BG0211's "zero epics are in this state" was wrong: there are 33.
 
 ## Next steps
 
-- **CR0358** (High) - the close review is an unbounded repair loop: no convergence check, no round
-  ceiling, no cost surface, and the author writes the reviewer's prompt. Still the highest-value
-  unbuilt item. Both rounds here were briefed neutrally by hand; nothing enforces that.
-- **CR0351** (widened, M) - prose reaches 13 scripts through a shell argument, so a backtick silently
-  empties the field it documents. File/stdin form is the fix; the detector catches 3 of 4 real
-  corruptions and is defence in depth only.
-- **CR0361** (M) - an agent meets the gates as refusals rather than as a briefing; five anticipatable
-  refusals in one 3-point bug, each behind a full gate run.
-- Filed this run: **BG0209** (seven shipped tests read this repo's own story files, so the payload
-  fails its own suite when installed), **BG0211** (an epic whose breakdown declares a dead id is owed
-  a close no close can give - latent, over-reporting direction), **CR0362** (a finding fixed during
-  the sprint has no honest disposition; this retro records eleven repairs as "declined").
-- **CR0355** is **HELD until v5 launch** (D0046) - the Claude for Open Source acknowledgement; the
-  logo needs prior written permission and must never delay the release.
-- Standing: **CR0278** - tokens not-yet-captured for interactive builds; the two review rounds cost
-  ~115k and ~117k subagent tokens, which the point-based forecast does not model at all. Residual
-  audit CRs (CR0280-CR0306) remain unrefined. Release freeze held.
+- **CR0358** (High) - the close review is an unbounded repair loop. **Third consecutive run of
+  evidence**, and its repair-regression detector would have flagged two of this round's three
+  findings. Still the highest-value unbuilt item. Both rounds here were briefed neutrally by hand;
+  nothing enforces that.
+- **CR0363** (High, new) - a mutation run scoped below its target's coverage over-reports absence,
+  and nothing warns. This produced BG0203 and was then repeated while investigating it.
+- **CR0361** (M) - an agent meets the gates as refusals rather than as a briefing.
+- **CR0351** (widened, M) - prose reaches 13 scripts through a shell argument, so a backtick
+  silently empties the field it documents.
+- Filed this run: **BG0212** (14 mutation survivors in `audit.py` outside the profile parser, the
+  full 190-mutant enumeration recorded), **CR0363**.
+- **CR0362** was hit live twice while filling in RETRO-0055: a finding fixed during the sprint can
+  only be recorded as "declined", which is the wrong word for it.
+- **CR0355** is **HELD until v5 launch** (D0046). Standing: **CR0278** - tokens not-yet-captured
+  for interactive builds; this run's two review rounds cost ~113k and ~141k subagent tokens, which
+  the point-based forecast does not model at all. Residual audit CRs (CR0280-CR0306) remain
+  unrefined. Release freeze held.
 
 ## Lessons this run paid for
 
-L-0127 to L-0129. **A test that passes for an incidental reason is not coverage** - mutate the guard,
-because reading the test cannot find this. **When two paths answer the same question, extract before
-the second answer drifts** - the H1 rule had three private copies, child-resolution had two. **A
-fix's own argument constrains its implementation** - BG0208's case is that the archive is the
-permanent record, so re-stamping `ended_at` while correcting `outcome` corrupted what it protected.
+L-0134 to L-0139. **A narrow test command over-reports absence** - a mutation run scoped below its
+target's coverage manufactures survivors, which then get filed as bugs. **A sweep that checks many
+things in one process can be satisfied by the first one** - shared `sys.path` and `sys.modules`
+state makes later cases pass on the back of earlier ones. **A finding is a hypothesis, not a
+fact**: two of six here were false in their specifics. **A new guard needs a test of its
+MECHANISM**, not just of the case that prompted it, because a guard is code and rots like code,
+and a green suite says nothing about a guard nothing exercises. **Round 2's findings are made by
+round 1's repair**: treat a repair as new code needing its own adversarial pass, never as the
+closing of a loop.
