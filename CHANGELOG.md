@@ -21,6 +21,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The pre-commit gate runs cheapest-first and short-circuits (US0268).** The markdown lanes now
+  run before the unit suites, and the suites are skipped entirely once a cheaper lane has failed -
+  the commit is blocked either way, so paying ~132s of tests to be told about a blank line was
+  pure waste. Reordering alone would have changed nothing: `run()` records a failure and returns
+  0, so every lane ran regardless; the expensive block needed its own guard. Measured end to end,
+  a commit whose only defect is markdown now reports in 35s. The skip is named, like the docs-only
+  one beside it, because a guard that quietly does not run reads exactly like one that passed.
+  `tools/tests/test_precommit_lane_order.py` pins the order, the short-circuit, its named skip,
+  and that no lane was lost or duplicated in the reorder. The suite's leaked-line baseline drops
+  233 to 134, by capturing leaks rather than raising the number.
 - **`sprint plan` briefs the gates each unit will meet (US0266).** The plan now names, per unit,
   the close requirements still unmet, and lists the checks every commit meets. Both halves are
   generated - the first by running the real transition gates, the second from `gate.DEFAULT_CHECKS`

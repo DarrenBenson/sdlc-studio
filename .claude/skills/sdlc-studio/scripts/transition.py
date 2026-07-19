@@ -566,6 +566,22 @@ def _tier_gate(root: Path, text: str, type_: str) -> str | None:
     return tiers.promotion_deficit(text, type_, strict=tiers.require_full_sections(root))
 
 
+class GateRefusal(ValueError):
+    """A transition refused by the gate ladder, carrying the blocks as DATA.
+
+    Subclasses ValueError so every existing caller and test keeps working unchanged - the
+    message is identical. `blocks` exists so a reader does not have to re-parse that message:
+    the ladder joins with `"; AND "` but only SOME gates suffix their reason with
+    `". Override with --force"`, so splitting on the suffix merges any two adjacent gates that
+    do not carry it, and leaks the delimiter into the next item when they alternate. Rebuilding
+    a list from a sentence is guesswork about a format nothing pinned; passing the list is not.
+    """
+
+    def __init__(self, message: str, blocks: list[str]):
+        super().__init__(message)
+        self.blocks = list(blocks)
+
+
 def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
                      target_canon, from_canon, force, dry_run, triaged_by) -> str | None:
     """Run the ordered pre-write gates (bug-depth, depth-parity, done-verify, triage,
@@ -656,8 +672,8 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
             blocks.append(pr_res["reason"])
     if blocks:
         joined = "; AND ".join(blocks)
-        raise ValueError(f"{artifact_id} -> {new_status} blocked ({len(blocks)} requirement(s), "
-                         f"all listed): {joined}.")
+        raise GateRefusal(f"{artifact_id} -> {new_status} blocked ({len(blocks)} requirement(s), "
+                          f"all listed): {joined}.", blocks)
     return gate_warn
 
 
@@ -904,17 +920,16 @@ def requirements(root, artifact_id: str, target: str) -> list[str]:
     """
     try:
         transition(root, artifact_id, target, dry_run=True)
-    except ValueError as exc:
-        msg = str(exc)
-        # ONLY the gate ladder's own refusal counts. It reports every unmet gate in one
-        # message behind this marker; any other ValueError - an unknown id, a status outside
-        # the vocabulary - is an ERROR, and reporting it as "a requirement you must meet"
-        # would be a confidently wrong answer of exactly the kind this command exists to end.
-        if "all listed):" not in msg:
-            raise
-        body = msg.split("all listed):", 1)[1]
-        return [part.strip() for part in body.split(". Override with --force")
-                if part.strip().strip(".")]
+    except GateRefusal as exc:
+        # The blocks come from the ladder as a LIST. An earlier version rebuilt them by
+        # splitting the message on `". Override with --force"`, which only some gates append -
+        # so two adjacent gates without it merged into one item, and an alternating pair leaked
+        # the `"; AND "` delimiter into the next. The count then disagreed with the count the
+        # gate itself had just reported.
+        return [b.strip().rstrip(".") for b in exc.blocks if b.strip()]
+    # Any OTHER error - an unknown id, a status outside the vocabulary - is an error, not a
+    # requirement. Reporting it as "something you must satisfy" would be the confidently wrong
+    # answer this command exists to end, so it propagates.
     return []
 
 

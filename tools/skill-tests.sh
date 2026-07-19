@@ -42,8 +42,8 @@ fi
 # 233 -> 134 (US0266). Adding the gate briefing to the plan pushed the count over, and the
 # rule above forbids raising the number to accommodate it - so the leaks were captured
 # instead. Seven `main(["plan", ...])` call sites in test_sprint.py printed a whole rendered
-# plan each with nothing capturing stdout; wrapping them removed the 6 new lines and 93 that
-# predated this change.
+# plan each with nothing capturing stdout. Wrapping them suppressed 105 lines in total: the 6
+# the briefing had just added, and 99 that predated this change. 233 + 6 - 105 = 134.
 #
 # This number was first recorded as 68. That was not a measurement of the suite, it was a
 # measurement of a blind detector: the exclusion list swallowed any indented line and any

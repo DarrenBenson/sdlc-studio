@@ -9,6 +9,7 @@ import importlib.util
 import json
 import sys
 import contextlib
+import re
 import io
 import tempfile
 import unittest
@@ -1059,6 +1060,29 @@ class DryRunHonestyTests(unittest.TestCase):
             self.assertIn("never verified", str(ctx.exception))
             self.assertIn("> **Status:** Ready", _read(root, "stories", "US0001-x.md"))
 
+    def test_a_story_dry_run_reports_the_depth_parity_refusal(self) -> None:
+        """The THIRD gate the BG0213 fix changed, which had no test at all.
+
+        Restoring `not dry_run` on this branch left the entire suite green, while the commit
+        claimed the fix covered all three gates it touched. It is advisory by default, so the
+        project must opt in via `quality.depth_parity_gate` for it to refuse - which is why
+        the other story tests never reach it.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d))
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "quality:\n  depth_parity_gate: true\n  done_requires_verified: false\n",
+                encoding="utf-8")
+            sp = root / "sdlc-studio" / "stories" / "US0001-x.md"
+            sp.write_text(sp.read_text(encoding="utf-8").replace(
+                "- **Verify:** shell echo ok",
+                "- **Verification target:** soak\n- **Verify:** shell echo ok"),
+                encoding="utf-8")
+            with self.assertRaises(ValueError) as ctx:
+                _quiet(tr.transition, root, "US0001", "Done", dry_run=True)
+            self.assertIn("Verification target", str(ctx.exception))
+            self.assertIn("> **Status:** Ready", sp.read_text(encoding="utf-8"))
+
     def test_force_still_waives_the_gate_on_a_dry_run(self) -> None:
         # `--force` is a legitimate override, so a forced dry-run must report what a forced
         # real run would do - not refuse. Dropping `not dry_run` without keeping `not force`
@@ -1143,6 +1167,66 @@ class RequirementsPreflightTests(unittest.TestCase):
             (root / "sdlc-studio").mkdir(parents=True)
             with self.assertRaises((ValueError, FileNotFoundError)):
                 _quiet(tr.requirements, root, "BG9999", "Fixed")
+
+    def test_blocks_come_from_the_ladder_as_data_not_reparsed_prose(self) -> None:
+        """Two gates that do NOT suffix their reason must still be two items.
+
+        The ladder joins with `"; AND "`, but only SOME gates append
+        `". Override with --force"`. Splitting the message on that suffix therefore merged
+        any two adjacent gates lacking it, and leaked the delimiter into the next item when
+        they alternated - while the printed count disagreed with the count the gate had just
+        reported.
+
+        The earlier pinning test asserted `len >= 2` on a fixture where exactly ONE of the
+        two blocks carried the suffix, so the wrong delimiter still produced two items. It
+        passed for an incidental reason. This uses two suffix-free reasons, which the old
+        code collapses into one.
+        """
+        exc = tr.GateRefusal(
+            "US0001 -> Done blocked (2 requirement(s), all listed): first reason; "
+            "AND second reason.",
+            ["first reason", "second reason"])
+        self.assertEqual(exc.blocks, ["first reason", "second reason"])
+        # and the message is unchanged, so every existing caller and test still reads the same
+        self.assertIn("all listed):", str(exc))
+        self.assertIsInstance(exc, ValueError)
+
+    def test_no_requirement_carries_the_ladders_join_token(self) -> None:
+        # The observable symptom of re-parsing: a leaked `; AND ` inside an item.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n",
+                                                               encoding="utf-8")
+            bd = root / "sdlc-studio" / "bugs"
+            bd.mkdir()
+            (bd / "BG0001-x.md").write_text(
+                "# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n## Summary\n\ns\n",
+                encoding="utf-8")
+            unmet = _quiet(tr.requirements, root, "BG0001", "Fixed")
+        self.assertGreaterEqual(len(unmet), 2)
+        for item in unmet:
+            self.assertNotIn("; AND ", item, f"the join token leaked into an item: {item!r}")
+
+    def test_the_reported_count_matches_the_gates_own_count(self) -> None:
+        # The two numbers came from different places and could disagree; now they cannot.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir(parents=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n",
+                                                               encoding="utf-8")
+            bd = root / "sdlc-studio" / "bugs"
+            bd.mkdir()
+            (bd / "BG0001-x.md").write_text(
+                "# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n## Summary\n\ns\n",
+                encoding="utf-8")
+            unmet = _quiet(tr.requirements, root, "BG0001", "Fixed")
+            try:
+                _quiet(tr.transition, root, "BG0001", "Fixed")
+                self.fail("expected the gate to refuse")
+            except ValueError as exc:
+                stated = int(re.search(r"blocked \((\d+) requirement", str(exc)).group(1))
+        self.assertEqual(len(unmet), stated)
 
     def test_every_unmet_gate_is_listed_not_just_the_first(self) -> None:
         # The ladder collects all refusals into one message; the reporter must split them
