@@ -2,6 +2,8 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0139: **Round 2's findings are made by round 1's repair, and this is now three runs in a row.** Every new finding this round was created by the...**
+- **L-0138: **A new guard needs a test of its MECHANISM, not just of the case that prompted it.** The line that closed this review's MAJOR could be...**
 - **L-0137: **Forgiving an unsatisfiable demand must surface its cause.** Dropping a dead id silently would trade a false debt for a hidden defect...**
 - **L-0136: **A finding is a hypothesis, not a fact.** Two of six bugs in this batch were wrong in their specifics and both were worth more once...**
 - **L-0135: **A sweep that checks many things in one process can be satisfied by the first one.** Shared interpreter state - `sys.path`, `sys.modules`...**

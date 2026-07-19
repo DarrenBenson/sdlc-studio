@@ -89,7 +89,20 @@ filed by this run).
   rather than the fixtures.
 - **I left dead code behind while fixing dead code.** Inlining BG0211's logic made
   `_derived_from_covered_children` unreferenced, an hour after deleting `PROFILE_DIR` from
-  `audit.py` for being exactly that.
+  `audit.py` for being exactly that. The review then found `delivery_ids`, dead on arrival in
+  the very commit whose message says so.
+- **The review REJECTed, and the MAJOR was in the guard written to prevent that class of
+  defect.** BG0206's sweep was blind to `test_telemetry`, a module in its own directory, on two
+  independent layers: the census matched `ast.Import` only, so `from gitutil import git` was
+  invisible; and fixing the census alone would not have closed it, because that import sits
+  inside a method and so does not run at import time. The sweep now imports each module AND
+  resolves the helpers it references.
+- **Round 2 found three more, every one created by the round-1 repair.** The mode-shape gate I
+  added was necessary but its `break` lost `open('rt', 'w')` - a write reported as no write
+  surface, the same failure class as BG0202 itself. **The helper-resolution line that closed the
+  MAJOR was itself unpinned**: deleting it left the whole suite green, silently reopening the
+  hole - which is the exact defect I had caught in my own BG0209 work one commit earlier. And my
+  correction of an overclaim from "five" to a precise count was off by one; it is six.
 
 ## Lessons
 
@@ -106,6 +119,14 @@ filed by this run).
   trade a false debt for a hidden defect; reporting it unconditionally would restore the noise the
   forgiveness existed to remove. Scope the report to the cases where the forgiveness changed the
   answer.
+- **A new guard needs a test of its MECHANISM, not just of the case that prompted it.** The line
+  that closed this review's MAJOR could be deleted with 3,205 tests still green. A guard is code,
+  it rots like code, and "the suite is green" says nothing about a guard nothing exercises. Write
+  the fixture that makes it fire.
+- **Round 2's findings are made by round 1's repair, and this is now three runs in a row.** Every
+  new finding this round was created by the previous round's fix, twice inside the very lines
+  written to fix the previous finding. Treat a repair as new code needing its own adversarial
+  pass, never as the closing of a loop.
 
 ## Estimate vs actual
 
@@ -157,6 +178,8 @@ not an answer.
 | BG0203's filed premise was wrong; both named survivors were already pinned | declined: no NEW work is owed - it was fixed in-run, and BG0203 carries a Resolution section stating the falsification. See the CR0362 row below: "declined" is the wrong word for this and the vocabulary is the reason |
 | BG0211's "zero epics are in this state" was wrong; there are 33 | declined: no new work owed - established in-run and used to scope the advisory. Same vocabulary problem as the row above |
 | A finding FIXED during the sprint has no honest disposition: `retro validate` accepts only an id or `declined:`, so in-run repairs must be recorded as declined | CR0362 - already open, and hit live twice in this retro. The two rows above are not declined in any ordinary sense; they were fixed. Confirms the CR from a second run |
+| The closing review took two rounds and every round-2 finding was created by the round-1 repair - the third consecutive run with that shape, and nothing in the process detects it | CR0358 - already open and unbuilt; this run is its third piece of evidence. The repair-regression detector it specifies would have flagged two of the three round-2 findings, both of which landed inside the lines written to fix a round-1 finding |
+| A new guard can ship with its mechanism untested: the line closing the review's MAJOR was deletable with 3,205 tests green | declined: fixed in-run by `ProbeMechanismTests`, which exercises the probe against real fixtures. The general habit is now a lesson rather than a ticket |
 | Two bugs still lacked a `Verification depth` field and were refused by `transition` | declined: the gate caught both and the cost was one field each. The refusal is the feature working |
 | A retro reconstructed days later cannot supply estimate-versus-actual | declined: correctly excluded rather than guessed. The general gap is CR0278, already open |
 | Interactive sprint tokens are still not captured, so this retro's own accuracy block is empty | declined: CR0278 covers it and is unchanged by this run |
@@ -177,4 +200,7 @@ The next sprint reads them automatically: `sprint plan` prints the digest in the
 
 ## Metrics
 
-- Tokens: not-yet-captured (harness-tracked; supply with `accuracy --tokens N`) · Duration: one interactive session · Critic rejects: see the closing review record
+- Tokens: not-yet-captured (harness-tracked; supply with `accuracy --tokens N`). The two review
+  rounds cost ~113k and ~141k subagent tokens, which the point-based forecast does not model at
+  all · Duration: one interactive session · Critic rejects: 1 (REJECT at round 1 on a MAJOR, APPROVE
+  at round 2 with three new MINORs, all repaired)
